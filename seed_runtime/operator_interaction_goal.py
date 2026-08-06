@@ -77,16 +77,32 @@ def run_interaction_goal_establishment(
     )
     treatment = recorded_alternative.get("consumer_treatment")
 
+    # Consumer, Responsibility, and Act carry distinct exact identities.
     consumer_ref = new_id("interaction_goal_consumer")
+    responsibility_ref = new_id("interaction_goal_responsibility")
     applicability_standing, basis = determine_goal_applicability(
         relation, recovery, treatment, scope=scope
     )
-    # The exact instantiated Consumer Authority, evidenced by the recorded
-    # formation occurrence, and the structural Consumer Responsibility every
-    # Act of this occurrence references.
-    consumer_authority = None
+    # The determination Authority warrants the Applicability finding itself,
+    # applicable or not; the treatment Authority -- present only where the
+    # recorded treatment relation covers this exact material -- warrants
+    # Admission, consumption, and goal establishment, and its absence is
+    # what prevents them.
+    determination_authority = {
+        "standing": "bounded",
+        "supports": ["determine-exact-goal-applicability"],
+        "evidence_event_ids": [
+            relation["event_id"],
+            relation["presentation_formed_event_id"],
+        ],
+        "scope": {
+            "consumer_purpose": CONSUMER_PURPOSE,
+            "session_scope": scope,
+        },
+    }
+    treatment_authority = None
     if treatment is not None and applicability_standing == "applicable":
-        consumer_authority = {
+        treatment_authority = {
             "identity": treatment["relation_identity"],
             "kind": treatment["treatment_kind"],
             "standing": "bounded",
@@ -98,11 +114,12 @@ def run_interaction_goal_establishment(
             "provenance": treatment["provenance"],
         }
     consumer_responsibility = {
-        "identity": consumer_ref,
+        "identity": responsibility_ref,
+        "consumer_identity": consumer_ref,
         "purpose": CONSUMER_PURPOSE,
-        "consumer": "interaction-goal-consumer",
         "scope": scope,
-        "authority": consumer_authority,
+        "determination_authority": determination_authority,
+        "treatment_authority": treatment_authority,
         "evidence_event_ids": [
             relation["event_id"],
             relation["presentation_formed_event_id"],
@@ -116,6 +133,16 @@ def run_interaction_goal_establishment(
             "attempt_ref": recovery["response_attempt_ref"],
             "applicability_ref": applicability_ref,
             "consumer_ref": consumer_ref,
+            "responsibility_ref": responsibility_ref,
+            "act": {
+                "act_ref": new_id("goal_applicability_act"),
+                "act_kind": "bounded-interaction-goal-applicability",
+                "responsibility_ref": responsibility_ref,
+            },
+            "basis": {
+                "responsibility_ref": responsibility_ref,
+                "authority_support": "determine-exact-goal-applicability",
+            },
             "consumer_purpose": CONSUMER_PURPOSE,
             "consumer_responsibility": consumer_responsibility,
             "meaning_relation_event_id": relation["event_id"],
@@ -152,7 +179,7 @@ def run_interaction_goal_establishment(
                 content=f"goal applicability: {applicability_standing} ({basis})",
                 standing=applicability_standing,
                 source=relation["event_id"],
-                responsibility="bounded-interaction-goal-applicability",
+                responsibility=responsibility_ref,
                 authority=(
                     "determines only whether the validated relation bears on "
                     "this exact Consumer purpose and Scope; establishes no "
@@ -203,11 +230,16 @@ def run_interaction_goal_establishment(
             "proposition": relation["proposition"],
             "consumer_scope": scope,
             "standing": "admitted",
-            "consumer_responsibility_identity": consumer_ref,
+            "responsibility_ref": responsibility_ref,
+            "act": {
+                "act_ref": new_id("goal_admission_act"),
+                "act_kind": "bounded-interaction-goal-admission",
+                "responsibility_ref": responsibility_ref,
+            },
             # The explicit constitutional basis for this exact movement.
             "basis": {
                 "applicable_finding_event_id": applicability_event.id,
-                "consumer_responsibility_identity": consumer_ref,
+                "responsibility_ref": responsibility_ref,
                 "authority_support": "admit-exact-meaning-relation",
             },
             "evidence_event_ids": [applicability_event.id, relation["event_id"]],
@@ -216,7 +248,7 @@ def run_interaction_goal_establishment(
                 content="applicable relation admitted for possible use",
                 standing="admitted",
                 source=applicability_event.id,
-                responsibility="bounded-interaction-goal-admission",
+                responsibility=responsibility_ref,
                 authority=(
                     "admits the applicable relation for possible use under "
                     "this exact Consumer purpose and Scope only; admission "
@@ -252,13 +284,18 @@ def run_interaction_goal_establishment(
             "source_identity": relation["source_identity"],
             "proposition": relation["proposition"],
             "consumer_scope": scope,
-            "consumer_responsibility_identity": consumer_ref,
+            "responsibility_ref": responsibility_ref,
+            "act": {
+                "act_ref": new_id("goal_consumption_act"),
+                "act_kind": "bounded-interaction-goal-consumption",
+                "responsibility_ref": responsibility_ref,
+            },
             "basis": {
                 "admission_event_id": admission_event.id,
-                "consumer_responsibility_identity": consumer_ref,
+                "responsibility_ref": responsibility_ref,
                 "authority_support": "consume-exact-admitted-relation",
             },
-            "consumer_authority": consumer_authority,
+            "treatment_authority": treatment_authority,
             "evidence_event_ids": [
                 admission_event.id,
                 applicability_event.id,
@@ -269,7 +306,7 @@ def run_interaction_goal_establishment(
                 content="admitted relation consumed by the exact Consumer",
                 standing="consumed",
                 source=admission_event.id,
-                responsibility="bounded-interaction-goal-consumption",
+                responsibility=responsibility_ref,
                 authority=(
                     "consumes the admitted relation under the exact "
                     "developer-supplied treatment relation only; establishes "
@@ -314,15 +351,20 @@ def run_interaction_goal_establishment(
                 "this exact bounded interaction proceeds under the "
                 "proposition as its current goal"
             ),
-            "consumer_responsibility_identity": consumer_ref,
+            "responsibility_ref": responsibility_ref,
+            "act": {
+                "act_ref": new_id("goal_standing_act"),
+                "act_kind": "bounded-interaction-goal-standing",
+                "responsibility_ref": responsibility_ref,
+            },
             "basis": {
                 "consumption_event_id": consumption_event.id,
-                "consumer_responsibility_identity": consumer_ref,
+                "responsibility_ref": responsibility_ref,
                 "authority_support": (
                     "establish-bounded-interaction-goal-standing"
                 ),
             },
-            "consumer_authority": consumer_authority,
+            "treatment_authority": treatment_authority,
             "operator_authority": {
                 "standing": "unresolved",
                 "supports": [],
@@ -345,7 +387,7 @@ def run_interaction_goal_establishment(
                 ),
                 standing="interaction-goal-established",
                 source=consumption_event.id,
-                responsibility="bounded-interaction-goal-standing",
+                responsibility=responsibility_ref,
                 authority=(
                     "bounds this exact interaction to proceed under the "
                     "proposition as its current goal; establishes no operator "

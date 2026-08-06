@@ -246,11 +246,24 @@ def test_each_act_requires_the_previous_recorded_act():
     assert admission.payload["applicability_event_id"] == applicability.id
     assert consumption.payload["admission_event_id"] == admission.id
     assert goal.payload["consumption_event_id"] == consumption.id
+    # One exact Responsibility, four distinct Acts: every event's
+    # Responsibility coordinate is the same recorded identity, while each
+    # Act carries its own identity and kind.
     responsibilities = {
         event.payload["dimensions"]["responsibility"]
         for event in (applicability, admission, consumption, goal)
     }
-    assert len(responsibilities) == 4
+    assert len(responsibilities) == 1
+    act_kinds = {
+        event.payload["act"]["act_kind"]
+        for event in (applicability, admission, consumption, goal)
+    }
+    assert len(act_kinds) == 4
+    act_refs = {
+        event.payload["act"]["act_ref"]
+        for event in (applicability, admission, consumption, goal)
+    }
+    assert len(act_refs) == 4
     assert result["outcome"] == "goal-standing-established"
 
 
@@ -494,8 +507,10 @@ def test_projector_refuses_forged_goal_chain_events():
     ledger.append(
         good.kind,
         "w",
-        {**good.payload, "applicability_ref": "forged", "standing": "applicable",
-         "basis": "structural-agreement", "consumer_treatment": None},
+        {**good.payload, "applicability_ref": "forged",
+         "responsibility_ref": "forged-responsibility",
+         "consumer_ref": "forged-consumer", "standing": "applicable",
+         "consumer_treatment": None},
         session_id="s",
     )
     with pytest.raises(ValueError, match="derived from recorded testimony"):
@@ -569,14 +584,26 @@ def test_consumer_responsibility_and_authority_are_structural():
     responsibility = applicability_event.payload["consumer_responsibility"]
     assert set(responsibility) == {
         "identity",
+        "consumer_identity",
         "purpose",
-        "consumer",
         "scope",
-        "authority",
+        "determination_authority",
+        "treatment_authority",
         "evidence_event_ids",
     }
-    assert responsibility["identity"] == result["consumer_ref"]
-    authority = responsibility["authority"]
+    # Consumer identity and Responsibility identity are distinct exact ids.
+    responsibility_ref = applicability_event.payload["responsibility_ref"]
+    assert responsibility["identity"] == responsibility_ref
+    assert responsibility["consumer_identity"] == (
+        applicability_event.payload["consumer_ref"]
+    )
+    assert responsibility["identity"] != responsibility["consumer_identity"]
+    # The determination Authority warrants the finding; the treatment
+    # Authority warrants the later movements.
+    determination = responsibility["determination_authority"]
+    assert determination["standing"] == "bounded"
+    assert determination["supports"] == ["determine-exact-goal-applicability"]
+    authority = responsibility["treatment_authority"]
     assert authority["kind"] == "bounded-interaction-goal-establishment"
     assert authority["identity"].startswith("treatment-relation:")
     assert authority["supports"] == [
@@ -601,14 +628,39 @@ def test_consumer_responsibility_and_authority_are_structural():
         (consumption_event, "consume-exact-admitted-relation"),
         (goal_event, "establish-bounded-interaction-goal-standing"),
     ):
-        assert event.payload["consumer_responsibility_identity"] == (
-            result["consumer_ref"]
+        assert event.payload["responsibility_ref"] == responsibility_ref
+        assert event.payload["dimensions"]["responsibility"] == (
+            responsibility_ref
         )
         assert event.payload["basis"]["authority_support"] == support
-    # The consumption and goal carry the full structural authority, scoped
-    # to the exact A / G / M / purpose / session.
-    assert consumption_event.payload["consumer_authority"] == authority
-    assert goal_event.payload["consumer_authority"] == authority
+    # The consumption and goal carry the full structural treatment
+    # authority, scoped to the exact A / G / M / purpose / session.
+    assert consumption_event.payload["treatment_authority"] == authority
+    assert goal_event.payload["treatment_authority"] == authority
+    # The projected goal Standing retains the complete validated boundary.
+    standing = _standing(ledger)
+    goal = standing["latest_interaction_goal_standing"]
+    assert goal["consumer_responsibility"] == responsibility
+    assert set(goal["bases"]) == {
+        "applicability",
+        "admission",
+        "consumption",
+        "goal_standing",
+    }
+    assert goal["evidence_event_ids"]
+    assert goal["lineage"]
+    assert goal["known_loss"] == []
+    assert goal["conflicts"] == []
+    # Inapplicable findings still carry the determination Authority.
+    stop_ledger = EventLedger()
+    _exchange_with_relation(stop_ledger, "3\n")
+    stop_result = _establish(stop_ledger)
+    stop_event = stop_ledger.get(stop_result["applicability"]["event_id"])
+    stop_responsibility = stop_event.payload["consumer_responsibility"]
+    assert stop_responsibility["determination_authority"]["standing"] == (
+        "bounded"
+    )
+    assert stop_responsibility["treatment_authority"] is None
 
 
 def test_projector_refuses_forged_goal_standing_claims():
