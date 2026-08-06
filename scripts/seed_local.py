@@ -310,6 +310,7 @@ from seed_runtime.selection_path_audit import (
 from seed_runtime.events import EventLedger, SQLiteEventLedger
 from seed_runtime.operator_ingress import run_operator_ingress_attempt
 from seed_runtime.operator_ingress_representation import capture_stdin_material
+from seed_runtime.operator_ingress_view import format_operator_ingress_view
 from seed_runtime.facts import (
     Fact,
     FactConflict,
@@ -5657,13 +5658,17 @@ def run_persistent_operator_console(
             captured_ingress.exact_bytes, captured_ingress.encoding_testimony
         ):
             return
-        run_operator_ingress_attempt(
+        attempt_view = run_operator_ingress_attempt(
             ledger=ledger,
             workspace_id=workspace_id,
             session_id=session_id,
             captured_ingress=captured_ingress,
             output_stream=output_stream,
         )
+        if attempt_view["current_standing"]["preserved_ingress"] is not None:
+            rendered_view = format_operator_ingress_view(attempt_view)
+            output_stream.write(rendered_view)
+            output_stream.flush()
 
 
 def main(argv: list[str] | None = None) -> int:
