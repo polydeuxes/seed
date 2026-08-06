@@ -281,18 +281,22 @@ def test_next_console_iteration_recovers_c1_and_forms_c2():
     assert identities(c1) == identities(c2)
 
 
-def test_no_response_comparison_or_identification_is_recorded():
-    ledger, output = _run_console("first\n2\n3\n")
+def test_first_interaction_records_no_comparison_without_prior_presentation():
+    ledger, _ = _run_console("first\n")
 
     kinds = {event.kind for event in ledger.list("w")}
-    assert kinds <= {
+    assert kinds == {
         *_INGRESS_KINDS,
         "operator.presentation.formed",
         "operator.presentation.emitted",
     }
     assert not any("compar" in kind or "identif" in kind for kind in kinds)
-    assert "match" not in output
-    assert "identified" not in output
+    ingress = next(
+        event
+        for event in ledger.list("w")
+        if event.kind == "operator.ingress.ingress_occurred"
+    )
+    assert "produced_after_presentation_ref" not in ingress.payload
 
 
 def test_direct_one_attempt_view_behavior_remains_valid():
