@@ -156,14 +156,11 @@ The exchange carries four relations that this report's ingredients imply but did
 ```text
 Source Authority
   establishes that the operator produced the attributed material at
-  the preserved occurrence, and preserves whatever exact occurrence
-  relation is evidenced:
-    the unbidden ingress precedes and occasions the first presentation
-    the response R is produced after C is emitted
+  the preserved occurrence
 
 response-comparison Authority
-  bounds R against C's exact response coordinates and permits only
-  match to T or no coordinate match
+  bounds the comparison to R against C's exact response coordinates
+  and bounds its result to match T or no coordinate match
 
 meaning Warrant
   supports what the identified represented source expresses
@@ -174,7 +171,19 @@ Operator Authority
   established
 ```
 
-`:104` withholds each of the later ones by name from the earlier:
+Preserved occurrence lineage is not one of the four. It is a distinct coordinate carrying the relation between the attributed material and Seed's presentation, and Source Authority does not establish it:
+
+```text
+Source Authority           the operator produced this material at this
+                           preserved occurrence
+
+preserved occurrence       the ingress precedes the first presentation
+lineage                    R is produced after C is emitted
+
+Source Authority != the occurrence relation the lineage carries
+```
+
+`:104` withholds each of the later relations by name from the earliest:
 
 > The independently established external fact is only that the operator produced R after C was emitted. It does not establish that the operator intended R to mean T, understood the binding or A, intended A, assented to a label or represented-source meaning, authorized downstream treatment, or performed a constitutional selection act. Operator selection occurrence remains **Unknown** unless separately established; no negative operator-intent claim follows.
 
@@ -193,7 +202,7 @@ C contains exact alternatives and response coordinates
 C is emitted
 R is produced after emission and captured with lineage
 comparison is restricted to R against C's coordinates
-the permitted result is match to T or no coordinate match
+the bounded result is match to T or no coordinate match
 ```
 
 ```text
@@ -380,6 +389,25 @@ second:
    occurrence relations are now stated separately
 ```
 
+A fourth round corrected two defects:
+
+```text
+10. Finding 5 said the comparison's Authority "permits only" a match or
+    no-match, and called the outcome "the permitted result". This author
+    had removed the same `permitted` framing from
+    `compare_occurrence_implementation_form_recovery_001.md` earlier the
+    same day, recording there that it grants a standing the report
+    disclaims. It re-entered here through adopted wording and was not
+    re-checked. Authority does not permit a result; it bounds the act
+    and the result
+
+11. the same finding had Source Authority establishing that the ingress
+    "occasions" the first presentation. Source Authority establishes
+    source-relative production only. The relation between that material
+    and Seed's later presentation is carried by preserved occurrence
+    lineage, which is now stated as a separate relation
+```
+
 ## Supported findings
 
 - The witness testifies to a comparison of captured operator-response material against an emitted presentation's exact response coordinates, naming Seed as actor kind, both inputs, and the result form, and separating the following identification act.
@@ -388,7 +416,7 @@ second:
 - Closed-choice representation follows from bounded grammar orientation and is not retired by prose competency.
 - Bounded comparison is a testified input to Learning establishment, which produces revised retained understanding.
 - Four distinct Authority and Warrant relations — Source Authority, response-comparison Authority, meaning Warrant, Operator Authority — are derivable from the witness's preserved boundaries. The witness withholds intent, understanding, assent, selection, and authorization from the operator-produced-material fact by name; it does not present this four-item inventory under these names.
-- The bounded exchange carries the comparison's Authority bounds — R against C's exact coordinates, permitted result match or no-match — so that Authority is neither borrowed from bounded testimony comparison nor held universally. The coordinate name is this report's; the bounded relation is the witness's.
+- The bounded exchange carries the comparison's Authority bounds — R against C's exact coordinates, result bounded to match or no-match — so that Authority is neither borrowed from bounded testimony comparison nor held universally. The coordinate name is this report's; the bounded relation is the witness's.
 
 ## Unsupported findings
 
