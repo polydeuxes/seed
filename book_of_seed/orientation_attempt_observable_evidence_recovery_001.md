@@ -76,7 +76,27 @@ A third correction then narrowed two claims made while making the second:
    road; it is not Evidence of any particular runtime occurrence
 ```
 
-What survives all three rounds is narrower and stated below: the current rendering is a constant and therefore cannot reflect any act, whether transient or recorded.
+A fourth correction then fixed two boundaries introduced by the third:
+
+```text
+8. it treated a live intermediate artifact as occurrence-local Evidence
+
+   result existence is not Evidence of its producing occurrence. Active
+   law preserves this as `act != artifact describing an act`, and in the
+   Fact-artifact and Fidelity-artifact clauses. The call boundary, exact
+   inputs, returned result, and preserved lineage together may evidence
+   the occurrence; the artifact alone cannot.
+
+9. it said losing the intermediates destroys no unique historical
+   Evidence because the operator material is durably recorded
+
+   that reasoning depends on the recomputability the same round withdrew.
+   The transient result may be unique and later irreproducible. Its loss
+   is lawful because no later Consumer depends on it, not because the
+   ingress preserves it.
+```
+
+What survives all four rounds is narrower and stated below: the current rendering is a constant and therefore cannot reflect any act, whether transient or recorded.
 
 ## Recovered owner and Consumer-purpose
 
@@ -198,7 +218,27 @@ no cross-tick recognition needed  no later projected recognition presently
                                   depends on preserving the intermediate
 ```
 
-That is sufficient. Losing them destroys no unique historical Evidence, because the operator material that produced them is itself durably recorded.
+That is sufficient on its own.
+
+It is **not** sufficient to say the intermediates may be lost because the operator material is durably recorded. That reasoning depends on recomputability, which is withdrawn below. The exact transient result may be unique and later irreproducible, since Seed's grammar and method may change.
+
+The lawful position is narrower:
+
+```text
+the exact transient result may be permanently lost
+
+that loss is lawful after immediate consumption, where no later
+reconstruction, provenance, accountability, or cross-tick recognition
+depends upon that result surviving
+```
+
+```text
+durable preservation unnecessary
+!= exact result non-unique
+
+transient result discarded after consumption
+!= result reconstructible
+```
 
 **Recomputability is not claimed.** An earlier version asserted these results are fully recomputable from the preserved ingress and Seed's available grammar. That is not established, and exact recomputation would additionally require preserving:
 
@@ -230,21 +270,29 @@ The current implementation fails that test, and this is what survives from both 
 
 Both constants remain correct as honest declarations of the preservation boundary's own limits. They are wrong only where a produced result should have taken their place.
 
-Three kinds of Evidence are distinct here, and an earlier version conflated the first two:
+Four kinds of Evidence are distinct here. Earlier versions conflated the first with the third, then the second with the third:
 
 ```text
-focused tests            evidence that the implementation contains and
-                         consumes the live road — not evidence that any
-                         particular runtime occurrence happened
+focused tests           Evidence that the implementation contains and
+                        connects the live road — not Evidence that any
+                        particular runtime occurrence happened
 
-live intermediate        occurrence-local Evidence, available to the
-artifacts                immediate Consumer during the interaction
+live result artifact    the exact material consumed by the immediate
+                        Consumer — its existence alone evidences nothing
+                        about the Act that produced it
 
-Event Ledger             durable historical Evidence — unnecessary unless
-                         the occurrence must survive as history
+live occurrence         Evidence supporting that the exact Act and its
+Evidence                production occurrence happened — the call
+                        boundary, exact inputs, returned result, and
+                        preserved lineage together, not the artifact alone
+
+Event Ledger            durable historical Evidence — unnecessary unless
+                        the occurrence must survive as history
 ```
 
-A test supplying different material and asserting a correspondingly different response establishes that the road exists and is consumed. It says nothing about any specific occurrence, and it is not a substitute for either of the other two.
+The second and third must not be collapsed. Active law preserves this in three places: `act != artifact describing an act`; *"A Fact artifact does not prove its own Fact standing"*; and *"A Fidelity-shaped artifact does not prove that this bounded comparison responsibility occurred."* A candidate or comparison result existing is not Evidence that candidate formation or Compare occurred.
+
+A test supplying different material and asserting a correspondingly different response establishes that the road exists and is consumed. It says nothing about any specific occurrence, and substitutes for none of the other three.
 
 Durable recording becomes warranted later, at the first occurrence whose loss would destroy the only support for something established — a warranted relation, with its subject, supporting coordinates, candidate provenance, comparison result, Warrant, scope, and Standing. In the worked examples that plausibly falls partway through E3, not at E1.
 
