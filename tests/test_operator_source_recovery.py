@@ -726,7 +726,7 @@ def test_projector_refuses_identified_basis_over_a_no_match_comparison():
         session_id="s",
     )
     with pytest.raises(
-        ValueError, match="does not follow from its recorded comparison"
+        ValueError, match="derived from its recorded comparison"
     ):
         _standing(ledger)
 
@@ -815,6 +815,86 @@ def test_projector_refuses_emission_naming_a_foreign_formation():
         ValueError, match="does not name its recorded formation"
     ):
         _standing(ledger)
+
+
+def test_projector_refuses_comparison_contradicting_recorded_ingress():
+    # The deepest forged chain: real ingress "not a coordinate", forged
+    # comparison using the real ingress and capture identities but claiming
+    # match:1. The projector re-derives the result from recorded R and C
+    # and refuses the contradiction.
+    ledger = EventLedger()
+    _, finding = _exchange(ledger, "not a coordinate\n")
+    good_payload = ledger.get(finding["comparison"]["event_id"]).payload
+    ledger.append(
+        "operator.exchange.comparison_occurred",
+        "w",
+        {
+            **good_payload,
+            "comparison_ref": "forged",
+            "compared_representation": "1",
+            "matched_coordinate": "1",
+            "outcome": "match:1",
+            "unknowns": [
+                "operator intent Unknown",
+                "operator selection occurrence Unknown",
+            ],
+        },
+        session_id="s",
+    )
+    with pytest.raises(
+        ValueError, match="derived from recorded testimony on compared_representation"
+    ):
+        _standing(ledger)
+
+
+def test_projector_refuses_forged_identified_alternative_testimony():
+    # Correct coordinate and binding, forged role and label: the complete
+    # identified alternative must equal the recorded reconstruction.
+    ledger = EventLedger()
+    _, finding = _exchange(ledger, "1\n")
+    good_payload = ledger.get(finding["identification"]["event_id"]).payload
+    ledger.append(
+        "operator.exchange.identification_occurred",
+        "w",
+        {
+            **good_payload,
+            "identification_ref": "forged",
+            "identified_alternative": {
+                **good_payload["identified_alternative"],
+                "role": "local-stop",
+                "rendered_label": "Stop immediately",
+            },
+        },
+        session_id="s",
+    )
+    with pytest.raises(
+        ValueError, match="derived from its recorded comparison and binding"
+    ):
+        _standing(ledger)
+
+
+def test_projector_refuses_duplicate_semantic_references():
+    # A later event reusing a prior semantic reference must not overwrite
+    # what earlier joins resolved to.
+    cases = (
+        ("operator.exchange.comparison_occurred", "comparison_ref"),
+        ("operator.exchange.identification_occurred", "identification_ref"),
+        ("operator.presentation.source_recovered", "recovery_ref"),
+        (
+            "operator.presentation.meaning_relation_established",
+            "relation_ref",
+        ),
+        ("operator.presentation.formed", "presentation_ref"),
+    )
+    for kind, reference_key in cases:
+        ledger = EventLedger()
+        _recovered_exchange(ledger)
+        original = next(
+            event for event in ledger.list("w") if event.kind == kind
+        )
+        ledger.append(kind, "w", dict(original.payload), session_id="s")
+        with pytest.raises(ValueError, match="duplicate"):
+            _standing(ledger)
 
 
 def test_console_runs_recovery_only_for_identified_exchanges():
