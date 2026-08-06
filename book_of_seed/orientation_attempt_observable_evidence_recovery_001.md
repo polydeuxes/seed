@@ -40,11 +40,28 @@ The first version of this report contained four errors, recorded rather than sil
    collapsed it, treating zero candidates as no production occurrence
 ```
 
-The evidentiary core survives. The materials, the E1 claim, the proposed event, and the implementation slice do not.
+The materials, the E1 claim, the proposed event, and the implementation slice did not survive that round.
+
+A second correction then replaced the evidentiary core itself:
+
+```text
+5. it claimed the ledger is the only repository-visible Evidence surface,
+   and inferred that without a recorded occurrence "attempted" and
+   "never attempted" are indistinguishable
+
+   constitutional_event_projection_persistence_boundary_001.md establishes
+   that a result may remain transient when bounded to immediate live use,
+   recomputable from preserved inputs, or not needed for cross-tick
+   recognition. Candidate production and Compare at first contact meet all
+   three. The distinction must hold inside the live road, not in durable
+   history.
+```
+
+What survives both rounds is narrower and stated below: the current rendering is a constant and therefore cannot reflect any act, whether transient or recorded.
 
 ## Recovered owner and Consumer-purpose
 
-**Unresolved, and this is the blocking finding.**
+**Unresolved, not absent.** The general recovery leaves ownership local to each instantiated comparison, so an unresolved general owner does not establish that this instance cannot supply one.
 
 `candidate_versus_grammar_comparison_recovery_001.md` records, for the exact shape at issue here:
 
@@ -84,23 +101,26 @@ prior preserved operator-origin material
 
 Omitting the first item is what turned the inquiry into comparison across operator utterances. The recovered road is candidate-versus-grammar, not testimony-versus-testimony, and those were established as non-identical instantiated Responsibilities.
 
-## The established acts
+## What the road requires, and what is named
 
-There is no established act named orientation. The acts the road requires are:
+There is no established Act named orientation. Exactly one Act on this road is recovered:
 
 ```text
-candidate production      01.External.F — a candidate must preserve each
-                          applicable producer, source-role, formation-
-                          occurrence, scope, authority, and provenance
-                          dimension where known
-
-Compare                   "Compare the candidate equivalence with the
-                          applicable relation grammar", recovered as
-                          Shape B and explicitly non-identical to
-                          testimony-versus-testimony comparison
+Compare    "Compare the candidate equivalence with the applicable
+           relation grammar" — recovered as Shape B, explicitly
+           non-identical to testimony-versus-testimony comparison
 ```
 
-Any ledger occurrence must testify to one of these under an exact Responsibility. An event named after report-level shorthand testifies to nothing.
+Compare tests an **already-produced** candidate. The Act that forms the candidate is not recovered.
+
+`candidate production` is not that Act. The candidate-versus-grammar recovery treats production as Responsibility topology concerning producer, production occurrence, and result, and states directly that production is not the exact Act's name. `01.External.F` governs what a candidate must preserve — producer, source-role, formation-occurrence, scope, authority, provenance — not who forms it.
+
+```text
+production                != exact responsible Act
+candidate production      != candidate-forming Act by identity
+```
+
+Any occurrence, transient or recorded, must be an occurrence *of an exact Act under an exact Responsibility*. Naming one after report-level shorthand, or after a topology branch, testifies to nothing.
 
 ## Candidate production at E1
 
@@ -119,38 +139,58 @@ which is not the same as the first point a candidate becomes possible
 
 ## Empty candidate set as a production result
 
-The corrected reading, replacing the collapse in the first version:
+The first version treated zero candidates as no production occurrence, collapsing a distinction it had just preserved. The corrected reading:
 
 ```text
-candidate-production Act occurred
+the exact candidate-forming Act occurred
+→ production occurrence
 → bounded result: empty candidate set
 ```
 
 is distinct from:
 
 ```text
-no candidate-production Act occurred
+no candidate-forming Act occurred
 ```
 
-This matters because it removes the reason the first version invented a separate event. If a candidate-production occurrence can carry an empty result, the tried-versus-not-tried distinction is evidenced by an act that already has Book grammar, with no new act invented.
+This removes the reason the first version invented a separate event: a production occurrence carrying an empty result already distinguishes attempted from not-attempted, with no new act.
 
-What remains unresolved is who performs it.
+Two things remain unresolved and are not settled by this correction: what the exact candidate-forming Act is, and who performs it. The phrase `candidate-production Act`, used in the second version of this report, is withdrawn — it named a topology branch as though it were the Act.
 
 ## Observable Evidence
 
-This part of the first version survives.
+The first two versions demanded durable history. That was the wrong requirement.
 
-The ledger is the only repository-visible Evidence surface for these acts. Without a recorded occurrence, "attempted and established nothing stronger" and "never attempted" produce byte-identical repository state, projections, and renderings.
+`constitutional_event_projection_persistence_boundary_001.md` establishes the boundary:
 
-The test for any proposed implementation:
+> An occurrence must enter durable history when later reconstruction, provenance, audit, authorization state, execution history, evidence observation, fact observation/inference, pending action state, or other cross-tick recognition depends on the occurrence as unique historical evidence.
+
+> A result **may remain transient** when it is bounded to immediate live use, does not need cross-tick recognition, is fully recomputable from preserved inputs, or is intentionally only renderer/operator progress visibility.
+
+Candidate production and Compare at first contact satisfy every transient condition. They are bounded to the response being formed in the live interaction, fully recomputable from the preserved ingress and Seed's available grammar, and establish no Standing that later projection depends upon. Losing them destroys no unique historical Evidence, because the operator material that produced them is itself durably recorded.
+
+So:
 
 ```text
-would the recorded ledger differ if Seed had not attempted?
+candidate formed        != Event required
+Compare occurred        != Event required
+no relation warranted   != Event required
 ```
 
-The current implementation fails it. `"Communicative meaning: unresolved (Unknown)."` is an unconditional literal in `operator_ingress_view.py`, and `UNKNOWNS` is a module-level constant tuple in `operator_ingress_addressable_material.py`. Both render identically regardless of what occurred, so neither evidences an attempt. Both remain correct as honest declarations of the preservation boundary's own limits.
+The distinction must hold **inside the live road**, not in the ledger. The correct test is therefore not whether history differs, but:
 
-The distinguishing Evidence would be a recorded occurrence of an established act carrying its exact materials, declared bounding, produced result including the empty case, and lineage. What blocks recording it is not the event schema. It is that no Responsibility owns the act.
+```text
+does the result reaching the response Consumer
+vary with what actually occurred?
+```
+
+The current implementation fails that test, and this is what survives from both prior versions. `"Communicative meaning: unresolved (Unknown)."` is an unconditional literal in `operator_ingress_view.py`, and `UNKNOWNS` is a module-level constant tuple in `operator_ingress_addressable_material.py`. Neither can vary. The response would be byte-identical whether Seed formed candidates and compared them or did nothing at all — not because the acts went unrecorded, but because nothing downstream consumes their result.
+
+Both constants remain correct as honest declarations of the preservation boundary's own limits. They are wrong only where a produced result should have taken their place.
+
+This is repository-visible without any Event: a test supplying different material and asserting a correspondingly different response proves the road is live rather than constant.
+
+Durable recording becomes warranted later, at the first occurrence whose loss would destroy the only support for something established — a warranted relation, with its subject, supporting coordinates, candidate provenance, comparison result, Warrant, scope, and Standing. In the worked examples that plausibly falls partway through E3, not at E1.
 
 ## Bounded result and Standing
 
@@ -166,6 +206,17 @@ No case establishes communicative meaning, operator intent, goal, Demand, or Aut
 ## Finding/response Consumer
 
 No existing relation consumes these results. Once such an occurrence were admitted into the attempt projection, the existing View would be positioned to render it, since the View already consumes the projection.
+
+Positioning is not performance. A View exposing a produced result is not response formation:
+
+```text
+View can expose a bounded result
+!= response formation completed
+!= composition
+!= presentation
+```
+
+A richer diagnostic View must not drift back into being treated as Seed's completed response.
 
 Whether these results are `findings` in the Book's sense is not settled here. `01.External.D` reserves *Fidelity finding* for a bounded comparison of constitutional grammar, a bounded expectation, and an implementation witness — a different subject.
 
@@ -197,25 +248,57 @@ This locates *where* an occurrence would be recorded. It does not establish *wha
 
 ## Smallest implementation slice
 
-**None is warranted yet.**
+No slice is proposed here, and no new Event kind is warranted at first contact.
 
-The blocker is not schema, naming, or projection. It is that no Responsibility owns candidate production for operator-ingress material, and none owns the candidate-versus-grammar Compare. Both are recorded as unresolved in the active recovery. An occurrence must evidence an exact Act under an exact Responsibility; recording one before the owner exists produces an ownerless event, which is what the first version of this report proposed and what this correction withdraws.
-
-The prerequisite is a recovery answering:
+The remaining blocker is narrower than the second version stated. It is not that a recorded occurrence needs an owner — no recording is required. It is that the exact Act forming a candidate equivalence from ingress material and Seed's available grammar is itself unrecovered:
 
 ```text
-which Responsibility, if any, produces a candidate equivalence for
-operator-ingress material, under what Authority and purpose
+production
+!= exact responsible Act
 
-whether that Responsibility already exists compressed inside an
-owned road, or is genuinely absent
+candidate production
+!= candidate-forming Act by identity
 ```
 
-Until then the correct state is the current one: material preserved, Standing projected, no claim that an attempt occurred.
+The candidate-versus-grammar recovery names Compare as the Act that tests an already-produced candidate. It leaves the Act that forms the candidate unresolved, and treats production as Responsibility topology concerning producer, production occurrence, and result. The second version of this report withdrew one invented Act and then substituted `candidate-production Act`; that substitution is withdrawn here.
+
+Ownership is likewise unresolved rather than absent. The general recovery leaves it local to each instantiated comparison, so its being unresolved in general does not establish that this instance cannot supply one. This instance already supplies substantial local coordinates:
+
+```text
+subject              exact free-form ingress material
+Consumer-purpose     form a bounded response during the active interaction
+Consumer boundary    available operator through the console
+scope                exact workspace, session, attempt, interaction
+comparison material  exact presentation plus Seed's available grammar
+```
+
+The prerequisite recovery is therefore:
+
+```text
+what exact Act forms candidate equivalences from operator-ingress
+material and Seed's available grammar
+
+what exact local Responsibility owns that Act during the active
+free-form interaction, and whether the coordinates above instantiate
+an already-owned one
+```
+
+Once that is answered, the shape available is a **live transient road** requiring no ledger addition:
+
+```text
+ingress projection
+→ candidate formation
+→ Compare where candidates exist and are applicable
+→ bounded result
+→ response formation
+→ composition, presentation, rendering, emission
+```
+
+with durable recording deferred to the first occurrence establishing something whose later reconstruction depends on it.
 
 ## Files likely changed
 
-None. No implementation slice is warranted at this disposition.
+None yet. When the prerequisite is answered, the change is expected to be live-road wiring plus tests rather than a new event kind or projection coordinate.
 
 ## Vocabulary or architecture explicitly rejected
 
