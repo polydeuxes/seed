@@ -26,7 +26,62 @@ _SUPPORTED_KINDS = {
     _IDENTIFICATION_KIND,
     _SOURCE_RECOVERED_KIND,
     _MEANING_RELATION_KIND,
+    "operator.interaction.goal_applicability_established",
+    "operator.interaction.goal_admission_established",
+    "operator.interaction.goal_consumption_occurred",
+    "operator.interaction.goal_standing_established",
 }
+
+
+CONSUMER_PURPOSE = (
+    "determine whether the validated potential-goal relation bears on "
+    "establishing the current bounded interaction goal"
+)
+
+_GOAL_APPLICABILITY_KIND = "operator.interaction.goal_applicability_established"
+_GOAL_ADMISSION_KIND = "operator.interaction.goal_admission_established"
+_GOAL_CONSUMPTION_KIND = "operator.interaction.goal_consumption_occurred"
+_GOAL_STANDING_KIND = "operator.interaction.goal_standing_established"
+
+
+def determine_goal_applicability(
+    relation: dict[str, Any],
+    recovery: dict[str, Any],
+    treatment: dict[str, Any] | None,
+    *,
+    scope: str,
+) -> tuple[str, str]:
+    """Derive the only lawful Applicability finding, structurally.
+
+    The determination consumes the alternative's role, the exact
+    developer-supplied treatment relation, the structural Authority
+    coordinates of the validated meaning relation, and Scope agreement.
+    It never inspects the proposition's wording.
+    """
+    role = recovery["alternative"]["role"]
+    if role != "potential-goal":
+        return "inapplicable", "role-not-potential-goal"
+    if treatment is None:
+        return "inapplicable", "no-consumer-treatment-relation"
+    if (
+        treatment["consumer_purpose"] != CONSUMER_PURPOSE
+        or treatment["alternative_id"] != recovery["alternative"]["alternative_id"]
+        or treatment["source_identity"] != relation["source_identity"]
+        or treatment["proposition"] != relation["proposition"]
+        or treatment["attribution"] != "developer-supplied"
+    ):
+        return "inapplicable", "treatment-disagreement"
+    if treatment["scope"] != scope or relation["representation_scope"] != scope:
+        return "inapplicable", "scope-mismatch"
+    separation = relation["authority_separation"]
+    if (
+        separation["meaning_warrant"]["standing"] != "established"
+        or separation["source_authority"]["standing"] != "bounded"
+        or separation["response_comparison_authority"]["standing"] != "bounded"
+    ):
+        return "inapplicable", "authority-coordinates-not-established"
+    return "applicable", "structural-agreement"
+
 
 
 def project_operator_session_standing(
@@ -42,6 +97,7 @@ def project_operator_session_standing(
     Meaning candidates are never produced here; each preserved ingress keeps
     the authority its own event recorded.
     """
+    scope = f"workspace:{workspace_id};session:{session_id}"
     attempts: dict[str, dict[str, Any]] = {}
     preserved_ingress_occurrences: list[dict[str, Any]] = []
     interaction_closures: list[dict[str, Any]] = []
@@ -54,6 +110,11 @@ def project_operator_session_standing(
     meaning_relations: dict[str, dict[str, Any]] = {}
     latest_source_recovery: dict[str, Any] | None = None
     latest_meaning_relation: dict[str, Any] | None = None
+    goal_applicabilities: dict[str, dict[str, Any]] = {}
+    goal_admissions: dict[str, dict[str, Any]] = {}
+    goal_consumptions: dict[str, dict[str, Any]] = {}
+    goal_standings: dict[str, dict[str, Any]] = {}
+    latest_interaction_goal_standing: dict[str, Any] | None = None
     known_loss: set[str] = set()
     unknowns: set[str] = set()
     conflicts: set[str] = set()
@@ -68,6 +129,7 @@ def project_operator_session_standing(
             event.kind.startswith("operator.ingress.")
             or event.kind.startswith("operator.presentation.")
             or event.kind.startswith("operator.exchange.")
+            or event.kind.startswith("operator.interaction.")
         ):
             continue
         if event.kind not in _SUPPORTED_KINDS:
@@ -689,6 +751,259 @@ def project_operator_session_standing(
             meaning_relations[payload["relation_ref"]] = relation
             latest_meaning_relation = relation
             continue
+        if event.kind == _GOAL_APPLICABILITY_KIND:
+            payload = event.payload
+            if payload["applicability_ref"] in goal_applicabilities:
+                raise ValueError(
+                    "duplicate applicability reference: "
+                    f"{payload['applicability_ref']}"
+                )
+            relation = meaning_relations.get(payload["relation_ref"])
+            if relation is None or relation["event_id"] != (
+                payload["meaning_relation_event_id"]
+            ):
+                raise ValueError(
+                    "goal applicability does not consume a recorded "
+                    "meaning relation"
+                )
+            recovery = source_recoveries[relation["recovery_ref"]]
+            presentation = presentations[relation["presentation_ref"]]
+            recorded_alternative = next(
+                alternative
+                for alternative in presentation["alternatives"]
+                if alternative["alternative_id"] == relation["alternative_id"]
+            )
+            treatment = recorded_alternative.get("consumer_treatment")
+            derived_standing, derived_basis = determine_goal_applicability(
+                relation, recovery, treatment, scope=scope
+            )
+            expected = {
+                "consumer_purpose": CONSUMER_PURPOSE,
+                "source_recovery_event_id": relation["source_recovery_event_id"],
+                "presentation_ref": relation["presentation_ref"],
+                "presentation_formed_event_id": relation[
+                    "presentation_formed_event_id"
+                ],
+                "alternative": {
+                    "alternative_id": recovery["alternative"]["alternative_id"],
+                    "role": recovery["alternative"]["role"],
+                },
+                "source_identity": relation["source_identity"],
+                "proposition": relation["proposition"],
+                "consumer_scope": scope,
+                "standing": derived_standing,
+                "basis": derived_basis,
+                "consumed_authority_coordinates": {
+                    name: relation["authority_separation"][name]["standing"]
+                    for name in (
+                        "source_authority",
+                        "response_comparison_authority",
+                        "meaning_warrant",
+                        "operator_authority",
+                    )
+                },
+                "consumer_treatment": treatment,
+                "evidence_event_ids": [
+                    relation["event_id"],
+                    relation["source_recovery_event_id"],
+                    relation["presentation_formed_event_id"],
+                ],
+            }
+            for field, value in expected.items():
+                if payload[field] != value:
+                    raise ValueError(
+                        "goal applicability does not agree with the result "
+                        f"derived from recorded testimony on {field}"
+                    )
+            goal_applicabilities[payload["applicability_ref"]] = {
+                "applicability_ref": payload["applicability_ref"],
+                "event_id": event.id,
+                "consumer_ref": payload["consumer_ref"],
+                "relation_ref": payload["relation_ref"],
+                "meaning_relation_event_id": payload["meaning_relation_event_id"],
+                **expected,
+            }
+            continue
+        if event.kind == _GOAL_ADMISSION_KIND:
+            payload = event.payload
+            if payload["admission_ref"] in goal_admissions:
+                raise ValueError(
+                    f"duplicate admission reference: {payload['admission_ref']}"
+                )
+            applicability = goal_applicabilities.get(payload["applicability_ref"])
+            if applicability is None or (
+                applicability["event_id"] != payload["applicability_event_id"]
+                or applicability["standing"] != "applicable"
+            ):
+                raise ValueError(
+                    "goal admission does not consume a recorded applicable "
+                    "finding"
+                )
+            for field in (
+                "consumer_ref",
+                "consumer_purpose",
+                "meaning_relation_event_id",
+                "source_identity",
+                "proposition",
+                "consumer_scope",
+            ):
+                if payload[field] != applicability[field]:
+                    raise ValueError(
+                        "goal admission does not agree with its recorded "
+                        f"applicability on {field}"
+                    )
+            if payload["alternative_id"] != (
+                applicability["alternative"]["alternative_id"]
+            ) or payload["standing"] != "admitted":
+                raise ValueError(
+                    "goal admission does not agree with its recorded "
+                    "applicability on alternative or standing"
+                )
+            goal_admissions[payload["admission_ref"]] = {
+                "admission_ref": payload["admission_ref"],
+                "event_id": event.id,
+                "applicability_ref": payload["applicability_ref"],
+                "applicability_event_id": payload["applicability_event_id"],
+                "consumer_ref": payload["consumer_ref"],
+                "consumer_purpose": payload["consumer_purpose"],
+                "meaning_relation_event_id": payload["meaning_relation_event_id"],
+                "alternative_id": payload["alternative_id"],
+                "source_identity": payload["source_identity"],
+                "proposition": payload["proposition"],
+                "consumer_scope": payload["consumer_scope"],
+                "standing": "admitted",
+            }
+            continue
+        if event.kind == _GOAL_CONSUMPTION_KIND:
+            payload = event.payload
+            if payload["consumption_ref"] in goal_consumptions:
+                raise ValueError(
+                    "duplicate consumption reference: "
+                    f"{payload['consumption_ref']}"
+                )
+            admission = goal_admissions.get(payload["admission_ref"])
+            if admission is None or (
+                admission["event_id"] != payload["admission_event_id"]
+                or admission["applicability_event_id"]
+                != payload["applicability_event_id"]
+            ):
+                raise ValueError(
+                    "goal consumption does not consume a recorded admission"
+                )
+            for field in (
+                "consumer_ref",
+                "consumer_purpose",
+                "meaning_relation_event_id",
+                "alternative_id",
+                "source_identity",
+                "proposition",
+                "consumer_scope",
+            ):
+                if payload[field] != admission[field]:
+                    raise ValueError(
+                        "goal consumption does not agree with its recorded "
+                        f"admission on {field}"
+                    )
+            applicability = goal_applicabilities[admission["applicability_ref"]]
+            treatment = applicability["consumer_treatment"]
+            expected_authority = {
+                "identity": treatment["identity"],
+                "standing": "bounded",
+                "boundary": treatment["authority_boundary"],
+                "attribution": treatment["attribution"],
+                "provenance": treatment["provenance"],
+            }
+            if payload["consumer_authority"] != expected_authority:
+                raise ValueError(
+                    "goal consumption does not carry the recorded consumer "
+                    "authority"
+                )
+            goal_consumptions[payload["consumption_ref"]] = {
+                "consumption_ref": payload["consumption_ref"],
+                "event_id": event.id,
+                "admission_ref": payload["admission_ref"],
+                "admission_event_id": payload["admission_event_id"],
+                "applicability_event_id": payload["applicability_event_id"],
+                "consumer_ref": payload["consumer_ref"],
+                "meaning_relation_event_id": payload["meaning_relation_event_id"],
+                "alternative_id": payload["alternative_id"],
+                "source_identity": payload["source_identity"],
+                "proposition": payload["proposition"],
+                "consumer_scope": payload["consumer_scope"],
+                "consumer_authority": expected_authority,
+            }
+            continue
+        if event.kind == _GOAL_STANDING_KIND:
+            payload = event.payload
+            if payload["goal_standing_ref"] in goal_standings:
+                raise ValueError(
+                    "duplicate goal-standing reference: "
+                    f"{payload['goal_standing_ref']}"
+                )
+            consumption = goal_consumptions.get(payload["consumption_ref"])
+            if consumption is None or (
+                consumption["event_id"] != payload["consumption_event_id"]
+                or consumption["admission_event_id"]
+                != payload["admission_event_id"]
+                or consumption["applicability_event_id"]
+                != payload["applicability_event_id"]
+            ):
+                raise ValueError(
+                    "goal standing does not consume a recorded consumption "
+                    "occurrence"
+                )
+            for field in (
+                "consumer_ref",
+                "meaning_relation_event_id",
+                "alternative_id",
+                "source_identity",
+                "proposition",
+            ):
+                if payload[field] != consumption[field]:
+                    raise ValueError(
+                        "goal standing does not agree with its recorded "
+                        f"consumption on {field}"
+                    )
+            expected_operator_authority = {
+                "standing": "unresolved",
+                "supports": [],
+                "evidence_event_ids": [],
+                "scope": {"proposition": consumption["proposition"]},
+            }
+            if payload["operator_authority"] != expected_operator_authority:
+                raise ValueError(
+                    "goal standing does not preserve the unresolved operator "
+                    "authority boundary"
+                )
+            if payload["consumer_authority"] != consumption["consumer_authority"]:
+                raise ValueError(
+                    "goal standing does not carry the recorded consumer "
+                    "authority"
+                )
+            goal_standing = {
+                "goal_standing_ref": payload["goal_standing_ref"],
+                "event_id": event.id,
+                "consumption_ref": payload["consumption_ref"],
+                "consumption_event_id": payload["consumption_event_id"],
+                "admission_event_id": payload["admission_event_id"],
+                "applicability_event_id": payload["applicability_event_id"],
+                "consumer_ref": payload["consumer_ref"],
+                "meaning_relation_event_id": payload["meaning_relation_event_id"],
+                "source_recovery_event_id": payload["source_recovery_event_id"],
+                "presentation_ref": payload["presentation_ref"],
+                "alternative_id": payload["alternative_id"],
+                "source_identity": payload["source_identity"],
+                "proposition": payload["proposition"],
+                "standing": payload["standing"],
+                "consumer_authority": consumption["consumer_authority"],
+                "operator_authority": expected_operator_authority,
+                "consumer_scope": consumption["consumer_scope"],
+                "locality": payload["locality"],
+                "unknowns": payload["unknowns"],
+            }
+            goal_standings[payload["goal_standing_ref"]] = goal_standing
+            latest_interaction_goal_standing = goal_standing
+            continue
         attempt_ref = event.payload["attempt_ref"]
         attempt = attempts.setdefault(
             attempt_ref,
@@ -756,6 +1071,11 @@ def project_operator_session_standing(
         "meaning_relations": meaning_relations,
         "latest_source_recovery": latest_source_recovery,
         "latest_meaning_relation": latest_meaning_relation,
+        "goal_applicabilities": goal_applicabilities,
+        "goal_admissions": goal_admissions,
+        "goal_consumptions": goal_consumptions,
+        "goal_standings": goal_standings,
+        "latest_interaction_goal_standing": latest_interaction_goal_standing,
         "recorded_relation_standings": [],
         "known_loss": sorted(known_loss),
         "unknowns": sorted(unknowns),
