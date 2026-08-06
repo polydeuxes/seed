@@ -315,6 +315,9 @@ from seed_runtime.operator_presentation import (
     emit_operator_presentation,
     form_operator_presentation,
 )
+from seed_runtime.operator_response_comparison import (
+    run_operator_response_comparison_and_identification,
+)
 from seed_runtime.operator_session_standing import project_operator_session_standing
 from seed_runtime.facts import (
     Fact,
@@ -5659,6 +5662,12 @@ def run_persistent_operator_console(
     output_stream.flush()
     while True:
         captured_ingress = capture_stdin_material(input_stream)
+        # `exit` is a process-boundary console escape, not constitutional
+        # local stopping: it is examined before any recording, produces no
+        # events, and never enters the presentation grammar.  Its exact byte
+        # form is disjoint from every recorded response coordinate; the
+        # recorded local-stop alternative is reached through its own
+        # coordinate and recorded Compare/Identification instead.
         if captured_ingress.eof or _is_console_exit(
             captured_ingress.exact_bytes, captured_ingress.encoding_testimony
         ):
@@ -5668,6 +5677,7 @@ def run_persistent_operator_console(
         session_standing = project_operator_session_standing(
             ledger, workspace_id=workspace_id, session_id=session_id
         )
+        active_presentation = session_standing["current_presentation"]
         attempt_view = run_operator_ingress_attempt(
             ledger=ledger,
             workspace_id=workspace_id,
@@ -5677,8 +5687,24 @@ def run_persistent_operator_console(
             session_standing=(
                 session_standing if session_standing["event_count"] else None
             ),
+            produced_after_presentation=active_presentation,
         )
         if attempt_view["current_standing"]["preserved_ingress"] is not None:
+            if (
+                active_presentation is not None
+                and active_presentation["emitted_event_id"] is not None
+            ):
+                run_operator_response_comparison_and_identification(
+                    ledger,
+                    workspace_id=workspace_id,
+                    session_id=session_id,
+                    presentation=active_presentation,
+                    response_ingress_event_id=(
+                        attempt_view["current_standing"]["preserved_ingress"][
+                            "evidence_event_id"
+                        ]
+                    ),
+                )
             # The interaction output is a bounded Presentation formed from the
             # session's current Standing (including this attempt).  The View
             # remains the renderer behind the `show current Standing`

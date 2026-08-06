@@ -13,11 +13,15 @@ _SUBJECT_BY_KIND = {
 }
 _PRESENTATION_FORMED_KIND = "operator.presentation.formed"
 _PRESENTATION_EMITTED_KIND = "operator.presentation.emitted"
+_COMPARISON_KIND = "operator.exchange.comparison_occurred"
+_IDENTIFICATION_KIND = "operator.exchange.identification_occurred"
 _SUPPORTED_KINDS = {
     *_SUBJECT_BY_KIND,
     "operator.ingress.representation_examined",
     _PRESENTATION_FORMED_KIND,
     _PRESENTATION_EMITTED_KIND,
+    _COMPARISON_KIND,
+    _IDENTIFICATION_KIND,
 }
 
 
@@ -39,6 +43,9 @@ def project_operator_session_standing(
     interaction_closures: list[dict[str, Any]] = []
     presentations: dict[str, dict[str, Any]] = {}
     current_presentation_id: str | None = None
+    comparisons: dict[str, dict[str, Any]] = {}
+    identifications: dict[str, dict[str, Any]] = {}
+    latest_exchange_finding: dict[str, Any] | None = None
     known_loss: set[str] = set()
     unknowns: set[str] = set()
     conflicts: set[str] = set()
@@ -52,6 +59,7 @@ def project_operator_session_standing(
         if not (
             event.kind.startswith("operator.ingress.")
             or event.kind.startswith("operator.presentation.")
+            or event.kind.startswith("operator.exchange.")
         ):
             continue
         if event.kind not in _SUPPORTED_KINDS:
@@ -80,6 +88,7 @@ def project_operator_session_standing(
                 "session_standing_evidence_ids": payload[
                     "session_standing_evidence_ids"
                 ],
+                "prior_exchange_finding": payload.get("prior_exchange_finding"),
                 "scope": payload["dimensions"]["scope_locality"],
                 "provenance": payload["dimensions"]["source_provenance"],
                 "known_loss": payload["known_loss"],
@@ -96,6 +105,46 @@ def project_operator_session_standing(
                 )
             presentations[presentation_ref]["emitted_event_id"] = event.id
             current_presentation_id = presentation_ref
+            continue
+        if event.kind == _COMPARISON_KIND:
+            payload = event.payload
+            comparisons[payload["comparison_ref"]] = {
+                "comparison_ref": payload["comparison_ref"],
+                "event_id": event.id,
+                "presentation_ref": payload["presentation_ref"],
+                "response_attempt_ref": payload["response_attempt_ref"],
+                "compared_representation": payload["compared_representation"],
+                "coordinate_set": payload["coordinate_set"],
+                "matched_coordinate": payload["matched_coordinate"],
+                "outcome": payload["outcome"],
+                "unknowns": payload["unknowns"],
+            }
+            continue
+        if event.kind == _IDENTIFICATION_KIND:
+            payload = event.payload
+            identification = {
+                "identification_ref": payload["identification_ref"],
+                "event_id": event.id,
+                "comparison_ref": payload["comparison_ref"],
+                "comparison_event_id": payload["comparison_event_id"],
+                "presentation_ref": payload["presentation_ref"],
+                "response_attempt_ref": payload["response_attempt_ref"],
+                "identified_alternative": payload["identified_alternative"],
+                "basis": payload["basis"],
+                "outcome": payload["outcome"],
+            }
+            identifications[payload["identification_ref"]] = identification
+            comparison = comparisons.get(payload["comparison_ref"])
+            if comparison is None:
+                raise ValueError(
+                    "identification without recorded comparison: "
+                    f"{payload['comparison_ref']}"
+                )
+            # The most recent complete exchange finding, exactly as recorded.
+            latest_exchange_finding = {
+                "comparison": comparison,
+                "identification": identification,
+            }
             continue
         attempt_ref = event.payload["attempt_ref"]
         attempt = attempts.setdefault(
@@ -146,6 +195,9 @@ def project_operator_session_standing(
         # Exactly the relation standings recorded by session events.  No
         # current event kind records one, so this stays empty until a
         # responsible occurrence does; emptiness is absence of record only.
+        "comparisons": comparisons,
+        "identifications": identifications,
+        "latest_exchange_finding": latest_exchange_finding,
         "recorded_relation_standings": [],
         "known_loss": sorted(known_loss),
         "unknowns": sorted(unknowns),

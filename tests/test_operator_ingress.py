@@ -380,15 +380,18 @@ def test_console_recurs_after_each_quiescent_non_eof_attempt():
     ledger, output = run_console(b"first ingress\nsecond ingress\nexit\n")
     events = ledger.list_events("console-w")
     assert [event.kind for event in events] == [
-        kind
-        for _ in range(2)
-        for kind in (
-            "operator.ingress.raw_material_captured",
-            "operator.ingress.representation_examined",
-            "operator.ingress.ingress_occurred",
-            "operator.presentation.formed",
-            "operator.presentation.emitted",
-        )
+        "operator.ingress.raw_material_captured",
+        "operator.ingress.representation_examined",
+        "operator.ingress.ingress_occurred",
+        "operator.presentation.formed",
+        "operator.presentation.emitted",
+        "operator.ingress.raw_material_captured",
+        "operator.ingress.representation_examined",
+        "operator.ingress.ingress_occurred",
+        "operator.exchange.comparison_occurred",
+        "operator.exchange.identification_occurred",
+        "operator.presentation.formed",
+        "operator.presentation.emitted",
     ]
     assert [
         event.payload["decoded_text"]

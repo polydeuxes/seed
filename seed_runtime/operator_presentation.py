@@ -136,6 +136,9 @@ def form_operator_presentation(
     # The exact inventory of session events this formation consumed,
     # including any prior Presentation formation and emission Evidence.
     standing_evidence_ids = list(session_standing["consumed_event_ids"])
+    # The latest recorded exchange finding, exposed exactly as recorded;
+    # formation neither strengthens nor reinterprets it.
+    prior_exchange_finding = session_standing.get("latest_exchange_finding")
     formed_event = ledger.append(
         PRESENTATION_FORMED_KIND,
         workspace_id,
@@ -169,6 +172,7 @@ def form_operator_presentation(
             "coordinate_bindings": coordinate_bindings,
             "session_standing_as_of_event_id": session_standing["as_of_event_id"],
             "session_standing_evidence_ids": standing_evidence_ids,
+            "prior_exchange_finding": prior_exchange_finding,
             "known_loss": [
                 "rendered label compresses represented candidate meaning"
             ],
@@ -192,6 +196,7 @@ def form_operator_presentation(
         "emitted_event_id": None,
         "session_standing_as_of_event_id": session_standing["as_of_event_id"],
         "session_standing_evidence_ids": standing_evidence_ids,
+        "prior_exchange_finding": prior_exchange_finding,
         "known_loss": ["rendered label compresses represented candidate meaning"],
         "unknowns": [],
         "conflicts": [],
@@ -205,10 +210,27 @@ def render_operator_presentation(presentation: dict[str, Any]) -> str:
     represented candidate's full meaning; that meaning stays preserved in the
     recorded formation payload.
     """
-    lines = [
-        f"Bounded Presentation {presentation['presentation_id']}",
-        "Respond with exactly one token:",
-    ]
+    lines = [f"Bounded Presentation {presentation['presentation_id']}"]
+    finding = presentation.get("prior_exchange_finding")
+    if finding is not None:
+        identification = finding["identification"]
+        comparison = finding["comparison"]
+        if identification["identified_alternative"] is not None:
+            alternative = identification["identified_alternative"]
+            lines.append(
+                "Prior exchange: alternative "
+                f"{alternative['response_coordinate']} "
+                f"({alternative['rendered_label']}) corresponds to the "
+                f"captured material within {comparison['presentation_ref']}. "
+                "Operator intent and selection remain Unknown."
+            )
+        else:
+            lines.append(
+                "Prior exchange: no coordinate match within "
+                f"{comparison['presentation_ref']}; response meaning and "
+                "requested treatment remain Unknown."
+            )
+    lines.append("Respond with exactly one token:")
     for alternative in presentation["alternatives"]:
         lines.append(
             f"  {alternative['response_coordinate']}. {alternative['rendered_label']}"
