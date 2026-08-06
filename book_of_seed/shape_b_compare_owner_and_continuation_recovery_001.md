@@ -42,6 +42,37 @@ constrain the attributed relation proposal. For compact reference this report
 calls those four coordinates **PESC**, but PESC is not an Act, stage,
 occurrence, owner, production boundary, or artifact.
 
+### Correction record
+
+The first version declared `owner unresolved != owner absent` among its
+governing non-equivalences and then converted three failures to recover into
+constitutional negatives:
+
+```text
+1. "the active free-form interaction supplies neither the exact Shape B owner
+   nor its Consumer-purpose" — not recovered from the interaction is not the
+   interaction supplying neither
+
+2. "the interaction is not itself a Responsibility" — no interaction-owned
+   Responsibility is recovered, which is an absence of assignment rather than
+   established non-identity
+
+3. "another Shape B Compare does not presently become applicable" and the
+   disposition answer "no" — no recovered bridge establishes Applicability,
+   which leaves Applicability unresolved rather than establishing
+   non-applicability
+```
+
+It also described the successful ingress path as having "no operator-facing
+Consumer". PR 2276 added View formation and emission toward the operator on
+that path; what remains absent is an evidenced Consumer occurrence, not the
+operator-directed emission.
+
+One vocabulary correction: `representation-examination testimony` built a
+nominalization from the event kind `operator.ingress.representation_examined`,
+reintroducing an excised umbrella word. The implementation's own bounded phrase
+is representation availability.
+
 ## Governing non-equivalences
 
 ```text
@@ -110,11 +141,30 @@ only for captured response material against the response coordinates of a
 bounded closed-choice Presentation. That Shape is not candidate-versus-relation-
 grammar Shape B.
 
-Consequently, **the active free-form interaction supplies neither the exact
-Shape B owner nor its Consumer-purpose**. The Consumer-purpose in the question
-is recovered only because it is an attributed coordinate carried by the exact
-relation proposal. Calling the surrounding contact an interaction does not
-assign that coordinate, and the interaction is not itself a Responsibility.
+Consequently the three-way test answers uniformly:
+
+```text
+Shape B owner supplied by the interaction            not established
+Consumer-purpose supplied by the interaction         not established
+interaction positively excluded as either            not established
+```
+
+The Consumer-purpose in the question is recovered because it is an attributed
+coordinate carried by the exact relation proposal. Where that coordinate's
+content originates remains unresolved:
+
+```text
+Consumer-purpose present on the proposal
+!= free-form interaction established as its Producer
+
+Consumer-purpose not recovered from the interaction
+!= the interaction does not supply it
+```
+
+Calling the surrounding contact an interaction does not establish it as the
+Shape B Responsibility, and no exact interaction-owned Responsibility is
+recovered. That is an absence of assignment, not established constitutional
+non-identity.
 
 ## First question — exact Shape B owner
 
@@ -210,8 +260,9 @@ at minimum need to produce either a new attributed relation proposal that is
 then bounded into a candidate equivalence, or newly applicable relation grammar
 for an exact candidate, or some other independently warranted material accepted
 by active Shape B grammar. No exact Consumer is recovered as producing any of
-those. Therefore **another Shape B Compare does not presently become
-applicable** on the recovered road.
+those. Therefore **the Applicability of another Shape B Compare remains
+unresolved**: no inspected active law or implementation testimony establishes a
+continuation bridge. That is not established non-applicability.
 
 ## Standing, Evidence, and preservation boundaries
 
@@ -230,10 +281,19 @@ horizon; it does not perform Compare, produce the original result, establish
 its Standing, or prove either occurrence.
 
 Current operator-ingress implementation testimony does not close either gap.
-It preserves raw material, representation-examination testimony, and successful
+It preserves raw material, representation-availability testimony, and successful
 ingress testimony; projects an attempt-local State View; and may form exact
-addressable operator material. Its successful path has no semantic Compare and
-no operator-facing Consumer. Decoder success, projection, addressability, and
+addressable operator material. Its successful path has no semantic Compare. It does form and emit a bounded
+View toward the operator, but no operator Consumer occurrence, receipt,
+interpretation, or Uptake is evidenced:
+
+```text
+operator-directed emission exists
+!= operator Consumer occurrence established
+!= operator receipt established
+```
+
+Decoder success, projection, addressability, and
 ledger recording do not establish communicative meaning, a relation proposal,
 Shape B ownership, Shape B occurrence, a bounded Shape B result, or its later
 Uptake. The implementation therefore corroborates the absence of an implemented
@@ -262,9 +322,10 @@ negative.
    responsibly unresolved. No direct Uptake, representation/testimony crossing,
    new proposal formation, new grammar establishment, or other production
    boundary is instantiated by current active law.
-5. **Another Shape B Compare applicable:** no, not on a currently recovered
-   road. This is lack of a recovered bridge, not proof that no lawful bridge can
-   be constructed.
+5. **Another Shape B Compare applicable:** unresolved. No currently recovered
+   road establishes Applicability. This is lack of a recovered bridge, not
+   proof that no lawful bridge can be constructed, and not established
+   non-applicability.
 6. **Minimal construction-ready slice:** none. Both ownership and continuation
    would have to be warranted; neither is. Constructing only fields for the
    recovered coordinates would risk laundering unresolved ownership and
