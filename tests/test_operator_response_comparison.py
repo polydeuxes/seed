@@ -206,25 +206,23 @@ def _record_malformed_presentation(ledger, mutate_bindings, *, workspace="w", se
     formed = ledger.append(
         "operator.presentation.formed", workspace, payload, session_id=session
     )
-    emitted = ledger.append(
-        "operator.presentation.emitted",
-        workspace,
-        {
-            "attempt_ref": None,
-            "presentation_ref": presentation_id,
-            "formed_event_id": formed.id,
-            "known_loss": [],
-            "unknowns": [],
-            "conflicts": [],
-            "lineage": [formed.id],
-            "mutates_cluster": False,
-        },
-        session_id=session,
+    malformed_presentation = {
+        "presentation_id": presentation_id,
+        "workspace_id": workspace,
+        "session_id": session,
+        "formed_event_id": formed.id,
+        "emitted_event_id": None,
+        "alternatives": template_payload["alternatives"],
+        "prior_exchange_finding": None,
+        "recovered_meaning_relation": None,
+    }
+    emit_operator_presentation(
+        ledger, presentation=malformed_presentation, output_stream=StringIO()
     )
     return {
         "presentation_id": presentation_id,
         "formed_event_id": formed.id,
-        "emitted_event_id": emitted.id,
+        "emitted_event_id": malformed_presentation["emitted_event_id"],
     }
 
 
