@@ -311,6 +311,7 @@ from seed_runtime.events import EventLedger, SQLiteEventLedger
 from seed_runtime.operator_ingress import run_operator_ingress_attempt
 from seed_runtime.operator_ingress_representation import capture_stdin_material
 from seed_runtime.operator_ingress_view import format_operator_ingress_view
+from seed_runtime.operator_session_standing import project_operator_session_standing
 from seed_runtime.facts import (
     Fact,
     FactConflict,
@@ -5658,12 +5659,20 @@ def run_persistent_operator_console(
             captured_ingress.exact_bytes, captured_ingress.encoding_testimony
         ):
             return
+        # Project Standing from this session's earlier recorded events before
+        # the next bounded interaction; the first interaction carries none.
+        session_standing = project_operator_session_standing(
+            ledger, workspace_id=workspace_id, session_id=session_id
+        )
         attempt_view = run_operator_ingress_attempt(
             ledger=ledger,
             workspace_id=workspace_id,
             session_id=session_id,
             captured_ingress=captured_ingress,
             output_stream=output_stream,
+            session_standing=(
+                session_standing if session_standing["event_count"] else None
+            ),
         )
         if attempt_view["current_standing"]["preserved_ingress"] is not None:
             rendered_view = format_operator_ingress_view(attempt_view)

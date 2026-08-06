@@ -217,8 +217,15 @@ def run_operator_ingress_attempt(
     session_id: str,
     captured_ingress: CapturedOperatorMaterial,
     output_stream: TextIO,
+    session_standing: dict[str, object] | None = None,
 ) -> dict[str, object]:
-    """Capture, examine, and project one bounded non-EOF ingress attempt."""
+    """Capture, examine, and project one bounded non-EOF ingress attempt.
+
+    ``session_standing`` is already-projected Standing from this session's
+    earlier recorded events.  It is carried on the returned projection for
+    the Presentation to expose; it is not recorded, interpreted, or used to
+    alter this attempt's own occurrence handling.
+    """
     if captured_ingress.eof:
         raise ValueError("captured_ingress must be non-EOF")
 
@@ -262,7 +269,10 @@ def run_operator_ingress_attempt(
             "Representation insufficient: captured material did not decode under the selected decoder mechanism.\n"
         )
         output_stream.flush()
-        return state.operator_ingress_attempts[attempt]
+        projection = state.operator_ingress_attempts[attempt]
+        if session_standing is not None:
+            projection["session_standing"] = session_standing
+        return projection
     raw_ingress = ingress_examination.represented_text
     ingress_kind = "empty" if raw_ingress in {"\n", "\r\n"} else "text"
     ingress_content = raw_ingress.removesuffix("\n").removesuffix("\r")
@@ -294,4 +304,7 @@ def run_operator_ingress_attempt(
         ],
     )
     state = StateProjector(ledger).project(workspace_id)
-    return state.operator_ingress_attempts[attempt]
+    projection = state.operator_ingress_attempts[attempt]
+    if session_standing is not None:
+        projection["session_standing"] = session_standing
+    return projection
