@@ -141,9 +141,17 @@ def test_changed_proposition_wording_does_not_alter_applicability():
         }
         if alternative["role"] == "potential-goal":
             alternative["represented_source"]["meaning"] = reworded
+            treatment = alternative["consumer_treatment"]
             alternative["consumer_treatment"] = {
-                **alternative["consumer_treatment"],
+                **treatment,
                 "proposition": reworded,
+                "consumer_authority": {
+                    **treatment["consumer_authority"],
+                    "scope": {
+                        **treatment["consumer_authority"]["scope"],
+                        "proposition": reworded,
+                    },
+                },
             }
         alternatives.append(alternative)
     formed = ledger.append(
@@ -527,7 +535,10 @@ def test_later_presentation_exposes_the_bounded_goal_without_strengthening():
     assert "Consumption: occurred" in rendered
     assert "Operator intent remains Unknown" in rendered
     assert "Operator Authority for the proposition remains unresolved" in rendered
-    assert "Learning has not occurred" in rendered
+    # The narrower claim: this path establishes no Learning Standing; it
+    # does not assert positive nonoccurrence of Learning anywhere.
+    assert "No Learning Standing is established by this path" in rendered
+    assert "Learning has not occurred" not in rendered
     assert "Operator selected" not in rendered
     assert "goal achieved" not in rendered
 
@@ -547,6 +558,211 @@ def test_console_establishes_the_goal_end_to_end():
     assert goal is not None
     assert goal["proposition"] == _GOAL_MEANING
     assert "Current bounded interaction goal" in output.getvalue()
+
+
+def test_consumer_responsibility_and_authority_are_structural():
+    ledger = EventLedger()
+    _exchange_with_relation(ledger, "1\n")
+    result = _establish(ledger)
+
+    applicability_event = ledger.get(result["applicability"]["event_id"])
+    responsibility = applicability_event.payload["consumer_responsibility"]
+    assert set(responsibility) == {
+        "identity",
+        "purpose",
+        "consumer",
+        "scope",
+        "authority",
+        "evidence_event_ids",
+    }
+    assert responsibility["identity"] == result["consumer_ref"]
+    authority = responsibility["authority"]
+    assert authority["kind"] == "bounded-interaction-goal-establishment"
+    assert authority["identity"].startswith("treatment-relation:")
+    assert authority["supports"] == [
+        "admit-exact-meaning-relation",
+        "consume-exact-admitted-relation",
+        "establish-bounded-interaction-goal-standing",
+    ]
+    assert set(authority["scope"]) == {
+        "alternative_id",
+        "source_identity",
+        "proposition",
+        "consumer_purpose",
+        "session_scope",
+    }
+    # Every later Act references the same Responsibility and carries its
+    # explicit basis with the exact authority support it moved under.
+    admission_event = ledger.get(result["admission"]["event_id"])
+    consumption_event = ledger.get(result["consumption"]["event_id"])
+    goal_event = ledger.get(result["goal_standing"]["event_id"])
+    for event, support in (
+        (admission_event, "admit-exact-meaning-relation"),
+        (consumption_event, "consume-exact-admitted-relation"),
+        (goal_event, "establish-bounded-interaction-goal-standing"),
+    ):
+        assert event.payload["consumer_responsibility_identity"] == (
+            result["consumer_ref"]
+        )
+        assert event.payload["basis"]["authority_support"] == support
+    # The consumption and goal carry the full structural authority, scoped
+    # to the exact A / G / M / purpose / session.
+    assert consumption_event.payload["consumer_authority"] == authority
+    assert goal_event.payload["consumer_authority"] == authority
+
+
+def test_projector_refuses_forged_goal_standing_claims():
+    for forged_fields in (
+        {"standing": "globally established goal"},
+        {"locality": "every interaction"},
+        {"unknowns": []},
+        {"basis": None},
+    ):
+        ledger = EventLedger()
+        _exchange_with_relation(ledger, "1\n")
+        _establish(ledger)
+        good = next(
+            event
+            for event in ledger.list("w")
+            if event.kind == "operator.interaction.goal_standing_established"
+        )
+        ledger.append(
+            good.kind,
+            "w",
+            {**good.payload, "goal_standing_ref": "forged", **forged_fields},
+            session_id="s",
+        )
+        with pytest.raises(ValueError, match="derived from recorded testimony"):
+            _standing(ledger)
+
+
+def test_projector_refuses_forged_admission_and_consumption_boundaries():
+    for kind, forged_fields in (
+        (
+            "operator.interaction.goal_admission_established",
+            {"unknowns": [], "known_loss": ["nothing"]},
+        ),
+        (
+            "operator.interaction.goal_consumption_occurred",
+            {
+                "basis": {
+                    "admission_event_id": "evt_forged",
+                    "consumer_responsibility_identity": "forged",
+                    "authority_support": "establish-anything",
+                }
+            },
+        ),
+    ):
+        ledger = EventLedger()
+        _exchange_with_relation(ledger, "1\n")
+        _establish(ledger)
+        good = next(event for event in ledger.list("w") if event.kind == kind)
+        reference_key = (
+            "admission_ref"
+            if "admission" in kind
+            else "consumption_ref"
+        )
+        ledger.append(
+            kind,
+            "w",
+            {**good.payload, reference_key: "forged", **forged_fields},
+            session_id="s",
+        )
+        with pytest.raises(ValueError, match="basis and boundary"):
+            _standing(ledger)
+
+
+def test_recorded_treatment_without_structural_authority_is_inapplicable():
+    # Same A/G/M/purpose/scope, but the recorded treatment carries a foreign
+    # kind or a conflicted inventory: structurally inapplicable, without
+    # parsing any prose.
+    for mutation, expected_basis in (
+        (
+            lambda treatment: {**treatment, "treatment_kind": "unrelated-kind"},
+            "treatment-kind-mismatch",
+        ),
+        (
+            lambda treatment: {**treatment, "consumer_authority": None},
+            "consumer-authority-not-established",
+        ),
+        (
+            lambda treatment: {**treatment, "conflicts": ["recorded conflict"]},
+            "treatment-conflicted",
+        ),
+    ):
+        ledger = EventLedger()
+        template = form_operator_presentation(
+            ledger,
+            workspace_id="w",
+            session_id="s",
+            session_standing=_standing(ledger),
+        )
+        template_payload = ledger.get(template["formed_event_id"]).payload
+        presentation_id = template["presentation_id"] + "-" + expected_basis
+        alternatives = []
+        for alternative in template_payload["alternatives"]:
+            alternative = dict(alternative)
+            if alternative["role"] == "potential-goal":
+                alternative["consumer_treatment"] = mutation(
+                    alternative["consumer_treatment"]
+                )
+            alternatives.append(alternative)
+        formed = ledger.append(
+            "operator.presentation.formed",
+            "w",
+            {
+                **template_payload,
+                "presentation_ref": presentation_id,
+                "alternatives": alternatives,
+                "dimensions": {
+                    **template_payload["dimensions"],
+                    "identity": presentation_id,
+                },
+            },
+            session_id="s",
+        )
+        custom = {
+            "presentation_id": presentation_id,
+            "workspace_id": "w",
+            "session_id": "s",
+            "formed_event_id": formed.id,
+            "emitted_event_id": None,
+            "alternatives": alternatives,
+            "prior_exchange_finding": None,
+            "recovered_meaning_relation": None,
+            "current_interaction_goal": None,
+        }
+        emit_operator_presentation(
+            ledger, presentation=custom, output_stream=StringIO()
+        )
+        projection = run_operator_ingress_attempt(
+            ledger=ledger,
+            workspace_id="w",
+            session_id="s",
+            captured_ingress=capture_stdin_material(StringIO("1\n")),
+            output_stream=StringIO(),
+            produced_after_presentation=custom,
+        )
+        finding = run_operator_response_comparison_and_identification(
+            ledger,
+            workspace_id="w",
+            session_id="s",
+            presentation=custom,
+            response_ingress_event_id=(
+                projection["current_standing"]["preserved_ingress"][
+                    "evidence_event_id"
+                ]
+            ),
+        )
+        run_operator_source_recovery_and_meaning_relation(
+            ledger,
+            workspace_id="w",
+            session_id="s",
+            identification_event_id=finding["identification"]["event_id"],
+        )
+        result = _establish(ledger)
+        assert result["outcome"] == "inapplicable", expected_basis
+        assert result["basis"] == expected_basis
 
 
 def test_no_code_or_payload_names_boge():
