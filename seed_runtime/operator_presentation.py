@@ -224,6 +224,16 @@ def render_operator_presentation(presentation: dict[str, Any]) -> str:
                 f"captured material within {comparison['presentation_ref']}. "
                 "Operator intent and selection remain Unknown."
             )
+        elif comparison["matched_coordinate"] is not None:
+            # A matched coordinate whose binding failed is not a no-match;
+            # the two recorded results stay distinguishable here.
+            lines.append(
+                "Prior exchange: coordinate "
+                f"{comparison['matched_coordinate']} matched within "
+                f"{comparison['presentation_ref']}, but no presented "
+                "alternative was lawfully identified "
+                f"({identification['basis']})."
+            )
         else:
             lines.append(
                 "Prior exchange: no coordinate match within "

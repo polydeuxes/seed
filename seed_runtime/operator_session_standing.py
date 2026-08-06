@@ -140,6 +140,21 @@ def project_operator_session_standing(
                     "identification without recorded comparison: "
                     f"{payload['comparison_ref']}"
                 )
+            # The joined pair must agree on every shared coordinate; a
+            # mismatched pair is structurally refused rather than composed.
+            for identification_key, comparison_key in (
+                ("comparison_event_id", "event_id"),
+                ("presentation_ref", "presentation_ref"),
+                ("response_attempt_ref", "response_attempt_ref"),
+            ):
+                if (
+                    identification[identification_key]
+                    != comparison[comparison_key]
+                ):
+                    raise ValueError(
+                        "identification does not agree with its recorded "
+                        f"comparison on {identification_key}"
+                    )
             # The most recent complete exchange finding, exactly as recorded.
             latest_exchange_finding = {
                 "comparison": comparison,
