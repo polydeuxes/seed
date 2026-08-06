@@ -74,25 +74,60 @@ def run_operator_response_comparison_and_identification(
     emitted_event_id = presentation["emitted_event_id"]
     _require(formed_event_id is not None, "presentation has no formation evidence")
     _require(emitted_event_id is not None, "presentation has no emission evidence")
-    _require(bool(presentation["coordinate_bindings"]), "presentation has no bindings")
-    _require(bool(presentation["alternatives"]), "presentation has no alternatives")
     scope = f"workspace:{workspace_id};session:{session_id}"
-    presentation_scope = presentation.get("scope") or (
-        f"workspace:{presentation.get('workspace_id')};"
-        f"session:{presentation.get('session_id')}"
-    )
-    _require(
-        presentation_scope == scope,
-        "presentation scope does not match this workspace and session",
-    )
+
+    # The recorded formation payload is the sole source of C's alternatives,
+    # coordinate bindings, and scope.  The supplied projection identifies
+    # which C to retrieve; it must not redefine C, so a projection that
+    # disagrees with the recorded testimony is structurally refused.
     formed_event = ledger.get(formed_event_id)
-    emitted_event = ledger.get(emitted_event_id)
     _require(formed_event is not None, "formation event not recorded in this ledger")
-    _require(emitted_event is not None, "emission event not recorded in this ledger")
+    _require(
+        formed_event.kind == "operator.presentation.formed",
+        "formation evidence is not a presentation formation event",
+    )
     _require(
         formed_event.workspace_id == workspace_id
         and formed_event.session_id == session_id,
         "formation event belongs to another workspace or session",
+    )
+    _require(
+        formed_event.payload["presentation_ref"] == presentation_ref,
+        "formation event does not record this exact presentation",
+    )
+    _require(
+        formed_event.payload["dimensions"]["scope_locality"] == scope,
+        "presentation scope does not match this workspace and session",
+    )
+    alternatives = formed_event.payload["alternatives"]
+    coordinate_bindings = formed_event.payload["coordinate_bindings"]
+    _require(bool(alternatives), "recorded presentation has no alternatives")
+    _require(bool(coordinate_bindings), "recorded presentation has no bindings")
+    for key in ("alternatives", "coordinate_bindings"):
+        supplied = presentation.get(key)
+        _require(
+            supplied is None or supplied == formed_event.payload[key],
+            f"supplied projection disagrees with recorded {key}",
+        )
+
+    emitted_event = ledger.get(emitted_event_id)
+    _require(emitted_event is not None, "emission event not recorded in this ledger")
+    _require(
+        emitted_event.kind == "operator.presentation.emitted",
+        "emission evidence is not a presentation emission event",
+    )
+    _require(
+        emitted_event.workspace_id == workspace_id
+        and emitted_event.session_id == session_id,
+        "emission event belongs to another workspace or session",
+    )
+    _require(
+        emitted_event.payload["presentation_ref"] == presentation_ref,
+        "emission event does not record this exact presentation",
+    )
+    _require(
+        emitted_event.payload["formed_event_id"] == formed_event_id,
+        "emission event does not record this exact formation occurrence",
     )
 
     ingress_event = ledger.get(response_ingress_event_id)
@@ -106,11 +141,17 @@ def run_operator_response_comparison_and_identification(
         and ingress_event.session_id == session_id,
         "response ingress belongs to another workspace or session",
     )
-    # The exact recorded C -> R reference; append order alone is not relied on.
+    # The exact recorded C -> R reference chain; append order alone is not
+    # relied on, and every named reference must agree.
     _require(
         ingress_event.payload.get("produced_after_presentation_ref")
         == presentation_ref,
         "ingress does not record production after this exact presentation",
+    )
+    _require(
+        ingress_event.payload.get("produced_after_presentation_formed_event_id")
+        == formed_event_id,
+        "ingress does not record this exact formation occurrence",
     )
     _require(
         ingress_event.payload.get("produced_after_presentation_emitted_event_id")
@@ -120,11 +161,32 @@ def run_operator_response_comparison_and_identification(
 
     response_attempt_ref = ingress_event.payload["attempt_ref"]
     response_capture_event_id = ingress_event.payload["raw_material_event_id"]
+    capture_event = ledger.get(response_capture_event_id)
+    _require(capture_event is not None, "response capture event not recorded")
+    _require(
+        capture_event.kind == "operator.ingress.raw_material_captured",
+        "capture evidence is not a raw-material capture event",
+    )
+    _require(
+        capture_event.workspace_id == workspace_id
+        and capture_event.session_id == session_id,
+        "capture event belongs to another workspace or session",
+    )
+    _require(
+        capture_event.payload["attempt_ref"] == response_attempt_ref,
+        "capture and ingress belong to different attempts",
+    )
+
     compared_representation = ingress_event.payload["dimensions"]["content"]
-    coordinate_set = sorted(presentation["coordinate_bindings"])
+    # C's exact response coordinates are the recorded alternatives' own
+    # coordinates; the binding relation is consumed separately below, so a
+    # recorded coordinate whose binding is absent stays distinguishable.
+    coordinate_set = sorted(
+        alternative["response_coordinate"] for alternative in alternatives
+    )
     matched_coordinate = (
         compared_representation
-        if compared_representation in presentation["coordinate_bindings"]
+        if compared_representation in set(coordinate_set)
         else None
     )
     comparison_outcome = (
@@ -194,12 +256,10 @@ def run_operator_response_comparison_and_identification(
     if matched_coordinate is None:
         basis = "no-coordinate-match"
     else:
-        bound_alternative_id = presentation["coordinate_bindings"].get(
-            matched_coordinate
-        )
+        bound_alternative_id = coordinate_bindings.get(matched_coordinate)
         alternatives_by_id = {
             alternative["alternative_id"]: alternative
-            for alternative in presentation["alternatives"]
+            for alternative in alternatives
         }
         if bound_alternative_id is None:
             basis = "binding-absent"
