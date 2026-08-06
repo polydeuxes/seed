@@ -25,6 +25,35 @@ Prometheus was chosen because the console supplies only one pipe, so console evi
 
 This report amends no active Book law, runtime, or tests.
 
+### Correction record
+
+The first version overreached in five places, recorded rather than silently replaced:
+
+```text
+1. it called several Translation Acts "demonstrable" while leaving every
+   crossing's owner unresolved, and treated all twelve inventory items as
+   Translation when several are structural decoding, conventions, or an
+   absence
+
+2. it reasserted that `Hello` necessarily produces an empty candidate set
+   — a claim already withdrawn in
+   orientation_attempt_observable_evidence_recovery_001.md
+
+3. it presented structural testimony and a semantic relation proposal as a
+   warranted/unwarranted pair from one candidate road; they are different
+   result kinds
+
+4. it said both roads place a constant where a computed result belongs;
+   Prometheus's output varies with the payload, and its defect is
+   unexamined semantic mapping rather than constant output
+
+5. it said competency is "expressly denied identity standing"; the cited
+   clauses are non-equivalences, and the finding rests on absence of
+   recovered grammar
+```
+
+The negative result survives unchanged: the durable-competency topology is not recovered, and no implementation follows from it.
+
 ## Finding 1 — `competency` is not established as a constitutional kind
 
 Active law mentions competency in three places and establishes none of them as a kind with its own grammar.
@@ -37,9 +66,16 @@ The same chapter at `:74` is explicitly negative:
 
 And `operator-ingress-common-grammar-prerequisite.md:195` preserves `prose competency available != enum obs...` as a non-equivalence.
 
-So competency is referenced conditionally — as something that *might* be separately established — and is expressly denied identity standing. Building a topology on "reusable bounded Translation competency" as the durable owner therefore rests on an unestablished kind.
+Both cited clauses are **non-equivalences**, not denials of standing:
 
-This is weaker than a pure coinage, since the word appears in active law. It is still not a recovered owner.
+```text
+possible relation      != competency by identity
+competency candidate   != Capability established
+```
+
+Neither establishes that competency has no standing. What is absent is any recovered grammar defining competency as a kind — no owner, act, evidence, result, or boundary. The finding rests on that absence, not on a positive denial. An earlier version of this report said competency was "expressly denied identity standing"; that read a non-equivalence as a positive claim about one side, and is withdrawn.
+
+Building a topology on "reusable bounded Translation competency" as the durable owner therefore rests on a kind the Book has not recovered.
 
 ## Finding 2 — the "many invocations" premise is not observable
 
@@ -105,11 +141,28 @@ and states directly:
 
 > The stack is not one translation: it contains a structural decoder, semantic translator, implicit ontology, predicate competency, relation competency, authority/temporal/confidence conventions, compatibility rules, and frozen realizations.
 
-That is the recoverable finding: **one external payload passes through several separable Translation-shaped crossings, compiled together in one class.** Their implementation co-location does not make them one Responsibility, and the repository has already warned that implementation owner is not constitutional Responsibility owner.
+That inventory is **not twelve Translation Acts**. It mixes kinds:
 
-This is demonstrable from observed structure. The durable-competency claim is not.
+```text
+structural decoder        != Translation automatically
+confidence convention     != Translation automatically
+compatibility/refusal     != Translation automatically
+absent Fidelity           != an Act occurrence at all
+```
 
-## Finding 4 — both roads fail identically, in opposite directions
+The recoverable finding is narrower: **one external payload passes through several separable structural and semantic crossings, compiled into one implementation boundary.**
+
+Separability is not cardinality:
+
+```text
+separable crossings        != several Responsibilities established
+implementation co-location != one Responsibility established
+separable outputs          != distinct owners established
+```
+
+This report classifies standing; it does not assign owners, and it cannot claim established Act cardinality while leaving ownership unresolved. What is demonstrable is that one compiled boundary may conceal several independently meaningful crossings — not how many Responsibilities those crossings constitute.
+
+## Finding 4 — the two roads fail in opposite ways, not identically
 
 ```text
 operator ingress    constant under-claim
@@ -122,15 +175,35 @@ Prometheus          frozen over-claims
                     — all baked in, none compared
 ```
 
-Both place a constant where a computed result belongs. The console asserts nothing and cannot be wrong. Prometheus asserts a semantic crossing that was never tested — `Fidelity examination: absent`, *"No preserved comparison warrants any semantic crossing."*
+An earlier version said both place a constant where a computed result belongs. That is wrong for Prometheus and is withdrawn.
+
+```text
+console      no candidate or Compare result is consumed
+             → a fixed literal is emitted regardless of ingress
+             → fixed under-claim
+
+Prometheus   input-dependent mapping does occur; the emitted value
+             varies with the payload
+             → but fixed semantic relations are applied without Fidelity
+             → potentially unwarranted over-claim
+```
+
+The console's output is constant. Prometheus's output is not — `Linux` becomes `linux` because the payload said `Linux`. Its defect is unexamined semantic mapping, not constant output: `Fidelity examination: absent`, *"No preserved comparison warrants any semantic crossing."*
 
 The prior recovery's conclusion stands: *"`sysname="Linux"` does not presently warrant constitutional `os=linux`."*
 
 ## Finding 5 — Prometheus supplies the non-empty candidate cases the console cannot
 
-The console cannot demonstrate a live candidate road because `Hello` offers no structure to propose against, so every proposal set is empty, and a computed empty set is indistinguishable in output from a constant one.
+An earlier version of this report said `Hello` offers no structure to propose against, so every proposal set is necessarily empty. That reintroduces a claim already withdrawn in `orientation_attempt_observable_evidence_recovery_001.md`:
 
-Prometheus supplies both outcomes, already analysed:
+```text
+candidate set not presently computed
+!= candidate set established empty
+```
+
+`Hello` supplies a presentation and Seed supplies available grammar. Whether that combination forms zero, one, or several candidate relations is unresolved until the candidate-forming Act occurs. The supportable claim is only that the console presently provides **no observable computed candidate result at all**.
+
+What Prometheus supplies is more explicit structural material, from which semantic proposals are easier to construct and test:
 
 ```text
 warranted     "For this occurrence, the provider record returned the
@@ -142,7 +215,13 @@ unwarranted   sysname="Linux" → os=linux
               — a semantic crossing with no preserved comparison
 ```
 
-That is the varying pair required to show a candidate road is live rather than constant.
+These are **not two outcomes of one candidate road**. The first is source-attributed testimony about returned syntax; the second is a proposed semantic relation:
+
+```text
+source-relative testimony != candidate semantic relation
+```
+
+What the pair establishes is that structural testimony may be warranted while a stronger semantic relation over the same material remains unwarranted. That is useful, and it is not proof that one candidate producer yielded two candidate outcomes.
 
 ## What this settles for the console question
 
@@ -152,11 +231,16 @@ It does not settle ownership. It removes one proposed route to settling it and p
 not supported    a durable Translation competency, invoked by many
                  Responsibilities, distinct from each invocation
 
-supported        within one occurrence, several distinct Translation-shaped
-                 crossings may be separately owned while compiled together
+supported        one compiled implementation boundary may conceal several
+                 independently meaningful crossings
+
+not supported    how many Responsibilities those crossings constitute,
+                 in either direction
 ```
 
-Applied to the console: decoding to an attributed addressable representation and forming a relation proposal may be distinct Translation acts with distinct owners, even though the present implementation compiles them into one boundary. That separation does not require the durable-competency claim, and can be argued from the Prometheus layer table rather than from an unestablished kind.
+Applied to the console: that decoding to an attributed addressable representation and forming a relation proposal are compiled into one boundary does not establish that they are one Responsibility — and separability does not establish that they are two. Neither cardinality follows from separability alone.
+
+What this does remove is the argument that they must be one because the implementation compiles them together. That argument is unavailable in both directions, which leaves the ownership question open on its own terms rather than settled by implementation shape.
 
 ## Remaining unresolved coordinates
 
@@ -171,7 +255,8 @@ Applied to the console: decoding to an attributed addressable representation and
 proposed topology                       not recovered
 competency as durable owner             unestablished kind
 one competency, many invocations        not observable in this repository
-one payload, several Translation acts   demonstrable
+one payload, several separable crossings demonstrable
+Act and Responsibility cardinality  unresolved
 console analogy via layer separation    available
 console analogy via durable competency  unavailable
 ```
