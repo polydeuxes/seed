@@ -698,6 +698,125 @@ def test_projected_results_preserve_the_complete_validated_boundary():
     ]
 
 
+def test_projector_refuses_identified_basis_over_a_no_match_comparison():
+    # The malformed chain curator named: no-match comparison, forged
+    # identification claiming a valid alternative, forged recovery with
+    # correct C/A/G identities. The projector now refuses at the
+    # identification, before any recovery can rest on it.
+    ledger = EventLedger()
+    presentation, finding = _exchange(ledger, "not a coordinate\n")
+    good_payload = ledger.get(finding["identification"]["event_id"]).payload
+    formed_payload = ledger.get(presentation["formed_event_id"]).payload
+    valid_alternative = formed_payload["alternatives"][0]
+    ledger.append(
+        "operator.exchange.identification_occurred",
+        "w",
+        {
+            **good_payload,
+            "identification_ref": "forged",
+            "basis": "identified",
+            "outcome": "alternative-identified",
+            "identified_alternative": {
+                "alternative_id": valid_alternative["alternative_id"],
+                "role": valid_alternative["role"],
+                "response_coordinate": valid_alternative["response_coordinate"],
+                "rendered_label": valid_alternative["rendered_label"],
+            },
+        },
+        session_id="s",
+    )
+    with pytest.raises(
+        ValueError, match="does not follow from its recorded comparison"
+    ):
+        _standing(ledger)
+
+
+def test_projector_refuses_forged_representation_and_response_evidence():
+    for forged_fields in (
+        {
+            "representation": {
+                "purpose": "forged purpose",
+                "scope": "workspace:w;session:s",
+                "provenance": "forged",
+                "evidence_event_ids": [],
+                "known_loss": [],
+                "unknowns": [],
+                "conflicts": [],
+            }
+        },
+        {"response_ingress_event_id": "evt_forged"},
+        {"response_capture_event_id": "evt_forged"},
+    ):
+        ledger = EventLedger()
+        _recovered_exchange(ledger)
+        good = next(
+            event
+            for event in ledger.list("w")
+            if event.kind == "operator.presentation.source_recovered"
+        )
+        ledger.append(
+            "operator.presentation.source_recovered",
+            "w",
+            {**good.payload, "recovery_ref": "forged", **forged_fields},
+            session_id="s",
+        )
+        with pytest.raises(ValueError):
+            _standing(ledger)
+
+
+def test_projector_refuses_forged_relation_standing_coordinates():
+    for forged_fields in (
+        {"warrant_basis": "derived from operator response text"},
+        {"known_loss": ["nothing was lost"]},
+        {"unknowns": []},
+        {"conflicts": ["fabricated conflict"]},
+    ):
+        ledger = EventLedger()
+        _recovered_exchange(ledger)
+        good = next(
+            event
+            for event in ledger.list("w")
+            if event.kind == "operator.presentation.meaning_relation_established"
+        )
+        ledger.append(
+            "operator.presentation.meaning_relation_established",
+            "w",
+            {**good.payload, "relation_ref": "forged", **forged_fields},
+            session_id="s",
+        )
+        with pytest.raises(ValueError, match="does not agree"):
+            _standing(ledger)
+
+
+def test_projector_refuses_emission_naming_a_foreign_formation():
+    ledger = EventLedger()
+    first = form_operator_presentation(
+        ledger, workspace_id="w", session_id="s", session_standing=_standing(ledger)
+    )
+    second = form_operator_presentation(
+        ledger, workspace_id="w", session_id="s", session_standing=_standing(ledger)
+    )
+    ledger.append(
+        "operator.presentation.emitted",
+        "w",
+        {
+            "attempt_ref": None,
+            "presentation_ref": second["presentation_id"],
+            "formed_event_id": first["formed_event_id"],
+            "known_loss": [],
+            "unknowns": [],
+            "conflicts": [],
+            "lineage": [first["formed_event_id"]],
+            "mutates_cluster": False,
+        },
+        session_id="s",
+    )
+    with pytest.raises(
+        ValueError, match="does not name its recorded formation"
+    ):
+        _standing(ledger)
+
+
 def test_console_runs_recovery_only_for_identified_exchanges():
     ledger = EventLedger()
     output = StringIO()
