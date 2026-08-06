@@ -57,7 +57,26 @@ A second correction then replaced the evidentiary core itself:
    history.
 ```
 
-What survives both rounds is narrower and stated below: the current rendering is a constant and therefore cannot reflect any act, whether transient or recorded.
+A third correction then narrowed two claims made while making the second:
+
+```text
+6. it claimed candidate formation and Compare satisfy every condition for
+   remaining transient, including full recomputability from preserved
+   inputs
+
+   the criterion is disjunctive, so only one condition is needed; and
+   recomputability is not established, since exact recomputation would
+   also require the grammar, method, scope, and as-of boundary at that
+   occurrence, and Seed's available grammar is expected to change
+
+7. it treated a focused test as repository-visible Evidence that the road
+   occurred
+
+   a test evidences that the implementation contains and consumes the
+   road; it is not Evidence of any particular runtime occurrence
+```
+
+What survives all three rounds is narrower and stated below: the current rendering is a constant and therefore cannot reflect any act, whether transient or recorded.
 
 ## Recovered owner and Consumer-purpose
 
@@ -167,7 +186,30 @@ The first two versions demanded durable history. That was the wrong requirement.
 
 > A result **may remain transient** when it is bounded to immediate live use, does not need cross-tick recognition, is fully recomputable from preserved inputs, or is intentionally only renderer/operator progress visibility.
 
-Candidate production and Compare at first contact satisfy every transient condition. They are bounded to the response being formed in the live interaction, fully recomputable from the preserved ingress and Seed's available grammar, and establish no Standing that later projection depends upon. Losing them destroys no unique historical Evidence, because the operator material that produced them is itself durably recorded.
+That criterion is **disjunctive**. A result need satisfy only one of its conditions, not all of them.
+
+Candidate formation and Compare at first contact satisfy the first two:
+
+```text
+bounded to immediate live use     the result is consumed by the response
+                                  being formed in the active interaction
+
+no cross-tick recognition needed  no later projected recognition presently
+                                  depends on preserving the intermediate
+```
+
+That is sufficient. Losing them destroys no unique historical Evidence, because the operator material that produced them is itself durably recorded.
+
+**Recomputability is not claimed.** An earlier version asserted these results are fully recomputable from the preserved ingress and Seed's available grammar. That is not established, and exact recomputation would additionally require preserving:
+
+```text
+the exact grammar available at that occurrence
+the exact candidate-forming method and its identity or version
+the exact scope and as-of boundary
+any other transient inputs consumed
+```
+
+Seed's available grammar is expected to change, so a later recomputation from the same ingress may not reproduce the same result. Recomputability is therefore instance-local and unresolved. It is also unnecessary, because the first two disjuncts already hold.
 
 So:
 
@@ -188,7 +230,21 @@ The current implementation fails that test, and this is what survives from both 
 
 Both constants remain correct as honest declarations of the preservation boundary's own limits. They are wrong only where a produced result should have taken their place.
 
-This is repository-visible without any Event: a test supplying different material and asserting a correspondingly different response proves the road is live rather than constant.
+Three kinds of Evidence are distinct here, and an earlier version conflated the first two:
+
+```text
+focused tests            evidence that the implementation contains and
+                         consumes the live road — not evidence that any
+                         particular runtime occurrence happened
+
+live intermediate        occurrence-local Evidence, available to the
+artifacts                immediate Consumer during the interaction
+
+Event Ledger             durable historical Evidence — unnecessary unless
+                         the occurrence must survive as history
+```
+
+A test supplying different material and asserting a correspondingly different response establishes that the road exists and is consumed. It says nothing about any specific occurrence, and it is not a substitute for either of the other two.
 
 Durable recording becomes warranted later, at the first occurrence whose loss would destroy the only support for something established — a warranted relation, with its subject, supporting coordinates, candidate provenance, comparison result, Warrant, scope, and Standing. In the worked examples that plausibly falls partway through E3, not at E1.
 
