@@ -65,14 +65,14 @@ The withdrawal of proposal 1 does not require abandoning testable refusal. The d
 ```text
 container form     an object exists with owner, Authority, and Evidence
                    slots, initially unfilled, awaiting later values.
-                   A Responsibility persists between calls.
+                   A Responsibility persists between invocations.
 
-occurrence form    no object persists. A call either carries every exact
-                   coordinate or the call does not happen. Each call
-                   is an instantiated occurrence or is not one.
+occurrence form    no object persists. An invocation either carries every
+                   exact coordinate or does not happen. Each invocation is
+                   an instantiated occurrence or is not one.
 ```
 
-The second asserts nothing between calls. It has no dormant Responsibility, no owner slot awaiting discovery, and no partial instance. It also keeps refusal demonstrable: a test supplying complete coordinates shows the occurrence proceeding, and a test withholding any one shows it not occurring.
+The second asserts nothing between invocations. It has no dormant Responsibility, no owner slot awaiting discovery, and no partial instance. It also keeps refusal demonstrable: a test supplying complete coordinates shows the occurrence proceeding, and a test withholding any one shows it not occurring.
 
 This is an implementation-form finding derived from recovered constitutional grammar. It is not itself recovered law, and the Book does not govern code shape. It is recorded as the form consistent with what the grammar establishes.
 
@@ -94,6 +94,28 @@ If any of these permits an occurrence, the gap closes by convention rather than 
 > An instantiated coordinate whose value has not been resolved **remains unresolved** unless a responsible occurrence positively establishes Unknown.
 
 So unresolved is the default and requires nothing; Unknown is a positive value supplyable only where a responsible occurrence has established it for that exact coordinate. An implementation that accepts `Unknown` as a convenient stand-in for unfilled erases the distinction.
+
+**A recorded false positive: `invocation` is not banned.** An earlier draft of this report removed the word, believing it forbidden because it appears on several prompt do-not-introduce lists and was retracted at one position by PR 2181. That was wrong, and the removal replaced a word appearing in a clause title with a vaguer one — inside a report arguing for naming precision.
+
+`invocation` is established in active law:
+
+```text
+06.Projection.C — Rebuildability and prior invocation boundary   (clause title)
+02.Acts:13   boundary invocation != assertion-bearing branch
+             != result construction != external effect
+06.Projection:38-39   rebuildable projection != prior invocation reconstruction
+                      reconstructable current condition
+                      != irrecoverable historical invocation
+01.Uptake anchor  seed_runtime/constitutional_pipeline.py::invoke_constitutional_pipeline
+```
+
+PR 2181's finding was that PRs 2176 and 2180 *"incorrectly treated `trigger`, `invocation`, ... **as if they named recovered constitutional acts**"* — the defect was treating the word as recovered at that position, not the word's standing.
+
+What `invocation` names across those uses is consistent: **a code-level call or run, offered as implementation testimony, proving nothing constitutional.** `02.Acts` states its context directly — *"Current Python functions and methods witness such boundaries; they are not the constitutional definition of act occurrence"* — and separates boundary invocation from external effect. `06.Projection.C` uses it for a prior projection run, citing elapsed duration and cache condition at that historical invocation.
+
+That is precisely the register this section needs, so the word is used here rather than avoided.
+
+Two lessons carried forward: a prompt's banned list is scoped to that report and is not a claim about Book standing; and over-banning is its own failure mode, producing vaguer language in the name of discipline.
 
 **Naming must come from the Act and its exact subjects**, not from working shorthand. `cup`, `faucet`, `Shape A`, and `Shape B` were conversational handles and are retired. A name such as `compare_candidate_with_relation_grammar` is descriptive; `ShapeBCompare` or `CompareCup` would install a metaphor as repository architecture.
 
@@ -158,3 +180,5 @@ ShapeBCompare
 ```
 
 These may remain in prior reports as acknowledged shorthand. They are not constitutional terms and must not become implementation names.
+
+**Not retired, and not banned:** `invocation`. It is established active-law vocabulary for a code-level call or run offered as implementation testimony. See the false positive recorded above.
