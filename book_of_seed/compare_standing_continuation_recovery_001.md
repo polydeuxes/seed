@@ -51,6 +51,22 @@ The first version contained six errors, recorded rather than silently replaced:
    sufficiency-family words in its own prose
 ```
 
+A second round corrected two narrower overclaims:
+
+```text
+7. it called the Shape A cup "recovered in full" and said "every
+   coordinate above is recovered", when the clause explicitly leaves
+   Purpose, comparison basis, comparison Authority, and Consumer local to
+   each instance. The declaration is recovered; an exact occurrence still
+   requires those coordinates supplied locally
+
+8. it called bounded Translation "the only recovered act" forming a
+   relation proposal and "the sole recovered route" to a candidate.
+   01.External.A's "only" bounds what a translation may form, not what
+   other Acts may do. It also collapsed relation proposal into candidate
+   equivalence, which requires PESC bounding first
+```
+
 ## Finding 1 — occurrence-local ownership is recovered for Shape A only
 
 `candidate_versus_grammar_comparison_recovery_001.md` records, for **Shape A**:
@@ -218,11 +234,23 @@ as act                   "may state or form only an attributed,
                          assertion, claim proposal, or relation proposal"
 ```
 
-Bounded translation is the only recovered act that forms a relation proposal. Discarding the entity is correct; discarding the act would remove the sole recovered route from presentation to candidate.
+Bounded translation is **one established Act** that may form an attributed relation proposal, and is the presently identified route under examination for forming the Shape B candidate from operator material.
+
+That is not an exclusivity claim. `01.External.A`'s "only" bounds what a translation may form; it does not establish that no other Act may form a relation proposal. An earlier version of this report said "the only recovered act" and "the sole recovered route", inferring exclusivity from not having found an alternative.
+
+A further distinction the earlier version collapsed:
+
+```text
+relation proposal != candidate equivalence automatically
+```
+
+A relation proposal becomes the exact candidate under Compare only once bounded by the PESC coordinates — Presentation, Equivalence, Scope, and Consumer-purpose. Forming the proposal is not by itself forming the candidate.
+
+Discarding the translator entity remains correct. Discarding the act would remove the presently identified route.
 
 ## The Shape A cup
 
-The grammar that holds one exact bounded **testimony** comparison, recovered in full:
+The **declaration** of a bounded testimony comparison, recovered as a bounded structure:
 
 ```text
 owner              the bounded comparison boundary, local to this
@@ -248,7 +276,38 @@ limits             comparison alone does not create truth, Warrant,
                    reconciliation
 ```
 
-Every coordinate above is recovered, so the **Shape A** cup is buildable.
+The coordinates above are recovered as a general declaration. Several others are explicitly **not** universally established and remain local to each instance:
+
+```text
+Purpose                    "Not universally established by 05.Testimony.E;
+                           the exact consumer-purpose remains local to the
+                           instantiated comparison"
+
+Comparison basis           "Not universally established by 05.Testimony.E;
+                           must be recovered for the exact instantiated
+                           comparison"
+
+Comparison Authority       "Separate Authority for the comparison is implied
+                           by responsibility topology but not globally named
+                           in the clause"
+
+Consumer                   "Not named universally"
+```
+
+So:
+
+```text
+Shape A declaration          recovered; implementable as a bounded structure
+one exact Shape A occurrence requires local purpose, basis, Authority,
+                             Evidence, inputs, and Consumer coordinates
+```
+
+```text
+Shape A cup structure buildable
+!= every exact Shape A comparison already complete
+```
+
+An earlier version said the cup was "recovered in full" and that "every coordinate above is recovered", which read the recovered declaration as a completed instance.
 
 An earlier version rendered the limits line with bare `permission`. Active law at `05.Testimony.E` says *"implementation permission"*; dropping the qualifier converts qualified external vocabulary into a confirmed hook word. The candidate-versus-grammar recovery states the limit as Authority, and that rendering is used here.
 
@@ -310,7 +369,7 @@ Building the continuation before that is answered would require inventing the br
 - Occurrence-local ownership is recovered for Shape A; Shape B's exact owner remains unresolved, and the two are non-identical instantiated Responsibilities.
 - `05.Testimony.E` consumes testimonies or findings and produces bounded relation standing.
 - Those kinds do not match, so direct Shape A relation-standing feedback does not follow from the clause. That bounds Shape A self-chaining only.
-- Bounded translation as an act is established; translator as an entity is not.
+- Bounded translation as an act is established and may form an attributed relation proposal; translator as an entity is not established.
 
 ## Unsupported findings
 
@@ -318,6 +377,9 @@ Building the continuation before that is answered would require inventing the br
 - That a Shape A comparison result may be consumed directly by a later Shape A comparison.
 - That all chained Compare is blocked — only direct Shape A feedback is shown not to typecheck.
 - That the Shape B cup is buildable; its owner, Authority, occurrence, result production, Standing establishment, and result Consumer remain unresolved.
+- That bounded Translation is the only Act able to form a relation proposal.
+- That a relation proposal is a candidate equivalence without PESC bounding.
+- That an exact Shape A occurrence is complete from the recovered declaration alone.
 - That the continuation is impossible — it is unrecovered, not excluded.
 - That structural kind-crossing implies durable persistence.
 - That competency has no standing — it has no recovered grammar as a kind, which is a different claim.
@@ -334,7 +396,8 @@ Building the continuation before that is answered would require inventing the br
 ## Disposition
 
 ```text
-Shape A testimony-comparison cup      buildable from recovered grammar
+Shape A declaration                   recovered; structure buildable, exact
+                                      occurrences need local coordinates
 Shape B candidate-versus-grammar cup  partially recovered; owner and
                                       several coordinates unresolved
 faucet                                unresolved; successive Compare
