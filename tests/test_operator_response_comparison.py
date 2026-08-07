@@ -14,6 +14,7 @@ from seed_runtime.operator_response_comparison import (
     run_operator_response_comparison_and_identification,
 )
 from seed_runtime.operator_session_standing import project_operator_session_standing
+from tests.closed_choice_fixture import CLOSED_CHOICE_FIXTURE_SOURCES
 from scripts import seed_local
 
 
@@ -29,6 +30,7 @@ def _emit_presentation(ledger, *, workspace="w", session="s"):
         workspace_id=workspace,
         session_id=session,
         session_standing=_standing(ledger, workspace=workspace, session=session),
+        alternative_sources=CLOSED_CHOICE_FIXTURE_SOURCES,
     )
     return emit_operator_presentation(
         ledger, presentation=presentation, output_stream=StringIO()
@@ -71,7 +73,11 @@ def _exchange(ledger, text, *, workspace="w", session="s"):
 def test_compare_requires_an_emitted_presentation_with_recorded_reference():
     ledger = EventLedger()
     presentation = form_operator_presentation(
-        ledger, workspace_id="w", session_id="s", session_standing=_standing(ledger)
+        ledger,
+        workspace_id="w",
+        session_id="s",
+        session_standing=_standing(ledger),
+        alternative_sources=CLOSED_CHOICE_FIXTURE_SOURCES,
     )
     ingress_event_id = _capture_after(ledger, presentation, "1\n")
 
@@ -190,6 +196,7 @@ def _record_malformed_presentation(ledger, mutate_bindings, *, workspace="w", se
         workspace_id=workspace,
         session_id=session,
         session_standing=_standing(ledger, workspace=workspace, session=session),
+        alternative_sources=CLOSED_CHOICE_FIXTURE_SOURCES,
     )
     template_payload = ledger.get(template["formed_event_id"]).payload
     presentation_id = template["presentation_id"] + "-malformed"
@@ -399,7 +406,11 @@ def test_later_presentation_consumes_findings_without_stronger_standing():
     _exchange(ledger, "1\n")
 
     later = form_operator_presentation(
-        ledger, workspace_id="w", session_id="s", session_standing=_standing(ledger)
+        ledger,
+        workspace_id="w",
+        session_id="s",
+        session_standing=_standing(ledger),
+        alternative_sources=CLOSED_CHOICE_FIXTURE_SOURCES,
     )
     finding = later["prior_exchange_finding"]
     assert finding["identification"]["basis"] == "identified"
@@ -467,7 +478,11 @@ def test_matched_but_unidentified_is_not_rendered_as_no_match():
     _compare(ledger, malformed, ingress_event_id)
 
     later = form_operator_presentation(
-        ledger, workspace_id="w", session_id="s", session_standing=_standing(ledger)
+        ledger,
+        workspace_id="w",
+        session_id="s",
+        session_standing=_standing(ledger),
+        alternative_sources=CLOSED_CHOICE_FIXTURE_SOURCES,
     )
     from seed_runtime.operator_presentation import render_operator_presentation
 
@@ -497,7 +512,11 @@ def test_exchange_findings_are_exposed_by_a_later_presentation():
     )
 
     later = form_operator_presentation(
-        ledger, workspace_id="w", session_id="s", session_standing=standing
+        ledger,
+        workspace_id="w",
+        session_id="s",
+        session_standing=standing,
+        alternative_sources=CLOSED_CHOICE_FIXTURE_SOURCES,
     )
     rendered = render_operator_presentation(later)
     assert "Prior exchange: no coordinate match within" in rendered

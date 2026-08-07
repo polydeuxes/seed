@@ -17,6 +17,7 @@ from seed_runtime.operator_session_standing import project_operator_session_stan
 from seed_runtime.operator_source_recovery import (
     run_operator_source_recovery_and_meaning_relation,
 )
+from tests.closed_choice_fixture import CLOSED_CHOICE_FIXTURE_SOURCES
 from scripts import seed_local
 
 _GOAL_MEANING = "establish richer shared grammar with the operator"
@@ -34,6 +35,7 @@ def _exchange(ledger, text, *, workspace="w", session="s"):
         workspace_id=workspace,
         session_id=session,
         session_standing=_standing(ledger, workspace=workspace, session=session),
+        alternative_sources=CLOSED_CHOICE_FIXTURE_SOURCES,
     )
     emit_operator_presentation(
         ledger, presentation=presentation, output_stream=StringIO()
@@ -100,7 +102,11 @@ def test_failed_identification_produces_no_source_recovery():
     # match, failed identification, and recovery structurally refuses.
     ledger = EventLedger()
     template = form_operator_presentation(
-        ledger, workspace_id="w", session_id="s", session_standing=_standing(ledger)
+        ledger,
+        workspace_id="w",
+        session_id="s",
+        session_standing=_standing(ledger),
+        alternative_sources=CLOSED_CHOICE_FIXTURE_SOURCES,
     )
     template_payload = ledger.get(template["formed_event_id"]).payload
     presentation_id = template["presentation_id"] + "-malformed"
@@ -428,7 +434,11 @@ def test_later_presentation_exposes_bounded_relations_without_strengthening():
     _recovered_exchange(ledger, "1\n")
 
     later = form_operator_presentation(
-        ledger, workspace_id="w", session_id="s", session_standing=_standing(ledger)
+        ledger,
+        workspace_id="w",
+        session_id="s",
+        session_standing=_standing(ledger),
+        alternative_sources=CLOSED_CHOICE_FIXTURE_SOURCES,
     )
     relation = later["recovered_meaning_relation"]
     assert relation["source_identity"] == (
@@ -486,7 +496,11 @@ def test_binding_that_bypasses_the_matched_coordinate_is_refused():
     # the identified alternative.
     ledger = EventLedger()
     template = form_operator_presentation(
-        ledger, workspace_id="w", session_id="s", session_standing=_standing(ledger)
+        ledger,
+        workspace_id="w",
+        session_id="s",
+        session_standing=_standing(ledger),
+        alternative_sources=CLOSED_CHOICE_FIXTURE_SOURCES,
     )
     template_payload = ledger.get(template["formed_event_id"]).payload
     presentation_id = template["presentation_id"] + "-crossbound"
@@ -791,10 +805,18 @@ def test_projector_refuses_forged_relation_standing_coordinates():
 def test_projector_refuses_emission_naming_a_foreign_formation():
     ledger = EventLedger()
     first = form_operator_presentation(
-        ledger, workspace_id="w", session_id="s", session_standing=_standing(ledger)
+        ledger,
+        workspace_id="w",
+        session_id="s",
+        session_standing=_standing(ledger),
+        alternative_sources=CLOSED_CHOICE_FIXTURE_SOURCES,
     )
     second = form_operator_presentation(
-        ledger, workspace_id="w", session_id="s", session_standing=_standing(ledger)
+        ledger,
+        workspace_id="w",
+        session_id="s",
+        session_standing=_standing(ledger),
+        alternative_sources=CLOSED_CHOICE_FIXTURE_SOURCES,
     )
     ledger.append(
         "operator.presentation.emitted",
@@ -911,7 +933,11 @@ def test_recovery_runs_only_for_identified_exchanges():
     assert len(standing["meaning_relations"]) == 1
 
     later = form_operator_presentation(
-        ledger, workspace_id="w", session_id="s", session_standing=standing
+        ledger,
+        workspace_id="w",
+        session_id="s",
+        session_standing=standing,
+        alternative_sources=CLOSED_CHOICE_FIXTURE_SOURCES,
     )
     # The latest finding is the no-match, so no recovered relation is exposed.
     assert later["recovered_meaning_relation"] is None

@@ -10,91 +10,6 @@ from seed_runtime.ids import new_id
 PRESENTATION_FORMED_KIND = "operator.presentation.formed"
 PRESENTATION_EMITTED_KIND = "operator.presentation.emitted"
 
-# Developer-supplied sources, attributed and bounded.  Their meanings are the
-# Book's exact wording and are never derived from operator ingress material.
-_CANDIDATE_SOURCE_REFERENCE = (
-    "book_of_seed/03-goals-and-advancement/"
-    "operator-ingress-common-grammar-prerequisite.md"
-)
-_DEVELOPER_SUPPLIED_SOURCES = (
-    {
-        "role": "potential-goal",
-        "rendered_label": "Establish richer shared grammar with the Operator",
-        "representation_purpose": (
-            "represent the developer-supplied potential-goal candidate "
-            "for bounded presentation"
-        ),
-        "represented_source": {
-            # Stable exact identity of source candidate G, held apart from
-            # its kind, meaning text, and reference so later recovery
-            # identifies the candidate rather than a description of it.
-            "identity": "source:developer-supplied-grammar-acquisition-candidate",
-            "kind": "developer-supplied-potential-goal-candidate",
-            "attribution": "developer-supplied",
-            "meaning": "establish richer shared grammar with the operator",
-            "reference": _CANDIDATE_SOURCE_REFERENCE,
-        },
-        # The exact developer-supplied treatment relation: this alternative
-        # may be consumed by the exact interaction-goal Consumer.  Neither
-        # the role string nor the rendered label carries this relation.
-        "consumer_treatment": {
-            # Stable treatment kind, distinct from the per-formation
-            # instantiated relation identity added at formation.
-            "treatment_kind": "bounded-interaction-goal-establishment",
-            "identity": (
-                "treatment:developer-supplied-interaction-goal-establishment"
-            ),
-            "consumer_purpose": (
-                "determine whether the validated potential-goal relation "
-                "bears on establishing the current bounded interaction goal"
-            ),
-            "treatment": (
-                "consume the warranted meaning relation to establish "
-                "bounded interaction-goal standing"
-            ),
-            "attribution": "developer-supplied",
-            "authority_boundary": (
-                "covers only bounded interaction-goal establishment for "
-                "this exact source and proposition within the forming "
-                "session; establishes no operator intent, selection, or "
-                "downstream authorization"
-            ),
-            "provenance": _CANDIDATE_SOURCE_REFERENCE,
-        },
-    },
-    {
-        "role": "presentation-navigation",
-        "rendered_label": "Show current Standing",
-        "representation_purpose": (
-            "represent navigation to the current Standing View"
-        ),
-        "represented_source": {
-            "identity": "source:operator-ingress-view-navigation",
-            "kind": "operator-ingress-view-navigation",
-            "attribution": "developer-supplied",
-            "meaning": "navigate to the current Standing View",
-            "reference": (
-                "seed_runtime.operator_ingress_view.format_operator_ingress_view"
-            ),
-        },
-    },
-    {
-        "role": "local-stop",
-        "rendered_label": "Establish no such goal and stop locally",
-        "representation_purpose": (
-            "represent the developer-supplied local-stop treatment"
-        ),
-        "represented_source": {
-            "identity": "source:developer-supplied-local-stop-treatment",
-            "kind": "developer-supplied-local-stop-treatment",
-            "attribution": "developer-supplied",
-            "meaning": "establish no such goal and stop locally",
-            "reference": _CANDIDATE_SOURCE_REFERENCE,
-        },
-    },
-)
-
-
 def _dimensions(
     *, identity, content, standing, source, responsibility, authority, scope, occurrence
 ):
@@ -116,12 +31,18 @@ def form_operator_presentation(
     workspace_id: str,
     session_id: str,
     session_standing: dict[str, Any],
+    alternative_sources: tuple[dict[str, Any], ...] = (),
 ) -> dict[str, Any]:
     """Form one exact bounded Presentation and record its formation occurrence.
 
-    The presented alternatives represent developer-supplied sources under
-    explicit roles; formation neither invents sources nor strengthens their
-    standing, and no alternative's meaning is derived from ingress material.
+    The Presentation is bounded by the supplied projected session Standing.
+    No alternatives are supplied by default: a Presentation carrying none is
+    the ordinary shape, and closed choice is a lawful special shape where
+    alternatives are independently warranted.  ``alternative_sources`` must
+    therefore be supplied by a caller that has that warrant; formation
+    neither invents sources nor strengthens their standing, and no
+    alternative's meaning is derived from ingress material.
+
     Formation is not emission: the returned Presentation carries no emission
     occurrence until :func:`emit_operator_presentation` records one.
     """
@@ -129,7 +50,7 @@ def form_operator_presentation(
     scope = f"workspace:{workspace_id};session:{session_id}"
     alternatives = []
     coordinate_bindings: dict[str, str] = {}
-    for position, source in enumerate(_DEVELOPER_SUPPLIED_SOURCES, start=1):
+    for position, source in enumerate(alternative_sources, start=1):
         alternative_id = new_id("presented_alternative")
         coordinate = str(position)
         source_treatment = source.get("consumer_treatment")
@@ -205,6 +126,13 @@ def form_operator_presentation(
     # The exact inventory of session events this formation consumed,
     # including any prior Presentation formation and emission Evidence.
     standing_evidence_ids = list(session_standing["consumed_event_ids"])
+    purpose = "present the current bounded session Standing"
+    known_loss: list[str] = []
+    if alternatives:
+        purpose += " with attributed bounded alternatives"
+        known_loss.append(
+            "rendered label compresses represented candidate meaning"
+        )
     # The latest recorded exchange finding, exposed exactly as recorded;
     # formation neither strengthens nor reinterprets it.
     prior_exchange_finding = session_standing.get("latest_exchange_finding")
@@ -248,10 +176,7 @@ def form_operator_presentation(
                     "lineage durably recorded"
                 ),
             ),
-            "purpose": (
-                "present developer-supplied bounded alternatives in the "
-                "current session Standing context"
-            ),
+            "purpose": purpose,
             "alternatives": alternatives,
             "coordinate_bindings": coordinate_bindings,
             "session_standing_as_of_event_id": session_standing["as_of_event_id"],
@@ -259,9 +184,7 @@ def form_operator_presentation(
             "prior_exchange_finding": prior_exchange_finding,
             "recovered_meaning_relation": recovered_meaning_relation,
             "current_interaction_goal": current_interaction_goal,
-            "known_loss": [
-                "rendered label compresses represented candidate meaning"
-            ],
+            "known_loss": known_loss,
             "unknowns": [],
             "conflicts": [],
             "mutates_cluster": False,
@@ -272,10 +195,7 @@ def form_operator_presentation(
         "presentation_id": presentation_id,
         "workspace_id": workspace_id,
         "session_id": session_id,
-        "purpose": (
-            "present developer-supplied bounded alternatives in the "
-            "current session Standing context"
-        ),
+        "purpose": purpose,
         "alternatives": alternatives,
         "coordinate_bindings": coordinate_bindings,
         "formed_event_id": formed_event.id,
@@ -285,7 +205,7 @@ def form_operator_presentation(
         "prior_exchange_finding": prior_exchange_finding,
         "recovered_meaning_relation": recovered_meaning_relation,
         "current_interaction_goal": current_interaction_goal,
-        "known_loss": ["rendered label compresses represented candidate meaning"],
+        "known_loss": known_loss,
         "unknowns": [],
         "conflicts": [],
     }
@@ -353,7 +273,8 @@ def render_operator_presentation(presentation: dict[str, Any]) -> str:
                 "path.",
             )
         )
-    lines.append("Respond with exactly one token:")
+    if presentation["alternatives"]:
+        lines.append("Respond with exactly one token:")
     for alternative in presentation["alternatives"]:
         lines.append(
             f"  {alternative['response_coordinate']}. {alternative['rendered_label']}"

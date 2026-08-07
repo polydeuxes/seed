@@ -10,6 +10,7 @@ from seed_runtime.operator_presentation import (
     render_operator_presentation,
 )
 from seed_runtime.operator_session_standing import project_operator_session_standing
+from tests.closed_choice_fixture import CLOSED_CHOICE_FIXTURE_SOURCES
 from scripts import seed_local
 
 _INGRESS_KINDS = (
@@ -32,6 +33,25 @@ def _run_console(text, *, workspace="w", session="s"):
     return ledger, output.getvalue()
 
 
+def _fixture_presentation(ledger, *, workspace="w", session="s"):
+    """Form one closed-choice Presentation from the explicit fixture.
+
+    The console no longer supplies alternatives; a caller with warrant does.
+    These tests exercise the closed-choice shape itself, so they construct it.
+    """
+    presentation = form_operator_presentation(
+        ledger,
+        workspace_id=workspace,
+        session_id=session,
+        session_standing=_standing(ledger, workspace=workspace, session=session),
+        alternative_sources=CLOSED_CHOICE_FIXTURE_SOURCES,
+    )
+    emit_operator_presentation(
+        ledger, presentation=presentation, output_stream=StringIO()
+    )
+    return presentation
+
+
 def _standing(ledger, *, workspace="w", session="s"):
     return project_operator_session_standing(
         ledger, workspace_id=workspace, session_id=session
@@ -44,6 +64,7 @@ def _form_and_emit(ledger, *, workspace="w", session="s"):
         workspace_id=workspace,
         session_id=session,
         session_standing=_standing(ledger, workspace=workspace, session=session),
+        alternative_sources=CLOSED_CHOICE_FIXTURE_SOURCES,
     )
     return emit_operator_presentation(
         ledger, presentation=presentation, output_stream=StringIO()
@@ -118,6 +139,77 @@ def test_no_compare_or_identification_follows_console_ingress():
     assert standing["latest_interaction_goal_standing"] is None
 
 
+def test_c0_presents_standing_with_no_developer_semantics():
+    ledger = EventLedger()
+    standing = _standing(ledger)
+    c0 = form_operator_presentation(
+        ledger, workspace_id="w", session_id="s", session_standing=standing
+    )
+    emit_operator_presentation(ledger, presentation=c0, output_stream=StringIO())
+
+    # Empty Standing is legitimately consumed: the formation occurred and
+    # recorded what it consumed, rather than being skipped.
+    payload = ledger.get(c0["formed_event_id"]).payload
+    assert payload["session_standing_as_of_event_id"] is None
+    assert payload["session_standing_evidence_ids"] == []
+    assert payload["prior_exchange_finding"] is None
+    assert payload["recovered_meaning_relation"] is None
+    assert payload["current_interaction_goal"] is None
+    assert payload["unknowns"] == []
+    assert payload["conflicts"] == []
+
+    # No developer-supplied alternatives, sources, meanings, or treatment.
+    assert payload["alternatives"] == []
+    assert payload["coordinate_bindings"] == {}
+    flattened = str(payload)
+    for injected in (
+        "Establish richer shared grammar",
+        "Show current Standing",
+        "establish no such goal and stop locally",
+        "developer-supplied",
+        "potential-goal",
+        "consumer_treatment",
+    ):
+        assert injected not in flattened, injected
+    rendered = render_operator_presentation(c0)
+    assert rendered == f"Bounded Presentation {c0['presentation_id']}\n"
+    assert "Respond with exactly one token" not in rendered
+
+
+def test_console_presents_standing_only_across_an_ingress():
+    ledger, _ = _run_console("hello\n")
+
+    kinds = [event.kind for event in ledger.list("w")]
+    assert kinds == [
+        "operator.presentation.formed",
+        "operator.presentation.emitted",
+        *_INGRESS_KINDS,
+        "operator.presentation.formed",
+        "operator.presentation.emitted",
+    ]
+    # No automatic exchange, recovery, relation, or goal occurrence.
+    assert not any(k.startswith("operator.exchange.") for k in kinds)
+    assert not any(k.startswith("operator.interaction.") for k in kinds)
+    assert "operator.presentation.source_recovered" not in kinds
+    assert "operator.presentation.meaning_relation_established" not in kinds
+
+    c0, _, _, _, ingress, c1, _ = ledger.list("w")
+    # C1 is formed from Standing that now contains the preserved ingress.
+    # C1 consumed every session event recorded before it, C0's own
+    # formation and emission included.
+    assert c1.payload["session_standing_evidence_ids"] == [
+        e.id for e in ledger.list("w")[:5]
+    ]
+    assert c0.payload["alternatives"] == [] and c1.payload["alternatives"] == []
+    assert ingress.payload["produced_after_presentation_ref"] == (
+        c0.payload["presentation_ref"]
+    )
+    # No developer goal semantics anywhere in the session.
+    session = str([e.payload for e in ledger.list("w")])
+    assert "developer-supplied" not in session
+    assert "Establish richer shared grammar" not in session
+
+
 def test_c0_and_c1_are_formed_and_emitted_in_order():
     ledger, output = _run_console("hello\n")
 
@@ -134,14 +226,17 @@ def test_c0_and_c1_are_formed_and_emitted_in_order():
 
 
 def test_alternatives_carry_complete_coordinates_and_evidence_lineage():
-    ledger, _ = _run_console("hello\n")
+    ledger = EventLedger()
+    _fixture_presentation(ledger)
 
     standing = _standing(ledger)
     presentation = standing["current_presentation"]
     assert presentation is not None
     assert presentation["purpose"]
     assert presentation["scope"] == "workspace:w;session:s"
-    assert presentation["provenance"] is not None
+    # provenance is the consumed Standing's as-of boundary; None here is the
+    # recorded absence of prior session events, not a fabricated Unknown.
+    assert "provenance" in presentation
     assert presentation["known_loss"] == [
         "rendered label compresses represented candidate meaning"
     ]
@@ -149,7 +244,9 @@ def test_alternatives_carry_complete_coordinates_and_evidence_lineage():
     # Unknown, so the formed Presentation carries no Unknowns.
     assert presentation["unknowns"] == []
     assert presentation["conflicts"] == []
-    assert presentation["session_standing_evidence_ids"]
+    # Empty for a formation from empty Standing: recorded absence of prior
+    # consumed events, not absence of consumption.
+    assert presentation["session_standing_evidence_ids"] == []
     recorded_ids = {event.id for event in ledger.list("w")}
     assert set(presentation["session_standing_evidence_ids"]) <= recorded_ids
     assert len(presentation["alternatives"]) == 3
@@ -188,7 +285,8 @@ def test_alternatives_carry_complete_coordinates_and_evidence_lineage():
 
 
 def test_grammar_acquisition_candidate_is_developer_supplied_not_inferred():
-    ledger, _ = _run_console("Learn Klingon immediately\n")
+    ledger = EventLedger()
+    _fixture_presentation(ledger)
 
     presentation = _standing(ledger)["current_presentation"]
     goal_alternatives = [
@@ -205,7 +303,8 @@ def test_grammar_acquisition_candidate_is_developer_supplied_not_inferred():
 
 
 def test_local_stop_alternative_is_not_represented_as_a_goal():
-    ledger, _ = _run_console("hello\n")
+    ledger = EventLedger()
+    _fixture_presentation(ledger)
 
     presentation = _standing(ledger)["current_presentation"]
     stops = [
@@ -225,7 +324,8 @@ def test_local_stop_alternative_is_not_represented_as_a_goal():
 
 
 def test_navigation_alternative_is_distinct_and_leads_to_the_existing_view():
-    ledger, _ = _run_console("hello\n")
+    ledger = EventLedger()
+    _fixture_presentation(ledger)
 
     presentation = _standing(ledger)["current_presentation"]
     navigation = [
@@ -249,7 +349,8 @@ def test_navigation_alternative_is_distinct_and_leads_to_the_existing_view():
 
 
 def test_no_new_meaning_candidate_is_synthesized():
-    ledger, output = _run_console("hello\n")
+    ledger = EventLedger()
+    _fixture_presentation(ledger)
 
     presentation = _standing(ledger)["current_presentation"]
     assert len(presentation["alternatives"]) == 3
@@ -257,7 +358,6 @@ def test_no_new_meaning_candidate_is_synthesized():
         alternative["represented_source"]["attribution"] == "developer-supplied"
         for alternative in presentation["alternatives"]
     )
-    assert " means " not in output
     assert " means " not in render_operator_presentation(presentation)
 
 
@@ -364,6 +464,7 @@ def test_formation_is_recorded_before_emission_and_they_stay_distinct():
         workspace_id="w",
         session_id="s",
         session_standing=_standing(ledger),
+        alternative_sources=CLOSED_CHOICE_FIXTURE_SOURCES,
     )
     assert presentation["emitted_event_id"] is None
     assert _standing(ledger)["current_presentation"] is None
