@@ -1,4 +1,9 @@
-"""Recorded formation and emission of bounded closed-choice Presentations."""
+"""Recorded formation and emission of bounded operator Presentations.
+
+A Presentation is a bounded representation of current session Standing. It
+may additionally represent presented alternatives where a caller supplies
+them with warrant.
+"""
 
 from __future__ import annotations
 
@@ -36,12 +41,12 @@ def form_operator_presentation(
     """Form one exact bounded Presentation and record its formation occurrence.
 
     The Presentation is bounded by the supplied projected session Standing.
-    No alternatives are supplied by default: a Presentation carrying none is
-    the ordinary shape, and closed choice is a lawful special shape where
-    alternatives are independently warranted.  ``alternative_sources`` must
-    therefore be supplied by a caller that has that warrant; formation
-    neither invents sources nor strengthens their standing, and no
-    alternative's meaning is derived from ingress material.
+    No alternatives are supplied by default; ``alternative_sources`` must be
+    supplied by a caller with warrant for the eligibility and participation
+    relations those alternatives carry.  Formation neither invents sources
+    nor strengthens their standing, and no alternative's meaning is derived
+    from ingress material.  This module records what a Presentation carries;
+    it does not classify the resulting combination as a shape.
 
     Formation is not emission: the returned Presentation carries no emission
     occurrence until :func:`emit_operator_presentation` records one.
@@ -127,8 +132,18 @@ def form_operator_presentation(
     # including any prior Presentation formation and emission Evidence.
     standing_evidence_ids = list(session_standing["consumed_event_ids"])
     purpose = "present the current bounded session Standing"
+    content = "bounded Presentation of current session Standing"
+    occurrence = "Presentation formation durably recorded"
     known_loss: list[str] = []
     if alternatives:
+        content = (
+            "bounded Presentation of current session Standing with "
+            f"{len(alternatives)} presented alternatives"
+        )
+        occurrence = (
+            f"{len(alternatives)} alternatives, roles, response-coordinate "
+            "bindings, and represented-source lineage durably recorded"
+        )
         purpose += " with attributed bounded alternatives"
         known_loss.append(
             "rendered label compresses represented candidate meaning"
@@ -159,10 +174,7 @@ def form_operator_presentation(
             "presentation_ref": presentation_id,
             "dimensions": _dimensions(
                 identity=presentation_id,
-                content=(
-                    "bounded closed-choice presentation with "
-                    f"{len(alternatives)} role-tagged alternatives"
-                ),
+                content=content,
                 standing="formed",
                 source=session_standing["as_of_event_id"],
                 responsibility="bounded-presentation-formation",
@@ -171,10 +183,7 @@ def form_operator_presentation(
                     "warrant, goal, or response treatment"
                 ),
                 scope=scope,
-                occurrence=(
-                    "alternatives, roles, token bindings, and represented-source "
-                    "lineage durably recorded"
-                ),
+                occurrence=occurrence,
             ),
             "purpose": purpose,
             "alternatives": alternatives,

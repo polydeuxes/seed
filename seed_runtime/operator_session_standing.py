@@ -125,7 +125,6 @@ def project_operator_session_standing(
     preserved_ingress_occurrences: list[dict[str, Any]] = []
     interaction_closures: list[dict[str, Any]] = []
     presentations: dict[str, dict[str, Any]] = {}
-    current_presentation_id: str | None = None
     comparisons: dict[str, dict[str, Any]] = {}
     identifications: dict[str, dict[str, Any]] = {}
     latest_exchange_finding: dict[str, Any] | None = None
@@ -219,7 +218,6 @@ def project_operator_session_standing(
                     "formation occurrence"
                 )
             presentations[presentation_ref]["emitted_event_id"] = event.id
-            current_presentation_id = presentation_ref
             continue
         if event.kind == _COMPARISON_KIND:
             payload = event.payload
@@ -257,22 +255,9 @@ def project_operator_session_standing(
                     "comparison's response evidence does not agree with a "
                     "recorded ingress occurrence"
                 )
-            if (
-                preserved_response["produced_after_presentation_ref"]
-                != payload["presentation_ref"]
-                or preserved_response[
-                    "produced_after_presentation_formed_event_id"
-                ]
-                != presentation["formed_event_id"]
-                or preserved_response[
-                    "produced_after_presentation_emitted_event_id"
-                ]
-                != presentation["emitted_event_id"]
-            ):
-                raise ValueError(
-                    "recorded ingress was not produced after this exact "
-                    "presentation"
-                )
+            # The ingress records no Presentation reference, so no check
+            # here establishes that this Presentation and this ingress
+            # belong to one act.  That relation is unrecovered.
             expected_representation = preserved_response["content"]
             expected_coordinate_set = sorted(
                 alternative["response_coordinate"]
@@ -1316,15 +1301,6 @@ def project_operator_session_standing(
                 "evidence_event_id": event.id,
                 "raw_material_event_id": event.payload["raw_material_event_id"],
                 "content": event.payload["dimensions"]["content"],
-                "produced_after_presentation_ref": event.payload.get(
-                    "produced_after_presentation_ref"
-                ),
-                "produced_after_presentation_formed_event_id": event.payload.get(
-                    "produced_after_presentation_formed_event_id"
-                ),
-                "produced_after_presentation_emitted_event_id": event.payload.get(
-                    "produced_after_presentation_emitted_event_id"
-                ),
             }
             attempt["preserved_ingress"] = occurrence
             preserved_ingress_occurrences.append(occurrence)
@@ -1350,14 +1326,10 @@ def project_operator_session_standing(
         "preserved_ingress_occurrences": preserved_ingress_occurrences,
         "interaction_closures": interaction_closures,
         "presentations": presentations,
-        # The most recently emitted Presentation, complete with alternatives
-        # and bindings, so a later occurrence can consume its exact
-        # coordinates.  None means no emission is recorded in this session.
-        "current_presentation": (
-            presentations[current_presentation_id]
-            if current_presentation_id is not None
-            else None
-        ),
+        # No "current" Presentation is projected.  Emission order is
+        # recoverable from `presentations` and `consumed_event_ids`; naming one
+        # of them current would assert present relevance that no occurrence
+        # establishes.
         # Exactly the relation standings recorded by session events.  No
         # current event kind records one, so this stays empty until a
         # responsible occurrence does; emptiness is absence of record only.

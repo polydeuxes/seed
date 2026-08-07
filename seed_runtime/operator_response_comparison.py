@@ -62,6 +62,13 @@ def run_operator_response_comparison_and_identification(
     recorded coordinates.  No further trimming, normalization, case folding,
     or interpretation occurs here.
 
+    Both subjects are supplied by the caller.  That supply is not an
+    Applicability determination, and nothing here establishes that these two
+    proposed inputs may participate in this exact Act.  What is missing is not
+    necessarily a prior relation between them but the input Applicability
+    01.Standing.E.1 assigns to this Act's own Responsibility; that route is
+    unrecovered, which is why this occurrence is not presently reachable.
+
     A match establishes correspondence within C only.  It establishes no
     operator intent, understanding, selection, authorization, source
     recovery, meaning, or treatment.  No coordinate match establishes none
@@ -141,23 +148,14 @@ def run_operator_response_comparison_and_identification(
         and ingress_event.session_id == session_id,
         "response ingress belongs to another workspace or session",
     )
-    # The exact recorded C -> R reference chain; append order alone is not
-    # relied on, and every named reference must agree.
-    _require(
-        ingress_event.payload.get("produced_after_presentation_ref")
-        == presentation_ref,
-        "ingress does not record production after this exact presentation",
-    )
-    _require(
-        ingress_event.payload.get("produced_after_presentation_formed_event_id")
-        == formed_event_id,
-        "ingress does not record this exact formation occurrence",
-    )
-    _require(
-        ingress_event.payload.get("produced_after_presentation_emitted_event_id")
-        == emitted_event_id,
-        "ingress does not record this exact emission occurrence",
-    )
+    # The ingress no longer names a Presentation: a relation between two
+    # preserved subjects is its own bounded claim subject rather than a
+    # coordinate of one participant.  Nothing here substitutes for the
+    # missing determination, and its absence is not permission.  Per
+    # 01.Standing.E.1 the Responsibility performing this exact Act owes an
+    # Applicability determination for each proposed input; a caller supplying
+    # two references is not that determination, and no such route is
+    # recovered.  This occurrence is therefore not presently reachable.
 
     response_attempt_ref = ingress_event.payload["attempt_ref"]
     response_capture_event_id = ingress_event.payload["raw_material_event_id"]

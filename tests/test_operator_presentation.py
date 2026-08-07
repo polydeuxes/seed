@@ -94,14 +94,17 @@ def test_console_forms_c0_before_first_ingress_and_preserves_lineage_only():
     assert c0_formed.payload["recovered_meaning_relation"] is None
     assert c0_formed.payload["current_interaction_goal"] is None
     assert c0_formed.payload["unknowns"] == []
+    # The console attaches no Presentation to the capture: several emissions
+    # may precede it and nothing determines which, if any, it relates to.
     ingress = next(
         event
         for event in ledger.list("w")
         if event.kind == "operator.ingress.ingress_occurred"
     )
-    assert ingress.payload["produced_after_presentation_ref"] == c0_formed.payload["presentation_ref"]
-    assert ingress.payload["produced_after_presentation_formed_event_id"] == c0_formed.id
-    assert ingress.payload["produced_after_presentation_emitted_event_id"] == c0_emitted.id
+    assert "produced_after_presentation_ref" not in ingress.payload
+    assert "produced_after_presentation_formed_event_id" not in ingress.payload
+    assert "produced_after_presentation_emitted_event_id" not in ingress.payload
+    assert c0_emitted.kind == "operator.presentation.emitted"
 
 
 def test_no_compare_or_identification_follows_console_ingress():
@@ -123,12 +126,8 @@ def test_no_compare_or_identification_follows_console_ingress():
     presentations = [e for e in ledger.list("w") if e.kind == "operator.presentation.formed"]
     ingresses = [e for e in ledger.list("w") if e.kind == "operator.ingress.ingress_occurred"]
     assert len(ingresses) == 3
-    for ingress, formed in zip(ingresses, presentations):
-        assert ingress.payload["produced_after_presentation_ref"] == (
-            formed.payload["presentation_ref"]
-        )
-        assert ingress.payload["produced_after_presentation_formed_event_id"] == formed.id
-        assert ingress.payload["produced_after_presentation_emitted_event_id"]
+    for ingress in ingresses:
+        assert "produced_after_presentation_ref" not in ingress.payload
 
     # Standing projection remains valid and records the occurrences.
     standing = _standing(ledger)
@@ -176,6 +175,56 @@ def test_c0_presents_standing_with_no_developer_semantics():
     assert "Respond with exactly one token" not in rendered
 
 
+def test_formation_dimensions_record_only_coordinates_that_exist():
+    ledger = EventLedger()
+    standing = _standing(ledger)
+
+    zero = form_operator_presentation(
+        ledger, workspace_id="w", session_id="s", session_standing=standing
+    )
+    dimensions = ledger.get(zero["formed_event_id"]).payload["dimensions"]
+    assert dimensions["content"] == (
+        "bounded Presentation of current session Standing"
+    )
+    assert dimensions["occurrence_preservation"] == (
+        "Presentation formation durably recorded"
+    )
+    # No claim of coordinates this Presentation does not carry, and no
+    # classification of the resulting combination as a shape or kind.
+    flattened = str(dimensions).lower()
+    for claim in (
+        "closed-choice",
+        "closed choice",
+        "alternatives",
+        "role-tagged",
+        "bindings",
+        "represented-source",
+    ):
+        assert claim not in flattened, claim
+
+    explicit = form_operator_presentation(
+        ledger,
+        workspace_id="w",
+        session_id="s",
+        session_standing=standing,
+        alternative_sources=CLOSED_CHOICE_FIXTURE_SOURCES,
+    )
+    # Exact alternative coordinates are recorded because they exist. The
+    # combination is not classified: supplying alternatives does not make the
+    # Presentation a different constitutional kind.
+    dimensions = ledger.get(explicit["formed_event_id"]).payload["dimensions"]
+    assert dimensions["content"] == (
+        "bounded Presentation of current session Standing with "
+        "3 presented alternatives"
+    )
+    assert dimensions["occurrence_preservation"] == (
+        "3 alternatives, roles, response-coordinate bindings, and "
+        "represented-source lineage durably recorded"
+    )
+    assert "closed-choice" not in str(dimensions).lower()
+    assert "closed choice" not in str(dimensions).lower()
+
+
 def test_console_presents_standing_only_across_an_ingress():
     ledger, _ = _run_console("hello\n")
 
@@ -201,9 +250,7 @@ def test_console_presents_standing_only_across_an_ingress():
         e.id for e in ledger.list("w")[:5]
     ]
     assert c0.payload["alternatives"] == [] and c1.payload["alternatives"] == []
-    assert ingress.payload["produced_after_presentation_ref"] == (
-        c0.payload["presentation_ref"]
-    )
+    assert "produced_after_presentation_ref" not in ingress.payload
     # No developer goal semantics anywhere in the session.
     session = str([e.payload for e in ledger.list("w")])
     assert "developer-supplied" not in session
@@ -230,7 +277,7 @@ def test_alternatives_carry_complete_coordinates_and_evidence_lineage():
     _fixture_presentation(ledger)
 
     standing = _standing(ledger)
-    presentation = standing["current_presentation"]
+    presentation = list(standing["presentations"].values())[-1]
     assert presentation is not None
     assert presentation["purpose"]
     assert presentation["scope"] == "workspace:w;session:s"
@@ -288,7 +335,7 @@ def test_grammar_acquisition_candidate_is_developer_supplied_not_inferred():
     ledger = EventLedger()
     _fixture_presentation(ledger)
 
-    presentation = _standing(ledger)["current_presentation"]
+    presentation = list(_standing(ledger)["presentations"].values())[-1]
     goal_alternatives = [
         alternative
         for alternative in presentation["alternatives"]
@@ -306,7 +353,7 @@ def test_local_stop_alternative_is_not_represented_as_a_goal():
     ledger = EventLedger()
     _fixture_presentation(ledger)
 
-    presentation = _standing(ledger)["current_presentation"]
+    presentation = list(_standing(ledger)["presentations"].values())[-1]
     stops = [
         alternative
         for alternative in presentation["alternatives"]
@@ -327,7 +374,7 @@ def test_navigation_alternative_is_distinct_and_leads_to_the_existing_view():
     ledger = EventLedger()
     _fixture_presentation(ledger)
 
-    presentation = _standing(ledger)["current_presentation"]
+    presentation = list(_standing(ledger)["presentations"].values())[-1]
     navigation = [
         alternative
         for alternative in presentation["alternatives"]
@@ -352,7 +399,7 @@ def test_no_new_meaning_candidate_is_synthesized():
     ledger = EventLedger()
     _fixture_presentation(ledger)
 
-    presentation = _standing(ledger)["current_presentation"]
+    presentation = list(_standing(ledger)["presentations"].values())[-1]
     assert len(presentation["alternatives"]) == 3
     assert all(
         alternative["represented_source"]["attribution"] == "developer-supplied"
@@ -368,7 +415,7 @@ def test_presentations_from_other_workspaces_or_sessions_cannot_enter():
 
     same_workspace_other_session = _standing(ledger, workspace="w", session="s2")
     assert same_workspace_other_session["presentations"] == {}
-    assert same_workspace_other_session["current_presentation"] is None
+    assert same_workspace_other_session["presentations"] == {}
     own = _standing(ledger, workspace="w", session="s1")
     assert len(own["presentations"]) == 1
 
@@ -390,7 +437,7 @@ def test_next_console_iteration_recovers_c1_and_forms_c2():
     # complete alternatives and bindings.
     ledger = EventLedger()
     c1 = _form_and_emit(ledger)
-    recovered = _standing(ledger)["current_presentation"]
+    recovered = list(_standing(ledger)["presentations"].values())[-1]
     assert recovered["presentation_id"] == c1["presentation_id"]
     assert recovered["alternatives"] == c1["alternatives"]
     assert recovered["coordinate_bindings"] == c1["coordinate_bindings"]
@@ -403,7 +450,7 @@ def test_next_console_iteration_recovers_c1_and_forms_c2():
     assert len(standing["presentations"]) == 3
     assert output.count("Bounded Presentation") == 3
     _, second_id, third_id = list(standing["presentations"])
-    assert standing["current_presentation"]["presentation_id"] == third_id
+    assert list(standing["presentations"])[-1] == third_id
     c1 = standing["presentations"][second_id]
     c2 = standing["presentations"][third_id]
     # C2's recorded formation consumed the Standing Evidence containing
@@ -419,12 +466,12 @@ def test_next_console_iteration_recovers_c1_and_forms_c2():
     assert identities(c1) == identities(c2)
 
 
-def test_first_interaction_preserves_produced_after_without_comparing():
+def test_first_interaction_attaches_no_presentation_to_the_capture():
     ledger, _ = _run_console("first\n")
 
-    # Preserved temporal lineage is retained as legitimate basis for a later
-    # responsible relation occurrence; it is not itself Applicability,
-    # participation, response, or selection.
+    # No Presentation is named by the capture.  Emission and ingress
+    # occurrences are preserved independently; any relation between them is a
+    # later responsible occurrence's to establish and record.
     kinds = {event.kind for event in ledger.list("w")}
     assert kinds == {
         *_INGRESS_KINDS,
@@ -437,7 +484,8 @@ def test_first_interaction_preserves_produced_after_without_comparing():
         if event.kind == "operator.ingress.ingress_occurred"
     )
     first_presentation = next(iter(_standing(ledger)["presentations"].values()))
-    assert ingress.payload["produced_after_presentation_ref"] == first_presentation["presentation_id"]
+    assert "produced_after_presentation_ref" not in ingress.payload
+    assert first_presentation["presentation_id"]
 
 
 def test_direct_one_attempt_view_behavior_remains_valid():
@@ -467,10 +515,14 @@ def test_formation_is_recorded_before_emission_and_they_stay_distinct():
         alternative_sources=CLOSED_CHOICE_FIXTURE_SOURCES,
     )
     assert presentation["emitted_event_id"] is None
-    assert _standing(ledger)["current_presentation"] is None
+    # Formation is recovered; its emission coordinate stays unrecorded until
+    # an emission occurrence supplies it.
+    recorded = list(_standing(ledger)["presentations"].values())[-1]
+    assert recorded["formed_event_id"] == presentation["formed_event_id"]
+    assert recorded["emitted_event_id"] is None
 
     emit_operator_presentation(
         ledger, presentation=presentation, output_stream=StringIO()
     )
-    recovered = _standing(ledger)["current_presentation"]
+    recovered = list(_standing(ledger)["presentations"].values())[-1]
     assert recovered["presentation_id"] == presentation["presentation_id"]

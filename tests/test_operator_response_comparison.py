@@ -44,7 +44,6 @@ def _capture_after(ledger, presentation, text, *, workspace="w", session="s"):
         session_id=session,
         captured_ingress=capture_stdin_material(StringIO(text)),
         output_stream=StringIO(),
-        produced_after_presentation=presentation,
     )
     return projection["current_standing"]["preserved_ingress"]["evidence_event_id"]
 
@@ -84,26 +83,32 @@ def test_compare_requires_an_emitted_presentation_with_recorded_reference():
     with pytest.raises(ValueError, match="no emission evidence"):
         _compare(ledger, presentation, ingress_event_id)
 
+    # The recorded-chain preconditions that remain are still enforced.
     emitted = _emit_presentation(ledger)
-    unreferenced = _capture_after(ledger, None, "1\n")
-    with pytest.raises(ValueError, match="does not record production after"):
-        _compare(ledger, emitted, unreferenced)
+    with pytest.raises(ValueError, match="not a presentation formation event"):
+        _compare(
+            ledger,
+            {**emitted, "formed_event_id": ingress_event_id},
+            _capture_after(ledger, emitted, "1\n"),
+        )
+
+    # Nothing asserts here that an arbitrary recorded Presentation and an
+    # arbitrary recorded ingress may participate in one Compare.  The recency
+    # pairing that was removed was false, and its absence does not make every
+    # pairing applicable: 01.Standing.E.1 requires the Responsibility
+    # performing the exact Act to determine Applicability for each proposed
+    # input, and a caller supplying two references is not that determination.
+    # That route is unrecovered, so this machinery stays dormant.
 
 
-def test_response_preserves_exact_lineage_to_formation_and_emission():
+def test_comparison_lineage_records_the_subjects_it_consumed():
     ledger = EventLedger()
     presentation, ingress_event_id, finding = _exchange(ledger, "1\n")
 
+    # The ingress names no Presentation; the comparison's own lineage is what
+    # records which subjects it consumed.
     ingress = ledger.get(ingress_event_id)
-    assert ingress.payload["produced_after_presentation_ref"] == (
-        presentation["presentation_id"]
-    )
-    assert ingress.payload["produced_after_presentation_formed_event_id"] == (
-        presentation["formed_event_id"]
-    )
-    assert ingress.payload["produced_after_presentation_emitted_event_id"] == (
-        presentation["emitted_event_id"]
-    )
+    assert not any(k.startswith("produced_after") for k in ingress.payload)
     comparison_event = ledger.get(finding["comparison"]["event_id"])
     assert comparison_event.payload["lineage"] == [
         presentation["formed_event_id"],

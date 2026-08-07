@@ -188,7 +188,7 @@ chain whose first link was never determined.
 | its `the exact emitted Presentation that preceded` presupposes uniqueness | **A** |
 | recovering emission order is legitimate | **A** |
 | `current` asserts more than `latest` | **C** — the distinction is real; whether `latest` alone is lawful here is not determined |
-| the produced-after field should be removed | **not asserted** — it is the natural place to preserve an established relation, and removing it would leave a later relation unrecordable |
+| the produced-after field should be preserved as the natural place for a later established relation | **withdrawn** — see §10 |
 | dormant machinery is defective | **not asserted** — unreachable, not examined |
 
 ## 9. Smallest next boundary
@@ -207,8 +207,65 @@ Whether an ingress occurrence should name one presentation at all, or name the
 set, or name none and leave the relation to a later responsible occurrence, is
 not determined here.
 
+**Refinement.** The framing above assumes a prior C-to-E relation must be
+recovered before a comparison. That is not established. `01.Standing.E.1`
+requires the Responsibility performing an exact Act to determine Applicability
+for every proposed input before that input participates — which a prior
+semantic relation is one possible way to support, and not the only one. The
+immediate missing coordinate is therefore **input Applicability to the exact
+Compare occurrence**, not necessarily a relation subject preceding it.
+
+The distinction that follows matters for what absence licenses:
+
+```text
+no established C-to-E relation
+!= all C-to-E pairings are applicable
+```
+
+Removing a false recency pairing does not make arbitrary pairing lawful. It
+leaves input Applicability undetermined, which is a different and weaker state
+than either.
+
 That question is the same shape as the one three prior investigations reached
 from other directions, now at the earliest point in the live path where a
 relation between two preserved subjects is asserted.
+
+## 10. Correction: the preservation stance is withdrawn
+
+An earlier version of this report declined to recommend removing the
+produced-after coordinates, on the ground that they are *"the natural place to
+preserve an established relation, and removing it would leave a later relation
+unrecordable."* That is withdrawn, along with a second attempt at the same
+stance which proposed keeping the coordinates because the dormant Compare and
+source-recovery paths consume them.
+
+`01.Standing.E:28` holds that a relation is its own bounded claim subject,
+preserving its own participants and roles, assertion, evidence standing, scope,
+producer, consumer and purpose, authority, occurrence, conflicts, and limits. A
+relation therefore does not live inside one participant's record. A later
+responsible occurrence establishing that E relates to some C names both
+subjects itself, and the preserved emission and ingress occurrences are already
+sufficient basis for it to do so.
+
+The stance also failed on its own terms. A slot held open *for* a future
+relation is not neutral while it is being filled: as long as the console
+supplied the field from recency, the record asserted the relation now.
+"Preserve it for later" cannot describe a coordinate that is currently
+populated by an undetermined selection.
+
+The second attempt failed differently and worse: it argued that because
+downstream machinery consumes the coordinates, what was unlawful was the
+producer rather than the field. **A downstream Consumer does not lawfully own
+an upstream coordinate.** Consumer demand is neither ownership nor Warrant, and
+the dependency was evidence that the contamination had propagated rather than
+grounds for preserving its source. That attempt also reached for the
+`alternative_sources` precedent from #2330, which does not carry: alternatives
+are content of the formation that carries them, while a C-to-E relation is
+between two independently preserved subjects.
+
+Recorded here rather than silently amended, because the reasoning that produced
+both attempts — preserve the place where a warranted thing might later go, then
+preserve it because something downstream expects it — is the same reasoning that
+kept the developer alternatives in place across two prior deletions.
 
 No construction or active-law amendment is authorized by this report.
