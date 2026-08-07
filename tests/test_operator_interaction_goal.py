@@ -24,6 +24,7 @@ from seed_runtime.operator_session_standing import (
 from seed_runtime.operator_source_recovery import (
     run_operator_source_recovery_and_meaning_relation,
 )
+from tests.closed_choice_fixture import CLOSED_CHOICE_FIXTURE_SOURCES
 from scripts import seed_local
 
 _GOAL_MEANING = "establish richer shared grammar with the operator"
@@ -47,6 +48,7 @@ def _exchange_with_relation(ledger, text, *, workspace="w", session="s"):
         workspace_id=workspace,
         session_id=session,
         session_standing=_standing(ledger, workspace=workspace, session=session),
+        alternative_sources=CLOSED_CHOICE_FIXTURE_SOURCES,
     )
     emit_operator_presentation(
         ledger, presentation=presentation, output_stream=StringIO()
@@ -128,7 +130,11 @@ def test_changed_proposition_wording_does_not_alter_applicability():
     # structural relations is equally applicable.
     ledger = EventLedger()
     template = form_operator_presentation(
-        ledger, workspace_id="w", session_id="s", session_standing=_standing(ledger)
+        ledger,
+        workspace_id="w",
+        session_id="s",
+        session_standing=_standing(ledger),
+        alternative_sources=CLOSED_CHOICE_FIXTURE_SOURCES,
     )
     template_payload = ledger.get(template["formed_event_id"]).payload
     presentation_id = template["presentation_id"] + "-reworded"
@@ -329,7 +335,11 @@ def test_identification_alone_cannot_produce_goal_standing():
     # the Consumer reports absence and records nothing.
     ledger = EventLedger()
     presentation = form_operator_presentation(
-        ledger, workspace_id="w", session_id="s", session_standing=_standing(ledger)
+        ledger,
+        workspace_id="w",
+        session_id="s",
+        session_standing=_standing(ledger),
+        alternative_sources=CLOSED_CHOICE_FIXTURE_SOURCES,
     )
     emit_operator_presentation(
         ledger, presentation=presentation, output_stream=StringIO()
@@ -364,7 +374,11 @@ def test_missing_consumer_treatment_prevents_goal_standing():
     # goal-consumption gap is preserved.
     ledger = EventLedger()
     template = form_operator_presentation(
-        ledger, workspace_id="w", session_id="s", session_standing=_standing(ledger)
+        ledger,
+        workspace_id="w",
+        session_id="s",
+        session_standing=_standing(ledger),
+        alternative_sources=CLOSED_CHOICE_FIXTURE_SOURCES,
     )
     template_payload = ledger.get(template["formed_event_id"]).payload
     presentation_id = template["presentation_id"] + "-untreated"
@@ -536,7 +550,11 @@ def test_later_presentation_exposes_the_bounded_goal_without_strengthening():
     _establish(ledger)
 
     later = form_operator_presentation(
-        ledger, workspace_id="w", session_id="s", session_standing=_standing(ledger)
+        ledger,
+        workspace_id="w",
+        session_id="s",
+        session_standing=_standing(ledger),
+        alternative_sources=CLOSED_CHOICE_FIXTURE_SOURCES,
     )
     rendered = render_operator_presentation(later)
     assert (
@@ -582,7 +600,11 @@ def test_goal_is_established_end_to_end_from_recorded_exchange():
     } <= kinds
 
     later = form_operator_presentation(
-        ledger, workspace_id="w", session_id="s", session_standing=standing
+        ledger,
+        workspace_id="w",
+        session_id="s",
+        session_standing=standing,
+        alternative_sources=CLOSED_CHOICE_FIXTURE_SOURCES,
     )
     assert "Current bounded interaction goal" in render_operator_presentation(later)
 
@@ -833,6 +855,7 @@ def test_recorded_treatment_without_structural_authority_is_inapplicable():
             workspace_id="w",
             session_id="s",
             session_standing=_standing(ledger),
+            alternative_sources=CLOSED_CHOICE_FIXTURE_SOURCES,
         )
         template_payload = ledger.get(template["formed_event_id"]).payload
         presentation_id = template["presentation_id"] + "-" + expected_basis
