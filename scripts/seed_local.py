@@ -5666,20 +5666,33 @@ def run_persistent_operator_console(
     """Own process-local repetition around bounded operator interactions."""
     output_stream.write("Seed console: `exit` exits.\n")
     output_stream.flush()
+    # The first outward bounded Act uses the ordinary Presentation path;
+    # empty Standing is lawful Evidence and does not fabricate an Unknown.
+    session_standing = project_operator_session_standing(
+        ledger, workspace_id=workspace_id, session_id=session_id
+    )
+    presentation = form_operator_presentation(
+        ledger,
+        workspace_id=workspace_id,
+        session_id=session_id,
+        session_standing=session_standing,
+    )
+    emit_operator_presentation(
+        ledger, presentation=presentation, output_stream=output_stream
+    )
     while True:
         captured_ingress = capture_stdin_material(input_stream)
         # `exit` is a process-boundary console escape, not constitutional
-        # local stopping: it is examined before any recording, produces no
-        # events, and never enters the presentation grammar.  Its exact byte
-        # form is disjoint from every recorded response coordinate; the
-        # recorded local-stop alternative is reached through its own
-        # coordinate and recorded Compare/Identification instead.
+        # local stopping: it is examined before operator-ingress recording,
+        # produces no exchange events, and never enters Presentation
+        # coordinates.  C0 formation and emission have already occurred; the
+        # local-stop alternative uses recorded Compare/Identification.
         if captured_ingress.eof or _is_console_exit(
             captured_ingress.exact_bytes, captured_ingress.encoding_testimony
         ):
             return
         # Project Standing from this session's earlier recorded events before
-        # the next bounded interaction; the first interaction carries none.
+        # the next bounded interaction, including C0 on first ingress.
         session_standing = project_operator_session_standing(
             ledger, workspace_id=workspace_id, session_id=session_id
         )
