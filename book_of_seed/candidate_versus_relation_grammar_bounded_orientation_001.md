@@ -21,7 +21,8 @@ The executive disposition is therefore:
 ```text
 exact phrase: not recovered within the inspected repository boundary
 constitutional shape required to own the proposed Compare: Unknown
-adjacent constitutional shapes: partially recovered and non-composable
+adjacent constitutional shapes: partially recovered;
+their composition remains unwarranted
 ```
 
 The controlling proof is not lexical. Active law does not use `relation
@@ -307,10 +308,10 @@ Cells are populated only from independent evidence for the exact family.
 | Coordinate | Operator response representation vs Presentation coordinate | Proposed candidate-versus-relation-grammar family | Testimony vs testimony | Constitutional grammar vs bounded expectation vs implementation witness |
 | --- | --- | --- | --- | --- |
 | exact Responsibility | bounded response comparison under `08.Communication` | Unknown | bounded testimony comparison under `05.Testimony.E` | Fidelity production under `01.External.D` |
-| Producer | runtime comparison function produces recorded result; constitutional local producer is the responsible response-comparison boundary | Unknown | local bounded comparison boundary; no universal named producer | bounded Fidelity comparison boundary |
+| Producer | exact Producer not independently recovered; the runtime function forms and records the result, but function != constitutional Producer | Unknown | exact Producer Unknown for any particular occurrence; the general Responsibility does not identify the participant | exact Producer Unknown for any particular occurrence; the bounded comparison Responsibility produces a finding, but Responsibility boundary != Producer |
 | Consumer | Identification consumes the response comparison finding where binding is applicable | Unknown | Unknown for a particular result | downstream cross-seam consumers may preserve an already-produced finding's limits; particular Consumer Unknown |
 | proposed compared subjects or representations | captured ingress content and exact recorded response-coordinate set of one Presentation | candidate side not admitted; proposed grammar representation not recovered | multiple independently preserved testimonies or findings | constitutional grammar, bounded expectation, implementation witness |
-| Applicability | exact exchange lineage and recorded Presentation preconditions; binding Applicability belongs to later Identification | not recovered | local to the instantiated comparison; no universal determination specified | declared seam or Scope bounds the comparison |
+| Applicability | the exact Act owner's applicability responsibility is established; no separate input-to-Compare Applicability finding is recovered from the implementation precondition checks | not recovered | exact occurrence-local Applicability not recovered by the general comparison clause | exact input-to-act Applicability not recovered merely from the declared seam or Scope |
 | Admission | comparison precondition checks are evidenced; no separately named Admission occurrence is established | not recovered | Unknown for a particular instantiation | Unknown for a particular instantiation |
 | Authority | bounded to one exchange and exact coordinate equality; no intent, meaning, selection, authorization, or treatment | Unknown | comparison must preserve each input's Authority; exact comparison Authority local | constitutional grammar and declared bounded expectation within seam/Scope; no global certification or correction Authority |
 | Evidence | Presentation formation/emission, capture, ingress, and exact reference lineage | Unknown | each input's preserved support basis plus exact local occurrence Evidence | constitutional subject, expectation, witness, Evidence/provenance, invariants, conflicts, Unknowns |
@@ -349,6 +350,16 @@ Response-coordinate Compare is not testimony comparison by identity. Testimony
 comparison is not the proposed candidate-versus-grammar family by identity.
 Fidelity does not establish a generic relation-grammar representation.
 
+Producer identity is reserved throughout this matrix:
+
+```text
+Producer
+!= function
+!= Responsibility
+!= Act
+!= occurrence
+```
+
 ## 7. Candidate-side Standing
 
 | Candidate-side question | Finding |
@@ -367,13 +378,12 @@ structural testimony. Candidate representation availability does not establish
 Applicability. Applicability would not establish Admission. Admission would not
 establish that a comparison occurred.
 
-The constructor is the runtime producer of the carrier instance in ordinary
-implementation terms. Constitutional Producer identity for the represented
-Claims remains Unknown because the caller's source role, formation occurrence,
-provenance standing, Authority, and Warrant are neither validated nor supplied
-by copying. The carrier has no event identity, no Evidence-standing result, and
-no Seed-native Standing beyond what its exact read-only preservation boundary
-witnesses.
+The constructor forms the carrier instance in runtime. Constitutional Producer
+identity for the represented Claims remains Unknown because the caller's source
+role, formation occurrence, provenance standing, Authority, and Warrant are
+neither validated nor supplied by copying. The carrier has no event identity,
+no Evidence-standing result, and no Seed-native Standing beyond what its exact
+read-only preservation boundary witnesses.
 
 ## 8. Proposed grammar-side Standing
 
