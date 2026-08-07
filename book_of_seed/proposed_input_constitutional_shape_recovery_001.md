@@ -12,26 +12,46 @@ bounding Proposal requires. Verified at `67e5014`.
 
 ## 1. Executive answer
 
-**`proposed input` is a local role term, not a recovered constitutional
-coordinate.** It has no producing Act, no owning Responsibility, no Standing,
-and no coordinates of its own anywhere in active law. It appears in exactly one
-clause, which introduced it in order to name the thing whose Applicability that
-clause assigns.
+**`proposed input` is antecedent vocabulary used by the Applicability grammar.
+What it names constitutionally is not recovered.** It appears in exactly one
+clause, which introduced it in order to refer to the thing whose Applicability
+that clause assigns.
+
+Four readings remain open, and this report picks none:
 
 ```text
-Test                                          Result
-a distinct constitutional coordinate          no
-a result produced by another Responsibility   no — none is named
-a local role assigned within an exact Act     closest supported reading
-a descriptive word for an existing shape      partly — see §4
-an unresolved compression                     not established either way
+A  an independently established constitutional relation or role
+B  a local role internal to an Act-owning Responsibility
+C  the descriptive condition "an input this exact Act is considering
+   for Applicability", with no independent thing at all
+D  unresolved vocabulary compressing some missing Responsibility
 ```
 
+**C would dissolve the missing edge entirely**, since nothing would need to
+occur for a subject to be considered — the act owner's consideration would be
+the whole content. **D would make the edge a compression to be decompressed.**
+A and B would make it a thing with an origin to find. The clause does not
+distinguish them.
+
+What is recovered, stated in the form the corpus requires:
+
+```text
+no producing Act or occurrence is recovered
+no owning Responsibility is recovered
+no independent proposed-input result or Standing is recovered
+no coordinates belonging to the term are recovered
+```
+
+Each of those is `not recovered`, not `absent`. `:49` itself lists *"a proposed
+input"* among things conditional applicability does not establish, which treats
+it as the sort of thing that could be established — so a categorical negative is
+not available.
+
 The governing question — *what makes a preserved subject a proposed input* —
-therefore has no recovered answer, and the reason is sharper than "the Book is
-silent." The Book uses the term only where it needs a name for an input under
-consideration by an act, and says what does **not** produce that status without
-ever saying what does.
+has no recovered answer, and under reading C it may be a question with no
+subject. The Book uses the term only where it needs to refer to an input an act
+is considering, and says what does **not** confer that status without ever
+saying what does.
 
 ## 2. Where the term lives
 
@@ -74,8 +94,11 @@ recovery of proposal underlies the term.
 
 ### Q1 — is `proposed input` a constitutional result or Standing?
 
-**No.** Nothing in active law produces it, establishes it, or attributes
-standing to it.
+**Not recovered as one.** Nothing located in active law produces it,
+establishes it, or attributes standing to it. That is the absence of a
+recovery, not a recovered absence: `:49`'s wording treats a proposed input as
+something that could be established, so this report does not conclude that no
+such result or Standing exists.
 
 Contrast a term active law does treat as a kind. `01.External.F` says of
 candidates:
@@ -88,7 +111,7 @@ where those are unresolved their Unknown standing must remain explicit. Nothing
 comparable is said of a proposed input anywhere.
 
 ```text
-Q1  not a constitutional result or Standing        recovered negative
+Q1  no independent proposed-input result or Standing is recovered
 ```
 
 ### Q2 — what Act or occurrence produces the proposal?
@@ -122,8 +145,8 @@ Q2  producing Act or occurrence                    Unknown
 
 ### Q3 — what Responsibility owns proposal?
 
-**None is assigned.** `01.Standing.E.1` assigns the *applicability* duty by
-name, in the same sentences, to the act-owning responsibility. It assigns
+**None is assigned in any clause located here.** `01.Standing.E.1` assigns the
+*applicability* duty by name, in the same sentences, to the act-owning responsibility. It assigns
 proposal to nobody.
 
 As recorded in the prior report, that silence is not the silence of a clause
@@ -161,7 +184,7 @@ Q4  local to the exact act and proposed use        warranted
 
 ### Q5 — what coordinates does proposal carry?
 
-**None of its own.** Every coordinate `01.Standing.E.1` names belongs to the
+**None are recovered.** Every coordinate `01.Standing.E.1` names belongs to the
 *applicability determination*, not to the proposal:
 
 ```text
@@ -209,9 +232,9 @@ Q6  same-occurrence proposal                       Unknown, not granted
 
 ## 4. What the term actually does in the clause
 
-Reading the five occurrences together, `proposed input` functions as a **role
-name for a subject under consideration by an exact act**, used to state duties
-that attach to the act owner:
+Reading the five occurrences together, `proposed input` is the phrase the clause
+uses to refer to a subject an exact act is considering, in the course of stating
+duties that attach to the act owner:
 
 ```text
 :37  every proposed input must have applicability determined before it
@@ -231,16 +254,22 @@ Every sentence uses the term to bound something *else* — the act owner's duty,
 an inference, a participation claim, an occurrence's permissions. None gives the
 role a producer, an occurrence, a result, or a standing.
 
-That is the shape of a **role assigned within an exact act**, not of an
-independent constitutional kind. The role is real in the sense that duties
-attach to it; it is not recovered as a thing that is produced.
+What that pattern shows is that the term is **used to refer** rather than
+defined — every sentence needs a phrase for "the input this act is considering",
+and supplies one. It does not show what the phrase names.
 
-**Where the reading stops.** It does not follow that proposal is *merely*
-descriptive. `:49` treats a proposed input as something that could be
-established, and `01.Standing.E.1` conditions a real duty on the role obtaining.
-Whether something must occur for a subject to hold the role — and if so what —
-is exactly what is unrecovered. This report does not resolve it, and does not
-claim the term dissolves.
+An earlier version of this report read the pattern as establishing a **role
+assigned within an exact act**. That is withdrawn. Duties attaching to a phrase
+does not establish that the phrase names a role: under reading C the duty
+attaches to the act owner's consideration of a subject, with no role conferred
+on the subject at all, and the clause reads identically either way.
+
+**Where the reading stops, in both directions.** It does not follow that
+proposal is merely descriptive — `:49` treats a proposed input as something that
+could be established, and a real duty is conditioned on the phrase applying. Nor
+does it follow that a role exists to be conferred. Both remain open, and this
+report resolves neither. It neither claims the term dissolves nor preserves it
+as a constitutional noun.
 
 ## 5. Arrows, independently classified
 
@@ -260,24 +289,60 @@ claim the term dissolves.
 ```text
 preserved subject
         │
-        │   whether anything must occur for this subject to hold the
-        │   role of proposed input to an exact Act — and if so, what
-        │   Act, occurrence, or Responsibility does it
-        ▼
-   proposed input                    role recovered; production Unknown
+        │   what is "proposed" doing here at all?
         │
+        ▼
+   proposed input                    antecedent vocabulary;
+        │                            what it names is not recovered
         ▼
 Applicability determination          owner, form, and four results recovered
 ```
 
-The edge is unrecovered, and the recovery narrows what kind of thing is
-missing. It is not a missing *coordinate* of a known kind: `proposed input` has
-no coordinates. It is not a missing *owner* of a known act: no proposal act is
-named. What is missing is whether the role is conferred by an occurrence at all,
-or obtains from the act owner's own consideration of a subject — and active law
-supports neither reading.
+The smallest unresolved question is not *what confers the role*, because that
+phrasing already answers one of the four readings. It is:
 
-No roadmap beyond that edge is offered.
+```text
+does "proposed" name anything constitutional at all,
+and if so which of A, B, C, or D?
+```
+
+The recovery narrows what would count as an answer. It is not a missing
+*coordinate* of a known kind — none is recovered for the term. It is not a
+missing *owner* of a named act — no proposal act is recovered. Under reading C
+there is nothing missing at all, and the edge in the diagram above would not
+exist. Active law distinguishes none of these, and this report does not.
+
+No roadmap beyond that question is offered.
+
+## 7. Correction record
+
+Two claims in the previous version were corrected. The provenance finding, the
+occurrence counts, the distinctness table, and the Q2/Q4/Q6 dispositions are
+unchanged.
+
+```text
+1. it concluded that `proposed input` is "a local role term", and framed
+   the closing question as what confers the role. That decides reading B
+   over C and D without warrant. Duties attaching to a phrase does not
+   establish that the phrase names a role -- under C the duty attaches to
+   the act owner's consideration and the clause reads identically. The
+   four readings are now recorded as open and the closing question is
+   "what is proposed doing here at all".
+
+2. its executive stated "it has no producing Act, no owning
+   Responsibility, no Standing, and no coordinates of its own", while the
+   detailed dispositions in the same report recorded those as Unknown.
+   `not recovered` is not `absent`, and :49's own wording -- listing "a
+   proposed input" among things conditional applicability does not
+   establish -- treats it as something that could be established, which
+   makes a categorical negative unavailable. All four are now stated as
+   not recovered, and Q1's "recovered negative" is withdrawn.
+```
+
+The second defect is this author's most repeated one and its third
+occurrence in a single session: the body recorded Unknown, the summary
+recorded absence. It recurred here in a report whose subject is the
+difference between what a clause says and what a reader supplies.
 
 Report only. No active-law, runtime, test, projection, or prior-report
 amendment.
