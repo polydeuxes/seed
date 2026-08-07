@@ -2,65 +2,51 @@
 
 ## 1. Executive
 
-`candidate equivalence` does not name a new constitutional subject. **But it
-does not dissolve into nothing, and this recovery reaches a different verdict
-from #2339.** The phrase resolves onto an established distinction that active
-law states three times in its own form, and seven times as a family across
-three chapters:
+`candidate equivalence` does not establish a new constitutional subject. It is
+not a second artifact standing beside the candidate.
+
+That is the whole of what this report establishes. **As merged at #2340 this
+report claimed considerably more.** Those claims are withdrawn here; §9 records
+each one and why. Readers who consumed the merged version should treat its
+executive conclusion as superseded by this section.
+
+What the phrase meant historically is recoverable from the commit that
+introduced it. #2244 formed it as a bounded proposed equivalence concerning a
+Presentation, bounded by the four PESC coordinates:
 
 ```text
-meaning assertion carried  !=  meaning relation warranted
-                                             01.Kinds:86
+Presentation
++ proposed equivalence to some subject / meaning / relation / grammar / role
++ Scope
++ Consumer-purpose
 ```
 
-`candidate equivalence` is the left-hand side. It is material carrying or
-proposing the assertion that X identifies, represents, or expresses Y, before
-any responsible occurrence has warranted that relation. Active law has a
-dedicated clause for exactly this, `01.Kinds:32`:
+and said explicitly that the candidate equivalence was not thereby true or
+established. That is **attributed PESC orientation vocabulary**, not a
+recovered Seed constitutional object. PESC does not appear in active law in any
+chapter; the reports record it as operator-attributed, from #2007 onward.
 
-> Material may carry or propose the assertion that X identifies, represents,
-> or expresses Y **without warranting that meaning relation**.
+So the phrase names a proposal under consideration, in vocabulary Seed has not
+adopted. It is not nothing, and it is not a subject.
 
-The two halves map separately and both land:
+## 2. Provenance
 
-```text
-equivalence  → meaning relation      01.Kinds:30, 46 uses in active law
-candidate    → carried/proposed but  01.Kinds:32, and 01.Kinds:28's
-               not yet warranted       "Candidate relation, relation
-                                        testimony, and established
-                                        relation standing remain distinct"
-```
+**Both terms in the Shape B rendering were introduced by the same commit.**
+`git log -S` returns #2244 as the introducing commit for `candidate
+equivalence` and for `applicable relation grammar` alike — a correction round
+whose stated subject was correcting PESC equivalence. Shape B was rendered as
+*compare the candidate equivalence with the applicable relation grammar*, and
+neither term existed in the corpus before that commit.
 
-So the cat test returns a third possible answer, distinct from the two seen so
-far. `proposed input` named nothing and dissolved. `relation grammar` named
-nothing and mapped onto a dimension list. `candidate equivalence` names
-something real that **already has a name**, and a well-developed one.
-
-## 2. Why this was worth asking anyway
-
-The phrase carries the same provenance defect that #2339 recorded, and worse:
-
-**Both operands of Shape B were introduced by the same commit.** `git log -S`
-returns #2244 as the introducing commit for `candidate equivalence` and for
-`applicable relation grammar` alike — a correction round whose stated subject
-was correcting PESC equivalence. Shape B is rendered as *compare the candidate
-equivalence with the applicable relation grammar*, and neither operand existed
-in the corpus before that commit.
-
-**`candidate equivalence` is absent from active law**, in 65 uses across nine
-reports. **PESC is absent from active law entirely**, across every chapter.
-PESC is attributed operator-origin observation vocabulary, recovered in reports
-from #2007 onward; the reports say so themselves.
-
-So the provenance finding holds and is stronger than at #2339. What differs is
-the outcome: the term turns out to have a lawful referent that the reports
-never connected it to.
+`candidate equivalence` is absent from active law across its 65 uses in nine
+reports. This holds together with #2339's finding on the other term, and the
+two together are the substantive result of the pair of investigations.
 
 ## 3. `candidate` is established — the fan-out
 
-Unlike `proposed` (zero corresponding act) and `grammar` (zero owner in twenty
-constructions), `candidate` is real. It appears in fourteen active-law files.
-The recurring constructions:
+Unlike `proposed` (zero corresponding act) and `grammar` (zero owner across
+twenty constructions), `candidate` is real. It appears in fourteen active-law
+files. The recurring constructions:
 
 ```text
 source candidate          30    interpretation candidate   5
@@ -70,7 +56,7 @@ bounded candidate          4    mechanism candidate         2
                                 candidate production        2
 ```
 
-Two distinct patterns, and they mean different things:
+Two distinct patterns, meaning different things:
 
 ```text
 <kind> candidate   a candidate of an established kind
@@ -81,92 +67,72 @@ candidate <X>      X of the candidate
                    != rendered content", "full candidate meaning"
 ```
 
-`candidate equivalence` takes the second form. Read under active law's own
-usage it means *the equivalence claimed by the candidate* — a property of the
-candidate, not a second subject standing beside it. This is curator's reading
-C, and the corpus supports it structurally rather than by argument.
+`candidate equivalence` takes the second form, reading as *the equivalence
+claimed by the candidate* — a property of the candidate rather than a second
+subject beside it. This is the structural support for §1.
 
-Decisively, `01.Kinds:28` makes `candidate` a **standing level**, not a kind:
+What active law states about candidate relations, and only this:
 
-> Candidate relation, relation testimony, and evidence-supported or
-> established relation standing remain distinct.
+```text
+01.Kinds:28   Candidate relation, relation testimony, and
+              evidence-supported or established relation standing
+              remain distinct.
+```
 
-Three standings of the same relation. A candidate relation is not a different
-subject from the relation; it is the relation before warrant.
+Three things held apart. Searching active law for a clause making `candidate` a
+standing level, or making a candidate relation the same relation at an earlier
+standing, returns nothing.
 
 ## 4. `equivalence` is not established
 
-The opposite result. `equivalence` appears **once** in all of active law, at
-`01.External:28`, and that one appearance is a limiting clause: a declared
-measurement may produce bounded findings of exact equality, and those findings
-"do not establish structural, grammatical, or semantic meaning, or
-constitutional standing beyond the measurement."
-
-The single time active law touches the equivalence family, it denies that
-equality findings establish meaning.
+`equivalence` appears **once** in all of active law, at `01.External:28`, and
+that appearance is a limiting clause: a declared measurement may produce
+bounded findings of exact equality, and those findings "do not establish
+structural, grammatical, or semantic meaning, or constitutional standing beyond
+the measurement."
 
 Nor is it a relation kind. Active law names relation kinds freely — meaning
-relation (46), warranted relation (15), uptake relation, admitted relation,
-participation relation, input-to-act relation, consumer-side relation,
-warrant-examinable relation. Searching for `equivalence relation`, `relation of
-equivalence`, or `asserts equivalence` returns nothing.
+relation (46 uses), warranted relation (15), uptake relation, admitted
+relation, participation relation, input-to-act relation, consumer-side
+relation, warrant-examinable relation. Searching for `equivalence relation`,
+`relation of equivalence`, or `asserts equivalence` returns nothing.
 
-So the compound joins an established standing qualifier to an unestablished
-relation assertion.
+So the compound joins an established qualifier to an unestablished relation
+assertion.
 
-## 5. What it is reaching for
+## 5. The meaning relation is a prerequisite, not the referent
 
-`01.Kinds:30` defines the form:
+Active law does give a meaning-assertion shape, at `01.Kinds:32`: "Material may
+carry or propose the assertion that X identifies, represents, or expresses Y
+without warranting that meaning relation." As merged at #2340 this report
+equated `candidate equivalence` with that carried assertion.
 
-> Meaning is one bounded relation form: subject X identifies, represents, or
-> expresses subject or proposition Y. [...] **Meaning is not a new kind,
-> artifact, registry, or object.**
+That equation is withdrawn, because the introducing report states the opposite
+relation. #2244:
 
-The reports describe the candidate as an equivalence "between a presentation
-and a proposed subject, meaning, relation, grammar, or role." A presentation
-standing for a subject is X representing Y. That is the meaning relation form,
-stated in the clause.
+> Seed cannot inspect uninterpreted English symbols and directly recover their
+> meaning. **A candidate equivalence requires some bounded meaning-relation
+> bridge**, such as acquired common grammar, attributed meaning relations,
+> operator-mediated examples, or a recovered translator or parser competency.
 
-And the candidate stage of it has its own sentence, `01.Kinds:32`, quoted in
-§1. The distinction is then restated as a non-equivalence. In its own
-carried-or-proposed form, three times:
-
-```text
-01.Kinds:86       meaning assertion carried != meaning relation warranted
-01.External:47    material carries or proposes meaning
-                                            != meaning relation warranted
-01.External:48    external material carries or proposes meaning
-                                            != Seed-native meaning
-                                               relation warranted
-```
-
-And as a wider `X != meaning relation warranted` family, seven statements
-across three chapters and five files, adding `01.Kinds:89` (attribution),
-`03.Prerequisite:174`, `03` construction-and-establishment:37, and
-`08.Communication:67` (all binding result).
-
-A distinction restated at that spread is not an unfilled coordinate. It is one
-of the more developed things in the corpus, and Shape B was built beside it
-without reaching for it.
-
-## 6. The act between the operands is already named
-
-This is the part worth carrying forward, and it is a positive finding rather
-than an excision.
-
-Restating Shape B's operands in established vocabulary:
+The meaning relation is what makes forming a candidate equivalence possible:
 
 ```text
-was    compare the candidate equivalence
-       with the applicable relation grammar
-
-is     a carried or proposed meaning assertion,           01.Kinds:32
-       considered under the constitutional dimensions
-       applicable to that relation                        01.Kinds:30
+bounded meaning-relation bridge  →  enables  →  candidate equivalence
 ```
 
-Active law then supplies the act that moves between them, and does so in two
-separate chapters:
+Collapsing that into `candidate equivalence = carried meaning assertion` folds a
+prerequisite into the thing it supports. And the bridge is not uniquely a
+meaning relation — #2244 lists four alternatives, of which attributed meaning
+relations are one.
+
+What survives: the meaning-assertion shape at `01.Kinds:32` is real, is
+well-developed in active law, and stands in a *supporting* position to the
+candidate equivalence rather than being it.
+
+## 6. What relation Warrant is, and what it is not
+
+Active law states a warranting act for bounded relations, twice:
 
 ```text
 01.Kinds:32       A responsible occurrence warrants only the bounded
@@ -180,67 +146,98 @@ separate chapters:
  and-explanation)  and preserved Unknowns.
 ```
 
-Owner form, act, input, governing conditions, and result standing are all
-stated, twice, in Grammar and Standing and again in Evidence and Knowledge.
-The campaign has been looking for the act between two operands while active
-law states it in the same chapter that defines both, and repeats it in
-another.
+That is real, and it is worth having located.
 
-## 7. Limits, and one thing this must not be read as
+As merged at #2340 this section was headed *"the act between the operands is
+already named"* and presented relation Warrant as the act Shape B was describing.
+**Withdrawn, on two grounds.**
+
+First, after #2339 there are no longer two constitutional operands. The
+applicable dimensions are not a second subject, so an act "between the operands"
+has nothing to sit between.
+
+Second, relation Warrant is not automatically the act #2244 was reaching for
+when it wrote *examine the candidate through the grammar appropriate to the
+relation*. Warranting a relation and considering a candidate under the
+dimensions applicable to it are not shown to be the same act, and this report
+does not show it.
+
+The withdrawn heading was also contradicted by this report's own §7, which
+already said the identity of the act was the next question. The heading
+asserted what the body denied.
+
+## 7. Where this leaves Shape B
+
+Restating what survives, with no claim about the act:
+
+```text
+some candidate claim or mapping concerning the presented thing
+
+considered under the constitutional dimensions applicable to
+whatever relation is being claimed
+```
+
+The next question is the **verb**. Not what owns `CandidateEquivalence`, and not
+what owns `RelationGrammar` — both noun hunts are finished, and both were
+distractions. And not yet an answer either: neither *it is Warrant* nor *it is
+Compare* is established.
+
+The open question is which of `examine`, `compare`, `consider`, and `warrant`
+names an actual Responsibility here, and which are ordinary verbs describing
+what it does. That is the next cat target, and the act word is now the only
+unrecovered part of the sentence.
+
+## 8. Limits
 
 **The symmetry question is open.** `01.Kinds:30`'s meaning relation is
-directional — X identifies, represents, or expresses Y. "Equivalence" ordinarily
-suggests symmetry. Where the reports meant a symmetric claim, the meaning
-relation form does not cover it and a separate warrant would be needed. Where
-they meant a presentation standing for a subject, it does. The report usage
-surveyed here reads directional throughout, but this recovery does not settle
-the symmetric case.
+directional — X identifies, represents, or expresses Y — while "equivalence"
+ordinarily suggests symmetry. Surveyed report usage reads directional. The
+symmetric case is not settled here.
 
-**This does not revive the withdrawn #2311 claim.** #2311 asserted that the
-runtime meaning-relation path was a running instance of candidate-versus-grammar
-Compare. That claim was refuted by `01.Kinds:67` — "Dimension-bearing material
-!= the responsible act over that material" — and reverted in full. Nothing here
-reinstates it. This report makes a **vocabulary** mapping between a report
-phrase and an active-law clause. It establishes nothing about
-`operator_meaning_relation` or any other runtime path, and finding the right
-name for an operand is not finding an implemented act.
+**This does not revive the withdrawn #2311 claim** that the runtime
+meaning-relation path is a running instance of candidate-versus-grammar
+Compare. `01.Kinds:67` refuted it and it was reverted in full. Nothing here
+establishes anything about any runtime path; no runtime code contains the term.
 
-**Also not established:** that Shape B's act *is* meaning-relation warranting.
-The operands restate onto `01.Kinds:30`/`:32`; whether the act described is that
-warranting occurrence, a Compare feeding it, or something else is the next
-question, and it is now askable because both operands finally have lawful
-names.
-
-## 8. Effect on prior reports
-
-Recorded here, not amended there. Nine reports carry `candidate equivalence`
-across 65 uses. Most are descriptive and survive restatement. What does not
-survive is the treatment of the phrase as an unrecovered coordinate: the
-campaign recorded it as a term awaiting recovery when its referent was
-already established. No runtime code contains the term, so nothing is
-implemented on it.
-
-`relation_grammar_constitutional_status_recovery_001.md` (#2339) is
-corroborated rather than disturbed. Its reading that `<X> grammar` names the
-rules under which an act operates is independently supported by `01.Kinds:67`,
-which has acts, constraints, and relations operating over dimension-bearing
-subjects "under their independently owned constitutional grammar" — grammar
-owned *by* the act, not standing beside it.
+**#2339 is corroborated rather than disturbed.** `01.Kinds:67` has acts,
+constraints, and relations operating over dimension-bearing subjects "under
+their independently owned constitutional grammar" — grammar owned *by* the act,
+not standing beside it.
 
 ## 9. Correction record
 
-**Defect: the cat test was run three times and the third result was nearly
-forced into the shape of the first two.** `proposed input` dissolved.
-`relation grammar` dissolved. The expected answer for `candidate equivalence`
-was dissolution, and the fan-out on `candidate` immediately contradicted it —
-fourteen active-law files, a stated standing distinction at `01.Kinds:28`.
+Four defects, all in this report as merged at #2340, corrected here at #2341.
+The withdrawn claims were live in `main` between those two commits.
 
-The test asks whether a phrase names something. It does not presuppose the
-answer is no. Two consecutive dissolutions make the third look like a pattern,
-and a pattern is not evidence.
+**Defect 1 — a prerequisite was collapsed into the thing it supports.** The
+draft equated `candidate equivalence` with the carried meaning assertion of
+`01.Kinds:32`, when the introducing report made a meaning-relation bridge a
+*requirement for forming* a candidate equivalence. Enabling condition and
+enabled thing are not the same subject. Corrected in §5.
 
-**How to apply:** run the fan-out before forming the verdict, and treat a
-by-file count of the component words as the first check. `proposed`: zero
-corresponding act. `grammar`: zero owner across twenty constructions.
-`candidate`: fourteen files and a standing clause. The third was visible in one
-command and would have overturned a dissolution written in advance.
+**Defect 2 — a frame outran its clause.** `01.Kinds:28` says candidate relation,
+relation testimony, and established relation standing "remain distinct." The
+draft rendered this as "three standings of the same relation" and concluded that
+`candidate` is a pre-warrant standing level. The clause holds three things
+apart; it does not say they are one thing at three standings, and no clause in
+active law makes `candidate` a standing level. Corrected in §3.
+
+**Defect 3 — the heading asserted what the body denied.** §6 was headed "the act
+between the operands is already named" while §7 of the same document said the
+identity of the act was the next question. This is the recurring defect of
+correcting a body and leaving the frame, appearing in a report whose own
+correction record was about not forcing a result. Corrected in §6.
+
+**Defect 4 — the cat test was run three times and the third result was nearly
+forced into the shape of the first two.** Two consecutive dissolutions made
+dissolution look like the pattern, and a pattern is not evidence. The fan-out
+contradicted it immediately: `proposed` had zero corresponding act, `grammar`
+zero owner across twenty constructions, `candidate` fourteen files.
+
+**The common shape of defects 1 through 3:** each substituted a nearby
+established thing for the unrecovered one — a prerequisite for its dependent, a
+distinctness clause for a standing hierarchy, a warranting act for an
+unidentified act. Finding real neighbouring law is not the same as finding the
+thing, and proximity to established material is where an overclaim is hardest to
+see. All three passed a citation check, because every clause cited was real and
+said what I quoted; what failed was the step from the clause to the conclusion.
