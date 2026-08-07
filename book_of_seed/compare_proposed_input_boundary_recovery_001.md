@@ -13,22 +13,39 @@ projection, constructs nothing, and proposes no machinery. Verified at
 
 ## 1. Executive answer
 
-Two of the three positions are recovered. The first is not.
-
 ```text
-preserved subject  ──?──▶  proposed input  ──▶  Applicable input  ──▶  participation
-                     ↑                     ↑                      ↑
-                 UNRECOVERED           recovered              recovered
-                                    (act-owning              (still requires
-                                     responsibility)          the act to occur)
+preserved subject
+        │
+        ?                          UNRECOVERED
+        ▼
+  proposed input
+        │
+        ▼
+Applicability determination        owner, form, and possible results recovered
+        │
+        ├── applicable
+        ├── inapplicable
+        ├── conflicting
+        └── Unknown
+        │
+        ?                          separate claims, not established here
+        ▼
+   Act occurrence
+   actual participation or reliance
 ```
 
-Active law establishes who determines Applicability, that the Compare
-Responsibility may do so within its own occurrence, and that applicability is
-not participation. It establishes **nothing** about how a preserved subject
-becomes proposed, and it repeatedly denies the candidate mechanisms.
+What is recovered: **who** ordinarily determines Applicability, that the
+Compare Responsibility may determine it within its own bounded occurrence, the
+**form** that determination takes, and the four **results** it may reach.
 
-Per the request, the recovery stops there rather than jumping the gap.
+What is not: how a preserved subject becomes proposed, and who owns that
+proposal.
+
+What is expressly not implied by an applicable result: that the Act occurs,
+that the input is consumed, or that it is relied upon. Those are separate
+claims that active law holds apart, and this report establishes none of them.
+
+Per the request, the recovery stops at the proposal gap rather than jumping it.
 
 ## 2. Q1 — how a preserved subject becomes a proposed input
 
@@ -98,6 +115,21 @@ And `:45`:
 > Before the exact act relies upon a proposed input, the act-owning
 > responsibility must determine or consume applicability standing for that
 > exact input-to-act relation.
+
+The determination's possible results are named at `:47` — the occurrence may
+*"exclude **inapplicable**, **conflicting**, or **Unknown** inputs"* — so the
+determination is four-valued, not a gate that either passes or is absent:
+
+```text
+applicable      the exact input may participate in this exact act under
+                this bounded determination
+inapplicable    excluded
+conflicting     excluded
+Unknown         excluded
+```
+
+An applicable result is a bounded determination about an input-to-act relation.
+It is not the act, not consumption, and not reliance.
 
 ```text
 default owner        the responsibility performing the exact act      warranted
@@ -190,8 +222,8 @@ Q5 disposition   warranted — same-occurrence determination is permitted
 
 ## 7. Q6 — does `05.Testimony.E` supply input-formation grammar?
 
-**No.** It names a kind constraint on what may be consumed once consumption is
-lawful, and a preservation obligation during consumption:
+**No.** It positively names Compare input kinds and imposes a preservation
+condition on their consumption:
 
 > A bounded comparison may consume multiple independently preserved testimonies
 > or findings **only while preserving** each input's attribution, provenance,
@@ -199,16 +231,26 @@ lawful, and a preservation obligation during consumption:
 > Unknowns, standing, and forbidden inferences.
 
 ```text
-supplies      the permitted input kinds                     warranted
+supplies      testimony and finding as positively named Compare
+              input kinds                                   warranted
 supplies      a preservation obligation during consumption  warranted
+
+does not supply   that only testimony or finding may ever be a Compare
+                  input — the wording names kinds positively and states
+                  no closure                                Unknown
 does not supply   how a subject becomes proposed
 does not supply   who proposes it
 does not supply   applicability determination (that is 01.Standing.E.1's)
 ```
 
-The two clauses are complementary and neither covers the gap: `05.Testimony.E`
-says *what kind* may be consumed, `01.Standing.E.1` says *who determines
-whether this one may be*, and nothing says *how this one came to be offered*.
+Exhaustiveness is left **Unknown**. `only while preserving` in that sentence
+conditions the manner of consumption, not the membership of the input kinds,
+and no other clause located here establishes closure.
+
+The two clauses are complementary and neither covers the gap:
+`05.Testimony.E` names kinds that may be consumed, `01.Standing.E.1` says who
+determines whether an exact proposed input may be, and nothing says how this
+one came to be offered.
 
 ## 8. Q7 — does the answer differ for testimony versus finding inputs?
 
@@ -254,17 +296,67 @@ to an exact Compare Act — and what Responsibility, if any, owns
 that proposal
 ```
 
-Everything downstream of it is recovered. The act owner may determine
-Applicability inside its own occurrence, needs no separate service, and must
-not treat determination as occurrence. Nothing upstream is: active law
-presupposes proposal in the same sentence that assigns the duty about it, and
-denies every mechanism this thread has considered — availability, similarity,
-equal content, exclusion, and conditional applicability.
+What is recovered downstream of it is narrower than *everything*: the
+ownership, form, and possible results of the Applicability determination. The
+act owner may determine Applicability inside its own occurrence, needs no
+separate service, and must not treat determination as occurrence. **Act
+occurrence and actual participation remain separate claims**, established by
+neither the determination nor this report.
+
+Nothing upstream is recovered: active law presupposes proposal in the same
+sentence that assigns the duty about it, and denies every mechanism this thread
+has considered — availability, similarity, equal content, exclusion, and
+conditional applicability.
 
 Recorded without a proposed answer, per the request. The prior thread's
 assumption that a C-to-E *relation subject* must precede Compare is neither
 established nor excluded by this recovery: a relation is one thing that could
 support a proposal, and active law does not say it is the only one, nor that
 proposal requires one at all.
+
+## 11. Correction record
+
+Four claims in the first version were corrected. The main finding — that the
+proposal boundary is unrecovered — is unchanged, as are the Q1, Q2, Q3, Q4,
+Q5, and Q7 recoveries.
+
+```text
+1. the executive topology drew
+
+     proposed input -> Applicable input
+
+   which collapses a four-valued determination into its success case.
+   01.Standing.E.1:47 names inapplicable, conflicting, and Unknown
+   alongside applicable. Replaced with proposed input -> Applicability
+   determination -> bounded result.
+
+2. it drew
+
+     Applicable input -> participation
+
+   and labelled participation recovered, while section 9's own table
+   listed that arrow as denied and section 6 quoted the clause denying
+   it. Active law holds that applicability success is not act occurrence
+   and that one input applicable is not act occurrence. Withdrawn: an
+   applicable result means the exact input may participate under that
+   bounded determination, nothing more.
+
+3. it called testimony and finding "the permitted input kinds", which
+   implies closure. 05.Testimony.E names them positively and states no
+   exhaustiveness; `only while preserving` conditions the manner of
+   consumption, not the membership of the kinds. Exhaustiveness is now
+   Unknown.
+
+4. section 10 said "everything downstream of it is recovered". Narrowed
+   to the ownership, form, and possible results of the Applicability
+   determination, with Act occurrence and actual participation recorded
+   as separate claims.
+```
+
+The second is the one worth naming: the report established
+`Applicability success != Act occurrence` in its body and then drew the
+arrow that denial forbids, in its own summary diagram. Frames outrunning
+the findings they summarise is this author's most repeated defect, and it
+recurred here inside a report about not overclaiming.
 
 Report only. No active-law, runtime, test, or projection amendment.
