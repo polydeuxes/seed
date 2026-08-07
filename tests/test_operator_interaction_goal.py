@@ -558,33 +558,33 @@ def test_later_presentation_exposes_the_bounded_goal_without_strengthening():
     assert "goal achieved" not in rendered
 
 
-def test_console_establishes_the_goal_end_to_end():
+def test_goal_is_established_end_to_end_from_recorded_exchange():
+    # Driven directly rather than through the console, which no longer selects
+    # participants by recency.  The end-to-end proof is unchanged: a recorded
+    # exchange carries through to bounded interaction-goal Standing, and a
+    # later Presentation exposes it.
     ledger = EventLedger()
-    output = StringIO()
-    seed_local.run_persistent_operator_console(
-        ledger=ledger,
-        workspace_id="w",
-        session_id="s",
-        input_stream=StringIO("1\nexit\n"),
-        output_stream=output,
-    )
+    _exchange_with_relation(ledger, "1\n")
+    result = _establish(ledger)
+    assert result["outcome"] == "goal-standing-established"
+
     standing = _standing(ledger)
     goal = standing["latest_interaction_goal_standing"]
     assert goal is not None
     assert goal["proposition"] == _GOAL_MEANING
-    assert "Current bounded interaction goal" in output.getvalue()
     kinds = {event.kind for event in ledger.list("w")}
     assert {
         "operator.exchange.comparison_occurred",
         "operator.exchange.identification_occurred",
         "operator.presentation.source_recovered",
         "operator.presentation.meaning_relation_established",
-        "operator.interaction.goal_applicability_established",
-        "operator.interaction.goal_admission_established",
-        "operator.interaction.goal_consumption_occurred",
-        "operator.interaction.goal_standing_established",
+        *_GOAL_KINDS,
     } <= kinds
 
+    later = form_operator_presentation(
+        ledger, workspace_id="w", session_id="s", session_standing=standing
+    )
+    assert "Current bounded interaction goal" in render_operator_presentation(later)
 
 def test_consumer_responsibility_and_authority_are_structural():
     ledger = EventLedger()

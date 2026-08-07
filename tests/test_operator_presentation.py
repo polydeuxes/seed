@@ -50,29 +50,72 @@ def _form_and_emit(ledger, *, workspace="w", session="s"):
     )
 
 
-def test_console_forms_c0_before_first_ingress_and_uses_existing_response_path():
+def test_console_forms_c0_before_first_ingress_and_preserves_lineage_only():
     ledger, _ = _run_console("hello\n")
 
+    # A current Presentation existing does not make the newest ingress and the
+    # most recently emitted Presentation participants in one Compare.  The
+    # occurrence and its produced-after testimony are preserved; no Compare or
+    # Identification follows.
     kinds = [event.kind for event in ledger.list("w")]
     assert kinds == [
         "operator.presentation.formed",
         "operator.presentation.emitted",
         *_INGRESS_KINDS,
-        "operator.exchange.comparison_occurred",
-        "operator.exchange.identification_occurred",
         "operator.presentation.formed",
         "operator.presentation.emitted",
     ]
+    assert "operator.exchange.comparison_occurred" not in kinds
+    assert "operator.exchange.identification_occurred" not in kinds
     c0_formed, c0_emitted = ledger.list("w")[:2]
     assert c0_formed.payload["session_standing_evidence_ids"] == []
     assert c0_formed.payload["prior_exchange_finding"] is None
     assert c0_formed.payload["recovered_meaning_relation"] is None
     assert c0_formed.payload["current_interaction_goal"] is None
     assert c0_formed.payload["unknowns"] == []
-    ingress = ledger.list("w")[4]
+    ingress = next(
+        event
+        for event in ledger.list("w")
+        if event.kind == "operator.ingress.ingress_occurred"
+    )
     assert ingress.payload["produced_after_presentation_ref"] == c0_formed.payload["presentation_ref"]
     assert ingress.payload["produced_after_presentation_formed_event_id"] == c0_formed.id
     assert ingress.payload["produced_after_presentation_emitted_event_id"] == c0_emitted.id
+
+
+def test_no_compare_or_identification_follows_console_ingress():
+    # The required proving: C emitted, E preserved, produced-after lineage
+    # retained, and no Compare or Identification occurrence.  Recency does not
+    # make C and E participants in one act; 01.Standing.E.1 requires the act
+    # owner to determine input-to-act Applicability, and no recovered
+    # Responsibility presently proposes those subjects.
+    ledger, _ = _run_console("hello\nsecond\nthird\n")
+
+    kinds = [event.kind for event in ledger.list("w")]
+    assert "operator.exchange.comparison_occurred" not in kinds
+    assert "operator.exchange.identification_occurred" not in kinds
+    assert "operator.presentation.source_recovered" not in kinds
+    assert "operator.presentation.meaning_relation_established" not in kinds
+    assert not any(kind.startswith("operator.interaction.") for kind in kinds)
+
+    # Every ingress still carries its exact produced-after testimony.
+    presentations = [e for e in ledger.list("w") if e.kind == "operator.presentation.formed"]
+    ingresses = [e for e in ledger.list("w") if e.kind == "operator.ingress.ingress_occurred"]
+    assert len(ingresses) == 3
+    for ingress, formed in zip(ingresses, presentations):
+        assert ingress.payload["produced_after_presentation_ref"] == (
+            formed.payload["presentation_ref"]
+        )
+        assert ingress.payload["produced_after_presentation_formed_event_id"] == formed.id
+        assert ingress.payload["produced_after_presentation_emitted_event_id"]
+
+    # Standing projection remains valid and records the occurrences.
+    standing = _standing(ledger)
+    assert len(standing["preserved_ingress_occurrences"]) == 3
+    assert standing["comparisons"] == {}
+    assert standing["identifications"] == {}
+    assert standing["latest_exchange_finding"] is None
+    assert standing["latest_interaction_goal_standing"] is None
 
 
 def test_c0_and_c1_are_formed_and_emitted_in_order():
@@ -276,16 +319,17 @@ def test_next_console_iteration_recovers_c1_and_forms_c2():
     assert identities(c1) == identities(c2)
 
 
-def test_first_interaction_compares_against_initial_presentation():
+def test_first_interaction_preserves_produced_after_without_comparing():
     ledger, _ = _run_console("first\n")
 
+    # Preserved temporal lineage is retained as legitimate basis for a later
+    # responsible relation occurrence; it is not itself Applicability,
+    # participation, response, or selection.
     kinds = {event.kind for event in ledger.list("w")}
     assert kinds == {
         *_INGRESS_KINDS,
         "operator.presentation.formed",
         "operator.presentation.emitted",
-        "operator.exchange.comparison_occurred",
-        "operator.exchange.identification_occurred",
     }
     ingress = next(
         event
