@@ -315,15 +315,6 @@ from seed_runtime.operator_presentation import (
     emit_operator_presentation,
     form_operator_presentation,
 )
-from seed_runtime.operator_response_comparison import (
-    run_operator_response_comparison_and_identification,
-)
-from seed_runtime.operator_interaction_goal import (
-    run_interaction_goal_establishment,
-)
-from seed_runtime.operator_source_recovery import (
-    run_operator_source_recovery_and_meaning_relation,
-)
 from seed_runtime.operator_session_standing import project_operator_session_standing
 from seed_runtime.facts import (
     Fact,
@@ -5709,37 +5700,14 @@ def run_persistent_operator_console(
             produced_after_presentation=active_presentation,
         )
         if attempt_view["current_standing"]["preserved_ingress"] is not None:
-            if (
-                active_presentation is not None
-                and active_presentation["emitted_event_id"] is not None
-            ):
-                exchange_finding = (
-                    run_operator_response_comparison_and_identification(
-                        ledger,
-                        workspace_id=workspace_id,
-                        session_id=session_id,
-                        presentation=active_presentation,
-                        response_ingress_event_id=(
-                            attempt_view["current_standing"]["preserved_ingress"][
-                                "evidence_event_id"
-                            ]
-                        ),
-                    )
-                )
-                if exchange_finding["identification"]["basis"] == "identified":
-                    run_operator_source_recovery_and_meaning_relation(
-                        ledger,
-                        workspace_id=workspace_id,
-                        session_id=session_id,
-                        identification_event_id=(
-                            exchange_finding["identification"]["event_id"]
-                        ),
-                    )
-                    run_interaction_goal_establishment(
-                        ledger,
-                        workspace_id=workspace_id,
-                        session_id=session_id,
-                    )
+            # The ingress occurrence and its produced-after Presentation
+            # testimony are preserved; no Compare or Identification follows.
+            # A current Presentation existing does not make the newest ingress
+            # and the most recently emitted Presentation participants in one
+            # Compare: 01.Standing.E.1 requires the act owner to determine
+            # input-to-act Applicability, and recency is not that
+            # determination.  No recovered Responsibility presently proposes
+            # those two subjects as inputs, so the boundary stays dormant.
             # The interaction output is a bounded Presentation formed from the
             # session's current Standing (including this attempt).  The View
             # remains the renderer behind the `show current Standing`

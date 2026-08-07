@@ -8,6 +8,7 @@ from seed_runtime.operator_ingress_representation import capture_stdin_material
 from seed_runtime.operator_presentation import (
     emit_operator_presentation,
     form_operator_presentation,
+    render_operator_presentation,
 )
 from seed_runtime.operator_response_comparison import (
     run_operator_response_comparison_and_identification,
@@ -480,29 +481,26 @@ def test_matched_but_unidentified_is_not_rendered_as_no_match():
     assert "corresponds to the captured material" not in rendered
 
 
-def test_console_full_exchange_and_next_presentation_exposes_finding():
+def test_exchange_findings_are_exposed_by_a_later_presentation():
+    # The console no longer selects participants by recency, so the exchange is
+    # driven directly here.  What is proved is unchanged: recorded findings are
+    # exposed by a later Presentation without being strengthened.
     ledger = EventLedger()
-    output = StringIO()
-    seed_local.run_persistent_operator_console(
-        ledger=ledger,
-        workspace_id="w",
-        session_id="s",
-        input_stream=StringIO("Hello\n1\nunmatched words\nexit\n"),
-        output_stream=output,
-    )
-    rendered = output.getvalue()
+    _, _, match = _exchange(ledger, "1\n")
+    _, _, no_match = _exchange(ledger, "unmatched words\n")
 
-    assert rendered.count("Bounded Presentation") == 4
-    assert (
-        "Prior exchange: alternative 1 (Establish richer shared grammar with "
-        "the Operator) corresponds to the captured material within" in rendered
-    )
-    assert "Operator intent and selection remain Unknown." in rendered
-    assert "Prior exchange: no coordinate match within" in rendered
-    assert "requested treatment remain Unknown" in rendered
     standing = _standing(ledger)
-    assert len(standing["comparisons"]) == 3
-    assert len(standing["identifications"]) == 3
+    assert len(standing["comparisons"]) == 2
+    assert len(standing["identifications"]) == 2
     assert standing["latest_exchange_finding"]["comparison"]["outcome"] == (
         "no-coordinate-match"
     )
+
+    later = form_operator_presentation(
+        ledger, workspace_id="w", session_id="s", session_standing=standing
+    )
+    rendered = render_operator_presentation(later)
+    assert "Prior exchange: no coordinate match within" in rendered
+    assert "requested treatment remain Unknown" in rendered
+    assert match["identification"]["basis"] == "identified"
+    assert no_match["identification"]["basis"] == "no-coordinate-match"

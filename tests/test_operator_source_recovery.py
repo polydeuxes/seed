@@ -897,22 +897,22 @@ def test_projector_refuses_duplicate_semantic_references():
             _standing(ledger)
 
 
-def test_console_runs_recovery_only_for_identified_exchanges():
+def test_recovery_runs_only_for_identified_exchanges():
+    # Driven directly rather than through the console, which no longer selects
+    # participants by recency.  The proof is unchanged: recovery follows an
+    # identified exchange only, and a no-match exchange exposes no relation.
     ledger = EventLedger()
-    output = StringIO()
-    seed_local.run_persistent_operator_console(
-        ledger=ledger,
-        workspace_id="w",
-        session_id="s",
-        input_stream=StringIO("Hello\n1\nnot a coordinate\nexit\n"),
-        output_stream=output,
-    )
+    _recovered_exchange(ledger, "1\n")
+    _, no_match = _exchange(ledger, "not a coordinate\n")
+    assert no_match["identification"]["basis"] == "no-coordinate-match"
 
     standing = _standing(ledger)
     assert len(standing["source_recoveries"]) == 1
     assert len(standing["meaning_relations"]) == 1
-    rendered = output.getvalue()
-    assert rendered.count("Recovered source") == 1
-    # The no-match exchange exposes no recovered relation.
-    final_presentation = rendered[rendered.rindex("Bounded Presentation") :]
-    assert "Recovered source" not in final_presentation
+
+    later = form_operator_presentation(
+        ledger, workspace_id="w", session_id="s", session_standing=standing
+    )
+    # The latest finding is the no-match, so no recovered relation is exposed.
+    assert later["recovered_meaning_relation"] is None
+    assert "Recovered source" not in render_operator_presentation(later)
