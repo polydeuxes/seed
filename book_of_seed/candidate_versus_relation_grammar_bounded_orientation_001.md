@@ -9,12 +9,14 @@ candidate-versus-relation-grammar Compare
 ```
 
 does not currently name an exact constitutional shape recovered within the
-inspected repository boundary. It compresses several adjacent but non-identical
-subjects: caller-supplied candidate testimony, the active dimensions of a
-bounded relation Claim or Standing, source-attributed relation proposals,
-bounded testimony comparison, closed-choice response-coordinate Compare, and
-Fidelity comparison. Current higher-authority evidence does not compose those
-subjects into one candidate-versus-relation-grammar Responsibility.
+inspected repository boundary. The investigation found several adjacent,
+non-identical subjects that prior reports may have compressed under the phrase:
+caller-supplied candidate testimony, the active dimensions of a bounded relation
+Claim or Standing, source-attributed relation proposals, bounded testimony
+comparison, closed-choice response-coordinate Compare, and Fidelity comparison.
+
+No composition among them is recovered. That list is bounded orientation
+material; the phrase is not established to contain or compose those subjects.
 
 The executive disposition is therefore:
 
@@ -201,9 +203,19 @@ The representation carries only caller-attributed structural testimony and the
 module's negative boundary assertions. Its provenance fields are opaque strings
 supplied by the caller; the constructor does not establish their Evidence
 standing. It creates no event-ledger record and no Seed-native Fact, relation,
-grammar, Applicability, Admission, or comparison Standing. The representation's
-independently evidenced standing is a read-only, non-cluster-mutating runtime
-carrier of validated input shape, renderable through the CLI and formatters.
+grammar, Applicability, Admission, or comparison Standing.
+
+Independently verified runtime properties are:
+
+```text
+read-only
+ledger-free
+non-cluster-mutating
+a carrier of validated input shape
+```
+
+Those properties establish no constitutional Standing for the carrier or the
+Claims it preserves. It is renderable through the CLI and formatters.
 
 Tests prove exact copying, rendering, duplicate refusal, zero-candidate
 rendering, and the fixed no-selection/no-verification boundary. They do not use
@@ -258,7 +270,7 @@ candidate testimony.
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | PESC asks which applicable relation grammar can examine a bounded candidate equivalence. | `book_of_seed/grammar_bounded_orientation_observation_001.md` | The report repeatedly describes an “applicable relation grammar” examining a candidate and says none may presently be recovered. | No runtime representation or occurrence independently supplies that grammar or comparison. | Active law supplies relation dimensions and several exact comparison boundaries, but does not use the phrase or assign this Responsibility. | Treating the prose label as active grammar would conflict with the Book's artifact-standing and lexical-presentation limits. | Owner, Authority, inputs, Applicability, Admission, occurrence, result, Standing, Consumer. | attributed candidate only |
 | Candidate-versus-grammar has an exact Compare Act rendering. | `book_of_seed/candidate_versus_grammar_comparison_recovery_001.md` | The report calls “Compare the candidate equivalence with the applicable relation grammar” the exact responsible act while leaving its owner unresolved. | No proposed-family runtime occurrence was found. | The Responsibility root requires an exact owning Responsibility; active law does not assign one here. | Under the controlling proof discipline, unresolved owner means the proposed Act and occurrence are not recovered. | Exact Responsibility and every dependent occurrence/result coordinate. | contradicted |
-| The proposed family is distinct from testimony comparison. | `book_of_seed/candidate_versus_grammar_comparison_recovery_001.md` | It distinguishes multiple testimonies/findings from one candidate-equivalence proposal. | Runtime response comparison and candidate carrier have different exact subjects and no connecting path. | `05.Testimony.E` is expressly limited to multiple preserved testimonies/findings; active relation and candidate clauses do not compose the proposed family. | None for the bounded non-identity; it does not positively establish the proposed family. | Proposed family's own Responsibility and coordinates. | corroborated |
+| The candidate material described by the reports does not establish identity with bounded testimony comparison. | `book_of_seed/candidate_versus_grammar_comparison_recovery_001.md` | It distinguishes multiple testimonies/findings from one candidate-equivalence proposal. | Runtime response comparison and candidate carrier have different exact subjects and no connecting path. | `05.Testimony.E` is expressly limited to multiple preserved testimonies/findings; active relation and candidate clauses do not compose the proposed family. | None for the bounded statement; it neither positively establishes the proposed family nor classifies it. | The proposed family's own identity, Responsibility, and coordinates. | partially corroborated — the described candidate material does not establish identity with bounded testimony comparison; the proposed family's own identity remains Unknown |
 | The proposed owner remained unresolved in pre-chain orientation reports. | `book_of_seed/shape_b_compare_owner_and_continuation_recovery_001.md` and `book_of_seed/compare_occurrence_implementation_form_recovery_001.md` | Both reports say the candidate-versus-relation-grammar owner was unresolved and no construction followed. | No current owner symbol, runtime path, or occurrence was found. | Active Responsibility grammar requires the owner and forbids inference from adjacency; no active clause assigns it. | None. “Unresolved” remains report testimony; the constitutional coordinate is reported here as Unknown because the exact required shape cannot be recovered. | Authority, Evidence, Applicability, Admission, result, Standing, Consumer. | corroborated |
 | Prometheus has provider-local Translation-shaped implementation boundaries. | `book_of_seed/prometheus_translation_ownership_recovery_001.md` | Bounded paraphrase: decoded sample and provider-local observation shape separate provider JSON from Observation formation. | `PrometheusDecodedSample`, `PrometheusObservationShape`, mapping functions, and tests independently witness those separations. | `01.External.A` and `05.Testimony` distinguish provider material, translated/addressable material, acquisition and interpretation, and Observation testimony. | The implementation names do not prove every constitutional coordinate or a relation to the proposed Compare. | Exact per-path Authority, Evidence standing, Consumer, production occurrence, and any Fidelity result. | partially corroborated |
 | Fidelity is bounded constitutional grammar versus expectation versus implementation witness. | `book_of_seed/fidelity_production_ownership_correction_001.md` | Bounded paraphrase: Book I owns general Fidelity production through bounded constitutional comparison. | Runtime-wide Fidelity occurrence was not needed or found for this proposed family. | `01.External.D` directly establishes the subject, required preservation, bounded qualitative results, Scope, and negative Authority. | No contradiction at the general active-law boundary. It does not supply candidate-versus-grammar inputs. | Particular seam, witnesses, occurrence, result, and Consumer for any instantiated Fidelity case. | corroborated |
@@ -311,8 +323,8 @@ Cells are populated only from independent evidence for the exact family.
 | Producer | exact Producer not independently recovered; the runtime function forms and records the result, but function != constitutional Producer | Unknown | exact Producer Unknown for any particular occurrence; the general Responsibility does not identify the participant | exact Producer Unknown for any particular occurrence; the bounded comparison Responsibility produces a finding, but Responsibility boundary != Producer |
 | Consumer | Identification consumes the response comparison finding where binding is applicable | Unknown | Unknown for a particular result | downstream cross-seam consumers may preserve an already-produced finding's limits; particular Consumer Unknown |
 | proposed compared subjects or representations | captured ingress content and exact recorded response-coordinate set of one Presentation | candidate side not admitted; proposed grammar representation not recovered | multiple independently preserved testimonies or findings | constitutional grammar, bounded expectation, implementation witness |
-| Applicability | the exact Act owner's applicability responsibility is established; no separate input-to-Compare Applicability finding is recovered from the implementation precondition checks | not recovered | exact occurrence-local Applicability not recovered by the general comparison clause | exact input-to-act Applicability not recovered merely from the declared seam or Scope |
-| Admission | comparison precondition checks are evidenced; no separately named Admission occurrence is established | not recovered | Unknown for a particular instantiation | Unknown for a particular instantiation |
+| Applicability | not separately recovered for the Compare; the exact exchange preconditions are producer validation, not Applicability Standing. The token-to-alternative Applicability consumed by Identification belongs to the later Identification Act | not recovered | exact occurrence-local Applicability not recovered by the general comparison clause | exact input-to-Act Applicability not recovered; the declared seam establishes Scope, not Applicability |
+| Admission | not separately recovered; whether this exact Compare requires Admission remains local | not recovered | Unknown for a particular instantiation | Unknown for a particular instantiation |
 | Authority | bounded to one exchange and exact coordinate equality; no intent, meaning, selection, authorization, or treatment | Unknown | comparison must preserve each input's Authority; exact comparison Authority local | constitutional grammar and declared bounded expectation within seam/Scope; no global certification or correction Authority |
 | Evidence | Presentation formation/emission, capture, ingress, and exact reference lineage | Unknown | each input's preserved support basis plus exact local occurrence Evidence | constitutional subject, expectation, witness, Evidence/provenance, invariants, conflicts, Unknowns |
 | Scope | exact workspace, session, Presentation, and response attempt | Unknown | bounded comparison and each input's Scope | declared examined seam or Scope |
@@ -346,8 +358,10 @@ shared Warrant
 candidate-versus-relation-grammar family membership
 ```
 
-Response-coordinate Compare is not testimony comparison by identity. Testimony
-comparison is not the proposed candidate-versus-grammar family by identity.
+Response-coordinate Compare is not testimony comparison by identity. The
+described candidate material does not establish identity with testimony
+comparison. The proposed candidate-versus-grammar family's own identity remains
+Unknown, so it is classified by neither identity nor non-identity here.
 Fidelity does not establish a generic relation-grammar representation.
 
 Producer identity is reserved throughout this matrix:
@@ -381,9 +395,9 @@ establish that a comparison occurred.
 The constructor forms the carrier instance in runtime. Constitutional Producer
 identity for the represented Claims remains Unknown because the caller's source
 role, formation occurrence, provenance standing, Authority, and Warrant are
-neither validated nor supplied by copying. The carrier has no event identity,
-no Evidence-standing result, and no Seed-native Standing beyond what its exact
-read-only preservation boundary witnesses.
+neither validated nor supplied by copying. The carrier has no event identity and
+no Evidence-standing result. The constructor and those runtime properties
+establish no constitutional Standing for the carrier or its represented Claims.
 
 ## 8. Proposed grammar-side Standing
 
@@ -628,7 +642,8 @@ the exact Consumer and Consumer purpose
 the Applicability determination and its occurrence
 the Admission requirement, boundary, and occurrence
 the exact compared representations
-the comparison method or relation
+the exact comparison relation
+the exact Compare Act form
 the Compare occurrence
 the result kind
 the result Producer and production occurrence
