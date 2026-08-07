@@ -2,25 +2,42 @@
 
 ## 1. Executive disposition
 
-**B. Partial responsibilities recovered; composition remains unwarranted** — with one correction that changes the question.
+**B. Partial adjacent responsibilities recovered; their composition as candidate-versus-grammar Compare remains unwarranted.**
 
-`applicable relation grammar` is not an absent object. It is not an object. The phrase names a **per-instance selector**: whichever already-established grammar is appropriate to the kind of relation a given candidate proposes. Its source says so directly, and the surviving `if any` in the recovery record was hardened into a right-hand operand by later reports, this author's among them.
+**And the required constitutional Compare shape itself remains Unknown.** Disposition D was considered and is defensible; B is recorded because the negative findings and the adjacent responsibilities are genuine recoveries, and the Unknown is stated here rather than folded into a weaker label. If the operator prefers D, nothing in the body needs to change.
+
+Recovered, and holding:
 
 ```text
-"candidate-versus-relation-grammar Compare"
-
-reads as     one Act over two operands, the right one missing
-recovers as  a family of comparisons, one per relation kind,
-             each against grammar the Book already carries
+no universal relation-grammar object is established
+CandidateExternalGrammarSet is not admitted to Compare
+RelationshipCatalog is not constitutional relation grammar
+Fidelity is unimplemented and does not answer this question
+absence of relation warrant != negation
+meaning-relation production and Warrant are present
+projector integrity validation is present
 ```
 
-Consequently the gate is not "build the missing operand." One member of the family is **already implemented and running** — the meaning-relation validation built in PRs 2302–2306 compares a candidate relation against `01.Kinds`'s relation-claim dimensions and refuses what disagrees. It was built without being recognised as an instance of this Compare.
+Not recovered, and withdrawn from the first version of this report:
 
-No universal Compare Responsibility is recovered, no universal operand exists, and none should be constructed.
+```text
+"applicable relation grammar" = a per-instance selector
+  attributed candidate only
+
+active law's dimension list = the right-hand material
+  unproven, and contradicted by 01.Kinds:67
+
+the meaning-relation path = a running instance of this Compare
+  unproven; it is relation establishment and integrity validation
+```
+
+No universal Compare Responsibility is recovered, no universal operand exists, none should be constructed — and no instance of this Compare is presently implemented.
 
 ## 2. Authority and testimony order
 
 Applied in this order: active internal Book grammar; runtime structures and tests; repository history; then reports and external-Book passages as attributed testimony only. `[UNRESOLVED]` markers are read as recorded absence of settled warrant, never as positive authority for construction.
+
+**The first version of this report violated that order at its central conclusion.** It established from active law that `relation grammar` does not occur there, then took the phrase's meaning from report testimony (PESC `:160`) and used that reading to reinterpret what the runtime does. Tier-four testimony drove a tier-two conclusion. The correction record at the end states what follows from repairing that.
 
 ## 3. Independently verified repository facts
 
@@ -80,7 +97,7 @@ admitted?   no. No ledger event, no Applicability, no Admission, no
 | Claim | Source | Wording | Repository corroboration | Internal-grammar corroboration | Contradiction | Disposition |
 |---|---|---|---|---|---|---|
 | A relation grammar bears on a candidate | PESC observation `grammar_bounded_orientation_observation_001.md:126` (via recovery `:126`) | "The relation grammar, **if any**, that can address the candidate relation" | none | `01.Kinds:28` supplies relation-claim grammar | none | **partially corroborated** — the conditional is part of the claim |
-| Different candidates need different grammars | PESC `:160` | "Different relation-shaped candidates must be examined through the grammar appropriate to the relation they propose" | the meaning-relation path does exactly this for one kind | consistent with `01.Kinds:28` | none | **corroborated** |
+| Different candidates need different grammars | PESC `:160` | "Different relation-shaped candidates must be examined through the grammar appropriate to the relation they propose" | none — the first version cited the meaning-relation path, which is the claim in dispute, so that corroboration was circular | none | none | **attributed candidate only** |
 | The relation kinds form a list | PESC `:160` | eleven relation kinds, stated "illustrative, not exhaustive, and not a taxonomy established by this report" | none | none | none | **attributed candidate only** |
 | Owner of the candidate-versus-grammar question | recovery `:127` | "Unresolved. Not automatically the candidate producer, operator, presentation source, later consumer, or PESC report" | none | none | none | **Unknown** |
 | Warrant for recovering a distinction | `01.External` Bounded resolution | "`[UNRESOLVED]` The warrant required for recovering a distinction is not yet safely established" | none | marked unresolved in active law | none | **Unknown** — not usable as construction authority |
@@ -105,7 +122,9 @@ admitted?   no. No ledger event, no Applicability, no Admission, no
 | Compare Act / occurrence / result | **present** for two instantiated families (below); no universal Act |
 | Standing established from comparison | **present** for the instantiated families only |
 
-**The compression.** The phrase folds three separable things into one noun: a conditional (*if any*), a per-instance selection (*the grammar appropriate to the relation proposed*), and a required-dimension set that already exists per relation kind. Reading it as an object manufactures a missing operand that the source never asserted.
+**On compression.** The phrase may fold a conditional (*if any*) together with something else; the recovery record's `if any` is genuine and is preserved above. What that something else is — a per-instance selection, a required-dimension set, a material representation, or a shape not yet named — is **not established**. The first version asserted the per-instance selector reading as recovered. It is attributed testimony from PESC only, and PESC's own eleven-kind list is stated there as illustrative, not a taxonomy.
+
+Reading the phrase as an object would manufacture an operand the source never asserted. Reading it as a selector asserts a structure the source also never established. Both readings remain candidates.
 
 ## 6. Existing Compare families
 
@@ -115,16 +134,18 @@ admitted?   no. No ledger event, no Applicability, no Admission, no
 | Producer | console occurrence | Unknown | consuming boundary | Fidelity production boundary |
 | Consumer | identification Act | Unknown | comparison boundary | cross-seam consumer |
 | Left material | captured operator material | candidate relation | preserved testimony | constitutional subject |
-| Right material | C's exact response coordinates | *selected per relation kind* | other preserved testimony | bounded expectation + implementation witness |
+| Right material | C's exact response coordinates | **not recovered** | other preserved testimony | bounded expectation + implementation witness |
 | Applicability gate | recorded produced-after chain | Unknown generally | not established | declared seam or scope |
 | Admission gate | none (pre-admission) | Unknown generally | not established | not established |
 | Authority | exchange-instantiated | Unresolved | comparison + input Authority, not globally named | declared seam Authority |
 | Evidence | full six-member lineage | per instance | preserved inputs | subject, expectation, witness, provenance |
 | Scope | exact exchange | per instance | comparison boundary | declared seam |
-| Act | implemented, recorded | one instance implemented | testified, unimplemented | testified, unimplemented |
-| Result | match:T \| no-coordinate-match | per instance | bounded relation standing | faithful \| unfaithful \| mixed \| Unknown |
-| Standing | correspondence within C only | per instance | inside comparison boundary | qualitative, within scope |
+| Act | implemented, recorded | **not recovered; no instance implemented** | testified, unimplemented | testified, unimplemented |
+| Result | match:T \| no-coordinate-match | **not recovered** | bounded relation standing | faithful \| unfaithful \| mixed \| Unknown |
+| Standing | correspondence within C only | **not recovered** | inside comparison boundary | qualitative, within scope |
 | No-match meaning | meaning and treatment Unknown | see §9 | disagreement, not falsity | unfaithful crossing within scope |
+
+The first version recorded this family's Responsibility as Unresolved while recording its Act as "one instance implemented". That is incoherent under the grammar being recovered: an Act is not a Responsibility, **and a responsible Act occurrence requires an exact owning Responsibility**. With the owner unresolved, no lawful instance of this Compare can presently be testified to. The row is corrected above.
 
 **Established relations between them:**
 
@@ -161,30 +182,71 @@ It is not the left operand of anything. No Applicability or Admission path into 
 
 ## 8. Grammar-side standing
 
-The right-hand material exists in decompressed form, and it is **active law rather than a runtime object**.
+**No right-hand material is recovered, in any decompressed form.** The first version of this report claimed active law's dimension list was that material, running in the meaning-relation path. That claim is withdrawn on three grounds, each from active law.
 
-For a candidate proposing a *meaning relation*, the applicable grammar is `01.Kinds:28`'s required dimensions: participants and roles, the relation assertion, evidence standing, scope, producer, consumer and purpose, authority, occurrence, conflicts, and limits.
+`01.Kinds:67` — decisive:
 
-Those dimensions are already compared against, per candidate, in the running system:
+> Acts, constraints, and relations are structurally distinct from dimensions. They may operate over, govern, or connect dimension-bearing subjects under their independently owned constitutional grammar. **Dimension-bearing material != the responsible act over that material.** Their presence in dimensional characterization does not make them additional dimensions, a mandatory intermediate layer, or one exhaustive taxonomy.
+
+Treating the dimension list as the operand of a Compare Act is exactly the equivalence that clause denies.
+
+`01.Kinds:63` — the dimensional families are "broad constitutional questions, **not mandatory fields or one universal artifact schema**", and "Dimension != field, value, constitutional kind, subject-family registry, or implementation key."
+
+`01.Kinds:30` — meaning is named as **its own bounded relation form**, with its own dimension list, and "**No rule requires every meaning relation to possess every coordinate**; unsupported coordinates remain Unknown or inapplicable." A relation form with its own clause is not thereby an instance of a comparison against grammar.
+
+### What the runtime actually does
+
+Two things, neither of which is this Compare.
 
 ```text
-01.Kinds:28 dimension    recorded meaning-relation coordinate
-participants and roles   source_identity + alternative_id
-relation assertion       proposition
-evidence standing        warrant_basis + source_recovery_event_id
-                         + presentation_formed_event_id
-scope                    representation_scope
-producer                 source recovery occurrence
-consumer and purpose     representation_purpose
-authority                authority_separation (four coordinates)
-occurrence               recorded lineage
-conflicts                conflicts
-limits                   known_loss + unknowns
+production        run_operator_source_recovery_and_meaning_relation
+                  validates the recorded exchange chain, recovers exact
+                  A and G, reads attributed meaning testimony M from the
+                  recorded formation, and records the relation.
+                  Responsibility: bounded-meaning-relation-consumption.
+
+                  There is no separately recorded candidate relation, no
+                  selected grammar material, no Compare Act, no
+                  comparison occurrence, and no comparison result. The
+                  comparison_event_id it carries is the earlier response
+                  -versus-coordinate Compare, evidencing that the
+                  response identified A. It is not a grammar comparison.
+
+validation        the projector checks a carried event against producer
+                  invariants and refuses disagreement:
+
+                  recorded event vs producer invariants
+                  -> admit projected result, or structurally refuse
+
+                  It records no Compare Responsibility, Act, occurrence,
+                  result, or comparison Standing.
 ```
 
-The session projector reconstructs each from recorded testimony and **refuses any relation that disagrees**. That is a candidate compared with its applicable relation grammar, producing bounded standing — implemented, for exactly one relation kind.
+Structural validation may one day be recovered as a comparison family. This report does not establish that identity, and the earlier version's claim that it already had is withdrawn.
 
-Partial shapes for other kinds are **not** composed here. `RelationshipCatalog`, `recorded_relation_standings`, the PESC eleven-item list, and `CandidateExternalGrammarSet` are four separate things; the repository establishes no composition among them and none is proposed.
+### The dimension correspondence, as a candidate only
+
+The first version presented the table below as verified grammar. It is an **unverified candidate correspondence**, retained because it may be useful input to the investigation named in §14, and because the non-equivalences it violates are worth recording:
+
+```text
+asserted mapping                     why it is not established
+participants and roles
+  -> source_identity+alternative_id  alternative identity != participant role
+producer
+  -> source recovery occurrence      the source-recovery occurrence is not
+                                     established as the meaning relation's
+                                     Producer
+consumer and purpose
+  -> representation_purpose          representation purpose != Consumer
+                                     identity and Consumer purpose
+occurrence
+  -> recorded lineage                lineage != relation-establishment
+                                     occurrence
+evidence standing
+  -> warrant_basis + event ids       Evidence identities != Evidence standing
+```
+
+Naming a recorded coordinate that sounds like a constitutional dimension does not establish that the dimension is filled. That is the same error this report identifies and rejects in `RelationshipCatalog` at §3, committed here on the author's own structure.
 
 ## 9. No-match boundary
 
@@ -249,27 +311,36 @@ meaning relation (01.External.G)
 
 candidate carriage or consumption != candidate production (01.External.F)
 
-one instance of candidate-versus-applicable-grammar comparison is
-implemented and running: the meaning-relation validation
+meaning-relation establishment and projector integrity validation are
+both present and running; neither is established as an instance of
+candidate-versus-grammar Compare
+
+dimension-bearing material is not the responsible act over that
+material (01.Kinds:67)
 ```
 
 ## 12. Exact Unknowns
 
 ```text
+the required constitutional shape of this Compare, entirely
+what the phrase "applicable relation grammar" names, beyond its
+  preserved conditional
 owner of the candidate-versus-grammar question, generally
 Authority for forming relation grammar (01.External [UNRESOLVED])
 producer of any general relation-grammar representation
 whether the eleven PESC relation kinds are a real inventory
 whether any Compare Responsibility spans relation kinds
 Applicability and Admission gates for CandidateExternalGrammarSet
+whether integrity validation is a comparison family
+whether relation establishment is a comparison family
 ```
 
 ## 13. Construction gates
 
 ```text
 blocked   a universal relation-grammar object, collection, or registry.
-          No producer, Authority, or Evidence is recovered, and PESC
-          does not require one.
+          No producer, Authority, or Evidence is recovered, and no
+          reading of the phrase is established.
 
 blocked   admitting CandidateExternalGrammarSet as an operand. No
           Applicability or Admission path exists, and its own boundary
@@ -278,47 +349,82 @@ blocked   admitting CandidateExternalGrammarSet as an operand. No
 blocked   any construction citing 01.External's [UNRESOLVED] as its
           warrant.
 
-open      extending the implemented per-kind comparison to a second
-          relation kind, where that kind's applicable grammar is
-          already active law and a warranted consumer exists.
+blocked   a second "per-kind comparison" modelled on the meaning-relation
+          path. That path is not established as a comparison, so copying
+          it would install this report's own withdrawn classification
+          into runtime and turn an integrity validator into cardboard
+          Compare.
+
+blocked   treating a dimension list as an Act's operand (01.Kinds:67).
 ```
+
+Nothing is presently open for construction on this question.
 
 ## 14. Recommendation for the next smallest slice
 
-**Recommended: none of the proposed slices as framed. Reframe first.**
+**No runtime slice on this question.** The first version recommended a per-kind comparison; that recommendation is withdrawn, because it rested on the classification withdrawn in §8.
 
-The next smallest useful slice is not a new Compare. It is to select **one further relation kind** whose applicable grammar is already active law and whose consumer is already warranted, and compare a candidate of that kind against those required dimensions — the same shape already running for meaning relations.
-
-Stated in required form, for the operator and curator to accept or reject rather than for implementation:
+The next work is a further bounded investigation, comparing the terms that this report and its predecessors have been treating as interchangeable. Three groups, each to be dispositioned separately rather than composed:
 
 ```text
-exact Responsibility   occurrence-local: compare one exact candidate
-                       relation of kind K against the dimensions
-                       01.Kinds:28 requires for kind K
-exact Producer         the occurrence that recorded the candidate
-                       relation; not recovered universally
-exact Consumer         must be an already-warranted consumer of kind
-                       K's standing. If none exists, the slice does not
-                       proceed — cardboard rule.
-exact material         left: one recorded candidate relation.
-                       right: 01.Kinds:28's required dimensions for K.
-                       Not an object; the dimension requirements.
-exact Authority        instantiated by the recorded exchange that
-                       produced the candidate, as with meaning relations
-exact Evidence         the recorded occurrence carrying the candidate,
-                       plus its lineage
-exact Scope            the exact workspace/session interaction
-exact occurrence       one recorded comparison occurrence, distinct
-                       from its result
-exact produced result  bounded: dimensions satisfied / exact dimension
-                       unsatisfied / applicable grammar not recovered
-                       for this kind. Never falsity, never unrelatedness.
-exact unresolved       which relation kind K, and whether a warranted
-Warrant                consumer for kind K's standing exists at all.
-                       Both must be answered before construction.
+Compare / validation / reconstruction / Warrant /
+relation establishment / Applicability / Admission
+
+grammar / applicable dimensions / constraints /
+producer invariants / schema / represented material
+
+candidate relation / proposed relation assertion /
+attributed relation testimony / recorded relation event /
+warranted relation Standing
 ```
 
-If no second relation kind has both active-law grammar and a warranted consumer, the correct outcome is to record that and build nothing — the campaign's remaining budget is better spent on the Learning-establishment slice, whose consumer (the interaction) is already running and whose grammar (`05.Testimony:113`) is already active law.
+Until those distinctions are resolved, the campaign should not add a comparison-shaped slice.
+
+**On the alternative direction.** This report earlier suggested Learning establishment as the better use of remaining budget, on the ground that its consumer is running and its grammar is active law. That suggestion is weakened by the same discipline applied here: `05.Testimony:113` names bounded comparison among Learning establishment's recoverable dependencies, and this report has just established that no candidate-versus-grammar comparison exists to supply one. Whether the response-versus-coordinate Compare that *is* implemented qualifies as that input is exactly the kind of composition claim this correction exists to refuse. Learning establishment remains a real direction; it is not the safe one, and it needs its own bounded orientation before a prompt is drafted.
+
+## Correction record
+
+The first version of this report was corrected on six points, all raised in review and all verified against active law before acceptance:
+
+```text
+1. authority-order reversal. The central conclusion was taken from
+   report testimony (PESC :160) and used to reinterpret runtime, after
+   the report itself established the phrase is absent from active law.
+   Recorded in section 2.
+
+2. the per-instance selector reading was recorded as recovered. It is
+   attributed testimony only, and its corroboration cited the very
+   claim in dispute. Corrected in sections 1, 4, and 5.
+
+3. the meaning-relation path was claimed as a running instance of this
+   Compare. It performs relation establishment; the projector performs
+   integrity validation. Neither records a Compare Responsibility, Act,
+   occurrence, result, or comparison Standing, and the comparison event
+   it carries is the earlier response-versus-coordinate Compare.
+   Corrected in section 8.
+
+4. active law's dimension list was claimed as the right-hand material.
+   01.Kinds:67 states that dimension-bearing material is not the
+   responsible act over that material; :63 that dimensions are not
+   mandatory fields or a universal schema; :30 that no rule requires
+   every meaning relation to possess every coordinate. Withdrawn in
+   section 8.
+
+5. the dimension mapping asserted five equivalences that are not
+   established -- alternative identity is not participant role,
+   representation purpose is not Consumer identity and purpose, the
+   source-recovery occurrence is not the relation's Producer, lineage
+   is not the relation-establishment occurrence, and Evidence
+   identities are not Evidence standing. Retained only as an unverified
+   candidate correspondence. This is the same error the report rejects
+   in RelationshipCatalog at section 3, committed on the author's own
+   structure.
+
+6. the Compare matrix recorded this family's Responsibility as
+   Unresolved and its Act as "one instance implemented" in the same
+   table. A responsible Act occurrence requires an exact owning
+   Responsibility. Corrected in section 6.
+```
 
 ## Materials inspected
 
