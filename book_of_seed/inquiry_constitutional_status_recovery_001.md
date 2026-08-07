@@ -2,12 +2,32 @@
 
 ## 1. Executive
 
-**Inquiry names something.** This is the fourth cat test in the sequence and
-the first to return a clear affirmative. `proposed input` named nothing.
-`relation grammar` named nothing and mapped onto a dimension list. `candidate
-equivalence` named a proposal in unadopted vocabulary. Inquiry is not like any
-of them: it holds a named act, a named standing, five clauses, a Demand family,
-stop grounds, and cited runtime.
+**Inquiry names established constitutional grammar — a family, not a node.**
+This is the fourth cat test in the sequence and the first to return an
+affirmative, but the affirmative is narrower than this report first stated.
+`proposed input` named nothing. `relation grammar` named nothing and mapped
+onto a dimension list. `candidate equivalence` named a proposal in unadopted
+vocabulary. Inquiry is unlike all three: old, distributed across six chapters,
+and a survivor of a deliberate excision.
+
+What that does **not** establish:
+
+```text
+Inquiry  →  established constitutional grammar / family      yes
+
+Inquiry  =  a recovered standalone node by identity          no
+Inquiry  =  one Act                                          no
+Inquiry  =  one Standing                                     no
+Inquiry  =  one Responsibility                               no
+```
+
+As merged at #2342 this report called inquiry origination "a named act" and
+inquiry standing "a named standing." Both are withdrawn at #2343; §7 records
+why. The corrected reading is the `selection` parallel: `02.Selection:16`
+supports "a shared higher-order selection grammar with distinct subfamilies"
+and then holds that "shared selection vocabulary does not collapse these into
+one constitutional act kind." Inquiry reads the same way — a family with exact
+responsibilities beneath it, not another box before Question.
 
 **But the shape being carried is still wrong, and in a way the noun test would
 have missed.** The shape was:
@@ -46,21 +66,27 @@ ownership at each.
 
 ## 2. Why Inquiry survives the test
 
-Eleven distinct supports, none of which the previous three phrases had.
+Eleven distinct supports, none of which the previous three phrases had. They
+support the family reading; two of them were originally written as support for
+a stronger reading and are restated here.
 
 **A home chapter with five clauses.** Chapter 04 is Inquiry, and
 `questions-and-inquiry.md` carries `04.Question.A` through `04.Question.E`. One
 is titled **"Inquiry origination requires bounded translation."**
 
-**A named act with stated preconditions.** `04.Question.B`: an operator ask,
-prompt phrase, uncertainty statement, reformulation, or presentation label "may
-create attributed testimony or inquiry pressure only. Seed may initiate
-internal inquiry after a bounded translation preserves identity, source, scope,
-evidence demand, authority limit, uncertainty, and lawful stop." Seven
-preserved coordinates gate the act.
+**A bounded action with stated preconditions — expressed in ordinary
+grammar.** `04.Question.B`: an operator ask, prompt phrase, uncertainty
+statement, reformulation, or presentation label "may create attributed
+testimony or inquiry pressure only. Seed may initiate internal inquiry after a
+bounded translation preserves identity, source, scope, evidence demand,
+authority limit, uncertainty, and lawful stop." Seven preserved coordinates
+gate it. This establishes that the action is bounded and gated. It does not
+establish an Inquiry Act kind, and §7 records why the earlier "named act"
+reading is withdrawn.
 
-**A named standing.** `04.Question:54` — `question surface != inquiry
-standing`.
+**An occurring term, `inquiry standing`.** `04.Question:54` — `question surface
+!= inquiry standing`. The phrase occurs. §3 records that it is defined
+nowhere, and the phrase occurring is not the box existing.
 
 **Non-equivalences that presuppose it is real.** `04.Question:53` — `operator
 testimony != inquiry origination`. `:56` — `uncertainty statement != inquiry
@@ -106,6 +132,23 @@ stated.** `:47` names them together as Seed-owned. It does not order them, make
 one part of the other, or say how they relate. Nothing here should be read as
 establishing that inquiry origination precedes, contains, or produces question
 formation.
+
+**The act active law names in this area is question formation, not inquiry.**
+`04.Question:23`: "External grammar cannot inject an internal question.
+Operator material may remain testimony, pressure, goals, constraints,
+corrections, or responses; **Seed owns the constitutional act that forms any
+internal question**." The definite article is doing work. This is the clause
+that makes the withdrawn "Inquiry holds a named act" reading untenable: the
+same chapter names a different thing as the constitutional act.
+
+**Active law records the realization question as a Preserved Unknown.**
+`04.Question:49`: "Preserved Unknowns include ... **which internal
+question-forming responsibilities realize the constitutional act in every
+district**. Those realization Unknowns do not weaken the ownership boundary."
+
+Plural responsibilities realizing one act, across districts, explicitly
+unresolved. That is the family shape stated in active law's own words, and it
+is a recorded gap sitting exactly at the seam this campaign is working on.
 
 **Cited runtime is not verified against the clauses.** Active law cites
 `seed_runtime/inquiry_orientation.py` and
@@ -165,8 +208,49 @@ the examining, and one is a filename. No clause names an Examination
 Responsibility, act, or standing.
 
 This is evidence that `examine` is an ordinary verb in active law rather than a
-Responsibility, and it was already decided at #2210. It does not settle
-`compare`, `consider`, or `warrant`, and this report does not extend to them.
+Responsibility, and it was already decided at #2210.
+
+**`consider` is also already decided, at #2236 and #2237.** Added at #2343.
+`#2236` is titled "Remove the unsupported consideration specialization" and
+`#2237` "Remove movement and candidate consideration residue," following the
+audit at #2233 and its correction at #2235.
+
+Active law now contains `consideration` twice, both in `04-inquiry/
+inquiry-frontiers.md`, and neither names an act:
+
+```text
+04.Frontier:10   Membership creates visibility for consideration, not
+                 selection, authorization, or resolution.
+04.Frontier:18   Preservation, consideration, supplied ...
+```
+
+`:10` is the stronger of the two, because it sets consideration *against* three
+real acts. Visibility for consideration is what membership creates **instead
+of** selection, authorization, or resolution. Searching active law for a
+Consideration act, standing, or responsibility, or for `consideration
+selection` or `selected-for-consideration`, returns nothing.
+
+There is corroborating history in this very campaign. `#2267` removed the
+sentences "a candidate equivalence **considered in relation to** an applicable
+relation grammar" and "the candidate **is considered in relation to** an
+applicable relation grammar," replacing them with Compare wording. That does
+not establish that the act is Compare — #2341 withdrew the operands those
+sentences used — but it confirms `considered` was already being treated as
+placeholder prose rather than constitutional grammar.
+
+So the verb seam narrows:
+
+```text
+examine    ordinary verb; Examination removed at #2210
+consider   ordinary verb; Consideration removed at #2236/#2237
+
+compare    not tested here
+warrant    not tested here
+```
+
+The remaining question is whether the responsible act at that boundary is
+Compare, Warrant, or two distinct acts — which would also explain what the old
+Examination was compressing. This report does not answer it.
 
 ## 6. Effect on prior work
 
@@ -178,17 +262,52 @@ stating because it changed with this one:
 proposed input        named nothing
 relation grammar      named nothing; mapped to a dimension list
 candidate equivalence named a proposal in unadopted vocabulary
-Inquiry               names something; was in the wrong position
+Inquiry               named a family, placed as a node
 ```
 
-The test asks whether a phrase names something. Three consecutive negative or
-partial answers made a fourth look likely, and this one is strongly positive —
-the same trap recorded at #2340, avoided here by running the fan-out first.
+The test asks whether a phrase names something, and the four answers show that
+"yes" and "no" do not exhaust it. A phrase can name established grammar without
+naming a subject, and that is the case the campaign was least prepared for: the
+first three failures were phrases that named nothing, so the fourth was read as
+its opposite. It is neither. **The kind of thing a phrase names is a separate
+question from whether it names anything**, and #2342 answered the first by
+assuming the second.
 
 ## 7. Correction record
 
-No defect to record in this report's own reasoning. One method note, carried
-forward from #2341's correction.
+**Defect, corrected at #2343: the report treated occurring phrases as recovered
+boxes.** As merged at #2342 it listed "a named act" and "a named standing"
+among Inquiry's supports. Neither holds.
+
+```text
+clause     "Seed may initiate internal inquiry after a bounded
+            translation preserves ..."
+written    Inquiry has a named Act
+should be  a bounded action, expressed in ordinary grammar, is gated
+            by seven coordinates
+
+clause     "question surface != inquiry standing"
+written    Inquiry has a named Standing
+should be  the phrase `inquiry standing` occurs and is defined nowhere
+```
+
+The second is the sharper failure, because §3 of the same report already
+recorded that `inquiry standing` has no defining clause. The support list and
+the limits section asserted opposite things — the recurring defect of a frame
+outrunning its own body, appearing for the second time in three reports.
+
+The first is refuted from within the same chapter: `04.Question:23` names
+question formation as **the** constitutional act in this area, and `:49`
+records as a Preserved Unknown which responsibilities realize it. A phrase
+cannot be the named Act of a region where active law names a different act and
+files the realization question as Unknown.
+
+What this misreading cost was the correct answer, which is more interesting
+than the overclaim: Inquiry is a **family**, and the campaign's recurring
+`Inquiry → Question` topology was putting a family name into a graph as a node.
+That is why the shape always felt wrong.
+
+**Method note**, carried forward from #2341's correction.
 
 The three overclaims corrected at #2341 all had the shape of substituting a
 nearby established thing for the unrecovered one, and all passed a citation
