@@ -12,46 +12,85 @@ bounding Proposal requires. Verified at `67e5014`.
 
 ## 1. Executive answer
 
-**`proposed input` is antecedent vocabulary used by the Applicability grammar.
-What it names constitutionally is not recovered.** It appears in exactly one
-clause, which introduced it in order to refer to the thing whose Applicability
-that clause assigns.
+**`proposed` is ordinary grammatical qualification of `input`. No Proposal
+Responsibility, Act, occurrence, or Standing is recovered, and none is
+required to read the clause.** The modifier describes how the noun is spoken of
+in context; it does not name a further constitutional subject behind it.
 
-Four readings remain open, and this report picks none:
-
-```text
-A  an independently established constitutional relation or role
-B  a local role internal to an Act-owning Responsibility
-C  the descriptive condition "an input this exact Act is considering
-   for Applicability", with no independent thing at all
-D  unresolved vocabulary compressing some missing Responsibility
-```
-
-**C would dissolve the missing edge entirely**, since nothing would need to
-occur for a subject to be considered — the act owner's consideration would be
-the whole content. **D would make the edge a compression to be decompressed.**
-A and B would make it a thing with an origin to find. The clause does not
-distinguish them.
-
-What is recovered, stated in the form the corpus requires:
+The four readings an earlier version left open are resolved in favour of the
+third:
 
 ```text
-no producing Act or occurrence is recovered
-no owning Responsibility is recovered
-no independent proposed-input result or Standing is recovered
-no coordinates belonging to the term are recovered
+A  an independently established constitutional relation or role   not supported
+B  a local role internal to an Act-owning Responsibility          not supported
+C  the descriptive condition "an input this exact Act is
+   considering for Applicability"                                 supported
+D  unresolved vocabulary compressing a missing Responsibility     not supported
 ```
 
-Each of those is `not recovered`, not `absent`. `:49` itself lists *"a proposed
-input"* among things conditional applicability does not establish, which treats
-it as the sort of thing that could be established — so a categorical negative is
-not available.
+Three findings support C, in ascending order of strength.
 
-The governing question — *what makes a preserved subject a proposed input* —
-has no recovered answer, and under reading C it may be a question with no
-subject. The Book uses the term only where it needs to refer to an input an act
-is considering, and says what does **not** confer that status without ever
-saying what does.
+**Every use reads coherently without Proposal.** All seven occurrences of the
+term across the clause state duties, limits, and permissions attaching to the
+act owner regarding inputs it is considering. None becomes incoherent when read
+that way, and none requires a producing occurrence.
+
+**The construction recurs elsewhere with the same sense.** Active law contains
+three `proposed X` constructions and no others:
+
+```text
+proposed input   01.Standing.E.1        the input this act is considering
+proposed act     02.Constraints:10      "a constraint consumes the proposed
+                                         act or relevant context"
+proposed use     01.Standing.E.1        "the exact act and proposed use"
+```
+
+`02.Constraints:10` is independent of the applicability clause and uses
+`proposed` identically: the act a constraint is considering, with no Proposal
+behind it. A grammatical pattern used consistently across unrelated chapters is
+grammar, not a kind appearing twice.
+
+**The neighbouring modifiers all have recovered acts, and this one has none.**
+This is the decisive asymmetry:
+
+```text
+modifier      corresponding recovered act    active-law files naming it
+selected      Selection                      21
+warranted     Warrant                        24
+admitted      Admission                      12
+attributed    attribution                     7
+proposed      —                               0
+```
+
+`Proposal` appears nowhere as an act, occurrence, or Responsibility. Two
+occurrences of the word `proposal` exist — `02.Acts:18`'s `proposal !=
+occurrence` and a provider-vocabulary mention at `01.External:15` — and neither
+names one. If `proposed` denoted a comparable act, four PRs written specifically
+about inputs to acts would have had occasion to say so across three years of
+corpus. They never did, because there was nothing to say.
+
+### On the sentence that seemed to point the other way
+
+An earlier version held the question open partly on `:49`, which lists *"a
+proposed input"* among things conditional applicability does not **establish** —
+establishment being constitutional vocabulary.
+
+That reading required list membership to confer kind-status on every member. The
+simpler reading requires nothing: *the fact that an input would be applicable
+does not by itself mean any input has been proposed.* It is an inference-block,
+of the same form as *the fence being jumpable does not make it a jumped fence*.
+Nothing favours the stronger reading, and the report no longer rests on it.
+
+### What the governing question turns out to be
+
+*What makes a preserved subject a proposed input* is a question with no subject.
+Nothing makes it one, because being proposed is not a status a subject acquires.
+It is how the clause refers to a subject an act is considering — the same
+subject, described by its position in that consideration.
+
+The report's own earlier finding was already this result: the term has no
+coordinates of its own. That was read as a gap to be filled rather than as the
+answer.
 
 ## 2. Where the term lives
 
@@ -91,6 +130,13 @@ This is provenance, not disqualification. It does establish that no separate
 recovery of proposal underlies the term.
 
 ## 3. Question by question
+
+**Read these under §1.** Each question was put under the earlier framing, which
+presupposed that being proposed is a status something confers. Their answers are
+preserved as the search record, and the uniform result is now read as evidence
+for the dissolution rather than as a set of gaps: every question that
+presupposes production returned nothing, and the one question that does not —
+Q4, whether the term is local to the exact act — returned a warranted answer.
 
 ### Q1 — is `proposed input` a constitutional result or Standing?
 
@@ -140,7 +186,8 @@ sort of thing that could be established, while naming nothing that establishes
 it.
 
 ```text
-Q2  producing Act or occurrence                    Unknown
+Q2  no producing Act or occurrence is recovered, and under §1 none is
+    required: the question presupposes that being proposed is produced
 ```
 
 ### Q3 — what Responsibility owns proposal?
@@ -154,7 +201,7 @@ which never discusses ownership; it discusses ownership immediately adjacent
 and does not extend it.
 
 ```text
-Q3  owning Responsibility                          Unknown
+Q3  no owning Responsibility is recovered, and under §1 none is required
 ```
 
 ### Q4 — generic across Acts, or local to the exact Act?
@@ -216,7 +263,8 @@ Reading the grant as covering proposal would extend an enumerated permission by
 analogy, which `:47`'s own *"same occurrence is not same claim"* discourages.
 
 ```text
-Q6  same-occurrence proposal                       Unknown, not granted
+Q6  not granted by the clause, and under §1 the question does not arise:
+    there is no proposal occurrence to place inside another occurrence
 ```
 
 ### Q7 — is proposal distinct from the neighbouring terms?
@@ -258,20 +306,25 @@ What that pattern shows is that the term is **used to refer** rather than
 defined — every sentence needs a phrase for "the input this act is considering",
 and supplies one. It does not show what the phrase names.
 
-An earlier version of this report read the pattern as establishing a **role
-assigned within an exact act**. That is withdrawn. Duties attaching to a phrase
-does not establish that the phrase names a role: under reading C the duty
-attaches to the act owner's consideration of a subject, with no role conferred
-on the subject at all, and the clause reads identically either way.
+An earlier version read the pattern as establishing a **role assigned within an
+exact act**. That is withdrawn. Duties attaching to a phrase does not establish
+that the phrase names a role: the duty attaches to the act owner's consideration
+of a subject, no role is conferred on the subject, and the clause reads
+identically.
 
-**Where the reading stops, in both directions.** It does not follow that
-proposal is merely descriptive — `:49` treats a proposed input as something that
-could be established, and a real duty is conditioned on the phrase applying. Nor
-does it follow that a role exists to be conferred. Both remain open, and this
-report resolves neither. It neither claims the term dissolves nor preserves it
-as a constitutional noun.
+The modifier does not create a new subject. `proposed input` and `input` refer
+to the same preserved subject; the qualifier states its position in an act's
+consideration, not a further thing it has become. That is what the absence of
+coordinates was recording all along.
 
 ## 5. Arrows, independently classified
+
+**Read these under §1.** Every arrow below terminates in `proposed input` as
+though it were a subject something produces. Under the dissolution none of these
+arrows has a target, and the table is preserved as the record of what was
+searched for. Its content still holds as stated — availability and conditional
+applicability are denied, the others were never addressed — and that uniform
+result is itself part of the evidence.
 
 | Arrow | Class |
 | --- | --- |
@@ -289,30 +342,34 @@ as a constitutional noun.
 ```text
 preserved subject
         │
-        │   what is "proposed" doing here at all?
-        │
-        ▼
-   proposed input                    antecedent vocabulary;
-        │                            what it names is not recovered
+        │   an exact Act considers it as an input
+        │   (no occurrence conferring a status; no edge)
         ▼
 Applicability determination          owner, form, and four results recovered
+        │
+        ├── applicable / inapplicable / conflicting / Unknown
+        ▼
+   separate claims: Act occurrence, participation, reliance
 ```
 
-The smallest unresolved question is not *what confers the role*, because that
-phrasing already answers one of the four readings. It is:
+**There is no edge.** The gap earlier reports recorded between a preserved
+subject and a proposed input was the shape of a question, not of a missing
+coordinate. Nothing occurs to make a subject proposed, because being proposed is
+not something a subject becomes.
 
-```text
-does "proposed" name anything constitutional at all,
-and if so which of A, B, C, or D?
-```
+What remains genuinely unresolved is upstream of all of it and unchanged by this
+finding: what an exact Act's Responsibility considers, and on what basis, is
+governed by that Responsibility's own grammar — which for a Compare occurrence
+is the coordinate three prior investigations reached and none recovered.
 
-The recovery narrows what would count as an answer. It is not a missing
-*coordinate* of a known kind — none is recovered for the term. It is not a
-missing *owner* of a named act — no proposal act is recovered. Under reading C
-there is nothing missing at all, and the edge in the diagram above would not
-exist. Active law distinguishes none of these, and this report does not.
+### Effect on prior reports
 
-No roadmap beyond that question is offered.
+`compare_proposed_input_boundary_recovery_001.md` records its smallest
+unresolved coordinate as *"what makes an independently preserved subject a
+proposed input to an exact Compare Act — and what Responsibility, if any, owns
+that proposal."* Under this finding that coordinate does not exist. It is
+recorded here rather than amended there; nothing else in that report depends on
+it, and its Applicability recoveries stand.
 
 ## 7. Correction record
 
@@ -320,14 +377,13 @@ Two claims in the previous version were corrected. The provenance finding, the
 occurrence counts, the distinctness table, and the Q2/Q4/Q6 dispositions are
 unchanged.
 
-```text
 1. it concluded that `proposed input` is "a local role term", and framed
-   the closing question as what confers the role. That decides reading B
-   over C and D without warrant. Duties attaching to a phrase does not
-   establish that the phrase names a role -- under C the duty attaches to
-   the act owner's consideration and the clause reads identically. The
-   four readings are now recorded as open and the closing question is
-   "what is proposed doing here at all".
+   the closing question as what confers the role. That decided one
+   reading without warrant. A later round left all four open; this round
+   resolves them in favour of the descriptive reading on three grounds --
+   every use reads coherently without Proposal, the construction recurs
+   independently at 02.Constraints:10 with the same sense, and every
+   neighbouring modifier has a recovered act while this one has none.
 
 2. its executive stated "it has no producing Act, no owning
    Responsibility, no Standing, and no coordinates of its own", while the
@@ -343,6 +399,14 @@ The second defect is this author's most repeated one and its third
 occurrence in a single session: the body recorded Unknown, the summary
 recorded absence. It recurred here in a report whose subject is the
 difference between what a clause says and what a reader supplies.
+
+A third defect underlies both and is worth recording separately. Across
+three reports this author asked what owns Proposal before asking whether
+Proposal names anything. An unfilled coordinate was treated as a
+coordinate that must be filled. That is the same shape that preserved
+`closed-choice` as a Presentation subtype until the same test dissolved
+it, and the corrective is a check to run first rather than last: before
+recovering what owns X, establish that X names something.
 
 Report only. No active-law, runtime, test, projection, or prior-report
 amendment.
