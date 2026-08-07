@@ -59,7 +59,6 @@ def _exchange_with_relation(ledger, text, *, workspace="w", session="s"):
         session_id=session,
         captured_ingress=capture_stdin_material(StringIO(text)),
         output_stream=StringIO(),
-        produced_after_presentation=presentation,
     )
     finding = run_operator_response_comparison_and_identification(
         ledger,
@@ -192,7 +191,6 @@ def test_changed_proposition_wording_does_not_alter_applicability():
         session_id="s",
         captured_ingress=capture_stdin_material(StringIO("1\n")),
         output_stream=StringIO(),
-        produced_after_presentation=custom,
     )
     finding = run_operator_response_comparison_and_identification(
         ledger,
@@ -350,7 +348,6 @@ def test_identification_alone_cannot_produce_goal_standing():
         session_id="s",
         captured_ingress=capture_stdin_material(StringIO("1\n")),
         output_stream=StringIO(),
-        produced_after_presentation=presentation,
     )
     run_operator_response_comparison_and_identification(
         ledger,
@@ -420,7 +417,6 @@ def test_missing_consumer_treatment_prevents_goal_standing():
         session_id="s",
         captured_ingress=capture_stdin_material(StringIO("1\n")),
         output_stream=StringIO(),
-        produced_after_presentation=untreated,
     )
     finding = run_operator_response_comparison_and_identification(
         ledger,
@@ -901,7 +897,6 @@ def test_recorded_treatment_without_structural_authority_is_inapplicable():
             session_id="s",
             captured_ingress=capture_stdin_material(StringIO("1\n")),
             output_stream=StringIO(),
-            produced_after_presentation=custom,
         )
         finding = run_operator_response_comparison_and_identification(
             ledger,

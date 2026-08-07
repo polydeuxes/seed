@@ -177,15 +177,8 @@ def run_operator_source_recovery_and_meaning_relation(
         capture_event.payload["attempt_ref"] == response_attempt_ref,
         "capture and ingress belong to different attempts",
     )
-    _require(
-        ingress_event.payload.get("produced_after_presentation_ref")
-        == presentation_ref
-        and ingress_event.payload.get("produced_after_presentation_formed_event_id")
-        == formed_event.id
-        and ingress_event.payload.get("produced_after_presentation_emitted_event_id")
-        == emitted_event.id,
-        "ingress does not record production after this exact presentation chain",
-    )
+    # The ingress names no Presentation; the relation between the two
+    # preserved subjects is unrecovered and nothing here stands in for it.
     _require(
         comparison_event.payload["compared_representation"]
         == ingress_event.payload["dimensions"]["content"],

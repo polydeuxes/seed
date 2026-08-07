@@ -5687,7 +5687,12 @@ def run_persistent_operator_console(
         session_standing = project_operator_session_standing(
             ledger, workspace_id=workspace_id, session_id=session_id
         )
-        active_presentation = session_standing["current_presentation"]
+        # No Presentation is attached to this capture.  Several emissions may
+        # precede it, and selecting one -- by recency or otherwise -- would
+        # assert a relation no occurrence determined.  The emission and ingress
+        # occurrences are preserved independently; a later responsible
+        # occurrence may establish a relation between them and record it
+        # itself.
         attempt_view = run_operator_ingress_attempt(
             ledger=ledger,
             workspace_id=workspace_id,
@@ -5697,7 +5702,6 @@ def run_persistent_operator_console(
             session_standing=(
                 session_standing if session_standing["event_count"] else None
             ),
-            produced_after_presentation=active_presentation,
         )
         if attempt_view["current_standing"]["preserved_ingress"] is not None:
             # The ingress occurrence and its produced-after Presentation

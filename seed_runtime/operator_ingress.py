@@ -218,7 +218,6 @@ def run_operator_ingress_attempt(
     captured_ingress: CapturedOperatorMaterial,
     output_stream: TextIO,
     session_standing: dict[str, object] | None = None,
-    produced_after_presentation: dict[str, object] | None = None,
 ) -> dict[str, object]:
     """Capture, examine, and project one bounded non-EOF ingress attempt.
 
@@ -227,11 +226,11 @@ def run_operator_ingress_attempt(
     the Presentation to expose; it is not recorded, interpreted, or used to
     alter this attempt's own occurrence handling.
 
-    ``produced_after_presentation`` is the exact emitted Presentation that
-    preceded this capture, where one exists.  The ingress occurrence records
-    only the temporal relation -- this material was produced after that
-    exact emission.  It does not classify the material as a response and
-    establishes no operator intent, selection, or requested treatment.
+    The occurrence names no Presentation.  A relation between this preserved
+    material and any preserved Presentation is its own bounded claim subject
+    with its own participants, producer, occurrence, and Evidence; it does
+    not live inside one participant's record, and no such relation is
+    established here.
     """
     if captured_ingress.eof:
         raise ValueError("captured_ingress must be non-EOF")
@@ -283,22 +282,6 @@ def run_operator_ingress_attempt(
     raw_ingress = ingress_examination.represented_text
     ingress_kind = "empty" if raw_ingress in {"\n", "\r\n"} else "text"
     ingress_content = raw_ingress.removesuffix("\n").removesuffix("\r")
-    produced_after: dict[str, object] = {}
-    if (
-        produced_after_presentation is not None
-        and produced_after_presentation.get("emitted_event_id") is not None
-    ):
-        produced_after = {
-            "produced_after_presentation_ref": produced_after_presentation[
-                "presentation_id"
-            ],
-            "produced_after_presentation_formed_event_id": (
-                produced_after_presentation["formed_event_id"]
-            ),
-            "produced_after_presentation_emitted_event_id": (
-                produced_after_presentation["emitted_event_id"]
-            ),
-        }
     _record(
         ledger,
         "operator.ingress.ingress_occurred",
@@ -325,7 +308,6 @@ def run_operator_ingress_attempt(
             ingress_capture.id,
             ingress_examination_event.id,
         ],
-        **produced_after,
     )
     state = StateProjector(ledger).project(workspace_id)
     projection = state.operator_ingress_attempts[attempt]

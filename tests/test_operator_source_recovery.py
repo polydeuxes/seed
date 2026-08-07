@@ -46,7 +46,6 @@ def _exchange(ledger, text, *, workspace="w", session="s"):
         session_id=session,
         captured_ingress=capture_stdin_material(StringIO(text)),
         output_stream=StringIO(),
-        produced_after_presentation=presentation,
     )
     finding = run_operator_response_comparison_and_identification(
         ledger,
@@ -152,7 +151,6 @@ def test_failed_identification_produces_no_source_recovery():
         session_id="s",
         captured_ingress=capture_stdin_material(StringIO("1\n")),
         output_stream=StringIO(),
-        produced_after_presentation=malformed,
     )
     finding = run_operator_response_comparison_and_identification(
         ledger,
@@ -539,7 +537,6 @@ def test_binding_that_bypasses_the_matched_coordinate_is_refused():
         session_id="s",
         captured_ingress=capture_stdin_material(StringIO("1\n")),
         output_stream=StringIO(),
-        produced_after_presentation=crossbound,
     )
     finding = run_operator_response_comparison_and_identification(
         ledger,

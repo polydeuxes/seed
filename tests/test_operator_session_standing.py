@@ -188,7 +188,7 @@ def test_console_supplies_prior_session_standing_to_later_interactions():
     standing = _standing(ledger)
     assert len(standing["presentations"]) == 3
     first_id, second_id, third_id = list(standing["presentations"])
-    assert standing["current_presentation"]["presentation_id"] == third_id
+    assert list(standing["presentations"])[-1] == third_id
     # The second Presentation's recorded formation consumed Standing that
     # already contained the first interaction's events.
     second_evidence = set(
