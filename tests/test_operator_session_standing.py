@@ -153,7 +153,7 @@ def test_one_attempt_behavior_unchanged_without_earlier_session_history():
     assert "session_standing" not in baseline
     assert "Session Standing" not in format_operator_ingress_view(baseline)
 
-    # The console passes no Standing to the first interaction of a session,
+    # The console passes Standing containing C0 to the first interaction,
     # and its interaction output is a bounded Presentation, not the View.
     input_stream = StringIO("solo material\nexit\n")
     output_stream = StringIO()
@@ -184,15 +184,15 @@ def test_console_supplies_prior_session_standing_to_later_interactions():
     )
 
     rendered = output_stream.getvalue()
-    assert rendered.count("Bounded Presentation") == 2
+    assert rendered.count("Bounded Presentation") == 3
     standing = _standing(ledger)
-    assert len(standing["presentations"]) == 2
-    first_id, second_id = list(standing["presentations"])
-    assert standing["current_presentation"]["presentation_id"] == second_id
+    assert len(standing["presentations"]) == 3
+    first_id, second_id, third_id = list(standing["presentations"])
+    assert standing["current_presentation"]["presentation_id"] == third_id
     # The second Presentation's recorded formation consumed Standing that
     # already contained the first interaction's events.
     second_evidence = set(
-        standing["presentations"][second_id]["session_standing_evidence_ids"]
+        standing["presentations"][third_id]["session_standing_evidence_ids"]
     )
     first_evidence = set(
         standing["presentations"][first_id]["session_standing_evidence_ids"]

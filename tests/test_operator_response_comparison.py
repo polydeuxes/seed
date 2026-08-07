@@ -410,7 +410,7 @@ def test_later_presentation_consumes_findings_without_stronger_standing():
 
 
 def test_exit_boundary_is_explicit_and_unambiguous():
-    # `exit` escapes the process boundary before any recording: no events.
+    # `exit` escapes before ingress recording, after the ordinary C0 path.
     ledger = EventLedger()
     output = StringIO()
     seed_local.run_persistent_operator_console(
@@ -420,7 +420,10 @@ def test_exit_boundary_is_explicit_and_unambiguous():
         input_stream=StringIO("exit\n"),
         output_stream=output,
     )
-    assert ledger.list("w") == []
+    assert [event.kind for event in ledger.list("w")] == [
+        "operator.presentation.formed",
+        "operator.presentation.emitted",
+    ]
 
     # The recorded local-stop coordinate is disjoint from the exit byte
     # form, and choosing it flows through recorded Compare/Identification
@@ -489,7 +492,7 @@ def test_console_full_exchange_and_next_presentation_exposes_finding():
     )
     rendered = output.getvalue()
 
-    assert rendered.count("Bounded Presentation") == 3
+    assert rendered.count("Bounded Presentation") == 4
     assert (
         "Prior exchange: alternative 1 (Establish richer shared grammar with "
         "the Operator) corresponds to the captured material within" in rendered
@@ -498,8 +501,8 @@ def test_console_full_exchange_and_next_presentation_exposes_finding():
     assert "Prior exchange: no coordinate match within" in rendered
     assert "requested treatment remain Unknown" in rendered
     standing = _standing(ledger)
-    assert len(standing["comparisons"]) == 2
-    assert len(standing["identifications"]) == 2
+    assert len(standing["comparisons"]) == 3
+    assert len(standing["identifications"]) == 3
     assert standing["latest_exchange_finding"]["comparison"]["outcome"] == (
         "no-coordinate-match"
     )

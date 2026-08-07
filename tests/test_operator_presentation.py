@@ -50,28 +50,32 @@ def _form_and_emit(ledger, *, workspace="w", session="s"):
     )
 
 
-def test_first_unbidden_ingress_precedes_c1_and_is_not_labeled_response():
+def test_console_forms_c0_before_first_ingress_and_uses_existing_response_path():
     ledger, _ = _run_console("hello\n")
 
     kinds = [event.kind for event in ledger.list("w")]
     assert kinds == [
+        "operator.presentation.formed",
+        "operator.presentation.emitted",
         *_INGRESS_KINDS,
+        "operator.exchange.comparison_occurred",
+        "operator.exchange.identification_occurred",
         "operator.presentation.formed",
         "operator.presentation.emitted",
     ]
-    formed, emitted = ledger.list("w")[3:]
-    for event in ledger.list("w")[:3]:
-        assert not any("response" in key for key in event.payload)
-    # The formation references session Standing evidence, never a response
-    # relation to the preserved ingress.
-    assert not any(
-        "response" in key for key in formed.payload if key != "unknowns"
-    )
-    assert "response_material" not in formed.payload
-    assert "response_material" not in emitted.payload
+    c0_formed, c0_emitted = ledger.list("w")[:2]
+    assert c0_formed.payload["session_standing_evidence_ids"] == []
+    assert c0_formed.payload["prior_exchange_finding"] is None
+    assert c0_formed.payload["recovered_meaning_relation"] is None
+    assert c0_formed.payload["current_interaction_goal"] is None
+    assert c0_formed.payload["unknowns"] == []
+    ingress = ledger.list("w")[4]
+    assert ingress.payload["produced_after_presentation_ref"] == c0_formed.payload["presentation_ref"]
+    assert ingress.payload["produced_after_presentation_formed_event_id"] == c0_formed.id
+    assert ingress.payload["produced_after_presentation_emitted_event_id"] == c0_emitted.id
 
 
-def test_c1_is_formed_and_emitted_after_the_first_ingress():
+def test_c0_and_c1_are_formed_and_emitted_in_order():
     ledger, output = _run_console("hello\n")
 
     events = ledger.list("w")
@@ -80,19 +84,10 @@ def test_c1_is_formed_and_emitted_after_the_first_ingress():
         for index, event in enumerate(events)
         if event.kind == "operator.ingress.ingress_occurred"
     )
-    formed_index = next(
-        index
-        for index, event in enumerate(events)
-        if event.kind == "operator.presentation.formed"
-    )
-    emitted_index = next(
-        index
-        for index, event in enumerate(events)
-        if event.kind == "operator.presentation.emitted"
-    )
-    assert ingress_index < formed_index < emitted_index
-    assert events[emitted_index].payload["lineage"] == [events[formed_index].id]
-    assert "Bounded Presentation" in output
+    formed = [i for i, event in enumerate(events) if event.kind == "operator.presentation.formed"]
+    emitted = [i for i, event in enumerate(events) if event.kind == "operator.presentation.emitted"]
+    assert formed[0] < emitted[0] < ingress_index < formed[1] < emitted[1]
+    assert output.count("Bounded Presentation") == 2
 
 
 def test_alternatives_carry_complete_coordinates_and_evidence_lineage():
@@ -262,12 +257,12 @@ def test_next_console_iteration_recovers_c1_and_forms_c2():
     # C1 and forms C2.
     console_ledger, output = _run_console("first\nsecond\n")
     standing = _standing(console_ledger)
-    assert len(standing["presentations"]) == 2
-    assert output.count("Bounded Presentation") == 2
-    first_id, second_id = list(standing["presentations"])
-    assert standing["current_presentation"]["presentation_id"] == second_id
-    c1 = standing["presentations"][first_id]
-    c2 = standing["presentations"][second_id]
+    assert len(standing["presentations"]) == 3
+    assert output.count("Bounded Presentation") == 3
+    _, second_id, third_id = list(standing["presentations"])
+    assert standing["current_presentation"]["presentation_id"] == third_id
+    c1 = standing["presentations"][second_id]
+    c2 = standing["presentations"][third_id]
     # C2's recorded formation consumed the Standing Evidence containing
     # C1's formation and emission occurrences, not merely later events.
     assert c1["formed_event_id"] in c2["session_standing_evidence_ids"]
@@ -281,7 +276,7 @@ def test_next_console_iteration_recovers_c1_and_forms_c2():
     assert identities(c1) == identities(c2)
 
 
-def test_first_interaction_records_no_comparison_without_prior_presentation():
+def test_first_interaction_compares_against_initial_presentation():
     ledger, _ = _run_console("first\n")
 
     kinds = {event.kind for event in ledger.list("w")}
@@ -289,14 +284,16 @@ def test_first_interaction_records_no_comparison_without_prior_presentation():
         *_INGRESS_KINDS,
         "operator.presentation.formed",
         "operator.presentation.emitted",
+        "operator.exchange.comparison_occurred",
+        "operator.exchange.identification_occurred",
     }
-    assert not any("compar" in kind or "identif" in kind for kind in kinds)
     ingress = next(
         event
         for event in ledger.list("w")
         if event.kind == "operator.ingress.ingress_occurred"
     )
-    assert "produced_after_presentation_ref" not in ingress.payload
+    first_presentation = next(iter(_standing(ledger)["presentations"].values()))
+    assert ingress.payload["produced_after_presentation_ref"] == first_presentation["presentation_id"]
 
 
 def test_direct_one_attempt_view_behavior_remains_valid():

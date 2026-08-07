@@ -565,7 +565,7 @@ def test_console_establishes_the_goal_end_to_end():
         ledger=ledger,
         workspace_id="w",
         session_id="s",
-        input_stream=StringIO("Hello\n1\nexit\n"),
+        input_stream=StringIO("1\nexit\n"),
         output_stream=output,
     )
     standing = _standing(ledger)
@@ -573,6 +573,17 @@ def test_console_establishes_the_goal_end_to_end():
     assert goal is not None
     assert goal["proposition"] == _GOAL_MEANING
     assert "Current bounded interaction goal" in output.getvalue()
+    kinds = {event.kind for event in ledger.list("w")}
+    assert {
+        "operator.exchange.comparison_occurred",
+        "operator.exchange.identification_occurred",
+        "operator.presentation.source_recovered",
+        "operator.presentation.meaning_relation_established",
+        "operator.interaction.goal_applicability_established",
+        "operator.interaction.goal_admission_established",
+        "operator.interaction.goal_consumption_occurred",
+        "operator.interaction.goal_standing_established",
+    } <= kinds
 
 
 def test_consumer_responsibility_and_authority_are_structural():

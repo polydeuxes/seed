@@ -380,9 +380,13 @@ def test_console_recurs_after_each_quiescent_non_eof_attempt():
     ledger, output = run_console(b"first ingress\nsecond ingress\nexit\n")
     events = ledger.list_events("console-w")
     assert [event.kind for event in events] == [
+        "operator.presentation.formed",
+        "operator.presentation.emitted",
         "operator.ingress.raw_material_captured",
         "operator.ingress.representation_examined",
         "operator.ingress.ingress_occurred",
+        "operator.exchange.comparison_occurred",
+        "operator.exchange.identification_occurred",
         "operator.presentation.formed",
         "operator.presentation.emitted",
         "operator.ingress.raw_material_captured",
@@ -401,7 +405,7 @@ def test_console_recurs_after_each_quiescent_non_eof_attempt():
     assert (
         len(StateProjector(ledger).project("console-w").operator_ingress_attempts) == 2
     )
-    assert output.count("Bounded Presentation") == 2
+    assert output.count("Bounded Presentation") == 3
 
 
 class _RawStdin:
@@ -478,15 +482,20 @@ def test_bare_seed_enters_persistent_console_and_announces_exit():
         capture_output=True,
         check=True,
     )
-    assert completed.stdout == b"Seed console: `exit` exits.\n"
+    assert completed.stdout.startswith(b"Seed console: `exit` exits.\n")
+    assert completed.stdout.count(b"Bounded Presentation") == 1
     assert completed.returncode == 0
 
 
 def test_console_immediate_eof_returns_without_operator_ingress_events():
     ledger, output = run_console(b"")
 
-    assert ledger.list_events("console-w") == []
-    assert output == "Seed console: `exit` exits.\n"
+    assert [event.kind for event in ledger.list_events("console-w")] == [
+        "operator.presentation.formed",
+        "operator.presentation.emitted",
+    ]
+    assert output.startswith("Seed console: `exit` exits.\n")
+    assert output.count("Bounded Presentation") == 1
 
 
 def test_empty_stream_encoding_metadata_uses_utf8_fallback_at_producer_boundary():
@@ -509,7 +518,7 @@ def test_console_admits_empty_stream_encoding_as_no_usable_testimony():
         output_stream=output,
     )
 
-    capture, examination, ingress = ledger.list_events("console-w")[:3]
+    capture, examination, ingress = ledger.list_events("console-w")[2:5]
     assert capture.payload["exact_bytes_hex"] == b"material\n".hex()
     assert capture.payload["encoding_testimony"] is None
     assert examination.payload["encoding_testimony"] is None
@@ -549,16 +558,20 @@ def test_console_eof_after_ordinary_input_adds_no_second_attempt():
     ledger, output = run_console(b"ordinary ingress\n")
 
     assert [event.kind for event in ledger.list_events("console-w")] == [
+        "operator.presentation.formed",
+        "operator.presentation.emitted",
         "operator.ingress.raw_material_captured",
         "operator.ingress.representation_examined",
         "operator.ingress.ingress_occurred",
+        "operator.exchange.comparison_occurred",
+        "operator.exchange.identification_occurred",
         "operator.presentation.formed",
         "operator.presentation.emitted",
     ]
     assert (
         len(StateProjector(ledger).project("console-w").operator_ingress_attempts) == 1
     )
-    assert output.count("Bounded Presentation") == 1
+    assert output.count("Bounded Presentation") == 2
 
 
 def test_console_passes_its_capture_unchanged_to_the_bounded_attempt(monkeypatch):
