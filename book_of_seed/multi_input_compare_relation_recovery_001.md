@@ -289,26 +289,81 @@ of E would equally assume a relation nothing establishes.
 | relation standing → prior subjects newly applicable | **D** |
 | recursive / cross-pollinating composition | **D**, with `01.Uptake.A` declining universal order |
 | implemented Compare as instance of `05.Testimony.E` | **D** |
+| bounded relation standing → later Compare input kind | **D** — the smallest unresolved arrow |
+| a separately named Responsibility is required before applicability has an assignee | **withdrawn** — see §6; the exact Act is itself a bounded responsibility |
 
 ## 6. Smallest unresolved arrow
 
-Not one of the semantic arrows. The recovery in §2/Q2 exposes a narrower gap
-underneath all of them.
+The smallest unresolved arrow is the kind-crossing between one comparison's
+result and a later comparison's inputs.
 
-`01.Standing.E.1` establishes that **the exact act owner** owns input
-applicability. `05.Testimony.E` establishes what multi-input comparison consumes
-and produces. Between them sits the coordinate neither supplies:
+`05.Testimony.E` consumes:
 
 ```text
-what Responsibility owns a multi-input bounded comparison occurrence?
+independently preserved testimony or finding
 ```
 
-Without it, `01.Standing.E.1` has no owner to assign the applicability duty to,
-and every downstream arrow in §3 is unreachable regardless of whether it is
-later recovered. It is also the same unrecovered coordinate the
-candidate-versus-grammar thread arrived at from the other side.
+and produces:
 
-That is the smallest unresolved arrow: not between two of the five positions,
-but beneath the comparison itself.
+```text
+bounded relation standing inside the comparison boundary
+```
+
+Those do not correspond across iterations. Nothing recovered here establishes
+that bounded relation standing is a finding, that it crosses into preserved
+testimony, or that a chained comparison is governed by further grammar.
+
+```text
+        bounded relation standing
+                  │
+                  ▼
+                 ???        ← smallest unresolved arrow
+                  │
+                  ▼
+   independently preserved testimony or finding
+                  │
+                  ▼
+          possible later Compare
+```
+
+`compare_standing_continuation_recovery_001.md` left the same crossing open with
+three unresolved possibilities, and this recovery does not close any of them.
+Recorded at §2/Q3 as **D**.
+
+### Correction: ownership is not the blocker
+
+An earlier version of this section named the smallest unresolved arrow as *what
+Responsibility owns a multi-input bounded comparison occurrence*, and concluded
+that without it the applicability duty has no assignee and every downstream
+arrow is unreachable. That is withdrawn.
+
+`02.Acts` states:
+
+> An act is a bounded responsibility at which something constitutionally
+> occurs: a choice is made, material is admitted, standing is established, or
+> an operation is performed.
+
+So an exact Compare Act is itself a bounded responsibility. `01.Standing.E.1`
+assigns the applicability duty to *"the responsibility assigned to perform the
+exact constitutional act"* — occurrence-local by construction, requiring no
+separately discovered universal owner. `compare_standing_continuation_recovery_001.md`
+already recorded the same reading for bounded testimony comparison: the exact
+owner is local to the instantiated comparison and is not named universally, and
+that records only that it is not universally named.
+
+The withdrawn claim treated *not globally named* as *not present*. That is the
+mirror of the relocation error this corpus has recorded six times: rather than
+naming an owner that was not recovered, it declared an occurrence-local owner
+missing because no universal name was found, and then blocked everything
+downstream on it.
+
+What survives, narrowly:
+
+```text
+Producer, participant identity, Authority, and occurrence Evidence
+for a multi-input bounded comparison remain unrecovered
+
+that is not a blocker; Responsibility != Producer != Act != occurrence
+```
 
 No construction or active-law amendment is authorized by this report.
