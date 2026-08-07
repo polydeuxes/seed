@@ -31,7 +31,7 @@ the meaning-relation path = a running instance of this Compare
   unproven; it is relation establishment and integrity validation
 ```
 
-No universal Compare Responsibility is recovered, no universal operand exists, none should be constructed — and no instance of this Compare is presently implemented.
+The candidate-versus-grammar Compare shape remains Unknown. Partial adjacent responsibilities exist, but their composition as this Compare is unwarranted. No candidate material is admitted to this Compare, and no right-hand grammar material is recovered. No Responsibility, Act, occurrence, result, Standing, Authority, Evidence basis, Scope, Producer, or Consumer is recovered for this Compare unless this report independently proves that exact coordinate.
 
 ## 2. Authority and testimony order
 
@@ -96,7 +96,7 @@ admitted?   no. No ledger event, no Applicability, no Admission, no
 
 | Claim | Source | Wording | Repository corroboration | Internal-grammar corroboration | Contradiction | Disposition |
 |---|---|---|---|---|---|---|
-| A relation grammar bears on a candidate | PESC observation `grammar_bounded_orientation_observation_001.md:126` (via recovery `:126`) | "The relation grammar, **if any**, that can address the candidate relation" | none | `01.Kinds:28` supplies relation-claim grammar | none | **partially corroborated** — the conditional is part of the claim |
+| A relation grammar bears on a candidate | PESC observation `grammar_bounded_orientation_observation_001.md:126` (via recovery `:126`) | "The relation grammar, **if any**, that can address the candidate relation" | none | `01.Kinds:28` governs warranted relation Claim or Standing; whether that constitutes “relation grammar” for this Compare is not established. | none | **attributed candidate only** — the surviving words `if any` preserve the testimony's conditional boundary; they do not corroborate the substantive existence or shape of relation grammar |
 | Different candidates need different grammars | PESC `:160` | "Different relation-shaped candidates must be examined through the grammar appropriate to the relation they propose" | none — the first version cited the meaning-relation path, which is the claim in dispute, so that corroboration was circular | none | none | **attributed candidate only** |
 | The relation kinds form a list | PESC `:160` | eleven relation kinds, stated "illustrative, not exhaustive, and not a taxonomy established by this report" | none | none | none | **attributed candidate only** |
 | Owner of the candidate-versus-grammar question | recovery `:127` | "Unresolved. Not automatically the candidate producer, operator, presentation source, later consumer, or PESC report" | none | none | none | **Unknown** |
@@ -110,17 +110,17 @@ admitted?   no. No ledger event, no Applicability, no Admission, no
 | relation Claim subject | **present** — `01.Kinds:28`, active law |
 | representation of a relation Claim | **present** for one kind — the recorded meaning relation |
 | relation Standing | **partially present** — established for meaning relations only |
-| grammar applicable to a relation Claim | **present** — `01.Kinds:28`'s required dimensions, per relation kind |
+| grammar applicable to a relation Claim | **Unknown** — active law governs relation Standing, but does not establish that those coordinates are grammar material for this Compare |
 | collection of relation Standings | **absent** — and PESC does not require one |
 | PESC coordinates | **represented only in report testimony** |
-| Authority for forming such grammar | **Unknown** — `01.External`'s `[UNRESOLVED]` |
-| Evidence warranting each included relation | **present per instance**, absent in aggregate |
-| Producer | **Unknown** for the general shape |
-| production Act / occurrence / produced representation | **absent** as a general shape; **present** for the meaning-relation instance |
-| Consumer | **present** for the interaction-goal instance; Unknown generally |
-| Applicability / Admission | **present** for the interaction-goal instance only |
-| Compare Act / occurrence / result | **present** for two instantiated families (below); no universal Act |
-| Standing established from comparison | **present** for the instantiated families only |
+| Authority for forming such grammar | **Unknown** — the active-law `[UNRESOLVED]` marker establishes only that the warrant required for recovering the distinction remains unresolved; its responsible subject is not established |
+| Evidence warranting this Compare | **not recovered** |
+| Producer | **not recovered** for this Compare |
+| production Act / occurrence / produced representation | **not recovered** for this Compare; meaning-relation production is present as an adjacent, non-identical responsibility |
+| Consumer | **not recovered** for this Compare |
+| Applicability / Admission | **not recovered** for this Compare |
+| Compare Act / occurrence / result | **not recovered** for candidate-versus-grammar Compare; response-coordinate Compare and projector validation remain adjacent, non-identical responsibilities |
+| Standing established from comparison | **not recovered** for this Compare; meaning Warrant remains separately established |
 
 **On compression.** The phrase may fold a conditional (*if any*) together with something else; the recovery record's `if any` is genuine and is preserved above. What that something else is — a per-instance selection, a required-dimension set, a material representation, or a shape not yet named — is **not established**. The first version asserted the per-instance selector reading as recovered. It is attributed testimony from PESC only, and PESC's own eleven-kind list is stated there as illustrative, not a taxonomy.
 
@@ -130,31 +130,29 @@ Reading the phrase as an object would manufacture an operand the source never as
 
 | | response vs Presentation coordinate | candidate vs applicable relation grammar | testimony vs testimony | constitutional grammar vs expectation vs witness |
 |---|---|---|---|---|
-| Responsibility | recorded, actor kind Seed named | **Unresolved** | occurrence-local | production boundary named |
-| Producer | console occurrence | Unknown | consuming boundary | Fidelity production boundary |
-| Consumer | identification Act | Unknown | comparison boundary | cross-seam consumer |
-| Left material | captured operator material | candidate relation | preserved testimony | constitutional subject |
+| Responsibility | recorded, actor kind Seed named | **Unknown / not recovered** | occurrence-local | production boundary named |
+| Producer | console occurrence | **Unknown / not recovered** | consuming boundary | Fidelity production boundary |
+| Consumer | identification Act | **Unknown / not recovered** | comparison boundary | cross-seam consumer |
+| Left material | captured operator material | proposed candidate material; Admission Unknown | preserved testimony | constitutional subject |
 | Right material | C's exact response coordinates | **not recovered** | other preserved testimony | bounded expectation + implementation witness |
-| Applicability gate | recorded produced-after chain | Unknown generally | not established | declared seam or scope |
-| Admission gate | none (pre-admission) | Unknown generally | not established | not established |
-| Authority | exchange-instantiated | Unresolved | comparison + input Authority, not globally named | declared seam Authority |
-| Evidence | full six-member lineage | per instance | preserved inputs | subject, expectation, witness, provenance |
-| Scope | exact exchange | per instance | comparison boundary | declared seam |
+| Applicability gate | recorded produced-after chain | **not recovered** | not established | declared seam or scope |
+| Admission gate | none (pre-admission) | **not recovered** | not established | not established |
+| Authority | exchange-instantiated | **not recovered** | comparison + input Authority, not globally named | declared seam Authority |
+| Evidence | full six-member lineage | **not recovered for this Compare** | preserved inputs | subject, expectation, witness, provenance |
+| Scope | exact exchange | **not recovered for this Compare** | comparison boundary | declared seam |
 | Act | implemented, recorded | **not recovered; no instance implemented** | testified, unimplemented | testified, unimplemented |
-| Result | match:T \| no-coordinate-match | **not recovered** | bounded relation standing | faithful \| unfaithful \| mixed \| Unknown |
+| occurrence | recorded exchange occurrence | **not recovered** | not implemented | not implemented |
+| result | match:T \| no-coordinate-match | **not recovered** | bounded relation standing | faithful \| unfaithful \| mixed \| Unknown |
 | Standing | correspondence within C only | **not recovered** | inside comparison boundary | qualitative, within scope |
-| No-match meaning | meaning and treatment Unknown | see §9 | disagreement, not falsity | unfaithful crossing within scope |
+| no-match meaning | meaning and treatment Unknown | no comparison occurrence exists from which to derive one | disagreement, not falsity | unfaithful crossing within scope |
 
 The first version recorded this family's Responsibility as Unresolved while recording its Act as "one instance implemented". That is incoherent under the grammar being recovered: an Act is not a Responsibility, **and a responsible Act occurrence requires an exact owning Responsibility**. With the owner unresolved, no lawful instance of this Compare can presently be testified to. The row is corrected above.
 
-**Established relations between them:**
+**Established relations between them:** Several repository and report surfaces use the word Compare. Shared naming does not establish shared Responsibility, Act, materials, Authority, Evidence, Scope, result, Warrant, or Standing.
 
 ```text
 shared word Compare              yes — and it establishes nothing
-shared dimensional shape         partially: each carries subject,
-                                 materials, Authority, Evidence, Scope,
-                                 result. That is Responsibility grammar
-                                 generally, not comparison identity.
+shared dimensional shape         not established by shared naming
 shared Responsibility            no
 shared operand representation    no
 shared result kind               no — coordinate match, relation
@@ -292,17 +290,11 @@ right-hand grammar? no
 
 Runtime corroboration: **none**. Zero Fidelity symbols exist. `01.External.D` is uncorroborated testimony in the same class as the other compiled-competency findings, and `01.External.D` itself warns that a Fidelity-shaped artifact does not prove the comparison responsibility occurred.
 
-Disposition: **attributed candidate only**. It is a genuine second construction direction, and it does not answer this question.
+Disposition: **attributed candidate only**. It does not answer this question.
 
 ## 11. Exact established relations
 
 ```text
-PESC bounds a candidate equivalence; it establishes no standing,
-applicability, admission, reliance, or Uptake by identity
-
-different relation-shaped candidates are examined through the grammar
-appropriate to the relation they propose
-
 a relation is its own bounded claim subject with required dimensions
 (01.Kinds:28)
 
@@ -319,6 +311,11 @@ dimension-bearing material is not the responsible act over that
 material (01.Kinds:67)
 ```
 
+**Attributed testimony only:** PESC says that it bounds a candidate
+equivalence and that different relation-shaped candidates are examined
+through the grammar appropriate to the relation they propose. Neither
+statement is repository-established grammar for this Compare.
+
 ## 12. Exact Unknowns
 
 ```text
@@ -326,7 +323,9 @@ the required constitutional shape of this Compare, entirely
 what the phrase "applicable relation grammar" names, beyond its
   preserved conditional
 owner of the candidate-versus-grammar question, generally
-Authority for forming relation grammar (01.External [UNRESOLVED])
+the responsible subject of the unresolved warrant: grammar formation,
+  grammar representation, Compare, relation establishment, or another
+  Responsibility
 producer of any general relation-grammar representation
 whether the eleven PESC relation kinds are a real inventory
 whether any Compare Responsibility spans relation kinds
@@ -360,27 +359,13 @@ blocked   treating a dimension list as an Act's operand (01.Kinds:67).
 
 Nothing is presently open for construction on this question.
 
-## 14. Recommendation for the next smallest slice
+## 14. Recommendation
 
-**No runtime slice on this question.** The first version recommended a per-kind comparison; that recommendation is withdrawn, because it rested on the classification withdrawn in §8.
+**No runtime construction is authorized by this report.** Further grammar comparison is required before construction can be warranted.
 
-The next work is a further bounded investigation, comparing the terms that this report and its predecessors have been treating as interchangeable. Three groups, each to be dispositioned separately rather than composed:
+Learning remains outside this investigation.
 
-```text
-Compare / validation / reconstruction / Warrant /
-relation establishment / Applicability / Admission
-
-grammar / applicable dimensions / constraints /
-producer invariants / schema / represented material
-
-candidate relation / proposed relation assertion /
-attributed relation testimony / recorded relation event /
-warranted relation Standing
-```
-
-Until those distinctions are resolved, the campaign should not add a comparison-shaped slice.
-
-**On the alternative direction.** This report earlier suggested Learning establishment as the better use of remaining budget, on the ground that its consumer is running and its grammar is active law. That suggestion is weakened by the same discipline applied here: `05.Testimony:113` names bounded comparison among Learning establishment's recoverable dependencies, and this report has just established that no candidate-versus-grammar comparison exists to supply one. Whether the response-versus-coordinate Compare that *is* implemented qualifies as that input is exactly the kind of composition claim this correction exists to refuse. Learning establishment remains a real direction; it is not the safe one, and it needs its own bounded orientation before a prompt is drafted.
+No conclusion about Learning inputs, dependencies, or next steps is established by this report.
 
 ## Correction record
 
