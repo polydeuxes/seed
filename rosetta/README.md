@@ -1,29 +1,27 @@
 # Rosetta of Seed
 
-**Nothing in this directory carries constitutional Authority.** It is
+**Nothing in this directory carries constitutional Authority.** It holds
 translation testimony: ordinary English about Seed's grammar, and mappings from
 words people have used to whatever current grammar corresponds to them. A
-mapping recorded here establishes no standing, no kind, and no equivalence. It
-records what a term was reaching for, and nothing more.
+mapping recorded here establishes no standing, no kind, and no equivalence.
 
-This is not part of the Book of Seed and is deliberately not stored inside it.
-English placed inside `book_of_seed/` acquires ambiguous authority — a reader
-cannot tell whether a sentence is grammar or explanation. Keeping the
-explanation outside removes the ambiguity in both directions: the Book can
-become grammar-only, and this can be plainly readable.
+This is not part of the Book of Seed and is not stored inside it. English
+placed inside `book_of_seed/` acquires ambiguous authority, since a reader
+cannot tell whether a sentence is grammar or explanation. Keeping explanation
+outside removes the ambiguity in both directions: the Book can be grammar-only,
+and this can be plainly readable.
 
-## Why this exists
+## Purpose
 
-The Book has been shedding vocabulary. Terms are retired when they turn out to
-name nothing, to compress several distinctions into one friendly word, or to
-be ordinary English that acquired constitutional-looking capitalisation.
+The Book sheds vocabulary. Terms are retired when they name nothing, when they
+compress several distinctions into one word, or when they are ordinary English
+that acquired constitutional-looking capitalisation.
 
-Retiring a word from the Book should not delete the knowledge of what it meant
-and why it went. But that knowledge cannot live in the Book, because
-maintaining a list of dead vocabulary keeps dead vocabulary present in the
-grammar.
+Retiring a word from the Book does not delete what it meant or why it went.
+That knowledge cannot live in the Book: a maintained list of dead vocabulary
+keeps dead vocabulary present in the grammar. It lives here.
 
-## What belongs here
+## Scope
 
 ```text
 retired vocabulary          words the Book no longer uses, and what
@@ -35,35 +33,35 @@ external / ordinary words   English that was never constitutional but
 implementation vocabulary   runtime and repository names that are not
                             constitutional grammar
 
-worked explanation          ordinary-language answers to "what does
-                            Standing actually mean"
+worked explanation          ordinary-language answers to questions like
+                            "what does Standing mean"
 ```
 
-## What does not belong here
+## Disposal rule
 
-A word is not preserved merely because it was deleted. The disposal rule:
+A word is not preserved merely because it was deleted.
 
 ```text
 useful for translating history or explaining the grammar?
     yes  →  record it here
-    no   →  it is simply gone
+    no   →  gone
 ```
 
-This directory is not a landfill for everything ever removed, and it is not a
-banned-word registry. "Banned" is a curation decision; translation is this
-directory's job.
+This directory is not a landfill for everything ever removed, and not a
+banned-word registry. Banning is a curation decision; translation is the work
+done here.
 
-## The governing constitutional clause
+## Constitutional authority
 
-`01.External` in the Book governs the boundary this directory sits on: external
-vocabulary may be translated, attributed, and compared **without thereby
-becoming constitutional grammar**. That chapter is the authority *for* a
-Rosetta. It is not itself a Rosetta, and this is not a chapter.
+`01.External` governs the boundary this directory sits on: external vocabulary
+may be translated, attributed, and compared **without thereby becoming
+constitutional grammar**. That chapter is the authority *for* a Rosetta. It is
+not itself a Rosetta, and this directory is not a chapter.
 
-The recursion worth noting: a Rosetta representation produced under bounded
-translation does not become constitutional merely because Seed produced it.
+A Rosetta representation produced under bounded translation does not become
+constitutional because Seed produced it.
 
-## Relationship to the other artifacts
+## Neighbouring artifacts
 
 ```text
 book_of_seed/       constitutional grammar only
@@ -72,10 +70,10 @@ rosetta/            external and retired vocabulary, translation
 reports + git       historical testimony, preserved as written
 ```
 
-The concordance maps *live* terms and warns that aliases "do not grant
-constitutional equivalence or standing." This directory maps *retired* ones,
-where the honest entry is often not an alias at all — `State` corresponds to
-four current terms and no single one of them.
+The concordance maps live terms and states that aliases "do not grant
+constitutional equivalence or standing." This directory maps retired ones,
+where the mapping is frequently not an alias relationship: `State` corresponds
+to four current terms and to no single one of them.
 
 ## Files
 
