@@ -31,7 +31,8 @@ alternative A, C is emitted, and the operator produces response material R after
 
 1. R equals T and A is identified as corresponding to R within C
    -> represented source-candidate identity is recovered through preserved lineage
-   -> a separately warranted meaning relation establishes that the candidate expresses the bounded goal proposition
+   -> a separate responsible occurrence warrants the meaning relation that the
+      candidate expresses the bounded goal proposition
    -> BOGE-local applicability examines whether that warranted relation may support
       BOGE's bounded use of the proposition
    -> a consumer-local occurrence admits the warranted relation to BOGE while
@@ -43,7 +44,8 @@ alternative A, C is emitted, and the operator produces response material R after
 2. R equals the token identifying the presented local-stop alternative, and that
    alternative is identified as corresponding to R within C
    -> the represented local-stop source is recovered through representation lineage
-   -> a separately warranted meaning relation establishes that the source expresses its bounded proposition
+   -> a separate responsible occurrence warrants the meaning relation that the
+      source expresses its bounded proposition
    -> a competent stopping occurrence may rely on that bounded relation
       when establishing the bounded stop
    -> no grammar-acquisition goal is established, and Seed may return to
@@ -115,8 +117,8 @@ bounded potential-goal standing
 -> exact response comparison finding
 -> presented-alternative identification establishes that A corresponds to R within C
 -> represented source-candidate identity recovered through preserved representation lineage
--> separately warranted meaning relation establishes that the source candidate
-   expresses bounded goal proposition M
+-> a separate responsible occurrence warrants the meaning relation that the
+   source candidate expresses bounded goal proposition M
 -> BOGE-local applicability examines whether the warranted relation may support
    BOGE's bounded use of M
 -> BOGE-local admission preserves the warranted relation and its limits
