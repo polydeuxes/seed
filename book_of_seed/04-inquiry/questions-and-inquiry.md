@@ -23,7 +23,7 @@ A relation involving inquiry pressure, an inquiry demand, a bounded question, a 
 External grammar cannot inject an internal question. Operator material may remain testimony, pressure, goals, constraints, corrections, or responses; Seed owns the constitutional act that forms any internal question from that material. An implementation taxonomy such as `QuestionFamily`, an exposed inventory, exact family label, dispatch map, or presentation surface is realization testimony only. It may support compatibility routing or bounded implementation eligibility, but it does not become Seed's constitutional question taxonomy or establish applicability to a goal by existence.
 
 ### 04.Question.D — Questions constrain evidence demand without becoming Views
-A bounded question may require dimensions, observation boundaries, and lawful stop conditions, and may constrain View applicability, selection, composition, or request formation. It does not by itself force one canonical View, supply the evidence it demands, or make a View into an answer. Some questions may be answered or lawfully stopped from already-preserved evidence; others may require selecting or composing a View or forming a bounded request. Question applicability, View applicability, and the evidence warrant required by the question remain separate standings that must be preserved at the local boundary.
+A bounded question may require dimensions, observation boundaries, and lawful stop conditions, and may constrain which Views are applicable to a later act, and their selection, composition, or request formation. It does not by itself force one canonical View, supply the evidence it demands, or make a View into an answer. Some questions may be answered or lawfully stopped from already-preserved evidence; others may require selecting or composing a View or forming a bounded request. Applicability is determined for an exact act and its exact input; the applicability determined for one act is not the applicability determined for another, and neither is the evidence warrant required by the question. Each remains a separate standing preserved at its local boundary.
 
 ### 04.Question.E — Normal internal questioning is Seed-owned
 The normal constitutional relationship is:
@@ -56,8 +56,6 @@ Preserved Unknowns include the complete executable default dialogue loop, the fu
 - uncertainty statement != inquiry origination
 - answer request != authority to investigate without bounds
 - question != View
-- question applicability != View applicability
-- View applicability != evidence warrant for the question
 - Seed-owned act != currently complete realization
 
 ## Representative repository anchors

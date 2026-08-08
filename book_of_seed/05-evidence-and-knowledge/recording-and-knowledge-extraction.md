@@ -82,5 +82,5 @@ Recording may preserve already produced measurement testimony and already produc
 
 ## Related chapters
 - [Testimony and established fact](testimony-and-established-fact.md)
-- [Events, facts, and standing](../06-standing-representation-view-and-projection/events-facts-and-standing.md)
+- [Events, facts, and standing](../06-standing-and-projection/events-facts-and-standing.md)
 - [Acts and act artifacts](../02-acts-and-constraints/acts-and-act-artifacts.md)
