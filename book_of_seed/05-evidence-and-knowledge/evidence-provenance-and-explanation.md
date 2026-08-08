@@ -23,7 +23,7 @@ A provenance reference may contribute represented lineage only when referenced p
 A missing, unmatched, unsupported, or unpreserved support result may be stated only as a bounded negative finding inside the corpus, surface, query or claim form, temporal boundary, authority boundary, and limitations that produced it. That finding may preserve insufficiency, support loss, mismatch, comparison pressure, or Unknown standing for a later exact act. It must not be promoted into falsehood, disproof, global nonexistence, legal invalidity, historical absence, operational absence, no-harm, no-event, no-authority, or established fact without separately preserved authority and evidence for that stronger claim.
 
 
-When a question asks for provenance and the applicable evidence does not preserve the required provenance dimensions, no lens, projection, explanation, correlation, or rearrangement can recover that provenance from the same material. The original answer remains Unknown. The inquiry may still produce a new bounded evidentiary finding: within the identified corpus, surface, question form, observation boundary, and authority limit, the required provenance dimensions were absent or insufficient for answer recovery. That finding may orient later questions about which dimensions, observers, acts, preservation forms, consumers, standings, or Unknowns are required, but it must not be treated as the missing provenance itself.
+When a question asks for provenance and the applicable evidence does not preserve the required provenance dimensions, no View, projection, explanation, correlation, or rearrangement can recover that provenance from the same material. The original answer remains Unknown. The inquiry may still produce a new bounded evidentiary finding: within the identified corpus, surface, question form, observation boundary, and authority limit, the required provenance dimensions were absent or insufficient for answer recovery. That finding may orient later questions about which dimensions, observers, acts, preservation forms, consumers, standings, or Unknowns are required, but it must not be treated as the missing provenance itself.
 
 
 ### 05.Evidence.D — Correlation and sequence are not causation
@@ -72,5 +72,5 @@ An artifact may preserve a meaning assertion, its attributed source, support or 
 
 ## Related chapters
 - [Testimony and established fact](testimony-and-established-fact.md)
-- [Projection and current standing](../06-standing-and-projection/projection-and-current-standing.md)
+- [Projection and current standing](../06-standing-representation-view-and-projection/projection-and-current-standing.md)
 - [Representation, emission, and consumer boundaries](../08-authority-communication-and-stopping/representation-emission-and-consumer-boundaries.md)

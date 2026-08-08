@@ -7,9 +7,9 @@ The preservation of meaning, evidence, limits, provenance, Unknowns, Responsibil
 What must representation, communication, emission, consumer-local use, and responsibility transition preserve, and what constitutional claims may compressed external wording not imply?
 
 ## Bounded resolution
-Seed may form a bounded representation from exact source material for a declared purpose and may emit that representation toward an exact candidate Consumer boundary. Representation formation is not emission occurrence.
+Seed may emit a formed representation toward an exact candidate Consumer boundary. Representation formation is not emission occurrence; formation grammar is owned by Book VI.
 
-The representation carries only the Standing warranted by its source, responsible formation, purpose, Scope, Evidence, provenance, Authority limits, conflicts, limits, and responsibly established Unknowns.
+The emitted representation carries only the Standing warranted by its source, responsible formation, purpose, Scope, Evidence, provenance, Authority limits, conflicts, limits, and responsibly established Unknowns.
 
 Lexical presentation is not positive coordinate instantiation. Naming a coordinate does not establish Applicability, does not establish that an exact responsible Act requires it, and does not establish Unknown Standing. A positively instantiated unresolved coordinate is not Unknown established by identity. Absence of Evidence for an Act occurrence remains only absence of evidenced Act occurrence unless a responsible finding establishes nonoccurrence.
 

@@ -9,7 +9,7 @@ def _read(relative: str) -> str:
 
 
 def test_view_kind_depends_on_emitted_standing_not_input_artifact_alone():
-    text = _read("book_of_seed/01-grammar-and-standing/lenses-views-and-assertion-preserving-uptake.md")
+    text = _read("book_of_seed/06-standing-representation-view-and-projection/representation-and-view.md")
 
     assert "Input artifact kind and representation shape may supply evidence" in text
     assert "they do not automatically determine the View kind" in text
@@ -19,12 +19,10 @@ def test_view_kind_depends_on_emitted_standing_not_input_artifact_alone():
 
 
 def test_projection_chapter_distinguishes_current_implementation_from_true_fact_view():
-    text = _read("book_of_seed/06-standing-and-projection/projection-and-current-standing.md")
+    text = _read("book_of_seed/06-standing-representation-view-and-projection/projection-and-current-standing.md")
 
     assert "A true FactView exposes a proposition with bounded Fact standing" in text
-    assert "current implementation named `FactView` exposes projected normalized fact/support material" in text
-    assert "PR 1890 was therefore correct" in text
-    assert "overbroad if that phrase is treated as the constitutional definition" in text
+    assert "that inventory shape is not the constitutional definition of a FactView" in text
     assert "A current-facing Fact View is a further standing-bearing emission" in text
 
 
