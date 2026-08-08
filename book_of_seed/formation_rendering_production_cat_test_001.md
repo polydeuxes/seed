@@ -6,38 +6,66 @@ The question put: does `formation` preserve any constitutional distinction not
 already carried by Production, Producer, Act, occurrence, and the resulting
 Representation? And independently, does `rendering`?
 
-**Both are ordinary vocabulary. So are Production, Producer, and emission.**
-The casing census returns zero mid-sentence capitals for all five:
+**`rendering` is ordinary vocabulary naming external form.** That result is
+recovered from positive clauses and stands: §4.
+
+**The `formation` question is not answered here.** A first version of this
+report answered it from a casing census — zero mid-sentence capitals for
+`formation`, `production`, `producer`, `emission`, and `rendering` — and
+concluded all five were ordinary vocabulary. **That reasoning is withdrawn in
+full**, and §2 records why. Casing is a search signal, not a warrant, and one
+of those five is independently established constitutional grammar.
+
+What survives of the original question is the question:
 
 ```text
-                mid-CAP   init-CAP   lowercase
-formation           0         1          34
-rendering           0         0          13
-rendered            0         0          12
-production          0         0          39
-producer            0         0          60
-emission            0         3          35
+does `formation` preserve any distinction not already carried by
+producer, act, occurrence, production, and the resulting representation?
 ```
 
-The question presupposed that `Production` and `Producer` are proper
-constitutional terms against which `formation` could be measured. They are not.
-Active law never capitalises either mid-sentence. Replacing `formation` with
-`Production` moves nothing from ordinary to proper — it is a lateral swap of
-one ordinary English word for another.
+Unanswered. It requires positive recovery — what each names, what is
+produced, what carries Standing, what owns a Responsibility — and this report
+supplies none of that.
 
-So the answer is narrower than either candidate framing. **No promotion is
-available in that direction, and none is needed:** a responsible occurrence
-produces a Representation, and `formation`, `production`, and `rendering` all
-describe *how* or *that* it did.
+## 2. Why the casing argument is withdrawn
 
-**A second result fell out of the same census, and it inverts a proposed
-hierarchy.** §3.
+A first version of this report ran a mid-sentence casing census and treated the
+result as constitutional evidence: zero mid-sentence capitals meant ordinary
+vocabulary. **`producer` refutes that directly.**
 
-## 2. The census
+`producer` is an established constitutional coordinate. It appears in the ten
+relation dimensions at `01.Kinds:28` — "participants and roles, the relation
+assertion, evidence standing, scope, **producer**, consumer and purpose,
+authority, occurrence, conflicts, and limits" — and is protected by five
+non-equivalences across four files:
 
-Applying the mid-sentence rule established at #2352 — a word capitalised only
-at sentence starts is orthographic; a word capitalised mid-sentence is proper
-vocabulary.
+```text
+02.Acts:25         producer occurrence != assertion truth automatically
+01.Kinds:73        represented provenance != verified producer occurrence
+01.Kinds:82        consumer-local standing != inherited producer standing
+01.Uptake:33       producer validation != consumer validation automatically
+01.Constructors:13 live producer return != durable producer-to-result
+                   evidence unless recorded or represented
+```
+
+`#2317` reserved Producer identity explicitly, recording `Producer` as a
+coordinate whose exact identity was Unknown and distinguishing it from
+function, Responsibility, Act, and occurrence.
+
+`producer` has zero mid-sentence capitals and is nonetheless constitutional
+grammar. The census therefore cannot support the inference drawn from it.
+
+**What casing is for.** The rule established at #2352 detects a specific
+defect: a word capitalised *only* at sentence starts while appearing lowercase
+mid-sentence has an orthographic capital, not a constitutional one. That
+catches `Remembering`. It does not run in the other direction. Absence of
+capitals is not absence of constitutional standing, and this campaign has
+refused surface-derived ontology everywhere else.
+
+Casing is a search signal. It says where to look. It warrants nothing.
+
+The census is retained below as an observation about how the Book is written,
+with no conclusion drawn from it.
 
 ```text
 view              mid-CAP=27   lowercase= 7
@@ -73,44 +101,36 @@ are genuine prose capitals spread across three other files:
 
 Seven genuine prose capitals against `representation`'s zero.
 
-## 3. The inverted hierarchy
+## 3. View and representation: untested
 
-The proposed topology places `View` beneath `Representation`:
+A first version of this section held that the casing evidence "points the
+other way" against placing `View` beneath `Representation`. **Withdrawn.** Under
+§2 the census warrants nothing in either direction, and saying it points
+anywhere gives it constitutional weight it does not have.
 
-```text
-proposed        Representation
-                    └── View
-```
-
-The casing evidence points the other way. `View` is capitalised in prose across
-four files; `representation` is capitalised in prose nowhere. On this evidence
-`representation` is the ordinary English word for what a View is, and `View` is
-the proper term.
-
-This report does **not** conclude that the hierarchy should be reversed. It
-records that the evidence does not support the proposed direction, and that the
-relation between the two is unrecovered in either direction. Two readings remain
-open:
+The relation is unrecovered, and this report does not test it. What a proper
+test requires:
 
 ```text
-View is the proper term; representation is the ordinary word
-  for the thing a View is
-
-both are real, and the corpus has simply never needed to
-  capitalise representation because it always appears as a
-  qualified compound (bounded representation, closed-choice
-  representation, egress representation)
+what does `representation` name, and what does `View` name?
+what is produced, and by what responsible occurrence?
+what carries Standing, and what standing?
+what exact Consumer purpose changes the classification?
+does either own a Responsibility?
 ```
 
-The second reading is live and testable: active law's `representation` uses are
-overwhelmingly qualified. Whether a bare unqualified `Representation` names
-anything has not been tested here.
+None of that is supplied here. The one clause bearing directly on it remains
+`01.Lenses:63` — "A View is constitutionally a bounded representation formed
+for a consumer purpose from source material under a declared method" — which
+reads as View being a bounded representation rather than a peer of one. That
+clause was not tested here either, and it is the natural place for the real
+recovery to start.
 
-**Consequence for #2356, recorded and not acted on.** That branch introduces
-`06.Representation.A` and a file named `representation-and-view.md`,
-capitalising a word active law does not capitalise in prose. Under the casing
-rule that is a defect, and it is one this author introduced while applying the
-rule elsewhere in the same pass.
+**A defect in #2356 stands regardless of the casing question.** That branch
+introduces `06.Representation.A` and a file named `representation-and-view.md`,
+promoting a noun whose constitutional status is exactly what remains untested.
+The promotion was not warranted by any recovery, only by the restructure's own
+convenience.
 
 ## 4. rendering
 
@@ -162,29 +182,31 @@ carried by the limiting clauses without a proper noun.
 Not assigned, included because the census covered it and the result bears on
 the same topology.
 
-`emission` has zero mid-sentence capitals and 35 lowercase uses. By the casing
-test it is ordinary vocabulary, like `formation` and `production`.
-
-The distinction it marks is nevertheless real and is stated in active law:
+The distinction `emission` marks is real and is stated in active law:
 `representation formation is not emission occurrence`, and a representation
 "may exist without being emitted." Producing a representation and presenting it
 toward a consumer boundary are different occurrences.
 
-That is the pattern this campaign keeps finding: **a real distinction carried by
-ordinary vocabulary in a limiting clause, with no proper noun required.** The
-same shape as `answer`, `truth`, `composition`, and `remembering`.
+So `emission` names a real distinct occurrence, and no separate proper-noun
+Emission kind is required to carry that distinction. That is the pattern this
+campaign keeps finding: a real distinction carried in a limiting clause without
+a proper noun, as with `answer`, `truth`, and `composition`.
 
 ## 6. What this does not establish
 
-That `formation` should be removed from active law. It appears 34 times as
-ordinary English describing what a responsible occurrence does, which is
-lawful use. Nothing here proposes deleting ordinary words.
+Anything about `formation`. The assigned question is unanswered, per §1.
 
-That `Production` should replace it. Both are ordinary; the swap gains nothing.
+That `production` and `formation` mark the same distinction. They may or may
+not; `production` bears on whether a representation came into existence, and
+`rendering` on what external form it takes. Those differ even if neither
+requires a capitalised kind, and a first version of this report compressed them
+into "describe how or that it did," which is wrong.
 
-That `View` should be promoted above `Representation`, or that the hierarchy
-should be reversed. §3 records that the proposed direction is unsupported, not
-that the opposite holds.
+That `producer` is ordinary vocabulary. §2 withdraws that and records the
+opposite: it is an established coordinate at `01.Kinds:28`, reserved at #2317.
+
+That `View` and `representation` stand in any particular relation. §3 records
+the question as untested.
 
 That `projection` is or is not a distinct act family under representation
 production. It has five genuine mid-sentence capitals and a defined responsible
@@ -194,14 +216,25 @@ exact relation to production is untested.
 That the `05.Recording:10` steelman is disposed of. It is the one positive use
 of rendering in active law and is recorded rather than dismissed.
 
-## 7. Method note
+## 7. Correction record
 
-The assigned question could not be answered as posed, because it assumed a
-baseline that does not exist. Measuring `formation` against `Production` and
-`Producer` presupposes those are proper terms; the census says all three are
-ordinary. The productive move was to test the baseline rather than the subject.
+**A detection heuristic was promoted into a warrant.** The casing rule from
+#2352 finds one specific defect: a word capitalised only at sentence starts
+while lowercase mid-sentence has an orthographic capital. This report ran it
+backwards — treating absence of capitals as absence of constitutional standing
+— and built four conclusions on it.
 
-The casing rule earned its keep twice here. It answered the assigned question,
-and it independently surfaced that a hierarchy under active discussion runs
-opposite to the corpus evidence — including in a branch this author wrote while
-applying the same rule to other words.
+`producer` is the refutation, and it was reachable in one command. Zero
+mid-sentence capitals, and an established coordinate in the `01.Kinds:28`
+dimension list with five protecting non-equivalences and a reservation at
+#2317.
+
+**Why this one is worth recording separately.** The campaign's whole method is
+refusing surface-derived ontology — grep counts, naming, capitalisation,
+adjacency. Having built a surface heuristic that works, this author immediately
+used it as the kind of warrant the campaign exists to reject. A useful
+detector is the most dangerous thing to hold, because its hit rate makes its
+verdicts feel earned.
+
+The rule going forward: **casing says where to look. It never says what is
+there.**
