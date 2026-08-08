@@ -1,23 +1,39 @@
-"""Remembering: preserved material stays available for later lawful recovery.
+"""Earlier preserved material remains referenceable by later occurrences.
 
-`05.Testimony:109` -- "Remembering is preservation of sufficient testimony or
-standing for later lawful recovery."
+The Book uses "remembering" for preservation of sufficient testimony or
+standing for later lawful recovery (`05.Testimony:109`).  **This module does
+not establish a Remembering Responsibility, Act, Standing, occurrence, or
+kind.**  In active law that word is capitalised only at sentence starts and is
+lowercase mid-sentence -- "sensing is not remembering, remembering is not
+current projection" -- and the section heading is lowercase.  The capital is
+orthographic.
 
-This module tests the temporal invariant that makes bootstrap tractable: an act
-occurring late may consume material preserved early, and doing so produces new
-occurrences rather than altering the old ones.  Seed is not limited to what it
-could establish at the moment material arrived.
+What this module demonstrates is narrow and structural:
 
-What this module does NOT test, stated plainly because the distinction is the
-whole point: it does not test that Seed's *capability* changes over time.  No
-measurement act exists in the runtime yet, so there is no M2-becomes-available
-case to exercise.  What is tested is the surrounding law -- that later
-consumption of earlier material is lawful, additive, and non-destructive --
-which is what any future capability change would rely on.
+    earlier events remain preserved and unchanged
+    a later session projection can reference them
+    a later presentation formation carries those references
 
-Run standalone to inspect the evidence lists:
+That is the substrate later Uptake would require.  It is **not** Uptake,
+consumption, admission, a finding, or new Standing, none of which are
+demonstrated here.  `01.Lenses:14` keeps applicable, admitted, and consumed as
+distinct standings, and carrying an event id as evidence establishes none of
+them.
 
-    python -m tests.test_remembering_later_lawful_recovery
+Two further limits.  Only presentation formations were inspected; the other
+operator event kinds are also later occurrences and are not shown to reference
+the whole past.  And `#2350` left open whether
+`project_operator_session_standing` is a lawful constitutional projection
+occurrence -- executing it proves the substrate exists, not that the projection
+is lawful.
+
+This module also does not test that Seed's *capability* changes over time.  No
+measurement act exists in the runtime, so there is no case where a later
+capability reaches material it previously could not.
+
+Run standalone to inspect the reference lists:
+
+    python -m tests.test_preserved_material_later_referenceable
 """
 
 from __future__ import annotations
@@ -61,16 +77,20 @@ def ledger() -> EventLedger:
     return led
 
 
-def test_later_occurrences_consume_earlier_preserved_material(ledger):
-    """Each formation's evidence includes every earlier event, cumulatively.
+def test_later_formations_retain_references_to_earlier_preserved_material(
+    ledger,
+):
+    """Each formation's evidence list includes every earlier event id.
 
-    This is the property that makes a growing capability useful: the material
-    from the first interaction is still being consumed at the last one.
+    References, not consumption of each referenced event.  The formation
+    consumes the projection; what it carries forward is that projection's
+    ordered list of event ids.
     """
     formations = [e for e in ledger.list() if e.kind == FORMED]
     assert len(formations) >= 3
     evidence = [e.payload["session_standing_evidence_ids"] for e in formations]
-    # The first formation consumes empty Standing; that is still consumption.
+    # The first formation's projection was empty.  Recording that emptiness is
+    # itself preserved testimony, not an absent occurrence.
     assert evidence[0] == []
     # Every later evidence list strictly extends the one before it.
     for earlier, later in zip(evidence, evidence[1:]):
@@ -80,8 +100,8 @@ def test_later_occurrences_consume_earlier_preserved_material(ledger):
     assert ledger.list()[0].id in evidence[-1]
 
 
-def test_later_consumption_does_not_alter_earlier_events(ledger):
-    """Consuming preserved material leaves that material byte-identical."""
+def test_later_reference_does_not_alter_earlier_events(ledger):
+    """Referencing preserved material leaves that material byte-identical."""
     before = _payload_snapshot(ledger.list())
     project_operator_session_standing(ledger, workspace_id="w", session_id="s")
     after = _payload_snapshot(
@@ -94,15 +114,20 @@ def test_projection_appends_nothing(ledger):
     """Projection reads; it does not record.
 
     `06.Events:20` holds that event recording is not required for every
-    constitutional occurrence, and projection here consumes without emitting.
+    constitutional occurrence.  This projection reads without appending.
     """
     count_before = len(ledger.list())
     project_operator_session_standing(ledger, workspace_id="w", session_id="s")
     assert len(ledger.list()) == count_before
 
 
-def test_a_later_finding_is_a_new_event_not_an_edit(ledger):
-    """New standing arrives as new occurrences appended after the old ones."""
+def test_each_formation_is_appended_after_every_event_it_references(ledger):
+    """Narrow by intent: an ordering fact about the ledger, nothing more.
+
+    This says nothing about findings or Standing.  A presentation formation is
+    not a finding, and its own recorded authority is "formation occurrence
+    only; establishes no selection, warrant, goal, or response treatment".
+    """
     events = ledger.list()
     formations = [e for e in events if e.kind == FORMED]
     positions = {event.id: index for index, event in enumerate(events)}
@@ -119,10 +144,10 @@ def test_no_capability_change_is_claimed_here(ledger):
     measurement or finding act is added later, this assertion should fail and
     be replaced by a real capability-change test.
     """
-    consuming_kinds = {
+    observed_operator_event_kinds = {
         e.kind for e in ledger.list() if e.kind.startswith("operator.")
     }
-    assert consuming_kinds == {
+    assert observed_operator_event_kinds == {
         "operator.presentation.formed",
         "operator.presentation.emitted",
         "operator.ingress.raw_material_captured",
@@ -140,7 +165,7 @@ def render_evidence_growth() -> str:
         input_stream=StringIO("first\nsecond\nthird\nexit\n"),
         output_stream=StringIO(),
     )
-    lines = ["formation -> evidence consumed", ""]
+    lines = ["formation -> earlier event ids referenced", ""]
     for event in (e for e in led.list() if e.kind == FORMED):
         cited = event.payload["session_standing_evidence_ids"]
         lines.append(
