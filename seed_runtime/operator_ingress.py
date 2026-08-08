@@ -10,7 +10,6 @@ from seed_runtime.operator_ingress_representation import (
     CapturedOperatorMaterial,
     examine_text_representation,
 )
-from seed_runtime.state import StateProjector
 
 
 def _dimensions(
@@ -42,8 +41,13 @@ def _record(ledger, kind, workspace, session, attempt, dimensions, **extra):
     )
 
 
-def project_operator_ingress_events(state, event, *, ledger=None) -> None:
-    """Dispatch one operator-ingress event into the dedicated current view."""
+def project_operator_ingress_events(attempts, event, *, ledger=None) -> None:
+    """Dispatch one operator-ingress event into the dedicated current view.
+
+    ``attempts`` is the per-attempt projection mapping and is the whole of what
+    this projection consumes. It reads no entity, Fact, alias, relationship, or
+    goal, so nothing here requires a whole-workspace projection to exist.
+    """
     if not event.kind.startswith("operator.ingress."):
         return
     subject_by_kind = {
@@ -58,7 +62,7 @@ def project_operator_ingress_events(state, event, *, ledger=None) -> None:
     if event.kind not in supported_kinds:
         raise ValueError(f"unsupported operator-ingress event: {event.kind}")
     attempt = event.payload["attempt_ref"]
-    view = state.operator_ingress_attempts.setdefault(
+    view = attempts.setdefault(
         attempt,
         {
             "event_ids": [],
@@ -210,6 +214,28 @@ def _capture_representation(
     return capture, examination, captured, examination_event
 
 
+def _project_attempt(*, events, ledger, attempt):
+    """Project one attempt from exactly the occurrences it recorded.
+
+    The whole-workspace projection this replaces rebuilt every entity, Fact,
+    alias, relationship, and index in order to return one bounded attempt, and
+    it did so once per attempt, so occurrence *j* was replayed by every later
+    attempt. The work here is constant in the number of earlier attempts.
+
+    Refusals the returned projection depends on are unchanged: the addressable
+    material is still formed through `form_operator_ingress_addressable_material`,
+    which consults the ledger for this attempt's exact lineage and refuses a
+    foreign, incomplete, or unrecorded occurrence. What is no longer performed is
+    the replay of unrelated historical events, which no clause makes this
+    responsibility's to perform.
+    """
+
+    attempts: dict[str, dict] = {}
+    for event in events:
+        project_operator_ingress_events(attempts, event, ledger=ledger)
+    return attempts[attempt]
+
+
 def run_operator_ingress_attempt(
     *,
     ledger: EventLedger,
@@ -250,7 +276,7 @@ def run_operator_ingress_attempt(
         material_role="initial_ingress",
     )
     if not ingress_examination.succeeded:
-        _record(
+        stop_event = _record(
             ledger,
             "operator.ingress.stopping_occurred",
             workspace_id,
@@ -270,19 +296,22 @@ def run_operator_ingress_attempt(
             response_kind="representation_insufficient",
             lineage=[ingress_examination_event.id],
         )
-        state = StateProjector(ledger).project(workspace_id)
+        projection = _project_attempt(
+            events=(ingress_capture, ingress_examination_event, stop_event),
+            ledger=ledger,
+            attempt=attempt,
+        )
         output_stream.write(
             "Representation insufficient: captured material did not decode under the selected decoder mechanism.\n"
         )
         output_stream.flush()
-        projection = state.operator_ingress_attempts[attempt]
         if session_standing is not None:
             projection["session_standing"] = session_standing
         return projection
     raw_ingress = ingress_examination.represented_text
     ingress_kind = "empty" if raw_ingress in {"\n", "\r\n"} else "text"
     ingress_content = raw_ingress.removesuffix("\n").removesuffix("\r")
-    _record(
+    ingress_event = _record(
         ledger,
         "operator.ingress.ingress_occurred",
         workspace_id,
@@ -309,8 +338,11 @@ def run_operator_ingress_attempt(
             ingress_examination_event.id,
         ],
     )
-    state = StateProjector(ledger).project(workspace_id)
-    projection = state.operator_ingress_attempts[attempt]
+    projection = _project_attempt(
+        events=(ingress_capture, ingress_examination_event, ingress_event),
+        ledger=ledger,
+        attempt=attempt,
+    )
     if session_standing is not None:
         projection["session_standing"] = session_standing
     return projection

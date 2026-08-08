@@ -1140,7 +1140,9 @@ class StateProjector:
         if event.kind.startswith("operator.ingress."):
             from seed_runtime.operator_ingress import project_operator_ingress_events
 
-            project_operator_ingress_events(state, event, ledger=self.ledger)
+            project_operator_ingress_events(
+                state.operator_ingress_attempts, event, ledger=self.ledger
+            )
         if event.kind == "entity.upserted":
             data = payload.get("entity", payload)
             entity = Entity(**data)
