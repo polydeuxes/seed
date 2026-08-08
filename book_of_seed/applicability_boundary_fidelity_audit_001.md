@@ -7,19 +7,26 @@ change is proposed, and none should follow from this report alone.
 
 **The headline is not the enum.** It is that the boundary's gating input no
 longer exists outside the test suite, so the boundary is unreachable in the
-live runtime — and the result it would produce if reached is one of the
-misclassified ones.
+live runtime — and the result it would produce if reached rests on a
+coordinate whose constitutional role is unrecovered.
+
+**Two independent fidelity problems, and the second is the larger one.**
 
 ```text
-Applicability results active law permits   applicable, inapplicable,
-                                           Unknown, conflicting
-Applicability results the code produces    applicable, inapplicable
+1  The result vocabulary cannot express all four applicability standings
+   active law permits. Whatever the right answers are, the code can say
+   only two things.
 
-of its 8 non-applicable bases:
-  4  sound as inapplicable
-  3  misclassified — two are Unknown, one is conflicting
-  1  conflates Unknown with inapplicable inside a single basis
+2  Most of the determination grammar depends on `consumer_treatment`,
+   whose constitutional role is unrecovered and whose only producer is
+   test-only developer testimony. For those branches the basis→standing
+   mapping is not recoverable at all — and some of them may not belong.
 ```
+
+An earlier draft of this report gave a full basis-by-basis verdict — "four
+sound, three misclassified, one split." **That table is withdrawn for every
+branch that depends on `consumer_treatment`.** §3 explains why, and §3.1 gives
+what survives.
 
 **The gating input is a test fixture.** `determine_goal_applicability` requires
 a `consumer_treatment` relation carrying `attribution == "developer-supplied"`.
@@ -29,15 +36,19 @@ populated `consumer_treatment` is constructed anywhere in the repository is
 to `()`, so no presented alternative is formed at all — which means the
 function is not merely limited to one branch, it is **never reached**.
 
-Were it reached with live-shaped input carrying no treatment, it returns the
-misclassified branch. Verified by execution:
+Were it reached with live-shaped input carrying no treatment, it returns —
+verified by execution:
 
 ```text
 determine_goal_applicability(relation, recovery, None, scope=...)
   → ('inapplicable', 'no-consumer-treatment-relation')
 ```
 
-Absence of a relation is not a finding of inapplicability. It is Unknown.
+That is a positive finding of inapplicability resting on the absence of a
+coordinate whose constitutional role in this determination is unrecovered. It
+asserts a determination that was not made. Whether the right answer there is
+`Unknown`, or whether the branch should exist at all, is exactly what §3 says
+cannot be settled yet.
 
 So the boundary is not merely dormant. Its only lawful input was determined to
 be developer-supplied contamination and excised to a fixture, leaving a careful
@@ -64,43 +75,87 @@ a coordinate required to decide was not
 material bearing an unresolved conflict         conflicting
 ```
 
-## 3. Basis-by-basis
+## 3. Why most bases cannot be classified yet
+
+The cat rule, one level deeper than §5 applies it. Before recovering **which
+standing** a basis warrants, establish that the coordinate it inspects has a
+constitutional role in this determination at all.
+
+`consumer_treatment` does not have a recovered one. It is absent from active
+law as a compound, it is required by the code to be `developer-supplied`, and
+its only producer is a test fixture. So:
 
 ```text
-basis                                 code   should be        sound?
-────────────────────────────────────────────────────────────────────
-role-not-potential-goal               inapp  inapplicable     yes
-treatment-disagreement                inapp  inapplicable     yes
-scope-mismatch                        inapp  inapplicable     yes
-treatment-kind-mismatch               inapp  inapplicable     yes
-no-consumer-treatment-relation        inapp  Unknown          no
-authority-coordinates-not-established inapp  Unknown          no
-treatment-conflicted                  inapp  conflicting      no
-consumer-authority-not-established    inapp  SPLIT — see 3.1  no
+consumer_treatment is absent
+  does NOT establish   Applicability = Unknown
+  may instead mean     this coordinate has no constitutional role here
 ```
 
-**The four sound ones share a shape.** Each is a positive mismatch between two
-things that both exist: a role that is not the expected role, a treatment that
-concerns a different alternative, a scope that disagrees, a treatment kind that
-is not the expected kind. A responsible determination was made and the answer
-was no. That is what `inapplicable` means.
+And a conflict inside an unrecovered developer-supplied object yields no
+constitutional conclusion about Applicability — not `conflicting`, not
+`inapplicable`, nothing. The branch may simply not belong.
 
-**The three misclassified ones share the opposite shape.** In each, something
-required was missing or unresolved, and the code converts that into a positive
-negative finding:
+Splitting the eight bases by what they inspect:
 
 ```text
-no-consumer-treatment-relation          treatment is None
-authority-coordinates-not-established   separation standings are not
-                                        "established"
-treatment-conflicted                    treatment carries conflicts
+DEPENDENT on consumer_treatment — no standing recoverable yet
+  no-consumer-treatment-relation      treatment is None
+  treatment-disagreement              treatment fields vs relation fields
+  treatment-kind-mismatch             treatment["treatment_kind"]
+  treatment-conflicted                treatment["conflicts"]
+  consumer-authority-not-established  treatment["consumer_authority"]
+
+INDEPENDENT of consumer_treatment
+  role-not-potential-goal             recovery alternative role
+  authority-coordinates-not-established   relation["authority_separation"]
+
+MIXED — see 3.2
+  scope-mismatch
 ```
 
-The first two are `unresolved != absent`. The third has its own standing in the
-clause — `conflicting` — and is instead reported as a determination that the
-material does not apply.
+Five of eight are unrecoverable until `consumer_treatment` itself survives a
+recovery. That is a stronger result than a mapping table, because it opens the
+possibility that some of these bases **should not exist**.
 
-### 3.1 The basis that conflates two standings
+### 3.1 What survives, and how firmly
+
+**`role-not-potential-goal` — inapplicable, and this holds.** It inspects the
+presented alternative's role, not the treatment. `potential-goal` is real
+active-law vocabulary (15 occurrences). A material whose role is not the role
+this consumer takes is a positive mismatch between two things that both exist:
+a determination was made and the answer was no. That is what `inapplicable`
+means.
+
+**`authority-coordinates-not-established` — not yet auditable.** It reads
+`relation["authority_separation"]`, so it does not depend on the treatment. The
+draft's reclassification to `Unknown` is plausible under `unresolved != absent`
+— but that requires first establishing that those exact Authority coordinates
+are **required for this exact Applicability act**, and active law deliberately
+makes local coordinates depend on the exact act and proposed use rather than a
+universal checklist. Downgraded from a finding to a candidate.
+
+**The result-vocabulary problem survives all of this.** Whatever the right
+mapping turns out to be, `01.Lenses:14` permits four standings and the function
+can return two. That claim needs no premise about `consumer_treatment`.
+
+### 3.2 A second conflation, in `scope-mismatch`
+
+```python
+if treatment["scope"] != scope or relation["representation_scope"] != scope:
+    return "inapplicable", "scope-mismatch"
+```
+
+Two conjuncts returning one basis. The first inspects the developer-supplied
+treatment; the second inspects the meaning relation's own scope and is
+independent of it. A caller cannot tell which fired.
+
+The second conjunct may genuinely warrant inapplicability — a relation whose
+representation scope disagrees with the consumer's scope is a real mismatch
+between two established things. The first cannot be borrowed until the
+treatment relation survives. Structurally this is the same defect as §3.3: one
+basis carrying two constitutionally different situations.
+
+### 3.3 The basis that conflates two standings
 
 `consumer-authority-not-established` is returned by a single condition covering
 two constitutionally different situations:
@@ -126,25 +181,37 @@ or scope disagree                         match → inapplicable, or
 ```
 
 Its name asserts the first reading — "not established" — while its condition
-also catches the second. One basis cannot carry both, and widening the return
+also catches the second. (This basis is treatment-dependent per §3, so the
+split is recorded as a structural observation rather than as a mapping.) One basis cannot carry both, and widening the return
 enum would not separate them; the condition itself has to split.
 
 ## 4. Why widening the enum is not the repair
 
-Recorded because it is the obvious next move and it is wrong.
+Recorded because it is the obvious next move and it is wrong, and §3 makes it
+more clearly wrong.
 
-Each of the eight bases is a determination about **which standing this exact
-ground warrants**, and that determination belongs to the boundary, not to a
-type signature. `01.Standing.E.1` places input applicability with the exact act
+Each basis is a determination about **which standing this exact ground
+warrants**, and that determination belongs to the boundary, not to a type
+signature. `01.Standing.E.1` places input applicability with the exact act
 owner. Adding `"conflicting"` and `"unknown"` to the return type would let the
-code express the right answers without establishing that any particular
-mapping is the right one.
+code express right answers without establishing that any mapping is right.
 
-Three of the four claims in §3 are also not equally firm. `treatment-conflicted`
-→ `conflicting` follows almost directly from the clause. The two Unknown
-reclassifications follow from `unresolved != absent`, which is well established
-in this campaign but has not been shown to govern *this* boundary by any clause
-cited here. That is a gap in this audit, not a settled result.
+And for five of the eight bases there is no mapping to make yet, because the
+coordinate they inspect has no recovered constitutional role. Widening the enum
+there would preserve branches that may not belong, in better vocabulary.
+
+The question this boundary actually poses is not how to repair the function. It
+is:
+
+```text
+What does an exact Responsibility need established
+before it may lawfully perform its Act?
+```
+
+`determine_goal_applicability` encodes one answer to that question. This audit
+establishes that the answer is partly developer-supplied and no longer has a
+live producer. Recovering the real answer is the work; repairing the encoding
+of the old one is not.
 
 ## 5. The chain's vocabulary
 
@@ -184,8 +251,14 @@ goal standing are unexamined. `01.Lenses:14` gives admission four standings and
 the implementation was observed to produce `admitted` only, but no basis-level
 audit was performed, and that observation should not be cited as a finding.
 
-It did not test whether the four sound bases are *complete* — whether there are
-grounds for inapplicability the function fails to check at all.
+It did not test whether the checks are *complete* — whether there are grounds
+for inapplicability the function fails to check at all.
+
+It did not recover `consumer_treatment`. §3 establishes that its constitutional
+role is unrecovered and that five bases depend on it. It does not establish
+that the coordinate is illegitimate, only that nothing here warrants using it
+to determine Applicability. That recovery is the next piece of work and it
+governs whether those five branches survive in any vocabulary.
 
 It did not determine whether `role != "potential-goal"` is the right gate, only
 that returning `inapplicable` for it is a coherent use of the standing.
