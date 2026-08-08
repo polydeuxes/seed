@@ -284,7 +284,7 @@ def run_operator_ingress_attempt(
             attempt,
             _dimensions(
                 identity=f"stop:{ingress_examination_event.id}",
-                content="representation insufficiency",
+                content=ingress_examination.outcome,
                 standing="closed",
                 source=ingress_examination_event.id,
                 responsibility="competent-local-stopping",
@@ -293,7 +293,7 @@ def run_operator_ingress_attempt(
                 occurrence="separate stopping act recorded",
             ),
             closed=True,
-            response_kind="representation_insufficient",
+            response_kind=ingress_examination.outcome,
             lineage=[ingress_examination_event.id],
         )
         projection = _project_attempt(
@@ -302,7 +302,8 @@ def run_operator_ingress_attempt(
             attempt=attempt,
         )
         output_stream.write(
-            "Representation insufficient: captured material did not decode under the selected decoder mechanism.\n"
+            f"Decoder outcome {ingress_examination.outcome}: captured material did not "
+            f"decode under {ingress_examination.mechanism}.\n"
         )
         output_stream.flush()
         if session_standing is not None:

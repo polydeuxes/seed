@@ -108,8 +108,8 @@ def test_decoder_failure_output_and_lack_of_successful_view_are_unchanged():
 
     assert "Operator ingress View" not in output.getvalue()
     assert output.getvalue().endswith(
-        "Representation insufficient: captured material did not decode under "
-        "the selected decoder mechanism.\n"
+        "Decoder outcome bytes_rejected: captured material did not "
+        "decode under utf-8.\n"
     )
 
 
