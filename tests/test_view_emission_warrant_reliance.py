@@ -19,7 +19,7 @@ def test_view_kind_depends_on_emitted_standing_not_input_artifact_alone():
 
 
 def test_projection_chapter_distinguishes_current_implementation_from_true_fact_view():
-    text = _read("book_of_seed/06-state-and-projection/projection-and-current-state.md")
+    text = _read("book_of_seed/06-standing-and-projection/projection-and-current-standing.md")
 
     assert "A true FactView exposes a proposition with bounded Fact standing" in text
     assert "current implementation named `FactView` exposes projected normalized fact/support material" in text

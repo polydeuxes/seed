@@ -1,4 +1,4 @@
-# Events, Facts, and State
+# Events, Facts, and Standing
 
 ## Constitutional subject
 The roles of recorded events, established facts, relationships, projected material, and bounded current constitutional standing.
@@ -12,7 +12,7 @@ A responsible recording occurrence may preserve, as an Event, attributed testimo
 
 ## Addressable boundaries for current constitutional standing
 
-### 06.State.A — Constitutional reality is bounded repository-governed standing, not objective reality
+### 06.Standing.A — Constitutional reality is bounded repository-governed standing, not objective reality
 Append-only records, established facts, projected material, current lawful condition, context views, and candidate convergence may support a bounded current constitutional standing within the applicable Seed, workspace, corpus, question, authority, projection rule, confidence limit, and Unknown boundary. Support becomes current standing only through the responsible bounded act that consumes the material under the required evidence, warrant, constraints, and preserved limits. That standing is repository-governed and inspectable; it is not projected material by identity, a constitutional State object, objective reality, complete memory, universal shared truth, mandatory convergence, verification of every recorded assertion, conflict resolution by existence alone, or an oracle about conditions outside preserved evidence and authority.
 
 ## Important distinctions
@@ -39,7 +39,7 @@ Append-only records, established facts, projected material, current lawful condi
 
 ## Related chapters
 - [Recording and knowledge extraction](../05-evidence-and-knowledge/recording-and-knowledge-extraction.md)
-- [Projection and current state](projection-and-current-state.md)
+- [Projection and current standing](projection-and-current-standing.md)
 - [Testimony and established fact](../05-evidence-and-knowledge/testimony-and-established-fact.md)
 
 ## Temporal preservation, replay, and projection amendment 001

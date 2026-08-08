@@ -24,6 +24,6 @@ Ownership claims are evaluated by comparing implementation behavior, producers, 
 - Preserving a legacy side path as law because tests still characterize it.
 
 ## Related chapters
-- [Projection and current state](projection-and-current-state.md)
+- [Projection and current standing](projection-and-current-standing.md)
 - [Constructors and production authority](../01-grammar-and-standing/constructors-and-production-authority.md)
 - [Authority scope](../08-authority-communication-and-stopping/authority-scope.md)

@@ -81,7 +81,7 @@ def test_concordance_indexes_measurement_without_equating_execution_or_runtime_o
 
 
 def test_rebuildability_does_not_reconstruct_prior_invocation():
-    text = _read("book_of_seed/06-state-and-projection/projection-and-current-state.md")
+    text = _read("book_of_seed/06-standing-and-projection/projection-and-current-standing.md")
 
     assert "A derived artifact need not be preserved" in text
     assert "Rebuildable projection is not prior invocation reconstruction" in text

@@ -72,5 +72,5 @@ An artifact may preserve a meaning assertion, its attributed source, support or 
 
 ## Related chapters
 - [Testimony and established fact](testimony-and-established-fact.md)
-- [Projection and current state](../06-state-and-projection/projection-and-current-state.md)
+- [Projection and current standing](../06-standing-and-projection/projection-and-current-standing.md)
 - [Representation, emission, and consumer boundaries](../08-authority-communication-and-stopping/representation-emission-and-consumer-boundaries.md)
