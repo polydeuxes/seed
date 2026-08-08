@@ -16,7 +16,7 @@ What this module demonstrates is narrow and structural:
 
 That is the substrate later Uptake would require.  It is **not** Uptake,
 consumption, admission, a finding, or new Standing, none of which are
-demonstrated here.  `01.Lenses:14` keeps applicable, admitted, and consumed as
+demonstrated here.  `01.Uptake` keeps applicable, admitted, and consumed as
 distinct standings, and carrying an event id as evidence establishes none of
 them.
 
