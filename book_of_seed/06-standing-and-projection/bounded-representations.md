@@ -3,7 +3,7 @@
 ## Constitutional subject
 Bounded representations formed from source material, and the coordinates a View carries for an exact consumer purpose.
 
-The relation between a View and a bounded representation is **unrecovered**: whether a View is a kind of bounded representation, a peer of one, or something else is not decided here. The relation of Projection to forming a representation is likewise unresolved.
+The relation between a View and a bounded representation remains **Unknown** unless separately established. The relation between Projection and forming a representation remains **Unknown** unless separately established.
 
 ## Core question
 What may a responsible occurrence form from preserved source material, and what Standing does that representation carry?
@@ -25,7 +25,7 @@ Provenance navigation can meet the requirements for upstream details that explai
 
 A responsible occurrence may form a bounded representation from exact source material under its warranted purpose, Scope, Authority, and Evidence, without changing the standing of the represented source material. Its assertion is about what the supplied sources expose within those boundaries, warranted by source identity and faithful transformation.
 
-No clause is stated here for that act. Whether forming a representation names an Act distinct from the exact Act that forms it is **Unknown**, and whether `formation` preserves anything beyond producer, act, occurrence, production, and the resulting representation is unresolved. `representation formation act` appears at `01.Kinds:10` among separate dimensions of repository responsibility and is not recovered.
+Whether forming a representation names an Act distinct from the exact Act that forms it remains **Unknown** unless separately established.
 
 A View asserts only what the supplied sources expose within its purpose, Scope, Authority, and Evidence. It is not automatically the answer to the question that motivated its formation, not proof that the evidence meets that question's exact requirements, and not recovery of dimensions that the supplied evidence did not preserve. Where required dimensions are absent from the supplied material, a View may make that bounded absence distinguishable; it may not manufacture the missing provenance, authority, occurrence, or standing.
 
