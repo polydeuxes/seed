@@ -296,8 +296,9 @@ corpus, and it appears in the runtime string that prompted the question.
 denied that these acts were warranted and denied that accumulation warrants
 anything — while its own §1 called them immediately lawful. A report that
 contradicts itself has usually applied a rule outside its scope, and that is
-what happened: `#2348`'s step-3 caution governs *derived* warrant and was
-applied to *direct* warrant.
+what happened: `#2348`'s step-3 caution governs the establishment of the
+stronger relation Standing at issue there, and was incorrectly applied to
+bounded witnessed occurrence Standing here.
 
 The generalisation worth keeping: **a correction learned in one place is not
 automatically a rule everywhere.** Four consecutive reports had found
