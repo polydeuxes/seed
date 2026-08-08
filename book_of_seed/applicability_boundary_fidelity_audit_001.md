@@ -17,16 +17,17 @@ coordinate whose constitutional role is unrecovered.
    active law permits. Whatever the right answers are, the code can say
    only two things.
 
-2  Most of the determination grammar depends on `consumer_treatment`,
-   whose constitutional role is unrecovered and whose only producer is
-   test-only developer testimony. For those branches the basis→standing
-   mapping is not recoverable at all — and some of them may not belong.
+2  No basis→standing mapping is recoverable yet. Five of the eight bases
+   inspect `consumer_treatment`, whose constitutional role is unrecovered
+   and whose only producer is test-only developer testimony — those
+   branches may not belong at all. The other three inspect coordinates
+   never established as required input for this exact Act.
 ```
 
 An earlier draft of this report gave a full basis-by-basis verdict — "four
-sound, three misclassified, one split." **That table is withdrawn for every
-branch that depends on `consumer_treatment`.** §3 explains why, and §3.1 gives
-what survives.
+sound, three misclassified, one split." **That table is withdrawn in full.**
+§3 explains why; §3.1 states what survives without it, and §4 states the
+governing order positively.
 
 **The gating input is a test fixture.** `determine_goal_applicability` requires
 a `consumer_treatment` relation carrying `attribution == "developer-supplied"`.
@@ -119,24 +120,47 @@ possibility that some of these bases **should not exist**.
 
 ### 3.1 What survives, and how firmly
 
-**`role-not-potential-goal` — inapplicable, and this holds.** It inspects the
-presented alternative's role, not the treatment. `potential-goal` is real
-active-law vocabulary (15 occurrences). A material whose role is not the role
-this consumer takes is a positive mismatch between two things that both exist:
-a determination was made and the answer was no. That is what `inapplicable`
-means.
+**No basis→standing mapping is currently recoverable.** Including the two
+treatment-independent ones. The three-step test applies to each coordinate a
+condition inspects, not only to `consumer_treatment`:
 
-**`authority-coordinates-not-established` — not yet auditable.** It reads
+```text
+1  the coordinate names something              real vocabulary
+2  the coordinate is required input for THIS   the missing step
+   exact Applicability act
+3  which Applicability standing this ground    only then
+   warrants
+```
+
+**`role-not-potential-goal` — candidate, not a finding.** An earlier version of
+this correction said "inapplicable, and this holds," reasoning that
+`potential-goal` is real active-law vocabulary with 15 occurrences. **That is
+the same inference just removed from `consumer_treatment`:**
+
+```text
+X is real vocabulary
+  !=  X is the required input criterion for this exact Act
+```
+
+Nothing cited here establishes that `potential-goal` is the required role for
+this Applicability determination. *If* it is required, then a role that is not
+it is a positive mismatch between two established things, and `inapplicable`
+follows. The conditional holds; its antecedent is unrecovered.
+
+**`authority-coordinates-not-established` — candidate.** It reads
 `relation["authority_separation"]`, so it does not depend on the treatment. The
-draft's reclassification to `Unknown` is plausible under `unresolved != absent`
-— but that requires first establishing that those exact Authority coordinates
-are **required for this exact Applicability act**, and active law deliberately
-makes local coordinates depend on the exact act and proposed use rather than a
-universal checklist. Downgraded from a finding to a candidate.
+draft's reclassification to `Unknown` is plausible under `unresolved != absent`,
+but requires first establishing that those exact Authority coordinates are
+required for this exact act — and active law deliberately makes local
+coordinates depend on the exact act and proposed use rather than a universal
+checklist.
 
-**The result-vocabulary problem survives all of this.** Whatever the right
-mapping turns out to be, `01.Lenses:14` permits four standings and the function
-can return two. That claim needs no premise about `consumer_treatment`.
+**What does survive without any such premise** is the result-vocabulary
+problem: `01.Lenses:14` permits four standings and the function can return two.
+That holds whatever the right mapping turns out to be. And the two structural
+conflations in §3.2 and §3.3 hold, because they are observations about one
+basis carrying two distinguishable situations, not claims about which standing
+either situation warrants.
 
 ### 3.2 A second conflation, in `scope-mismatch`
 
@@ -171,18 +195,19 @@ if authority is None or (
 ```
 
 ```text
-authority is None                        no authority coordinate exists
-                                         → Unknown
+authority is None                        the coordinate does not exist
 
-authority exists but standing, supports,  a present authority that does not
-or scope disagree                         match → inapplicable, or
-                                          conflicting if the disagreement
-                                          is a conflict
+authority exists but standing,           the coordinate exists and
+supports, or scope disagree              disagrees
+
+these are different situations; their Applicability standings are
+unrecovered, because consumer_treatment itself is unrecovered
 ```
 
 Its name asserts the first reading — "not established" — while its condition
-also catches the second. (This basis is treatment-dependent per §3, so the
-split is recorded as a structural observation rather than as a mapping.) One basis cannot carry both, and widening the return
+also catches the second. Recorded as a structural observation only: that one
+basis cannot carry two distinguishable situations. What standing either
+situation warrants is not claimed. One basis cannot carry both, and widening the return
 enum would not separate them; the condition itself has to split.
 
 ## 4. Why widening the enum is not the repair
@@ -200,8 +225,21 @@ And for five of the eight bases there is no mapping to make yet, because the
 coordinate they inspect has no recovered constitutional role. Widening the enum
 there would preserve branches that may not belong, in better vocabulary.
 
-The question this boundary actually poses is not how to repair the function. It
-is:
+**The governing order**, the durable result of this audit, applying to any
+condition in any Applicability boundary:
+
+```text
+1  establish the condition's coordinate is real
+2  establish that coordinate is REQUIRED for this exact Act
+3  only then determine which Applicability standing follows
+```
+
+Step 2 is the one both this function and this report's own earlier drafts
+skipped. It is grammar-bounded orientation applied inside a Responsibility
+rather than across the corpus.
+
+The question this boundary actually poses is therefore not how to repair the
+function. It is:
 
 ```text
 What does an exact Responsibility need established
