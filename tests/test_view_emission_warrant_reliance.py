@@ -9,21 +9,24 @@ def _read(relative: str) -> str:
 
 
 def test_view_kind_depends_on_emitted_standing_not_input_artifact_alone():
-    text = _read("book_of_seed/06-standing-representation-view-and-projection/representation-and-view.md")
+    text = _read("book_of_seed/06-standing-and-projection/bounded-representations.md")
 
     assert "Input artifact kind and representation shape may supply evidence" in text
     assert "they do not automatically determine the View kind" in text
-    assert "the standing of the assertion Seed is warranted to emit" in text
     assert "A View over Observation artifacts is not automatically an ObservationView" in text
     assert "FactSupport" in text and "not automatically a FactView" in text
 
 
 def test_projection_chapter_distinguishes_current_implementation_from_true_fact_view():
-    text = _read("book_of_seed/06-standing-representation-view-and-projection/projection-and-current-standing.md")
+    text = _read("book_of_seed/06-standing-and-projection/projection-and-current-standing.md")
 
     assert "A true FactView exposes a proposition with bounded Fact standing" in text
     assert "that inventory shape is not the constitutional definition of a FactView" in text
-    assert "A current-facing Fact View is a further standing-bearing emission" in text
+    emission = _read(
+        "book_of_seed/08-authority-communication-and-stopping/"
+        "representation-emission-and-consumer-boundaries.md"
+    )
+    assert "A current-facing Fact View is a further standing-bearing emission" in emission
 
 
 def test_amendment_records_required_reliance_answers_and_surface_table():

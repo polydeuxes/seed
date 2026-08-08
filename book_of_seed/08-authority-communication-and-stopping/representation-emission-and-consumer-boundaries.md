@@ -25,6 +25,10 @@ Developer-supplied connective meaning remains attributed and bounded testimony, 
 
 Realization testimony does not collapse these relations: an artifact is not an act, array inclusion does not establish a constitutional participation relation, a field value is not standing, and type compatibility is not lawful consumption.
 
+A responsible emission occurrence may present an ObservationView whose bounded assertion carries attributed testimony standing: the consumer may rely that the represented source or observation record reported the summarized claim with preserved attribution and supporting ids, not that the testified proposition is established, normalized as a Fact, current, verified, or operationally actionable. A responsible emission occurrence may present a FactView whose bounded assertion carries bounded Fact standing: the consumer may rely that the proposition has been established as a Fact within the preserved evidence, scope, source authority, confidence, conflict, and temporal limits, but not that it is presently applicable. A responsible emission occurrence may present a current-facing Fact View whose bounded assertion carries present-facing applicability only when its contract directly discloses or incorporates the projection method, scope, purpose, as-of boundary, freshness or expiry treatment, conflict treatment, and Unknowns required for current reliance by its exact consumer. Fact standing, projected support selection, and current applicability are therefore distinct standings, not a linear promotion automatically caused by a builder or getter.
+
+A current-facing Fact View is a further standing-bearing emission that warrants present applicability under a declared projection, scope, purpose, as-of boundary, freshness/expiry treatment, conflict treatment, and Unknowns.
+
 ## Addressable boundaries for representation and responsibility
 
 ### 08.Communication.A — Bounded responsibility transition
