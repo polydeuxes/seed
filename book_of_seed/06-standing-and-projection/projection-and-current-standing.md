@@ -1,4 +1,4 @@
-# Projection and Current State
+# Projection and Current Standing
 
 ## Constitutional subject
 The derivation of projected material, current lawful condition, and possible current constitutional standing from constitutional records and repository evidence.
@@ -19,7 +19,7 @@ A projection, view, package, or set is lossless for a declared bounded consumer 
 
 
 ### 06.Projection.C — Rebuildability and prior invocation boundary
-A derived artifact need not be preserved when the understanding it carries can be faithfully rebuilt from retained evidence. Projection snapshots are generally rebuildable from ledger-supported evidence; summary snapshots are generally rebuildable from projected State; fact-index snapshots are generally rebuildable from projected State. Rebuildability is bounded by the retained evidence, projection rules, and declared purpose, and does not mean rerunning an operation reconstructs a prior operation instance. Rebuildable projection is not prior invocation reconstruction. The elapsed duration of one invocation and the cache condition at that historical invocation may be irrecoverable after process exit even when current condition can be reconstructed or the operation can be rerun.
+A derived artifact need not be preserved when the understanding it carries can be faithfully rebuilt from retained evidence. Projection snapshots are generally rebuildable from ledger-supported evidence; summary snapshots and fact-index snapshots are generally rebuildable from projected material. Rebuildability is bounded by the retained evidence, projection rules, and declared purpose, and does not mean rerunning an operation reconstructs a prior operation instance. Rebuildable projection is not prior invocation reconstruction. The elapsed duration of one invocation and the cache condition at that historical invocation may be irrecoverable after process exit even when current condition can be reconstructed or the operation can be rerun.
 
 ## Important distinctions
 - projection != constitutional source
@@ -50,5 +50,5 @@ A derived artifact need not be preserved when the understanding it carries can b
 
 ## Related chapters
 - [Lenses, views, and assertion-preserving Uptake](../01-grammar-and-standing/lenses-views-and-assertion-preserving-uptake.md)
-- [Events, facts, and state](events-facts-and-state.md)
+- [Events, facts, and standing](events-facts-and-standing.md)
 - [Ownership, discrepancy, and residue](ownership-discrepancy-and-residue.md)

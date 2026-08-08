@@ -56,7 +56,7 @@ Evidence becoming available does not by itself change any consumer assertion, st
 ## Related chapters
 - [External and constitutional grammar](external-and-constitutional-grammar.md)
 - [Orientation and movement](../03-goals-and-advancement/orientation-and-movement.md)
-- [Projection and current state](../06-state-and-projection/projection-and-current-state.md)
+- [Projection and current standing](../06-standing-and-projection/projection-and-current-standing.md)
 
 ## View emission, warrant, and reliance amendment 001
 
