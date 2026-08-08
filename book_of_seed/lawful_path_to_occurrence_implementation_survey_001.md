@@ -31,8 +31,12 @@ use only under its exact subject, evidence, warrant, scope, authority,
 confidence, freshness, conflict, expiry, and Unknown limits. Nothing turns
 projected material into current Standing by identity.
 
-**The lawful path is already implemented in this repository — and it is
-dormant.** This is the finding worth acting on. §3.
+**An implementation *witness* of the lawful path exists in this repository, it
+is dormant, and its constitutional fidelity is not established.** All three
+clauses matter. The structure demonstrates dependency lineage rather than
+call-order warrant, which is the pattern being looked for. But it compresses
+Applicability in a way that conflicts with active law, so it is a candidate to
+cross-examine, not a validated implementation. §3.
 
 ## 2. What active law supplies, and what it refuses
 
@@ -62,10 +66,10 @@ Standing directly, another Applicability plus Admission. What is universal is
 only that the **exact Responsibility owns whatever its local grammar
 requires**, per `01.Standing.E.1`.
 
-## 3. The path exists in the runtime
+## 3. An implementation witness exists in the runtime
 
-`seed_runtime/operator_session_standing.py` implements a full lawful chain, and
-it is more complete than the campaign's recent discussions assumed:
+`seed_runtime/operator_session_standing.py` implements a candidate chain, more
+complete than the campaign's recent discussions assumed:
 
 ```text
 meaning relation
@@ -99,7 +103,9 @@ against the applicability it claims. Lineage is carried explicitly in payloads
 (`"lineage": [applicability["event_id"]]`), and `source_provenance`,
 `responsibility`, and `authority_support` are recorded per stage.
 
-**That is provenance for action, and it is built.**
+**That is provenance for action, and it is built.** Downstream stages are
+warranted by what they consumed, not by when they ran — which is the property
+worth preserving from this code.
 
 **It is also entirely dormant.** `seed_runtime/operator_interaction_goal.py` is
 imported by nothing except its own test file. The live console loop
@@ -112,9 +118,53 @@ emit_operator_presentation
 capture_stdin_material
 ```
 
-So the repository contains a worked lawful path from meaning relation to goal
-standing, with recorded applicability, admission, and consumption — and does
-not run it.
+So the repository contains a worked candidate path from meaning relation to
+goal standing, with recorded applicability, admission, and consumption — and
+does not run it.
+
+### 3.1 Where it conflicts with active law
+
+`01.Lenses:14` gives applicability and admission **four standings each**:
+
+> Available upstream material may be evaluated by a consumer-local
+> applicability boundary and remain **applicable, inapplicable, Unknown, or
+> conflicting** [...] A separate consumer-local admission boundary may consume
+> applicability and admission evidence to produce **admitted, unadmitted,
+> Unknown, or conflicting** admission standing.
+
+The implementation produces three of those eight:
+
+```text
+active law          implementation
+applicable          applicable
+inapplicable        inapplicable
+Unknown             —
+conflicting         —
+admitted            admitted
+unadmitted          —
+Unknown             —
+conflicting         —
+```
+
+Every non-applicable ground is compressed into `inapplicable`, and two of them
+are the wrong standing under that clause:
+
+```text
+treatment-conflicted                    reads as conflicting, not inapplicable
+consumer-authority-not-established      a required coordinate was not
+authority-coordinates-not-established     established — that is Unknown, not
+                                          a finding of inapplicability
+```
+
+This is the distinction the campaign has spent its whole length recovering:
+**failure to establish a coordinate is not a responsible finding of its
+absence.** `unresolved != absent`, applied to the applicability boundary
+itself. The implementation makes a positive negative finding where active law
+provides for recording that the question was not settled.
+
+So the fidelity claim cannot be made. What can be said is that the *shape* —
+recorded stages, each validated against the exact upstream event it names — is
+sound, and that its Applicability **result vocabulary** is not.
 
 ## 4. What the live path does record
 
@@ -142,19 +192,28 @@ what Authority and Scope, with what Unknowns surviving.
 **One coordinate is absent: applicability.** Nothing records why the consumed
 Standing was applicable input to this formation act.
 
-This is not obviously a defect, and the report does not call it one. Forming a
-bounded representation of Standing asserts nothing — the recorded authority
-string says so in the event itself — so it may require no applicability
-determination. Whether a formation act needs one is exactly the kind of
-question `01.Standing.E.1` leaves to the exact act owner. What can be said is
-narrower and still useful:
+This is not obviously a defect, and the report does not call it one. Whether a
+formation act needs an applicability determination is exactly the kind of
+question `01.Standing.E.1` leaves to the exact act owner.
+
+**A dichotomy drawn here earlier is withdrawn.** It read "acts that assert
+nothing" against "acts that establish standing," resting on the claim that
+forming a bounded representation asserts nothing. That claim is not supported.
+The event's own authority string is much narrower — it establishes "no
+selection, warrant, goal, or response treatment," which is not the same as
+asserting nothing. And `08.Communication:45` has the operator "rely only on the
+assertion and standing the emitted representation directly warrants for its
+declared purpose," so a representation does carry an assertion. `08.Communication:10`
+says only that formation is not emission.
 
 ```text
-acts that assert nothing       formation records its own limits and no
-                               applicability                        live
-acts that establish standing   applicability → admission → consumption,
-                               each recorded and cross-validated    dormant
+representation formation does not strengthen source Standing    supported
+representation formation asserts nothing                        not supported
 ```
+
+What survives is the observation without the boundary: the live formation act
+records no applicability, the dormant chain records one, and no principle
+separating the two cases has been established here.
 
 ## 5. Chronology is in the ledger; topology is in the payload
 
@@ -187,9 +246,16 @@ is well-formed and unanswered; naming an act because an occurrence is wanted is
 the error this campaign keeps finding.
 
 That the recorded chain is verified against active law clause by clause. This
-survey read the implementation and the relevant chapter. It did not audit
-whether each recorded coordinate meets the clause it invokes, and a cited
-implementation is not a corroborated one.
+survey read the implementation and the relevant chapters, and §3.1 records one
+conflict found in passing. It did not audit the remaining coordinates, and one
+found conflict is a reason to expect others rather than evidence that the rest
+are sound.
+
+That the Applicability compression is the only defect, or that widening the
+result vocabulary would fix it. Recording `conflicting` and `Unknown` where
+they belong is necessary; whether each of the eight named grounds maps to the
+right one of the four standings is a separate determination owned by that
+boundary.
 
 ## 7. Method note
 
@@ -203,3 +269,16 @@ The dormancy finding came from asking which non-test callers exist, rather than
 from reading the module. A module that imports cleanly, has passing tests, and
 implements a careful chain can still be connected to nothing, and the test
 suite will not say so.
+
+**Correction recorded.** An earlier draft claimed "the lawful path is already
+implemented" while its own limits section admitted the chain had not been
+audited against active law. Those two statements cannot both stand, and the
+first was written from being impressed by the code rather than from checking
+it. One clause — `01.Lenses:14` — was enough to find a conflict.
+
+The general form: **a sophisticated implementation is evidence of care, not of
+fidelity.** Recorded stages, named bases, and cross-validated references are
+exactly what a correct implementation looks like *and* exactly what a
+confidently wrong one looks like. The compression found here is invisible
+unless the result vocabulary is compared against the clause, because nothing in
+the code looks careless.
