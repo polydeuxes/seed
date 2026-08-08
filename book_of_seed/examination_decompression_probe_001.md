@@ -6,11 +6,11 @@ The probe: rather than census `formation` again, use the one composite act
 active law actually decomposed — `Examination`, removed at #2210 — and read
 what it decomposed *into*.
 
-**Two findings, and the second answers the question directly.**
+**One finding, and one edge the finding does not reach.**
 
-**Examination decomposed into four already-established acts, none of which is
-formation or production.** Each replacement names a different act, and each of
-those acts carries its own result:
+**#2210 distributed Examination's former uses across four different
+replacements, none of which is formation or production.** Each sentence got a
+different word, depending on what that sentence was doing:
 
 ```text
 before #2210                          after #2210
@@ -29,8 +29,14 @@ were added**. No replacement anywhere in that commit introduced `formation` or
 `production` to carry a result-producing step that Examination had been
 carrying.
 
-**Active law already has the general category, and Examination was a kind of
-it.** This is the direct answer. The clause read:
+These four are **replacements, not a recovered decomposition into established
+acts.** The distinction matters: `interpretation` in particular was later
+narrowed at #2186, which removed an unsupported common-grammar examination
+assignment. Calling all four "already-established acts" would give each more
+standing than this commit earned it.
+
+**Examination was described as one kind of production occurrence.** The clause
+read:
 
 > A responsible **examination or other kind-specific production occurrence**
 > may preserve a bounded **Unknown** finding …
@@ -44,37 +50,41 @@ Examination was listed as one *kind* of production occurrence. Removing the
 kind left the general category standing and covering the ground. Nothing had to
 be invented to replace it, because the category was already there.
 
-## 2. Why this answers the assigned question
+## 2. What this establishes, and what it does not
 
-The question was whether `formation` preserves any distinction not already
-carried by producer, act, occurrence, production, and the resulting
-representation.
+**Established.** Examination was explicitly one kind-specific production
+occurrence, and its removal needed no separate Formation node. That is positive
+evidence that a result-producing Act need not have a second formation
+occurrence beside it.
 
-`01.Kinds:69` supplies the grammar that makes a separate node unnecessary:
-
-```text
-responsible kind-specific production occurrence
-```
-
-That is a general form with a slot. The specific act names the kind;
-`production occurrence` names what it is. On this reading:
+**Not established, and an earlier version of this report claimed it.** That
+version generalised the slot:
 
 ```text
-Examination      was    a kind-specific production occurrence   (removed)
-comparison       is     a kind-specific production occurrence
-determination    is     a kind-specific production occurrence
-establishment    is     a kind-specific production occurrence
-forming a representation
-                 would be a kind-specific production occurrence
+withdrawn
+    comparison       is a kind-specific production occurrence
+    determination    is a kind-specific production occurrence
+    establishment    is a kind-specific production occurrence
+    forming a representation would be one too
 ```
 
-`formation` does not need to be a coordinate between the act and its result,
-because the act *is* the production occurrence and the result is what it
-produces. Inserting `formation` would add a node the grammar already has a slot
-for.
+`#2210` establishes this for Examination and for nothing else. Worse, **active
+law contradicts one of them directly.** The phrase `kind-specific production
+**or establishment** boundary` appears four times, keeping the two apart:
 
-The same clause family appears twice more as "kind-specific production **or
-establishment** boundary", so the general form is not a single stray phrase.
+```text
+production != establishment
+```
+
+So `production occurrence` is not a universal wrapper over every
+result-establishing Act, and the reasoning that made it one was a generalisation
+from a single clause.
+
+The assigned question therefore remains open:
+
+```text
+formation ?= production        unresolved
+```
 
 ## 3. What the decompression shows about composites generally
 
@@ -88,10 +98,10 @@ consumer-local interpretation    what this material means to this consumer
 establishment                    whether the bounded thing now holds
 ```
 
-And none of those four required a companion production step to be named
-separately. `determination`, `interpretation`, and `establishment` each carry
-their result in the act name; `comparison` produces a finding without a
-`comparison formation` beside it.
+None of the four replacements introduced a companion formation step. That is
+an observation about what #2210 wrote, not a claim that these acts stand in any
+particular relation to production — §2 records why that generalisation was
+withdrawn.
 
 The concordance's own retired `examination` row recorded its related concepts
 as **"relevance, applicability, testimony"** — consistent with the
@@ -118,13 +128,45 @@ general rule about composites.
 **That `kind-specific production occurrence` is a recovered constitutional act
 family.** It is a phrase appearing four times in one file. Whether it names a
 family with an owner, or is ordinary grammar for "whatever occurrence produced
-this kind of thing", is untested. That question matters, because §2 rests on
-it, and this report does not settle it.
+this kind of thing", is untested.
 
 **Anything about `rendering` or `emission`.** Settled separately at #2357 and
 untouched here.
 
-## 5. Method note
+## 5. The discriminating edge: `representation formation act`
+
+The probe does not reach the assigned question because active law contains the
+exact phrase under dispute. `01.Kinds:10` lists it among nine things that
+"describe different dimensions of repository responsibility":
+
+> Act, constraint, testimony, constructor, View, representation form or
+> structure, **representation formation act**, separately evidenced emission
+> occurrence, and transport structure describe different dimensions of
+> repository responsibility.
+
+`representation formation act` sits in that list beside `Act` itself and beside
+`separately evidenced emission occurrence`. Whatever it preserves, active law
+names it as a distinct dimension rather than as a synonym.
+
+That makes it the sharp next probe, and the cat test applies to the exact
+phrase:
+
+```text
+does `representation formation act` preserve an Act distinct from
+the exact Act that produces the representation?
+
+what is its Producer?
+what result does it produce?
+what would be lost if `formation` disappeared from it?
+is it merely "the Act that produces this representation"?
+```
+
+If that phrase dissolves, `formation` is finished. If it survives, `formation`
+is preserving something this probe could not see, and the Examination evidence
+does not override it — a term appearing in one list of nine dimensions is not
+refuted by a decompression that never touched it.
+
+## 6. Method note
 
 The probe answered in three commands what a vocabulary census could not answer
 at all, because it asked a different kind of question: not *how is this word
