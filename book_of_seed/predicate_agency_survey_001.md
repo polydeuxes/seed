@@ -157,42 +157,82 @@ producer. It is not one. `translat*` occurs 34 times across six chapters and no
 clause states what a translation is, names a translation occurrence, or names a
 translation boundary. All five capitalised occurrences are sentence-initial.
 
-**The general test, which this survey's evidence supports:**
+### 6.2 The discriminator, corrected
+
+**[operator correction]** A first version of this section asked whether active
+law *defines* the term, and cleared `learning` on that basis. The operator
+refused it: **name its responsibilities. You cannot.**
+
+That is right, and the failure is instructive. **A definition describes a
+thing. It does not supply an owner.** Describing is precisely what active law
+does to learning without ever owning it.
+
+**The test:**
 
 ```text
-does active law define the term,
-name its occurrence,
-or name its boundary?
+name its Responsibility
+    the owner
+    the act that produces it
+    the standing that production establishes
 
-    yes  ->  established vocabulary, however ordinary it sounds
-    no   ->  wording, and it must not be used as the doer
+    can be named  ->  established vocabulary, however ordinary it sounds
+    cannot        ->  wording, and it must not be used as the doer
 ```
 
-Applied to the words currently in question:
+`05.Recording.A` passes: a recording boundary may create retrievable
+assertion-bearing material, and "the produced standing is that a record exists
+and preserves an attributed assertion". Owner, act, standing.
+
+**[active law] `learning` fails it.** Eighteen sentences, **eleven pure
+denial**:
 
 ```text
-term          defined?                              disposition
-translation   no clause defines it                  ban; nothing is lost
-learning      "Learning establishment is an         keep; and note that
-              evidence-supported revision of        Learning is capitalised
-              retained understanding", with its     mid-sentence, unlike
-              own non-equivalences                  Translation
-assertion     no -- but 01.Kinds:28 requires        keep; an undefined
-              `the relation assertion` as a         required coordinate is a
-              coordinate                            recovery gap, not
-                                                    contamination
-examination   zero occurrences remain               guard the noun only;
+retained history is not learning
+changed stored data is not learning
+a new current value is not learning
+trajectory is not learning automatically
+an interaction episode is not learning automatically
+Learning establishment is not storage mutation, projection replacement,
+  a new current value, model training by identity, a universal Learning
+  object, or adaptive reliance
+```
+
+The remainder are topic lists — "Learning may concern condition, trajectory,
+limitations in evidence support, gap, capability…" — one passive definition,
+and one that says Learning establishment "**may be understood as**" constrained
+constitutional movement, which is a reading aid rather than an establishment.
+
+**A search for any clause naming a Learning owner, boundary, producer,
+occurrence, responsibility, or act returns nothing.** Active law separately
+denies "a universal Learning object" and denies authorizing "general language
+learning".
+
+**[inference]** This is the negative-grammar pattern at its purest: a word the
+Book talks *about* extensively and never puts anyone in charge of. Eleven
+denials establish what it is not; nothing establishes who does it.
+
+**Withdrawn.** The earlier note offered `Learning` being capitalised
+mid-sentence as evidence for standing. It is not evidence either way, and
+`Remembering` was the same shape.
+
+```text
+term          responsibility nameable?              disposition
+translation   no                                    ban
+learning      no                                    ban
+examination   n/a -- zero occurrences               guard the noun only;
                                                     `examines` is lawful prose
                                                     with applicability as its
                                                     subject
+assertion     no -- but 01.Kinds:28 REQUIRES `the   unresolved; a required
+              relation assertion` as a coordinate   coordinate with no owner
+                                                    is a different defect from
+                                                    a word with no owner
 ```
 
-**[inference]** The discriminator is not part of speech and not familiarity. It
-is whether a clause supplies the term's physiology. That is why `learning`
-survives and `translation` does not, though both are ordinary English and both
-appear in active law.
+**[inference]** The discriminator is neither part of speech, nor familiarity,
+nor whether a definition exists. It is whether a clause puts someone in charge.
 
-### 6.2 The `state` pattern
+### 6.3 The `state` pattern
 
 The `state` pattern must not be finalised on this survey's evidence.
 
