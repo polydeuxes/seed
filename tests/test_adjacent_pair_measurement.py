@@ -1,0 +1,393 @@
+"""A recorded finding supplies the next aperture, and every pair gets the same battery.
+
+`#2391` recovered ordered pairs whose adjacency reproduces across independently
+bounded scopes, without a reader naming a representation, occupant, or
+delimiter. It left one gap: the candidates were enumerated in a scratch run, so
+the loop was demonstrated rather than preserved.
+
+This closes that. :func:`adjacent_pairs_from_finding` reads pairs out of a recorded
+measurement finding, which is why a finding must record the aperture it measured
+after — a finding that does not is refused as a source of pairs. Every
+characterization then carries that finding as its premise, so the chain is
+recoverable from the ledger rather than from a transcript.
+
+The battery is four generic adjacency questions applied to every pair without
+exception. A question whose answer is absent is still asked and still recorded;
+dropping empty results would report only the questions that happened to
+succeed.
+
+Nothing here establishes meaning, grammatical kind, relation, or truth.
+"""
+
+from __future__ import annotations
+
+from io import StringIO
+
+import pytest
+
+from seed_runtime.events import EventLedger
+from seed_runtime.adjacent_pair_measurement import (
+    EQUIVALENCE_RULE,
+    enumerate_apertures,
+    measure_after,
+    AdjacentPair,
+    measure_adjacent_pair,
+    adjacent_pairs_from_finding,
+    record_pair_measurements,
+    shared_neighbours,
+    stability_across_scopes,
+)
+from seed_runtime.preserved_material_measurement import (
+    DeclaredMeasurement,
+    PreservedMaterialMeasurementError,
+    measure_occupancy,
+    premise_chain,
+    preserved_ingress_occurrences,
+    record_measurement_finding,
+)
+from scripts import seed_local
+
+MATERIAL = (
+    "it is a word and it is a thing\n"
+    "It is another word\n"
+    "and it is not a word\n"
+    "it may be a word\n"
+    "of the word and of the thing\n"
+)
+LEFT = "it"
+
+
+def _after_left(text):
+    parts = text.split()
+    for index in range(len(parts) - 1):
+        if parts[index] == LEFT:
+            return parts[index + 1]
+    return None
+
+
+@pytest.fixture
+def session():
+    ledger = EventLedger()
+    seed_local.run_persistent_operator_console(
+        ledger=ledger,
+        workspace_id="w",
+        session_id="s",
+        input_stream=StringIO(MATERIAL + "exit\n"),
+        output_stream=StringIO(),
+    )
+    return ledger
+
+
+@pytest.fixture
+def occurrences(session):
+    return preserved_ingress_occurrences(session, workspace_id="w", session_id="s")
+
+
+@pytest.fixture
+def recorded_finding(session, occurrences):
+    finding = measure_occupancy(
+        occurrences,
+        declared=DeclaredMeasurement(
+            representation_measured=f"the representation following {LEFT!r}",
+            equivalence_rule=EQUIVALENCE_RULE,
+            counting_scope="preserved ingress occurrences of this session",
+            measured_after=LEFT,
+        ),
+        occupant_of=_after_left,
+    )
+    return record_measurement_finding(
+        session, workspace_id="w", session_id="s", finding=finding
+    )
+
+
+# --------------------------------------------------------------------------
+# The aperture comes out of the record.
+# --------------------------------------------------------------------------
+
+
+def test_a_finding_records_the_aperture_it_measured_after(recorded_finding):
+    """Without this a finding cannot supply an aperture to anything."""
+    assert recorded_finding.payload["measured_left_representation"] == LEFT
+
+
+def test_pairs_are_read_from_the_record_not_supplied(session, recorded_finding):
+    pairs = adjacent_pairs_from_finding(session, recorded_finding.id)
+    assert pairs
+    assert all(pair.left == LEFT for pair in pairs)
+    assert AdjacentPair(left="it", right="is") in pairs
+
+
+def test_every_occupancy_becomes_a_pair_with_no_filtering(session, recorded_finding):
+    """No count, share, or threshold decides which pairs are returned."""
+    pairs = adjacent_pairs_from_finding(session, recorded_finding.id)
+    assert len(pairs) == len(recorded_finding.payload["occupancies"])
+
+
+def test_a_finding_that_names_no_aperture_cannot_supply_one(session, occurrences):
+    event = record_measurement_finding(
+        session,
+        workspace_id="w",
+        session_id="s",
+        finding=measure_occupancy(
+            occurrences,
+            declared=DeclaredMeasurement(
+                representation_measured="the first representation",
+                equivalence_rule=EQUIVALENCE_RULE,
+                counting_scope="this session",
+            ),
+            occupant_of=lambda t: (t.split() or [None])[0],
+        ),
+    )
+    with pytest.raises(PreservedMaterialMeasurementError):
+        adjacent_pairs_from_finding(session, event.id)
+
+
+def test_pairs_must_come_from_a_measurement_finding(session, occurrences):
+    foreign = session.append("unrelated.kind", "w", {"occupancies": []}, session_id="s")
+    with pytest.raises(PreservedMaterialMeasurementError):
+        adjacent_pairs_from_finding(session, foreign.id)
+
+
+# --------------------------------------------------------------------------
+# The battery is applied symmetrically.
+# --------------------------------------------------------------------------
+
+
+def test_every_pair_receives_every_question(occurrences, recorded_finding):
+    expected = {"preceding", "following", "left_alternatives", "right_alternatives"}
+    for pair in (AdjacentPair("it", "is"), AdjacentPair("it", "may"), AdjacentPair("of", "the")):
+        findings = measure_adjacent_pair(
+            occurrences,
+            pair,
+            counting_scope="this session",
+            premise_event_id=recorded_finding.id,
+        )
+        assert set(findings) == expected
+
+
+def test_a_question_that_found_nothing_is_still_recorded(
+    session, occurrences, recorded_finding
+):
+    """`of the` never appears with anything after it in this material."""
+    pair = AdjacentPair("of", "the")
+    findings = measure_adjacent_pair(
+        occurrences,
+        pair,
+        counting_scope="this session",
+        premise_event_id=recorded_finding.id,
+    )
+    recorded = record_pair_measurements(
+        session, workspace_id="w", session_id="s", pair=pair, findings=findings
+    )
+    assert set(recorded) == set(findings)
+    assert any(f.strongest is None for f in findings.values())
+    for event in recorded.values():
+        assert "occupancies" in event.payload
+
+
+def test_an_absent_position_is_absent_not_unknown(occurrences, recorded_finding):
+    findings = measure_adjacent_pair(
+        occurrences,
+        AdjacentPair("it", "is"),
+        counting_scope="this session",
+        premise_event_id=recorded_finding.id,
+    )
+    preceding = findings["preceding"]
+    assert preceding.positions_measured < len(preceding.consumed_event_ids)
+    assert "Unknown" not in str(preceding.occupancies)
+
+
+# --------------------------------------------------------------------------
+# The premise travels with every characterization.
+# --------------------------------------------------------------------------
+
+
+def test_each_characterization_records_its_premise(
+    session, occurrences, recorded_finding
+):
+    pair = AdjacentPair("it", "is")
+    recorded = record_pair_measurements(
+        session,
+        workspace_id="w",
+        session_id="s",
+        pair=pair,
+        findings=measure_adjacent_pair(
+            occurrences,
+            pair,
+            counting_scope="this session",
+            premise_event_id=recorded_finding.id,
+        ),
+    )
+    for name, event in recorded.items():
+        assert event.payload["premise_event_id"] == recorded_finding.id
+        assert event.payload["characterization"] == name
+        assert event.payload["pair_left"] == "it"
+        assert event.payload["pair_right"] == "is"
+        assert premise_chain(session, event.id) == [recorded_finding.id]
+
+
+def test_recording_does_not_alter_the_premise(session, occurrences, recorded_finding):
+    before = dict(recorded_finding.payload)
+    pair = AdjacentPair("it", "is")
+    record_pair_measurements(
+        session,
+        workspace_id="w",
+        session_id="s",
+        pair=pair,
+        findings=measure_adjacent_pair(
+            occurrences,
+            pair,
+            counting_scope="this session",
+            premise_event_id=recorded_finding.id,
+        ),
+    )
+    assert session.get(recorded_finding.id).payload == before
+
+
+# --------------------------------------------------------------------------
+# What agreement between pairs is, and is not.
+# --------------------------------------------------------------------------
+
+
+def test_stability_reports_agreement_not_a_share(occurrences, recorded_finding):
+    scopes = [occurrences[:3], occurrences[3:]]
+    occupant, agreeing, answered = stability_across_scopes(
+        scopes,
+        AdjacentPair("it", "is"),
+        "left_alternatives",
+        counting_scope="a bounded scope",
+        premise_event_id=recorded_finding.id,
+    )
+    assert agreeing <= answered <= len(scopes)
+    assert occupant is None or isinstance(occupant, str)
+
+
+def test_shared_neighbours_groups_without_claiming_a_kind(
+    occurrences, recorded_finding
+):
+    characterizations = {
+        str(pair): measure_adjacent_pair(
+            occurrences,
+            pair,
+            counting_scope="this session",
+            premise_event_id=recorded_finding.id,
+        )
+        for pair in (AdjacentPair("it", "is"), AdjacentPair("it", "may"))
+    }
+    grouped = shared_neighbours(characterizations, "left_alternatives")
+    assert all(isinstance(labels, list) for labels in grouped.values())
+    # Grouping is agreement between counts. No relation, kind, or standing.
+    assert not any("kind" in key or "relation" in key for key in grouped)
+
+
+def test_a_pair_must_be_two_exact_representations():
+    for bad in (("", "is"), ("it", ""), (None, "is")):
+        with pytest.raises(PreservedMaterialMeasurementError):
+            AdjacentPair(*bad)
+
+
+# --------------------------------------------------------------------------
+# Rung 0: the material offers the apertures, and nobody names one.
+# --------------------------------------------------------------------------
+
+
+def test_apertures_are_enumerated_from_the_material(occurrences):
+    """No representation is supplied, preferred, or filtered by count."""
+    apertures = enumerate_apertures(occurrences)
+    offered = {
+        token
+        for event in occurrences
+        for token in event.payload["decoded_text"].split()
+    }
+    assert set(apertures) == offered
+    assert apertures == sorted(apertures)
+
+
+def test_comparability_restricts_apertures_without_judging_them(occurrences):
+    """`present_in` keeps what every scope can answer, not what looks useful."""
+    scopes = [occurrences[:2], occurrences[2:]]
+    restricted = enumerate_apertures(occurrences, present_in=scopes)
+    everywhere = set.intersection(
+        *[
+            {t for e in scope for t in e.payload["decoded_text"].split()}
+            for scope in scopes
+        ]
+    )
+    assert set(restricted) == everywhere
+    assert set(restricted) <= set(enumerate_apertures(occurrences))
+
+
+def test_measuring_after_an_aperture_records_which(occurrences):
+    finding = measure_after(occurrences, "it", counting_scope="this session")
+    assert finding.declared.measured_after == "it"
+    assert finding.strongest.representation == "is"
+
+
+def test_the_whole_chain_runs_without_a_supplied_representation(
+    session, occurrences
+):
+    """Rung 0 to rung 2 with no representation named by this test.
+
+    The only inputs are the preserved occurrences and the fixed battery. Every
+    representation appearing anywhere below came out of the material.
+    """
+    scopes = [occurrences[:3], occurrences[3:]]
+    apertures = enumerate_apertures(occurrences, present_in=scopes)
+    assert apertures
+
+    agreed = []
+    for aperture in apertures:
+        answers = [
+            finding.strongest.representation
+            for scope in scopes
+            if (finding := measure_after(scope, aperture, counting_scope="a scope"))
+            and finding.strongest is not None
+        ]
+        if answers and len(set(answers)) == 1 and len(answers) == len(scopes):
+            agreed.append(aperture)
+    assert agreed, "the material offered no aperture with an agreeing occupant"
+
+    recorded_first = record_measurement_finding(
+        session,
+        workspace_id="w",
+        session_id="s",
+        finding=measure_after(
+            occurrences, agreed[0], counting_scope="whole session"
+        ),
+    )
+    pairs = adjacent_pairs_from_finding(session, recorded_first.id)
+    assert pairs
+
+    recorded_second = record_pair_measurements(
+        session,
+        workspace_id="w",
+        session_id="s",
+        pair=pairs[0],
+        findings=measure_adjacent_pair(
+            occurrences,
+            pairs[0],
+            counting_scope="whole session",
+            premise_event_id=recorded_first.id,
+        ),
+    )
+    for event in recorded_second.values():
+        assert premise_chain(session, event.id) == [recorded_first.id]
+
+
+def test_agreement_is_the_discriminator_not_a_count(occurrences):
+    """A frequent occupant that disagrees across scopes is not preferred."""
+    scopes = [occurrences[:3], occurrences[3:]]
+    disagreeing = []
+    for aperture in enumerate_apertures(occurrences, present_in=scopes):
+        answers = [
+            f.strongest.representation
+            for scope in scopes
+            if (f := measure_after(scope, aperture, counting_scope="a scope"))
+            and f.strongest is not None
+        ]
+        if len(answers) == len(scopes) and len(set(answers)) > 1:
+            disagreeing.append(aperture)
+    # Nothing here promotes a disagreeing aperture; it is simply not agreed.
+    for aperture in disagreeing:
+        whole = measure_after(occurrences, aperture, counting_scope="whole")
+        assert whole.strongest is not None

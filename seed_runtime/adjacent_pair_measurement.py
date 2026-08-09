@@ -1,0 +1,345 @@
+"""Measure a recovered adjacent pair by the same battery of bounded questions.
+
+An **adjacent pair** is two representations, one recorded as occupying the
+position after the other. Nothing more. An earlier draft of this module called
+it a *joint*, a word borrowed from conversation about what such pairs might
+turn out to be; that word is not used here, because a working name adopted in
+discussion is not a recovered distinction and this module should not lend it
+one.
+
+`#2391` recovered thirteen such pairs from preserved material without a reader
+naming any representation, occupant, or delimiter.
+
+This module takes such a pair and asks the same generic questions of it that
+it would ask of any other:
+
+```text
+preceding            what occupies the position before the pair
+following            what occupies the position after it
+left alternatives    what else occupies the pair's left position
+                     before the same right representation
+right alternatives   what else occupies the pair's right position
+                     after the same left representation
+```
+
+**The battery is fixed and applied symmetrically.** No question is asked of one
+pair and withheld from another, and none of the four is motivated by what a
+reader believes the representations are. They are adjacency and occupancy
+measurements, which `01.External:28` permits a declared measurement to produce.
+
+**The pairs are not supplied.** :func:`adjacent_pairs_from_finding` reads them out of a
+recorded measurement finding, so the aperture for this round comes from the
+previous round's evidence rather than from the caller. Every characterization
+records that finding as its premise, so what it stood on travels with it.
+
+**Comparing characterizations is not performed here.** Two pairs sharing an
+alternative is a fact about two preserved findings. `05.Testimony:27` reserves
+consuming preserved findings to a bounded comparison, and none is performed.
+
+Nothing here establishes meaning, grammatical kind, relation, or truth. A pair
+is an ordered pair that recurs. That two pairs share a neighbour is a measured
+agreement between counts, and `01.Standing.D` refuses relation standing to
+co-presence.
+"""
+
+from __future__ import annotations
+
+from dataclasses import dataclass
+from typing import Callable, Iterable, Sequence
+
+from seed_runtime.events import EventLedger
+from seed_runtime.models import Event
+from seed_runtime.preserved_material_measurement import (
+    MEASUREMENT_RECORDED_KIND,
+    DeclaredMeasurement,
+    MeasurementFinding,
+    PreservedMaterialMeasurementError,
+    measure_occupancy,
+    record_measurement_finding,
+)
+
+EQUIVALENCE_RULE = "byte-for-byte equality; no normalization"
+
+
+@dataclass(frozen=True)
+class AdjacentPair:
+    """An ordered pair of representations whose adjacency was found reproducible.
+
+    The name describes the measured arrangement and nothing else. It is not a
+    constitutional kind, and it asserts nothing about either representation or
+    about any relation between them.
+    """
+
+    left: str
+    right: str
+
+    def __post_init__(self) -> None:
+        if not isinstance(self.left, str) or not isinstance(self.right, str):
+            raise PreservedMaterialMeasurementError("a pair is a pair of representations")
+        if not self.left or not self.right:
+            raise PreservedMaterialMeasurementError("a pair's representations must be exact")
+
+    def __str__(self) -> str:  # pragma: no cover - rendering only
+        return f"{self.left!r} -> {self.right!r}"
+
+
+def adjacent_pairs_from_finding(ledger: EventLedger, finding_event_id: str) -> list[AdjacentPair]:
+    """Read pairs out of a recorded finding rather than taking them from a caller.
+
+    The recorded finding names a left representation and the occupancies
+    measured after it. Every occupancy is returned; none is filtered by count,
+    share, or a threshold. Which of them prove reproducible is what the
+    characterization measures, not something decided here.
+    """
+
+    event = ledger.get(finding_event_id)
+    if event is None or event.kind != MEASUREMENT_RECORDED_KIND:
+        raise PreservedMaterialMeasurementError(
+            "pairs must be read from a recorded measurement finding"
+        )
+    left = event.payload.get("measured_left_representation")
+    if not isinstance(left, str) or not left:
+        raise PreservedMaterialMeasurementError(
+            "the recorded finding does not name the representation it measured after"
+        )
+    return [
+        AdjacentPair(left=left, right=occupancy["representation"])
+        for occupancy in event.payload["occupancies"]
+    ]
+
+
+def _positions(text: str) -> Sequence[str]:
+    """Whitespace-delimited positions.
+
+    A reader-supplied resolution, recorded as such. `#2391` established that
+    the discrimination survives character n-grams too, so this rule is not
+    load-bearing; it is legible.
+    """
+
+    return text.split()
+
+
+def _characterizations(pair: AdjacentPair) -> dict[str, Callable[[str], str | None]]:
+    """The four questions, each returning one occupant or nothing.
+
+    Absence of the pair in an occurrence yields ``None``: the position is not
+    there, which is absence rather than Unknown.
+    """
+
+    def find(parts: Sequence[str]) -> int | None:
+        for index in range(len(parts) - 1):
+            if parts[index] == pair.left and parts[index + 1] == pair.right:
+                return index
+        return None
+
+    def preceding(text: str) -> str | None:
+        parts = _positions(text)
+        at = find(parts)
+        return parts[at - 1] if at is not None and at > 0 else None
+
+    def following(text: str) -> str | None:
+        parts = _positions(text)
+        at = find(parts)
+        return parts[at + 2] if at is not None and at + 2 < len(parts) else None
+
+    def left_alternatives(text: str) -> str | None:
+        parts = _positions(text)
+        for index in range(len(parts) - 1):
+            if parts[index + 1] == pair.right and parts[index] != pair.left:
+                return parts[index]
+        return None
+
+    def right_alternatives(text: str) -> str | None:
+        parts = _positions(text)
+        for index in range(len(parts) - 1):
+            if parts[index] == pair.left and parts[index + 1] != pair.right:
+                return parts[index + 1]
+        return None
+
+    return {
+        "preceding": preceding,
+        "following": following,
+        "left_alternatives": left_alternatives,
+        "right_alternatives": right_alternatives,
+    }
+
+
+def measure_adjacent_pair(
+    occurrences: Iterable[Event],
+    pair: AdjacentPair,
+    *,
+    counting_scope: str,
+    premise_event_id: str,
+) -> dict[str, MeasurementFinding]:
+    """Apply the whole battery to one pair. Every question, no exceptions."""
+
+    material = list(occurrences)
+    findings: dict[str, MeasurementFinding] = {}
+    for name, occupant_of in _characterizations(pair).items():
+        findings[name] = measure_occupancy(
+            material,
+            declared=DeclaredMeasurement(
+                representation_measured=(
+                    f"the {name.replace('_', ' ')} position of the ordered pair "
+                    f"{pair.left!r} {pair.right!r}"
+                ),
+                equivalence_rule=EQUIVALENCE_RULE,
+                counting_scope=counting_scope,
+                premise_event_id=premise_event_id,
+            ),
+            occupant_of=occupant_of,
+        )
+    return findings
+
+
+def record_pair_measurements(
+    ledger: EventLedger,
+    *,
+    workspace_id: str,
+    session_id: str,
+    pair: AdjacentPair,
+    findings: dict[str, MeasurementFinding],
+) -> dict[str, Event]:
+    """Preserve every characterization, including the ones that found nothing.
+
+    A question whose answer was absent is recorded as having been asked. A
+    battery that quietly dropped its empty results would report only the
+    questions that happened to succeed.
+    """
+
+    recorded: dict[str, Event] = {}
+    for name, finding in findings.items():
+        recorded[name] = record_measurement_finding(
+            ledger,
+            workspace_id=workspace_id,
+            session_id=session_id,
+            finding=finding,
+            extra={
+                "characterization": name,
+                "pair_left": pair.left,
+                "pair_right": pair.right,
+            },
+        )
+    return recorded
+
+
+def stability_across_scopes(
+    scopes: Sequence[Sequence[Event]],
+    pair: AdjacentPair,
+    characterization: str,
+    *,
+    counting_scope: str,
+    premise_event_id: str,
+) -> tuple[str | None, int, int]:
+    """How many independently bounded scopes returned the same occupant.
+
+    Returns the agreed occupant, the number of scopes agreeing, and the number
+    that produced any answer. Agreement is the discriminator `#2390` found
+    survives; no share threshold is applied and none is proposed.
+    """
+
+    answers: list[str] = []
+    for scope in scopes:
+        finding = measure_adjacent_pair(
+            scope, pair, counting_scope=counting_scope, premise_event_id=premise_event_id
+        )[characterization]
+        strongest = finding.strongest
+        if strongest is not None:
+            answers.append(strongest.representation)
+    if not answers:
+        return None, 0, 0
+    counts: dict[str, int] = {}
+    for answer in answers:
+        counts[answer] = counts.get(answer, 0) + 1
+    agreed = max(counts.items(), key=lambda kv: (kv[1], kv[0]))
+    return agreed[0], agreed[1], len(answers)
+
+
+def shared_neighbours(
+    characterizations: dict[str, dict[str, MeasurementFinding]],
+    characterization: str,
+) -> dict[str, list[str]]:
+    """Which pairs returned the same occupant for the same question.
+
+    This reports agreement between preserved counts. It performs no comparison
+    in the sense `05.Testimony:27` governs, establishes no relation between the
+    pairs, and does not make them a kind.
+    """
+
+    grouped: dict[str, list[str]] = {}
+    for label, findings in characterizations.items():
+        strongest = findings[characterization].strongest
+        if strongest is None:
+            continue
+        grouped.setdefault(strongest.representation, []).append(label)
+    return grouped
+
+
+def enumerate_apertures(
+    occurrences: Iterable[Event], *, present_in: Sequence[Sequence[Event]] = ()
+) -> list[str]:
+    """Every representation the material offers as a possible aperture.
+
+    No representation is named here and none is preferred. When ``present_in``
+    is supplied, only representations measurable in *every* one of those scopes
+    are returned -- a comparability requirement, so that a later measurement can
+    ask the same question of each scope, not a judgement that the others are
+    uninteresting.
+
+    This is what removes the last supplied representation from the chain. The
+    caller no longer says which representation to measure after; the material
+    says which representations there are, and later measurements say which of
+    them anything reproducible follows from.
+    """
+
+    material = list(occurrences)
+    everywhere: set[str] | None = None
+    for scope in present_in:
+        seen = {
+            token
+            for event in scope
+            for token in _positions(event.payload["decoded_text"])
+        }
+        everywhere = seen if everywhere is None else (everywhere & seen)
+    offered = {
+        token
+        for event in material
+        for token in _positions(event.payload["decoded_text"])
+    }
+    if everywhere is not None:
+        offered &= everywhere
+    return sorted(offered)
+
+
+def measure_after(
+    occurrences: Iterable[Event],
+    aperture: str,
+    *,
+    counting_scope: str,
+    premise_event_id: str | None = None,
+) -> MeasurementFinding:
+    """Count what occupies the position after one enumerated aperture.
+
+    The finding records the aperture it measured relative to, which is what
+    lets :func:`adjacent_pairs_from_finding` read the next round's candidates
+    out of it instead of taking them from a caller.
+    """
+
+    def occupant_of(text: str) -> str | None:
+        parts = _positions(text)
+        for index in range(len(parts) - 1):
+            if parts[index] == aperture:
+                return parts[index + 1]
+        return None
+
+    return measure_occupancy(
+        occurrences,
+        declared=DeclaredMeasurement(
+            representation_measured=f"the representation following {aperture!r}",
+            equivalence_rule=EQUIVALENCE_RULE,
+            counting_scope=counting_scope,
+            premise_event_id=premise_event_id,
+            measured_after=aperture,
+        ),
+        occupant_of=occupant_of,
+    )
