@@ -24,14 +24,14 @@ ROGET        pairs per d          running union        d1   new past d1   union
                                                                           0/20 >= 7
 ```
 
-**Yes, and no.** Measuring past d1 finds ordered Brown fifteen relations d1
-never found — more than doubling what d1 alone holds, and drawing in 36
+**Yes, and no.** Measuring past d1 finds ordered Brown fifteen pair findings d1
+never produced — more than doubling what d1 alone holds, and drawing in 36
 representations where d1 touched 13. **None of that separates it from noise.**
 Nine of twenty permutations reach or exceed its union of 22, and the two most
-productive permutations gain 27 and 22 new relations past d1 against ordered's
+productive permutations gain 27 and 22 new pair findings past d1 against ordered's
 15.
 
-**More relations. No more knowledge that tells ordered Brown from a shuffle.**
+**More pair findings. No more knowledge that tells ordered Brown from a shuffle.**
 
 ## 1. The two sources invert
 
@@ -61,8 +61,8 @@ displacement.** Every row's per-displacement counts sum exactly to its union:
   seed02         13 + 4 + 2 + 1 + 7  =  27  =  union
 ```
 
-**[inference]** Each displacement finds its own relations. Displacement is not
-re-finding one structure at several distances; the sets are disjoint.
+**[inference]** Each displacement produces its own pair findings. Displacement
+is not re-finding one structure at several distances; the sets are disjoint.
 
 **This refutes the double-counting concern raised against `#2406`.** Its row
 totals could not have double-counted, because there was nothing to count twice.
@@ -72,7 +72,20 @@ that the things summed were distinct, and the sum was sound by luck. A correct
 number produced without the check that would have made it correct is not
 evidence that the check was unnecessary.
 
-## 3. What this does not establish
+## 3. Correction: these are pair findings, not relations
+
+This report said "relations" throughout. They are measured overlapping **pair
+findings**, and every use above is corrected.
+
+`relation` is load-bearing. `01.Standing.D:24-25` holds that co-presence
+establishes no relation, and `01.Kinds:28` governs relation coordinates and
+requires them to remain distinct. Two representations whose measured sets share
+half their union are co-present under a criterion I chose. Calling that a
+relation asserts the standing `01.Standing.D` withholds.
+
+The numbers are unaffected. The word was.
+
+## 4. What this does not establish
 
 **That the d1–d5 region has been measured as one subject.** It has not. This
 measures five displacements and then reads the identity of what each found. A
@@ -80,12 +93,12 @@ form whose subject is the region itself does not exist, and the combined column
 a reader expects from `#2406` still does not exist. This answers a narrower
 question than that one.
 
-**That ordered Brown holds no arrangement.** It holds 22 relations that a
-reader can inspect. What is measured is that its permutations hold as many,
+**That ordered Brown holds no arrangement.** It carries 22 pair findings that
+a reader can inspect. What is measured is that its permutations hold as many,
 which as `#2395` recorded establishes nothing about the material.
 
-**That the gain is real knowledge in any other sense.** The relations found
-past d1 are relations under the one-half overlap criterion recorded as a
+**That the gain is real knowledge in any other sense.** The pair findings
+produced past d1 are overlaps under the one-half criterion recorded as a
 developer-chosen number in `#2406`, still unvaried.
 
 **That five displacements is the region.** Brown reaches 15 and Roget 12.
