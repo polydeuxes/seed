@@ -26,7 +26,12 @@ BOOK = ROOT / "book_of_seed"
 
 # (pattern, label).  Patterns are matched case-insensitively.
 BANNED: tuple[tuple[str, str], ...] = (
-    (r"\bexamin\w*\b", "examin*"),
+    # The retired composite noun only.  `examines` and `examinable` are
+    # ordinary prose in active law -- `03.Prerequisite:36,104,122` have
+    # applicability as the subject doing the examining -- and banning the whole
+    # family would refuse them.  `examination` is already at zero occurrences,
+    # so this is a regression guard against the noun returning.
+    (r"\bexaminations?\b", "examination"),
     (r"\bexecut\w*\b", "execut*"),
     (r"\bsuffi\w*\b", "suffi*"),
     (r"\bpermission\w*\b", "permission*"),
@@ -57,7 +62,33 @@ BANNED: tuple[tuple[str, str], ...] = (
     # `stated` are not matched: banning the noun does not ban English.
     (r"\bstate\b", "state"),
     (r"\bStateProjector\b", "StateProjector"),
+    # Words active law contains but never defines, which arrive carrying an
+    # ordinary-language bundle no clause supplies.  `translation` drags source
+    # language, target language, semantic equivalence, meaning preservation,
+    # and a translator; no clause states what a translation is, names a
+    # translation occurrence, or names a translation boundary.  See
+    # `relation_proposal_join_investigation_001.md` section 9.
+    (r"\btranslat\w*\b", "translat*"),
 )
+
+# Considered and deliberately not banned.  Recorded so the test is not
+# re-litigated from the word alone.
+#
+# The discriminator is whether active law defines the term, names its
+# occurrence, or names its boundary.  A word that does is established
+# vocabulary however ordinary it sounds; a word that does not is wording.
+#
+#   learn*        NOT banned.  `05.Testimony` defines it -- "Learning
+#                 establishment is an evidence-supported revision of retained
+#                 understanding" -- carries its own non-equivalences, and
+#                 capitalises `Learning` mid-sentence.  The operator's flag was
+#                 about reading `learn` in operator material as establishing
+#                 acquisition machinery, which is a different claim.
+#   assertion     NOT banned.  `01.Kinds:28` requires `the relation assertion`
+#                 as a coordinate.  Banning it would refuse active law its own
+#                 dimension name.  That it is undefined is a recovery gap, not
+#                 contamination.
+#   examines      NOT banned; see the note above.
 
 COMPILED = tuple((re.compile(p, re.IGNORECASE), label) for p, label in BANNED)
 
