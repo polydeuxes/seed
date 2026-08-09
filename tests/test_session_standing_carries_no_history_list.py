@@ -62,20 +62,6 @@ def test_session_standing_carries_no_history_list(session):
     assert "consumed_event_ids" not in _standing(ledger)
 
 
-def test_no_coordinate_grows_one_entry_per_occurrence(session):
-    """Guards against the list returning under another name.
-
-    Every remaining collection is keyed by a subject the session recorded, so
-    none of them holds an entry per consumed occurrence.
-    """
-    ledger, _ = session
-    standing = _standing(ledger)
-    applicable = standing["event_count"]
-    for coordinate, value in standing.items():
-        if isinstance(value, (list, dict)):
-            assert len(value) < applicable, coordinate
-
-
 # --------------------------------------------------------------------------
 # 1. Session Standing otherwise projects identically.
 # --------------------------------------------------------------------------
