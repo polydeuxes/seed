@@ -60,6 +60,25 @@ from seed_runtime.preserved_material_measurement import (
 
 EQUIVALENCE_RULE = "byte-for-byte equality; no normalization"
 
+# Where each form measures, stated as coordinates rather than left in the
+# indexing.  A measurement that does not say where it looked cannot be compared
+# with one that looked elsewhere, and a coordinate that is never written down
+# cannot be observed to have never varied.
+#
+#   anchored_on   which preserved representation the position is taken from
+#   direction     which side of it
+#   displacement  how many positions away
+#
+# These describe the forms as they are. Nothing here proposes another
+# displacement, and none of the five uses one.
+MEASURED_POSITIONS: dict[str, dict[str, object]] = {
+    "after": {"anchored_on": "the representation", "direction": "after", "displacement": 1},
+    "preceding": {"anchored_on": "left", "direction": "before", "displacement": 1},
+    "following": {"anchored_on": "right", "direction": "after", "displacement": 1},
+    "before_same_right": {"anchored_on": "right", "direction": "before", "displacement": 1},
+    "after_same_left": {"anchored_on": "left", "direction": "after", "displacement": 1},
+}
+
 
 @dataclass(frozen=True)
 class AdjacentPair:
@@ -188,6 +207,7 @@ def measure_adjacent_pair(
                 premise_event_id=premise_event_id,
                 form=name,
                 relative_to=(pair.left, pair.right),
+                measured_position=MEASURED_POSITIONS[name],
             ),
             occupant_of=occupant_of,
         )
@@ -344,6 +364,7 @@ def measure_after(
             measured_after=representation,
             form="after",
             relative_to=(representation,),
+            measured_position=MEASURED_POSITIONS["after"],
         ),
         occupant_of=occupant_of,
     )

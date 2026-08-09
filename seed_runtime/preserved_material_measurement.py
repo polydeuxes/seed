@@ -89,6 +89,11 @@ class DeclaredMeasurement:
     # are exact strings taken from preserved material; neither names a kind.
     form: str | None = None
     relative_to: tuple[str, ...] = ()
+    # Where the position measured sits relative to what it was measured
+    # relative to.  Recorded so a measurement can be compared with another
+    # that measured elsewhere, and so a coordinate that never varies is
+    # observable rather than implicit in the code that indexed it.
+    measured_position: dict[str, Any] | None = None
 
     def __post_init__(self) -> None:
         for name in ("representation_measured", "equivalence_rule", "counting_scope"):
@@ -140,6 +145,7 @@ class MeasurementFinding:
             "measured_left_representation": self.declared.measured_after,
             "measurement_form": self.declared.form,
             "measured_relative_to": list(self.declared.relative_to),
+            "measured_position": self.declared.measured_position,
             "positions_measured": self.positions_measured,
             "occupancies": [
                 {"representation": o.representation, "occurrence_count": o.occurrence_count}
