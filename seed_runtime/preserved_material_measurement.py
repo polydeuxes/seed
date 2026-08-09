@@ -82,6 +82,13 @@ class DeclaredMeasurement:
     # records the representation it used, so this is what makes a finding
     # representation-supplying rather than merely informative.
     measured_after: str | None = None
+    # The form of positional measurement performed, and the exact
+    # representations it was performed relative to.  Without these a finding
+    # says what it found but not what question produced it, so nothing can form
+    # the next question from it without a reader restating the first.  These
+    # are exact strings taken from preserved material; neither names a kind.
+    form: str | None = None
+    relative_to: tuple[str, ...] = ()
 
     def __post_init__(self) -> None:
         for name in ("representation_measured", "equivalence_rule", "counting_scope"):
@@ -131,6 +138,8 @@ class MeasurementFinding:
             "counting_scope": self.declared.counting_scope,
             "premise_event_id": self.declared.premise_event_id,
             "measured_left_representation": self.declared.measured_after,
+            "measurement_form": self.declared.form,
+            "measured_relative_to": list(self.declared.relative_to),
             "positions_measured": self.positions_measured,
             "occupancies": [
                 {"representation": o.representation, "occurrence_count": o.occurrence_count}
