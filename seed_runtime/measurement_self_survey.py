@@ -35,12 +35,10 @@ from typing import Any
 from seed_runtime.events import EventLedger
 from seed_runtime.preserved_material_measurement import (
     MEASUREMENT_RECORDED_KIND,
-    DeclaredMeasurement,
-    MeasurementFinding,
-    Occupancy,
     PreservedMaterialMeasurementError,
-    record_measurement_finding,
 )
+
+SELF_SURVEY_RECORDED_KIND = "operator.measurement.self_survey_recorded"
 
 SELF_SURVEY_SCOPE = (
     "the measurement occurrences recorded by this session; occurrences "
@@ -112,60 +110,76 @@ def record_self_survey(
     session_id: str,
     variations: list[CoordinateVariation],
 ) -> Any:
-    """Preserve the survey, so what Seed did is consumable like what it measured.
+    """Preserve the survey in the shape of what it measured.
 
-    Recorded through the same boundary as any other finding. Its subject is
-    Seed's own occurrences rather than preserved ingress, and its authority is
-    the same: measurement evidence only.
+    An earlier version recorded this through `MeasurementFinding`, which forced
+    each coordinate into an `Occupancy` shaped like
+    ``representation="displacement=1", occurrence_count=3226``. Nothing
+    occupied a measured position there. The survey counted **recorded
+    coordinate values across measurement occurrences**, and saying so in the
+    vocabulary of positional occupancy made the record claim a kind of thing it
+    is not.
+
+    It was a downstream shape deciding an upstream subject, which is the shape
+    this campaign keeps finding: consumer demand is not ownership. So this
+    records its own coordinates.
+
+    The subject is Seed's own occurrences and the authority is the same as any
+    measurement: evidence of what was counted, and nothing beyond it.
     """
 
-    finding = MeasurementFinding(
-        declared=DeclaredMeasurement(
-            representation_measured=(
-                "the position coordinates recorded by this session's "
-                "measurement occurrences"
-            ),
-            equivalence_rule=(
-                "byte-for-byte equality of each coordinate's recorded value; "
-                "no normalization"
-            ),
-            counting_scope=SELF_SURVEY_SCOPE,
-            form="self_survey",
-            relative_to=(),
-        ),
-        positions_measured=sum(v.occurrence_count for v in variations),
-        occupancies=tuple(
-            Occupancy(
-                representation=f"{v.coordinate}={'|'.join(v.values)}",
-                occurrence_count=v.occurrence_count,
-            )
-            for v in variations
-        ),
-        consumed_event_ids=tuple(
-            event.id
-            for event in surveyed_occurrences(
-                ledger, workspace_id=workspace_id, session_id=session_id
-            )
-        ),
+    surveyed = surveyed_occurrences(
+        ledger, workspace_id=workspace_id, session_id=session_id
     )
-    return record_measurement_finding(
-        ledger,
-        workspace_id=workspace_id,
-        session_id=session_id,
-        finding=finding,
-        extra={
-            "coordinates_observed_with_one_value": sorted(
-                v.coordinate for v in variations if not v.varied
+    payload = {
+        "dimensions": {
+            "identity": "self-survey:measured-position-coordinates",
+            "content": "distinct values recorded per position coordinate",
+            "standing": "surveyed",
+            "source_provenance": "this session's recorded measurement occurrences",
+            "responsibility": "declared-survey-over-recorded-measurements",
+            "authority_warrant": (
+                "measurement evidence only; establishes no meaning, relation, "
+                "or standing beyond the survey assertion"
             ),
-            "coordinates_observed_with_several": sorted(
-                v.coordinate for v in variations if v.varied
-            ),
-            # Stated so the record cannot be read as a recommendation.
-            "forbidden_inference": (
-                "a coordinate observed with one value is not thereby a defect, "
-                "a degree of freedom, or an instruction to vary it"
-            ),
+            "scope_locality": f"workspace:{workspace_id};session:{session_id}",
+            "occurrence_preservation": "declared survey durably recorded",
         },
+        "mutates_cluster": False,
+        "surveyed_subject": "recorded measurement occurrences",
+        "equivalence_rule": (
+            "byte-for-byte equality of each coordinate's recorded value; "
+            "no normalization"
+        ),
+        "counting_scope": SELF_SURVEY_SCOPE,
+        "coordinates": [
+            {
+                "coordinate": variation.coordinate,
+                "observed_values": list(variation.values),
+                "distinct_value_count": len(variation.values),
+                "occurrences_carrying_it": variation.occurrence_count,
+            }
+            for variation in variations
+        ],
+        "coordinates_observed_with_one_value": sorted(
+            v.coordinate for v in variations if not v.varied
+        ),
+        "coordinates_observed_with_several": sorted(
+            v.coordinate for v in variations if v.varied
+        ),
+        "consumed_event_ids": [event.id for event in surveyed],
+        "unknowns": [
+            "why any coordinate was recorded with the values it was remains Unknown"
+        ],
+        # Stated so the record cannot be read as a recommendation.
+        "forbidden_inference": (
+            "a coordinate observed with one value is not thereby a defect, "
+            "a degree of freedom, or an instruction to vary it"
+        ),
+        "lineage": [],
+    }
+    return ledger.append(
+        SELF_SURVEY_RECORDED_KIND, workspace_id, payload, session_id=session_id
     )
 
 

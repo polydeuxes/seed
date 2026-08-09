@@ -36,6 +36,7 @@ from seed_runtime.adjacent_pair_measurement import (
 from seed_runtime.events import EventLedger
 from seed_runtime.measurement_continuation import continue_measurements
 from seed_runtime.measurement_self_survey import (
+    SELF_SURVEY_RECORDED_KIND,
     record_self_survey,
     render_survey,
     survey_measured_positions,
@@ -216,14 +217,35 @@ def test_one_coordinate_was_recorded_with_a_single_value(exhausted):
     )
 
 
-def test_the_survey_is_recorded_like_any_other_finding(exhausted):
-    variations = survey_measured_positions(
-        exhausted, workspace_id="w", session_id="s"
-    )
+def test_the_survey_is_recorded_in_the_shape_of_what_it_measured(exhausted):
+    """It counted coordinate values, so it records coordinate values.
+
+    An earlier version forced each coordinate through `Occupancy` as
+    ``representation="displacement=1"``. Nothing occupied a measured position
+    there, and borrowing that vocabulary made the record claim a kind of thing
+    it is not. A downstream shape does not decide an upstream subject.
+    """
     event = record_self_survey(
-        exhausted, workspace_id="w", session_id="s", variations=variations
+        exhausted,
+        workspace_id="w",
+        session_id="s",
+        variations=survey_measured_positions(
+            exhausted, workspace_id="w", session_id="s"
+        ),
     )
-    assert event.kind == MEASUREMENT_RECORDED_KIND
+    assert event.kind == SELF_SURVEY_RECORDED_KIND
+    assert event.kind != MEASUREMENT_RECORDED_KIND
+    assert event.payload["surveyed_subject"] == "recorded measurement occurrences"
+    assert "occupancies" not in event.payload
+    assert "positions_measured" not in event.payload
+
+    by_name = {c["coordinate"]: c for c in event.payload["coordinates"]}
+    assert by_name["displacement"]["observed_values"] == ["1"]
+    assert by_name["displacement"]["distinct_value_count"] == 1
+    assert by_name["displacement"]["occurrences_carrying_it"] == len(
+        surveyed_occurrences(exhausted, workspace_id="w", session_id="s")
+    )
+
     authority = event.payload["dimensions"]["authority_warrant"]
     assert "measurement evidence only" in authority
     assert event.payload["coordinates_observed_with_one_value"] == ["displacement"]
@@ -231,6 +253,23 @@ def test_the_survey_is_recorded_like_any_other_finding(exhausted):
         "anchored_on",
         "direction",
     ]
+
+
+def test_the_survey_does_not_appear_as_a_positional_measurement(exhausted):
+    """A survey of measurements must not be counted as one of them."""
+    before = len(surveyed_occurrences(exhausted, workspace_id="w", session_id="s"))
+    record_self_survey(
+        exhausted,
+        workspace_id="w",
+        session_id="s",
+        variations=survey_measured_positions(
+            exhausted, workspace_id="w", session_id="s"
+        ),
+    )
+    assert (
+        len(surveyed_occurrences(exhausted, workspace_id="w", session_id="s"))
+        == before
+    )
 
 
 # --------------------------------------------------------------------------
