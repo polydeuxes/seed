@@ -142,7 +142,6 @@ def project_operator_session_standing(
     unknowns: set[str] = set()
     conflicts: set[str] = set()
     as_of_event_id: str | None = None
-    consumed_event_ids: list[str] = []
     event_count = 0
 
     def register_goal_identity(identity: str, coordinate: str) -> None:
@@ -167,7 +166,6 @@ def project_operator_session_standing(
             raise ValueError(f"unsupported operator-ingress event: {event.kind}")
         event_count += 1
         as_of_event_id = event.id
-        consumed_event_ids.append(event.id)
         for key, collected in (
             ("known_loss", known_loss),
             ("unknowns", unknowns),
@@ -1315,18 +1313,14 @@ def project_operator_session_standing(
         "session_id": session_id,
         "as_of_event_id": as_of_event_id,
         "event_count": event_count,
-        # Exact append-order inventory of every session event this
-        # projection consumed, including Presentation formation and
-        # emission Evidence.
-        "consumed_event_ids": consumed_event_ids,
         "attempts": attempts,
         "preserved_ingress_occurrences": preserved_ingress_occurrences,
         "interaction_closures": interaction_closures,
         "presentations": presentations,
         # No "current" Presentation is projected.  Emission order is
-        # recoverable from `presentations` and `consumed_event_ids`; naming one
-        # of them current would assert present relevance that no occurrence
-        # establishes.
+        # recoverable from `presentations`, which preserves formation and
+        # emission occurrences in append order; naming one of them current
+        # would assert present relevance that no occurrence establishes.
         # Exactly the relation standings recorded by session events.  No
         # current event kind records one, so this stays empty until a
         # responsible occurrence does; emptiness is absence of record only.
