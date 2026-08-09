@@ -69,26 +69,52 @@ BANNED: tuple[tuple[str, str], ...] = (
     # translation occurrence, or names a translation boundary.  See
     # `relation_proposal_join_investigation_001.md` section 9.
     (r"\btranslat\w*\b", "translat*"),
+    # 18 sentences in active law, 11 of them pure denial -- "retained history
+    # is not learning, changed stored data is not learning, a new current value
+    # is not learning".  The rest are topic lists ("Learning may concern
+    # condition, trajectory, ..."), one passive definition, and one that says
+    # Learning establishment "may be understood as" constrained movement, which
+    # is a reading aid rather than an establishment.  No clause names a
+    # Learning owner, boundary, producer, occurrence, responsibility, or act.
+    # Active law itself denies "a universal Learning object" and denies
+    # authorizing "general language learning".
+    (r"\blearn\w*\b", "learn*"),
 )
 
-# Considered and deliberately not banned.  Recorded so the test is not
-# re-litigated from the word alone.
+# The discriminator, corrected.
 #
-# The discriminator is whether active law defines the term, names its
-# occurrence, or names its boundary.  A word that does is established
-# vocabulary however ordinary it sounds; a word that does not is wording.
+# An earlier version of this list asked whether active law *defines* the term.
+# That test is too weak and it cleared `learn*`, which active law defines and
+# never owns.  A definition describes; it does not supply a responsibility.
 #
-#   learn*        NOT banned.  `05.Testimony` defines it -- "Learning
-#                 establishment is an evidence-supported revision of retained
-#                 understanding" -- carries its own non-equivalences, and
-#                 capitalises `Learning` mid-sentence.  The operator's flag was
-#                 about reading `learn` in operator material as establishing
-#                 acquisition machinery, which is a different claim.
-#   assertion     NOT banned.  `01.Kinds:28` requires `the relation assertion`
-#                 as a coordinate.  Banning it would refuse active law its own
-#                 dimension name.  That it is undefined is a recovery gap, not
-#                 contamination.
-#   examines      NOT banned; see the note above.
+# The test is:
+#
+#     name its Responsibility -- the owner, the act that produces it, and the
+#     standing that production establishes
+#
+#     can be named  ->  established vocabulary, however ordinary it sounds
+#     cannot        ->  wording, and it must not be used as the doer
+#
+# `05.Recording.A` passes: a recording boundary may create retrievable
+# assertion-bearing material, and the produced standing is that a record exists
+# and preserves an attributed assertion.  Owner, act, standing.
+#
+# `learning` and `translation` fail it.  Neither has a clause naming who does
+# it.  Sentence-initial capitals are not evidence either way; `Remembering`
+# was the same shape.
+#
+# Considered, recorded so the test is not re-litigated from the word alone:
+#
+#   examines      NOT banned.  `03.Prerequisite:36,104,122` have applicability
+#                 as the subject doing the examining.  Ordinary prose whose
+#                 subject is an established coordinate is not the retired noun.
+#   assertion     UNRESOLVED, deliberately not banned here.  It fails the test
+#                 above -- `#2382` established that no clause names what
+#                 produces `the relation assertion` -- but `01.Kinds:28`
+#                 *requires* it as a coordinate, so banning it would flag
+#                 active law's own required text.  A required coordinate with
+#                 no owner is a different defect from a word with no owner, and
+#                 this gate is not the place to decide which repair applies.
 
 COMPILED = tuple((re.compile(p, re.IGNORECASE), label) for p, label in BANNED)
 
