@@ -165,9 +165,10 @@ def test_the_console_still_presents_every_interaction(session):
     assert output.count("Bounded Presentation") == 5
 
 
-def test_standing_still_records_what_it_consumed(session):
-    """Removed from the Presentation, not from the projection that consumed it."""
+def test_standing_still_records_the_boundary_it_consumed_through(session):
+    """Removed from the Presentation, and the boundary remains on the projection."""
     ledger, _ = session
     standing = _standing(ledger)
-    assert standing["consumed_event_ids"]
-    assert standing["as_of_event_id"] == standing["consumed_event_ids"][-1]
+    assert standing["as_of_event_id"] is not None
+    assert standing["event_count"] > 0
+    assert "consumed_event_ids" not in standing
