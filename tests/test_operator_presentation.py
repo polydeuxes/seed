@@ -89,7 +89,7 @@ def test_console_forms_c0_before_first_ingress_and_preserves_lineage_only():
     assert "operator.exchange.comparison_occurred" not in kinds
     assert "operator.exchange.identification_occurred" not in kinds
     c0_formed, c0_emitted = ledger.list("w")[:2]
-    assert c0_formed.payload["session_standing_evidence_ids"] == []
+    assert c0_formed.payload["session_standing_as_of_event_id"] is None
     assert c0_formed.payload["prior_exchange_finding"] is None
     assert c0_formed.payload["recovered_meaning_relation"] is None
     assert c0_formed.payload["current_interaction_goal"] is None
@@ -150,7 +150,6 @@ def test_c0_presents_standing_with_no_developer_semantics():
     # recorded what it consumed, rather than being skipped.
     payload = ledger.get(c0["formed_event_id"]).payload
     assert payload["session_standing_as_of_event_id"] is None
-    assert payload["session_standing_evidence_ids"] == []
     assert payload["prior_exchange_finding"] is None
     assert payload["recovered_meaning_relation"] is None
     assert payload["current_interaction_goal"] is None
@@ -244,11 +243,11 @@ def test_console_presents_standing_only_across_an_ingress():
 
     c0, _, _, _, ingress, c1, _ = ledger.list("w")
     # C1 is formed from Standing that now contains the preserved ingress.
-    # C1 consumed every session event recorded before it, C0's own
-    # formation and emission included.
-    assert c1.payload["session_standing_evidence_ids"] == [
-        e.id for e in ledger.list("w")[:5]
-    ]
+    # C1's Standing was taken through the last event recorded before it,
+    # C0's own formation and emission included.
+    assert (
+        c1.payload["session_standing_as_of_event_id"] == ledger.list("w")[4].id
+    )
     assert c0.payload["alternatives"] == [] and c1.payload["alternatives"] == []
     assert "produced_after_presentation_ref" not in ingress.payload
     # No developer goal semantics anywhere in the session.
@@ -291,11 +290,9 @@ def test_alternatives_carry_complete_coordinates_and_evidence_lineage():
     # Unknown, so the formed Presentation carries no Unknowns.
     assert presentation["unknowns"] == []
     assert presentation["conflicts"] == []
-    # Empty for a formation from empty Standing: recorded absence of prior
-    # consumed events, not absence of consumption.
-    assert presentation["session_standing_evidence_ids"] == []
-    recorded_ids = {event.id for event in ledger.list("w")}
-    assert set(presentation["session_standing_evidence_ids"]) <= recorded_ids
+    # Absent for a formation from empty Standing: recorded absence of a prior
+    # consumed occurrence, not absence of consumption.
+    assert presentation["session_standing_as_of_event_id"] is None
     assert len(presentation["alternatives"]) == 3
     purposes = set()
     for alternative in presentation["alternatives"]:
@@ -453,10 +450,14 @@ def test_next_console_iteration_recovers_c1_and_forms_c2():
     assert list(standing["presentations"])[-1] == third_id
     c1 = standing["presentations"][second_id]
     c2 = standing["presentations"][third_id]
-    # C2's recorded formation consumed the Standing Evidence containing
-    # C1's formation and emission occurrences, not merely later events.
-    assert c1["formed_event_id"] in c2["session_standing_evidence_ids"]
-    assert c1["emitted_event_id"] in c2["session_standing_evidence_ids"]
+    # C2's Standing boundary stands after C1's formation and emission
+    # occurrences, so both fall inside the prefix it consumed.
+    positions = {
+        event.id: index for index, event in enumerate(console_ledger.list("w"))
+    }
+    boundary = positions[c2["session_standing_as_of_event_id"]]
+    assert positions[c1["formed_event_id"]] < boundary
+    assert positions[c1["emitted_event_id"]] < boundary
     # The represented source candidates keep stable exact identities
     # across formations.
     identities = lambda presentation: [

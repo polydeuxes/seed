@@ -191,9 +191,6 @@ def project_operator_session_standing(
                 "session_standing_as_of_event_id": payload[
                     "session_standing_as_of_event_id"
                 ],
-                "session_standing_evidence_ids": payload[
-                    "session_standing_evidence_ids"
-                ],
                 "prior_exchange_finding": payload.get("prior_exchange_finding"),
                 "scope": payload["dimensions"]["scope_locality"],
                 "provenance": payload["dimensions"]["source_provenance"],
