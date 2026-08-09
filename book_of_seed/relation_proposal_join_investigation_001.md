@@ -32,9 +32,11 @@ occupancy. Both joins are real and ordered.
 
 ```text
 relation proposal
-  where       01.External:15, once, in a list of what a bounded translation
-              "may state or form"
-  produced by a bounded translation
+  where       01.External:15, once, in a list of what the clause words as
+              "a bounded translation" "may state or form"
+  produced by the formation boundary that clause words as "a bounded
+              translation". What responsibility that wording names is
+              unrecovered; see the note below.
   coordinates none stated
   standing    none stated; 01.External:34 keeps external material from
               warranting a Seed-native relation
@@ -99,7 +101,8 @@ not "distinct".
 
 ```text
 external material
-    │  established -- 01.External:15, a bounded translation may form
+    │  established -- 01.External:15 states that a relation proposal may be
+    │  formed at the boundary it words as "a bounded translation"
     ▼
 relation proposal
     │  Unknown -- no clause relates it to anything below
@@ -148,8 +151,8 @@ disagreement, contradiction, conflict, refinement, unmet requirements, Unknown
 
 ```text
 transition                          owner                        clause
-external material → relation        a bounded translation        01.External:15
-  proposal
+external material → relation        the boundary 01.External:15    01.External:15
+  proposal                          words "a bounded translation"
 preserved testimonies/findings →    a bounded comparison         05.Testimony:27
   bounded relation standing
 support → warranted bounded         a responsible occurrence     01.Kinds:32
@@ -256,9 +259,9 @@ carries no road structure with it, however load-bearing it later looks.
 
 ```text
 what relation proposal is
-    a thing a bounded translation may form from external material.
-    01.External:15. No coordinates, standing, successor, or exclusions
-    are stated.
+    a thing 01.External:15 states may be formed from external material
+    at the boundary it words as "a bounded translation". No coordinates,
+    standing, successor, or exclusions are stated.
 
 what candidate relation is
     one of four items declared distinct from each other at 01.Kinds:28.
@@ -277,7 +280,8 @@ missing transition
     no stated coordinate obligation either
 
 owners of established transitions
-    bounded translation      → relation proposal        01.External:15
+    the boundary worded     → relation proposal        01.External:15
+    "a bounded translation"
     bounded comparison       → bounded relation         05.Testimony:27
                                standing, in-boundary
     responsible occurrence   → warranted bounded        01.Kinds:32
@@ -299,6 +303,37 @@ Not amended, not proposed. And it is worth recording that the same sentence
 would leave `candidate relation` and `relation testimony` exactly where they
 are unless it named them too.
 
+## 9. Correction: `translation` is Book wording, not a recovered act
+
+**[operator correction]** The sections above originally named "a bounded
+translation" as the owner of a transition. That treats a word the Book contains
+as the name of an established Act, responsibility, or producer. It is not one.
+
+**[active law]** `translat*` occurs 34 times across six chapters and is **never
+defined**. No clause states what a translation is, names a translation
+occurrence, or names a translation boundary. All five capitalised occurrences
+are sentence-initial, so the capital is orthographic.
+
+**[inference]** The word drags an ordinary-language bundle behind it — source
+language, target language, semantic equivalence, meaning preservation, a
+translator — none of which any clause supplies. Importing that bundle because
+the Book contains the word is the same error as reading `learn` in operator
+material as establishing acquisition machinery.
+
+**Discipline.** Use `translation` only to quote or locate existing Book
+wording. Do not use it as the name of an act, responsibility, producer, or
+transition until it is recovered. The safe form of §4's first row is:
+
+```text
+01.External:15 states that a relation proposal may be formed at a
+boundary it words as "a bounded translation". What responsible
+distinction that wording names remains unrecovered.
+```
+
+This does not weaken the report's findings. The transition is still the only
+established production of a relation proposal; what is withdrawn is the claim
+to know whose act it is.
+
 ## What this does not establish
 
 **That the three terms are distinct.** §2 finds no relating clause in either
@@ -316,6 +351,10 @@ this road wants.
 
 **That the chronology explains intent.** §7 establishes when the terms entered
 and under what stated subjects. Why they were never related is not recoverable.
+
+**That `translation` names nothing.** §9 establishes that active law does not
+define it and that this report should not have used it as an owner. Whether it
+names a real responsibility is unrecovered, not denied.
 
 **Independence.** `#2382` was written by this session; §6's reading of it is
 self-review. `#2381` is not.
