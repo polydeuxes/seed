@@ -77,6 +77,11 @@ class DeclaredMeasurement:
     equivalence_rule: str
     counting_scope: str
     premise_event_id: str | None = None
+    # The representation this measurement measured relative to, when it had
+    # one.  A finding can only supply an aperture to a later measurement if it
+    # records the aperture it used, so this is what makes a finding
+    # aperture-supplying rather than merely informative.
+    measured_after: str | None = None
 
     def __post_init__(self) -> None:
         for name in ("representation_measured", "equivalence_rule", "counting_scope"):
@@ -117,6 +122,7 @@ class MeasurementFinding:
             "equivalence_rule": self.declared.equivalence_rule,
             "counting_scope": self.declared.counting_scope,
             "premise_event_id": self.declared.premise_event_id,
+            "measured_left_representation": self.declared.measured_after,
             "positions_measured": self.positions_measured,
             "occupancies": [
                 {"representation": o.representation, "occurrence_count": o.occurrence_count}
@@ -188,6 +194,7 @@ def record_measurement_finding(
     workspace_id: str,
     session_id: str,
     finding: MeasurementFinding,
+    extra: dict[str, Any] | None = None,
 ) -> Event:
     """Preserve a finding so a later responsible act may consume it.
 
@@ -219,6 +226,7 @@ def record_measurement_finding(
         "mutates_cluster": False,
         "unknowns": ["what any measured representation means remains Unknown"],
         **finding.to_json_dict(),
+        **(extra or {}),
         "lineage": (
             [finding.declared.premise_event_id]
             if finding.declared.premise_event_id
