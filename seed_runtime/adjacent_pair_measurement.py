@@ -333,6 +333,92 @@ def enumerate_representations(
     return sorted(offered)
 
 
+def enumerate_displacements(
+    occurrences: Iterable[Event], representation: str, *, direction: str = "after"
+) -> list[int]:
+    """Every positional displacement at which this material has a position.
+
+    Nothing is preferred and nothing is chosen. An occurrence carrying the
+    representation at index *i* has a position at displacement *d* whenever the
+    occurrence extends that far, so the displacements returned are a fact about
+    how far the material reaches from where the representation sits.
+
+    A displacement absent here is absent because no occurrence reaches it, not
+    because it was judged uninteresting. `#2397` recorded that a coordinate
+    observed with one value is not thereby an instruction to vary it; this does
+    not vary it either, it reports what the material makes measurable.
+    """
+
+    if direction not in ("after", "before"):
+        raise PreservedMaterialMeasurementError(
+            "a displacement is measured before or after, and nothing else"
+        )
+    reachable: set[int] = set()
+    for event in occurrences:
+        parts = _positions(event.payload["decoded_text"])
+        for index, part in enumerate(parts):
+            if part != representation:
+                continue
+            span = len(parts) - 1 - index if direction == "after" else index
+            reachable.update(range(1, span + 1))
+    return sorted(reachable)
+
+
+def measure_at_displacement(
+    occurrences: Iterable[Event],
+    representation: str,
+    *,
+    displacement: int,
+    direction: str = "after",
+    counting_scope: str,
+    premise_event_id: str | None = None,
+) -> MeasurementFinding:
+    """Count what occupies one stated displacement from one representation.
+
+    The displacement is a parameter of the measurement rather than a constant
+    of the code, and it is recorded on the finding, so a later survey observes
+    the value actually used instead of a value the indexing hid.
+    """
+
+    if displacement < 1:
+        raise PreservedMaterialMeasurementError(
+            "a displacement is at least one position away"
+        )
+    step = displacement if direction == "after" else -displacement
+
+    def occupant_of(text: str) -> str | None:
+        parts = _positions(text)
+        for index, part in enumerate(parts):
+            if part != representation:
+                continue
+            at = index + step
+            if 0 <= at < len(parts):
+                return parts[at]
+        return None
+
+    return measure_occupancy(
+        occurrences,
+        declared=DeclaredMeasurement(
+            representation_measured=(
+                f"the representation {displacement} position(s) {direction} "
+                f"{representation!r}"
+            ),
+            equivalence_rule=EQUIVALENCE_RULE,
+            counting_scope=counting_scope,
+            premise_event_id=premise_event_id,
+            measured_after=representation,
+            form=direction,
+            relative_to=(representation,),
+            measured_position={
+                "anchored_on": "the representation",
+                "direction": direction,
+                "displacement": displacement,
+            },
+        ),
+        occupant_of=occupant_of,
+    )
+
+
 def measure_after(
     occurrences: Iterable[Event],
     representation: str,
@@ -340,31 +426,18 @@ def measure_after(
     counting_scope: str,
     premise_event_id: str | None = None,
 ) -> MeasurementFinding:
-    """Count what occupies the position after one enumerated representation.
+    """Count what occupies the position immediately after a representation.
 
-    The finding records the representation it measured relative to, which is what
-    lets :func:`adjacent_pairs_from_finding` read the next round's candidates
-    out of it instead of taking them from a caller.
+    One displacement of the family :func:`measure_at_displacement` covers, kept
+    because the continuation and its tests name it. It carries no privilege;
+    `#2403` records that no displacement is preferred.
     """
 
-    def occupant_of(text: str) -> str | None:
-        parts = _positions(text)
-        for index in range(len(parts) - 1):
-            if parts[index] == representation:
-                return parts[index + 1]
-        return None
-
-    return measure_occupancy(
+    return measure_at_displacement(
         occurrences,
-        declared=DeclaredMeasurement(
-            representation_measured=f"the representation following {representation!r}",
-            equivalence_rule=EQUIVALENCE_RULE,
-            counting_scope=counting_scope,
-            premise_event_id=premise_event_id,
-            measured_after=representation,
-            form="after",
-            relative_to=(representation,),
-            measured_position=MEASURED_POSITIONS["after"],
-        ),
-        occupant_of=occupant_of,
+        representation,
+        displacement=1,
+        direction="after",
+        counting_scope=counting_scope,
+        premise_event_id=premise_event_id,
     )

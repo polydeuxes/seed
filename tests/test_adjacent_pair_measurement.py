@@ -28,8 +28,10 @@ import pytest
 from seed_runtime.events import EventLedger
 from seed_runtime.adjacent_pair_measurement import (
     EQUIVALENCE_RULE,
+    enumerate_displacements,
     enumerate_representations,
     measure_after,
+    measure_at_displacement,
     AdjacentPair,
     measure_adjacent_pair,
     adjacent_pairs_from_finding,
@@ -47,6 +49,7 @@ from seed_runtime.preserved_material_measurement import (
 )
 from scripts import seed_local
 
+SCOPE = "whole session"
 MATERIAL = (
     "it is a word and it is a thing\n"
     "It is another word\n"
@@ -391,3 +394,95 @@ def test_agreement_is_the_discriminator_not_a_count(occurrences):
     for representation in disagreeing:
         whole = measure_after(occurrences, representation, counting_scope="whole")
         assert whole.highest_count_occupancy is not None
+
+
+# --------------------------------------------------------------------------
+# Displacement is a coordinate of the measurement, not a constant of the code.
+# --------------------------------------------------------------------------
+
+
+def test_displacements_are_enumerated_from_the_material(occurrences):
+    """What the material reaches, not what anyone thought worth measuring."""
+    reachable = enumerate_displacements(occurrences, "it")
+    assert reachable
+    assert reachable == sorted(reachable)
+    assert min(reachable) == 1
+    longest = max(
+        len(e.payload["decoded_text"].split())
+        for e in occurrences
+        if "it" in e.payload["decoded_text"].split()
+    )
+    assert max(reachable) < longest
+
+
+def test_a_displacement_absent_from_the_material_is_simply_absent(session):
+    """Absent because nothing reaches it, not because it was judged dull."""
+    ledger = EventLedger()
+    seed_local.run_persistent_operator_console(
+        ledger=ledger,
+        workspace_id="w",
+        session_id="s",
+        input_stream=StringIO("alpha beta\nexit\n"),
+        output_stream=StringIO(),
+    )
+    occurrences = preserved_ingress_occurrences(
+        ledger, workspace_id="w", session_id="s"
+    )
+    assert enumerate_displacements(occurrences, "alpha") == [1]
+
+
+def test_each_displacement_is_recorded_on_its_own_finding(occurrences):
+    for displacement in (1, 2):
+        finding = measure_at_displacement(
+            occurrences, "it", displacement=displacement, counting_scope=SCOPE
+        )
+        assert finding.declared.measured_position["displacement"] == displacement
+        assert finding.declared.measured_position["direction"] == "after"
+
+
+def test_no_displacement_is_preferred(occurrences):
+    """The family treats every displacement the same way."""
+    findings = [
+        measure_at_displacement(
+            occurrences, "it", displacement=d, counting_scope=SCOPE
+        )
+        for d in enumerate_displacements(occurrences, "it")
+    ]
+    assert len({type(f) for f in findings}) == 1
+    for finding in findings:
+        assert finding.declared.equivalence_rule == EQUIVALENCE_RULE
+        assert finding.declared.counting_scope == SCOPE
+
+
+def test_measuring_before_is_the_same_family(occurrences):
+    after = measure_at_displacement(
+        occurrences, "is", displacement=1, direction="after", counting_scope=SCOPE
+    )
+    before = measure_at_displacement(
+        occurrences, "is", displacement=1, direction="before", counting_scope=SCOPE
+    )
+    assert after.declared.measured_position["direction"] == "after"
+    assert before.declared.measured_position["direction"] == "before"
+
+
+def test_measure_after_is_one_displacement_of_the_family(occurrences):
+    """Kept for the continuation, carrying no privilege."""
+    assert (
+        measure_after(occurrences, "it", counting_scope=SCOPE).to_json_dict()
+        == measure_at_displacement(
+            occurrences, "it", displacement=1, direction="after", counting_scope=SCOPE
+        ).to_json_dict()
+    )
+
+
+def test_a_displacement_below_one_is_refused(occurrences):
+    for bad in (0, -1):
+        with pytest.raises(PreservedMaterialMeasurementError):
+            measure_at_displacement(
+                occurrences, "it", displacement=bad, counting_scope=SCOPE
+            )
+
+
+def test_a_direction_outside_the_two_is_refused(occurrences):
+    with pytest.raises(PreservedMaterialMeasurementError):
+        enumerate_displacements(occurrences, "it", direction="sideways")
