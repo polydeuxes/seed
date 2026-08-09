@@ -2,10 +2,10 @@
 
 Findings only. No runtime or Book amendment.
 
-## Executive
+## Summary
 
-`#2398` said the shuffled control material "was never received as ingress". That
-was the wrong diagnosis, and correcting it is half this report.
+`#2398` said the shuffled comparison material "was never received as ingress".
+That was the wrong diagnosis, and correcting it is half this report.
 
 The corpus is not operator testimony. It is environment. Nothing should reach
 Seed through operator ingress except the operator, or ingress quietly becomes
@@ -35,13 +35,18 @@ use.
 
 ## 2. Active law has the outward path
 
-**[active law]** The stages are named as time coordinates in
-`05.Testimony`:
+**[active law]** `05.Testimony` lists a set of time coordinates. The terms
+below are **quoted, not adopted**: `delivery`, `receipt`, and `emission` are
+this clause's words, and none of them has been through the responsibility test.
 
 > Requirement time, request-formation time, emission time, delivery time,
 > external receipt time, interpretation time, uptake time, reliance time…
 
-That is an act reaching outward and a consequence returning, enumerated.
+**[inference]** A reader recognises those as an act reaching outward and a
+consequence returning. That recognition is not established by the list. The
+clause enumerates times; it says nothing about them being stages of one path,
+and reading an ordered sequence out of an enumeration is the error this
+campaign has caught in `02.Acts:13` and `01.Kinds:28` already.
 
 **[active law]** And the acquisition path is stated directly:
 
@@ -55,16 +60,20 @@ That is an act reaching outward and a consequence returning, enumerated.
 > Seed-native testimony formed after acquisition and interpretation, not
 > environment truth, not recording, not current standing, and not learning.
 
-**[active law]** And what an Observation must carry, which is exactly what a
-control needs:
+**[active law]** And what an Observation must carry:
 
 > Later admission, comparison, establishment, current projection, and
 > inquiry-continuation movements must consume the Observation only within
 > preserved **source, method, scope, temporal, conflict, authority**, and
 > uncertainty…
 
-`method` is the coordinate that would distinguish the same source observed
-under two arrangements. Nothing new is required for that.
+That clause contains the word `method`. **This report previously read that as
+the coordinate distinguishing one source observed under two arrangements. That
+reading is withdrawn.** The clause establishes that a term of that name is
+among what an Observation must preserve. It does not establish what the term
+names, and `method` is exactly the kind of ordinary word that arrives carrying
+a bundle no clause supplies — the same test that retired `translation` and
+`learning` applies to it and has not been run.
 
 **[active law]** `Observation` occurs 56 times across five chapters. `egress`
 occurs once, and `observer` five times; the outward half is named through the
@@ -128,15 +137,15 @@ bytes.
 
 **That the observer path should be changed.** This locates where it collapses.
 Whether `_read_bounded_first_line` is doing something else correctly for its
-own consumers is not examined, and it may be right for them.
+own consumers is not investigated here, and it may be right for them.
 
 **That the corpus should be observed rather than ingressed.** That is the
 operator's correction, recorded here as the topology this audit assumes. The
 audit tests the path against it; it does not establish it.
 
-**That an egress act exists.** Nothing found performs one. The timing clauses
-name emission and delivery; no runtime act was traced that reaches outward and
-records having done so, and `egress` appears once in active law and four times
+**That an egress act exists.** Nothing found performs one. The timing clause lists terms
+including two that a reader would read as outward stages; no runtime act was
+traced that reaches outward and records having done so, and `egress` appears once in active law and four times
 in one unrelated runtime module.
 
 **That `Observation` is uncontaminated.** `05.Testimony:18` says the repository
@@ -144,9 +153,10 @@ compresses Observation intake, Evidence construction, normalization, Fact
 construction, and emission into `ObservationIngestor`, and the probe register
 records that module as compressed.
 
-**That method would suffice for the control.** §2 shows active law requires an
-Observation to preserve `method`. Whether two arrangements of one source are
-distinguishable *by* that coordinate is unrecovered.
+**That the clause's `method` term bears on the comparison at all.** §2 records
+that active law requires an Observation to preserve something of that name, and
+withdraws the reading that connected it to distinguishing two arrangements of
+one source. What the term names is unrecovered.
 
 **That anything was measured about the corpus here.** Nothing was observed,
 acquired, or ingested. The two paths were compared on five bytes.
