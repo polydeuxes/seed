@@ -36,7 +36,12 @@ Under that test, `preserve`, `carry`, `assert`, `require`, and `state` are
 stative when they describe content, and only `establish`, `warrant`, `select`,
 `admit`, `consume`, `emit`, and their kin are eventive.
 
-## 2. The one defect
+## 2. The one defect — since repaired
+
+**Status: fixed by `#2369`.** All three instances of this construction now read
+"a separate responsible occurrence warrants the meaning relation that …", and
+`relation establishes` occurs zero times in active law. The analysis below is
+kept because it is the reason the repair was warranted.
 
 ```text
 03.Prerequisite:34
@@ -141,6 +146,54 @@ defect stands on relation grammar alone.
 
 ## 6. Consequence for the lexical gate
 
+### 6.1 A noun can be wording too
+
+This survey looked for phantom Acts hiding in predicates. `#2384` found the
+same failure in a noun, which this survey's method would not have caught.
+
+`01.External:15` contains the phrase "a bounded translation". That phrase was
+then used — in `#2384`'s own ownership table — as the name of an act with a
+producer. It is not one. `translat*` occurs 34 times across six chapters and no
+clause states what a translation is, names a translation occurrence, or names a
+translation boundary. All five capitalised occurrences are sentence-initial.
+
+**The general test, which this survey's evidence supports:**
+
+```text
+does active law define the term,
+name its occurrence,
+or name its boundary?
+
+    yes  ->  established vocabulary, however ordinary it sounds
+    no   ->  wording, and it must not be used as the doer
+```
+
+Applied to the words currently in question:
+
+```text
+term          defined?                              disposition
+translation   no clause defines it                  ban; nothing is lost
+learning      "Learning establishment is an         keep; and note that
+              evidence-supported revision of        Learning is capitalised
+              retained understanding", with its     mid-sentence, unlike
+              own non-equivalences                  Translation
+assertion     no -- but 01.Kinds:28 requires        keep; an undefined
+              `the relation assertion` as a         required coordinate is a
+              coordinate                            recovery gap, not
+                                                    contamination
+examination   zero occurrences remain               guard the noun only;
+                                                    `examines` is lawful prose
+                                                    with applicability as its
+                                                    subject
+```
+
+**[inference]** The discriminator is not part of speech and not familiarity. It
+is whether a clause supplies the term's physiology. That is why `learning`
+survives and `translation` does not, though both are ordinary English and both
+appear in active law.
+
+### 6.2 The `state` pattern
+
 The `state` pattern must not be finalised on this survey's evidence.
 
 ```text
@@ -154,6 +207,11 @@ cannot separate them, so it should ban the noun and leave the verb, and the
 Demand rewrite should be made on clarity grounds rather than by lint.
 
 ## 7. What this does not establish
+
+**That the noun test in §6.1 was performed here.** This survey extracted
+subject-to-verb pairs. The `translation` finding comes from `#2384` and is
+recorded here because it changes what the gate should ban, not because this
+survey found it. A systematic noun pass has not been run.
 
 **That the survey is complete.** Forty-one verbs were tested. Passive
 constructions and nominalised acts — "the establishment of", "upon
