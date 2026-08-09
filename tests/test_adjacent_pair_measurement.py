@@ -1,4 +1,4 @@
-"""A recorded finding supplies the next aperture, and every pair gets the same battery.
+"""A recorded finding supplies the next representation, and every pair gets the same battery.
 
 `#2391` recovered ordered pairs whose adjacency reproduces across independently
 bounded scopes, without a reader naming a representation, occupant, or
@@ -6,9 +6,9 @@ delimiter. It left one gap: the candidates were enumerated in a scratch run, so
 the loop was demonstrated rather than preserved.
 
 This closes that. :func:`adjacent_pairs_from_finding` reads pairs out of a recorded
-measurement finding, which is why a finding must record the aperture it measured
+measurement finding, which is why a finding must record the representation it measured
 after — a finding that does not is refused as a source of pairs. Every
-characterization then carries that finding as its premise, so the chain is
+measurement then carries that finding as its premise, so the chain is
 recoverable from the ledger rather than from a transcript.
 
 The battery is four generic adjacency questions applied to every pair without
@@ -28,14 +28,14 @@ import pytest
 from seed_runtime.events import EventLedger
 from seed_runtime.adjacent_pair_measurement import (
     EQUIVALENCE_RULE,
-    enumerate_apertures,
+    enumerate_representations,
     measure_after,
     AdjacentPair,
     measure_adjacent_pair,
     adjacent_pairs_from_finding,
     record_pair_measurements,
-    shared_neighbours,
-    stability_across_scopes,
+    group_by_highest_count_occupant,
+    occupant_agreement_across_scopes,
 )
 from seed_runtime.preserved_material_measurement import (
     DeclaredMeasurement,
@@ -101,12 +101,12 @@ def recorded_finding(session, occurrences):
 
 
 # --------------------------------------------------------------------------
-# The aperture comes out of the record.
+# The representation comes out of the record.
 # --------------------------------------------------------------------------
 
 
-def test_a_finding_records_the_aperture_it_measured_after(recorded_finding):
-    """Without this a finding cannot supply an aperture to anything."""
+def test_a_finding_records_the_representation_it_measured_after(recorded_finding):
+    """Without this a finding cannot supply an representation to anything."""
     assert recorded_finding.payload["measured_left_representation"] == LEFT
 
 
@@ -123,7 +123,7 @@ def test_every_occupancy_becomes_a_pair_with_no_filtering(session, recorded_find
     assert len(pairs) == len(recorded_finding.payload["occupancies"])
 
 
-def test_a_finding_that_names_no_aperture_cannot_supply_one(session, occurrences):
+def test_a_finding_that_names_no_representation_cannot_supply_one(session, occurrences):
     event = record_measurement_finding(
         session,
         workspace_id="w",
@@ -154,7 +154,7 @@ def test_pairs_must_come_from_a_measurement_finding(session, occurrences):
 
 
 def test_every_pair_receives_every_question(occurrences, recorded_finding):
-    expected = {"preceding", "following", "left_alternatives", "right_alternatives"}
+    expected = {"preceding", "following", "before_same_right", "after_same_left"}
     for pair in (AdjacentPair("it", "is"), AdjacentPair("it", "may"), AdjacentPair("of", "the")):
         findings = measure_adjacent_pair(
             occurrences,
@@ -180,7 +180,7 @@ def test_a_question_that_found_nothing_is_still_recorded(
         session, workspace_id="w", session_id="s", pair=pair, findings=findings
     )
     assert set(recorded) == set(findings)
-    assert any(f.strongest is None for f in findings.values())
+    assert any(f.highest_count_occupancy is None for f in findings.values())
     for event in recorded.values():
         assert "occupancies" in event.payload
 
@@ -198,11 +198,11 @@ def test_an_absent_position_is_absent_not_unknown(occurrences, recorded_finding)
 
 
 # --------------------------------------------------------------------------
-# The premise travels with every characterization.
+# The premise travels with every measurement.
 # --------------------------------------------------------------------------
 
 
-def test_each_characterization_records_its_premise(
+def test_each_measurement_records_its_premise(
     session, occurrences, recorded_finding
 ):
     pair = AdjacentPair("it", "is")
@@ -220,7 +220,7 @@ def test_each_characterization_records_its_premise(
     )
     for name, event in recorded.items():
         assert event.payload["premise_event_id"] == recorded_finding.id
-        assert event.payload["characterization"] == name
+        assert event.payload["measurement"] == name
         assert event.payload["pair_left"] == "it"
         assert event.payload["pair_right"] == "is"
         assert premise_chain(session, event.id) == [recorded_finding.id]
@@ -249,12 +249,12 @@ def test_recording_does_not_alter_the_premise(session, occurrences, recorded_fin
 # --------------------------------------------------------------------------
 
 
-def test_stability_reports_agreement_not_a_share(occurrences, recorded_finding):
+def test_agreement_is_counted_not_scored(occurrences, recorded_finding):
     scopes = [occurrences[:3], occurrences[3:]]
-    occupant, agreeing, answered = stability_across_scopes(
+    occupant, agreeing, answered = occupant_agreement_across_scopes(
         scopes,
         AdjacentPair("it", "is"),
-        "left_alternatives",
+        "before_same_right",
         counting_scope="a bounded scope",
         premise_event_id=recorded_finding.id,
     )
@@ -262,10 +262,10 @@ def test_stability_reports_agreement_not_a_share(occurrences, recorded_finding):
     assert occupant is None or isinstance(occupant, str)
 
 
-def test_shared_neighbours_groups_without_claiming_a_kind(
+def test_group_by_highest_count_occupant_groups_without_claiming_a_kind(
     occurrences, recorded_finding
 ):
-    characterizations = {
+    measurements = {
         str(pair): measure_adjacent_pair(
             occurrences,
             pair,
@@ -274,7 +274,7 @@ def test_shared_neighbours_groups_without_claiming_a_kind(
         )
         for pair in (AdjacentPair("it", "is"), AdjacentPair("it", "may"))
     }
-    grouped = shared_neighbours(characterizations, "left_alternatives")
+    grouped = group_by_highest_count_occupant(measurements, "before_same_right")
     assert all(isinstance(labels, list) for labels in grouped.values())
     # Grouping is agreement between counts. No relation, kind, or standing.
     assert not any("kind" in key or "relation" in key for key in grouped)
@@ -287,26 +287,26 @@ def test_a_pair_must_be_two_exact_representations():
 
 
 # --------------------------------------------------------------------------
-# Rung 0: the material offers the apertures, and nobody names one.
+# Rung 0: the material offers the representations, and nobody names one.
 # --------------------------------------------------------------------------
 
 
-def test_apertures_are_enumerated_from_the_material(occurrences):
+def test_representations_are_enumerated_from_the_material(occurrences):
     """No representation is supplied, preferred, or filtered by count."""
-    apertures = enumerate_apertures(occurrences)
+    representations = enumerate_representations(occurrences)
     offered = {
         token
         for event in occurrences
         for token in event.payload["decoded_text"].split()
     }
-    assert set(apertures) == offered
-    assert apertures == sorted(apertures)
+    assert set(representations) == offered
+    assert representations == sorted(representations)
 
 
-def test_comparability_restricts_apertures_without_judging_them(occurrences):
+def test_comparability_restricts_representations_without_judging_them(occurrences):
     """`present_in` keeps what every scope can answer, not what looks useful."""
     scopes = [occurrences[:2], occurrences[2:]]
-    restricted = enumerate_apertures(occurrences, present_in=scopes)
+    restricted = enumerate_representations(occurrences, present_in=scopes)
     everywhere = set.intersection(
         *[
             {t for e in scope for t in e.payload["decoded_text"].split()}
@@ -314,13 +314,13 @@ def test_comparability_restricts_apertures_without_judging_them(occurrences):
         ]
     )
     assert set(restricted) == everywhere
-    assert set(restricted) <= set(enumerate_apertures(occurrences))
+    assert set(restricted) <= set(enumerate_representations(occurrences))
 
 
-def test_measuring_after_an_aperture_records_which(occurrences):
+def test_measuring_after_an_representation_records_which(occurrences):
     finding = measure_after(occurrences, "it", counting_scope="this session")
     assert finding.declared.measured_after == "it"
-    assert finding.strongest.representation == "is"
+    assert finding.highest_count_occupancy.representation == "is"
 
 
 def test_the_whole_chain_runs_without_a_supplied_representation(
@@ -332,20 +332,20 @@ def test_the_whole_chain_runs_without_a_supplied_representation(
     representation appearing anywhere below came out of the material.
     """
     scopes = [occurrences[:3], occurrences[3:]]
-    apertures = enumerate_apertures(occurrences, present_in=scopes)
-    assert apertures
+    representations = enumerate_representations(occurrences, present_in=scopes)
+    assert representations
 
     agreed = []
-    for aperture in apertures:
+    for representation in representations:
         answers = [
-            finding.strongest.representation
+            finding.highest_count_occupancy.representation
             for scope in scopes
-            if (finding := measure_after(scope, aperture, counting_scope="a scope"))
-            and finding.strongest is not None
+            if (finding := measure_after(scope, representation, counting_scope="a scope"))
+            and finding.highest_count_occupancy is not None
         ]
         if answers and len(set(answers)) == 1 and len(answers) == len(scopes):
-            agreed.append(aperture)
-    assert agreed, "the material offered no aperture with an agreeing occupant"
+            agreed.append(representation)
+    assert agreed, "the material offered no representation with an agreeing occupant"
 
     recorded_first = record_measurement_finding(
         session,
@@ -378,16 +378,16 @@ def test_agreement_is_the_discriminator_not_a_count(occurrences):
     """A frequent occupant that disagrees across scopes is not preferred."""
     scopes = [occurrences[:3], occurrences[3:]]
     disagreeing = []
-    for aperture in enumerate_apertures(occurrences, present_in=scopes):
+    for representation in enumerate_representations(occurrences, present_in=scopes):
         answers = [
-            f.strongest.representation
+            f.highest_count_occupancy.representation
             for scope in scopes
-            if (f := measure_after(scope, aperture, counting_scope="a scope"))
-            and f.strongest is not None
+            if (f := measure_after(scope, representation, counting_scope="a scope"))
+            and f.highest_count_occupancy is not None
         ]
         if len(answers) == len(scopes) and len(set(answers)) > 1:
-            disagreeing.append(aperture)
-    # Nothing here promotes a disagreeing aperture; it is simply not agreed.
-    for aperture in disagreeing:
-        whole = measure_after(occurrences, aperture, counting_scope="whole")
-        assert whole.strongest is not None
+            disagreeing.append(representation)
+    # Nothing here promotes a disagreeing representation; it is simply not agreed.
+    for representation in disagreeing:
+        whole = measure_after(occurrences, representation, counting_scope="whole")
+        assert whole.highest_count_occupancy is not None

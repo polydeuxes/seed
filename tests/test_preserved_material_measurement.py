@@ -224,7 +224,7 @@ def test_a_premise_that_bounds_a_position_sharpens_the_next_finding(occurrences)
     """`#2387`'s measured result, at this module's scale.
 
     This is not a claim that premises always sharpen. It records that the
-    same material measured at two apertures yields different concentrations.
+    same material measured at two representations yields different concentrations.
     """
     unbounded = measure_occupancy(
         occurrences, declared=_declared(), occupant_of=_first_word
@@ -232,9 +232,9 @@ def test_a_premise_that_bounds_a_position_sharpens_the_next_finding(occurrences)
     bounded = measure_occupancy(
         occurrences, declared=_declared(), occupant_of=_after_delimiter
     )
-    assert unbounded.strongest.occurrence_count / unbounded.positions_measured < 0.5
-    assert bounded.strongest.representation == "is"
-    assert bounded.strongest.occurrence_count / bounded.positions_measured == 1.0
+    assert unbounded.highest_count_occupancy.occurrence_count / unbounded.positions_measured < 0.5
+    assert bounded.highest_count_occupancy.representation == "is"
+    assert bounded.highest_count_occupancy.occurrence_count / bounded.positions_measured == 1.0
 
 
 def test_the_recorded_authority_states_the_clause_s_own_limit(session, occurrences):
