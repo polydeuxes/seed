@@ -80,24 +80,29 @@ def ledger() -> EventLedger:
 def test_later_formations_retain_references_to_earlier_preserved_material(
     ledger,
 ):
-    """Each formation's evidence list includes every earlier event id.
+    """Each formation's as-of boundary reaches further back than the last.
 
-    References, not consumption of each referenced event.  The formation
-    consumes the projection; what it carries forward is that projection's
-    ordered list of event ids.
+    Reference, not consumption of each referenced event.  The formation
+    consumes the projection; what it carries forward is the exact occurrence
+    that projection was taken through.  `#2372` established that the boundary
+    fixes the consumed prefix exactly, so an enumeration of that prefix adds
+    no distinction to it.
     """
-    formations = [e for e in ledger.list() if e.kind == FORMED]
+    events = ledger.list()
+    positions = {event.id: index for index, event in enumerate(events)}
+    formations = [e for e in events if e.kind == FORMED]
     assert len(formations) >= 3
-    evidence = [e.payload["session_standing_evidence_ids"] for e in formations]
-    # The first formation's projection was empty.  Recording that emptiness is
+    boundaries = [
+        e.payload["session_standing_as_of_event_id"] for e in formations
+    ]
+    # The first formation's projection was empty.  Recording that absence is
     # itself preserved testimony, not an absent occurrence.
-    assert evidence[0] == []
-    # Every later evidence list strictly extends the one before it.
-    for earlier, later in zip(evidence, evidence[1:]):
-        assert later[: len(earlier)] == earlier
-        assert len(later) > len(earlier)
-    # The very first recorded event is still cited by the last formation.
-    assert ledger.list()[0].id in evidence[-1]
+    assert boundaries[0] is None
+    # Every later boundary reaches strictly further into the session.
+    for earlier, later in zip(boundaries[1:], boundaries[2:]):
+        assert positions[later] > positions[earlier]
+    # The last formation's boundary still stands after the first recorded event.
+    assert positions[boundaries[-1]] > positions[events[0].id]
 
 
 def test_later_reference_does_not_alter_earlier_events(ledger):
@@ -131,10 +136,11 @@ def test_each_formation_is_appended_after_every_event_it_references(ledger):
     events = ledger.list()
     formations = [e for e in events if e.kind == FORMED]
     positions = {event.id: index for index, event in enumerate(events)}
-    # Each formation appears after every event it cites as evidence.
+    # Each formation appears after the occurrence its boundary names.
     for formation in formations:
-        for cited in formation.payload["session_standing_evidence_ids"]:
-            assert positions[cited] < positions[formation.id]
+        boundary = formation.payload["session_standing_as_of_event_id"]
+        if boundary is not None:
+            assert positions[boundary] < positions[formation.id]
 
 
 def test_no_capability_change_is_claimed_here(ledger):
@@ -165,13 +171,11 @@ def render_evidence_growth() -> str:
         input_stream=StringIO("first\nsecond\nthird\nexit\n"),
         output_stream=StringIO(),
     )
-    lines = ["formation -> earlier event ids referenced", ""]
+    lines = ["formation -> the occurrence its Standing was taken through", ""]
     for event in (e for e in led.list() if e.kind == FORMED):
-        cited = event.payload["session_standing_evidence_ids"]
         lines.append(
             f"  {event.id}  as_of="
-            f"{event.payload['session_standing_as_of_event_id']}  "
-            f"n={len(cited)}  {cited}"
+            f"{event.payload['session_standing_as_of_event_id']}"
         )
     return "\n".join(lines)
 

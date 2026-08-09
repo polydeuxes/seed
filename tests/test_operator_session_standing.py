@@ -189,20 +189,18 @@ def test_console_supplies_prior_session_standing_to_later_interactions():
     assert len(standing["presentations"]) == 3
     first_id, second_id, third_id = list(standing["presentations"])
     assert list(standing["presentations"])[-1] == third_id
-    # The second Presentation's recorded formation consumed Standing that
-    # already contained the first interaction's events.
-    second_evidence = set(
-        standing["presentations"][third_id]["session_standing_evidence_ids"]
-    )
-    first_evidence = set(
-        standing["presentations"][first_id]["session_standing_evidence_ids"]
-    )
-    assert first_evidence < second_evidence
-    # The second formation's consumed Evidence includes the first
-    # Presentation's formation and emission occurrences.
+    # The later Presentation's recorded formation consumed Standing taken
+    # through a strictly later occurrence than the first one's.
+    positions = {event.id: index for index, event in enumerate(ledger.list("w"))}
     first_presentation = standing["presentations"][first_id]
-    assert first_presentation["formed_event_id"] in second_evidence
-    assert first_presentation["emitted_event_id"] in second_evidence
+    assert first_presentation["session_standing_as_of_event_id"] is None
+    later_boundary = positions[
+        standing["presentations"][third_id]["session_standing_as_of_event_id"]
+    ]
+    # The first Presentation's own formation and emission occurrences fall
+    # inside the prefix the later formation consumed.
+    assert positions[first_presentation["formed_event_id"]] < later_boundary
+    assert positions[first_presentation["emitted_event_id"]] < later_boundary
 
 
 def test_projection_does_not_mutate_ledger_or_synthesize_events():

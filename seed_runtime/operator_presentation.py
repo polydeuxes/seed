@@ -128,9 +128,6 @@ def form_operator_presentation(
             }
         )
         coordinate_bindings[coordinate] = alternative_id
-    # The exact inventory of session events this formation consumed,
-    # including any prior Presentation formation and emission Evidence.
-    standing_evidence_ids = list(session_standing["consumed_event_ids"])
     purpose = "present the current bounded session Standing"
     content = "bounded Presentation of current session Standing"
     occurrence = "Presentation formation durably recorded"
@@ -189,7 +186,6 @@ def form_operator_presentation(
             "alternatives": alternatives,
             "coordinate_bindings": coordinate_bindings,
             "session_standing_as_of_event_id": session_standing["as_of_event_id"],
-            "session_standing_evidence_ids": standing_evidence_ids,
             "prior_exchange_finding": prior_exchange_finding,
             "recovered_meaning_relation": recovered_meaning_relation,
             "current_interaction_goal": current_interaction_goal,
@@ -210,7 +206,6 @@ def form_operator_presentation(
         "formed_event_id": formed_event.id,
         "emitted_event_id": None,
         "session_standing_as_of_event_id": session_standing["as_of_event_id"],
-        "session_standing_evidence_ids": standing_evidence_ids,
         "prior_exchange_finding": prior_exchange_finding,
         "recovered_meaning_relation": recovered_meaning_relation,
         "current_interaction_goal": current_interaction_goal,
