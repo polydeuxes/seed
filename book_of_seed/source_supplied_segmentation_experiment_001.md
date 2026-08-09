@@ -19,10 +19,11 @@ describing it.
 
 ## 1. Result
 
-**For `corpus/grammar_goold_brown.txt`, the source supplies the segmentation.**
+**For `corpus/grammar_goold_brown.txt`, the source supplies most of the
+segmentation.** Two boundaries of three; the third is open, and §3 records it.
 
-Every boundary in the three-coordinate shape is obtainable from measurements
-`01.External:28` already permits — exact equality, count, recurrence, prefix
+The boundaries that are obtainable come from measurements `01.External:28`
+already permits — exact equality, count, recurrence, prefix
 occurrence, adjacency. None required knowing English, and none was chosen for
 its meaning.
 
