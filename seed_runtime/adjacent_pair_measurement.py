@@ -186,6 +186,8 @@ def measure_adjacent_pair(
                 equivalence_rule=EQUIVALENCE_RULE,
                 counting_scope=counting_scope,
                 premise_event_id=premise_event_id,
+                form=name,
+                relative_to=(pair.left, pair.right),
             ),
             occupant_of=occupant_of,
         )
@@ -340,6 +342,8 @@ def measure_after(
             counting_scope=counting_scope,
             premise_event_id=premise_event_id,
             measured_after=representation,
+            form="after",
+            relative_to=(representation,),
         ),
         occupant_of=occupant_of,
     )
