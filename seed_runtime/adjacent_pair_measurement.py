@@ -14,12 +14,12 @@ This module takes such a pair and asks the same generic questions of it that
 it would ask of any other:
 
 ```text
-preceding            what occupies the position before the pair
-following            what occupies the position after it
-left alternatives    what else occupies the pair's left position
-                     before the same right representation
-right alternatives   what else occupies the pair's right position
-                     after the same left representation
+preceding           what occupies the position before the pair
+following           what occupies the position after it
+before_same_right   what else occupies the left position, before the
+                    pair's right representation
+after_same_left     what else occupies the right position, after the
+                    pair's left representation
 ```
 
 **The battery is fixed and applied symmetrically.** No question is asked of one
@@ -28,17 +28,17 @@ reader believes the representations are. They are adjacency and occupancy
 measurements, which `01.External:28` permits a declared measurement to produce.
 
 **The pairs are not supplied.** :func:`adjacent_pairs_from_finding` reads them out of a
-recorded measurement finding, so the aperture for this round comes from the
-previous round's evidence rather than from the caller. Every characterization
+recorded measurement finding, so what this round measures relative to comes
+from the previous round's evidence rather than from the caller. Every measurement
 records that finding as its premise, so what it stood on travels with it.
 
-**Comparing characterizations is not performed here.** Two pairs sharing an
+**Comparing measurements is not performed here.** Two pairs sharing an
 alternative is a fact about two preserved findings. `05.Testimony:27` reserves
 consuming preserved findings to a bounded comparison, and none is performed.
 
 Nothing here establishes meaning, grammatical kind, relation, or truth. A pair
-is an ordered pair that recurs. That two pairs share a neighbour is a measured
-agreement between counts, and `01.Standing.D` refuses relation standing to
+is an ordered pair that recurs. That two pairs return the same occupant is a
+measured agreement between counts, and `01.Standing.D` refuses relation standing to
 co-presence.
 """
 
@@ -89,7 +89,7 @@ def adjacent_pairs_from_finding(ledger: EventLedger, finding_event_id: str) -> l
     The recorded finding names a left representation and the occupancies
     measured after it. Every occupancy is returned; none is filtered by count,
     share, or a threshold. Which of them prove reproducible is what the
-    characterization measures, not something decided here.
+    measurement measures, not something decided here.
     """
 
     event = ledger.get(finding_event_id)
@@ -119,7 +119,7 @@ def _positions(text: str) -> Sequence[str]:
     return text.split()
 
 
-def _characterizations(pair: AdjacentPair) -> dict[str, Callable[[str], str | None]]:
+def _position_measurements(pair: AdjacentPair) -> dict[str, Callable[[str], str | None]]:
     """The four questions, each returning one occupant or nothing.
 
     Absence of the pair in an occurrence yields ``None``: the position is not
@@ -142,14 +142,14 @@ def _characterizations(pair: AdjacentPair) -> dict[str, Callable[[str], str | No
         at = find(parts)
         return parts[at + 2] if at is not None and at + 2 < len(parts) else None
 
-    def left_alternatives(text: str) -> str | None:
+    def before_same_right(text: str) -> str | None:
         parts = _positions(text)
         for index in range(len(parts) - 1):
             if parts[index + 1] == pair.right and parts[index] != pair.left:
                 return parts[index]
         return None
 
-    def right_alternatives(text: str) -> str | None:
+    def after_same_left(text: str) -> str | None:
         parts = _positions(text)
         for index in range(len(parts) - 1):
             if parts[index] == pair.left and parts[index + 1] != pair.right:
@@ -159,8 +159,8 @@ def _characterizations(pair: AdjacentPair) -> dict[str, Callable[[str], str | No
     return {
         "preceding": preceding,
         "following": following,
-        "left_alternatives": left_alternatives,
-        "right_alternatives": right_alternatives,
+        "before_same_right": before_same_right,
+        "after_same_left": after_same_left,
     }
 
 
@@ -175,7 +175,7 @@ def measure_adjacent_pair(
 
     material = list(occurrences)
     findings: dict[str, MeasurementFinding] = {}
-    for name, occupant_of in _characterizations(pair).items():
+    for name, occupant_of in _position_measurements(pair).items():
         findings[name] = measure_occupancy(
             material,
             declared=DeclaredMeasurement(
@@ -200,7 +200,7 @@ def record_pair_measurements(
     pair: AdjacentPair,
     findings: dict[str, MeasurementFinding],
 ) -> dict[str, Event]:
-    """Preserve every characterization, including the ones that found nothing.
+    """Preserve every measurement, including the ones that found nothing.
 
     A question whose answer was absent is recorded as having been asked. A
     battery that quietly dropped its empty results would report only the
@@ -215,7 +215,7 @@ def record_pair_measurements(
             session_id=session_id,
             finding=finding,
             extra={
-                "characterization": name,
+                "measurement": name,
                 "pair_left": pair.left,
                 "pair_right": pair.right,
             },
@@ -223,10 +223,10 @@ def record_pair_measurements(
     return recorded
 
 
-def stability_across_scopes(
+def occupant_agreement_across_scopes(
     scopes: Sequence[Sequence[Event]],
     pair: AdjacentPair,
-    characterization: str,
+    measurement: str,
     *,
     counting_scope: str,
     premise_event_id: str,
@@ -242,10 +242,10 @@ def stability_across_scopes(
     for scope in scopes:
         finding = measure_adjacent_pair(
             scope, pair, counting_scope=counting_scope, premise_event_id=premise_event_id
-        )[characterization]
-        strongest = finding.strongest
-        if strongest is not None:
-            answers.append(strongest.representation)
+        )[measurement]
+        highest = finding.highest_count_occupancy
+        if highest is not None:
+            answers.append(highest.representation)
     if not answers:
         return None, 0, 0
     counts: dict[str, int] = {}
@@ -255,9 +255,9 @@ def stability_across_scopes(
     return agreed[0], agreed[1], len(answers)
 
 
-def shared_neighbours(
-    characterizations: dict[str, dict[str, MeasurementFinding]],
-    characterization: str,
+def group_by_highest_count_occupant(
+    measurements: dict[str, dict[str, MeasurementFinding]],
+    measurement: str,
 ) -> dict[str, list[str]]:
     """Which pairs returned the same occupant for the same question.
 
@@ -267,18 +267,18 @@ def shared_neighbours(
     """
 
     grouped: dict[str, list[str]] = {}
-    for label, findings in characterizations.items():
-        strongest = findings[characterization].strongest
-        if strongest is None:
+    for label, findings in measurements.items():
+        highest = findings[measurement].highest_count_occupancy
+        if highest is None:
             continue
-        grouped.setdefault(strongest.representation, []).append(label)
+        grouped.setdefault(highest.representation, []).append(label)
     return grouped
 
 
-def enumerate_apertures(
+def enumerate_representations(
     occurrences: Iterable[Event], *, present_in: Sequence[Sequence[Event]] = ()
 ) -> list[str]:
-    """Every representation the material offers as a possible aperture.
+    """Every representation the material offers.
 
     No representation is named here and none is preferred. When ``present_in``
     is supplied, only representations measurable in *every* one of those scopes
@@ -313,14 +313,14 @@ def enumerate_apertures(
 
 def measure_after(
     occurrences: Iterable[Event],
-    aperture: str,
+    representation: str,
     *,
     counting_scope: str,
     premise_event_id: str | None = None,
 ) -> MeasurementFinding:
-    """Count what occupies the position after one enumerated aperture.
+    """Count what occupies the position after one enumerated representation.
 
-    The finding records the aperture it measured relative to, which is what
+    The finding records the representation it measured relative to, which is what
     lets :func:`adjacent_pairs_from_finding` read the next round's candidates
     out of it instead of taking them from a caller.
     """
@@ -328,18 +328,18 @@ def measure_after(
     def occupant_of(text: str) -> str | None:
         parts = _positions(text)
         for index in range(len(parts) - 1):
-            if parts[index] == aperture:
+            if parts[index] == representation:
                 return parts[index + 1]
         return None
 
     return measure_occupancy(
         occurrences,
         declared=DeclaredMeasurement(
-            representation_measured=f"the representation following {aperture!r}",
+            representation_measured=f"the representation following {representation!r}",
             equivalence_rule=EQUIVALENCE_RULE,
             counting_scope=counting_scope,
             premise_event_id=premise_event_id,
-            measured_after=aperture,
+            measured_after=representation,
         ),
         occupant_of=occupant_of,
     )

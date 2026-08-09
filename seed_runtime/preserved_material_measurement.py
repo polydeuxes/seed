@@ -52,7 +52,7 @@ MEASUREMENT_CONVENTION = "preserved_material_declared_measurement_v1"
 BOUNDARY_NOTES: tuple[str, ...] = (
     "A finding reports a count within its stated scope and nothing further.",
     "Recurrence establishes that a representation occurs more than once only.",
-    "A dominant occupant of a position is not the meaning of that position.",
+    "A highest-count occupant of a position is not the meaning of that position.",
     "Co-presence of representations establishes no relation (01.Standing.D).",
     "A finding standing on a premise is not stronger than a finding without one.",
     "The premise is preserved so the finding cannot be read independently of it.",
@@ -78,9 +78,9 @@ class DeclaredMeasurement:
     counting_scope: str
     premise_event_id: str | None = None
     # The representation this measurement measured relative to, when it had
-    # one.  A finding can only supply an aperture to a later measurement if it
-    # records the aperture it used, so this is what makes a finding
-    # aperture-supplying rather than merely informative.
+    # one.  A finding can only supply an representation to a later measurement if it
+    # records the representation it used, so this is what makes a finding
+    # representation-supplying rather than merely informative.
     measured_after: str | None = None
 
     def __post_init__(self) -> None:
@@ -112,7 +112,15 @@ class MeasurementFinding:
     convention: str = MEASUREMENT_CONVENTION
 
     @property
-    def strongest(self) -> Occupancy | None:
+    def highest_count_occupancy(self) -> Occupancy | None:
+        """The occupancy with the highest count, or nothing if none was measured.
+
+        A count, not a rank of importance. `01.External:28` bounds a finding to
+        the measurement assertion, so the most frequent occupant of a position
+        is the most frequent occupant of a position and carries no standing
+        that a less frequent one lacks.
+        """
+
         return self.occupancies[0] if self.occupancies else None
 
     def to_json_dict(self) -> dict[str, Any]:
