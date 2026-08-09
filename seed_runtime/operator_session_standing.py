@@ -2,9 +2,11 @@
 
 from __future__ import annotations
 
-from typing import Any
+from bisect import bisect_left
+from typing import Any, Iterable
 
 from seed_runtime.events import EventLedger
+from seed_runtime.models import Event
 
 _SUBJECT_BY_KIND = {
     "operator.ingress.raw_material_captured": "raw_initial_material",
@@ -107,10 +109,73 @@ def determine_goal_applicability(
 
 
 
+def _record_distinct(collected: list[str], value: str) -> None:
+    """Keep one sorted, distinct sequence in place.
+
+    The returned coordinate is a sorted list of distinct strings, as it has
+    always been.  Adding a value already present does nothing, so an advance
+    that produces no new value costs nothing.
+    """
+
+    index = bisect_left(collected, value)
+    if index == len(collected) or collected[index] != value:
+        collected.insert(index, value)
+
+
 def project_operator_session_standing(
     ledger: EventLedger, *, workspace_id: str, session_id: str
 ) -> dict[str, Any]:
-    """Project bounded session-local Standing from already-recorded events.
+    """Project bounded session-local Standing by replaying the whole session.
+
+    Equivalent to advancing from no prior Standing over every recorded event.
+    `#2376` established that advancing from a prior Standing over only the
+    occurrences after its boundary produces the same result, so a caller that
+    already holds its Standing and knows what it just recorded should use
+    :func:`advance_operator_session_standing` instead of replaying.
+    """
+
+    return advance_operator_session_standing(
+        ledger.list(workspace_id), workspace_id=workspace_id, session_id=session_id
+    )
+
+
+def advance_operator_session_standing(
+    events: Iterable[Event],
+    *,
+    workspace_id: str,
+    session_id: str,
+    prior: dict[str, Any] | None = None,
+) -> dict[str, Any]:
+    """Advance bounded session-local Standing over an exact sequence of events.
+
+    With no `prior`, this projects from nothing and `events` must be the whole
+    session. With a `prior`, `events` must be exactly the applicable
+    occurrences recorded after `prior["as_of_event_id"]`, in append order; the
+    prefix it already consumed is not revisited.
+
+    The caller supplies those occurrences. Nothing here searches a ledger for
+    them, because a responsible act that just recorded an occurrence already
+    holds it.
+
+    Every accumulator the live event kinds read is seeded from `prior`, and the
+    per-event branches and refusals below are the same ones replay uses. Those
+    refusals consult accumulated Standing rather than the ledger, which is why
+    seeding preserves them (`#2376`).
+
+    `goal_identities` is not seeded. It is the one accumulator the returned
+    Standing does not carry, and `#2374` established the live event kinds never
+    reach it. A caller advancing over `operator.interaction.goal_*`
+    occurrences must replay instead.
+
+    **The advance consumes `prior`.** Its accumulators are taken over rather
+    than copied, and the returned Standing shares them. A caller that needs the
+    earlier Standing to stay as it was must project it again; there is no
+    snapshot here.
+
+    That is not defensive weakness, it is the point. Standing grows with the
+    session, so copying it per advance would cost the session length every
+    time and reinstate the quadratic this replaced. The console holds one
+    Standing, hands it forward, and keeps no earlier one.
 
     Consumes only ``operator.ingress.*`` and ``operator.presentation.*``
     events stamped with this exact workspace and session, in append order.  The result is fully recomputable
@@ -138,9 +203,15 @@ def project_operator_session_standing(
     goal_consumptions: dict[str, dict[str, Any]] = {}
     goal_standings: dict[str, dict[str, Any]] = {}
     latest_interaction_goal_standing: dict[str, Any] | None = None
-    known_loss: set[str] = set()
-    unknowns: set[str] = set()
-    conflicts: set[str] = set()
+    # Kept sorted and distinct in place rather than as a set sorted on return.
+    # A set would have to be rebuilt from the prior list and re-sorted on every
+    # advance, which costs the accumulated size each time.  These coordinates
+    # do not grow on the five live kinds today, but acquisition would make them
+    # grow, and the consuming-prior rule has to hold for every accumulator that
+    # can.
+    known_loss: list[str] = []
+    unknowns: list[str] = []
+    conflicts: list[str] = []
     as_of_event_id: str | None = None
     event_count = 0
 
@@ -152,7 +223,33 @@ def project_operator_session_standing(
             )
         goal_identities[identity] = coordinate
 
-    for event in ledger.list(workspace_id):
+    if prior is not None:
+        # Every accumulator the live event kinds read, taken over from the
+        # Standing that already consumed the earlier occurrences.  Not copied:
+        # see the ownership note above.
+        attempts = prior["attempts"]
+        preserved_ingress_occurrences = prior["preserved_ingress_occurrences"]
+        interaction_closures = prior["interaction_closures"]
+        presentations = prior["presentations"]
+        comparisons = prior["comparisons"]
+        identifications = prior["identifications"]
+        latest_exchange_finding = prior["latest_exchange_finding"]
+        source_recoveries = prior["source_recoveries"]
+        meaning_relations = prior["meaning_relations"]
+        latest_source_recovery = prior["latest_source_recovery"]
+        latest_meaning_relation = prior["latest_meaning_relation"]
+        goal_applicabilities = prior["goal_applicabilities"]
+        goal_admissions = prior["goal_admissions"]
+        goal_consumptions = prior["goal_consumptions"]
+        goal_standings = prior["goal_standings"]
+        latest_interaction_goal_standing = prior["latest_interaction_goal_standing"]
+        known_loss = prior["known_loss"]
+        unknowns = prior["unknowns"]
+        conflicts = prior["conflicts"]
+        as_of_event_id = prior["as_of_event_id"]
+        event_count = prior["event_count"]
+
+    for event in events:
         if event.session_id != session_id:
             continue
         if not (
@@ -171,7 +268,8 @@ def project_operator_session_standing(
             ("unknowns", unknowns),
             ("conflicts", conflicts),
         ):
-            collected.update(event.payload.get(key, ()))
+            for value in event.payload.get(key, ()):
+                _record_distinct(collected, value)
         if event.kind == _PRESENTATION_FORMED_KIND:
             payload = event.payload
             if payload["presentation_ref"] in presentations:
@@ -1337,7 +1435,7 @@ def project_operator_session_standing(
         "goal_standings": goal_standings,
         "latest_interaction_goal_standing": latest_interaction_goal_standing,
         "recorded_relation_standings": [],
-        "known_loss": sorted(known_loss),
-        "unknowns": sorted(unknowns),
-        "conflicts": sorted(conflicts),
+        "known_loss": known_loss,
+        "unknowns": unknowns,
+        "conflicts": conflicts,
     }

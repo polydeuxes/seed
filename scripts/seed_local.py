@@ -315,7 +315,10 @@ from seed_runtime.operator_presentation import (
     emit_operator_presentation,
     form_operator_presentation,
 )
-from seed_runtime.operator_session_standing import project_operator_session_standing
+from seed_runtime.operator_session_standing import (
+    advance_operator_session_standing,
+    project_operator_session_standing,
+)
 from seed_runtime.facts import (
     Fact,
     FactConflict,
@@ -5646,6 +5649,22 @@ def _is_console_exit(material: bytes, encoding: str | None) -> bool:
         return False
 
 
+def _advance_over(ledger, standing, event_ids, *, workspace_id, session_id):
+    """Advance carried Standing over occurrences a responsible act just recorded.
+
+    The identifiers come from the act that recorded them, so nothing here
+    searches the ledger for what happened; the events are retrieved by exact
+    identifier.
+    """
+
+    return advance_operator_session_standing(
+        [ledger.get(event_id) for event_id in event_ids],
+        workspace_id=workspace_id,
+        session_id=session_id,
+        prior=standing,
+    )
+
+
 def run_persistent_operator_console(
     *,
     ledger: EventLedger,
@@ -5659,6 +5678,12 @@ def run_persistent_operator_console(
     output_stream.flush()
     # The first outward bounded Act uses the ordinary Presentation path;
     # empty Standing is lawful Evidence and does not fabricate an Unknown.
+    #
+    # Standing is carried through the session rather than re-projected from the
+    # ledger before each interaction.  Each responsible act returns the
+    # occurrences it recorded, so the console advances its Standing over
+    # exactly those.  `#2376` established that advancing over the occurrences
+    # after a boundary equals replaying the whole session through it.
     session_standing = project_operator_session_standing(
         ledger, workspace_id=workspace_id, session_id=session_id
     )
@@ -5668,8 +5693,15 @@ def run_persistent_operator_console(
         session_id=session_id,
         session_standing=session_standing,
     )
-    emit_operator_presentation(
+    presentation = emit_operator_presentation(
         ledger, presentation=presentation, output_stream=output_stream
+    )
+    session_standing = _advance_over(
+        ledger,
+        session_standing,
+        (presentation["formed_event_id"], presentation["emitted_event_id"]),
+        workspace_id=workspace_id,
+        session_id=session_id,
     )
     while True:
         captured_ingress = capture_stdin_material(input_stream)
@@ -5682,11 +5714,6 @@ def run_persistent_operator_console(
             captured_ingress.exact_bytes, captured_ingress.encoding_testimony
         ):
             return
-        # Project Standing from this session's earlier recorded events before
-        # the next bounded interaction, including C0 on first ingress.
-        session_standing = project_operator_session_standing(
-            ledger, workspace_id=workspace_id, session_id=session_id
-        )
         # No Presentation is attached to this capture.  Several emissions may
         # precede it, and selecting one -- by recency or otherwise -- would
         # assert a relation no occurrence determined.  The emission and ingress
@@ -5703,6 +5730,13 @@ def run_persistent_operator_console(
                 session_standing if session_standing["event_count"] else None
             ),
         )
+        session_standing = _advance_over(
+            ledger,
+            session_standing,
+            attempt_view["event_ids"],
+            workspace_id=workspace_id,
+            session_id=session_id,
+        )
         if attempt_view["current_standing"]["preserved_ingress"] is not None:
             # The ingress occurrence and its produced-after Presentation
             # testimony are preserved; no Compare or Identification follows.
@@ -5716,17 +5750,24 @@ def run_persistent_operator_console(
             # session's current Standing (including this attempt).  The View
             # remains the renderer behind the `show current Standing`
             # navigation alternative rather than the default output.
-            current_standing = project_operator_session_standing(
-                ledger, workspace_id=workspace_id, session_id=session_id
-            )
             presentation = form_operator_presentation(
                 ledger,
                 workspace_id=workspace_id,
                 session_id=session_id,
-                session_standing=current_standing,
+                session_standing=session_standing,
             )
-            emit_operator_presentation(
+            presentation = emit_operator_presentation(
                 ledger, presentation=presentation, output_stream=output_stream
+            )
+            session_standing = _advance_over(
+                ledger,
+                session_standing,
+                (
+                    presentation["formed_event_id"],
+                    presentation["emitted_event_id"],
+                ),
+                workspace_id=workspace_id,
+                session_id=session_id,
             )
 
 

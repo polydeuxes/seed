@@ -574,7 +574,9 @@ def test_console_passes_its_capture_unchanged_to_the_bounded_attempt(monkeypatch
 
     def bounded_attempt(**kwargs):
         received.append(kwargs)
-        return {"current_standing": {"preserved_ingress": None}}
+        # A real attempt returns the occurrences it recorded; the console
+        # advances its Standing over exactly those.
+        return {"event_ids": [], "current_standing": {"preserved_ingress": None}}
 
     monkeypatch.setattr(
         seed_local,
