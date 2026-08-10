@@ -11,7 +11,7 @@ from seed_runtime.projection_store import (
     state_to_payload,
 )
 from seed_runtime.relationship_catalog import RelationshipCatalog
-from seed_runtime.models import Fact
+from seed_runtime.facts import Fact
 from seed_runtime.serialization import to_plain
 from seed_runtime.state import GraphValidationIssue, GraphValidator, State, StateProjector
 

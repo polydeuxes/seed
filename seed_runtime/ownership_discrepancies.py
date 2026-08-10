@@ -5,7 +5,7 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import Any, Literal
 
-from seed_runtime.models import Fact
+from seed_runtime.facts import Fact
 from seed_runtime.state import State
 
 OwnershipKind = Literal["storage", "service"]

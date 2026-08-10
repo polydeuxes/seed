@@ -10,7 +10,8 @@ from typing import Any
 from seed_runtime.base import SeedModel
 from seed_runtime.capability_catalog import CapabilityRecommendation
 from seed_runtime.facts import is_fact_expired
-from seed_runtime.models import Entity, Fact
+from seed_runtime.facts import Fact
+from seed_runtime.models import Entity
 from seed_runtime.state import State
 from seed_runtime.capabilities import slugify
 

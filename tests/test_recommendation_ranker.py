@@ -2,7 +2,7 @@ from datetime import timedelta
 
 from seed_runtime.capability_catalog import CapabilityRecommendation
 from seed_runtime.event import utc_now
-from seed_runtime.models import Fact
+from seed_runtime.facts import Fact
 from seed_runtime.recommendation_ranker import RecommendationRanker
 from seed_runtime.state import State
 

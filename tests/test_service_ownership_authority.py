@@ -11,7 +11,7 @@ from seed_runtime.service_ownership_authority import (
     evaluate_service_ownership_authority_slice,
     format_service_ownership_authority,
 )
-from seed_runtime.models import Fact
+from seed_runtime.facts import Fact
 from seed_runtime.state import State
 
 

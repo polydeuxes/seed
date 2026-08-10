@@ -392,7 +392,6 @@ from seed_runtime.integrity_summary import (
     build_projection_integrity_summary,
 )
 from seed_runtime.event import Event, utc_now
-from seed_runtime.models import Observation
 from seed_runtime.observation_normalizers import (
     EndpointAliasNormalizer,
     EndpointIdentityNormalizer,
@@ -423,7 +422,7 @@ from seed_runtime.observation_sources import (
     diff_observations_json,
     export_observations_json,
 )
-from seed_runtime.observations import ObservationIngestor
+from seed_runtime.observations import Observation, ObservationIngestor
 from seed_runtime.ownership_discrepancies import (
     build_ownership_discrepancies,
     diagnostic_capability_need_records,

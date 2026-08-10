@@ -6,8 +6,8 @@ from seed_runtime.classification_coverage import (
     format_classification_coverage,
 )
 from seed_runtime.events import EventLedger, SQLiteEventLedger
+from seed_runtime.facts import Fact
 from seed_runtime.models import Entity
-from seed_runtime.models import Fact
 from seed_runtime.serialization import to_plain
 from seed_runtime.state import StateProjector
 
