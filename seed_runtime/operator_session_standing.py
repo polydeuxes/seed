@@ -135,7 +135,9 @@ def project_operator_session_standing(
     """
 
     return advance_operator_session_standing(
-        ledger.list(workspace_id), workspace_id=workspace_id, session_id=session_id
+        ledger.list_session(workspace_id, session_id),
+        workspace_id=workspace_id,
+        session_id=session_id,
     )
 
 

@@ -465,6 +465,26 @@ from seed_runtime.state_views import (
 DEFAULT_WORKSPACE = "local"
 DEFAULT_SESSION = "local"
 
+# The console is the no-argument entry.  It also accepts the options that say
+# where its history is kept and which workspace it belongs to, because a
+# durable console is otherwise unreachable: `--db` made `argv` non-empty and
+# every non-empty `argv` selected something other than the console.  Any other
+# argument still selects a subcommand.
+CONSOLE_OPTIONS = ("--db", "--workspace")
+
+
+def _is_console_invocation(argv: list[str]) -> bool:
+    remaining = list(argv)
+    while remaining:
+        token = remaining.pop(0)
+        if token.split("=", 1)[0] not in CONSOLE_OPTIONS:
+            return False
+        if "=" not in token:
+            if not remaining:
+                return False
+            remaining.pop(0)
+    return True
+
 
 @dataclass(frozen=True)
 class DevFactSeed:
@@ -5787,14 +5807,21 @@ def main(argv: list[str] | None = None) -> int:
     args = parser.parse_args(argv)
     apply_bounded_ask_dispatch(args, parser)
     validate_lifecycle_args(args, parser)
-    if not argv:
-        ledger: EventLedger = EventLedger()
+    if _is_console_invocation(argv):
+        ledger: EventLedger = (
+            SQLiteEventLedger(args.db) if args.db else EventLedger()
+        )
         # A console lifetime is one bounded exchange, and this is the boundary
         # that owns it: the console opens here and exits here.  The session id
         # is therefore allocated here rather than taken from `--session`, whose
         # constant default made every lifetime address the one named session
-        # `local`.  Reopening the console then continued the previous exchange's
-        # Standing, which is not what a new exchange is.
+        # `local`.
+        #
+        # Without `--db` that collision could not bite: the ledger is
+        # process-local and the previous lifetime's events are gone before the
+        # next one opens.  With `--db` they survive, and a reopened console
+        # would otherwise continue the previous exchange's Standing, which is
+        # not what a new exchange is.
         #
         # `--session` remains for the subcommands, which address a session that
         # already exists.  Callers passing `session_id` directly to

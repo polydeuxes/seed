@@ -1,17 +1,15 @@
 """A console lifetime is one bounded exchange, and owns its own session id.
 
 `--session` defaulted to the constant `local`, so every console lifetime
-addressed the one named session. Reopening the console continued the previous
-exchange's Standing, because as far as the projection was concerned it was the
-previous exchange.
+addressed the one named session. That could not bite while the ledger was
+process-local — the previous lifetime's events were gone before the next opened
+— but `--db` makes them survive, and then a reopened console would continue an
+exchange that had ended.
 
-These tests pin the boundary: two lifetimes in one workspace and one ledger
-receive different session ids, each keeps its own C0 and ingress, and the second
-does not inherit the first's Standing.
+`--db` also could not reach the console at all: the console was the no-argument
+entry, and `--db` made the argument list non-empty.
 
-They also pin what did **not** change. `--session` still exists for the
-subcommands, which address a session that already exists, and a caller passing
-`session_id` directly still owns that choice.
+These tests pin both halves together, because neither is safe alone.
 """
 
 from __future__ import annotations
@@ -20,7 +18,7 @@ from io import StringIO
 
 import pytest
 
-from seed_runtime.events import EventLedger
+from seed_runtime.events import EventLedger, SQLiteEventLedger
 from seed_runtime.operator_session_standing import (
     project_operator_session_standing,
 )
@@ -31,118 +29,174 @@ from scripts import seed_local
 
 
 @pytest.fixture
-def shared_ledger(monkeypatch):
-    """One ledger across console lifetimes, which the CLI cannot supply itself.
-
-    The bare console constructs `EventLedger()` and never consults `--db`, so
-    two real invocations never share history. That is recorded as a finding
-    rather than repaired here; this fixture supplies what the CLI does not so
-    the session boundary can be observed at all.
-    """
-    ledger = EventLedger()
-    monkeypatch.setattr(seed_local, "EventLedger", lambda: ledger)
-    return ledger
+def db(tmp_path):
+    return str(tmp_path / "seed.db")
 
 
-def _console(monkeypatch, material: str) -> None:
+def _console(monkeypatch, material: str, argv: list[str]) -> None:
     monkeypatch.setattr("sys.stdin", StringIO(material + "exit\n"))
     monkeypatch.setattr("sys.stdout", StringIO())
-    assert seed_local.main([]) == 0
+    assert seed_local.main(argv) == 0
 
 
-def _sessions(ledger: EventLedger) -> list[str]:
+def _sessions(ledger: EventLedger, workspace_id: str = "local") -> list[str]:
     seen: list[str] = []
-    for event in ledger.list("local"):
+    for event in ledger.list(workspace_id):
         if event.session_id is not None and event.session_id not in seen:
             seen.append(event.session_id)
     return seen
 
 
 # --------------------------------------------------------------------------
-# Two lifetimes, one workspace.
+# `--db` reaches the console.
 # --------------------------------------------------------------------------
 
 
-def test_two_console_lifetimes_receive_different_session_ids(
-    shared_ledger, monkeypatch
-):
-    _console(monkeypatch, "first exchange\n")
-    _console(monkeypatch, "second exchange\n")
+@pytest.mark.parametrize(
+    "argv",
+    [[], ["--db", "x"], ["--db=x"], ["--workspace", "w", "--db", "x"]],
+)
+def test_console_options_alone_select_the_console(argv):
+    assert seed_local._is_console_invocation(argv)
 
-    sessions = _sessions(shared_ledger)
+
+@pytest.mark.parametrize(
+    "argv",
+    [["--show-inference-catalog"], ["--db", "x", "--show-inference-catalog"]],
+)
+def test_any_other_argument_selects_something_else(argv):
+    assert not seed_local._is_console_invocation(argv)
+
+
+def test_a_db_console_records_into_that_db(db, monkeypatch):
+    _console(monkeypatch, "material\n", ["--db", db])
+
+    ledger = SQLiteEventLedger(db)
+    try:
+        assert ledger.list("local")
+    finally:
+        ledger.close()
+
+
+def test_the_bare_console_writes_no_durable_history(db, monkeypatch):
+    _console(monkeypatch, "material\n", [])
+
+    ledger = SQLiteEventLedger(db)
+    try:
+        assert ledger.list("local") == []
+    finally:
+        ledger.close()
+
+
+# --------------------------------------------------------------------------
+# Two lifetimes, one durable workspace.
+# --------------------------------------------------------------------------
+
+
+@pytest.fixture
+def two_lifetimes(db, monkeypatch):
+    _console(monkeypatch, "first exchange\nmore material\n", ["--db", db])
+    _console(monkeypatch, "a later exchange\n", ["--db", db])
+    ledger = SQLiteEventLedger(db)
+    yield ledger
+    ledger.close()
+
+
+def test_two_console_lifetimes_receive_different_session_ids(two_lifetimes):
+    sessions = _sessions(two_lifetimes)
     assert len(sessions) == 2
     assert sessions[0] != sessions[1]
 
 
-def test_neither_lifetime_uses_the_constant_default(shared_ledger, monkeypatch):
-    _console(monkeypatch, "an exchange\n")
-    assert seed_local.DEFAULT_SESSION not in _sessions(shared_ledger)
+def test_neither_lifetime_uses_the_constant_default(two_lifetimes):
+    assert seed_local.DEFAULT_SESSION not in _sessions(two_lifetimes)
 
 
-def test_both_lifetimes_share_one_workspace(shared_ledger, monkeypatch):
-    _console(monkeypatch, "first exchange\n")
-    _console(monkeypatch, "second exchange\n")
-
-    assert {event.workspace_id for event in shared_ledger.list("local")} == {"local"}
+def test_both_lifetimes_share_one_workspace(two_lifetimes):
+    assert {e.workspace_id for e in two_lifetimes.list("local")} == {"local"}
 
 
-# --------------------------------------------------------------------------
-# Each lifetime keeps its own occurrences.
-# --------------------------------------------------------------------------
-
-
-def test_each_lifetime_holds_only_its_own_ingress(shared_ledger, monkeypatch):
-    _console(monkeypatch, "first exchange\n")
-    _console(monkeypatch, "second exchange\n")
-    first, second = _sessions(shared_ledger)
+def test_each_lifetime_holds_only_its_own_ingress(two_lifetimes):
+    first, second = _sessions(two_lifetimes)
 
     def material(session_id):
         return [
             event.payload["decoded_text"]
             for event in preserved_ingress_occurrences(
-                shared_ledger, workspace_id="local", session_id=session_id
+                two_lifetimes, workspace_id="local", session_id=session_id
             )
         ]
 
-    assert material(first) == ["first exchange\n"]
-    assert material(second) == ["second exchange\n"]
+    assert material(first) == ["first exchange\n", "more material\n"]
+    assert material(second) == ["a later exchange\n"]
 
 
-def test_each_lifetime_forms_its_own_c0(shared_ledger, monkeypatch):
-    _console(monkeypatch, "first exchange\n")
-    _console(monkeypatch, "second exchange\n")
-    first, second = _sessions(shared_ledger)
+def test_a_reopened_console_does_not_continue_the_prior_standing(two_lifetimes):
+    """The defect, stated as the behaviour it removes.
 
-    def presentations(session_id):
-        return project_operator_session_standing(
-            shared_ledger, workspace_id="local", session_id=session_id
-        )["presentations"]
-
-    assert presentations(first)
-    assert presentations(second)
-    assert set(presentations(first)).isdisjoint(presentations(second))
-
-
-def test_a_reopened_console_does_not_continue_the_prior_standing(
-    shared_ledger, monkeypatch
-):
-    """The defect this fixes, stated as the behaviour it removes."""
-    _console(monkeypatch, "first exchange\nsecond material\n")
-    _console(monkeypatch, "a later exchange\n")
-    first, second = _sessions(shared_ledger)
-
+    This is the test that could not previously be written against the real CLI,
+    because two invocations never shared history to continue.
+    """
+    first, second = _sessions(two_lifetimes)
     prior = project_operator_session_standing(
-        shared_ledger, workspace_id="local", session_id=first
+        two_lifetimes, workspace_id="local", session_id=first
     )
     later = project_operator_session_standing(
-        shared_ledger, workspace_id="local", session_id=second
+        two_lifetimes, workspace_id="local", session_id=second
     )
 
-    # The first lifetime held two interactions plus C0; the second holds C0 and
-    # one.  A continued session would show the second carrying all of them.
     assert len(prior["presentations"]) == 3
     assert len(later["presentations"]) == 2
     assert set(later["presentations"]).isdisjoint(prior["presentations"])
+
+
+def test_the_earlier_lifetime_remains_projectable(two_lifetimes):
+    """Bounding the read must not lose what it stopped reading."""
+    first = _sessions(two_lifetimes)[0]
+    standing = project_operator_session_standing(
+        two_lifetimes, workspace_id="local", session_id=first
+    )
+    assert len(standing["presentations"]) == 3
+
+
+# --------------------------------------------------------------------------
+# A session projection reads a session.
+# --------------------------------------------------------------------------
+
+
+def test_a_session_read_returns_only_that_session(two_lifetimes):
+    first, second = _sessions(two_lifetimes)
+    for session_id in (first, second):
+        events = two_lifetimes.list_session("local", session_id)
+        assert events
+        assert {e.session_id for e in events} == {session_id}
+    assert len(two_lifetimes.list_session("local", first)) + len(
+        two_lifetimes.list_session("local", second)
+    ) == len(two_lifetimes.list("local"))
+
+
+def test_a_fresh_session_reads_none_of_the_history(two_lifetimes):
+    """The console's startup projection, which is the growing read."""
+    assert two_lifetimes.list("local")
+    assert two_lifetimes.list_session("local", "never-recorded") == []
+    standing = project_operator_session_standing(
+        two_lifetimes, workspace_id="local", session_id="never-recorded"
+    )
+    assert standing["presentations"] == {}
+
+
+def test_the_in_memory_ledger_scopes_the_same_way():
+    ledger = EventLedger()
+    for session_id in ("a", "b"):
+        seed_local.run_persistent_operator_console(
+            ledger=ledger,
+            workspace_id="w",
+            session_id=session_id,
+            input_stream=StringIO("material\nexit\n"),
+            output_stream=StringIO(),
+        )
+    assert {e.session_id for e in ledger.list_session("w", "a")} == {"a"}
+    assert len(ledger.list_session("w", "a")) < len(ledger.list("w"))
 
 
 # --------------------------------------------------------------------------
