@@ -51,13 +51,16 @@ def _reject_secret_fields(value: Any, path: str, allowed_fields: set[str]) -> No
     if isinstance(value, dict):
         for key, nested in value.items():
             normalized_key = normalize_field_name(key)
-            child_path = f"{path}.{key}"
             if (
                 normalized_key in SECRET_FIELD_NAMES
                 and normalized_key not in allowed_fields
             ):
                 raise ValueError(f"secret field is not allowed in {path}: {key}")
-            _reject_secret_fields(nested, child_path, allowed_fields)
+            # Secret rejection is key based. Scalars cannot contain another
+            # field name, so only containers can extend the search boundary.
+            if isinstance(nested, (dict, list)):
+                _reject_secret_fields(nested, f"{path}.{key}", allowed_fields)
     elif isinstance(value, list):
         for index, nested in enumerate(value):
-            _reject_secret_fields(nested, f"{path}[{index}]", allowed_fields)
+            if isinstance(nested, (dict, list)):
+                _reject_secret_fields(nested, f"{path}[{index}]", allowed_fields)

@@ -1,3 +1,5 @@
+import pytest
+
 from seed_runtime.events import EventLedger, SQLiteEventLedger
 
 
@@ -30,6 +32,28 @@ def test_event_ledger_rejects_secret_fields_in_payloads():
             assert "secret field" in str(exc)
         else:
             raise AssertionError(f"{field} must be rejected")
+
+
+@pytest.mark.parametrize(
+    "payload",
+    (
+        {"token": "not-accepted"},
+        {"outer": {"token": "not-accepted"}},
+        {"outer": [{"token": "not-accepted"}]},
+        {"outer": [[{"token": "not-accepted"}]]},
+    ),
+)
+def test_event_secret_rejection_reaches_every_nested_container(payload):
+    with pytest.raises(ValueError, match="secret field"):
+        EventLedger().append("k", "w", payload)
+
+
+def test_event_secret_rejection_accepts_large_scalar_lists():
+    payload = {"consumed_event_ids": [f"evt_{index}" for index in range(10_000)]}
+
+    event = EventLedger().append("k", "w", payload)
+
+    assert event.payload == payload
 
 
 def test_sqlite_persisted_id_prefixes_exclude_deleted_planning_artifacts():
