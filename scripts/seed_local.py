@@ -12,7 +12,7 @@ import time
 from dataclasses import dataclass
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
-from typing import Any, BinaryIO, Literal, TextIO
+from typing import Any, BinaryIO, Literal
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 if str(REPO_ROOT) not in sys.path:
@@ -308,16 +308,9 @@ from seed_runtime.selection_path_audit import (
     selection_path_audit_json,
 )
 from seed_runtime.events import EventLedger, SQLiteEventLedger
-from seed_runtime.operator_ingress import run_operator_ingress_attempt
-from seed_runtime.operator_ingress_representation import capture_stdin_material
 from seed_runtime.operator_ingress_view import format_operator_ingress_view
-from seed_runtime.operator_presentation import (
-    emit_operator_presentation,
-    form_operator_presentation,
-)
-from seed_runtime.operator_session_standing import (
-    advance_operator_session_standing,
-    project_operator_session_standing,
+from seed_runtime.operator_console import (
+    run_persistent_operator_console as _run_persistent_operator_console,
 )
 from seed_runtime.facts import (
     Fact,
@@ -5661,157 +5654,9 @@ def inquiry_note_store_path_from_args(args: argparse.Namespace) -> Path:
     return REPO_ROOT / ".seed" / "inquiry_notes.jsonl"
 
 
-def _is_console_exit(material: bytes, encoding: str | None) -> bool:
-    command = material.removesuffix(b"\n").removesuffix(b"\r")
-    try:
-        return command == "exit".encode(encoding or "utf-8", errors="strict")
-    except LookupError:
-        return False
-
-
-def _advance_over(ledger, standing, event_ids, *, workspace_id, session_id):
-    """Advance carried Standing over occurrences a responsible act just recorded.
-
-    The identifiers come from the act that recorded them, so nothing here
-    searches the ledger for what happened; the events are retrieved by exact
-    identifier.
-    """
-
-    return advance_operator_session_standing(
-        [ledger.get(event_id) for event_id in event_ids],
-        workspace_id=workspace_id,
-        session_id=session_id,
-        prior=standing,
-    )
-
-
-def run_persistent_operator_console(
-    *,
-    ledger: EventLedger,
-    workspace_id: str,
-    session_id: str,
-    input_stream: TextIO,
-    output_stream: TextIO,
-    process_boundary_escape: bool = True,
-) -> None:
-    """Own process-local repetition around bounded operator interactions."""
-    # A console that declined to install the escape does not announce it.
-    # `#2436` emitted this unconditionally while the check was conditional, so
-    # a driven console asserted a boundary it was not enforcing.
-    if process_boundary_escape:
-        output_stream.write("Seed console: `exit` exits.\n")
-        output_stream.flush()
-    # The first outward bounded Act uses the ordinary Presentation path;
-    # empty Standing is lawful Evidence and does not fabricate an Unknown.
-    #
-    # Standing is carried through the session rather than re-projected from the
-    # ledger before each interaction.  Each responsible act returns the
-    # occurrences it recorded, so the console advances its Standing over
-    # exactly those.  `#2376` established that advancing over the occurrences
-    # after a boundary equals replaying the whole session through it.
-    session_standing = project_operator_session_standing(
-        ledger, workspace_id=workspace_id, session_id=session_id
-    )
-    presentation = form_operator_presentation(
-        ledger,
-        workspace_id=workspace_id,
-        session_id=session_id,
-        session_standing=session_standing,
-    )
-    presentation = emit_operator_presentation(
-        ledger, presentation=presentation, output_stream=output_stream
-    )
-    session_standing = _advance_over(
-        ledger,
-        session_standing,
-        (presentation["formed_event_id"], presentation["emitted_event_id"]),
-        workspace_id=workspace_id,
-        session_id=session_id,
-    )
-    while True:
-        captured_ingress = capture_stdin_material(input_stream)
-        # `exit` is a process-boundary console escape, not constitutional
-        # local stopping: it is examined before operator-ingress recording,
-        # produces no exchange events, and never enters Presentation
-        # coordinates.  C0 formation and emission have already occurred; the
-        # local-stop alternative uses recorded Compare/Identification.
-        #
-        # `process_boundary_escape=False` is **bootstrap scaffolding**, and the
-        # circle it breaks is exact: Seed needs Bash evidence, the Bash guide
-        # contains a line whose entire content is `exit`, the escape consumes
-        # it as control, so Seed cannot acquire enough Bash to use Bash through
-        # an egress it does not have yet. `#2435` measured the cost at 2,957 of
-        # 54,264 lines.
-        #
-        # This is not a second ingress mode and Seed is not told that `exit` is
-        # sometimes material. The escape is a convenience of the surrounding
-        # developer console, and a non-interactive driver simply does not
-        # install it; termination then comes from EOF, outside the material
-        # stream, where no corpus line can collide with it. Renaming the token
-        # would move the collision rather than remove it. The accommodation
-        # disappears when Seed's own egress makes acquisition stop passing
-        # through operator escape syntax.
-        if captured_ingress.eof:
-            return
-        if process_boundary_escape and _is_console_exit(
-            captured_ingress.exact_bytes, captured_ingress.encoding_testimony
-        ):
-            return
-        # No Presentation is attached to this capture.  Several emissions may
-        # precede it, and selecting one -- by recency or otherwise -- would
-        # assert a relation no occurrence determined.  The emission and ingress
-        # occurrences are preserved independently; a later responsible
-        # occurrence may establish a relation between them and record it
-        # itself.
-        attempt_view = run_operator_ingress_attempt(
-            ledger=ledger,
-            workspace_id=workspace_id,
-            session_id=session_id,
-            captured_ingress=captured_ingress,
-            output_stream=output_stream,
-            session_standing=(
-                session_standing if session_standing["event_count"] else None
-            ),
-        )
-        session_standing = _advance_over(
-            ledger,
-            session_standing,
-            attempt_view["event_ids"],
-            workspace_id=workspace_id,
-            session_id=session_id,
-        )
-        if attempt_view["current_standing"]["preserved_ingress"] is not None:
-            # The ingress occurrence and its produced-after Presentation
-            # testimony are preserved; no Compare or Identification follows.
-            # A current Presentation existing does not make the newest ingress
-            # and the most recently emitted Presentation participants in one
-            # Compare: 01.Standing.E.1 requires the act owner to determine
-            # input-to-act Applicability, and recency is not that
-            # determination.  No recovered Responsibility presently proposes
-            # those two subjects as inputs, so the boundary stays dormant.
-            # The interaction output is a bounded Presentation formed from the
-            # session's current Standing (including this attempt).  The View
-            # remains the renderer behind the `show current Standing`
-            # navigation alternative rather than the default output.
-            presentation = form_operator_presentation(
-                ledger,
-                workspace_id=workspace_id,
-                session_id=session_id,
-                session_standing=session_standing,
-            )
-            presentation = emit_operator_presentation(
-                ledger, presentation=presentation, output_stream=output_stream
-            )
-            session_standing = _advance_over(
-                ledger,
-                session_standing,
-                (
-                    presentation["formed_event_id"],
-                    presentation["emitted_event_id"],
-                ),
-                workspace_id=workspace_id,
-                session_id=session_id,
-            )
+# Compatibility callers may still import the console loop from this module;
+# ownership and implementation live at the extracted boundary.
+run_persistent_operator_console = _run_persistent_operator_console
 
 
 def main(argv: list[str] | None = None) -> int:
