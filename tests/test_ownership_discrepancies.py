@@ -5,7 +5,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 from seed_runtime.events import SQLiteEventLedger
-from seed_runtime.models import Fact
+from seed_runtime.facts import Fact
 from seed_runtime.ownership_discrepancies import (
     _evidence,
     _matching_listener_process_refs,

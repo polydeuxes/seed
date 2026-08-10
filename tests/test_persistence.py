@@ -2,7 +2,8 @@ from datetime import datetime, timezone
 
 from seed_runtime import AnsibleInventoryObservationSource
 from seed_runtime.events import SQLiteEventLedger
-from seed_runtime.models import Entity, Fact
+from seed_runtime.facts import Fact
+from seed_runtime.models import Entity
 from seed_runtime.observation_sources import (
     FakeObservationSource,
     ObservationCollectionService,
