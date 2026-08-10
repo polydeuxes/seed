@@ -5789,11 +5789,22 @@ def main(argv: list[str] | None = None) -> int:
     validate_lifecycle_args(args, parser)
     if not argv:
         ledger: EventLedger = EventLedger()
+        # A console lifetime is one bounded exchange, and this is the boundary
+        # that owns it: the console opens here and exits here.  The session id
+        # is therefore allocated here rather than taken from `--session`, whose
+        # constant default made every lifetime address the one named session
+        # `local`.  Reopening the console then continued the previous exchange's
+        # Standing, which is not what a new exchange is.
+        #
+        # `--session` remains for the subcommands, which address a session that
+        # already exists.  Callers passing `session_id` directly to
+        # `run_persistent_operator_console` still own their own choice.
+        session_id = new_id("session")
         try:
             run_persistent_operator_console(
                 ledger=ledger,
                 workspace_id=args.workspace,
-                session_id=args.session,
+                session_id=session_id,
                 input_stream=sys.stdin,
                 output_stream=sys.stdout,
             )
