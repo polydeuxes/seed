@@ -29,7 +29,6 @@ from seed_runtime.preserved_material_measurement import (
 )
 from seed_runtime.recurrence_measurement import (
     DECLARED_IDENTITY,
-    occurrences_of_declared_exchanges,
     EXCHANGE_COUNT_RECORDED_KIND,
     FORBIDDEN_INFERENCES,
     RecurrenceMeasurementError,
@@ -448,40 +447,51 @@ def test_durable_validation_does_not_read_the_whole_workspace(tmp_path):
     assert selects, "the measurement read something"
     for query in selects:
         assert "session_id" in query, query
+        assert "kind" in query, query
         assert "FROM events WHERE workspace_id" in query, query
-    # every read named a session; none swept the workspace
-    assert len(selects) == len(DECLARED)
+    # Two passes name each session and exact relevant kind; none sweeps the
+    # workspace or materialises irrelevant occurrences.
+    assert len(selects) == 2 * len(DECLARED)
+    assert sum(
+        MEASUREMENT_RECORDED_KIND in query for query in selects
+    ) == len(DECLARED)
+    assert sum(
+        "operator.measurement.comparison_recorded" in query for query in selects
+    ) == len(DECLARED)
 
 
-def test_the_declared_exchanges_bound_what_is_read(compared):
-    """Reading two declared exchanges does not deserialize the other two."""
-    pairs = list(occurrences_of_declared_exchanges(
-        compared, workspace_id="w", bounded_exchanges=("s1", "s2")))
-    assert [x for x, _ in pairs] == ["s1", "s2"]
-    for exchange, events in pairs:
-        assert events
-        assert {e.session_id for e in events} == {exchange}
+def test_comparison_events_are_folded_without_being_retained(compared):
+    """The resource boundary is one streamed comparison, not all comparisons."""
+    import gc
+    import weakref
 
+    references = []
+    live_counts = []
+    original_iterator = compared.iter_session_kind
 
-def test_only_one_exchange_is_materialised_at_a_time(compared):
-    """`#2432` returned a dict holding every declared exchange at once.
+    def tracked_iterator(workspace_id, session_id, kind):
+        for stored in original_iterator(workspace_id, session_id, kind):
+            if kind != "operator.measurement.comparison_recorded":
+                yield stored
+                continue
+            gc.collect()
+            live_counts.append(
+                sum(reference() is not None for reference in references)
+            )
+            generated = stored.model_copy(deep=True)
+            references.append(weakref.ref(generated))
+            yield generated
+            del generated
 
-    The read boundary was right and the materialisation was the sum of all of
-    them: 34 GB on sixteen exchanges of 898,787 occurrences, against a peak
-    that should be one exchange. This pins that the reader yields rather than
-    collects, so a caller can release each exchange before the next is read.
-    """
-    import types
+    compared.iter_session_kind = tracked_iterator
+    measure_exchange_counts(
+        compared, workspace_id="w", bounded_exchanges=DECLARED
+    )
+    gc.collect()
 
-    produced = occurrences_of_declared_exchanges(
-        compared, workspace_id="w", bounded_exchanges=DECLARED)
-    assert isinstance(produced, types.GeneratorType)
-
-    live = []
-    for exchange, events in produced:
-        live.append(len(events))
-        del events
-    assert len(live) == len(DECLARED)
+    assert references
+    assert max(live_counts) <= 1
+    assert all(reference() is None for reference in references)
 
 
 # --------------------------------------------------------------------------

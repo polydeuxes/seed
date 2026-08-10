@@ -121,6 +121,26 @@ def test_an_unrecorded_session_reads_empty(durable_ledger):
     )
 
 
+@pytest.mark.parametrize("ledger_name", ("memory_ledger", "durable_ledger"))
+def test_one_kind_is_streamed_from_only_one_session(request, ledger_name):
+    ledger = request.getfixturevalue(ledger_name)
+    produced = ledger.iter_session_kind("w", "s1", INGRESS_OCCURRED_KIND)
+
+    assert iter(produced) is produced
+    events = list(produced)
+    assert events
+    assert {event.session_id for event in events} == {"s1"}
+    assert {event.kind for event in events} == {INGRESS_OCCURRED_KIND}
+
+
+@pytest.mark.parametrize("ledger_name", ("memory_ledger", "durable_ledger"))
+def test_session_existence_comes_from_any_recorded_kind(request, ledger_name):
+    ledger = request.getfixturevalue(ledger_name)
+
+    assert ledger.has_session("w", "s1") is True
+    assert ledger.has_session("w", "never-recorded") is False
+
+
 # --------------------------------------------------------------------------
 # The extent is bounded.
 # --------------------------------------------------------------------------
@@ -158,6 +178,23 @@ def test_the_index_covers_the_boundary_sessions_are_selected_by(durable_ledger):
     assert "session_id" in sql[0]
 
 
+def test_the_kind_stream_seeks_by_workspace_session_and_kind(durable_ledger):
+    connection = sqlite3.connect(durable_ledger.database_path)
+    try:
+        plan = connection.execute(
+            "EXPLAIN QUERY PLAN "
+            "SELECT * FROM events WHERE workspace_id = ? AND session_id = ? "
+            "AND kind = ? ORDER BY rowid",
+            ("w", "s1", INGRESS_OCCURRED_KIND),
+        ).fetchall()
+    finally:
+        connection.close()
+
+    detail = " ".join(str(row[-1]) for row in plan)
+    assert "SCAN events" not in detail
+    assert "idx_events_workspace_session_kind" in detail
+
+
 def test_the_index_is_created_on_an_existing_ledger(tmp_path):
     """A ledger written before `#2416` gains the index when next opened."""
     path = str(tmp_path / "prior.db")
@@ -166,7 +203,7 @@ def test_the_index_is_created_on_an_existing_ledger(tmp_path):
         "CREATE TABLE events (id TEXT PRIMARY KEY, kind TEXT NOT NULL, "
         "workspace_id TEXT NOT NULL, actor TEXT NOT NULL, timestamp TEXT "
         "NOT NULL, payload TEXT NOT NULL, session_id TEXT, causation_id TEXT, "
-        "correlation_id TEXT)"
+        "correlation_id TEXT, content_hash TEXT NOT NULL)"
     )
     connection.commit()
     connection.close()
