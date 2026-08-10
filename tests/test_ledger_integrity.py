@@ -171,6 +171,34 @@ def test_rewriting_the_row_and_its_digest_together_is_not_detected(ledger, path)
     assert SQLiteEventLedger(path).get(event.id).payload == {"a": 999}
 
 
+def test_verified_durable_rehydration_still_rejects_nested_secret_fields(path):
+    """Row integrity and secret-field admission remain separate boundaries."""
+    from seed_runtime.events import _content_digest
+
+    ledger = SQLiteEventLedger(path)
+    event = ledger.append("k", "w", {"a": 1}, session_id="s")
+    ledger.close()
+
+    con = _raw(path)
+    con.execute("DROP TRIGGER events_refuse_update")
+    row = dict(con.execute("SELECT * FROM events WHERE id = ?", (event.id,)).fetchone())
+    row["payload"] = '{"outer":[[{"token":"not-accepted"}]]}'
+    con.execute(
+        "UPDATE events SET payload = ?, content_hash = ? WHERE id = ?",
+        (row["payload"], _content_digest(row), event.id),
+    )
+    con.commit()
+    con.close()
+
+    reopened = SQLiteEventLedger(path)
+    try:
+        assert reopened.integrity_of(event.id) == VERIFIED
+        with pytest.raises(ValueError, match="secret field"):
+            reopened.get(event.id)
+    finally:
+        reopened.close()
+
+
 def _legacy_store(path, rows=1):
     con = sqlite3.connect(path)
     con.execute(
