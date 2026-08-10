@@ -145,6 +145,15 @@ class EventLedger:
 class SQLiteEventLedger(EventLedger):
     """SQLite-backed ledger with the same public API as EventLedger."""
 
+    # Every minted-id prefix this ledger stores and a later process may mint
+    # again. A prefix missing here is a collision waiting for the second
+    # process: `new_id` counts from 1 per process, so the second console
+    # lifetime against a durable ledger reissues the first one's identifiers.
+    #
+    # The four operator-console prefixes were absent until `#2413` connected
+    # the console to a durable ledger, at which point the second `seed --db`
+    # invocation aborted on `duplicate presentation reference`. Nothing was
+    # wrong with them before: no console had ever written durable history.
     _PERSISTED_ID_PREFIXES = (
         "obs",
         "obs_local_host",
@@ -153,6 +162,10 @@ class SQLiteEventLedger(EventLedger):
         "fact",
         "fact_obs",
         "need",
+        "operator_presentation",
+        "operator_ingress_attempt",
+        "operator_material",
+        "session",
     )
 
     def __init__(self, database_path: str) -> None:
@@ -177,6 +190,7 @@ class SQLiteEventLedger(EventLedger):
         self._next_event_number = max_event_suffix + 1
         reserve_id_prefix("evt", max_event_suffix)
         self._reserve_persisted_payload_ids()
+        self._reserve_persisted_session_ids()
 
     def append(
         self,
@@ -350,6 +364,24 @@ class SQLiteEventLedger(EventLedger):
             except (TypeError, json.JSONDecodeError):
                 continue
             self._reserve_payload_ids(payload)
+
+    def _reserve_persisted_session_ids(self) -> None:
+        """Session ids live in their own column, not in any payload.
+
+        A session id appears in `dimensions.scope` only as
+        `workspace:...;session:...`, which is not an identifier string, so
+        walking payloads never sees one.
+        """
+        rows = self._connection.execute(
+            "SELECT DISTINCT session_id FROM events WHERE session_id IS NOT NULL"
+        ).fetchall()
+        max_suffix = 0
+        for row in rows:
+            suffix = _numeric_suffix(row["session_id"], "session")
+            if suffix is not None:
+                max_suffix = max(max_suffix, suffix)
+        if max_suffix:
+            reserve_id_prefix("session", max_suffix)
 
     def _reserve_payload_ids(self, payload: Any) -> None:
         max_suffixes = {prefix: 0 for prefix in self._PERSISTED_ID_PREFIXES}
