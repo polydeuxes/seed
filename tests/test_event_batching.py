@@ -164,7 +164,14 @@ def test_sqlite_append_many_uses_one_transaction_for_many_events(tmp_path):
 
     assert sum(1 for statement in statements if statement == "BEGIN ") == 1
     assert sum(1 for statement in statements if statement == "COMMIT") == 1
-    assert sum(1 for statement in statements if "INSERT INTO events" in statement) == 3
+    # SQLite's trace callback may report the originating INSERT again while
+    # executing an INSERT trigger. The stored rows, not trace repetitions, are
+    # the event-granularity invariant.
+    reopened = SQLiteEventLedger(str(tmp_path / "events.db"))
+    try:
+        assert len(reopened.list()) == 3
+    finally:
+        reopened.close()
 
 
 def _batch_observations() -> list[Observation]:
