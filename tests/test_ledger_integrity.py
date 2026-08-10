@@ -469,3 +469,59 @@ def test_the_counter_table_is_not_an_occurrence(path):
         assert led.integrity_of(event.id) == VERIFIED
     finally:
         led.close()
+
+
+def test_a_batch_commits_its_reservations_with_its_occurrences(path):
+    """`#2428`'s invariant, which `append_many` did not satisfy.
+
+    `append` inserts an occurrence and persists its reservations in one
+    transaction. `append_many` used two, so a failure between them left durable
+    occurrences carrying identifiers whose counters were stale on reopen —
+    exactly the collision `#2428` exists to prevent.
+    """
+    from seed_runtime.models import Event
+
+    led = SQLiteEventLedger(path)
+    commits = []
+    led._connection.set_trace_callback(commits.append)
+    try:
+        led.append_many([
+            Event(id=f"evt_10000{i}", kind="k", workspace_id="w",
+                  payload={"ref": f"obs_0000{40 + i}"}, session_id="session_000009")
+            for i in range(3)
+        ])
+    finally:
+        led._connection.set_trace_callback(None)
+        led.close()
+
+    assert sum(1 for q in commits if q.strip().upper() == "COMMIT") == 1
+
+    con = _raw(path)
+    try:
+        kept = dict(con.execute("SELECT prefix, max_suffix FROM id_reservations"))
+        stored = con.execute("SELECT COUNT(*) FROM events").fetchone()[0]
+    finally:
+        con.close()
+    assert stored == 3
+    assert kept["obs"] == 42
+    assert kept["session"] == 9
+
+
+def test_a_batch_leaves_no_occurrence_without_its_reservation(path):
+    """Reopening a batched store does not reissue a batched identifier."""
+    from seed_runtime.ids import _next_values, new_id
+    from seed_runtime.models import Event
+
+    led = SQLiteEventLedger(path)
+    led.append_many([
+        Event(id="evt_100001", kind="k", workspace_id="w",
+              payload={"ref": "obs_000077"}, session_id="s")
+    ])
+    led.close()
+
+    _next_values.clear()
+    led = SQLiteEventLedger(path)
+    try:
+        assert new_id("obs") == "obs_000078"
+    finally:
+        led.close()
