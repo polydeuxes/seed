@@ -143,15 +143,36 @@ def test_declaring_an_exchange_does_not_establish_it(compared):
 
 
 def test_a_named_exchange_cannot_enter_the_third_result_unestablished(compared):
-    """The exact consequence: a ghost would have been counted as not measuring."""
-    with pytest.raises(RecurrenceMeasurementError):
+    """The exact consequence: a ghost would have been counted as not measuring.
+
+    The refusal is what this asserts. `#2432` followed it with
+    ``all(f.bounded_exchanges == ("s1",) for f in findings)`` over a
+    single-exchange declaration, which returns no findings at all — every
+    comparison involving `s1` has its other input outside the declared Scope
+    and is correctly rejected — so `all([])` passed and established nothing.
+    """
+    with pytest.raises(RecurrenceMeasurementError, match="ghost"):
         measure_exchange_counts(
-            compared, workspace_id="w",
-            bounded_exchanges=("s1", "ghost"))
-    # and the established ones alone are fine
+            compared, workspace_id="w", bounded_exchanges=("s1", "ghost"))
+
+
+def test_a_declaration_of_established_exchanges_is_accepted(compared):
+    """Existence validation passing, asserted on a result that exists."""
     findings = measure_exchange_counts(
-        compared, workspace_id="w", bounded_exchanges=("s1",))
-    assert all(f.bounded_exchanges == ("s1",) for f in findings)
+        compared, workspace_id="w", bounded_exchanges=("s1", "s2"))
+    assert findings
+    assert all(f.bounded_exchanges == ("s1", "s2") for f in findings)
+
+
+def test_declaring_one_exchange_yields_no_findings_and_that_is_not_a_pass(compared):
+    """Recorded because it is what made the vacuous assertion look green.
+
+    A comparison consumes two exchanges. Declaring one leaves every comparison
+    with an undeclared input, so nothing contributes. That is correct behaviour
+    and an empty result, which no assertion over the result can witness.
+    """
+    assert measure_exchange_counts(
+        compared, workspace_id="w", bounded_exchanges=("s1",)) == []
 
 
 # --------------------------------------------------------------------------

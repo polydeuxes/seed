@@ -226,6 +226,26 @@ and measurement in it.
 correctly — it declared four exchanges that never existed in its ledger, and
 reached the intended refusal by a different route.
 
+### A test that asserted nothing
+
+**[measured]** `#2432` followed its refusal test with:
+
+```python
+findings = measure_exchange_counts(..., bounded_exchanges=("s1",))
+assert all(f.bounded_exchanges == ("s1",) for f in findings)
+```
+
+commented "the established ones alone are fine". Declaring one exchange yields
+**zero** findings — a comparison consumes two, so every comparison involving
+`s1` has its other input outside the declared Scope and is correctly rejected —
+and `all([])` is `True`.
+
+**[inference]** The assertion was green because it ran over nothing. The
+refusal it followed was real; the reassurance after it was not. Split into
+three: the refusal, an acceptance asserted on a result that exists, and the
+empty case recorded as correct behaviour that no assertion over the result can
+witness.
+
 ## Two questions this exposed, and did not answer
 
 ### An Act with no recovered producer, recording produced Standing
