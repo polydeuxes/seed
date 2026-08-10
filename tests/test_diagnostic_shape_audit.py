@@ -1,6 +1,6 @@
 import json
 
-import scripts.seed_local as seed_local
+from seed_runtime import process_entry
 from seed_runtime.diagnostic_inventory import DiagnosticInventoryEntry
 from seed_runtime.diagnostic_shape_audit import (
     DiagnosticImplementationSpec,
@@ -149,7 +149,7 @@ def test_knowledge_reachability_validates_repo_file_usage():
 
 
 def test_cli_diagnostic_shape_audit_json_emits_valid_json(capsys):
-    assert seed_local.main(["--diagnostic-shape-audit", "--json"]) == 0
+    assert process_entry.main(["--diagnostic-shape-audit", "--json"]) == 0
 
     payload = json.loads(capsys.readouterr().out)
 
@@ -255,7 +255,7 @@ def test_default_diagnostic_shape_audit_output_is_unchanged_by_filter_support():
 
 
 def test_cli_mismatches_filter_shows_only_mismatch_rows_and_filtered_count(capsys):
-    assert seed_local.main(["--diagnostic-shape-audit", "--mismatches"]) == 0
+    assert process_entry.main(["--diagnostic-shape-audit", "--mismatches"]) == 0
 
     output = capsys.readouterr().out
 
@@ -268,7 +268,9 @@ def test_cli_mismatches_filter_shows_only_mismatch_rows_and_filtered_count(capsy
 
 def test_cli_json_mismatch_filter_returns_no_rows_when_audit_is_green(capsys):
     assert (
-        seed_local.main(["--diagnostic-shape-audit", "--json", "--status", "mismatch"])
+        process_entry.main(
+            ["--diagnostic-shape-audit", "--json", "--status", "mismatch"]
+        )
         == 0
     )
 

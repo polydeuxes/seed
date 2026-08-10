@@ -6,7 +6,7 @@ requires-python = ">=3.11"
 dependencies = ["pydantic>=2,<3"]
 
 [project.scripts]
-seed = "scripts.seed_local:main"
+seed = "seed_runtime.process_entry:main"
 
 [tool.setuptools.packages.find]
 where = ["."]

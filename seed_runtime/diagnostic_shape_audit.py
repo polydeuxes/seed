@@ -19,6 +19,7 @@ FILTERABLE_AUDIT_STATUSES: tuple[AuditStatus, ...] = (
     "unknown",
 )
 AUDIT_FIELDS = (
+    "entrypoint_status",
     "supports_record",
     "supports_json",
     "record_scope",
@@ -806,10 +807,13 @@ def build_diagnostic_shape_audit(
 ) -> list[DiagnosticShapeAuditRow]:
     root = repo_root or Path(__file__).resolve().parents[1]
     cli_source = _read(root / "scripts" / "seed_local.py")
+    live_entry_source = _read(root / "seed_runtime" / "process_entry.py")
     rows: list[DiagnosticShapeAuditRow] = []
     for entry in entries:
         spec = implementation_specs.get(entry.name)
-        observed = _observe(entry, spec, root, cli_source) if spec else {}
+        observed = (
+            _observe(entry, spec, root, cli_source, live_entry_source) if spec else {}
+        )
         for field in AUDIT_FIELDS:
             declared = getattr(entry, field)
             value = observed.get(field)
@@ -901,6 +905,7 @@ def _observe(
     spec: DiagnosticImplementationSpec,
     root: Path,
     cli_source: str,
+    live_entry_source: str,
 ) -> dict[str, bool | str | None]:
     module_source = _read(root / spec.module_path)
     record_source = (
@@ -938,6 +943,15 @@ def _observe(
         elif any(marker in record_source for marker in protected):
             record_scope = "cluster_subject"
     return {
+        "entrypoint_status": (
+            "active"
+            if any(
+                f'"{flag}"' in live_entry_source
+                for flag in entry.cli_flags
+                if flag.startswith("--")
+            )
+            else "compatibility_only"
+        ),
         "supports_record": bool(
             spec.record_function and spec.record_function in cli_source
         ),
