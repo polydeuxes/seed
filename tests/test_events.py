@@ -44,4 +44,11 @@ def test_sqlite_persisted_id_prefixes_exclude_deleted_planning_artifacts():
         "fact",
         "fact_obs",
         "need",
+        # Added by `#2413`, which gave the console a durable ledger. They are
+        # here because the console persists them and a later process mints
+        # them again, not because they were found nearby.
+        "operator_presentation",
+        "operator_ingress_attempt",
+        "operator_material",
+        "session",
     )

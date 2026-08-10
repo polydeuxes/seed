@@ -14,6 +14,9 @@ These tests pin both halves together, because neither is safe alone.
 
 from __future__ import annotations
 
+import pathlib
+import subprocess
+import sys
 from io import StringIO
 
 import pytest
@@ -221,3 +224,58 @@ def test_a_caller_supplying_a_session_id_still_owns_it():
 def test_the_session_argument_remains_for_the_subcommands():
     args = seed_local.build_parser().parse_args([])
     assert args.session == seed_local.DEFAULT_SESSION
+
+
+# --------------------------------------------------------------------------
+# Separate processes, which is how the console is actually reopened.
+# --------------------------------------------------------------------------
+
+
+def _run_console_process(db: str, material: str) -> subprocess.CompletedProcess:
+    return subprocess.run(
+        [sys.executable, "scripts/seed_local.py", "--db", db],
+        input=material + "exit\n",
+        capture_output=True,
+        text=True,
+        cwd=str(pathlib.Path(__file__).resolve().parent.parent),
+    )
+
+
+def test_a_reopened_console_process_does_not_abort(db):
+    """`new_id` counts from 1 per process, so durable ids must be reserved.
+
+    Every other test here runs its lifetimes inside one process, where the
+    counters keep climbing and no identifier is ever reissued. The second real
+    `seed --db` invocation aborted on `duplicate presentation reference` until
+    the console's prefixes were reserved on open.
+    """
+    for material in ("first process\n", "second process\n", "third process\n"):
+        result = _run_console_process(db, material)
+        assert result.returncode == 0, result.stderr
+        assert "Traceback" not in result.stderr
+
+
+def test_separate_processes_receive_separate_sessions(db):
+    for material in ("first process\n", "second process\n", "third process\n"):
+        assert _run_console_process(db, material).returncode == 0
+
+    ledger = SQLiteEventLedger(db)
+    try:
+        sessions = _sessions(ledger)
+        assert len(sessions) == 3
+        held = [
+            [
+                event.payload["decoded_text"]
+                for event in preserved_ingress_occurrences(
+                    ledger, workspace_id="local", session_id=session
+                )
+            ]
+            for session in sessions
+        ]
+        assert held == [
+            ["first process\n"],
+            ["second process\n"],
+            ["third process\n"],
+        ]
+    finally:
+        ledger.close()
