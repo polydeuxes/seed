@@ -88,3 +88,28 @@ def test_the_cli_console_does_not_expose_suppression():
     rendered = parser.format_help()
     assert "process-boundary-escape" not in rendered
     assert "process_boundary_escape" not in rendered
+
+
+def test_a_console_that_declines_the_escape_does_not_announce_it():
+    """`#2436` announced a boundary it was not enforcing.
+
+    The notice was unconditional while the check was conditional, so a driven
+    console told its reader that `exit` exits while preserving `exit` as
+    material.
+    """
+    out = StringIO()
+    ledger = EventLedger()
+    seed_local.run_persistent_operator_console(
+        ledger=ledger, workspace_id="w", session_id="s",
+        input_stream=StringIO(MATERIAL), output_stream=out,
+        process_boundary_escape=False)
+    assert "`exit` exits" not in out.getvalue()
+
+
+def test_the_operator_console_still_announces_it():
+    out = StringIO()
+    ledger = EventLedger()
+    seed_local.run_persistent_operator_console(
+        ledger=ledger, workspace_id="w", session_id="s",
+        input_stream=StringIO(MATERIAL), output_stream=out)
+    assert "Seed console: `exit` exits." in out.getvalue()

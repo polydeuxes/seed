@@ -58,6 +58,20 @@ from EOF — outside the material stream, where no corpus line can collide with
 it. That is why EOF rather than a different token: every byte before it is
 material, by construction rather than by choice of word.
 
+## Correction: it announced what it was not enforcing
+
+**[measured]** The console's opening notice, `Seed console: \`exit\` exits.`,
+was written unconditionally while the escape check was conditional. A driven
+console told its reader that `exit` exits, and then preserved `exit` as
+material.
+
+**[inference]** That is false testimony from the surrounding console — small,
+and exactly the kind that survives because nobody reads a notice they expect.
+The notice is now conditional on the same argument as the check: a console that
+declines to install the escape declines to announce it. Widening the message to
+explain the suppression was rejected, because it would expose bootstrap
+machinery to an operator who never has access to it.
+
 ## What is unchanged
 
 **[measured]** The default is the interactive behaviour, and three tests pin it:
