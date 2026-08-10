@@ -35,7 +35,8 @@ believed rather than held.
   new occurrence     whole persisted row -> SHA-256 -> content_hash
   SQLite             BEFORE UPDATE and BEFORE DELETE refuse
   consuming act      Compare verifies its two inputs, refuses CORRUPTED
-  legacy row         UNVERIFIABLE, never back-filled
+  pre-digest store   REFUSED at open, never migrated or back-filled
+  durable occurrence VERIFIED or CORRUPTED, never UNVERIFIABLE
   in-memory ledger   UNVERIFIABLE — objects, not stored bytes
 ```
 
@@ -80,16 +81,25 @@ They are tests rather than prose so they cannot be quietly forgotten.
 issue it can also recompute the digest. Detecting that needs an integrity root
 outside the mutable database, which this does not have and does not claim.
 
-**`test_history_written_before_the_digest_is_unverifiable_not_verified`**
-pins the migration stance. A digest computed today proves what bytes exist
-today; it cannot prove they are the bytes originally recorded. Back-filling
-would manufacture exactly the guarantee this exists to stop assuming.
+**`test_a_pre_digest_store_is_refused_rather_than_migrated`** pins the
+migration stance. A digest computed today proves what bytes exist today; it
+cannot prove they are the bytes originally recorded, so no back-fill is
+performed — and Seed does not preserve a durable history nobody needs.
+
+An earlier form of this classified undigested rows as `UNVERIFIABLE` and
+consumed them, on backward-compatibility grounds the operator does not hold.
+That left a **supported path on which a durable occurrence carried no
+integrity**, which could later have been cited as evidence that durable
+references need none. A durable occurrence is now `VERIFIED` or `CORRUPTED`;
+`UNVERIFIABLE` survives only for the in-memory ledger, which is a genuinely
+different storage shape, and for an identifier nothing stored.
 
 **`test_an_unverifiable_input_is_recorded_rather_than_refused`** pins that
 Compare refuses only `CORRUPTED`. `UNVERIFIABLE` travels into the comparison
-payload on the input that carried it. In-memory ledgers and pre-digest history
-are both lawfully unverifiable, and refusing them would demand a guarantee
-nothing ever offered — the same shape `#2419` removed from `05.Testimony.E`.
+payload on the input that carried it. That case is now the in-memory ledger
+alone, which holds objects rather than stored bytes; demanding a durable
+guarantee of a storage shape that has none would be the shape `#2419` removed
+from `05.Testimony.E`.
 
 ## What this does not establish
 
@@ -107,6 +117,11 @@ It may remain warranted after this; that is the separate question.
 comparison is byte-identical boilerplate — boundary notes, owner wording, fixed
 dimension strings. Nothing in active law requires inscription, and that question
 is untouched here and needs no doctrinal answer about inputs.
+
+**That existing databases keep working.** They do not. Any SQLite ledger
+written before this — including `.seed-local.sqlite` and the corpus experiment
+stores — is refused at open. That is the intended consequence of not carrying a
+history nobody needs, and it is a cost, not a side effect.
 
 **That a trigger is the right mechanism.** It is *a* mechanism that refuses the
 mutation the API never performs. Content addressing, an integrity root, or a
