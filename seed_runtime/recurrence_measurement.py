@@ -288,8 +288,11 @@ def measure_exchange_counts(
         measured = measured_coordinate.get(key.declared, set())
         not_measured = declared_set - measured
         evidence = set(support[key])
-        # the occurrences that placed each exchange in the third result
-        for exchange in not_measured | (measured - where):
+        # The occurrences that place an exchange in the third result travel.
+        # Exact-coordinate Measurement Evidence already places an exchange in
+        # measured_without_distinction; unrelated measurements do not support
+        # that second classification.
+        for exchange in not_measured:
             evidence.update(presence_evidence.get(exchange, set()))
         findings.append(
             MeasuredCountFinding(

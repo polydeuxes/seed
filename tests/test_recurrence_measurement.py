@@ -257,6 +257,35 @@ def test_measuring_the_coordinate_without_the_distinction_is_its_own_result(comp
     assert finding.measured_without_distinction == ("s4",)
 
 
+def test_only_relevant_evidence_places_an_exchange_in_the_second_result(compared):
+    """`#2431`'s unrelated-presence warrant belongs to the third result.
+
+    Exact-coordinate Measurement and Compare/input Evidence establish
+    ``measured_without_distinction``. A later measurement of another coordinate
+    in the same exchange establishes nothing additional about that result.
+    """
+    exact_coordinate = next(
+        event
+        for event in compared.list("w")
+        if event.kind == MEASUREMENT_RECORDED_KIND and event.session_id == "s4"
+    )
+    occurrences = preserved_ingress_occurrences(
+        compared, workspace_id="w", session_id="s4"
+    )
+    unrelated = record_measurement_finding(
+        compared,
+        workspace_id="w",
+        session_id="s4",
+        finding=measure_after(occurrences, "nothing", counting_scope=SCOPE),
+    )
+
+    finding = _by_right(compared)["word"]
+
+    assert finding.measured_without_distinction == ("s4",)
+    assert exact_coordinate.id in finding.consumed_event_ids
+    assert unrelated.id not in finding.consumed_event_ids
+
+
 def test_a_count_of_one_is_a_finding_and_is_not_recurrence(compared):
     """`01.External:28` lists count and recurrence as separate findings.
 
