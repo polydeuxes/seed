@@ -148,28 +148,32 @@ def test_a_persisted_ledger_advances_identically(tmp_path):
 def test_the_console_never_replays_the_session(monkeypatch):
     """One projection from nothing recorded, for C0. No replay after that."""
     calls = []
-    original = seed_local.project_operator_session_standing
+    from seed_runtime import operator_console
+
+    original = operator_console.project_operator_session_standing
 
     def record(ledger, **kwargs):
         calls.append(len(ledger.list(kwargs["workspace_id"])))
         return original(ledger, **kwargs)
 
-    monkeypatch.setattr(seed_local, "project_operator_session_standing", record)
+    monkeypatch.setattr(operator_console, "project_operator_session_standing", record)
     _console("alpha\nbeta\ngamma\ndelta\nexit\n")
     assert calls == [0]
 
 
 def test_each_advance_consumes_only_what_an_act_just_recorded(monkeypatch):
     """Guards against a ledger scan reappearing on the continuation path."""
+    from seed_runtime import operator_console
+
     sizes = []
-    original = seed_local.advance_operator_session_standing
+    original = operator_console.advance_operator_session_standing
 
     def record(events, **kwargs):
         events = list(events)
         sizes.append(len(events))
         return original(events, **kwargs)
 
-    monkeypatch.setattr(seed_local, "advance_operator_session_standing", record)
+    monkeypatch.setattr(operator_console, "advance_operator_session_standing", record)
     _console("alpha\nbeta\ngamma\ndelta\nexit\n")
     assert set(sizes) <= {2, 3}, sizes
 

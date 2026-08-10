@@ -7,6 +7,7 @@ import sys
 import pytest
 
 from seed_runtime.events import EventLedger, SQLiteEventLedger
+from seed_runtime import operator_console
 from seed_runtime.operator_ingress import (
     run_operator_ingress_attempt,
 )
@@ -579,7 +580,7 @@ def test_console_passes_its_capture_unchanged_to_the_bounded_attempt(monkeypatch
         return {"event_ids": [], "current_standing": {"preserved_ingress": None}}
 
     monkeypatch.setattr(
-        seed_local,
+        operator_console,
         "run_operator_ingress_attempt",
         bounded_attempt,
     )
