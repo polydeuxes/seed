@@ -162,12 +162,17 @@ def preserved_ingress_occurrences(
     """Every occurrence this session preserved, in append order.
 
     The material measured is what Seed recorded, not what a file contains.
+
+    The session is read as a session. Reading the workspace and discarding the
+    rest returned the same occurrences and cost the whole workspace: `#2414`
+    measured 757.8ms against 46.4ms on sixteen co-resident bodies, a factor
+    equal to how many of them share the ledger.
     """
 
     return [
         event
-        for event in ledger.list(workspace_id)
-        if event.session_id == session_id and event.kind == INGRESS_OCCURRED_KIND
+        for event in ledger.list_session(workspace_id, session_id)
+        if event.kind == INGRESS_OCCURRED_KIND
     ]
 
 

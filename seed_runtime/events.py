@@ -185,6 +185,13 @@ class SQLiteEventLedger(EventLedger):
                 correlation_id TEXT
             )
             """)
+        # The boundary sessions are actually selected by. Without it the
+        # session read returns one session after scanning every row, which is
+        # bounded in what it answers and not in what it reads.
+        self._connection.execute("""
+            CREATE INDEX IF NOT EXISTS idx_events_workspace_session
+            ON events(workspace_id, session_id)
+            """)
         self._connection.commit()
         max_event_suffix = self._max_event_id_suffix()
         self._next_event_number = max_event_suffix + 1
