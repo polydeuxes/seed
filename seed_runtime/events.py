@@ -7,7 +7,7 @@ from datetime import datetime
 import hashlib
 import json
 import sqlite3
-from typing import Any, Iterable
+from typing import Any, Iterable, Iterator
 
 from seed_runtime.execution_status import (
     ExecutionStatusConsumer,
@@ -166,6 +166,21 @@ class EventLedger:
             if event.session_id == session_id
         ]
 
+    def has_session(self, workspace_id: str, session_id: str) -> bool:
+        """Whether at least one occurrence establishes this session boundary."""
+        return any(
+            event.session_id == session_id
+            for event in self._by_workspace.get(workspace_id, ())
+        )
+
+    def iter_session_kind(
+        self, workspace_id: str, session_id: str, kind: str
+    ) -> Iterator[Event]:
+        """Yield one kind from one session without collecting a result list."""
+        for event in self._by_workspace.get(workspace_id, ()):
+            if event.session_id == session_id and event.kind == kind:
+                yield event
+
     def extend(self, events: Iterable[Event]) -> None:
         """Append externally constructed events while preserving order and IDs."""
         self.append_many(events)
@@ -292,6 +307,10 @@ class SQLiteEventLedger(EventLedger):
             CREATE INDEX IF NOT EXISTS idx_events_workspace_session
             ON events(workspace_id, session_id)
             """)
+        self._connection.execute("""
+            CREATE INDEX IF NOT EXISTS idx_events_workspace_session_kind
+            ON events(workspace_id, session_id, kind)
+            """)
         self._connection.commit()
         max_event_suffix = self._max_event_id_suffix()
         self._next_event_number = max_event_suffix + 1
@@ -396,6 +415,24 @@ class SQLiteEventLedger(EventLedger):
             (workspace_id, session_id),
         ).fetchall()
         return [self._row_to_event(row) for row in rows]
+
+    def has_session(self, workspace_id: str, session_id: str) -> bool:
+        row = self._connection.execute(
+            "SELECT 1 FROM events WHERE workspace_id = ? AND session_id = ? LIMIT 1",
+            (workspace_id, session_id),
+        ).fetchone()
+        return row is not None
+
+    def iter_session_kind(
+        self, workspace_id: str, session_id: str, kind: str
+    ) -> Iterator[Event]:
+        rows = self._connection.execute(
+            "SELECT * FROM events WHERE workspace_id = ? AND session_id = ? "
+            "AND kind = ? ORDER BY rowid",
+            (workspace_id, session_id, kind),
+        )
+        for row in rows:
+            yield self._row_to_event(row)
 
     def integrity_of(self, event_id: str) -> str:
         """Recompute the stored row's digest and compare it with the recorded one.
