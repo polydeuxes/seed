@@ -333,7 +333,36 @@ def record_measured_count(
     session_id: str,
     finding: MeasuredCountFinding,
 ) -> Event:
-    """Preserve one count finding so a later responsible act may consume it."""
+    """Preserve one count finding so a later responsible act may consume it.
+
+    The record carries a **Producer** distinct from its Responsibility.
+    `#2423` recovered that declared measurement has no production *owner* in
+    active law, and `#2431` then wrote the Act into the Responsibility
+    coordinate, which asserts the owner that recovery says is absent. But owner
+    and Producer are different coordinates: `01.External:31` requires a
+    candidate to preserve "each applicable producer, source-role,
+    formation-occurrence, scope, authority, and provenance dimension", listing
+    producer beside provenance rather than as it.
+
+    So the partial shape is ordinary rather than contradictory:
+
+    ```text
+      Producer          this Seed
+      Producer Evidence the exact recorded producing occurrence
+      Act               declared measurement
+      result            count finding
+      Standing          measured
+      Responsibility    Unknown
+    ```
+
+    `06.Constructors:13` is what licenses the Producer claim and what limits it:
+    a live producer return is not durable producer-to-result Evidence *unless
+    recorded or represented*. The Producer therefore rests on the recorded
+    occurrence, and the occurrence is Evidence **for** the Producer rather than
+    being the Producer — `01.Kinds:73` keeps represented provenance and verified
+    producer occurrence apart, and collapsing participant into occurrence would
+    be the same compression in different nouns.
+    """
 
     declared = dict(finding.distinction.declared)
     payload = {
@@ -364,6 +393,12 @@ def record_measured_count(
             "scope_locality": f"workspace:{workspace_id};session:{session_id}",
             "occurrence_preservation": "count finding durably recorded",
         },
+        "producer": "this Seed",
+        "producer_evidence": (
+            "the recorded producing occurrence this payload is appended as; a "
+            "live producer return is not durable producer-to-result evidence "
+            "unless recorded (06.Constructors:13)"
+        ),
         "measurement_subject": (
             "recorded comparison occurrences and recorded measurement occurrences"
         ),

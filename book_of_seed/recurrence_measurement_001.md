@@ -248,7 +248,50 @@ witness.
 
 ## Two questions this exposed, and did not answer
 
-### An Act with no recovered producer, recording produced Standing
+### Producer, recovered as its own coordinate
+
+**[measured]** `#2423` established `production owner: none found` for declared
+measurement — an **owner**, a Responsibility. That was then reported, here and
+in three other places, as though declared measurement had no **Producer**.
+
+**[measured]** They are different coordinates. `01.External:31` requires a
+candidate to preserve "each applicable **producer**, source-role,
+formation-occurrence, scope, authority, and provenance dimension", listing
+producer beside provenance rather than as it. `01.Kinds:73` keeps represented
+provenance and verified producer occurrence apart. `02.Acts:10` and `:25` treat
+producer occurrence as its own subject.
+
+**[inference]** Letting *owner* swallow *Producer* is the compression this
+project punishes elsewhere. The partial shape is ordinary:
+
+```text
+  Producer          this Seed
+  Producer Evidence the exact recorded producing occurrence
+  Act               declared measurement
+  result            count finding
+  Standing          measured
+  Responsibility    Unknown
+```
+
+**[measured]** `06.Constructors:13` both licenses and limits it: a live producer
+return is not durable producer-to-result Evidence *unless recorded or
+represented*. The findings are recorded, with digests, so the condition is met —
+and the Producer rests on the recorded occurrence rather than on a function
+having run.
+
+**[inference]** The occurrence is Evidence **for** the Producer, not the
+Producer. Recording `producer: evt_X` would collapse a participant coordinate
+into an occurrence coordinate — the same compression in different nouns. Four
+tests pin the distinction, including that the producer is neither the event id
+nor the provenance string.
+
+**[inference]** An earlier objection of this report's author — that `this Seed`
+is constant and therefore vacuous — does not survive. A coordinate is not
+meaningless because one bounded system currently has one value; it distinguishes
+the moment one Seed egresses to another, and that is the topology being built
+toward.
+
+### The Responsibility that is still Unknown
 
 **[measured]** The same event now records:
 

@@ -461,3 +461,78 @@ def test_the_declared_exchanges_bound_what_is_read(compared):
     for exchange, events in by_exchange.items():
         assert events
         assert {e.session_id for e in events} == {exchange}
+
+
+# --------------------------------------------------------------------------
+# Producer is not the Responsibility, and not the occurrence either.
+# --------------------------------------------------------------------------
+
+
+def test_the_record_names_a_producer(compared):
+    """`#2423` found no production *owner*; owner is not Producer.
+
+    `01.External:31` lists producer beside provenance as its own dimension, so
+    the absence of a recovered owner does not remove the Producer.
+    """
+    event = record_measured_count(
+        compared, workspace_id="w", session_id="s1",
+        finding=_by_right(compared)["word"])
+    assert event.payload["producer"] == "this Seed"
+    assert event.payload["producer_evidence"]
+    assert "06.Constructors:13" in event.payload["producer_evidence"]
+
+
+def test_the_producer_is_not_the_producing_occurrence(compared):
+    """Collapsing participant into occurrence is the same compression."""
+    event = record_measured_count(
+        compared, workspace_id="w", session_id="s1",
+        finding=_by_right(compared)["word"])
+    assert event.payload["producer"] != event.id
+    assert event.id not in event.payload["producer"]
+
+
+def test_the_producer_is_not_the_provenance(compared):
+    """`01.Kinds:73`: represented provenance != verified producer occurrence."""
+    event = record_measured_count(
+        compared, workspace_id="w", session_id="s1",
+        finding=_by_right(compared)["word"])
+    assert event.payload["producer"] != event.payload["dimensions"][
+        "source_provenance"]
+
+
+def test_the_responsibility_stays_unknown_beside_a_known_producer(compared):
+    """The partial shape is ordinary, not contradictory."""
+    event = record_measured_count(
+        compared, workspace_id="w", session_id="s1",
+        finding=_by_right(compared)["word"])
+    assert event.payload["producer"] == "this Seed"
+    assert event.payload["dimensions"]["responsibility"].startswith("unrecovered")
+    assert event.payload["dimensions"]["standing"] == "measured"
+
+
+# --------------------------------------------------------------------------
+# D consumes C without defeating C.
+# --------------------------------------------------------------------------
+
+
+def test_counting_recurrence_does_not_strengthen_any_comparison(compared):
+    """The invariant. `recurs in 15` must never become `15 sources agree`.
+
+    Every comparison this count consumed still records `Unknown`, and the
+    count's own record refuses corroboration in its own words.
+    """
+    finding = _by_right(compared)["word"]
+    consumed = [compared.get(i) for i in finding.consumed_event_ids]
+    comparisons = [
+        e for e in consumed
+        if e.kind == "operator.measurement.comparison_recorded"
+    ]
+    assert comparisons
+    for comparison in comparisons:
+        assert comparison.payload["bounded_relation"] == "Unknown"
+
+    event = record_measured_count(
+        compared, workspace_id="w", session_id="s1", finding=finding)
+    refused = " ".join(event.payload["forbidden_inferences"])
+    assert "not independent corroboration" in refused
+    assert "establishes no relation between the" in refused
