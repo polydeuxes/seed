@@ -108,6 +108,21 @@ BANNED: tuple[tuple[str, str], ...] = (
 #   examines      NOT banned.  `03.Prerequisite:36,104,122` have applicability
 #                 as the subject doing the examining.  Ordinary prose whose
 #                 subject is an established coordinate is not the retired noun.
+#   artifact      NOT banned here, and it is not clean either.
+#                 `artifact_substitution_test_001` asked what distinction would
+#                 be lost if the word left Book proper and found **none**: its
+#                 own definition is a union of terms that already carry the
+#                 content -- a preserved representation OR record carrying
+#                 another responsibility's assertion.  So it names nothing of
+#                 its own, which makes casual use worse than for an ordinary
+#                 term rather than better.
+#                 It stays out of the banned list because it appears 107 times
+#                 across the chapters and `01.Kinds` is titled for it, so
+#                 excision is a chapter restructuring rather than a word swap
+#                 -- more work than it is worth against a gate already carrying
+#                 290 violations.  Recorded here so the deferral is a decision
+#                 rather than an oversight, and so the next reader does not
+#                 re-derive the substitution test.
 #   assertion     UNRESOLVED, deliberately not banned here.  It fails the test
 #                 above -- `#2382` established that no clause names what
 #                 produces `the relation assertion` -- but `01.Kinds:28`
