@@ -56,6 +56,24 @@ def test_event_secret_rejection_accepts_large_scalar_lists():
     assert event.payload == payload
 
 
+def test_durable_large_scalar_lists_do_not_repeat_secret_traversal(
+    tmp_path, monkeypatch
+):
+    ledger = SQLiteEventLedger(str(tmp_path / "seed.db"))
+    payload = {"consumed_event_ids": [f"evt_{index}" for index in range(10_000)]}
+    event = ledger.append("k", "w", payload)
+
+    def unexpected_second_traversal(*args, **kwargs):
+        raise AssertionError("durable payload was screened during JSON decoding")
+
+    monkeypatch.setattr(
+        "seed_runtime.models.reject_secret_fields", unexpected_second_traversal
+    )
+
+    assert ledger.get(event.id).payload == payload
+    ledger.close()
+
+
 def test_sqlite_persisted_id_prefixes_exclude_deleted_planning_artifacts():
     assert "plan" not in SQLiteEventLedger._PERSISTED_ID_PREFIXES
     assert "handoff" not in SQLiteEventLedger._PERSISTED_ID_PREFIXES
