@@ -31,6 +31,10 @@ VERIFIED = "verified"
 UNVERIFIABLE = "unverifiable"
 CORRUPTED = "corrupted"
 
+
+class LedgerIntegrityError(Exception):
+    """A durable store cannot supply the integrity its occurrences require."""
+
 # Every persisted field, because an occurrence moved between sessions is as
 # altered as one whose payload changed, and `session_id` is now the boundary
 # keeping bounded exchanges apart.
@@ -230,11 +234,24 @@ class SQLiteEventLedger(EventLedger):
             for row in self._connection.execute("PRAGMA table_info(events)")
         }
         if "content_hash" not in columns:
-            # Nullable, and never back-filled. A digest computed today proves
-            # what bytes exist today; it cannot prove they are the bytes
-            # originally recorded. Rows written before this column stay
-            # UNVERIFIABLE and say so.
+            if self._connection.execute("SELECT 1 FROM events LIMIT 1").fetchone():
+                raise LedgerIntegrityError(
+                    f"{database_path} holds occurrences recorded before content "
+                    "digests and cannot supply one for them. Seed does not "
+                    "migrate pre-integrity ledgers, and a digest computed now "
+                    "would certify today's bytes rather than the recorded ones"
+                )
             self._connection.execute("ALTER TABLE events ADD COLUMN content_hash TEXT")
+        else:
+            undigested = self._connection.execute(
+                "SELECT COUNT(*) FROM events WHERE content_hash IS NULL"
+            ).fetchone()[0]
+            if undigested:
+                raise LedgerIntegrityError(
+                    f"{database_path} holds {undigested} occurrences without a "
+                    "digest. A durable occurrence carries one or the store is "
+                    "not supported; no back-fill is performed"
+                )
         # Refuse the mutation the API never performs, so that code outside the
         # API cannot perform it either. A `DROP TRIGGER` removes this; that is
         # what keeps the claim at "refused by default" rather than "immutable".
@@ -362,11 +379,18 @@ class SQLiteEventLedger(EventLedger):
             "SELECT * FROM events WHERE id = ?", (event_id,)
         ).fetchone()
         if row is None:
+            # Nothing is stored, so there is nothing to have diverged. This is
+            # the absence of an occurrence, not a durable one lacking integrity.
             return UNVERIFIABLE
-        recorded = row["content_hash"]
-        if recorded is None:
-            return UNVERIFIABLE
-        return VERIFIED if _content_digest(dict(row)) == recorded else CORRUPTED
+        # A durable occurrence always carries a digest: the store is refused
+        # at open otherwise. So this answers VERIFIED or CORRUPTED, never
+        # UNVERIFIABLE. Leaving a supported unverifiable path here would let it
+        # be cited later as evidence that durable references need no integrity.
+        return (
+            VERIFIED
+            if _content_digest(dict(row)) == row["content_hash"]
+            else CORRUPTED
+        )
 
     def extend(self, events: Iterable[Event]) -> None:
         self.append_many(events)

@@ -24,6 +24,7 @@ from seed_runtime.events import (
     UNVERIFIABLE,
     VERIFIED,
     EventLedger,
+    LedgerIntegrityError,
     SQLiteEventLedger,
 )
 
@@ -125,8 +126,9 @@ def test_moving_an_occurrence_between_sessions_is_detected(ledger, path):
 
 @pytest.mark.parametrize(
     "column,value",
-    [("kind", "other"), ("workspace_id", "elsewhere"), ("actor", "someone"),
-     ("timestamp", "1999-01-01T00:00:00"), ("causation_id", "evt_x")],
+    [("id", "evt_999999"), ("kind", "other"), ("workspace_id", "elsewhere"),
+     ("actor", "someone"), ("timestamp", "1999-01-01T00:00:00"),
+     ("causation_id", "evt_x"), ("correlation_id", "evt_y")],
 )
 def test_every_persisted_field_is_covered(ledger, path, column, value):
     event = ledger.append("k", "w", {"a": 1}, session_id="s")
@@ -136,7 +138,9 @@ def test_every_persisted_field_is_covered(ledger, path, column, value):
     con.commit()
     con.close()
 
-    assert SQLiteEventLedger(path).integrity_of(event.id) == CORRUPTED
+    reopened = SQLiteEventLedger(path)
+    # An altered `id` is looked up under the value now stored.
+    assert reopened.integrity_of(value if column == "id" else event.id) == CORRUPTED
 
 
 # --------------------------------------------------------------------------
@@ -167,33 +171,67 @@ def test_rewriting_the_row_and_its_digest_together_is_not_detected(ledger, path)
     assert SQLiteEventLedger(path).get(event.id).payload == {"a": 999}
 
 
-def test_history_written_before_the_digest_is_unverifiable_not_verified(path):
-    """No back-fill. A digest computed today cannot certify yesterday's bytes."""
+def _legacy_store(path, rows=1):
     con = sqlite3.connect(path)
     con.execute(
         "CREATE TABLE events (id TEXT PRIMARY KEY, kind TEXT NOT NULL, "
         "workspace_id TEXT NOT NULL, actor TEXT NOT NULL, timestamp TEXT NOT NULL, "
         "payload TEXT NOT NULL, session_id TEXT, causation_id TEXT, correlation_id TEXT)"
     )
-    con.execute(
-        "INSERT INTO events VALUES ('evt_000001','k','w','system',"
-        "'2026-01-01T00:00:00','{}','s',NULL,NULL)"
-    )
+    for i in range(rows):
+        con.execute(
+            "INSERT INTO events VALUES (?,'k','w','system',"
+            "'2026-01-01T00:00:00','{}','s',NULL,NULL)", (f"evt_{i:06d}",))
     con.commit()
     con.close()
 
+
+def test_a_pre_digest_store_is_refused_rather_than_migrated(path):
+    """Seed does not preserve a durable history nobody needs.
+
+    An earlier form of this classified undigested rows as UNVERIFIABLE and
+    consumed them. That left a supported path on which a durable occurrence
+    carried no integrity, and it could later have been cited as evidence that
+    durable references need none.
+    """
+    _legacy_store(path)
+    with pytest.raises(LedgerIntegrityError, match="recorded before content digests"):
+        SQLiteEventLedger(path)
+
+
+def test_a_store_with_undigested_rows_is_refused(path):
+    """The column exists but some occurrence lacks a digest."""
+    led = SQLiteEventLedger(path)
+    event = led.append("k", "w", {"a": 1})
+    led.close()
+    con = _raw(path)
+    con.execute("DROP TRIGGER events_refuse_update")
+    con.execute("UPDATE events SET content_hash = NULL WHERE id = ?", (event.id,))
+    con.commit()
+    con.close()
+
+    with pytest.raises(LedgerIntegrityError, match="without a digest"):
+        SQLiteEventLedger(path)
+
+
+def test_an_empty_pre_digest_store_gains_the_column(path):
+    """A schema without occurrences has no history to protect or refuse."""
+    _legacy_store(path, rows=0)
     led = SQLiteEventLedger(path)
     try:
-        assert led.integrity_of("evt_000001") == UNVERIFIABLE
-        assert led.get("evt_000001") is not None
-        # and a new occurrence in the same ledger is verifiable
         assert led.integrity_of(led.append("k", "w", {"a": 1}).id) == VERIFIED
     finally:
         led.close()
 
 
-def test_an_in_memory_ledger_reports_unverifiable(ledger=None):
-    """Objects, not stored bytes. Nothing was protected, so nothing is claimed."""
+def test_no_durable_occurrence_is_ever_unverifiable(ledger):
+    """The refusal at open is what makes this true."""
+    ids = [ledger.append("k", "w", {"a": i}).id for i in range(5)]
+    assert {ledger.integrity_of(i) for i in ids} == {VERIFIED}
+
+
+def test_an_in_memory_ledger_reports_unverifiable():
+    """Objects, not stored bytes — the one storage shape that cannot verify."""
     led = EventLedger()
     assert led.integrity_of(led.append("k", "w", {"a": 1}).id) == UNVERIFIABLE
 
