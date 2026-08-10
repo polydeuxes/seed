@@ -186,27 +186,39 @@ def _legacy_store(path, rows=1):
     con.close()
 
 
-def test_a_pre_digest_store_is_refused_rather_than_migrated(path):
+@pytest.mark.parametrize("rows", [0, 1, 5])
+def test_a_pre_digest_schema_is_refused_whether_or_not_it_holds_rows(path, rows):
     """Seed does not preserve a durable history nobody needs.
 
-    An earlier form of this classified undigested rows as UNVERIFIABLE and
-    consumed them. That left a supported path on which a durable occurrence
-    carried no integrity, and it could later have been cited as evidence that
-    durable references need none.
+    An earlier form classified undigested rows as UNVERIFIABLE and consumed
+    them, leaving a supported path on which a durable occurrence carried no
+    integrity. A later form refused populated pre-digest stores but migrated
+    empty ones, which meant a new database was created by running a
+    compatibility migration over the very shape being rejected.
     """
-    _legacy_store(path)
-    with pytest.raises(LedgerIntegrityError, match="recorded before content digests"):
+    _legacy_store(path, rows=rows)
+    with pytest.raises(LedgerIntegrityError, match="without content_hash"):
         SQLiteEventLedger(path)
 
 
 def test_a_store_with_undigested_rows_is_refused(path):
-    """The column exists but some occurrence lacks a digest."""
-    led = SQLiteEventLedger(path)
-    event = led.append("k", "w", {"a": 1})
-    led.close()
-    con = _raw(path)
-    con.execute("DROP TRIGGER events_refuse_update")
-    con.execute("UPDATE events SET content_hash = NULL WHERE id = ?", (event.id,))
+    """A nullable-digest schema, which a store born current cannot be.
+
+    `NOT NULL` makes an absent digest unrepresentable in a table Seed created,
+    so this builds the only shape that can still hold one: a column declared
+    nullable, as an ALTER-created schema would have been.
+    """
+    con = sqlite3.connect(path)
+    con.execute(
+        "CREATE TABLE events (id TEXT PRIMARY KEY, kind TEXT NOT NULL, "
+        "workspace_id TEXT NOT NULL, actor TEXT NOT NULL, timestamp TEXT NOT NULL, "
+        "payload TEXT NOT NULL, session_id TEXT, causation_id TEXT, "
+        "correlation_id TEXT, content_hash TEXT)"
+    )
+    con.execute(
+        "INSERT INTO events VALUES ('evt_000001','k','w','system',"
+        "'2026-01-01T00:00:00','{}','s',NULL,NULL,NULL)"
+    )
     con.commit()
     con.close()
 
@@ -214,11 +226,28 @@ def test_a_store_with_undigested_rows_is_refused(path):
         SQLiteEventLedger(path)
 
 
-def test_an_empty_pre_digest_store_gains_the_column(path):
-    """A schema without occurrences has no history to protect or refuse."""
-    _legacy_store(path, rows=0)
+def test_a_current_store_cannot_hold_an_undigested_occurrence(path):
+    """The schema refuses it before any check has to."""
     led = SQLiteEventLedger(path)
     try:
+        event = led.append("k", "w", {"a": 1})
+        con = _raw(path)
+        con.execute("DROP TRIGGER events_refuse_update")
+        with pytest.raises(sqlite3.IntegrityError, match="NOT NULL"):
+            con.execute("UPDATE events SET content_hash = NULL WHERE id = ?",
+                        (event.id,))
+        con.close()
+    finally:
+        led.close()
+
+
+def test_a_new_store_is_born_with_the_integrity_column(path):
+    """No ALTER path exists, so opening at all means the schema is current."""
+    led = SQLiteEventLedger(path)
+    try:
+        info = {row["name"]: row["notnull"]
+                for row in led._connection.execute("PRAGMA table_info(events)")}
+        assert info.get("content_hash") == 1
         assert led.integrity_of(led.append("k", "w", {"a": 1}).id) == VERIFIED
     finally:
         led.close()
