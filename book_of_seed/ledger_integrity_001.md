@@ -35,7 +35,7 @@ believed rather than held.
   new occurrence     whole persisted row -> SHA-256 -> content_hash
   SQLite             BEFORE UPDATE and BEFORE DELETE refuse
   consuming act      Compare verifies its two inputs, refuses CORRUPTED
-  pre-digest store   REFUSED at open, never migrated or back-filled
+  pre-digest schema  REFUSED at open, rows or not; no ALTER path exists
   durable occurrence VERIFIED or CORRUPTED, never UNVERIFIABLE
   in-memory ledger   UNVERIFIABLE — objects, not stored bytes
 ```
@@ -86,13 +86,24 @@ migration stance. A digest computed today proves what bytes exist today; it
 cannot prove they are the bytes originally recorded, so no back-fill is
 performed — and Seed does not preserve a durable history nobody needs.
 
-An earlier form of this classified undigested rows as `UNVERIFIABLE` and
-consumed them, on backward-compatibility grounds the operator does not hold.
-That left a **supported path on which a durable occurrence carried no
+This took two passes. The first classified undigested rows as `UNVERIFIABLE`
+and consumed them, on backward-compatibility grounds the operator does not
+hold — leaving a **supported path on which a durable occurrence carried no
 integrity**, which could later have been cited as evidence that durable
-references need none. A durable occurrence is now `VERIFIED` or `CORRUPTED`;
-`UNVERIFIABLE` survives only for the in-memory ledger, which is a genuinely
-different storage shape, and for an identifier nothing stored.
+references need none. The second refused populated pre-digest stores but
+migrated empty ones by `ALTER`, which meant **a new database was created by
+running a compatibility migration over the shape being rejected**. The table is
+now born with `content_hash TEXT NOT NULL` and there is no `ALTER` path at all.
+
+The invariant that buys:
+
+```text
+  if the ledger opens, the store was born with the current integrity schema
+```
+
+rather than "either born current, or an empty old schema we upgraded". A
+durable occurrence is `VERIFIED` or `CORRUPTED`; `UNVERIFIABLE` survives only
+for the in-memory ledger and for an identifier nothing stored.
 
 **`test_an_unverifiable_input_is_recorded_rather_than_refused`** pins that
 Compare refuses only `CORRUPTED`. `UNVERIFIABLE` travels into the comparison
@@ -120,8 +131,14 @@ is untouched here and needs no doctrinal answer about inputs.
 
 **That existing databases keep working.** They do not. Any SQLite ledger
 written before this — including `.seed-local.sqlite` and the corpus experiment
-stores — is refused at open. That is the intended consequence of not carrying a
-history nobody needs, and it is a cost, not a side effect.
+stores — is refused at open, whether or not it holds rows. That is the intended
+consequence of not carrying a history nobody needs, and it is a cost, not a
+side effect.
+
+**That `VERIFIED` means durable.** It means the stored occurrence still matches
+its recorded digest. A ledger on tmpfs verifies identically and does not survive
+a reboot, so integrity and persistence are separate properties that this
+arrangement supplies separately.
 
 **That a trigger is the right mechanism.** It is *a* mechanism that refuses the
 mutation the API never performs. Content addressing, an integrity root, or a

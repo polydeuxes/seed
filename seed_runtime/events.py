@@ -226,32 +226,33 @@ class SQLiteEventLedger(EventLedger):
                 payload TEXT NOT NULL,
                 session_id TEXT,
                 causation_id TEXT,
-                correlation_id TEXT
+                correlation_id TEXT,
+                content_hash TEXT NOT NULL
             )
             """)
+        # A store either was born with integrity or is not this store. There is
+        # no ALTER path: creating a new database by running a compatibility
+        # migration over the shape we no longer support is backwards, and an
+        # empty pre-digest schema is still a schema Seed does not keep.
         columns = {
             row["name"]
             for row in self._connection.execute("PRAGMA table_info(events)")
         }
         if "content_hash" not in columns:
-            if self._connection.execute("SELECT 1 FROM events LIMIT 1").fetchone():
-                raise LedgerIntegrityError(
-                    f"{database_path} holds occurrences recorded before content "
-                    "digests and cannot supply one for them. Seed does not "
-                    "migrate pre-integrity ledgers, and a digest computed now "
-                    "would certify today's bytes rather than the recorded ones"
-                )
-            self._connection.execute("ALTER TABLE events ADD COLUMN content_hash TEXT")
-        else:
-            undigested = self._connection.execute(
-                "SELECT COUNT(*) FROM events WHERE content_hash IS NULL"
-            ).fetchone()[0]
-            if undigested:
-                raise LedgerIntegrityError(
-                    f"{database_path} holds {undigested} occurrences without a "
-                    "digest. A durable occurrence carries one or the store is "
-                    "not supported; no back-fill is performed"
-                )
+            raise LedgerIntegrityError(
+                f"{database_path} has an events table without content_hash. "
+                "Seed does not migrate pre-integrity ledgers; a store either "
+                "carries digests from birth or is not supported"
+            )
+        undigested = self._connection.execute(
+            "SELECT COUNT(*) FROM events WHERE content_hash IS NULL"
+        ).fetchone()[0]
+        if undigested:
+            raise LedgerIntegrityError(
+                f"{database_path} holds {undigested} occurrences without a "
+                "digest. A durable occurrence carries one or the store is "
+                "not supported; no back-fill is performed"
+            )
         # Refuse the mutation the API never performs, so that code outside the
         # API cannot perform it either. A `DROP TRIGGER` removes this; that is
         # what keeps the claim at "refused by default" rather than "immutable".
