@@ -31,7 +31,6 @@ from seed_runtime.knowledge.relationship_observation import (
     extract_python_definition_relationship_facts,
     extract_python_import_relationship_facts,
 )
-from seed_runtime.models import Actor
 from seed_runtime.local_packages import (
     package_records_to_observations,
     parse_dpkg_status,
@@ -3277,7 +3276,7 @@ class ObservationCollectionService:
         source: ObservationSource,
         workspace_id: str = "default",
         *,
-        actor: Actor = "system",
+        actor: str = "system",
         session_id: str | None = None,
         causation_id: str | None = None,
         correlation_id: str | None = None,

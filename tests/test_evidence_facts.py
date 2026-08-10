@@ -2,7 +2,7 @@ from seed_runtime.base import SeedModel
 from seed_runtime.evidence import Evidence
 from seed_runtime.events import EventLedger
 from seed_runtime.facts import Fact
-from seed_runtime.models import utc_now
+from seed_runtime.event import utc_now
 from seed_runtime.serialization import to_plain
 from seed_runtime.state import StateProjector
 

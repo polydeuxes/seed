@@ -29,7 +29,7 @@ from dataclasses import dataclass
 from typing import Any, Iterable
 
 from seed_runtime.events import CORRUPTED, EventLedger
-from seed_runtime.models import Event
+from seed_runtime.event import Event
 from seed_runtime.preserved_material_measurement import (
     MEASUREMENT_RECORDED_KIND,
     premise_chain,

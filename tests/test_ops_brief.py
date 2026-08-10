@@ -4,7 +4,7 @@ from datetime import datetime, timezone
 import scripts.seed_local as seed_local
 from seed_runtime.audit_snapshots import create_audit_snapshot
 from seed_runtime.facts import Fact
-from seed_runtime.models import Event
+from seed_runtime.event import Event
 from seed_runtime.ops_brief import build_ops_brief, format_ops_brief
 from seed_runtime.events import SQLiteEventLedger
 from seed_runtime.state import State

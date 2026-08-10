@@ -7,7 +7,7 @@ import hashlib
 import json
 
 from seed_runtime.events import EventLedger
-from seed_runtime.models import Event
+from seed_runtime.event import Event
 
 
 class OperatorIngressAddressableMaterialError(ValueError):

@@ -6,7 +6,7 @@ from datetime import datetime, timezone
 from seed_runtime.events import EventLedger, SQLiteEventLedger
 from seed_runtime.execution_status import RecordingExecutionStatusConsumer
 from seed_runtime.facts import Fact
-from seed_runtime.models import Event
+from seed_runtime.event import Event
 from seed_runtime.projection_store import (
     InMemoryProjectionStore,
     ProjectionSnapshot,

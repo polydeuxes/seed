@@ -48,7 +48,7 @@ from dataclasses import dataclass
 from typing import Callable, Iterable, Sequence
 
 from seed_runtime.events import EventLedger
-from seed_runtime.models import Event
+from seed_runtime.event import Event
 from seed_runtime.preserved_material_measurement import (
     MEASUREMENT_RECORDED_KIND,
     DeclaredMeasurement,

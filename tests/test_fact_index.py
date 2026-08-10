@@ -6,7 +6,7 @@ from seed_runtime.events import EventLedger, SQLiteEventLedger
 from seed_runtime.execution_status import RecordingExecutionStatusConsumer
 from seed_runtime.fact_index import build_fact_index, load_or_build_fact_index
 from seed_runtime.facts import Fact
-from seed_runtime.models import Event
+from seed_runtime.event import Event
 from seed_runtime.projection_store import (
     FACT_INDEX_NAME,
     FACT_INDEX_VERSION,

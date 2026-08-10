@@ -9,7 +9,7 @@ from seed_runtime.knowledge_reachability import (
     _new_counters,
     _surface_terms,
 )
-from seed_runtime.models import Event
+from seed_runtime.event import Event
 from seed_runtime.state import State
 
 
