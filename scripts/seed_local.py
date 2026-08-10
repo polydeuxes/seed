@@ -5695,8 +5695,12 @@ def run_persistent_operator_console(
     process_boundary_escape: bool = True,
 ) -> None:
     """Own process-local repetition around bounded operator interactions."""
-    output_stream.write("Seed console: `exit` exits.\n")
-    output_stream.flush()
+    # A console that declined to install the escape does not announce it.
+    # `#2436` emitted this unconditionally while the check was conditional, so
+    # a driven console asserted a boundary it was not enforcing.
+    if process_boundary_escape:
+        output_stream.write("Seed console: `exit` exits.\n")
+        output_stream.flush()
     # The first outward bounded Act uses the ordinary Presentation path;
     # empty Standing is lawful Evidence and does not fabricate an Unknown.
     #
