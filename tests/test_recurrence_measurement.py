@@ -29,14 +29,16 @@ from seed_runtime.preserved_material_measurement import (
 )
 from seed_runtime.recurrence_measurement import (
     DECLARED_IDENTITY,
+    EXCHANGE_COUNT_RECORDED_KIND,
     FORBIDDEN_INFERENCES,
-    RECURRENCE_RECORDED_KIND,
     RecurrenceMeasurementError,
-    measure_recurrence,
-    record_recurrence_finding,
-    render_recurrence,
+    measure_exchange_counts,
+    record_measured_count,
+    render_measured_count,
 )
 from scripts import seed_local
+
+DECLARED = tuple(f"workspace:w;session:{s}" for s in ("s1","s2","s3","s4"))
 
 EXCHANGES = {
     "s1": "a word is here\n",
@@ -75,10 +77,11 @@ def compared():
     return ledger
 
 
-def _by_right(ledger):
+def _by_right(ledger, declared=None):
     return {
         f.distinction.right_representation: f
-        for f in measure_recurrence(ledger, workspace_id="w")
+        for f in measure_exchange_counts(
+            ledger, workspace_id="w", bounded_exchanges=declared or DECLARED)
     }
 
 
@@ -87,20 +90,29 @@ def _by_right(ledger):
 # --------------------------------------------------------------------------
 
 
-def test_the_recorded_responsibility_is_declared_measurement(compared):
-    """`#2429` wrote cohort-measurement-over-recorded-comparisons here."""
-    event = record_recurrence_finding(
+def test_the_producer_responsibility_stays_unrecovered(compared):
+    """`#2429` invented one; `#2430` put the Act in its place.
+
+    `#2423` recovered that declared measurement has no production owner in
+    active law — "the act that would produce the finding has no named owner".
+    Writing `declared-measurement` there asserts the owner that recovery says
+    is absent.
+    """
+    event = record_measured_count(
         compared, workspace_id="w", session_id="s1",
         finding=_by_right(compared)["word"])
-    assert event.payload["dimensions"]["responsibility"] == "declared-measurement"
+    responsibility = event.payload["dimensions"]["responsibility"]
+    assert responsibility.startswith("unrecovered")
+    assert "#2423" in responsibility
+    assert responsibility != "declared-measurement"
     assert "cohort" not in str(event.payload).lower()
 
 
 def test_the_record_shape_is_its_own(compared):
-    event = record_recurrence_finding(
+    event = record_measured_count(
         compared, workspace_id="w", session_id="s1",
         finding=_by_right(compared)["word"])
-    assert event.kind == RECURRENCE_RECORDED_KIND
+    assert event.kind == EXCHANGE_COUNT_RECORDED_KIND
     assert event.kind != MEASUREMENT_RECORDED_KIND
     assert "occupancies" not in event.payload
 
@@ -111,7 +123,7 @@ def test_measuring_without_any_comparison_is_refused():
         ledger=ledger, workspace_id="w", session_id="s",
         input_stream=StringIO("a word\nexit\n"), output_stream=StringIO())
     with pytest.raises(RecurrenceMeasurementError, match="not preserved\nmaterial|not preserved material"):
-        measure_recurrence(ledger, workspace_id="w")
+        measure_exchange_counts(ledger, workspace_id="w", bounded_exchanges=DECLARED)
 
 
 # --------------------------------------------------------------------------
@@ -142,13 +154,13 @@ def test_measurements_declaring_different_scopes_do_not_group(compared):
 
     scopes = {
         dict(f.distinction.declared)["counting_scope"]
-        for f in measure_recurrence(compared, workspace_id="w")
+        for f in measure_exchange_counts(compared, workspace_id="w", bounded_exchanges=DECLARED)
         if f.distinction.right_representation == "word"
     }
     assert scopes == {SCOPE, "a different scope"}
     counts = {
-        dict(f.distinction.declared)["counting_scope"]: f.recurrence_count
-        for f in measure_recurrence(compared, workspace_id="w")
+        dict(f.distinction.declared)["counting_scope"]: f.exchange_count
+        for f in measure_exchange_counts(compared, workspace_id="w", bounded_exchanges=DECLARED)
         if f.distinction.right_representation == "word"
     }
     assert counts[SCOPE] == 3            # s1 s2 s3
@@ -188,7 +200,7 @@ def test_every_exchange_s_measurement_is_among_the_support(compared):
 
 def test_it_counts_the_exchanges_the_distinction_recurs_in(compared):
     finding = _by_right(compared)["word"]
-    assert finding.recurrence_count == 3
+    assert finding.exchange_count == 3
     assert finding.measured_in == (
         "workspace:w;session:s1",
         "workspace:w;session:s2",
@@ -201,30 +213,79 @@ def test_measuring_the_coordinate_without_the_distinction_is_its_own_result(comp
     assert finding.measured_without_distinction == ("workspace:w;session:s4",)
 
 
-def test_recurrence_in_one_exchange_is_still_a_finding(compared):
+def test_a_count_of_one_is_a_finding_and_is_not_recurrence(compared):
+    """`01.External:28` lists count and recurrence as separate findings.
+
+    `#2430` called this shape RecurrenceFinding and rendered a count of one as
+    "recurs in 1 bounded exchanges", asserting recurrence where nothing
+    recurred.
+    """
     finding = _by_right(compared)["thing"]
     assert finding.measured_in == ("workspace:w;session:s4",)
-    assert finding.recurrence_count == 1
+    assert finding.exchange_count == 1
+    assert finding.recurrence_established is False
+    assert "was measured in 1 bounded exchange" in render_measured_count(finding)
+    assert "recurs" not in render_measured_count(finding)
+
+
+def test_recurrence_is_established_only_above_one(compared):
+    finding = _by_right(compared)["word"]
+    assert finding.exchange_count == 3
+    assert finding.recurrence_established is True
+    assert "recurs in 3 bounded exchanges" in render_measured_count(finding)
+
+
+def _add_s5(ledger):
+    """An exchange that measures a different coordinate entirely."""
+    seed_local.run_persistent_operator_console(
+        ledger=ledger, workspace_id="w", session_id="s5",
+        input_stream=StringIO("nothing relevant here\nexit\n"),
+        output_stream=StringIO())
+    occ = preserved_ingress_occurrences(ledger, workspace_id="w", session_id="s5")
+    return record_measurement_finding(
+        ledger, workspace_id="w", session_id="s5",
+        finding=measure_after(occ, "nothing", counting_scope=SCOPE))
 
 
 def test_an_exchange_that_never_measured_the_coordinate_is_distinguished(compared):
-    seed_local.run_persistent_operator_console(
-        ledger=compared, workspace_id="w", session_id="s5",
-        input_stream=StringIO("nothing relevant here\nexit\n"),
-        output_stream=StringIO())
-    occ = preserved_ingress_occurrences(compared, workspace_id="w", session_id="s5")
-    record_measurement_finding(
-        compared, workspace_id="w", session_id="s5",
-        finding=measure_after(occ, "nothing", counting_scope=SCOPE))
-
-    finding = _by_right(compared)["word"]
+    _add_s5(compared)
+    declared = DECLARED + ("workspace:w;session:s5",)
+    finding = _by_right(compared, declared)["word"]
     assert "workspace:w;session:s5" in finding.coordinate_not_measured
     assert "workspace:w;session:s5" not in finding.measured_without_distinction
     assert "workspace:w;session:s5" not in finding.measured_in
 
 
+def test_what_places_an_exchange_in_the_third_result_travels_as_support(compared):
+    """If Evidence changes a field of the result, it participated in it.
+
+    `#2430` cited only occurrences matching the grouped identity, so s5's
+    unrelated measurement could place s5 in `coordinate_not_measured` while
+    being absent from `consumed_event_ids`.
+    """
+    unrelated = _add_s5(compared)
+    declared = DECLARED + ("workspace:w;session:s5",)
+    finding = _by_right(compared, declared)["word"]
+    assert "workspace:w;session:s5" in finding.coordinate_not_measured
+    assert unrelated.id in finding.consumed_event_ids
+
+
+def test_an_undeclared_exchange_enters_nothing(compared):
+    """`#2430` swept the workspace, so any measurement enlarged the denominator."""
+    _add_s5(compared)
+    finding = _by_right(compared)["word"]          # s5 not declared
+    assert "workspace:w;session:s5" not in finding.bounded_exchanges
+    assert "workspace:w;session:s5" not in finding.coordinate_not_measured
+    assert len(finding.bounded_exchanges) == 4
+
+
+def test_the_bounded_scope_must_be_declared(compared):
+    with pytest.raises(RecurrenceMeasurementError, match="no bounded exchanges were declared"):
+        measure_exchange_counts(compared, workspace_id="w", bounded_exchanges=[])
+
+
 def test_the_three_results_partition_the_bounded_exchanges(compared):
-    for finding in measure_recurrence(compared, workspace_id="w"):
+    for finding in measure_exchange_counts(compared, workspace_id="w", bounded_exchanges=DECLARED):
         parts = (
             set(finding.measured_in),
             set(finding.measured_without_distinction),
@@ -239,19 +300,23 @@ def test_the_three_results_partition_the_bounded_exchanges(compared):
 # --------------------------------------------------------------------------
 
 
-def test_the_counting_scope_states_what_was_consumed(compared):
-    """`#2429` said "which bodies were supplied to this Seed"."""
-    event = record_recurrence_finding(
+def test_the_counting_scope_states_the_declaration(compared):
+    """`#2429` said "supplied to this Seed"; `#2430` said what it consumed.
+
+    Neither was the bounded scope `01.External:28` requires disclosed, because
+    both described a set the act discovered rather than one it was given.
+    """
+    event = record_measured_count(
         compared, workspace_id="w", session_id="s1",
         finding=_by_right(compared)["word"])
     scope = event.payload["counting_scope"]
-    assert "recorded occurrences this measurement consumed" in scope
-    assert "no relevant recorded measurement does not appear here" in scope
+    assert "declared to this measurement" in scope
+    assert "no exchange enters by having measured something else" in scope
     assert "supplied to this Seed" not in scope
 
 
 def test_the_record_refuses_source_independence_and_corroboration(compared):
-    event = record_recurrence_finding(
+    event = record_measured_count(
         compared, workspace_id="w", session_id="s1",
         finding=_by_right(compared)["word"])
     refused = " ".join(event.payload["forbidden_inferences"])
@@ -262,7 +327,7 @@ def test_the_record_refuses_source_independence_and_corroboration(compared):
 
 
 def test_the_rendering_states_the_literal_sentence(compared):
-    rendered = render_recurrence(_by_right(compared)["word"])
+    rendered = render_measured_count(_by_right(compared)["word"])
     assert "recurs in 3 bounded exchanges" in rendered
     assert SCOPE in rendered
     for word in ("agree", "corroborat", "independent source", "relation",
@@ -272,7 +337,7 @@ def test_the_rendering_states_the_literal_sentence(compared):
 
 def test_the_vocabulary_is_gone(compared):
     """`cohort`, `population`, `body`, `survey`, `exposed` earned no place."""
-    event = record_recurrence_finding(
+    event = record_measured_count(
         compared, workspace_id="w", session_id="s1",
         finding=_by_right(compared)["word"])
     rendered = str(event.payload).lower()
