@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from collections import defaultdict
 from datetime import datetime
+import hashlib
 import json
 import sqlite3
 from typing import Any, Iterable
@@ -16,6 +17,35 @@ from seed_runtime.execution_status import (
 )
 from seed_runtime.ids import new_id, reserve_id_prefix
 from seed_runtime.models import Actor, Event
+
+
+# What a ledger can say about a stored occurrence's integrity.
+#
+# `06.Standing:16` names append-only records permissively, among projected
+# material and context views. Nothing in active law requires append-only, and
+# nothing here claims history cannot change: a `DROP TRIGGER` followed by a
+# rewrite of both row and digest defeats this. The warranted claim is narrower
+# — mutation is refused by default, and undetected corruption becomes
+# detectable.
+VERIFIED = "verified"
+UNVERIFIABLE = "unverifiable"
+CORRUPTED = "corrupted"
+
+# Every persisted field, because an occurrence moved between sessions is as
+# altered as one whose payload changed, and `session_id` is now the boundary
+# keeping bounded exchanges apart.
+_DIGESTED_FIELDS = (
+    "id", "kind", "workspace_id", "actor", "timestamp", "payload",
+    "session_id", "causation_id", "correlation_id",
+)
+
+
+def _content_digest(row: dict) -> str:
+    """A stable digest over the whole recorded row."""
+    return hashlib.sha256(
+        json.dumps({f: row.get(f) for f in _DIGESTED_FIELDS},
+                   sort_keys=True, separators=(",", ":")).encode()
+    ).hexdigest()
 
 
 class EventLedger:
@@ -109,6 +139,16 @@ class EventLedger:
         """Backward-compatible alias for :meth:`list`."""
         return self.list(workspace_id)
 
+    def integrity_of(self, event_id: str) -> str:
+        """What this ledger can say about a stored occurrence's integrity.
+
+        An in-memory ledger holds objects, not stored bytes, so there is no
+        recorded representation to have diverged from. It reports
+        `UNVERIFIABLE` rather than `VERIFIED`: nothing was protected, and
+        saying otherwise would manufacture the guarantee.
+        """
+        return UNVERIFIABLE
+
     def list_session(self, workspace_id: str, session_id: str) -> list[Event]:
         """Return one session's events in append order.
 
@@ -184,6 +224,29 @@ class SQLiteEventLedger(EventLedger):
                 causation_id TEXT,
                 correlation_id TEXT
             )
+            """)
+        columns = {
+            row["name"]
+            for row in self._connection.execute("PRAGMA table_info(events)")
+        }
+        if "content_hash" not in columns:
+            # Nullable, and never back-filled. A digest computed today proves
+            # what bytes exist today; it cannot prove they are the bytes
+            # originally recorded. Rows written before this column stay
+            # UNVERIFIABLE and say so.
+            self._connection.execute("ALTER TABLE events ADD COLUMN content_hash TEXT")
+        # Refuse the mutation the API never performs, so that code outside the
+        # API cannot perform it either. A `DROP TRIGGER` removes this; that is
+        # what keeps the claim at "refused by default" rather than "immutable".
+        self._connection.execute("""
+            CREATE TRIGGER IF NOT EXISTS events_refuse_update
+            BEFORE UPDATE ON events
+            BEGIN SELECT RAISE(ABORT, 'recorded occurrences do not change'); END
+            """)
+        self._connection.execute("""
+            CREATE TRIGGER IF NOT EXISTS events_refuse_delete
+            BEFORE DELETE ON events
+            BEGIN SELECT RAISE(ABORT, 'recorded occurrences are not removed'); END
             """)
         # The boundary sessions are actually selected by. Without it the
         # session read returns one session after scanning every row, which is
@@ -287,6 +350,24 @@ class SQLiteEventLedger(EventLedger):
         ).fetchall()
         return [self._row_to_event(row) for row in rows]
 
+    def integrity_of(self, event_id: str) -> str:
+        """Recompute the stored row's digest and compare it with the recorded one.
+
+        Verification belongs where the guarantee is claimed. `#2416` made
+        ordinary reads cheap, and putting a digest on `get` or `list_session`
+        would charge every reader for an obligation only a consuming act
+        carries.
+        """
+        row = self._connection.execute(
+            "SELECT * FROM events WHERE id = ?", (event_id,)
+        ).fetchone()
+        if row is None:
+            return UNVERIFIABLE
+        recorded = row["content_hash"]
+        if recorded is None:
+            return UNVERIFIABLE
+        return VERIFIED if _content_digest(dict(row)) == recorded else CORRUPTED
+
     def extend(self, events: Iterable[Event]) -> None:
         self.append_many(events)
 
@@ -302,21 +383,26 @@ class SQLiteEventLedger(EventLedger):
     def _insert_without_commit(self, event: Event) -> None:
         self._connection.execute(
             """
-            INSERT INTO events (id, kind, workspace_id, actor, timestamp, payload, session_id, causation_id, correlation_id)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+            INSERT INTO events (id, kind, workspace_id, actor, timestamp, payload, session_id, causation_id, correlation_id, content_hash)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """,
-            (
-                event.id,
-                event.kind,
-                event.workspace_id,
-                event.actor,
-                event.timestamp.isoformat(),
-                json.dumps(event.payload),
-                event.session_id,
-                event.causation_id,
-                event.correlation_id,
-            ),
+            self._row_values(event),
         )
+
+    @staticmethod
+    def _row_values(event: Event) -> tuple:
+        row = {
+            "id": event.id,
+            "kind": event.kind,
+            "workspace_id": event.workspace_id,
+            "actor": event.actor,
+            "timestamp": event.timestamp.isoformat(),
+            "payload": json.dumps(event.payload),
+            "session_id": event.session_id,
+            "causation_id": event.causation_id,
+            "correlation_id": event.correlation_id,
+        }
+        return tuple(row[f] for f in _DIGESTED_FIELDS) + (_content_digest(row),)
 
     def _validate_sqlite_batch(self, events: list[Event]) -> None:
         seen: set[str] = set()
