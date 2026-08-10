@@ -28,7 +28,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Any, Iterable
 
-from seed_runtime.events import EventLedger
+from seed_runtime.events import CORRUPTED, EventLedger
 from seed_runtime.models import Event
 from seed_runtime.preserved_material_measurement import (
     MEASUREMENT_RECORDED_KIND,
@@ -80,6 +80,7 @@ class PreservedInput:
     carried: dict[str, Any]
     absent: tuple[str, ...]
     support_basis: tuple[str, ...]
+    integrity: str
 
     def to_json_dict(self) -> dict[str, Any]:
         return {
@@ -87,6 +88,7 @@ class PreservedInput:
             "carried": dict(self.carried),
             "coordinates_absent": list(self.absent),
             "support_basis": list(self.support_basis),
+            "integrity": self.integrity,
         }
 
 
@@ -155,6 +157,7 @@ def _preserve(ledger: EventLedger, event: Event) -> PreservedInput:
         carried=carried,
         absent=tuple(absent),
         support_basis=tuple(premise_chain(ledger, event.id)),
+        integrity=ledger.integrity_of(event.id),
     )
 
 
@@ -198,6 +201,17 @@ def compare_preserved_findings(
         if event.kind != MEASUREMENT_RECORDED_KIND:
             raise BoundedComparisonError(
                 f"{event_id} is {event.kind}, not a recorded measurement finding"
+            )
+        # This act claims to preserve what it consumes, so this act verifies
+        # what it consumes. A corrupted input cannot be preserved, only copied.
+        # `unverifiable` is recorded on the input rather than refused: an
+        # in-memory ledger and any occurrence written before the digest
+        # existed are both lawfully unverifiable, and refusing them would
+        # demand a guarantee nothing ever offered.
+        if ledger.integrity_of(event_id) == CORRUPTED:
+            raise BoundedComparisonError(
+                f"{event_id} does not match its recorded digest; a corrupted "
+                "occurrence cannot be preserved by a comparison"
             )
         events.append(event)
 
