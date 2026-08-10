@@ -217,7 +217,6 @@ def measure_exchange_counts(
     # occurrence can establish a session without supplying a measured coordinate.
     measured_coordinate: dict[tuple, set[str]] = {}
     coordinate_evidence: dict[tuple, set[str]] = {}
-    presence_evidence: dict[str, set[str]] = {}
     session_of: dict[str, str] = {}
     unestablished: list[str] = []
 
@@ -234,7 +233,6 @@ def measure_exchange_counts(
             through=consumed_ledger_boundary,
         ):
             session_of[event.id] = exchange
-            presence_evidence.setdefault(exchange, set()).add(event.id)
             declared = _declared_of_measurement(event)
             if declared is None:
                 continue
@@ -304,12 +302,11 @@ def measure_exchange_counts(
         measured = measured_coordinate.get(key.declared, set())
         not_measured = declared_set - measured
         evidence = set(support[key])
-        # The occurrences that place an exchange in the third result travel.
-        # Exact-coordinate Measurement Evidence already places an exchange in
-        # measured_without_distinction; unrelated measurements do not support
-        # that second classification.
-        for exchange in not_measured:
-            evidence.update(presence_evidence.get(exchange, set()))
+        # The third result stands on the complete Measurement-kind read for
+        # each declared exchange through the preserved ledger boundary. Copying
+        # every unrelated Measurement id into every negative finding neither
+        # establishes nor strengthens that completeness. Exact-coordinate,
+        # Compare, and comparison-input Evidence remain carried below.
         findings.append(
             MeasuredCountFinding(
                 distinction=key,

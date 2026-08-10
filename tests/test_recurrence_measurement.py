@@ -345,18 +345,21 @@ def test_an_exchange_that_never_measured_the_coordinate_is_distinguished(compare
     assert "s5" not in finding.measured_in
 
 
-def test_what_places_an_exchange_in_the_third_result_travels_as_support(compared):
-    """If Evidence changes a field of the result, it participated in it.
-
-    `#2430` cited only occurrences matching the grouped identity, so s5's
-    unrelated measurement could place s5 in `coordinate_not_measured` while
-    being absent from `consumed_event_ids`.
-    """
+def test_the_third_result_preserves_its_complete_read_not_an_id_inventory(compared):
+    """The ledger boundary recovers the complete negative-classification read."""
     unrelated = _add_s5(compared)
     declared = DECLARED + ("s5",)
     finding = _by_right(compared, declared)["word"]
+
     assert "s5" in finding.coordinate_not_measured
-    assert unrelated.id in finding.consumed_event_ids
+    assert unrelated.id not in finding.consumed_event_ids
+    recovered = compared.iter_session_kind(
+        "w",
+        "s5",
+        MEASUREMENT_RECORDED_KIND,
+        through=finding.consumed_ledger_boundary,
+    )
+    assert unrelated.id in {event.id for event in recovered}
 
 
 def test_an_undeclared_exchange_enters_nothing(compared):
