@@ -46,9 +46,29 @@ one of seven sources that fail it.
 separate at 0/20; Dickens at 7/20 and Hume at 10/20 do not. Genre does not
 sort this.
 
-**[measured]** The two non-English adversaries split. `latin_vulgate`
-separates at 0/20; `french_hugo` fails at 11/20. The physiology is **not**
-English-only, and it is also not uniform outside English.
+**[WITHDRAWN]** This said: "The two non-English adversaries split.
+`latin_vulgate` separates at 0/20; `french_hugo` fails at 11/20. The physiology
+is **not** English-only, and it is also not uniform outside English."
+
+**[measured]** `latin_vulgate.txt` is not Latin. Its own first line reads *"The
+Project Gutenberg eBook of The Bible, Douay-Rheims, Complete"*, and the word
+counts settle it:
+
+```text
+  the    79,622        et         2
+  and    63,449        dominus    6
+  of     44,352        deus      14
+```
+
+Gutenberg 8300 is the Douay-Rheims in English. `corpus/SOURCES.md` recorded it
+as "Gutenberg 8300, Latin Vulgate" — the file that exists "because nothing else
+will" was itself wrong.
+
+**[inference]** So there was one non-English body, not two, and **it failed to
+separate**. The claim that the physiology is not English-only rested entirely on
+an English Bible counted as Latin. Whether the physiology is English-only
+returns to **Unknown**, which is weaker than what this report claimed and
+weaker than what it started with.
 
 **[measured]** Webster fails at 5/20 while Roget separates at 0/20. Both are
 reference works organised by entry.
