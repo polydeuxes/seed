@@ -2,7 +2,6 @@ import inspect
 import json
 
 import scripts.seed_local as seed_local
-from seed_runtime import process_entry
 import seed_runtime.diagnostic_inventory as diagnostic_inventory
 from seed_runtime.diagnostic_inventory import (
     DIAGNOSTIC_INVENTORY,
@@ -189,7 +188,7 @@ def _entry(name: str) -> DiagnosticInventoryEntry:
 
 
 def test_cli_diagnostic_inventory_lists_known_diagnostics(capsys):
-    assert process_entry.main(["--diagnostic-inventory"]) == 0
+    assert seed_local.main(["--diagnostic-inventory"]) == 0
 
     output = capsys.readouterr().out
 
@@ -218,12 +217,11 @@ def test_cli_diagnostic_inventory_lists_known_diagnostics(capsys):
 
 
 def test_cli_diagnostic_inventory_json_emits_valid_json(capsys):
-    assert process_entry.main(["--diagnostic-inventory", "--json"]) == 0
+    assert seed_local.main(["--diagnostic-inventory", "--json"]) == 0
 
     payload = json.loads(capsys.readouterr().out)
     assert {item["entrypoint_status"] for item in payload} == {
-        "active",
-        "compatibility_only",
+        "compatibility_only"
     }
 
     assert isinstance(payload, list)
@@ -2459,7 +2457,7 @@ def test_diagnostic_surface_definition_unknown_is_bounded(capsys):
 
 
 def test_diagnostic_surface_definition_does_not_change_inventory_output(capsys):
-    assert process_entry.main(["--diagnostic-inventory", "--json"]) == 0
+    assert seed_local.main(["--diagnostic-inventory", "--json"]) == 0
 
     payload = json.loads(capsys.readouterr().out)
 
@@ -3074,7 +3072,7 @@ def test_diagnostic_surface_explanation_preserves_existing_field_behaviors(capsy
 
 
 def test_diagnostic_surface_explanation_does_not_change_inventory_output(capsys):
-    assert process_entry.main(["--diagnostic-inventory", "--json"]) == 0
+    assert seed_local.main(["--diagnostic-inventory", "--json"]) == 0
 
     payload = json.loads(capsys.readouterr().out)
 
