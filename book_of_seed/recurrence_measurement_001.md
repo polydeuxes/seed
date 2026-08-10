@@ -307,7 +307,12 @@ move this session keeps catching.
 
 **[measured]** The question reaches backward. `preserved_material_measurement`
 and `measurement_self_survey` record `measured` Standing under the same
-unrecovered producer, so this is not a property of the new module.
+unrecovered **Responsibility**, so this is not a property of the new module.
+
+**[measured]** That sentence read "unrecovered producer" until this correction.
+It is the compression this report's Producer section removes: `#2423`
+established that no production **owner** is recovered, and the Producer is a
+separate coordinate that was never missing.
 
 **[inference]** Making the contradiction visible is worth more than resolving
 it by inventing an owner. It may mean the whole measurement campaign has been a
@@ -332,6 +337,19 @@ compression:
 
 Not folded into this correction, because a coordinate used by several recorders
 should be recovered rather than reinterpreted in one of them.
+
+### The sweep, and a count that was not checked
+
+**[measured]** `#2439` said the owner/Producer compression had been reported
+"here and in three other places". A sweep of every report mentioning a missing
+production owner finds **one** surviving statement — the line corrected just
+above. `#2423`'s own text says "production owner" and "no named owner"
+throughout, which is accurate, and the remaining occurrences quote the runtime
+string, which also says owner.
+
+**[inference]** The claim of three was itself unverified: a count asserted in
+the middle of a correction about unverified claims. The compression was real and
+narrower than reported.
 
 ## What this does not establish
 
