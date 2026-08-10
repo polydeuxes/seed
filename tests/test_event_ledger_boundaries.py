@@ -204,3 +204,14 @@ def test_a_constructed_unknown_boundary_is_refused():
     ledger = EventLedger()
     with pytest.raises(InvalidLedgerBoundary):
         ledger.list(through=EventLedgerBoundary("0" * 64))
+
+
+def test_failed_in_memory_canonicalization_leaves_the_ledger_unchanged():
+    ledger = EventLedger()
+    before = ledger.capture_boundary()
+
+    with pytest.raises(TypeError):
+        ledger.append("k", "w", {"not_json": object()})
+
+    assert ledger.capture_boundary() == before
+    assert ledger.list() == []

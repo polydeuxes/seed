@@ -295,13 +295,17 @@ class EventLedger:
     def _store(self, event: Event) -> None:
         if event.id in self._by_id:
             raise ValueError(f"event id already exists: {event.id}")
+        # Canonicalization may refuse a payload. Derive before making the
+        # occurrence visible anywhere so a failed append cannot leave event
+        # history ahead of its append-prefix mechanics.
+        commitment = _next_prefix_commitment(self._latest_prefix_commitment, event)
+        position = len(self._events) + 1
         self._events.append(event)
         self._by_id[event.id] = event
         self._by_workspace[event.workspace_id].append(event)
-        commitment = _next_prefix_commitment(self._latest_prefix_commitment, event)
         self._latest_prefix_commitment = commitment
-        self._boundary_positions[commitment] = len(self._events)
-        self._by_id_position[event.id] = len(self._events)
+        self._boundary_positions[commitment] = position
+        self._by_id_position[event.id] = position
 
     def _validate_batch(self, events: list[Event]) -> None:
         seen: set[str] = set()
