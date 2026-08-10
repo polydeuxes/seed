@@ -343,9 +343,18 @@ class SQLiteEventLedger(EventLedger):
             total=total,
         )
         cadence = ProgressCadence()
+        # One transaction, occurrences and their identifier reservations
+        # together. `#2428` stated that a reservation is written in the same
+        # transaction as the occurrence that carried the identifier, and
+        # `append` does that; this path did not. A failure between the two
+        # commits left durable occurrences carrying identifiers whose counters
+        # were stale on reopen, which is the collision `#2428` exists to
+        # prevent. `evt` is partly shielded because open recovers the maximum
+        # event id separately; the payload and session prefixes are not.
         with self._connection:
             for index, event in enumerate(stored_events, start=1):
                 self._insert_without_commit(event)
+                self._persist_reservations(self._observed_suffixes(event))
                 emit_progress_if_due(
                     status_consumer,
                     cadence,
@@ -354,9 +363,6 @@ class SQLiteEventLedger(EventLedger):
                     current=index,
                     total=total,
                 )
-        with self._connection:
-            for event in stored_events:
-                self._persist_reservations(self._observed_suffixes(event))
         for event in stored_events:
             self._advance_event_counter(event.id)
         return stored_events
