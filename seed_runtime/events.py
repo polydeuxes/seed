@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from collections import defaultdict
+from dataclasses import dataclass
 from datetime import datetime
 import hashlib
 import json
@@ -32,6 +33,26 @@ UNVERIFIABLE = "unverifiable"
 CORRUPTED = "corrupted"
 
 
+_PREFIX_DOMAIN = b"seed.event-ledger.append-prefix.v1\0"
+_EMPTY_PREFIX_COMMITMENT = hashlib.sha256(_PREFIX_DOMAIN + b"empty").hexdigest()
+
+
+@dataclass(frozen=True)
+class EventLedgerBoundary:
+    """An opaque commitment to one exact append prefix.
+
+    Callers may retain and return the value, but only an EventLedger interprets
+    it. Equal ordered prefixes produce equal boundaries; a boundary does not
+    expose an append position.
+    """
+
+    commitment: str
+
+
+class InvalidLedgerBoundary(ValueError):
+    """A boundary does not denote a prefix of the ledger being read."""
+
+
 class LedgerIntegrityError(Exception):
     """A durable store cannot supply the integrity its occurrences require."""
 
@@ -52,6 +73,34 @@ def _content_digest(row: dict) -> str:
     ).hexdigest()
 
 
+def _canonical_occurrence_bytes(event: Event) -> bytes:
+    """Canonical bytes for the occurrence itself, excluding ledger mechanics."""
+    represented = {
+        "id": event.id,
+        "kind": event.kind,
+        "workspace_id": event.workspace_id,
+        "actor": event.actor,
+        "timestamp": event.timestamp.isoformat(),
+        "payload": event.payload,
+        "session_id": event.session_id,
+        "causation_id": event.causation_id,
+        "correlation_id": event.correlation_id,
+    }
+    return json.dumps(
+        represented, sort_keys=True, separators=(",", ":")
+    ).encode()
+
+
+def _next_prefix_commitment(previous: str, event: Event) -> str:
+    occurrence = _canonical_occurrence_bytes(event)
+    return hashlib.sha256(
+        _PREFIX_DOMAIN
+        + bytes.fromhex(previous)
+        + len(occurrence).to_bytes(8, "big")
+        + occurrence
+    ).hexdigest()
+
+
 class EventLedger:
     """Process-local append-only ledger for recording Seed runtime events."""
 
@@ -68,6 +117,11 @@ class EventLedger:
         self._events: list[Event] = []
         self._by_id: dict[str, Event] = {}
         self._by_workspace: dict[str, list[Event]] = defaultdict(list)
+        self._by_id_position: dict[str, int] = {}
+        self._latest_prefix_commitment = _EMPTY_PREFIX_COMMITMENT
+        self._boundary_positions: dict[str, int] = {
+            _EMPTY_PREFIX_COMMITMENT: 0
+        }
 
     def append(
         self,
@@ -133,15 +187,45 @@ class EventLedger:
         """Return an event by id, if it exists."""
         return self._by_id.get(event_id)
 
-    def list(self, workspace_id: str | None = None) -> list[Event]:
-        """Return events in append order, optionally scoped to a workspace."""
-        if workspace_id is None:
-            return list(self._events)
-        return list(self._by_workspace.get(workspace_id, []))
+    def capture_boundary(self) -> EventLedgerBoundary:
+        """Capture an opaque commitment to the current append prefix."""
+        return EventLedgerBoundary(self._latest_prefix_commitment)
 
-    def list_events(self, workspace_id: str | None = None) -> list[Event]:
+    def _position_through(self, through: EventLedgerBoundary | None) -> int:
+        if through is None:
+            return len(self._events)
+        position = self._boundary_positions.get(through.commitment)
+        if position is None:
+            raise InvalidLedgerBoundary(
+                "boundary does not denote an append prefix of this ledger"
+            )
+        return position
+
+    def list(
+        self,
+        workspace_id: str | None = None,
+        *,
+        through: EventLedgerBoundary | None = None,
+    ) -> list[Event]:
+        """Return events in append order, optionally scoped to a workspace."""
+        position = self._position_through(through)
+        if workspace_id is None:
+            return list(self._events[:position])
+        bounded = []
+        for event in self._by_workspace.get(workspace_id, []):
+            if self._by_id_position[event.id] > position:
+                break
+            bounded.append(event)
+        return bounded
+
+    def list_events(
+        self,
+        workspace_id: str | None = None,
+        *,
+        through: EventLedgerBoundary | None = None,
+    ) -> list[Event]:
         """Backward-compatible alias for :meth:`list`."""
-        return self.list(workspace_id)
+        return self.list(workspace_id, through=through)
 
     def integrity_of(self, event_id: str) -> str:
         """What this ledger can say about a stored occurrence's integrity.
@@ -153,7 +237,13 @@ class EventLedger:
         """
         return UNVERIFIABLE
 
-    def list_session(self, workspace_id: str, session_id: str) -> list[Event]:
+    def list_session(
+        self,
+        workspace_id: str,
+        session_id: str,
+        *,
+        through: EventLedgerBoundary | None = None,
+    ) -> list[Event]:
         """Return one session's events in append order.
 
         A session projection reads a session. Reading the whole workspace and
@@ -162,22 +252,39 @@ class EventLedger:
         """
         return [
             event
-            for event in self.list(workspace_id)
+            for event in self.list(workspace_id, through=through)
             if event.session_id == session_id
         ]
 
-    def has_session(self, workspace_id: str, session_id: str) -> bool:
+    def has_session(
+        self,
+        workspace_id: str,
+        session_id: str,
+        *,
+        through: EventLedgerBoundary | None = None,
+    ) -> bool:
         """Whether at least one occurrence establishes this session boundary."""
-        return any(
-            event.session_id == session_id
-            for event in self._by_workspace.get(workspace_id, ())
-        )
+        position = self._position_through(through)
+        for event in self._by_workspace.get(workspace_id, ()):
+            if self._by_id_position[event.id] > position:
+                break
+            if event.session_id == session_id:
+                return True
+        return False
 
     def iter_session_kind(
-        self, workspace_id: str, session_id: str, kind: str
+        self,
+        workspace_id: str,
+        session_id: str,
+        kind: str,
+        *,
+        through: EventLedgerBoundary | None = None,
     ) -> Iterator[Event]:
         """Yield one kind from one session without collecting a result list."""
+        position = self._position_through(through)
         for event in self._by_workspace.get(workspace_id, ()):
+            if self._by_id_position[event.id] > position:
+                break
             if event.session_id == session_id and event.kind == kind:
                 yield event
 
@@ -191,6 +298,10 @@ class EventLedger:
         self._events.append(event)
         self._by_id[event.id] = event
         self._by_workspace[event.workspace_id].append(event)
+        commitment = _next_prefix_commitment(self._latest_prefix_commitment, event)
+        self._latest_prefix_commitment = commitment
+        self._boundary_positions[commitment] = len(self._events)
+        self._by_id_position[event.id] = len(self._events)
 
     def _validate_batch(self, events: list[Event]) -> None:
         seen: set[str] = set()
@@ -231,6 +342,13 @@ class SQLiteEventLedger(EventLedger):
         self.database_path = database_path
         self._connection = sqlite3.connect(database_path)
         self._connection.row_factory = sqlite3.Row
+        # A durable prefix chain has to be extended by every writer. Older
+        # writers do not register this connection-local function, so the
+        # durable trigger installed below refuses their inserts instead of
+        # admitting an occurrence outside the chain.
+        self._connection.create_function(
+            "seed_prefix_writer", 0, lambda: 1, deterministic=True
+        )
         self._connection.execute("""
             CREATE TABLE IF NOT EXISTS events (
                 id TEXT PRIMARY KEY,
@@ -311,6 +429,7 @@ class SQLiteEventLedger(EventLedger):
             CREATE INDEX IF NOT EXISTS idx_events_workspace_session_kind
             ON events(workspace_id, session_id, kind)
             """)
+        self._ensure_prefix_commitments()
         self._connection.commit()
         max_event_suffix = self._max_event_id_suffix()
         self._next_event_number = max_event_suffix + 1
@@ -372,7 +491,8 @@ class SQLiteEventLedger(EventLedger):
         # event id separately; the payload and session prefixes are not.
         with self._connection:
             for index, event in enumerate(stored_events, start=1):
-                self._insert_without_commit(event)
+                event_rowid = self._insert_without_commit(event)
+                self._insert_prefix_commitment(event, event_rowid)
                 self._persist_reservations(self._observed_suffixes(event))
                 emit_progress_if_due(
                     status_consumer,
@@ -393,43 +513,126 @@ class SQLiteEventLedger(EventLedger):
         ).fetchone()
         return self._row_to_event(row) if row is not None else None
 
-    def list(self, workspace_id: str | None = None) -> list[Event]:
+    def capture_boundary(self) -> EventLedgerBoundary:
+        """Capture an opaque commitment to the current durable append prefix."""
+        row = self._connection.execute(
+            "SELECT commitment FROM event_prefix_commitments "
+            "ORDER BY position DESC LIMIT 1"
+        ).fetchone()
+        return EventLedgerBoundary(
+            row["commitment"] if row is not None else _EMPTY_PREFIX_COMMITMENT
+        )
+
+    def _rowid_through(self, through: EventLedgerBoundary | None) -> int | None:
+        if through is None:
+            return None
+        if through.commitment == _EMPTY_PREFIX_COMMITMENT:
+            return 0
+        row = self._connection.execute(
+            "SELECT event_rowid FROM event_prefix_commitments "
+            "WHERE commitment = ?",
+            (through.commitment,),
+        ).fetchone()
+        if row is None:
+            raise InvalidLedgerBoundary(
+                "boundary does not denote an append prefix of this ledger"
+            )
+        return int(row["event_rowid"])
+
+    def list(
+        self,
+        workspace_id: str | None = None,
+        *,
+        through: EventLedgerBoundary | None = None,
+    ) -> list[Event]:
+        rowid = self._rowid_through(through)
+        boundary_sql = "" if rowid is None else " WHERE rowid <= ?"
+        boundary_args: tuple[Any, ...] = () if rowid is None else (rowid,)
         if workspace_id is None:
             rows = self._connection.execute(
-                "SELECT * FROM events ORDER BY rowid"
+                f"SELECT * FROM events{boundary_sql} ORDER BY rowid",
+                boundary_args,
             ).fetchall()
         else:
+            qualifier = "WHERE" if rowid is None else "AND"
             rows = self._connection.execute(
-                "SELECT * FROM events WHERE workspace_id = ? ORDER BY rowid",
-                (workspace_id,),
+                f"SELECT * FROM events{boundary_sql} {qualifier} "
+                "workspace_id = ? ORDER BY rowid",
+                (*boundary_args, workspace_id),
             ).fetchall()
         return [self._row_to_event(row) for row in rows]
 
-    def list_events(self, workspace_id: str | None = None) -> list[Event]:
-        return self.list(workspace_id)
+    def list_events(
+        self,
+        workspace_id: str | None = None,
+        *,
+        through: EventLedgerBoundary | None = None,
+    ) -> list[Event]:
+        return self.list(workspace_id, through=through)
 
-    def list_session(self, workspace_id: str, session_id: str) -> list[Event]:
+    def list_session(
+        self,
+        workspace_id: str,
+        session_id: str,
+        *,
+        through: EventLedgerBoundary | None = None,
+    ) -> list[Event]:
+        rowid = self._rowid_through(through)
+        boundary = "" if rowid is None else "AND rowid <= ? "
+        args: tuple[Any, ...] = (
+            (workspace_id, session_id)
+            if rowid is None
+            else (workspace_id, session_id, rowid)
+        )
         rows = self._connection.execute(
             "SELECT * FROM events WHERE workspace_id = ? AND session_id = ? "
-            "ORDER BY rowid",
-            (workspace_id, session_id),
+            + boundary
+            + "ORDER BY rowid",
+            args,
         ).fetchall()
         return [self._row_to_event(row) for row in rows]
 
-    def has_session(self, workspace_id: str, session_id: str) -> bool:
+    def has_session(
+        self,
+        workspace_id: str,
+        session_id: str,
+        *,
+        through: EventLedgerBoundary | None = None,
+    ) -> bool:
+        rowid = self._rowid_through(through)
+        boundary = "" if rowid is None else "AND rowid <= ? "
+        args: tuple[Any, ...] = (
+            (workspace_id, session_id)
+            if rowid is None
+            else (workspace_id, session_id, rowid)
+        )
         row = self._connection.execute(
-            "SELECT 1 FROM events WHERE workspace_id = ? AND session_id = ? LIMIT 1",
-            (workspace_id, session_id),
+            "SELECT 1 FROM events WHERE workspace_id = ? AND session_id = ? "
+            + boundary
+            + "LIMIT 1",
+            args,
         ).fetchone()
         return row is not None
 
     def iter_session_kind(
-        self, workspace_id: str, session_id: str, kind: str
+        self,
+        workspace_id: str,
+        session_id: str,
+        kind: str,
+        *,
+        through: EventLedgerBoundary | None = None,
     ) -> Iterator[Event]:
+        rowid = self._rowid_through(through)
+        boundary = "" if rowid is None else "AND rowid <= ? "
+        args: tuple[Any, ...] = (
+            (workspace_id, session_id, kind)
+            if rowid is None
+            else (workspace_id, session_id, kind, rowid)
+        )
         rows = self._connection.execute(
             "SELECT * FROM events WHERE workspace_id = ? AND session_id = ? "
-            "AND kind = ? ORDER BY rowid",
-            (workspace_id, session_id, kind),
+            "AND kind = ? " + boundary + "ORDER BY rowid",
+            args,
         )
         for row in rows:
             yield self._row_to_event(row)
@@ -466,19 +669,111 @@ class SQLiteEventLedger(EventLedger):
         self._connection.close()
 
     def _insert(self, event: Event) -> None:
-        self._insert_without_commit(event)
-        self._persist_reservations(self._observed_suffixes(event))
-        self._connection.commit()
+        with self._connection:
+            event_rowid = self._insert_without_commit(event)
+            self._insert_prefix_commitment(event, event_rowid)
+            self._persist_reservations(self._observed_suffixes(event))
         self._advance_event_counter(event.id)
 
-    def _insert_without_commit(self, event: Event) -> None:
+    def _ensure_prefix_commitments(self) -> None:
+        """Create or validate the ledger-owned append-prefix mechanics.
+
+        An existing store without the table receives one atomic derivation from
+        the append sequence it currently represents. This does not alter or
+        strengthen any occurrence's integrity result.
+        """
+        existed = self._connection.execute(
+            "SELECT 1 FROM sqlite_master WHERE type = 'table' "
+            "AND name = 'event_prefix_commitments'"
+        ).fetchone() is not None
+        self._connection.execute("BEGIN IMMEDIATE")
+        try:
+            self._connection.execute("""
+                CREATE TABLE IF NOT EXISTS event_prefix_commitments (
+                    position INTEGER PRIMARY KEY,
+                    event_rowid INTEGER NOT NULL UNIQUE,
+                    event_id TEXT NOT NULL UNIQUE,
+                    commitment TEXT NOT NULL UNIQUE
+                )
+                """)
+            self._connection.execute("""
+                CREATE TRIGGER IF NOT EXISTS prefix_commitments_refuse_update
+                BEFORE UPDATE ON event_prefix_commitments
+                BEGIN SELECT RAISE(ABORT, 'append-prefix commitments do not change'); END
+                """)
+            self._connection.execute("""
+                CREATE TRIGGER IF NOT EXISTS prefix_commitments_refuse_delete
+                BEFORE DELETE ON event_prefix_commitments
+                BEGIN SELECT RAISE(ABORT, 'append-prefix commitments are not removed'); END
+                """)
+            self._connection.execute("""
+                CREATE TRIGGER IF NOT EXISTS events_require_prefix_writer
+                BEFORE INSERT ON events
+                WHEN seed_prefix_writer() != 1
+                BEGIN SELECT RAISE(ABORT, 'writer cannot maintain append-prefix commitments'); END
+                """)
+            if not existed:
+                previous = _EMPTY_PREFIX_COMMITMENT
+                position = 0
+                for row in self._connection.execute(
+                    "SELECT rowid AS event_rowid, * FROM events ORDER BY rowid"
+                ):
+                    position += 1
+                    event = self._row_to_event(row)
+                    previous = _next_prefix_commitment(previous, event)
+                    self._connection.execute(
+                        "INSERT INTO event_prefix_commitments "
+                        "(position, event_rowid, event_id, commitment) "
+                        "VALUES (?, ?, ?, ?)",
+                        (position, row["event_rowid"], event.id, previous),
+                    )
+            self._connection.commit()
+        except Exception:
+            self._connection.rollback()
+            raise
+
+        event_stats = self._connection.execute(
+            "SELECT COUNT(*) AS n, COALESCE(MAX(rowid), 0) AS tail FROM events"
+        ).fetchone()
+        prefix_stats = self._connection.execute(
+            "SELECT COUNT(*) AS n, COALESCE(MAX(position), 0) AS position, "
+            "COALESCE(MAX(event_rowid), 0) AS tail FROM event_prefix_commitments"
+        ).fetchone()
+        if (
+            event_stats["n"] != prefix_stats["n"]
+            or prefix_stats["position"] != prefix_stats["n"]
+            or event_stats["tail"] != prefix_stats["tail"]
+        ):
+            raise LedgerIntegrityError(
+                "append-prefix commitment mechanics are incomplete"
+            )
+
+    def _insert_prefix_commitment(
+        self, event: Event, event_rowid: int
+    ) -> None:
+        position_row = self._connection.execute(
+            "SELECT COALESCE(MAX(position), 0) + 1 AS position, "
+            "(SELECT commitment FROM event_prefix_commitments "
+            " ORDER BY position DESC LIMIT 1) AS previous "
+            "FROM event_prefix_commitments"
+        ).fetchone()
+        previous = position_row["previous"] or _EMPTY_PREFIX_COMMITMENT
+        commitment = _next_prefix_commitment(previous, event)
         self._connection.execute(
+            "INSERT INTO event_prefix_commitments "
+            "(position, event_rowid, event_id, commitment) VALUES (?, ?, ?, ?)",
+            (position_row["position"], event_rowid, event.id, commitment),
+        )
+
+    def _insert_without_commit(self, event: Event) -> int:
+        cursor = self._connection.execute(
             """
             INSERT INTO events (id, kind, workspace_id, actor, timestamp, payload, session_id, causation_id, correlation_id, content_hash)
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """,
             self._row_values(event),
         )
+        return int(cursor.lastrowid)
 
     @staticmethod
     def _row_values(event: Event) -> tuple:
