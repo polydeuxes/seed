@@ -1,7 +1,8 @@
 from datetime import datetime, timezone
 
 from seed_runtime.events import EventLedger, SQLiteEventLedger
-from seed_runtime.models import Event, Fact
+from seed_runtime.event import Event
+from seed_runtime.models import Fact
 from seed_runtime.observations import Observation, ObservationIngestor
 from seed_runtime.serialization import to_plain
 from seed_runtime.state import StateProjector

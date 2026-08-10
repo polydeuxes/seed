@@ -17,7 +17,7 @@ from seed_runtime.execution_status import (
     emit_status,
 )
 from seed_runtime.ids import new_id, reserve_id_prefix
-from seed_runtime.models import Actor, Event, _decode_screened_event_payload
+from seed_runtime.event import Event, _decode_screened_event_payload
 
 
 # What a ledger can say about a stored occurrence's integrity.
@@ -129,7 +129,7 @@ class EventLedger:
         workspace_id: str = "default",
         payload: dict[str, Any] | None = None,
         *,
-        actor: Actor = "system",
+        actor: str = "system",
         session_id: str | None = None,
         causation_id: str | None = None,
         correlation_id: str | None = None,
@@ -449,7 +449,7 @@ class SQLiteEventLedger(EventLedger):
         workspace_id: str = "default",
         payload: dict[str, Any] | None = None,
         *,
-        actor: Actor = "system",
+        actor: str = "system",
         session_id: str | None = None,
         causation_id: str | None = None,
         correlation_id: str | None = None,

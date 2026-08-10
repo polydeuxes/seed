@@ -6,7 +6,7 @@ from bisect import bisect_left
 from typing import Any, Iterable
 
 from seed_runtime.events import EventLedger
-from seed_runtime.models import Event
+from seed_runtime.event import Event
 
 _SUBJECT_BY_KIND = {
     "operator.ingress.raw_material_captured": "raw_initial_material",

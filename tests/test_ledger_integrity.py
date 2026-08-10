@@ -209,10 +209,10 @@ def test_screened_durable_rehydration_still_runs_event_validation(path):
     con = _raw(path)
     con.execute("DROP TRIGGER events_refuse_update")
     row = dict(con.execute("SELECT * FROM events WHERE id = ?", (event.id,)).fetchone())
-    row["actor"] = "not-an-actor"
+    row["payload"] = "[]"
     con.execute(
-        "UPDATE events SET actor = ?, content_hash = ? WHERE id = ?",
-        (row["actor"], _content_digest(row), event.id),
+        "UPDATE events SET payload = ?, content_hash = ? WHERE id = ?",
+        (row["payload"], _content_digest(row), event.id),
     )
     con.commit()
     con.close()
@@ -220,7 +220,7 @@ def test_screened_durable_rehydration_still_runs_event_validation(path):
     reopened = SQLiteEventLedger(path)
     try:
         assert reopened.integrity_of(event.id) == VERIFIED
-        with pytest.raises(ValueError, match="actor"):
+        with pytest.raises(ValueError, match="payload"):
             reopened.get(event.id)
     finally:
         reopened.close()
@@ -534,7 +534,7 @@ def test_a_batch_commits_its_reservations_with_its_occurrences(path):
     occurrences carrying identifiers whose counters were stale on reopen —
     exactly the collision `#2428` exists to prevent.
     """
-    from seed_runtime.models import Event
+    from seed_runtime.event import Event
 
     led = SQLiteEventLedger(path)
     commits = []
@@ -565,7 +565,7 @@ def test_a_batch_commits_its_reservations_with_its_occurrences(path):
 def test_a_batch_leaves_no_occurrence_without_its_reservation(path):
     """Reopening a batched store does not reissue a batched identifier."""
     from seed_runtime.ids import _next_values, new_id
-    from seed_runtime.models import Event
+    from seed_runtime.event import Event
 
     led = SQLiteEventLedger(path)
     led.append_many([

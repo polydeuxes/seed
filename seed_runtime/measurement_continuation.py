@@ -54,7 +54,7 @@ from seed_runtime.adjacent_pair_measurement import (
     measure_after,
 )
 from seed_runtime.events import EventLedger
-from seed_runtime.models import Event
+from seed_runtime.event import Event
 from seed_runtime.preserved_material_measurement import (
     MEASUREMENT_RECORDED_KIND,
     PreservedMaterialMeasurementError,

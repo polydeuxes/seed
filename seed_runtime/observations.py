@@ -96,7 +96,7 @@ class ObservationIngestor:
         event in the same order as repeated :meth:`ingest` calls.
         """
 
-        from seed_runtime.models import Event
+        from seed_runtime.event import Event
 
         observation_list = list(observations)
         total = len(observation_list)

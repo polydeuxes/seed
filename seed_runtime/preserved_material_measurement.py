@@ -42,7 +42,7 @@ from dataclasses import dataclass, field
 from typing import Any, Iterable
 
 from seed_runtime.events import EventLedger
-from seed_runtime.models import Event
+from seed_runtime.event import Event
 
 MEASUREMENT_RECORDED_KIND = "operator.measurement.finding_recorded"
 INGRESS_OCCURRED_KIND = "operator.ingress.ingress_occurred"

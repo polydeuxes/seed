@@ -391,7 +391,8 @@ from seed_runtime.integrity_summary import (
     ProjectionIntegritySummary,
     build_projection_integrity_summary,
 )
-from seed_runtime.models import Event, Observation, utc_now
+from seed_runtime.event import Event, utc_now
+from seed_runtime.models import Observation
 from seed_runtime.observation_normalizers import (
     EndpointAliasNormalizer,
     EndpointIdentityNormalizer,

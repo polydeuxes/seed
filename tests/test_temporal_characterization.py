@@ -4,7 +4,8 @@ from datetime import datetime, timedelta, timezone
 
 from seed_runtime.events import EventLedger
 from seed_runtime.facts import Fact
-from seed_runtime.models import Entity, Event
+from seed_runtime.event import Event
+from seed_runtime.models import Entity
 from seed_runtime.projection_store import (
     InMemoryProjectionStore,
     STATE_PROJECTION_NAME,

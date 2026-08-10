@@ -13,7 +13,7 @@ from seed_runtime.events import (
     LedgerIntegrityError,
     SQLiteEventLedger,
 )
-from seed_runtime.models import Event
+from seed_runtime.event import Event
 
 
 def _exercise_scoped_reads(ledger):

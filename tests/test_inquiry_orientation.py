@@ -28,7 +28,7 @@ from seed_runtime.inquiry_orientation import (
     load_inquiry_notes,
     record_inquiry_note,
 )
-from seed_runtime.models import utc_now
+from seed_runtime.event import utc_now
 from seed_runtime.serialization import to_plain
 from seed_runtime.state import StateProjector
 

@@ -22,6 +22,15 @@ def test_get_returns_appended_event_by_id():
     assert ledger.get(event.id) == event
 
 
+def test_durable_actor_is_a_preserved_label_not_a_closed_grammar(tmp_path):
+    ledger = SQLiteEventLedger(str(tmp_path / "seed.db"))
+
+    event = ledger.append("k", "w", actor="source-local-label")
+
+    assert ledger.get(event.id).actor == "source-local-label"
+    ledger.close()
+
+
 def test_event_ledger_rejects_secret_fields_in_payloads():
     ledger = EventLedger()
 
@@ -67,7 +76,7 @@ def test_durable_large_scalar_lists_do_not_repeat_secret_traversal(
         raise AssertionError("durable payload was screened during JSON decoding")
 
     monkeypatch.setattr(
-        "seed_runtime.models.reject_secret_fields", unexpected_second_traversal
+        "seed_runtime.event.reject_secret_fields", unexpected_second_traversal
     )
 
     assert ledger.get(event.id).payload == payload
