@@ -6,6 +6,7 @@ from dataclasses import asdict, dataclass
 from typing import Iterable, Literal, Union
 
 RecordScope = Literal["none", "diagnostic_run"]
+EntrypointStatus = Literal["active", "compatibility_only"]
 
 
 @dataclass(frozen=True)
@@ -25,6 +26,7 @@ class DiagnosticInventoryEntry:
     mutates_cluster: bool
     reads_diagnostic_facts: bool
     description: str
+    entrypoint_status: EntrypointStatus = "compatibility_only"
 
     def to_json_dict(self) -> dict[str, object]:
         data = asdict(self)
@@ -1453,6 +1455,7 @@ DIAGNOSTIC_INVENTORY: tuple[DiagnosticInventoryEntry, ...] = (
         mutates_cluster=False,
         reads_diagnostic_facts=False,
         description="Lists registry-declared diagnostic and operational surfaces without recording or mutation.",
+        entrypoint_status="active",
     ),
     DiagnosticInventoryEntry(
         name="diagnostic_shape_audit",
@@ -1468,6 +1471,7 @@ DIAGNOSTIC_INVENTORY: tuple[DiagnosticInventoryEntry, ...] = (
         mutates_cluster=False,
         reads_diagnostic_facts=False,
         description="Compares diagnostic registry declarations with static implementation shape without recording or mutation.",
+        entrypoint_status="active",
     ),
     DiagnosticInventoryEntry(
         name="projected_state_consumers",
@@ -2794,6 +2798,7 @@ def _compose_diagnostic_inventory(
     headers = [
         "Diagnostic",
         "CLI Flag",
+        "Entrypoint",
         "Uses State",
         "Uses Repo Files",
         "JSON",
@@ -2807,6 +2812,7 @@ def _compose_diagnostic_inventory(
         [
             entry.name,
             ", ".join(entry.cli_flags),
+            entry.entrypoint_status,
             _yes_no(entry.uses_projected_state),
             _yes_no(entry.uses_repo_files),
             _yes_no(entry.supports_json),
