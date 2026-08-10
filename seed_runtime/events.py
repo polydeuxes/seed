@@ -230,6 +230,23 @@ class SQLiteEventLedger(EventLedger):
                 content_hash TEXT NOT NULL
             )
             """)
+        # Minted identifier counters, kept durably instead of reconstructed.
+        #
+        # `#2414` measured the reconstruction: every payload of every event
+        # deserialized and walked on every open, to recover the highest issued
+        # suffix per prefix. That is a whole-history read for an answer of a few
+        # integers, and it grows without bound — 36.9s at 100,000 events,
+        # extrapolating to about 356s at a million.
+        #
+        # This table is not an occurrence. It records no claim and supports no
+        # standing; it is ledger mechanics, and the `events` mutation refusal
+        # deliberately does not cover it.
+        self._connection.execute("""
+            CREATE TABLE IF NOT EXISTS id_reservations (
+                prefix TEXT PRIMARY KEY,
+                max_suffix INTEGER NOT NULL
+            )
+            """)
         # A store either was born with integrity or is not this store. There is
         # no ALTER path: creating a new database by running a compatibility
         # migration over the shape we no longer support is backwards, and an
@@ -279,8 +296,10 @@ class SQLiteEventLedger(EventLedger):
         max_event_suffix = self._max_event_id_suffix()
         self._next_event_number = max_event_suffix + 1
         reserve_id_prefix("evt", max_event_suffix)
-        self._reserve_persisted_payload_ids()
-        self._reserve_persisted_session_ids()
+        for prefix, max_suffix in self._connection.execute(
+            "SELECT prefix, max_suffix FROM id_reservations"
+        ):
+            reserve_id_prefix(prefix, max_suffix)
 
     def append(
         self,
@@ -335,9 +354,11 @@ class SQLiteEventLedger(EventLedger):
                     current=index,
                     total=total,
                 )
+        with self._connection:
+            for event in stored_events:
+                self._persist_reservations(self._observed_suffixes(event))
         for event in stored_events:
             self._advance_event_counter(event.id)
-            self._reserve_payload_ids(event.payload)
         return stored_events
 
     def get(self, event_id: str) -> Event | None:
@@ -403,9 +424,9 @@ class SQLiteEventLedger(EventLedger):
 
     def _insert(self, event: Event) -> None:
         self._insert_without_commit(event)
+        self._persist_reservations(self._observed_suffixes(event))
         self._connection.commit()
         self._advance_event_counter(event.id)
-        self._reserve_payload_ids(event.payload)
 
     def _insert_without_commit(self, event: Event) -> None:
         self._connection.execute(
@@ -484,6 +505,30 @@ class SQLiteEventLedger(EventLedger):
             except (TypeError, json.JSONDecodeError):
                 continue
             self._reserve_payload_ids(payload)
+
+    def _observed_suffixes(self, event: Event) -> dict[str, int]:
+        """Every reservable identifier this one occurrence carries."""
+        found: dict[str, int] = {}
+        values = list(_walk_values(event.payload))
+        if event.session_id is not None:
+            values.append(event.session_id)
+        for value in values:
+            if not isinstance(value, str):
+                continue
+            for prefix in (*self._PERSISTED_ID_PREFIXES, "session"):
+                suffix = _numeric_suffix(value, prefix)
+                if suffix is not None and suffix > found.get(prefix, 0):
+                    found[prefix] = suffix
+        return found
+
+    def _persist_reservations(self, observed: dict[str, int]) -> None:
+        for prefix, max_suffix in observed.items():
+            self._connection.execute(
+                "INSERT INTO id_reservations (prefix, max_suffix) VALUES (?, ?) "
+                "ON CONFLICT(prefix) DO UPDATE SET max_suffix = MAX(max_suffix, ?)",
+                (prefix, max_suffix, max_suffix),
+            )
+            reserve_id_prefix(prefix, max_suffix)
 
     def _reserve_persisted_session_ids(self) -> None:
         """Session ids live in their own column, not in any payload.

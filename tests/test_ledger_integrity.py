@@ -390,3 +390,82 @@ def test_a_nullable_digest_schema_is_refused_even_when_fully_digested(path):
 
     with pytest.raises(LedgerIntegrityError, match="declares content_hash nullable"):
         SQLiteEventLedger(path)
+
+
+# --------------------------------------------------------------------------
+# Identifier counters are kept, not reconstructed.
+# --------------------------------------------------------------------------
+
+
+def test_reservations_are_read_from_the_table_not_from_history(path):
+    """`#2414`'s whole-history read, replaced by a durable counter.
+
+    The open cost was linear in stored events — 36.9s at 100,000 — because
+    every payload was deserialized and walked to recover a few integers.
+    """
+    led = SQLiteEventLedger(path)
+    try:
+        led.append("k", "w", {"ref": "obs_000042"}, session_id="session_000007")
+        led.append("k", "w", {"ref": "evd_000005"})
+    finally:
+        led.close()
+
+    con = _raw(path)
+    try:
+        kept = dict(con.execute("SELECT prefix, max_suffix FROM id_reservations"))
+    finally:
+        con.close()
+    assert kept["obs"] == 42
+    assert kept["session"] == 7
+    assert kept["evd"] == 5
+
+
+def test_a_reopened_store_does_not_reissue_identifiers(path):
+    """The property the reservation exists for, across ledger lifetimes."""
+    from seed_runtime.ids import _next_values, new_id
+
+    led = SQLiteEventLedger(path)
+    led.append("k", "w", {"ref": "obs_000042"})
+    led.close()
+
+    _next_values.clear()          # a fresh process counts from 1
+    led = SQLiteEventLedger(path)
+    try:
+        assert new_id("obs") == "obs_000043"
+    finally:
+        led.close()
+
+
+def test_a_reservation_only_ever_rises(path):
+    led = SQLiteEventLedger(path)
+    try:
+        led.append("k", "w", {"ref": "obs_000042"})
+        led.append("k", "w", {"ref": "obs_000007"})
+    finally:
+        led.close()
+    con = _raw(path)
+    try:
+        kept = dict(con.execute("SELECT prefix, max_suffix FROM id_reservations"))
+    finally:
+        con.close()
+    assert kept["obs"] == 42
+
+
+def test_the_counter_table_is_not_an_occurrence(path):
+    """It records no claim, so the events mutation refusal does not cover it."""
+    led = SQLiteEventLedger(path)
+    try:
+        event = led.append("k", "w", {"ref": "obs_000042"})
+    finally:
+        led.close()
+    con = _raw(path)
+    try:
+        con.execute("UPDATE id_reservations SET max_suffix = 99 WHERE prefix = 'obs'")
+        con.commit()
+    finally:
+        con.close()
+    led = SQLiteEventLedger(path)
+    try:
+        assert led.integrity_of(event.id) == VERIFIED
+    finally:
+        led.close()

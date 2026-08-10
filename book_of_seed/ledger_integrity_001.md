@@ -158,3 +158,39 @@ arrangement supplies separately.
 **That a trigger is the right mechanism.** It is *a* mechanism that refuses the
 mutation the API never performs. Content addressing, an integrity root, or a
 different store would each make different claims, and none was compared.
+
+## Identifier counters, kept rather than reconstructed
+
+`#2414` recorded the largest remaining whole-history read and curator scoped it
+out at the time. The rerun's scale reopened it.
+
+**[measured]** Reconstructing the highest issued suffix per prefix by walking
+every stored payload, on every open:
+
+```text
+    5,000 events   1.87s
+   20,000 events   7.42s
+   50,000 events  18.55s
+  100,000 events  36.92s
+  ~965,000 events ~356s extrapolated, every open
+```
+
+**[measured]** Kept in an `id_reservations` table written by the same
+transaction as the occurrence that carried the identifier:
+
+```text
+    5,000 events   0.006s
+   20,000 events   0.015s
+   50,000 events   0.038s
+  100,000 events   0.075s
+```
+
+**[inference]** The table is not an occurrence. It records no claim, supports no
+standing, and only ever rises; it is ledger mechanics, and the `events` mutation
+refusal deliberately does not cover it. A test pins that rewriting it does not
+make any occurrence `CORRUPTED`.
+
+**[measured]** The property the reservation exists for is unchanged: three
+separate OS processes against one durable store still receive distinct sessions
+and every occurrence verifies. `#2415` established that without reservation the
+second process reissues identifiers and aborts.
