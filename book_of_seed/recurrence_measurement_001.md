@@ -1,4 +1,4 @@
-# Recurrence across bounded exchanges, and #2429's over-reach corrected
+# Counting exchanges over recorded occurrences, corrected three times
 
 Runtime amended narrowly. No Book amendment.
 
@@ -108,6 +108,74 @@ not appear at all.
 under one exchange's session while consuming a finding from another, so
 filtering to one session would report the other exchange as never having
 measured the coordinate. The mode is removed rather than repaired.
+
+## Four further corrections
+
+### Responsibility is not the Act
+
+**[measured]** `#2430` removed an invented Responsibility and wrote
+`declared-measurement` in its place.
+
+**[measured]** `#2423` recovered that declared measurement has **no production
+owner in active law**: "the act that would produce the finding has no named
+owner", with `production owner: none found` set against operational
+measurement's named one.
+
+**[inference]** So the replacement asserts the owner that recovery says is
+absent. The same slot, filled differently wrong. The coordinate now reads
+`unrecovered; declared measurement has no production owner in active law
+(#2423)`, and a test asserts it is not `declared-measurement`.
+
+**[measured]** The contamination is inherited rather than invented.
+`preserved_material_measurement.py:246` records
+`declared-measurement-over-preserved-material` and
+`measurement_self_survey.py:140` records
+`declared-survey-over-recorded-measurements`, still carrying `survey`. Both are
+merged and outside this branch; they are recorded here rather than silently
+widened into.
+
+### A count of one is not a recurrence
+
+**[measured]** `01.External:28` lists exact equality, **count**, **recurrence**,
+prefix occurrence, declared-predicate result and adjacency as separate findings.
+
+**[measured]** `#2430` named the shape `RecurrenceFinding` and rendered a count
+of one as `recurs in 1 bounded exchanges`.
+
+**Now:** `exchange_count` is a finding at any value; `recurrence_established` is
+true only above one, and the sentence follows it.
+
+```text
+  ('a', 'thing')  was measured in 1 bounded exchange of 4 declared, at ...
+  ('a', 'word')   recurs in 3 bounded exchanges of 4 declared, at ...
+```
+
+### The bounded scope is declared, not swept
+
+**[measured]** `#2430` built `bounded_exchanges` from every measurement
+occurrence in the workspace, so an exchange entered the denominator by having
+measured anything at all. A measurement of `"nothing"` set the denominator of a
+finding about `"a"`.
+
+**[inference]** That is workspace visibility choosing Applicability.
+`01.External:28` requires a recurrence assertion to disclose the bounded scope
+within which occurrences were counted, and a scope the act discovers is not a
+scope it discloses. `bounded_exchanges` is now a required argument and an empty
+declaration is refused.
+
+**[inference]** Repairing only the *provenance* of the swept set would have made
+the citation honest and left the boundary chosen by control flow. That was the
+deeper defect and the reason this correction is not just an Evidence fix.
+
+### What places an exchange in a result travels with it
+
+**[measured]** `#2430` cited only occurrences matching the grouped identity, so
+an exchange could be placed in `coordinate_not_measured` by an occurrence absent
+from `consumed_event_ids`.
+
+**Now:** every occurrence that establishes where a declared exchange stands
+travels, pinned by a test that adds an exchange through an unrelated measurement
+and requires that measurement in the support.
 
 ## What this does not establish
 
