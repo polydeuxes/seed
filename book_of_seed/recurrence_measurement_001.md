@@ -177,6 +177,99 @@ from `consumed_event_ids`.
 travels, pinned by a test that adds an exchange through an unrelated measurement
 and requires that measurement in the support.
 
+### Declaring a Scope does not establish its members
+
+**[measured]** `#2431` accepted any name in `bounded_exchanges`. A declaration
+of `workspace:w;session:ghost` placed `ghost` in `coordinate_not_measured`, with
+no Evidence that any such exchange occurred.
+
+**[inference]** Having just removed *workspace visibility choosing
+Applicability*, `#2431` replaced it with *caller declaration creating a
+subject*. The correct split:
+
+```text
+  declaring the measurement Scope   chooses among established exchanges
+  establishing an exchange          a recorded occurrence carries it
+```
+
+A declared exchange with no recorded occurrence is now refused.
+
+**The first attempt picked the wrong witness.** It established existence from
+`dimensions.scope_locality` — the coordinate this same report leaves Unknown two
+sections down — and read `ledger.list(workspace_id)` to gather it, reinstating
+the whole-workspace-read shape `#2416` removed and measured at 20x. Both are
+corrected:
+
+```text
+  a bounded exchange IS      the recorded session boundary
+  established by             a recorded occurrence within it
+  read through               ledger.list_session(workspace, session)
+  costing                    one bounded read per declared exchange
+```
+
+**[measured]** `session_id` is a top-level recorded coordinate of every event.
+`scope_locality` is a payload description a record can say anything in, and a
+test now writes `scope_locality = ...ghost` into an occurrence recorded under
+`s1` and requires `ghost` to remain unestablished.
+
+**[measured]** A second test traces the durable ledger's SQL and requires every
+read to name a session, one per declared exchange, with none sweeping the
+workspace. It is asserted on SQLite because the in-memory `list_session` is a
+comprehension over the workspace list, as `#2416` recorded — the in-memory
+ledger cannot witness this.
+
+**[inference]** Bounding the reads also bounded the act: the module no longer
+reads the workspace at all, where `#2430` and `#2431` gathered every comparison
+and measurement in it.
+
+**[measured]** One existing test was passing for the wrong reason and now fails
+correctly — it declared four exchanges that never existed in its ledger, and
+reached the intended refusal by a different route.
+
+## Two questions this exposed, and did not answer
+
+### An Act with no recovered producer, recording produced Standing
+
+**[measured]** The same event now records:
+
+```text
+  responsibility   unrecovered; declared measurement has no production owner
+  standing         measured
+```
+
+**[Unknown]** Whether an Act whose producing Responsibility is unrecovered may
+lawfully produce Standing at all. Under a Responsibility-first topology the
+answer is plausibly no, and amending from that intuition would be exactly the
+move this session keeps catching.
+
+**[measured]** The question reaches backward. `preserved_material_measurement`
+and `measurement_self_survey` record `measured` Standing under the same
+unrecovered producer, so this is not a property of the new module.
+
+**[inference]** Making the contradiction visible is worth more than resolving
+it by inventing an owner. It may mean the whole measurement campaign has been a
+useful witness implementation running ahead of the Responsibility that would
+make its findings Seed's Standing — which matters before Acquisition Seed
+depends on them.
+
+### `scope_locality` may be occurrence locality, not claim Scope
+
+**[measured]** `record_measured_count` sets
+`dimensions.scope_locality = workspace:w;session:<the session it was appended
+under>`, while the finding's declared Scope is the N bounded exchanges. The
+comparison recorder does the same.
+
+**[Unknown]** Whether `scope_locality` names where the occurrence happened or
+what the record asserts about. If a consumer reads it as claim Scope, that is a
+compression:
+
+```text
+  where the record occurred  !=  Scope of what the record asserts
+```
+
+Not folded into this correction, because a coordinate used by several recorders
+should be recovered rather than reinterpreted in one of them.
+
 ## What this does not establish
 
 **That recurrence is a relation.** `01.Standing.D` refuses relation standing to

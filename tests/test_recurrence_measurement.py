@@ -29,6 +29,7 @@ from seed_runtime.preserved_material_measurement import (
 )
 from seed_runtime.recurrence_measurement import (
     DECLARED_IDENTITY,
+    occurrences_of_declared_exchanges,
     EXCHANGE_COUNT_RECORDED_KIND,
     FORBIDDEN_INFERENCES,
     RecurrenceMeasurementError,
@@ -38,7 +39,7 @@ from seed_runtime.recurrence_measurement import (
 )
 from scripts import seed_local
 
-DECLARED = tuple(f"workspace:w;session:{s}" for s in ("s1","s2","s3","s4"))
+DECLARED = ("s1", "s2", "s3", "s4")   # a bounded exchange is the recorded session
 
 EXCHANGES = {
     "s1": "a word is here\n",
@@ -122,8 +123,35 @@ def test_measuring_without_any_comparison_is_refused():
     seed_local.run_persistent_operator_console(
         ledger=ledger, workspace_id="w", session_id="s",
         input_stream=StringIO("a word\nexit\n"), output_stream=StringIO())
-    with pytest.raises(RecurrenceMeasurementError, match="not preserved\nmaterial|not preserved material"):
-        measure_exchange_counts(ledger, workspace_id="w", bounded_exchanges=DECLARED)
+    with pytest.raises(RecurrenceMeasurementError, match="not preserved material"):
+        measure_exchange_counts(
+            ledger, workspace_id="w",
+            bounded_exchanges=["s"])
+
+
+def test_declaring_an_exchange_does_not_establish_it(compared):
+    """`#2431` accepted any name and placed it in coordinate_not_measured.
+
+    Declaring the Scope chooses among established exchanges. It cannot create
+    one by naming it — the caller-side twin of the workspace sweeping `#2431`
+    had just removed.
+    """
+    with pytest.raises(RecurrenceMeasurementError, match="no recorded occurrence"):
+        measure_exchange_counts(
+            compared, workspace_id="w",
+            bounded_exchanges=DECLARED + ("ghost",))
+
+
+def test_a_named_exchange_cannot_enter_the_third_result_unestablished(compared):
+    """The exact consequence: a ghost would have been counted as not measuring."""
+    with pytest.raises(RecurrenceMeasurementError):
+        measure_exchange_counts(
+            compared, workspace_id="w",
+            bounded_exchanges=("s1", "ghost"))
+    # and the established ones alone are fine
+    findings = measure_exchange_counts(
+        compared, workspace_id="w", bounded_exchanges=("s1",))
+    assert all(f.bounded_exchanges == ("s1",) for f in findings)
 
 
 # --------------------------------------------------------------------------
@@ -186,7 +214,7 @@ def test_the_consumed_measurements_travel_not_only_the_comparisons(compared):
 def test_every_exchange_s_measurement_is_among_the_support(compared):
     finding = _by_right(compared)["word"]
     supporting = {
-        compared.get(i).payload["dimensions"]["scope_locality"]
+        compared.get(i).session_id
         for i in finding.consumed_event_ids
         if compared.get(i).kind == MEASUREMENT_RECORDED_KIND
     }
@@ -201,16 +229,12 @@ def test_every_exchange_s_measurement_is_among_the_support(compared):
 def test_it_counts_the_exchanges_the_distinction_recurs_in(compared):
     finding = _by_right(compared)["word"]
     assert finding.exchange_count == 3
-    assert finding.measured_in == (
-        "workspace:w;session:s1",
-        "workspace:w;session:s2",
-        "workspace:w;session:s3",
-    )
+    assert finding.measured_in == ("s1", "s2", "s3")
 
 
 def test_measuring_the_coordinate_without_the_distinction_is_its_own_result(compared):
     finding = _by_right(compared)["word"]
-    assert finding.measured_without_distinction == ("workspace:w;session:s4",)
+    assert finding.measured_without_distinction == ("s4",)
 
 
 def test_a_count_of_one_is_a_finding_and_is_not_recurrence(compared):
@@ -221,7 +245,7 @@ def test_a_count_of_one_is_a_finding_and_is_not_recurrence(compared):
     recurred.
     """
     finding = _by_right(compared)["thing"]
-    assert finding.measured_in == ("workspace:w;session:s4",)
+    assert finding.measured_in == ("s4",)
     assert finding.exchange_count == 1
     assert finding.recurrence_established is False
     assert "was measured in 1 bounded exchange" in render_measured_count(finding)
@@ -249,11 +273,11 @@ def _add_s5(ledger):
 
 def test_an_exchange_that_never_measured_the_coordinate_is_distinguished(compared):
     _add_s5(compared)
-    declared = DECLARED + ("workspace:w;session:s5",)
+    declared = DECLARED + ("s5",)
     finding = _by_right(compared, declared)["word"]
-    assert "workspace:w;session:s5" in finding.coordinate_not_measured
-    assert "workspace:w;session:s5" not in finding.measured_without_distinction
-    assert "workspace:w;session:s5" not in finding.measured_in
+    assert "s5" in finding.coordinate_not_measured
+    assert "s5" not in finding.measured_without_distinction
+    assert "s5" not in finding.measured_in
 
 
 def test_what_places_an_exchange_in_the_third_result_travels_as_support(compared):
@@ -264,9 +288,9 @@ def test_what_places_an_exchange_in_the_third_result_travels_as_support(compared
     being absent from `consumed_event_ids`.
     """
     unrelated = _add_s5(compared)
-    declared = DECLARED + ("workspace:w;session:s5",)
+    declared = DECLARED + ("s5",)
     finding = _by_right(compared, declared)["word"]
-    assert "workspace:w;session:s5" in finding.coordinate_not_measured
+    assert "s5" in finding.coordinate_not_measured
     assert unrelated.id in finding.consumed_event_ids
 
 
@@ -274,8 +298,8 @@ def test_an_undeclared_exchange_enters_nothing(compared):
     """`#2430` swept the workspace, so any measurement enlarged the denominator."""
     _add_s5(compared)
     finding = _by_right(compared)["word"]          # s5 not declared
-    assert "workspace:w;session:s5" not in finding.bounded_exchanges
-    assert "workspace:w;session:s5" not in finding.coordinate_not_measured
+    assert "s5" not in finding.bounded_exchanges
+    assert "s5" not in finding.coordinate_not_measured
     assert len(finding.bounded_exchanges) == 4
 
 
@@ -343,3 +367,76 @@ def test_the_vocabulary_is_gone(compared):
     rendered = str(event.payload).lower()
     for word in ("cohort", "population", "survey", "exposed", "bodies"):
         assert word not in rendered
+
+
+# --------------------------------------------------------------------------
+# A bounded exchange is the recorded session, and validating one is bounded.
+# --------------------------------------------------------------------------
+
+
+def test_a_payload_string_cannot_manufacture_an_exchange(compared):
+    """`#2432` established existence from `dimensions.scope_locality`.
+
+    That coordinate's meaning is itself left Unknown by the same report, and a
+    record can say anything in it. The recorded session boundary is the witness.
+    """
+    compared.append(
+        "operator.measurement.finding_recorded", "w",
+        {"dimensions": {"scope_locality": "workspace:w;session:ghost"}},
+        session_id="s1",
+    )
+    with pytest.raises(RecurrenceMeasurementError, match="no recorded occurrence"):
+        measure_exchange_counts(
+            compared, workspace_id="w", bounded_exchanges=DECLARED + ("ghost",))
+
+
+def test_durable_validation_does_not_read_the_whole_workspace(tmp_path):
+    """`#2416` removed this shape and measured 20x; it must not return.
+
+    Asserted on the durable ledger, where `list_session` is an indexed query.
+    The in-memory ledger implements `list_session` as a comprehension over the
+    workspace list, which `#2416` recorded, so it cannot witness this.
+    """
+    from seed_runtime.events import SQLiteEventLedger
+
+    ledger = SQLiteEventLedger(str(tmp_path / "seed.db"))
+    try:
+        for session_id, material in EXCHANGES.items():
+            seed_local.run_persistent_operator_console(
+                ledger=ledger, workspace_id="w", session_id=session_id,
+                input_stream=StringIO(material + "exit\n"),
+                output_stream=StringIO())
+        findings = {}
+        for session_id in EXCHANGES:
+            occ = preserved_ingress_occurrences(
+                ledger, workspace_id="w", session_id=session_id)
+            findings[session_id] = record_measurement_finding(
+                ledger, workspace_id="w", session_id=session_id,
+                finding=measure_after(occ, "a", counting_scope=SCOPE)).id
+        _compare_all(ledger, findings)
+
+        statements = []
+        ledger._connection.set_trace_callback(statements.append)
+        measure_exchange_counts(
+            ledger, workspace_id="w", bounded_exchanges=DECLARED)
+        ledger._connection.set_trace_callback(None)
+    finally:
+        ledger.close()
+
+    selects = [q for q in statements if q.strip().upper().startswith("SELECT *")]
+    assert selects, "the measurement read something"
+    for query in selects:
+        assert "session_id" in query, query
+        assert "FROM events WHERE workspace_id" in query, query
+    # every read named a session; none swept the workspace
+    assert len(selects) == len(DECLARED)
+
+
+def test_the_declared_exchanges_bound_what_is_read(compared):
+    """Reading two declared exchanges does not deserialize the other two."""
+    by_exchange = occurrences_of_declared_exchanges(
+        compared, workspace_id="w", bounded_exchanges=("s1", "s2"))
+    assert set(by_exchange) == {"s1", "s2"}
+    for exchange, events in by_exchange.items():
+        assert events
+        assert {e.session_id for e in events} == {exchange}

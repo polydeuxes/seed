@@ -3,7 +3,9 @@
 **No new Act.** `#2351` recovered declared measurement and said no new act,
 noun, or grammar is required; recurrence and count are already its findings.
 This measures a different subject — recorded comparison and measurement
-occurrences instead of preserved material — and produces a recurrence finding.
+occurrences instead of preserved material — and produces an exact count of the
+bounded exchanges a distinction was measured in. Recurrence is one reading of
+that count, warranted only where the count exceeds one.
 A distinct record shape is warranted (`#2399`: a downstream shape must not
 decide an upstream subject); a distinct Responsibility is not.
 
@@ -14,9 +16,11 @@ Responsibility nothing established, and `cohort`, `population`, `body` and
 reports is:
 
 ```text
-this measured distinction recurs in N bounded exchanges
+this measured distinction was measured in N of the declared bounded exchanges
 under the declared rule and Scope
 ```
+
+and recurrence is asserted only where N exceeds one.
 
 **Its result stands on both recorded kinds.** Recorded comparison occurrences
 say which exchanges measured the distinction. Recorded measurement occurrences
@@ -78,7 +82,7 @@ class RecurrenceMeasurementError(Exception):
 
 @dataclass(frozen=True)
 class MeasuredDistinction:
-    """What recurred, under the whole declared identity it was measured with."""
+    """What was measured, under the whole declared identity it was measured with."""
 
     right_representation: str
     declared: tuple[tuple[str, str], ...]
@@ -135,20 +139,22 @@ class MeasuredCountFinding:
         }
 
 
-def recorded_comparison_occurrences(
-    ledger: EventLedger, *, workspace_id: str
-) -> list[Event]:
-    return [
-        e for e in ledger.list(workspace_id) if e.kind == COMPARISON_RECORDED_KIND
-    ]
+def occurrences_of_declared_exchanges(
+    ledger: EventLedger, *, workspace_id: str, bounded_exchanges: Iterable[str]
+) -> dict[str, list[Event]]:
+    """Each declared exchange's recorded occurrences, read one session at a time.
 
+    A bounded exchange **is** the recorded session boundary the durable-console
+    work established. `#2432` established existence from
+    `dimensions.scope_locality` — a payload description whose meaning that same
+    report left Unknown — and read `ledger.list(workspace_id)` to do it, which
+    is the whole-workspace-read shape `#2416` removed and measured at 20x.
+    """
 
-def recorded_measurement_occurrences(
-    ledger: EventLedger, *, workspace_id: str
-) -> list[Event]:
-    return [
-        e for e in ledger.list(workspace_id) if e.kind == MEASUREMENT_RECORDED_KIND
-    ]
+    return {
+        exchange: ledger.list_session(workspace_id, exchange)
+        for exchange in bounded_exchanges
+    }
 
 
 def _declared_of_measurement(event: Event) -> tuple[tuple[str, str], ...] | None:
@@ -172,14 +178,15 @@ def _declared_of_comparison(event: Event) -> tuple[tuple[str, str], ...] | None:
     return tuple(declared)
 
 
-def _exchange_of(preserved: dict[str, Any]) -> str | None:
-    return preserved.get("carried", {}).get("scope")
+def _exchange_of(event: Event) -> str | None:
+    """The recorded session boundary, a top-level coordinate of the occurrence."""
+    return event.session_id
 
 
 def measure_exchange_counts(
     ledger: EventLedger, *, workspace_id: str, bounded_exchanges: Iterable[str]
 ) -> list[MeasuredCountFinding]:
-    """Count, over recorded occurrences, the exchanges each distinction recurs in.
+    """Count, over recorded occurrences, the exchanges each distinction was measured in.
 
     `bounded_exchanges` is required and is the declared scope. `#2430` swept
     every measurement in the workspace instead, so an exchange entered the
@@ -199,8 +206,25 @@ def measure_exchange_counts(
             "a declared measurement discloses the bounded scope within which "
             "occurrences were counted; no bounded exchanges were declared"
         )
-    comparisons = recorded_comparison_occurrences(ledger, workspace_id=workspace_id)
-    measurements = recorded_measurement_occurrences(ledger, workspace_id=workspace_id)
+    # Declaring the Scope chooses which established exchanges this measurement
+    # concerns. It does not establish them: a recorded occurrence within the
+    # session boundary does. Each declared exchange is read through that exact
+    # boundary, so the existence check costs one bounded read per declared
+    # exchange rather than a pass over the workspace.
+    by_exchange = occurrences_of_declared_exchanges(
+        ledger, workspace_id=workspace_id, bounded_exchanges=declared_exchanges
+    )
+    unestablished = [x for x in declared_exchanges if not by_exchange[x]]
+    if unestablished:
+        raise RecurrenceMeasurementError(
+            "declared bounded exchanges with no recorded occurrence: "
+            f"{', '.join(unestablished)}. Declaring a measurement's Scope "
+            "chooses among established exchanges; it does not establish them"
+        )
+    occurrences = [e for events in by_exchange.values() for e in events]
+    comparisons = [e for e in occurrences if e.kind == COMPARISON_RECORDED_KIND]
+    measurements = [e for e in occurrences if e.kind == MEASUREMENT_RECORDED_KIND]
+    session_of = {e.id: _exchange_of(e) for e in measurements}
     if not comparisons:
         raise RecurrenceMeasurementError(
             "no recorded comparison occurrences to measure; this measurement's "
@@ -218,7 +242,7 @@ def measure_exchange_counts(
     # `coordinate_not_measured` by an occurrence absent from the support.
     presence_evidence: dict[str, set[str]] = {}
     for event in measurements:
-        exchange = event.payload.get("dimensions", {}).get("scope_locality")
+        exchange = _exchange_of(event)
         if exchange is None or exchange not in declared_exchanges:
             continue
         presence_evidence.setdefault(exchange, set()).add(event.id)
@@ -235,7 +259,9 @@ def measure_exchange_counts(
         if declared is None:
             continue
         inputs = event.payload.get("inputs", [])
-        exchanges = [_exchange_of(i) for i in inputs]
+        # An input's exchange is the recorded session of the occurrence it
+        # names, recovered from the measurements already read.
+        exchanges = [session_of.get(i.get("event_id")) for i in inputs]
         if any(x is None or x not in declared_exchanges for x in exchanges):
             continue
         by_event = {i["event_id"]: x for i, x in zip(inputs, exchanges)}
