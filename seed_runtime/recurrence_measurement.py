@@ -43,7 +43,7 @@ from dataclasses import dataclass
 from typing import Any, Iterable, Iterator
 
 from seed_runtime.bounded_testimony_comparison import COMPARISON_RECORDED_KIND
-from seed_runtime.events import EventLedger
+from seed_runtime.events import EventLedger, EventLedgerBoundary
 from seed_runtime.models import Event
 from seed_runtime.preserved_material_measurement import MEASUREMENT_RECORDED_KIND
 
@@ -114,6 +114,7 @@ class MeasuredCountFinding:
     measured_without_distinction: tuple[str, ...]
     coordinate_not_measured: tuple[str, ...]
     consumed_event_ids: tuple[str, ...]
+    consumed_ledger_boundary: EventLedgerBoundary
     bounded_exchanges: tuple[str, ...]
 
     @property
@@ -136,6 +137,9 @@ class MeasuredCountFinding:
             "recurrence_established": self.recurrence_established,
             "bounded_exchanges": list(self.bounded_exchanges),
             "consumed_event_ids": list(self.consumed_event_ids),
+            "consumed_ledger_boundary": {
+                "commitment": self.consumed_ledger_boundary.commitment,
+            },
         }
 
 
@@ -197,6 +201,10 @@ def measure_exchange_counts(
             "a declared measurement discloses the bounded scope within which "
             "occurrences were counted; no bounded exchanges were declared"
         )
+    # Every probe and both occurrence passes consume one ledger-owned append
+    # prefix. The boundary is carried as read provenance; it is not an Event
+    # identity and does not strengthen the occurrences read through it.
+    consumed_ledger_boundary = ledger.capture_boundary()
     # Declaring the Scope chooses which established exchanges this measurement
     # concerns. It does not establish them: a recorded occurrence within the
     # session boundary does. Each declared exchange is read through that exact
@@ -214,11 +222,16 @@ def measure_exchange_counts(
     unestablished: list[str] = []
 
     for exchange in declared_exchanges:
-        if not ledger.has_session(workspace_id, exchange):
+        if not ledger.has_session(
+            workspace_id, exchange, through=consumed_ledger_boundary
+        ):
             unestablished.append(exchange)
             continue
         for event in ledger.iter_session_kind(
-            workspace_id, exchange, MEASUREMENT_RECORDED_KIND
+            workspace_id,
+            exchange,
+            MEASUREMENT_RECORDED_KIND,
+            through=consumed_ledger_boundary,
         ):
             session_of[event.id] = exchange
             presence_evidence.setdefault(exchange, set()).add(event.id)
@@ -241,7 +254,10 @@ def measure_exchange_counts(
     comparison_seen = False
     for exchange in declared_exchanges:
         for event in ledger.iter_session_kind(
-            workspace_id, exchange, COMPARISON_RECORDED_KIND
+            workspace_id,
+            exchange,
+            COMPARISON_RECORDED_KIND,
+            through=consumed_ledger_boundary,
         ):
             comparison_seen = True
             declared = _declared_of_comparison(event)
@@ -301,6 +317,7 @@ def measure_exchange_counts(
                 measured_without_distinction=tuple(sorted(measured - where)),
                 coordinate_not_measured=tuple(sorted(not_measured)),
                 consumed_event_ids=tuple(sorted(evidence)),
+                consumed_ledger_boundary=consumed_ledger_boundary,
                 bounded_exchanges=declared_exchanges,
             )
         )
