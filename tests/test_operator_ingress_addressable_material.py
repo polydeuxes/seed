@@ -259,7 +259,7 @@ def test_noncanonical_source_span_shapes_cannot_self_certify(shape):
         )
 
 
-def test_representation_insufficiency_forms_no_addressable_material():
+def test_rejected_bytes_form_no_addressable_material():
     ledger = EventLedger()
     output = StringIO()
     view = run_operator_ingress_attempt(

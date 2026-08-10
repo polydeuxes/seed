@@ -711,8 +711,8 @@ def test_production_and_event_payloads_do_not_claim_source_relative_original_byt
 def test_invalid_initial_bytes_are_preserved_without_replacement_and_stop_before_enum():
     ledger, view, output = run_raw(b"\xff\n1\n")
     assert output == (
-        "Representation insufficient: captured material did not decode under "
-        "the selected decoder mechanism.\n"
+        "Decoder outcome bytes_rejected: captured material did not "
+        "decode under utf-8.\n"
     )
     events = ledger.list_events("raw-w")
     assert events[0].payload["exact_bytes_hex"] == "ff0a"
