@@ -109,6 +109,19 @@ class EventLedger:
         """Backward-compatible alias for :meth:`list`."""
         return self.list(workspace_id)
 
+    def list_session(self, workspace_id: str, session_id: str) -> list[Event]:
+        """Return one session's events in append order.
+
+        A session projection reads a session. Reading the whole workspace and
+        discarding the rest costs the whole workspace, which for a durable
+        ledger grows without bound while the answer does not.
+        """
+        return [
+            event
+            for event in self.list(workspace_id)
+            if event.session_id == session_id
+        ]
+
     def extend(self, events: Iterable[Event]) -> None:
         """Append externally constructed events while preserving order and IDs."""
         self.append_many(events)
@@ -244,6 +257,14 @@ class SQLiteEventLedger(EventLedger):
 
     def list_events(self, workspace_id: str | None = None) -> list[Event]:
         return self.list(workspace_id)
+
+    def list_session(self, workspace_id: str, session_id: str) -> list[Event]:
+        rows = self._connection.execute(
+            "SELECT * FROM events WHERE workspace_id = ? AND session_id = ? "
+            "ORDER BY rowid",
+            (workspace_id, session_id),
+        ).fetchall()
+        return [self._row_to_event(row) for row in rows]
 
     def extend(self, events: Iterable[Event]) -> None:
         self.append_many(events)
