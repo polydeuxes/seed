@@ -37,8 +37,12 @@ projecting Standing for a **freshly allocated** session:
   presentations found        0       0       0       0       0
 ```
 
-It read the entire durable history, every time, to find nothing — because a
-fresh session has no events by construction.
+It read the entire durable history to answer a question about one session.
+
+**The defect is the read's extent, not the answer.** Empty Standing is a valid
+Standing and is lawful Evidence, as the console states where it forms C0 from
+it. A fresh session having no prior occurrences is the correct answer, not a
+wasted one.
 
 **[inference]** At corpus scale this is the shape of the problem
 `project_corpus_runs_and_projector_state` records as already killed once. A
@@ -117,8 +121,9 @@ operator's call and nothing here presumes it.
 **That `--workspace` is the right second console option.** It was included
 because the console already accepted it; no separate reason was established.
 
-**That the startup projection is needed at all.** For a freshly allocated
-session it is provably empty. It was left in place because
-`run_persistent_operator_console` is also called with existing session ids, and
-removing it would have been a change to the console's contract rather than to
-its cost.
+**That an empty projection is a projection worth removing.** An earlier draft
+of this report raised that, and the operator withdrew it. Empty Standing is a
+valid Standing that can be represented, and C0 forming from it is the ordinary
+first-contact path rather than a computation with nothing to do. What this
+repair changed is how much history that projection reads, and nothing about
+whether it should run.
