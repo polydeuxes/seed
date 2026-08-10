@@ -5692,6 +5692,7 @@ def run_persistent_operator_console(
     session_id: str,
     input_stream: TextIO,
     output_stream: TextIO,
+    process_boundary_escape: bool = True,
 ) -> None:
     """Own process-local repetition around bounded operator interactions."""
     output_stream.write("Seed console: `exit` exits.\n")
@@ -5730,7 +5731,25 @@ def run_persistent_operator_console(
         # produces no exchange events, and never enters Presentation
         # coordinates.  C0 formation and emission have already occurred; the
         # local-stop alternative uses recorded Compare/Identification.
-        if captured_ingress.eof or _is_console_exit(
+        #
+        # `process_boundary_escape=False` is **bootstrap scaffolding**, and the
+        # circle it breaks is exact: Seed needs Bash evidence, the Bash guide
+        # contains a line whose entire content is `exit`, the escape consumes
+        # it as control, so Seed cannot acquire enough Bash to use Bash through
+        # an egress it does not have yet. `#2435` measured the cost at 2,957 of
+        # 54,264 lines.
+        #
+        # This is not a second ingress mode and Seed is not told that `exit` is
+        # sometimes material. The escape is a convenience of the surrounding
+        # developer console, and a non-interactive driver simply does not
+        # install it; termination then comes from EOF, outside the material
+        # stream, where no corpus line can collide with it. Renaming the token
+        # would move the collision rather than remove it. The accommodation
+        # disappears when Seed's own egress makes acquisition stop passing
+        # through operator escape syntax.
+        if captured_ingress.eof:
+            return
+        if process_boundary_escape and _is_console_exit(
             captured_ingress.exact_bytes, captured_ingress.encoding_testimony
         ):
             return
