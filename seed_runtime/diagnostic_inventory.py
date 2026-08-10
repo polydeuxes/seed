@@ -1455,7 +1455,6 @@ DIAGNOSTIC_INVENTORY: tuple[DiagnosticInventoryEntry, ...] = (
         mutates_cluster=False,
         reads_diagnostic_facts=False,
         description="Lists registry-declared diagnostic and operational surfaces without recording or mutation.",
-        entrypoint_status="active",
     ),
     DiagnosticInventoryEntry(
         name="diagnostic_shape_audit",
@@ -1471,7 +1470,6 @@ DIAGNOSTIC_INVENTORY: tuple[DiagnosticInventoryEntry, ...] = (
         mutates_cluster=False,
         reads_diagnostic_facts=False,
         description="Compares diagnostic registry declarations with static implementation shape without recording or mutation.",
-        entrypoint_status="active",
     ),
     DiagnosticInventoryEntry(
         name="projected_state_consumers",

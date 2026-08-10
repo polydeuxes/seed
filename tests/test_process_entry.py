@@ -27,7 +27,9 @@ def test_importing_the_live_entry_does_not_wake_the_compatibility_district():
                 "import sys; import seed_runtime.process_entry; "
                 "assert 'scripts.seed_local' not in sys.modules; "
                 "assert 'seed_runtime.observations' not in sys.modules; "
-                "assert 'seed_runtime.state' not in sys.modules"
+                "assert 'seed_runtime.state' not in sys.modules; "
+                "assert 'seed_runtime.diagnostic_inventory' not in sys.modules; "
+                "assert 'seed_runtime.diagnostic_shape_audit' not in sys.modules"
             ),
         ],
         check=False,
@@ -81,6 +83,21 @@ def test_reopened_live_process_allocates_a_new_session(tmp_path):
     assert len(sessions) == 2
 
 
-def test_historical_operational_flag_is_not_on_the_live_entry():
+@pytest.mark.parametrize(
+    "flag",
+    [
+        "--diagnostic-inventory",
+        "--diagnostic-shape-audit",
+        "--json",
+        "--status",
+        "--mismatches",
+    ],
+)
+def test_historical_operational_flag_is_not_on_the_live_entry(flag):
+    with pytest.raises(SystemExit, match="2"):
+        process_entry.main([flag])
+
+
+def test_historical_ingestion_flag_is_not_on_the_live_entry():
     with pytest.raises(SystemExit, match="2"):
         process_entry.main(["--observe", "host", "status", "healthy"])
