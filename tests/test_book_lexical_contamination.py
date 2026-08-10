@@ -79,6 +79,13 @@ BANNED: tuple[tuple[str, str], ...] = (
     # Active law itself denies "a universal Learning object" and denies
     # authorizing "general language learning".
     (r"\blearn\w*\b", "learn*"),
+    # `actor` entered with the retired generalized runtime as a closed list of
+    # user/model/system/tool/builder/approver labels.  It names no Responsibility
+    # that established Producer or attributed-source distinctions do not
+    # already carry.  The durable occurrence column is retained as
+    # unconstrained compatibility shape; storage survival does not establish
+    # Book grammar.
+    (r"\bactors?\b", "actor"),
 )
 
 # The discriminator, corrected.
@@ -89,11 +96,14 @@ BANNED: tuple[tuple[str, str], ...] = (
 #
 # The test is:
 #
-#     name its Responsibility -- the owner, the act that produces it, and the
-#     standing that production establishes
+#     name the Responsibility no other established coordinate already carries,
+#     then recover its owner, the act that produces it, and the standing that
+#     production establishes
 #
-#     can be named  ->  established vocabulary, however ordinary it sounds
-#     cannot        ->  wording, and it must not be used as the doer
+#     unique Responsibility can be named  ->  admitted vocabulary, however
+#                                             ordinary it sounds
+#     no unique Responsibility             ->  wording, alias, or duplicate;
+#                                             it must not enter as the doer
 #
 # `05.Recording.A` passes: a recording boundary may create retrievable
 # assertion-bearing material, and the produced standing is that a record exists
@@ -130,6 +140,13 @@ BANNED: tuple[tuple[str, str], ...] = (
 #                 active law's own required text.  A required coordinate with
 #                 no owner is a different defect from a word with no owner, and
 #                 this gate is not the place to decide which repair applies.
+#   actor         BANNED.  Historical reconciliation called it coarse event
+#                 authorship vocabulary, but it carries no Responsibility not
+#                 already carried by established Producer or attributed-source
+#                 distinctions.  `#2450` removed its closed runtime grammar
+#                 while retaining the durable column as an unconstrained
+#                 compatibility label.  That physical field does not earn
+#                 admission to active law.
 
 COMPILED = tuple((re.compile(p, re.IGNORECASE), label) for p, label in BANNED)
 
