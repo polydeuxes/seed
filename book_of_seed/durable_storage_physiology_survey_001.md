@@ -6,8 +6,13 @@ the evidence below does not distinguish one.
 ## Summary
 
 Traced against a real durable console lifetime and the 24,032-event workspace
-`#2414` recorded, Seed's entire durable access surface is **six statement
+`#2415` recorded, **the live durable console path** shows **six statement
 shapes**. Three run once at open, three run per interaction.
+
+**Correction.** This first said "Seed's entire durable access surface". Only one
+console lifetime was traced, and §5 already recorded that subcommands,
+diagnostics and audit surfaces were not. The warranted claim is about the
+console path, and the broader one was never measured.
 
 ```text
   AT OPEN                                                     extent    cost
@@ -78,12 +83,12 @@ interaction.
 **[measured]** This is not a storage-engine cost. It is a Python scan over
 deserialized payloads, and the database part of it is 2%.
 
-**[measured]** **`#2414` made it 51% worse.** Reserving four more prefixes means
+**[measured]** **`#2415` made it 51% worse.** Reserving four more prefixes means
 four more comparisons per string per payload:
 
 ```text
-   7 prefixes (before #2414)    1.58 s
-  11 prefixes (after  #2414)    2.39 s
+   7 prefixes (before #2415)    1.58 s
+  11 prefixes (after  #2415)    2.39 s
 ```
 
 The repair was necessary — without it the second console process aborts — and
@@ -99,6 +104,8 @@ rows to return 1,502.
 *deserialized*, which is where `#2413`'s 95× came from. It did not bound what is
 *read*. The distinction was invisible while the win was large.
 
+**Repaired in `#2416`**, which indexes the boundary sessions are selected by.
+
 ### The acquisition path still reads the whole workspace
 
 **[measured]** `preserved_ingress_occurrences` calls `ledger.list(workspace_id)`
@@ -112,8 +119,9 @@ and filters by session in Python, although `list_session` now exists:
 
 **[inference]** 16× for the same answer, and the factor is the number of
 co-resident bodies. This is exactly the shape `#2413` repaired one layer up,
-surviving one layer down. It is recorded here and not repaired, because this is
-a survey.
+surviving one layer down.
+
+**Repaired in `#2416`.** This survey did not repair it, being a survey.
 
 ## 3. The question the evidence cannot settle
 
@@ -154,9 +162,9 @@ Stated as properties, from the six statements only.
   established by the live path
     append one occurrence durably, ordered            INSERT
     fetch one occurrence by exact id                  0.1ms, indexed
-    fetch one session's occurrences, in order         needs an index it lacks
+    fetch one session's occurrences, in order         indexed by #2416
     survive process exit                              the point of --db
-    tell one bounded exchange from another            #2414, 16/16
+    tell one bounded exchange from another            #2415, 16/16
 
   established as a defect of the current arrangement
     answer a small question without a whole-history read
