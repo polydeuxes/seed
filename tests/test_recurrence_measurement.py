@@ -468,6 +468,41 @@ def test_the_declared_exchanges_bound_what_is_read(compared):
 # --------------------------------------------------------------------------
 
 
+def test_a_durable_producing_occurrence_is_identifiable_and_verifies(tmp_path):
+    """`#2439` proved producer_evidence existed, not that it identifies one.
+
+    The producing occurrence is the event carrying the payload, so its own id
+    cannot appear inside that payload. What must hold is that the enclosing
+    occurrence is exactly identifiable and verifiable once appended.
+    """
+    from seed_runtime.events import VERIFIED, SQLiteEventLedger
+
+    ledger = SQLiteEventLedger(str(tmp_path / "seed.db"))
+    try:
+        for session_id, material in EXCHANGES.items():
+            seed_local.run_persistent_operator_console(
+                ledger=ledger, workspace_id="w", session_id=session_id,
+                input_stream=StringIO(material + "exit\n"),
+                output_stream=StringIO())
+        findings = {}
+        for session_id in EXCHANGES:
+            occ = preserved_ingress_occurrences(
+                ledger, workspace_id="w", session_id=session_id)
+            findings[session_id] = record_measurement_finding(
+                ledger, workspace_id="w", session_id=session_id,
+                finding=measure_after(occ, "a", counting_scope=SCOPE)).id
+        _compare_all(ledger, findings)
+        counted = measure_exchange_counts(
+            ledger, workspace_id="w", bounded_exchanges=DECLARED)
+        event = record_measured_count(
+            ledger, workspace_id="w", session_id="s1", finding=counted[0])
+
+        assert ledger.get(event.id).id == event.id
+        assert ledger.integrity_of(event.id) == VERIFIED
+    finally:
+        ledger.close()
+
+
 def test_the_record_names_a_producer(compared):
     """`#2423` found no production *owner*; owner is not Producer.
 
