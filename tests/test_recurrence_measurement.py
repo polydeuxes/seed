@@ -241,6 +241,22 @@ def test_every_exchange_s_measurement_is_among_the_support(compared):
     assert supporting == set(finding.bounded_exchanges)
 
 
+def test_the_consumed_ledger_boundary_is_preserved_as_read_provenance(compared):
+    boundary = compared.capture_boundary()
+    finding = _by_right(compared)["word"]
+
+    assert finding.consumed_ledger_boundary == boundary
+    assert finding.to_json_dict()["consumed_ledger_boundary"] == {
+        "commitment": boundary.commitment,
+    }
+    recorded = record_measured_count(
+        compared, workspace_id="w", session_id="s1", finding=finding
+    )
+    assert recorded.payload["consumed_ledger_boundary"] == {
+        "commitment": boundary.commitment,
+    }
+
+
 # --------------------------------------------------------------------------
 # The three results, and what they are called.
 # --------------------------------------------------------------------------
@@ -498,8 +514,10 @@ def test_comparison_events_are_folded_without_being_retained(compared):
     live_counts = []
     original_iterator = compared.iter_session_kind
 
-    def tracked_iterator(workspace_id, session_id, kind):
-        for stored in original_iterator(workspace_id, session_id, kind):
+    def tracked_iterator(workspace_id, session_id, kind, *, through=None):
+        for stored in original_iterator(
+            workspace_id, session_id, kind, through=through
+        ):
             if kind != "operator.measurement.comparison_recorded":
                 yield stored
                 continue
@@ -521,6 +539,63 @@ def test_comparison_events_are_folded_without_being_retained(compared):
     assert references
     assert max(live_counts) <= 1
     assert all(reference() is None for reference in references)
+
+
+def test_every_probe_and_pass_reads_one_prefix_despite_a_concurrent_append(compared):
+    boundary = compared.capture_boundary()
+    original_has_session = compared.has_session
+    original_iterator = compared.iter_session_kind
+    seen_boundaries = []
+    appended = False
+
+    comparison = next(
+        event
+        for event in compared.list("w")
+        if event.kind == "operator.measurement.comparison_recorded"
+    )
+    payload = comparison.model_copy(deep=True).payload
+    payload["shared_occupants"] = [
+        *payload.get("shared_occupants", []),
+        "after-boundary",
+    ]
+
+    def tracked_has_session(workspace_id, session_id, *, through=None):
+        seen_boundaries.append(through)
+        return original_has_session(
+            workspace_id, session_id, through=through
+        )
+
+    def tracked_iterator(workspace_id, session_id, kind, *, through=None):
+        nonlocal appended
+        seen_boundaries.append(through)
+        if not appended:
+            appended = True
+            compared.append(
+                comparison.kind,
+                comparison.workspace_id,
+                payload,
+                actor=comparison.actor,
+                session_id=comparison.session_id,
+                causation_id=comparison.causation_id,
+                correlation_id=comparison.correlation_id,
+            )
+        yield from original_iterator(
+            workspace_id, session_id, kind, through=through
+        )
+
+    compared.has_session = tracked_has_session
+    compared.iter_session_kind = tracked_iterator
+    findings = measure_exchange_counts(
+        compared, workspace_id="w", bounded_exchanges=DECLARED
+    )
+
+    assert appended is True
+    assert seen_boundaries
+    assert set(seen_boundaries) == {boundary}
+    assert all(finding.consumed_ledger_boundary == boundary for finding in findings)
+    assert "after-boundary" not in {
+        finding.distinction.right_representation for finding in findings
+    }
 
 
 # --------------------------------------------------------------------------
