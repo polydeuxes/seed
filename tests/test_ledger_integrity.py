@@ -201,13 +201,8 @@ def test_a_pre_digest_schema_is_refused_whether_or_not_it_holds_rows(path, rows)
         SQLiteEventLedger(path)
 
 
-def test_a_store_with_undigested_rows_is_refused(path):
-    """A nullable-digest schema, which a store born current cannot be.
-
-    `NOT NULL` makes an absent digest unrepresentable in a table Seed created,
-    so this builds the only shape that can still hold one: a column declared
-    nullable, as an ALTER-created schema would have been.
-    """
+def test_a_nullable_schema_holding_an_undigested_row_is_refused(path):
+    """Refused for its schema, before any row is counted."""
     con = sqlite3.connect(path)
     con.execute(
         "CREATE TABLE events (id TEXT PRIMARY KEY, kind TEXT NOT NULL, "
@@ -222,7 +217,7 @@ def test_a_store_with_undigested_rows_is_refused(path):
     con.commit()
     con.close()
 
-    with pytest.raises(LedgerIntegrityError, match="without a digest"):
+    with pytest.raises(LedgerIntegrityError, match="declares content_hash nullable"):
         SQLiteEventLedger(path)
 
 
@@ -355,3 +350,43 @@ def test_an_unverifiable_input_is_recorded_rather_than_refused():
 
     finding = compare_preserved_findings(led, ids)
     assert [i.integrity for i in finding.inputs] == [UNVERIFIABLE, UNVERIFIABLE]
+
+
+def test_a_nullable_digest_schema_is_refused_even_when_fully_digested(path):
+    """The column being present is not the invariant.
+
+    `#2426` claimed that opening implies the store was born current, but only
+    checked that the column existed and that no row was currently NULL. A store
+    created by the withdrawn ALTER path is nullable, and one populated entirely
+    with valid digests would have passed while still admitting an undigested
+    occurrence later. Prose claiming a property runtime does not enforce is the
+    same defect `#2421` removed from Compare's arity.
+    """
+    from seed_runtime.events import _content_digest
+
+    con = sqlite3.connect(path)
+    con.execute(
+        "CREATE TABLE events (id TEXT PRIMARY KEY, kind TEXT NOT NULL, "
+        "workspace_id TEXT NOT NULL, actor TEXT NOT NULL, timestamp TEXT NOT NULL, "
+        "payload TEXT NOT NULL, session_id TEXT, causation_id TEXT, "
+        "correlation_id TEXT, content_hash TEXT)"
+    )
+    row = {"id": "evt_000001", "kind": "k", "workspace_id": "w", "actor": "system",
+           "timestamp": "2026-01-01T00:00:00", "payload": "{}", "session_id": "s",
+           "causation_id": None, "correlation_id": None}
+    con.execute(
+        "INSERT INTO events VALUES (?,?,?,?,?,?,?,?,?,?)",
+        tuple(row.values()) + (_content_digest(row),),
+    )
+    con.commit()
+    con.close()
+
+    # every row digested, and every digest correct
+    con = _raw(path)
+    assert con.execute(
+        "SELECT COUNT(*) FROM events WHERE content_hash IS NULL"
+    ).fetchone()[0] == 0
+    con.close()
+
+    with pytest.raises(LedgerIntegrityError, match="declares content_hash nullable"):
+        SQLiteEventLedger(path)

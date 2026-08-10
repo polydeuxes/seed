@@ -36,6 +36,7 @@ believed rather than held.
   SQLite             BEFORE UPDATE and BEFORE DELETE refuse
   consuming act      Compare verifies its two inputs, refuses CORRUPTED
   pre-digest schema  REFUSED at open, rows or not; no ALTER path exists
+  nullable digest    REFUSED at open, however many rows carry one
   durable occurrence VERIFIED or CORRUPTED, never UNVERIFIABLE
   in-memory ledger   UNVERIFIABLE — objects, not stored bytes
 ```
@@ -100,6 +101,20 @@ The invariant that buys:
 ```text
   if the ledger opens, the store was born with the current integrity schema
 ```
+
+**And the check has to prove that, not something near it.** A third pass was
+needed: the open validated that `content_hash` exists and that no row is
+currently `NULL`, which a store created by the withdrawn `ALTER` path could
+satisfy while remaining nullable. Holding no undigested occurrence today is not
+being unable to hold one tomorrow, so the column's `NOT NULL` declaration is
+what is checked. **Prose claiming a property the runtime does not enforce is
+the defect `#2421` removed from Compare's arity, appearing again in the same
+session.**
+
+The row-level check became unreachable once the column check was right — a
+`NOT NULL` column cannot hold a null digest, and a nullable column is refused
+before rows are counted — so it was removed rather than left as a guard that
+guards nothing.
 
 rather than "either born current, or an empty old schema we upgraded". A
 durable occurrence is `VERIFIED` or `CORRUPTED`; `UNVERIFIABLE` survives only

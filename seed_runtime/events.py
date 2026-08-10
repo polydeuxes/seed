@@ -235,7 +235,7 @@ class SQLiteEventLedger(EventLedger):
         # migration over the shape we no longer support is backwards, and an
         # empty pre-digest schema is still a schema Seed does not keep.
         columns = {
-            row["name"]
+            row["name"]: row
             for row in self._connection.execute("PRAGMA table_info(events)")
         }
         if "content_hash" not in columns:
@@ -244,14 +244,16 @@ class SQLiteEventLedger(EventLedger):
                 "Seed does not migrate pre-integrity ledgers; a store either "
                 "carries digests from birth or is not supported"
             )
-        undigested = self._connection.execute(
-            "SELECT COUNT(*) FROM events WHERE content_hash IS NULL"
-        ).fetchone()[0]
-        if undigested:
+        if not columns["content_hash"]["notnull"]:
+            # The column being present is not the invariant. A store created
+            # by the withdrawn ALTER path has a nullable digest column, and
+            # could hold nothing but valid digests today while still admitting
+            # an undigested occurrence tomorrow. Checking current rows would
+            # accept it and leave the claim false.
             raise LedgerIntegrityError(
-                f"{database_path} holds {undigested} occurrences without a "
-                "digest. A durable occurrence carries one or the store is "
-                "not supported; no back-fill is performed"
+                f"{database_path} declares content_hash nullable, so it was not "
+                "born with the current integrity schema. Holding no undigested "
+                "occurrence now is not the same as being unable to hold one"
             )
         # Refuse the mutation the API never performs, so that code outside the
         # API cannot perform it either. A `DROP TRIGGER` removes this; that is
