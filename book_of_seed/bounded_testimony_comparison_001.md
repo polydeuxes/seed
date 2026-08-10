@@ -138,3 +138,7 @@ in each body, chosen by this report's author because it is common in English.
 **That the comparison is complete.** It compares two findings. Comparing more
 than two, comparing across workspaces, and consuming comparison findings are all
 unbuilt.
+
+**Correction (`#2421`).** When this was written the runtime accepted any number
+of inputs and intersected them all, so three-body comparison existed while this
+sentence denied it. The refusal now matches the sentence.

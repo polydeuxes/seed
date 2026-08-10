@@ -174,10 +174,15 @@ def compare_preserved_findings(
     """
 
     ids = tuple(event_ids)
-    if len(ids) < 2:
+    if len(ids) != 2:
+        # Two, exactly. `05.Testimony.E` says "multiple", and an earlier form of
+        # this function accepted any number and intersected them all — n-ary
+        # comparison implemented while its own report called it unbuilt. What
+        # more than two inputs jointly establish is not recovered, and a set
+        # intersection over n findings is not that recovery.
         raise BoundedComparisonError(
-            "a bounded comparison consumes multiple preserved findings; "
-            f"{len(ids)} supplied"
+            "a bounded comparison consumes exactly two preserved findings; "
+            f"{len(ids)} supplied. Comparing more than two is unbuilt"
         )
     if len(set(ids)) != len(ids):
         raise BoundedComparisonError(
@@ -201,6 +206,7 @@ def compare_preserved_findings(
     distinctions: list[Distinction] = []
     for coordinate, field in (
         ("representation_measured", "representation_measured"),
+        ("measured_left_representation", "measured_left_representation"),
         ("equivalence_rule", "equivalence_rule"),
         ("counting_scope", "counting_scope"),
         ("measured_position", "measured_position"),
@@ -216,14 +222,14 @@ def compare_preserved_findings(
     )
 
     occupant_sets = [_occupants(event) for event in events]
-    shared = set.intersection(*occupant_sets) if occupant_sets else set()
+    shared = occupant_sets[0] & occupant_sets[1]
     only = {
         event.id: tuple(sorted(occupants - shared))
         for event, occupants in zip(events, occupant_sets)
     }
 
     same = {d.coordinate: d.same for d in distinctions}
-    if not same["representation_measured"]:
+    if not (same["representation_measured"] and same["measured_left_representation"]):
         relation = UNKNOWN_RELATION
         basis = "the inputs did not measure the same representation"
     elif not (same["equivalence_rule"] and same["measured_position"]):
@@ -235,7 +241,7 @@ def compare_preserved_findings(
             "the inputs are exact within different bounded exchanges, so differing "
             "results are not disagreement and matching results are not corroboration"
         )
-    elif occupant_sets[0] == occupant_sets[-1] and len(set(map(frozenset, occupant_sets))) == 1:
+    elif occupant_sets[0] == occupant_sets[1]:
         relation = "agreement"
         basis = "same representation, rule, position and bounded exchange, same occupants"
     else:

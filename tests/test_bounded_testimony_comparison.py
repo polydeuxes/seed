@@ -67,8 +67,21 @@ def _finding(led, session_id, representation="a", scope=SCOPE):
 
 def test_a_comparison_needs_more_than_one_preserved_finding(ledger):
     one = _finding(ledger, "s1")
-    with pytest.raises(BoundedComparisonError, match="multiple preserved findings"):
+    with pytest.raises(BoundedComparisonError, match="exactly two"):
         compare_preserved_findings(ledger, [one.id])
+
+
+def test_more_than_two_inputs_are_refused(ledger):
+    """The report said n-ary comparison was unbuilt; the runtime built it.
+
+    An earlier form accepted any number and intersected them all, so a
+    three-body comparison existed and nothing said what it established. What
+    more than two inputs jointly establish is not recovered, and a set
+    intersection is not that recovery.
+    """
+    a, b, c = (_finding(ledger, s) for s in ("s1", "s2", "s1"))
+    with pytest.raises(BoundedComparisonError, match="more than two is unbuilt"):
+        compare_preserved_findings(ledger, [a.id, b.id, c.id])
 
 
 def test_an_input_compared_with_itself_is_refused(ledger):
@@ -175,6 +188,35 @@ def test_two_findings_in_one_exchange_may_reach_agreement(ledger):
     finding = compare_preserved_findings(ledger, [a.id, b.id])
     assert finding.bounded_relation == "agreement"
     assert all(d.same for d in finding.distinctions)
+
+
+def test_the_left_representation_is_compared_as_a_coordinate(ledger):
+    """Pair identity must not be reconstructed from prose.
+
+    `representation_measured` is a sentence. The anchor a finding measured from
+    is carried structurally, and a comparison asking whether two findings share
+    a left representation must read that rather than parse the sentence.
+    """
+    a = _finding(ledger, "s1", representation="a")
+    b = _finding(ledger, "s2", representation="a")
+    by_name = {d.coordinate: d for d in
+               compare_preserved_findings(ledger, [a.id, b.id]).distinctions}
+    assert by_name["measured_left_representation"].same
+    assert by_name["measured_left_representation"].values == ("a", "a")
+
+    c = _finding(ledger, "s2", representation="is")
+    by_name = {d.coordinate: d for d in
+               compare_preserved_findings(ledger, [a.id, c.id]).distinctions}
+    assert not by_name["measured_left_representation"].same
+    assert by_name["measured_left_representation"].values == ("a", "is")
+
+
+def test_a_different_left_representation_yields_Unknown(ledger):
+    a = _finding(ledger, "s1", representation="a")
+    b = _finding(ledger, "s1", representation="is")
+    finding = compare_preserved_findings(ledger, [a.id, b.id])
+    assert finding.bounded_relation == "Unknown"
+    assert "same representation" in finding.relation_basis
 
 
 def test_the_distinctions_are_literal(ledger):
