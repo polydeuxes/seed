@@ -455,12 +455,33 @@ def test_durable_validation_does_not_read_the_whole_workspace(tmp_path):
 
 def test_the_declared_exchanges_bound_what_is_read(compared):
     """Reading two declared exchanges does not deserialize the other two."""
-    by_exchange = occurrences_of_declared_exchanges(
-        compared, workspace_id="w", bounded_exchanges=("s1", "s2"))
-    assert set(by_exchange) == {"s1", "s2"}
-    for exchange, events in by_exchange.items():
+    pairs = list(occurrences_of_declared_exchanges(
+        compared, workspace_id="w", bounded_exchanges=("s1", "s2")))
+    assert [x for x, _ in pairs] == ["s1", "s2"]
+    for exchange, events in pairs:
         assert events
         assert {e.session_id for e in events} == {exchange}
+
+
+def test_only_one_exchange_is_materialised_at_a_time(compared):
+    """`#2432` returned a dict holding every declared exchange at once.
+
+    The read boundary was right and the materialisation was the sum of all of
+    them: 34 GB on sixteen exchanges of 898,787 occurrences, against a peak
+    that should be one exchange. This pins that the reader yields rather than
+    collects, so a caller can release each exchange before the next is read.
+    """
+    import types
+
+    produced = occurrences_of_declared_exchanges(
+        compared, workspace_id="w", bounded_exchanges=DECLARED)
+    assert isinstance(produced, types.GeneratorType)
+
+    live = []
+    for exchange, events in produced:
+        live.append(len(events))
+        del events
+    assert len(live) == len(DECLARED)
 
 
 # --------------------------------------------------------------------------
