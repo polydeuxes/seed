@@ -220,6 +220,100 @@ class MeasuredAssertion:
         }
 
 
+@dataclass(frozen=True)
+class RecordedMeasuredAssertion:
+    """One addressable Assertion preserved inside its producing occurrence."""
+
+    assertion_id: str
+    producing_event_id: str
+    producing_session_id: str | None
+    result: str
+    payload: dict[str, Any]
+
+    @property
+    def reference(self) -> dict[str, str]:
+        return {
+            "assertion_id": self.assertion_id,
+            "producing_event_id": self.producing_event_id,
+        }
+
+
+def assertions_of_recorded_measurement(event: Event) -> tuple[RecordedMeasuredAssertion, ...]:
+    """Recover every Assertion from one exact producing occurrence."""
+
+    if event.kind != EXCHANGE_COUNT_RECORDED_KIND:
+        raise RecurrenceMeasurementError(
+            f"{event.id} is {event.kind}, not a recurrence Measurement occurrence"
+        )
+    stated = event.payload.get("assertions")
+    if not isinstance(stated, list):
+        raise RecurrenceMeasurementError(
+            f"{event.id} does not preserve its distinct Assertions"
+        )
+    recovered = []
+    seen = set()
+    for assertion in stated:
+        if not isinstance(assertion, dict):
+            raise RecurrenceMeasurementError(
+                f"{event.id} carries a non-object Assertion representation"
+            )
+        dimensions = assertion.get("dimensions")
+        identity = dimensions.get("identity") if isinstance(dimensions, dict) else None
+        result = assertion.get("result")
+        if not isinstance(identity, str) or not identity or not isinstance(result, str):
+            raise RecurrenceMeasurementError(
+                f"{event.id} carries an Assertion without exact identity and result"
+            )
+        if identity in seen:
+            raise RecurrenceMeasurementError(
+                f"{event.id} carries duplicate Assertion identity {identity}"
+            )
+        seen.add(identity)
+        recovered.append(
+            RecordedMeasuredAssertion(
+                assertion_id=identity,
+                producing_event_id=event.id,
+                producing_session_id=event.session_id,
+                result=result,
+                payload=assertion,
+            )
+        )
+    return tuple(recovered)
+
+
+def iter_recorded_measured_assertions(
+    ledger: EventLedger,
+    *,
+    workspace_id: str,
+    session_ids: Iterable[str],
+    through: EventLedgerBoundary | None = None,
+) -> Iterator[RecordedMeasuredAssertion]:
+    """Stream Assertions from exact declared sessions through one boundary."""
+
+    for session_id in tuple(dict.fromkeys(session_ids)):
+        for event in ledger.iter_session_kind(
+            workspace_id,
+            session_id,
+            EXCHANGE_COUNT_RECORDED_KIND,
+            through=through,
+        ):
+            yield from assertions_of_recorded_measurement(event)
+
+
+def get_recorded_measured_assertion(
+    ledger: EventLedger, *, producing_event_id: str, assertion_id: str
+) -> RecordedMeasuredAssertion | None:
+    """Resolve one exact occurrence-bound Assertion reference."""
+
+    event = ledger.get(producing_event_id)
+    if event is None:
+        return None
+    for assertion in assertions_of_recorded_measurement(event):
+        if assertion.assertion_id == assertion_id:
+            return assertion
+    return None
+
+
 def occurrences_of_declared_exchanges(
     ledger: EventLedger, *, workspace_id: str, bounded_exchanges: Iterable[str]
 ) -> Iterator[tuple[str, list[Event]]]:
