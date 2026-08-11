@@ -22,9 +22,9 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python-version }}
-      - name: Install test dependencies
-        run: python -m pip install -U pip pytest
-      - name: Compile runtime and scripts
-        run: python -m compileall -q seed_runtime scripts
+      - name: Install project and test dependencies
+        run: python -m pip install -U pip pytest -e .
+      - name: Compile runtime
+        run: python -m compileall -q seed_runtime
       - name: Run tests
         run: pytest -q
