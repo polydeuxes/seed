@@ -25,7 +25,7 @@ import pytest
 
 from seed_runtime.events import EventLedger
 from seed_runtime.operator_session_standing import project_operator_session_standing
-from scripts import seed_local
+from seed_runtime.operator_console import run_persistent_operator_console
 
 FORMED = "operator.presentation.formed"
 FAMILIES = (
@@ -39,7 +39,7 @@ FAMILIES = (
 def _console(material):
     ledger = EventLedger()
     output = StringIO()
-    seed_local.run_persistent_operator_console(
+    run_persistent_operator_console(
         ledger=ledger,
         workspace_id="w",
         session_id="s",

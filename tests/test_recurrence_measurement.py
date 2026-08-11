@@ -36,7 +36,7 @@ from seed_runtime.recurrence_measurement import (
     record_measured_count,
     render_measured_count,
 )
-from scripts import seed_local
+from seed_runtime.operator_console import run_persistent_operator_console
 
 DECLARED = ("s1", "s2", "s3", "s4")   # a bounded exchange is the recorded session
 
@@ -63,7 +63,7 @@ def _compare_all(ledger, findings):
 def compared():
     ledger = EventLedger()
     for session_id, material in EXCHANGES.items():
-        seed_local.run_persistent_operator_console(
+        run_persistent_operator_console(
             ledger=ledger, workspace_id="w", session_id=session_id,
             input_stream=StringIO(material + "exit\n"), output_stream=StringIO())
     findings = {}
@@ -119,7 +119,7 @@ def test_the_record_shape_is_its_own(compared):
 
 def test_measuring_without_any_comparison_is_refused():
     ledger = EventLedger()
-    seed_local.run_persistent_operator_console(
+    run_persistent_operator_console(
         ledger=ledger, workspace_id="w", session_id="s",
         input_stream=StringIO("a word\nexit\n"), output_stream=StringIO())
     with pytest.raises(RecurrenceMeasurementError, match="not preserved material"):
@@ -326,7 +326,7 @@ def test_recurrence_is_established_only_above_one(compared):
 
 def _add_s5(ledger):
     """An exchange that measures a different coordinate entirely."""
-    seed_local.run_persistent_operator_console(
+    run_persistent_operator_console(
         ledger=ledger, workspace_id="w", session_id="s5",
         input_stream=StringIO("nothing relevant here\nexit\n"),
         output_stream=StringIO())
@@ -470,7 +470,7 @@ def test_durable_validation_does_not_read_the_whole_workspace(tmp_path):
     ledger = SQLiteEventLedger(str(tmp_path / "seed.db"))
     try:
         for session_id, material in EXCHANGES.items():
-            seed_local.run_persistent_operator_console(
+            run_persistent_operator_console(
                 ledger=ledger, workspace_id="w", session_id=session_id,
                 input_stream=StringIO(material + "exit\n"),
                 output_stream=StringIO())
@@ -618,7 +618,7 @@ def test_a_durable_producing_occurrence_is_identifiable_and_verifies(tmp_path):
     ledger = SQLiteEventLedger(str(tmp_path / "seed.db"))
     try:
         for session_id, material in EXCHANGES.items():
-            seed_local.run_persistent_operator_console(
+            run_persistent_operator_console(
                 ledger=ledger, workspace_id="w", session_id=session_id,
                 input_stream=StringIO(material + "exit\n"),
                 output_stream=StringIO())

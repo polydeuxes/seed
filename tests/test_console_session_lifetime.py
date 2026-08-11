@@ -22,13 +22,14 @@ from io import StringIO
 import pytest
 
 from seed_runtime.events import EventLedger, SQLiteEventLedger
+from seed_runtime.operator_console import run_persistent_operator_console
+from seed_runtime import process_entry
 from seed_runtime.operator_session_standing import (
     project_operator_session_standing,
 )
 from seed_runtime.preserved_material_measurement import (
     preserved_ingress_occurrences,
 )
-from scripts import seed_local
 
 
 @pytest.fixture
@@ -39,7 +40,7 @@ def db(tmp_path):
 def _console(monkeypatch, material: str, argv: list[str]) -> None:
     monkeypatch.setattr("sys.stdin", StringIO(material + "exit\n"))
     monkeypatch.setattr("sys.stdout", StringIO())
-    assert seed_local.main(argv) == 0
+    assert process_entry.main(argv) == 0
 
 
 def _sessions(ledger: EventLedger, workspace_id: str = "local") -> list[str]:
@@ -60,7 +61,7 @@ def _sessions(ledger: EventLedger, workspace_id: str = "local") -> list[str]:
     [[], ["--db", "x"], ["--db=x"], ["--workspace", "w", "--db", "x"]],
 )
 def test_console_options_alone_select_the_console(argv):
-    assert seed_local._is_console_invocation(argv)
+    process_entry.build_parser().parse_args(argv)
 
 
 @pytest.mark.parametrize(
@@ -68,7 +69,8 @@ def test_console_options_alone_select_the_console(argv):
     [["--show-inference-catalog"], ["--db", "x", "--show-inference-catalog"]],
 )
 def test_any_other_argument_selects_something_else(argv):
-    assert not seed_local._is_console_invocation(argv)
+    with pytest.raises(SystemExit, match="2"):
+        process_entry.build_parser().parse_args(argv)
 
 
 def test_a_db_console_records_into_that_db(db, monkeypatch):
@@ -109,10 +111,6 @@ def test_two_console_lifetimes_receive_different_session_ids(two_lifetimes):
     sessions = _sessions(two_lifetimes)
     assert len(sessions) == 2
     assert sessions[0] != sessions[1]
-
-
-def test_neither_lifetime_uses_the_constant_default(two_lifetimes):
-    assert seed_local.DEFAULT_SESSION not in _sessions(two_lifetimes)
 
 
 def test_both_lifetimes_share_one_workspace(two_lifetimes):
@@ -191,7 +189,7 @@ def test_a_fresh_session_reads_none_of_the_history(two_lifetimes):
 def test_the_in_memory_ledger_scopes_the_same_way():
     ledger = EventLedger()
     for session_id in ("a", "b"):
-        seed_local.run_persistent_operator_console(
+        run_persistent_operator_console(
             ledger=ledger,
             workspace_id="w",
             session_id=session_id,
@@ -209,7 +207,7 @@ def test_the_in_memory_ledger_scopes_the_same_way():
 
 def test_a_caller_supplying_a_session_id_still_owns_it():
     ledger = EventLedger()
-    seed_local.run_persistent_operator_console(
+    run_persistent_operator_console(
         ledger=ledger,
         workspace_id="w",
         session_id="chosen-by-the-caller",
@@ -221,11 +219,6 @@ def test_a_caller_supplying_a_session_id_still_owns_it():
     }
 
 
-def test_the_session_argument_remains_for_the_subcommands():
-    args = seed_local.build_parser().parse_args([])
-    assert args.session == seed_local.DEFAULT_SESSION
-
-
 # --------------------------------------------------------------------------
 # Separate processes, which is how the console is actually reopened.
 # --------------------------------------------------------------------------
@@ -233,7 +226,7 @@ def test_the_session_argument_remains_for_the_subcommands():
 
 def _run_console_process(db: str, material: str) -> subprocess.CompletedProcess:
     return subprocess.run(
-        [sys.executable, "scripts/seed_local.py", "--db", db],
+        [sys.executable, "-m", "seed_runtime.process_entry", "--db", db],
         input=material + "exit\n",
         capture_output=True,
         text=True,

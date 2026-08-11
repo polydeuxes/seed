@@ -23,7 +23,7 @@ from seed_runtime.preserved_material_measurement import (
     INGRESS_OCCURRED_KIND,
     preserved_ingress_occurrences,
 )
-from scripts import seed_local
+from seed_runtime.operator_console import run_persistent_operator_console
 
 BODIES = {
     "s1": "a noun is a word\nand a verb is a word\n",
@@ -43,7 +43,7 @@ def _whole_workspace_read(ledger, *, workspace_id, session_id):
 
 def _fill(ledger):
     for session_id, material in BODIES.items():
-        seed_local.run_persistent_operator_console(
+        run_persistent_operator_console(
             ledger=ledger,
             workspace_id="w",
             session_id=session_id,

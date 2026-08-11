@@ -15,7 +15,7 @@ from seed_runtime.operator_response_comparison import (
 )
 from seed_runtime.operator_session_standing import project_operator_session_standing
 from tests.closed_choice_fixture import CLOSED_CHOICE_FIXTURE_SOURCES
-from scripts import seed_local
+from seed_runtime.operator_console import run_persistent_operator_console
 
 
 def _standing(ledger, *, workspace="w", session="s"):
@@ -430,7 +430,7 @@ def test_exit_boundary_is_explicit_and_unambiguous():
     # `exit` escapes before ingress recording, after the ordinary C0 path.
     ledger = EventLedger()
     output = StringIO()
-    seed_local.run_persistent_operator_console(
+    run_persistent_operator_console(
         ledger=ledger,
         workspace_id="w",
         session_id="s",

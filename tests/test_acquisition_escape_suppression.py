@@ -17,17 +17,18 @@ from io import StringIO
 import pytest
 
 from seed_runtime.events import EventLedger
+from seed_runtime.operator_console import run_persistent_operator_console
+from seed_runtime.process_entry import build_parser
 from seed_runtime.preserved_material_measurement import (
     preserved_ingress_occurrences,
 )
-from scripts import seed_local
 
 MATERIAL = "alpha\nexit\nomega\n"
 
 
 def _run(escape: bool):
     ledger = EventLedger()
-    seed_local.run_persistent_operator_console(
+    run_persistent_operator_console(
         ledger=ledger, workspace_id="w", session_id="s",
         input_stream=StringIO(MATERIAL),        # EOF terminates; no trailing exit
         output_stream=StringIO(),
@@ -50,7 +51,7 @@ def test_a_driven_console_may_preserve_the_token_as_material():
 
 def test_the_default_is_the_interactive_behaviour():
     ledger = EventLedger()
-    seed_local.run_persistent_operator_console(
+    run_persistent_operator_console(
         ledger=ledger, workspace_id="w", session_id="s",
         input_stream=StringIO(MATERIAL), output_stream=StringIO())
     assert len(preserved_ingress_occurrences(
@@ -61,7 +62,7 @@ def test_eof_terminates_either_way():
     """Termination comes from outside the material stream."""
     for escape in (True, False):
         ledger = EventLedger()
-        seed_local.run_persistent_operator_console(
+        run_persistent_operator_console(
             ledger=ledger, workspace_id="w", session_id="s",
             input_stream=StringIO("alpha\n"), output_stream=StringIO(),
             process_boundary_escape=escape)
@@ -72,7 +73,7 @@ def test_eof_terminates_either_way():
 def test_the_material_is_preserved_byte_for_byte():
     """No escaping, no capitalisation, no rewriting of the source."""
     ledger = EventLedger()
-    seed_local.run_persistent_operator_console(
+    run_persistent_operator_console(
         ledger=ledger, workspace_id="w", session_id="s",
         input_stream=StringIO("exit\nExit\nEXIT\n exit\n"),
         output_stream=StringIO(), process_boundary_escape=False)
@@ -84,7 +85,7 @@ def test_the_material_is_preserved_byte_for_byte():
 
 def test_the_cli_console_does_not_expose_suppression():
     """No operator-facing flag: the accommodation is for a driver, not a person."""
-    parser = seed_local.build_parser()
+    parser = build_parser()
     rendered = parser.format_help()
     assert "process-boundary-escape" not in rendered
     assert "process_boundary_escape" not in rendered
@@ -99,7 +100,7 @@ def test_a_console_that_declines_the_escape_does_not_announce_it():
     """
     out = StringIO()
     ledger = EventLedger()
-    seed_local.run_persistent_operator_console(
+    run_persistent_operator_console(
         ledger=ledger, workspace_id="w", session_id="s",
         input_stream=StringIO(MATERIAL), output_stream=out,
         process_boundary_escape=False)
@@ -109,7 +110,7 @@ def test_a_console_that_declines_the_escape_does_not_announce_it():
 def test_the_operator_console_still_announces_it():
     out = StringIO()
     ledger = EventLedger()
-    seed_local.run_persistent_operator_console(
+    run_persistent_operator_console(
         ledger=ledger, workspace_id="w", session_id="s",
         input_stream=StringIO(MATERIAL), output_stream=out)
     assert "Seed console: `exit` exits." in out.getvalue()

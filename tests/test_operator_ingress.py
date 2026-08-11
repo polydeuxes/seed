@@ -8,6 +8,7 @@ import pytest
 
 from seed_runtime.events import EventLedger, SQLiteEventLedger
 from seed_runtime import operator_console
+from seed_runtime.operator_console import run_persistent_operator_console
 from seed_runtime.operator_ingress import (
     run_operator_ingress_attempt,
 )
@@ -19,7 +20,6 @@ from seed_runtime.operator_ingress_representation import (
     examine_text_representation,
 )
 from seed_runtime.state import StateProjector
-from scripts import seed_local
 
 
 def run_attempt(text, ledger=None, session="s"):
@@ -462,7 +462,7 @@ def run_raw(material: bytes, *, ledger=None):
 def run_console(material: bytes):
     ledger = EventLedger()
     output = StringIO()
-    seed_local.run_persistent_operator_console(
+    run_persistent_operator_console(
         ledger=ledger,
         workspace_id="console-w",
         session_id="console-s",
@@ -474,7 +474,7 @@ def run_console(material: bytes):
 
 def test_bare_seed_enters_persistent_console_and_announces_exit():
     completed = subprocess.run(
-        [sys.executable, "scripts/seed_local.py"],
+        [sys.executable, "-m", "seed_runtime.process_entry"],
         input=b"exit\n",
         capture_output=True,
         check=True,
@@ -507,7 +507,7 @@ def test_empty_stream_encoding_metadata_uses_utf8_fallback_at_producer_boundary(
 def test_console_admits_empty_stream_encoding_as_no_usable_testimony():
     ledger = EventLedger()
     output = StringIO()
-    seed_local.run_persistent_operator_console(
+    run_persistent_operator_console(
         ledger=ledger,
         workspace_id="console-w",
         session_id="console-s",
@@ -584,7 +584,7 @@ def test_console_passes_its_capture_unchanged_to_the_bounded_attempt(monkeypatch
         "run_operator_ingress_attempt",
         bounded_attempt,
     )
-    seed_local.run_persistent_operator_console(
+    run_persistent_operator_console(
         ledger=EventLedger(),
         workspace_id="w",
         session_id="s",

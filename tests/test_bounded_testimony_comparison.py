@@ -31,7 +31,7 @@ from seed_runtime.preserved_material_measurement import (
     preserved_ingress_occurrences,
     record_measurement_finding,
 )
-from scripts import seed_local
+from seed_runtime.operator_console import run_persistent_operator_console
 
 BODIES = {
     "s1": "a noun is a word\nand a verb is a word\n",
@@ -44,7 +44,7 @@ SCOPE = "one bounded exchange"
 def ledger():
     led = EventLedger()
     for session_id, material in BODIES.items():
-        seed_local.run_persistent_operator_console(
+        run_persistent_operator_console(
             ledger=led, workspace_id="w", session_id=session_id,
             input_stream=StringIO(material + "exit\n"), output_stream=StringIO())
     return led

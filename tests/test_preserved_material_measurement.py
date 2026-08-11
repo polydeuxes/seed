@@ -36,7 +36,7 @@ from seed_runtime.preserved_material_measurement import (
     preserved_ingress_occurrences,
     record_measurement_finding,
 )
-from scripts import seed_local
+from seed_runtime.operator_console import run_persistent_operator_console
 
 MATERIAL = (
     "_The_ is the definite article.\n"
@@ -73,7 +73,7 @@ def _declared(**overrides):
 @pytest.fixture
 def session():
     ledger = EventLedger()
-    seed_local.run_persistent_operator_console(
+    run_persistent_operator_console(
         ledger=ledger,
         workspace_id="w",
         session_id="s",
