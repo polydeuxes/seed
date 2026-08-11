@@ -24,6 +24,7 @@ from seed_runtime.assertion_comparison import (
     assertions_of_recorded_positional_result_comparison,
     compare_positional_result_assertions,
     get_recorded_positional_result_distinction,
+    iter_positional_result_comparison_inputs,
     record_positional_result_comparison,
 )
 from seed_runtime.events import EventLedger
@@ -180,6 +181,90 @@ def test_compare_does_not_claim_relation_recurrence_or_meaning(comparable):
     assert "recurrence=" not in represented
     assert "meaning=" not in represented
     assert "similarity=" not in represented
+
+
+def test_every_equal_subject_production_pair_is_formed_without_comparing(comparable):
+    ledger, left, right = comparable
+    boundary = ledger.capture_boundary()
+    before = tuple(event.id for event in ledger.list("w"))
+    formed = list(
+        iter_positional_result_comparison_inputs(
+            ledger,
+            workspace_id="w",
+            session_ids=("s1", "s2"),
+            through=boundary,
+        )
+    )
+
+    assert len(formed) == 4  # one pair for each of the four exact form subjects
+    assert (left.reference, right.reference) in formed
+    assert tuple(event.id for event in ledger.list("w")) == before
+
+
+def test_formation_boundary_excludes_later_productions(comparable):
+    ledger, _, _ = comparable
+    boundary = ledger.capture_boundary()
+    _record_following(ledger, "s3", "it is green\n")
+
+    bounded = list(
+        iter_positional_result_comparison_inputs(
+            ledger,
+            workspace_id="w",
+            session_ids=("s1", "s2", "s3"),
+            through=boundary,
+        )
+    )
+    current = list(
+        iter_positional_result_comparison_inputs(
+            ledger,
+            workspace_id="w",
+            session_ids=("s1", "s2", "s3"),
+            through=ledger.capture_boundary(),
+        )
+    )
+
+    assert len(bounded) == 4
+    assert len(current) == 12
+
+
+def test_formation_does_not_filter_different_result_content(comparable):
+    ledger, left, right = comparable
+    formed = list(
+        iter_positional_result_comparison_inputs(
+            ledger,
+            workspace_id="w",
+            session_ids=("s1", "s2"),
+            through=ledger.capture_boundary(),
+        )
+    )
+
+    assert left.payload["dimensions"]["content"] != right.payload["dimensions"][
+        "content"
+    ]
+    assert (left.reference, right.reference) in formed
+
+
+def test_formation_recovers_each_session_boundary_once(comparable):
+    ledger, _, _ = comparable
+    original = ledger.iter_session_kind
+    ingress_reads = []
+
+    def tracked(workspace_id, session_id, kind, **kwargs):
+        if kind == "operator.ingress.ingress_occurred":
+            ingress_reads.append((session_id, kwargs.get("through")))
+        return original(workspace_id, session_id, kind, **kwargs)
+
+    ledger.iter_session_kind = tracked
+    list(
+        iter_positional_result_comparison_inputs(
+            ledger,
+            workspace_id="w",
+            session_ids=("s1", "s2"),
+            through=ledger.capture_boundary(),
+        )
+    )
+
+    assert [session_id for session_id, _ in ingress_reads] == ["s1", "s2"]
 
 
 def test_recording_preserves_one_assertion_per_compare_coordinate(comparable):
