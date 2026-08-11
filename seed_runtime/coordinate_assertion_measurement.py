@@ -43,7 +43,7 @@ MEASUREMENT_UNKNOWNS = (
     "why this exact coordinate Assertion has this production count remains Unknown",
 )
 PRODUCTION_SET_FORBIDDEN_INFERENCES = (
-    "an exact production count is not recurrence, relation, similarity, profile, "
+    "an exact production set is not recurrence, relation, similarity, profile, "
     "meaning, or Standing strength",
 )
 COUNT_FORBIDDEN_INFERENCES = (
