@@ -21,12 +21,7 @@ from io import StringIO
 import pytest
 
 from seed_runtime.events import EventLedger
-
-import sys
-from pathlib import Path
-
-sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts"))
-import seed_local  # noqa: E402
+from seed_runtime.operator_console import run_persistent_operator_console
 
 # Fixed, reproducible operator material.
 #
@@ -51,7 +46,7 @@ OCCURRED = "operator.ingress.ingress_occurred"
 def run_null_start() -> list:
     """Drive the live console from an empty ledger.  No fixture is supplied."""
     ledger = EventLedger()
-    seed_local.run_persistent_operator_console(
+    run_persistent_operator_console(
         ledger=ledger,
         workspace_id="w",
         session_id="s",

@@ -39,9 +39,7 @@ Run standalone to inspect the reference lists:
 from __future__ import annotations
 
 import json
-import sys
 from io import StringIO
-from pathlib import Path
 
 import pytest
 
@@ -49,9 +47,7 @@ from seed_runtime.events import EventLedger
 from seed_runtime.operator_session_standing import (
     project_operator_session_standing,
 )
-
-sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts"))
-import seed_local  # noqa: E402
+from seed_runtime.operator_console import run_persistent_operator_console
 
 FORMED = "operator.presentation.formed"
 
@@ -67,7 +63,7 @@ def _payload_snapshot(events) -> dict[str, str]:
 def ledger() -> EventLedger:
     """Three operator materials delivered in sequence, from an empty ledger."""
     led = EventLedger()
-    seed_local.run_persistent_operator_console(
+    run_persistent_operator_console(
         ledger=led,
         workspace_id="w",
         session_id="s",
@@ -164,7 +160,7 @@ def test_no_capability_change_is_claimed_here(ledger):
 
 def render_evidence_growth() -> str:
     led = EventLedger()
-    seed_local.run_persistent_operator_console(
+    run_persistent_operator_console(
         ledger=led,
         workspace_id="w",
         session_id="s",
