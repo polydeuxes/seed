@@ -35,7 +35,10 @@ from seed_runtime.recurrence_measurement import (
     FORBIDDEN_INFERENCES,
     MEASURED_ASSERTION_FIDELITY_RESPONSIBILITY,
     RecurrenceMeasurementError,
+    assertions_of_recorded_measurement,
     assertions_from_measured_count,
+    get_recorded_measured_assertion,
+    iter_recorded_measured_assertions,
     measure_exchange_counts,
     record_measured_count,
     render_measured_count,
@@ -176,6 +179,136 @@ def test_one_occurrence_preserves_every_distinct_result(compared):
     }
 
 
+def test_recorded_assertions_are_addressable_through_their_occurrence(compared):
+    event = record_measured_count(
+        compared,
+        workspace_id="w",
+        session_id="s1",
+        finding=_by_right(compared)["word"],
+    )
+    assertions = assertions_of_recorded_measurement(event)
+
+    assert len(assertions) == 5
+    assert {assertion.result for assertion in assertions} == {
+        "measured_in",
+        "measured_without_distinction",
+        "coordinate_not_measured",
+        "count",
+        "recurrence",
+    }
+    for assertion in assertions:
+        assert assertion.reference == {
+            "assertion_id": assertion.assertion_id,
+            "producing_event_id": event.id,
+        }
+        assert get_recorded_measured_assertion(
+            compared,
+            producing_event_id=event.id,
+            assertion_id=assertion.assertion_id,
+        ) == assertion
+
+    by_result = {assertion.result: assertion for assertion in assertions}
+    assert by_result["count"].support_assertion_refs == (
+        {
+            "producing_event_id": event.id,
+            "assertion_id": by_result["measured_in"].assertion_id,
+        },
+    )
+    assert by_result["recurrence"].support_assertion_refs == (
+        {
+            "producing_event_id": event.id,
+            "assertion_id": by_result["count"].assertion_id,
+        },
+    )
+
+
+def test_recovery_refuses_assertion_identity_that_does_not_match_content(compared):
+    event = record_measured_count(
+        compared,
+        workspace_id="w",
+        session_id="s1",
+        finding=_by_right(compared)["word"],
+    ).model_copy(deep=True)
+    assertion = _assertions_by_result(event)["count"]
+    assertion["dimensions"]["content"]["exchange_count"] += 1
+
+    with pytest.raises(
+        RecurrenceMeasurementError, match="identity that does not match"
+    ):
+        assertions_of_recorded_measurement(event)
+
+
+def test_recovery_refuses_non_assertion_and_unresolved_local_support(compared):
+    event = record_measured_count(
+        compared,
+        workspace_id="w",
+        session_id="s1",
+        finding=_by_right(compared)["word"],
+    ).model_copy(deep=True)
+    _assertions_by_result(event)["count"]["subject_kind"] = "not-an-assertion"
+    with pytest.raises(RecurrenceMeasurementError, match="not identified"):
+        assertions_of_recorded_measurement(event)
+
+    event = record_measured_count(
+        compared,
+        workspace_id="w",
+        session_id="s1",
+        finding=_by_right(compared)["word"],
+    ).model_copy(deep=True)
+    _assertions_by_result(event)["count"]["support_basis"][
+        "local_assertion_ids"
+    ] = ["absent-assertion"]
+    with pytest.raises(RecurrenceMeasurementError, match="unresolved local"):
+        assertions_of_recorded_measurement(event)
+
+
+def test_assertion_identity_and_producing_occurrence_remain_distinct(compared):
+    finding = _by_right(compared)["word"]
+    first = record_measured_count(
+        compared, workspace_id="w", session_id="s1", finding=finding
+    )
+    second = record_measured_count(
+        compared, workspace_id="w", session_id="s1", finding=finding
+    )
+    first_count = _assertions_by_result(first)["count"]
+    second_count = _assertions_by_result(second)["count"]
+
+    assert first_count["dimensions"]["identity"] == second_count["dimensions"][
+        "identity"
+    ]
+    assert first.id != second.id
+    assert get_recorded_measured_assertion(
+        compared,
+        producing_event_id=first.id,
+        assertion_id=first_count["dimensions"]["identity"],
+    ).producing_event_id == first.id
+
+
+def test_recorded_assertion_stream_obeys_sessions_and_boundary(compared):
+    finding = _by_right(compared)["word"]
+    first = record_measured_count(
+        compared, workspace_id="w", session_id="s1", finding=finding
+    )
+    boundary = compared.capture_boundary()
+    record_measured_count(
+        compared, workspace_id="w", session_id="s1", finding=finding
+    )
+    record_measured_count(
+        compared, workspace_id="w", session_id="s2", finding=finding
+    )
+
+    recovered = list(
+        iter_recorded_measured_assertions(
+            compared,
+            workspace_id="w",
+            session_ids=("s1",),
+            through=boundary,
+        )
+    )
+    assert len(recovered) == 5
+    assert {assertion.producing_event_id for assertion in recovered} == {first.id}
+
+
 def test_exact_sets_keep_completeness_separate_from_support(compared):
     finding = _by_right(compared)["word"]
     assertions = {
@@ -196,7 +329,7 @@ def test_exact_sets_keep_completeness_separate_from_support(compared):
         assert encoded["completeness_scope"]["requires_session_existence"] is True
         assert finding.consumed_ledger_boundary.commitment not in (
             encoded["support_basis"]["event_ids"]
-            + encoded["support_basis"]["assertion_ids"]
+            + encoded["support_basis"]["local_assertion_ids"]
         )
 
     assert assertions["measured_in"].support_event_ids
@@ -801,7 +934,8 @@ def test_a_durable_producing_occurrence_is_identifiable_and_verifies(tmp_path):
     """
     from seed_runtime.events import VERIFIED, SQLiteEventLedger
 
-    ledger = SQLiteEventLedger(str(tmp_path / "seed.db"))
+    path = str(tmp_path / "seed.db")
+    ledger = SQLiteEventLedger(path)
     try:
         for session_id, material in EXCHANGES.items():
             run_persistent_operator_console(
@@ -820,11 +954,34 @@ def test_a_durable_producing_occurrence_is_identifiable_and_verifies(tmp_path):
             ledger, workspace_id="w", bounded_exchanges=DECLARED)
         event = record_measured_count(
             ledger, workspace_id="w", session_id="s1", finding=counted[0])
+        boundary = ledger.capture_boundary()
 
         assert ledger.get(event.id).id == event.id
         assert ledger.integrity_of(event.id) == VERIFIED
     finally:
         ledger.close()
+
+    reopened = SQLiteEventLedger(path)
+    try:
+        recovered = list(
+            iter_recorded_measured_assertions(
+                reopened,
+                workspace_id="w",
+                session_ids=("s1",),
+                through=boundary,
+            )
+        )
+        assert recovered
+        assert {assertion.producing_event_id for assertion in recovered} == {
+            event.id
+        }
+        assert get_recorded_measured_assertion(
+            reopened,
+            producing_event_id=event.id,
+            assertion_id=recovered[0].assertion_id,
+        ) == recovered[0]
+    finally:
+        reopened.close()
 
 
 def test_the_record_names_a_producer(compared):

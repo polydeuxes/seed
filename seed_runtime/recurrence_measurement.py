@@ -194,7 +194,10 @@ class MeasuredAssertion:
             "assertion_scope": dict(self.scope),
             "support_basis": {
                 "event_ids": list(self.support_event_ids),
-                "assertion_ids": list(self.support_assertion_ids),
+                # These dependencies are local to the same producing
+                # occurrence. Recovery binds each to that occurrence's id
+                # before exposing it to a downstream consumer.
+                "local_assertion_ids": list(self.support_assertion_ids),
             },
             "completeness_boundary": (
                 {"commitment": self.completeness_boundary.commitment}
@@ -218,6 +221,175 @@ class MeasuredAssertion:
             ],
             "forbidden_inferences": list(FORBIDDEN_INFERENCES),
         }
+
+
+@dataclass(frozen=True)
+class RecordedMeasuredAssertion:
+    """One addressable Assertion preserved inside its producing occurrence."""
+
+    assertion_id: str
+    producing_event_id: str
+    producing_session_id: str | None
+    result: str
+    payload: dict[str, Any]
+    support_assertion_refs: tuple[dict[str, str], ...] = ()
+
+    @property
+    def reference(self) -> dict[str, str]:
+        return {
+            "assertion_id": self.assertion_id,
+            "producing_event_id": self.producing_event_id,
+        }
+
+
+def assertions_of_recorded_measurement(event: Event) -> tuple[RecordedMeasuredAssertion, ...]:
+    """Recover every Assertion from one exact producing occurrence."""
+
+    if event.kind != EXCHANGE_COUNT_RECORDED_KIND:
+        raise RecurrenceMeasurementError(
+            f"{event.id} is {event.kind}, not a recurrence Measurement occurrence"
+        )
+    stated = event.payload.get("assertions")
+    if not isinstance(stated, list):
+        raise RecurrenceMeasurementError(
+            f"{event.id} does not preserve its distinct Assertions"
+        )
+    recovered = []
+    seen = set()
+    for assertion in stated:
+        if not isinstance(assertion, dict):
+            raise RecurrenceMeasurementError(
+                f"{event.id} carries a non-object Assertion representation"
+            )
+        dimensions = assertion.get("dimensions")
+        identity = dimensions.get("identity") if isinstance(dimensions, dict) else None
+        content = dimensions.get("content") if isinstance(dimensions, dict) else None
+        result = assertion.get("result")
+        subject = assertion.get("assertion_subject")
+        scope = assertion.get("assertion_scope")
+        if assertion.get("subject_kind") != "assertion":
+            raise RecurrenceMeasurementError(
+                f"{event.id} carries a result that is not identified as an Assertion"
+            )
+        if (
+            not isinstance(identity, str)
+            or not identity
+            or not isinstance(result, str)
+            or not isinstance(content, dict)
+            or not isinstance(subject, dict)
+            or not isinstance(scope, dict)
+        ):
+            raise RecurrenceMeasurementError(
+                f"{event.id} carries an Assertion without exact identity, result, "
+                "subject, scope, and content"
+            )
+        workspace_id = scope.get("workspace_id")
+        bounded_exchanges = scope.get("bounded_exchanges")
+        declared_identity = scope.get("declared_identity")
+        if (
+            not isinstance(workspace_id, str)
+            or not workspace_id
+            or not isinstance(bounded_exchanges, list)
+            or not all(isinstance(value, str) for value in bounded_exchanges)
+            or not isinstance(declared_identity, dict)
+            or any(subject.get(name) != value for name, value in declared_identity.items())
+        ):
+            raise RecurrenceMeasurementError(
+                f"{event.id} carries an Assertion without coherent bounded scope"
+            )
+        canonical = _canonical_measured_assertion_identity(
+            result=result,
+            subject=subject,
+            workspace_id=workspace_id,
+            bounded_exchanges=bounded_exchanges,
+            content=content,
+        )
+        if identity != canonical:
+            raise RecurrenceMeasurementError(
+                f"{event.id} carries an Assertion identity that does not match "
+                "its carried coordinates"
+            )
+        if identity in seen:
+            raise RecurrenceMeasurementError(
+                f"{event.id} carries duplicate Assertion identity {identity}"
+            )
+        seen.add(identity)
+        recovered.append(
+            RecordedMeasuredAssertion(
+                assertion_id=identity,
+                producing_event_id=event.id,
+                producing_session_id=event.session_id,
+                result=result,
+                payload=assertion,
+            )
+        )
+    identities = {assertion.assertion_id for assertion in recovered}
+    bound = []
+    for assertion in recovered:
+        support = assertion.payload.get("support_basis")
+        local_ids = support.get("local_assertion_ids") if isinstance(support, dict) else None
+        if not isinstance(local_ids, list) or not all(
+            isinstance(value, str) for value in local_ids
+        ):
+            raise RecurrenceMeasurementError(
+                f"{event.id} carries an Assertion without local Assertion support"
+            )
+        missing = set(local_ids) - identities
+        if missing:
+            raise RecurrenceMeasurementError(
+                f"{event.id} carries unresolved local Assertion support: "
+                f"{', '.join(sorted(missing))}"
+            )
+        bound.append(
+            RecordedMeasuredAssertion(
+                assertion_id=assertion.assertion_id,
+                producing_event_id=assertion.producing_event_id,
+                producing_session_id=assertion.producing_session_id,
+                result=assertion.result,
+                payload=assertion.payload,
+                support_assertion_refs=tuple(
+                    {
+                        "producing_event_id": event.id,
+                        "assertion_id": local_id,
+                    }
+                    for local_id in local_ids
+                ),
+            )
+        )
+    return tuple(bound)
+
+
+def iter_recorded_measured_assertions(
+    ledger: EventLedger,
+    *,
+    workspace_id: str,
+    session_ids: Iterable[str],
+    through: EventLedgerBoundary | None = None,
+) -> Iterator[RecordedMeasuredAssertion]:
+    """Stream Assertions from exact declared sessions through one boundary."""
+
+    for session_id in tuple(dict.fromkeys(session_ids)):
+        for event in ledger.iter_session_kind(
+            workspace_id,
+            session_id,
+            EXCHANGE_COUNT_RECORDED_KIND,
+            through=through,
+        ):
+            yield from assertions_of_recorded_measurement(event)
+
+
+def get_recorded_measured_assertion(
+    ledger: EventLedger, *, producing_event_id: str, assertion_id: str
+) -> RecordedMeasuredAssertion | None:
+    """Resolve one exact occurrence-bound Assertion reference."""
+
+    event = ledger.get(producing_event_id)
+    if event is None:
+        return None
+    for assertion in assertions_of_recorded_measurement(event):
+        if assertion.assertion_id == assertion_id:
+            return assertion
+    return None
 
 
 def occurrences_of_declared_exchanges(
@@ -435,18 +607,35 @@ def render_measured_count(finding: MeasuredCountFinding) -> str:
     )
 
 
-def _result_assertion_identity(
-    finding: MeasuredCountFinding, result: str, content: dict[str, Any]
+def _canonical_measured_assertion_identity(
+    *,
+    result: str,
+    subject: dict[str, Any],
+    workspace_id: str,
+    bounded_exchanges: Iterable[str],
+    content: dict[str, Any],
 ) -> str:
     identified = {
         "result": result,
-        "distinction": finding.distinction.to_json_dict(),
-        "workspace_id": finding.workspace_id,
-        "bounded_exchanges": list(finding.bounded_exchanges),
+        "distinction": subject,
+        "workspace_id": workspace_id,
+        "bounded_exchanges": list(bounded_exchanges),
         "content": content,
     }
     return "measured-assertion:" + json.dumps(
         identified, sort_keys=True, separators=(",", ":")
+    )
+
+
+def _result_assertion_identity(
+    finding: MeasuredCountFinding, result: str, content: dict[str, Any]
+) -> str:
+    return _canonical_measured_assertion_identity(
+        result=result,
+        subject=finding.distinction.to_json_dict(),
+        workspace_id=finding.workspace_id,
+        bounded_exchanges=finding.bounded_exchanges,
+        content=content,
     )
 
 
