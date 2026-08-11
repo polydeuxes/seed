@@ -394,6 +394,11 @@ def get_recorded_recurrence_subject_coordinate_assertion(
         raise RecurrenceSubjectMeasurementError(
             "coordinate Measurement does not consume a recovered recurrence Assertion"
         )
+    source_scope = source.payload["assertion_scope"]
+    expected_scope = {
+        "workspace_id": source_scope["workspace_id"],
+        "source_session_ids": list(source_scope["source_session_ids"]),
+    }
     expected = dict(
         zip(
             RECURRENCE_SUBJECT_COORDINATES,
@@ -401,9 +406,11 @@ def get_recorded_recurrence_subject_coordinate_assertion(
         )
     )
     for item in recovered:
-        if item.payload["dimensions"]["content"]["exact_value"] != expected[
-            item.coordinate
-        ]:
+        if (
+            item.payload["assertion_scope"] != expected_scope
+            or item.payload["dimensions"]["content"]["exact_value"]
+            != expected[item.coordinate]
+        ):
             raise RecurrenceSubjectMeasurementError(
                 "coordinate Measurement result does not match its source Assertion"
             )

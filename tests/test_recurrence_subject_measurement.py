@@ -174,6 +174,34 @@ def test_recovery_refuses_a_coordinate_value_that_disagrees_with_its_source():
         )
 
 
+def test_recovery_refuses_a_self_consistent_scope_not_carried_by_its_source():
+    ledger = _recurrence_population()
+    record_recurrence_subject_coordinate_layer(
+        ledger,
+        workspace_id="w",
+        source_session_ids=("counts",),
+        recording_session_id="coordinate-results",
+    )
+    event = ledger.list_session("w", "coordinate-results")[0]
+    assertion = event.payload["assertions"][0]
+    assertion["assertion_scope"] = {
+        "workspace_id": "w",
+        "source_session_ids": ["different-comparison-session"],
+    }
+    assertion["dimensions"]["identity"] = _assertion_identity(
+        coordinate=assertion["assertion_subject"]["coordinate"],
+        value=assertion["dimensions"]["content"]["exact_value"],
+        scope=assertion["assertion_scope"],
+    )
+
+    with pytest.raises(RecurrenceSubjectMeasurementError):
+        get_recorded_recurrence_subject_coordinate_assertion(
+            ledger,
+            producing_event_id=event.id,
+            assertion_id=assertion["dimensions"]["identity"],
+        )
+
+
 def test_measurement_refuses_a_population_with_no_recurrence_assertions():
     ledger = EventLedger()
     pair = AdjacentPair("it", "is")
