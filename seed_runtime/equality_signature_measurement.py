@@ -265,6 +265,10 @@ def record_equality_signature_layer(
 ) -> int:
     """Measure and durably record every available exact signature once."""
 
+    if not isinstance(recording_session_id, str) or not recording_session_id:
+        raise EqualitySignatureMeasurementError(
+            "equality-signature recording requires an exact session"
+        )
     pending: list[Event] = []
     recorded = 0
     for finding in measure_equality_signatures(

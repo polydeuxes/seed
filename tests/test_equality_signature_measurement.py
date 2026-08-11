@@ -182,3 +182,22 @@ def test_signature_does_not_claim_equivalence_or_select_a_subset():
     assert "no Equivalence" in assertion["dimensions"]["authority_warrant"]
     assert "not Equivalence" in assertion["forbidden_inferences"][0]
     assert "selected_coordinates" not in str(event.payload)
+
+
+@pytest.mark.parametrize("recording_session_id", ("", None, 7))
+def test_recording_requires_an_exact_session(recording_session_id):
+    ledger = EventLedger()
+    _comparison(ledger)
+
+    with pytest.raises(
+        EqualitySignatureMeasurementError,
+        match="requires an exact session",
+    ):
+        record_equality_signature_layer(
+            ledger,
+            workspace_id="w",
+            source_session_ids=("comparisons",),
+            recording_session_id=recording_session_id,
+        )
+
+    assert ledger.list_session("w", "signatures") == []
