@@ -45,7 +45,7 @@ co-presence.
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Callable, Iterable, Sequence
+from typing import Callable, Iterable, Iterator, Sequence
 
 from seed_runtime.events import EventLedger
 from seed_runtime.event import Event
@@ -111,16 +111,7 @@ class AdjacentPair:
         return f"{self.left!r} -> {self.right!r}"
 
 
-def adjacent_pairs_from_finding(ledger: EventLedger, finding_event_id: str) -> list[AdjacentPair]:
-    """Read pairs out of a recorded finding rather than taking them from a caller.
-
-    The recorded finding names a left representation and the occupancies
-    measured after it. Every occupancy is returned; none is filtered by count,
-    share, or a threshold. Which of them prove reproducible is what the
-    measurement measures, not something decided here.
-    """
-
-    event = ledger.get(finding_event_id)
+def _adjacent_pairs_from_event(event: Event | None) -> list[AdjacentPair]:
     if event is None or event.kind != MEASUREMENT_RECORDED_KIND:
         raise PreservedMaterialMeasurementError(
             "pairs must be read from a recorded measurement finding"
@@ -134,6 +125,18 @@ def adjacent_pairs_from_finding(ledger: EventLedger, finding_event_id: str) -> l
         AdjacentPair(left=left, right=occupancy["representation"])
         for occupancy in event.payload["occupancies"]
     ]
+
+
+def adjacent_pairs_from_finding(ledger: EventLedger, finding_event_id: str) -> list[AdjacentPair]:
+    """Read pairs out of a recorded finding rather than taking them from a caller.
+
+    The recorded finding names a left representation and the occupancies
+    measured after it. Every occupancy is returned; none is filtered by count,
+    share, or a threshold. Which of them prove reproducible is what the
+    measurement measures, not something decided here.
+    """
+
+    return _adjacent_pairs_from_event(ledger.get(finding_event_id))
 
 
 def _positions(text: str) -> Sequence[str]:
@@ -334,23 +337,34 @@ class AdjacentPairMeasurementIndex:
     ) -> list[tuple[AdjacentPair, dict[str, MeasurementFinding]]]:
         """Measure every supplied pair occurrence, preserving order and premise."""
 
-        results = []
+        return list(
+            self.iter_measure_all(
+                pair_premises,
+                counting_scope=counting_scope,
+            )
+        )
+
+    def iter_measure_all(
+        self,
+        pair_premises: Iterable[tuple[AdjacentPair, str]],
+        *,
+        counting_scope: str,
+    ) -> Iterator[tuple[AdjacentPair, dict[str, MeasurementFinding]]]:
+        """Stream every supplied pair occurrence with its exact premise."""
+
         for pair, premise_event_id in pair_premises:
             if not isinstance(premise_event_id, str) or not premise_event_id:
                 raise PreservedMaterialMeasurementError(
                     f"no premise occurrence identity supplied for {pair}"
                 )
-            results.append(
-                (
+            yield (
+                pair,
+                self.measure(
                     pair,
-                    self.measure(
-                        pair,
-                        counting_scope=counting_scope,
-                        premise_event_id=premise_event_id,
-                    ),
-                )
+                    counting_scope=counting_scope,
+                    premise_event_id=premise_event_id,
+                ),
             )
-        return results
 
 
 def measure_adjacent_pair(
@@ -413,6 +427,63 @@ def record_pair_measurements(
             },
         )
     return recorded
+
+
+def record_adjacent_pair_measurement_layer(
+    ledger: EventLedger,
+    *,
+    workspace_id: str,
+    session_id: str,
+    counting_scope: str,
+) -> int:
+    """Record the four-form battery for every pair supplied by ``after`` findings.
+
+    One ledger boundary fixes both the preserved material and the recorded
+    premise occurrences eligible for this layer.  Each occupancy of each
+    eligible premise remains a separate ``(pair, premise occurrence)`` input;
+    equal pair values from different premises are never collapsed.
+
+    The return is only the number of result occurrences recorded.  Results are
+    not retained in a second in-memory collection after the ledger preserves
+    them, and this function does not consume the results into another layer.
+    """
+
+    boundary = ledger.capture_boundary()
+    material = tuple(
+        ledger.iter_session_kind(
+            workspace_id,
+            session_id,
+            INGRESS_OCCURRED_KIND,
+            through=boundary,
+        )
+    )
+    index = AdjacentPairMeasurementIndex(material)
+    pair_premises = []
+    for premise in ledger.iter_session_kind(
+        workspace_id,
+        session_id,
+        MEASUREMENT_RECORDED_KIND,
+        through=boundary,
+    ):
+        if premise.payload.get("measurement_form") != "after":
+            continue
+        for pair in _adjacent_pairs_from_event(premise):
+            pair_premises.append((pair, premise.id))
+
+    recorded_count = 0
+    for pair, findings in index.iter_measure_all(
+        pair_premises,
+        counting_scope=counting_scope,
+    ):
+        recorded = record_pair_measurements(
+            ledger,
+            workspace_id=workspace_id,
+            session_id=session_id,
+            pair=pair,
+            findings=findings,
+        )
+        recorded_count += len(recorded)
+    return recorded_count
 
 
 def occupant_agreement_across_scopes(
