@@ -173,19 +173,22 @@ def measure_coordinate_assertion_counts(
         raise CoordinateAssertionMeasurementError(
             "no recovered recurrence-subject coordinate Assertions to measure"
         )
-    for source_assertion_id, refs in grouped.items():
-        representative = _rehydrate_coordinate_assertion(ledger, refs[0])
-        payload = representative.payload
-        yield MeasuredCoordinateAssertionCount(
-            source_assertion_id=source_assertion_id,
-            source_assertion_subject=payload["assertion_subject"],
-            exact_coordinate_value=payload["dimensions"]["content"]["exact_value"],
-            assertion_scope=payload["assertion_scope"],
-            production_refs=tuple(refs),
-            workspace_id=workspace_id,
-            source_session_ids=sessions,
-            completeness_boundary=boundary,
-        )
+    def stream() -> Iterator[MeasuredCoordinateAssertionCount]:
+        for source_assertion_id, refs in grouped.items():
+            representative = _rehydrate_coordinate_assertion(ledger, refs[0])
+            payload = representative.payload
+            yield MeasuredCoordinateAssertionCount(
+                source_assertion_id=source_assertion_id,
+                source_assertion_subject=payload["assertion_subject"],
+                exact_coordinate_value=payload["dimensions"]["content"]["exact_value"],
+                assertion_scope=payload["assertion_scope"],
+                production_refs=tuple(refs),
+                workspace_id=workspace_id,
+                source_session_ids=sessions,
+                completeness_boundary=boundary,
+            )
+
+    return stream()
 
 
 def _finding_assertions(

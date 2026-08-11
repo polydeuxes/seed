@@ -122,10 +122,18 @@ def test_measurement_boundary_excludes_later_comparison(monkeypatch):
 def test_measurement_requires_declared_established_population():
     ledger = EventLedger()
     with pytest.raises(ComparisonResultMeasurementError, match="absent"):
-        list(
-            measure_comparison_result_counts(
-                ledger, workspace_id="w", source_session_ids=("missing",)
-            )
+        measure_comparison_result_counts(
+            ledger, workspace_id="w", source_session_ids=("missing",)
+        )
+
+
+def test_measurement_refuses_an_empty_comparison_population_eagerly():
+    ledger = EventLedger()
+    ledger.append("unrelated", "w", {}, session_id="comparisons")
+
+    with pytest.raises(ComparisonResultMeasurementError, match="no recorded"):
+        measure_comparison_result_counts(
+            ledger, workspace_id="w", source_session_ids=("comparisons",)
         )
 
 
