@@ -22,6 +22,7 @@ from seed_runtime.bounded_testimony_comparison import (
     record_comparison_finding,
 )
 from seed_runtime.events import EventLedger
+from seed_runtime.measurement_continuation import measurements_from_finding
 from seed_runtime.preserved_material_measurement import (
     MEASUREMENT_RECORDED_KIND,
     preserved_ingress_occurrences,
@@ -31,6 +32,7 @@ from seed_runtime.recurrence_measurement import (
     DECLARED_IDENTITY,
     EXCHANGE_COUNT_RECORDED_KIND,
     FORBIDDEN_INFERENCES,
+    MEASURED_ASSERTION_FIDELITY_RESPONSIBILITY,
     RecurrenceMeasurementError,
     measure_exchange_counts,
     record_measured_count,
@@ -90,22 +92,34 @@ def _by_right(ledger, declared=None):
 # --------------------------------------------------------------------------
 
 
-def test_the_producer_responsibility_stays_unrecovered(compared):
-    """`#2429` invented one; `#2430` put the Act in its place.
-
-    `#2423` recovered that declared measurement has no production owner in
-    active law — "the act that would produce the finding has no named owner".
-    Writing `declared-measurement` there asserts the owner that recovery says
-    is absent.
-    """
+def test_the_assertion_owns_fidelity_not_its_production(compared):
+    """Producer, producing Act, and the result's owner remain distinct."""
     event = record_measured_count(
         compared, workspace_id="w", session_id="s1",
         finding=_by_right(compared)["word"])
     responsibility = event.payload["dimensions"]["responsibility"]
-    assert responsibility.startswith("unrecovered")
-    assert "#2423" in responsibility
-    assert responsibility != "declared-measurement"
+    assert responsibility == MEASURED_ASSERTION_FIDELITY_RESPONSIBILITY
+    assert event.payload["subject_kind"] == "assertion"
+    assert event.payload["responsibility_owner"] == "this recorded assertion"
+    assert event.payload["producing_act"] == "declared measurement"
+    assert event.payload["responsibility_owner"] != event.payload["producer"]
+    assert responsibility != event.payload["producing_act"]
     assert "cohort" not in str(event.payload).lower()
+
+
+def test_a_measured_assertion_does_not_invent_its_next_question(compared):
+    """Local fidelity ownership is not an automatic continuation demand."""
+    event = record_measured_count(
+        compared, workspace_id="w", session_id="s1",
+        finding=_by_right(compared)["word"])
+    before = tuple(occurrence.id for occurrence in compared.list("w"))
+
+    with pytest.raises(
+        ValueError, match="measurements are formed from recorded findings only"
+    ):
+        measurements_from_finding(event)
+
+    assert tuple(occurrence.id for occurrence in compared.list("w")) == before
 
 
 def test_the_record_shape_is_its_own(compared):
@@ -673,13 +687,16 @@ def test_the_producer_is_not_the_provenance(compared):
         "source_provenance"]
 
 
-def test_the_responsibility_stays_unknown_beside_a_known_producer(compared):
-    """The partial shape is ordinary, not contradictory."""
+def test_the_assertion_responsibility_stands_beside_a_known_producer(compared):
+    """The result owns fidelity while its producing participant remains known."""
     event = record_measured_count(
         compared, workspace_id="w", session_id="s1",
         finding=_by_right(compared)["word"])
     assert event.payload["producer"] == "this Seed"
-    assert event.payload["dimensions"]["responsibility"].startswith("unrecovered")
+    assert event.payload["responsibility_owner"] == "this recorded assertion"
+    assert event.payload["dimensions"]["responsibility"] == (
+        MEASURED_ASSERTION_FIDELITY_RESPONSIBILITY
+    )
     assert event.payload["dimensions"]["standing"] == "measured"
 
 

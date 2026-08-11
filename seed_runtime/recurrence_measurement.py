@@ -49,6 +49,11 @@ from seed_runtime.preserved_material_measurement import MEASUREMENT_RECORDED_KIN
 
 EXCHANGE_COUNT_RECORDED_KIND = "operator.measurement.exchange_count_recorded"
 
+MEASURED_ASSERTION_FIDELITY_RESPONSIBILITY = (
+    "preserve the fidelity of this measured assertion's Standing to its "
+    "Evidence, declared identity, Scope, Authority, and Unknowns"
+)
+
 # The declared identity a recurrence assertion is made under. Two occurrences
 # that differ on any of these did not measure the same thing, and counting them
 # together reports a recurrence nothing observed.
@@ -348,7 +353,7 @@ def record_measured_count(
     session_id: str,
     finding: MeasuredCountFinding,
 ) -> Event:
-    """Preserve one count finding so a later responsible act may consume it.
+    """Preserve one count finding as a bounded measured assertion.
 
     The record carries a **Producer** distinct from its Responsibility.
     `#2423` recovered that declared measurement has no production *owner* in
@@ -359,15 +364,22 @@ def record_measured_count(
     formation-occurrence, scope, authority, and provenance dimension", listing
     producer beside provenance rather than as it.
 
-    So the partial shape is ordinary rather than contradictory:
+    The production owner was unrecovered because the result was being asked to
+    own its production.  It does not.  Declared Measurement performs the Act,
+    this Seed is its Producer, and the recorded occurrence is Producer
+    Evidence.  The result owns a different, continuing Responsibility: the
+    fidelity of its own Standing to the coordinates and Evidence it carries.
+
+    So the shape is:
 
     ```text
       Producer          this Seed
       Producer Evidence the exact recorded producing occurrence
       Act               declared measurement
-      result            count finding
+      result            bounded measured assertion
       Standing          measured
-      Responsibility    Unknown
+      owner             this assertion
+      Responsibility    fidelity of this assertion's Standing
     ```
 
     `06.Constructors:13` is what licenses the Producer claim and what limits it:
@@ -392,15 +404,9 @@ def record_measured_count(
                 "recorded comparison occurrences and recorded measurement "
                 "occurrences"
             ),
-            # Not the Act. `#2423` recovered that declared measurement has
-            # **no production owner in active law** — "the act that would
-            # produce the finding has no named owner". Writing the Act here
-            # would assert the owner that recovery says is absent, which is
-            # what `#2430` did after removing an invented Responsibility.
-            "responsibility": (
-                "unrecovered; declared measurement has no production owner in "
-                "active law (#2423)"
-            ),
+            # The Assertion does not perform or own its producing Act.  It owns
+            # only the continuing fidelity of the Standing recorded here.
+            "responsibility": MEASURED_ASSERTION_FIDELITY_RESPONSIBILITY,
             "authority_warrant": (
                 "measurement evidence only; establishes no relation between the "
                 "exchanges, no source independence, and no corroboration"
@@ -408,6 +414,9 @@ def record_measured_count(
             "scope_locality": f"workspace:{workspace_id};session:{session_id}",
             "occurrence_preservation": "count finding durably recorded",
         },
+        "subject_kind": "assertion",
+        "responsibility_owner": "this recorded assertion",
+        "producing_act": "declared measurement",
         "producer": "this Seed",
         "producer_evidence": (
             "the recorded producing occurrence this payload is appended as; a "
