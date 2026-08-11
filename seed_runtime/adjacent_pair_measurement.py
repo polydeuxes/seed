@@ -50,9 +50,11 @@ from typing import Callable, Iterable, Sequence
 from seed_runtime.events import EventLedger
 from seed_runtime.event import Event
 from seed_runtime.preserved_material_measurement import (
+    INGRESS_OCCURRED_KIND,
     MEASUREMENT_RECORDED_KIND,
     DeclaredMeasurement,
     MeasurementFinding,
+    Occupancy,
     PreservedMaterialMeasurementError,
     measure_occupancy,
     record_measurement_finding,
@@ -78,6 +80,13 @@ MEASURED_POSITIONS: dict[str, dict[str, object]] = {
     "before_same_right": {"anchored_on": "right", "direction": "before", "displacement": 1},
     "after_same_left": {"anchored_on": "left", "direction": "after", "displacement": 1},
 }
+
+PAIR_MEASUREMENT_FORMS: tuple[str, ...] = (
+    "preceding",
+    "following",
+    "before_same_right",
+    "after_same_left",
+)
 
 
 @dataclass(frozen=True)
@@ -181,6 +190,169 @@ def _position_measurements(pair: AdjacentPair) -> dict[str, Callable[[str], str 
         "before_same_right": before_same_right,
         "after_same_left": after_same_left,
     }
+
+
+class AdjacentPairMeasurementIndex:
+    """One tokenization of a bounded material set for many pair measurements.
+
+    The index changes representation cost only.  Each answer retains the exact
+    first-match behavior, declaration, consumed occurrence identities, and
+    empty-result behavior of :func:`measure_adjacent_pair`.
+    """
+
+    def __init__(self, occurrences: Iterable[Event]):
+        material = tuple(occurrences)
+        for event in material:
+            if event.kind != INGRESS_OCCURRED_KIND:
+                raise PreservedMaterialMeasurementError(
+                    f"only preserved ingress occurrences may be measured: {event.kind}"
+                )
+        self._event_ids = tuple(event.id for event in material)
+        self._contexts = tuple(
+            self._index_positions(_positions(event.payload["decoded_text"]))
+            for event in material
+        )
+
+    @staticmethod
+    def _index_positions(parts: Sequence[str]) -> tuple[
+        dict[tuple[str, str], tuple[str | None, str | None]],
+        dict[str, tuple[str, ...]],
+        dict[str, tuple[str, ...]],
+    ]:
+        first_pair_context = {}
+        left_alternatives: dict[str, list[str]] = {}
+        right_alternatives: dict[str, list[str]] = {}
+        for index in range(len(parts) - 1):
+            left = parts[index]
+            right = parts[index + 1]
+            first_pair_context.setdefault(
+                (left, right),
+                (
+                    parts[index - 1] if index > 0 else None,
+                    parts[index + 2] if index + 2 < len(parts) else None,
+                ),
+            )
+            lefts = left_alternatives.setdefault(right, [])
+            if left not in lefts and len(lefts) < 2:
+                lefts.append(left)
+            rights = right_alternatives.setdefault(left, [])
+            if right not in rights and len(rights) < 2:
+                rights.append(right)
+        return (
+            first_pair_context,
+            {key: tuple(values) for key, values in left_alternatives.items()},
+            {key: tuple(values) for key, values in right_alternatives.items()},
+        )
+
+    @staticmethod
+    def _occupant(
+        context: tuple[
+            dict[tuple[str, str], tuple[str | None, str | None]],
+            dict[str, tuple[str, ...]],
+            dict[str, tuple[str, ...]],
+        ],
+        pair: AdjacentPair,
+        form: str,
+    ) -> str | None:
+        first_pair_context, left_alternatives, right_alternatives = context
+        if form in {"preceding", "following"}:
+            pair_context = first_pair_context.get((pair.left, pair.right))
+            if pair_context is None:
+                return None
+            if form == "preceding":
+                return pair_context[0]
+            return pair_context[1]
+        if form == "before_same_right":
+            return next(
+                (
+                    left
+                    for left in left_alternatives.get(pair.right, ())
+                    if left != pair.left
+                ),
+                None,
+            )
+        if form == "after_same_left":
+            return next(
+                (
+                    right
+                    for right in right_alternatives.get(pair.left, ())
+                    if right != pair.right
+                ),
+                None,
+            )
+        raise PreservedMaterialMeasurementError(f"unknown adjacent-pair form: {form}")
+
+    def measure(
+        self,
+        pair: AdjacentPair,
+        *,
+        counting_scope: str,
+        premise_event_id: str,
+    ) -> dict[str, MeasurementFinding]:
+        """Apply every established pair form to one pair without retokenizing."""
+
+        findings = {}
+        for form in PAIR_MEASUREMENT_FORMS:
+            counts: dict[str, int] = {}
+            positions_measured = 0
+            for context in self._contexts:
+                occupant = self._occupant(context, pair, form)
+                if occupant is None:
+                    continue
+                positions_measured += 1
+                counts[occupant] = counts.get(occupant, 0) + 1
+            occupancies = tuple(
+                Occupancy(representation=representation, occurrence_count=count)
+                for representation, count in sorted(
+                    counts.items(), key=lambda item: (-item[1], item[0])
+                )
+            )
+            findings[form] = MeasurementFinding(
+                declared=DeclaredMeasurement(
+                    representation_measured=(
+                        f"the {form.replace('_', ' ')} position of the ordered pair "
+                        f"{pair.left!r} {pair.right!r}"
+                    ),
+                    equivalence_rule=EQUIVALENCE_RULE,
+                    counting_scope=counting_scope,
+                    premise_event_id=premise_event_id,
+                    form=form,
+                    relative_to=(pair.left, pair.right),
+                    measured_position=MEASURED_POSITIONS[form],
+                ),
+                positions_measured=positions_measured,
+                occupancies=occupancies,
+                consumed_event_ids=self._event_ids,
+            )
+        return findings
+
+    def measure_all(
+        self,
+        pairs: Iterable[AdjacentPair],
+        *,
+        counting_scope: str,
+        premise_event_ids: dict[AdjacentPair, str],
+    ) -> list[tuple[AdjacentPair, dict[str, MeasurementFinding]]]:
+        """Measure every supplied pair once, preserving the supplied order."""
+
+        results = []
+        for pair in pairs:
+            premise_event_id = premise_event_ids.get(pair)
+            if premise_event_id is None:
+                raise PreservedMaterialMeasurementError(
+                    f"no recorded premise supplied for {pair}"
+                )
+            results.append(
+                (
+                    pair,
+                    self.measure(
+                        pair,
+                        counting_scope=counting_scope,
+                        premise_event_id=premise_event_id,
+                    ),
+                )
+            )
+        return results
 
 
 def measure_adjacent_pair(
