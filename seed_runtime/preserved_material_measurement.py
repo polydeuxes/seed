@@ -43,6 +43,7 @@ from typing import Any, Iterable
 
 from seed_runtime.events import EventLedger
 from seed_runtime.event import Event
+from seed_runtime.ids import new_id
 
 MEASUREMENT_RECORDED_KIND = "operator.measurement.finding_recorded"
 INGRESS_OCCURRED_KIND = "operator.ingress.ingress_occurred"
@@ -216,28 +217,14 @@ def measure_occupancy(
     )
 
 
-def record_measurement_finding(
-    ledger: EventLedger,
+def _measurement_finding_payload(
     *,
     workspace_id: str,
     session_id: str,
     finding: MeasurementFinding,
-    extra: dict[str, Any] | None = None,
-) -> Event:
-    """Preserve a finding so a later responsible act may consume it.
-
-    The recorded authority states the clause's own limit. A finding is
-    measurement evidence and is not relation, meaning, or established standing.
-    """
-
-    if finding.declared.premise_event_id is not None:
-        premise = ledger.get(finding.declared.premise_event_id)
-        if premise is None or premise.kind != MEASUREMENT_RECORDED_KIND:
-            raise PreservedMaterialMeasurementError(
-                "a premise must be a recorded measurement finding"
-            )
-
-    payload = {
+    extra: dict[str, Any] | None,
+) -> dict[str, Any]:
+    return {
         "dimensions": {
             "identity": f"measurement:{finding.declared.representation_measured}",
             "content": finding.declared.counting_scope,
@@ -261,9 +248,67 @@ def record_measurement_finding(
             else []
         ),
     }
-    return ledger.append(
-        MEASUREMENT_RECORDED_KIND, workspace_id, payload, session_id=session_id
-    )
+
+
+def record_measurement_findings(
+    ledger: EventLedger,
+    *,
+    workspace_id: str,
+    session_id: str,
+    findings: Iterable[tuple[MeasurementFinding, dict[str, Any] | None]],
+) -> list[Event]:
+    """Preserve a bounded group of findings in one ledger transaction."""
+
+    supplied = list(findings)
+    premise_ids = {
+        finding.declared.premise_event_id
+        for finding, _ in supplied
+        if finding.declared.premise_event_id is not None
+    }
+    for premise_id in premise_ids:
+        premise = ledger.get(premise_id)
+        if premise is None or premise.kind != MEASUREMENT_RECORDED_KIND:
+            raise PreservedMaterialMeasurementError(
+                "a premise must be a recorded measurement finding"
+            )
+    events = [
+        Event(
+            id=new_id("evt"),
+            kind=MEASUREMENT_RECORDED_KIND,
+            workspace_id=workspace_id,
+            payload=_measurement_finding_payload(
+                workspace_id=workspace_id,
+                session_id=session_id,
+                finding=finding,
+                extra=extra,
+            ),
+            session_id=session_id,
+        )
+        for finding, extra in supplied
+    ]
+    return ledger.append_many(events)
+
+
+def record_measurement_finding(
+    ledger: EventLedger,
+    *,
+    workspace_id: str,
+    session_id: str,
+    finding: MeasurementFinding,
+    extra: dict[str, Any] | None = None,
+) -> Event:
+    """Preserve a finding so a later responsible act may consume it.
+
+    The recorded authority states the clause's own limit. A finding is
+    measurement evidence and is not relation, meaning, or established standing.
+    """
+
+    return record_measurement_findings(
+        ledger,
+        workspace_id=workspace_id,
+        session_id=session_id,
+        findings=((finding, extra),),
+    )[0]
 
 
 def premise_chain(ledger: EventLedger, event_id: str) -> list[str]:

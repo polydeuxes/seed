@@ -394,6 +394,27 @@ def test_one_layer_refuses_claimed_after_premises_without_exact_coordinates(
     })
 
 
+def test_one_layer_persists_results_in_a_bounded_batch(session, recorded_finding):
+    batches = []
+    original = session.append_many
+
+    def tracked(events, **kwargs):
+        supplied = list(events)
+        batches.append(len(supplied))
+        return original(supplied, **kwargs)
+
+    session.append_many = tracked
+    recorded_count = record_adjacent_pair_measurement_layer(
+        session,
+        workspace_id="w",
+        session_id="s",
+        counting_scope="this session",
+    )
+
+    assert recorded_count == len(recorded_finding.payload["occupancies"]) * 4
+    assert batches == [recorded_count]
+
+
 def test_a_question_that_found_nothing_is_still_recorded(
     session, occurrences, recorded_finding
 ):

@@ -59,6 +59,7 @@ from seed_runtime.preserved_material_measurement import (
     PreservedMaterialMeasurementError,
     measure_occupancy,
     record_measurement_finding,
+    record_measurement_findings,
 )
 
 EQUIVALENCE_RULE = "byte-for-byte equality; no normalization"
@@ -430,20 +431,24 @@ def record_pair_measurements(
     questions that happened to succeed.
     """
 
-    recorded: dict[str, Event] = {}
-    for name, finding in findings.items():
-        recorded[name] = record_measurement_finding(
-            ledger,
-            workspace_id=workspace_id,
-            session_id=session_id,
-            finding=finding,
-            extra={
-                "measurement": name,
-                "pair_left": pair.left,
-                "pair_right": pair.right,
-            },
-        )
-    return recorded
+    names = tuple(findings)
+    events = record_measurement_findings(
+        ledger,
+        workspace_id=workspace_id,
+        session_id=session_id,
+        findings=(
+            (
+                findings[name],
+                {
+                    "measurement": name,
+                    "pair_left": pair.left,
+                    "pair_right": pair.right,
+                },
+            )
+            for name in names
+        ),
+    )
+    return dict(zip(names, events))
 
 
 def record_adjacent_pair_measurement_layer(
@@ -487,19 +492,43 @@ def record_adjacent_pair_measurement_layer(
         for pair in _adjacent_pairs_from_event(premise):
             pair_premises.append((pair, premise.id))
 
+    record_batch_size = 256
+    pending_records = []
     recorded_count = 0
     for pair, findings in index.iter_measure_all(
         pair_premises,
         counting_scope=counting_scope,
     ):
-        recorded = record_pair_measurements(
-            ledger,
-            workspace_id=workspace_id,
-            session_id=session_id,
-            pair=pair,
-            findings=findings,
+        pending_records.extend(
+            (
+                finding,
+                {
+                    "measurement": name,
+                    "pair_left": pair.left,
+                    "pair_right": pair.right,
+                },
+            )
+            for name, finding in findings.items()
         )
-        recorded_count += len(recorded)
+        if len(pending_records) >= record_batch_size:
+            recorded_count += len(
+                record_measurement_findings(
+                    ledger,
+                    workspace_id=workspace_id,
+                    session_id=session_id,
+                    findings=pending_records,
+                )
+            )
+            pending_records.clear()
+    if pending_records:
+        recorded_count += len(
+            record_measurement_findings(
+                ledger,
+                workspace_id=workspace_id,
+                session_id=session_id,
+                findings=pending_records,
+            )
+        )
     return recorded_count
 
 
