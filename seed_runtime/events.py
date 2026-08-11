@@ -298,14 +298,10 @@ class EventLedger:
     ) -> Iterator[str]:
         """Yield the identities of one kind from one session, in append order.
 
-        The same bounded read as `iter_session_kind` over the same rows in the
-        same order, returning only what a caller that compares identities
-        consumes. A caller that needs an occurrence's content must read the
-        occurrence; this is not a cheaper way to obtain one.
-
-        Nothing is skipped by reading less. `iter_session_kind` verifies no
-        digest, so an identity read forgoes no check a full read performs;
-        `integrity_of` remains the separate act that carries that obligation.
+        The same bounded rows in the same order as `iter_session_kind`, returning
+        only their identities. It does not reconstruct or inspect occurrence
+        payloads. A caller requiring occurrence content must use the occurrence
+        read; `integrity_of` remains the separate integrity boundary.
         """
         for event in self.iter_session_kind(
             workspace_id, session_id, kind, through=through
@@ -675,11 +671,20 @@ class SQLiteEventLedger(EventLedger):
     ) -> Iterator[str]:
         """Read one column of the same bounded rows `iter_session_kind` reads.
 
-        Selecting one column rather than decoding every payload is worth its own
-        method here. `#2480` measured the recovery path: one 300-occurrence
-        ingress read costs 7.09 ms as Events and 0.25 ms as identities, because
-        902 bytes of JSON per occurrence are decoded and discarded by a caller
-        that keeps only the identity.
+        The same row selection, boundary and order, returning only identities.
+
+        **This does not reconstruct or inspect occurrence payloads**, and the
+        difference is nameable rather than merely cheaper: the occurrence read
+        decodes each payload through `_decode_screened_event_payload`, which
+        refuses a durable payload carrying a secret field name. An identity read
+        performs no such screen, because it hands no payload to its caller. A
+        caller requiring occurrence content must use the occurrence read, and
+        `integrity_of` remains the separate integrity boundary.
+
+        The signature-count population run measured why this is worth its own
+        method: one 300-occurrence ingress read costs 7.09 ms as Events and
+        0.25 ms as identities, because 902 bytes of JSON per occurrence are
+        decoded and discarded by a caller that keeps only the identity.
         """
         rowid = self._rowid_through(through)
         boundary = "" if rowid is None else "AND rowid <= ? "

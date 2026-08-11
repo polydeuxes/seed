@@ -86,10 +86,20 @@ the rest.
 `iter_session_kind_ids` on both ledgers: the same bounded rows in the same order,
 selecting one column.
 
-**Nothing is skipped by reading less.** `iter_session_kind` verifies no digest —
-`#2416` deliberately kept verification off ordinary reads and left it with
-`integrity_of`, which is a separate act and is unchanged here. So an identity
-read forgoes no check the occurrence read performs.
+**Something is skipped, and it has a name.** The durable occurrence read decodes
+each payload through `_decode_screened_event_payload`, which refuses a payload
+carrying a secret field name. The identity read performs no such screen.
+
+**It is not a check this consumer's Responsibility carries.** That Responsibility
+is to recover the complete bounded ingress identity population and compare it
+with the carried consumed and support identities.
+`_validate_result_assertion_ingress` consumes no ingress payload content at all.
+The screen exists so a payload is not handed to a caller carrying a secret; this
+caller receives no payload. Decoding 264 KB to obtain 300 identities was
+unrelated work.
+
+`integrity_of` is untouched and remains the separate integrity boundary —
+`#2416` deliberately kept verification off ordinary reads and left it there.
 
 **This is why it was preferable to the cache.** A cache raises a question an
 identity read does not: whether the second read it elides would have detected
