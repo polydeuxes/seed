@@ -1,4 +1,5 @@
 from copy import deepcopy
+from collections.abc import Iterator
 
 import pytest
 
@@ -35,9 +36,11 @@ def test_measurement_counts_exact_results_without_collapsing_difference():
     first = _record_compare(ledger, session_id="comparisons", left=a, right=b)
     second = _record_compare(ledger, session_id="comparisons", left=a, right=c)
 
-    findings = measure_comparison_result_counts(
+    measured = measure_comparison_result_counts(
         ledger, workspace_id="w", source_session_ids=("comparisons",)
     )
+    assert isinstance(measured, Iterator)
+    findings = list(measured)
     occupancy = [item for item in findings if item.coordinate == "occupancies"]
 
     assert len(occupancy) == 2
@@ -56,8 +59,10 @@ def test_measurement_groups_only_identical_complete_result_content():
     first = _record_compare(ledger, session_id="comparisons", left=a, right=b)
     second = _record_compare(ledger, session_id="comparisons", left=a, right=b)
 
-    findings = measure_comparison_result_counts(
-        ledger, workspace_id="w", source_session_ids=("comparisons",)
+    findings = list(
+        measure_comparison_result_counts(
+            ledger, workspace_id="w", source_session_ids=("comparisons",)
+        )
     )
     occupancy = [item for item in findings if item.coordinate == "occupancies"]
 
@@ -90,8 +95,10 @@ def test_measurement_boundary_excludes_later_comparison(monkeypatch):
         return captured
 
     monkeypatch.setattr(ledger, "capture_boundary", capture_then_append)
-    findings = measure_comparison_result_counts(
-        ledger, workspace_id="w", source_session_ids=("comparisons",)
+    findings = list(
+        measure_comparison_result_counts(
+            ledger, workspace_id="w", source_session_ids=("comparisons",)
+        )
     )
 
     refs = {
@@ -107,8 +114,10 @@ def test_measurement_boundary_excludes_later_comparison(monkeypatch):
 def test_measurement_requires_declared_established_population():
     ledger = EventLedger()
     with pytest.raises(ComparisonResultMeasurementError, match="absent"):
-        measure_comparison_result_counts(
-            ledger, workspace_id="w", source_session_ids=("missing",)
+        list(
+            measure_comparison_result_counts(
+                ledger, workspace_id="w", source_session_ids=("missing",)
+            )
         )
 
 
@@ -122,6 +131,31 @@ def test_measurement_replays_the_recorded_compare_before_counting():
     event.payload["assertions"][0]["dimensions"]["standing"] = "warranted"
 
     with pytest.raises(ValueError):
+        list(
+            measure_comparison_result_counts(
+                ledger, workspace_id="w", source_session_ids=("comparisons",)
+            )
+        )
+
+
+def test_digest_collision_does_not_establish_exact_result_equality(monkeypatch):
+    ledger = EventLedger()
+    pair = AdjacentPair("it", "is")
+    a = _record_following(ledger, "s1", "it is here\n", pair)
+    b = _record_following(ledger, "s2", "it is there\n", pair)
+    c = _record_following(ledger, "s3", "it is elsewhere\n", pair)
+    _record_compare(ledger, session_id="comparisons", left=a, right=b)
+    _record_compare(ledger, session_id="comparisons", left=a, right=c)
+    monkeypatch.setattr(
+        "seed_runtime.comparison_result_measurement._digest", lambda value: "collision"
+    )
+
+    findings = list(
         measure_comparison_result_counts(
             ledger, workspace_id="w", source_session_ids=("comparisons",)
         )
+    )
+    occupancy = [item for item in findings if item.coordinate == "occupancies"]
+
+    assert len(occupancy) == 2
+    assert all(item.count == 1 for item in occupancy)
