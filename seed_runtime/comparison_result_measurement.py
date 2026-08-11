@@ -55,6 +55,10 @@ COUNT_FORBIDDEN_INFERENCES = (
     "count greater than one does not by itself establish recurrence, similarity, "
     "relation, meaning, profile membership, or Standing strength",
 )
+RECURRENCE_FORBIDDEN_INFERENCES = (
+    "recurrence is repetition, not similarity, relation, meaning, independent "
+    "corroboration, profile membership, or Standing strength",
+)
 
 
 @dataclass(frozen=True)
@@ -264,7 +268,7 @@ def _assertion_identity(
 
 def assertions_from_comparison_result_count(
     finding: MeasuredComparisonResultCount,
-) -> tuple[dict[str, Any], dict[str, Any]]:
+) -> tuple[dict[str, Any], ...]:
     """The exact production set and the count derived from that set."""
 
     subject = {
@@ -336,7 +340,36 @@ def assertions_from_comparison_result_count(
         "unknowns": list(MEASUREMENT_UNKNOWNS),
         "forbidden_inferences": list(COUNT_FORBIDDEN_INFERENCES),
     }
-    return production_set, count
+    assertions = [production_set, count]
+    if finding.count > 1:
+        recurrence_content = {"recurrence_established": True}
+        recurrence_id = _assertion_identity(
+            result="recurrence",
+            subject=subject,
+            scope=scope,
+            content=recurrence_content,
+        )
+        assertions.append(
+            {
+                "dimensions": {
+                    "identity": recurrence_id,
+                    "content": recurrence_content,
+                    "standing": "measured",
+                    "source_provenance": "the exact count Assertion carried here",
+                    "responsibility": MEASURED_ASSERTION_RESPONSIBILITY,
+                    "authority_warrant": MEASUREMENT_AUTHORITY,
+                },
+                "subject_kind": "assertion",
+                "responsibility_owner": "this recorded assertion",
+                "result": "recurrence",
+                "assertion_subject": subject,
+                "assertion_scope": scope,
+                "support_basis": {"local_assertion_ids": [count_id]},
+                "unknowns": list(MEASUREMENT_UNKNOWNS),
+                "forbidden_inferences": list(RECURRENCE_FORBIDDEN_INFERENCES),
+            }
+        )
+    return tuple(assertions)
 
 
 def _comparison_result_count_event(
@@ -358,7 +391,7 @@ def _comparison_result_count_event(
         payload={
             "dimensions": {
                 "identity": "comparison-result-count-measurement-occurrence",
-                "content": "two distinct measured Assertions recorded",
+                "content": f"{len(assertions)} distinct measured Assertions recorded",
                 "standing": "recorded",
                 "source_provenance": (
                     "recorded positional-result comparison Assertions"
@@ -444,12 +477,12 @@ def assertions_of_recorded_comparison_result_count(
     dimensions = event.payload.get("dimensions")
     if (
         not isinstance(stated, list)
-        or len(stated) != 2
+        or len(stated) not in (2, 3)
         or not isinstance(dimensions, dict)
         or dimensions
         != {
             "identity": "comparison-result-count-measurement-occurrence",
-            "content": "two distinct measured Assertions recorded",
+            "content": f"{len(stated)} distinct measured Assertions recorded",
             "standing": "recorded",
             "source_provenance": "recorded positional-result comparison Assertions",
             "authority_warrant": MEASUREMENT_AUTHORITY,
@@ -466,12 +499,16 @@ def assertions_of_recorded_comparison_result_count(
     by_result = {
         item.get("result"): item for item in stated if isinstance(item, dict)
     }
-    if set(by_result) != {"exact_production_set", "count"}:
+    if set(by_result) not in (
+        {"exact_production_set", "count"},
+        {"exact_production_set", "count", "recurrence"},
+    ):
         raise ComparisonResultMeasurementError(
             f"{event.id} does not carry the exact two-result Measurement"
         )
     production_set = by_result["exact_production_set"]
     count = by_result["count"]
+    recurrence = by_result.get("recurrence")
     set_dimensions = production_set.get("dimensions")
     count_dimensions = count.get("dimensions")
     subject = production_set.get("assertion_subject")
@@ -512,6 +549,7 @@ def assertions_of_recorded_comparison_result_count(
         or count.get("assertion_subject") != subject
         or count.get("assertion_scope") != scope
         or count_content != {"production_count": len(refs)}
+        or (recurrence is None) != (len(refs) == 1)
     ):
         raise ComparisonResultMeasurementError(
             f"{event.id} carries incoherent Measurement coordinates"
@@ -565,6 +603,40 @@ def assertions_of_recorded_comparison_result_count(
         raise ComparisonResultMeasurementError(
             f"{event.id} carries a noncanonical Assertion or dependency"
         )
+    ordered = [production_set, count]
+    if recurrence is not None:
+        recurrence_dimensions = recurrence.get("dimensions")
+        recurrence_content = (
+            recurrence_dimensions.get("content")
+            if isinstance(recurrence_dimensions, dict)
+            else None
+        )
+        require_shell(
+            recurrence,
+            recurrence_dimensions,
+            "the exact count Assertion carried here",
+            RECURRENCE_FORBIDDEN_INFERENCES,
+        )
+        recurrence_id = _assertion_identity(
+            result="recurrence",
+            subject=subject,
+            scope=scope,
+            content={"recurrence_established": True},
+        )
+        if (
+            recurrence.get("assertion_subject") != subject
+            or recurrence.get("assertion_scope") != scope
+            or recurrence_content != {"recurrence_established": True}
+            or recurrence_dimensions.get("identity") != recurrence_id
+            or recurrence.get("support_basis")
+            != {"local_assertion_ids": [count_id]}
+            or "completeness_boundary" in recurrence
+            or "completeness_scope" in recurrence
+        ):
+            raise ComparisonResultMeasurementError(
+                f"{event.id} carries a noncanonical recurrence Assertion"
+            )
+        ordered.append(recurrence)
     return tuple(
         RecordedComparisonResultCountAssertion(
             assertion_id=item["dimensions"]["identity"],
@@ -572,7 +644,7 @@ def assertions_of_recorded_comparison_result_count(
             result=item["result"],
             payload=item,
         )
-        for item in (production_set, count)
+        for item in ordered
     )
 
 

@@ -229,7 +229,7 @@ def test_recording_preserves_exact_set_and_derived_count_separately():
         session_id="counts",
         finding=finding,
     )
-    production_set, count = event.payload["assertions"]
+    production_set, count, recurrence = event.payload["assertions"]
 
     assert event.kind == COMPARISON_RESULT_COUNT_RECORDED_KIND
     assert event.payload["producer_evidence"] == MEASUREMENT_PRODUCER_EVIDENCE
@@ -254,6 +254,28 @@ def test_recording_preserves_exact_set_and_derived_count_separately():
         "local_assertion_ids": [production_set["dimensions"]["identity"]]
     }
     assert "completeness_boundary" not in count
+    assert recurrence["result"] == "recurrence"
+    assert recurrence["dimensions"]["content"] == {
+        "recurrence_established": True
+    }
+    assert recurrence["support_basis"] == {
+        "local_assertion_ids": [count["dimensions"]["identity"]]
+    }
+    assert "completeness_boundary" not in recurrence
+    recovered = assertions_of_recorded_comparison_result_count(event)
+    assert [item.result for item in recovered] == [
+        "exact_production_set",
+        "count",
+        "recurrence",
+    ]
+    assert (
+        get_recorded_comparison_result_count_assertion(
+            ledger,
+            producing_event_id=event.id,
+            assertion_id=recurrence["dimensions"]["identity"],
+        ).result
+        == "recurrence"
+    )
 
 
 def test_count_one_is_recorded_without_a_recurrence_assertion():
