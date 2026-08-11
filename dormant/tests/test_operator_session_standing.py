@@ -4,8 +4,9 @@ from io import StringIO
 from seed_runtime.events import EventLedger
 from seed_runtime.operator_ingress import run_operator_ingress_attempt
 from seed_runtime.operator_ingress_representation import capture_stdin_material
-from seed_runtime.operator_console import run_persistent_operator_console
+from seed_runtime.operator_ingress_view import format_operator_ingress_view
 from seed_runtime.operator_session_standing import project_operator_session_standing
+from scripts import seed_local
 
 
 def _attempt(ledger, text, *, workspace="w", session="s", session_standing=None):
@@ -63,9 +64,10 @@ def test_next_attempt_consumes_standing_from_earlier_same_session_events():
     assert [occurrence["subject_ref"] for occurrence in inherited] == [
         first["current_standing"]["preserved_ingress"]["subject_ref"]
     ]
-    assert first["current_standing"]["preserved_ingress"]["subject_ref"] == (
-        inherited[0]["subject_ref"]
-    )
+    rendered = format_operator_ingress_view(second)
+    assert "Session Standing" in rendered
+    assert first["current_standing"]["preserved_ingress"]["subject_ref"] in rendered
+    assert 'authority="occurrence-only; meaning Unknown"' in rendered
 
 
 def test_projection_is_deterministic_regardless_of_unrelated_ledger_events():
@@ -95,21 +97,68 @@ def test_unknown_conflict_and_absence_remain_distinct():
     assert standing["conflicts"] == []
     assert standing["recorded_relation_standings"] == []
     assert "relation" not in " ".join(standing["unknowns"])
-    next_attempt = _attempt(ledger, "next\n", session_standing=standing)
-    assert next_attempt["session_standing"]["recorded_relation_standings"] == []
+    rendered = format_operator_ingress_view(
+        _attempt(ledger, "next\n", session_standing=standing)
+    )
+    assert (
+        "Recorded relation standings: none recorded"
+        " (absence of record; not negative standing; not Unknown)" in rendered
+    )
+
+
+def test_presentation_exposes_only_inherited_status():
+    ledger = EventLedger()
+    _attempt(ledger, "inherited occurrence\n")
+    standing = _standing(ledger)
+
+    rendered = format_operator_ingress_view(
+        _attempt(ledger, "current\n", session_standing=standing)
+    )
+
+    session_section = rendered[rendered.index("Session Standing") :]
+    # Every evidence reference in the section is a recorded session event.
+    session_event_ids = {
+        event_id
+        for attempt in standing["attempts"].values()
+        for event_id in attempt["event_ids"]
+    }
+    for occurrence in standing["preserved_ingress_occurrences"]:
+        assert occurrence["evidence_event_id"] in session_event_ids
+        assert occurrence["evidence_event_id"] in session_section
+    assert "goal" not in session_section.lower()
+    assert "intent" not in session_section.lower()
+    assert "compare" not in session_section.lower()
+
+
+def test_no_meaning_candidate_is_synthesized_when_none_exists():
+    ledger = EventLedger()
+    _attempt(ledger, "hello\n")
+    standing = _standing(ledger)
+
+    rendered = format_operator_ingress_view(
+        _attempt(ledger, "hello again\n", session_standing=standing)
+    )
+
+    assert " means " not in rendered
+    assert "candidate" not in rendered.lower()
+    # Meaning appears only as the Unknown each event itself recorded.
+    for line in rendered.splitlines():
+        if "meaning" in line.lower():
+            assert "Unknown" in line
 
 
 def test_one_attempt_behavior_unchanged_without_earlier_session_history():
     baseline_ledger = EventLedger()
     baseline = _attempt(baseline_ledger, "solo material\n")
     assert "session_standing" not in baseline
+    assert "Session Standing" not in format_operator_ingress_view(baseline)
 
     # The console passes Standing containing C0 to the first interaction,
     # and its interaction output is a bounded Presentation, not the View.
     input_stream = StringIO("solo material\nexit\n")
     output_stream = StringIO()
     console_ledger = EventLedger()
-    run_persistent_operator_console(
+    seed_local.run_persistent_operator_console(
         ledger=console_ledger,
         workspace_id="w",
         session_id="s",
@@ -126,7 +175,7 @@ def test_console_supplies_prior_session_standing_to_later_interactions():
     output_stream = StringIO()
     ledger = EventLedger()
 
-    run_persistent_operator_console(
+    seed_local.run_persistent_operator_console(
         ledger=ledger,
         workspace_id="w",
         session_id="s",

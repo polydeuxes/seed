@@ -10,7 +10,7 @@ seed = "seed_runtime.process_entry:main"
 
 [tool.setuptools.packages.find]
 where = ["."]
-include = ["seed_runtime*", "seed_builder*", "scripts*"]
+include = ["seed_runtime*"]
 
 [tool.pytest.ini_options]
 markers = ["experimental_runtime_loop: quarantined RuntimeLoop coverage; not canonical runtime behavior"]

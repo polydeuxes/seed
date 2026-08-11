@@ -1,6 +1,9 @@
 from io import StringIO
 
 from seed_runtime.events import EventLedger
+from seed_runtime.operator_ingress import run_operator_ingress_attempt
+from seed_runtime.operator_ingress_representation import capture_stdin_material
+from seed_runtime.operator_ingress_view import format_operator_ingress_view
 from seed_runtime.operator_presentation import (
     emit_operator_presentation,
     form_operator_presentation,
@@ -364,6 +367,31 @@ def test_local_stop_alternative_is_not_represented_as_a_goal():
     )
 
 
+def test_navigation_alternative_is_distinct_and_leads_to_the_existing_view():
+    ledger = EventLedger()
+    _fixture_presentation(ledger)
+
+    presentation = list(_standing(ledger)["presentations"].values())[-1]
+    navigation = [
+        alternative
+        for alternative in presentation["alternatives"]
+        if alternative["role"] == "presentation-navigation"
+    ]
+    assert len(navigation) == 1
+    assert navigation[0]["represented_source"]["reference"] == (
+        "seed_runtime.operator_ingress_view.format_operator_ingress_view"
+    )
+    # The referenced View remains an independently consumable renderer.
+    direct = run_operator_ingress_attempt(
+        ledger=EventLedger(),
+        workspace_id="direct",
+        session_id="direct",
+        captured_ingress=capture_stdin_material(StringIO("direct material\n")),
+        output_stream=StringIO(),
+    )
+    assert "Operator ingress View" in format_operator_ingress_view(direct)
+
+
 def test_no_new_meaning_candidate_is_synthesized():
     ledger = EventLedger()
     _fixture_presentation(ledger)
@@ -459,6 +487,23 @@ def test_first_interaction_attaches_no_presentation_to_the_capture():
     first_presentation = next(iter(_standing(ledger)["presentations"].values()))
     assert "produced_after_presentation_ref" not in ingress.payload
     assert first_presentation["presentation_id"]
+
+
+def test_direct_one_attempt_view_behavior_remains_valid():
+    ledger = EventLedger()
+    projection = run_operator_ingress_attempt(
+        ledger=ledger,
+        workspace_id="w",
+        session_id="s",
+        captured_ingress=capture_stdin_material(StringIO("direct material\n")),
+        output_stream=StringIO(),
+    )
+
+    rendered = format_operator_ingress_view(projection)
+    assert 'Represented material: "direct material\\n"' in rendered
+    assert "Bounded Presentation" not in rendered
+    kinds = [event.kind for event in ledger.list("w")]
+    assert kinds == list(_INGRESS_KINDS)
 
 
 def test_formation_is_recorded_before_emission_and_they_stay_distinct():
