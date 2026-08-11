@@ -130,7 +130,6 @@ def measure_recurrence_subject_coordinates(
             "declared source sessions are absent through the Measurement boundary: "
             + ", ".join(missing)
         )
-    found = False
     try:
         recovered = iter_recorded_comparison_result_count_assertions(
             ledger,
@@ -138,25 +137,39 @@ def measure_recurrence_subject_coordinates(
             session_ids=sessions,
             through=boundary,
         )
-        for assertion in recovered:
-            if assertion.result != "recurrence":
-                continue
-            found = True
-            subject = assertion.payload["assertion_subject"]
-            if set(subject) != set(RECURRENCE_SUBJECT_COORDINATES):
-                raise RecurrenceSubjectMeasurementError(
-                    "recurrence Assertion does not carry the established immediate subject surface"
-                )
-            yield MeasuredRecurrenceSubjectCoordinates(
-                source=assertion,
-                coordinates=tuple((name, subject[name]) for name in RECURRENCE_SUBJECT_COORDINATES),
-            )
-    except ComparisonResultMeasurementError as exc:
-        raise RecurrenceSubjectMeasurementError(str(exc)) from exc
-    if not found:
+        first = next(
+            assertion for assertion in recovered if assertion.result == "recurrence"
+        )
+    except StopIteration as exc:
         raise RecurrenceSubjectMeasurementError(
             "no recovered recurrence Assertions to measure"
+        ) from exc
+    except ComparisonResultMeasurementError as exc:
+        raise RecurrenceSubjectMeasurementError(str(exc)) from exc
+
+    def measured(assertion):
+        subject = assertion.payload["assertion_subject"]
+        if set(subject) != set(RECURRENCE_SUBJECT_COORDINATES):
+            raise RecurrenceSubjectMeasurementError(
+                "recurrence Assertion does not carry the established immediate subject surface"
+            )
+        return MeasuredRecurrenceSubjectCoordinates(
+            source=assertion,
+            coordinates=tuple(
+                (name, subject[name]) for name in RECURRENCE_SUBJECT_COORDINATES
+            ),
         )
+
+    def stream() -> Iterator[MeasuredRecurrenceSubjectCoordinates]:
+        yield measured(first)
+        try:
+            for assertion in recovered:
+                if assertion.result == "recurrence":
+                    yield measured(assertion)
+        except ComparisonResultMeasurementError as exc:
+            raise RecurrenceSubjectMeasurementError(str(exc)) from exc
+
+    return stream()
 
 
 def _coordinate_assertions(

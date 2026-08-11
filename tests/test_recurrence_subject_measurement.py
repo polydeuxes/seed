@@ -216,10 +216,8 @@ def test_measurement_refuses_a_population_with_no_recurrence_assertions():
     )
 
     with pytest.raises(RecurrenceSubjectMeasurementError, match="no recovered"):
-        list(
-            measure_recurrence_subject_coordinates(
-                ledger, workspace_id="w", source_session_ids=("counts",)
-            )
+        measure_recurrence_subject_coordinates(
+            ledger, workspace_id="w", source_session_ids=("counts",)
         )
 
 
