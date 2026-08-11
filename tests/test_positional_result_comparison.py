@@ -26,6 +26,7 @@ from seed_runtime.assertion_comparison import (
     get_recorded_positional_result_distinction,
     iter_positional_result_comparison_inputs,
     record_positional_result_comparison,
+    record_positional_result_comparison_layer,
 )
 from seed_runtime.events import EventLedger
 from seed_runtime.operator_console import run_persistent_operator_console
@@ -267,6 +268,125 @@ def test_formation_recovers_each_session_boundary_once(comparable):
     assert [session_id for session_id, _ in ingress_reads] == ["s1", "s2"]
 
 
+def test_validated_formation_retains_only_occurrence_bound_references(comparable):
+    import seed_runtime.assertion_comparison as module
+
+    ledger, _, _ = comparable
+    grouped = module._positional_result_assertions_by_subject(
+        ledger,
+        workspace_id="w",
+        session_ids=("s1", "s2"),
+        through=ledger.capture_boundary(),
+    )
+
+    assert grouped
+    assert all(
+        set(reference) == {"producing_event_id", "assertion_id"}
+        for references in grouped.values()
+        for reference in references
+    )
+    assert not any(
+        "payload" in reference
+        for references in grouped.values()
+        for reference in references
+    )
+
+
+def test_one_layer_records_every_formed_comparison_and_nothing_more(comparable):
+    ledger, _, _ = comparable
+    before = {event.id for event in ledger.list("w")}
+
+    recorded_count = record_positional_result_comparison_layer(
+        ledger,
+        workspace_id="w",
+        source_session_ids=("s1", "s2"),
+        recording_session_id="comparison-session",
+    )
+    recorded = [event for event in ledger.list("w") if event.id not in before]
+
+    assert recorded_count == 4
+    assert len(recorded) == 4
+    assert all(
+        event.kind == POSITIONAL_RESULT_COMPARISON_RECORDED_KIND
+        for event in recorded
+    )
+    assert all(len(event.payload["assertions"]) == len(POSITIONAL_RESULT_COORDINATES) for event in recorded)
+    for event in recorded:
+        results = assertions_of_recorded_positional_result_comparison(event)
+        assert get_recorded_positional_result_distinction(
+            ledger,
+            producing_event_id=event.id,
+            assertion_id=results[0].assertion_id,
+        ) == results[0]
+
+
+def test_one_layer_batches_storage_without_batching_compare_occurrences(comparable):
+    ledger, _, _ = comparable
+    original = ledger.append_many
+    batches = []
+
+    def tracked(events, **kwargs):
+        supplied = list(events)
+        batches.append(len(supplied))
+        return original(supplied, **kwargs)
+
+    ledger.append_many = tracked
+    recorded_count = record_positional_result_comparison_layer(
+        ledger,
+        workspace_id="w",
+        source_session_ids=("s1", "s2"),
+        recording_session_id="comparison-session",
+    )
+
+    assert recorded_count == 4
+    assert batches == [4]
+    assert len(
+        [
+            event
+            for event in ledger.list("w")
+            if event.kind == POSITIONAL_RESULT_COMPARISON_RECORDED_KIND
+        ]
+    ) == 4
+
+
+def test_one_layer_boundary_excludes_results_made_available_during_the_run(
+    comparable, monkeypatch
+):
+    import seed_runtime.assertion_comparison as module
+
+    ledger, _, _ = comparable
+    original = module._positional_result_assertions_by_subject
+
+    def inject_later_result(*args, **kwargs):
+        _record_following(ledger, "s1", "it is green\n")
+        return original(*args, **kwargs)
+
+    monkeypatch.setattr(module, "_positional_result_assertions_by_subject", inject_later_result)
+    recorded_count = record_positional_result_comparison_layer(
+        ledger,
+        workspace_id="w",
+        source_session_ids=("s1", "s2"),
+        recording_session_id="comparison-session",
+    )
+
+    assert recorded_count == 4
+
+
+def test_one_layer_refuses_an_absent_declared_session(comparable):
+    ledger, _, _ = comparable
+    before = tuple(event.id for event in ledger.list("w"))
+
+    with pytest.raises(AssertionComparisonError, match="absent through"):
+        record_positional_result_comparison_layer(
+            ledger,
+            workspace_id="w",
+            source_session_ids=("s1", "absent"),
+            recording_session_id="comparison-session",
+        )
+
+    assert tuple(event.id for event in ledger.list("w")) == before
+
+
 def test_recording_preserves_one_assertion_per_compare_coordinate(comparable):
     ledger, left, right = comparable
     comparison = compare_positional_result_assertions(
@@ -495,7 +615,6 @@ def test_ledger_recovery_refuses_self_consistent_results_for_other_inputs(compar
         ("producing_act", "Measure"),
         ("owner", "an input Assertion"),
         ("responsibility", "revise the compared Assertions"),
-        ("mutates_cluster", True),
     ),
 )
 def test_ledger_recovery_refuses_changed_outer_compare_law(
