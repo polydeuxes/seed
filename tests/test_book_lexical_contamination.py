@@ -118,6 +118,23 @@ BANNED: tuple[tuple[str, str], ...] = (
 #   examines      NOT banned.  `03.Prerequisite:36,104,122` have applicability
 #                 as the subject doing the examining.  Ordinary prose whose
 #                 subject is an established coordinate is not the retired noun.
+#   claim         MUST GO, and is not banned here yet.
+#                 The operator's rule under this gate is that Book proper does
+#                 not carry ordinary words.  `claim` has no owner in active law
+#                 and no Act produces it: `05.Testimony:10` defines it as the
+#                 proposition *carried by* testimony, observations, evidence
+#                 payloads, fact artifacts, relationships, projections,
+#                 explanations, documentation, or consumer assertions, and the
+#                 Book positively declines a durable `Claim` subject.
+#                 It is not `confidence`.  That word survived `#2418` because
+#                 something owns it -- the provider -- and `01.External:15`
+#                 admits it as attributed external grammar.  `claim` is owned
+#                 by nothing anywhere.  The cat test drew that comparison and
+#                 the operator corrected it.
+#                 101 occurrences across 17 of 31 files, and `claim-centricity`
+#                 at `05.Testimony:10` is load-bearing, so excision needs a
+#                 replacement for what that clause does rather than a word swap.
+#                 Recorded so the requirement is not lost while the repair waits.
 #   artifact      NOT banned here, and it is not clean either.
 #                 `artifact_substitution_test_001` asked what distinction would
 #                 be lost if the word left Book proper and found **none**: its
