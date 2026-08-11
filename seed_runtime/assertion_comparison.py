@@ -721,18 +721,24 @@ def get_recorded_positional_result_distinction(
     event = ledger.get(producing_event_id)
     if event is None:
         return None
-    recovered = recover_recorded_positional_result_comparison(ledger, event)
+    recovered = _recover_recorded_positional_result_comparison(ledger, event)
     for result in recovered:
         if result.assertion_id == assertion_id:
             return result
     return None
 
 
-def recover_recorded_positional_result_comparison(
+def _recover_recorded_positional_result_comparison(
     ledger: EventLedger,
     event: Event,
 ) -> tuple[RecordedPositionalResultDistinction, ...]:
-    """Recover one Compare from an Event the caller already holds."""
+    """Recover one Compare from an Event returned by this ledger.
+
+    This private helper's caller must obtain ``event`` from ``ledger`` in the
+    current bounded read.  Public recovery remains occurrence-id based so an
+    arbitrary Event carrying the same id cannot borrow the ledger row's
+    integrity standing.
+    """
 
     if ledger.integrity_of(event.id) == CORRUPTED:
         raise AssertionComparisonError(

@@ -73,6 +73,20 @@ def test_measurement_accepts_source_results_in_a_different_serialized_order():
         POSITIONAL_RESULT_COORDINATES
     )
 
+    assert record_equality_signature_layer(
+        ledger,
+        workspace_id="w",
+        source_session_ids=("comparisons",),
+        recording_session_id="signatures",
+    ) == 1
+    recorded = ledger.list_session("w", "signatures")[0]
+    assertion = assertion_of_recorded_equality_signature(recorded)
+    assert get_recorded_equality_signature(
+        ledger,
+        producing_event_id=recorded.id,
+        assertion_id=assertion.assertion_id,
+    ) == assertion
+
 
 def test_empty_population_refuses_before_an_iterator_is_returned():
     ledger = EventLedger()

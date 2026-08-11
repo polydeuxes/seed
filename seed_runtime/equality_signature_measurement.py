@@ -21,7 +21,7 @@ from seed_runtime.assertion_comparison import (
     AssertionComparisonError,
     RecordedPositionalResultDistinction,
     iter_recorded_positional_result_distinctions,
-    recover_recorded_positional_result_comparison,
+    _recover_recorded_positional_result_comparison,
 )
 from seed_runtime.event import Event
 from seed_runtime.events import CORRUPTED, EventLedger, EventLedgerBoundary
@@ -424,17 +424,22 @@ def _recover_equality_signature(
             "a corrupted Compare occurrence cannot support a signature"
         )
     try:
-        source = recover_recorded_positional_result_comparison(ledger, source_event)
+        source = _recover_recorded_positional_result_comparison(ledger, source_event)
     except AssertionComparisonError as exc:
         raise EqualitySignatureMeasurementError(str(exc)) from exc
-    if [item.reference for item in source] != refs:
+    by_coordinate = {item.coordinate: item for item in source}
+    if (
+        len(source) != len(_surface())
+        or set(by_coordinate) != set(_surface())
+        or [by_coordinate[name].reference for name in _surface()] != refs
+    ):
         raise EqualitySignatureMeasurementError(
             "signature support is not the complete source Compare surface"
         )
     expected_same = [
-        item.coordinate
-        for item in source
-        if item.payload["dimensions"]["content"]["same"]
+        name
+        for name in _surface()
+        if by_coordinate[name].payload["dimensions"]["content"]["same"]
     ]
     expected = _content(
         same_coordinates=expected_same,
