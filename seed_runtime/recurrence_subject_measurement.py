@@ -417,3 +417,97 @@ def get_recorded_recurrence_subject_coordinate_assertion(
         if item.assertion_id == assertion_id:
             return item
     return None
+
+
+def iter_recorded_recurrence_subject_coordinate_assertions(
+    ledger: EventLedger,
+    *,
+    workspace_id: str,
+    session_ids: Iterable[str],
+    through: EventLedgerBoundary,
+) -> Iterator[RecordedRecurrenceSubjectCoordinateAssertion]:
+    """Recover one bounded coordinate-Assertion population efficiently."""
+
+    sessions = tuple(dict.fromkeys(session_ids))
+    if not sessions:
+        raise RecurrenceSubjectMeasurementError(
+            "coordinate-Assertion recovery requires exact declared sessions"
+        )
+    source_sessions = set()
+    source_refs = set()
+    for session_id in sessions:
+        for event in ledger.iter_session_kind(
+            workspace_id,
+            session_id,
+            RECURRENCE_SUBJECT_COORDINATES_RECORDED_KIND,
+            through=through,
+        ):
+            source_ref = event.payload.get("source_assertion_ref")
+            if not isinstance(source_ref, dict):
+                raise RecurrenceSubjectMeasurementError(
+                    "coordinate Measurement does not carry its source reference"
+                )
+            source_event = ledger.get(source_ref.get("producing_event_id"))
+            if (
+                source_event is None
+                or source_event.workspace_id != workspace_id
+                or not source_event.session_id
+            ):
+                raise RecurrenceSubjectMeasurementError(
+                    "coordinate Measurement source is not recoverable in this workspace"
+                )
+            source_sessions.add(source_event.session_id)
+            source_refs.add(
+                (source_ref.get("producing_event_id"), source_ref.get("assertion_id"))
+            )
+
+    recovered_sources = {}
+    try:
+        for source in iter_recorded_comparison_result_count_assertions(
+            ledger,
+            workspace_id=workspace_id,
+            session_ids=tuple(sorted(source_sessions)),
+            through=through,
+        ):
+            key = (source.producing_event_id, source.assertion_id)
+            if key in source_refs and source.result == "recurrence":
+                recovered_sources[key] = source
+    except ComparisonResultMeasurementError as exc:
+        raise RecurrenceSubjectMeasurementError(str(exc)) from exc
+    if set(recovered_sources) != source_refs:
+        raise RecurrenceSubjectMeasurementError(
+            "coordinate Measurement population contains an unrecovered recurrence source"
+        )
+
+    for session_id in sessions:
+        for event in ledger.iter_session_kind(
+            workspace_id,
+            session_id,
+            RECURRENCE_SUBJECT_COORDINATES_RECORDED_KIND,
+            through=through,
+        ):
+            if ledger.integrity_of(event.id) == CORRUPTED:
+                raise RecurrenceSubjectMeasurementError(
+                    "a corrupted Measurement occurrence cannot expose coordinate Assertions"
+                )
+            recovered = assertions_of_recorded_recurrence_subject_coordinates(event)
+            source_ref = event.payload["source_assertion_ref"]
+            source = recovered_sources[
+                (source_ref["producing_event_id"], source_ref["assertion_id"])
+            ]
+            source_scope = source.payload["assertion_scope"]
+            expected_scope = {
+                "workspace_id": source_scope["workspace_id"],
+                "source_session_ids": list(source_scope["source_session_ids"]),
+            }
+            expected_values = source.payload["assertion_subject"]
+            for item in recovered:
+                if (
+                    item.payload["assertion_scope"] != expected_scope
+                    or item.payload["dimensions"]["content"]["exact_value"]
+                    != expected_values[item.coordinate]
+                ):
+                    raise RecurrenceSubjectMeasurementError(
+                        "coordinate Measurement result does not match its source Assertion"
+                    )
+                yield item
