@@ -45,9 +45,11 @@ co-presence.
 from __future__ import annotations
 
 from dataclasses import dataclass
+import hashlib
+import json
 from typing import Callable, Iterable, Iterator, Sequence
 
-from seed_runtime.events import EventLedger
+from seed_runtime.events import CORRUPTED, EventLedger, EventLedgerBoundary
 from seed_runtime.event import Event
 from seed_runtime.preserved_material_measurement import (
     INGRESS_OCCURRED_KIND,
@@ -90,6 +92,11 @@ PAIR_MEASUREMENT_FORMS: tuple[str, ...] = (
     "after_same_left",
 )
 
+POSITIONAL_RESULT_FIDELITY_RESPONSIBILITY = (
+    "preserve the fidelity of this measured Assertion's Standing to its "
+    "carried coordinates"
+)
+
 
 @dataclass(frozen=True)
 class AdjacentPair:
@@ -111,6 +118,246 @@ class AdjacentPair:
 
     def __str__(self) -> str:  # pragma: no cover - rendering only
         return f"{self.left!r} -> {self.right!r}"
+
+
+@dataclass(frozen=True)
+class RecordedAdjacentPairResultAssertion:
+    """One exact positional result, addressable at its producing occurrence."""
+
+    assertion_id: str
+    producing_event_id: str
+    producing_session_id: str | None
+    payload: dict[str, object]
+    completeness_boundary: EventLedgerBoundary
+
+    @property
+    def reference(self) -> dict[str, str]:
+        return {
+            "producing_event_id": self.producing_event_id,
+            "assertion_id": self.assertion_id,
+        }
+
+
+def _canonical_json(value: object) -> str:
+    return json.dumps(value, sort_keys=True, separators=(",", ":"))
+
+
+def _adjacent_pair_result_assertion_identity(
+    *, subject: dict[str, object], scope: dict[str, object], content: dict[str, object]
+) -> str:
+    represented = {
+        "result": "position_occupancy",
+        "subject": subject,
+        "scope": scope,
+        "content": content,
+    }
+    return "position-occupancy-assertion:" + hashlib.sha256(
+        _canonical_json(represented).encode("utf-8")
+    ).hexdigest()
+
+
+def _adjacent_pair_result_assertion_fields(
+    *,
+    workspace_id: str,
+    session_id: str,
+    pair: AdjacentPair,
+    finding: MeasurementFinding,
+    completeness_boundary: EventLedgerBoundary,
+) -> dict[str, object]:
+    form = finding.declared.form
+    if form not in PAIR_MEASUREMENT_FORMS:
+        raise PreservedMaterialMeasurementError(
+            "an adjacent-pair result Assertion requires one established pair form"
+        )
+    subject: dict[str, object] = {
+        "ordered_pair": [pair.left, pair.right],
+        "measurement_form": form,
+        "measured_position": finding.declared.measured_position,
+        "equivalence_rule": finding.declared.equivalence_rule,
+    }
+    scope: dict[str, object] = {
+        "workspace_id": workspace_id,
+        "session_id": session_id,
+        "counting_scope": finding.declared.counting_scope,
+    }
+    content: dict[str, object] = {
+        "positions_measured": finding.positions_measured,
+        "occupancies": [
+            {
+                "representation": occupancy.representation,
+                "occurrence_count": occupancy.occurrence_count,
+            }
+            for occupancy in finding.occupancies
+        ],
+    }
+    identity = _adjacent_pair_result_assertion_identity(
+        subject=subject, scope=scope, content=content
+    )
+    return {
+        "dimensions": {
+            "identity": identity,
+            "content": content,
+            "standing": "measured",
+            "source_provenance": "preserved operator-ingress occurrences",
+            "responsibility": POSITIONAL_RESULT_FIDELITY_RESPONSIBILITY,
+            "authority_warrant": (
+                "measurement evidence only; establishes no meaning, relation, "
+                "kind, or standing beyond this measured Assertion"
+            ),
+            "scope_locality": "the exact assertion_scope carried here",
+            "occurrence_preservation": (
+                "one exact result preserved by its producing occurrence"
+            ),
+        },
+        "subject_kind": "assertion",
+        "responsibility_owner": "this recorded assertion",
+        "result": "position_occupancy",
+        "assertion_subject": subject,
+        "assertion_scope": scope,
+        "support_basis": {
+            "event_ids": list(finding.consumed_event_ids),
+            "premise_event_id": finding.declared.premise_event_id,
+        },
+        "completeness_boundary": {
+            "commitment": completeness_boundary.commitment,
+        },
+        "completeness_scope": {
+            "workspace_id": workspace_id,
+            "session_id": session_id,
+            "occurrence_kind": INGRESS_OCCURRED_KIND,
+        },
+        "unknowns": [
+            "what any measured representation means remains Unknown",
+        ],
+        "forbidden_inferences": [
+            "literal recurrence is not meaning or relation",
+            "matching result content across different Assertions does not make "
+            "them one Assertion",
+        ],
+    }
+
+
+def assertion_of_recorded_adjacent_pair_result(
+    event: Event,
+) -> RecordedAdjacentPairResultAssertion:
+    """Recover one canonical result Assertion or refuse its carried claim."""
+
+    if event.kind != MEASUREMENT_RECORDED_KIND:
+        raise PreservedMaterialMeasurementError(
+            f"{event.id} is not a recorded Measurement result"
+        )
+    payload = event.payload
+    dimensions = payload.get("dimensions")
+    subject = payload.get("assertion_subject")
+    scope = payload.get("assertion_scope")
+    content = dimensions.get("content") if isinstance(dimensions, dict) else None
+    boundary = payload.get("completeness_boundary")
+    completeness_scope = payload.get("completeness_scope")
+    support = payload.get("support_basis")
+    identity = dimensions.get("identity") if isinstance(dimensions, dict) else None
+    if (
+        payload.get("subject_kind") != "assertion"
+        or payload.get("result") != "position_occupancy"
+        or not isinstance(subject, dict)
+        or not isinstance(scope, dict)
+        or not isinstance(content, dict)
+        or not isinstance(boundary, dict)
+        or not isinstance(boundary.get("commitment"), str)
+        or not boundary["commitment"]
+        or not isinstance(completeness_scope, dict)
+        or not isinstance(support, dict)
+        or not isinstance(identity, str)
+        or not identity
+    ):
+        raise PreservedMaterialMeasurementError(
+            f"{event.id} does not carry one exact positional result Assertion"
+        )
+    pair = payload.get("measured_relative_to")
+    form = payload.get("measurement_form")
+    expected_content = {
+        "positions_measured": payload.get("positions_measured"),
+        "occupancies": payload.get("occupancies"),
+    }
+    if (
+        not isinstance(pair, list)
+        or len(pair) != 2
+        or not all(isinstance(value, str) and value for value in pair)
+        or form not in PAIR_MEASUREMENT_FORMS
+        or payload.get("equivalence_rule") != EQUIVALENCE_RULE
+        or payload.get("measured_position") != MEASURED_POSITIONS[form]
+        or subject
+        != {
+            "ordered_pair": pair,
+            "measurement_form": form,
+            "measured_position": payload.get("measured_position"),
+            "equivalence_rule": payload.get("equivalence_rule"),
+        }
+        or scope
+        != {
+            "workspace_id": event.workspace_id,
+            "session_id": event.session_id,
+            "counting_scope": payload.get("counting_scope"),
+        }
+        or content != expected_content
+        or completeness_scope
+        != {
+            "workspace_id": event.workspace_id,
+            "session_id": event.session_id,
+            "occurrence_kind": INGRESS_OCCURRED_KIND,
+        }
+        or support.get("event_ids") != payload.get("consumed_event_ids")
+        or support.get("premise_event_id") != payload.get("premise_event_id")
+    ):
+        raise PreservedMaterialMeasurementError(
+            f"{event.id} carries incoherent positional result coordinates"
+        )
+    canonical = _adjacent_pair_result_assertion_identity(
+        subject=subject, scope=scope, content=content
+    )
+    if identity != canonical:
+        raise PreservedMaterialMeasurementError(
+            f"{event.id} carries an Assertion identity that does not match its result"
+        )
+    return RecordedAdjacentPairResultAssertion(
+        assertion_id=identity,
+        producing_event_id=event.id,
+        producing_session_id=event.session_id,
+        payload=payload,
+        completeness_boundary=EventLedgerBoundary(boundary["commitment"]),
+    )
+
+
+def get_recorded_adjacent_pair_result_assertion(
+    ledger: EventLedger, *, producing_event_id: str, assertion_id: str
+) -> RecordedAdjacentPairResultAssertion | None:
+    """Resolve one exact occurrence-bound positional result Assertion."""
+
+    event = ledger.get(producing_event_id)
+    if event is None:
+        return None
+    if ledger.integrity_of(producing_event_id) == CORRUPTED:
+        raise PreservedMaterialMeasurementError(
+            "a corrupted producing occurrence cannot expose a result Assertion"
+        )
+    assertion = assertion_of_recorded_adjacent_pair_result(event)
+    if assertion.assertion_id != assertion_id:
+        return None
+    recovered_ingress_ids = tuple(
+        item.id
+        for item in ledger.iter_session_kind(
+            event.workspace_id,
+            event.session_id,
+            INGRESS_OCCURRED_KIND,
+            through=assertion.completeness_boundary,
+        )
+    )
+    consumed_event_ids = tuple(event.payload["consumed_event_ids"])
+    support_event_ids = tuple(event.payload["support_basis"]["event_ids"])
+    if recovered_ingress_ids != consumed_event_ids or support_event_ids != consumed_event_ids:
+        raise PreservedMaterialMeasurementError(
+            "the carried support does not equal the complete bounded ingress read"
+        )
+    return assertion
 
 
 def _adjacent_pairs_from_event(event: Event | None) -> list[AdjacentPair]:
@@ -423,6 +670,7 @@ def record_pair_measurements(
     session_id: str,
     pair: AdjacentPair,
     findings: dict[str, MeasurementFinding],
+    completeness_boundary: EventLedgerBoundary,
 ) -> dict[str, Event]:
     """Preserve every measurement, including the ones that found nothing.
 
@@ -443,6 +691,13 @@ def record_pair_measurements(
                     "measurement": name,
                     "pair_left": pair.left,
                     "pair_right": pair.right,
+                    **_adjacent_pair_result_assertion_fields(
+                        workspace_id=workspace_id,
+                        session_id=session_id,
+                        pair=pair,
+                        finding=findings[name],
+                        completeness_boundary=completeness_boundary,
+                    ),
                 },
             )
             for name in names
@@ -506,6 +761,13 @@ def record_adjacent_pair_measurement_layer(
                     "measurement": name,
                     "pair_left": pair.left,
                     "pair_right": pair.right,
+                    **_adjacent_pair_result_assertion_fields(
+                        workspace_id=workspace_id,
+                        session_id=session_id,
+                        pair=pair,
+                        finding=finding,
+                        completeness_boundary=boundary,
+                    ),
                 },
             )
             for name, finding in findings.items()

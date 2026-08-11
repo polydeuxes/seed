@@ -26,7 +26,7 @@ from itertools import product
 
 import pytest
 
-from seed_runtime.events import EventLedger
+from seed_runtime.events import EventLedger, InvalidLedgerBoundary
 from seed_runtime.event import Event
 from seed_runtime.adjacent_pair_measurement import (
     AdjacentPairMeasurementIndex,
@@ -38,6 +38,8 @@ from seed_runtime.adjacent_pair_measurement import (
     AdjacentPair,
     measure_adjacent_pair,
     adjacent_pairs_from_finding,
+    assertion_of_recorded_adjacent_pair_result,
+    get_recorded_adjacent_pair_result_assertion,
     record_pair_measurements,
     record_adjacent_pair_measurement_layer,
     group_by_highest_count_occupant,
@@ -282,6 +284,7 @@ def test_one_layer_records_every_pair_form_and_nothing_beyond(
     session, recorded_finding
 ):
     before = {event.id for event in session.list("w")}
+    boundary = session.capture_boundary()
     pair_count = len(recorded_finding.payload["occupancies"])
 
     recorded_count = record_adjacent_pair_measurement_layer(
@@ -304,6 +307,14 @@ def test_one_layer_records_every_pair_form_and_nothing_beyond(
         recorded_finding.id
     }
     assert all(event.payload["measurement_form"] != "after" for event in recorded)
+    assert all(
+        assertion_of_recorded_adjacent_pair_result(event).producing_event_id
+        == event.id
+        for event in recorded
+    )
+    assert {
+        event.payload["completeness_boundary"]["commitment"] for event in recorded
+    } == {boundary.commitment}
 
 
 def test_one_layer_preserves_duplicate_pair_subject_productions(
@@ -427,7 +438,12 @@ def test_a_question_that_found_nothing_is_still_recorded(
         premise_event_id=recorded_finding.id,
     )
     recorded = record_pair_measurements(
-        session, workspace_id="w", session_id="s", pair=pair, findings=findings
+        session,
+        workspace_id="w",
+        session_id="s",
+        pair=pair,
+        findings=findings,
+        completeness_boundary=session.capture_boundary(),
     )
     assert set(recorded) == set(findings)
     assert any(f.highest_count_occupancy is None for f in findings.values())
@@ -467,6 +483,7 @@ def test_each_measurement_records_its_premise(
             counting_scope="this session",
             premise_event_id=recorded_finding.id,
         ),
+        completeness_boundary=session.capture_boundary(),
     )
     for name, event in recorded.items():
         assert event.payload["premise_event_id"] == recorded_finding.id
@@ -490,8 +507,235 @@ def test_recording_does_not_alter_the_premise(session, occurrences, recorded_fin
             counting_scope="this session",
             premise_event_id=recorded_finding.id,
         ),
+        completeness_boundary=session.capture_boundary(),
     )
     assert session.get(recorded_finding.id).payload == before
+
+
+def test_each_pair_result_is_one_addressable_assertion(
+    session, occurrences, recorded_finding
+):
+    pair = AdjacentPair("it", "is")
+    boundary = session.capture_boundary()
+    recorded = record_pair_measurements(
+        session,
+        workspace_id="w",
+        session_id="s",
+        pair=pair,
+        findings=measure_adjacent_pair(
+            occurrences,
+            pair,
+            counting_scope="this session",
+            premise_event_id=recorded_finding.id,
+        ),
+        completeness_boundary=boundary,
+    )
+
+    for event in recorded.values():
+        assertion = assertion_of_recorded_adjacent_pair_result(event)
+        assert assertion.producing_event_id == event.id
+        assert assertion.reference == {
+            "producing_event_id": event.id,
+            "assertion_id": event.payload["dimensions"]["identity"],
+        }
+        assert event.payload["dimensions"]["content"] == {
+            "positions_measured": event.payload["positions_measured"],
+            "occupancies": event.payload["occupancies"],
+        }
+        assert event.payload["completeness_boundary"] == {
+            "commitment": boundary.commitment
+        }
+        assert boundary.commitment not in event.payload["support_basis"]["event_ids"]
+        assert get_recorded_adjacent_pair_result_assertion(
+            session,
+            producing_event_id=event.id,
+            assertion_id=assertion.assertion_id,
+        ) == assertion
+        recovered_ingress = list(
+            session.iter_session_kind(
+                "w",
+                "s",
+                "operator.ingress.ingress_occurred",
+                through=assertion.completeness_boundary,
+            )
+        )
+        assert [item.id for item in recovered_ingress] == list(
+            event.payload["consumed_event_ids"]
+        )
+
+
+def test_repeated_exact_result_has_one_assertion_identity_and_two_productions(
+    session, occurrences, recorded_finding
+):
+    pair = AdjacentPair("it", "is")
+    findings = measure_adjacent_pair(
+        occurrences,
+        pair,
+        counting_scope="this session",
+        premise_event_id=recorded_finding.id,
+    )
+    boundary = session.capture_boundary()
+    first = record_pair_measurements(
+        session,
+        workspace_id="w",
+        session_id="s",
+        pair=pair,
+        findings=findings,
+        completeness_boundary=boundary,
+    )["following"]
+    second = record_pair_measurements(
+        session,
+        workspace_id="w",
+        session_id="s",
+        pair=pair,
+        findings=findings,
+        completeness_boundary=boundary,
+    )["following"]
+
+    first_assertion = assertion_of_recorded_adjacent_pair_result(first)
+    second_assertion = assertion_of_recorded_adjacent_pair_result(second)
+    assert first_assertion.assertion_id == second_assertion.assertion_id
+    assert first_assertion.producing_event_id != second_assertion.producing_event_id
+
+
+def test_result_assertion_identity_includes_exact_scope(
+    session, occurrences, recorded_finding
+):
+    pair = AdjacentPair("it", "is")
+    boundary = session.capture_boundary()
+
+    def recorded_identity(counting_scope):
+        event = record_pair_measurements(
+            session,
+            workspace_id="w",
+            session_id="s",
+            pair=pair,
+            findings=measure_adjacent_pair(
+                occurrences,
+                pair,
+                counting_scope=counting_scope,
+                premise_event_id=recorded_finding.id,
+            ),
+            completeness_boundary=boundary,
+        )["following"]
+        return assertion_of_recorded_adjacent_pair_result(event).assertion_id
+
+    assert recorded_identity("scope one") != recorded_identity("scope two")
+
+
+def test_result_recovery_refuses_identity_that_does_not_match_content(
+    session, occurrences, recorded_finding
+):
+    pair = AdjacentPair("it", "is")
+    event = record_pair_measurements(
+        session,
+        workspace_id="w",
+        session_id="s",
+        pair=pair,
+        findings=measure_adjacent_pair(
+            occurrences,
+            pair,
+            counting_scope="this session",
+            premise_event_id=recorded_finding.id,
+        ),
+        completeness_boundary=session.capture_boundary(),
+    )["following"].model_copy(deep=True)
+    event.payload["dimensions"]["content"]["positions_measured"] += 1
+
+    with pytest.raises(
+        PreservedMaterialMeasurementError,
+        match="incoherent positional result coordinates",
+    ):
+        assertion_of_recorded_adjacent_pair_result(event)
+
+
+def test_ledger_recovery_refuses_a_boundary_not_owned_by_the_ledger(
+    session, occurrences, recorded_finding
+):
+    event = record_pair_measurements(
+        session,
+        workspace_id="w",
+        session_id="s",
+        pair=AdjacentPair("it", "is"),
+        findings=measure_adjacent_pair(
+            occurrences,
+            AdjacentPair("it", "is"),
+            counting_scope="this session",
+            premise_event_id=recorded_finding.id,
+        ),
+        completeness_boundary=session.capture_boundary(),
+    )["following"]
+    assertion = assertion_of_recorded_adjacent_pair_result(event)
+    event.payload["completeness_boundary"]["commitment"] = "not-a-ledger-prefix"
+
+    with pytest.raises(InvalidLedgerBoundary):
+        get_recorded_adjacent_pair_result_assertion(
+            session,
+            producing_event_id=event.id,
+            assertion_id=assertion.assertion_id,
+        )
+
+
+def test_ledger_recovery_refuses_an_incomplete_claimed_ingress_read(
+    session, occurrences, recorded_finding
+):
+    event = record_pair_measurements(
+        session,
+        workspace_id="w",
+        session_id="s",
+        pair=AdjacentPair("it", "is"),
+        findings=measure_adjacent_pair(
+            occurrences,
+            AdjacentPair("it", "is"),
+            counting_scope="this session",
+            premise_event_id=recorded_finding.id,
+        ),
+        completeness_boundary=session.capture_boundary(),
+    )["following"]
+    assertion = assertion_of_recorded_adjacent_pair_result(event)
+    event.payload["consumed_event_ids"].pop()
+    event.payload["support_basis"]["event_ids"].pop()
+
+    with pytest.raises(
+        PreservedMaterialMeasurementError,
+        match="complete bounded ingress read",
+    ):
+        get_recorded_adjacent_pair_result_assertion(
+            session,
+            producing_event_id=event.id,
+            assertion_id=assertion.assertion_id,
+        )
+
+
+def test_recovery_refuses_a_claimed_form_with_other_position_coordinates(
+    session, occurrences, recorded_finding
+):
+    event = record_pair_measurements(
+        session,
+        workspace_id="w",
+        session_id="s",
+        pair=AdjacentPair("it", "is"),
+        findings=measure_adjacent_pair(
+            occurrences,
+            AdjacentPair("it", "is"),
+            counting_scope="this session",
+            premise_event_id=recorded_finding.id,
+        ),
+        completeness_boundary=session.capture_boundary(),
+    )["following"].model_copy(deep=True)
+    malformed_position = {
+        "anchored_on": "left",
+        "direction": "before",
+        "displacement": 17,
+    }
+    event.payload["measured_position"] = malformed_position
+    event.payload["assertion_subject"]["measured_position"] = malformed_position
+
+    with pytest.raises(
+        PreservedMaterialMeasurementError,
+        match="incoherent positional result coordinates",
+    ):
+        assertion_of_recorded_adjacent_pair_result(event)
 
 
 # --------------------------------------------------------------------------
@@ -619,6 +863,7 @@ def test_the_whole_chain_runs_without_a_supplied_representation(
             counting_scope="whole session",
             premise_event_id=recorded_first.id,
         ),
+        completeness_boundary=session.capture_boundary(),
     )
     for event in recorded_second.values():
         assert premise_chain(session, event.id) == [recorded_first.id]
