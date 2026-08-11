@@ -1,5 +1,6 @@
 """Literal Compare over exact positional result Assertion productions."""
 
+from dataclasses import replace
 from io import StringIO
 
 import pytest
@@ -13,8 +14,17 @@ from seed_runtime.adjacent_pair_measurement import (
 )
 from seed_runtime.assertion_comparison import (
     POSITIONAL_RESULT_COORDINATES,
+    POSITIONAL_RESULT_COMPARISON_RECORDED_KIND,
+    POSITIONAL_RESULT_COMPARISON_AUTHORITY,
+    POSITIONAL_RESULT_COMPARISON_FORBIDDEN_INFERENCES,
+    POSITIONAL_RESULT_COMPARISON_PROVENANCE,
+    POSITIONAL_RESULT_COMPARISON_UNKNOWNS,
     AssertionComparisonError,
+    _positional_result_distinction_identity,
+    assertions_of_recorded_positional_result_comparison,
     compare_positional_result_assertions,
+    get_recorded_positional_result_distinction,
+    record_positional_result_comparison,
 )
 from seed_runtime.events import EventLedger
 from seed_runtime.operator_console import run_persistent_operator_console
@@ -170,3 +180,275 @@ def test_compare_does_not_claim_relation_recurrence_or_meaning(comparable):
     assert "recurrence=" not in represented
     assert "meaning=" not in represented
     assert "similarity=" not in represented
+
+
+def test_recording_preserves_one_assertion_per_compare_coordinate(comparable):
+    ledger, left, right = comparable
+    comparison = compare_positional_result_assertions(
+        ledger, (left.reference, right.reference)
+    )
+    before = len(ledger.list("w"))
+    event = record_positional_result_comparison(
+        ledger,
+        workspace_id="w",
+        session_id="comparison-session",
+        comparison=comparison,
+    )
+
+    assert event.kind == POSITIONAL_RESULT_COMPARISON_RECORDED_KIND
+    assert len(ledger.list("w")) == before + 1
+    assert len(event.payload["assertions"]) == len(POSITIONAL_RESULT_COORDINATES)
+    assert "distinctions" not in event.payload
+    assert "relation" not in event.payload
+    assert "recurrence" not in event.payload
+    assert event.payload["inputs"] == [left.reference, right.reference]
+
+
+def test_recorded_compare_results_are_occurrence_addressable(comparable):
+    ledger, left, right = comparable
+    event = record_positional_result_comparison(
+        ledger,
+        workspace_id="w",
+        session_id="comparison-session",
+        comparison=compare_positional_result_assertions(
+            ledger, (left.reference, right.reference)
+        ),
+    )
+    recovered = assertions_of_recorded_positional_result_comparison(event)
+
+    assert {item.coordinate for item in recovered} == set(
+        POSITIONAL_RESULT_COORDINATES
+    )
+    for item in recovered:
+        assert item.reference == {
+            "producing_event_id": event.id,
+            "assertion_id": item.assertion_id,
+        }
+        assert item.payload["support_basis"]["assertion_refs"] == [
+            left.reference,
+            right.reference,
+        ]
+        assert get_recorded_positional_result_distinction(
+            ledger,
+            producing_event_id=event.id,
+            assertion_id=item.assertion_id,
+        ) == item
+
+
+@pytest.mark.parametrize(
+    ("field", "replacement"),
+    (
+        ("standing", "warranted"),
+        ("source_provenance", "another provenance"),
+        ("responsibility", "revise an input Assertion"),
+        ("authority_warrant", "establishes relation"),
+    ),
+)
+def test_recovery_refuses_changed_result_assertion_dimensions(
+    comparable, field, replacement
+):
+    ledger, left, right = comparable
+    event = record_positional_result_comparison(
+        ledger,
+        workspace_id="w",
+        session_id="comparison-session",
+        comparison=compare_positional_result_assertions(
+            ledger, (left.reference, right.reference)
+        ),
+    ).model_copy(deep=True)
+    event.payload["assertions"][0]["dimensions"][field] = replacement
+
+    with pytest.raises(AssertionComparisonError, match="incoherent"):
+        assertions_of_recorded_positional_result_comparison(event)
+
+
+@pytest.mark.parametrize(
+    ("field", "replacement"),
+    (
+        ("responsibility_owner", "an input Assertion"),
+        ("unknowns", ["nothing remains Unknown"]),
+        ("forbidden_inferences", []),
+    ),
+)
+def test_recovery_refuses_changed_result_assertion_fidelity_shell(
+    comparable, field, replacement
+):
+    ledger, left, right = comparable
+    event = record_positional_result_comparison(
+        ledger,
+        workspace_id="w",
+        session_id="comparison-session",
+        comparison=compare_positional_result_assertions(
+            ledger, (left.reference, right.reference)
+        ),
+    ).model_copy(deep=True)
+    event.payload["assertions"][0][field] = replacement
+
+    with pytest.raises(AssertionComparisonError, match="incoherent"):
+        assertions_of_recorded_positional_result_comparison(event)
+
+
+def test_recorded_result_assertion_shell_is_exactly_bounded(comparable):
+    ledger, left, right = comparable
+    event = record_positional_result_comparison(
+        ledger,
+        workspace_id="w",
+        session_id="comparison-session",
+        comparison=compare_positional_result_assertions(
+            ledger, (left.reference, right.reference)
+        ),
+    )
+    assertion = event.payload["assertions"][0]
+
+    assert assertion["dimensions"]["standing"] == "compared"
+    assert (
+        assertion["dimensions"]["source_provenance"]
+        == POSITIONAL_RESULT_COMPARISON_PROVENANCE
+    )
+    assert (
+        assertion["dimensions"]["authority_warrant"]
+        == POSITIONAL_RESULT_COMPARISON_AUTHORITY
+    )
+    assert assertion["unknowns"] == list(POSITIONAL_RESULT_COMPARISON_UNKNOWNS)
+    assert assertion["forbidden_inferences"] == list(
+        POSITIONAL_RESULT_COMPARISON_FORBIDDEN_INFERENCES
+    )
+
+
+def test_recording_recomputes_compare_from_occurrence_bound_inputs(comparable):
+    ledger, left, right = comparable
+    comparison = compare_positional_result_assertions(
+        ledger, (left.reference, right.reference)
+    )
+    altered = replace(
+        comparison,
+        distinctions=(
+            replace(comparison.distinctions[0], same=not comparison.distinctions[0].same),
+            *comparison.distinctions[1:],
+        ),
+    )
+
+    with pytest.raises(AssertionComparisonError, match="does not match its inputs"):
+        record_positional_result_comparison(
+            ledger,
+            workspace_id="w",
+            session_id="comparison-session",
+            comparison=altered,
+        )
+
+
+def test_recovery_refuses_a_self_consistent_invented_compare_result(comparable):
+    ledger, left, right = comparable
+    event = record_positional_result_comparison(
+        ledger,
+        workspace_id="w",
+        session_id="comparison-session",
+        comparison=compare_positional_result_assertions(
+            ledger, (left.reference, right.reference)
+        ),
+    ).model_copy(deep=True)
+    assertion = next(
+        item
+        for item in event.payload["assertions"]
+        if item["dimensions"]["content"]["coordinate"] == "standing"
+    )
+    content = assertion["dimensions"]["content"]
+    content["same"] = False
+    assertion["dimensions"]["identity"] = _positional_result_distinction_identity(
+        subject=event.payload["compared_subject"],
+        inputs=event.payload["inputs"],
+        workspace_id=event.workspace_id,
+        session_id=event.session_id,
+        **content,
+    )
+
+    with pytest.raises(AssertionComparisonError, match="unlawful"):
+        assertions_of_recorded_positional_result_comparison(event)
+
+
+def test_ledger_recovery_refuses_self_consistent_results_for_other_inputs(comparable):
+    ledger, left, right = comparable
+    event = record_positional_result_comparison(
+        ledger,
+        workspace_id="w",
+        session_id="comparison-session",
+        comparison=compare_positional_result_assertions(
+            ledger, (left.reference, right.reference)
+        ),
+    )
+    recovered = assertions_of_recorded_positional_result_comparison(event)
+    event.payload["compared_subject"] = {
+        **event.payload["compared_subject"],
+        "measurement_form": "preceding",
+    }
+    for assertion in event.payload["assertions"]:
+        assertion["assertion_subject"]["compared_subject"] = event.payload[
+            "compared_subject"
+        ]
+        content = assertion["dimensions"]["content"]
+        assertion["dimensions"]["identity"] = (
+            _positional_result_distinction_identity(
+                subject=event.payload["compared_subject"],
+                inputs=event.payload["inputs"],
+                workspace_id=event.workspace_id,
+                session_id=event.session_id,
+                **content,
+            )
+        )
+
+    with pytest.raises(AssertionComparisonError, match="replayed Act"):
+        get_recorded_positional_result_distinction(
+            ledger,
+            producing_event_id=event.id,
+            assertion_id=recovered[0].assertion_id,
+        )
+
+
+@pytest.mark.parametrize(
+    ("field", "replacement"),
+    (
+        ("producing_act", "Measure"),
+        ("owner", "an input Assertion"),
+        ("responsibility", "revise the compared Assertions"),
+        ("mutates_cluster", True),
+    ),
+)
+def test_ledger_recovery_refuses_changed_outer_compare_law(
+    comparable, field, replacement
+):
+    ledger, left, right = comparable
+    event = record_positional_result_comparison(
+        ledger,
+        workspace_id="w",
+        session_id="comparison-session",
+        comparison=compare_positional_result_assertions(
+            ledger, (left.reference, right.reference)
+        ),
+    )
+    recovered = assertions_of_recorded_positional_result_comparison(event)
+    event.payload[field] = replacement
+
+    with pytest.raises(AssertionComparisonError, match="replayed Act"):
+        get_recorded_positional_result_distinction(
+            ledger,
+            producing_event_id=event.id,
+            assertion_id=recovered[0].assertion_id,
+        )
+
+
+def test_recorded_compare_does_not_perform_automatic_uptake(comparable):
+    ledger, left, right = comparable
+    event = record_positional_result_comparison(
+        ledger,
+        workspace_id="w",
+        session_id="comparison-session",
+        comparison=compare_positional_result_assertions(
+            ledger, (left.reference, right.reference)
+        ),
+    )
+
+    assert all(
+        "Uptake" in assertion["forbidden_inferences"][-1]
+        for assertion in event.payload["assertions"]
+    )
+    assert all("applicability" not in assertion for assertion in event.payload["assertions"])
