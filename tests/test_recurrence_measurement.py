@@ -250,16 +250,17 @@ def test_scope_and_rule_are_part_of_assertion_identity(compared):
             finding.distinction, declared=tuple(other_rule.items())
         ),
     )
+    other_workspace = replace(finding, workspace_id="another-workspace")
 
     identities = [
         {
             assertion.result: assertion.identity
             for assertion in assertions_from_measured_count(candidate)
         }
-        for candidate in (finding, scoped, ruled)
+        for candidate in (finding, scoped, ruled, other_workspace)
     ]
     for result in identities[0]:
-        assert len({identified[result] for identified in identities}) == 3
+        assert len({identified[result] for identified in identities}) == 4
         assert all(
             identified[result].startswith("measured-assertion:")
             for identified in identities
@@ -401,9 +402,38 @@ def test_the_consumed_ledger_boundary_is_preserved_as_read_provenance(compared):
     recorded = record_measured_count(
         compared, workspace_id="w", session_id="s1", finding=finding
     )
-    assert recorded.payload["consumed_ledger_boundary"] == {
-        "commitment": boundary.commitment,
+    assert "consumed_ledger_boundary" not in recorded.payload
+    assertions = _assertions_by_result(recorded)
+    for result in (
+        "measured_in",
+        "measured_without_distinction",
+        "coordinate_not_measured",
+    ):
+        assert assertions[result]["completeness_boundary"] == {
+            "commitment": boundary.commitment,
+        }
+
+
+def test_the_old_aggregate_result_is_not_recorded_beside_the_assertions(compared):
+    event = record_measured_count(
+        compared,
+        workspace_id="w",
+        session_id="s1",
+        finding=_by_right(compared)["word"],
+    )
+    old_aggregate_fields = {
+        "measured_in",
+        "measured_without_distinction",
+        "coordinate_not_measured",
+        "exchange_count",
+        "recurrence_established",
+        "bounded_exchanges",
+        "consumed_event_ids",
+        "consumed_ledger_boundary",
+        "workspace_id",
+        "distinction",
     }
+    assert old_aggregate_fields.isdisjoint(event.payload)
 
 
 # --------------------------------------------------------------------------

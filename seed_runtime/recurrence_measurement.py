@@ -441,6 +441,7 @@ def _result_assertion_identity(
     identified = {
         "result": result,
         "distinction": finding.distinction.to_json_dict(),
+        "workspace_id": finding.workspace_id,
         "bounded_exchanges": list(finding.bounded_exchanges),
         "content": content,
     }
@@ -624,7 +625,6 @@ def record_measured_count(
             "whether their sources are independent remains Unknown",
         ],
         "forbidden_inferences": list(FORBIDDEN_INFERENCES),
-        **finding.to_json_dict(),
     }
     return ledger.append(
         EXCHANGE_COUNT_RECORDED_KIND, workspace_id, payload, session_id=session_id
