@@ -40,6 +40,21 @@ MEASUREMENT_AUTHORITY = (
     "literal Measurement evidence only; establishes no recurrence, profile, "
     "similarity, relation, meaning, or Standing movement"
 )
+MEASUREMENT_PRODUCER_EVIDENCE = (
+    "the recorded producing occurrence this payload is appended as; a live "
+    "producer return is not durable producer-to-result Evidence unless recorded"
+)
+MEASUREMENT_UNKNOWNS = (
+    "why this exact comparison result has this count remains Unknown",
+)
+PRODUCTION_SET_FORBIDDEN_INFERENCES = (
+    "an exact production count is not recurrence, similarity, relation, meaning, "
+    "profile membership, or Standing strength",
+)
+COUNT_FORBIDDEN_INFERENCES = (
+    "count greater than one does not by itself establish recurrence, similarity, "
+    "relation, meaning, profile membership, or Standing strength",
+)
 
 
 @dataclass(frozen=True)
@@ -57,6 +72,21 @@ class MeasuredComparisonResultCount:
     @property
     def count(self) -> int:
         return len(self.production_refs)
+
+
+@dataclass(frozen=True)
+class RecordedComparisonResultCountAssertion:
+    assertion_id: str
+    producing_event_id: str
+    result: str
+    payload: dict[str, Any]
+
+    @property
+    def reference(self) -> dict[str, str]:
+        return {
+            "producing_event_id": self.producing_event_id,
+            "assertion_id": self.assertion_id,
+        }
 
 
 def _canonical(value: Any) -> str:
@@ -278,13 +308,8 @@ def assertions_from_comparison_result_count(
             "source_session_ids": list(finding.source_session_ids),
             "occurrence_kind": POSITIONAL_RESULT_COMPARISON_RECORDED_KIND,
         },
-        "unknowns": [
-            "why this exact comparison result has this count remains Unknown"
-        ],
-        "forbidden_inferences": [
-            "an exact production count is not recurrence, similarity, relation, "
-            "meaning, profile membership, or Standing strength"
-        ],
+        "unknowns": list(MEASUREMENT_UNKNOWNS),
+        "forbidden_inferences": list(PRODUCTION_SET_FORBIDDEN_INFERENCES),
     }
     count_content = {"production_count": finding.count}
     count_id = _assertion_identity(
@@ -308,13 +333,8 @@ def assertions_from_comparison_result_count(
         "assertion_subject": subject,
         "assertion_scope": scope,
         "support_basis": {"local_assertion_ids": [production_set_id]},
-        "unknowns": [
-            "why this exact comparison result has this count remains Unknown"
-        ],
-        "forbidden_inferences": [
-            "count greater than one does not by itself establish recurrence, "
-            "similarity, relation, meaning, profile membership, or Standing strength"
-        ],
+        "unknowns": list(MEASUREMENT_UNKNOWNS),
+        "forbidden_inferences": list(COUNT_FORBIDDEN_INFERENCES),
     }
     return production_set, count
 
@@ -347,6 +367,7 @@ def _comparison_result_count_event(
             },
             "producing_act": "declared Measurement",
             "producer": "this Seed",
+            "producer_evidence": MEASUREMENT_PRODUCER_EVIDENCE,
             "measurement_subject": "recorded positional-result comparison Assertions",
             "assertions": list(assertions),
         },
@@ -408,3 +429,196 @@ def record_comparison_result_count_layer(
         ledger.append_many(pending)
         recorded += len(pending)
     return recorded
+
+
+def assertions_of_recorded_comparison_result_count(
+    event: Event,
+) -> tuple[RecordedComparisonResultCountAssertion, ...]:
+    """Structurally recover the exact production set and its derived count."""
+
+    if event.kind != COMPARISON_RESULT_COUNT_RECORDED_KIND:
+        raise ComparisonResultMeasurementError(
+            f"{event.id} is not a comparison-result count Measurement occurrence"
+        )
+    stated = event.payload.get("assertions")
+    dimensions = event.payload.get("dimensions")
+    if (
+        not isinstance(stated, list)
+        or len(stated) != 2
+        or not isinstance(dimensions, dict)
+        or dimensions
+        != {
+            "identity": "comparison-result-count-measurement-occurrence",
+            "content": "two distinct measured Assertions recorded",
+            "standing": "recorded",
+            "source_provenance": "recorded positional-result comparison Assertions",
+            "authority_warrant": MEASUREMENT_AUTHORITY,
+        }
+        or event.payload.get("producing_act") != "declared Measurement"
+        or event.payload.get("producer") != "this Seed"
+        or event.payload.get("producer_evidence") != MEASUREMENT_PRODUCER_EVIDENCE
+        or event.payload.get("measurement_subject")
+        != "recorded positional-result comparison Assertions"
+    ):
+        raise ComparisonResultMeasurementError(
+            f"{event.id} does not carry the established Measurement occurrence"
+        )
+    by_result = {
+        item.get("result"): item for item in stated if isinstance(item, dict)
+    }
+    if set(by_result) != {"exact_production_set", "count"}:
+        raise ComparisonResultMeasurementError(
+            f"{event.id} does not carry the exact two-result Measurement"
+        )
+    production_set = by_result["exact_production_set"]
+    count = by_result["count"]
+    set_dimensions = production_set.get("dimensions")
+    count_dimensions = count.get("dimensions")
+    subject = production_set.get("assertion_subject")
+    scope = production_set.get("assertion_scope")
+    set_content = (
+        set_dimensions.get("content") if isinstance(set_dimensions, dict) else None
+    )
+    count_content = (
+        count_dimensions.get("content")
+        if isinstance(count_dimensions, dict)
+        else None
+    )
+    refs = set_content.get("production_refs") if isinstance(set_content, dict) else None
+    required_ref = {"producing_event_id", "assertion_id"}
+    boundary = production_set.get("completeness_boundary")
+    if (
+        not isinstance(subject, dict)
+        or set(subject)
+        != {"compared_subject", "coordinate", "exact_comparison_result"}
+        or not isinstance(scope, dict)
+        or set(scope) != {"workspace_id", "source_session_ids"}
+        or scope.get("workspace_id") != event.workspace_id
+        or not isinstance(scope.get("source_session_ids"), list)
+        or not scope["source_session_ids"]
+        or not isinstance(refs, list)
+        or not refs
+        or any(not isinstance(ref, dict) or set(ref) != required_ref for ref in refs)
+        or production_set.get("support_basis") != {"assertion_refs": refs}
+        or production_set.get("completeness_scope")
+        != {
+            "workspace_id": event.workspace_id,
+            "source_session_ids": scope["source_session_ids"],
+            "occurrence_kind": POSITIONAL_RESULT_COMPARISON_RECORDED_KIND,
+        }
+        or not isinstance(boundary, dict)
+        or set(boundary) != {"commitment"}
+        or not isinstance(boundary["commitment"], str)
+        or count.get("assertion_subject") != subject
+        or count.get("assertion_scope") != scope
+        or count_content != {"production_count": len(refs)}
+    ):
+        raise ComparisonResultMeasurementError(
+            f"{event.id} carries incoherent Measurement coordinates"
+        )
+
+    def require_shell(item, item_dimensions, provenance, forbidden):
+        if (
+            item.get("subject_kind") != "assertion"
+            or item.get("responsibility_owner") != "this recorded assertion"
+            or not isinstance(item_dimensions, dict)
+            or item_dimensions.get("standing") != "measured"
+            or item_dimensions.get("source_provenance") != provenance
+            or item_dimensions.get("responsibility")
+            != MEASURED_ASSERTION_RESPONSIBILITY
+            or item_dimensions.get("authority_warrant") != MEASUREMENT_AUTHORITY
+            or item.get("unknowns") != list(MEASUREMENT_UNKNOWNS)
+            or item.get("forbidden_inferences") != list(forbidden)
+        ):
+            raise ComparisonResultMeasurementError(
+                f"{event.id} carries an incoherent measured Assertion shell"
+            )
+
+    require_shell(
+        production_set,
+        set_dimensions,
+        "recorded positional-result comparison Assertion productions",
+        PRODUCTION_SET_FORBIDDEN_INFERENCES,
+    )
+    require_shell(
+        count,
+        count_dimensions,
+        "the exact production-set Assertion carried here",
+        COUNT_FORBIDDEN_INFERENCES,
+    )
+    set_id = _assertion_identity(
+        result="exact_production_set",
+        subject=subject,
+        scope=scope,
+        content=set_content,
+    )
+    count_id = _assertion_identity(
+        result="count", subject=subject, scope=scope, content=count_content
+    )
+    if (
+        set_dimensions.get("identity") != set_id
+        or count_dimensions.get("identity") != count_id
+        or count.get("support_basis") != {"local_assertion_ids": [set_id]}
+        or "completeness_boundary" in count
+        or "completeness_scope" in count
+    ):
+        raise ComparisonResultMeasurementError(
+            f"{event.id} carries a noncanonical Assertion or dependency"
+        )
+    return tuple(
+        RecordedComparisonResultCountAssertion(
+            assertion_id=item["dimensions"]["identity"],
+            producing_event_id=event.id,
+            result=item["result"],
+            payload=item,
+        )
+        for item in (production_set, count)
+    )
+
+
+def get_recorded_comparison_result_count_assertion(
+    ledger: EventLedger,
+    *,
+    producing_event_id: str,
+    assertion_id: str,
+) -> RecordedComparisonResultCountAssertion | None:
+    """Resolve one Assertion after proving its complete production set."""
+
+    event = ledger.get(producing_event_id)
+    if event is None:
+        return None
+    if ledger.integrity_of(producing_event_id) == CORRUPTED:
+        raise ComparisonResultMeasurementError(
+            "a corrupted Measurement occurrence cannot expose result Assertions"
+        )
+    recovered = assertions_of_recorded_comparison_result_count(event)
+    production_set = next(item for item in recovered if item.result == "exact_production_set")
+    payload = production_set.payload
+    boundary = EventLedgerBoundary(
+        payload["completeness_boundary"]["commitment"]
+    )
+    scope = payload["assertion_scope"]
+    subject = payload["assertion_subject"]
+    expected_refs = []
+    for result in iter_recorded_positional_result_distinctions(
+        ledger,
+        workspace_id=event.workspace_id,
+        session_ids=scope["source_session_ids"],
+        through=boundary,
+    ):
+        if (
+            result.coordinate == subject["coordinate"]
+            and result.payload["assertion_subject"]["compared_subject"]
+            == subject["compared_subject"]
+            and result.payload["dimensions"]["content"]
+            == subject["exact_comparison_result"]
+        ):
+            expected_refs.append(result.reference)
+    if expected_refs != payload["support_basis"]["assertion_refs"]:
+        raise ComparisonResultMeasurementError(
+            "the carried production set does not equal the complete bounded read"
+        )
+    for item in recovered:
+        if item.assertion_id == assertion_id:
+            return item
+    return None
