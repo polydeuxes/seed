@@ -3,7 +3,8 @@
 The subject is Seed's own recorded Compare output.  For every exact positional
 subject and comparison coordinate, this Measurement counts every exact carried
 result.  It does not reduce results to same/different, rank them, or infer
-similarity, recurrence, relation, or meaning.
+similarity, relation, or meaning.  Where an exact production count exceeds one,
+recurrence is a distinct result of the same declared Measurement.
 """
 
 from __future__ import annotations
@@ -37,7 +38,7 @@ MEASURED_ASSERTION_RESPONSIBILITY = (
     "carried coordinates"
 )
 MEASUREMENT_AUTHORITY = (
-    "literal Measurement evidence only; establishes no recurrence, profile, "
+    "literal Measurement Evidence only; establishes no profile, "
     "similarity, relation, meaning, or Standing movement"
 )
 MEASUREMENT_PRODUCER_EVIDENCE = (
