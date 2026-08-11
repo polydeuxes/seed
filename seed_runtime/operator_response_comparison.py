@@ -149,7 +149,7 @@ def run_operator_response_comparison_and_identification(
         "response ingress belongs to another workspace or session",
     )
     # The ingress no longer names a Presentation: a relation between two
-    # preserved subjects is its own bounded claim subject rather than a
+    # preserved subjects is its own bounded Assertion rather than a
     # coordinate of one participant.  Nothing here substitutes for the
     # missing determination, and its absence is not permission.  Per
     # 01.Standing.E.1 the Responsibility performing this exact Act owes an

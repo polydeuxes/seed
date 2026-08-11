@@ -240,7 +240,7 @@ def _adjacent_pair_result_assertion_fields(
 def assertion_of_recorded_adjacent_pair_result(
     event: Event,
 ) -> RecordedAdjacentPairResultAssertion:
-    """Recover one canonical result Assertion or refuse its carried claim."""
+    """Recover one canonical result Assertion, or refuse what it carries."""
 
     if event.kind != MEASUREMENT_RECORDED_KIND:
         raise PreservedMaterialMeasurementError(

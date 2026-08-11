@@ -405,9 +405,9 @@ class SQLiteEventLedger(EventLedger):
         # integers, and it grows without bound — 36.9s at 100,000 events,
         # extrapolating to about 356s at a million.
         #
-        # This table is not an occurrence. It records no claim and supports no
-        # standing; it is ledger mechanics, and the `events` mutation refusal
-        # deliberately does not cover it.
+        # This table is not an occurrence. It records no Assertion and
+        # supports no standing; it is ledger mechanics, and the `events`
+        # mutation refusal deliberately does not cover it.
         self._connection.execute("""
             CREATE TABLE IF NOT EXISTS id_reservations (
                 prefix TEXT PRIMARY KEY,

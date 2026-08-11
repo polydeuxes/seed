@@ -253,10 +253,10 @@ def run_operator_ingress_attempt(
     alter this attempt's own occurrence handling.
 
     The occurrence names no Presentation.  A relation between this preserved
-    material and any preserved Presentation is its own bounded claim subject
-    with its own participants, producer, occurrence, and Evidence; it does
-    not live inside one participant's record, and no such relation is
-    established here.
+    material and any preserved Presentation is its own bounded Assertion with
+    its own participants, producer, occurrence, and Evidence; it does not live
+    inside one participant's record, and no such relation is established
+    here.
     """
     if captured_ingress.eof:
         raise ValueError("captured_ingress must be non-EOF")

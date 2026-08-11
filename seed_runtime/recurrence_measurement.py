@@ -786,7 +786,7 @@ def record_measured_count(
       Responsibility    fidelity of that Assertion's Standing
     ```
 
-    `06.Constructors:13` is what licenses the Producer claim and what limits it:
+    `06.Constructors:13` is what licenses the Producer Assertion and limits it:
     a live producer return is not durable producer-to-result Evidence *unless
     recorded or represented*. The Producer therefore rests on the recorded
     occurrence, and the occurrence is Evidence **for** the Producer rather than
