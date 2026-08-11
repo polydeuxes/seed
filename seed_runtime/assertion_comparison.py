@@ -10,10 +10,12 @@ or reason to revise either Assertion.
 from __future__ import annotations
 
 from dataclasses import dataclass
+import hashlib
 import json
 from typing import Any, Iterable
 
 from seed_runtime.events import CORRUPTED, EventLedger
+from seed_runtime.event import Event
 from seed_runtime.recurrence_measurement import (
     RecordedMeasuredAssertion,
     get_recorded_measured_assertion,
@@ -52,6 +54,33 @@ class AssertionProductionComparison:
     )
 
 
+ASSERTION_PRODUCTION_COMPARISON_RECORDED_KIND = (
+    "operator.assertion.production_comparison_recorded"
+)
+
+COMPARISON_ASSERTION_FIDELITY_RESPONSIBILITY = (
+    "preserve the fidelity of this compared Assertion's Standing to its "
+    "carried coordinates"
+)
+
+
+@dataclass(frozen=True)
+class RecordedAssertionProductionDistinction:
+    """One addressable coordinate result inside its producing Compare occurrence."""
+
+    assertion_id: str
+    producing_event_id: str
+    coordinate: str
+    payload: dict[str, Any]
+
+    @property
+    def reference(self) -> dict[str, str]:
+        return {
+            "producing_event_id": self.producing_event_id,
+            "assertion_id": self.assertion_id,
+        }
+
+
 COORDINATES: dict[str, tuple[str, ...]] = {
     "standing": ("dimensions", "standing"),
     "source_provenance": ("dimensions", "source_provenance"),
@@ -79,6 +108,36 @@ def _exactly_same(left: Any, right: Any) -> bool:
     return json.dumps(left, sort_keys=True, separators=(",", ":")) == json.dumps(
         right, sort_keys=True, separators=(",", ":")
     )
+
+
+def _canonical_json(value: Any) -> str:
+    return json.dumps(value, sort_keys=True, separators=(",", ":"))
+
+
+def _distinction_assertion_identity(
+    *,
+    compared_assertion_id: str,
+    inputs: Iterable[dict[str, str]],
+    workspace_id: str,
+    session_id: str,
+    coordinate: str,
+    present: Iterable[bool],
+    values: Iterable[Any],
+    same: bool,
+) -> str:
+    identity = {
+        "compared_assertion_id": compared_assertion_id,
+        "inputs": list(inputs),
+        "workspace_id": workspace_id,
+        "session_id": session_id,
+        "coordinate": coordinate,
+        "present": list(present),
+        "values": list(values),
+        "same": same,
+    }
+    return "assertion-production-distinction:" + hashlib.sha256(
+        _canonical_json(identity).encode("utf-8")
+    ).hexdigest()
 
 
 def compare_assertion_productions(
@@ -149,3 +208,181 @@ def compare_assertion_productions(
         inputs=(inputs[0], inputs[1]),
         distinctions=tuple(distinctions),
     )
+
+
+def record_assertion_production_comparison(
+    ledger: EventLedger,
+    *,
+    workspace_id: str,
+    session_id: str,
+    comparison: AssertionProductionComparison,
+) -> Event:
+    """Preserve each literal Compare result without performing its Uptake."""
+
+    input_refs = tuple(
+        {
+            "producing_event_id": item.producing_event_id,
+            "assertion_id": item.assertion_id,
+        }
+        for item in comparison.inputs
+    )
+    verified = compare_assertion_productions(ledger, input_refs)
+    if comparison != verified:
+        raise AssertionComparisonError(
+            "the supplied comparison does not match its occurrence-bound inputs"
+        )
+    assertions = []
+    for distinction in comparison.distinctions:
+        content = {
+            "coordinate": distinction.coordinate,
+            "present": list(distinction.present),
+            "values": list(distinction.values),
+            "same": distinction.same,
+        }
+        identity = _distinction_assertion_identity(
+            compared_assertion_id=comparison.assertion_id,
+            inputs=input_refs,
+            workspace_id=workspace_id,
+            session_id=session_id,
+            **content,
+        )
+        assertions.append(
+            {
+                "dimensions": {
+                    "identity": identity,
+                    "content": content,
+                    "standing": "compared",
+                    "source_provenance": (
+                        "the two exact occurrence-bound productions carried in "
+                        "support_basis"
+                    ),
+                    "responsibility": COMPARISON_ASSERTION_FIDELITY_RESPONSIBILITY,
+                    "authority_warrant": (
+                        "literal comparison evidence only; establishes no conflict, "
+                        "meaning, preference, revision, or strengthening"
+                    ),
+                    "scope_locality": "the exact assertion_scope carried here",
+                    "occurrence_preservation": (
+                        "distinct Compare result preserved by its producing occurrence"
+                    ),
+                },
+                "subject_kind": "assertion",
+                "responsibility_owner": "this recorded assertion",
+                "result": "assertion_production_coordinate_distinction",
+                "assertion_subject": {
+                    "compared_assertion_id": comparison.assertion_id,
+                    "coordinate": distinction.coordinate,
+                },
+                "assertion_scope": {
+                    "workspace_id": workspace_id,
+                    "session_id": session_id,
+                    "compared_productions": list(input_refs),
+                },
+                "support_basis": {"assertion_refs": list(input_refs)},
+                "unknowns": [
+                    "whether a literal difference is Applicable to either input "
+                    "Assertion remains Unknown",
+                    "whether any consumer will admit or consume this result remains "
+                    "Unknown",
+                ],
+                "forbidden_inferences": [
+                    "literal difference is not conflict",
+                    "new availability does not revise either compared Assertion",
+                    "recording does not establish Applicability, admission, "
+                    "consumption, or Uptake",
+                ],
+            }
+        )
+    return ledger.append(
+        ASSERTION_PRODUCTION_COMPARISON_RECORDED_KIND,
+        workspace_id,
+        {
+            "dimensions": {
+                "identity": "assertion-production-comparison-occurrence",
+                "content": f"{len(assertions)} distinct comparison Assertions recorded",
+                "standing": "recorded",
+                "source_provenance": "two occurrence-bound Assertion productions",
+                "authority_warrant": "literal Compare results only",
+                "scope_locality": f"workspace:{workspace_id};session:{session_id}",
+                "occurrence_preservation": "comparison occurrence durably recorded",
+            },
+            "producing_act": "Compare",
+            "owner": comparison.owner,
+            "responsibility": comparison.responsibility,
+            "inputs": list(input_refs),
+            "assertions": assertions,
+            "mutates_cluster": False,
+        },
+        session_id=session_id,
+    )
+
+
+def assertions_of_recorded_assertion_comparison(
+    event: Event,
+) -> tuple[RecordedAssertionProductionDistinction, ...]:
+    """Recover and verify every addressable result of one recorded Compare."""
+
+    if event.kind != ASSERTION_PRODUCTION_COMPARISON_RECORDED_KIND:
+        raise AssertionComparisonError(
+            f"{event.id} is {event.kind}, not an Assertion production Compare occurrence"
+        )
+    stated = event.payload.get("assertions")
+    if not isinstance(stated, list):
+        raise AssertionComparisonError(
+            f"{event.id} does not preserve its distinct comparison Assertions"
+        )
+    recovered = []
+    seen = set()
+    for assertion in stated:
+        dimensions = assertion.get("dimensions") if isinstance(assertion, dict) else None
+        content = dimensions.get("content") if isinstance(dimensions, dict) else None
+        identity = dimensions.get("identity") if isinstance(dimensions, dict) else None
+        subject = assertion.get("assertion_subject") if isinstance(assertion, dict) else None
+        scope = assertion.get("assertion_scope") if isinstance(assertion, dict) else None
+        support = assertion.get("support_basis") if isinstance(assertion, dict) else None
+        input_refs = support.get("assertion_refs") if isinstance(support, dict) else None
+        if (
+            assertion.get("subject_kind") != "assertion"
+            or assertion.get("result") != "assertion_production_coordinate_distinction"
+            or not isinstance(content, dict)
+            or not isinstance(subject, dict)
+            or not isinstance(scope, dict)
+            or not isinstance(input_refs, list)
+            or scope.get("compared_productions") != input_refs
+            or not isinstance(scope.get("workspace_id"), str)
+            or not isinstance(scope.get("session_id"), str)
+            or subject.get("compared_assertion_id") is None
+            or subject.get("coordinate") != content.get("coordinate")
+        ):
+            raise AssertionComparisonError(
+                f"{event.id} carries an incoherent comparison Assertion"
+            )
+        required_content = {"coordinate", "present", "values", "same"}
+        if set(content) != required_content:
+            raise AssertionComparisonError(
+                f"{event.id} carries an incomplete comparison result"
+            )
+        canonical = _distinction_assertion_identity(
+            compared_assertion_id=subject["compared_assertion_id"],
+            inputs=input_refs,
+            workspace_id=scope.get("workspace_id"),
+            session_id=scope.get("session_id"),
+            coordinate=content["coordinate"],
+            present=content["present"],
+            values=content["values"],
+            same=content["same"],
+        )
+        if identity != canonical or identity in seen:
+            raise AssertionComparisonError(
+                f"{event.id} carries a comparison Assertion with invalid identity"
+            )
+        seen.add(identity)
+        recovered.append(
+            RecordedAssertionProductionDistinction(
+                assertion_id=identity,
+                producing_event_id=event.id,
+                coordinate=content["coordinate"],
+                payload=assertion,
+            )
+        )
+    return tuple(recovered)
