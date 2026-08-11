@@ -35,8 +35,8 @@ from seed_runtime.recurrence_measurement import (
     FORBIDDEN_INFERENCES,
     MEASURED_ASSERTION_FIDELITY_RESPONSIBILITY,
     RecurrenceMeasurementError,
+    assertions_from_measured_count,
     measure_exchange_counts,
-    measured_assertion_identity,
     record_measured_count,
     render_measured_count,
 )
@@ -89,6 +89,10 @@ def _by_right(ledger, declared=None):
     }
 
 
+def _assertions_by_result(event):
+    return {assertion["result"]: assertion for assertion in event.payload["assertions"]}
+
+
 # --------------------------------------------------------------------------
 # No new Act. A record shape, and declared measurement.
 # --------------------------------------------------------------------------
@@ -99,13 +103,28 @@ def test_the_assertion_owns_fidelity_not_its_production(compared):
     event = record_measured_count(
         compared, workspace_id="w", session_id="s1",
         finding=_by_right(compared)["word"])
-    responsibility = event.payload["dimensions"]["responsibility"]
-    assert responsibility == MEASURED_ASSERTION_FIDELITY_RESPONSIBILITY
-    assert event.payload["subject_kind"] == "assertion"
-    assert event.payload["responsibility_owner"] == "this recorded assertion"
+    assertions = event.payload["assertions"]
+    assert assertions
+    assert all(
+        assertion["dimensions"]["responsibility"]
+        == MEASURED_ASSERTION_FIDELITY_RESPONSIBILITY
+        for assertion in assertions
+    )
+    assert all(assertion["subject_kind"] == "assertion" for assertion in assertions)
+    assert all(
+        assertion["responsibility_owner"] == "this recorded assertion"
+        for assertion in assertions
+    )
     assert event.payload["producing_act"] == "declared measurement"
-    assert event.payload["responsibility_owner"] != event.payload["producer"]
-    assert responsibility != event.payload["producing_act"]
+    assert all(
+        assertion["responsibility_owner"] != event.payload["producer"]
+        for assertion in assertions
+    )
+    assert all(
+        assertion["dimensions"]["responsibility"]
+        != event.payload["producing_act"]
+        for assertion in assertions
+    )
     assert "cohort" not in str(event.payload).lower()
 
 
@@ -131,6 +150,86 @@ def test_the_record_shape_is_its_own(compared):
     assert event.kind == EXCHANGE_COUNT_RECORDED_KIND
     assert event.kind != MEASUREMENT_RECORDED_KIND
     assert "occupancies" not in event.payload
+    assert event.payload["dimensions"]["standing"] == "recorded"
+    assert "responsibility" not in event.payload["dimensions"]
+
+
+def test_one_occurrence_preserves_every_distinct_result(compared):
+    finding = _by_right(compared)["word"]
+    event = record_measured_count(
+        compared, workspace_id="w", session_id="s1", finding=finding
+    )
+    assertions = _assertions_by_result(event)
+
+    assert set(assertions) == {
+        "measured_in",
+        "measured_without_distinction",
+        "coordinate_not_measured",
+        "count",
+        "recurrence",
+    }
+    assert assertions["measured_in"]["dimensions"]["content"] == {
+        "exchanges": ["s1", "s2", "s3"]
+    }
+    assert assertions["count"]["dimensions"]["content"] == {
+        "exchange_count": 3
+    }
+
+
+def test_exact_sets_keep_completeness_separate_from_support(compared):
+    finding = _by_right(compared)["word"]
+    assertions = {
+        assertion.result: assertion
+        for assertion in assertions_from_measured_count(finding)
+    }
+    boundary = {"commitment": finding.consumed_ledger_boundary.commitment}
+
+    for result in (
+        "measured_in",
+        "measured_without_distinction",
+        "coordinate_not_measured",
+    ):
+        encoded = assertions[result].to_json_dict()
+        assert encoded["completeness_boundary"] == boundary
+        assert encoded["completeness_scope"]["workspace_id"] == "w"
+        assert encoded["completeness_scope"]["session_ids"] == list(DECLARED)
+        assert encoded["completeness_scope"]["requires_session_existence"] is True
+        assert finding.consumed_ledger_boundary.commitment not in (
+            encoded["support_basis"]["event_ids"]
+            + encoded["support_basis"]["assertion_ids"]
+        )
+
+    assert assertions["measured_in"].support_event_ids
+    assert assertions["measured_in"].completeness_occurrence_kinds == (
+        "operator.measurement.comparison_recorded",
+    )
+    assert assertions["measured_without_distinction"].support_event_ids
+    assert assertions[
+        "measured_without_distinction"
+    ].completeness_occurrence_kinds == (
+        MEASUREMENT_RECORDED_KIND,
+        "operator.measurement.comparison_recorded",
+    )
+    assert assertions["coordinate_not_measured"].support_event_ids == ()
+    assert assertions["coordinate_not_measured"].completeness_occurrence_kinds == (
+        MEASUREMENT_RECORDED_KIND,
+    )
+
+
+def test_count_and_recurrence_stand_on_assertions_not_raw_events(compared):
+    assertions = assertions_from_measured_count(_by_right(compared)["word"])
+    by_result = {assertion.result: assertion for assertion in assertions}
+
+    assert by_result["count"].support_event_ids == ()
+    assert by_result["count"].support_assertion_ids == (
+        by_result["measured_in"].identity,
+    )
+    assert by_result["count"].completeness_boundary is None
+    assert by_result["recurrence"].support_event_ids == ()
+    assert by_result["recurrence"].support_assertion_ids == (
+        by_result["count"].identity,
+    )
+    assert by_result["recurrence"].completeness_boundary is None
 
 
 def test_scope_and_rule_are_part_of_assertion_identity(compared):
@@ -151,13 +250,21 @@ def test_scope_and_rule_are_part_of_assertion_identity(compared):
             finding.distinction, declared=tuple(other_rule.items())
         ),
     )
+    other_workspace = replace(finding, workspace_id="another-workspace")
 
-    identities = {
-        measured_assertion_identity(candidate)
-        for candidate in (finding, scoped, ruled)
-    }
-    assert len(identities) == 3
-    assert all(identity.startswith("measured-assertion:") for identity in identities)
+    identities = [
+        {
+            assertion.result: assertion.identity
+            for assertion in assertions_from_measured_count(candidate)
+        }
+        for candidate in (finding, scoped, ruled, other_workspace)
+    ]
+    for result in identities[0]:
+        assert len({identified[result] for identified in identities}) == 4
+        assert all(
+            identified[result].startswith("measured-assertion:")
+            for identified in identities
+        )
 
 
 def test_measuring_without_any_comparison_is_refused():
@@ -295,9 +402,38 @@ def test_the_consumed_ledger_boundary_is_preserved_as_read_provenance(compared):
     recorded = record_measured_count(
         compared, workspace_id="w", session_id="s1", finding=finding
     )
-    assert recorded.payload["consumed_ledger_boundary"] == {
-        "commitment": boundary.commitment,
+    assert "consumed_ledger_boundary" not in recorded.payload
+    assertions = _assertions_by_result(recorded)
+    for result in (
+        "measured_in",
+        "measured_without_distinction",
+        "coordinate_not_measured",
+    ):
+        assert assertions[result]["completeness_boundary"] == {
+            "commitment": boundary.commitment,
+        }
+
+
+def test_the_old_aggregate_result_is_not_recorded_beside_the_assertions(compared):
+    event = record_measured_count(
+        compared,
+        workspace_id="w",
+        session_id="s1",
+        finding=_by_right(compared)["word"],
+    )
+    old_aggregate_fields = {
+        "measured_in",
+        "measured_without_distinction",
+        "coordinate_not_measured",
+        "exchange_count",
+        "recurrence_established",
+        "bounded_exchanges",
+        "consumed_event_ids",
+        "consumed_ledger_boundary",
+        "workspace_id",
+        "distinction",
     }
+    assert old_aggregate_fields.isdisjoint(event.payload)
 
 
 # --------------------------------------------------------------------------
@@ -358,6 +494,13 @@ def test_a_count_of_one_is_a_finding_and_is_not_recurrence(compared):
     assert finding.recurrence_established is False
     assert "was measured in 1 bounded exchange" in render_measured_count(finding)
     assert "recurs" not in render_measured_count(finding)
+    assertions = assertions_from_measured_count(finding)
+    assert {assertion.result for assertion in assertions} == {
+        "measured_in",
+        "measured_without_distinction",
+        "coordinate_not_measured",
+        "count",
+    }
 
 
 def test_recurrence_is_established_only_above_one(compared):
@@ -722,11 +865,20 @@ def test_the_assertion_responsibility_stands_beside_a_known_producer(compared):
         compared, workspace_id="w", session_id="s1",
         finding=_by_right(compared)["word"])
     assert event.payload["producer"] == "this Seed"
-    assert event.payload["responsibility_owner"] == "this recorded assertion"
-    assert event.payload["dimensions"]["responsibility"] == (
-        MEASURED_ASSERTION_FIDELITY_RESPONSIBILITY
+    assertions = event.payload["assertions"]
+    assert all(
+        assertion["responsibility_owner"] == "this recorded assertion"
+        for assertion in assertions
     )
-    assert event.payload["dimensions"]["standing"] == "measured"
+    assert all(
+        assertion["dimensions"]["responsibility"]
+        == MEASURED_ASSERTION_FIDELITY_RESPONSIBILITY
+        for assertion in assertions
+    )
+    assert all(
+        assertion["dimensions"]["standing"] == "measured"
+        for assertion in assertions
+    )
 
 
 # --------------------------------------------------------------------------
