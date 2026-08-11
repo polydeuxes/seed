@@ -1,20 +1,43 @@
-# Signature-count recording, and what the surface actually carries: run 001
+# Signature-count recording, and what the surface discriminates: run 001
 
 Roadmap item 1's recording half, item 4's remaining check, and item 5's gate.
-Then one thing item 5 did not ask for, which is the reason its gate should hold.
+Then two things item 5 did not ask for: what the twelve Compare coordinates
+discriminate, and what the material behind the counts actually is.
 
 **The three occurrences exist only in a working copy** at
 `/tmp/claude-1000/sig_run.db`. The operator's Test Seed store is unchanged.
-Whether to record into it is a separate decision, taken below.
+
+## What the material is
+
+Sixteen bodies, **300 lines of each**, taken from the middle rather than the
+start. 4,800 lines. One ingress occurrence is one line.
+
+```text
+  s01 grammar_goold_brown      s09 cookbook_farmer
+  s02 roget_thesaurus          s10 french_les_miserables
+  s03 grammar_kittredge        s11 latin_vulgate
+  s04 webster_dictionary       s12 prose_austen_pride
+  s05 algebra_rivenburg        s13 prose_dickens_copperfield
+  s06 unmatched                s14 latin_vulgate
+  s07 euclid_elements          s15 prose_emerson_essays
+  s08 bash_abs_guide           s16 prose_hume_enquiry
+```
+
+One measurement takes an ordered pair of adjacent representations — `('sum',
+'of')` — and asks the fixed four-question battery of the 300 lines: what
+precedes the pair, what follows it, what else occupies the left position before
+the pair's right member, what else occupies the right position after its left
+member. The answer is a tally, `[{'the': 2}]`.
+
+One Compare takes the same pair and the same question in **two different
+bodies** and reports which of twelve coordinates are equal. One signature
+records that same/different partition.
 
 ## What was recorded
 
-`record_equality_signature_count_layer` over the 16,156-signature population,
-63 s, three occurrences appended.
-
 ```text
   recording occurrences        3
-  produced Assertions          9        exact_production_set 3, count 3, recurrence 3
+  produced Assertions          9        set 3, count 3, recurrence 3
   unique canonical ids         9
   duplicate identities         0
   integrity of new events      3 verified
@@ -22,137 +45,174 @@ Whether to record into it is a separate decision, taken below.
   total occurrences            1,164,283      (+3)
 ```
 
-**[measured]** Item 5's stated expectation — nine produced Assertions, nine
-unique canonical identities — held exactly. Item 4's remaining check passes.
-**Identity continuation stops here**, as item 5 said it would.
+**[measured]** Item 5's stated expectation held exactly, and item 4's remaining
+check passes. Identity continuation stops here, as item 5 said it would.
 
-## Item 5's gate holds for a stronger reason than nine
-
-Nine unique identities does not mean nine distinct things were said.
+## Only 2 of the 12 coordinates discriminate this population
 
 ```text
-                        subject      scope       content
-  exact_production_set  3 distinct   identical   3 distinct
-  count                 3 distinct   identical   3 distinct
-  recurrence            3 distinct   identical   IDENTICAL
-```
-
-**[measured]** All three recurrence Assertions carry the same content —
-`{"recurrence_established": true}` — and the same scope. They are distinguished
-only by subject.
-
-**[inference]** So the recurrence stratum says one thing three times. The
-identities differ because the subject is hashed into them, not because three
-different findings were made. A survey of that stratum would be counting hash
-inputs.
-
-## The 12-coordinate surface carries 2 coordinates
-
-The signature partitions a 12-coordinate Compare surface into same and
-different. Across the whole population:
-
-```text
-   count   positions_  occupanci  standing  source_p  responsi  authorit  unknowns  forbidde  scope  support  compl.b  compl.s
-  12,228   DIFF        DIFF       same      same      same      same      same      same      DIFF   DIFF     DIFF     DIFF
-   3,447   same        DIFF       same      same      same      same      same      same      DIFF   DIFF     DIFF     DIFF
-     481   same        same       same      same      same      same      same      same      DIFF   DIFF     DIFF     DIFF
-```
-
-```text
-  always same (6)       standing, source_provenance, responsibility,
-                        authority_warrant, unknowns, forbidden_inferences
-  always different (4)  scope, support_basis, completeness_boundary,
-                        completeness_scope
-  varies (2)            positions_measured, occupancies
+   count   pos_meas  occupanc  standing  src_prov  respons  authority  unknowns  forbidden  scope  support  compl.b  compl.s
+  12,228   DIFF      DIFF      same      same      same     same       same      same       DIFF   DIFF     DIFF     DIFF
+   3,447   same      DIFF      same      same      same     same       same      same       DIFF   DIFF     DIFF     DIFF
+     481   same      same      same      same      same     same       same      same       DIFF   DIFF     DIFF     DIFF
 ```
 
 **[measured]** The three groups partition all 16,156 signatures, so a signature
-splitting those ten differently would have formed a fourth group. None did.
+splitting the other ten differently would have formed a fourth group. None did.
 
-**[verified in code]** The six are **literal constants** in the producing
-function. `record_adjacent_pair_result` writes `standing: "measured"`,
-`source_provenance: "preserved operator-ingress occurrences"`,
-`POSITIONAL_RESULT_FIDELITY_RESPONSIBILITY`, a fixed authority warrant, a fixed
-`unknowns` list and a fixed `forbidden_inferences` list. Two result Assertions of
-this kind cannot differ on them.
+**[verified in code]** The six always-same coordinates are literal constants in
+`record_adjacent_pair_result`: fixed `standing`, `source_provenance`,
+`POSITIONAL_RESULT_FIDELITY_RESPONSIBILITY`, a fixed authority warrant, and fixed
+`unknowns` and `forbidden_inferences` lists. Two result Assertions of this kind
+cannot differ on them.
 
-**[verified in code]** The four are per-occurrence provenance —
-`assertion_scope` carries `session_id`, `completeness_scope` carries workspace,
-session and kind, `support_basis` carries the consumed occurrence identities,
-`completeness_boundary` carries the prefix commitment. Every compared pair spans
-two bodies and therefore two sessions, so all four differ by construction.
+**[measured]** The four always-different are provenance and boundary
+coordinates, and **all 1,281 traced comparisons cross sessions** — zero
+same-session pairs. That is a property of this pairing topology. It is not that
+those coordinates are incapable of sameness.
 
-**Ten of twelve coordinates are determined before any material is read.**
+**Three senses of shape were being read as one.** This is the general lesson,
+and it is curator's:
 
-### And the three groups were not free to be anything else
+```text
+  fidelity envelope        what must travel for the Assertion to stay bounded
+  provenance shape         where and how this production exists
+  discriminating shape     coordinates whose values can differ from material
+```
 
-**[measured]** The different-sets are strictly nested:
-`{4} ⊂ {5} ⊂ {6}`.
+Reading all three as one flat surface makes a 12-coordinate Compare look far
+richer than it discriminates. **None of the ten should be dropped** — the six
+constants are how a reader establishes the fidelity envelope was identical
+rather than assumed, and the four provenance coordinates are what keep two
+productions distinguishable.
 
-**[inference]** They had to be. `positions_measured` is the number of positions
-measured and `occupancies` is the tally over them, so the occupancy counts sum to
-`positions_measured`. Two productions differing in `positions_measured`
-necessarily differ in `occupancies`. The fourth combination — positions differing
-while occupancies match — is unreachable.
+### Three signatures was the whole reachable space
 
-**So "three canonical identities" is forced by the encoding.** Two varying
-coordinates with one implying the other admit exactly three signatures, and
-exactly three occurred. The count was not a discovery about the corpus.
+**[measured]** The different-sets are strictly nested: `{4} ⊂ {5} ⊂ {6}`.
 
-**What is empirical is the distribution**: 12,228 / 3,447 / 481. That is a fact
-about the sixteen bodies. It says that in 481 of 16,156 Compares the two
-productions measured the same number of positions *and* found the same occupancy
-tally, and in 12,228 they agreed on neither.
+**[verified in code]** They had to be. In `measure_occupancy`, `measured += 1`
+and `counts[occupant] += 1` execute together on every occupied position, so the
+occupancy counts always sum to `positions_measured`. Equal occupancies therefore
+force equal `positions_measured`, and the fourth combination — positions
+differing while occupancies match — is unreachable.
 
-## What this means for item 6
+```text
+  positions DIFF / occupancies DIFF     reachable
+  positions same / occupancies DIFF     reachable
+  positions same / occupancies same     reachable
+  positions DIFF / occupancies same     impossible
+```
+
+**So "three canonical Assertion identities" was not a corpus discovery.** Under
+this producer and this pairing topology, three is the entire reachable signature
+space. **The empirical content is the distribution**: 12,228 / 3,447 / 481.
+
+## What the 481 turned out to be
+
+The 481 group was traced back through each signature's source Compare to the two
+findings and their measured representations. All 481, not a sample.
+
+```text
+  368   76.5%   the pair occurs in NEITHER body
+                positions_measured 0 and occupancies [] on both sides
+  111   23.1%   occurs once in each, same neighbour, once
+    2    0.4%   'sum' 'of' surrounded by 'the' twice in both bodies
+```
+
+**[measured]** The two are the same ordered pair measured from two directions —
+`preceding` and `following`. **One fact, recorded twice.**
+
+**[inference]** So of 16,156 comparisons across sixteen bodies, exactly one
+agreement above a single occurrence was found. The 300-line window is why:
+almost every ordered pair occurs zero or one times in it, so the battery mostly
+has nothing to measure.
+
+### The signature cannot tell agreement from mutual absence
+
+**[measured]** `positions_measured` reads `same` whether both bodies measured
+zero or both measured seven.
+
+**[inference]** The values survive in the compared Assertions; the signature
+records only the same/different partition and discards them. That is why 481
+reads as agreement when three quarters of it is two bodies both lacking
+something. This is a property of what a signature is, not a defect in the
+Compare — but a reader taking 481 as a measure of agreement is reading a number
+that does not carry it.
+
+## The three recurrence Assertions
+
+**[measured]** All three carry identical content — `{"recurrence_established":
+true}` — and identical scope, and three distinct subjects.
+
+**A subject is not incidental.** Each carries `measured_assertion_id`,
+`signature_subject`, and the `exact_equality_signature` itself. So these are:
+
+```text
+  signature A recurs
+  signature B recurs
+  signature C recurs
+```
+
+and **not** the same claim three times. Same predicate is not same Assertion.
+The finding is that **one recurrence predicate holds over three distinct bounded
+subjects**, which is what a recurrence layer over a three-signature population
+should produce.
+
+## What this gives item 6, kept narrow
 
 Item 6 asks what responsibly proposes two different recurrence Assertions to one
 exact Compare, and forbids availability, equal count, both recurring, a shared
 coordinate, similar-looking content, and a universal pair population.
 
-**The measurement adds a reason the gate should stay shut that is not on that
-list.** The three recurrence Assertions are content-identical. A Compare across
-any two of them would return `same` on content and `different` on subject, for
-every pair, every time — because that is what the encoding guarantees, not
-because of anything in the material.
+**The warranted observation is small.** A Compare reading only the top-level
+recurrence content would find `same` every time, because that content is one
+constant. It would carry no discrimination.
 
-**[inference]** So the proposer question is not the only thing missing. Even
-granting a lawful proposer, the Compare it fed at this layer would be vacuous.
-Recovering the proposal boundary is worth doing on its own terms; it is not what
-would make this stratum say something.
+**It does not follow that any lawful Compare between these Assertions is
+vacuous.** No cross-subject Compare surface has been warranted for them. Their
+subjects carry the exact equality signatures, which differ, so a future lawful
+Measurement could have discriminating coordinates inside the subject. **That
+road is Unknown**, and this is not an argument for surveying the wrapper because
+it exists.
 
-**This is the same unrecovered thing as the register's open question.**
-`#2480` recorded that at district scale the open question is *what selects the
-pairs*, because comparisons go as n² in bodies. Item 6 asks what proposes two
-subjects to one Compare. Those are one question seen from the cost side and from
-the warrant side.
+### Cost and warrant are two questions, not one
+
+`#2480` recorded that at district scale the open question is what selects the
+pairs, because comparisons go as n² in bodies. Item 6 asks what warrants two
+subjects becoming proposed inputs. **These are related and they are not the
+same.**
+
+```text
+  cost question         which pairs can be afforded?
+  warrant question      what makes these two lawful inputs?
+```
+
+**[inference]** Collapsing them produces *the quadratic requires selection,
+therefore this selection rule proposes the inputs* — downstream demand standing
+in for upstream warrant, which is the failure the cardboard-city rule exists to
+refuse. A responsible proposer may also relieve the scaling problem. Cost can
+constrain a lawful proposal; cost cannot establish one.
 
 ## What this does not establish
 
-**That the surface is wrong.** Six constant coordinates are how the layer
-declares its own limits, and carrying them into the Compare is what lets a reader
-confirm the limits were identical rather than assumed. The finding is that they
-carry no *discriminating* information, not that they should be dropped.
+**That the surface is wrong.** Ten of twelve coordinates carry fidelity and
+provenance information that a reader needs. They do not discriminate, which is a
+different finding.
 
 **That the two varying coordinates are the right two.** Nothing here recovers
-what a signature should measure. It measures what this one does.
+what a signature should measure.
 
 **That 481 means agreement about anything.** `01.External:28` bounds a count to
-the counting assertion. Two productions agreeing on a position count and an
-occupancy tally have agreed on a position count and an occupancy tally.
+the counting assertion, and three quarters of the 481 is mutual absence.
 
 ## The recording decision
 
-The three occurrences are in a copy. Appending to the operator's Test Seed is
-one-way — the store refuses update and delete by trigger — so it is left to the
-operator rather than taken.
+Appending to the operator's Test Seed is one-way; the store refuses update and
+delete by trigger.
 
-**[inference]** The argument for recording there is the layer's own: a finding
-that vanishes with the process is one no later act can consume, which is what
-`#2368` was withdrawn for. The argument against is that nothing currently
-consumes it, and item 5 says identity continuation stops. Recording it preserves
-a finding for a consumer that does not exist yet, which is the pattern the
-cardboard-city rule refuses.
+The argument for is the layer's own: a finding that vanishes with the process is
+one no later act can consume, which is what `#2368` was withdrawn for. The
+argument against is that nothing currently consumes it, and item 5 says identity
+continuation stops.
 
-**The rule decides it.** Do not record into the durable store until an act
-consumes it.
+**The cardboard-city rule decides it.** Not recorded.
