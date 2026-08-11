@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from collections import defaultdict
+from itertools import chain
 from dataclasses import dataclass
 from datetime import datetime
 import hashlib
@@ -348,6 +349,15 @@ class SQLiteEventLedger(EventLedger):
     # the console to a durable ledger, at which point the second `seed --db`
     # invocation aborted on `duplicate presentation reference`. Nothing was
     # wrong with them before: no console had ever written durable history.
+    # The prefixes `_observed_suffixes` may reserve, as a set for membership.
+    # `session` is reservable and is not persisted inside a payload, so it is
+    # named here in addition to the persisted prefixes rather than instead.
+    _RESERVABLE_PREFIXES = frozenset({
+        "obs", "obs_local_host", "evd", "evd_obs", "fact", "fact_obs", "need",
+        "operator_presentation", "operator_ingress_attempt", "operator_material",
+        "session",
+    })
+
     _PERSISTED_ID_PREFIXES = (
         "obs",
         "obs_local_host",
@@ -909,18 +919,32 @@ class SQLiteEventLedger(EventLedger):
             self._reserve_payload_ids(payload)
 
     def _observed_suffixes(self, event: Event) -> dict[str, int]:
-        """Every reservable identifier this one occurrence carries."""
+        """Every reservable identifier this one occurrence carries.
+
+        A reservable identifier is a known prefix, an underscore, and digits.
+        The digits therefore run to the end of the string and begin just after
+        its **last** underscore, so one split locates the only candidate split
+        point rather than testing the value against each prefix in turn.
+
+        `#2483` measured why that matters on a Compare payload: testing every
+        walked value against every prefix cost 53.6 million calls over 3,984
+        appended occurrences, and the payloads grow with what the layer
+        compares.
+        """
         found: dict[str, int] = {}
-        values = list(_walk_values(event.payload))
+        reservable = self._RESERVABLE_PREFIXES
+        values = _walk_values(event.payload)
         if event.session_id is not None:
-            values.append(event.session_id)
+            values = chain(values, (event.session_id,))
         for value in values:
             if not isinstance(value, str):
                 continue
-            for prefix in (*self._PERSISTED_ID_PREFIXES, "session"):
-                suffix = _numeric_suffix(value, prefix)
-                if suffix is not None and suffix > found.get(prefix, 0):
-                    found[prefix] = suffix
+            prefix, separator, digits = value.rpartition("_")
+            if not separator or prefix not in reservable or not digits.isdigit():
+                continue
+            suffix = int(digits)
+            if suffix > found.get(prefix, 0):
+                found[prefix] = suffix
         return found
 
     def _persist_reservations(self, observed: dict[str, int]) -> None:
