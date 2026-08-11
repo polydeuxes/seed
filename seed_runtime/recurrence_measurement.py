@@ -121,7 +121,10 @@ class MeasuredCountFinding:
     coordinate_not_measured: tuple[str, ...]
     consumed_event_ids: tuple[str, ...]
     consumed_ledger_boundary: EventLedgerBoundary
+    workspace_id: str
     bounded_exchanges: tuple[str, ...]
+    measured_in_support_event_ids: tuple[str, ...] = ()
+    measured_without_distinction_support_event_ids: tuple[str, ...] = ()
 
     @property
     def exchange_count(self) -> int:
@@ -142,10 +145,78 @@ class MeasuredCountFinding:
             "exchange_count": self.exchange_count,
             "recurrence_established": self.recurrence_established,
             "bounded_exchanges": list(self.bounded_exchanges),
+            "workspace_id": self.workspace_id,
             "consumed_event_ids": list(self.consumed_event_ids),
             "consumed_ledger_boundary": {
                 "commitment": self.consumed_ledger_boundary.commitment,
             },
+        }
+
+
+@dataclass(frozen=True)
+class MeasuredAssertion:
+    """One separately accountable result of the recurrence Measurement."""
+
+    identity: str
+    result: str
+    subject: dict[str, Any]
+    content: dict[str, Any]
+    scope: dict[str, Any]
+    support_event_ids: tuple[str, ...] = ()
+    support_assertion_ids: tuple[str, ...] = ()
+    completeness_boundary: EventLedgerBoundary | None = None
+    completeness_occurrence_kinds: tuple[str, ...] = ()
+
+    def to_json_dict(self) -> dict[str, Any]:
+        return {
+            "dimensions": {
+                "identity": self.identity,
+                "content": dict(self.content),
+                "standing": "measured",
+                "source_provenance": (
+                    "recorded comparison occurrences and recorded measurement "
+                    "occurrences"
+                ),
+                "responsibility": MEASURED_ASSERTION_FIDELITY_RESPONSIBILITY,
+                "authority_warrant": (
+                    "measurement evidence only; establishes no relation between "
+                    "the exchanges, no source independence, and no corroboration"
+                ),
+                "scope_locality": "the exact assertion_scope carried here",
+                "occurrence_preservation": (
+                    "distinct result preserved by its producing occurrence"
+                ),
+            },
+            "subject_kind": "assertion",
+            "responsibility_owner": "this recorded assertion",
+            "result": self.result,
+            "assertion_subject": dict(self.subject),
+            "assertion_scope": dict(self.scope),
+            "support_basis": {
+                "event_ids": list(self.support_event_ids),
+                "assertion_ids": list(self.support_assertion_ids),
+            },
+            "completeness_boundary": (
+                {"commitment": self.completeness_boundary.commitment}
+                if self.completeness_boundary is not None
+                else None
+            ),
+            "completeness_scope": (
+                {
+                    "workspace_id": self.scope["workspace_id"],
+                    "session_ids": list(self.scope["bounded_exchanges"]),
+                    "occurrence_kinds": list(self.completeness_occurrence_kinds),
+                    "requires_session_existence": True,
+                }
+                if self.completeness_boundary is not None
+                else None
+            ),
+            "unknowns": [
+                "what any measured representation means remains Unknown",
+                "whether the exchanges stand in any relation remains Unknown",
+                "whether their sources are independent remains Unknown",
+            ],
+            "forbidden_inferences": list(FORBIDDEN_INFERENCES),
         }
 
 
@@ -222,7 +293,7 @@ def measure_exchange_counts(
     # declaration chooses among established sessions, and a non-measurement
     # occurrence can establish a session without supplying a measured coordinate.
     measured_coordinate: dict[tuple, set[str]] = {}
-    coordinate_evidence: dict[tuple, set[str]] = {}
+    coordinate_evidence: dict[tuple, dict[str, set[str]]] = {}
     session_of: dict[str, str] = {}
     unestablished: list[str] = []
 
@@ -243,7 +314,9 @@ def measure_exchange_counts(
             if declared is None:
                 continue
             measured_coordinate.setdefault(declared, set()).add(exchange)
-            coordinate_evidence.setdefault(declared, set()).add(event.id)
+            coordinate_evidence.setdefault(declared, {}).setdefault(
+                exchange, set()
+            ).add(event.id)
 
     if unestablished:
         raise RecurrenceMeasurementError(
@@ -281,7 +354,6 @@ def measure_exchange_counts(
                 )
                 recurs.setdefault(key, set()).update(where)
                 support.setdefault(key, set()).add(event.id)
-                support[key].update(coordinate_evidence.get(declared, set()))
                 support[key].update(i["event_id"] for i in inputs)
 
             for right in event.payload.get("shared_occupants", []):
@@ -307,7 +379,16 @@ def measure_exchange_counts(
         where = recurs[key]
         measured = measured_coordinate.get(key.declared, set())
         not_measured = declared_set - measured
-        evidence = set(support[key])
+        measured_without = measured - where
+        measured_without_evidence = {
+            event_id
+            for exchange in measured_without
+            for event_id in coordinate_evidence.get(key.declared, {}).get(
+                exchange, set()
+            )
+        }
+        measured_in_evidence = set(support[key])
+        evidence = measured_in_evidence | measured_without_evidence
         # The third result stands on the complete Measurement-kind read for
         # each declared exchange through the preserved ledger boundary. Copying
         # every unrelated Measurement id into every negative finding neither
@@ -317,11 +398,18 @@ def measure_exchange_counts(
             MeasuredCountFinding(
                 distinction=key,
                 measured_in=tuple(sorted(where)),
-                measured_without_distinction=tuple(sorted(measured - where)),
+                measured_without_distinction=tuple(sorted(measured_without)),
                 coordinate_not_measured=tuple(sorted(not_measured)),
                 consumed_event_ids=tuple(sorted(evidence)),
                 consumed_ledger_boundary=consumed_ledger_boundary,
+                workspace_id=workspace_id,
                 bounded_exchanges=declared_exchanges,
+                measured_in_support_event_ids=tuple(
+                    sorted(measured_in_evidence)
+                ),
+                measured_without_distinction_support_event_ids=tuple(
+                    sorted(measured_without_evidence)
+                ),
             )
         )
     return findings
@@ -347,30 +435,106 @@ def render_measured_count(finding: MeasuredCountFinding) -> str:
     )
 
 
-def measured_assertion_identity(finding: MeasuredCountFinding) -> str:
-    """The exact measured content that makes this Assertion this Assertion.
-
-    Evidence and the ledger boundary support and recover the Assertion but do
-    not identify its content.  Every coordinate of the measured result does:
-    the declared distinction, its three exchange classifications, and its
-    bounded exchange extent.  Canonical JSON avoids delimiter-based identity
-    collisions while leaving the identity directly inspectable.
-    """
-
-    content = {
+def _result_assertion_identity(
+    finding: MeasuredCountFinding, result: str, content: dict[str, Any]
+) -> str:
+    identified = {
+        "result": result,
         "distinction": finding.distinction.to_json_dict(),
-        "measured_in": list(finding.measured_in),
-        "measured_without_distinction": list(
-            finding.measured_without_distinction
-        ),
-        "coordinate_not_measured": list(finding.coordinate_not_measured),
-        "exchange_count": finding.exchange_count,
-        "recurrence_established": finding.recurrence_established,
         "bounded_exchanges": list(finding.bounded_exchanges),
+        "content": content,
     }
     return "measured-assertion:" + json.dumps(
-        content, sort_keys=True, separators=(",", ":")
+        identified, sort_keys=True, separators=(",", ":")
     )
+
+
+def assertions_from_measured_count(
+    finding: MeasuredCountFinding,
+) -> tuple[MeasuredAssertion, ...]:
+    """Every distinct result this recurrence Measurement already established.
+
+    This is result fan-out, not inference from one Assertion to another.  The
+    three classifications retain their exact-set shape and therefore carry the
+    completeness boundary of the reads that produced them.  Count stands on
+    the measured-in Assertion, and recurrence stands on count only where the
+    count establishes recurrence.
+    """
+
+    subject = finding.distinction.to_json_dict()
+    scope = {
+        "workspace_id": finding.workspace_id,
+        "bounded_exchanges": list(finding.bounded_exchanges),
+        "declared_identity": dict(finding.distinction.declared),
+    }
+
+    def exact_set(
+        result: str,
+        exchanges: tuple[str, ...],
+        support: tuple[str, ...],
+        occurrence_kinds: tuple[str, ...],
+    ) -> MeasuredAssertion:
+        content = {"exchanges": list(exchanges)}
+        return MeasuredAssertion(
+            identity=_result_assertion_identity(finding, result, content),
+            result=result,
+            subject=subject,
+            content=content,
+            scope=scope,
+            support_event_ids=support,
+            completeness_boundary=finding.consumed_ledger_boundary,
+            completeness_occurrence_kinds=occurrence_kinds,
+        )
+
+    measured_in = exact_set(
+        "measured_in",
+        finding.measured_in,
+        finding.measured_in_support_event_ids,
+        (COMPARISON_RECORDED_KIND,),
+    )
+    measured_without = exact_set(
+        "measured_without_distinction",
+        finding.measured_without_distinction,
+        finding.measured_without_distinction_support_event_ids,
+        (MEASUREMENT_RECORDED_KIND, COMPARISON_RECORDED_KIND),
+    )
+    coordinate_not_measured = exact_set(
+        "coordinate_not_measured",
+        finding.coordinate_not_measured,
+        (),
+        (MEASUREMENT_RECORDED_KIND,),
+    )
+
+    count_content = {"exchange_count": finding.exchange_count}
+    count = MeasuredAssertion(
+        identity=_result_assertion_identity(finding, "count", count_content),
+        result="count",
+        subject=subject,
+        content=count_content,
+        scope=scope,
+        support_assertion_ids=(measured_in.identity,),
+    )
+    assertions = [
+        measured_in,
+        measured_without,
+        coordinate_not_measured,
+        count,
+    ]
+    if finding.recurrence_established:
+        recurrence_content = {"recurrence_established": True}
+        assertions.append(
+            MeasuredAssertion(
+                identity=_result_assertion_identity(
+                    finding, "recurrence", recurrence_content
+                ),
+                result="recurrence",
+                subject=subject,
+                content=recurrence_content,
+                scope=scope,
+                support_assertion_ids=(count.identity,),
+            )
+        )
+    return tuple(assertions)
 
 
 def record_measured_count(
@@ -380,7 +544,7 @@ def record_measured_count(
     session_id: str,
     finding: MeasuredCountFinding,
 ) -> Event:
-    """Preserve one count finding as a bounded measured assertion.
+    """Preserve the distinct Assertions one recurrence Measurement produced.
 
     The record carries a **Producer** distinct from its Responsibility.
     `#2423` recovered that declared measurement has no production *owner* in
@@ -391,12 +555,12 @@ def record_measured_count(
     formation-occurrence, scope, authority, and provenance dimension", listing
     producer beside provenance rather than as it.
 
-    The result's Responsibility slot had been answering a production-ownership
+    The old aggregate result's Responsibility slot had been answering a production-ownership
     question that belongs elsewhere.  Production ownership remains separate
     and is not resolved here.  The producing Act is declared Measurement, this
     Seed is its Producer, and the recorded occurrence is Producer Evidence.
-    The result owns a different, continuing Responsibility: the fidelity of
-    its own Standing to the coordinates it carries.
+    Each distinct result owns a different, continuing Responsibility: the
+    fidelity of its own Standing to the coordinates it carries.
 
     So the shape is:
 
@@ -404,10 +568,10 @@ def record_measured_count(
       Producer          this Seed
       Producer Evidence the exact recorded producing occurrence
       Act               declared measurement
-      result            bounded measured assertion
-      Standing          measured
-      owner             this assertion
-      Responsibility    fidelity of this assertion's Standing
+      results           distinct bounded measured Assertions
+      each Standing     measured
+      each owner        that Assertion
+      Responsibility    fidelity of that Assertion's Standing
     ```
 
     `06.Constructors:13` is what licenses the Producer claim and what limits it:
@@ -420,18 +584,16 @@ def record_measured_count(
     """
 
     declared = dict(finding.distinction.declared)
+    assertions = assertions_from_measured_count(finding)
     payload = {
         "dimensions": {
-            "identity": measured_assertion_identity(finding),
-            "content": render_measured_count(finding),
-            "standing": "measured",
+            "identity": "declared-measurement-result-occurrence",
+            "content": f"{len(assertions)} distinct measured Assertions recorded",
+            "standing": "recorded",
             "source_provenance": (
                 "recorded comparison occurrences and recorded measurement "
                 "occurrences"
             ),
-            # The Assertion does not perform or own its producing Act.  It owns
-            # only the continuing fidelity of the Standing recorded here.
-            "responsibility": MEASURED_ASSERTION_FIDELITY_RESPONSIBILITY,
             "authority_warrant": (
                 "measurement evidence only; establishes no relation between the "
                 "exchanges, no source independence, and no corroboration"
@@ -439,8 +601,7 @@ def record_measured_count(
             "scope_locality": f"workspace:{workspace_id};session:{session_id}",
             "occurrence_preservation": "count finding durably recorded",
         },
-        "subject_kind": "assertion",
-        "responsibility_owner": "this recorded assertion",
+        "assertions": [assertion.to_json_dict() for assertion in assertions],
         "producing_act": "declared measurement",
         "producer": "this Seed",
         "producer_evidence": (
