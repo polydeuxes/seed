@@ -355,8 +355,7 @@ def _validate_result_assertion_ingress(
 ) -> None:
     if recovered_ingress_ids is None:
         recovered_ingress_ids = tuple(
-            item.id
-            for item in ledger.iter_session_kind(
+            ledger.iter_session_kind_ids(
                 event.workspace_id,
                 event.session_id,
                 INGRESS_OCCURRED_KIND,
@@ -405,8 +404,7 @@ def iter_recorded_adjacent_pair_result_assertions(
             recovered_ingress_ids = ingress_ids_by_boundary.get(cache_key)
             if recovered_ingress_ids is None:
                 recovered_ingress_ids = tuple(
-                    item.id
-                    for item in ledger.iter_session_kind(
+                    ledger.iter_session_kind_ids(
                         workspace_id,
                         session_id,
                         INGRESS_OCCURRED_KIND,

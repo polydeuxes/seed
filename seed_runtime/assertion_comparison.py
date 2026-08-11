@@ -838,8 +838,7 @@ def iter_recorded_positional_result_distinctions(
                     recovered_ingress_ids = ingress_ids_by_boundary.get(cache_key)
                     if recovered_ingress_ids is None:
                         recovered_ingress_ids = tuple(
-                            item.id
-                            for item in ledger.iter_session_kind(
+                            ledger.iter_session_kind_ids(
                                 workspace_id,
                                 producing_event.session_id,
                                 INGRESS_OCCURRED_KIND,
