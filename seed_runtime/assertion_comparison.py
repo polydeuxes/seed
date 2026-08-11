@@ -19,7 +19,9 @@ from seed_runtime.events import CORRUPTED, EventLedger
 from seed_runtime.event import Event
 from seed_runtime.ids import new_id
 from seed_runtime.adjacent_pair_measurement import (
+    INGRESS_OCCURRED_KIND,
     RecordedAdjacentPairResultAssertion,
+    _validate_result_assertion_ingress,
     assertion_of_recorded_adjacent_pair_result,
     get_recorded_adjacent_pair_result_assertion,
     iter_recorded_adjacent_pair_result_assertions,
@@ -725,6 +727,20 @@ def get_recorded_positional_result_distinction(
         )
     recovered = assertions_of_recorded_positional_result_comparison(event)
     comparison = compare_positional_result_assertions(ledger, event.payload["inputs"])
+    _require_recorded_positional_comparison_matches(event, recovered, comparison)
+    for result in recovered:
+        if result.assertion_id == assertion_id:
+            return result
+    return None
+
+
+def _require_recorded_positional_comparison_matches(
+    event: Event,
+    recovered: tuple[RecordedPositionalResultDistinction, ...],
+    comparison: PositionalResultComparison,
+) -> None:
+    """Require the carried occurrence and outputs to equal the replayed Act."""
+
     if (
         event.payload.get("producing_act") != comparison.act
         or event.payload.get("owner") != comparison.owner
@@ -748,9 +764,89 @@ def get_recorded_positional_result_distinction(
             raise AssertionComparisonError(
                 "a recorded positional Compare result does not match its inputs"
             )
-        if result.assertion_id == assertion_id:
-            return result
-    return None
+
+
+def iter_recorded_positional_result_distinctions(
+    ledger: EventLedger,
+    *,
+    workspace_id: str,
+    session_ids: Iterable[str],
+    through: "EventLedgerBoundary",
+) -> Iterator[RecordedPositionalResultDistinction]:
+    """Validate and stream a bounded population of recorded Compare outputs.
+
+    Each occurrence-bound positional input receives its complete ingress proof
+    once in this frozen invocation. Later uses retain only that compact
+    validated reference, then rehydrate and structurally verify the Assertion.
+    """
+
+    validated_inputs: set[tuple[str, str]] = set()
+    ingress_ids_by_boundary: dict[tuple[str, str], tuple[str, ...]] = {}
+    for session_id in tuple(dict.fromkeys(session_ids)):
+        for event in ledger.iter_session_kind(
+            workspace_id,
+            session_id,
+            POSITIONAL_RESULT_COMPARISON_RECORDED_KIND,
+            through=through,
+        ):
+            recovered_results = assertions_of_recorded_positional_result_comparison(
+                event
+            )
+            recovered_inputs = []
+            integrities = []
+            for reference in event.payload["inputs"]:
+                ref = (
+                    reference["producing_event_id"],
+                    reference["assertion_id"],
+                )
+                producing_event = ledger.get(ref[0])
+                if producing_event is None:
+                    raise AssertionComparisonError(
+                        "a positional result input is no longer recoverable"
+                    )
+                integrity = ledger.integrity_of(ref[0])
+                if integrity == CORRUPTED:
+                    raise AssertionComparisonError(
+                        "a corrupted positional result cannot supply Compare"
+                    )
+                assertion = assertion_of_recorded_adjacent_pair_result(producing_event)
+                if assertion.assertion_id != ref[1]:
+                    raise AssertionComparisonError(
+                        "a positional result input reference changed"
+                    )
+                if ref not in validated_inputs:
+                    cache_key = (
+                        producing_event.session_id,
+                        assertion.completeness_boundary.commitment,
+                    )
+                    recovered_ingress_ids = ingress_ids_by_boundary.get(cache_key)
+                    if recovered_ingress_ids is None:
+                        recovered_ingress_ids = tuple(
+                            item.id
+                            for item in ledger.iter_session_kind(
+                                workspace_id,
+                                producing_event.session_id,
+                                INGRESS_OCCURRED_KIND,
+                                through=assertion.completeness_boundary,
+                            )
+                        )
+                        ingress_ids_by_boundary[cache_key] = recovered_ingress_ids
+                    _validate_result_assertion_ingress(
+                        ledger,
+                        producing_event,
+                        assertion,
+                        recovered_ingress_ids=recovered_ingress_ids,
+                    )
+                    validated_inputs.add(ref)
+                recovered_inputs.append(assertion)
+                integrities.append(integrity)
+            comparison = _compare_recovered_positional_result_assertions(
+                recovered_inputs, integrities=integrities
+            )
+            _require_recorded_positional_comparison_matches(
+                event, recovered_results, comparison
+            )
+            yield from recovered_results
 
 
 def record_positional_result_comparison_layer(

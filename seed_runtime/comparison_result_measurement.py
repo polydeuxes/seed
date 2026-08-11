@@ -14,11 +14,10 @@ import json
 from typing import Any, Iterable, Iterator
 
 from seed_runtime.assertion_comparison import (
-    POSITIONAL_RESULT_COMPARISON_RECORDED_KIND,
     AssertionComparisonError,
     RecordedPositionalResultDistinction,
     assertions_of_recorded_positional_result_comparison,
-    get_recorded_positional_result_distinction,
+    iter_recorded_positional_result_distinctions,
 )
 from seed_runtime.events import CORRUPTED, EventLedger, EventLedgerBoundary
 
@@ -65,27 +64,6 @@ class _CompactResultGroup:
 
     representative: tuple[str, str]
     production_refs: list[tuple[str, str]]
-
-
-def _validated_results(
-    ledger: EventLedger, event: Any
-) -> tuple[RecordedPositionalResultDistinction, ...]:
-    """Recover one Compare once, including its ledger-backed replay."""
-
-    results = assertions_of_recorded_positional_result_comparison(event)
-    first = results[0]
-    if (
-        get_recorded_positional_result_distinction(
-            ledger,
-            producing_event_id=event.id,
-            assertion_id=first.assertion_id,
-        )
-        is None
-    ):
-        raise AssertionComparisonError(
-            "a recorded positional Compare result did not survive replay"
-        )
-    return results
 
 
 def _rehydrate_validated_reference(
@@ -146,54 +124,48 @@ def measure_comparison_result_counts(
     # group.  Thus hash equality is never promoted into the Measurement rule.
     grouped: dict[str, list[_CompactResultGroup]] = {}
     compared_any = False
-    for session_id in sessions:
-        for event in ledger.iter_session_kind(
-            workspace_id,
-            session_id,
-            POSITIONAL_RESULT_COMPARISON_RECORDED_KIND,
-            through=boundary,
-        ):
-            compared_any = True
-            for result in _validated_results(ledger, event):
-                payload = result.payload
-                subject = payload["assertion_subject"]["compared_subject"]
-                content = payload["dimensions"]["content"]
-                exact_result = {
-                    "compared_subject": subject,
-                    "coordinate": result.coordinate,
-                    "content": content,
-                }
-                digest = _digest(exact_result)
-                candidates = grouped.setdefault(digest, [])
-                matched = None
-                for candidate in candidates:
-                    representative = _rehydrate_validated_reference(
-                        ledger, candidate.representative
-                    )
-                    if representative is None:
-                        raise AssertionComparisonError(
-                            "a measured comparison result is no longer recoverable"
-                        )
-                    representative_exact_result = {
-                        "compared_subject": representative.payload["assertion_subject"][
-                            "compared_subject"
-                        ],
-                        "coordinate": representative.coordinate,
-                        "content": representative.payload["dimensions"]["content"],
-                    }
-                    if representative_exact_result == exact_result:
-                        matched = candidate
-                        break
-                reference = (result.producing_event_id, result.assertion_id)
-                if matched is None:
-                    candidates.append(
-                        _CompactResultGroup(
-                            representative=reference,
-                            production_refs=[reference],
-                        )
-                    )
-                else:
-                    matched.production_refs.append(reference)
+    for result in iter_recorded_positional_result_distinctions(
+        ledger,
+        workspace_id=workspace_id,
+        session_ids=sessions,
+        through=boundary,
+    ):
+        compared_any = True
+        payload = result.payload
+        subject = payload["assertion_subject"]["compared_subject"]
+        content = payload["dimensions"]["content"]
+        exact_result = {
+            "compared_subject": subject,
+            "coordinate": result.coordinate,
+            "content": content,
+        }
+        digest = _digest(exact_result)
+        candidates = grouped.setdefault(digest, [])
+        matched = None
+        for candidate in candidates:
+            representative = _rehydrate_validated_reference(
+                ledger, candidate.representative
+            )
+            representative_exact_result = {
+                "compared_subject": representative.payload["assertion_subject"][
+                    "compared_subject"
+                ],
+                "coordinate": representative.coordinate,
+                "content": representative.payload["dimensions"]["content"],
+            }
+            if representative_exact_result == exact_result:
+                matched = candidate
+                break
+        reference = (result.producing_event_id, result.assertion_id)
+        if matched is None:
+            candidates.append(
+                _CompactResultGroup(
+                    representative=reference,
+                    production_refs=[reference],
+                )
+            )
+        else:
+            matched.production_refs.append(reference)
 
     if not compared_any:
         raise ComparisonResultMeasurementError(

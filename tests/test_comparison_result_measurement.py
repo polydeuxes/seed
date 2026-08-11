@@ -159,3 +159,42 @@ def test_digest_collision_does_not_establish_exact_result_equality(monkeypatch):
 
     assert len(occupancy) == 2
     assert all(item.count == 1 for item in occupancy)
+
+
+def test_population_validates_each_reused_input_once(monkeypatch):
+    ledger = EventLedger()
+    pair = AdjacentPair("it", "is")
+    a = _record_following(ledger, "s1", "it is here\n", pair)
+    b = _record_following(ledger, "s2", "it is there\n", pair)
+    c = _record_following(ledger, "s3", "it is elsewhere\n", pair)
+    d = _record_following(ledger, "s4", "it is present\n", pair)
+    _record_compare(ledger, session_id="comparisons", left=a, right=b)
+    _record_compare(ledger, session_id="comparisons", left=a, right=c)
+    _record_compare(ledger, session_id="comparisons", left=a, right=d)
+
+    calls = []
+    from seed_runtime import assertion_comparison
+
+    original = assertion_comparison._validate_result_assertion_ingress
+
+    def counted(*args, **kwargs):
+        calls.append(args[1].id)
+        return original(*args, **kwargs)
+
+    monkeypatch.setattr(
+        assertion_comparison, "_validate_result_assertion_ingress", counted
+    )
+
+    list(
+        measure_comparison_result_counts(
+            ledger, workspace_id="w", source_session_ids=("comparisons",)
+        )
+    )
+
+    assert len(calls) == 4
+    assert set(calls) == {
+        a.producing_event_id,
+        b.producing_event_id,
+        c.producing_event_id,
+        d.producing_event_id,
+    }
