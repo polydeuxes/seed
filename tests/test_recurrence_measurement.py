@@ -19,8 +19,12 @@ import pytest
 
 from seed_runtime.adjacent_pair_measurement import measure_after
 from seed_runtime.assertion_comparison import (
+    ASSERTION_PRODUCTION_COMPARISON_RECORDED_KIND,
     AssertionComparisonError,
+    _distinction_assertion_identity,
+    assertions_of_recorded_assertion_comparison,
     compare_assertion_productions,
+    record_assertion_production_comparison,
 )
 from seed_runtime.bounded_testimony_comparison import (
     compare_preserved_findings,
@@ -436,6 +440,219 @@ def test_assertion_compare_refuses_self_and_different_assertions(compared):
                     "assertion_id": recurrence.assertion_id,
                 },
             ),
+        )
+
+
+def test_assertion_production_compare_records_each_literal_result_separately(compared):
+    finding = _by_right(compared)["word"]
+    first = record_measured_count(
+        compared, workspace_id="w", session_id="s1", finding=finding
+    )
+    second = record_measured_count(
+        compared, workspace_id="w", session_id="s1", finding=finding
+    )
+    first_count = next(
+        item for item in assertions_of_recorded_measurement(first)
+        if item.result == "count"
+    )
+    second_count = next(
+        item for item in assertions_of_recorded_measurement(second)
+        if item.result == "count"
+    )
+    comparison = compare_assertion_productions(
+        compared, (first_count.reference, second_count.reference)
+    )
+
+    event = record_assertion_production_comparison(
+        compared,
+        workspace_id="w",
+        session_id="s1",
+        comparison=comparison,
+    )
+    assertions = assertions_of_recorded_assertion_comparison(event)
+
+    assert event.kind == ASSERTION_PRODUCTION_COMPARISON_RECORDED_KIND
+    assert event.payload["producing_act"] == "Compare"
+    assert event.payload["owner"] == "this bounded comparison occurrence"
+    assert len(assertions) == len(comparison.distinctions) == 10
+    assert {item.coordinate for item in assertions} == {
+        item.coordinate for item in comparison.distinctions
+    }
+    assert len({item.assertion_id for item in assertions}) == 10
+    assert all(item.producing_event_id == event.id for item in assertions)
+    assert all(
+        item.payload["support_basis"]["assertion_refs"]
+        == [first_count.reference, second_count.reference]
+        for item in assertions
+    )
+
+
+def test_recording_comparison_results_does_not_establish_uptake_or_revision(compared):
+    finding = _by_right(compared)["word"]
+    first = record_measured_count(
+        compared, workspace_id="w", session_id="s1", finding=finding
+    )
+    second = record_measured_count(
+        compared, workspace_id="w", session_id="s1", finding=finding
+    )
+    left = next(
+        item for item in assertions_of_recorded_measurement(first)
+        if item.result == "count"
+    )
+    right = next(
+        item for item in assertions_of_recorded_measurement(second)
+        if item.result == "count"
+    )
+    comparison = compare_assertion_productions(
+        compared, (left.reference, right.reference)
+    )
+    event = record_assertion_production_comparison(
+        compared, workspace_id="w", session_id="s1", comparison=comparison
+    )
+
+    rendered = str(event.payload)
+    assert "recording does not establish Applicability" in rendered
+    assert "applicability" not in event.payload
+    assert "admission" not in event.payload
+    assert "uptake" not in event.payload
+    assert "revision" not in event.payload
+
+
+def test_recorded_comparison_assertion_identity_is_recomputed(compared):
+    finding = _by_right(compared)["word"]
+    first = record_measured_count(
+        compared, workspace_id="w", session_id="s1", finding=finding
+    )
+    second = record_measured_count(
+        compared, workspace_id="w", session_id="s1", finding=finding
+    )
+    left = assertions_of_recorded_measurement(first)[0]
+    right = assertions_of_recorded_measurement(second)[0]
+    comparison = compare_assertion_productions(
+        compared, (left.reference, right.reference)
+    )
+    event = record_assertion_production_comparison(
+        compared, workspace_id="w", session_id="s1", comparison=comparison
+    ).model_copy(deep=True)
+    event.payload["assertions"][0]["dimensions"]["identity"] = "claimed-not-canonical"
+
+    with pytest.raises(AssertionComparisonError, match="invalid identity"):
+        assertions_of_recorded_assertion_comparison(event)
+
+
+def test_recovery_refuses_a_self_consistent_invented_compare_result(compared):
+    finding = _by_right(compared)["word"]
+    first = record_measured_count(
+        compared, workspace_id="w", session_id="s1", finding=finding
+    )
+    second = record_measured_count(
+        compared, workspace_id="w", session_id="s1", finding=finding
+    )
+    left = assertions_of_recorded_measurement(first)[0]
+    right = assertions_of_recorded_measurement(second)[0]
+    comparison = compare_assertion_productions(
+        compared, (left.reference, right.reference)
+    )
+    event = record_assertion_production_comparison(
+        compared, workspace_id="w", session_id="s1", comparison=comparison
+    ).model_copy(deep=True)
+    assertion = event.payload["assertions"][0]
+    content = assertion["dimensions"]["content"]
+    assert content["present"] == [True, True]
+    assert content["values"][0] == content["values"][1]
+    content["same"] = False
+    assertion["dimensions"]["identity"] = _distinction_assertion_identity(
+        compared_assertion_id=assertion["assertion_subject"][
+            "compared_assertion_id"
+        ],
+        inputs=assertion["support_basis"]["assertion_refs"],
+        workspace_id="w",
+        session_id="s1",
+        **content,
+    )
+
+    with pytest.raises(AssertionComparisonError, match="output contract"):
+        assertions_of_recorded_assertion_comparison(event)
+
+
+def test_recovery_requires_the_exact_compare_coordinate_set(compared):
+    finding = _by_right(compared)["word"]
+    first = record_measured_count(
+        compared, workspace_id="w", session_id="s1", finding=finding
+    )
+    second = record_measured_count(
+        compared, workspace_id="w", session_id="s1", finding=finding
+    )
+    left = assertions_of_recorded_measurement(first)[0]
+    right = assertions_of_recorded_measurement(second)[0]
+    comparison = compare_assertion_productions(
+        compared, (left.reference, right.reference)
+    )
+    event = record_assertion_production_comparison(
+        compared, workspace_id="w", session_id="s1", comparison=comparison
+    ).model_copy(deep=True)
+    event.payload["assertions"].pop()
+
+    with pytest.raises(AssertionComparisonError, match="every distinct"):
+        assertions_of_recorded_assertion_comparison(event)
+
+
+def test_comparison_assertion_identity_includes_its_recorded_scope(compared):
+    finding = _by_right(compared)["word"]
+    first = record_measured_count(
+        compared, workspace_id="w", session_id="s1", finding=finding
+    )
+    second = record_measured_count(
+        compared, workspace_id="w", session_id="s1", finding=finding
+    )
+    left = assertions_of_recorded_measurement(first)[0]
+    right = assertions_of_recorded_measurement(second)[0]
+    comparison = compare_assertion_productions(
+        compared, (left.reference, right.reference)
+    )
+
+    first_record = record_assertion_production_comparison(
+        compared, workspace_id="w", session_id="s1", comparison=comparison
+    )
+    second_record = record_assertion_production_comparison(
+        compared, workspace_id="w", session_id="s2", comparison=comparison
+    )
+
+    first_ids = {
+        item.assertion_id
+        for item in assertions_of_recorded_assertion_comparison(first_record)
+    }
+    second_ids = {
+        item.assertion_id
+        for item in assertions_of_recorded_assertion_comparison(second_record)
+    }
+    assert first_ids.isdisjoint(second_ids)
+
+
+def test_recording_refuses_a_comparison_not_established_from_its_inputs(compared):
+    finding = _by_right(compared)["word"]
+    first = record_measured_count(
+        compared, workspace_id="w", session_id="s1", finding=finding
+    )
+    second = record_measured_count(
+        compared, workspace_id="w", session_id="s1", finding=finding
+    )
+    left = assertions_of_recorded_measurement(first)[0]
+    right = assertions_of_recorded_measurement(second)[0]
+    comparison = compare_assertion_productions(
+        compared, (left.reference, right.reference)
+    )
+    invented = replace(
+        comparison,
+        distinctions=(
+            replace(comparison.distinctions[0], same=not comparison.distinctions[0].same),
+            *comparison.distinctions[1:],
+        ),
+    )
+
+    with pytest.raises(AssertionComparisonError, match="does not match"):
+        record_assertion_production_comparison(
+            compared, workspace_id="w", session_id="s1", comparison=invented
         )
 
 
