@@ -312,8 +312,58 @@ def test_two_productions_of_one_assertion_can_be_compared_without_relation(compa
     )
 
     assert comparison.assertion_id == first_count.assertion_id
+    assert comparison.act == "Compare"
+    assert comparison.owner == "this bounded comparison occurrence"
+    assert comparison.responsibility == (
+        "preserve each input's carried fidelity coordinates and report literal "
+        "sameness, difference, and absence only"
+    )
     assert all(distinction.same for distinction in comparison.distinctions)
     assert not hasattr(comparison, "bounded_relation")
+
+
+def test_assertion_compare_distinguishes_absence_from_carried_none(compared):
+    finding = _by_right(compared)["word"]
+    first = record_measured_count(
+        compared, workspace_id="w", session_id="s1", finding=finding
+    )
+    altered_payload = first.model_copy(deep=True).payload
+    altered_count = next(
+        assertion
+        for assertion in altered_payload["assertions"]
+        if assertion["result"] == "count"
+    )
+    assert altered_count["completeness_boundary"] is None
+    del altered_count["completeness_boundary"]
+    second = compared.append(
+        first.kind,
+        first.workspace_id,
+        altered_payload,
+        session_id=first.session_id,
+    )
+    first_count = next(
+        assertion
+        for assertion in assertions_of_recorded_measurement(first)
+        if assertion.result == "count"
+    )
+    second_count = next(
+        assertion
+        for assertion in assertions_of_recorded_measurement(second)
+        if assertion.result == "count"
+    )
+
+    comparison = compare_assertion_productions(
+        compared, (first_count.reference, second_count.reference)
+    )
+    distinction = next(
+        distinction
+        for distinction in comparison.distinctions
+        if distinction.coordinate == "completeness_boundary"
+    )
+
+    assert distinction.present == (True, False)
+    assert distinction.values == (None, None)
+    assert distinction.same is False
 
 
 def test_assertion_compare_exposes_changed_support_without_strengthening_it(compared):

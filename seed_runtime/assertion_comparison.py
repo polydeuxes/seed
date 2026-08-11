@@ -35,6 +35,7 @@ class AssertionProductionInput:
 class AssertionCoordinateDistinction:
     coordinate: str
     same: bool
+    present: tuple[bool, bool]
     values: tuple[Any, Any]
 
 
@@ -43,6 +44,12 @@ class AssertionProductionComparison:
     assertion_id: str
     inputs: tuple[AssertionProductionInput, AssertionProductionInput]
     distinctions: tuple[AssertionCoordinateDistinction, ...]
+    act: str = "Compare"
+    owner: str = "this bounded comparison occurrence"
+    responsibility: str = (
+        "preserve each input's carried fidelity coordinates and report literal "
+        "sameness, difference, and absence only"
+    )
 
 
 COORDINATES: dict[str, tuple[str, ...]] = {
@@ -59,13 +66,13 @@ COORDINATES: dict[str, tuple[str, ...]] = {
 }
 
 
-def _read(payload: dict[str, Any], path: tuple[str, ...]) -> Any:
+def _read(payload: dict[str, Any], path: tuple[str, ...]) -> tuple[bool, Any]:
     value: Any = payload
     for coordinate in path:
         if not isinstance(value, dict) or coordinate not in value:
-            return None
+            return False, None
         value = value[coordinate]
-    return value
+    return True, value
 
 
 def _exactly_same(left: Any, right: Any) -> bool:
@@ -126,11 +133,14 @@ def compare_assertion_productions(
 
     distinctions = []
     for coordinate, path in COORDINATES.items():
-        values = tuple(_read(assertion.payload, path) for assertion in recovered)
+        read = tuple(_read(assertion.payload, path) for assertion in recovered)
+        present = (read[0][0], read[1][0])
+        values = (read[0][1], read[1][1])
         distinctions.append(
             AssertionCoordinateDistinction(
                 coordinate=coordinate,
-                same=_exactly_same(*values),
+                same=present[0] == present[1] and _exactly_same(*values),
+                present=present,
                 values=values,
             )
         )
