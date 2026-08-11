@@ -541,6 +541,67 @@ class AdjacentPairMeasurementIndex:
             self._index_positions(_positions(event.payload["decoded_text"]))
             for event in material
         )
+        # Which occurrences can answer a form at all.
+        #
+        # Every form is keyed: `preceding` and `following` on the ordered pair,
+        # `before_same_right` on the pair's right representation,
+        # `after_same_left` on its left. An occurrence carrying none of those
+        # returns no occupant, and a measurement already skips a `None`
+        # occupant, so visiting it changes no count.
+        #
+        # `#2484` measured why this is worth inverting rather than scanning.
+        # Scanning every occurrence for every pair costs 4 x pairs x
+        # occurrences, and that term became prohibitive with depth: 300 lines a
+        # body cost 2.6 million lookups, 3,000 cost 161 million, and a run at
+        # that depth was abandoned.
+        #
+        # It is not quadratic, and the measured reason is worth keeping.
+        # Quadratic would need distinct pairs to grow linearly with material.
+        # They do not — over 200 to 800 lines, pairs ~ lines^0.74-0.92, so the
+        # pair x occurrence term predicts lines^1.74-1.92 and the stage
+        # measured lines^1.65-1.81. Strongly superlinear, short of quadratic.
+        pair_contexts: dict[tuple[str, str], list[int]] = {}
+        right_contexts: dict[str, list[int]] = {}
+        left_contexts: dict[str, list[int]] = {}
+        for position, (first_pair_context, left_alternatives, right_alternatives) in enumerate(
+            self._contexts
+        ):
+            for key in first_pair_context:
+                pair_contexts.setdefault(key, []).append(position)
+            for key in left_alternatives:
+                right_contexts.setdefault(key, []).append(position)
+            for key in right_alternatives:
+                left_contexts.setdefault(key, []).append(position)
+        self._pair_contexts = {key: tuple(v) for key, v in pair_contexts.items()}
+        self._right_contexts = {key: tuple(v) for key, v in right_contexts.items()}
+        self._left_contexts = {key: tuple(v) for key, v in left_contexts.items()}
+
+    _EMPTY: tuple[int, ...] = ()
+
+    def _answering_contexts(self, pair: "AdjacentPair", form: str) -> tuple[int, ...]:
+        """The occurrence positions that can yield an occupant for this form.
+
+        Order is ascending append order, the same order `self._contexts` is
+        visited in, so a form whose answer depends on which occurrence is
+        reached first is unaffected.
+
+        Key presence is not occupant existence. A candidate occurrence is one
+        that *could* answer; `_occupant` still applies the form's own test,
+        including the different-left and different-right requirements, and
+        still returns `None`.
+
+        Sharing an index key is representation reuse and nothing more. Two
+        pairs visiting the same occurrences are not thereby a collective, a
+        proposal, a relation, or a basis for Compare.
+        """
+
+        if form in {"preceding", "following"}:
+            return self._pair_contexts.get((pair.left, pair.right), self._EMPTY)
+        if form == "before_same_right":
+            return self._right_contexts.get(pair.right, self._EMPTY)
+        if form == "after_same_left":
+            return self._left_contexts.get(pair.left, self._EMPTY)
+        raise PreservedMaterialMeasurementError(f"unknown adjacent-pair form: {form}")
 
     @staticmethod
     def _index_positions(parts: Sequence[str]) -> tuple[
@@ -624,8 +685,8 @@ class AdjacentPairMeasurementIndex:
         for form in PAIR_MEASUREMENT_FORMS:
             counts: dict[str, int] = {}
             positions_measured = 0
-            for context in self._contexts:
-                occupant = self._occupant(context, pair, form)
+            for position in self._answering_contexts(pair, form):
+                occupant = self._occupant(self._contexts[position], pair, form)
                 if occupant is None:
                     continue
                 positions_measured += 1
