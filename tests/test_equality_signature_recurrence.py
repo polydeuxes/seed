@@ -60,7 +60,6 @@ def test_identity_groups_supply_exact_counts_without_pair_formation():
             ledger, workspace_id="w", source_session_ids=("signatures",)
         )
     )
-
     assert len(findings) == 2
     assert sorted(item.count for item in findings) == [1, 3]
     assert sum(item.count for item in findings) == 4
@@ -69,6 +68,31 @@ def test_identity_groups_supply_exact_counts_without_pair_formation():
         == {item.measured_assertion_id}
         for item in findings
     )
+
+
+def test_streaming_reuses_signature_events_and_fetches_each_source_compare_once(
+    monkeypatch,
+):
+    ledger = _signatures()
+    signature_events = ledger.list_session("w", "signatures")
+    signature_ids = {event.id for event in signature_events}
+    source_ids = {event.payload["source_compare_event_id"] for event in signature_events}
+    calls = []
+    original_get = ledger.get
+
+    def counted(event_id):
+        calls.append(event_id)
+        return original_get(event_id)
+
+    monkeypatch.setattr(ledger, "get", counted)
+    list(
+        measure_equality_signature_counts(
+            ledger, workspace_id="w", source_session_ids=("signatures",)
+        )
+    )
+
+    assert signature_ids.isdisjoint(calls)
+    assert all(calls.count(source_id) == 1 for source_id in source_ids)
 
 
 def test_recording_fans_out_set_count_and_conditional_recurrence():
