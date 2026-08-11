@@ -40,6 +40,7 @@ the bounded scope to travel with a recurrence assertion.
 from __future__ import annotations
 
 from dataclasses import dataclass
+import json
 from typing import Any, Iterable, Iterator
 
 from seed_runtime.bounded_testimony_comparison import COMPARISON_RECORDED_KIND
@@ -48,6 +49,11 @@ from seed_runtime.event import Event
 from seed_runtime.preserved_material_measurement import MEASUREMENT_RECORDED_KIND
 
 EXCHANGE_COUNT_RECORDED_KIND = "operator.measurement.exchange_count_recorded"
+
+MEASURED_ASSERTION_FIDELITY_RESPONSIBILITY = (
+    "preserve the fidelity of this measured Assertion's Standing to its "
+    "carried coordinates"
+)
 
 # The declared identity a recurrence assertion is made under. Two occurrences
 # that differ on any of these did not measure the same thing, and counting them
@@ -341,6 +347,32 @@ def render_measured_count(finding: MeasuredCountFinding) -> str:
     )
 
 
+def measured_assertion_identity(finding: MeasuredCountFinding) -> str:
+    """The exact measured content that makes this Assertion this Assertion.
+
+    Evidence and the ledger boundary support and recover the Assertion but do
+    not identify its content.  Every coordinate of the measured result does:
+    the declared distinction, its three exchange classifications, and its
+    bounded exchange extent.  Canonical JSON avoids delimiter-based identity
+    collisions while leaving the identity directly inspectable.
+    """
+
+    content = {
+        "distinction": finding.distinction.to_json_dict(),
+        "measured_in": list(finding.measured_in),
+        "measured_without_distinction": list(
+            finding.measured_without_distinction
+        ),
+        "coordinate_not_measured": list(finding.coordinate_not_measured),
+        "exchange_count": finding.exchange_count,
+        "recurrence_established": finding.recurrence_established,
+        "bounded_exchanges": list(finding.bounded_exchanges),
+    }
+    return "measured-assertion:" + json.dumps(
+        content, sort_keys=True, separators=(",", ":")
+    )
+
+
 def record_measured_count(
     ledger: EventLedger,
     *,
@@ -348,7 +380,7 @@ def record_measured_count(
     session_id: str,
     finding: MeasuredCountFinding,
 ) -> Event:
-    """Preserve one count finding so a later responsible act may consume it.
+    """Preserve one count finding as a bounded measured assertion.
 
     The record carries a **Producer** distinct from its Responsibility.
     `#2423` recovered that declared measurement has no production *owner* in
@@ -359,15 +391,23 @@ def record_measured_count(
     formation-occurrence, scope, authority, and provenance dimension", listing
     producer beside provenance rather than as it.
 
-    So the partial shape is ordinary rather than contradictory:
+    The result's Responsibility slot had been answering a production-ownership
+    question that belongs elsewhere.  Production ownership remains separate
+    and is not resolved here.  The producing Act is declared Measurement, this
+    Seed is its Producer, and the recorded occurrence is Producer Evidence.
+    The result owns a different, continuing Responsibility: the fidelity of
+    its own Standing to the coordinates it carries.
+
+    So the shape is:
 
     ```text
       Producer          this Seed
       Producer Evidence the exact recorded producing occurrence
       Act               declared measurement
-      result            count finding
+      result            bounded measured assertion
       Standing          measured
-      Responsibility    Unknown
+      owner             this assertion
+      Responsibility    fidelity of this assertion's Standing
     ```
 
     `06.Constructors:13` is what licenses the Producer claim and what limits it:
@@ -382,25 +422,16 @@ def record_measured_count(
     declared = dict(finding.distinction.declared)
     payload = {
         "dimensions": {
-            "identity": (
-                f"exchange-count:{declared['measured_left_representation']}"
-                f"|{finding.distinction.right_representation}"
-            ),
+            "identity": measured_assertion_identity(finding),
             "content": render_measured_count(finding),
             "standing": "measured",
             "source_provenance": (
                 "recorded comparison occurrences and recorded measurement "
                 "occurrences"
             ),
-            # Not the Act. `#2423` recovered that declared measurement has
-            # **no production owner in active law** — "the act that would
-            # produce the finding has no named owner". Writing the Act here
-            # would assert the owner that recovery says is absent, which is
-            # what `#2430` did after removing an invented Responsibility.
-            "responsibility": (
-                "unrecovered; declared measurement has no production owner in "
-                "active law (#2423)"
-            ),
+            # The Assertion does not perform or own its producing Act.  It owns
+            # only the continuing fidelity of the Standing recorded here.
+            "responsibility": MEASURED_ASSERTION_FIDELITY_RESPONSIBILITY,
             "authority_warrant": (
                 "measurement evidence only; establishes no relation between the "
                 "exchanges, no source independence, and no corroboration"
@@ -408,6 +439,9 @@ def record_measured_count(
             "scope_locality": f"workspace:{workspace_id};session:{session_id}",
             "occurrence_preservation": "count finding durably recorded",
         },
+        "subject_kind": "assertion",
+        "responsibility_owner": "this recorded assertion",
+        "producing_act": "declared measurement",
         "producer": "this Seed",
         "producer_evidence": (
             "the recorded producing occurrence this payload is appended as; a "
