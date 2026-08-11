@@ -324,6 +324,13 @@ def assertions_of_recorded_measurement(event: Event) -> tuple[RecordedMeasuredAs
             )
         )
     identities = {assertion.assertion_id for assertion in recovered}
+    by_result = {}
+    for assertion in recovered:
+        if assertion.result in by_result:
+            raise RecurrenceMeasurementError(
+                f"{event.id} carries duplicate Assertion result {assertion.result}"
+            )
+        by_result[assertion.result] = assertion
     bound = []
     for assertion in recovered:
         support = assertion.payload.get("support_basis")
@@ -339,6 +346,21 @@ def assertions_of_recorded_measurement(event: Event) -> tuple[RecordedMeasuredAs
             raise RecurrenceMeasurementError(
                 f"{event.id} carries unresolved local Assertion support: "
                 f"{', '.join(sorted(missing))}"
+            )
+        if assertion.result == "count":
+            measured_in = by_result.get("measured_in")
+            expected_local_ids = (
+                [measured_in.assertion_id] if measured_in is not None else []
+            )
+        elif assertion.result == "recurrence":
+            count = by_result.get("count")
+            expected_local_ids = [count.assertion_id] if count is not None else []
+        else:
+            expected_local_ids = []
+        if local_ids != expected_local_ids:
+            raise RecurrenceMeasurementError(
+                f"{event.id} carries {assertion.result} with the wrong local "
+                "Assertion support"
             )
         bound.append(
             RecordedMeasuredAssertion(
