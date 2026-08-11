@@ -288,6 +288,30 @@ class EventLedger:
             if event.session_id == session_id and event.kind == kind:
                 yield event
 
+    def iter_session_kind_ids(
+        self,
+        workspace_id: str,
+        session_id: str,
+        kind: str,
+        *,
+        through: EventLedgerBoundary | None = None,
+    ) -> Iterator[str]:
+        """Yield the identities of one kind from one session, in append order.
+
+        The same bounded read as `iter_session_kind` over the same rows in the
+        same order, returning only what a caller that compares identities
+        consumes. A caller that needs an occurrence's content must read the
+        occurrence; this is not a cheaper way to obtain one.
+
+        Nothing is skipped by reading less. `iter_session_kind` verifies no
+        digest, so an identity read forgoes no check a full read performs;
+        `integrity_of` remains the separate act that carries that obligation.
+        """
+        for event in self.iter_session_kind(
+            workspace_id, session_id, kind, through=through
+        ):
+            yield event.id
+
     def extend(self, events: Iterable[Event]) -> None:
         """Append externally constructed events while preserving order and IDs."""
         self.append_many(events)
@@ -640,6 +664,37 @@ class SQLiteEventLedger(EventLedger):
         )
         for row in rows:
             yield self._row_to_event(row)
+
+    def iter_session_kind_ids(
+        self,
+        workspace_id: str,
+        session_id: str,
+        kind: str,
+        *,
+        through: EventLedgerBoundary | None = None,
+    ) -> Iterator[str]:
+        """Read one column of the same bounded rows `iter_session_kind` reads.
+
+        Selecting one column rather than decoding every payload is worth its own
+        method here. `#2480` measured the recovery path: one 300-occurrence
+        ingress read costs 7.09 ms as Events and 0.25 ms as identities, because
+        902 bytes of JSON per occurrence are decoded and discarded by a caller
+        that keeps only the identity.
+        """
+        rowid = self._rowid_through(through)
+        boundary = "" if rowid is None else "AND rowid <= ? "
+        args: tuple[Any, ...] = (
+            (workspace_id, session_id, kind)
+            if rowid is None
+            else (workspace_id, session_id, kind, rowid)
+        )
+        rows = self._connection.execute(
+            "SELECT id FROM events WHERE workspace_id = ? AND session_id = ? "
+            "AND kind = ? " + boundary + "ORDER BY rowid",
+            args,
+        )
+        for row in rows:
+            yield row[0]
 
     def integrity_of(self, event_id: str) -> str:
         """Recompute the stored row's digest and compare it with the recorded one.

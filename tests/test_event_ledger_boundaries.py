@@ -215,3 +215,52 @@ def test_failed_in_memory_canonicalization_leaves_the_ledger_unchanged():
 
     assert ledger.capture_boundary() == before
     assert ledger.list() == []
+
+
+def _identity_read_matches_occurrence_read(ledger):
+    """An identity read returns exactly the identities the occurrence read does.
+
+    Both ledgers are held to it, and at every boundary, because a caller that
+    compares recovered identities against carried ones must not be able to reach
+    a different bounded population by reading less.
+    """
+
+    boundaries = [None]
+    ledger.append_many([
+        Event(id="i1", kind="ingress", workspace_id="w", session_id="s"),
+        Event(id="i2", kind="other", workspace_id="w", session_id="s"),
+        Event(id="i3", kind="ingress", workspace_id="w", session_id="other"),
+    ])
+    boundaries.append(ledger.capture_boundary())
+    ledger.append_many([
+        Event(id="i4", kind="ingress", workspace_id="w", session_id="s"),
+        Event(id="i5", kind="ingress", workspace_id="other", session_id="s"),
+    ])
+    boundaries.append(ledger.capture_boundary())
+
+    for boundary in boundaries:
+        occurrences = [
+            event.id
+            for event in ledger.iter_session_kind("w", "s", "ingress", through=boundary)
+        ]
+        identities = list(
+            ledger.iter_session_kind_ids("w", "s", "ingress", through=boundary)
+        )
+        assert identities == occurrences
+
+    assert list(ledger.iter_session_kind_ids("w", "s", "ingress")) == ["i1", "i4"]
+    assert list(ledger.iter_session_kind_ids("w", "s", "ingress",
+                                             through=boundaries[1])) == ["i1"]
+    assert list(ledger.iter_session_kind_ids("w", "s", "absent")) == []
+
+
+def test_an_in_memory_identity_read_matches_its_occurrence_read():
+    _identity_read_matches_occurrence_read(EventLedger())
+
+
+def test_a_durable_identity_read_matches_its_occurrence_read(tmp_path):
+    ledger = SQLiteEventLedger(str(tmp_path / "ledger.db"))
+    try:
+        _identity_read_matches_occurrence_read(ledger)
+    finally:
+        ledger.close()
