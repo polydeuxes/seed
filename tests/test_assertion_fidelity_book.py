@@ -25,6 +25,7 @@ def test_assertion_owns_only_fidelity_of_its_standing():
 def test_assertion_ownership_creates_no_automatic_movement():
     clause = _assertion_clause()
     assert "does not require another Act merely because it exists" in clause
-    assert "does not automatically revise its content or Standing" in clause
-    assert "an **Unknown** does not create a demand to eliminate it" in clause
+    assert "does not automatically revise its Standing" in clause
+    assert "different exact asserted content identifies a different Assertion" in clause
+    assert "An **Unknown** does not create a demand to eliminate it" in clause
     assert "not an inferred constitutional Stop" in clause

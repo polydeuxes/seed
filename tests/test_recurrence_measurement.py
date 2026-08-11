@@ -12,6 +12,7 @@ travels with it, and the counting scope says exactly what was consumed.
 
 from __future__ import annotations
 
+from dataclasses import replace
 from io import StringIO
 
 import pytest
@@ -35,6 +36,7 @@ from seed_runtime.recurrence_measurement import (
     MEASURED_ASSERTION_FIDELITY_RESPONSIBILITY,
     RecurrenceMeasurementError,
     measure_exchange_counts,
+    measured_assertion_identity,
     record_measured_count,
     render_measured_count,
 )
@@ -129,6 +131,33 @@ def test_the_record_shape_is_its_own(compared):
     assert event.kind == EXCHANGE_COUNT_RECORDED_KIND
     assert event.kind != MEASUREMENT_RECORDED_KIND
     assert "occupancies" not in event.payload
+
+
+def test_scope_and_rule_are_part_of_assertion_identity(compared):
+    finding = _by_right(compared)["word"]
+    declared = dict(finding.distinction.declared)
+    other_scope = dict(declared, counting_scope="another bounded scope")
+    other_rule = dict(declared, equivalence_rule="another exact rule")
+
+    scoped = replace(
+        finding,
+        distinction=replace(
+            finding.distinction, declared=tuple(other_scope.items())
+        ),
+    )
+    ruled = replace(
+        finding,
+        distinction=replace(
+            finding.distinction, declared=tuple(other_rule.items())
+        ),
+    )
+
+    identities = {
+        measured_assertion_identity(candidate)
+        for candidate in (finding, scoped, ruled)
+    }
+    assert len(identities) == 3
+    assert all(identity.startswith("measured-assertion:") for identity in identities)
 
 
 def test_measuring_without_any_comparison_is_refused():

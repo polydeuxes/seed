@@ -40,6 +40,7 @@ the bounded scope to travel with a recurrence assertion.
 from __future__ import annotations
 
 from dataclasses import dataclass
+import json
 from typing import Any, Iterable, Iterator
 
 from seed_runtime.bounded_testimony_comparison import COMPARISON_RECORDED_KIND
@@ -50,8 +51,8 @@ from seed_runtime.preserved_material_measurement import MEASUREMENT_RECORDED_KIN
 EXCHANGE_COUNT_RECORDED_KIND = "operator.measurement.exchange_count_recorded"
 
 MEASURED_ASSERTION_FIDELITY_RESPONSIBILITY = (
-    "preserve the fidelity of this measured assertion's Standing to its "
-    "Evidence, declared identity, Scope, Authority, and Unknowns"
+    "preserve the fidelity of this measured Assertion's Standing to its "
+    "carried coordinates"
 )
 
 # The declared identity a recurrence assertion is made under. Two occurrences
@@ -346,6 +347,32 @@ def render_measured_count(finding: MeasuredCountFinding) -> str:
     )
 
 
+def measured_assertion_identity(finding: MeasuredCountFinding) -> str:
+    """The exact measured content that makes this Assertion this Assertion.
+
+    Evidence and the ledger boundary support and recover the Assertion but do
+    not identify its content.  Every coordinate of the measured result does:
+    the declared distinction, its three exchange classifications, and its
+    bounded exchange extent.  Canonical JSON avoids delimiter-based identity
+    collisions while leaving the identity directly inspectable.
+    """
+
+    content = {
+        "distinction": finding.distinction.to_json_dict(),
+        "measured_in": list(finding.measured_in),
+        "measured_without_distinction": list(
+            finding.measured_without_distinction
+        ),
+        "coordinate_not_measured": list(finding.coordinate_not_measured),
+        "exchange_count": finding.exchange_count,
+        "recurrence_established": finding.recurrence_established,
+        "bounded_exchanges": list(finding.bounded_exchanges),
+    }
+    return "measured-assertion:" + json.dumps(
+        content, sort_keys=True, separators=(",", ":")
+    )
+
+
 def record_measured_count(
     ledger: EventLedger,
     *,
@@ -364,11 +391,12 @@ def record_measured_count(
     formation-occurrence, scope, authority, and provenance dimension", listing
     producer beside provenance rather than as it.
 
-    The production owner was unrecovered because the result was being asked to
-    own its production.  It does not.  Declared Measurement performs the Act,
-    this Seed is its Producer, and the recorded occurrence is Producer
-    Evidence.  The result owns a different, continuing Responsibility: the
-    fidelity of its own Standing to the coordinates and Evidence it carries.
+    The result's Responsibility slot had been answering a production-ownership
+    question that belongs elsewhere.  Production ownership remains separate
+    and is not resolved here.  The producing Act is declared Measurement, this
+    Seed is its Producer, and the recorded occurrence is Producer Evidence.
+    The result owns a different, continuing Responsibility: the fidelity of
+    its own Standing to the coordinates it carries.
 
     So the shape is:
 
@@ -394,10 +422,7 @@ def record_measured_count(
     declared = dict(finding.distinction.declared)
     payload = {
         "dimensions": {
-            "identity": (
-                f"exchange-count:{declared['measured_left_representation']}"
-                f"|{finding.distinction.right_representation}"
-            ),
+            "identity": measured_assertion_identity(finding),
             "content": render_measured_count(finding),
             "standing": "measured",
             "source_provenance": (
