@@ -39,6 +39,7 @@ from seed_runtime.adjacent_pair_measurement import (
     measure_adjacent_pair,
     adjacent_pairs_from_finding,
     record_pair_measurements,
+    record_adjacent_pair_measurement_layer,
     group_by_highest_count_occupant,
     occupant_agreement_across_scopes,
 )
@@ -91,15 +92,10 @@ def occurrences(session):
 
 @pytest.fixture
 def recorded_finding(session, occurrences):
-    finding = measure_occupancy(
+    finding = measure_after(
         occurrences,
-        declared=DeclaredMeasurement(
-            representation_measured=f"the representation following {LEFT!r}",
-            equivalence_rule=EQUIVALENCE_RULE,
-            counting_scope="preserved ingress occurrences of this session",
-            measured_after=LEFT,
-        ),
-        occupant_of=_after_left,
+        LEFT,
+        counting_scope="preserved ingress occurrences of this session",
     )
     return record_measurement_finding(
         session, workspace_id="w", session_id="s", finding=finding
@@ -280,6 +276,122 @@ def test_batched_pair_index_preserves_first_match_semantics_exhaustively():
                 counting_scope="exhaustive bounded fixture",
                 premise_event_id="premise",
             )
+
+
+def test_one_layer_records_every_pair_form_and_nothing_beyond(
+    session, recorded_finding
+):
+    before = {event.id for event in session.list("w")}
+    pair_count = len(recorded_finding.payload["occupancies"])
+
+    recorded_count = record_adjacent_pair_measurement_layer(
+        session,
+        workspace_id="w",
+        session_id="s",
+        counting_scope="this session",
+    )
+    recorded = [event for event in session.list("w") if event.id not in before]
+
+    assert recorded_count == pair_count * 4
+    assert len(recorded) == recorded_count
+    assert {event.payload["measurement_form"] for event in recorded} == {
+        "preceding",
+        "following",
+        "before_same_right",
+        "after_same_left",
+    }
+    assert {event.payload["premise_event_id"] for event in recorded} == {
+        recorded_finding.id
+    }
+    assert all(event.payload["measurement_form"] != "after" for event in recorded)
+
+
+def test_one_layer_preserves_duplicate_pair_subject_productions(
+    session, recorded_finding
+):
+    second_premise = session.append(
+        recorded_finding.kind,
+        recorded_finding.workspace_id,
+        recorded_finding.model_copy(deep=True).payload,
+        session_id=recorded_finding.session_id,
+    )
+    pair_count = len(recorded_finding.payload["occupancies"])
+
+    recorded_count = record_adjacent_pair_measurement_layer(
+        session,
+        workspace_id="w",
+        session_id="s",
+        counting_scope="this session",
+    )
+    produced = [
+        event
+        for event in session.list("w")
+        if event.payload.get("premise_event_id")
+        in {recorded_finding.id, second_premise.id}
+    ]
+
+    assert recorded_count == pair_count * 2 * 4
+    assert len(produced) == recorded_count
+    assert {
+        premise: sum(
+            event.payload["premise_event_id"] == premise for event in produced
+        )
+        for premise in (recorded_finding.id, second_premise.id)
+    } == {
+        recorded_finding.id: pair_count * 4,
+        second_premise.id: pair_count * 4,
+    }
+
+
+def test_one_layer_refuses_claimed_after_premises_without_exact_coordinates(
+    session, recorded_finding
+):
+    malformed = []
+    mutations = (
+        lambda payload: payload.update(
+            measured_position={
+                "anchored_on": "the representation",
+                "direction": "before",
+                "displacement": 1,
+            }
+        ),
+        lambda payload: payload.update(measured_relative_to=["another"]),
+        lambda payload: payload.update(
+            equivalence_rule="a different asserted equivalence rule"
+        ),
+        lambda payload: payload.update(convention="another-convention"),
+    )
+    for mutate in mutations:
+        payload = recorded_finding.model_copy(deep=True).payload
+        mutate(payload)
+        malformed.append(
+            session.append(
+                recorded_finding.kind,
+                recorded_finding.workspace_id,
+                payload,
+                session_id=recorded_finding.session_id,
+            )
+        )
+
+    recorded_count = record_adjacent_pair_measurement_layer(
+        session,
+        workspace_id="w",
+        session_id="s",
+        counting_scope="this session",
+    )
+    produced = [
+        event
+        for event in session.list("w")
+        if event.payload.get("premise_event_id") is not None
+    ]
+
+    assert recorded_count == len(recorded_finding.payload["occupancies"]) * 4
+    assert {event.payload["premise_event_id"] for event in produced} == {
+        recorded_finding.id
+    }
+    assert not ({event.id for event in malformed} & {
+        event.payload["premise_event_id"] for event in produced
+    })
 
 
 def test_a_question_that_found_nothing_is_still_recorded(
