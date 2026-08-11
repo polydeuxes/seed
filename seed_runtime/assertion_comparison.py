@@ -11,6 +11,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 import hashlib
+from itertools import combinations
 import json
 from typing import Any, Iterable
 
@@ -19,6 +20,7 @@ from seed_runtime.event import Event
 from seed_runtime.adjacent_pair_measurement import (
     RecordedAdjacentPairResultAssertion,
     get_recorded_adjacent_pair_result_assertion,
+    iter_recorded_adjacent_pair_result_assertions,
 )
 from seed_runtime.recurrence_measurement import (
     RecordedMeasuredAssertion,
@@ -397,6 +399,33 @@ def compare_positional_result_assertions(
         inputs=(inputs[0], inputs[1]),
         distinctions=tuple(distinctions),
     )
+
+
+def iter_positional_result_comparison_inputs(
+    ledger: EventLedger,
+    *,
+    workspace_id: str,
+    session_ids: Iterable[str],
+    through: "EventLedgerBoundary",
+) -> Iterator[tuple[dict[str, str], dict[str, str]]]:
+    """Form every unordered production pair sharing one exact subject.
+
+    The caller fixes the eligible append extent. Equal carried subjects supply
+    comparability; no count, threshold, ranking, result value, or semantic
+    category admits or excludes a production. Compare is not performed here.
+    """
+
+    by_subject: dict[str, list[dict[str, str]]] = {}
+    for assertion in iter_recorded_adjacent_pair_result_assertions(
+        ledger,
+        workspace_id=workspace_id,
+        session_ids=session_ids,
+        through=through,
+    ):
+        subject_key = _canonical_json(assertion.payload["assertion_subject"])
+        by_subject.setdefault(subject_key, []).append(assertion.reference)
+    for references in by_subject.values():
+        yield from combinations(references, 2)
 
 
 def record_positional_result_comparison(

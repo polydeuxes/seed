@@ -342,22 +342,85 @@ def get_recorded_adjacent_pair_result_assertion(
     assertion = assertion_of_recorded_adjacent_pair_result(event)
     if assertion.assertion_id != assertion_id:
         return None
-    recovered_ingress_ids = tuple(
-        item.id
-        for item in ledger.iter_session_kind(
-            event.workspace_id,
-            event.session_id,
-            INGRESS_OCCURRED_KIND,
-            through=assertion.completeness_boundary,
+    _validate_result_assertion_ingress(ledger, event, assertion)
+    return assertion
+
+
+def _validate_result_assertion_ingress(
+    ledger: EventLedger,
+    event: Event,
+    assertion: RecordedAdjacentPairResultAssertion,
+    *,
+    recovered_ingress_ids: tuple[str, ...] | None = None,
+) -> None:
+    if recovered_ingress_ids is None:
+        recovered_ingress_ids = tuple(
+            item.id
+            for item in ledger.iter_session_kind(
+                event.workspace_id,
+                event.session_id,
+                INGRESS_OCCURRED_KIND,
+                through=assertion.completeness_boundary,
+            )
         )
-    )
     consumed_event_ids = tuple(event.payload["consumed_event_ids"])
     support_event_ids = tuple(event.payload["support_basis"]["event_ids"])
     if recovered_ingress_ids != consumed_event_ids or support_event_ids != consumed_event_ids:
         raise PreservedMaterialMeasurementError(
             "the carried support does not equal the complete bounded ingress read"
         )
-    return assertion
+
+
+def iter_recorded_adjacent_pair_result_assertions(
+    ledger: EventLedger,
+    *,
+    workspace_id: str,
+    session_ids: Iterable[str],
+    through: EventLedgerBoundary,
+) -> Iterator[RecordedAdjacentPairResultAssertion]:
+    """Stream exact result Assertions through one caller-captured boundary.
+
+    Complete ingress recovery is cached only for equal session/boundary pairs.
+    The cache contains compact Event identities, not material or result Events.
+    """
+
+    ingress_ids_by_boundary: dict[tuple[str, str], tuple[str, ...]] = {}
+    for session_id in tuple(dict.fromkeys(session_ids)):
+        for event in ledger.iter_session_kind(
+            workspace_id,
+            session_id,
+            MEASUREMENT_RECORDED_KIND,
+            through=through,
+        ):
+            if event.payload.get("subject_kind") != "assertion":
+                continue
+            if event.payload.get("result") != "position_occupancy":
+                continue
+            if ledger.integrity_of(event.id) == CORRUPTED:
+                raise PreservedMaterialMeasurementError(
+                    "a corrupted producing occurrence cannot expose a result Assertion"
+                )
+            assertion = assertion_of_recorded_adjacent_pair_result(event)
+            cache_key = (session_id, assertion.completeness_boundary.commitment)
+            recovered_ingress_ids = ingress_ids_by_boundary.get(cache_key)
+            if recovered_ingress_ids is None:
+                recovered_ingress_ids = tuple(
+                    item.id
+                    for item in ledger.iter_session_kind(
+                        workspace_id,
+                        session_id,
+                        INGRESS_OCCURRED_KIND,
+                        through=assertion.completeness_boundary,
+                    )
+                )
+                ingress_ids_by_boundary[cache_key] = recovered_ingress_ids
+            _validate_result_assertion_ingress(
+                ledger,
+                event,
+                assertion,
+                recovered_ingress_ids=recovered_ingress_ids,
+            )
+            yield assertion
 
 
 def _adjacent_pairs_from_event(event: Event | None) -> list[AdjacentPair]:
