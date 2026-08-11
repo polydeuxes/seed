@@ -66,8 +66,25 @@ owner. `claim-centricity` is doing work — the clause's point is that the
 proposition **is not identical to any one storage object** — but that is a
 constraint on other subjects, not a subject.
 
-**[inference]** So Claim is a cat in the same narrow sense `confidence` is: it
-names something real, and what it names is a coordinate of other things.
+**[inference]** So Claim is a cat, and **the comparison to `confidence` is
+wrong** — this report's author drew it and the operator corrected it.
+
+```text
+  confidence   named home, named owner: the provider, outside Seed
+               01.External:15 admits it as attributed source grammar
+  claim        carried by eight things, no owner anywhere, no producing act
+```
+
+`confidence` survived `#2418` because something owns it and that something is
+external. `claim` has no owner in or out of Seed. Under `#2361`'s rule — the
+Book does not carry ordinary words — that is not a coordinate to leave alone.
+**`claim` must eventually be removed.**
+
+**[measured]** The scale: 101 occurrences across 17 of the Book's 31 active-law
+files. Comparable to `artifact`'s 107, and larger than most banned families.
+`claim-centricity` at `05.Testimony:10` is the load-bearing use, and it is
+already a statement that the proposition is not identical to any storage object
+— which is a constraint on other subjects, expressible without the noun.
 
 ## 3. Fact — a different failure
 
@@ -128,8 +145,10 @@ something depends on the fidelity being enforced.
 
 ## What this does not establish
 
-**That `Claim` should be excised.** `#2418` found `confidence` real and
-provider-owned and did not remove it. A coordinate is not contraband.
+**How `Claim` should be excised.** That it must be is the operator's standing
+rule under `#2361`; what replaces `claim-centricity`'s work at `05.Testimony:10`
+is not recovered here, and the clause is doing something real. Naming the
+requirement is not proposing the repair.
 
 **That `Fact`'s two meanings should be split.** Its clause has held them apart
 deliberately since before this session. Naming the hazard is not proposing the
