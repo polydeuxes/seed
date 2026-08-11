@@ -14,16 +14,32 @@ import json
 from typing import Any, Iterable, Iterator
 
 from seed_runtime.assertion_comparison import (
+    POSITIONAL_RESULT_COMPARISON_RECORDED_KIND,
     AssertionComparisonError,
     RecordedPositionalResultDistinction,
     assertions_of_recorded_positional_result_comparison,
     iter_recorded_positional_result_distinctions,
 )
 from seed_runtime.events import CORRUPTED, EventLedger, EventLedgerBoundary
+from seed_runtime.event import Event
+from seed_runtime.ids import new_id
 
 
 class ComparisonResultMeasurementError(ValueError):
     """The bounded comparison-result Measurement could not be instantiated."""
+
+
+COMPARISON_RESULT_COUNT_RECORDED_KIND = (
+    "operator.measurement.comparison_result_count_recorded"
+)
+MEASURED_ASSERTION_RESPONSIBILITY = (
+    "preserve the fidelity of this measured Assertion's Standing to its "
+    "carried coordinates"
+)
+MEASUREMENT_AUTHORITY = (
+    "literal Measurement evidence only; establishes no recurrence, profile, "
+    "similarity, relation, meaning, or Standing movement"
+)
 
 
 @dataclass(frozen=True)
@@ -196,3 +212,199 @@ def measure_comparison_result_counts(
                 source_session_ids=sessions,
                 completeness_boundary=boundary,
             )
+
+
+def _assertion_identity(
+    *,
+    result: str,
+    subject: dict[str, Any],
+    scope: dict[str, Any],
+    content: dict[str, Any],
+) -> str:
+    identified = {
+        "result": result,
+        "subject": subject,
+        "scope": scope,
+        "content": content,
+    }
+    return "comparison-result-measurement:" + hashlib.sha256(
+        _canonical(identified).encode("utf-8")
+    ).hexdigest()
+
+
+def assertions_from_comparison_result_count(
+    finding: MeasuredComparisonResultCount,
+) -> tuple[dict[str, Any], dict[str, Any]]:
+    """The exact production set and the count derived from that set."""
+
+    subject = {
+        "compared_subject": finding.compared_subject,
+        "coordinate": finding.coordinate,
+        "exact_comparison_result": finding.result_content,
+    }
+    scope = {
+        "workspace_id": finding.workspace_id,
+        "source_session_ids": list(finding.source_session_ids),
+    }
+    set_content = {"production_refs": list(finding.production_refs)}
+    production_set_id = _assertion_identity(
+        result="exact_production_set",
+        subject=subject,
+        scope=scope,
+        content=set_content,
+    )
+    production_set = {
+        "dimensions": {
+            "identity": production_set_id,
+            "content": set_content,
+            "standing": "measured",
+            "source_provenance": (
+                "recorded positional-result comparison Assertion productions"
+            ),
+            "responsibility": MEASURED_ASSERTION_RESPONSIBILITY,
+            "authority_warrant": MEASUREMENT_AUTHORITY,
+        },
+        "subject_kind": "assertion",
+        "responsibility_owner": "this recorded assertion",
+        "result": "exact_production_set",
+        "assertion_subject": subject,
+        "assertion_scope": scope,
+        "support_basis": {"assertion_refs": list(finding.production_refs)},
+        "completeness_boundary": {
+            "commitment": finding.completeness_boundary.commitment
+        },
+        "completeness_scope": {
+            "workspace_id": finding.workspace_id,
+            "source_session_ids": list(finding.source_session_ids),
+            "occurrence_kind": POSITIONAL_RESULT_COMPARISON_RECORDED_KIND,
+        },
+        "unknowns": [
+            "why this exact comparison result has this count remains Unknown"
+        ],
+        "forbidden_inferences": [
+            "an exact production count is not recurrence, similarity, relation, "
+            "meaning, profile membership, or Standing strength"
+        ],
+    }
+    count_content = {"production_count": finding.count}
+    count_id = _assertion_identity(
+        result="count",
+        subject=subject,
+        scope=scope,
+        content=count_content,
+    )
+    count = {
+        "dimensions": {
+            "identity": count_id,
+            "content": count_content,
+            "standing": "measured",
+            "source_provenance": "the exact production-set Assertion carried here",
+            "responsibility": MEASURED_ASSERTION_RESPONSIBILITY,
+            "authority_warrant": MEASUREMENT_AUTHORITY,
+        },
+        "subject_kind": "assertion",
+        "responsibility_owner": "this recorded assertion",
+        "result": "count",
+        "assertion_subject": subject,
+        "assertion_scope": scope,
+        "support_basis": {"local_assertion_ids": [production_set_id]},
+        "unknowns": [
+            "why this exact comparison result has this count remains Unknown"
+        ],
+        "forbidden_inferences": [
+            "count greater than one does not by itself establish recurrence, "
+            "similarity, relation, meaning, profile membership, or Standing strength"
+        ],
+    }
+    return production_set, count
+
+
+def _comparison_result_count_event(
+    *,
+    workspace_id: str,
+    session_id: str,
+    finding: MeasuredComparisonResultCount,
+) -> Event:
+    if workspace_id != finding.workspace_id:
+        raise ComparisonResultMeasurementError(
+            "recording workspace must equal the Measurement workspace"
+        )
+    assertions = assertions_from_comparison_result_count(finding)
+    return Event(
+        id=new_id("evt"),
+        kind=COMPARISON_RESULT_COUNT_RECORDED_KIND,
+        workspace_id=workspace_id,
+        session_id=session_id,
+        payload={
+            "dimensions": {
+                "identity": "comparison-result-count-measurement-occurrence",
+                "content": "two distinct measured Assertions recorded",
+                "standing": "recorded",
+                "source_provenance": (
+                    "recorded positional-result comparison Assertions"
+                ),
+                "authority_warrant": MEASUREMENT_AUTHORITY,
+            },
+            "producing_act": "declared Measurement",
+            "producer": "this Seed",
+            "measurement_subject": "recorded positional-result comparison Assertions",
+            "assertions": list(assertions),
+        },
+    )
+
+
+def record_comparison_result_count(
+    ledger: EventLedger,
+    *,
+    workspace_id: str,
+    session_id: str,
+    finding: MeasuredComparisonResultCount,
+) -> Event:
+    """Record one exact production-set Assertion and its derived count."""
+
+    return ledger.append_many(
+        [
+            _comparison_result_count_event(
+            workspace_id=workspace_id,
+            session_id=session_id,
+            finding=finding,
+            )
+        ]
+    )[0]
+
+
+def record_comparison_result_count_layer(
+    ledger: EventLedger,
+    *,
+    workspace_id: str,
+    source_session_ids: Iterable[str],
+    recording_session_id: str,
+) -> int:
+    """Measure and record every exact result; batching is persistence-only."""
+
+    if not isinstance(recording_session_id, str) or not recording_session_id:
+        raise ComparisonResultMeasurementError(
+            "comparison-result recording requires an exact session"
+        )
+    pending = []
+    recorded = 0
+    for finding in measure_comparison_result_counts(
+        ledger,
+        workspace_id=workspace_id,
+        source_session_ids=source_session_ids,
+    ):
+        pending.append(
+            _comparison_result_count_event(
+                workspace_id=workspace_id,
+                session_id=recording_session_id,
+                finding=finding,
+            )
+        )
+        if len(pending) == 128:
+            ledger.append_many(pending)
+            recorded += len(pending)
+            pending.clear()
+    if pending:
+        ledger.append_many(pending)
+        recorded += len(pending)
+    return recorded

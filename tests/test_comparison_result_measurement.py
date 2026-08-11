@@ -9,8 +9,12 @@ from seed_runtime.assertion_comparison import (
     record_positional_result_comparison,
 )
 from seed_runtime.comparison_result_measurement import (
+    COMPARISON_RESULT_COUNT_RECORDED_KIND,
     ComparisonResultMeasurementError,
+    assertions_from_comparison_result_count,
     measure_comparison_result_counts,
+    record_comparison_result_count,
+    record_comparison_result_count_layer,
 )
 from seed_runtime.events import EventLedger
 from tests.test_positional_result_comparison import _record_following
@@ -198,3 +202,95 @@ def test_population_validates_each_reused_input_once(monkeypatch):
         c.producing_event_id,
         d.producing_event_id,
     }
+
+
+def test_recording_preserves_exact_set_and_derived_count_separately():
+    ledger = EventLedger()
+    pair = AdjacentPair("it", "is")
+    a = _record_following(ledger, "s1", "it is here\n", pair)
+    b = _record_following(ledger, "s2", "it is there\n", pair)
+    first = _record_compare(ledger, session_id="comparisons", left=a, right=b)
+    second = _record_compare(ledger, session_id="comparisons", left=a, right=b)
+    finding = next(
+        item
+        for item in measure_comparison_result_counts(
+            ledger, workspace_id="w", source_session_ids=("comparisons",)
+        )
+        if item.coordinate == "occupancies"
+    )
+
+    event = record_comparison_result_count(
+        ledger,
+        workspace_id="w",
+        session_id="counts",
+        finding=finding,
+    )
+    production_set, count = event.payload["assertions"]
+
+    assert event.kind == COMPARISON_RESULT_COUNT_RECORDED_KIND
+    assert "result_content" not in event.payload
+    assert production_set["result"] == "exact_production_set"
+    assert production_set["support_basis"]["assertion_refs"] == [
+        {
+            "producing_event_id": first.id,
+            "assertion_id": first.payload["assertions"][1]["dimensions"]["identity"],
+        },
+        {
+            "producing_event_id": second.id,
+            "assertion_id": second.payload["assertions"][1]["dimensions"]["identity"],
+        },
+    ]
+    assert production_set["completeness_boundary"] == {
+        "commitment": finding.completeness_boundary.commitment
+    }
+    assert count["result"] == "count"
+    assert count["dimensions"]["content"] == {"production_count": 2}
+    assert count["support_basis"] == {
+        "local_assertion_ids": [production_set["dimensions"]["identity"]]
+    }
+    assert "completeness_boundary" not in count
+
+
+def test_count_one_is_recorded_without_a_recurrence_assertion():
+    ledger = EventLedger()
+    pair = AdjacentPair("it", "is")
+    a = _record_following(ledger, "s1", "it is here\n", pair)
+    b = _record_following(ledger, "s2", "it is there\n", pair)
+    _record_compare(ledger, session_id="comparisons", left=a, right=b)
+    finding = next(
+        item
+        for item in measure_comparison_result_counts(
+            ledger, workspace_id="w", source_session_ids=("comparisons",)
+        )
+        if item.coordinate == "occupancies"
+    )
+
+    assertions = assertions_from_comparison_result_count(finding)
+
+    assert finding.count == 1
+    assert [item["result"] for item in assertions] == [
+        "exact_production_set",
+        "count",
+    ]
+    assert all(item["result"] != "recurrence" for item in assertions)
+
+
+def test_recording_layer_writes_one_event_per_exact_result():
+    ledger = EventLedger()
+    pair = AdjacentPair("it", "is")
+    a = _record_following(ledger, "s1", "it is here\n", pair)
+    b = _record_following(ledger, "s2", "it is there\n", pair)
+    _record_compare(ledger, session_id="comparisons", left=a, right=b)
+
+    recorded = record_comparison_result_count_layer(
+        ledger,
+        workspace_id="w",
+        source_session_ids=("comparisons",),
+        recording_session_id="counts",
+    )
+    events = ledger.list_session("w", "counts")
+
+    assert recorded == 12
+    assert len(events) == 12
+    assert all(event.kind == COMPARISON_RESULT_COUNT_RECORDED_KIND for event in events)
+    assert all(len(event.payload["assertions"]) == 2 for event in events)
