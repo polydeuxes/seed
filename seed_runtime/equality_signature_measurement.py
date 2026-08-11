@@ -11,6 +11,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 import hashlib
+from itertools import chain
 import json
 from typing import Any, Iterable, Iterator
 
@@ -144,15 +145,11 @@ def measure_equality_signatures(
             + ", ".join(missing)
         )
 
-    current_event_id: str | None = None
-    current: list[RecordedPositionalResultDistinction] = []
-    found = False
-
     def measured(
         results: list[RecordedPositionalResultDistinction],
     ) -> MeasuredEqualitySignature:
         by_coordinate = {result.coordinate: result for result in results}
-        if tuple(by_coordinate) != _surface():
+        if len(results) != len(_surface()) or set(by_coordinate) != set(_surface()):
             raise EqualitySignatureMeasurementError(
                 "a Compare occurrence did not yield the exact declared surface"
             )
@@ -164,35 +161,45 @@ def measure_equality_signatures(
         different = tuple(name for name in _surface() if name not in same)
         return MeasuredEqualitySignature(
             source_event_id=results[0].producing_event_id,
-            source_assertions=tuple(results),
+            source_assertions=tuple(by_coordinate[name] for name in _surface()),
             source_session_ids=sessions,
             same_coordinates=same,
             different_coordinates=different,
         )
 
     try:
-        for result in iter_recorded_positional_result_distinctions(
+        recovered = iter_recorded_positional_result_distinctions(
             ledger,
             workspace_id=workspace_id,
             session_ids=sessions,
             through=boundary,
-        ):
-            found = True
-            if current_event_id is None:
-                current_event_id = result.producing_event_id
-            if result.producing_event_id != current_event_id:
-                yield measured(current)
-                current = []
-                current_event_id = result.producing_event_id
-            current.append(result)
-    except AssertionComparisonError as exc:
-        raise EqualitySignatureMeasurementError(str(exc)) from exc
-    if current:
-        yield measured(current)
-    if not found:
+        )
+        first = next(recovered)
+    except StopIteration as exc:
         raise EqualitySignatureMeasurementError(
             "no recovered positional-result Comparisons to measure"
-        )
+        ) from exc
+    except AssertionComparisonError as exc:
+        raise EqualitySignatureMeasurementError(str(exc)) from exc
+
+    def stream() -> Iterator[MeasuredEqualitySignature]:
+        current_event_id: str | None = None
+        current: list[RecordedPositionalResultDistinction] = []
+        try:
+            for result in chain((first,), recovered):
+                if current_event_id is None:
+                    current_event_id = result.producing_event_id
+                if result.producing_event_id != current_event_id:
+                    yield measured(current)
+                    current = []
+                    current_event_id = result.producing_event_id
+                current.append(result)
+        except AssertionComparisonError as exc:
+            raise EqualitySignatureMeasurementError(str(exc)) from exc
+        if current:
+            yield measured(current)
+
+    return stream()
 
 
 def _assertion(finding: MeasuredEqualitySignature, *, workspace_id: str) -> dict[str, Any]:

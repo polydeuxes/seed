@@ -58,6 +58,35 @@ def test_measurement_emits_the_complete_maximal_signature():
     assert len(finding.source_assertions) == len(POSITIONAL_RESULT_COORDINATES)
 
 
+def test_measurement_accepts_source_results_in_a_different_serialized_order():
+    ledger = EventLedger()
+    source = _comparison(ledger)
+    source.payload["assertions"].reverse()
+
+    finding = next(
+        measure_equality_signatures(
+            ledger, workspace_id="w", source_session_ids=("comparisons",)
+        )
+    )
+
+    assert tuple(item.coordinate for item in finding.source_assertions) == tuple(
+        POSITIONAL_RESULT_COORDINATES
+    )
+
+
+def test_empty_population_refuses_before_an_iterator_is_returned():
+    ledger = EventLedger()
+    ledger.append("unrelated", "w", {}, session_id="comparisons")
+
+    with pytest.raises(
+        EqualitySignatureMeasurementError,
+        match="no recovered positional-result Comparisons",
+    ):
+        measure_equality_signatures(
+            ledger, workspace_id="w", source_session_ids=("comparisons",)
+        )
+
+
 def test_same_signature_has_one_identity_across_distinct_compares():
     ledger = EventLedger()
     pair = AdjacentPair("it", "is")
