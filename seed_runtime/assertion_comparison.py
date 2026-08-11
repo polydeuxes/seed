@@ -16,6 +16,10 @@ from typing import Any, Iterable
 
 from seed_runtime.events import CORRUPTED, EventLedger
 from seed_runtime.event import Event
+from seed_runtime.adjacent_pair_measurement import (
+    RecordedAdjacentPairResultAssertion,
+    get_recorded_adjacent_pair_result_assertion,
+)
 from seed_runtime.recurrence_measurement import (
     RecordedMeasuredAssertion,
     get_recorded_measured_assertion,
@@ -54,6 +58,40 @@ class AssertionProductionComparison:
     )
 
 
+@dataclass(frozen=True)
+class PositionalResultInput:
+    """One exact occurrence-bound positional result consumed by Compare."""
+
+    assertion_id: str
+    producing_event_id: str
+    integrity: str
+
+
+@dataclass(frozen=True)
+class PositionalResultCoordinateDistinction:
+    """One literal carried-coordinate result of Compare."""
+
+    coordinate: str
+    same: bool
+    present: tuple[bool, bool]
+    values: tuple[Any, Any]
+
+
+@dataclass(frozen=True)
+class PositionalResultComparison:
+    """Unrecorded Compare over two Assertions with one exact subject."""
+
+    subject: dict[str, Any]
+    inputs: tuple[PositionalResultInput, PositionalResultInput]
+    distinctions: tuple[PositionalResultCoordinateDistinction, ...]
+    act: str = "Compare"
+    owner: str = "this bounded comparison occurrence"
+    responsibility: str = (
+        "preserve each positional result Assertion as carried and report literal "
+        "coordinate sameness, difference, and absence only"
+    )
+
+
 ASSERTION_PRODUCTION_COMPARISON_RECORDED_KIND = (
     "operator.assertion.production_comparison_recorded"
 )
@@ -82,6 +120,21 @@ class RecordedAssertionProductionDistinction:
 
 
 COORDINATES: dict[str, tuple[str, ...]] = {
+    "standing": ("dimensions", "standing"),
+    "source_provenance": ("dimensions", "source_provenance"),
+    "responsibility": ("dimensions", "responsibility"),
+    "authority_warrant": ("dimensions", "authority_warrant"),
+    "scope": ("assertion_scope",),
+    "support_basis": ("support_basis",),
+    "completeness_boundary": ("completeness_boundary",),
+    "completeness_scope": ("completeness_scope",),
+    "unknowns": ("unknowns",),
+    "forbidden_inferences": ("forbidden_inferences",),
+}
+
+POSITIONAL_RESULT_COORDINATES: dict[str, tuple[str, ...]] = {
+    "positions_measured": ("dimensions", "content", "positions_measured"),
+    "occupancies": ("dimensions", "content", "occupancies"),
     "standing": ("dimensions", "standing"),
     "source_provenance": ("dimensions", "source_provenance"),
     "responsibility": ("dimensions", "responsibility"),
@@ -205,6 +258,80 @@ def compare_assertion_productions(
         )
     return AssertionProductionComparison(
         assertion_id=refs[0]["assertion_id"],
+        inputs=(inputs[0], inputs[1]),
+        distinctions=tuple(distinctions),
+    )
+
+
+def compare_positional_result_assertions(
+    ledger: EventLedger, references: Iterable[dict[str, str]]
+) -> PositionalResultComparison:
+    """Compare two exact result Assertions sharing one literal subject.
+
+    Subject equality supplies comparability only. It establishes no relation,
+    similarity, recurrence, conflict, preference, meaning, or reason for either
+    Assertion's Standing to move.
+    """
+
+    refs = tuple(references)
+    if len(refs) != 2:
+        raise AssertionComparisonError(
+            f"positional result Compare consumes exactly two inputs; {len(refs)} supplied"
+        )
+    required = {"producing_event_id", "assertion_id"}
+    if any(set(reference) != required for reference in refs):
+        raise AssertionComparisonError(
+            "each input must be one exact producing-event and Assertion identity pair"
+        )
+    if refs[0] == refs[1] or refs[0]["producing_event_id"] == refs[1]["producing_event_id"]:
+        raise AssertionComparisonError(
+            "one positional result production cannot be compared with itself"
+        )
+
+    recovered: list[RecordedAdjacentPairResultAssertion] = []
+    inputs = []
+    for reference in refs:
+        assertion = get_recorded_adjacent_pair_result_assertion(
+            ledger,
+            producing_event_id=reference["producing_event_id"],
+            assertion_id=reference["assertion_id"],
+        )
+        if assertion is None:
+            raise AssertionComparisonError(
+                "a positional result Assertion reference does not resolve to its "
+                "producing occurrence"
+            )
+        integrity = ledger.integrity_of(assertion.producing_event_id)
+        recovered.append(assertion)
+        inputs.append(
+            PositionalResultInput(
+                assertion_id=assertion.assertion_id,
+                producing_event_id=assertion.producing_event_id,
+                integrity=integrity,
+            )
+        )
+
+    subjects = tuple(assertion.payload["assertion_subject"] for assertion in recovered)
+    if not _exactly_same(subjects[0], subjects[1]):
+        raise AssertionComparisonError(
+            "positional result Compare requires one exact carried Assertion subject"
+        )
+
+    distinctions = []
+    for coordinate, path in POSITIONAL_RESULT_COORDINATES.items():
+        read = tuple(_read(assertion.payload, path) for assertion in recovered)
+        present = (read[0][0], read[1][0])
+        values = (read[0][1], read[1][1])
+        distinctions.append(
+            PositionalResultCoordinateDistinction(
+                coordinate=coordinate,
+                same=present[0] == present[1] and _exactly_same(*values),
+                present=present,
+                values=values,
+            )
+        )
+    return PositionalResultComparison(
+        subject=dict(subjects[0]),
         inputs=(inputs[0], inputs[1]),
         distinctions=tuple(distinctions),
     )
