@@ -18,6 +18,10 @@ from io import StringIO
 import pytest
 
 from seed_runtime.adjacent_pair_measurement import measure_after
+from seed_runtime.assertion_comparison import (
+    AssertionComparisonError,
+    compare_assertion_productions,
+)
 from seed_runtime.bounded_testimony_comparison import (
     compare_preserved_findings,
     record_comparison_finding,
@@ -282,6 +286,157 @@ def test_assertion_identity_and_producing_occurrence_remain_distinct(compared):
         producing_event_id=first.id,
         assertion_id=first_count["dimensions"]["identity"],
     ).producing_event_id == first.id
+
+
+def test_two_productions_of_one_assertion_can_be_compared_without_relation(compared):
+    finding = _by_right(compared)["word"]
+    first = record_measured_count(
+        compared, workspace_id="w", session_id="s1", finding=finding
+    )
+    second = record_measured_count(
+        compared, workspace_id="w", session_id="s1", finding=finding
+    )
+    first_count = next(
+        assertion
+        for assertion in assertions_of_recorded_measurement(first)
+        if assertion.result == "count"
+    )
+    second_count = next(
+        assertion
+        for assertion in assertions_of_recorded_measurement(second)
+        if assertion.result == "count"
+    )
+
+    comparison = compare_assertion_productions(
+        compared, (first_count.reference, second_count.reference)
+    )
+
+    assert comparison.assertion_id == first_count.assertion_id
+    assert comparison.act == "Compare"
+    assert comparison.owner == "this bounded comparison occurrence"
+    assert comparison.responsibility == (
+        "preserve each input's carried fidelity coordinates and report literal "
+        "sameness, difference, and absence only"
+    )
+    assert all(distinction.same for distinction in comparison.distinctions)
+    assert not hasattr(comparison, "bounded_relation")
+
+
+def test_assertion_compare_distinguishes_absence_from_carried_none(compared):
+    finding = _by_right(compared)["word"]
+    first = record_measured_count(
+        compared, workspace_id="w", session_id="s1", finding=finding
+    )
+    altered_payload = first.model_copy(deep=True).payload
+    altered_count = next(
+        assertion
+        for assertion in altered_payload["assertions"]
+        if assertion["result"] == "count"
+    )
+    assert altered_count["completeness_boundary"] is None
+    del altered_count["completeness_boundary"]
+    second = compared.append(
+        first.kind,
+        first.workspace_id,
+        altered_payload,
+        session_id=first.session_id,
+    )
+    first_count = next(
+        assertion
+        for assertion in assertions_of_recorded_measurement(first)
+        if assertion.result == "count"
+    )
+    second_count = next(
+        assertion
+        for assertion in assertions_of_recorded_measurement(second)
+        if assertion.result == "count"
+    )
+
+    comparison = compare_assertion_productions(
+        compared, (first_count.reference, second_count.reference)
+    )
+    distinction = next(
+        distinction
+        for distinction in comparison.distinctions
+        if distinction.coordinate == "completeness_boundary"
+    )
+
+    assert distinction.present == (True, False)
+    assert distinction.values == (None, None)
+    assert distinction.same is False
+
+
+def test_assertion_compare_exposes_changed_support_without_strengthening_it(compared):
+    finding = _by_right(compared)["word"]
+    first = record_measured_count(
+        compared, workspace_id="w", session_id="s1", finding=finding
+    )
+    altered_payload = first.model_copy(deep=True).payload
+    altered_measured_in = next(
+        assertion
+        for assertion in altered_payload["assertions"]
+        if assertion["result"] == "measured_in"
+    )
+    altered_measured_in["support_basis"]["event_ids"].append(
+        "additional-applicable-evidence"
+    )
+    second = compared.append(
+        first.kind,
+        first.workspace_id,
+        altered_payload,
+        session_id=first.session_id,
+    )
+    first_assertion = next(
+        assertion
+        for assertion in assertions_of_recorded_measurement(first)
+        if assertion.result == "measured_in"
+    )
+    second_assertion = next(
+        assertion
+        for assertion in assertions_of_recorded_measurement(second)
+        if assertion.result == "measured_in"
+    )
+
+    comparison = compare_assertion_productions(
+        compared, (first_assertion.reference, second_assertion.reference)
+    )
+    distinctions = {
+        distinction.coordinate: distinction for distinction in comparison.distinctions
+    }
+    assert distinctions["support_basis"].same is False
+    assert all(
+        distinction.same
+        for coordinate, distinction in distinctions.items()
+        if coordinate != "support_basis"
+    )
+
+
+def test_assertion_compare_refuses_self_and_different_assertions(compared):
+    event = record_measured_count(
+        compared,
+        workspace_id="w",
+        session_id="s1",
+        finding=_by_right(compared)["word"],
+    )
+    assertions = assertions_of_recorded_measurement(event)
+    count = next(assertion for assertion in assertions if assertion.result == "count")
+    recurrence = next(
+        assertion for assertion in assertions if assertion.result == "recurrence"
+    )
+
+    with pytest.raises(AssertionComparisonError, match="cannot be compared with itself"):
+        compare_assertion_productions(compared, (count.reference, count.reference))
+    with pytest.raises(AssertionComparisonError, match="one canonical Assertion"):
+        compare_assertion_productions(
+            compared,
+            (
+                count.reference,
+                {
+                    "producing_event_id": "another-event",
+                    "assertion_id": recurrence.assertion_id,
+                },
+            ),
+        )
 
 
 def test_recorded_assertion_stream_obeys_sessions_and_boundary(compared):
