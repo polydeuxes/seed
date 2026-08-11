@@ -4,6 +4,7 @@ from copy import deepcopy
 
 import pytest
 
+from seed_runtime.events import EventLedger
 from seed_runtime.coordinate_assertion_measurement import (
     COORDINATE_ASSERTION_COUNT_RECORDED_KIND,
     CoordinateAssertionMeasurementError,
@@ -214,10 +215,20 @@ def test_recovery_refuses_self_consistent_content_not_carried_by_source():
 def test_measurement_refuses_an_absent_declared_source_session():
     ledger = _coordinate_population()
     with pytest.raises(CoordinateAssertionMeasurementError, match="absent"):
-        list(
-            measure_coordinate_assertion_counts(
-                ledger,
-                workspace_id="w",
-                source_session_ids=("missing",),
-            )
+        measure_coordinate_assertion_counts(
+            ledger,
+            workspace_id="w",
+            source_session_ids=("missing",),
+        )
+
+
+def test_measurement_refuses_an_empty_coordinate_population_eagerly():
+    ledger = EventLedger()
+    ledger.append("unrelated", "w", {}, session_id="coordinate-results")
+
+    with pytest.raises(CoordinateAssertionMeasurementError, match="no recovered"):
+        measure_coordinate_assertion_counts(
+            ledger,
+            workspace_id="w",
+            source_session_ids=("coordinate-results",),
         )

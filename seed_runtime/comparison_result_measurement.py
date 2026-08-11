@@ -224,29 +224,32 @@ def measure_comparison_result_counts(
         )
 
     # Rehydrate only the representative of the exact result being yielded.
-    # Callers may stream the findings; this function never constructs a global
-    # collection of full result payloads at its output boundary.
-    for candidates in grouped.values():
-        for group in candidates:
-            representative = _rehydrate_validated_reference(
-                ledger, group.representative
-            )
-            payload = representative.payload
-            yield MeasuredComparisonResultCount(
-                compared_subject=payload["assertion_subject"]["compared_subject"],
-                coordinate=representative.coordinate,
-                result_content=payload["dimensions"]["content"],
-                production_refs=tuple(
-                    {
-                        "producing_event_id": producing_event_id,
-                        "assertion_id": assertion_id,
-                    }
-                    for producing_event_id, assertion_id in group.production_refs
-                ),
-                workspace_id=workspace_id,
-                source_session_ids=sessions,
-                completeness_boundary=boundary,
-            )
+    # Population validation above is eager; callers may stream the findings
+    # without this function constructing a global collection of full payloads.
+    def stream() -> Iterator[MeasuredComparisonResultCount]:
+        for candidates in grouped.values():
+            for group in candidates:
+                representative = _rehydrate_validated_reference(
+                    ledger, group.representative
+                )
+                payload = representative.payload
+                yield MeasuredComparisonResultCount(
+                    compared_subject=payload["assertion_subject"]["compared_subject"],
+                    coordinate=representative.coordinate,
+                    result_content=payload["dimensions"]["content"],
+                    production_refs=tuple(
+                        {
+                            "producing_event_id": producing_event_id,
+                            "assertion_id": assertion_id,
+                        }
+                        for producing_event_id, assertion_id in group.production_refs
+                    ),
+                    workspace_id=workspace_id,
+                    source_session_ids=sessions,
+                    completeness_boundary=boundary,
+                )
+
+    return stream()
 
 
 def _assertion_identity(

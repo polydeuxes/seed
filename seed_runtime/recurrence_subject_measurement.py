@@ -474,6 +474,9 @@ def iter_recorded_recurrence_subject_coordinate_assertions(
                 (source_ref.get("producing_event_id"), source_ref.get("assertion_id"))
             )
 
+    if not source_refs:
+        return
+
     recovered_sources = {}
     try:
         for source in iter_recorded_comparison_result_count_assertions(
