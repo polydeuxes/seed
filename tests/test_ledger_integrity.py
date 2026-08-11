@@ -11,10 +11,12 @@ establishes a storage property Seed chose, not one the Book demanded.
 
 from __future__ import annotations
 
+import random
 import sqlite3
 
 import pytest
 
+from seed_runtime.event import Event
 from seed_runtime.bounded_testimony_comparison import (
     BoundedComparisonError,
     compare_preserved_findings,
@@ -580,3 +582,89 @@ def test_a_batch_leaves_no_occurrence_without_its_reservation(path):
         assert new_id("obs") == "obs_000078"
     finally:
         led.close()
+
+
+def test_reservable_suffix_observation_matches_a_per_prefix_scan():
+    """One split must find exactly what testing every prefix in turn found.
+
+    A reservable identifier is a prefix, an underscore, and digits, so the
+    digits begin just after the value's last underscore. This holds the split
+    to that equivalence over generated payloads rather than over examples,
+    because the prefixes overlap (`obs` and `obs_local_host`) and a suffix of
+    zero is deliberately not reserved.
+    """
+
+    from seed_runtime.events import _numeric_suffix, _walk_values
+
+    prefixes = tuple(SQLiteEventLedger._PERSISTED_ID_PREFIXES) + ("session",)
+
+    def per_prefix_scan(event):
+        found = {}
+        values = list(_walk_values(event.payload))
+        if event.session_id is not None:
+            values.append(event.session_id)
+        for value in values:
+            if not isinstance(value, str):
+                continue
+            for prefix in prefixes:
+                suffix = _numeric_suffix(value, prefix)
+                if suffix is not None and suffix > found.get(prefix, 0):
+                    found[prefix] = suffix
+        return found
+
+    tokens = list(prefixes) + ["evt", "x", "", "obs_local", "need"]
+    rng = random.Random(11)
+
+    def identifier():
+        token = rng.choice(tokens)
+        return rng.choice([
+            f"{token}_{rng.randint(0, 999)}",
+            f"{token}_{rng.choice(['', 'x', '0a', '007'])}",
+            token,
+            f"_{rng.randint(0, 99)}",
+            f"{token}__{rng.randint(0, 99)}",
+        ])
+
+    def value(depth=0):
+        roll = rng.random()
+        if depth < 3 and roll < 0.3:
+            return {identifier(): value(depth + 1) for _ in range(rng.randint(0, 4))}
+        if depth < 3 and roll < 0.45:
+            return [value(depth + 1) for _ in range(rng.randint(0, 4))]
+        if roll < 0.75:
+            return identifier()
+        return rng.choice([None, True, 7, 3.5])
+
+    ledger = SQLiteEventLedger.__new__(SQLiteEventLedger)
+    for index in range(1500):
+        payload = value()
+        if not isinstance(payload, dict):
+            payload = {"k": payload}
+        event = Event(
+            id=f"evt_{index}",
+            kind="k",
+            workspace_id="w",
+            payload=payload,
+            session_id=rng.choice([None, identifier(), f"session_{rng.randint(0, 9999)}"]),
+        )
+        assert ledger._observed_suffixes(event) == per_prefix_scan(event)
+
+
+def test_a_reserved_suffix_of_zero_is_not_reserved():
+    """`suffix > found.get(prefix, 0)` deliberately declines zero, and the
+    split must decline it too rather than reserve prefix zero."""
+
+    ledger = SQLiteEventLedger.__new__(SQLiteEventLedger)
+    event = Event(id="evt_1", kind="k", workspace_id="w", payload={"a": "need_0"})
+    assert ledger._observed_suffixes(event) == {}
+    event = Event(id="evt_2", kind="k", workspace_id="w", payload={"a": "need_1"})
+    assert ledger._observed_suffixes(event) == {"need": 1}
+
+
+def test_an_overlapping_prefix_reserves_the_longer_match():
+    ledger = SQLiteEventLedger.__new__(SQLiteEventLedger)
+    event = Event(
+        id="evt_1", kind="k", workspace_id="w",
+        payload={"a": "obs_local_host_7", "b": "obs_4"},
+    )
+    assert ledger._observed_suffixes(event) == {"obs_local_host": 7, "obs": 4}
