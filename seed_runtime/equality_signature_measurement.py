@@ -20,9 +20,8 @@ from seed_runtime.assertion_comparison import (
     POSITIONAL_RESULT_COORDINATES,
     AssertionComparisonError,
     RecordedPositionalResultDistinction,
-    assertions_of_recorded_positional_result_comparison,
-    get_recorded_positional_result_distinction,
     iter_recorded_positional_result_distinctions,
+    _recover_recorded_positional_result_comparison,
 )
 from seed_runtime.event import Event
 from seed_runtime.events import CORRUPTED, EventLedger, EventLedgerBoundary
@@ -398,6 +397,16 @@ def get_recorded_equality_signature(
     event = ledger.get(producing_event_id)
     if event is None:
         return None
+    recovered = _recover_equality_signature(ledger, event)
+    return recovered if recovered.assertion_id == assertion_id else None
+
+
+def _recover_equality_signature(
+    ledger: EventLedger,
+    event: Event,
+) -> RecordedEqualitySignatureAssertion:
+    """Recover one signature from an Event the caller already holds."""
+
     if ledger.integrity_of(event.id) == CORRUPTED:
         raise EqualitySignatureMeasurementError(
             "a corrupted Measurement occurrence cannot expose its Assertion"
@@ -415,25 +424,22 @@ def get_recorded_equality_signature(
             "a corrupted Compare occurrence cannot support a signature"
         )
     try:
-        if get_recorded_positional_result_distinction(
-            ledger,
-            producing_event_id=source_event_id,
-            assertion_id=refs[0]["assertion_id"],
-        ) is None:
-            raise EqualitySignatureMeasurementError(
-                "the source Compare result does not resolve"
-            )
-        source = assertions_of_recorded_positional_result_comparison(source_event)
+        source = _recover_recorded_positional_result_comparison(ledger, source_event)
     except AssertionComparisonError as exc:
         raise EqualitySignatureMeasurementError(str(exc)) from exc
-    if [item.reference for item in source] != refs:
+    by_coordinate = {item.coordinate: item for item in source}
+    if (
+        len(source) != len(_surface())
+        or set(by_coordinate) != set(_surface())
+        or [by_coordinate[name].reference for name in _surface()] != refs
+    ):
         raise EqualitySignatureMeasurementError(
             "signature support is not the complete source Compare surface"
         )
     expected_same = [
-        item.coordinate
-        for item in source
-        if item.payload["dimensions"]["content"]["same"]
+        name
+        for name in _surface()
+        if by_coordinate[name].payload["dimensions"]["content"]["same"]
     ]
     expected = _content(
         same_coordinates=expected_same,
@@ -443,7 +449,7 @@ def get_recorded_equality_signature(
         raise EqualitySignatureMeasurementError(
             "signature does not match its complete source Compare surface"
         )
-    return recovered if recovered.assertion_id == assertion_id else None
+    return recovered
 
 
 def iter_recorded_equality_signatures(
@@ -462,14 +468,4 @@ def iter_recorded_equality_signatures(
             EQUALITY_SIGNATURE_RECORDED_KIND,
             through=through,
         ):
-            recovered = assertion_of_recorded_equality_signature(event)
-            resolved = get_recorded_equality_signature(
-                ledger,
-                producing_event_id=event.id,
-                assertion_id=recovered.assertion_id,
-            )
-            if resolved is None:
-                raise EqualitySignatureMeasurementError(
-                    "a bounded signature Assertion no longer resolves"
-                )
-            yield resolved
+            yield _recover_equality_signature(ledger, event)
