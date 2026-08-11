@@ -25,7 +25,7 @@ from seed_runtime.assertion_comparison import (
     iter_recorded_positional_result_distinctions,
 )
 from seed_runtime.event import Event
-from seed_runtime.events import CORRUPTED, EventLedger
+from seed_runtime.events import CORRUPTED, EventLedger, EventLedgerBoundary
 from seed_runtime.ids import new_id
 
 
@@ -444,3 +444,32 @@ def get_recorded_equality_signature(
             "signature does not match its complete source Compare surface"
         )
     return recovered if recovered.assertion_id == assertion_id else None
+
+
+def iter_recorded_equality_signatures(
+    ledger: EventLedger,
+    *,
+    workspace_id: str,
+    session_ids: Iterable[str],
+    through: EventLedgerBoundary,
+) -> Iterator[RecordedEqualitySignatureAssertion]:
+    """Validate and stream a bounded population of signature Assertions."""
+
+    for session_id in tuple(dict.fromkeys(session_ids)):
+        for event in ledger.iter_session_kind(
+            workspace_id,
+            session_id,
+            EQUALITY_SIGNATURE_RECORDED_KIND,
+            through=through,
+        ):
+            recovered = assertion_of_recorded_equality_signature(event)
+            resolved = get_recorded_equality_signature(
+                ledger,
+                producing_event_id=event.id,
+                assertion_id=recovered.assertion_id,
+            )
+            if resolved is None:
+                raise EqualitySignatureMeasurementError(
+                    "a bounded signature Assertion no longer resolves"
+                )
+            yield resolved
