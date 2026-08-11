@@ -695,3 +695,83 @@ def get_recorded_comparison_result_count_assertion(
         if item.assertion_id == assertion_id:
             return item
     return None
+
+
+def iter_recorded_comparison_result_count_assertions(
+    ledger: EventLedger,
+    *,
+    workspace_id: str,
+    session_ids: Iterable[str],
+    through: EventLedgerBoundary,
+) -> Iterator[RecordedComparisonResultCountAssertion]:
+    """Recover a bounded count-Assertion population with shared verification.
+
+    Every producing occurrence is checked structurally.  Its production set is
+    then checked against the complete positional-result comparison population
+    through the boundary that occurrence carries.  Expected populations are
+    built once per exact source scope/boundary during this invocation rather
+    than replayed once per count occurrence.
+    """
+
+    sessions = tuple(dict.fromkeys(session_ids))
+    if not sessions:
+        raise ComparisonResultMeasurementError(
+            "count-Assertion recovery requires exact declared sessions"
+        )
+    expected_by_extent: dict[
+        tuple[tuple[str, ...], str], dict[str, list[dict[str, str]]]
+    ] = {}
+    for session_id in sessions:
+        for event in ledger.iter_session_kind(
+            workspace_id,
+            session_id,
+            COMPARISON_RESULT_COUNT_RECORDED_KIND,
+            through=through,
+        ):
+            if ledger.integrity_of(event.id) == CORRUPTED:
+                raise ComparisonResultMeasurementError(
+                    "a corrupted Measurement occurrence cannot expose result Assertions"
+                )
+            recovered = assertions_of_recorded_comparison_result_count(event)
+            production_set = next(
+                item for item in recovered if item.result == "exact_production_set"
+            )
+            payload = production_set.payload
+            scope = payload["assertion_scope"]
+            boundary = EventLedgerBoundary(
+                payload["completeness_boundary"]["commitment"]
+            )
+            extent_key = (
+                tuple(scope["source_session_ids"]),
+                boundary.commitment,
+            )
+            expected = expected_by_extent.get(extent_key)
+            if expected is None:
+                expected = {}
+                for result in iter_recorded_positional_result_distinctions(
+                    ledger,
+                    workspace_id=workspace_id,
+                    session_ids=extent_key[0],
+                    through=boundary,
+                ):
+                    result_subject = {
+                        "compared_subject": result.payload["assertion_subject"][
+                            "compared_subject"
+                        ],
+                        "coordinate": result.coordinate,
+                        "exact_comparison_result": result.payload["dimensions"][
+                            "content"
+                        ],
+                    }
+                    expected.setdefault(_canonical(result_subject), []).append(
+                        result.reference
+                    )
+                expected_by_extent[extent_key] = expected
+            subject_key = _canonical(payload["assertion_subject"])
+            if expected.get(subject_key, []) != payload["support_basis"][
+                "assertion_refs"
+            ]:
+                raise ComparisonResultMeasurementError(
+                    "the carried production set does not equal the complete bounded read"
+                )
+            yield from recovered
