@@ -27,7 +27,7 @@ from seed_runtime.operator_session_standing import (
     advance_operator_session_standing,
     project_operator_session_standing,
 )
-from scripts import seed_local
+from seed_runtime.operator_console import run_persistent_operator_console
 
 MATERIALS = (
     "alpha\nbeta\ngamma\nexit\n",
@@ -42,7 +42,7 @@ MATERIALS = (
 def _console(material, ledger=None):
     ledger = ledger if ledger is not None else EventLedger()
     output = StringIO()
-    seed_local.run_persistent_operator_console(
+    run_persistent_operator_console(
         ledger=ledger,
         workspace_id="w",
         session_id="s",

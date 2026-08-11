@@ -44,7 +44,7 @@ from seed_runtime.preserved_material_measurement import (
     preserved_ingress_occurrences,
     record_measurement_finding,
 )
-from scripts import seed_local
+from seed_runtime.operator_console import run_persistent_operator_console
 
 MATERIAL = (
     "it is a word and it is a thing\n"
@@ -59,7 +59,7 @@ SCOPE = "whole session"
 @pytest.fixture
 def session():
     ledger = EventLedger()
-    seed_local.run_persistent_operator_console(
+    run_persistent_operator_console(
         ledger=ledger,
         workspace_id="w",
         session_id="s",

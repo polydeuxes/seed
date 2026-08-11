@@ -11,7 +11,7 @@ from seed_runtime.operator_presentation import (
 )
 from seed_runtime.operator_session_standing import project_operator_session_standing
 from tests.closed_choice_fixture import CLOSED_CHOICE_FIXTURE_SOURCES
-from scripts import seed_local
+from seed_runtime.operator_console import run_persistent_operator_console
 
 _INGRESS_KINDS = (
     "operator.ingress.raw_material_captured",
@@ -23,7 +23,7 @@ _INGRESS_KINDS = (
 def _run_console(text, *, workspace="w", session="s"):
     ledger = EventLedger()
     output = StringIO()
-    seed_local.run_persistent_operator_console(
+    run_persistent_operator_console(
         ledger=ledger,
         workspace_id=workspace,
         session_id=session,

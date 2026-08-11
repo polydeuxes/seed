@@ -47,7 +47,7 @@ from seed_runtime.preserved_material_measurement import (
     preserved_ingress_occurrences,
     record_measurement_finding,
 )
-from scripts import seed_local
+from seed_runtime.operator_console import run_persistent_operator_console
 
 SCOPE = "whole session"
 MATERIAL = (
@@ -71,7 +71,7 @@ def _after_left(text):
 @pytest.fixture
 def session():
     ledger = EventLedger()
-    seed_local.run_persistent_operator_console(
+    run_persistent_operator_console(
         ledger=ledger,
         workspace_id="w",
         session_id="s",
@@ -418,7 +418,7 @@ def test_displacements_are_enumerated_from_the_material(occurrences):
 def test_a_displacement_absent_from_the_material_is_simply_absent(session):
     """Absent because nothing reaches it, not because it was judged dull."""
     ledger = EventLedger()
-    seed_local.run_persistent_operator_console(
+    run_persistent_operator_console(
         ledger=ledger,
         workspace_id="w",
         session_id="s",
