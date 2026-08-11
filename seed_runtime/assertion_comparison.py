@@ -17,8 +17,10 @@ from typing import Any, Iterable
 
 from seed_runtime.events import CORRUPTED, EventLedger
 from seed_runtime.event import Event
+from seed_runtime.ids import new_id
 from seed_runtime.adjacent_pair_measurement import (
     RecordedAdjacentPairResultAssertion,
+    assertion_of_recorded_adjacent_pair_result,
     get_recorded_adjacent_pair_result_assertion,
     iter_recorded_adjacent_pair_result_assertions,
 )
@@ -353,7 +355,7 @@ def compare_positional_result_assertions(
         )
 
     recovered: list[RecordedAdjacentPairResultAssertion] = []
-    inputs = []
+    integrities = []
     for reference in refs:
         assertion = get_recorded_adjacent_pair_result_assertion(
             ledger,
@@ -367,14 +369,32 @@ def compare_positional_result_assertions(
             )
         integrity = ledger.integrity_of(assertion.producing_event_id)
         recovered.append(assertion)
-        inputs.append(
-            PositionalResultInput(
-                assertion_id=assertion.assertion_id,
-                producing_event_id=assertion.producing_event_id,
-                integrity=integrity,
-            )
-        )
+        integrities.append(integrity)
 
+    return _compare_recovered_positional_result_assertions(
+        recovered, integrities=integrities
+    )
+
+
+def _compare_recovered_positional_result_assertions(
+    assertions: Iterable[RecordedAdjacentPairResultAssertion],
+    *,
+    integrities: Iterable[str],
+) -> PositionalResultComparison:
+    """Compare Assertions already recovered inside one bounded occurrence."""
+
+    recovered = tuple(assertions)
+    integrity_values = tuple(integrities)
+    if len(recovered) != 2 or len(integrity_values) != 2:
+        raise AssertionComparisonError("a recovered positional Compare requires two inputs")
+    inputs = tuple(
+        PositionalResultInput(
+            assertion_id=assertion.assertion_id,
+            producing_event_id=assertion.producing_event_id,
+            integrity=integrity,
+        )
+        for assertion, integrity in zip(recovered, integrity_values)
+    )
     subjects = tuple(assertion.payload["assertion_subject"] for assertion in recovered)
     if not _exactly_same(subjects[0], subjects[1]):
         raise AssertionComparisonError(
@@ -401,6 +421,27 @@ def compare_positional_result_assertions(
     )
 
 
+def _positional_result_assertions_by_subject(
+    ledger: EventLedger,
+    *,
+    workspace_id: str,
+    session_ids: Iterable[str],
+    through: "EventLedgerBoundary",
+) -> dict[str, list[dict[str, str]]]:
+    """Validate the population while retaining only compact references."""
+
+    grouped: dict[str, list[dict[str, str]]] = {}
+    for assertion in iter_recorded_adjacent_pair_result_assertions(
+        ledger,
+        workspace_id=workspace_id,
+        session_ids=session_ids,
+        through=through,
+    ):
+        subject_key = _canonical_json(assertion.payload["assertion_subject"])
+        grouped.setdefault(subject_key, []).append(assertion.reference)
+    return grouped
+
+
 def iter_positional_result_comparison_inputs(
     ledger: EventLedger,
     *,
@@ -415,15 +456,12 @@ def iter_positional_result_comparison_inputs(
     category admits or excludes a production. Compare is not performed here.
     """
 
-    by_subject: dict[str, list[dict[str, str]]] = {}
-    for assertion in iter_recorded_adjacent_pair_result_assertions(
+    by_subject = _positional_result_assertions_by_subject(
         ledger,
         workspace_id=workspace_id,
         session_ids=session_ids,
         through=through,
-    ):
-        subject_key = _canonical_json(assertion.payload["assertion_subject"])
-        by_subject.setdefault(subject_key, []).append(assertion.reference)
+    )
     for references in by_subject.values():
         yield from combinations(references, 2)
 
@@ -449,6 +487,33 @@ def record_positional_result_comparison(
         raise AssertionComparisonError(
             "the supplied positional-result comparison does not match its inputs"
         )
+    return ledger.append(
+        POSITIONAL_RESULT_COMPARISON_RECORDED_KIND,
+        workspace_id,
+        _positional_result_comparison_payload(
+            workspace_id=workspace_id,
+            session_id=session_id,
+            comparison=comparison,
+        ),
+        session_id=session_id,
+    )
+
+
+def _positional_result_comparison_payload(
+    *,
+    workspace_id: str,
+    session_id: str,
+    comparison: PositionalResultComparison,
+) -> dict[str, Any]:
+    """Represent a comparison already reproduced from validated inputs."""
+
+    input_refs = tuple(
+        {
+            "producing_event_id": item.producing_event_id,
+            "assertion_id": item.assertion_id,
+        }
+        for item in comparison.inputs
+    )
     assertions = []
     for distinction in comparison.distinctions:
         content = {
@@ -497,10 +562,7 @@ def record_positional_result_comparison(
                 ),
             }
         )
-    return ledger.append(
-        POSITIONAL_RESULT_COMPARISON_RECORDED_KIND,
-        workspace_id,
-        {
+    return {
             "dimensions": {
                 "identity": "positional-result-comparison-occurrence",
                 "content": f"{len(assertions)} distinct comparison Assertions recorded",
@@ -516,10 +578,7 @@ def record_positional_result_comparison(
             "compared_subject": dict(comparison.subject),
             "inputs": list(input_refs),
             "assertions": assertions,
-            "mutates_cluster": False,
-        },
-        session_id=session_id,
-    )
+        }
 
 
 def assertions_of_recorded_positional_result_comparison(
@@ -670,7 +729,6 @@ def get_recorded_positional_result_distinction(
         event.payload.get("producing_act") != comparison.act
         or event.payload.get("owner") != comparison.owner
         or event.payload.get("responsibility") != comparison.responsibility
-        or event.payload.get("mutates_cluster") is not False
         or event.payload["compared_subject"] != comparison.subject
     ):
         raise AssertionComparisonError(
@@ -693,6 +751,95 @@ def get_recorded_positional_result_distinction(
         if result.assertion_id == assertion_id:
             return result
     return None
+
+
+def record_positional_result_comparison_layer(
+    ledger: EventLedger,
+    *,
+    workspace_id: str,
+    source_session_ids: Iterable[str],
+    recording_session_id: str,
+) -> int:
+    """Form, perform, and record one fixed layer of lawful Comparisons.
+
+    One captured append prefix fixes the eligible result Assertions. Every
+    unordered pair sharing an exact carried subject is compared and recorded;
+    results written here cannot become inputs to this same invocation.
+    """
+
+    sessions = tuple(dict.fromkeys(source_session_ids))
+    if not sessions or any(not isinstance(value, str) or not value for value in sessions):
+        raise AssertionComparisonError(
+            "a positional comparison layer requires exact declared source sessions"
+        )
+    if not isinstance(recording_session_id, str) or not recording_session_id:
+        raise AssertionComparisonError(
+            "a positional comparison layer requires an exact recording session"
+        )
+    boundary = ledger.capture_boundary()
+    missing = [
+        session_id
+        for session_id in sessions
+        if not ledger.has_session(workspace_id, session_id, through=boundary)
+    ]
+    if missing:
+        raise AssertionComparisonError(
+            "declared source sessions are absent through the layer boundary: "
+            + ", ".join(missing)
+        )
+
+    by_subject = _positional_result_assertions_by_subject(
+        ledger,
+        workspace_id=workspace_id,
+        session_ids=sessions,
+        through=boundary,
+    )
+    batch_size = 128
+    pending = []
+    recorded = 0
+    for references in by_subject.values():
+        recovered = []
+        for reference in references:
+            event = ledger.get(reference["producing_event_id"])
+            if event is None:
+                raise AssertionComparisonError(
+                    "a validated positional result production is no longer recoverable"
+                )
+            assertion = assertion_of_recorded_adjacent_pair_result(event)
+            if assertion.assertion_id != reference["assertion_id"]:
+                raise AssertionComparisonError(
+                    "a validated positional result reference changed during the layer"
+                )
+            recovered.append(assertion)
+        for left, right in combinations(recovered, 2):
+            comparison = _compare_recovered_positional_result_assertions(
+                (left, right),
+                integrities=(
+                    ledger.integrity_of(left.producing_event_id),
+                    ledger.integrity_of(right.producing_event_id),
+                ),
+            )
+            pending.append(
+                Event(
+                    id=new_id("evt"),
+                    kind=POSITIONAL_RESULT_COMPARISON_RECORDED_KIND,
+                    workspace_id=workspace_id,
+                    session_id=recording_session_id,
+                    payload=_positional_result_comparison_payload(
+                        workspace_id=workspace_id,
+                        session_id=recording_session_id,
+                        comparison=comparison,
+                    ),
+                )
+            )
+            if len(pending) == batch_size:
+                ledger.append_many(pending)
+                recorded += len(pending)
+                pending.clear()
+    if pending:
+        ledger.append_many(pending)
+        recorded += len(pending)
+    return recorded
 
 
 def record_assertion_production_comparison(
@@ -796,7 +943,6 @@ def record_assertion_production_comparison(
             "responsibility": comparison.responsibility,
             "inputs": list(input_refs),
             "assertions": assertions,
-            "mutates_cluster": False,
         },
         session_id=session_id,
     )
