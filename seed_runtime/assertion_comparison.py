@@ -95,16 +95,52 @@ class PositionalResultComparison:
 ASSERTION_PRODUCTION_COMPARISON_RECORDED_KIND = (
     "operator.assertion.production_comparison_recorded"
 )
+POSITIONAL_RESULT_COMPARISON_RECORDED_KIND = (
+    "operator.assertion.positional_result_comparison_recorded"
+)
 
 COMPARISON_ASSERTION_FIDELITY_RESPONSIBILITY = (
     "preserve the fidelity of this comparison Assertion's Standing to its "
     "carried coordinates"
+)
+POSITIONAL_RESULT_COMPARISON_PROVENANCE = (
+    "the two exact positional result Assertion productions carried in support_basis"
+)
+POSITIONAL_RESULT_COMPARISON_AUTHORITY = (
+    "literal comparison evidence only; establishes no relation, similarity, "
+    "recurrence, conflict, meaning, preference, revision, or strengthening"
+)
+POSITIONAL_RESULT_COMPARISON_UNKNOWNS = (
+    "whether this literal result is Applicable to any later Act remains Unknown",
+)
+POSITIONAL_RESULT_COMPARISON_FORBIDDEN_INFERENCES = (
+    "literal sameness is not similarity, relation, or recurrence",
+    "literal difference is not conflict",
+    "recording does not establish Applicability, admission, consumption, "
+    "Uptake, or Standing movement",
 )
 
 
 @dataclass(frozen=True)
 class RecordedAssertionProductionDistinction:
     """One addressable coordinate result inside its producing Compare occurrence."""
+
+    assertion_id: str
+    producing_event_id: str
+    coordinate: str
+    payload: dict[str, Any]
+
+    @property
+    def reference(self) -> dict[str, str]:
+        return {
+            "producing_event_id": self.producing_event_id,
+            "assertion_id": self.assertion_id,
+        }
+
+
+@dataclass(frozen=True)
+class RecordedPositionalResultDistinction:
+    """One addressable coordinate result of a positional-result Compare."""
 
     assertion_id: str
     producing_event_id: str
@@ -189,6 +225,32 @@ def _distinction_assertion_identity(
         "same": same,
     }
     return "assertion-production-distinction:" + hashlib.sha256(
+        _canonical_json(identity).encode("utf-8")
+    ).hexdigest()
+
+
+def _positional_result_distinction_identity(
+    *,
+    subject: dict[str, Any],
+    inputs: Iterable[dict[str, str]],
+    workspace_id: str,
+    session_id: str,
+    coordinate: str,
+    present: Iterable[bool],
+    values: Iterable[Any],
+    same: bool,
+) -> str:
+    identity = {
+        "compared_subject": subject,
+        "inputs": list(inputs),
+        "workspace_id": workspace_id,
+        "session_id": session_id,
+        "coordinate": coordinate,
+        "present": list(present),
+        "values": list(values),
+        "same": same,
+    }
+    return "positional-result-distinction:" + hashlib.sha256(
         _canonical_json(identity).encode("utf-8")
     ).hexdigest()
 
@@ -335,6 +397,273 @@ def compare_positional_result_assertions(
         inputs=(inputs[0], inputs[1]),
         distinctions=tuple(distinctions),
     )
+
+
+def record_positional_result_comparison(
+    ledger: EventLedger,
+    *,
+    workspace_id: str,
+    session_id: str,
+    comparison: PositionalResultComparison,
+) -> Event:
+    """Preserve each literal positional-result Compare output separately."""
+
+    input_refs = tuple(
+        {
+            "producing_event_id": item.producing_event_id,
+            "assertion_id": item.assertion_id,
+        }
+        for item in comparison.inputs
+    )
+    verified = compare_positional_result_assertions(ledger, input_refs)
+    if comparison != verified:
+        raise AssertionComparisonError(
+            "the supplied positional-result comparison does not match its inputs"
+        )
+    assertions = []
+    for distinction in comparison.distinctions:
+        content = {
+            "coordinate": distinction.coordinate,
+            "present": list(distinction.present),
+            "values": list(distinction.values),
+            "same": distinction.same,
+        }
+        identity = _positional_result_distinction_identity(
+            subject=comparison.subject,
+            inputs=input_refs,
+            workspace_id=workspace_id,
+            session_id=session_id,
+            **content,
+        )
+        assertions.append(
+            {
+                "dimensions": {
+                    "identity": identity,
+                    "content": content,
+                    "standing": "compared",
+                    "source_provenance": POSITIONAL_RESULT_COMPARISON_PROVENANCE,
+                    "responsibility": COMPARISON_ASSERTION_FIDELITY_RESPONSIBILITY,
+                    "authority_warrant": POSITIONAL_RESULT_COMPARISON_AUTHORITY,
+                    "scope_locality": "the exact assertion_scope carried here",
+                    "occurrence_preservation": (
+                        "distinct Compare result preserved by its producing occurrence"
+                    ),
+                },
+                "subject_kind": "assertion",
+                "responsibility_owner": "this recorded assertion",
+                "result": "positional_result_coordinate_distinction",
+                "assertion_subject": {
+                    "compared_subject": dict(comparison.subject),
+                    "coordinate": distinction.coordinate,
+                },
+                "assertion_scope": {
+                    "workspace_id": workspace_id,
+                    "session_id": session_id,
+                    "compared_productions": list(input_refs),
+                },
+                "support_basis": {"assertion_refs": list(input_refs)},
+                "unknowns": list(POSITIONAL_RESULT_COMPARISON_UNKNOWNS),
+                "forbidden_inferences": list(
+                    POSITIONAL_RESULT_COMPARISON_FORBIDDEN_INFERENCES
+                ),
+            }
+        )
+    return ledger.append(
+        POSITIONAL_RESULT_COMPARISON_RECORDED_KIND,
+        workspace_id,
+        {
+            "dimensions": {
+                "identity": "positional-result-comparison-occurrence",
+                "content": f"{len(assertions)} distinct comparison Assertions recorded",
+                "standing": "recorded",
+                "source_provenance": "two occurrence-bound positional result Assertions",
+                "authority_warrant": "literal Compare results only",
+                "scope_locality": f"workspace:{workspace_id};session:{session_id}",
+                "occurrence_preservation": "comparison occurrence durably recorded",
+            },
+            "producing_act": "Compare",
+            "owner": comparison.owner,
+            "responsibility": comparison.responsibility,
+            "compared_subject": dict(comparison.subject),
+            "inputs": list(input_refs),
+            "assertions": assertions,
+            "mutates_cluster": False,
+        },
+        session_id=session_id,
+    )
+
+
+def assertions_of_recorded_positional_result_comparison(
+    event: Event,
+) -> tuple[RecordedPositionalResultDistinction, ...]:
+    """Recover and verify every output of one recorded positional Compare."""
+
+    if event.kind != POSITIONAL_RESULT_COMPARISON_RECORDED_KIND:
+        raise AssertionComparisonError(
+            f"{event.id} is not a positional-result Compare occurrence"
+        )
+    stated = event.payload.get("assertions")
+    outer_inputs = event.payload.get("inputs")
+    compared_subject = event.payload.get("compared_subject")
+    required_ref = {"producing_event_id", "assertion_id"}
+    if (
+        not isinstance(stated, list)
+        or len(stated) != len(POSITIONAL_RESULT_COORDINATES)
+        or not isinstance(compared_subject, dict)
+        or not isinstance(outer_inputs, list)
+        or len(outer_inputs) != 2
+        or any(
+            not isinstance(reference, dict)
+            or set(reference) != required_ref
+            or not all(isinstance(value, str) and value for value in reference.values())
+            for reference in outer_inputs
+        )
+        or outer_inputs[0]["producing_event_id"]
+        == outer_inputs[1]["producing_event_id"]
+    ):
+        raise AssertionComparisonError(
+            f"{event.id} does not carry one bounded positional-result Compare"
+        )
+
+    recovered = []
+    seen_identities = set()
+    seen_coordinates = set()
+    for assertion in stated:
+        dimensions = assertion.get("dimensions") if isinstance(assertion, dict) else None
+        content = dimensions.get("content") if isinstance(dimensions, dict) else None
+        identity = dimensions.get("identity") if isinstance(dimensions, dict) else None
+        subject = assertion.get("assertion_subject") if isinstance(assertion, dict) else None
+        scope = assertion.get("assertion_scope") if isinstance(assertion, dict) else None
+        support = assertion.get("support_basis") if isinstance(assertion, dict) else None
+        refs = support.get("assertion_refs") if isinstance(support, dict) else None
+        if (
+            assertion.get("subject_kind") != "assertion"
+            or assertion.get("responsibility_owner") != "this recorded assertion"
+            or assertion.get("result") != "positional_result_coordinate_distinction"
+            or not isinstance(dimensions, dict)
+            or dimensions.get("standing") != "compared"
+            or dimensions.get("source_provenance")
+            != POSITIONAL_RESULT_COMPARISON_PROVENANCE
+            or dimensions.get("responsibility")
+            != COMPARISON_ASSERTION_FIDELITY_RESPONSIBILITY
+            or dimensions.get("authority_warrant")
+            != POSITIONAL_RESULT_COMPARISON_AUTHORITY
+            or dimensions.get("scope_locality")
+            != "the exact assertion_scope carried here"
+            or dimensions.get("occurrence_preservation")
+            != "distinct Compare result preserved by its producing occurrence"
+            or not isinstance(content, dict)
+            or set(content) != {"coordinate", "present", "values", "same"}
+            or not isinstance(identity, str)
+            or not identity
+            or not isinstance(subject, dict)
+            or not isinstance(scope, dict)
+            or refs != outer_inputs
+            or subject.get("compared_subject") != compared_subject
+            or scope
+            != {
+                "workspace_id": event.workspace_id,
+                "session_id": event.session_id,
+                "compared_productions": outer_inputs,
+            }
+            or assertion.get("unknowns")
+            != list(POSITIONAL_RESULT_COMPARISON_UNKNOWNS)
+            or assertion.get("forbidden_inferences")
+            != list(POSITIONAL_RESULT_COMPARISON_FORBIDDEN_INFERENCES)
+        ):
+            raise AssertionComparisonError(
+                f"{event.id} carries an incoherent positional Compare result"
+            )
+        coordinate = content["coordinate"]
+        present = content["present"]
+        values = content["values"]
+        same = content["same"]
+        if (
+            coordinate not in POSITIONAL_RESULT_COORDINATES
+            or subject.get("coordinate") != coordinate
+            or not isinstance(present, list)
+            or len(present) != 2
+            or not all(isinstance(value, bool) for value in present)
+            or not isinstance(values, list)
+            or len(values) != 2
+            or not isinstance(same, bool)
+            or same != (present[0] == present[1] and _exactly_same(*values))
+        ):
+            raise AssertionComparisonError(
+                f"{event.id} carries an unlawful positional Compare result"
+            )
+        canonical = _positional_result_distinction_identity(
+            subject=compared_subject,
+            inputs=outer_inputs,
+            workspace_id=event.workspace_id,
+            session_id=event.session_id,
+            coordinate=coordinate,
+            present=present,
+            values=values,
+            same=same,
+        )
+        if identity != canonical or identity in seen_identities or coordinate in seen_coordinates:
+            raise AssertionComparisonError(
+                f"{event.id} carries duplicate or noncanonical positional Compare output"
+            )
+        seen_identities.add(identity)
+        seen_coordinates.add(coordinate)
+        recovered.append(
+            RecordedPositionalResultDistinction(
+                assertion_id=identity,
+                producing_event_id=event.id,
+                coordinate=coordinate,
+                payload=assertion,
+            )
+        )
+    if seen_coordinates != set(POSITIONAL_RESULT_COORDINATES):
+        raise AssertionComparisonError(
+            f"{event.id} does not carry every positional Compare coordinate"
+        )
+    return tuple(recovered)
+
+
+def get_recorded_positional_result_distinction(
+    ledger: EventLedger, *, producing_event_id: str, assertion_id: str
+) -> RecordedPositionalResultDistinction | None:
+    """Resolve one result only after reproducing its bounded Compare."""
+
+    event = ledger.get(producing_event_id)
+    if event is None:
+        return None
+    if ledger.integrity_of(producing_event_id) == CORRUPTED:
+        raise AssertionComparisonError(
+            "a corrupted Compare occurrence cannot expose result Assertions"
+        )
+    recovered = assertions_of_recorded_positional_result_comparison(event)
+    comparison = compare_positional_result_assertions(ledger, event.payload["inputs"])
+    if (
+        event.payload.get("producing_act") != comparison.act
+        or event.payload.get("owner") != comparison.owner
+        or event.payload.get("responsibility") != comparison.responsibility
+        or event.payload.get("mutates_cluster") is not False
+        or event.payload["compared_subject"] != comparison.subject
+    ):
+        raise AssertionComparisonError(
+            "the recorded Compare occurrence does not match its replayed Act"
+        )
+    expected = {
+        distinction.coordinate: {
+            "coordinate": distinction.coordinate,
+            "present": list(distinction.present),
+            "values": list(distinction.values),
+            "same": distinction.same,
+        }
+        for distinction in comparison.distinctions
+    }
+    for result in recovered:
+        if result.payload["dimensions"]["content"] != expected[result.coordinate]:
+            raise AssertionComparisonError(
+                "a recorded positional Compare result does not match its inputs"
+            )
+        if result.assertion_id == assertion_id:
+            return result
+    return None
 
 
 def record_assertion_production_comparison(
