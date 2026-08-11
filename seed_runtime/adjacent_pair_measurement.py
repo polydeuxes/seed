@@ -54,6 +54,7 @@ from seed_runtime.preserved_material_measurement import (
     MEASUREMENT_RECORDED_KIND,
     DeclaredMeasurement,
     MeasurementFinding,
+    MEASUREMENT_CONVENTION,
     Occupancy,
     PreservedMaterialMeasurementError,
     measure_occupancy,
@@ -125,6 +126,22 @@ def _adjacent_pairs_from_event(event: Event | None) -> list[AdjacentPair]:
         AdjacentPair(left=left, right=occupancy["representation"])
         for occupancy in event.payload["occupancies"]
     ]
+
+
+def _is_established_after_measurement(event: Event) -> bool:
+    """Whether a record carries the exact established displacement-1 form."""
+
+    left = event.payload.get("measured_left_representation")
+    return (
+        event.kind == MEASUREMENT_RECORDED_KIND
+        and event.payload.get("convention") == MEASUREMENT_CONVENTION
+        and event.payload.get("equivalence_rule") == EQUIVALENCE_RULE
+        and event.payload.get("measurement_form") == "after"
+        and isinstance(left, str)
+        and bool(left)
+        and event.payload.get("measured_relative_to") == [left]
+        and event.payload.get("measured_position") == MEASURED_POSITIONS["after"]
+    )
 
 
 def adjacent_pairs_from_finding(ledger: EventLedger, finding_event_id: str) -> list[AdjacentPair]:
@@ -465,7 +482,7 @@ def record_adjacent_pair_measurement_layer(
         MEASUREMENT_RECORDED_KIND,
         through=boundary,
     ):
-        if premise.payload.get("measurement_form") != "after":
+        if not _is_established_after_measurement(premise):
             continue
         for pair in _adjacent_pairs_from_event(premise):
             pair_premises.append((pair, premise.id))

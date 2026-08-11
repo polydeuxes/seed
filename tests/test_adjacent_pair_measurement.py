@@ -343,6 +343,57 @@ def test_one_layer_preserves_duplicate_pair_subject_productions(
     }
 
 
+def test_one_layer_refuses_claimed_after_premises_without_exact_coordinates(
+    session, recorded_finding
+):
+    malformed = []
+    mutations = (
+        lambda payload: payload.update(
+            measured_position={
+                "anchored_on": "the representation",
+                "direction": "before",
+                "displacement": 1,
+            }
+        ),
+        lambda payload: payload.update(measured_relative_to=["another"]),
+        lambda payload: payload.update(
+            equivalence_rule="a different asserted equivalence rule"
+        ),
+        lambda payload: payload.update(convention="another-convention"),
+    )
+    for mutate in mutations:
+        payload = recorded_finding.model_copy(deep=True).payload
+        mutate(payload)
+        malformed.append(
+            session.append(
+                recorded_finding.kind,
+                recorded_finding.workspace_id,
+                payload,
+                session_id=recorded_finding.session_id,
+            )
+        )
+
+    recorded_count = record_adjacent_pair_measurement_layer(
+        session,
+        workspace_id="w",
+        session_id="s",
+        counting_scope="this session",
+    )
+    produced = [
+        event
+        for event in session.list("w")
+        if event.payload.get("premise_event_id") is not None
+    ]
+
+    assert recorded_count == len(recorded_finding.payload["occupancies"]) * 4
+    assert {event.payload["premise_event_id"] for event in produced} == {
+        recorded_finding.id
+    }
+    assert not ({event.id for event in malformed} & {
+        event.payload["premise_event_id"] for event in produced
+    })
+
+
 def test_a_question_that_found_nothing_is_still_recorded(
     session, occurrences, recorded_finding
 ):
