@@ -24,6 +24,13 @@ Compiled behavior, artifact construction, stable serialization, and compatibilit
 ### 01.Standing.D — Multiplicity does not establish a collective
 Co-presence or multiplicity does not by itself establish membership, collection standing, relation, topology, ordering, selection, priority, focus, shared purpose, or higher-order identity. Each stronger assertion requires its own bounded subject and warrant; preserving several participant identities does not silently create or mutate a collective subject.
 
+### 01.Standing.D.1 — An Assertion owns fidelity of its Standing
+A bounded **Assertion** is the exact asserted content as its own subject under its carried Evidence, provenance, Scope, Authority, conflicts, limits, **Unknowns**, and current Standing. An Assertion owns the Responsibility for fidelity of its Standing to those applicable coordinates. Assertion ownership is local to that bounded Assertion; it does not create a universal assertion manager, knowledge owner, or conflict resolver.
+
+The Assertion does not thereby perform or own the Act that produced it, produce itself, or become its Producer or producing occurrence. A responsible Act may produce an Assertion and establish only the bounded Standing warranted by that Act's Evidence and Authority. The Assertion's fidelity Responsibility begins with the produced result; it does not relocate production Responsibility or production Evidence into the result. Producer != Assertion owner, producing Act != Assertion Responsibility, and recorded occurrence != Producer.
+
+An Assertion having current Standing does not require another Act merely because it exists. New, changed, or conflicting material does not automatically revise its content or Standing, and an **Unknown** does not create a demand to eliminate it. Further movement requires an applicable responsible occurrence with its own Act, Evidence, Scope, Authority, and limits. In the absence of such an occurrence, preserving the Assertion and its current Standing unchanged is lawful persistence, not an inferred constitutional Stop.
+
 ### 01.Standing.E — Relations have bounded standing
 A relation is its own bounded claim subject. A relation claim or standing must preserve each applicable constitutional dimension, or its explicit Unknown or unresolved standing, including participants and roles, the relation assertion, evidence standing, scope, producer, consumer and purpose, authority, occurrence, conflicts, and limits. Evidence that does not warrant a bounded relation claim does not thereby warrant its negation or an opposing strengthened relation claim such as unrelatedness, independence, non-conflict, not dependent, or absence of dependency. Bounded findings may instead preserve bounded absence of applicable relation evidence within the bounded corpus or boundary, limitation, conflict, non-applicability, unresolved authority, unresolved provenance, or failure to warrant the bounded claim. The honest epistemic answer may remain Unknown, but that answer does not establish that a constitutional Unknown standing was responsibly produced; absence of a relation producer does not automatically produce Typed Unknown standing. Candidate relation, relation testimony, and evidence-supported or established relation standing remain distinct. Later evidence may revise relation standing without mutating participant identity.
 
@@ -82,6 +89,9 @@ Acts, constraints, and relations are structurally distinct from dimensions. They
 - consumer-local standing != inherited producer standing
 - constructed behavior != constitutional standing
 - multiplicity != collective standing
+- Assertion owner != Producer or producing Act
+- Assertion Standing persists != automatic continuation or constitutional Stop
+- new or conflicting material available != Assertion automatically revised
 - evidence that does not warrant a relation claim != its negation or an opposing strengthened relation
 - meaning assertion carried != meaning relation warranted
 - meaning relation != proposition truth
