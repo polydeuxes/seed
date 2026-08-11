@@ -182,9 +182,8 @@ def test_batched_pair_measurement_is_exactly_the_existing_battery(
     index = AdjacentPairMeasurementIndex(occurrences)
 
     measured = index.measure_all(
-        pairs,
+        ((pair, recorded_finding.id) for pair in pairs),
         counting_scope="this session",
-        premise_event_ids={pair: recorded_finding.id for pair in pairs},
     )
 
     assert [pair for pair, _ in measured] == list(pairs)
@@ -218,20 +217,36 @@ def test_batched_pair_measurement_tokenizes_each_occurrence_once(
         AdjacentPair("of", "the"),
     )
     index.measure_all(
-        pairs,
+        ((pair, recorded_finding.id) for pair in pairs),
         counting_scope="this session",
-        premise_event_ids={pair: recorded_finding.id for pair in pairs},
     )
 
     assert calls == len(occurrences)
 
 
-def test_batched_pair_measurement_requires_each_exact_premise(occurrences):
+def test_batched_pair_measurement_requires_each_premise_identity(occurrences):
     pair = AdjacentPair("it", "is")
-    with pytest.raises(PreservedMaterialMeasurementError, match="no recorded premise"):
+    with pytest.raises(
+        PreservedMaterialMeasurementError,
+        match="no premise occurrence identity",
+    ):
         AdjacentPairMeasurementIndex(occurrences).measure_all(
-            (pair,), counting_scope="this session", premise_event_ids={}
+            ((pair, ""),), counting_scope="this session"
         )
+
+
+def test_batched_pair_measurement_preserves_duplicate_subject_premises(occurrences):
+    pair = AdjacentPair("it", "is")
+    measured = AdjacentPairMeasurementIndex(occurrences).measure_all(
+        ((pair, "premise-1"), (pair, "premise-2")),
+        counting_scope="this session",
+    )
+
+    assert [pair for pair, _ in measured] == [pair, pair]
+    assert [
+        findings["preceding"].declared.premise_event_id
+        for _, findings in measured
+    ] == ["premise-1", "premise-2"]
 
 
 def test_batched_pair_index_preserves_first_match_semantics_exhaustively():

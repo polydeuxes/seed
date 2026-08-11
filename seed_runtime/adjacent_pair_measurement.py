@@ -328,19 +328,17 @@ class AdjacentPairMeasurementIndex:
 
     def measure_all(
         self,
-        pairs: Iterable[AdjacentPair],
+        pair_premises: Iterable[tuple[AdjacentPair, str]],
         *,
         counting_scope: str,
-        premise_event_ids: dict[AdjacentPair, str],
     ) -> list[tuple[AdjacentPair, dict[str, MeasurementFinding]]]:
-        """Measure every supplied pair once, preserving the supplied order."""
+        """Measure every supplied pair occurrence, preserving order and premise."""
 
         results = []
-        for pair in pairs:
-            premise_event_id = premise_event_ids.get(pair)
-            if premise_event_id is None:
+        for pair, premise_event_id in pair_premises:
+            if not isinstance(premise_event_id, str) or not premise_event_id:
                 raise PreservedMaterialMeasurementError(
-                    f"no recorded premise supplied for {pair}"
+                    f"no premise occurrence identity supplied for {pair}"
                 )
             results.append(
                 (
