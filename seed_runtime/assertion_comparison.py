@@ -59,7 +59,7 @@ ASSERTION_PRODUCTION_COMPARISON_RECORDED_KIND = (
 )
 
 COMPARISON_ASSERTION_FIDELITY_RESPONSIBILITY = (
-    "preserve the fidelity of this compared Assertion's Standing to its "
+    "preserve the fidelity of this comparison Assertion's Standing to its "
     "carried coordinates"
 )
 
@@ -327,12 +327,35 @@ def assertions_of_recorded_assertion_comparison(
             f"{event.id} is {event.kind}, not an Assertion production Compare occurrence"
         )
     stated = event.payload.get("assertions")
+    outer_inputs = event.payload.get("inputs")
     if not isinstance(stated, list):
         raise AssertionComparisonError(
             f"{event.id} does not preserve its distinct comparison Assertions"
         )
+    required_ref = {"producing_event_id", "assertion_id"}
+    if (
+        not isinstance(outer_inputs, list)
+        or len(outer_inputs) != 2
+        or any(
+            not isinstance(reference, dict)
+            or set(reference) != required_ref
+            or not all(isinstance(value, str) and value for value in reference.values())
+            for reference in outer_inputs
+        )
+        or outer_inputs[0]["producing_event_id"]
+        == outer_inputs[1]["producing_event_id"]
+        or outer_inputs[0]["assertion_id"] != outer_inputs[1]["assertion_id"]
+    ):
+        raise AssertionComparisonError(
+            f"{event.id} does not carry two distinct productions of one Assertion"
+        )
+    if len(stated) != len(COORDINATES):
+        raise AssertionComparisonError(
+            f"{event.id} does not carry every distinct Compare result"
+        )
     recovered = []
     seen = set()
+    seen_coordinates = set()
     for assertion in stated:
         dimensions = assertion.get("dimensions") if isinstance(assertion, dict) else None
         content = dimensions.get("content") if isinstance(dimensions, dict) else None
@@ -348,10 +371,14 @@ def assertions_of_recorded_assertion_comparison(
             or not isinstance(subject, dict)
             or not isinstance(scope, dict)
             or not isinstance(input_refs, list)
+            or input_refs != outer_inputs
             or scope.get("compared_productions") != input_refs
             or not isinstance(scope.get("workspace_id"), str)
             or not isinstance(scope.get("session_id"), str)
-            or subject.get("compared_assertion_id") is None
+            or scope.get("workspace_id") != event.workspace_id
+            or scope.get("session_id") != event.session_id
+            or subject.get("compared_assertion_id")
+            != outer_inputs[0]["assertion_id"]
             or subject.get("coordinate") != content.get("coordinate")
         ):
             raise AssertionComparisonError(
@@ -362,6 +389,26 @@ def assertions_of_recorded_assertion_comparison(
             raise AssertionComparisonError(
                 f"{event.id} carries an incomplete comparison result"
             )
+        coordinate = content["coordinate"]
+        present = content["present"]
+        values = content["values"]
+        same = content["same"]
+        if (
+            coordinate not in COORDINATES
+            or coordinate in seen_coordinates
+            or not isinstance(present, list)
+            or len(present) != 2
+            or not all(isinstance(value, bool) for value in present)
+            or not isinstance(values, list)
+            or len(values) != 2
+            or not isinstance(same, bool)
+            or same
+            != (present[0] == present[1] and _exactly_same(values[0], values[1]))
+        ):
+            raise AssertionComparisonError(
+                f"{event.id} carries a result outside the Compare output contract"
+            )
+        seen_coordinates.add(coordinate)
         canonical = _distinction_assertion_identity(
             compared_assertion_id=subject["compared_assertion_id"],
             inputs=input_refs,
@@ -384,5 +431,9 @@ def assertions_of_recorded_assertion_comparison(
                 coordinate=content["coordinate"],
                 payload=assertion,
             )
+        )
+    if seen_coordinates != set(COORDINATES):
+        raise AssertionComparisonError(
+            f"{event.id} does not carry the exact Compare coordinate set"
         )
     return tuple(recovered)

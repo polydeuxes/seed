@@ -21,6 +21,7 @@ from seed_runtime.adjacent_pair_measurement import measure_after
 from seed_runtime.assertion_comparison import (
     ASSERTION_PRODUCTION_COMPARISON_RECORDED_KIND,
     AssertionComparisonError,
+    _distinction_assertion_identity,
     assertions_of_recorded_assertion_comparison,
     compare_assertion_productions,
     record_assertion_production_comparison,
@@ -536,6 +537,63 @@ def test_recorded_comparison_assertion_identity_is_recomputed(compared):
     event.payload["assertions"][0]["dimensions"]["identity"] = "claimed-not-canonical"
 
     with pytest.raises(AssertionComparisonError, match="invalid identity"):
+        assertions_of_recorded_assertion_comparison(event)
+
+
+def test_recovery_refuses_a_self_consistent_invented_compare_result(compared):
+    finding = _by_right(compared)["word"]
+    first = record_measured_count(
+        compared, workspace_id="w", session_id="s1", finding=finding
+    )
+    second = record_measured_count(
+        compared, workspace_id="w", session_id="s1", finding=finding
+    )
+    left = assertions_of_recorded_measurement(first)[0]
+    right = assertions_of_recorded_measurement(second)[0]
+    comparison = compare_assertion_productions(
+        compared, (left.reference, right.reference)
+    )
+    event = record_assertion_production_comparison(
+        compared, workspace_id="w", session_id="s1", comparison=comparison
+    ).model_copy(deep=True)
+    assertion = event.payload["assertions"][0]
+    content = assertion["dimensions"]["content"]
+    assert content["present"] == [True, True]
+    assert content["values"][0] == content["values"][1]
+    content["same"] = False
+    assertion["dimensions"]["identity"] = _distinction_assertion_identity(
+        compared_assertion_id=assertion["assertion_subject"][
+            "compared_assertion_id"
+        ],
+        inputs=assertion["support_basis"]["assertion_refs"],
+        workspace_id="w",
+        session_id="s1",
+        **content,
+    )
+
+    with pytest.raises(AssertionComparisonError, match="output contract"):
+        assertions_of_recorded_assertion_comparison(event)
+
+
+def test_recovery_requires_the_exact_compare_coordinate_set(compared):
+    finding = _by_right(compared)["word"]
+    first = record_measured_count(
+        compared, workspace_id="w", session_id="s1", finding=finding
+    )
+    second = record_measured_count(
+        compared, workspace_id="w", session_id="s1", finding=finding
+    )
+    left = assertions_of_recorded_measurement(first)[0]
+    right = assertions_of_recorded_measurement(second)[0]
+    comparison = compare_assertion_productions(
+        compared, (left.reference, right.reference)
+    )
+    event = record_assertion_production_comparison(
+        compared, workspace_id="w", session_id="s1", comparison=comparison
+    ).model_copy(deep=True)
+    event.payload["assertions"].pop()
+
+    with pytest.raises(AssertionComparisonError, match="every distinct"):
         assertions_of_recorded_assertion_comparison(event)
 
 
