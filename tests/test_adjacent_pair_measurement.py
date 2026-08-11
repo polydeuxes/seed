@@ -22,11 +22,14 @@ Nothing here establishes meaning, grammatical kind, relation, or truth.
 from __future__ import annotations
 
 from io import StringIO
+from itertools import product
 
 import pytest
 
 from seed_runtime.events import EventLedger
+from seed_runtime.event import Event
 from seed_runtime.adjacent_pair_measurement import (
+    AdjacentPairMeasurementIndex,
     EQUIVALENCE_RULE,
     enumerate_displacements,
     enumerate_representations,
@@ -166,6 +169,117 @@ def test_every_pair_receives_every_question(occurrences, recorded_finding):
             premise_event_id=recorded_finding.id,
         )
         assert set(findings) == expected
+
+
+def test_batched_pair_measurement_is_exactly_the_existing_battery(
+    occurrences, recorded_finding
+):
+    pairs = (
+        AdjacentPair("it", "is"),
+        AdjacentPair("it", "may"),
+        AdjacentPair("of", "the"),
+    )
+    index = AdjacentPairMeasurementIndex(occurrences)
+
+    measured = index.measure_all(
+        ((pair, recorded_finding.id) for pair in pairs),
+        counting_scope="this session",
+    )
+
+    assert [pair for pair, _ in measured] == list(pairs)
+    for pair, findings in measured:
+        assert findings == measure_adjacent_pair(
+            occurrences,
+            pair,
+            counting_scope="this session",
+            premise_event_id=recorded_finding.id,
+        )
+
+
+def test_batched_pair_measurement_tokenizes_each_occurrence_once(
+    monkeypatch, occurrences, recorded_finding
+):
+    import seed_runtime.adjacent_pair_measurement as module
+
+    calls = 0
+    original = module._positions
+
+    def counted(text):
+        nonlocal calls
+        calls += 1
+        return original(text)
+
+    monkeypatch.setattr(module, "_positions", counted)
+    index = AdjacentPairMeasurementIndex(occurrences)
+    pairs = (
+        AdjacentPair("it", "is"),
+        AdjacentPair("it", "may"),
+        AdjacentPair("of", "the"),
+    )
+    index.measure_all(
+        ((pair, recorded_finding.id) for pair in pairs),
+        counting_scope="this session",
+    )
+
+    assert calls == len(occurrences)
+
+
+def test_batched_pair_measurement_requires_each_premise_identity(occurrences):
+    pair = AdjacentPair("it", "is")
+    with pytest.raises(
+        PreservedMaterialMeasurementError,
+        match="no premise occurrence identity",
+    ):
+        AdjacentPairMeasurementIndex(occurrences).measure_all(
+            ((pair, ""),), counting_scope="this session"
+        )
+
+
+def test_batched_pair_measurement_preserves_duplicate_subject_premises(occurrences):
+    pair = AdjacentPair("it", "is")
+    measured = AdjacentPairMeasurementIndex(occurrences).measure_all(
+        ((pair, "premise-1"), (pair, "premise-2")),
+        counting_scope="this session",
+    )
+
+    assert [pair for pair, _ in measured] == [pair, pair]
+    assert [
+        findings["preceding"].declared.premise_event_id
+        for _, findings in measured
+    ] == ["premise-1", "premise-2"]
+
+
+def test_batched_pair_index_preserves_first_match_semantics_exhaustively():
+    alphabet = ("a", "b", "c")
+    occurrences = [
+        Event(
+            id=f"event-{index}",
+            kind="operator.ingress.ingress_occurred",
+            workspace_id="w",
+            session_id="s",
+            payload={"decoded_text": " ".join(parts)},
+        )
+        for index, parts in enumerate(
+            parts
+            for length in range(1, 6)
+            for parts in product(alphabet, repeat=length)
+        )
+    ]
+    index = AdjacentPairMeasurementIndex(occurrences)
+
+    for left in alphabet:
+        for right in alphabet:
+            pair = AdjacentPair(left, right)
+            assert index.measure(
+                pair,
+                counting_scope="exhaustive bounded fixture",
+                premise_event_id="premise",
+            ) == measure_adjacent_pair(
+                occurrences,
+                pair,
+                counting_scope="exhaustive bounded fixture",
+                premise_event_id="premise",
+            )
 
 
 def test_a_question_that_found_nothing_is_still_recorded(
