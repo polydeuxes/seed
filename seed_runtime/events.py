@@ -94,15 +94,45 @@ def _stored_payload(serialized: str) -> str | bytes:
     return compressed if len(compressed) < len(encoded) else serialized
 
 
+class UnrecoverablePayload(LedgerIntegrityError):
+    """A stored payload cannot be returned to the string it was digested from."""
+
+
 def _serialized_payload(stored: str | bytes) -> str:
     """The canonical JSON string a stored payload carries.
 
     A store written before compression holds text, and reads unchanged.
+
+    **Failure to recover the stored representation is corruption, not a
+    compressor error.** Damaged compressed bytes raise `zlib.error`, and bytes
+    that decompress but are not UTF-8 raise `UnicodeDecodeError`; both mean the
+    stored row no longer carries what it was digested from, which is the
+    condition `integrity_of` exists to report. Letting either escape would make
+    a corrupted store crash its reader instead of being told about it.
     """
 
     if isinstance(stored, bytes):
-        return zlib.decompress(stored).decode("utf-8")
+        try:
+            return zlib.decompress(stored).decode("utf-8")
+        except (zlib.error, UnicodeDecodeError) as exc:
+            raise UnrecoverablePayload(
+                f"a stored payload could not be recovered: {exc}"
+            ) from exc
     return stored
+
+
+def _digest_of_stored_row(row: "sqlite3.Row") -> str | None:
+    """The digest of a stored row, or nothing when it cannot be recovered.
+
+    A row whose payload will not decompress cannot reproduce any digest, and
+    that is exactly what `integrity_of` reports rather than raising through its
+    caller.
+    """
+
+    try:
+        return _content_digest(_digested_row(row))
+    except UnrecoverablePayload:
+        return None
 
 
 def _digested_row(row: "sqlite3.Row") -> dict:
@@ -782,7 +812,7 @@ class SQLiteEventLedger(EventLedger):
         # be cited later as evidence that durable references need no integrity.
         return (
             VERIFIED
-            if _content_digest(_digested_row(row)) == row["content_hash"]
+            if _digest_of_stored_row(row) == row["content_hash"]
             else CORRUPTED
         )
 

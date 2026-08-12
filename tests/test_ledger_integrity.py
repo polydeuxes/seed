@@ -934,10 +934,64 @@ def test_a_store_written_before_compression_still_reads_and_verifies(tmp_path):
         ledger.close()
 
 
-def test_a_corrupted_compressed_payload_is_detected_not_crashed(tmp_path):
-    """Tampering below the integrity boundary must still surface as CORRUPTED."""
+def test_damaged_compressed_storage_is_corruption_not_a_compressor_error(tmp_path):
+    """Damage the compressed bytes, not the row's type.
 
-    path = str(tmp_path / "tampered.db")
+    An earlier version of this test replaced the BLOB with `json.dumps(...)`,
+    which SQLite returns as `str`, so `zlib.decompress` was never reached and
+    the test passed through the ordinary text path while claiming to exercise
+    compressed corruption. Curator caught it. Damaged compressed bytes had been
+    leaking raw `zlib.error` and `UnicodeDecodeError` through `integrity_of`.
+    """
+
+    import zlib
+    from seed_runtime.events import UnrecoverablePayload
+
+    payload = {"dimensions": {"content": "q" * 5000}}
+    intact = zlib.compress(json.dumps(payload).encode("utf-8"), 1)
+
+    damage = {
+        "truncated": intact[: len(intact) // 2],
+        "bit flipped": intact[:20] + bytes([intact[20] ^ 0xFF]) + intact[21:],
+        "empty": b"",
+        # Decompresses, and what comes out is not text.
+        "not utf-8": zlib.compress(b"\xff\xfe\x00", 1),
+    }
+
+    for label, stored in damage.items():
+        path = str(tmp_path / f"{label.replace(' ', '_')}.db")
+        ledger = SQLiteEventLedger(path)
+        try:
+            event = ledger.append("k", "w", payload)
+        finally:
+            ledger.close()
+
+        connection = sqlite3.connect(path)
+        connection.execute("DROP TRIGGER events_refuse_update")
+        connection.execute(
+            "UPDATE events SET payload = ? WHERE id = ?", (stored, event.id)
+        )
+        connection.commit()
+        connection.close()
+
+        ledger = SQLiteEventLedger(path)
+        try:
+            # Reported, never raised through the caller.
+            assert ledger.integrity_of(event.id) == CORRUPTED, label
+            # And a read refuses as a ledger integrity failure rather than
+            # exposing the compressor.
+            with pytest.raises(UnrecoverablePayload):
+                ledger.get(event.id)
+        finally:
+            ledger.close()
+
+
+def test_a_compressed_payload_altered_to_other_valid_content_is_corrupted(tmp_path):
+    """The digest still settles it when the storage recovers cleanly."""
+
+    import zlib
+
+    path = str(tmp_path / "swapped.db")
     ledger = SQLiteEventLedger(path)
     try:
         event = ledger.append("k", "w", {"dimensions": {"content": "q" * 5000}})
@@ -948,7 +1002,7 @@ def test_a_corrupted_compressed_payload_is_detected_not_crashed(tmp_path):
     connection.execute("DROP TRIGGER events_refuse_update")
     connection.execute(
         "UPDATE events SET payload = ? WHERE id = ?",
-        (json.dumps({"dimensions": {"content": "different"}}), event.id),
+        (zlib.compress(json.dumps({"dimensions": {"content": "other"}}).encode(), 1), event.id),
     )
     connection.commit()
     connection.close()
