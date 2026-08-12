@@ -46,9 +46,13 @@ continuation. None asks whether the distinction is irreducible.
 17      switches would indicate perfectly contiguous blocks
 ```
 
-Occurrences of one session are not contiguous in the ledger. Membership is
-therefore not any range of the recorded order, and removing the coordinate
-destroys the information rather than making it costly to recover.
+In this store, occurrences of one session are not contiguous in the ledger.
+Membership there is therefore not any range of the recorded order, and removing
+the coordinate would destroy the information rather than make it costly to
+recover. The clause states the weaker constitutional invariant that chronology
+alone does not establish locality; this store is a witness that position can fail
+to supply it, not a proof that position could never supply it in some other
+pipeline.
 
 `seed_runtime/assertion_comparison.py::record_positional_result_comparison_layer`
 takes `source_session_ids` as its scope and `recording_session_id` as its target.
