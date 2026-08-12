@@ -19,7 +19,7 @@ Represented-source recovery may then consume identified A and preserved represen
 - establishment assertion != artifact field named established
 - establishment lineage != proof that each upstream producer ran
 - construction != establishment
-- interpreted expression != established goal
+- interpreted material != established goal
 - valid fields != admitted meaning
 - potential-goal standing != bounded goal established
 - source candidate != presented alternative
