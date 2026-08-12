@@ -277,8 +277,16 @@ def measure_recurrence(
 
 
 def _locality_of(event: Event) -> str:
-    """The locality coordinate this occurrence carries, in the recorded form."""
+    """The locality coordinates this occurrence carries, in the recorded form.
 
+    Only the coordinates present. `session_id` is optional, and rendering its
+    absence as ``session:None`` would turn a missing witness into an asserted
+    locality value. `06.Standing.B` holds that occurrences *may* carry a
+    locality; it does not authorize inventing one where none was carried.
+    """
+
+    if event.session_id is None:
+        return f"workspace:{event.workspace_id}"
     return f"workspace:{event.workspace_id};session:{event.session_id}"
 
 

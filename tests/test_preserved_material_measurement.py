@@ -567,10 +567,10 @@ def test_a_recurrence_finding_may_stand_on_a_premise(recurrence_occurrences):
 # --------------------------------------------------------------------------
 # Measuring many representations across one pass of the material.
 #
-# The acquisition workload is every distinct representation against every
-# occurrence. One at a time, that re-walks and re-splits the whole body once
-# per representation. These tests hold the findings identical; the speed is
-# measured in the PR, not asserted here.
+# Many already-declared representations measured over one bounded occurrence
+# population. One at a time, that re-walks and re-splits the whole population
+# once per representation. These tests hold the findings identical; the speed
+# is measured in the PR, not asserted here.
 # --------------------------------------------------------------------------
 
 
@@ -786,6 +786,31 @@ def test_a_finding_preserves_the_localities_it_consumed(recurrence_occurrences):
     )
 
 
+def test_an_occurrence_carrying_no_session_locality_asserts_none(
+    recurrence_occurrences,
+):
+    """Absence of the witness is not an asserted locality value."""
+
+    ledger, _ = recurrence_occurrences
+    without_session = Event(
+        id="evt_no_locality",
+        kind=INGRESS_OCCURRED_KIND,
+        workspace_id="w",
+        payload={
+            "decoded_text": "the cat",
+            "material_origin": "operator",
+            "text_representation": {"available": True},
+        },
+    )
+    finding = measure_recurrence(
+        [without_session],
+        declared=_recurrence_declared("the"),
+        occurrences_of=_counts("the"),
+    )
+    assert finding.consumed_localities == ("workspace:w",)
+    assert "None" not in finding.consumed_localities[0]
+
+
 def test_batch_and_single_survive_the_recording_boundary_identically(
     recurrence_occurrences,
 ):
@@ -813,12 +838,6 @@ def test_batch_and_single_survive_the_recording_boundary_identically(
             occurrences, declared=declared, counts_in=_counts_in(declared)
         )
     ]
-    # Occurrence identity is independently generated and is the only difference.
-    def _without_identity(event):
-        payload = dict(event.payload)
-        payload.pop("lineage", None)
-        return payload
-
-    assert [_without_identity(e) for e in singly] == [
-        _without_identity(e) for e in batched
-    ]
+    # Occurrence identity is the Event id, which is outside the payload, so
+    # the payloads themselves must match completely -- lineage included.
+    assert [e.payload for e in singly] == [e.payload for e in batched]
