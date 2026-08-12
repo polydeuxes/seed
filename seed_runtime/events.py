@@ -446,6 +446,8 @@ class SQLiteEventLedger(EventLedger):
         "obs", "obs_local_host", "evd", "evd_obs", "fact", "fact_obs", "need",
         "operator_presentation", "operator_ingress_attempt", "operator_material",
         "session", "system_invocation", "system_material", "transient_material",
+        "operator_response_comparison", "operator_alternative_identification",
+        "presented_alternative",
     })
 
     _PERSISTED_ID_PREFIXES = (
@@ -468,6 +470,13 @@ class SQLiteEventLedger(EventLedger):
         "system_invocation",
         "system_material",
         "transient_material",
+        # Found by sweeping for the defect rather than meeting it a fourth time.
+        # All three are minted on the console path and written into durable
+        # payloads — 553 times across the test suite — and none was reserved, so
+        # each restarted at one in every process.
+        "operator_response_comparison",
+        "operator_alternative_identification",
+        "presented_alternative",
     )
 
     def __init__(self, database_path: str) -> None:
