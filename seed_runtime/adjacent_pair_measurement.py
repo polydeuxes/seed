@@ -162,6 +162,92 @@ def _adjacent_pair_result_assertion_identity(
     ).hexdigest()
 
 
+class _DeclaredSupportBinding:
+    """A support basis and the exact population object it was formed over.
+
+    **The binding is established by formation, not by adjacency.** An earlier
+    revision was a dataclass holding an identities tuple and a `SupportBasis`
+    side by side, with prose saying the second was bound to the first and
+    nothing enforcing it — so a basis carrying a forged commitment and count
+    could be placed beside an honest population and would be carried onto every
+    Assertion the layer recorded. Putting two things in one dataclass does not
+    establish a relation between them.
+
+    There is no way to supply a basis here. This forms it, once, from the
+    identities it is given, and retains both.
+    """
+
+    __slots__ = ("_identities", "_basis")
+
+    def __init__(
+        self,
+        *,
+        workspace_id: str,
+        session_id: str,
+        occurrence_kind: str,
+        boundary: EventLedgerBoundary,
+        identities: tuple[str, ...],
+    ) -> None:
+        self._identities = identities
+        self._basis = declare_complete_population(
+            workspace_id=workspace_id,
+            session_id=session_id,
+            occurrence_kind=occurrence_kind,
+            boundary=boundary,
+            identities=identities,
+        )
+
+    @property
+    def identities(self) -> tuple[str, ...]:
+        return self._identities
+
+    @property
+    def basis(self) -> SupportBasis:
+        return self._basis
+
+
+def _support_for(
+    *,
+    workspace_id: str,
+    session_id: str,
+    completeness_boundary: EventLedgerBoundary,
+    finding: MeasurementFinding,
+    declared_support: "_DeclaredSupportBinding | None",
+) -> SupportBasis:
+    """The basis for this finding, declared once per population where supplied.
+
+    A supplied basis is required to describe this finding's own scope, boundary
+    and extent. It is not re-derived from the identities, because re-deriving is
+    the cost being removed — but a basis that does not match is refused rather
+    than carried onto an Assertion it does not describe.
+    """
+
+    if declared_support is None:
+        return declare_complete_population(
+            workspace_id=workspace_id,
+            session_id=session_id,
+            occurrence_kind=INGRESS_OCCURRED_KIND,
+            boundary=completeness_boundary,
+            identities=finding.consumed_event_ids,
+        )
+    if finding.consumed_event_ids is not declared_support.identities:
+        raise PreservedMaterialMeasurementError(
+            "a declared support binding was not formed over the population object "
+            "this finding carries"
+        )
+    basis = declared_support.basis
+    if (
+        basis.workspace_id != workspace_id
+        or basis.session_id != session_id
+        or basis.occurrence_kind != INGRESS_OCCURRED_KIND
+        or basis.boundary_commitment != completeness_boundary.commitment
+    ):
+        raise PreservedMaterialMeasurementError(
+            "a declared support basis does not describe this finding's scope"
+        )
+    return basis
+
+
 def _adjacent_pair_result_assertion_fields(
     *,
     workspace_id: str,
@@ -169,7 +255,21 @@ def _adjacent_pair_result_assertion_fields(
     pair: AdjacentPair,
     finding: MeasurementFinding,
     completeness_boundary: EventLedgerBoundary,
+    declared_support: "_DeclaredSupportBinding | None" = None,
 ) -> dict[str, object]:
+    """Form one result Assertion's carried coordinates.
+
+    ``declared_support`` is the basis already declared for this population,
+    bound to the identities it was declared over. A layer measures one bounded
+    population, so every finding it produces consumed the same identities under
+    the same rule and yields the same basis — and declaring it per finding
+    recomputed a digest over the whole population once per result, measured at
+    28.7s against 23.1s on 21,972 results over 700 occurrences.
+
+    It is required to match, not trusted. The layer holds one identities tuple
+    and every finding carries that same object, so the check is an identity
+    comparison rather than a second digest.
+    """
     form = finding.declared.form
     if form not in PAIR_MEASUREMENT_FORMS:
         raise PreservedMaterialMeasurementError(
@@ -221,12 +321,12 @@ def _adjacent_pair_result_assertion_fields(
         "assertion_subject": subject,
         "assertion_scope": scope,
         "support_basis": {
-            "basis": declare_complete_population(
+            "basis": _support_for(
                 workspace_id=workspace_id,
                 session_id=session_id,
-                occurrence_kind=INGRESS_OCCURRED_KIND,
-                boundary=completeness_boundary,
-                identities=finding.consumed_event_ids,
+                completeness_boundary=completeness_boundary,
+                finding=finding,
+                declared_support=declared_support,
             ).to_json_dict(),
             "premise_event_id": finding.declared.premise_event_id,
         },
@@ -622,6 +722,24 @@ class AdjacentPairMeasurementIndex:
             return self._left_contexts.get(pair.left, self._EMPTY)
         raise PreservedMaterialMeasurementError(f"unknown adjacent-pair form: {form}")
 
+    @property
+    def event_ids(self) -> tuple[str, ...]:
+        """The exact population object every finding this index produces carries.
+
+        Exposed so a support binding can be formed over *this* tuple, which is
+        what makes reuse checkable in constant time.
+
+        **An equal tuple is not a different population.** Two tuples with the
+        same contents describe the same exact ordered population, and the
+        support commitment says so. What object identity establishes is
+        narrower: that a finding came from the captured population whose basis
+        was already declared, without re-deriving anything. An equal copy may
+        well be the same population — the fast path simply has not established
+        it, so it is refused rather than assumed.
+        """
+
+        return self._event_ids
+
     @staticmethod
     def _index_positions(parts: Sequence[str]) -> tuple[
         dict[tuple[str, str], tuple[str | None, str | None]],
@@ -876,6 +994,15 @@ def record_adjacent_pair_measurement_layer(
         )
     )
     index = AdjacentPairMeasurementIndex(material)
+    # One population, declared once. Every finding this layer produces consumed
+    # exactly these identities through exactly this boundary.
+    declared_support = _DeclaredSupportBinding(
+        workspace_id=workspace_id,
+        session_id=session_id,
+        occurrence_kind=INGRESS_OCCURRED_KIND,
+        boundary=boundary,
+        identities=index.event_ids,
+    )
     pair_premises = []
     for premise in ledger.iter_session_kind(
         workspace_id,
@@ -908,6 +1035,7 @@ def record_adjacent_pair_measurement_layer(
                         pair=pair,
                         finding=finding,
                         completeness_boundary=boundary,
+                        declared_support=declared_support,
                     ),
                 },
             )

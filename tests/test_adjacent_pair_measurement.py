@@ -1088,3 +1088,109 @@ def test_an_unknown_form_is_refused_before_any_occurrence_is_visited():
     index = AdjacentPairMeasurementIndex(events)
     with pytest.raises(PreservedMaterialMeasurementError, match="unknown adjacent-pair form"):
         index._answering_contexts(AdjacentPair(left="the", right="cat"), "invented")
+
+
+def test_a_support_binding_is_formed_over_its_population_not_paired_with_one():
+    """Putting a basis beside a population does not bind it to that population.
+
+    An earlier revision was a dataclass holding an identities tuple and a
+    `SupportBasis` side by side, with prose saying the second was bound to the
+    first and nothing enforcing it. A basis carrying a forged commitment and
+    count could be placed beside an honest population and would be carried onto
+    every Assertion the layer recorded.
+
+    The binding now forms the basis itself, so that state is not constructable
+    rather than merely refused.
+    """
+
+    import inspect
+
+    from seed_runtime.adjacent_pair_measurement import (
+        _DeclaredSupportBinding, _support_for,
+    )
+    from seed_runtime.preserved_material_measurement import INGRESS_OCCURRED_KIND
+    from seed_runtime.support_basis import declare_complete_population
+
+    def bodied(prefix):
+        ledger = EventLedger()
+        events = [
+            Event(id=f"{prefix}_{index}", kind=INGRESS_OCCURRED_KIND, workspace_id="w",
+                  session_id="s", payload={"decoded_text": "the cat jumped"})
+            for index in range(3)
+        ]
+        ledger.append_many(events)
+        index = AdjacentPairMeasurementIndex(events)
+        finding = index.measure(
+            AdjacentPair(left="the", right="cat"),
+            counting_scope="s", premise_event_id=f"{prefix}_0",
+        )["following"]
+        return ledger, index, finding
+
+    ledger, index, finding = bodied("evt")
+    boundary = ledger.capture_boundary()
+
+    # A basis cannot be supplied at all: the binding forms it.
+    assert "basis" not in inspect.signature(_DeclaredSupportBinding.__init__).parameters
+
+    binding = _DeclaredSupportBinding(
+        workspace_id="w", session_id="s", occurrence_kind=INGRESS_OCCURRED_KIND,
+        boundary=boundary, identities=index.event_ids,
+    )
+    assert finding.consumed_event_ids is index.event_ids
+    assert binding.basis == declare_complete_population(
+        workspace_id="w", session_id="s", occurrence_kind=INGRESS_OCCURRED_KIND,
+        boundary=boundary, identities=index.event_ids,
+    )
+
+    supplied = _support_for(
+        workspace_id="w", session_id="s", completeness_boundary=boundary,
+        finding=finding, declared_support=binding,
+    )
+    assert supplied == binding.basis
+    # Declaring afresh yields the same basis, which is why reuse is lawful.
+    assert _support_for(
+        workspace_id="w", session_id="s", completeness_boundary=boundary,
+        finding=finding, declared_support=None,
+    ) == binding.basis
+
+    # A different population of the same size is refused. Under a count check
+    # this passed and carried a basis describing material never consumed.
+    _, _, other_finding = bodied("other")
+    assert len(other_finding.consumed_event_ids) == len(finding.consumed_event_ids)
+    assert other_finding.consumed_event_ids != finding.consumed_event_ids
+    with pytest.raises(PreservedMaterialMeasurementError, match="population object"):
+        _support_for(
+            workspace_id="w", session_id="s", completeness_boundary=boundary,
+            finding=other_finding, declared_support=binding,
+        )
+
+    # An equal copy may well be the same population; the fast path simply has
+    # not established that, so it is refused rather than assumed. Built from a
+    # list because `tuple(t)` returns `t` itself for a tuple.
+    rebuilt = tuple(list(index.event_ids))
+    assert rebuilt == index.event_ids and rebuilt is not index.event_ids
+    equal_binding = _DeclaredSupportBinding(
+        workspace_id="w", session_id="s", occurrence_kind=INGRESS_OCCURRED_KIND,
+        boundary=boundary, identities=rebuilt,
+    )
+    # Its basis is identical, because it is the same population.
+    assert equal_binding.basis == binding.basis
+    with pytest.raises(PreservedMaterialMeasurementError, match="population object"):
+        _support_for(
+            workspace_id="w", session_id="s", completeness_boundary=boundary,
+            finding=finding, declared_support=equal_binding,
+        )
+
+    # And the scope is still checked once the population object matches.
+    for changes in ({"session_id": "another"}, {"workspace_id": "another"}):
+        elsewhere = _DeclaredSupportBinding(
+            workspace_id=changes.get("workspace_id", "w"),
+            session_id=changes.get("session_id", "s"),
+            occurrence_kind=INGRESS_OCCURRED_KIND,
+            boundary=boundary, identities=index.event_ids,
+        )
+        with pytest.raises(PreservedMaterialMeasurementError, match="scope"):
+            _support_for(
+                workspace_id="w", session_id="s", completeness_boundary=boundary,
+                finding=finding, declared_support=elsewhere,
+            )
