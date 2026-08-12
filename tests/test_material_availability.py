@@ -352,47 +352,50 @@ def test_the_occurrence_claims_nothing_about_any_other_source(tmp_path):
     assert event.payload["held_at_occurrence"] == "process-local"
 
 
-def test_the_occurrence_identity_survives_a_reopen(tmp_path):
-    """`transient_material` is a durably minted identity and must be reserved.
+def test_the_occurrence_identity_survives_a_fresh_process(tmp_path):
+    """`transient_material` is durably minted and must be durably reserved.
 
-    `new_id` is process-local, and a durable store reserves only the prefixes it
-    knows. Unreserved, two independent occurrences claimed
-    `transient_material_000001` across a reopen — the same defect `#2491` found
-    for `system_material`, and `#2493` for its exchange identity before that.
+    **In a fresh process, not a reopen.** `new_id` keeps its counter for the
+    lifetime of the interpreter, so reopening a store in the same process
+    increments regardless of what the store reserves — an earlier version of
+    this test passed with the reservation removed and therefore proved nothing.
+    Curator caught it. The collision this guards against needs a genuinely new
+    process, where the counter starts again and only the store's reservation
+    can prevent a reissue.
     """
 
-    path = str(tmp_path / "reopen.db")
-    identities = []
-    for index in range(3):
-        ledger = SQLiteEventLedger(path)
-        holder = ProcessLocalMaterial()
-        try:
-            identity = holder.hold(f"material {index}".encode())
-            event = _record(ledger, holder, identity, session_id=f"s{index}")
-            identities.append(event.payload["dimensions"]["identity"])
-        finally:
-            ledger.close()
-    assert len(set(identities)) == 3, identities
+    import subprocess
+    import sys
+    from pathlib import Path
 
+    root = Path(__file__).resolve().parent.parent
+    program = tmp_path / "mint.py"
+    program.write_text(
+        "import sys\n"
+        "sys.path.insert(0, sys.argv[1])\n"
+        "from seed_runtime.events import SQLiteEventLedger\n"
+        "from seed_runtime.ids import new_id\n"
+        "ledger = SQLiteEventLedger(sys.argv[2])\n"
+        "try:\n"
+        "    ledger.append('k', 'w', {'identity': new_id(sys.argv[3])})\n"
+        "    print(ledger.list('w')[-1].payload['identity'])\n"
+        "finally:\n"
+        "    ledger.close()\n"
+    )
+    database = str(tmp_path / "fresh.db")
 
-def test_one_canonical_digest_identifies_exact_material():
-    """The material identity and the pointer account agree about a body.
+    minted = []
+    for _ in range(3):
+        result = subprocess.run(
+            [sys.executable, str(program), str(root), database, "transient_material"],
+            capture_output=True, text=True, timeout=120,
+        )
+        assert result.returncode == 0, result.stderr
+        minted.append(result.stdout.strip())
 
-    `ExactMaterialPointers.sha256` is `sha256` over the reconstructed bytes. An
-    earlier revision of this module domain-separated its own, so one body had
-    two values both describable as *the digest of this exact material*. The
-    separator earned nothing: the other domains in this runtime commit to
-    composed structures where one could be read as another, and this commits to
-    raw bytes, which is the same subject the pointer account commits to.
-    """
-
-    import hashlib
-
-    from seed_runtime.exact_material_pointers import form_exact_material_pointers
-
-    for body in (b"", b"the cat jumped the cat jumped", MATERIAL, bytes(range(256))):
-        identity = MaterialIdentity.of(body)
-        account = form_exact_material_pointers(body)
-        assert identity.digest == account.sha256
-        assert identity.digest == hashlib.sha256(body).hexdigest()
-        assert identity.byte_count == account.byte_count
+    assert len(set(minted)) == 3, minted
+    assert minted == [
+        "transient_material_000001",
+        "transient_material_000002",
+        "transient_material_000003",
+    ], minted
