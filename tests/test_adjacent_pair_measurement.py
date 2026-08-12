@@ -21,12 +21,14 @@ Nothing here establishes meaning, grammatical kind, relation, or truth.
 
 from __future__ import annotations
 
+import json
 from io import StringIO
 from itertools import product
 
 import pytest
 
 from seed_runtime.events import EventLedger, InvalidLedgerBoundary
+from seed_runtime.support_basis import SupportBasis, SupportRecovery
 from seed_runtime.event import Event
 from seed_runtime.adjacent_pair_measurement import (
     AdjacentPairMeasurementIndex,
@@ -545,7 +547,8 @@ def test_each_pair_result_is_one_addressable_assertion(
         assert event.payload["completeness_boundary"] == {
             "commitment": boundary.commitment
         }
-        assert boundary.commitment not in event.payload["support_basis"]["event_ids"]
+        assert "consumed_event_ids" not in event.payload
+        assert event.payload["support_basis"]["basis"] == event.payload["consumed_support"]
         assert get_recorded_adjacent_pair_result_assertion(
             session,
             producing_event_id=event.id,
@@ -559,8 +562,10 @@ def test_each_pair_result_is_one_addressable_assertion(
                 through=assertion.completeness_boundary,
             )
         )
+        basis = SupportBasis.from_json_dict(event.payload["consumed_support"])
+        assert basis.support_count == event.payload["consumed_count"]
         assert [item.id for item in recovered_ingress] == list(
-            event.payload["consumed_event_ids"]
+            SupportRecovery(session).recover(basis)
         )
 
 
@@ -666,7 +671,11 @@ def test_ledger_recovery_refuses_a_boundary_not_owned_by_the_ledger(
         completeness_boundary=session.capture_boundary(),
     )["following"]
     assertion = assertion_of_recorded_adjacent_pair_result(event)
+    # Forged consistently in both places. A boundary the ledger never issued
+    # must still be refused when nothing internally disagrees about it.
     event.payload["completeness_boundary"]["commitment"] = "not-a-ledger-prefix"
+    event.payload["consumed_support"]["boundary"]["commitment"] = "not-a-ledger-prefix"
+    event.payload["support_basis"]["basis"]["boundary"]["commitment"] = "not-a-ledger-prefix"
 
     with pytest.raises(InvalidLedgerBoundary):
         get_recorded_adjacent_pair_result_assertion(
@@ -693,18 +702,49 @@ def test_ledger_recovery_refuses_an_incomplete_claimed_ingress_read(
         completeness_boundary=session.capture_boundary(),
     )["following"]
     assertion = assertion_of_recorded_adjacent_pair_result(event)
-    event.payload["consumed_event_ids"].pop()
-    event.payload["support_basis"]["event_ids"].pop()
 
-    with pytest.raises(
-        PreservedMaterialMeasurementError,
-        match="complete bounded ingress read",
-    ):
+    # The occurrence no longer carries a list that could be shortened, so the
+    # tamper surface is the basis. Every part of it must refuse, and each fails
+    # for its own reason rather than one check covering the others.
+    intact = json.loads(json.dumps(event.payload["consumed_support"]))
+
+    def tampered(**changes):
+        basis = json.loads(json.dumps(intact))
+        basis.update(changes)
+        event.payload["consumed_support"] = basis
+        event.payload["support_basis"]["basis"] = basis
+        return basis
+
+    tampered(support_count=intact["support_count"] - 1)
+    with pytest.raises(PreservedMaterialMeasurementError, match="support count"):
         get_recorded_adjacent_pair_result_assertion(
-            session,
-            producing_event_id=event.id,
-            assertion_id=assertion.assertion_id,
+            session, producing_event_id=event.id, assertion_id=assertion.assertion_id
         )
+
+    tampered(commitment="0" * 64)
+    with pytest.raises(PreservedMaterialMeasurementError, match="committed digest"):
+        get_recorded_adjacent_pair_result_assertion(
+            session, producing_event_id=event.id, assertion_id=assertion.assertion_id
+        )
+
+    tampered(selection_rule="a selection nobody established")
+    with pytest.raises(PreservedMaterialMeasurementError, match="recoverable support basis"):
+        get_recorded_adjacent_pair_result_assertion(
+            session, producing_event_id=event.id, assertion_id=assertion.assertion_id
+        )
+
+    scope = dict(intact["scope"], session_id="another")
+    tampered(scope=scope)
+    with pytest.raises(PreservedMaterialMeasurementError, match="outside its own scope"):
+        get_recorded_adjacent_pair_result_assertion(
+            session, producing_event_id=event.id, assertion_id=assertion.assertion_id
+        )
+
+    event.payload["consumed_support"] = intact
+    event.payload["support_basis"]["basis"] = intact
+    assert get_recorded_adjacent_pair_result_assertion(
+        session, producing_event_id=event.id, assertion_id=assertion.assertion_id
+    ) == assertion
 
 
 def test_recovery_refuses_a_claimed_form_with_other_position_coordinates(

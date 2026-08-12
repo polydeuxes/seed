@@ -18,6 +18,7 @@ from typing import Any, Iterable
 from seed_runtime.events import CORRUPTED, EventLedger
 from seed_runtime.event import Event
 from seed_runtime.ids import new_id
+from seed_runtime.support_basis import SupportRecovery
 from seed_runtime.adjacent_pair_measurement import (
     INGRESS_OCCURRED_KIND,
     RecordedAdjacentPairResultAssertion,
@@ -797,7 +798,7 @@ def iter_recorded_positional_result_distinctions(
     """
 
     validated_inputs: set[tuple[str, str]] = set()
-    ingress_ids_by_boundary: dict[tuple[str, str], tuple[str, ...]] = {}
+    recovery = SupportRecovery(ledger)
     for session_id in tuple(dict.fromkeys(session_ids)):
         for event in ledger.iter_session_kind(
             workspace_id,
@@ -831,26 +832,8 @@ def iter_recorded_positional_result_distinctions(
                         "a positional result input reference changed"
                     )
                 if ref not in validated_inputs:
-                    cache_key = (
-                        producing_event.session_id,
-                        assertion.completeness_boundary.commitment,
-                    )
-                    recovered_ingress_ids = ingress_ids_by_boundary.get(cache_key)
-                    if recovered_ingress_ids is None:
-                        recovered_ingress_ids = tuple(
-                            ledger.iter_session_kind_ids(
-                                workspace_id,
-                                producing_event.session_id,
-                                INGRESS_OCCURRED_KIND,
-                                through=assertion.completeness_boundary,
-                            )
-                        )
-                        ingress_ids_by_boundary[cache_key] = recovered_ingress_ids
                     _validate_result_assertion_ingress(
-                        ledger,
-                        producing_event,
-                        assertion,
-                        recovered_ingress_ids=recovered_ingress_ids,
+                        ledger, producing_event, assertion, recovery=recovery
                     )
                     validated_inputs.add(ref)
                 recovered_inputs.append(assertion)

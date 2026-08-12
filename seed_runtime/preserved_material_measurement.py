@@ -120,6 +120,12 @@ class MeasurementFinding:
     declared: DeclaredMeasurement
     positions_measured: int
     occupancies: tuple[Occupancy, ...]
+    # The identities this measurement consumed, available while the act runs.
+    # On the result-Assertion path a recoverable support basis is formed from
+    # this population instead of preserving the enumeration in every result;
+    # the basis belongs to that path, and this dataclass does not own a second
+    # coordinate for it. `#2486` measured why: copying the population into
+    # every finding of a body cost 97% of the stored finding.
     consumed_event_ids: tuple[str, ...]
     boundary_notes: tuple[str, ...] = field(default=BOUNDARY_NOTES)
     convention: str = MEASUREMENT_CONVENTION
@@ -152,7 +158,11 @@ class MeasurementFinding:
                 {"representation": o.representation, "occurrence_count": o.occurrence_count}
                 for o in self.occupancies
             ],
+            # Not "support_basis": the result-Assertion coordinate surface owns
+            # that key and its fields are merged over this dict, so naming both
+            # the same silently replaced one with the other.
             "consumed_event_ids": list(self.consumed_event_ids),
+            "consumed_count": len(self.consumed_event_ids),
             "boundary_notes": list(self.boundary_notes),
         }
 
@@ -224,6 +234,14 @@ def _measurement_finding_payload(
     finding: MeasurementFinding,
     extra: dict[str, Any] | None,
 ) -> dict[str, Any]:
+    carried = finding.to_json_dict()
+    basis = (extra or {}).get("support_basis", {}).get("basis") if extra else None
+    if basis is not None:
+        # A result Assertion carries a recoverable support basis, so the
+        # enumeration it replaces is not written beside it. `#2486` measured
+        # the enumeration at 97% of a 4,000-line finding.
+        carried["consumed_support"] = basis
+        carried.pop("consumed_event_ids", None)
     return {
         "dimensions": {
             "identity": f"measurement:{finding.declared.representation_measured}",
@@ -240,7 +258,7 @@ def _measurement_finding_payload(
         },
         "mutates_cluster": False,
         "unknowns": ["what any measured representation means remains Unknown"],
-        **finding.to_json_dict(),
+        **carried,
         **(extra or {}),
         "lineage": (
             [finding.declared.premise_event_id]

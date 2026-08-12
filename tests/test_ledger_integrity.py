@@ -668,3 +668,58 @@ def test_an_overlapping_prefix_reserves_the_longer_match():
         payload={"a": "obs_local_host_7", "b": "obs_4"},
     )
     assert ledger._observed_suffixes(event) == {"obs_local_host": 7, "obs": 4}
+
+
+def test_a_cache_hit_still_refuses_a_contradictory_support_count():
+    """A forged count must be refused whichever recovery reaches it first.
+
+    `SupportRecovery` keys on the commitment, not the count, so a second basis
+    committing to the same population reaches a cached result. Curator found
+    that the count check then never ran, which made catching a forged count
+    depend on what the act happened to have recovered earlier.
+    """
+
+    from seed_runtime.support_basis import (
+        SupportBasis,
+        SupportBasisError,
+        SupportRecovery,
+        declare_complete_population,
+    )
+
+    ledger = EventLedger()
+    ledger.append_many([
+        Event(id=f"evt_{index}", kind="ingress", workspace_id="w", session_id="s")
+        for index in range(4)
+    ])
+    boundary = ledger.capture_boundary()
+    identities = tuple(ledger.iter_session_kind_ids("w", "s", "ingress", through=boundary))
+    honest = declare_complete_population(
+        workspace_id="w", session_id="s", occurrence_kind="ingress",
+        boundary=boundary, identities=identities,
+    )
+    forged = SupportBasis(
+        workspace_id=honest.workspace_id,
+        session_id=honest.session_id,
+        occurrence_kind=honest.occurrence_kind,
+        boundary_commitment=honest.boundary_commitment,
+        selection_rule=honest.selection_rule,
+        commitment=honest.commitment,
+        support_count=honest.support_count - 1,
+    )
+
+    # Refused on a cold recovery.
+    with pytest.raises(SupportBasisError, match="declared count"):
+        SupportRecovery(ledger).recover(forged)
+
+    # And refused after the same population has been cached, which is the path
+    # that previously returned it.
+    recovery = SupportRecovery(ledger)
+    assert recovery.recover(honest) == identities
+    assert recovery.reads == 1
+    with pytest.raises(SupportBasisError, match="declared count"):
+        recovery.recover(forged)
+    assert recovery.reuses == 0
+
+    # An honest second reference still reuses rather than re-reading.
+    assert recovery.recover(honest) == identities
+    assert (recovery.reads, recovery.reuses) == (1, 1)
