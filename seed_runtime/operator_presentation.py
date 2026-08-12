@@ -13,6 +13,8 @@ from seed_runtime.events import EventLedger
 from seed_runtime.ids import new_id
 
 PRESENTATION_FORMED_KIND = "operator.presentation.formed"
+from seed_runtime.operator_ingress import SEED_ORIGIN
+
 PRESENTATION_EMITTED_KIND = "operator.presentation.emitted"
 
 def _dimensions(
@@ -323,6 +325,11 @@ def emit_operator_presentation(
                 ),
                 occurrence="emission occurrence durably recorded",
             ),
+            # Attribution only. The exact emitted material is deliberately not
+            # preserved here yet: it becomes safe to preserve once a measurement
+            # can decline Seed-origin material, which is what this coordinate
+            # makes possible and what a later act must actually do.
+            "material_origin": SEED_ORIGIN,
             "known_loss": [],
             "unknowns": [],
             "conflicts": [],
