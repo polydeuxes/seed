@@ -790,6 +790,23 @@ def test_a_commitment_distinguishes_order_and_rule_not_only_membership():
     assert ordered != support_commitment(COMPLETE_INGRESS_POPULATION, ("a", "c", "b"))
     assert ordered != support_commitment("another rule", ("a", "b", "c"))
     assert ordered != support_commitment(COMPLETE_INGRESS_POPULATION, ("a", "b"))
-    # and separator injection cannot forge a match
     assert support_commitment(COMPLETE_INGRESS_POPULATION, ("ab", "c")) != \
            support_commitment(COMPLETE_INGRESS_POPULATION, ("a", "bc"))
+
+    # The parts must be unambiguous when a part contains whatever divides them.
+    # An earlier encoding separated parts with a NUL, which held only while no
+    # identity carried one — and nothing constrains an Event.id. Both of these
+    # produced one digest for two different populations.
+    assert support_commitment(COMPLETE_INGRESS_POPULATION, ("a", "b\0c")) != \
+           support_commitment(COMPLETE_INGRESS_POPULATION, ("a\0b", "c"))
+    assert support_commitment("a", ("b",)) != support_commitment("a\0b", ())
+
+    # And the same requirement under the length prefix that replaced it.
+    assert support_commitment("a", ("b",)) != support_commitment("ab", ())
+    assert support_commitment(COMPLETE_INGRESS_POPULATION, ("", "ab")) != \
+           support_commitment(COMPLETE_INGRESS_POPULATION, ("a", "b"))
+    assert support_commitment(COMPLETE_INGRESS_POPULATION, ("",)) != \
+           support_commitment(COMPLETE_INGRESS_POPULATION, ())
+    # Multi-byte identities are committed by encoded length, not character count.
+    assert support_commitment(COMPLETE_INGRESS_POPULATION, ("é",)) != \
+           support_commitment(COMPLETE_INGRESS_POPULATION, ("ab",))

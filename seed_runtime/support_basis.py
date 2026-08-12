@@ -68,18 +68,40 @@ class SupportBasisError(ValueError):
     """A support basis could not be declared, recovered, or verified."""
 
 
+def _commit_part(digest: "hashlib._Hash", value: str) -> None:
+    """Commit one part so no part can be mistaken for a different division.
+
+    Length-prefixed rather than separated. A separator only divides parts
+    unambiguously while no part can contain it, and nothing constrains an
+    `Event.id` to avoid one. Constraining identities to suit this digest would
+    let a commitment dictate the repository's identity grammar, which is
+    backwards; the representation is made unambiguous instead.
+    """
+
+    encoded = value.encode("utf-8")
+    digest.update(len(encoded).to_bytes(8, "big"))
+    digest.update(encoded)
+
+
 def support_commitment(selection_rule: str, identities: Iterable[str]) -> str:
     """A digest over the exact ordered identities the selection produced.
 
     The rule is committed alongside them, so two selections that happen to
     return the same identities from the same scope are not interchangeable.
+
+    Its Standing is *"I represent this exact ordered support population"*, and a
+    representation under which two different populations produce one digest
+    cannot carry that. The separated encoding this replaces could not: with
+    a NUL between parts, `("a", "b\0c")` and `("a\0b", "c")` encoded
+    identically, and so did rule `"a"` with identity `"b"` against rule
+    `"a\0b"` with no identities. Neither was a hash collision — both handed
+    SHA-256 the same input for different populations.
     """
 
     digest = hashlib.sha256(_COMMITMENT_DOMAIN)
-    digest.update(selection_rule.encode("utf-8"))
+    _commit_part(digest, selection_rule)
     for identity in identities:
-        digest.update(b"\0")
-        digest.update(identity.encode("utf-8"))
+        _commit_part(digest, identity)
     return digest.hexdigest()
 
 
