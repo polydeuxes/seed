@@ -206,15 +206,30 @@ def test_a_constructed_unknown_boundary_is_refused():
         ledger.list(through=EventLedgerBoundary("0" * 64))
 
 
-def test_failed_in_memory_canonicalization_leaves_the_ledger_unchanged():
-    ledger = EventLedger()
-    before = ledger.capture_boundary()
+def test_a_refused_payload_leaves_the_ledger_unchanged():
+    """Whatever is refused, nothing is left half-appended.
 
-    with pytest.raises(TypeError):
-        ledger.append("k", "w", {"not_json": object()})
+    The refusal moved earlier than the serializer: `#2495` refuses a payload a
+    durable store could not return unchanged, so an unsupported value is now
+    declined by name rather than as a `TypeError` out of `json.dumps`. What this
+    test is about is unchanged — the boundary and the history stay exactly as
+    they were.
+    """
 
-    assert ledger.capture_boundary() == before
-    assert ledger.list() == []
+    for payload in (
+        {"not_json": object()},
+        {"tuple": (1, 2)},
+        {"nested": {"deeper": {"key": {1: "x"}}}},
+        {"set": {1, 2}},
+    ):
+        ledger = EventLedger()
+        before = ledger.capture_boundary()
+
+        with pytest.raises(ValueError):
+            ledger.append("k", "w", payload)
+
+        assert ledger.capture_boundary() == before
+        assert ledger.list() == []
 
 
 def _identity_read_matches_occurrence_read(ledger):
@@ -264,3 +279,63 @@ def test_a_durable_identity_read_matches_its_occurrence_read(tmp_path):
         _identity_read_matches_occurrence_read(ledger)
     finally:
         ledger.close()
+
+
+def test_the_two_ledgers_preserve_the_same_payload(tmp_path):
+    """An append must mean the same thing in either ledger.
+
+    They share an API and are used interchangeably, and a durable store silently
+    returned `[1, 2]` for a tuple and `{"1": ...}` for an integer key while the
+    in-memory ledger returned what the caller passed. The same append produced
+    two different occurrences depending on which ledger held it, with nothing
+    recorded to say so.
+    """
+
+    memory = EventLedger()
+    durable = SQLiteEventLedger(str(tmp_path / "both.db"))
+    try:
+        preservable = {
+            "text": "the cat", "list": [1, 2], "nested": {"a": {"b": [1, {"c": None}]}},
+            "numbers": [1, 1.5, True, False, None],
+        }
+        in_memory = memory.append("k", "w", preservable)
+        stored = durable.append("k", "w", preservable)
+        assert memory.get(in_memory.id).payload == preservable
+        assert durable.get(stored.id).payload == preservable
+
+        # And what neither can preserve is refused by both, identically.
+        for payload in (
+            {"tuple": (1, 2)},
+            {"nested tuple": {"a": ("x",)}},
+            {"int key": {1: "x"}},
+            {"nested int key": {"a": {"b": {2: "x"}}}},
+            {"bytes": b"raw"},
+            {"set": {1}},
+        ):
+            with pytest.raises(ValueError) as memory_refusal:
+                memory.append("k", "w", payload)
+            with pytest.raises(ValueError) as durable_refusal:
+                durable.append("k", "w", payload)
+            assert str(memory_refusal.value) == str(durable_refusal.value)
+            # The path is reported, so a nested one is findable.
+            assert "payload[" in str(memory_refusal.value)
+    finally:
+        durable.close()
+
+
+def test_a_digest_requires_every_recorded_field():
+    """An absent field and a null field are different rows."""
+
+    from seed_runtime.events import _content_digest, LedgerIntegrityError
+
+    complete = {
+        "id": "e", "kind": "k", "workspace_id": "w", "actor": "system",
+        "timestamp": "2026-01-01T00:00:00+00:00", "payload": "{}",
+        "session_id": None, "causation_id": None, "correlation_id": None,
+    }
+    assert _content_digest(complete)
+
+    for field in complete:
+        partial = {k: v for k, v in complete.items() if k != field}
+        with pytest.raises(LedgerIntegrityError, match=field):
+            _content_digest(partial)
