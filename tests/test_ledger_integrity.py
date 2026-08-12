@@ -11,6 +11,7 @@ establishes a storage property Seed chose, not one the Book demanded.
 
 from __future__ import annotations
 
+import json
 import random
 import sqlite3
 
@@ -841,3 +842,119 @@ def test_a_commitment_distinguishes_order_and_rule_not_only_membership():
             support_commitment(COMPLETE_INGRESS_POPULATION, (bad,))
         with pytest.raises(_E, match="must be a representation"):
             support_commitment(bad, ("a",))
+
+
+def test_a_digest_does_not_move_when_a_payload_is_compressed(tmp_path):
+    """The digest commits to what an occurrence carries, not how it was stored.
+
+    `#2494` put compression below the integrity boundary. If the digest were
+    taken over the stored bytes instead of the canonical string, an occurrence
+    would verify differently depending on whether it happened to compress, and
+    a store written before compression would verify as CORRUPTED.
+    """
+
+    import zlib
+    from seed_runtime.events import _content_digest, _stored_payload, _serialized_payload
+
+    payload = {"dimensions": {"content": "x" * 4000}, "n": list(range(200))}
+    small = {"a": 1}
+
+    for value in (payload, small):
+        serialized = json.dumps(value)
+        row = {
+            "id": "evt_1", "kind": "k", "workspace_id": "w", "actor": "system",
+            "timestamp": "2026-01-01T00:00:00+00:00", "payload": serialized,
+            "session_id": None, "causation_id": None, "correlation_id": None,
+        }
+        digest = _content_digest(row)
+        stored = _stored_payload(serialized)
+        # Whatever the store holds, it recovers the canonical string exactly,
+        # and digesting that reproduces the same commitment.
+        assert _serialized_payload(stored) == serialized
+        assert _content_digest(dict(row, payload=_serialized_payload(stored))) == digest
+
+    # Large payloads compress and are stored as bytes; tiny ones do not and are
+    # stored as text, because compressing them would cost bytes for nothing.
+    assert isinstance(_stored_payload(json.dumps(payload)), bytes)
+    assert isinstance(_stored_payload(json.dumps(small)), str)
+
+
+def test_compressed_and_uncompressed_stores_verify_alike(tmp_path):
+    path = str(tmp_path / "ledger.db")
+    ledger = SQLiteEventLedger(path)
+    payload = {"dimensions": {"content": "y" * 5000}, "n": list(range(300))}
+    try:
+        compressed = ledger.append("k", "w", payload)
+        plain = ledger.append("k", "w", {"a": 1})
+        assert ledger.integrity_of(compressed.id) == VERIFIED
+        assert ledger.integrity_of(plain.id) == VERIFIED
+        assert ledger.get(compressed.id).payload == payload
+        assert ledger.get(plain.id).payload == {"a": 1}
+    finally:
+        ledger.close()
+
+    # Stored forms differ; standing does not.
+    connection = sqlite3.connect(path)
+    stored = {
+        row[0]: row[1]
+        for row in connection.execute("SELECT id, payload FROM events")
+    }
+    connection.close()
+    assert isinstance(stored[compressed.id], bytes)
+    assert isinstance(stored[plain.id], str)
+
+
+def test_a_store_written_before_compression_still_reads_and_verifies(tmp_path):
+    """Text payloads predate `#2494` and must not become unreadable or corrupt."""
+
+    path = str(tmp_path / "legacy.db")
+    ledger = SQLiteEventLedger(path)
+    payload = {"dimensions": {"content": "z" * 5000}}
+    try:
+        event = ledger.append("k", "w", payload)
+    finally:
+        ledger.close()
+
+    # Rewrite the row as an older store would have held it: canonical text, and
+    # the same digest, since the digest never covered the stored form.
+    connection = sqlite3.connect(path)
+    connection.execute("DROP TRIGGER events_refuse_update")
+    connection.execute(
+        "UPDATE events SET payload = ? WHERE id = ?",
+        (json.dumps(payload), event.id),
+    )
+    connection.commit()
+    connection.close()
+
+    ledger = SQLiteEventLedger(path)
+    try:
+        assert ledger.get(event.id).payload == payload
+        assert ledger.integrity_of(event.id) == VERIFIED
+    finally:
+        ledger.close()
+
+
+def test_a_corrupted_compressed_payload_is_detected_not_crashed(tmp_path):
+    """Tampering below the integrity boundary must still surface as CORRUPTED."""
+
+    path = str(tmp_path / "tampered.db")
+    ledger = SQLiteEventLedger(path)
+    try:
+        event = ledger.append("k", "w", {"dimensions": {"content": "q" * 5000}})
+    finally:
+        ledger.close()
+
+    connection = sqlite3.connect(path)
+    connection.execute("DROP TRIGGER events_refuse_update")
+    connection.execute(
+        "UPDATE events SET payload = ? WHERE id = ?",
+        (json.dumps({"dimensions": {"content": "different"}}), event.id),
+    )
+    connection.commit()
+    connection.close()
+
+    ledger = SQLiteEventLedger(path)
+    try:
+        assert ledger.integrity_of(event.id) == CORRUPTED
+    finally:
+        ledger.close()
