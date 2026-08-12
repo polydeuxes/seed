@@ -445,7 +445,7 @@ class SQLiteEventLedger(EventLedger):
     _RESERVABLE_PREFIXES = frozenset({
         "obs", "obs_local_host", "evd", "evd_obs", "fact", "fact_obs", "need",
         "operator_presentation", "operator_ingress_attempt", "operator_material",
-        "session", "system_invocation", "system_material",
+        "session", "system_invocation", "system_material", "transient_material",
     })
 
     _PERSISTED_ID_PREFIXES = (
@@ -467,6 +467,7 @@ class SQLiteEventLedger(EventLedger):
         # distinct and the store accepted both.
         "system_invocation",
         "system_material",
+        "transient_material",
     )
 
     def __init__(self, database_path: str) -> None:

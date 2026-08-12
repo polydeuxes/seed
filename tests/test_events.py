@@ -108,4 +108,6 @@ def test_sqlite_persisted_id_prefixes_exclude_deleted_planning_artifacts():
         # `system_material_000001` across a reopen.
         "system_invocation",
         "system_material",
+        # `#2496` on the same criterion again.
+        "transient_material",
     )
