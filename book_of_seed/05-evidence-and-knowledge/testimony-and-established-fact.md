@@ -7,7 +7,7 @@ The boundary between a source's claim or diagnostic finding and a fact with esta
 Which source, support, reconciliation, and promotion conditions establish a fact?
 
 ## Bounded resolution
-A Claim is the semantic proposition carried by testimony, observations, evidence payloads, fact artifacts, relationships, projections, explanations, documentation, or consumer assertions. The Book does not currently recognize a separate durable `Claim` artifact as the universal subject of knowledge; claim-centricity means the proposition is not identical to any one storage object and must keep its source, scope, interpretation, support, confidence, conflict, and authority limits as it moves through different artifacts and standings. Claim expression, claim interpretation, normalization, support, establishment, current selection, and verification are distinct boundaries.
+A Claim is the semantic proposition carried by testimony, observations, evidence payloads, fact artifacts, relationships, projections, explanations, documentation, or consumer assertions. The Book does not currently recognize a separate durable `Claim` artifact as the universal subject of knowledge; claim-centricity means the proposition is not identical to any one storage object and must keep its source, scope, interpretation, support, confidence, conflict, and authority limits as it moves through different artifacts and standings. Claim carriage, claim interpretation, normalization, support, establishment, current selection, and verification are distinct boundaries.
 
 Normalization canonicalizes an interpreted claim into Seed's subject, predicate, value, dimensions, time, source, and provenance vocabulary so it can be compared, supported, projected, contradicted, or explained. Normalization does not create a new constitutional subject by itself, does not prove the interpreted claim, does not supply support, and does not require a `NormalizedClaim` class or schema.
 
@@ -60,7 +60,7 @@ An operational baseline is retained, scoped, evidence-supported understanding of
 - baseline transition establishment != transition recording
 - ExecutionStatus cadence != operation timing testimony
 - operation status != operational measurement
-- claim expression != claim interpretation
+- claim carriage != claim interpretation
 - claim interpretation != normalization
 - normalization != support
 - support != establishment automatically
@@ -94,7 +94,7 @@ An operational baseline is retained, scoped, evidence-supported understanding of
 
 Temporal standing is the bounded warrant that a claim, artifact, support group, projection, verification, or consumer use is temporally interpretable for a declared purpose without collapsing different time relations. It asks which time a claim describes, which time supports it, when a record or artifact was produced or preserved if that is evidenced, when standing was established if that boundary is evidenced, what interval or expiry affects present-facing use, and which later consumer time supplies reliance or applicability judgment.
 
-Claim expression may assert an occurrence at a time, a condition during an interval, a source report at a time, a desired state, a historical assertion, a present-facing assertion, or a timeless/durable relation. Normalization must preserve temporal material whenever it is part of claim identity, dimensions, support scope, provenance, predicate semantics, or source-relative limitation. The required location is claim-family and predicate specific; the Book does not impose a universal one-timestamp Claim grammar.
+A carried claim may assert an occurrence at a time, a condition during an interval, a source report at a time, a desired state, a historical assertion, a present-facing assertion, or a timeless/durable relation. Normalization must preserve temporal material whenever it is part of claim identity, dimensions, support scope, provenance, predicate semantics, or source-relative limitation. The required location is claim-family and predicate specific; the Book does not impose a universal one-timestamp Claim grammar.
 
 `observed_at` safely means only the observation-time testimony supplied or inherited at the producing boundary. Depending on the producer, it may represent source sample time, collection time, adapter time, caller-supplied time, or import time. It does not by itself establish source occurrence time, Seed receipt time, ledger recording time, normalization time, Fact-establishment time, projection time, consumer uptake time, or lawful reliance time.
 
