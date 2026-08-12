@@ -167,6 +167,114 @@ class MeasurementFinding:
         }
 
 
+@dataclass(frozen=True)
+class RecurrenceFinding:
+    """How often one representation occurred, and across how much material.
+
+    `01.External:28` grants recurrence by name and states its disclosures. This
+    is the grant taken directly: what is measured is the representation itself,
+    rather than a position defined relative to it.
+
+    That is a fact about what was measured, not about constitutional subject
+    identity. The recorded identity remains `measurement:<representation>`, and
+    `01.External:28` bounds the result to the measurement assertion. Nothing
+    here establishes that the representation is the subject of anything, or
+    that Standing concerning it exists.
+
+    Three counts, because one is not readable without the others. A
+    representation occurring three times says nothing until the material it
+    occurred across is also stated, and occurring three times in one occurrence
+    is not the same finding as occurring once in each of three. The clause
+    requires the bounded scope be disclosed; `occurrences_examined` is that
+    scope's size, and it is preserved rather than left to the reader.
+    """
+
+    declared: DeclaredMeasurement
+    # Preserved occurrences the measurement ran over. The denominator.
+    occurrences_examined: int
+    # How many of them carried the representation at least once.
+    occurrences_carrying: int
+    # How many times it occurred in total across them. This is the recurrence.
+    total_count: int
+    consumed_event_ids: tuple[str, ...]
+    boundary_notes: tuple[str, ...] = field(default=BOUNDARY_NOTES)
+    convention: str = MEASUREMENT_CONVENTION
+
+    def to_json_dict(self) -> dict[str, Any]:
+        return {
+            "convention": self.convention,
+            "representation_measured": self.declared.representation_measured,
+            "equivalence_rule": self.declared.equivalence_rule,
+            "counting_scope": self.declared.counting_scope,
+            "premise_event_id": self.declared.premise_event_id,
+            "measurement_form": "recurrence",
+            "occurrences_examined": self.occurrences_examined,
+            "occurrences_carrying": self.occurrences_carrying,
+            "total_count": self.total_count,
+            "consumed_event_ids": list(self.consumed_event_ids),
+            "consumed_count": len(self.consumed_event_ids),
+            "boundary_notes": list(self.boundary_notes),
+        }
+
+
+def measure_recurrence(
+    occurrences: Iterable[Event],
+    *,
+    declared: DeclaredMeasurement,
+    occurrences_of: "callable[[str], int]",
+) -> RecurrenceFinding:
+    """Count how often one representation occurs across preserved material.
+
+    ``occurrences_of`` receives one preserved representation and returns how
+    many times the measured representation occurs within it under the declared
+    equivalence rule. The rule decides what counts as an occurrence, so the
+    caller supplies it and this act performs no interpretation: a
+    representation that does not occur occurs zero times, which is a finding
+    and not an absence of one.
+
+    Refuses the same material `measure_occupancy` refuses, for the same reason.
+    A measurement over a bounded population cannot measure text in material
+    that has none, and skipping would silently narrow the scope the finding
+    goes on to disclose.
+    """
+
+    consumed: list[str] = []
+    examined = 0
+    carrying = 0
+    total = 0
+    for event in occurrences:
+        if event.kind != INGRESS_OCCURRED_KIND:
+            raise PreservedMaterialMeasurementError(
+                f"only preserved ingress occurrences may be measured: {event.kind}"
+            )
+        consumed.append(event.id)
+        text = event.payload.get("text_representation")
+        if text is None:
+            text = {"available": "decoded_text" in event.payload}
+        if not isinstance(text, dict) or not text.get("available"):
+            raise PreservedMaterialMeasurementError(
+                f"{event.id} preserves material with no available text "
+                "representation, and this measurement measures text"
+            )
+        count = occurrences_of(event.payload["decoded_text"])
+        if not isinstance(count, int) or isinstance(count, bool) or count < 0:
+            raise PreservedMaterialMeasurementError(
+                "a recurrence count must be a non-negative integer, "
+                f"not {count!r}"
+            )
+        examined += 1
+        if count:
+            carrying += 1
+            total += count
+    return RecurrenceFinding(
+        declared=declared,
+        occurrences_examined=examined,
+        occurrences_carrying=carrying,
+        total_count=total,
+        consumed_event_ids=tuple(consumed),
+    )
+
+
 def preserved_ingress_occurrences(
     ledger: EventLedger, *, workspace_id: str, session_id: str
 ) -> list[Event]:
@@ -254,7 +362,7 @@ def _measurement_finding_payload(
     *,
     workspace_id: str,
     session_id: str,
-    finding: MeasurementFinding,
+    finding: MeasurementFinding | RecurrenceFinding,
     extra: dict[str, Any] | None,
 ) -> dict[str, Any]:
     carried = finding.to_json_dict()
@@ -296,7 +404,7 @@ def record_measurement_findings(
     *,
     workspace_id: str,
     session_id: str,
-    findings: Iterable[tuple[MeasurementFinding, dict[str, Any] | None]],
+    findings: Iterable[tuple[MeasurementFinding | RecurrenceFinding, dict[str, Any] | None]],
 ) -> list[Event]:
     """Preserve a bounded group of findings in one ledger transaction."""
 
@@ -335,7 +443,7 @@ def record_measurement_finding(
     *,
     workspace_id: str,
     session_id: str,
-    finding: MeasurementFinding,
+    finding: MeasurementFinding | RecurrenceFinding,
     extra: dict[str, Any] | None = None,
 ) -> Event:
     """Preserve a finding so a later responsible act may consume it.

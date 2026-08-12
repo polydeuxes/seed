@@ -38,6 +38,7 @@ from seed_runtime.preserved_material_measurement import (
     DeclaredMeasurement,
     PreservedMaterialMeasurementError,
     measure_occupancy,
+    measure_recurrence,
     premise_chain,
     preserved_ingress_occurrences,
     record_measurement_finding,
@@ -369,3 +370,194 @@ def test_an_occurrence_predating_the_coordinate_stays_measurable():
     )
     with pytest.raises(PreservedMaterialMeasurementError, match="no available text"):
         measure_occupancy([without_either], declared=declared, occupant_of=lambda t: None)
+
+
+# --------------------------------------------------------------------------
+# Recurrence: what is measured is the representation, not a position.
+#
+# `01.External:28` grants recurrence by name. Until this existed the only
+# measurement primitive was positional, which is why every finding Seed had
+# ever recorded was about a slot defined relative to a representation rather
+# than about a representation.
+#
+# None of this establishes that the representation is a constitutional
+# subject. The recorded identity is still `measurement:<representation>`, a
+# subject reference, and `01.External:28` bounds the result to the
+# measurement assertion. These tests assert what was measured and what was
+# disclosed, and nothing about subject identity or Standing.
+# --------------------------------------------------------------------------
+
+
+RECURRENCE_MATERIAL = (
+    "the cat sat on the mat\n"      # "the" twice in one occurrence
+    "a dog barked\n"                # "the" absent
+    "the end\n"                     # "the" once
+)
+
+
+def _recurrence_ledger():
+    ledger = EventLedger()
+    run_persistent_operator_console(
+        ledger=ledger,
+        workspace_id="w",
+        session_id="r",
+        input_stream=StringIO(RECURRENCE_MATERIAL + "exit\n"),
+        output_stream=StringIO(),
+    )
+    return ledger
+
+
+@pytest.fixture
+def recurrence_occurrences():
+    ledger = _recurrence_ledger()
+    return ledger, preserved_ingress_occurrences(ledger, workspace_id="w", session_id="r")
+
+
+def _counts(target):
+    return lambda text: text.split().count(target)
+
+
+def _recurrence_declared(target, premise_event_id=None):
+    return DeclaredMeasurement(
+        representation_measured=target,
+        equivalence_rule="exact equality between whitespace-separated tokens",
+        counting_scope="preserved operator-ingress occurrences of this session",
+        premise_event_id=premise_event_id,
+    )
+
+
+def test_what_is_measured_is_the_representation_not_a_position(recurrence_occurrences):
+    _, occurrences = recurrence_occurrences
+    finding = measure_recurrence(
+        occurrences, declared=_recurrence_declared("the"), occurrences_of=_counts("the")
+    )
+    carried = finding.to_json_dict()
+    assert carried["representation_measured"] == "the"
+    assert carried["measurement_form"] == "recurrence"
+    # No positional coordinate is claimed, because none was measured.
+    assert "measured_position" not in carried
+    assert "measured_relative_to" not in carried
+
+
+def test_material_examined_carrying_and_total_are_three_different_counts(
+    recurrence_occurrences,
+):
+    _, occurrences = recurrence_occurrences
+    finding = measure_recurrence(
+        occurrences, declared=_recurrence_declared("the"), occurrences_of=_counts("the")
+    )
+    # Three occurrences examined; two carry "the"; it occurs three times in all,
+    # because the first occurrence carries it twice.
+    assert finding.occurrences_examined == 3
+    assert finding.occurrences_carrying == 2
+    assert finding.total_count == 3
+
+
+def test_a_representation_that_never_occurs_produces_a_measurement_finding(
+    recurrence_occurrences,
+):
+    ledger, occurrences = recurrence_occurrences
+    finding = measure_recurrence(
+        occurrences,
+        declared=_recurrence_declared("zebra"),
+        occurrences_of=_counts("zebra"),
+    )
+    assert finding.total_count == 0
+    assert finding.occurrences_carrying == 0
+    # The scope is still stated: a bounded measurement assertion under the
+    # declared rule and scope, not a failure to measure. It establishes no
+    # Standing concerning zebra; `01.External:28` bounds it to the assertion.
+    assert finding.occurrences_examined == 3
+    event = record_measurement_finding(
+        ledger, workspace_id="w", session_id="r", finding=finding
+    )
+    assert event.payload["dimensions"]["identity"] == "measurement:zebra"
+    assert event.payload["total_count"] == 0
+
+
+def test_nothing_but_a_preserved_ingress_occurrence_may_be_recurrence_measured(
+    recurrence_occurrences,
+):
+    ledger, _ = recurrence_occurrences
+    foreign = ledger.append("unrelated.kind", "w", {"decoded_text": "the"}, session_id="r")
+    with pytest.raises(PreservedMaterialMeasurementError, match="preserved ingress"):
+        measure_recurrence(
+            [foreign], declared=_recurrence_declared("the"), occurrences_of=_counts("the")
+        )
+
+
+def test_material_with_no_available_text_representation_is_refused(
+    recurrence_occurrences,
+):
+    _, occurrences = recurrence_occurrences
+    without_text = Event(
+        id="evt_no_text",
+        kind=INGRESS_OCCURRED_KIND,
+        workspace_id="w",
+        session_id="r",
+        payload={"text_representation": {"available": False}},
+    )
+    with pytest.raises(PreservedMaterialMeasurementError, match="no available text"):
+        measure_recurrence(
+            [without_text],
+            declared=_recurrence_declared("the"),
+            occurrences_of=_counts("the"),
+        )
+
+
+@pytest.mark.parametrize("bad", [True, False, 1.0, -1, "2", None])
+def test_a_count_that_is_not_a_non_negative_integer_is_refused(
+    recurrence_occurrences, bad
+):
+    _, occurrences = recurrence_occurrences
+    with pytest.raises(PreservedMaterialMeasurementError, match="non-negative integer"):
+        measure_recurrence(
+            occurrences,
+            declared=_recurrence_declared("the"),
+            occurrences_of=lambda text: bad,
+        )
+
+
+def test_a_recurrence_finding_records_through_the_existing_path(
+    recurrence_occurrences,
+):
+    ledger, occurrences = recurrence_occurrences
+    finding = measure_recurrence(
+        occurrences, declared=_recurrence_declared("the"), occurrences_of=_counts("the")
+    )
+    event = record_measurement_finding(
+        ledger, workspace_id="w", session_id="r", finding=finding
+    )
+    assert event.kind == MEASUREMENT_RECORDED_KIND
+    assert event.payload["dimensions"]["identity"] == "measurement:the"
+    assert event.payload["dimensions"]["standing"] == "measured"
+    # The three disclosures `01.External:28` requires all survive recording.
+    assert event.payload["representation_measured"] == "the"
+    assert event.payload["equivalence_rule"].startswith("exact equality")
+    assert event.payload["counting_scope"].startswith("preserved operator-ingress")
+    assert event.payload["consumed_event_ids"] == [e.id for e in occurrences]
+
+
+def test_a_recurrence_finding_may_stand_on_a_premise(recurrence_occurrences):
+    ledger, occurrences = recurrence_occurrences
+    first = record_measurement_finding(
+        ledger,
+        workspace_id="w",
+        session_id="r",
+        finding=measure_recurrence(
+            occurrences,
+            declared=_recurrence_declared("the"),
+            occurrences_of=_counts("the"),
+        ),
+    )
+    second = record_measurement_finding(
+        ledger,
+        workspace_id="w",
+        session_id="r",
+        finding=measure_recurrence(
+            occurrences,
+            declared=_recurrence_declared("cat", premise_event_id=first.id),
+            occurrences_of=_counts("cat"),
+        ),
+    )
+    assert premise_chain(ledger, second.id) == [first.id]
