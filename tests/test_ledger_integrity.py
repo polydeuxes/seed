@@ -755,6 +755,17 @@ def test_every_support_basis_refusal_can_be_reached():
     with pytest.raises(SupportBasisError, match="recognised selection"):
         basis(selection_rule="a selection nobody established")
 
+    # A selection rule is established as a representation before it is looked
+    # up, because frozenset membership hashes its argument. `[]` and `{}` leaked
+    # a raw TypeError; `set()` did not, only because CPython converts a set
+    # argument to a frozenset before testing membership. Both outcomes are held
+    # so neither depends on that quirk.
+    for value in ([], {}, set(), None, 1, True, b"x", ("a",)):
+        with pytest.raises(SupportBasisError, match="recognised selection"):
+            basis(selection_rule=value)
+        with pytest.raises(SupportBasisError):
+            SupportBasis.from_json_dict(dict(basis().to_json_dict(), selection_rule=value))
+
     for name in ("workspace_id", "session_id", "occurrence_kind",
                  "boundary_commitment", "commitment"):
         with pytest.raises(SupportBasisError, match=f"requires {name}"):

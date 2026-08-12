@@ -122,6 +122,14 @@ class SupportBasis:
     support_count: int
 
     def __post_init__(self) -> None:
+        # Established as a representation before it is looked up. Membership of
+        # a frozenset hashes its argument, so an unhashable value leaked a raw
+        # TypeError rather than the refusal this declares.
+        if not isinstance(self.selection_rule, str):
+            raise SupportBasisError(
+                "a support basis must declare a recognised selection, not "
+                f"{type(self.selection_rule).__name__}"
+            )
         if self.selection_rule not in SUPPORT_SELECTION_RULES:
             raise SupportBasisError(
                 f"a support basis must declare a recognised selection: {self.selection_rule!r}"
