@@ -346,7 +346,7 @@ class SQLiteEventLedger(EventLedger):
     _RESERVABLE_PREFIXES = frozenset({
         "obs", "obs_local_host", "evd", "evd_obs", "fact", "fact_obs", "need",
         "operator_presentation", "operator_ingress_attempt", "operator_material",
-        "session",
+        "session", "system_invocation", "system_material",
     })
 
     _PERSISTED_ID_PREFIXES = (
@@ -361,6 +361,13 @@ class SQLiteEventLedger(EventLedger):
         "operator_ingress_attempt",
         "operator_material",
         "session",
+        # `#2491` records why an unreserved prefix is not merely untidy. A
+        # subject identity minted from an unreserved prefix restarts at one in
+        # every process, so two independent durable subjects claimed
+        # `system_material_000001` across a reopen while their event rows stayed
+        # distinct and the store accepted both.
+        "system_invocation",
+        "system_material",
     )
 
     def __init__(self, database_path: str) -> None:

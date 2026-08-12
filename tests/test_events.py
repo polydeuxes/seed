@@ -102,4 +102,10 @@ def test_sqlite_persisted_id_prefixes_exclude_deleted_planning_artifacts():
         "operator_ingress_attempt",
         "operator_material",
         "session",
+        # Added by `#2491` on the same criterion. A durable store persists these
+        # subject identities and a later process mints them again, so before
+        # they were reserved two independent subjects claimed
+        # `system_material_000001` across a reopen.
+        "system_invocation",
+        "system_material",
     )
