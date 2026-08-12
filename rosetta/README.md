@@ -24,6 +24,10 @@ keeps dead vocabulary present in the grammar. It lives here.
 ## Scope
 
 ```text
+the two roots               Examination and Presentation: the inward and
+                            outward directions across Seed's boundary,
+                            named in ordinary English
+
 retired vocabulary          words the Book no longer uses, and what
                             current grammar covers what they covered
 
@@ -77,4 +81,8 @@ to four current terms and to no single one of them.
 
 ## Files
 
+- [The two roots](roots.md)
 - [Retired vocabulary](retired-vocabulary.md)
+
+The roots are the spine. Every other entry either hangs beneath one of them or
+is a word that named nothing and is recorded only so its removal stays legible.

@@ -62,6 +62,11 @@ applicability determination, and relation establishment among them.
 `examine` survives in active law as an ordinary verb, with *applicability* as
 the subject doing the examining.
 
+The noun is retired from the Book and adopted here as a root: see
+[the two roots](roots.md). The property that made it unusable as law — that it
+covers several responsibilities at once — is what makes it usable as ordinary
+English for a whole direction.
+
 ## Consideration
 
 ```text
