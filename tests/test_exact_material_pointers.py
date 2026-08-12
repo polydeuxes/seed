@@ -326,34 +326,47 @@ def test_a_serialized_account_is_refused_when_it_cannot_be_recovered():
         )
 
 
-def test_base64_is_not_canonical_and_the_digest_is_what_settles_it():
-    """Over-padded base64 decodes, so a serialized account is not unique.
+def test_a_literal_must_carry_the_canonical_encoding_of_its_bytes():
+    """Acceptance must not depend on which interpreter reads the account.
 
-    `b64decode(validate=True)` accepts `"YWJj"` and `"YWJj===="` alike, both
-    yielding `b"abc"`. Two different serialized forms therefore recover one
-    account. That is not a fidelity failure: the digest commits to the
-    reconstructed material rather than to its serialization, so the account is
-    about the bytes and not about how they were written down. Held here so the
-    property is a decision rather than an accident, since the refusal above
-    reads as though every irregular encoding is rejected.
+    `b64decode(validate=True)` accepted `"YWJj===="` as `b"abc"` through Python
+    3.11 and refuses it as excess padding from 3.12. An earlier revision
+    recorded that leniency as a property of the representation and held it by
+    test, which passed on 3.11 and failed on 3.12 — a durable boundary whose
+    acceptance moved with the runtime.
+
+    Canonicality is now required explicitly, which is exact and identical
+    everywhere. This is stricter than either interpreter's default in one
+    direction only: a form this module emits is always accepted, since
+    `to_json_dict` emits canonical base64.
     """
 
     material = b"abc"
     account = form_exact_material_pointers(material)
     carried = account.to_json_dict()
     assert carried["parts"] == [{"kind": "literal", "bytes_b64": "YWJj"}]
+    assert ExactMaterialPointers.from_json_dict(carried) == account
 
-    over_padded = dict(carried, parts=[{"kind": "literal", "bytes_b64": "YWJj===="}])
-    recovered = ExactMaterialPointers.from_json_dict(over_padded)
-    assert recovered == account
-    assert reconstruct_exact_bytes(recovered) == material
+    for non_canonical in ("YWJj====", "YWJj=", "YWJj=="):
+        with pytest.raises(ExactMaterialPointerError, match="not valid base64|not the canonical"):
+            ExactMaterialPointers.from_json_dict(
+                dict(carried, parts=[{"kind": "literal", "bytes_b64": non_canonical}])
+            )
 
-    # And an encoding that decodes to different bytes is still refused, by the
+    # An encoding that decodes to different bytes is still refused, by the
     # digest rather than by base64.
     with pytest.raises(ExactMaterialPointerError, match="does not match"):
         ExactMaterialPointers.from_json_dict(
             dict(carried, parts=[{"kind": "literal", "bytes_b64": "YWJk"}])
         )
+
+    # Round-tripping anything this module emits stays exact, including bytes
+    # whose canonical encoding carries padding.
+    for exact in (b"a", b"ab", b"abc", b"abcd", bytes(range(256))):
+        rebuilt = ExactMaterialPointers.from_json_dict(
+            form_exact_material_pointers(exact).to_json_dict()
+        )
+        assert reconstruct_exact_bytes(rebuilt) == exact
 
 
 def test_reconstruction_refuses_material_that_is_not_an_account():

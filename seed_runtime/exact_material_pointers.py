@@ -197,6 +197,16 @@ class ExactMaterialPointers:
                     exact = base64.b64decode(encoded.encode("ascii"), validate=True)
                 except (ValueError, UnicodeEncodeError) as exc:
                     raise ExactMaterialPointerError("literal bytes_b64 is not valid base64") from exc
+                # Canonical, and required explicitly rather than left to the
+                # runtime's opinion. `b64decode(validate=True)` accepted
+                # "YWJj====" as b"abc" through Python 3.11 and refuses it as
+                # excess padding from 3.12, so an account's acceptance depended
+                # on the interpreter reading it. Re-encoding is exact and the
+                # same everywhere.
+                if base64.b64encode(exact).decode("ascii") != encoded:
+                    raise ExactMaterialPointerError(
+                        "literal bytes_b64 is not the canonical encoding of its bytes"
+                    )
                 parts.append(LiteralPart(exact))
             elif kind == "reference":
                 parts.append(ReferencePart(start=raw.get("start"), length=raw.get("length")))
