@@ -78,6 +78,10 @@ def _commit_part(digest: "hashlib._Hash", value: str) -> None:
     backwards; the representation is made unambiguous instead.
     """
 
+    if not isinstance(value, str):
+        raise SupportBasisError(
+            f"a committed part must be a representation, not {type(value).__name__}"
+        )
     encoded = value.encode("utf-8")
     digest.update(len(encoded).to_bytes(8, "big"))
     digest.update(encoded)
@@ -127,6 +131,15 @@ class SupportBasis:
             value = getattr(self, name)
             if not isinstance(value, str) or not value:
                 raise SupportBasisError(f"a support basis requires {name}")
+        # A count coordinate must be able to be a count. `bool` is excluded
+        # because it is an `int` in Python and `True == 1`, so a basis carrying
+        # `True` would agree with a one-occurrence population — a coordinate
+        # claiming an exact count while carrying something that is not one.
+        if not isinstance(self.support_count, int) or isinstance(self.support_count, bool):
+            raise SupportBasisError(
+                "a support basis requires an integer support count, not "
+                f"{type(self.support_count).__name__}"
+            )
         if self.support_count < 0:
             raise SupportBasisError("a support basis cannot support a negative count")
 

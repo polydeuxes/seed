@@ -765,6 +765,17 @@ def test_every_support_basis_refusal_can_be_reached():
     with pytest.raises(SupportBasisError, match="negative count"):
         basis(support_count=-1)
 
+    # A count coordinate must establish that it can be a count. Each of these
+    # previously either leaked a raw TypeError from the comparison or was
+    # accepted outright.
+    for value in ("4", None, True, False, 4.0, [], {}, ()):
+        with pytest.raises(SupportBasisError, match="integer support count"):
+            basis(support_count=value)
+
+    # `True` mattered most: it is an int and equals 1, so a basis carrying it
+    # would have agreed with a one-occurrence population.
+    assert True == 1
+
     with pytest.raises(SupportBasisError, match="not present"):
         SupportBasis.from_json_dict(None)
     with pytest.raises(SupportBasisError, match="not present"):
@@ -810,3 +821,12 @@ def test_a_commitment_distinguishes_order_and_rule_not_only_membership():
     # Multi-byte identities are committed by encoded length, not character count.
     assert support_commitment(COMPLETE_INGRESS_POPULATION, ("é",)) != \
            support_commitment(COMPLETE_INGRESS_POPULATION, ("ab",))
+
+    # A part that is not a representation is refused rather than leaking from
+    # the encode. The rule is a part too, and is held to the same requirement.
+    from seed_runtime.support_basis import SupportBasisError as _E
+    for bad in (1, None, b"bytes", ["a"]):
+        with pytest.raises(_E, match="must be a representation"):
+            support_commitment(COMPLETE_INGRESS_POPULATION, (bad,))
+        with pytest.raises(_E, match="must be a representation"):
+            support_commitment(bad, ("a",))
