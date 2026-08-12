@@ -34,7 +34,7 @@ Measured over a store of sixteen bodies at 1,200 lines each, 597,736 occurrences
 
 ## Consequence measured
 
-Comparisons grow as `C(k, 2)` in the number of bodies a subject appears in; movement against current Standing would grow as `k`.
+Comparisons grow as `C(k, 2)` in the number of bodies a subject appears in; successive movement in Standing concerning that subject would grow as `k`.
 
 ```text
    16 bodies        76,004 compares       55,492 movements     1.4x
@@ -55,6 +55,7 @@ At the scale every experiment has run at, the two are nearly indistinguishable, 
 - **It does not promise that Standing improves.** Movement may be almost nothing. The amendment permits poor Standing to exist and to persist as the same subject; it warrants no trajectory.
 - **It does not license discarding preserved Assertions.** Current Standing is what a later Assertion is considered against; the Assertions that warranted it remain preserved and recoverable, exactly as `B` carries a bounded history forward without erasing it.
 - **It does not promote any composite.** `01.Standing.D` governs that, unamended.
+- **It does not establish the Compare continuation.** `05.Testimony.E` names preserved testimonies and findings as a bounded comparison's inputs and bounded relation standing as its output; it does not name that output as a later Compare's input. PR #2286 examined exactly that crossing and recorded it as *unrecovered, not excluded*, resting on the unrecovered premise that comparison results are findings generally. An earlier draft of this clause read "a Compare consuming an Assertion and current Standing," which asserts that crossing; the clause now states that it establishes neither what carries current Standing into a Compare nor that a Compare result is a consumable finding. Applicability is a different matter and is grounded: `01.Standing.E.1` already names "standing and warrant, currentness and occurrence identity" among what an applicability determination preserves.
 
 ## Falsification target
 
