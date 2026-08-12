@@ -668,3 +668,176 @@ def test_an_overlapping_prefix_reserves_the_longer_match():
         payload={"a": "obs_local_host_7", "b": "obs_4"},
     )
     assert ledger._observed_suffixes(event) == {"obs_local_host": 7, "obs": 4}
+
+
+def test_a_cache_hit_still_refuses_a_contradictory_support_count():
+    """A forged count must be refused whichever recovery reaches it first.
+
+    `SupportRecovery` keys on the commitment, not the count, so a second basis
+    committing to the same population reaches a cached result. Curator found
+    that the count check then never ran, which made catching a forged count
+    depend on what the act happened to have recovered earlier.
+    """
+
+    from seed_runtime.support_basis import (
+        SupportBasis,
+        SupportBasisError,
+        SupportRecovery,
+        declare_complete_population,
+    )
+
+    ledger = EventLedger()
+    ledger.append_many([
+        Event(id=f"evt_{index}", kind="ingress", workspace_id="w", session_id="s")
+        for index in range(4)
+    ])
+    boundary = ledger.capture_boundary()
+    identities = tuple(ledger.iter_session_kind_ids("w", "s", "ingress", through=boundary))
+    honest = declare_complete_population(
+        workspace_id="w", session_id="s", occurrence_kind="ingress",
+        boundary=boundary, identities=identities,
+    )
+    forged = SupportBasis(
+        workspace_id=honest.workspace_id,
+        session_id=honest.session_id,
+        occurrence_kind=honest.occurrence_kind,
+        boundary_commitment=honest.boundary_commitment,
+        selection_rule=honest.selection_rule,
+        commitment=honest.commitment,
+        support_count=honest.support_count - 1,
+    )
+
+    # Refused on a cold recovery.
+    with pytest.raises(SupportBasisError, match="declared count"):
+        SupportRecovery(ledger).recover(forged)
+
+    # And refused after the same population has been cached, which is the path
+    # that previously returned it.
+    recovery = SupportRecovery(ledger)
+    assert recovery.recover(honest) == identities
+    assert recovery.reads == 1
+    with pytest.raises(SupportBasisError, match="declared count"):
+        recovery.recover(forged)
+    assert recovery.reuses == 0
+
+    # An honest second reference still reuses rather than re-reading.
+    assert recovery.recover(honest) == identities
+    assert (recovery.reads, recovery.reuses) == (1, 1)
+
+
+def test_every_support_basis_refusal_can_be_reached():
+    """Each refusal a support basis declares must actually fire.
+
+    A refusal no test has triggered is a refusal nobody has verified, and this
+    module's refusals are what stand in for the enumeration it no longer
+    carries.
+    """
+
+    from seed_runtime.support_basis import (
+        COMPLETE_INGRESS_POPULATION,
+        SupportBasis,
+        SupportBasisError,
+        support_commitment,
+    )
+
+    def basis(**changes):
+        fields = dict(
+            workspace_id="w", session_id="s", occurrence_kind="k",
+            boundary_commitment="b", selection_rule=COMPLETE_INGRESS_POPULATION,
+            commitment=support_commitment(COMPLETE_INGRESS_POPULATION, ()),
+            support_count=0,
+        )
+        fields.update(changes)
+        return SupportBasis(**fields)
+
+    basis()  # the honest one is constructible
+
+    with pytest.raises(SupportBasisError, match="recognised selection"):
+        basis(selection_rule="a selection nobody established")
+
+    # A selection rule is established as a representation before it is looked
+    # up, because frozenset membership hashes its argument. `[]` and `{}` leaked
+    # a raw TypeError; `set()` did not, only because CPython converts a set
+    # argument to a frozenset before testing membership. Both outcomes are held
+    # so neither depends on that quirk.
+    for value in ([], {}, set(), None, 1, True, b"x", ("a",)):
+        with pytest.raises(SupportBasisError, match="recognised selection"):
+            basis(selection_rule=value)
+        with pytest.raises(SupportBasisError):
+            SupportBasis.from_json_dict(dict(basis().to_json_dict(), selection_rule=value))
+
+    for name in ("workspace_id", "session_id", "occurrence_kind",
+                 "boundary_commitment", "commitment"):
+        with pytest.raises(SupportBasisError, match=f"requires {name}"):
+            basis(**{name: ""})
+        with pytest.raises(SupportBasisError, match=f"requires {name}"):
+            basis(**{name: None})
+
+    with pytest.raises(SupportBasisError, match="negative count"):
+        basis(support_count=-1)
+
+    # A count coordinate must establish that it can be a count. Each of these
+    # previously either leaked a raw TypeError from the comparison or was
+    # accepted outright.
+    for value in ("4", None, True, False, 4.0, [], {}, ()):
+        with pytest.raises(SupportBasisError, match="integer support count"):
+            basis(support_count=value)
+
+    # `True` mattered most: it is an int and equals 1, so a basis carrying it
+    # would have agreed with a one-occurrence population.
+    assert True == 1
+
+    with pytest.raises(SupportBasisError, match="not present"):
+        SupportBasis.from_json_dict(None)
+    with pytest.raises(SupportBasisError, match="not present"):
+        SupportBasis.from_json_dict("a string is not a basis")
+
+    complete = basis().to_json_dict()
+    assert SupportBasis.from_json_dict(complete) == basis()
+    for key in ("scope", "boundary", "selection_rule", "commitment", "support_count"):
+        partial = {k: v for k, v in complete.items() if k != key}
+        with pytest.raises(SupportBasisError, match="incomplete"):
+            SupportBasis.from_json_dict(partial)
+
+
+def test_a_commitment_distinguishes_order_and_rule_not_only_membership():
+    """Two selections returning the same identities in a different order, or
+    under a different rule, must not commit to the same digest."""
+
+    from seed_runtime.support_basis import (
+        COMPLETE_INGRESS_POPULATION, support_commitment,
+    )
+
+    ordered = support_commitment(COMPLETE_INGRESS_POPULATION, ("a", "b", "c"))
+    assert ordered != support_commitment(COMPLETE_INGRESS_POPULATION, ("a", "c", "b"))
+    assert ordered != support_commitment("another rule", ("a", "b", "c"))
+    assert ordered != support_commitment(COMPLETE_INGRESS_POPULATION, ("a", "b"))
+    assert support_commitment(COMPLETE_INGRESS_POPULATION, ("ab", "c")) != \
+           support_commitment(COMPLETE_INGRESS_POPULATION, ("a", "bc"))
+
+    # The parts must be unambiguous when a part contains whatever divides them.
+    # An earlier encoding separated parts with a NUL, which held only while no
+    # identity carried one — and nothing constrains an Event.id. Both of these
+    # produced one digest for two different populations.
+    assert support_commitment(COMPLETE_INGRESS_POPULATION, ("a", "b\0c")) != \
+           support_commitment(COMPLETE_INGRESS_POPULATION, ("a\0b", "c"))
+    assert support_commitment("a", ("b",)) != support_commitment("a\0b", ())
+
+    # And the same requirement under the length prefix that replaced it.
+    assert support_commitment("a", ("b",)) != support_commitment("ab", ())
+    assert support_commitment(COMPLETE_INGRESS_POPULATION, ("", "ab")) != \
+           support_commitment(COMPLETE_INGRESS_POPULATION, ("a", "b"))
+    assert support_commitment(COMPLETE_INGRESS_POPULATION, ("",)) != \
+           support_commitment(COMPLETE_INGRESS_POPULATION, ())
+    # Multi-byte identities are committed by encoded length, not character count.
+    assert support_commitment(COMPLETE_INGRESS_POPULATION, ("é",)) != \
+           support_commitment(COMPLETE_INGRESS_POPULATION, ("ab",))
+
+    # A part that is not a representation is refused rather than leaking from
+    # the encode. The rule is a part too, and is held to the same requirement.
+    from seed_runtime.support_basis import SupportBasisError as _E
+    for bad in (1, None, b"bytes", ["a"]):
+        with pytest.raises(_E, match="must be a representation"):
+            support_commitment(COMPLETE_INGRESS_POPULATION, (bad,))
+        with pytest.raises(_E, match="must be a representation"):
+            support_commitment(bad, ("a",))

@@ -51,6 +51,12 @@ from typing import Callable, Iterable, Iterator, Sequence
 
 from seed_runtime.events import CORRUPTED, EventLedger, EventLedgerBoundary
 from seed_runtime.event import Event
+from seed_runtime.support_basis import (
+    SupportBasis,
+    SupportBasisError,
+    SupportRecovery,
+    declare_complete_population,
+)
 from seed_runtime.preserved_material_measurement import (
     INGRESS_OCCURRED_KIND,
     MEASUREMENT_RECORDED_KIND,
@@ -215,7 +221,13 @@ def _adjacent_pair_result_assertion_fields(
         "assertion_subject": subject,
         "assertion_scope": scope,
         "support_basis": {
-            "event_ids": list(finding.consumed_event_ids),
+            "basis": declare_complete_population(
+                workspace_id=workspace_id,
+                session_id=session_id,
+                occurrence_kind=INGRESS_OCCURRED_KIND,
+                boundary=completeness_boundary,
+                identities=finding.consumed_event_ids,
+            ).to_json_dict(),
             "premise_event_id": finding.declared.premise_event_id,
         },
         "completeness_boundary": {
@@ -305,7 +317,7 @@ def assertion_of_recorded_adjacent_pair_result(
             "session_id": event.session_id,
             "occurrence_kind": INGRESS_OCCURRED_KIND,
         }
-        or support.get("event_ids") != payload.get("consumed_event_ids")
+        or support.get("basis") != payload.get("consumed_support")
         or support.get("premise_event_id") != payload.get("premise_event_id")
     ):
         raise PreservedMaterialMeasurementError(
@@ -351,23 +363,45 @@ def _validate_result_assertion_ingress(
     event: Event,
     assertion: RecordedAdjacentPairResultAssertion,
     *,
-    recovered_ingress_ids: tuple[str, ...] | None = None,
+    recovery: SupportRecovery | None = None,
 ) -> None:
-    if recovered_ingress_ids is None:
-        recovered_ingress_ids = tuple(
-            ledger.iter_session_kind_ids(
-                event.workspace_id,
-                event.session_id,
-                INGRESS_OCCURRED_KIND,
-                through=assertion.completeness_boundary,
-            )
-        )
-    consumed_event_ids = tuple(event.payload["consumed_event_ids"])
-    support_event_ids = tuple(event.payload["support_basis"]["event_ids"])
-    if recovered_ingress_ids != consumed_event_ids or support_event_ids != consumed_event_ids:
+    """Recover the carried support basis and require it to reproduce.
+
+    The occurrence no longer carries every supporting identity, so this no
+    longer compares two lists. It performs the basis's own declared selection
+    against the ledger and refuses unless the result reproduces the committed
+    digest.
+
+    The check this replaces also recovered the population from the ledger, so
+    the guarantee is substantially the same one in a compact and reusable form.
+    It is not stronger for using a commitment.
+    """
+
+    try:
+        basis = SupportBasis.from_json_dict(event.payload.get("consumed_support"))
+    except SupportBasisError as exc:
         raise PreservedMaterialMeasurementError(
-            "the carried support does not equal the complete bounded ingress read"
+            f"{event.id} does not carry a recoverable support basis: {exc}"
+        ) from exc
+    if (
+        basis.workspace_id != event.workspace_id
+        or basis.session_id != event.session_id
+        or basis.occurrence_kind != INGRESS_OCCURRED_KIND
+        or basis.boundary_commitment != assertion.completeness_boundary.commitment
+    ):
+        raise PreservedMaterialMeasurementError(
+            f"{event.id} carries a support basis outside its own scope and boundary"
         )
+    if basis.support_count != event.payload.get("consumed_count"):
+        raise PreservedMaterialMeasurementError(
+            f"{event.id} carries a support count its basis does not support"
+        )
+    try:
+        (recovery or SupportRecovery(ledger)).recover(basis)
+    except SupportBasisError as exc:
+        raise PreservedMaterialMeasurementError(
+            f"the carried support basis does not recover: {exc}"
+        ) from exc
 
 
 def iter_recorded_adjacent_pair_result_assertions(
@@ -383,7 +417,7 @@ def iter_recorded_adjacent_pair_result_assertions(
     The cache contains compact Event identities, not material or result Events.
     """
 
-    ingress_ids_by_boundary: dict[tuple[str, str], tuple[str, ...]] = {}
+    recovery = SupportRecovery(ledger)
     for session_id in tuple(dict.fromkeys(session_ids)):
         for event in ledger.iter_session_kind(
             workspace_id,
@@ -400,23 +434,8 @@ def iter_recorded_adjacent_pair_result_assertions(
                     "a corrupted producing occurrence cannot expose a result Assertion"
                 )
             assertion = assertion_of_recorded_adjacent_pair_result(event)
-            cache_key = (session_id, assertion.completeness_boundary.commitment)
-            recovered_ingress_ids = ingress_ids_by_boundary.get(cache_key)
-            if recovered_ingress_ids is None:
-                recovered_ingress_ids = tuple(
-                    ledger.iter_session_kind_ids(
-                        workspace_id,
-                        session_id,
-                        INGRESS_OCCURRED_KIND,
-                        through=assertion.completeness_boundary,
-                    )
-                )
-                ingress_ids_by_boundary[cache_key] = recovered_ingress_ids
             _validate_result_assertion_ingress(
-                ledger,
-                event,
-                assertion,
-                recovered_ingress_ids=recovered_ingress_ids,
+                ledger, event, assertion, recovery=recovery
             )
             yield assertion
 
