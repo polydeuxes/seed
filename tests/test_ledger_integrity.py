@@ -723,3 +723,73 @@ def test_a_cache_hit_still_refuses_a_contradictory_support_count():
     # An honest second reference still reuses rather than re-reading.
     assert recovery.recover(honest) == identities
     assert (recovery.reads, recovery.reuses) == (1, 1)
+
+
+def test_every_support_basis_refusal_can_be_reached():
+    """Each refusal a support basis declares must actually fire.
+
+    A refusal no test has triggered is a refusal nobody has verified, and this
+    module's refusals are what stand in for the enumeration it no longer
+    carries.
+    """
+
+    from seed_runtime.support_basis import (
+        COMPLETE_INGRESS_POPULATION,
+        SupportBasis,
+        SupportBasisError,
+        support_commitment,
+    )
+
+    def basis(**changes):
+        fields = dict(
+            workspace_id="w", session_id="s", occurrence_kind="k",
+            boundary_commitment="b", selection_rule=COMPLETE_INGRESS_POPULATION,
+            commitment=support_commitment(COMPLETE_INGRESS_POPULATION, ()),
+            support_count=0,
+        )
+        fields.update(changes)
+        return SupportBasis(**fields)
+
+    basis()  # the honest one is constructible
+
+    with pytest.raises(SupportBasisError, match="recognised selection"):
+        basis(selection_rule="a selection nobody established")
+
+    for name in ("workspace_id", "session_id", "occurrence_kind",
+                 "boundary_commitment", "commitment"):
+        with pytest.raises(SupportBasisError, match=f"requires {name}"):
+            basis(**{name: ""})
+        with pytest.raises(SupportBasisError, match=f"requires {name}"):
+            basis(**{name: None})
+
+    with pytest.raises(SupportBasisError, match="negative count"):
+        basis(support_count=-1)
+
+    with pytest.raises(SupportBasisError, match="not present"):
+        SupportBasis.from_json_dict(None)
+    with pytest.raises(SupportBasisError, match="not present"):
+        SupportBasis.from_json_dict("a string is not a basis")
+
+    complete = basis().to_json_dict()
+    assert SupportBasis.from_json_dict(complete) == basis()
+    for key in ("scope", "boundary", "selection_rule", "commitment", "support_count"):
+        partial = {k: v for k, v in complete.items() if k != key}
+        with pytest.raises(SupportBasisError, match="incomplete"):
+            SupportBasis.from_json_dict(partial)
+
+
+def test_a_commitment_distinguishes_order_and_rule_not_only_membership():
+    """Two selections returning the same identities in a different order, or
+    under a different rule, must not commit to the same digest."""
+
+    from seed_runtime.support_basis import (
+        COMPLETE_INGRESS_POPULATION, support_commitment,
+    )
+
+    ordered = support_commitment(COMPLETE_INGRESS_POPULATION, ("a", "b", "c"))
+    assert ordered != support_commitment(COMPLETE_INGRESS_POPULATION, ("a", "c", "b"))
+    assert ordered != support_commitment("another rule", ("a", "b", "c"))
+    assert ordered != support_commitment(COMPLETE_INGRESS_POPULATION, ("a", "b"))
+    # and separator injection cannot forge a match
+    assert support_commitment(COMPLETE_INGRESS_POPULATION, ("ab", "c")) != \
+           support_commitment(COMPLETE_INGRESS_POPULATION, ("a", "bc"))

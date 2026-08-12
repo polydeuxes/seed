@@ -208,10 +208,16 @@ class SupportRecovery:
                 )
             self.reuses += 1
             return cached
-        if basis.selection_rule != COMPLETE_INGRESS_POPULATION:
-            raise SupportBasisError(
-                f"no recovery is established for selection {basis.selection_rule!r}"
-            )
+        # No rule check here. A basis refuses any selection outside
+        # `SUPPORT_SELECTION_RULES` at construction, and that set has one
+        # member, so a basis reaching this point can only carry the complete
+        # population — recovery performs every rule a basis can hold.
+        #
+        # Where a second rule is added, two responsibilities separate here that
+        # are currently one: a basis knowing a rule is *recognised*, and a
+        # recovery being able to *perform* it. This is where that split goes,
+        # and it is not made now because a refusal that cannot fire asserts a
+        # distinction the code does not have.
         self.reads += 1
         identities = tuple(
             self._ledger.iter_session_kind_ids(
