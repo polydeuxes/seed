@@ -172,8 +172,14 @@ class RecurrenceFinding:
     """How often one representation occurred, and across how much material.
 
     `01.External:28` grants recurrence by name and states its disclosures. This
-    is the grant taken directly: the subject measured is the representation
-    itself, not a position defined relative to one.
+    is the grant taken directly: what is measured is the representation itself,
+    rather than a position defined relative to it.
+
+    That is a fact about what was measured, not about constitutional subject
+    identity. The recorded identity remains `measurement:<representation>`, and
+    `01.External:28` bounds the result to the measurement assertion. Nothing
+    here establishes that the representation is the subject of anything, or
+    that Standing concerning it exists.
 
     Three counts, because one is not readable without the others. A
     representation occurring three times says nothing until the material it

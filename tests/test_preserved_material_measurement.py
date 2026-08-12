@@ -373,12 +373,18 @@ def test_an_occurrence_predating_the_coordinate_stays_measurable():
 
 
 # --------------------------------------------------------------------------
-# Recurrence: the subject measured is the representation, not a position.
+# Recurrence: what is measured is the representation, not a position.
 #
 # `01.External:28` grants recurrence by name. Until this existed the only
 # measurement primitive was positional, which is why every finding Seed had
 # ever recorded was about a slot defined relative to a representation rather
 # than about a representation.
+#
+# None of this establishes that the representation is a constitutional
+# subject. The recorded identity is still `measurement:<representation>`, a
+# subject reference, and `01.External:28` bounds the result to the
+# measurement assertion. These tests assert what was measured and what was
+# disclosed, and nothing about subject identity or Standing.
 # --------------------------------------------------------------------------
 
 
@@ -420,7 +426,7 @@ def _recurrence_declared(target, premise_event_id=None):
     )
 
 
-def test_the_measured_subject_is_the_representation_itself(recurrence_occurrences):
+def test_what_is_measured_is_the_representation_not_a_position(recurrence_occurrences):
     _, occurrences = recurrence_occurrences
     finding = measure_recurrence(
         occurrences, declared=_recurrence_declared("the"), occurrences_of=_counts("the")
@@ -447,7 +453,9 @@ def test_material_examined_carrying_and_total_are_three_different_counts(
     assert finding.total_count == 3
 
 
-def test_a_representation_that_never_occurs_produces_a_finding(recurrence_occurrences):
+def test_a_representation_that_never_occurs_produces_a_measurement_finding(
+    recurrence_occurrences,
+):
     ledger, occurrences = recurrence_occurrences
     finding = measure_recurrence(
         occurrences,
@@ -456,7 +464,9 @@ def test_a_representation_that_never_occurs_produces_a_finding(recurrence_occurr
     )
     assert finding.total_count == 0
     assert finding.occurrences_carrying == 0
-    # The scope is still stated: this is a finding about zebra, not a failure.
+    # The scope is still stated: a bounded measurement assertion under the
+    # declared rule and scope, not a failure to measure. It establishes no
+    # Standing concerning zebra; `01.External:28` bounds it to the assertion.
     assert finding.occurrences_examined == 3
     event = record_measurement_finding(
         ledger, workspace_id="w", session_id="r", finding=finding
