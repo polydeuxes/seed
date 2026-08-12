@@ -5,3 +5,8 @@ builder_out/
 *.db
 .audit/
 corpus/
+
+# coverage run artifacts
+.coverage
+.coverage.*
+htmlcov/
