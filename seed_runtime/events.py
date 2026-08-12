@@ -118,6 +118,10 @@ def _serialized_payload(stored: str | bytes) -> str:
             raise UnrecoverablePayload(
                 f"a stored payload could not be recovered: {exc}"
             ) from exc
+    if not isinstance(stored, str):
+        raise UnrecoverablePayload(
+            f"a stored payload is {type(stored).__name__}, not a representation"
+        )
     return stored
 
 
@@ -149,9 +153,22 @@ def _digested_row(row: "sqlite3.Row") -> dict:
 
 
 def _content_digest(row: dict) -> str:
-    """A stable digest over the whole recorded row."""
+    """A stable digest over the whole recorded row.
+
+    Every digested field must be present. `row.get` returned `None` for an
+    absent field and for a null one alike, so a row missing `session_id`
+    digested identically to a row whose session is null — two different rows
+    committing to one digest. Unreachable through SQLite, where every column
+    exists, and refused rather than left to depend on that.
+    """
+
+    missing = [field for field in _DIGESTED_FIELDS if field not in row]
+    if missing:
+        raise LedgerIntegrityError(
+            "a digest requires every recorded field; absent: " + ", ".join(missing)
+        )
     return hashlib.sha256(
-        json.dumps({f: row.get(f) for f in _DIGESTED_FIELDS},
+        json.dumps({f: row[f] for f in _DIGESTED_FIELDS},
                    sort_keys=True, separators=(",", ":")).encode()
     ).hexdigest()
 
@@ -958,13 +975,25 @@ class SQLiteEventLedger(EventLedger):
             seen.add(event.id)
 
     def _row_to_event(self, row: sqlite3.Row) -> Event:
+        try:
+            payload = _decode_screened_event_payload(_serialized_payload(row["payload"]))
+        except json.JSONDecodeError as exc:
+            # Recovered as text and not as an occurrence. The same condition as
+            # a payload that will not decompress: the stored row no longer
+            # carries what it was digested from, so it is refused as an
+            # integrity failure rather than as the parser's error. This was
+            # already reachable before compression, for a text payload damaged
+            # in place.
+            raise UnrecoverablePayload(
+                f"a stored payload is not a recoverable occurrence: {exc}"
+            ) from exc
         return Event(
             id=row["id"],
             kind=row["kind"],
             workspace_id=row["workspace_id"],
             actor=row["actor"],
             timestamp=datetime.fromisoformat(row["timestamp"]),
-            payload=_decode_screened_event_payload(_serialized_payload(row["payload"])),
+            payload=payload,
             session_id=row["session_id"],
             causation_id=row["causation_id"],
             correlation_id=row["correlation_id"],

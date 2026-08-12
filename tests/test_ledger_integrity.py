@@ -1012,3 +1012,47 @@ def test_a_compressed_payload_altered_to_other_valid_content_is_corrupted(tmp_pa
         assert ledger.integrity_of(event.id) == CORRUPTED
     finally:
         ledger.close()
+
+
+def test_a_stored_payload_that_is_not_an_occurrence_is_refused(tmp_path):
+    """Recovering as text is not recovering as an occurrence.
+
+    A payload that decompresses cleanly but is not JSON raised
+    `JSONDecodeError` through `get()`, and so did a text payload damaged in
+    place — reachable before compression existed. It is the same condition as
+    one that will not decompress: the stored row no longer carries what it was
+    digested from.
+    """
+
+    import zlib
+    from seed_runtime.events import UnrecoverablePayload
+
+    payload = {"dimensions": {"content": "y" * 5000}}
+    damage = {
+        "compressed, not json": zlib.compress(b"not json at all", 1),
+        "text, not json": "not json at all",
+        "text, truncated json": json.dumps(payload)[:40],
+    }
+    for label, stored in damage.items():
+        path = str(tmp_path / f"{label.replace(' ', '_').replace(',', '')}.db")
+        ledger = SQLiteEventLedger(path)
+        try:
+            event = ledger.append("k", "w", payload)
+        finally:
+            ledger.close()
+
+        connection = sqlite3.connect(path)
+        connection.execute("DROP TRIGGER events_refuse_update")
+        connection.execute(
+            "UPDATE events SET payload = ? WHERE id = ?", (stored, event.id)
+        )
+        connection.commit()
+        connection.close()
+
+        ledger = SQLiteEventLedger(path)
+        try:
+            assert ledger.integrity_of(event.id) == CORRUPTED, label
+            with pytest.raises(UnrecoverablePayload):
+                ledger.get(event.id)
+        finally:
+            ledger.close()

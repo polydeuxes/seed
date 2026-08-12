@@ -206,15 +206,30 @@ def test_a_constructed_unknown_boundary_is_refused():
         ledger.list(through=EventLedgerBoundary("0" * 64))
 
 
-def test_failed_in_memory_canonicalization_leaves_the_ledger_unchanged():
-    ledger = EventLedger()
-    before = ledger.capture_boundary()
+def test_a_refused_payload_leaves_the_ledger_unchanged():
+    """Whatever is refused, nothing is left half-appended.
 
-    with pytest.raises(TypeError):
-        ledger.append("k", "w", {"not_json": object()})
+    The refusal moved earlier than the serializer: `#2495` refuses a payload a
+    durable store could not return unchanged, so an unsupported value is now
+    declined by name rather than as a `TypeError` out of `json.dumps`. What this
+    test is about is unchanged — the boundary and the history stay exactly as
+    they were.
+    """
 
-    assert ledger.capture_boundary() == before
-    assert ledger.list() == []
+    for payload in (
+        {"not_json": object()},
+        {"tuple": (1, 2)},
+        {"nested": {"deeper": {"key": {1: "x"}}}},
+        {"set": {1, 2}},
+    ):
+        ledger = EventLedger()
+        before = ledger.capture_boundary()
+
+        with pytest.raises(ValueError):
+            ledger.append("k", "w", payload)
+
+        assert ledger.capture_boundary() == before
+        assert ledger.list() == []
 
 
 def _identity_read_matches_occurrence_read(ledger):
@@ -264,3 +279,145 @@ def test_a_durable_identity_read_matches_its_occurrence_read(tmp_path):
         _identity_read_matches_occurrence_read(ledger)
     finally:
         ledger.close()
+
+
+def test_the_two_ledgers_preserve_the_same_payload(tmp_path):
+    """An append must mean the same thing in either ledger.
+
+    They share an API and are used interchangeably, and a durable store silently
+    returned `[1, 2]` for a tuple and `{"1": ...}` for an integer key while the
+    in-memory ledger returned what the caller passed. The same append produced
+    two different occurrences depending on which ledger held it, with nothing
+    recorded to say so.
+    """
+
+    memory = EventLedger()
+    durable = SQLiteEventLedger(str(tmp_path / "both.db"))
+    try:
+        preservable = {
+            "text": "the cat", "list": [1, 2], "nested": {"a": {"b": [1, {"c": None}]}},
+            "numbers": [1, 1.5, True, False, None],
+        }
+        in_memory = memory.append("k", "w", preservable)
+        stored = durable.append("k", "w", preservable)
+        assert memory.get(in_memory.id).payload == preservable
+        assert durable.get(stored.id).payload == preservable
+
+        # And what neither can preserve is refused by both, identically.
+        for payload in (
+            {"tuple": (1, 2)},
+            {"nested tuple": {"a": ("x",)}},
+            {"int key": {1: "x"}},
+            {"nested int key": {"a": {"b": {2: "x"}}}},
+            {"bytes": b"raw"},
+            {"set": {1}},
+        ):
+            with pytest.raises(ValueError) as memory_refusal:
+                memory.append("k", "w", payload)
+            with pytest.raises(ValueError) as durable_refusal:
+                durable.append("k", "w", payload)
+            assert str(memory_refusal.value) == str(durable_refusal.value)
+            # The path is reported, so a nested one is findable.
+            assert "payload[" in str(memory_refusal.value)
+    finally:
+        durable.close()
+
+
+def test_a_digest_requires_every_recorded_field():
+    """An absent field and a null field are different rows."""
+
+    from seed_runtime.events import _content_digest, LedgerIntegrityError
+
+    complete = {
+        "id": "e", "kind": "k", "workspace_id": "w", "actor": "system",
+        "timestamp": "2026-01-01T00:00:00+00:00", "payload": "{}",
+        "session_id": None, "causation_id": None, "correlation_id": None,
+    }
+    assert _content_digest(complete)
+
+    for field in complete:
+        partial = {k: v for k, v in complete.items() if k != field}
+        with pytest.raises(LedgerIntegrityError, match=field):
+            _content_digest(partial)
+
+
+def test_a_payload_carrying_a_non_json_number_is_refused(tmp_path):
+    """`NaN` and the infinities are not JSON, whatever Python's encoder allows.
+
+    `NaN` never equals itself and so cannot round-trip at all. The infinities do
+    round-trip, but only under Python's own permissive encoder — no strict
+    reader accepts `NaN` or `Infinity`, so a store holding one is readable by
+    nothing else. `#2492` was this exact lesson at the base64 boundary: a
+    durable representation must not depend on one runtime's leniency.
+    """
+
+    memory = EventLedger()
+    durable = SQLiteEventLedger(str(tmp_path / "numbers.db"))
+    try:
+        for value in (float("nan"), float("inf"), float("-inf")):
+            with pytest.raises(ValueError, match="not a JSON number"):
+                memory.append("k", "w", {"a": value})
+            with pytest.raises(ValueError, match="not a JSON number"):
+                durable.append("k", "w", {"a": value})
+            with pytest.raises(ValueError, match=r"payload\['a'\]\['b'\]\[0\]"):
+                memory.append("k", "w", {"a": {"b": [value]}})
+
+        # Ordinary numbers, including the awkward ones, still pass.
+        finite = {"large": 1e308, "small": 5e-324, "negative zero": -0.0,
+                  "int": 0, "negative": -5, "bool": True}
+        in_memory = memory.append("k", "w", finite)
+        stored = durable.append("k", "w", finite)
+        assert memory.get(in_memory.id).payload == durable.get(stored.id).payload
+    finally:
+        durable.close()
+
+
+def test_a_python_subclass_does_not_survive_the_store_and_is_refused(tmp_path):
+    """The boundary is JSON value identity, held by exact type.
+
+    A durable store returns the JSON type, so an `IntEnum` came back as `int`, a
+    `str` subclass as `str`, a `list` subclass as `list`. That is the same
+    divergence a tuple caused, and an `isinstance` gate admitted every one of
+    them — the rule was stated as one thing and enforced as another.
+    """
+
+    import enum
+
+    class Colour(enum.IntEnum):
+        RED = 1
+
+    class Name(str):
+        pass
+
+    class Rows(list):
+        pass
+
+    class Table(dict):
+        pass
+
+    memory = EventLedger()
+    durable = SQLiteEventLedger(str(tmp_path / "subclasses.db"))
+    try:
+        for payload in (
+            {"a": Colour.RED},
+            {"a": Name("x")},
+            {"a": Rows([1])},
+            {"a": Table({"b": 1})},
+            {"a": {"b": [Colour.RED]}},
+            {Name("key"): 1},
+        ):
+            with pytest.raises(ValueError) as from_memory:
+                memory.append("k", "w", payload)
+            with pytest.raises(ValueError) as from_durable:
+                durable.append("k", "w", payload)
+            assert str(from_memory.value) == str(from_durable.value)
+
+        # bool is an int subclass and must remain admissible.
+        both = {"true": True, "false": False, "int": 1}
+        in_memory = memory.append("k", "w", both)
+        stored = durable.append("k", "w", both)
+        assert memory.get(in_memory.id).payload == both
+        assert durable.get(stored.id).payload == both
+        assert type(durable.get(stored.id).payload["true"]) is bool
+    finally:
+        durable.close()
