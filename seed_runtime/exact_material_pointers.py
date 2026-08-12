@@ -10,6 +10,27 @@ It establishes only a reversible representation of exact bytes:
 A reference establishes byte reuse only. It establishes no subject identity,
 meaning, relation, grammar, or standing beyond exact reconstruction.
 
+**What this carries is the recurrence its declared formation found, not the
+recurrence present in the material.** The formation bounds the search, and the
+same bytes yield different accounts under different bounds — 60,000 bytes of
+prose were 95.8% covered at a three-byte minimum and 52.2% covered at eight, and
+changing only the candidate bound moved hundreds of references. So:
+
+```text
+  absence of a reference
+  !=
+  absence of recurrence
+```
+
+An absent reference may mean the recurrence is shorter than the minimum, that
+its source fell outside the candidate bound, or that an earlier greedy choice
+consumed the bytes it would have matched. The formation is therefore carried in
+the representation, because an account of a bounded search that does not
+disclose its bounds reads as a complete one.
+
+Reconstruction does not depend on the formation. The parts alone reconstruct
+exactly, and the formation bounds only what the account may be read to mean.
+
 References are backward-only and non-overlapping with the bytes currently being
 formed. Every reference therefore terminates in material that is already fully
 reconstructable from earlier parts; no external source lookup or brute-force
@@ -56,12 +77,57 @@ ExactMaterialPart = LiteralPart | ReferencePart
 
 
 @dataclass(frozen=True)
+class ExactMaterialFormation:
+    """The declared bounds of the search that produced an account.
+
+    Carried so an account of a bounded search discloses its bounds. Two
+    accounts of the same material under different formations are different
+    findings rather than contradictory ones, and become comparable subjects.
+    """
+
+    minimum_reference_length: int
+    candidate_limit: int
+
+    def __post_init__(self) -> None:
+        for name in ("minimum_reference_length", "candidate_limit"):
+            value = getattr(self, name)
+            # `bool` is an `int` and `True == 1`, so it is excluded explicitly.
+            if type(value) is not int:
+                raise ExactMaterialPointerError(
+                    f"{name} must be an integer, not {type(value).__name__}"
+                )
+        if self.minimum_reference_length < 2:
+            raise ExactMaterialPointerError("minimum_reference_length must be at least 2")
+        if self.candidate_limit <= 0:
+            raise ExactMaterialPointerError("candidate_limit must be positive")
+
+    def to_json_dict(self) -> dict[str, Any]:
+        return {
+            "minimum_reference_length": self.minimum_reference_length,
+            "candidate_limit": self.candidate_limit,
+        }
+
+    @classmethod
+    def from_json_dict(cls, value: Any) -> "ExactMaterialFormation":
+        if not isinstance(value, dict):
+            raise ExactMaterialPointerError("a formation must be an object")
+        try:
+            return cls(
+                minimum_reference_length=value["minimum_reference_length"],
+                candidate_limit=value["candidate_limit"],
+            )
+        except KeyError as exc:
+            raise ExactMaterialPointerError(f"a formation is incomplete: {exc}") from exc
+
+
+@dataclass(frozen=True)
 class ExactMaterialPointers:
     """A self-contained, lossless representation of one exact byte sequence."""
 
     byte_count: int
     sha256: str
     parts: tuple[ExactMaterialPart, ...]
+    formation: ExactMaterialFormation
     version: str = ENCODING_VERSION
 
     def __post_init__(self) -> None:
@@ -79,6 +145,10 @@ class ExactMaterialPointers:
             raise ExactMaterialPointerError("parts must be an exact tuple")
         if not all(isinstance(part, (LiteralPart, ReferencePart)) for part in self.parts):
             raise ExactMaterialPointerError("parts must contain only literals or references")
+        if not isinstance(self.formation, ExactMaterialFormation):
+            raise ExactMaterialPointerError(
+                "an account must declare the formation that produced it"
+            )
         recovered = reconstruct_exact_bytes(self, verify=False)
         if len(recovered) != self.byte_count:
             raise ExactMaterialPointerError("reconstructed material does not match byte_count")
@@ -103,6 +173,7 @@ class ExactMaterialPointers:
             "version": self.version,
             "byte_count": self.byte_count,
             "sha256": self.sha256,
+            "formation": self.formation.to_json_dict(),
             "parts": encoded_parts,
         }
 
@@ -135,6 +206,7 @@ class ExactMaterialPointers:
             version=value.get("version"),
             byte_count=value.get("byte_count"),
             sha256=value.get("sha256"),
+            formation=ExactMaterialFormation.from_json_dict(value.get("formation")),
             parts=tuple(parts),
         )
 
@@ -174,12 +246,21 @@ def form_exact_material_pointers(
     minimum_reference_length: int = 4,
     candidate_limit: int = 64,
 ) -> ExactMaterialPointers:
-    """Greedily replace exact recurrences with deterministic backward references.
+    """Greedily find exact backward recurrence within the declared bounds.
 
-    The search is intentionally a storage-mechanics experiment, not a claim of
-    optimal compression. At each position it chooses the longest already-complete
-    matching span. Ties choose the earliest source position. `candidate_limit`
-    bounds work on highly repetitive material without changing reconstruction.
+    The search is a storage-mechanics experiment, not a claim of optimal
+    compression, and not a claim to find every recurrence. At each position it
+    chooses the longest already-complete matching span among the candidates it
+    considers.
+
+    `candidate_limit` bounds that consideration to the most recent matching
+    source positions, so a tie is resolved to the earliest source **among those
+    considered** — which on material recurring more than `candidate_limit`
+    times is not the earliest in the material.
+
+    Both bounds are recorded on the result. They do not affect reconstruction,
+    which is exact under any formation; they bound what the account may be read
+    to mean.
     """
 
     if type(exact_bytes) is not bytes:
@@ -189,11 +270,17 @@ def form_exact_material_pointers(
     if type(candidate_limit) is not int or candidate_limit <= 0:
         raise ExactMaterialPointerError("candidate_limit must be a positive integer")
 
+    formation = ExactMaterialFormation(
+        minimum_reference_length=minimum_reference_length,
+        candidate_limit=candidate_limit,
+    )
+
     if not exact_bytes:
         return ExactMaterialPointers(
             byte_count=0,
             sha256=hashlib.sha256(b"").hexdigest(),
             parts=(),
+            formation=formation,
         )
 
     index: dict[bytes, list[int]] = {}
@@ -252,4 +339,5 @@ def form_exact_material_pointers(
         byte_count=size,
         sha256=hashlib.sha256(exact_bytes).hexdigest(),
         parts=tuple(parts),
+        formation=formation,
     )
