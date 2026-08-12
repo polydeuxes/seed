@@ -110,4 +110,64 @@ def test_sqlite_persisted_id_prefixes_exclude_deleted_planning_artifacts():
         "system_material",
         # `#2496` on the same criterion again.
         "transient_material",
+        # `#2497` found these by sweeping instead of waiting for a fourth.
+        "operator_response_comparison",
+        "operator_alternative_identification",
+        "presented_alternative",
+    )
+
+
+# Prefixes minted for use inside one process and never written into a durable
+# payload. Reservation is about a *later* process reissuing an identity, so a
+# genuinely process-local one does not need it — but it has to be declared here
+# rather than assumed, because that is the judgement someone has to make.
+PROCESS_LOCAL_ID_PREFIXES: frozenset = frozenset()
+
+
+def test_every_minted_prefix_is_reserved_or_declared_process_local():
+    """The invariant, held mechanically instead of one pocket at a time.
+
+    What requires reservation is narrower than "every `new_id` call": an
+    identity must be minted, written into a durable payload, and mintable again
+    by a later process. `new_id` promises process uniqueness and nothing more,
+    so a genuinely process-local identity should not be dragged into durable
+    ledger mechanics merely because it shares a helper.
+
+    Rather than infer which calls are durable — which is the kind of inference
+    that produced this defect three times — every minted prefix must be either
+    reserved or **declared** process-local above. Adding a prefix forces that
+    decision into the open instead of leaving it to whoever reads the diff.
+
+    Answered locally three times before this existed: `system_material` in
+    `#2491`, an exchange identity in `#2493`, `transient_material` in `#2496`.
+    """
+
+    import glob
+    import os
+    import re
+
+    reserved = set(SQLiteEventLedger._RESERVABLE_PREFIXES)
+    reserved |= set(SQLiteEventLedger._PERSISTED_ID_PREFIXES)
+    # `evt` is issued by the durable ledger from its own numbering.
+    reserved.add("evt")
+    reserved |= PROCESS_LOCAL_ID_PREFIXES
+
+    minted = {}
+    root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    pattern = re.compile(r"new_id\(\s*[\"']([a-z][a-z_]*)[\"']")
+    for path in glob.glob(os.path.join(root, "seed_runtime", "*.py")):
+        source = open(path, encoding="utf-8").read()
+        for match in pattern.finditer(source):
+            minted.setdefault(match.group(1), set()).add(os.path.basename(path))
+
+    assert minted, "no minted prefixes were found, so this would pass vacuously"
+    undeclared = {
+        prefix: sorted(files)
+        for prefix, files in minted.items()
+        if prefix not in reserved
+    }
+    assert not undeclared, (
+        "these identity prefixes are minted but neither reserved nor declared "
+        "process-local, so if any reaches a durable payload it restarts at one "
+        f"in every process: {undeclared}"
     )
