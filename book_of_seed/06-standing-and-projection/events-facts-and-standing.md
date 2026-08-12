@@ -15,6 +15,15 @@ A responsible recording occurrence may preserve, as an Event, attributed testimo
 ### 06.Standing.A — Constitutional reality is bounded repository-governed standing, not objective reality
 Append-only records, established facts, projected material, and current lawful condition may support a bounded current constitutional standing within the applicable Seed, workspace, corpus, question, authority, projection rule, confidence limit, and Unknown boundary. Support becomes current standing only through the responsible bounded act that consumes the material under the required evidence, warrant, constraints, and preserved limits. That standing is repository-governed and inspectable; it is not projected material by identity, a constitutional State object, objective reality, complete memory, universal shared truth, mandatory convergence, verification of every recorded assertion, conflict resolution by existence alone, or an oracle about conditions outside preserved evidence and authority.
 
+### 06.Standing.B — Occurrence locality is a carried boundary coordinate
+Occurrences preserved within one workspace may carry a bounded locality coordinate, and consuming acts preserve that locality where applicable, in the sense `01.Standing.E.1` already requires applicability to preserve as scope and locality and as consumer context. Same workspace does not mean same locality, and same locality does not mean same occurrence.
+
+Chronology alone does not establish locality. Occurrences carrying one locality need not be contiguous in any recorded order, and position within a preserved sequence establishes neither membership nor exclusion.
+
+Where a responsible act consumes material distinguished by locality, it preserves the applicable locality of what it consumed. Where that act records material under a distinct locality, the consumed and produced locality coordinates remain distinct, so that material the act produced is not later consumed as material it was given.
+
+This establishes no further standing. A locality is not a constitutional subject, does not own or perform an act, does not carry standing of its own, and does not establish a lifetime, container, coordinator, current context, or ordering authority. Locality requires no separate locality producer or producing act; a carried locality value remains bounded by the warrant of the occurrence or act that carries it. `session_id` is a current implementation witness for this coordinate and is not its constitutional definition.
+
 ## Important distinctions
 - event != explanation
 - event recording != required for every constitutional occurrence
