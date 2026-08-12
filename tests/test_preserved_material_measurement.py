@@ -22,6 +22,12 @@ co-presence, and a finding reports co-presence.
 from __future__ import annotations
 
 import re
+from io import BytesIO, StringIO
+
+from seed_runtime.event import Event
+from seed_runtime.operator_ingress import run_operator_ingress_attempt
+from seed_runtime.operator_ingress_representation import capture_stdin_material
+from seed_runtime.preserved_material_measurement import INGRESS_OCCURRED_KIND
 from io import StringIO
 
 import pytest
@@ -283,3 +289,83 @@ def test_recording_a_finding_does_not_disturb_the_measured_occurrences(
     )
     after = preserved_ingress_occurrences(session, workspace_id="w", session_id="s")
     assert [(e.id, e.payload["decoded_text"]) for e in after] == before
+
+
+def test_material_without_a_text_representation_is_refused_not_skipped():
+    """A text measurement over a population containing non-text refuses.
+
+    Skipping would silently narrow the counting scope the finding goes on to
+    disclose, and a population measured is not a population partly measured. A
+    selection admitting only text-representable material is its own declared
+    scope and does not exist yet.
+    """
+
+    ledger = EventLedger()
+    sink = StringIO()
+    for material in (b"the cat jumped\n", b"\xff\xfe\x00binary\n", b"the fence\n"):
+        run_operator_ingress_attempt(
+            ledger=ledger,
+            workspace_id="w",
+            session_id="s",
+            captured_ingress=capture_stdin_material(BytesIO(material)),
+            output_stream=sink,
+        )
+    occurrences = preserved_ingress_occurrences(ledger, workspace_id="w", session_id="s")
+
+    # All three occurred, and each says whose material it is.
+    assert len(occurrences) == 3
+    assert {event.payload["material_origin"] for event in occurrences} == {"operator"}
+    available = [
+        event.payload["text_representation"]["available"] for event in occurrences
+    ]
+    assert available == [True, False, True]
+    unrepresented = occurrences[1].payload
+    assert "decoded_text" not in unrepresented
+    assert unrepresented["byte_count"] == len(b"\xff\xfe\x00binary\n")
+    assert unrepresented["text_representation"]["decoder_outcome"] == "bytes_rejected"
+
+    declared = DeclaredMeasurement(
+        representation_measured="anything",
+        equivalence_rule="byte-for-byte equality; no normalization",
+        counting_scope="one bounded exchange",
+    )
+    with pytest.raises(PreservedMaterialMeasurementError, match="no available text"):
+        measure_occupancy(occurrences, declared=declared, occupant_of=lambda text: None)
+
+    # The two that do carry one remain measurable together.
+    text_only = [occurrences[0], occurrences[2]]
+    finding = measure_occupancy(
+        text_only, declared=declared, occupant_of=lambda text: text.split()[0]
+    )
+    assert finding.positions_measured == 2
+
+
+def test_an_occurrence_predating_the_coordinate_stays_measurable():
+    """Absence of the coordinate is read as what such an occurrence carried."""
+
+    older = Event(
+        id="evt_older",
+        kind=INGRESS_OCCURRED_KIND,
+        workspace_id="w",
+        session_id="s",
+        payload={"decoded_text": "the cat jumped"},
+    )
+    declared = DeclaredMeasurement(
+        representation_measured="anything",
+        equivalence_rule="byte-for-byte equality; no normalization",
+        counting_scope="one bounded exchange",
+    )
+    finding = measure_occupancy(
+        [older], declared=declared, occupant_of=lambda text: text.split()[0]
+    )
+    assert finding.positions_measured == 1
+
+    without_either = Event(
+        id="evt_neither",
+        kind=INGRESS_OCCURRED_KIND,
+        workspace_id="w",
+        session_id="s",
+        payload={},
+    )
+    with pytest.raises(PreservedMaterialMeasurementError, match="no available text"):
+        measure_occupancy([without_either], declared=declared, occupant_of=lambda t: None)

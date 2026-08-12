@@ -12,6 +12,16 @@ from seed_runtime.operator_ingress_representation import (
 )
 
 
+# Who supplied the material an occurrence preserves. Not the Producer of the
+# recording occurrence, which is this Seed in both directions, and not authorship
+# — an operator who supplies a book did not write it. `#2490` records why this
+# has to exist before Seed preserves what it emitted: without it a later
+# measurement over "preserved material" cannot decline to consume Seed's own
+# output, and Seed's account of a fire becomes material saying a fire occurred.
+OPERATOR_ORIGIN = "operator"
+SEED_ORIGIN = "this Seed"
+
+
 def _dimensions(
     *, identity, content, standing, source, responsibility, authority, scope, occurrence
 ):
@@ -276,6 +286,49 @@ def run_operator_ingress_attempt(
         material_role="initial_ingress",
     )
     if not ingress_examination.succeeded:
+        # The material occurred. Its text representation did not.
+        #
+        # Until now no ingress occurrence was recorded at all when the decoder
+        # refused the bytes, so material Seed had captured exactly, and could
+        # recover exactly, was absent from its own history because one later
+        # examination of it failed. Capture and examination were already
+        # recorded either way; only the occurrence was gated.
+        #
+        # The interaction still closes here. That is a separate consequence and
+        # is unchanged: what the console can render is not what Seed preserves.
+        unrepresented_event = _record(
+            ledger,
+            "operator.ingress.ingress_occurred",
+            workspace_id,
+            session_id,
+            attempt,
+            _dimensions(
+                identity=attempt,
+                content=f"exact material, {len(captured_ingress.exact_bytes)} bytes",
+                standing="occurred",
+                source=ingress_examination_event.id,
+                responsibility="operator-ingress",
+                authority="occurrence-only; meaning Unknown",
+                scope=f"workspace:{workspace_id};session:{session_id}",
+                occurrence="exact material preserved; no text representation available",
+            ),
+            material_origin=OPERATOR_ORIGIN,
+            text_representation={
+                "available": False,
+                "decoder_outcome": ingress_examination.outcome,
+                "decoder_mechanism": ingress_examination.mechanism,
+            },
+            ingress_kind="unrepresented",
+            byte_count=len(captured_ingress.exact_bytes),
+            raw_material_event_id=ingress_capture.id,
+            representation_examination_event_id=ingress_examination_event.id,
+            known_loss=list(captured_ingress.known_loss),
+            unknowns=[
+                "what these bytes represent remains Unknown",
+                "whether any decoder represents them remains Unknown",
+            ],
+            lineage=[ingress_capture.id, ingress_examination_event.id],
+        )
         stop_event = _record(
             ledger,
             "operator.ingress.stopping_occurred",
@@ -297,7 +350,12 @@ def run_operator_ingress_attempt(
             lineage=[ingress_examination_event.id],
         )
         projection = _project_attempt(
-            events=(ingress_capture, ingress_examination_event, stop_event),
+            events=(
+                ingress_capture,
+                ingress_examination_event,
+                unrepresented_event,
+                stop_event,
+            ),
             ledger=ledger,
             attempt=attempt,
         )
@@ -328,6 +386,12 @@ def run_operator_ingress_attempt(
             scope=f"workspace:{workspace_id};session:{session_id}",
             occurrence="strictly decoded text preserves capture/examination lineage",
         ),
+        material_origin=OPERATOR_ORIGIN,
+        text_representation={
+            "available": True,
+            "decoder_outcome": ingress_examination.outcome,
+            "decoder_mechanism": ingress_examination.mechanism,
+        },
         raw_input=raw_ingress,
         ingress_kind=ingress_kind,
         decoded_text=ingress_examination.represented_text,
