@@ -105,15 +105,6 @@ def _next_prefix_commitment(previous: str, event: Event) -> str:
 class EventLedger:
     """Process-local append-only ledger for recording Seed runtime events."""
 
-    __seed_arch__ = {
-        "owner": "event_history",
-        "layer": "events",
-        "summary": "Owns append-only runtime event history read by projection and owner services.",
-        "edges": [
-            {"to": "StateProjector", "label": "feeds projection"},
-        ],
-    }
-
     def __init__(self) -> None:
         self._events: list[Event] = []
         self._by_id: dict[str, Event] = {}
