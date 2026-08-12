@@ -9,6 +9,7 @@ from datetime import datetime
 import hashlib
 import json
 import sqlite3
+import zlib
 from typing import Any, Iterable, Iterator
 
 from seed_runtime.execution_status import (
@@ -64,6 +65,87 @@ _DIGESTED_FIELDS = (
     "id", "kind", "workspace_id", "actor", "timestamp", "payload",
     "session_id", "causation_id", "correlation_id",
 )
+
+
+# Payload storage, below the integrity boundary.
+#
+# The digest is computed over the canonical JSON string, never over the stored
+# bytes, so how a payload was written down cannot change what it commits to.
+# `#2492` was the same lesson at the other end: two base64 encodings of one
+# byte string had to recover one account.
+#
+# Level 1 rather than 6 or 9. `#2494` measured 4.9x against 5.3x at less than
+# half the compression cost, and decompression is flat across levels at roughly
+# 50 microseconds per payload — about one second across the 205,328 reads the
+# count layer performs.
+_PAYLOAD_COMPRESSION_LEVEL = 1
+
+
+def _stored_payload(serialized: str) -> str | bytes:
+    """The payload as stored: compressed when that is smaller, else as written.
+
+    A payload that does not shrink is stored as text, because compressing it
+    would cost bytes and reads for nothing. The two forms are told apart on read
+    by their type, which SQLite preserves.
+    """
+
+    encoded = serialized.encode("utf-8")
+    compressed = zlib.compress(encoded, _PAYLOAD_COMPRESSION_LEVEL)
+    return compressed if len(compressed) < len(encoded) else serialized
+
+
+class UnrecoverablePayload(LedgerIntegrityError):
+    """A stored payload cannot be returned to the string it was digested from."""
+
+
+def _serialized_payload(stored: str | bytes) -> str:
+    """The canonical JSON string a stored payload carries.
+
+    A store written before compression holds text, and reads unchanged.
+
+    **Failure to recover the stored representation is corruption, not a
+    compressor error.** Damaged compressed bytes raise `zlib.error`, and bytes
+    that decompress but are not UTF-8 raise `UnicodeDecodeError`; both mean the
+    stored row no longer carries what it was digested from, which is the
+    condition `integrity_of` exists to report. Letting either escape would make
+    a corrupted store crash its reader instead of being told about it.
+    """
+
+    if isinstance(stored, bytes):
+        try:
+            return zlib.decompress(stored).decode("utf-8")
+        except (zlib.error, UnicodeDecodeError) as exc:
+            raise UnrecoverablePayload(
+                f"a stored payload could not be recovered: {exc}"
+            ) from exc
+    return stored
+
+
+def _digest_of_stored_row(row: "sqlite3.Row") -> str | None:
+    """The digest of a stored row, or nothing when it cannot be recovered.
+
+    A row whose payload will not decompress cannot reproduce any digest, and
+    that is exactly what `integrity_of` reports rather than raising through its
+    caller.
+    """
+
+    try:
+        return _content_digest(_digested_row(row))
+    except UnrecoverablePayload:
+        return None
+
+
+def _digested_row(row: "sqlite3.Row") -> dict:
+    """A stored row as the digest was taken over it.
+
+    The payload is returned to its canonical string, because the digest commits
+    to what the occurrence carries and not to how the store wrote it down. Left
+    unconverted, every compressed occurrence would verify as CORRUPTED.
+    """
+
+    values = dict(row)
+    values["payload"] = _serialized_payload(values["payload"])
+    return values
 
 
 def _content_digest(row: dict) -> str:
@@ -730,7 +812,7 @@ class SQLiteEventLedger(EventLedger):
         # be cited later as evidence that durable references need no integrity.
         return (
             VERIFIED
-            if _content_digest(dict(row)) == row["content_hash"]
+            if _digest_of_stored_row(row) == row["content_hash"]
             else CORRUPTED
         )
 
@@ -860,7 +942,13 @@ class SQLiteEventLedger(EventLedger):
             "causation_id": event.causation_id,
             "correlation_id": event.correlation_id,
         }
-        return tuple(row[f] for f in _DIGESTED_FIELDS) + (_content_digest(row),)
+        # The digest is taken from the canonical string, then the payload is
+        # replaced by its stored form. Compression therefore cannot move a
+        # digest, and an occurrence stored compressed digests identically to the
+        # same occurrence stored as text.
+        digest = _content_digest(row)
+        row["payload"] = _stored_payload(row["payload"])
+        return tuple(row[f] for f in _DIGESTED_FIELDS) + (digest,)
 
     def _validate_sqlite_batch(self, events: list[Event]) -> None:
         seen: set[str] = set()
@@ -876,7 +964,7 @@ class SQLiteEventLedger(EventLedger):
             workspace_id=row["workspace_id"],
             actor=row["actor"],
             timestamp=datetime.fromisoformat(row["timestamp"]),
-            payload=_decode_screened_event_payload(row["payload"]),
+            payload=_decode_screened_event_payload(_serialized_payload(row["payload"])),
             session_id=row["session_id"],
             causation_id=row["causation_id"],
             correlation_id=row["correlation_id"],
@@ -911,7 +999,7 @@ class SQLiteEventLedger(EventLedger):
         ).fetchall()
         for row in rows:
             try:
-                payload = json.loads(row["payload"])
+                payload = json.loads(_serialized_payload(row["payload"]))
             except (TypeError, json.JSONDecodeError):
                 continue
             self._reserve_payload_ids(payload)
