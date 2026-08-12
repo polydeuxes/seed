@@ -42,10 +42,34 @@ count calls, then run under `cProfile`.
 `05.Testimony.C` already establishes the kind — runtime/resource observation is
 testimony about a process condition at an observed time, and "may exist without a
 recording boundary." So there is no constitutional obstacle to Seed producing its own
-operational observation. There is no consumer for it. The consumer of these numbers is
-the operator and the reviewer deciding what to optimise, and an external consumer is
-served by external tooling. Building the inward version now would be a producer with
-no warranted consumer.
+operational observation.
+
+They stay outside for a different reason: Seed does not need an inward producer to
+reach these numbers. Diagnostic output is material, and Seed already has a path for
+consuming material. An earlier draft of this file said there was no consumer, which was
+wrong — `eye_roadmap_orientation.md` and
+`eye_competency_composition_locality_characterization_009.md` establish the direction,
+and the operator names the mechanism: Seed reads the diagnostic output as material.
+
+That path needs no Eye competency, which matters, because the characterization pass
+records "Seed itself as observer" as *not established as a Book subject* and "single
+bounded competency" as *contradicted*. The best-supported characterizations are
+constitutional frontier and orientation. So a design resting on the Eye *owning* an
+observation responsibility would rest on something unrecovered; a design where Seed
+reads produced output as material does not.
+
+Two constraints on that reading, when it happens:
+
+- `material_origin` is `system`. The harness produced the observation; Seed did not
+  measure itself, and preserving it as though he did would misattribute the producer.
+- What Seed may record is that the system testified to a value — not that he is slow.
+  Testimony about Seed is still testimony from a witness and is consumed under
+  `05.Testimony:24`. This is the same guard as recording that an occurrence happened
+  rather than adopting its content as fact.
+
+Writing output that Seed can read is not egress; invoking these scripts from inside
+would be. Sequencing the readable-output half first leaves the egress question
+untouched.
 
 Known fragility: the counters attach by patching internal method names. Renaming any
 of those three methods makes these scripts measure nothing rather than fail, which is
