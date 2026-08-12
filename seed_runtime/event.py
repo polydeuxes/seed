@@ -5,6 +5,7 @@ from __future__ import annotations
 from datetime import datetime, timezone
 from importlib.util import find_spec
 import json
+import math
 from typing import Any
 
 from seed_runtime.base import SeedModel
@@ -59,27 +60,49 @@ def _require_preservable_payload(value: Any, path: str = "payload") -> None:
     loss is avoidable, since a caller wanting a sequence can pass a list and one
     wanting a key can pass a string. The path is reported because a tuple nested
     four levels down is otherwise a long search.
+
+    **The boundary is JSON value identity, held by exact type.** A durable store
+    returns the JSON type, so a Python subclass does not survive it: an
+    `IntEnum` came back as `int`, a `str` subclass as `str`, a `list` subclass
+    as `list`. Those are the same divergence a tuple caused, so they are refused
+    the same way rather than the rule being stated as one thing and enforced as
+    another.
     """
 
-    if isinstance(value, dict):
+    # `type(...) is` throughout, not `isinstance`. A durable store returns the
+    # JSON type, so an `IntEnum` came back as `int`, a `str` subclass as `str`,
+    # and a `list` subclass as `list`, while the in-memory ledger returned what
+    # the caller passed. That is the same divergence a tuple caused, and an
+    # `isinstance` gate admitted every one of them.
+    if type(value) is dict:
         for key, nested in value.items():
-            if not isinstance(key, str):
+            if type(key) is not str:
                 raise ValueError(
                     f"{path} carries a {type(key).__name__} key {key!r}; a durable "
-                    "store preserves only string keys"
+                    "store preserves only exact string keys"
                 )
             _require_preservable_payload(nested, f"{path}[{key!r}]")
         return
-    if isinstance(value, tuple):
+    if type(value) is list:
+        for index, nested in enumerate(value):
+            _require_preservable_payload(nested, f"{path}[{index}]")
+        return
+    if type(value) is tuple:
         raise ValueError(
             f"{path} carries a tuple; a durable store returns it as a list, so "
             "pass a list to preserve it exactly"
         )
-    if isinstance(value, list):
-        for index, nested in enumerate(value):
-            _require_preservable_payload(nested, f"{path}[{index}]")
-        return
-    if value is None or isinstance(value, (str, int, float, bool)):
+    if type(value) is float and not math.isfinite(value):
+        # Refused for a stronger reason than round-tripping. `NaN` never equals
+        # itself so it cannot round-trip at all, and `Infinity` does only under
+        # Python's own permissive encoder — neither is valid JSON, so a store
+        # holding one is readable by nothing else. `#2492` was this exact
+        # lesson: a durable boundary must not depend on one runtime's leniency.
+        raise ValueError(
+            f"{path} carries {value!r}, which is not a JSON number; a durable "
+            "store could hold it only under a permissive reader"
+        )
+    if value is None or type(value) in (str, int, float, bool):
         return
     raise ValueError(
         f"{path} carries {type(value).__name__}, which a durable store cannot "

@@ -339,3 +339,85 @@ def test_a_digest_requires_every_recorded_field():
         partial = {k: v for k, v in complete.items() if k != field}
         with pytest.raises(LedgerIntegrityError, match=field):
             _content_digest(partial)
+
+
+def test_a_payload_carrying_a_non_json_number_is_refused(tmp_path):
+    """`NaN` and the infinities are not JSON, whatever Python's encoder allows.
+
+    `NaN` never equals itself and so cannot round-trip at all. The infinities do
+    round-trip, but only under Python's own permissive encoder — no strict
+    reader accepts `NaN` or `Infinity`, so a store holding one is readable by
+    nothing else. `#2492` was this exact lesson at the base64 boundary: a
+    durable representation must not depend on one runtime's leniency.
+    """
+
+    memory = EventLedger()
+    durable = SQLiteEventLedger(str(tmp_path / "numbers.db"))
+    try:
+        for value in (float("nan"), float("inf"), float("-inf")):
+            with pytest.raises(ValueError, match="not a JSON number"):
+                memory.append("k", "w", {"a": value})
+            with pytest.raises(ValueError, match="not a JSON number"):
+                durable.append("k", "w", {"a": value})
+            with pytest.raises(ValueError, match=r"payload\['a'\]\['b'\]\[0\]"):
+                memory.append("k", "w", {"a": {"b": [value]}})
+
+        # Ordinary numbers, including the awkward ones, still pass.
+        finite = {"large": 1e308, "small": 5e-324, "negative zero": -0.0,
+                  "int": 0, "negative": -5, "bool": True}
+        in_memory = memory.append("k", "w", finite)
+        stored = durable.append("k", "w", finite)
+        assert memory.get(in_memory.id).payload == durable.get(stored.id).payload
+    finally:
+        durable.close()
+
+
+def test_a_python_subclass_does_not_survive_the_store_and_is_refused(tmp_path):
+    """The boundary is JSON value identity, held by exact type.
+
+    A durable store returns the JSON type, so an `IntEnum` came back as `int`, a
+    `str` subclass as `str`, a `list` subclass as `list`. That is the same
+    divergence a tuple caused, and an `isinstance` gate admitted every one of
+    them — the rule was stated as one thing and enforced as another.
+    """
+
+    import enum
+
+    class Colour(enum.IntEnum):
+        RED = 1
+
+    class Name(str):
+        pass
+
+    class Rows(list):
+        pass
+
+    class Table(dict):
+        pass
+
+    memory = EventLedger()
+    durable = SQLiteEventLedger(str(tmp_path / "subclasses.db"))
+    try:
+        for payload in (
+            {"a": Colour.RED},
+            {"a": Name("x")},
+            {"a": Rows([1])},
+            {"a": Table({"b": 1})},
+            {"a": {"b": [Colour.RED]}},
+            {Name("key"): 1},
+        ):
+            with pytest.raises(ValueError) as from_memory:
+                memory.append("k", "w", payload)
+            with pytest.raises(ValueError) as from_durable:
+                durable.append("k", "w", payload)
+            assert str(from_memory.value) == str(from_durable.value)
+
+        # bool is an int subclass and must remain admissible.
+        both = {"true": True, "false": False, "int": 1}
+        in_memory = memory.append("k", "w", both)
+        stored = durable.append("k", "w", both)
+        assert memory.get(in_memory.id).payload == both
+        assert durable.get(stored.id).payload == both
+        assert type(durable.get(stored.id).payload["true"]) is bool
+    finally:
+        durable.close()
