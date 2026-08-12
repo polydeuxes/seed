@@ -190,6 +190,14 @@ class RecurrenceFinding:
     """
 
     declared: DeclaredMeasurement
+    # The localities the consumed occurrences carried. `06.Standing.B` requires
+    # an act consuming material distinguished by locality to preserve the
+    # locality of what it consumed, and to keep that distinct from the locality
+    # it records into. Recording stamps the recording locality; without this
+    # coordinate a finding drawn from two localities and recorded into a third
+    # asserts only the third, and the consumed localities survive as nothing
+    # but event identities a later reader would have to re-derive.
+    consumed_localities: tuple[str, ...]
     # Preserved occurrences the measurement ran over. The denominator.
     occurrences_examined: int
     # How many of them carried the representation at least once.
@@ -208,6 +216,7 @@ class RecurrenceFinding:
             "counting_scope": self.declared.counting_scope,
             "premise_event_id": self.declared.premise_event_id,
             "measurement_form": "recurrence",
+            "consumed_localities": list(self.consumed_localities),
             "occurrences_examined": self.occurrences_examined,
             "occurrences_carrying": self.occurrences_carrying,
             "total_count": self.total_count,
@@ -239,12 +248,14 @@ def measure_recurrence(
     """
 
     consumed: list[str] = []
+    localities: dict[str, None] = {}
     examined = 0
     carrying = 0
     total = 0
     for event in occurrences:
         text = _measurable_text(event)
         consumed.append(event.id)
+        localities[_locality_of(event)] = None
         count = occurrences_of(text)
         if not isinstance(count, int) or isinstance(count, bool) or count < 0:
             raise PreservedMaterialMeasurementError(
@@ -257,11 +268,18 @@ def measure_recurrence(
             total += count
     return RecurrenceFinding(
         declared=declared,
+        consumed_localities=tuple(localities),
         occurrences_examined=examined,
         occurrences_carrying=carrying,
         total_count=total,
         consumed_event_ids=tuple(consumed),
     )
+
+
+def _locality_of(event: Event) -> str:
+    """The locality coordinate this occurrence carries, in the recorded form."""
+
+    return f"workspace:{event.workspace_id};session:{event.session_id}"
 
 
 def _measurable_text(event: Event) -> str:
@@ -295,12 +313,15 @@ def measure_recurrences(
 ) -> tuple[RecurrenceFinding, ...]:
     """Measure many representations across one pass of the material.
 
-    Measuring every representation of a body one at a time re-walks and
-    re-splits the whole body once per representation. On 4,716 representations
-    over 2,000 preserved occurrences that is 9.43 million redundant splits and
-    9.91s; one pass is 0.02s, measured at **583x**. The acquisition workload is
-    exactly this shape — every distinct representation against every occurrence
-    — so the redundancy is not incidental to it.
+    Measuring many declared representations over the same bounded occurrence
+    population, one at a time, re-walks and re-splits that population once per
+    representation. On 4,716 declared representations over 2,000 preserved
+    occurrences that is 9.43 million redundant splits and 10.12s; one pass is
+    0.02s, measured at **509x** in one tree with only the call path toggled.
+
+    That is a measured property of one workload shape, not an established
+    account of acquisition. Where the declared representations come from is not
+    established here, and this act receives them already declared.
 
     ``counts_in`` receives one preserved representation and returns how many
     times each measured representation occurs within it, under the declared
@@ -314,27 +335,49 @@ def measure_recurrences(
 
     A representation counted but not declared is refused. The declared set is
     the measurement boundary, and a counting function returning results outside
-    it has exceeded that boundary rather than extended it. A representation
-    declared but never counted receives a finding of zero, which is a finding.
+    it has exceeded that boundary rather than extended it.
+
+    ``counts_in`` may return counts sparsely. **A declared representation absent
+    from its result occurred zero times in that occurrence**, and that is the
+    convention rather than a silence: the declared set already states what was
+    looked for, so absence from the result is a reported zero and not an
+    unreported measurement. The single-representation path requires an explicit
+    integer because it asks about one representation at a time and has no
+    declared set to read the absence against.
     """
 
     if not declared:
         raise PreservedMaterialMeasurementError(
             "a measurement must declare at least one representation"
         )
+    scopes = set()
     for representation, declaration in declared.items():
         if declaration.representation_measured != representation:
             raise PreservedMaterialMeasurementError(
                 f"declaration for {representation!r} measures "
                 f"{declaration.representation_measured!r}"
             )
+        scopes.add(declaration.counting_scope)
+    if len(scopes) > 1:
+        # One pass consumes one population, so every finding it produces
+        # receives that population. A declaration disclosing a different
+        # counting scope would have its scope assertion preserved beside a
+        # population the act did not draw from it. `01.External:28` requires
+        # the disclosed scope to be the scope within which occurrences were
+        # counted, so the disagreement is refused rather than reconciled.
+        raise PreservedMaterialMeasurementError(
+            "one pass consumes one population, so every declaration must "
+            f"disclose the same counting scope; got {len(scopes)}"
+        )
     consumed: list[str] = []
+    localities: dict[str, None] = {}
     examined = 0
     carrying: dict[str, int] = {name: 0 for name in declared}
     total: dict[str, int] = {name: 0 for name in declared}
     for event in occurrences:
         text = _measurable_text(event)
         consumed.append(event.id)
+        localities[_locality_of(event)] = None
         examined += 1
         counted = counts_in(text)
         if not isinstance(counted, dict):
@@ -355,9 +398,11 @@ def measure_recurrences(
                 carrying[representation] += 1
                 total[representation] += count
     population = tuple(consumed)
+    consumed_localities = tuple(localities)
     return tuple(
         RecurrenceFinding(
             declared=declaration,
+            consumed_localities=consumed_localities,
             occurrences_examined=examined,
             occurrences_carrying=carrying[representation],
             total_count=total[representation],
@@ -370,14 +415,18 @@ def measure_recurrences(
 def preserved_ingress_occurrences(
     ledger: EventLedger, *, workspace_id: str, session_id: str
 ) -> list[Event]:
-    """Every occurrence this session preserved, in append order.
+    """Every preserved ingress occurrence carrying this locality, in append order.
 
     The material measured is what Seed recorded, not what a file contains.
 
-    The session is read as a session. Reading the workspace and discarding the
-    rest returned the same occurrences and cost the whole workspace: `#2414`
-    measured 757.8ms against 46.4ms on sixteen co-resident bodies, a factor
-    equal to how many of them share the ledger.
+    The locality is read as a locality. Reading the whole workspace and
+    discarding the rest returned the same occurrences and cost the whole
+    workspace: `#2414` measured 757.8ms against 46.4ms on sixteen co-resident
+    bodies, a factor equal to how many of them share the ledger.
+
+    `06.Standing.B` holds that a locality is a carried coordinate. It preserves
+    nothing and performs nothing; the ledger preserves, and this reads by the
+    coordinate the occurrences carry.
     """
 
     return [

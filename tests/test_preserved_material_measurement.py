@@ -693,3 +693,132 @@ def test_the_batch_refuses_the_same_material_the_single_measurement_refuses(
         measure_recurrences(
             [foreign], declared=declared, counts_in=_counts_in(declared)
         )
+
+
+# --------------------------------------------------------------------------
+# Fidelity of the one-pass batch: what it discloses must be what it did.
+# --------------------------------------------------------------------------
+
+
+def test_one_pass_refuses_declarations_disclosing_different_scopes(
+    recurrence_occurrences,
+):
+    _, occurrences = recurrence_occurrences
+    declared = {
+        "the": DeclaredMeasurement(
+            representation_measured="the",
+            equivalence_rule="exact equality between whitespace-separated tokens",
+            counting_scope="corpus A",
+        ),
+        "cat": DeclaredMeasurement(
+            representation_measured="cat",
+            equivalence_rule="exact equality between whitespace-separated tokens",
+            counting_scope="corpus B",
+        ),
+    }
+    with pytest.raises(PreservedMaterialMeasurementError, match="same counting scope"):
+        measure_recurrences(
+            occurrences, declared=declared, counts_in=_counts_in(declared)
+        )
+
+
+def test_a_declared_representation_absent_from_the_result_counted_zero(
+    recurrence_occurrences,
+):
+    """Sparse omission is the convention, and it equals an explicit zero."""
+
+    _, occurrences = recurrence_occurrences
+    declared = _declared_for("the", "zebra")
+    sparse = measure_recurrences(
+        occurrences,
+        declared=declared,
+        counts_in=lambda text: {"the": text.split().count("the")}
+        if "the" in text.split()
+        else {},
+    )
+    explicit = measure_recurrences(
+        occurrences,
+        declared=declared,
+        counts_in=lambda text: {
+            "the": text.split().count("the"),
+            "zebra": text.split().count("zebra"),
+        },
+    )
+    assert [f.to_json_dict() for f in sparse] == [f.to_json_dict() for f in explicit]
+
+
+def test_a_finding_preserves_the_localities_it_consumed(recurrence_occurrences):
+    """`06.Standing.B`: consumed locality is preserved and stays distinct from
+    the locality recorded into."""
+
+    ledger, _ = recurrence_occurrences
+    elsewhere = ledger.append(
+        INGRESS_OCCURRED_KIND,
+        "w",
+        {
+            "decoded_text": "the other body",
+            "material_origin": "operator",
+            "text_representation": {"available": True},
+        },
+        session_id="other",
+    )
+    here = preserved_ingress_occurrences(ledger, workspace_id="w", session_id="r")
+    finding = measure_recurrence(
+        list(here) + [elsewhere],
+        declared=_recurrence_declared("the"),
+        occurrences_of=_counts("the"),
+    )
+    assert finding.consumed_localities == (
+        "workspace:w;session:r",
+        "workspace:w;session:other",
+    )
+    # Recorded into a third locality; both coordinates survive, distinctly.
+    event = record_measurement_finding(
+        ledger, workspace_id="w", session_id="recording", finding=finding
+    )
+    assert event.payload["consumed_localities"] == [
+        "workspace:w;session:r",
+        "workspace:w;session:other",
+    ]
+    assert (
+        event.payload["dimensions"]["scope_locality"]
+        == "workspace:w;session:recording"
+    )
+
+
+def test_batch_and_single_survive_the_recording_boundary_identically(
+    recurrence_occurrences,
+):
+    """Equivalence must hold across preservation, not only serialization."""
+
+    ledger, occurrences = recurrence_occurrences
+    targets = ("the", "cat", "zebra")
+    declared = _declared_for(*targets)
+    singly = [
+        record_measurement_finding(
+            ledger,
+            workspace_id="w",
+            session_id="r",
+            finding=measure_recurrence(
+                occurrences, declared=declared[t], occurrences_of=_counts(t)
+            ),
+        )
+        for t in targets
+    ]
+    batched = [
+        record_measurement_finding(
+            ledger, workspace_id="w", session_id="r", finding=finding
+        )
+        for finding in measure_recurrences(
+            occurrences, declared=declared, counts_in=_counts_in(declared)
+        )
+    ]
+    # Occurrence identity is independently generated and is the only difference.
+    def _without_identity(event):
+        payload = dict(event.payload)
+        payload.pop("lineage", None)
+        return payload
+
+    assert [_without_identity(e) for e in singly] == [
+        _without_identity(e) for e in batched
+    ]
