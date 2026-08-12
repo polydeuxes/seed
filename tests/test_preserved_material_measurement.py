@@ -39,6 +39,7 @@ from seed_runtime.preserved_material_measurement import (
     PreservedMaterialMeasurementError,
     measure_occupancy,
     measure_recurrence,
+    measure_recurrences,
     premise_chain,
     preserved_ingress_occurrences,
     record_measurement_finding,
@@ -561,3 +562,134 @@ def test_a_recurrence_finding_may_stand_on_a_premise(recurrence_occurrences):
         ),
     )
     assert premise_chain(ledger, second.id) == [first.id]
+
+
+# --------------------------------------------------------------------------
+# Measuring many representations across one pass of the material.
+#
+# The acquisition workload is every distinct representation against every
+# occurrence. One at a time, that re-walks and re-splits the whole body once
+# per representation. These tests hold the findings identical; the speed is
+# measured in the PR, not asserted here.
+# --------------------------------------------------------------------------
+
+
+def _counts_in(declared):
+    def counts(text):
+        found = {}
+        for word in text.split():
+            if word in declared:
+                found[word] = found.get(word, 0) + 1
+        return found
+    return counts
+
+
+def _declared_for(*targets):
+    return {t: _recurrence_declared(t) for t in targets}
+
+
+def test_one_pass_produces_the_same_findings_as_one_at_a_time(recurrence_occurrences):
+    _, occurrences = recurrence_occurrences
+    targets = ("the", "cat", "a", "zebra")
+    declared = _declared_for(*targets)
+    batched = measure_recurrences(
+        occurrences, declared=declared, counts_in=_counts_in(declared)
+    )
+    singly = [
+        measure_recurrence(
+            occurrences, declared=declared[t], occurrences_of=_counts(t)
+        )
+        for t in targets
+    ]
+    assert [f.to_json_dict() for f in batched] == [f.to_json_dict() for f in singly]
+
+
+def test_every_finding_carries_the_same_consumed_population(recurrence_occurrences):
+    _, occurrences = recurrence_occurrences
+    declared = _declared_for("the", "zebra")
+    findings = measure_recurrences(
+        occurrences, declared=declared, counts_in=_counts_in(declared)
+    )
+    population = tuple(e.id for e in occurrences)
+    assert all(f.consumed_event_ids == population for f in findings)
+    assert all(f.occurrences_examined == len(occurrences) for f in findings)
+
+
+def test_a_declared_representation_that_never_occurs_still_gets_a_finding(
+    recurrence_occurrences,
+):
+    _, occurrences = recurrence_occurrences
+    declared = _declared_for("the", "zebra")
+    findings = {
+        f.declared.representation_measured: f
+        for f in measure_recurrences(
+            occurrences, declared=declared, counts_in=_counts_in(declared)
+        )
+    }
+    assert findings["zebra"].total_count == 0
+    assert findings["zebra"].occurrences_examined == 3
+    assert findings["the"].total_count == 3
+
+
+def test_counting_a_representation_that_was_not_declared_is_refused(
+    recurrence_occurrences,
+):
+    _, occurrences = recurrence_occurrences
+    declared = _declared_for("the")
+    with pytest.raises(PreservedMaterialMeasurementError, match="not declared"):
+        measure_recurrences(
+            occurrences,
+            declared=declared,
+            counts_in=lambda text: {"the": 1, "undeclared": 1},
+        )
+
+
+def test_a_declaration_must_measure_the_representation_it_is_filed_under(
+    recurrence_occurrences,
+):
+    _, occurrences = recurrence_occurrences
+    with pytest.raises(PreservedMaterialMeasurementError, match="measures"):
+        measure_recurrences(
+            occurrences,
+            declared={"the": _recurrence_declared("cat")},
+            counts_in=lambda text: {},
+        )
+
+
+def test_measuring_nothing_is_refused(recurrence_occurrences):
+    _, occurrences = recurrence_occurrences
+    with pytest.raises(PreservedMaterialMeasurementError, match="at least one"):
+        measure_recurrences(occurrences, declared={}, counts_in=lambda text: {})
+
+
+@pytest.mark.parametrize("bad", [True, 1.0, -1, "2", None])
+def test_a_batched_count_must_also_be_a_non_negative_integer(
+    recurrence_occurrences, bad
+):
+    _, occurrences = recurrence_occurrences
+    declared = _declared_for("the")
+    with pytest.raises(PreservedMaterialMeasurementError, match="non-negative integer"):
+        measure_recurrences(
+            occurrences, declared=declared, counts_in=lambda text: {"the": bad}
+        )
+
+
+def test_counts_must_be_returned_as_a_mapping(recurrence_occurrences):
+    _, occurrences = recurrence_occurrences
+    declared = _declared_for("the")
+    with pytest.raises(PreservedMaterialMeasurementError, match="mapping"):
+        measure_recurrences(
+            occurrences, declared=declared, counts_in=lambda text: [("the", 1)]
+        )
+
+
+def test_the_batch_refuses_the_same_material_the_single_measurement_refuses(
+    recurrence_occurrences,
+):
+    ledger, _ = recurrence_occurrences
+    foreign = ledger.append("unrelated.kind", "w", {"decoded_text": "the"}, session_id="r")
+    declared = _declared_for("the")
+    with pytest.raises(PreservedMaterialMeasurementError, match="preserved ingress"):
+        measure_recurrences(
+            [foreign], declared=declared, counts_in=_counts_in(declared)
+        )
