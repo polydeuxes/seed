@@ -48,7 +48,9 @@ from seed_runtime.adjacent_pair_measurement import (
     occupant_agreement_across_scopes,
 )
 from seed_runtime.preserved_material_measurement import (
+    INGRESS_OCCURRED_KIND,
     DeclaredMeasurement,
+    Occupancy,
     PreservedMaterialMeasurementError,
     measure_occupancy,
     premise_chain,
@@ -1018,3 +1020,71 @@ def test_a_displacement_below_one_is_refused(occurrences):
 def test_a_direction_outside_the_two_is_refused(occurrences):
     with pytest.raises(PreservedMaterialMeasurementError):
         enumerate_displacements(occurrences, "it", direction="sideways")
+
+
+def test_answering_contexts_measure_what_every_context_would_have():
+    """Visiting only the occurrences that can answer must change no finding.
+
+    Every form is keyed, and a measurement already skips a `None` occupant, so
+    an occurrence carrying none of the keys contributes nothing. This holds
+    that equivalence over material chosen to exercise the ways it could break:
+    a pair in no occurrence, a pair in several, a representation that is left
+    of many rights, and one that is right of many lefts.
+    """
+
+    lines = [
+        "the cat jumped the fence",
+        "the cat sat",
+        "a cat jumped over",
+        "the dog jumped the gate",
+        "nothing relevant here at all",
+        "the cat jumped the fence",
+    ]
+    events = [
+        Event(
+            id=f"evt_{index:03d}",
+            kind=INGRESS_OCCURRED_KIND,
+            workspace_id="w",
+            session_id="s",
+            payload={"decoded_text": text},
+        )
+        for index, text in enumerate(lines)
+    ]
+    index = AdjacentPairMeasurementIndex(events)
+
+    pairs = [AdjacentPair(left="the", right="cat"), AdjacentPair(left="cat", right="jumped"),
+             AdjacentPair(left="jumped", right="the"), AdjacentPair(left="the", right="fence"),
+             AdjacentPair(left="a", right="cat"), AdjacentPair(left="the", right="dog"),
+             AdjacentPair(left="absent", right="entirely"),
+             AdjacentPair(left="the", right="absent")]
+
+    for pair in pairs:
+        findings = index.measure(pair, counting_scope="s", premise_event_id="evt_000")
+        for form, finding in findings.items():
+            counts: dict[str, int] = {}
+            measured = 0
+            for context in index._contexts:
+                occupant = index._occupant(context, pair, form)
+                if occupant is None:
+                    continue
+                measured += 1
+                counts[occupant] = counts.get(occupant, 0) + 1
+            expected = tuple(
+                Occupancy(representation=representation, occurrence_count=count)
+                for representation, count in sorted(
+                    counts.items(), key=lambda item: (-item[1], item[0])
+                )
+            )
+            assert finding.positions_measured == measured, (pair, form)
+            assert finding.occupancies == expected, (pair, form)
+            assert finding.consumed_event_ids == tuple(event.id for event in events)
+
+
+def test_an_unknown_form_is_refused_before_any_occurrence_is_visited():
+    events = [
+        Event(id="evt_1", kind=INGRESS_OCCURRED_KIND, workspace_id="w",
+              session_id="s", payload={"decoded_text": "the cat"}),
+    ]
+    index = AdjacentPairMeasurementIndex(events)
+    with pytest.raises(PreservedMaterialMeasurementError, match="unknown adjacent-pair form"):
+        index._answering_contexts(AdjacentPair(left="the", right="cat"), "invented")
