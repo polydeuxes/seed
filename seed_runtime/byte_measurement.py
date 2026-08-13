@@ -86,6 +86,7 @@ BYTE_PAIR_APPLICABILITY_RESULT_COORDINATES = frozenset(
         "producer",
         "responsibility",
         "responsible_boundary",
+        "assigned_by_responsibility",
         "responsibility_basis",
         "applicability_act_id",
         "applicability_act_occurrence_id",
@@ -125,7 +126,7 @@ BYTE_PAIR_PURPOSE = (
     "establish exact counts of consecutive two-byte spans within the exact "
     "bounded source population"
 )
-SEED_NATIVE_MEASUREMENT_RESPONSIBLE_BOUNDARY = "Seed"
+SEED_NATIVE_MEASUREMENT_RESPONSIBLE_BOUNDARY = "this Seed"
 BYTE_MEASUREMENT_RESPONSIBILITY = (
     "perform the bounded exact-byte Measurement and produce only the findings "
     "warranted by its exact source population, rule, Scope, Authority, and limits"
@@ -134,6 +135,10 @@ BYTE_PAIR_MEASUREMENT_RESPONSIBILITY = (
     "produce exact adjacent-byte-pair findings from an "
     "applicable exact bounded source population without exceeding the source's "
     "Scope, provenance, occurrence identities, Authority, Unknowns, or limits"
+)
+BYTE_PAIR_INPUT_APPLICABILITY_RESPONSIBILITY = (
+    "determine whether one exact source-material-set Assertion may participate "
+    "in one exact adjacent-byte-pair Measurement Act"
 )
 BYTE_PAIR_RESPONSIBILITY_BASIS = (
     "see 01.External.E, 01.Standing.E.1, and 02.Acts"
@@ -284,8 +289,9 @@ def _pair_input_applicability(
         "input_assertion_ref": source.reference,
         "target_act_id": target_act_id,
         "target_act": "declared adjacent-byte-pair Measurement",
-        "responsibility": BYTE_PAIR_MEASUREMENT_RESPONSIBILITY,
+        "responsibility": BYTE_PAIR_INPUT_APPLICABILITY_RESPONSIBILITY,
         "responsible_boundary": SEED_NATIVE_MEASUREMENT_RESPONSIBLE_BOUNDARY,
+        "assigned_by_responsibility": BYTE_PAIR_MEASUREMENT_RESPONSIBILITY,
         "applicability_act_id": applicability_act_id,
         "applicability_act_occurrence_id": applicability_act_occurrence_id,
         "purpose": BYTE_PAIR_PURPOSE,
@@ -373,8 +379,9 @@ def _pair_input_applicability(
         "input_assertion_ref": source.reference,
         "target_act_id": target_act_id,
         "target_act_occurrence_id": None,
-        "responsibility": BYTE_PAIR_MEASUREMENT_RESPONSIBILITY,
+        "responsibility": BYTE_PAIR_INPUT_APPLICABILITY_RESPONSIBILITY,
         "responsible_boundary": SEED_NATIVE_MEASUREMENT_RESPONSIBLE_BOUNDARY,
+        "assigned_by_responsibility": BYTE_PAIR_MEASUREMENT_RESPONSIBILITY,
         "responsibility_basis": BYTE_PAIR_RESPONSIBILITY_BASIS,
         "applicability_act_id": applicability_act_id,
         "applicability_act_occurrence_id": applicability_act_occurrence_id,
@@ -555,7 +562,7 @@ def _prepare_pair_source(
     consumer_workspace_id: str,
     measurement_session_id: str,
 ) -> tuple[RecordedByteAssertion, dict[str, Any], dict[str, Any], str]:
-    """Recover one proposed source before Responsibility and Applicability occur."""
+    """Recover one source before its consumer-local Applicability determination."""
 
     if (
         not isinstance(consumer_workspace_id, str)
@@ -1167,8 +1174,9 @@ def _record_pair_input_applicability(
         },
         "producing_act": "input Applicability determination",
         "producer": RESPONSIBILITY_UNRECOVERED,
-        "responsibility": BYTE_PAIR_MEASUREMENT_RESPONSIBILITY,
+        "responsibility": BYTE_PAIR_INPUT_APPLICABILITY_RESPONSIBILITY,
         "responsible_boundary": SEED_NATIVE_MEASUREMENT_RESPONSIBLE_BOUNDARY,
+        "assigned_by_responsibility": BYTE_PAIR_MEASUREMENT_RESPONSIBILITY,
         "responsibility_basis": BYTE_PAIR_RESPONSIBILITY_BASIS,
         "applicability_act_id": claim["applicability_act_id"],
         "applicability_act_occurrence_id": claim[
@@ -1188,8 +1196,9 @@ def _record_pair_input_applicability(
                 "applicability_act_occurrence_id"
             ],
             "act": "input Applicability determination",
-            "responsibility": BYTE_PAIR_MEASUREMENT_RESPONSIBILITY,
+            "responsibility": BYTE_PAIR_INPUT_APPLICABILITY_RESPONSIBILITY,
             "responsible_boundary": SEED_NATIVE_MEASUREMENT_RESPONSIBLE_BOUNDARY,
+            "assigned_by_responsibility": BYTE_PAIR_MEASUREMENT_RESPONSIBILITY,
             "input_assertion_ref": source.reference,
             "target_act_id": claim["target_act_id"],
             "result_commitment": production_commitment(
@@ -1209,7 +1218,7 @@ def _record_pair_input_applicability(
         result_identity=claim["dimensions"]["identity"],
         produced_content=result_payload,
         producer=RESPONSIBILITY_UNRECOVERED,
-        responsibility=BYTE_PAIR_MEASUREMENT_RESPONSIBILITY,
+        responsibility=BYTE_PAIR_INPUT_APPLICABILITY_RESPONSIBILITY,
     )
     return ledger.append(
         BYTE_PAIR_APPLICABILITY_RECORDED_KIND,
@@ -1273,8 +1282,9 @@ def get_recorded_pair_input_applicability(
             "applicability_act_occurrence_id"
         ],
         "act": "input Applicability determination",
-        "responsibility": BYTE_PAIR_MEASUREMENT_RESPONSIBILITY,
+        "responsibility": BYTE_PAIR_INPUT_APPLICABILITY_RESPONSIBILITY,
         "responsible_boundary": SEED_NATIVE_MEASUREMENT_RESPONSIBLE_BOUNDARY,
+        "assigned_by_responsibility": BYTE_PAIR_MEASUREMENT_RESPONSIBILITY,
         "input_assertion_ref": payload["input_assertion_ref"],
         "target_act_id": payload["target_act_id"],
         "result_commitment": production_commitment(
@@ -1321,9 +1331,12 @@ def get_recorded_pair_input_applicability(
         or dimensions.get("identity") != expected_identity
         or claim.get("result") != "input_applicability"
         or claim.get("target_act_occurrence_id") is not None
-        or claim.get("responsibility") != BYTE_PAIR_MEASUREMENT_RESPONSIBILITY
+        or claim.get("responsibility")
+        != BYTE_PAIR_INPUT_APPLICABILITY_RESPONSIBILITY
         or claim.get("responsible_boundary")
         != SEED_NATIVE_MEASUREMENT_RESPONSIBLE_BOUNDARY
+        or claim.get("assigned_by_responsibility")
+        != BYTE_PAIR_MEASUREMENT_RESPONSIBILITY
         or claim.get("responsibility_basis") != BYTE_PAIR_RESPONSIBILITY_BASIS
         or claim.get("applicability_act_id") != payload.get("applicability_act_id")
         or claim.get("applicability_act_occurrence_id")
@@ -1335,9 +1348,12 @@ def get_recorded_pair_input_applicability(
         or payload.get("dimensions", {}).get("standing") != standing
         or payload.get("target_act_id") != claim.get("target_act_id")
         or payload.get("input_assertion_ref") != claim.get("input_assertion_ref")
-        or payload.get("responsibility") != BYTE_PAIR_MEASUREMENT_RESPONSIBILITY
+        or payload.get("responsibility")
+        != BYTE_PAIR_INPUT_APPLICABILITY_RESPONSIBILITY
         or payload.get("responsible_boundary")
         != SEED_NATIVE_MEASUREMENT_RESPONSIBLE_BOUNDARY
+        or payload.get("assigned_by_responsibility")
+        != BYTE_PAIR_MEASUREMENT_RESPONSIBILITY
         or payload.get("responsibility_basis") != BYTE_PAIR_RESPONSIBILITY_BASIS
         or payload.get("target_act_outcome")
         != "not established by this Applicability claim"
@@ -1469,8 +1485,9 @@ def _validate_recorded_pair_input_applicability(
         "input_assertion_ref": source.reference,
         "target_act_id": target_act_id,
         "target_act": "declared adjacent-byte-pair Measurement",
-        "responsibility": BYTE_PAIR_MEASUREMENT_RESPONSIBILITY,
+        "responsibility": BYTE_PAIR_INPUT_APPLICABILITY_RESPONSIBILITY,
         "responsible_boundary": SEED_NATIVE_MEASUREMENT_RESPONSIBLE_BOUNDARY,
+        "assigned_by_responsibility": BYTE_PAIR_MEASUREMENT_RESPONSIBILITY,
         "applicability_act_id": claim.get("applicability_act_id"),
         "applicability_act_occurrence_id": claim.get(
             "applicability_act_occurrence_id"
@@ -1503,8 +1520,9 @@ def _validate_recorded_pair_input_applicability(
         "input_assertion_ref": source.reference,
         "target_act_id": target_act_id,
         "target_act_occurrence_id": None,
-        "responsibility": BYTE_PAIR_MEASUREMENT_RESPONSIBILITY,
+        "responsibility": BYTE_PAIR_INPUT_APPLICABILITY_RESPONSIBILITY,
         "responsible_boundary": SEED_NATIVE_MEASUREMENT_RESPONSIBLE_BOUNDARY,
+        "assigned_by_responsibility": BYTE_PAIR_MEASUREMENT_RESPONSIBILITY,
         "responsibility_basis": BYTE_PAIR_RESPONSIBILITY_BASIS,
         "applicability_act_id": claim.get("applicability_act_id"),
         "applicability_act_occurrence_id": claim.get(

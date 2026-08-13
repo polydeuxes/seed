@@ -516,7 +516,7 @@ def test_zero_observed_pairs_is_a_lawful_recoverable_result():
     assert assertions_of_recorded_adjacent_byte_pair_measurement(ledger, event.id) == ()
 
 
-def test_applicability_identity_is_bound_to_one_exact_act_occurrence():
+def test_applicability_identity_is_bound_to_one_exact_target_act():
     ledger = _ledger("ta\n")
     source_event = _byte_source(ledger)
     source = next(
@@ -543,6 +543,7 @@ def test_applicability_identity_is_bound_to_one_exact_act_occurrence():
 
     assert first["dimensions"]["identity"] != second["dimensions"]["identity"]
     assert first["responsibility"]
+    assert first["responsibility"] != first["assigned_by_responsibility"]
     assert first["target_act_id"] == "pair-act-1"
     assert first["target_act_occurrence_id"] is None
 
