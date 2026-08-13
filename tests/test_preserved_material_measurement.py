@@ -34,7 +34,11 @@ import pytest
 
 from seed_runtime.events import EventLedger
 from seed_runtime.preserved_material_measurement import (
+    MATERIAL_AS_SUPPLIED,
+    RESPONSIBILITY_UNRECOVERED,
+    MATERIAL_READ_FROM_LEDGER,
     MEASUREMENT_RECORDED_KIND,
+    RecurrenceFinding,
     DeclaredMeasurement,
     PreservedMaterialMeasurementError,
     measure_occupancy,
@@ -791,10 +795,10 @@ def test_a_finding_preserves_the_localities_it_consumed(recurrence_occurrences):
     )
 
 
-def test_an_occurrence_carrying_no_session_locality_asserts_none(
+def test_an_occurrence_carrying_no_locality_records_the_absence(
     recurrence_occurrences,
 ):
-    """Absence of the witness is not an asserted locality value."""
+    """Absence of the coordinate is preserved, not filled in."""
 
     ledger, _ = recurrence_occurrences
     without_session = Event(
@@ -812,8 +816,9 @@ def test_an_occurrence_carrying_no_session_locality_asserts_none(
         declared=_recurrence_declared("the"),
         occurrences_of=_counts("the"),
     )
-    assert finding.consumed_localities == ("workspace:w",)
-    assert "None" not in finding.consumed_localities[0]
+    # No locality was carried, so none is recorded. The workspace is a
+    # different member of `06.Standing.A`'s boundary and cannot stand in.
+    assert finding.consumed_localities == (None,)
 
 
 def test_batch_and_single_survive_the_recording_boundary_identically(
@@ -1111,7 +1116,7 @@ def test_an_identity_the_ledger_does_not_preserve_is_refused(
         boundary=ledger.capture_boundary(),
         identities=[absent.id],
     )
-    with pytest.raises(Exception, match="not preserved|recovered support"):
+    with pytest.raises(PreservedMaterialMeasurementError, match="not preserved in the ledger"):
         measure_recurrences(
             [absent],
             declared=declared,
@@ -1134,3 +1139,259 @@ def test_the_positional_path_also_refuses_incoherent_material(recurrence_occurre
     )
     with pytest.raises(PreservedMaterialMeasurementError, match="preserves no decoded text"):
         measure_occupancy([lying], declared=_declared(), occupant_of=_first_word)
+
+
+def test_a_finding_over_unpreserved_material_cannot_be_recorded():
+    """The recorder states provenance it never established."""
+
+    ledger = EventLedger()
+    forged = Event(
+        id="evt_never_preserved",
+        kind=INGRESS_OCCURRED_KIND,
+        workspace_id="w",
+        session_id="r",
+        payload={
+            "decoded_text": "zebra zebra",
+            "material_origin": "operator",
+            "text_representation": {"available": True},
+        },
+    )
+    finding = measure_recurrence(
+        [forged],
+        declared=_recurrence_declared("zebra"),
+        occurrences_of=_counts("zebra"),
+    )
+    assert finding.total_count == 2  # the measurement itself is not the guard
+    with pytest.raises(PreservedMaterialMeasurementError, match="preserves no such ingress"):
+        record_measurement_finding(
+            ledger, workspace_id="w", session_id="r", finding=finding
+        )
+
+
+def test_the_positional_path_cannot_record_unpreserved_material_either():
+    ledger = EventLedger()
+    forged = Event(
+        id="evt_also_never_preserved",
+        kind=INGRESS_OCCURRED_KIND,
+        workspace_id="w",
+        session_id="r",
+        payload={"decoded_text": "the cat", "text_representation": {"available": True}},
+    )
+    finding = measure_occupancy(
+        [forged], declared=_declared(), occupant_of=_first_word
+    )
+    with pytest.raises(PreservedMaterialMeasurementError, match="preserves no such ingress"):
+        record_measurement_finding(
+            ledger, workspace_id="w", session_id="r", finding=finding
+        )
+
+
+def test_a_real_identity_carrying_forged_material_measures_the_ledger(
+    recurrence_occurrences,
+):
+    """`#2510` closed this for the basis path only; every other path trusted
+    the object it was handed."""
+
+    ledger, occurrences = recurrence_occurrences
+    forged = [
+        Event(
+            id=e.id,
+            kind=e.kind,
+            workspace_id="w",
+            session_id="r",
+            payload={
+                "decoded_text": "zebra zebra zebra",
+                "material_origin": "operator",
+                "text_representation": {"available": True},
+            },
+        )
+        for e in occurrences
+    ]
+    # Unbound: the act measures what it was handed and cannot say otherwise.
+    loose = measure_recurrence(
+        forged, declared=_recurrence_declared("zebra"), occurrences_of=_counts("zebra")
+    )
+    assert loose.total_count == 9
+
+    # Bound to the ledger those identities name: the ledger carries no zebra.
+    bound = measure_recurrence(
+        forged,
+        declared=_recurrence_declared("zebra"),
+        occurrences_of=_counts("zebra"),
+        preserved_in=ledger,
+    )
+    assert bound.total_count == 0
+
+
+def test_the_positional_path_can_bind_its_material_too(recurrence_occurrences):
+    ledger, occurrences = recurrence_occurrences
+    forged = [
+        Event(
+            id=occurrences[0].id,
+            kind=INGRESS_OCCURRED_KIND,
+            workspace_id="w",
+            session_id="r",
+            payload={"decoded_text": "zebra", "text_representation": {"available": True}},
+        )
+    ]
+    finding = measure_occupancy(
+        forged, declared=_declared(), occupant_of=_first_word, preserved_in=ledger
+    )
+    assert finding.occupancies[0].representation == "the"
+
+
+def test_carrying_a_basis_no_longer_exempts_a_finding_from_the_recorder():
+    """Carrying a basis is not being verified against one."""
+
+    ledger = EventLedger()
+    forged = Event(
+        id="evt_absent_but_claimed",
+        kind=INGRESS_OCCURRED_KIND,
+        workspace_id="w",
+        session_id="r",
+        payload={"decoded_text": "the", "text_representation": {"available": True}},
+    )
+    finding = measure_recurrence(
+        [forged], declared=_recurrence_declared("the"), occurrences_of=_counts("the")
+    )
+    # A SupportBasis is a directly constructible dataclass; attaching one is
+    # not evidence that any act verified it.
+    attached = RecurrenceFinding(
+        declared=finding.declared,
+        consumed_localities=finding.consumed_localities,
+        occurrences_examined=finding.occurrences_examined,
+        occurrences_carrying=finding.occurrences_carrying,
+        total_count=finding.total_count,
+        consumed_event_ids=finding.consumed_event_ids,
+        support_basis=declare_complete_population(
+            workspace_id="w",
+            session_id="r",
+            occurrence_kind=INGRESS_OCCURRED_KIND,
+            boundary=ledger.capture_boundary(),
+            identities=[forged.id],
+        ),
+    )
+    with pytest.raises(PreservedMaterialMeasurementError, match="preserves no such ingress"):
+        record_measurement_finding(
+            ledger, workspace_id="w", session_id="r", finding=attached
+        )
+
+
+def test_a_finding_carries_where_its_material_came_from(recurrence_occurrences):
+    ledger, occurrences = recurrence_occurrences
+    unbound = measure_recurrence(
+        occurrences, declared=_recurrence_declared("the"), occurrences_of=_counts("the")
+    )
+    bound = measure_recurrence(
+        occurrences,
+        declared=_recurrence_declared("the"),
+        occurrences_of=_counts("the"),
+        preserved_in=ledger,
+    )
+    assert unbound.material_provenance == MATERIAL_AS_SUPPLIED
+    assert bound.material_provenance == MATERIAL_READ_FROM_LEDGER
+    # Stated once, where the recorder reads it. Carrying it in the finding
+    # payload as well would be two representations of one coordinate.
+    assert "material_provenance" not in unbound.to_json_dict()
+
+
+def test_the_recorder_states_the_provenance_the_measurement_declared(
+    recurrence_occurrences,
+):
+    """The blocker: a real Act over unbound material, recorded as preserved."""
+
+    ledger, occurrences = recurrence_occurrences
+    forged = [
+        Event(
+            id=e.id,
+            kind=e.kind,
+            workspace_id="w",
+            session_id="r",
+            payload={
+                "decoded_text": "zebra zebra",
+                "material_origin": "operator",
+                "text_representation": {"available": True},
+            },
+        )
+        for e in occurrences
+    ]
+    # A lawful measurement, over material the ledger does not carry, with
+    # identities the ledger does.
+    finding = measure_recurrence(
+        forged,
+        declared=_recurrence_declared("zebra"),
+        occurrences_of=_counts("zebra"),
+    )
+    assert finding.total_count == 6
+    event = record_measurement_finding(
+        ledger, workspace_id="w", session_id="r", finding=finding
+    )
+    # It records -- the identities exist and the Act occurred -- but it no
+    # longer claims the material was preserved.
+    assert event.payload["dimensions"]["source_provenance"] == MATERIAL_AS_SUPPLIED
+    assert "preserved" not in event.payload["dimensions"]["source_provenance"]
+
+    bound = measure_recurrence(
+        occurrences,
+        declared=_recurrence_declared("the"),
+        occurrences_of=_counts("the"),
+        preserved_in=ledger,
+    )
+    recorded = record_measurement_finding(
+        ledger, workspace_id="w", session_id="r", finding=bound
+    )
+    assert (
+        recorded.payload["dimensions"]["source_provenance"]
+        == MATERIAL_READ_FROM_LEDGER
+    )
+
+
+def test_the_basis_path_reports_the_ledger_it_read_from(recurrence_occurrences):
+    """It re-reads every occurrence and used to record them as supplied."""
+
+    ledger, occurrences = recurrence_occurrences
+    declared = _declared_for("the")
+    finding = measure_recurrences(
+        occurrences,
+        declared=declared,
+        counts_in=_counts_in(declared),
+        support_basis=_basis_for(occurrences, ledger),
+        support_recovery=SupportRecovery(ledger),
+    )[0]
+    assert finding.material_provenance == MATERIAL_READ_FROM_LEDGER
+
+
+def test_responsibility_does_not_follow_the_provenance(recurrence_occurrences):
+    ledger, occurrences = recurrence_occurrences
+    unbound = record_measurement_finding(
+        ledger,
+        workspace_id="w",
+        session_id="r",
+        finding=measure_recurrence(
+            occurrences,
+            declared=_recurrence_declared("the"),
+            occurrences_of=_counts("the"),
+        ),
+    )
+    bound = record_measurement_finding(
+        ledger,
+        workspace_id="w",
+        session_id="r",
+        finding=measure_recurrence(
+            occurrences,
+            declared=_recurrence_declared("the"),
+            occurrences_of=_counts("the"),
+            preserved_in=ledger,
+        ),
+    )
+    # Provenance differs; Responsibility does not follow it. `#2439` recovered
+    # Producer, Act and Standing for declared measurement and left the
+    # Responsibility unrecovered, and that stays true either way.
+    assert unbound.payload["dimensions"]["source_provenance"] != bound.payload[
+        "dimensions"
+    ]["source_provenance"]
+    assert (
+        unbound.payload["dimensions"]["responsibility"]
+        == bound.payload["dimensions"]["responsibility"]
+        == RESPONSIBILITY_UNRECOVERED
+    )
