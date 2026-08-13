@@ -752,14 +752,11 @@ def record_measurement_finding(
 def premise_chain(ledger: EventLedger, event_id: str) -> list[str]:
     """Every finding this one stood on, nearest premise first.
 
-    Not a support basis. `#2486` established that as an explicit scope,
-    boundary, selection rule and commitment over the population a measurement
-    consumed, and `05.Testimony.E` bounds it as what a producing act consumed.
-    This is a different thing: what one finding stood on, recovered by following
-    each premise to the one before it. A finding cannot be read as independent
-    of what bounded it, and that is why the chain is preserved -- but the prose
-    called it a support basis before the distinction existed and kept calling it
-    that after.
+    Not the runtime's `SupportBasis` representation. This is the chain of
+    recorded premise findings one finding stood on, recovered nearest premise
+    first. It preserves that dependency relation and claims nothing about the
+    producing act's support basis; the prose called it that before the two
+    were distinguished and kept calling it that after.
     """
 
     chain: list[str] = []
