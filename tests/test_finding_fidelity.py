@@ -5,7 +5,7 @@ from __future__ import annotations
 import pytest
 
 from seed_runtime.event import Event
-from seed_runtime.events import EventLedger
+from seed_runtime.events import EventLedger, SQLiteEventLedger
 from seed_runtime.adjacent_pair_measurement import measure_after
 from seed_runtime.finding_fidelity import (
     ERASURE,
@@ -18,6 +18,7 @@ from seed_runtime.finding_fidelity import (
     UNFAITHFUL_CROSSING,
     FindingFidelityError,
     compare_recorded_finding,
+    get_recorded_fidelity_finding,
 )
 from seed_runtime.preserved_material_measurement import (
     INGRESS_OCCURRED_KIND,
@@ -36,9 +37,7 @@ from seed_runtime.production_evidence import (
 from seed_runtime.support_basis import support_commitment
 
 
-@pytest.fixture
-def recorded():
-    ledger = EventLedger()
+def _recorded_in(ledger):
     occurrences = [
         ledger.append(
             INGRESS_OCCURRED_KIND,
@@ -65,6 +64,11 @@ def recorded():
         ledger, workspace_id="w", session_id="r", finding=finding
     )
     return ledger, event
+
+
+@pytest.fixture
+def recorded():
+    return _recorded_in(EventLedger())
 
 
 def test_a_finding_that_names_the_evidence_concerning_it_is_faithful(recorded):
@@ -108,6 +112,93 @@ def test_result_shape_without_the_production_relation_has_no_witness(recorded):
     )
     assert "production_evidence_id" not in forged.payload
     assert result.payload["production_evidence_id"] is not None
+
+
+def test_a_produced_fidelity_finding_is_occurrence_bound_and_recoverable(recorded):
+    ledger, event = recorded
+    result = compare_recorded_finding(ledger, event.id)
+    recovered = get_recorded_fidelity_finding(ledger, result.id)
+    assert recovered.producing_event_id == result.id
+    assert recovered.production_evidence_id == result.payload[
+        "production_evidence_id"
+    ]
+    assert recovered.source_finding_event_id == event.id
+    assert recovered.standing == FAITHFUL_WITHIN_SCOPE
+    assert recovered.reference == {"producing_event_id": result.id}
+
+
+def test_a_fidelity_shaped_event_without_production_evidence_is_not_recovered(
+    recorded,
+):
+    ledger, event = recorded
+    result = compare_recorded_finding(ledger, event.id)
+    forged = dict(result.payload)
+    forged.pop("production_evidence_id")
+    occurrence = ledger.append(FIDELITY_FINDING_KIND, "w", forged, session_id="r")
+    with pytest.raises(FindingFidelityError, match="coordinate surfaces"):
+        get_recorded_fidelity_finding(ledger, occurrence.id)
+
+
+def test_a_changed_fidelity_result_cannot_borrow_the_production_evidence(recorded):
+    ledger, event = recorded
+    result = compare_recorded_finding(ledger, event.id)
+    altered = dict(result.payload)
+    altered["unknowns"] = ["an Unknown the comparison did not produce"]
+    occurrence = ledger.append(FIDELITY_FINDING_KIND, "w", altered, session_id="r")
+    with pytest.raises(FindingFidelityError, match="different Fidelity result"):
+        get_recorded_fidelity_finding(ledger, occurrence.id)
+
+
+def test_fidelity_recovery_survives_durable_reopen(tmp_path):
+    path = tmp_path / "fidelity-recovery.sqlite"
+    ledger, event = _recorded_in(SQLiteEventLedger(path))
+    result = compare_recorded_finding(ledger, event.id)
+    result_id = result.id
+    ledger.close()
+
+    reopened = SQLiteEventLedger(path)
+    recovered = get_recorded_fidelity_finding(reopened, result_id)
+    assert recovered.producing_event_id == result_id
+    assert recovered.standing == FAITHFUL_WITHIN_SCOPE
+    reopened.close()
+
+
+def test_fidelity_recovery_refuses_an_invented_production_coordinate(recorded):
+    ledger, event = recorded
+    result = compare_recorded_finding(ledger, event.id)
+    evidence = ledger.get(result.payload["production_evidence_id"])
+    forged_evidence = ledger.append(
+        PRODUCTION_EVIDENCE_KIND,
+        "w",
+        {
+            **evidence.payload,
+            "production_coordinates": evidence.payload["production_coordinates"]
+            + ["invented"],
+        },
+        session_id="r",
+    )
+    forged_result = ledger.append(
+        FIDELITY_FINDING_KIND,
+        "w",
+        {**result.payload, "production_evidence_id": forged_evidence.id},
+        session_id="r",
+    )
+    with pytest.raises(FindingFidelityError, match="exact Fidelity result contract"):
+        get_recorded_fidelity_finding(ledger, forged_result.id)
+
+
+def test_corrupted_fidelity_occurrence_cannot_be_recovered(tmp_path):
+    ledger, event = _recorded_in(SQLiteEventLedger(tmp_path / "corrupt-result.sqlite"))
+    result = compare_recorded_finding(ledger, event.id)
+    ledger._connection.execute("DROP TRIGGER events_refuse_update")
+    ledger._connection.execute(
+        "UPDATE events SET content_hash = ? WHERE id = ?",
+        ("corrupted", result.id),
+    )
+    ledger._connection.commit()
+    with pytest.raises(FindingFidelityError, match="corrupted occurrence"):
+        get_recorded_fidelity_finding(ledger, result.id)
+    ledger.close()
 
 
 def test_a_finding_naming_no_production_evidence_preserves_erasure(recorded):

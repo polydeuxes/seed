@@ -35,6 +35,8 @@ recorded and a later responsible act may follow them; this act does not.
 
 from __future__ import annotations
 
+from dataclasses import dataclass
+
 from seed_runtime.event import Event
 from seed_runtime.events import CORRUPTED, EventLedger
 from seed_runtime.preserved_material_measurement import (
@@ -47,6 +49,7 @@ from seed_runtime.preserved_material_measurement import (
 from seed_runtime.production_evidence import (
     PRODUCTION_EVIDENCE_KIND,
     _record_production_evidence,
+    production_commitment,
 )
 
 FIDELITY_FINDING_KIND = "operator.fidelity.finding_recorded"
@@ -60,9 +63,156 @@ FIDELITY_UNKNOWN = "Unknown"
 ERASURE = "erasure"
 INVENTION = "invention"
 
+FIDELITY_RESULT_COORDINATES = frozenset(
+    {
+        "dimensions",
+        "constitutional_subject",
+        "bounded_expectation",
+        "implementation_witness",
+        "production_evidence",
+        "evidence_and_provenance",
+        "authority_boundary",
+        "preserved_invariants",
+        "observed_crossings",
+        "conflicts",
+        "unknowns",
+        "lawful_stopping_point",
+        "revises",
+        "forbidden_inferences",
+    }
+)
+FIDELITY_RECORDING_COORDINATES = frozenset(
+    {"production_evidence_id", "occurrence_preservation"}
+)
+FIDELITY_OCCURRENCE_PRESERVATION = (
+    "Fidelity finding durably recorded after its exact result was produced"
+)
+
 
 class FindingFidelityError(ValueError):
     """A fidelity comparison cannot be performed as declared."""
+
+
+@dataclass(frozen=True)
+class RecordedFidelityFinding:
+    """One exact produced Fidelity finding recovered from its occurrence."""
+
+    producing_event_id: str
+    production_evidence_id: str
+    source_finding_event_id: str
+    standing: str
+    payload: dict[str, object]
+
+    @property
+    def reference(self) -> dict[str, str]:
+        return {"producing_event_id": self.producing_event_id}
+
+
+def get_recorded_fidelity_finding(
+    ledger: EventLedger, event_id: str
+) -> RecordedFidelityFinding | None:
+    """Recover one occurrence-bound Fidelity result without consuming it.
+
+    Recovery establishes that the occurrence carries the exact result its
+    production Evidence commits to. It does not decide this finding's
+    Applicability to any later Act, traverse its source finding, or revise
+    anything.
+    """
+
+    event = ledger.get(event_id)
+    if event is None:
+        return None
+    if event.kind != FIDELITY_FINDING_KIND:
+        raise FindingFidelityError(
+            f"{event_id} is {event.kind}, not a recorded Fidelity finding"
+        )
+    if ledger.integrity_of(event_id) == CORRUPTED:
+        raise FindingFidelityError(
+            "a corrupted occurrence cannot expose a Fidelity finding"
+        )
+    payload = event.payload
+    if set(payload) != FIDELITY_RESULT_COORDINATES | FIDELITY_RECORDING_COORDINATES:
+        raise FindingFidelityError(
+            f"{event_id} does not preserve the exact Fidelity result and "
+            "recording coordinate surfaces"
+        )
+    if payload.get("occurrence_preservation") != FIDELITY_OCCURRENCE_PRESERVATION:
+        raise FindingFidelityError(
+            f"{event_id} does not preserve the Fidelity recording occurrence"
+        )
+    evidence_id = payload.get("production_evidence_id")
+    if not isinstance(evidence_id, str) or not evidence_id:
+        raise FindingFidelityError(
+            f"{event_id} names no exact production Evidence occurrence"
+        )
+    evidence = ledger.get(evidence_id)
+    if evidence is None or evidence.kind != PRODUCTION_EVIDENCE_KIND:
+        raise FindingFidelityError(
+            f"{evidence_id} is not preserved production Evidence"
+        )
+    if ledger.integrity_of(evidence_id) == CORRUPTED:
+        raise FindingFidelityError(
+            "corrupted production Evidence cannot expose a Fidelity finding"
+        )
+    if evidence.workspace_id != event.workspace_id:
+        raise FindingFidelityError(
+            "a Fidelity finding and its production Evidence must belong to "
+            "the same workspace"
+        )
+    if (
+        evidence.payload.get("production_convention") != FIDELITY_CONVENTION
+        or evidence.payload.get("produced_result_kind") != FIDELITY_RESULT_KIND
+        or evidence.payload.get("production_coordinates")
+        != sorted(FIDELITY_RESULT_COORDINATES)
+    ):
+        raise FindingFidelityError(
+            "the named production Evidence does not describe the exact "
+            "Fidelity result contract"
+        )
+    produced = {name: payload[name] for name in FIDELITY_RESULT_COORDINATES}
+    if evidence.payload.get("production_commitment") != production_commitment(
+        FIDELITY_CONVENTION, produced
+    ):
+        raise FindingFidelityError(
+            "the named production Evidence concerns a different Fidelity result"
+        )
+    dimensions = payload.get("dimensions")
+    source_id = payload.get("implementation_witness")
+    standing = dimensions.get("standing") if isinstance(dimensions, dict) else None
+    if (
+        not isinstance(source_id, str)
+        or not source_id
+        or standing
+        not in {FAITHFUL_WITHIN_SCOPE, UNFAITHFUL_CROSSING, FIDELITY_UNKNOWN}
+        or not isinstance(dimensions, dict)
+        or dimensions.get("identity") != f"fidelity:{source_id}"
+        or dimensions.get("producing_act") != "bounded fidelity comparison"
+        or dimensions.get("producer") != RESPONSIBILITY_UNRECOVERED
+        or dimensions.get("responsibility") != RESPONSIBILITY_UNRECOVERED
+        or dimensions.get("scope_workspace") != event.workspace_id
+        or dimensions.get("scope_locality")
+        != (f"session:{event.session_id}" if event.session_id is not None else None)
+    ):
+        raise FindingFidelityError(
+            f"{event_id} carries an incoherent Fidelity result shell"
+        )
+    source = ledger.get(source_id)
+    if (
+        source is None
+        or source.kind != MEASUREMENT_RECORDED_KIND
+        or source.workspace_id != event.workspace_id
+        or source.payload.get("measurement_form") != "recurrence"
+    ):
+        raise FindingFidelityError(
+            f"{event_id} does not address the recurrence finding it examined"
+        )
+    return RecordedFidelityFinding(
+        producing_event_id=event.id,
+        production_evidence_id=evidence.id,
+        source_finding_event_id=source_id,
+        standing=standing,
+        payload=payload,
+    )
 
 
 def _provenance(event: Event, integrity: str) -> dict[str, object]:
@@ -325,10 +475,7 @@ def compare_recorded_finding(ledger: EventLedger, event_id: str) -> Event:
         {
             **result_payload,
             "production_evidence_id": production_evidence.id,
-            "occurrence_preservation": (
-                "Fidelity finding durably recorded after its exact result was "
-                "produced"
-            ),
+            "occurrence_preservation": FIDELITY_OCCURRENCE_PRESERVATION,
         },
         session_id=recorded.session_id,
     )
