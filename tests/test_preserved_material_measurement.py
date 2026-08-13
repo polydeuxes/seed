@@ -35,6 +35,8 @@ import pytest
 from seed_runtime.events import EventLedger
 from seed_runtime.preserved_material_measurement import (
     MATERIAL_AS_SUPPLIED,
+    MEASUREMENT_PRODUCED_KIND,
+    record_measurement_production,
     RESPONSIBILITY_UNRECOVERED,
     MATERIAL_READ_FROM_LEDGER,
     MEASUREMENT_RECORDED_KIND,
@@ -423,6 +425,17 @@ def recurrence_occurrences():
     return ledger, preserved_ingress_occurrences(ledger, workspace_id="w", session_id="r")
 
 
+def _record(ledger, finding, workspace_id="w", session_id="r"):
+    """Record a production occurrence, then the finding it committed to."""
+
+    record_measurement_production(
+        ledger, workspace_id=workspace_id, session_id=session_id, finding=finding
+    )
+    return record_measurement_finding(
+        ledger, workspace_id=workspace_id, session_id=session_id, finding=finding
+    )
+
+
 def _counts(target):
     return lambda text: text.split().count(target)
 
@@ -478,9 +491,7 @@ def test_a_representation_that_never_occurs_produces_a_measurement_finding(
     # declared rule and scope, not a failure to measure. It establishes no
     # Standing concerning zebra; `01.External:28` bounds it to the assertion.
     assert finding.occurrences_examined == 3
-    event = record_measurement_finding(
-        ledger, workspace_id="w", session_id="r", finding=finding
-    )
+    event = _record(ledger, finding=finding)
     assert event.payload["dimensions"]["identity"] == "measurement:zebra"
     assert event.payload["total_count"] == 0
 
@@ -535,9 +546,7 @@ def test_a_recurrence_finding_records_through_the_existing_path(
     finding = measure_recurrence(
         occurrences, declared=_recurrence_declared("the"), occurrences_of=_counts("the")
     )
-    event = record_measurement_finding(
-        ledger, workspace_id="w", session_id="r", finding=finding
-    )
+    event = _record(ledger, finding=finding)
     assert event.kind == MEASUREMENT_RECORDED_KIND
     assert event.payload["dimensions"]["identity"] == "measurement:the"
     assert event.payload["dimensions"]["standing"] == "measured"
@@ -550,21 +559,13 @@ def test_a_recurrence_finding_records_through_the_existing_path(
 
 def test_a_recurrence_finding_may_stand_on_a_premise(recurrence_occurrences):
     ledger, occurrences = recurrence_occurrences
-    first = record_measurement_finding(
-        ledger,
-        workspace_id="w",
-        session_id="r",
-        finding=measure_recurrence(
+    first = _record(ledger, finding=measure_recurrence(
             occurrences,
             declared=_recurrence_declared("the"),
             occurrences_of=_counts("the"),
         ),
     )
-    second = record_measurement_finding(
-        ledger,
-        workspace_id="w",
-        session_id="r",
-        finding=measure_recurrence(
+    second = _record(ledger, finding=measure_recurrence(
             occurrences,
             declared=_recurrence_declared("cat", premise_event_id=first.id),
             occurrences_of=_counts("cat"),
@@ -782,6 +783,11 @@ def test_a_finding_preserves_the_localities_it_consumed(recurrence_occurrences):
         "workspace:w;session:other",
     )
     # Recorded into a third locality; both coordinates survive, distinctly.
+    # Production is recorded where the material lives, recording happens
+    # elsewhere -- which is the case `06.Standing.B` makes lawful.
+    record_measurement_production(
+        ledger, workspace_id="w", session_id="r", finding=finding
+    )
     event = record_measurement_finding(
         ledger, workspace_id="w", session_id="recording", finding=finding
     )
@@ -830,19 +836,14 @@ def test_batch_and_single_survive_the_recording_boundary_identically(
     targets = ("the", "cat", "zebra")
     declared = _declared_for(*targets)
     singly = [
-        record_measurement_finding(
-            ledger,
-            workspace_id="w",
-            session_id="r",
-            finding=measure_recurrence(
+        _record(ledger, finding=measure_recurrence(
                 occurrences, declared=declared[t], occurrences_of=_counts(t)
             ),
         )
         for t in targets
     ]
     batched = [
-        record_measurement_finding(
-            ledger, workspace_id="w", session_id="r", finding=finding
+        _record(ledger, finding=finding
         )
         for finding in measure_recurrences(
             occurrences, declared=declared, counts_in=_counts_in(declared)
@@ -1323,9 +1324,7 @@ def test_the_recorder_states_the_provenance_the_measurement_declared(
         occurrences_of=_counts("zebra"),
     )
     assert finding.total_count == 6
-    event = record_measurement_finding(
-        ledger, workspace_id="w", session_id="r", finding=finding
-    )
+    event = _record(ledger, finding=finding)
     # It records -- the identities exist and the Act occurred -- but it no
     # longer claims the material was preserved.
     assert event.payload["dimensions"]["source_provenance"] == MATERIAL_AS_SUPPLIED
@@ -1337,8 +1336,7 @@ def test_the_recorder_states_the_provenance_the_measurement_declared(
         occurrences_of=_counts("the"),
         preserved_in=ledger,
     )
-    recorded = record_measurement_finding(
-        ledger, workspace_id="w", session_id="r", finding=bound
+    recorded = _record(ledger, finding=bound
     )
     assert (
         recorded.payload["dimensions"]["source_provenance"]
@@ -1363,21 +1361,13 @@ def test_the_basis_path_reports_the_ledger_it_read_from(recurrence_occurrences):
 
 def test_responsibility_does_not_follow_the_provenance(recurrence_occurrences):
     ledger, occurrences = recurrence_occurrences
-    unbound = record_measurement_finding(
-        ledger,
-        workspace_id="w",
-        session_id="r",
-        finding=measure_recurrence(
+    unbound = _record(ledger, finding=measure_recurrence(
             occurrences,
             declared=_recurrence_declared("the"),
             occurrences_of=_counts("the"),
         ),
     )
-    bound = record_measurement_finding(
-        ledger,
-        workspace_id="w",
-        session_id="r",
-        finding=measure_recurrence(
+    bound = _record(ledger, finding=measure_recurrence(
             occurrences,
             declared=_recurrence_declared("the"),
             occurrences_of=_counts("the"),
@@ -1393,5 +1383,58 @@ def test_responsibility_does_not_follow_the_provenance(recurrence_occurrences):
     assert (
         unbound.payload["dimensions"]["responsibility"]
         == bound.payload["dimensions"]["responsibility"]
+        == RESPONSIBILITY_UNRECOVERED
+    )
+
+
+def test_a_constructed_finding_cannot_be_recorded_as_measured(recurrence_occurrences):
+    """`01.Constructors`: mechanical construction proves only that the output
+    can be built."""
+
+    ledger, occurrences = recurrence_occurrences
+    real = measure_recurrence(
+        occurrences, declared=_recurrence_declared("the"), occurrences_of=_counts("the")
+    )
+    record_measurement_production(ledger, workspace_id="w", session_id="r", finding=real)
+    # The produced result records.
+    record_measurement_finding(ledger, workspace_id="w", session_id="r", finding=real)
+
+    # The same shape with an invented count does not, because no production
+    # occurrence commits to it.
+    invented = RecurrenceFinding(
+        declared=real.declared,
+        material_provenance=real.material_provenance,
+        consumed_localities=real.consumed_localities,
+        occurrences_examined=real.occurrences_examined,
+        occurrences_carrying=real.occurrences_carrying,
+        total_count=999999,
+        consumed_event_ids=real.consumed_event_ids,
+    )
+    with pytest.raises(PreservedMaterialMeasurementError, match="no recorded production"):
+        record_measurement_finding(
+            ledger, workspace_id="w", session_id="r", finding=invented
+        )
+
+
+def test_recording_a_production_for_the_invented_result_is_itself_an_act(
+    recurrence_occurrences,
+):
+    """What the boundary buys, stated exactly: forgery becomes attributable."""
+
+    ledger, occurrences = recurrence_occurrences
+    invented = measure_recurrence(
+        occurrences, declared=_recurrence_declared("the"), occurrences_of=lambda t: 7
+    )
+    production = record_measurement_production(
+        ledger, workspace_id="w", session_id="r", finding=invented
+    )
+    record_measurement_finding(
+        ledger, workspace_id="w", session_id="r", finding=invented
+    )
+    # It records -- and the ledger holds who claimed to have produced it.
+    assert production.kind == MEASUREMENT_PRODUCED_KIND
+    assert production.payload["dimensions"]["producer"] == "this Seed"
+    assert (
+        production.payload["dimensions"]["responsibility"]
         == RESPONSIBILITY_UNRECOVERED
     )

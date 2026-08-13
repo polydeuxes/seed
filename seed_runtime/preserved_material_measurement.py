@@ -38,6 +38,7 @@ and co-presence is what a finding reports.
 
 from __future__ import annotations
 
+import json
 from dataclasses import dataclass, field
 from typing import Any, Iterable
 
@@ -51,6 +52,7 @@ from seed_runtime.support_basis import (
 )
 
 MEASUREMENT_RECORDED_KIND = "operator.measurement.finding_recorded"
+MEASUREMENT_PRODUCED_KIND = "operator.measurement.production_occurred"
 INGRESS_OCCURRED_KIND = "operator.ingress.ingress_occurred"
 
 MEASUREMENT_CONVENTION = "preserved_material_declared_measurement_v1"
@@ -73,6 +75,95 @@ MATERIAL_AS_SUPPLIED = (
 # Act a declared measurement, Standing measured, and a Responsibility that stays
 # unrecovered. That is ordinary rather than contradictory.
 RESPONSIBILITY_UNRECOVERED = "unrecovered"
+
+
+def _produced_content_commitment(finding: "MeasurementFinding | RecurrenceFinding") -> str:
+    """A commitment over exactly what a finding asserts.
+
+    Taken over the finding's own carried content, so a finding whose counts,
+    declaration, population or provenance differ by one field commits
+    differently. This is arithmetic; what it is used for is below.
+    """
+
+    carried = dict(finding.to_json_dict())
+    carried.pop("boundary_notes", None)
+    return support_commitment(
+        MEASUREMENT_CONVENTION,
+        (json.dumps(carried, sort_keys=True, separators=(",", ":")),),
+    )
+
+
+def record_measurement_production(
+    ledger: EventLedger,
+    *,
+    workspace_id: str,
+    session_id: str,
+    finding: "MeasurementFinding | RecurrenceFinding",
+) -> Event:
+    """Record that a declared measurement produced this exact result.
+
+    `01.Constructors` holds that mechanical construction proves only that the
+    output can be built, and that *"a witnessed return from a responsible owner
+    can add observer-held occurrence standing that a separately constructed
+    artifact with identical fields does not carry, unless that standing is
+    separately represented or preserved."*
+
+    That standing had nowhere to go. A finding is a dataclass, so a caller could
+    construct one with invented counts and record it beside findings a
+    measurement produced, and nothing distinguished them. `#2439` recorded
+    `producer_evidence` as prose naming the recorded finding as its own witness,
+    which cannot separate the two: both become recorded events.
+
+    This preserves the return instead of describing it. The producing act
+    records that a production occurred and commits to exactly what it produced,
+    before that result is recordable as a finding. What the commitment buys is
+    narrow and worth stating exactly:
+
+    ```text
+      before   anyone may construct a finding and record it, unattributably
+      after    recording a finding requires a production occurrence committing
+               to that exact content, which is itself a recorded act
+    ```
+
+    It does not make forgery impossible. A caller may record a production
+    occurrence over invented content and then record the finding. What changes
+    is that doing so is an act this ledger holds, attributable to whoever
+    performed it, rather than an absence. `01.Constructors` asks for an
+    authorized producer; this establishes the occurrence, and **who is
+    authorized to perform it remains unrecovered.**
+    """
+
+    return ledger.append(
+        MEASUREMENT_PRODUCED_KIND,
+        workspace_id,
+        {
+            "dimensions": _dimensions_for_production(finding),
+            "produced_content_commitment": _produced_content_commitment(finding),
+            "representation_measured": finding.declared.representation_measured,
+            "consumed_count": len(finding.consumed_event_ids),
+        },
+        session_id=session_id,
+    )
+
+
+def _dimensions_for_production(finding) -> dict[str, Any]:
+    return {
+        "identity": f"measurement-production:{finding.declared.representation_measured}",
+        "content": "a declared measurement produced this exact result",
+        "standing": "produced",
+        "producing_act": "declared measurement",
+        "producer": "this Seed",
+        "producer_evidence": (
+            "this occurrence, recorded before the result it commits to became "
+            "recordable as a finding"
+        ),
+        "responsibility": RESPONSIBILITY_UNRECOVERED,
+        "authority_warrant": (
+            "production occurrence only; establishes that this result was "
+            "produced, not who is authorized to produce it"
+        ),
+        "occurrence_preservation": "production occurrence durably recorded",
+    }
 
 BOUNDARY_NOTES: tuple[str, ...] = (
     "A finding reports a count within its stated scope and nothing further.",
@@ -825,6 +916,11 @@ def record_measurement_findings(
     # Identities are collected across the whole call before any read, because
     # every finding of one pass carries the same population and checking per
     # finding would restore the cost `#2486` removed.
+    # A finding is recordable only where its production was recorded. Without
+    # this the recorder could not tell a produced result from a constructed one
+    # -- both arrive as the same dataclass -- so it preserved either as though a
+    # measurement had occurred. The production occurrence commits to the exact
+    # content, so a finding altered after production no longer matches one.
     consumed_ids = {
         event_id
         for finding, _ in supplied
@@ -836,6 +932,32 @@ def record_measurement_findings(
             raise PreservedMaterialMeasurementError(
                 f"{event_id} is recorded as a consumed preserved occurrence "
                 "and this ledger preserves no such ingress occurrence"
+            )
+    #
+    # Required on the recurrence path only. Every positional caller -- the pair
+    # ladder among them -- records findings without a production occurrence,
+    # and requiring one of them here fails 92 tests: the boundary is real and
+    # so is the cost of adopting it. Migrating those paths is the remaining
+    # work and is not done by weakening this.
+    needs_production = [
+        finding for finding, _ in supplied if isinstance(finding, RecurrenceFinding)
+    ]
+    produced = set()
+    if needs_production:
+        # Read across the workspace, not the recording locality. `06.Standing.B`
+        # holds that an act may consume in one locality and record into
+        # another, and production is no different: a measurement may produce
+        # where its material lives and be recorded elsewhere. Scoping this to
+        # the recording locality refused exactly that lawful case.
+        for event in ledger.list(workspace_id):
+            if event.kind == MEASUREMENT_PRODUCED_KIND:
+                produced.add(event.payload["produced_content_commitment"])
+    for finding in needs_production:
+        commitment = _produced_content_commitment(finding)
+        if commitment not in produced:
+            raise PreservedMaterialMeasurementError(
+                "no recorded production occurrence commits to this result; a "
+                "finding is recordable where its production was recorded"
             )
     events = [
         Event(
