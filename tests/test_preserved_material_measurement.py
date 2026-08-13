@@ -1119,3 +1119,18 @@ def test_an_identity_the_ledger_does_not_preserve_is_refused(
             support_basis=basis,
             support_recovery=SupportRecovery(ledger),
         )
+
+
+def test_the_positional_path_also_refuses_incoherent_material(recurrence_occurrences):
+    """`measure_occupancy` had its own copy of the check and never gained the fix."""
+
+    _, _ = recurrence_occurrences
+    lying = Event(
+        id="evt_positional_claims_text",
+        kind=INGRESS_OCCURRED_KIND,
+        workspace_id="w",
+        session_id="r",
+        payload={"text_representation": {"available": True}},
+    )
+    with pytest.raises(PreservedMaterialMeasurementError, match="preserves no decoded text"):
+        measure_occupancy([lying], declared=_declared(), occupant_of=_first_word)

@@ -628,35 +628,9 @@ def measure_occupancy(
     consumed: list[str] = []
     measured = 0
     for event in _distinct_population(occurrences):
-        if event.kind != INGRESS_OCCURRED_KIND:
-            raise PreservedMaterialMeasurementError(
-                f"only preserved ingress occurrences may be measured: {event.kind}"
-            )
+        text = _measurable_text(event)
         consumed.append(event.id)
-        text = event.payload.get("text_representation")
-        if text is None:
-            # An occurrence recorded before `#2490` carries no such coordinate,
-            # and carried `decoded_text` exactly when a representation was
-            # available, because no occurrence without one was recorded at all.
-            # Reading its absence that way is what keeps already-preserved
-            # material measurable; it is not a default for new occurrences,
-            # which always declare it.
-            text = {"available": "decoded_text" in event.payload}
-        if not isinstance(text, dict) or not text.get("available"):
-            # A declared measurement over the complete ingress population cannot
-            # measure text in material that has none. It refuses rather than
-            # skipping, because skipping would silently narrow the counting
-            # scope the finding goes on to disclose — the scope is part of what
-            # the finding is, and a population measured is not a population
-            # partly measured. `#2490` began preserving material whose text
-            # representation is unavailable; a selection that admits only
-            # text-representable material is its own declared scope and does not
-            # exist yet.
-            raise PreservedMaterialMeasurementError(
-                f"{event.id} preserves material with no available text "
-                "representation, and this measurement measures text"
-            )
-        occupant = occupant_of(event.payload["decoded_text"])
+        occupant = occupant_of(text)
         if occupant is None:
             continue
         measured += 1
@@ -778,9 +752,11 @@ def record_measurement_finding(
 def premise_chain(ledger: EventLedger, event_id: str) -> list[str]:
     """Every finding this one stood on, nearest premise first.
 
-    `05.Testimony:27` requires a consumed input's support basis to be preserved.
-    This is that basis, recovered: a finding cannot be read as independent of
-    what bounded it.
+    Not the runtime's `SupportBasis` representation. This is the chain of
+    recorded premise findings one finding stood on, recovered nearest premise
+    first. It preserves that dependency relation and claims nothing about the
+    producing act's support basis; the prose called it that before the two
+    were distinguished and kept calling it that after.
     """
 
     chain: list[str] = []
