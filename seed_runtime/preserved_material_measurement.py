@@ -14,11 +14,17 @@ and `01.External:28` grants the finding and states its conditions:
 
 Those three disclosures are required fields here, not commentary.
 
-**What this consumes is Seed's own preserved material.** Occurrences come from
-the ledger, having been recorded through operator ingress with
-``authority="occurrence-only; meaning Unknown"``. Reading a file directly and
-measuring it produces a result that vanishes with the process and that no later
-act can consume; `#2368` did that and it was withdrawn.
+**What this is for is Seed's own preserved material.** Occurrences recorded
+through operator ingress carry ``authority="occurrence-only; meaning Unknown"``,
+and reading a file directly and measuring it produces a result that vanishes
+with the process and that no later act can consume; `#2368` did that and it was
+withdrawn.
+
+A measurement given a ledger reads its material from that ledger. A measurement
+given occurrences measures what it was handed, which is lawful and weaker: the
+finding then says its material was supplied rather than preserved, and the two
+claims are recorded distinctly. This module used to describe only the first
+while doing both.
 
 **What this produces is recorded.** Each finding is appended to the ledger, so a
 later responsible act may consume it. `05.Testimony:27` permits exactly that: a
