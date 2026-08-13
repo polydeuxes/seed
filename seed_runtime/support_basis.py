@@ -1,9 +1,15 @@
 """A support basis, and why it is not a support enumeration.
 
-`05.Testimony:27` requires a consumed input's support basis to be preserved. It
-does not require that basis to be preserved as a list of every supporting
-occurrence, and until now this runtime preserved it that way — every finding
-carried the complete ordered identity of every occurrence it consumed.
+`05.Testimony:27` requires a consumed input's support basis to be preserved, and
+`05.Testimony.E` bounds it: what a producing act consumed, with no enumeration
+required and **no structure established**. Until now this runtime preserved it as
+a list — every finding carried the complete ordered identity of every occurrence
+it consumed.
+
+**The four parts below are chosen, not recovered.** An earlier version of this
+paragraph read as though the clause supplied them. It does not; it names a
+coordinate that must survive and says nothing about its shape. Each part is
+argued for here on its own merits, and each is open to a better answer.
 
 `#2486` measured what that cost on real material. At 4,000 lines a body, one
 recorded finding is 57,886 bytes and **56,000 of them are that enumeration**:

@@ -252,7 +252,7 @@ def measure_recurrence(
     examined = 0
     carrying = 0
     total = 0
-    for event in occurrences:
+    for event in _distinct_population(occurrences):
         text = _measurable_text(event)
         consumed.append(event.id)
         localities[_locality_of(event)] = None
@@ -290,6 +290,37 @@ def _locality_of(event: Event) -> str:
     return f"workspace:{event.workspace_id};session:{event.session_id}"
 
 
+def _distinct_population(occurrences: Iterable[Event]) -> list[Event]:
+    """The occurrences to measure, refusing a repeated occurrence identity.
+
+    The rule is not `01.External:28`, which requires the bounded scope to be
+    disclosed and says nothing about identity-distinctness. It comes from what
+    ``occurrences_examined`` asserts: a number of occurrences. One preserved
+    occurrence referenced twice is one occurrence, so counting it twice reports
+    a population larger than the one that exists, and every count drawn from it
+    carries that inflation.
+
+    Refused rather than deduplicated. Silently collapsing would decide that the
+    caller meant one, and refusing rather than pretending is the same choice
+    this module makes about material it cannot measure.
+
+    `01.External.E.1` establishes the rule: each counted occurrence is
+    distinguished by exact occurrence identity, and repeated reference to one
+    preserved occurrence does not establish another. That clause was added
+    because this refusal had nothing behind it.
+    """
+
+    population = list(occurrences)
+    seen: set[str] = set()
+    for event in population:
+        if event.id in seen:
+            raise PreservedMaterialMeasurementError(
+                f"{event.id} appears more than once in one measured population"
+            )
+        seen.add(event.id)
+    return population
+
+
 def _measurable_text(event: Event) -> str:
     """The text this occurrence preserved, or a refusal stating why not.
 
@@ -309,6 +340,27 @@ def _measurable_text(event: Event) -> str:
         raise PreservedMaterialMeasurementError(
             f"{event.id} preserves material with no available text "
             "representation, and this measurement measures text"
+        )
+    if "decoded_text" not in event.payload:
+        # The occurrence says a text representation was formed and carries no
+        # decoded text. That is incoherent material, and reading the coordinate
+        # and trusting it would rest the finding on a claim about the material
+        # rather than on the material, surfacing as a KeyError rather than as a
+        # refusal stating what was wrong.
+        #
+        # `text_representation.available` records a *historical* outcome: at
+        # ingress, this decoder formed a text representation. It is not the
+        # present-tense availability `#2496` governs, which is asked of the
+        # holder and never read from the ledger. One word carries both, which
+        # is why this looked at first like a `#2496` violation and is not one.
+        #
+        # This refusal closes the incoherent case only. Whether gating on the
+        # historical coordinate at all is faithful -- an occurrence recording
+        # that no representation was formed, while carrying decoded text, is
+        # still refused by the check above -- remains unresolved here.
+        raise PreservedMaterialMeasurementError(
+            f"{event.id} declares an available text representation but "
+            "preserves no decoded text"
         )
     return event.payload["decoded_text"]
 
@@ -382,7 +434,7 @@ def measure_recurrences(
     examined = 0
     carrying: dict[str, int] = {name: 0 for name in declared}
     total: dict[str, int] = {name: 0 for name in declared}
-    for event in occurrences:
+    for event in _distinct_population(occurrences):
         text = _measurable_text(event)
         consumed.append(event.id)
         localities[_locality_of(event)] = None
@@ -461,7 +513,7 @@ def measure_occupancy(
     counts: dict[str, int] = {}
     consumed: list[str] = []
     measured = 0
-    for event in occurrences:
+    for event in _distinct_population(occurrences):
         if event.kind != INGRESS_OCCURRED_KIND:
             raise PreservedMaterialMeasurementError(
                 f"only preserved ingress occurrences may be measured: {event.kind}"
