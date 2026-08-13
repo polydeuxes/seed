@@ -55,6 +55,17 @@ INGRESS_OCCURRED_KIND = "operator.ingress.ingress_occurred"
 
 MEASUREMENT_CONVENTION = "preserved_material_declared_measurement_v1"
 
+# What a finding may say about where the material it measured came from. The
+# measuring act knows which of these is true and nothing carried it forward, so
+# recording stated the stronger one for every finding. A measurement given a
+# ledger reads its material from that ledger; a measurement given occurrences
+# measures what it was handed, and no later act can establish that those
+# objects carried what the preserved occurrences of the same identity carry.
+MATERIAL_READ_FROM_LEDGER = "preserved operator-ingress occurrences"
+MATERIAL_AS_SUPPLIED = (
+    "occurrences as supplied to this measurement, not read from a ledger"
+)
+
 BOUNDARY_NOTES: tuple[str, ...] = (
     "A finding reports a count within its stated scope and nothing further.",
     "Recurrence establishes that a representation occurs more than once only.",
@@ -132,6 +143,10 @@ class MeasurementFinding:
     # coordinate for it. `#2486` measured why: copying the population into
     # every finding of a body cost 97% of the stored finding.
     consumed_event_ids: tuple[str, ...]
+    # Where the measured material came from. Defaults to the weaker claim:
+    # a finding that did not read from a ledger cannot say it measured
+    # preserved material, and silence must not read as the stronger one.
+    material_provenance: str = MATERIAL_AS_SUPPLIED
     boundary_notes: tuple[str, ...] = field(default=BOUNDARY_NOTES)
     convention: str = MEASUREMENT_CONVENTION
 
@@ -212,6 +227,10 @@ class RecurrenceFinding:
     # How many times it occurred in total across them. This is the recurrence.
     total_count: int
     consumed_event_ids: tuple[str, ...]
+    # Where the measured material came from. Defaults to the weaker claim:
+    # a finding that did not read from a ledger cannot say it measured
+    # preserved material, and silence must not read as the stronger one.
+    material_provenance: str = MATERIAL_AS_SUPPLIED
     # The basis of the population consumed, where one was declared. Every
     # finding of one pass stands on the same population, so preserving the
     # enumeration in each copies that population once per representation.
@@ -274,7 +293,10 @@ def measure_recurrence(
     examined = 0
     carrying = 0
     total = 0
-    for event in _as_preserved(_distinct_population(occurrences), preserved_in):
+    walked, material_provenance = _as_preserved(
+        _distinct_population(occurrences), preserved_in
+    )
+    for event in walked:
         text = _measurable_text(event)
         consumed.append(event.id)
         localities[_locality_of(event)] = None
@@ -290,6 +312,7 @@ def measure_recurrence(
             total += count
     return RecurrenceFinding(
         declared=declared,
+        material_provenance=material_provenance,
         consumed_localities=tuple(localities),
         occurrences_examined=examined,
         occurrences_carrying=carrying,
@@ -352,7 +375,7 @@ def _distinct_population(occurrences: Iterable[Event]) -> list[Event]:
 
 def _as_preserved(
     population: "list[Event]", ledger: EventLedger | None
-) -> "list[Event]":
+) -> "tuple[list[Event], str]":
     """The preserved occurrences these identities name, where a ledger says so.
 
     An `Event` is directly constructible with any id and any payload, so an
@@ -368,7 +391,7 @@ def _as_preserved(
     """
 
     if ledger is None:
-        return population
+        return population, MATERIAL_AS_SUPPLIED
     preserved = []
     for event in population:
         recorded = ledger.get(event.id)
@@ -378,7 +401,7 @@ def _as_preserved(
                 "reads its material from"
             )
         preserved.append(recorded)
-    return preserved
+    return preserved, MATERIAL_READ_FROM_LEDGER
 
 
 def _measurable_text(event: Event) -> str:
@@ -497,7 +520,9 @@ def measure_recurrences(
     examined = 0
     carrying: dict[str, int] = {name: 0 for name in declared}
     total: dict[str, int] = {name: 0 for name in declared}
-    walked = _as_preserved(_distinct_population(occurrences), preserved_in)
+    walked, material_provenance = _as_preserved(
+        _distinct_population(occurrences), preserved_in
+    )
     if support_basis is not None and support_recovery is not None:
         # A finding claiming support from preserved occurrences must have
         # measured the material those occurrences carry. An `Event` can be
@@ -617,6 +642,7 @@ def measure_recurrences(
     return tuple(
         RecurrenceFinding(
             declared=declaration,
+            material_provenance=material_provenance,
             consumed_localities=consumed_localities,
             occurrences_examined=examined,
             occurrences_carrying=carrying[representation],
@@ -670,7 +696,10 @@ def measure_occupancy(
     counts: dict[str, int] = {}
     consumed: list[str] = []
     measured = 0
-    for event in _as_preserved(_distinct_population(occurrences), preserved_in):
+    walked, material_provenance = _as_preserved(
+        _distinct_population(occurrences), preserved_in
+    )
+    for event in walked:
         text = _measurable_text(event)
         consumed.append(event.id)
         occupant = occupant_of(text)
@@ -684,6 +713,7 @@ def measure_occupancy(
     )
     return MeasurementFinding(
         declared=declared,
+        material_provenance=material_provenance,
         positions_measured=measured,
         occupancies=ordered,
         consumed_event_ids=tuple(consumed),
@@ -710,7 +740,13 @@ def _measurement_finding_payload(
             "identity": f"measurement:{finding.declared.representation_measured}",
             "content": finding.declared.counting_scope,
             "standing": "measured",
-            "source_provenance": "preserved operator-ingress occurrences",
+            # Stated from the finding rather than asserted here. The measuring
+            # act knows whether it read its material from a ledger, and this
+            # said "preserved operator-ingress occurrences" for every finding
+            # regardless -- inventing a provenance the act had declined.
+            "source_provenance": getattr(
+                finding, "material_provenance", MATERIAL_AS_SUPPLIED
+            ),
             "responsibility": "declared-measurement-over-preserved-material",
             "authority_warrant": (
                 "measurement evidence only; establishes no meaning, relation, "
