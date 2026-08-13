@@ -114,6 +114,9 @@ def test_sqlite_persisted_id_prefixes_exclude_deleted_planning_artifacts():
         "operator_response_comparison",
         "operator_alternative_identification",
         "presented_alternative",
+        # The exact pair-Measurement Act identity is carried durably by its
+        # Applicability, responsible-Act Evidence, and result occurrence.
+        "adjacent_byte_pair_measurement_act",
     )
 
 
