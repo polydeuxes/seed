@@ -8,8 +8,6 @@ from seed_runtime.byte_measurement import (
     BYTE_PAIR_MEASUREMENT_RECORDED_KIND,
     BYTE_PAIR_APPLICABILITY_RECORDED_KIND,
     BYTE_PAIR_MEASUREMENT_CONVENTION,
-    BYTE_PAIR_RESPONSIBILITY_CONVENTION,
-    BYTE_PAIR_RESPONSIBILITY_RESULT_COORDINATES,
     BYTE_PAIR_RESULT_COORDINATES,
     BYTE_MEASUREMENT_RECORDED_KIND,
     BYTE_MEASUREMENT_CONVENTION,
@@ -17,13 +15,11 @@ from seed_runtime.byte_measurement import (
     BYTE_MEASUREMENT_RULE,
     ByteMeasurementError,
     RESPONSIBILITY_UNRECOVERED,
-    SEED_STANDING_RESPONSIBILITY,
+    SEED_NATIVE_MEASUREMENT_RESPONSIBLE_BOUNDARY,
     _measure_byte_counts_through,
     _identity,
     _pair_input_applicability,
     get_recorded_pair_input_applicability,
-    get_recorded_pair_act_proposal,
-    get_recorded_pair_responsibility_standing,
     assertions_of_recorded_byte_measurement,
     assertions_of_recorded_adjacent_byte_pair_measurement,
     input_applicability_of_recorded_adjacent_byte_pair_measurement,
@@ -528,30 +524,12 @@ def test_applicability_identity_is_bound_to_one_exact_act_occurrence():
     first = _pair_input_applicability(
         source,
         target_act_id="pair-act-1",
-        responsibility_standing_ref={
-            "recorded_occurrence_id": "responsibility-1",
-            "responsibility_identity": "responsibility-standing-1",
-        },
-        target_act_proposal_ref={
-            "recorded_occurrence_id": "proposal-1",
-            "proposal_identity": "proposal-standing-1",
-            "target_act_id": "pair-act-1",
-        },
         consumer_workspace_id="w",
         measurement_session_id="measurement",
     )
     second = _pair_input_applicability(
         source,
         target_act_id="pair-act-2",
-        responsibility_standing_ref={
-            "recorded_occurrence_id": "responsibility-2",
-            "responsibility_identity": "responsibility-standing-2",
-        },
-        target_act_proposal_ref={
-            "recorded_occurrence_id": "proposal-2",
-            "proposal_identity": "proposal-standing-2",
-            "target_act_id": "pair-act-2",
-        },
         consumer_workspace_id="w",
         measurement_session_id="measurement",
     )
@@ -573,15 +551,6 @@ def test_pair_applicability_has_real_non_applicable_and_unknown_outcomes():
     inapplicable = _pair_input_applicability(
         source,
         target_act_id="pair-act-other-workspace",
-        responsibility_standing_ref={
-            "recorded_occurrence_id": "responsibility-inapplicable",
-            "responsibility_identity": "responsibility-standing-inapplicable",
-        },
-        target_act_proposal_ref={
-            "recorded_occurrence_id": "proposal-inapplicable",
-            "proposal_identity": "proposal-standing-inapplicable",
-            "target_act_id": "pair-act-other-workspace",
-        },
         consumer_workspace_id="other",
         measurement_session_id="measurement",
     )
@@ -598,15 +567,6 @@ def test_pair_applicability_has_real_non_applicable_and_unknown_outcomes():
     unknown = _pair_input_applicability(
         unknown_source,
         target_act_id="pair-act-unknown-authority",
-        responsibility_standing_ref={
-            "recorded_occurrence_id": "responsibility-unknown",
-            "responsibility_identity": "responsibility-standing-unknown",
-        },
-        target_act_proposal_ref={
-            "recorded_occurrence_id": "proposal-unknown",
-            "proposal_identity": "proposal-standing-unknown",
-            "target_act_id": "pair-act-unknown-authority",
-        },
         consumer_workspace_id="w",
         measurement_session_id="measurement",
     )
@@ -656,7 +616,7 @@ def test_negative_pair_applicability_is_recorded_and_the_target_act_does_not_occ
     )
 
 
-def test_pair_responsibility_standing_is_independently_recorded_before_applicability():
+def test_seed_native_measurement_and_result_assertions_keep_distinct_responsibilities():
     ledger = _ledger("ta\n")
     source = _byte_source(ledger)
     result = record_adjacent_byte_pair_count_layer(
@@ -665,90 +625,19 @@ def test_pair_responsibility_standing_is_independently_recorded_before_applicabi
         workspace_id="w",
         recording_session_id="measurement",
     )
-    applicability_event = ledger.get(result.payload["input_applicability_event_id"])
-    responsibility_ref = applicability_event.payload["responsibility_standing_ref"]
-    recovered_responsibility = get_recorded_pair_responsibility_standing(
-        ledger, responsibility_ref["recorded_occurrence_id"]
-    )
-    responsibility_event = ledger.get(responsibility_ref["recorded_occurrence_id"])
-    proposal_ref = applicability_event.payload["target_act_proposal_ref"]
-    recovered_proposal = get_recorded_pair_act_proposal(
-        ledger, proposal_ref["recorded_occurrence_id"]
+    applicability = get_recorded_pair_input_applicability(
+        ledger, result.payload["input_applicability_event_id"]
     )
 
-    assert recovered_responsibility == responsibility_ref
-    assert "target_act_id" not in responsibility_event.payload
-    assert "source_assertion_ref" not in responsibility_event.payload
-    assert "bounded_work" not in responsibility_event.payload
-    assert responsibility_event.payload["responsible_boundary"] == "Seed"
-    assert responsibility_event.payload["subject_or_material_addressed"]
-    assert responsibility_event.payload["exact_responsible_act"]
-    assert responsibility_event.payload["authority"]
-    assert responsibility_event.payload["evidence"]
-    assert responsibility_event.payload["purpose"]
-    assert responsibility_event.payload["scope"] == {"workspace_id": "w"}
-    assert responsibility_event.payload["locality"] == "unresolved"
-    assert "input_source" not in responsibility_event.payload
-    assert "provenance" not in responsibility_event.payload
-    assert "result_standing_boundary" not in responsibility_event.payload
-    responsibility_production = ledger.get(
-        responsibility_event.payload["production_evidence_id"]
+    assert result.payload["responsible_boundary"] == (
+        SEED_NATIVE_MEASUREMENT_RESPONSIBLE_BOUNDARY
     )
-    assert responsibility_production.payload["dimensions"]["responsibility"] == (
-        SEED_STANDING_RESPONSIBILITY
+    assert applicability["responsible_boundary"] == (
+        SEED_NATIVE_MEASUREMENT_RESPONSIBLE_BOUNDARY
     )
-    assert recovered_proposal == proposal_ref
-    assert proposal_ref["source_assertion_ref"] == (
-        applicability_event.payload["input_assertion_ref"]
-    )
-    assert proposal_ref["responsibility_standing_ref"] == responsibility_ref
-    assert applicability_event.payload["responsibility_standing_ref"] == (
-        recovered_responsibility
-    )
-
-
-def test_pair_responsibility_recovery_refuses_a_different_self_consistent_r():
-    ledger = _ledger("ta\n")
-    source = _byte_source(ledger)
-    result = record_adjacent_byte_pair_count_layer(
-        ledger,
-        source_measurement_event_id=source.id,
-        workspace_id="w",
-        recording_session_id="measurement",
-    )
-    applicability = ledger.get(result.payload["input_applicability_event_id"])
-    responsibility_id = applicability.payload["responsibility_standing_ref"][
-        "recorded_occurrence_id"
-    ]
-    responsibility = ledger.get(responsibility_id)
-    responsibility.payload["exact_responsible_act"]["produce_only"] = [
-        "some other Standing"
-    ]
-    identity_content = responsibility.payload["dimensions"]["content"]
-    identity_content["exact_responsible_act"] = responsibility.payload[
-        "exact_responsible_act"
-    ]
-    responsibility.payload["dimensions"]["identity"] = (
-        "byte-pair-responsibility:"
-        + hashlib.sha256(
-            json.dumps(
-                identity_content,
-                ensure_ascii=False,
-                sort_keys=True,
-                separators=(",", ":"),
-            ).encode("utf-8")
-        ).hexdigest()
-    )
-    produced = {
-        name: responsibility.payload[name]
-        for name in BYTE_PAIR_RESPONSIBILITY_RESULT_COORDINATES
-    }
-    ledger.get(responsibility.payload["production_evidence_id"]).payload[
-        "production_commitment"
-    ] = production_commitment(BYTE_PAIR_RESPONSIBILITY_CONVENTION, produced)
-
-    with pytest.raises(ByteMeasurementError, match="unlawful Responsibility Standing"):
-        get_recorded_pair_responsibility_standing(ledger, responsibility_id)
+    assert result.payload["producer"] == RESPONSIBILITY_UNRECOVERED
+    for assertion in result.payload["assertions"]:
+        assert assertion["dimensions"]["responsibility"] != result.payload["responsibility"]
 
 
 def test_pair_act_identity_is_not_its_occurrence_identity():
@@ -762,14 +651,10 @@ def test_pair_act_identity_is_not_its_occurrence_identity():
     )
 
     assert result.payload["target_act_id"] != result.payload["act_occurrence_id"]
-    proposal = get_recorded_pair_act_proposal(
-        ledger,
-        result.payload["input_applicability"]["target_act_proposal_ref"][
-            "recorded_occurrence_id"
-        ],
+    assert result.payload["input_applicability"]["target_act_id"] == (
+        result.payload["target_act_id"]
     )
-    assert proposal["target_act_id"] == result.payload["target_act_id"]
-    assert "act_occurrence_id" not in proposal
+    assert result.payload["input_applicability"]["target_act_occurrence_id"] is None
 
 
 def test_pair_recovery_refuses_more_carrying_occurrences_than_total_pairs():
