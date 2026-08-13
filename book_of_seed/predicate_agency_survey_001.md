@@ -1,0 +1,292 @@
+# Predicate agency in Book proper: survey 001
+
+## 1. Executive
+
+The campaign has tested nouns. A phantom ontology can survive in the
+**predicate** instead. This survey looked there.
+
+224 subject-to-verb pairs were extracted across Book proper. **One is a
+defect.** An earlier version of this report proposed five, on a test that
+does not hold.
+
+```text
+withdrawn rule
+    non-acting subject + movement-looking verb = defect
+```
+
+Active law itself permits non-acting material to take such verbs.
+`01.Kinds:10`: an artifact's "shape can **preserve** identity, provenance,
+result, uncertainty, and boundaries" and its "fields **carry** an assertion
+made by another responsibility." Classifying those as phantom Acts would
+contradict the grammar the survey is meant to enforce.
+
+The distinction that does the work is **what the predicate claims**, not what
+the subject is:
+
+```text
+eventive       claims an occurrence happened
+               → requires a responsible Act or occurrence as subject
+
+stative        describes what the subject carries, contains, represents,
+relational     requires, or asserts
+               → the subject need not be an actor at all
+```
+
+Under that test, `preserve`, `carry`, `assert`, `require`, and `state` are
+stative when they describe content, and only `establish`, `warrant`, `select`,
+`admit`, `consume`, `emit`, and their kin are eventive.
+
+## 2. The one defect — since repaired
+
+**Status: fixed by `#2369`.** All three instances of this construction now read
+"a separate responsible occurrence warrants the meaning relation that …", and
+`relation establishes` occurs zero times in active law. The analysis below is
+kept because it is the reason the repair was warranted.
+
+```text
+03.Prerequisite:34
+    a separately warranted meaning relation establishes that the
+    candidate expresses the bounded goal proposition
+```
+
+`establishes` is eventive. Establishment is an occurrence, and a relation is
+not one.
+
+Relation grammar settles it without appeal to English word order.
+`01.Kinds:28` makes a relation "its own bounded claim subject" and keeps
+candidate relation, relation testimony, and established relation standing
+distinct. `01.Kinds:32` names what does the establishing: "A responsible
+occurrence warrants only the bounded relation supported by claim-appropriate
+authority, evidence, scope, provenance, conflicts, loss, and preserved
+Unknowns."
+
+So the relation is *warranted by* an occurrence. It does not establish
+anything. What the relation **carries** is the content:
+
+```text
+relation content     the candidate expresses the bounded goal proposition
+responsible          warrants that relation
+occurrence
+```
+
+The clause collapses those, giving the relation its warranting occurrence's
+verb.
+
+## 3. Reclassified — not defects
+
+Four proposals from the earlier version are withdrawn.
+
+**`the Stop preserves that reason`** — `08.Stopping:12`. The same paragraph
+distinguishes the two readings itself: it opens "the **stopping occurrence**
+preserves the exact supported reason" and later says "the **Stop** preserves
+that reason." The first is eventive and correctly attributed; the second is
+carrier preservation, which `01.Kinds:10` explicitly permits. Not a defect.
+
+**`the View asserts only the standing its declared contract states`** —
+`06.Representations:22`. Both verbs are stative. `asserts` describes what the
+View's content claims, which is the Book's consistent usage for Views, and
+`states` describes what a contract contains. Neither claims an occurrence.
+
+That second half also exposed a contradiction in the earlier version, which
+called `contract states` a defect in one section while allowing
+document-subject `states` as ordinary English in another. The stative reading
+resolves it: a contract is exactly the kind of subject whose `states` is
+ordinary.
+
+**`A Demand states what result ... is required`** — `03.Demands:9`. `states`
+here is stative, describing the Demand's content, so no speech Act is claimed
+and the earlier version's reading was wrong.
+
+It remains a **rewrite candidate on separate grounds.** The sentence is
+Demand's own definition, and it defines a Standing by what it does rather than
+by what it is. Active law elsewhere treats Demand as bounded required-result
+Standing and locates the movement in establishment. A verbless definition is
+available:
+
+```text
+A Demand is bounded required-result Standing for an exact result,
+relation, clarification, inquiry, authority, transformation, competency,
+or other bounded condition, under an exact Responsibility and Scope.
+```
+
+That is a clarity improvement, not a correction of an ontology error, and this
+report does not propose it as an amendment.
+
+## 4. Confirmed non-defects
+
+**Subjects that act.** `responsible occurrence warrants`,
+`identification act consumes`, `representation occurrence forms`,
+`response occurrence supplies`, `establishment boundary supplies`,
+`identification determines`. Eventive verbs, acting subjects.
+
+**Requirement statements.** `Fact standing requires claim-appropriate evidence
+support`, `Authorization standing requires a separately warranted authority
+boundary`. Stative: what is needed for the standing to hold.
+
+**`evidence supports X`.** Stative relational. Support is a relation the
+evidence stands in, not an act it performs.
+
+## 5. One current witness
+
+`05.Provenance:42` shows a clause handling a carrier and an act together
+correctly. It is a witness, not a template: `artifact` is itself under
+question, and a rule should not be anchored to a word that may leave active
+law.
+
+> An artifact may preserve a meaning assertion, its attributed source, support
+> or warrant references, scope, and limits. The artifact carries that
+> assertion; **it does not perform the warranting act.**
+
+Stative verb for the carrier, explicit denial of the eventive one.
+
+The rule does not depend on this clause. `08.Stopping:12` demonstrates the
+same distinction using one verb in both roles within a single paragraph —
+`the stopping occurrence preserves` beside `the Stop preserves` — and the §2
+defect stands on relation grammar alone.
+
+## 6. Consequence for the lexical gate
+
+### 6.1 A noun can be wording too
+
+This survey looked for phantom Acts hiding in predicates. `#2384` found the
+same failure in a noun, which this survey's method would not have caught.
+
+`01.External:15` contains the phrase "a bounded translation". That phrase was
+then used — in `#2384`'s own ownership table — as the name of an act with a
+producer. It is not one. `translat*` occurs 34 times across six chapters and no
+clause states what a translation is, names a translation occurrence, or names a
+translation boundary. All five capitalised occurrences are sentence-initial.
+
+### 6.2 The discriminator, corrected
+
+**[operator correction]** A first version of this section asked whether active
+law *defines* the term, and cleared `learning` on that basis. The operator
+refused it: **name its responsibilities. You cannot.**
+
+That is right, and the failure is instructive. **A definition describes a
+thing. It does not supply an owner.** Describing is precisely what active law
+does to learning without ever owning it.
+
+**The test:**
+
+```text
+name its Responsibility
+    the owner
+    the act that produces it
+    the standing that production establishes
+
+    can be named  ->  established vocabulary, however ordinary it sounds
+    cannot        ->  wording, and it must not be used as the doer
+```
+
+`05.Recording.A` passes: a recording boundary may create retrievable
+assertion-bearing material, and "the produced standing is that a record exists
+and preserves an attributed assertion". Owner, act, standing.
+
+**[active law] `learning` fails it.** Eighteen sentences, **eleven pure
+denial**:
+
+```text
+retained history is not learning
+changed stored data is not learning
+a new current value is not learning
+trajectory is not learning automatically
+an interaction episode is not learning automatically
+Learning establishment is not storage mutation, projection replacement,
+  a new current value, model training by identity, a universal Learning
+  object, or adaptive reliance
+```
+
+The remainder are topic lists — "Learning may concern condition, trajectory,
+limitations in evidence support, gap, capability…" — one passive definition,
+and one that says Learning establishment "**may be understood as**" constrained
+constitutional movement, which is a reading aid rather than an establishment.
+
+**A search for any clause naming a Learning owner, boundary, producer,
+occurrence, responsibility, or act returns nothing.** Active law separately
+denies "a universal Learning object" and denies authorizing "general language
+learning".
+
+**[inference]** This is the negative-grammar pattern at its purest: a word the
+Book talks *about* extensively and never puts anyone in charge of. Eleven
+denials establish what it is not; nothing establishes who does it.
+
+**Withdrawn.** The earlier note offered `Learning` being capitalised
+mid-sentence as evidence for standing. It is not evidence either way, and
+`Remembering` was the same shape.
+
+```text
+term          responsibility nameable?              disposition
+translation   no                                    ban
+learning      no                                    ban
+examination   n/a -- zero occurrences               guard the noun only;
+                                                    `examines` is lawful prose
+                                                    with applicability as its
+                                                    subject
+assertion     no -- but 01.Kinds:28 REQUIRES `the   unresolved; a required
+              relation assertion` as a coordinate   coordinate with no owner
+                                                    is a different defect from
+                                                    a word with no owner
+```
+
+**[inference]** The discriminator is neither part of speech, nor familiarity,
+nor whether a definition exists. It is whether a clause puts someone in charge.
+
+### 6.3 The `state` pattern
+
+The `state` pattern must not be finalised on this survey's evidence.
+
+```text
+\bstate\b     bans the noun; leaves states and stated
+\bstates?\b   conflates the plural noun with the stative verb
+```
+
+`states` is stative and lawful wherever it describes content — a contract, a
+document, a Demand. The retired abstraction is the **noun**. A lexical gate
+cannot separate them, so it should ban the noun and leave the verb, and the
+Demand rewrite should be made on clarity grounds rather than by lint.
+
+## 7. What this does not establish
+
+**That the noun test in §6.1 was performed here.** This survey extracted
+subject-to-verb pairs. The `translation` finding comes from `#2384` and is
+recorded here because it changes what the gate should ban, not because this
+survey found it. A systematic noun pass has not been run.
+
+**That the survey is complete.** Forty-one verbs were tested. Passive
+constructions and nominalised acts — "the establishment of", "upon
+consumption", "after admission" — were not examined, and nominalisation is the
+obvious next hiding place, since it makes an act look like a noun and evades
+both a noun census and a verb survey.
+
+**That the eventive/stative boundary is settled for every verb.** `assert`,
+`preserve`, and `state` are classified here from their use in context. A verb
+can be eventive in one clause and stative in another, so the classification is
+per-clause and not a vocabulary list.
+
+**That `03.Prerequisite:34` should be rewritten in any particular way.** §2
+establishes that the relation is given its warranting occurrence's verb. What
+replaces it is a per-clause judgement not made here, and no amendment is
+proposed.
+
+**Anything about Demand's constitutional status.** §3 proposes wording for a
+sentence, not a recovery.
+
+## 8. Method note
+
+The finding came from an operator observation about one word in a lint
+pattern — that `states` in "a Demand states what result" is a verb, and that
+verbs had never been surveyed.
+
+The correction came from the opposite direction. The first version of this
+survey built a rule from grammatical subject alone, which produced five
+findings, four of them wrong, and one internal contradiction where the same
+verb was a defect in one section and ordinary English in another. **A rule
+that classifies from form rather than from claim will always overproduce**,
+which is the same failure as reading constitutional standing off
+capitalisation.
+
+The campaign's apparatus remains noun-shaped, and that observation survives:
+a Book could pass every cat test, census, and lexical gate with a clean noun
+inventory while carrying a phantom ontology in its predicates. But locating
+one requires asking what a predicate *claims*, not what its subject *is*.
