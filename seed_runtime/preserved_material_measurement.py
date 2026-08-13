@@ -198,11 +198,13 @@ class RecurrenceFinding:
     # The localities the consumed occurrences carried. `06.Standing.B` requires
     # an act consuming material distinguished by locality to preserve the
     # locality of what it consumed, and to keep that distinct from the locality
-    # it records into. Recording stamps the recording locality; without this
+    # it records into. `None` in this tuple is an occurrence that carried no
+    # locality, preserved rather than filled in.
+    # Recording stamps the recording locality; without this
     # coordinate a finding drawn from two localities and recorded into a third
     # asserts only the third, and the consumed localities survive as nothing
     # but event identities a later reader would have to re-derive.
-    consumed_localities: tuple[str, ...]
+    consumed_localities: tuple[str | None, ...]
     # Preserved occurrences the measurement ran over. The denominator.
     occurrences_examined: int
     # How many of them carried the representation at least once.
@@ -267,7 +269,7 @@ def measure_recurrence(
     """
 
     consumed: list[str] = []
-    localities: dict[str, None] = {}
+    localities: dict[str | None, None] = {}
     examined = 0
     carrying = 0
     total = 0
@@ -295,17 +297,24 @@ def measure_recurrence(
     )
 
 
-def _locality_of(event: Event) -> str:
-    """The locality coordinates this occurrence carries, in the recorded form.
+def _locality_of(event: Event) -> str | None:
+    """The locality this occurrence carries, or nothing where it carries none.
 
-    Only the coordinates present. `session_id` is optional, and rendering its
-    absence as ``session:None`` would turn a missing witness into an asserted
-    locality value. `06.Standing.B` holds that occurrences *may* carry a
-    locality; it does not authorize inventing one where none was carried.
+    `06.Standing.B` holds that occurrences *may* carry a bounded locality
+    coordinate. Where one is not carried, this returns ``None``, and a finding
+    records that absence rather than a value standing in for it.
+
+    An earlier version rendered a missing `session_id` as ``session:None``, and
+    the version after it returned ``workspace:w``. Both replaced an absent
+    coordinate with an asserted one: the first invented a locality named None,
+    the second answered the locality question with the workspace, which
+    `06.Standing.A` lists as a different member of the same boundary. Same
+    workspace does not mean same locality, so the workspace cannot stand in for
+    a locality that was not carried.
     """
 
     if event.session_id is None:
-        return f"workspace:{event.workspace_id}"
+        return None
     return f"workspace:{event.workspace_id};session:{event.session_id}"
 
 
@@ -451,7 +460,7 @@ def measure_recurrences(
             f"disclose the same counting scope; got {len(scopes)}"
         )
     consumed: list[str] = []
-    localities: dict[str, None] = {}
+    localities: dict[str | None, None] = {}
     examined = 0
     carrying: dict[str, int] = {name: 0 for name in declared}
     total: dict[str, int] = {name: 0 for name in declared}

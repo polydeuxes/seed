@@ -791,10 +791,10 @@ def test_a_finding_preserves_the_localities_it_consumed(recurrence_occurrences):
     )
 
 
-def test_an_occurrence_carrying_no_session_locality_asserts_none(
+def test_an_occurrence_carrying_no_locality_records_the_absence(
     recurrence_occurrences,
 ):
-    """Absence of the witness is not an asserted locality value."""
+    """Absence of the coordinate is preserved, not filled in."""
 
     ledger, _ = recurrence_occurrences
     without_session = Event(
@@ -812,8 +812,9 @@ def test_an_occurrence_carrying_no_session_locality_asserts_none(
         declared=_recurrence_declared("the"),
         occurrences_of=_counts("the"),
     )
-    assert finding.consumed_localities == ("workspace:w",)
-    assert "None" not in finding.consumed_localities[0]
+    # No locality was carried, so none is recorded. The workspace is a
+    # different member of `06.Standing.A`'s boundary and cannot stand in.
+    assert finding.consumed_localities == (None,)
 
 
 def test_batch_and_single_survive_the_recording_boundary_identically(
