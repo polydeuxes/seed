@@ -34,6 +34,8 @@ import pytest
 
 from seed_runtime.events import EventLedger
 from seed_runtime.preserved_material_measurement import (
+    MATERIAL_AS_SUPPLIED,
+    MATERIAL_READ_FROM_LEDGER,
     MEASUREMENT_RECORDED_KIND,
     RecurrenceFinding,
     DeclaredMeasurement,
@@ -1272,3 +1274,72 @@ def test_carrying_a_basis_no_longer_exempts_a_finding_from_the_recorder():
         record_measurement_finding(
             ledger, workspace_id="w", session_id="r", finding=attached
         )
+
+
+def test_a_finding_carries_where_its_material_came_from(recurrence_occurrences):
+    ledger, occurrences = recurrence_occurrences
+    unbound = measure_recurrence(
+        occurrences, declared=_recurrence_declared("the"), occurrences_of=_counts("the")
+    )
+    bound = measure_recurrence(
+        occurrences,
+        declared=_recurrence_declared("the"),
+        occurrences_of=_counts("the"),
+        preserved_in=ledger,
+    )
+    assert unbound.material_provenance == MATERIAL_AS_SUPPLIED
+    assert bound.material_provenance == MATERIAL_READ_FROM_LEDGER
+    # Stated once, where the recorder reads it. Carrying it in the finding
+    # payload as well would be two representations of one coordinate.
+    assert "material_provenance" not in unbound.to_json_dict()
+
+
+def test_the_recorder_states_the_provenance_the_measurement_declared(
+    recurrence_occurrences,
+):
+    """The blocker: a real Act over unbound material, recorded as preserved."""
+
+    ledger, occurrences = recurrence_occurrences
+    forged = [
+        Event(
+            id=e.id,
+            kind=e.kind,
+            workspace_id="w",
+            session_id="r",
+            payload={
+                "decoded_text": "zebra zebra",
+                "material_origin": "operator",
+                "text_representation": {"available": True},
+            },
+        )
+        for e in occurrences
+    ]
+    # A lawful measurement, over material the ledger does not carry, with
+    # identities the ledger does.
+    finding = measure_recurrence(
+        forged,
+        declared=_recurrence_declared("zebra"),
+        occurrences_of=_counts("zebra"),
+    )
+    assert finding.total_count == 6
+    event = record_measurement_finding(
+        ledger, workspace_id="w", session_id="r", finding=finding
+    )
+    # It records -- the identities exist and the Act occurred -- but it no
+    # longer claims the material was preserved.
+    assert event.payload["dimensions"]["source_provenance"] == MATERIAL_AS_SUPPLIED
+    assert "preserved" not in event.payload["dimensions"]["source_provenance"]
+
+    bound = measure_recurrence(
+        occurrences,
+        declared=_recurrence_declared("the"),
+        occurrences_of=_counts("the"),
+        preserved_in=ledger,
+    )
+    recorded = record_measurement_finding(
+        ledger, workspace_id="w", session_id="r", finding=bound
+    )
+    assert (
+        recorded.payload["dimensions"]["source_provenance"]
+        == MATERIAL_READ_FROM_LEDGER
+    )
