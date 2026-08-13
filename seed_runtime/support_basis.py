@@ -235,6 +235,17 @@ class SupportRecovery:
         self.reads = 0
         self.reuses = 0
 
+    @property
+    def ledger(self) -> EventLedger:
+        """The ledger this recovery reads.
+
+        Exposed so an act that verifies a basis against the ledger can also
+        read the occurrences that basis selects, rather than measuring objects
+        a caller supplied and calling them those occurrences.
+        """
+
+        return self._ledger
+
     def recover(self, basis: SupportBasis) -> tuple[str, ...]:
         key = (
             basis.workspace_id,

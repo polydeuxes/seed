@@ -45,6 +45,11 @@ from seed_runtime.preserved_material_measurement import (
     record_measurement_finding,
 )
 from seed_runtime.operator_console import run_persistent_operator_console
+from seed_runtime.support_basis import (
+    SupportBasisError,
+    SupportRecovery,
+    declare_complete_population,
+)
 
 MATERIAL = (
     "_The_ is the definite article.\n"
@@ -885,4 +890,232 @@ def test_the_positional_path_also_refuses_a_repeated_occurrence(occurrences):
             list(occurrences) + [occurrences[0]],
             declared=_declared(),
             occupant_of=_first_word,
+        )
+
+# --------------------------------------------------------------------------
+# One pass consumes one population, so one basis describes every finding.
+# `#2486` built SupportBasis for exactly this and the recurrence path was
+# written without it.
+# --------------------------------------------------------------------------
+
+
+def _basis_for(occurrences, ledger):
+    return declare_complete_population(
+        workspace_id="w",
+        session_id="r",
+        occurrence_kind=INGRESS_OCCURRED_KIND,
+        boundary=ledger.capture_boundary(),
+        identities=[e.id for e in occurrences],
+    )
+
+
+def test_a_declared_basis_replaces_the_enumeration(recurrence_occurrences):
+    ledger, occurrences = recurrence_occurrences
+    declared = _declared_for("the", "cat")
+    findings = measure_recurrences(
+        occurrences,
+        declared=declared,
+        counts_in=_counts_in(declared),
+        support_basis=_basis_for(occurrences, ledger),
+        support_recovery=SupportRecovery(ledger),
+    )
+    for finding in findings:
+        carried = finding.to_json_dict()
+        assert "consumed_event_ids" not in carried
+        assert carried["consumed_support"]["support_count"] == len(occurrences)
+        # the act still knows what it walked, in memory, while it runs
+        assert finding.consumed_event_ids == tuple(e.id for e in occurrences)
+
+
+def test_a_basis_that_does_not_commit_to_the_population_is_refused(
+    recurrence_occurrences,
+):
+    ledger, occurrences = recurrence_occurrences
+    declared = _declared_for("the")
+    wrong = _basis_for(occurrences[:1], ledger)
+    with pytest.raises(PreservedMaterialMeasurementError, match="does not commit"):
+        measure_recurrences(
+            occurrences,
+            declared=declared,
+            counts_in=_counts_in(declared),
+            support_basis=wrong,
+        )
+
+
+def test_findings_with_and_without_a_basis_agree_on_everything_else(
+    recurrence_occurrences,
+):
+    ledger, occurrences = recurrence_occurrences
+    declared = _declared_for("the", "zebra")
+    plain = measure_recurrences(
+        occurrences, declared=declared, counts_in=_counts_in(declared)
+    )
+    based = measure_recurrences(
+        occurrences,
+        declared=declared,
+        counts_in=_counts_in(declared),
+        support_basis=_basis_for(occurrences, ledger),
+        support_recovery=SupportRecovery(ledger),
+    )
+    for a, b in zip(plain, based):
+        left, right = a.to_json_dict(), b.to_json_dict()
+        left.pop("consumed_event_ids")
+        right.pop("consumed_support")
+        assert left == right
+
+
+def test_a_basis_scoped_to_one_locality_cannot_describe_several(
+    recurrence_occurrences,
+):
+    """Committing to the identities is not describing the population."""
+
+    ledger, occurrences = recurrence_occurrences
+    elsewhere = ledger.append(
+        INGRESS_OCCURRED_KIND,
+        "w",
+        {
+            "decoded_text": "the other body",
+            "material_origin": "operator",
+            "text_representation": {"available": True},
+        },
+        session_id="other",
+    )
+    population = list(occurrences) + [elsewhere]
+    # The basis commits to exactly these identities and declares one locality.
+    basis = declare_complete_population(
+        workspace_id="w",
+        session_id="r",
+        occurrence_kind=INGRESS_OCCURRED_KIND,
+        boundary=ledger.capture_boundary(),
+        identities=[e.id for e in population],
+    )
+    declared = _declared_for("the")
+    with pytest.raises(PreservedMaterialMeasurementError, match="scoped to"):
+        measure_recurrences(
+            population,
+            declared=declared,
+            counts_in=_counts_in(declared),
+            support_basis=basis,
+        )
+
+
+def test_a_basis_selecting_another_occurrence_kind_is_refused(
+    recurrence_occurrences,
+):
+    ledger, occurrences = recurrence_occurrences
+    basis = declare_complete_population(
+        workspace_id="w",
+        session_id="r",
+        occurrence_kind="some.other.kind",
+        boundary=ledger.capture_boundary(),
+        identities=[e.id for e in occurrences],
+    )
+    declared = _declared_for("the")
+    with pytest.raises(PreservedMaterialMeasurementError, match="selects some.other.kind"):
+        measure_recurrences(
+            occurrences,
+            declared=declared,
+            counts_in=_counts_in(declared),
+            support_basis=basis,
+        )
+
+
+def test_a_basis_is_refused_without_the_means_to_establish_its_selection(
+    recurrence_occurrences,
+):
+    ledger, occurrences = recurrence_occurrences
+    declared = _declared_for("the")
+    with pytest.raises(PreservedMaterialMeasurementError, match="requires a SupportRecovery"):
+        measure_recurrences(
+            occurrences,
+            declared=declared,
+            counts_in=_counts_in(declared),
+            support_basis=_basis_for(occurrences, ledger),
+        )
+
+
+def test_a_basis_claiming_completeness_over_a_subset_is_refused(
+    recurrence_occurrences,
+):
+    """The checks on ids, count, locality and kind all pass on a subset."""
+
+    ledger, occurrences = recurrence_occurrences
+    subset = list(occurrences)[:-1]
+    basis = declare_complete_population(
+        workspace_id="w",
+        session_id="r",
+        occurrence_kind=INGRESS_OCCURRED_KIND,
+        boundary=ledger.capture_boundary(),
+        identities=[e.id for e in subset],
+    )
+    declared = _declared_for("the")
+    with pytest.raises(SupportBasisError, match="recovered support"):
+        measure_recurrences(
+            subset,
+            declared=declared,
+            counts_in=_counts_in(declared),
+            support_basis=basis,
+            support_recovery=SupportRecovery(ledger),
+        )
+
+
+def test_a_finding_measures_what_the_ledger_carries_not_what_was_handed_in(
+    recurrence_occurrences,
+):
+    """An Event can be constructed with any id and any payload."""
+
+    ledger, occurrences = recurrence_occurrences
+    # Same identities the ledger preserves; different material.
+    forged = [
+        Event(
+            id=e.id,
+            kind=e.kind,
+            workspace_id="w",
+            session_id="r",
+            payload={
+                "decoded_text": "zebra zebra zebra",
+                "material_origin": "operator",
+                "text_representation": {"available": True},
+            },
+        )
+        for e in occurrences
+    ]
+    declared = _declared_for("zebra")
+    findings = measure_recurrences(
+        forged,
+        declared=declared,
+        counts_in=_counts_in(declared),
+        support_basis=_basis_for(occurrences, ledger),
+        support_recovery=SupportRecovery(ledger),
+    )
+    # The ledger carries no "zebra". The handed-in objects carried nine.
+    assert findings[0].total_count == 0
+
+
+def test_an_identity_the_ledger_does_not_preserve_is_refused(
+    recurrence_occurrences,
+):
+    ledger, occurrences = recurrence_occurrences
+    absent = Event(
+        id="evt_not_in_ledger",
+        kind=INGRESS_OCCURRED_KIND,
+        workspace_id="w",
+        session_id="r",
+        payload={"decoded_text": "the", "text_representation": {"available": True}},
+    )
+    declared = _declared_for("the")
+    basis = declare_complete_population(
+        workspace_id="w",
+        session_id="r",
+        occurrence_kind=INGRESS_OCCURRED_KIND,
+        boundary=ledger.capture_boundary(),
+        identities=[absent.id],
+    )
+    with pytest.raises(Exception, match="not preserved|recovered support"):
+        measure_recurrences(
+            [absent],
+            declared=declared,
+            counts_in=_counts_in(declared),
+            support_basis=basis,
+            support_recovery=SupportRecovery(ledger),
         )
