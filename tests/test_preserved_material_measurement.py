@@ -37,6 +37,7 @@ from seed_runtime.preserved_material_measurement import (
     MATERIAL_AS_SUPPLIED,
     RESPONSIBILITY_UNRECOVERED,
     MATERIAL_READ_FROM_LEDGER,
+    MEASUREMENT_PRODUCED_KIND,
     MEASUREMENT_RECORDED_KIND,
     RecurrenceFinding,
     DeclaredMeasurement,
@@ -471,6 +472,7 @@ def test_a_representation_that_never_occurs_produces_a_measurement_finding(
         occurrences,
         declared=_recurrence_declared("zebra"),
         occurrences_of=_counts("zebra"),
+        produce_in=(ledger, "w", "r"),
     )
     assert finding.total_count == 0
     assert finding.occurrences_carrying == 0
@@ -533,7 +535,8 @@ def test_a_recurrence_finding_records_through_the_existing_path(
 ):
     ledger, occurrences = recurrence_occurrences
     finding = measure_recurrence(
-        occurrences, declared=_recurrence_declared("the"), occurrences_of=_counts("the")
+        occurrences, declared=_recurrence_declared("the"), occurrences_of=_counts("the"),
+        produce_in=(ledger, "w", "r"),
     )
     event = record_measurement_finding(
         ledger, workspace_id="w", session_id="r", finding=finding
@@ -558,7 +561,8 @@ def test_a_recurrence_finding_may_stand_on_a_premise(recurrence_occurrences):
             occurrences,
             declared=_recurrence_declared("the"),
             occurrences_of=_counts("the"),
-        ),
+        produce_in=(ledger, "w", "r"),
+    ),
     )
     second = record_measurement_finding(
         ledger,
@@ -568,7 +572,8 @@ def test_a_recurrence_finding_may_stand_on_a_premise(recurrence_occurrences):
             occurrences,
             declared=_recurrence_declared("cat", premise_event_id=first.id),
             occurrences_of=_counts("cat"),
-        ),
+        produce_in=(ledger, "w", "r"),
+    ),
     )
     assert premise_chain(ledger, second.id) == [first.id]
 
@@ -776,6 +781,7 @@ def test_a_finding_preserves_the_localities_it_consumed(recurrence_occurrences):
         list(here) + [elsewhere],
         declared=_recurrence_declared("the"),
         occurrences_of=_counts("the"),
+        produce_in=(ledger, "w", "r"),
     )
     assert finding.consumed_localities == (
         "workspace:w;session:r",
@@ -835,8 +841,9 @@ def test_batch_and_single_survive_the_recording_boundary_identically(
             workspace_id="w",
             session_id="r",
             finding=measure_recurrence(
-                occurrences, declared=declared[t], occurrences_of=_counts(t)
-            ),
+                occurrences, declared=declared[t], occurrences_of=_counts(t),
+        produce_in=(ledger, "w", "r"),
+    ),
         )
         for t in targets
     ]
@@ -845,8 +852,9 @@ def test_batch_and_single_survive_the_recording_boundary_identically(
             ledger, workspace_id="w", session_id="r", finding=finding
         )
         for finding in measure_recurrences(
-            occurrences, declared=declared, counts_in=_counts_in(declared)
-        )
+            occurrences, declared=declared, counts_in=_counts_in(declared),
+        produce_in=(ledger, "w", "r"),
+    )
     ]
     # Occurrence identity is the Event id, which is outside the payload, so
     # the payloads themselves must match completely -- lineage included.
@@ -1160,6 +1168,7 @@ def test_a_finding_over_unpreserved_material_cannot_be_recorded():
         [forged],
         declared=_recurrence_declared("zebra"),
         occurrences_of=_counts("zebra"),
+        produce_in=(ledger, "w", "r"),
     )
     assert finding.total_count == 2  # the measurement itself is not the guard
     with pytest.raises(PreservedMaterialMeasurementError, match="preserves no such ingress"):
@@ -1252,7 +1261,8 @@ def test_carrying_a_basis_no_longer_exempts_a_finding_from_the_recorder():
         payload={"decoded_text": "the", "text_representation": {"available": True}},
     )
     finding = measure_recurrence(
-        [forged], declared=_recurrence_declared("the"), occurrences_of=_counts("the")
+        [forged], declared=_recurrence_declared("the"), occurrences_of=_counts("the"),
+        produce_in=(ledger, "w", "r"),
     )
     # A SupportBasis is a directly constructible dataclass; attaching one is
     # not evidence that any act verified it.
@@ -1321,6 +1331,7 @@ def test_the_recorder_states_the_provenance_the_measurement_declared(
         forged,
         declared=_recurrence_declared("zebra"),
         occurrences_of=_counts("zebra"),
+        produce_in=(ledger, "w", "r"),
     )
     assert finding.total_count == 6
     event = record_measurement_finding(
@@ -1336,6 +1347,7 @@ def test_the_recorder_states_the_provenance_the_measurement_declared(
         declared=_recurrence_declared("the"),
         occurrences_of=_counts("the"),
         preserved_in=ledger,
+        produce_in=(ledger, "w", "r"),
     )
     recorded = record_measurement_finding(
         ledger, workspace_id="w", session_id="r", finding=bound
@@ -1371,7 +1383,8 @@ def test_responsibility_does_not_follow_the_provenance(recurrence_occurrences):
             occurrences,
             declared=_recurrence_declared("the"),
             occurrences_of=_counts("the"),
-        ),
+        produce_in=(ledger, "w", "r"),
+    ),
     )
     bound = record_measurement_finding(
         ledger,
@@ -1382,7 +1395,8 @@ def test_responsibility_does_not_follow_the_provenance(recurrence_occurrences):
             declared=_recurrence_declared("the"),
             occurrences_of=_counts("the"),
             preserved_in=ledger,
-        ),
+        produce_in=(ledger, "w", "r"),
+    ),
     )
     # Provenance differs; Responsibility does not follow it. `#2439` recovered
     # Producer, Act and Standing for declared measurement and left the
@@ -1394,4 +1408,136 @@ def test_responsibility_does_not_follow_the_provenance(recurrence_occurrences):
         unbound.payload["dimensions"]["responsibility"]
         == bound.payload["dimensions"]["responsibility"]
         == RESPONSIBILITY_UNRECOVERED
+    )
+
+
+# --------------------------------------------------------------------------
+# The production witness. `01.Constructors` separates mechanical construction
+# from a witnessed producer return; these fix which is which.
+# --------------------------------------------------------------------------
+
+
+def _rebuilt(finding, **changed):
+    fields = {
+        "declared": finding.declared,
+        "material_provenance": finding.material_provenance,
+        "consumed_localities": finding.consumed_localities,
+        "occurrences_examined": finding.occurrences_examined,
+        "occurrences_carrying": finding.occurrences_carrying,
+        "total_count": finding.total_count,
+        "consumed_event_ids": finding.consumed_event_ids,
+        "support_basis": finding.support_basis,
+    }
+    fields.update(changed)
+    return RecurrenceFinding(**fields)
+
+
+def _produced(ledger, occurrences, target="the", **kw):
+    return measure_recurrence(
+        occurrences,
+        declared=_recurrence_declared(target),
+        occurrences_of=_counts(target),
+        produce_in=(ledger, "w", "r"),
+        **kw,
+    )
+
+
+def test_a_produced_result_records(recurrence_occurrences):
+    ledger, occurrences = recurrence_occurrences
+    finding = _produced(ledger, occurrences)
+    event = record_measurement_finding(
+        ledger, workspace_id="w", session_id="r", finding=finding
+    )
+    assert event.kind == MEASUREMENT_RECORDED_KIND
+
+
+def test_an_equivalent_finding_nobody_produced_cannot_reuse_the_witness(
+    recurrence_occurrences,
+):
+    ledger, occurrences = recurrence_occurrences
+    produced = _produced(ledger, occurrences)
+    # Same shape, same fields, constructed rather than returned.
+    constructed = _rebuilt(produced, total_count=produced.total_count + 1)
+    with pytest.raises(PreservedMaterialMeasurementError, match="no preserved production"):
+        record_measurement_finding(
+            ledger, workspace_id="w", session_id="r", finding=constructed
+        )
+
+
+@pytest.mark.parametrize(
+    "changed",
+    [
+        {"total_count": 999},
+        {"occurrences_carrying": 999},
+        {"occurrences_examined": 999},
+        {"material_provenance": MATERIAL_READ_FROM_LEDGER},
+        {"consumed_localities": ("workspace:w;session:elsewhere",)},
+        {"boundary_notes": ("a limit nobody measured",)},
+    ],
+)
+def test_changing_any_produced_coordinate_cannot_reuse_the_witness(
+    recurrence_occurrences, changed
+):
+    ledger, occurrences = recurrence_occurrences
+    produced = _produced(ledger, occurrences)
+    altered = _rebuilt(produced, **changed)
+    with pytest.raises(PreservedMaterialMeasurementError, match="no preserved production"):
+        record_measurement_finding(
+            ledger, workspace_id="w", session_id="r", finding=altered
+        )
+
+
+def test_recording_cannot_overwrite_what_the_measurement_established(
+    recurrence_occurrences,
+):
+    """`extra` may add recording coordinates; it may not own producer ones."""
+
+    ledger, occurrences = recurrence_occurrences
+    finding = _produced(ledger, occurrences)
+    event = record_measurement_finding(
+        ledger,
+        workspace_id="w",
+        session_id="r",
+        finding=finding,
+        extra={"total_count": 999, "a_recording_coordinate": "kept"},
+    )
+    assert event.payload["total_count"] == finding.total_count
+    assert event.payload["a_recording_coordinate"] == "kept"
+
+
+def test_production_and_recording_may_be_in_different_localities(
+    recurrence_occurrences,
+):
+    ledger, occurrences = recurrence_occurrences
+    finding = measure_recurrence(
+        occurrences,
+        declared=_recurrence_declared("the"),
+        occurrences_of=_counts("the"),
+        produce_in=(ledger, "w", "where the material lives"),
+    )
+    event = record_measurement_finding(
+        ledger, workspace_id="w", session_id="somewhere else", finding=finding
+    )
+    assert event.kind == MEASUREMENT_RECORDED_KIND
+
+
+def test_no_public_operation_attaches_production_to_an_arbitrary_finding():
+    import seed_runtime.preserved_material_measurement as module
+
+    public = [n for n in dir(module) if not n.startswith("_")]
+    assert not [n for n in public if "production" in n or "produce" in n]
+
+
+def test_the_witness_claims_no_producer_and_no_responsibility(
+    recurrence_occurrences,
+):
+    ledger, occurrences = recurrence_occurrences
+    _produced(ledger, occurrences)
+    witness = [
+        e for e in ledger.list("w") if e.kind == MEASUREMENT_PRODUCED_KIND
+    ][-1]
+    assert witness.payload["dimensions"]["producer"] == RESPONSIBILITY_UNRECOVERED
+    assert witness.payload["dimensions"]["responsibility"] == RESPONSIBILITY_UNRECOVERED
+    assert "not that occurrence by identity" in (
+        witness.payload["dimensions"]["occurrence_preservation"]
     )
