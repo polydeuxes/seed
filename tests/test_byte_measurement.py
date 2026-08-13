@@ -15,6 +15,7 @@ from seed_runtime.byte_measurement import (
     _measure_byte_counts_through,
     assertions_of_recorded_byte_measurement,
     assertions_of_recorded_adjacent_byte_pair_measurement,
+    input_applicability_of_recorded_adjacent_byte_pair_measurement,
     measure_adjacent_byte_pair_counts,
     measure_byte_counts,
     record_byte_count_layer,
@@ -293,7 +294,9 @@ def test_every_overlapping_adjacent_byte_pair_is_measured():
     ledger = _ledger("tatatata\n")
     source = _byte_source(ledger)
     measured = measure_adjacent_byte_pair_counts(
-        ledger, source_measurement_event_id=source.id
+        ledger,
+        source_measurement_event_id=source.id,
+        measurement_session_id="measurement",
     )
     counts = {item.pair_hex: item for item in measured.counts}
 
@@ -306,7 +309,9 @@ def test_adjacent_pairs_never_cross_ingress_capture_boundaries():
     ledger = _ledger("a\nb\n")
     source = _byte_source(ledger)
     measured = measure_adjacent_byte_pair_counts(
-        ledger, source_measurement_event_id=source.id
+        ledger,
+        source_measurement_event_id=source.id,
+        measurement_session_id="measurement",
     )
     counts = {item.pair_hex: item.total_count for item in measured.counts}
 
@@ -318,7 +323,9 @@ def test_adjacent_pair_measurement_remains_byte_not_character_based():
     ledger = _ledger("猫\n")
     source = _byte_source(ledger)
     measured = measure_adjacent_byte_pair_counts(
-        ledger, source_measurement_event_id=source.id
+        ledger,
+        source_measurement_event_id=source.id,
+        measurement_session_id="measurement",
     )
     counts = {item.pair_hex for item in measured.counts}
 
@@ -354,6 +361,20 @@ def test_pair_count_and_recurrence_are_separate_results():
             if item.result == "exact_source_material_set"
         )
     ]
+    applicability = input_applicability_of_recorded_adjacent_byte_pair_measurement(
+        ledger, event.id
+    )
+    assert applicability["dimensions"]["standing"] == "applicable"
+    assert applicability["input_assertion_ref"] == event.payload["source_assertion_ref"]
+    assert applicability["purpose"]
+    assert applicability["target_act"] == "declared adjacent-byte-pair Measurement"
+    assert applicability["consumer_context"] == {
+        "workspace_id": "w",
+        "measurement_session_id": "measurement",
+    }
+    assert applicability["input_unknowns"]
+    assert applicability["input_limits"]
+    assert applicability["conflicts"] == []
 
 
 def test_recorded_pair_results_replay_the_complete_bounded_source_read():
@@ -397,5 +418,42 @@ def test_pair_recovery_refuses_a_self_consistent_truncated_result_population():
         {name: event.payload[name] for name in BYTE_PAIR_RESULT_COORDINATES},
     )
 
-    with pytest.raises(ByteMeasurementError, match="complete bounded source read"):
+    with pytest.raises(ByteMeasurementError, match="recurrence boundary"):
+        assertions_of_recorded_adjacent_byte_pair_measurement(ledger, event.id)
+
+
+def test_pair_recovery_does_not_perform_the_pair_measurement_again(monkeypatch):
+    ledger = _ledger("tatatata\n")
+    source = _byte_source(ledger)
+    event = record_adjacent_byte_pair_count_layer(
+        ledger,
+        source_measurement_event_id=source.id,
+        recording_session_id="measurement",
+    )
+
+    def forbidden(*args, **kwargs):
+        raise AssertionError("recovery performed the pair Measurement again")
+
+    monkeypatch.setattr(
+        "seed_runtime.byte_measurement.measure_adjacent_byte_pair_counts", forbidden
+    )
+    assert assertions_of_recorded_adjacent_byte_pair_measurement(ledger, event.id)
+
+
+def test_pair_recovery_refuses_invented_input_applicability():
+    ledger = _ledger("tatatata\n")
+    source = _byte_source(ledger)
+    event = record_adjacent_byte_pair_count_layer(
+        ledger,
+        source_measurement_event_id=source.id,
+        recording_session_id="measurement",
+    )
+    event.payload["input_applicability"]["purpose"] = "some other use"
+    evidence = ledger.get(event.payload["production_evidence_id"])
+    evidence.payload["production_commitment"] = production_commitment(
+        BYTE_PAIR_MEASUREMENT_CONVENTION,
+        {name: event.payload[name] for name in BYTE_PAIR_RESULT_COORDINATES},
+    )
+
+    with pytest.raises(ByteMeasurementError, match="exact input Applicability"):
         assertions_of_recorded_adjacent_byte_pair_measurement(ledger, event.id)
