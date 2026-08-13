@@ -450,7 +450,8 @@ def measure_recurrences(
     examined = 0
     carrying: dict[str, int] = {name: 0 for name in declared}
     total: dict[str, int] = {name: 0 for name in declared}
-    for event in _distinct_population(occurrences):
+    walked = _distinct_population(occurrences)
+    for event in walked:
         text = _measurable_text(event)
         consumed.append(event.id)
         localities[_locality_of(event)] = None
@@ -474,11 +475,12 @@ def measure_recurrences(
                 carrying[representation] += 1
                 total[representation] += count
     population = tuple(consumed)
+    consumed_localities = tuple(localities)
     if support_basis is not None:
         # A basis carried but never checked would let a finding preserve a
         # commitment to a population the act did not walk. `support_commitment`
         # is a pure function of the rule and the ordered identities, so the act
-        # can confirm the basis describes what it actually consumed.
+        # can confirm the basis commits to what it actually consumed.
         if support_commitment(support_basis.selection_rule, population) != (
             support_basis.commitment
         ):
@@ -491,7 +493,36 @@ def measure_recurrences(
                 f"the declared support basis counts {support_basis.support_count} "
                 f"occurrences and this measurement consumed {len(population)}"
             )
-    consumed_localities = tuple(localities)
+        # Committing to the identities is not describing the population. The
+        # commitment is a digest over the rule and the ordered ids and says
+        # nothing about scope, so a basis declaring one locality could be
+        # accepted for a population drawn from several: the ids match, and the
+        # preserved basis then asserts a scope the act never consumed within.
+        # The producing act refuses that now; a later recovery failure is a
+        # different responsibility and arrives too late to prevent it.
+        declared_locality = (
+            f"workspace:{support_basis.workspace_id};"
+            f"session:{support_basis.session_id}"
+        )
+        if consumed_localities != (declared_locality,):
+            raise PreservedMaterialMeasurementError(
+                f"the declared support basis is scoped to {declared_locality} "
+                f"and this measurement consumed {list(consumed_localities)}"
+            )
+        for event in walked:
+            if event.kind != support_basis.occurrence_kind:
+                raise PreservedMaterialMeasurementError(
+                    f"the declared support basis selects "
+                    f"{support_basis.occurrence_kind} and {event.id} is "
+                    f"{event.kind}"
+                )
+        # `boundary_commitment` stays unverified here. A boundary is opaque and
+        # only an EventLedger interprets it; this act consumes an iterable of
+        # occurrences and holds no ledger to ask. What that leaves open is
+        # whether the population is the whole of the selection through that
+        # prefix, rather than a subset of it that happens to share the scope.
+        # The count and commitment bound how far that can diverge; they do not
+        # close it.
     return tuple(
         RecurrenceFinding(
             declared=declaration,

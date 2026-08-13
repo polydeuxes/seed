@@ -956,3 +956,59 @@ def test_findings_with_and_without_a_basis_agree_on_everything_else(
         left.pop("consumed_event_ids")
         right.pop("consumed_support")
         assert left == right
+
+
+def test_a_basis_scoped_to_one_locality_cannot_describe_several(
+    recurrence_occurrences,
+):
+    """Committing to the identities is not describing the population."""
+
+    ledger, occurrences = recurrence_occurrences
+    elsewhere = ledger.append(
+        INGRESS_OCCURRED_KIND,
+        "w",
+        {
+            "decoded_text": "the other body",
+            "material_origin": "operator",
+            "text_representation": {"available": True},
+        },
+        session_id="other",
+    )
+    population = list(occurrences) + [elsewhere]
+    # The basis commits to exactly these identities and declares one locality.
+    basis = declare_complete_population(
+        workspace_id="w",
+        session_id="r",
+        occurrence_kind=INGRESS_OCCURRED_KIND,
+        boundary=ledger.capture_boundary(),
+        identities=[e.id for e in population],
+    )
+    declared = _declared_for("the")
+    with pytest.raises(PreservedMaterialMeasurementError, match="scoped to"):
+        measure_recurrences(
+            population,
+            declared=declared,
+            counts_in=_counts_in(declared),
+            support_basis=basis,
+        )
+
+
+def test_a_basis_selecting_another_occurrence_kind_is_refused(
+    recurrence_occurrences,
+):
+    ledger, occurrences = recurrence_occurrences
+    basis = declare_complete_population(
+        workspace_id="w",
+        session_id="r",
+        occurrence_kind="some.other.kind",
+        boundary=ledger.capture_boundary(),
+        identities=[e.id for e in occurrences],
+    )
+    declared = _declared_for("the")
+    with pytest.raises(PreservedMaterialMeasurementError, match="selects some.other.kind"):
+        measure_recurrences(
+            occurrences,
+            declared=declared,
+            counts_in=_counts_in(declared),
+            support_basis=basis,
+        )
