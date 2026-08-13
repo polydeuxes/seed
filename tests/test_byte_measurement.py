@@ -3,6 +3,9 @@ from io import StringIO
 import pytest
 
 from seed_runtime.byte_measurement import (
+    BYTE_PAIR_MEASUREMENT_RECORDED_KIND,
+    BYTE_PAIR_MEASUREMENT_CONVENTION,
+    BYTE_PAIR_RESULT_COORDINATES,
     BYTE_MEASUREMENT_RECORDED_KIND,
     BYTE_MEASUREMENT_CONVENTION,
     BYTE_RESULT_COORDINATES,
@@ -11,8 +14,11 @@ from seed_runtime.byte_measurement import (
     RESPONSIBILITY_UNRECOVERED,
     _measure_byte_counts_through,
     assertions_of_recorded_byte_measurement,
+    assertions_of_recorded_adjacent_byte_pair_measurement,
+    measure_adjacent_byte_pair_counts,
     measure_byte_counts,
     record_byte_count_layer,
+    record_adjacent_byte_pair_count_layer,
 )
 from seed_runtime.events import EventLedger
 from seed_runtime.event import Event
@@ -33,6 +39,15 @@ def _ledger(text="猫\n狗\n"):
         output_stream=StringIO(),
     )
     return ledger
+
+
+def _byte_source(ledger):
+    return record_byte_count_layer(
+        ledger,
+        workspace_id="w",
+        source_session_ids=("source",),
+        recording_session_id="byte-measurement",
+    )
 
 
 def test_exact_bytes_supply_the_measured_subjects_without_whitespace():
@@ -272,3 +287,115 @@ def test_one_raw_occurrence_cannot_be_counted_through_two_ingress_references():
         measure_byte_counts(
             ledger, workspace_id="w", source_session_ids=("source",)
         )
+
+
+def test_every_overlapping_adjacent_byte_pair_is_measured():
+    ledger = _ledger("tatatata\n")
+    source = _byte_source(ledger)
+    measured = measure_adjacent_byte_pair_counts(
+        ledger, source_measurement_event_id=source.id
+    )
+    counts = {item.pair_hex: item for item in measured.counts}
+
+    assert counts["7461"].total_count == 4  # ta
+    assert counts["6174"].total_count == 3  # at
+    assert counts["610a"].total_count == 1  # a + capture newline
+
+
+def test_adjacent_pairs_never_cross_ingress_capture_boundaries():
+    ledger = _ledger("a\nb\n")
+    source = _byte_source(ledger)
+    measured = measure_adjacent_byte_pair_counts(
+        ledger, source_measurement_event_id=source.id
+    )
+    counts = {item.pair_hex: item.total_count for item in measured.counts}
+
+    assert counts == {"610a": 1, "620a": 1}
+    assert "0a62" not in counts
+
+
+def test_adjacent_pair_measurement_remains_byte_not_character_based():
+    ledger = _ledger("猫\n")
+    source = _byte_source(ledger)
+    measured = measure_adjacent_byte_pair_counts(
+        ledger, source_measurement_event_id=source.id
+    )
+    counts = {item.pair_hex for item in measured.counts}
+
+    # UTF-8 bytes e7 8c ab plus the captured newline. These are adjacent bytes,
+    # not a claim that any pair is a character.
+    assert counts == {"e78c", "8cab", "ab0a"}
+
+
+def test_pair_count_and_recurrence_are_separate_results():
+    ledger = _ledger("tatatata\n")
+    source = _byte_source(ledger)
+    event = record_adjacent_byte_pair_count_layer(
+        ledger,
+        source_measurement_event_id=source.id,
+        recording_session_id="measurement",
+    )
+    assert event.kind == BYTE_PAIR_MEASUREMENT_RECORDED_KIND
+    by_pair = {}
+    for assertion in event.payload["assertions"]:
+        pair_hex = assertion["assertion_subject"].get("pair_hex")
+        if pair_hex is not None:
+            by_pair.setdefault(pair_hex, []).append(assertion)
+
+    assert [item["result"] for item in by_pair["7461"]] == ["count", "recurrence"]
+    assert [item["result"] for item in by_pair["610a"]] == ["count"]
+    assert by_pair["7461"][1]["support_basis"]["local_assertion_ids"] == [
+        by_pair["7461"][0]["dimensions"]["identity"]
+    ]
+    assert by_pair["7461"][0]["support_basis"]["assertion_refs"] == [
+        next(
+            item.reference
+            for item in assertions_of_recorded_byte_measurement(ledger, source.id)
+            if item.result == "exact_source_material_set"
+        )
+    ]
+
+
+def test_recorded_pair_results_replay_the_complete_bounded_source_read():
+    ledger = _ledger("tatatata\n")
+    source = _byte_source(ledger)
+    event = record_adjacent_byte_pair_count_layer(
+        ledger,
+        source_measurement_event_id=source.id,
+        recording_session_id="measurement",
+    )
+
+    recovered = assertions_of_recorded_adjacent_byte_pair_measurement(
+        ledger, event.id
+    )
+    assert recovered
+    assert all(item.recorded_occurrence_id == event.id for item in recovered)
+    assert {item.pair_hex for item in recovered if item.pair_hex} == {
+        "7461",
+        "6174",
+        "610a",
+    }
+    count = next(item for item in recovered if item.pair_hex == "7461" and item.result == "count")
+    detached = count.payload
+    detached["dimensions"]["standing"] = "invented"
+    assert count.payload["dimensions"]["standing"] == "measured"
+    assert count.support_assertion_refs[0]["recorded_occurrence_id"] == source.id
+
+
+def test_pair_recovery_refuses_a_self_consistent_truncated_result_population():
+    ledger = _ledger("tatatata\n")
+    source = _byte_source(ledger)
+    event = record_adjacent_byte_pair_count_layer(
+        ledger,
+        source_measurement_event_id=source.id,
+        recording_session_id="measurement",
+    )
+    event.payload["assertions"] = event.payload["assertions"][:-1]
+    evidence = ledger.get(event.payload["production_evidence_id"])
+    evidence.payload["production_commitment"] = production_commitment(
+        BYTE_PAIR_MEASUREMENT_CONVENTION,
+        {name: event.payload[name] for name in BYTE_PAIR_RESULT_COORDINATES},
+    )
+
+    with pytest.raises(ByteMeasurementError, match="complete bounded source read"):
+        assertions_of_recorded_adjacent_byte_pair_measurement(ledger, event.id)

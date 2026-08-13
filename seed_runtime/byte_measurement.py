@@ -31,9 +31,17 @@ INGRESS_OCCURRED_KIND = "operator.ingress.ingress_occurred"
 BYTE_MEASUREMENT_RECORDED_KIND = "operator.measurement.byte_counts_recorded"
 BYTE_MEASUREMENT_RESULT_KIND = "exact byte-count Measurement results"
 BYTE_MEASUREMENT_CONVENTION = "exact_captured_byte_count_measurement_v1"
+BYTE_PAIR_MEASUREMENT_RECORDED_KIND = (
+    "operator.measurement.adjacent_byte_pair_counts_recorded"
+)
+BYTE_PAIR_MEASUREMENT_RESULT_KIND = "exact adjacent-byte-pair count Measurement results"
+BYTE_PAIR_MEASUREMENT_CONVENTION = "exact_adjacent_captured_byte_pair_count_v1"
 RESPONSIBILITY_UNRECOVERED = "unrecovered"
 BYTE_OCCURRENCE_PRESERVATION = (
     "byte Measurement results durably recorded after production"
+)
+BYTE_PAIR_OCCURRENCE_PRESERVATION = (
+    "adjacent-byte-pair Measurement results durably recorded after production"
 )
 BYTE_RESULT_COORDINATES = frozenset(
     {
@@ -46,14 +54,24 @@ BYTE_RESULT_COORDINATES = frozenset(
         "assertions",
     }
 )
+BYTE_PAIR_RESULT_COORDINATES = BYTE_RESULT_COORDINATES | {"source_assertion_ref"}
 BYTE_MEASUREMENT_RULE = (
     "each individual byte of exact captured ingress material; equal only when "
     "the byte values are identical"
+)
+BYTE_PAIR_MEASUREMENT_RULE = (
+    "each ordered pair of consecutive bytes within one exact captured ingress "
+    "material occurrence; equal only when both byte values are identical in order"
 )
 MEASUREMENT_AUTHORITY = (
     "literal byte-count Measurement Evidence only; establishes no character, "
     "word, language, position, adjacency, grammar, meaning, relation, or "
     "Standing movement"
+)
+PAIR_MEASUREMENT_AUTHORITY = (
+    "declared exact-source and literal ordered adjacent-byte-pair Measurement "
+    "Evidence only; establishes no character, word, language, grammar, meaning, "
+    "relation, significance, or Standing movement"
 )
 MEASURED_ASSERTION_RESPONSIBILITY = (
     "preserve the fidelity of this measured Assertion's Standing to its "
@@ -83,6 +101,24 @@ class MeasuredBytePopulation:
 
 
 @dataclass(frozen=True)
+class MeasuredBytePairCount:
+    pair_hex: str
+    occurrences_examined: int
+    occurrences_carrying: int
+    total_count: int
+
+
+@dataclass(frozen=True)
+class MeasuredBytePairPopulation:
+    workspace_id: str
+    source_session_ids: tuple[str, ...]
+    completeness_boundary: EventLedgerBoundary
+    source_material: tuple[dict[str, str], ...]
+    source_assertion_ref: dict[str, str]
+    counts: tuple[MeasuredBytePairCount, ...]
+
+
+@dataclass(frozen=True)
 class RecordedByteAssertion:
     assertion_id: str
     recorded_occurrence_id: str
@@ -101,6 +137,31 @@ class RecordedByteAssertion:
     def support_assertion_refs(self) -> tuple[dict[str, str], ...]:
         """Return detached occurrence-bound local support addresses."""
 
+        return tuple(json.loads(self._support_assertion_refs_json))
+
+    @property
+    def reference(self) -> dict[str, str]:
+        return {
+            "recorded_occurrence_id": self.recorded_occurrence_id,
+            "assertion_id": self.assertion_id,
+        }
+
+
+@dataclass(frozen=True)
+class RecordedBytePairAssertion:
+    assertion_id: str
+    recorded_occurrence_id: str
+    pair_hex: str | None
+    result: str
+    _payload_json: str
+    _support_assertion_refs_json: str
+
+    @property
+    def payload(self) -> dict[str, Any]:
+        return json.loads(self._payload_json)
+
+    @property
+    def support_assertion_refs(self) -> tuple[dict[str, str], ...]:
         return tuple(json.loads(self._support_assertion_refs_json))
 
     @property
@@ -264,6 +325,124 @@ def _measure_byte_counts_through(
     )
 
 
+def measure_adjacent_byte_pair_counts(
+    ledger: EventLedger,
+    *,
+    source_measurement_event_id: str,
+) -> MeasuredBytePairPopulation:
+    """Consume one recovered source-set Assertion and count its adjacent bytes."""
+
+    recovered = assertions_of_recorded_byte_measurement(
+        ledger, source_measurement_event_id
+    )
+    if recovered is None:
+        raise ByteMeasurementError("adjacent-byte-pair Measurement requires a source")
+    source = next(
+        (item for item in recovered if item.result == "exact_source_material_set"),
+        None,
+    )
+    if source is None:
+        raise ByteMeasurementError(
+            "adjacent-byte-pair Measurement requires an exact source-material-set Assertion"
+        )
+    payload = source.payload
+    scope = payload["assertion_scope"]
+    content = payload["dimensions"]["content"]
+    return _measure_adjacent_byte_pair_counts_through(
+        ledger,
+        workspace_id=scope["workspace_id"],
+        sessions=tuple(scope["source_session_ids"]),
+        boundary=EventLedgerBoundary(content["completeness_boundary"]["commitment"]),
+        source_assertion_ref=source.reference,
+    )
+
+
+def _measure_adjacent_byte_pair_counts_through(
+    ledger: EventLedger,
+    *,
+    workspace_id: str,
+    sessions: tuple[str, ...],
+    boundary: EventLedgerBoundary,
+    source_assertion_ref: dict[str, str],
+) -> MeasuredBytePairPopulation:
+    missing = [
+        session
+        for session in sessions
+        if not ledger.has_session(workspace_id, session, through=boundary)
+    ]
+    if missing:
+        raise ByteMeasurementError(
+            "declared source sessions are absent through the Measurement boundary: "
+            + ", ".join(missing)
+        )
+
+    source_material: list[dict[str, str]] = []
+    seen_raw_material: set[str] = set()
+    totals: dict[bytes, int] = {}
+    carrying: dict[bytes, int] = {}
+    examined = 0
+    for session in sessions:
+        raw_through_boundary = {
+            event.id: event
+            for event in ledger.iter_session_kind(
+                workspace_id,
+                session,
+                RAW_MATERIAL_CAPTURED_KIND,
+                through=boundary,
+            )
+        }
+        for ingress in ledger.iter_session_kind(
+            workspace_id, session, INGRESS_OCCURRED_KIND, through=boundary
+        ):
+            if ledger.integrity_of(ingress.id) == CORRUPTED:
+                raise ByteMeasurementError(
+                    "corrupted ingress cannot participate in adjacent-byte-pair Measurement"
+                )
+            raw_id, exact = _raw_bytes(
+                ledger,
+                ingress,
+                workspace_id=workspace_id,
+                raw_through_boundary=raw_through_boundary,
+            )
+            if raw_id in seen_raw_material:
+                raise ByteMeasurementError(
+                    "one raw-material occurrence cannot enter a pair Measurement twice"
+                )
+            seen_raw_material.add(raw_id)
+            source_material.append(
+                {"ingress_occurrence_id": ingress.id, "raw_material_event_id": raw_id}
+            )
+            examined += 1
+            seen: set[bytes] = set()
+            for index in range(len(exact) - 1):
+                pair = exact[index : index + 2]
+                totals[pair] = totals.get(pair, 0) + 1
+                seen.add(pair)
+            for pair in seen:
+                carrying[pair] = carrying.get(pair, 0) + 1
+    if not source_material:
+        raise ByteMeasurementError(
+            "declared source sessions contain no ingress through the Measurement boundary"
+        )
+    counts = tuple(
+        MeasuredBytePairCount(
+            pair_hex=pair.hex(),
+            occurrences_examined=examined,
+            occurrences_carrying=carrying[pair],
+            total_count=totals[pair],
+        )
+        for pair in sorted(totals)
+    )
+    return MeasuredBytePairPopulation(
+        workspace_id=workspace_id,
+        source_session_ids=sessions,
+        completeness_boundary=boundary,
+        source_material=tuple(source_material),
+        source_assertion_ref=source_assertion_ref,
+        counts=counts,
+    )
+
+
 def _assertions(measured: MeasuredBytePopulation) -> list[dict[str, Any]]:
     scope = {
         "workspace_id": measured.workspace_id,
@@ -363,7 +542,7 @@ def _assertions(measured: MeasuredBytePopulation) -> list[dict[str, Any]]:
             result="count",
             item=item,
             content=count_content,
-            provenance="the exact source-material-set Assertion carried here",
+            provenance="the exact source-material-set Assertion referenced here",
             local_support_ids=[source_id],
         )
         results.append(count)
@@ -559,3 +738,269 @@ def assertions_of_recorded_byte_measurement(
             )
         )
     return tuple(recovered)
+
+
+def _pair_assertions(measured: MeasuredBytePairPopulation) -> list[dict[str, Any]]:
+    scope = {
+        "workspace_id": measured.workspace_id,
+        "source_session_ids": list(measured.source_session_ids),
+    }
+    results: list[dict[str, Any]] = []
+
+    def assertion(
+        *,
+        result: str,
+        item: MeasuredBytePairCount,
+        content: dict[str, Any],
+        provenance: str,
+        local_support_ids: list[str],
+        external_support_refs: list[dict[str, str]],
+    ) -> dict[str, Any]:
+        subject = {
+            "pair_hex": item.pair_hex,
+            "measurement_rule": BYTE_PAIR_MEASUREMENT_RULE,
+        }
+        identity = _identity(result=result, subject=subject, scope=scope, content=content)
+        return {
+            "dimensions": {
+                "identity": identity,
+                "content": content,
+                "standing": "measured",
+                "source_provenance": provenance,
+                "responsibility": MEASURED_ASSERTION_RESPONSIBILITY,
+                "authority_warrant": PAIR_MEASUREMENT_AUTHORITY,
+            },
+            "subject_kind": "assertion",
+            "responsibility_owner": "this recorded assertion",
+            "result": result,
+            "assertion_subject": subject,
+            "assertion_scope": scope,
+            "support_basis": {
+                "assertion_refs": external_support_refs,
+                "local_assertion_ids": local_support_ids,
+            },
+            "unknowns": [
+                "what this ordered adjacent byte pair participates in or represents remains Unknown"
+            ],
+            "forbidden_inferences": [
+                "an exact adjacent-byte-pair count or recurrence establishes no "
+                "character, word, language, grammar, meaning, relation, or significance"
+            ],
+        }
+
+    for item in measured.counts:
+        count = assertion(
+            result="count",
+            item=item,
+            content={
+                "occurrences_examined": item.occurrences_examined,
+                "occurrences_carrying": item.occurrences_carrying,
+                "total_count": item.total_count,
+            },
+            provenance="the exact source-material-set Assertion carried here",
+            local_support_ids=[],
+            external_support_refs=[measured.source_assertion_ref],
+        )
+        results.append(count)
+        if item.total_count > 1:
+            results.append(
+                assertion(
+                    result="recurrence",
+                    item=item,
+                    content={"recurrence_established": True},
+                    provenance="the exact count Assertion carried here",
+                    local_support_ids=[count["dimensions"]["identity"]],
+                    external_support_refs=[],
+                )
+            )
+    return results
+
+
+def record_adjacent_byte_pair_count_layer(
+    ledger: EventLedger,
+    *,
+    source_measurement_event_id: str,
+    recording_session_id: str,
+):
+    """Record exact adjacent-byte-pair counts without crossing capture boundaries."""
+
+    if not isinstance(recording_session_id, str) or not recording_session_id:
+        raise ByteMeasurementError(
+            "adjacent-byte-pair Measurement recording requires an exact session"
+        )
+    measured = measure_adjacent_byte_pair_counts(
+        ledger, source_measurement_event_id=source_measurement_event_id
+    )
+    result_payload = {
+        "dimensions": {
+            "identity": "adjacent-byte-pair-count-measurement-occurrence",
+            "content": (
+                "adjacent-byte-pair count and conditional recurrence Assertions produced"
+            ),
+            "standing": "measured",
+            "source_provenance": "the exact recovered source-material-set Assertion",
+            "authority_warrant": PAIR_MEASUREMENT_AUTHORITY,
+        },
+        "producing_act": "declared Measurement",
+        "producer": RESPONSIBILITY_UNRECOVERED,
+        "measurement_rule": BYTE_PAIR_MEASUREMENT_RULE,
+        "source_assertion_ref": measured.source_assertion_ref,
+        "source_session_ids": list(measured.source_session_ids),
+        "completeness_boundary": {
+            "commitment": measured.completeness_boundary.commitment
+        },
+        "assertions": _pair_assertions(measured),
+    }
+    evidence = _record_production_evidence(
+        ledger,
+        workspace_id=measured.workspace_id,
+        session_id=recording_session_id,
+        convention=BYTE_PAIR_MEASUREMENT_CONVENTION,
+        producing_act="declared Measurement",
+        produced_result_kind=BYTE_PAIR_MEASUREMENT_RESULT_KIND,
+        result_identity="adjacent-byte-pair-count-measurement-occurrence",
+        produced_content=result_payload,
+        producer=RESPONSIBILITY_UNRECOVERED,
+        responsibility=RESPONSIBILITY_UNRECOVERED,
+    )
+    return ledger.append(
+        BYTE_PAIR_MEASUREMENT_RECORDED_KIND,
+        measured.workspace_id,
+        {
+            **result_payload,
+            "production_evidence_id": evidence.id,
+            "occurrence_preservation": BYTE_PAIR_OCCURRENCE_PRESERVATION,
+        },
+        session_id=recording_session_id,
+    )
+
+
+def assertions_of_recorded_adjacent_byte_pair_measurement(
+    ledger: EventLedger, event_id: str
+) -> tuple[RecordedBytePairAssertion, ...] | None:
+    """Recover pair results after replaying the same complete bounded read."""
+
+    event = ledger.get(event_id)
+    if event is None:
+        return None
+    if event.kind != BYTE_PAIR_MEASUREMENT_RECORDED_KIND:
+        raise ByteMeasurementError(
+            f"{event_id} is not an adjacent-byte-pair Measurement occurrence"
+        )
+    if ledger.integrity_of(event_id) == CORRUPTED:
+        raise ByteMeasurementError("a corrupted occurrence cannot expose pair results")
+    payload = event.payload
+    exact_surface = BYTE_PAIR_RESULT_COORDINATES | {
+        "production_evidence_id",
+        "occurrence_preservation",
+    }
+    if set(payload) != exact_surface:
+        raise ByteMeasurementError(
+            f"{event_id} does not carry the exact pair result and recording surfaces"
+        )
+    expected_dimensions = {
+        "identity": "adjacent-byte-pair-count-measurement-occurrence",
+        "content": (
+            "adjacent-byte-pair count and conditional recurrence Assertions produced"
+        ),
+        "standing": "measured",
+        "source_provenance": "the exact recovered source-material-set Assertion",
+        "authority_warrant": PAIR_MEASUREMENT_AUTHORITY,
+    }
+    if (
+        payload.get("occurrence_preservation") != BYTE_PAIR_OCCURRENCE_PRESERVATION
+        or payload.get("producing_act") != "declared Measurement"
+        or payload.get("producer") != RESPONSIBILITY_UNRECOVERED
+        or payload.get("dimensions") != expected_dimensions
+        or payload.get("measurement_rule") != BYTE_PAIR_MEASUREMENT_RULE
+    ):
+        raise ByteMeasurementError(
+            f"{event_id} does not preserve its exact pair Measurement testimony"
+        )
+    evidence_id = payload.get("production_evidence_id")
+    evidence = ledger.get(evidence_id) if isinstance(evidence_id, str) else None
+    if (
+        evidence is None
+        or evidence.kind != PRODUCTION_EVIDENCE_KIND
+        or evidence.workspace_id != event.workspace_id
+        or ledger.integrity_of(evidence.id) == CORRUPTED
+        or evidence.payload.get("production_convention")
+        != BYTE_PAIR_MEASUREMENT_CONVENTION
+        or evidence.payload.get("produced_result_kind")
+        != BYTE_PAIR_MEASUREMENT_RESULT_KIND
+        or evidence.payload.get("production_coordinates")
+        != sorted(BYTE_PAIR_RESULT_COORDINATES)
+        or evidence.payload.get("dimensions", {}).get("producer")
+        != RESPONSIBILITY_UNRECOVERED
+        or evidence.payload.get("dimensions", {}).get("responsibility")
+        != RESPONSIBILITY_UNRECOVERED
+    ):
+        raise ByteMeasurementError(
+            f"{event_id} names no exact adjacent-byte-pair production Evidence"
+        )
+    produced = {name: payload[name] for name in BYTE_PAIR_RESULT_COORDINATES}
+    if evidence.payload.get("production_commitment") != production_commitment(
+        BYTE_PAIR_MEASUREMENT_CONVENTION, produced
+    ):
+        raise ByteMeasurementError(
+            f"{event_id} does not carry the exact produced pair Measurement result"
+        )
+    boundary_value = payload.get("completeness_boundary")
+    sessions_value = payload.get("source_session_ids")
+    if (
+        not isinstance(boundary_value, dict)
+        or set(boundary_value) != {"commitment"}
+        or not isinstance(boundary_value["commitment"], str)
+        or not isinstance(sessions_value, list)
+        or not sessions_value
+        or any(not isinstance(item, str) or not item for item in sessions_value)
+        or len(set(sessions_value)) != len(sessions_value)
+    ):
+        raise ByteMeasurementError(
+            f"{event_id} does not carry the exact pair Measurement boundary"
+        )
+    source_ref = payload.get("source_assertion_ref")
+    if (
+        not isinstance(source_ref, dict)
+        or set(source_ref) != {"recorded_occurrence_id", "assertion_id"}
+        or not all(isinstance(value, str) and value for value in source_ref.values())
+    ):
+        raise ByteMeasurementError(f"{event_id} carries no exact source Assertion")
+    measured = measure_adjacent_byte_pair_counts(
+        ledger,
+        source_measurement_event_id=source_ref["recorded_occurrence_id"],
+    )
+    if (
+        measured.source_assertion_ref != source_ref
+        or measured.workspace_id != event.workspace_id
+        or measured.source_session_ids != tuple(sessions_value)
+        or measured.completeness_boundary.commitment != boundary_value["commitment"]
+    ):
+        raise ByteMeasurementError(
+            f"{event_id} does not carry its exact consumed source Assertion"
+        )
+    expected = _pair_assertions(measured)
+    if payload.get("assertions") != expected:
+        raise ByteMeasurementError(
+            f"{event_id} does not carry the pair results of its complete bounded source read"
+        )
+    recovered_results = []
+    for assertion in expected:
+        support = assertion["support_basis"]
+        support_refs = list(support["assertion_refs"])
+        support_refs.extend(
+            {
+                "recorded_occurrence_id": event.id,
+                "assertion_id": local_id,
+            }
+            for local_id in support["local_assertion_ids"]
+        )
+        recovered_results.append(RecordedBytePairAssertion(
+            assertion_id=assertion["dimensions"]["identity"],
+            recorded_occurrence_id=event.id,
+            pair_hex=assertion["assertion_subject"].get("pair_hex"),
+            result=assertion["result"],
+            _payload_json=_canonical(assertion),
+            _support_assertion_refs_json=_canonical(support_refs),
+        ))
+    return tuple(recovered_results)
