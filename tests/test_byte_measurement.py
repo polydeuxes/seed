@@ -15,6 +15,7 @@ from seed_runtime.byte_measurement import (
     record_byte_count_layer,
 )
 from seed_runtime.events import EventLedger
+from seed_runtime.event import Event
 from seed_runtime.operator_console import run_persistent_operator_console
 from seed_runtime.production_evidence import (
     PRODUCTION_EVIDENCE_KIND,
@@ -126,6 +127,50 @@ def test_recorded_results_replay_the_complete_bounded_source_read():
     assert evidence.payload["dimensions"]["producer"] == RESPONSIBILITY_UNRECOVERED
     assert "occurrence_preservation" not in evidence.payload["production_coordinates"]
 
+    count = next(
+        item
+        for item in recovered
+        if item.byte_hex == "e7" and item.result == "count"
+    )
+    assert count.payload["dimensions"]["content"] == {
+        "occurrences_examined": 2,
+        "occurrences_carrying": 2,
+        "total_count": 2,
+    }
+    assert count.payload["assertion_scope"] == {
+        "workspace_id": "w",
+        "source_session_ids": ["source"],
+    }
+    assert count.payload["dimensions"]["source_provenance"]
+    assert count.payload["dimensions"]["authority_warrant"]
+    assert count.payload["unknowns"]
+    assert count.payload["forbidden_inferences"]
+    assert count.support_assertion_refs == (
+        {
+            "recorded_occurrence_id": event.id,
+            "assertion_id": event.payload["assertions"][0]["dimensions"]["identity"],
+        },
+    )
+
+    detached_payload = count.payload
+    detached_payload["dimensions"]["standing"] = "invented"
+    assert count.payload["dimensions"]["standing"] == "measured"
+
+    detached_refs = count.support_assertion_refs
+    detached_refs[0]["assertion_id"] = "invented"
+    assert count.support_assertion_refs[0]["assertion_id"] != "invented"
+
+    # Recovery preserves exact durable JSON kinds. It does not protect the
+    # result by transmuting lists to tuples or dicts to proxy objects.
+    represented = Event(
+        id="re-presented",
+        kind="test.representation",
+        workspace_id="w",
+        payload=count.payload,
+    )
+    assert type(represented.payload) is dict
+    assert type(represented.payload["assertion_scope"]["source_session_ids"]) is list
+
 
 def test_a_self_consistent_truncated_source_claim_is_refused():
     ledger = _ledger("a\nb\n")
@@ -204,6 +249,26 @@ def test_raw_material_must_match_its_exact_byte_coordinates():
     raw = ledger.get(ingress.payload["raw_material_event_id"])
     raw.payload["exact_bytes_hex"] = "not hex"
     with pytest.raises(ByteMeasurementError, match="malformed"):
+        measure_byte_counts(
+            ledger, workspace_id="w", source_session_ids=("source",)
+        )
+
+
+def test_one_raw_occurrence_cannot_be_counted_through_two_ingress_references():
+    ledger = _ledger("a\n")
+    ingress = next(
+        ledger.iter_session_kind(
+            "w", "source", "operator.ingress.ingress_occurred"
+        )
+    )
+    ledger.append(
+        "operator.ingress.ingress_occurred",
+        "w",
+        {"raw_material_event_id": ingress.payload["raw_material_event_id"]},
+        session_id="source",
+    )
+
+    with pytest.raises(ByteMeasurementError, match="cannot enter.*twice"):
         measure_byte_counts(
             ledger, workspace_id="w", source_session_ids=("source",)
         )

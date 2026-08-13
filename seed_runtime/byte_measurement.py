@@ -88,6 +88,20 @@ class RecordedByteAssertion:
     recorded_occurrence_id: str
     byte_hex: str | None
     result: str
+    _payload_json: str
+    _support_assertion_refs_json: str
+
+    @property
+    def payload(self) -> dict[str, Any]:
+        """Return one detached copy of the exact recovered JSON representation."""
+
+        return json.loads(self._payload_json)
+
+    @property
+    def support_assertion_refs(self) -> tuple[dict[str, str], ...]:
+        """Return detached occurrence-bound local support addresses."""
+
+        return tuple(json.loads(self._support_assertion_refs_json))
 
     @property
     def reference(self) -> dict[str, str]:
@@ -186,6 +200,7 @@ def _measure_byte_counts_through(
         )
 
     source_material: list[dict[str, str]] = []
+    seen_raw_material: set[str] = set()
     carrying = [0] * 256
     totals = [0] * 256
     examined = 0
@@ -212,6 +227,11 @@ def _measure_byte_counts_through(
                 workspace_id=workspace_id,
                 raw_through_boundary=raw_through_boundary,
             )
+            if raw_id in seen_raw_material:
+                raise ByteMeasurementError(
+                    "one raw-material occurrence cannot enter a byte Measurement twice"
+                )
+            seen_raw_material.add(raw_id)
             source_material.append(
                 {"ingress_occurrence_id": ingress.id, "raw_material_event_id": raw_id}
             )
@@ -379,7 +399,10 @@ def record_byte_count_layer(
     result_payload = {
         "dimensions": {
                 "identity": "byte-count-measurement-occurrence",
-                "content": "distinct exact byte count and recurrence Assertions produced",
+                "content": (
+                    "exact source-material-set, byte count, and conditional "
+                    "recurrence Assertions produced"
+                ),
                 "standing": "measured",
                 "source_provenance": "complete declared ingress read through one boundary",
                 "authority_warrant": MEASUREMENT_AUTHORITY,
@@ -444,9 +467,10 @@ def assertions_of_recorded_byte_measurement(
         or payload.get("dimensions")
         != {
             "identity": "byte-count-measurement-occurrence",
-            "content": (
-                "distinct exact byte count and recurrence Assertions produced"
-            ),
+                "content": (
+                    "exact source-material-set, byte count, and conditional "
+                    "recurrence Assertions produced"
+                ),
             "standing": "measured",
             "source_provenance": (
                 "complete declared ingress read through one boundary"
@@ -515,12 +539,23 @@ def assertions_of_recorded_byte_measurement(
         )
     recovered = []
     for assertion in expected:
+        local_ids = assertion["support_basis"]["local_assertion_ids"]
         recovered.append(
             RecordedByteAssertion(
                 assertion_id=assertion["dimensions"]["identity"],
                 recorded_occurrence_id=event.id,
                 byte_hex=assertion["assertion_subject"].get("byte_hex"),
                 result=assertion["result"],
+                _payload_json=_canonical(assertion),
+                _support_assertion_refs_json=_canonical(
+                    [
+                        {
+                            "recorded_occurrence_id": event.id,
+                            "assertion_id": local_id,
+                        }
+                        for local_id in local_ids
+                    ]
+                ),
             )
         )
     return tuple(recovered)
