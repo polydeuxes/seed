@@ -199,8 +199,7 @@ established. PESC appears in no active-law chapter.
 
 ```text
 status          never adopted (removed from active law 2026-08-13)
-closest grammar none. where the runtime must preserve what a result stood
-                on, the coordinate is `support basis`
+closest grammar bounded candidate set · what support was taken from
 ```
 
 Entered active law through this session's own `01.Standing.D.2`, in the clause
@@ -213,8 +212,23 @@ implementation vocabulary and carries no standing.
 
 It does not gloss to `support basis`. An earlier version of this entry said it
 did, which restates the definition `#2514` withdrew: what an act consumed is
-broader than the support its result stands on. The support basis is a
-different coordinate that the runtime may preserve *about* such a set.
+broader than the support its result stands on.
+
+What it *does* gloss to is **bounded candidate set**, which `02.Selection`
+establishes — *"a selection act consumes a bounded candidate set plus a
+selection basis."* That is the distinction the word kept carrying:
+
+```text
+support basis           what was taken
+bounded candidate set   what it was taken from
+```
+
+The word came back three times, twice inside the very changes removing it, and
+each time it was carrying the second of those. A compact representation of
+support must distinguish *some of a set* from *all of it*, and that sentence
+cannot be written without naming the set. It was reappearing because the
+sentence needed a referent, not because the noun was sticky — and the referent
+already had a name one chapter over.
 
 Recorded because the miss is instructive: the same session excised
 `assimilation` for being a noun in a title while the body said the thing
