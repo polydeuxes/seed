@@ -226,7 +226,7 @@ native because it *was* native — this session put it there.
 
 ```text
 status          mechanical
-closest grammar none, and none expected
+closest grammar none established for this mechanical role
 ```
 
 Neither appears in active law. `digest` is used 71 times in `seed_runtime` and
@@ -250,8 +250,9 @@ constitutional; the arithmetic that makes a preserved one checkable is not.
 The distinction earns its place because the vocabulary hunt fails in two
 directions. A word can be contamination wearing a technical coat — `state`,
 `aggregation` and `candidate convergence` all were. A word can also be plumbing
-audited as though it were making a claim. Recording *this will not need a
-clause* closes a question instead of leaving it open.
+audited as though it were making a claim. Recording that *this mechanical role
+establishes no constitutional distinction* closes this audit question, which is
+a statement about what was examined and not a forecast.
 
 ## occurrences examined
 
