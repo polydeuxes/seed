@@ -252,7 +252,7 @@ def measure_recurrence(
     examined = 0
     carrying = 0
     total = 0
-    for event in occurrences:
+    for event in _distinct_population(occurrences):
         text = _measurable_text(event)
         consumed.append(event.id)
         localities[_locality_of(event)] = None
@@ -290,6 +290,29 @@ def _locality_of(event: Event) -> str:
     return f"workspace:{event.workspace_id};session:{event.session_id}"
 
 
+def _distinct_population(occurrences: Iterable[Event]) -> list[Event]:
+    """The occurrences to measure, refusing a repeated occurrence identity.
+
+    `01.External:28` requires a finding to disclose the bounded scope within
+    which occurrences were counted. One occurrence appearing twice in a
+    population is counted twice, so ``occurrences_examined`` would report a
+    population larger than the one that exists and every count drawn from it
+    would carry that inflation. The duplication is recoverable from
+    ``consumed_event_ids``, which is not the same as not having misstated the
+    scope.
+    """
+
+    population = list(occurrences)
+    seen: set[str] = set()
+    for event in population:
+        if event.id in seen:
+            raise PreservedMaterialMeasurementError(
+                f"{event.id} appears more than once in one measured population"
+            )
+        seen.add(event.id)
+    return population
+
+
 def _measurable_text(event: Event) -> str:
     """The text this occurrence preserved, or a refusal stating why not.
 
@@ -309,6 +332,16 @@ def _measurable_text(event: Event) -> str:
         raise PreservedMaterialMeasurementError(
             f"{event.id} preserves material with no available text "
             "representation, and this measurement measures text"
+        )
+    if "decoded_text" not in event.payload:
+        # The coordinate says a text representation is available and the
+        # material does not carry one. Reading the flag and trusting it would
+        # rest the finding on a claim about the material rather than on the
+        # material, and would surface as a KeyError rather than as a refusal
+        # stating what was wrong.
+        raise PreservedMaterialMeasurementError(
+            f"{event.id} declares an available text representation but "
+            "preserves no decoded text"
         )
     return event.payload["decoded_text"]
 
@@ -382,7 +415,7 @@ def measure_recurrences(
     examined = 0
     carrying: dict[str, int] = {name: 0 for name in declared}
     total: dict[str, int] = {name: 0 for name in declared}
-    for event in occurrences:
+    for event in _distinct_population(occurrences):
         text = _measurable_text(event)
         consumed.append(event.id)
         localities[_locality_of(event)] = None

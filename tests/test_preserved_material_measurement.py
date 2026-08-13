@@ -841,3 +841,37 @@ def test_batch_and_single_survive_the_recording_boundary_identically(
     # Occurrence identity is the Event id, which is outside the payload, so
     # the payloads themselves must match completely -- lineage included.
     assert [e.payload for e in singly] == [e.payload for e in batched]
+
+
+def test_material_declaring_text_it_does_not_carry_is_refused(recurrence_occurrences):
+    """The flag is a claim about the material, not the material."""
+
+    _, _ = recurrence_occurrences
+    lying = Event(
+        id="evt_claims_text",
+        kind=INGRESS_OCCURRED_KIND,
+        workspace_id="w",
+        session_id="r",
+        payload={"text_representation": {"available": True}},
+    )
+    with pytest.raises(PreservedMaterialMeasurementError, match="preserves no decoded text"):
+        measure_recurrence(
+            [lying], declared=_recurrence_declared("the"), occurrences_of=_counts("the")
+        )
+    declared = _declared_for("the")
+    with pytest.raises(PreservedMaterialMeasurementError, match="preserves no decoded text"):
+        measure_recurrences([lying], declared=declared, counts_in=_counts_in(declared))
+
+
+def test_one_occurrence_twice_in_a_population_is_refused(recurrence_occurrences):
+    """`01.External:28`: the disclosed scope is the scope counted within."""
+
+    _, occurrences = recurrence_occurrences
+    doubled = list(occurrences) + [occurrences[0]]
+    with pytest.raises(PreservedMaterialMeasurementError, match="more than once"):
+        measure_recurrence(
+            doubled, declared=_recurrence_declared("the"), occurrences_of=_counts("the")
+        )
+    declared = _declared_for("the")
+    with pytest.raises(PreservedMaterialMeasurementError, match="more than once"):
+        measure_recurrences(doubled, declared=declared, counts_in=_counts_in(declared))
