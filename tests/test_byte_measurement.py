@@ -138,7 +138,7 @@ def test_recorded_results_replay_the_complete_bounded_source_read():
     }
     assert count.payload["assertion_scope"] == {
         "workspace_id": "w",
-        "source_session_ids": ["source"],
+        "source_session_ids": ("source",),
     }
     assert count.payload["dimensions"]["source_provenance"]
     assert count.payload["dimensions"]["authority_warrant"]
@@ -150,6 +150,11 @@ def test_recorded_results_replay_the_complete_bounded_source_read():
             "assertion_id": event.payload["assertions"][0]["dimensions"]["identity"],
         },
     )
+
+    with pytest.raises(TypeError):
+        count.payload["dimensions"]["standing"] = "invented"
+    with pytest.raises(TypeError):
+        count.support_assertion_refs[0]["assertion_id"] = "invented"
 
 
 def test_a_self_consistent_truncated_source_claim_is_refused():
