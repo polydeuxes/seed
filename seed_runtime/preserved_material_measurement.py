@@ -1083,6 +1083,11 @@ def record_measurement_findings(
                 f"{finding.production_evidence_id} is production evidence for "
                 "a different kind of result"
             )
+        if evidence.payload.get("production_convention") != MEASUREMENT_CONVENTION:
+            raise PreservedMaterialMeasurementError(
+                f"{finding.production_evidence_id} is production evidence "
+                "under a different production convention"
+            )
         if evidence.payload["production_commitment"] != _production_commitment(
             finding
         ):

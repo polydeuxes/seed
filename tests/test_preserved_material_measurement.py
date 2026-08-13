@@ -1601,6 +1601,27 @@ def test_production_evidence_cannot_be_borrowed_across_workspaces(
         )
 
 
+def test_recurrence_recorder_requires_its_production_convention(
+    recurrence_occurrences,
+):
+    ledger, occurrences = recurrence_occurrences
+    finding = _produced(ledger, occurrences)
+    evidence = ledger.get(finding.production_evidence_id)
+    forged = ledger.append(
+        PRODUCTION_EVIDENCE_KIND,
+        "w",
+        {**evidence.payload, "production_convention": "another convention"},
+        session_id="r",
+    )
+    altered = _rebuilt(finding, production_evidence_id=forged.id)
+    with pytest.raises(
+        PreservedMaterialMeasurementError, match="different production convention"
+    ):
+        record_measurement_finding(
+            ledger, workspace_id="w", session_id="r", finding=altered
+        )
+
+
 def test_no_public_operation_attaches_production_to_an_arbitrary_finding():
     import seed_runtime.preserved_material_measurement as module
 

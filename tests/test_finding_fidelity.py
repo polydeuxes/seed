@@ -83,6 +83,7 @@ def test_the_fidelity_finding_carries_evidence_that_the_act_produced_it(recorded
     assert evidence.payload["produced_result_kind"] == FIDELITY_RESULT_KIND
     content = dict(result.payload)
     content.pop("production_evidence_id")
+    content.pop("occurrence_preservation")
     assert evidence.payload["production_coordinates"] == sorted(content)
     assert evidence.payload["production_commitment"] == production_commitment(
         FIDELITY_CONVENTION, content
@@ -337,16 +338,21 @@ def test_foreign_workspace_production_evidence_is_not_faithful(recorded):
         session_id="r",
     )
     result = compare_recorded_finding(ledger, foreign.id)
-    assert result.payload["dimensions"]["standing"] == UNFAITHFUL_CROSSING
-    assert result.payload["observed_crossings"] == [
-        {
-            "kind": FIDELITY_UNKNOWN,
-            "observation": (
-                "the named production evidence belongs to a different "
-                "workspace than the recorded finding"
-            ),
-        }
+    assert result.payload["dimensions"]["standing"] == FIDELITY_UNKNOWN
+    assert result.payload["observed_crossings"] == []
+    assert "cross-workspace movement" in " ".join(result.payload["unknowns"])
+
+
+def test_recording_testimony_is_not_part_of_the_produced_fidelity_result(recorded):
+    ledger, event = recorded
+    result = compare_recorded_finding(ledger, event.id)
+    evidence = ledger.get(result.payload["production_evidence_id"])
+    assert "occurrence_preservation" not in evidence.payload[
+        "production_coordinates"
     ]
+    assert result.payload["occurrence_preservation"].startswith(
+        "Fidelity finding durably recorded"
+    )
 
 
 def test_corrupted_implementation_witness_is_refused(tmp_path):

@@ -5,9 +5,11 @@ an act after that act has fixed its result, Evidence committing to the exact
 coordinates produced. The resulting Event is Evidence concerning the
 production occurrence; it is not that occurrence by identity.
 
-The helper stays private. Exposing an operation that accepts arbitrary result
-content would create a second recorder able to manufacture production standing
-for caller-constructed objects.
+The helper is private implementation plumbing, not the guarantee. The result's
+carried relation to this Evidence distinguishes a produced result from an
+identical caller-constructed representation. Exposing a public operation that
+accepts arbitrary result content would instead create a second recorder able to
+manufacture that relation.
 """
 
 from __future__ import annotations

@@ -151,12 +151,11 @@ def compare_recorded_finding(ledger: EventLedger, event_id: str) -> Event:
                     "the named production-evidence occurrence is corrupted"
                 )
             elif evidence.workspace_id != recorded.workspace_id:
-                observed.append(
-                    _crossing(
-                        FIDELITY_UNKNOWN,
-                        "the named production evidence belongs to a different "
-                        "workspace than the recorded finding",
-                    )
+                unresolved = True
+                unknowns.append(
+                    "the named production evidence belongs to a different "
+                    "workspace, and no warranted cross-workspace movement is "
+                    "available to this comparison"
                 )
             elif evidence.kind != PRODUCTION_EVIDENCE_KIND:
                 observed.append(
@@ -211,8 +210,14 @@ def compare_recorded_finding(ledger: EventLedger, event_id: str) -> Event:
                         recorded_commitment = _recorded_production_commitment(
                             recorded, tuple(coordinates)
                         )
-                    except PreservedMaterialMeasurementError as exc:
-                        observed.append(_crossing(ERASURE, str(exc)))
+                    except PreservedMaterialMeasurementError:
+                        observed.append(
+                            _crossing(
+                                ERASURE,
+                                "the recorded finding omits at least one exact "
+                                "coordinate its production evidence commits to",
+                            )
+                        )
                     else:
                         if commitment != recorded_commitment:
                             # The mismatch proves the bounded expectation failed.
@@ -256,8 +261,7 @@ def compare_recorded_finding(ledger: EventLedger, event_id: str) -> Event:
                     if recorded.session_id is not None
                     else None
                 ),
-                "occurrence_preservation": "fidelity comparison durably recorded",
-        },
+            },
         "constitutional_subject": (
                 "the recorded finding's represented relation to the production "
                 "evidence it names"
@@ -318,6 +322,13 @@ def compare_recorded_finding(ledger: EventLedger, event_id: str) -> Event:
     return ledger.append(
         FIDELITY_FINDING_KIND,
         recorded.workspace_id,
-        {**result_payload, "production_evidence_id": production_evidence.id},
+        {
+            **result_payload,
+            "production_evidence_id": production_evidence.id,
+            "occurrence_preservation": (
+                "Fidelity finding durably recorded after its exact result was "
+                "produced"
+            ),
+        },
         session_id=recorded.session_id,
     )
