@@ -35,6 +35,7 @@ import pytest
 from seed_runtime.events import EventLedger
 from seed_runtime.preserved_material_measurement import (
     MATERIAL_AS_SUPPLIED,
+    _produced_content,
     RESPONSIBILITY_UNRECOVERED,
     MATERIAL_READ_FROM_LEDGER,
     MEASUREMENT_PRODUCED_KIND,
@@ -856,9 +857,17 @@ def test_batch_and_single_survive_the_recording_boundary_identically(
         produce_in=(ledger, "w", "r"),
     )
     ]
-    # Occurrence identity is the Event id, which is outside the payload, so
-    # the payloads themselves must match completely -- lineage included.
-    assert [e.payload for e in singly] == [e.payload for e in batched]
+    # Occurrence identity is the Event id, which is outside the payload. The
+    # one payload coordinate that legitimately differs is `produced_by`: these
+    # are two productions of the same content, and each names its own evidence.
+    def _without_its_own_evidence(event):
+        payload = dict(event.payload)
+        payload.pop("produced_by", None)
+        return payload
+
+    assert [_without_its_own_evidence(e) for e in singly] == [
+        _without_its_own_evidence(e) for e in batched
+    ]
 
 
 def test_material_declaring_text_it_does_not_carry_is_refused(recurrence_occurrences):
@@ -1427,6 +1436,7 @@ def _rebuilt(finding, **changed):
         "total_count": finding.total_count,
         "consumed_event_ids": finding.consumed_event_ids,
         "support_basis": finding.support_basis,
+        "produced_by": finding.produced_by,
     }
     fields.update(changed)
     return RecurrenceFinding(**fields)
@@ -1451,16 +1461,43 @@ def test_a_produced_result_records(recurrence_occurrences):
     assert event.kind == MEASUREMENT_RECORDED_KIND
 
 
-def test_an_equivalent_finding_nobody_produced_cannot_reuse_the_witness(
+def test_an_identical_finding_nobody_produced_cannot_reuse_the_witness(
     recurrence_occurrences,
 ):
+    """The exact `01.Constructors` counterexample: identical fields."""
+
     ledger, occurrences = recurrence_occurrences
     produced = _produced(ledger, occurrences)
-    # Same shape, same fields, constructed rather than returned.
-    constructed = _rebuilt(produced, total_count=produced.total_count + 1)
-    with pytest.raises(PreservedMaterialMeasurementError, match="no preserved production"):
+    constructed = _rebuilt(produced, produced_by=None)
+    # Every measured coordinate is identical. Only the relation is absent.
+    assert _produced_content(constructed) == _produced_content(produced)
+    with pytest.raises(PreservedMaterialMeasurementError, match="names no production"):
         record_measurement_finding(
             ledger, workspace_id="w", session_id="r", finding=constructed
+        )
+
+
+def test_another_representation_of_the_same_produced_result_is_lawful(
+    recurrence_occurrences,
+):
+    """Carrying the same evidence is being the same result, not forging one."""
+
+    ledger, occurrences = recurrence_occurrences
+    produced = _produced(ledger, occurrences)
+    same = _rebuilt(produced)
+    event = record_measurement_finding(
+        ledger, workspace_id="w", session_id="r", finding=same
+    )
+    assert event.kind == MEASUREMENT_RECORDED_KIND
+
+
+def test_evidence_for_one_result_does_not_carry_another(recurrence_occurrences):
+    ledger, occurrences = recurrence_occurrences
+    produced = _produced(ledger, occurrences)
+    borrowed = _rebuilt(produced, total_count=produced.total_count + 1)
+    with pytest.raises(PreservedMaterialMeasurementError, match="different result"):
+        record_measurement_finding(
+            ledger, workspace_id="w", session_id="r", finding=borrowed
         )
 
 
@@ -1481,7 +1518,7 @@ def test_changing_any_produced_coordinate_cannot_reuse_the_witness(
     ledger, occurrences = recurrence_occurrences
     produced = _produced(ledger, occurrences)
     altered = _rebuilt(produced, **changed)
-    with pytest.raises(PreservedMaterialMeasurementError, match="no preserved production"):
+    with pytest.raises(PreservedMaterialMeasurementError, match="different result"):
         record_measurement_finding(
             ledger, workspace_id="w", session_id="r", finding=altered
         )
@@ -1494,15 +1531,42 @@ def test_recording_cannot_overwrite_what_the_measurement_established(
 
     ledger, occurrences = recurrence_occurrences
     finding = _produced(ledger, occurrences)
+    # Refused rather than quietly dropped: a caller asked to record one thing
+    # and silently recording another is its own defect.
+    with pytest.raises(PreservedMaterialMeasurementError, match="may not replace"):
+        record_measurement_finding(
+            ledger,
+            workspace_id="w",
+            session_id="r",
+            finding=finding,
+            extra={"total_count": 999},
+        )
     event = record_measurement_finding(
         ledger,
         workspace_id="w",
         session_id="r",
         finding=finding,
-        extra={"total_count": 999, "a_recording_coordinate": "kept"},
+        extra={"a_recording_coordinate": "kept"},
     )
-    assert event.payload["total_count"] == finding.total_count
     assert event.payload["a_recording_coordinate"] == "kept"
+
+
+def test_recording_cannot_restate_the_measurements_own_dimensions(
+    recurrence_occurrences,
+):
+    """`extra` was filtered against the finding's keys only, so `dimensions`
+    -- carrying the provenance `#2516` recovered -- was reachable."""
+
+    ledger, occurrences = recurrence_occurrences
+    finding = _produced(ledger, occurrences)
+    with pytest.raises(PreservedMaterialMeasurementError, match="may not replace"):
+        record_measurement_finding(
+            ledger,
+            workspace_id="w",
+            session_id="r",
+            finding=finding,
+            extra={"dimensions": {"source_provenance": "whatever I want"}},
+        )
 
 
 def test_production_and_recording_may_be_in_different_localities(

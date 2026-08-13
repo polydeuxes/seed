@@ -45,7 +45,7 @@ and co-presence is what a finding reports.
 from __future__ import annotations
 
 import json
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 from typing import Any, Iterable
 
 from seed_runtime.events import EventLedger
@@ -81,6 +81,11 @@ MATERIAL_AS_SUPPLIED = (
 # Act a declared measurement, Standing measured, and a Responsibility that stays
 # unrecovered. That is ordinary rather than contradictory.
 RESPONSIBILITY_UNRECOVERED = "unrecovered"
+
+# What the measuring act says about itself, which recording may not restate.
+MEASUREMENT_OWNED_DIMENSIONS = frozenset(
+    {"source_provenance", "responsibility", "standing", "authority_warrant"}
+)
 
 BOUNDARY_NOTES: tuple[str, ...] = (
     "A finding reports a count within its stated scope and nothing further.",
@@ -254,6 +259,18 @@ class RecurrenceFinding:
     # SupportBasis to carry the basis instead. This path was written without
     # it and measured 96.8% on 500 findings over 2,000 occurrences.
     support_basis: SupportBasis | None = None
+    # Which preserved production evidence concerns this result. `01.Constructors`
+    # holds that a separately constructed representation with identical fields
+    # does not carry the witnessed return's standing "unless that standing is
+    # separately represented or preserved". Content equality cannot supply it:
+    # an identical reconstruction has identical content by definition, which is
+    # exactly the case the relation must distinguish. So the relation travels
+    # with the result rather than being recovered later by matching bytes.
+    #
+    # A later representation carrying this same reference is another
+    # representation of the same produced result, which is lawful. One carrying
+    # none is a representation of nothing produced.
+    produced_by: str | None = None
     boundary_notes: tuple[str, ...] = field(default=BOUNDARY_NOTES)
     convention: str = MEASUREMENT_CONVENTION
 
@@ -272,6 +289,7 @@ class RecurrenceFinding:
             "consumed_event_ids": list(self.consumed_event_ids),
             "consumed_count": len(self.consumed_event_ids),
             "boundary_notes": list(self.boundary_notes),
+            "produced_by": self.produced_by,
         }
         if self.support_basis is not None:
             # The basis replaces the enumeration rather than accompanying it.
@@ -337,12 +355,13 @@ def measure_recurrence(
         consumed_event_ids=tuple(consumed),
     )
     if produce_in is not None:
-        _record_production(
+        evidence = _record_production(
             produce_in[0],
             workspace_id=produce_in[1],
             session_id=produce_in[2],
             finding=finding,
         )
+        finding = replace(finding, produced_by=evidence.id)
     return finding
 
 
@@ -429,6 +448,51 @@ def _as_preserved(
     return preserved, MATERIAL_READ_FROM_LEDGER
 
 
+def _additive_only(
+    finding, carried: dict[str, Any], extra: dict[str, Any] | None
+) -> dict[str, Any]:
+    """Recording coordinates, refused where they collide with owned ones.
+
+    Merging `extra` last let a caller record ``extra={"total_count": 999}`` over
+    a produced count of three, so the durable result was one no act produced.
+    Filtering silently was the first repair and was also wrong: a caller asked
+    to record one thing and the recorder recorded another without saying so.
+
+    Owned coordinates are the finding's own, and the recorded coordinates this
+    function builds around it -- `dimensions` among them, which carries the
+    material provenance `#2516` recovered and was reachable while only the
+    finding's keys were checked.
+    """
+
+    if not extra:
+        return {}
+    collisions = sorted(set(extra) & set(carried))
+    if collisions:
+        raise PreservedMaterialMeasurementError(
+            "recording may add coordinates and may not replace ones the "
+            f"measurement established: {', '.join(collisions)}"
+        )
+    added = dict(extra)
+    supplied = added.get("dimensions")
+    if isinstance(supplied, dict) and isinstance(finding, RecurrenceFinding):
+        # A caller may supply dimensions -- the result-Assertion path does --
+        # and replacing the whole object took the measurement's own coordinates
+        # with it, `source_provenance` among them, which is the provenance
+        # `#2516` recovered. Reached while only the finding's top-level keys
+        # were checked. These few belong to the measuring act.
+        #
+        # Recurrence only, like the rest of this boundary. The result-Assertion
+        # path builds its own complete dimensions by design, and refusing that
+        # is a migration rather than a repair.
+        taken = sorted(set(supplied) & MEASUREMENT_OWNED_DIMENSIONS)
+        if taken:
+            raise PreservedMaterialMeasurementError(
+                "recording may add dimensions and may not replace ones the "
+                f"measurement established: {', '.join(taken)}"
+            )
+    return added
+
+
 def _produced_content(finding) -> dict[str, Any]:
     """Everything the measuring act established about its own result.
 
@@ -444,6 +508,9 @@ def _produced_content(finding) -> dict[str, Any]:
     content["material_provenance"] = getattr(
         finding, "material_provenance", MATERIAL_AS_SUPPLIED
     )
+    # The reference to the production evidence is not part of the content that
+    # evidence commits to; it is how a result says which evidence concerns it.
+    content.pop("produced_by", None)
     return content
 
 
@@ -465,18 +532,19 @@ def _record_production(
 ) -> Event:
     """Preserve, from inside the producing act, that it returned this result.
 
-    **Private, and that is the whole distinction.** An earlier attempt exposed
-    this publicly, which made it a second recorder: a caller holding any object
-    could record a production over it, establishing that a caller possessed
-    something and called a function. `01.Constructors` separates mechanical
-    construction from a witnessed producer return, and a function accepting
-    whatever it is handed witnesses nothing. Only the measuring acts call this,
-    after their result is fixed and before it is returned.
+    The distinction is not that this is private. Privacy is mechanics. It is
+    that production standing is preserved at the producing return boundary, and
+    the result carries the relation to it — so a separately constructed
+    representation with identical fields carries no such relation, which is the
+    counterexample `01.Constructors` states. An earlier attempt exposed this
+    publicly, which made it a second recorder: a caller holding any object could
+    record a production over it, establishing only that a caller possessed
+    something and called a function.
 
     What this establishes, and what it does not:
 
     ```text
-      established   this measuring act ran and returned this exact result
+      established   this measuring act produced this exact result
       not           who is authorized to perform it
       not           under whose Responsibility the production is owned
       not           that nothing else appended this kind directly
@@ -503,8 +571,8 @@ def _record_production(
                 "standing": "produced",
                 "producing_act": "declared measurement",
                 "producer_evidence": (
-                    "preserved from inside the producing act, after its result "
-                    "was fixed and before it was returned"
+                    "preserved at the producing return boundary, after this "
+                    "result was fixed; the result carries the relation to this"
                 ),
                 "producer": RESPONSIBILITY_UNRECOVERED,
                 "responsibility": RESPONSIBILITY_UNRECOVERED,
@@ -781,13 +849,20 @@ def measure_recurrences(
         for representation, declaration in declared.items()
     )
     if produce_in is not None:
+        # Every result is fixed before any evidence is preserved. Preserving
+        # one at a time would let evidence for the first survive a failure
+        # while measuring the rest, and that evidence would concern a result
+        # this act had not finished producing.
+        witnessed = []
         for finding in findings:
-            _record_production(
+            evidence = _record_production(
                 produce_in[0],
                 workspace_id=produce_in[1],
                 session_id=produce_in[2],
                 finding=finding,
             )
+            witnessed.append(replace(finding, produced_by=evidence.id))
+        findings = tuple(witnessed)
     return findings
 
 
@@ -901,13 +976,7 @@ def _measurement_finding_payload(
         "mutates_cluster": False,
         "unknowns": ["what any measured representation means remains Unknown"],
         **carried,
-        # Recording may add its own coordinates and may not overwrite the
-        # measuring act's. Merging `extra` last let a caller record
-        # extra={"total_count": 999} over a produced count of 3, so the
-        # durable result was one no act produced. The producer does not need
-        # to commit to future recorder material; the recorder needs to stop
-        # owning producer material.
-        **{key: value for key, value in (extra or {}).items() if key not in carried},
+        **_additive_only(finding, carried, extra),
         "lineage": (
             [finding.declared.premise_event_id]
             if finding.declared.premise_event_id
@@ -971,19 +1040,27 @@ def record_measurement_findings(
     # `06.Standing.B` makes producing in one locality and recording in another
     # lawful. Required on this path only: every positional caller records
     # without a production witness, and adopting it there is its own migration.
-    needs_witness = [f for f, _ in supplied if isinstance(f, RecurrenceFinding)]
-    if needs_witness:
-        witnessed = {
-            event.payload["production_commitment"]
-            for event in ledger.list(workspace_id)
-            if event.kind == MEASUREMENT_PRODUCED_KIND
-        }
-        for finding in needs_witness:
-            if _production_commitment(finding) not in witnessed:
-                raise PreservedMaterialMeasurementError(
-                    "no preserved production evidence matches this result; a "
-                    "measuring act preserves that evidence when it returns"
-                )
+    for finding, _ in supplied:
+        if not isinstance(finding, RecurrenceFinding):
+            continue
+        if finding.produced_by is None:
+            raise PreservedMaterialMeasurementError(
+                "this result names no production evidence; a measuring act "
+                "preserves that evidence and the result it returns carries it"
+            )
+        evidence = ledger.get(finding.produced_by)
+        if evidence is None or evidence.kind != MEASUREMENT_PRODUCED_KIND:
+            raise PreservedMaterialMeasurementError(
+                f"{finding.produced_by} is named as this result's production "
+                "evidence and is not preserved production evidence"
+            )
+        if evidence.payload["production_commitment"] != _production_commitment(
+            finding
+        ):
+            raise PreservedMaterialMeasurementError(
+                "the production evidence this result names concerns a "
+                "different result"
+            )
     events = [
         Event(
             id=new_id("evt"),
