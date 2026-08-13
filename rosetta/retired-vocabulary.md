@@ -194,3 +194,56 @@ Absent from active law. The phrase entered through the same correction round as
 `relation grammar`, as attributed PESC orientation vocabulary: a bounded
 proposed equivalence concerning a Presentation, explicitly not thereby true or
 established. PESC appears in no active-law chapter.
+
+## population
+
+```text
+status          never adopted (removed from active law 2026-08-13)
+closest grammar support basis · the preserved occurrences an act consumed
+```
+
+Entered active law through this session's own `01.Standing.D.2`, in the clause
+title, on 2026-08-12. The body never used it and said the thing plainly:
+*not every preserved Assertion*. Removed the next day.
+
+It survives in `seed_runtime` as ordinary English for the bounded set of
+occurrences one act consumed — 47 uses across the measurement modules. That is
+implementation vocabulary and carries no standing. Where the runtime needs to
+*preserve* what it consumed, the coordinate is `support basis`, which
+`05.Testimony.E` now bounds.
+
+Recorded because the miss is instructive: the same session excised
+`assimilation` for being a noun in a title while the body said the thing
+plainly, named that pattern out loud, and then shipped an instance of it. Four
+readings walked past it, three of them hunting contamination. The word sounded
+native because it *was* native — this session put it there.
+
+## commitment
+
+```text
+status          never adopted
+closest grammar none recovered
+```
+
+Zero occurrences in active law; 22 in `support_basis.py`, where it names the
+digest over a selection rule and its ordered identities. It is what makes a
+support basis checkable without its enumeration.
+
+Implementation vocabulary. The Book requires a support basis to be preserved
+and, since `05.Testimony.E`, says what one is — it says nothing about how a
+preserved basis is made checkable. That mechanism is chosen, not recovered, and
+is recorded here rather than promoted.
+
+## occurrences examined
+
+```text
+status          never adopted
+closest grammar bounded scope (01.External:28)
+```
+
+`examined` is absent from active law; `occurrences_examined` is the runtime's
+name for the size of the scope a measurement counted within. `01.External:28`
+requires a recurrence assertion to disclose *the bounded scope within which
+occurrences were counted*; this field is that disclosure's measured size.
+
+Ordinary English for an established requirement, not a second coordinate.
