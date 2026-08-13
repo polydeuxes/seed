@@ -1343,3 +1343,45 @@ def test_the_recorder_states_the_provenance_the_measurement_declared(
         recorded.payload["dimensions"]["source_provenance"]
         == MATERIAL_READ_FROM_LEDGER
     )
+
+
+def test_the_basis_path_reports_the_ledger_it_read_from(recurrence_occurrences):
+    """It re-reads every occurrence and used to record them as supplied."""
+
+    ledger, occurrences = recurrence_occurrences
+    declared = _declared_for("the")
+    finding = measure_recurrences(
+        occurrences,
+        declared=declared,
+        counts_in=_counts_in(declared),
+        support_basis=_basis_for(occurrences, ledger),
+        support_recovery=SupportRecovery(ledger),
+    )[0]
+    assert finding.material_provenance == MATERIAL_READ_FROM_LEDGER
+
+
+def test_the_responsibility_label_follows_the_provenance(recurrence_occurrences):
+    ledger, occurrences = recurrence_occurrences
+    unbound = record_measurement_finding(
+        ledger,
+        workspace_id="w",
+        session_id="r",
+        finding=measure_recurrence(
+            occurrences,
+            declared=_recurrence_declared("the"),
+            occurrences_of=_counts("the"),
+        ),
+    )
+    bound = record_measurement_finding(
+        ledger,
+        workspace_id="w",
+        session_id="r",
+        finding=measure_recurrence(
+            occurrences,
+            declared=_recurrence_declared("the"),
+            occurrences_of=_counts("the"),
+            preserved_in=ledger,
+        ),
+    )
+    assert "supplied" in unbound.payload["dimensions"]["responsibility"]
+    assert "preserved" in bound.payload["dimensions"]["responsibility"]

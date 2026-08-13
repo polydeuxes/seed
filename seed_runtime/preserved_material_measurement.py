@@ -535,6 +535,12 @@ def measure_recurrences(
         # the basis is recovered against. The supplied objects still determine
         # which occurrences are consumed and in what order; they do not supply
         # what was measured.
+        # This read establishes the same provenance `_as_preserved` does, so
+        # the finding must carry it. Without this the basis path recorded
+        # material as supplied while having read every occurrence from the
+        # ledger -- erasing an established provenance rather than inventing an
+        # unestablished one, which is the same defect facing the other way.
+        material_provenance = MATERIAL_READ_FROM_LEDGER
         preserved = []
         for event in walked:
             recorded = support_recovery.ledger.get(event.id)
@@ -747,7 +753,15 @@ def _measurement_finding_payload(
             "source_provenance": getattr(
                 finding, "material_provenance", MATERIAL_AS_SUPPLIED
             ),
-            "responsibility": "declared-measurement-over-preserved-material",
+            # Follows the provenance rather than asserting it. A finding whose
+            # material was supplied recorded this label anyway, so its two
+            # coordinates contradicted each other in one payload.
+            "responsibility": (
+                "declared-measurement-over-preserved-material"
+                if getattr(finding, "material_provenance", MATERIAL_AS_SUPPLIED)
+                == MATERIAL_READ_FROM_LEDGER
+                else "declared-measurement-over-supplied-material"
+            ),
             "authority_warrant": (
                 "measurement evidence only; establishes no meaning, relation, "
                 "or standing beyond the measurement assertion"
