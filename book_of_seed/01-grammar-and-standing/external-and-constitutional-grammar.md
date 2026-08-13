@@ -27,6 +27,11 @@ A Fidelity finding is produced only by a bounded comparison that brings constitu
 ### 01.External.E — Measurement and recurrence do not establish meaning
 A declared measurement may produce bounded findings of exact equality, count, recurrence, prefix occurrence, the result of a declared predicate, or adjacency within its measurement boundary. Those findings do not establish structural, grammatical, or semantic meaning, or constitutional standing beyond the measurement assertion. A recurrence assertion must disclose the representation or projection measured, the rule by which equivalence or sameness was determined, and the bounded scope within which occurrences were counted. A consumer's purpose separately governs lawful reliance and acceptable representational loss; purpose is not therefore a required coordinate of every exact count.
 
+### 01.External.E.0 — A finding is the bounded result of a declared act
+A finding is the bounded result a declared measurement or a bounded comparison produces. It reports what that act found within the boundary that act declared, and carries no standing beyond its own assertion. A finding is not the material it was drawn from, not the act that produced it, and not a claim about anything outside the boundary it states.
+
+A finding may later be consumed as an input. Being consumed establishes nothing further about it, and a finding consumed by several acts remains one finding.
+
 ### 01.External.E.1 — Occurrence counts preserve occurrence identity
 Where a declared measurement counts preserved occurrences, each counted occurrence is distinguished by exact occurrence identity. Repeated reference to one preserved occurrence does not establish another occurrence and does not increase that occurrence count. A separately warranted count of references is a different declared measurement.
 
