@@ -9,6 +9,8 @@ Which kinds are constitutionally recognized, and what establishes an artifact's 
 ## Bounded resolution
 An artifact is a preserved representation or record whose fields carry an assertion made by another responsibility. Its shape can preserve identity, provenance, result, uncertainty, and boundaries; it does not supply the warrant for those assertions. Standing depends on the kind-specific production or establishment boundary and its validated inputs. A normalized fact-shaped artifact may preserve a claim in Fact vocabulary without proving that the claim has constitutional Fact standing; that standing must be recovered from the applicable producer, support, scope, authority, and conflict-aware establishment boundary. Act, constraint, testimony, constructor, View, representation form or structure, representation formation act, separately evidenced emission occurrence, and transport structure describe different dimensions of repository responsibility; an assertion-preserving Uptake relation describes a warranted consumer-side relation. They are not mutually exclusive artifact shapes, and a dedicated dataclass or concordance entry does not by itself establish a durable constitutional kind.
 
+Seed is responsible for establishing no Standing beyond what its Evidence, Authority, Scope, and preserved limits warrant. Particular responsibilities are bounded expressions of that Responsibility for an exact subject and purpose; they do not replace it or independently strengthen what may be established, preserved, or revised.
+
 
 ## Addressable boundaries for availability and reachability
 

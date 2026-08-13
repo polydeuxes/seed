@@ -448,6 +448,7 @@ class SQLiteEventLedger(EventLedger):
         "session", "system_invocation", "system_material", "transient_material",
         "operator_response_comparison", "operator_alternative_identification",
         "presented_alternative", "adjacent_byte_pair_measurement_act",
+        "adjacent_byte_pair_measurement_occurrence",
     })
 
     _PERSISTED_ID_PREFIXES = (
@@ -478,6 +479,7 @@ class SQLiteEventLedger(EventLedger):
         "operator_alternative_identification",
         "presented_alternative",
         "adjacent_byte_pair_measurement_act",
+        "adjacent_byte_pair_measurement_occurrence",
     )
 
     def __init__(self, database_path: str) -> None:
