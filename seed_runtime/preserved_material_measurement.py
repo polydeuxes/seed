@@ -291,24 +291,28 @@ def _locality_of(event: Event) -> str:
 
 
 def _measurable_text(event: Event) -> str:
-    """The text this occurrence preserved, or a refusal stating why not.
+    """The text this preserved occurrence carries, or a refusal stating why not.
 
-    Both recurrence measurements refuse identically, so the refusal lives in
-    one place: a measurement that reports its scope cannot quietly skip part
-    of it.
+    PROTOTYPE A. `#2496` holds that an occurrence records that material
+    occurred and does not record that it is available: current availability
+    "is asked of the holder, never read from the ledger". For a preserved
+    ingress occurrence the payload is what holds the text, so the payload is
+    asked and ``text_representation.available`` is not consulted at all.
+
+    The consequence, stated rather than hidden: an occurrence claiming no text
+    representation while carrying decoded text is measured. This prefers the
+    material over the record in a case where they contradict each other, which
+    is a choice this docstring is making visible rather than defending.
     """
 
     if event.kind != INGRESS_OCCURRED_KIND:
         raise PreservedMaterialMeasurementError(
             f"only preserved ingress occurrences may be measured: {event.kind}"
         )
-    text = event.payload.get("text_representation")
-    if text is None:
-        text = {"available": "decoded_text" in event.payload}
-    if not isinstance(text, dict) or not text.get("available"):
+    if "decoded_text" not in event.payload:
         raise PreservedMaterialMeasurementError(
-            f"{event.id} preserves material with no available text "
-            "representation, and this measurement measures text"
+            f"{event.id} preserves no decoded text, and this measurement "
+            "measures text"
         )
     return event.payload["decoded_text"]
 

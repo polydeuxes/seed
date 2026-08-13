@@ -331,7 +331,7 @@ def test_material_without_a_text_representation_is_refused_not_skipped():
         equivalence_rule="byte-for-byte equality; no normalization",
         counting_scope="one bounded exchange",
     )
-    with pytest.raises(PreservedMaterialMeasurementError, match="no available text"):
+    with pytest.raises(PreservedMaterialMeasurementError, match="preserves no decoded text"):
         measure_occupancy(occurrences, declared=declared, occupant_of=lambda text: None)
 
     # The two that do carry one remain measurable together.
@@ -369,7 +369,7 @@ def test_an_occurrence_predating_the_coordinate_stays_measurable():
         session_id="s",
         payload={},
     )
-    with pytest.raises(PreservedMaterialMeasurementError, match="no available text"):
+    with pytest.raises(PreservedMaterialMeasurementError, match="preserves no decoded text"):
         measure_occupancy([without_either], declared=declared, occupant_of=lambda t: None)
 
 
@@ -498,7 +498,7 @@ def test_material_with_no_available_text_representation_is_refused(
         session_id="r",
         payload={"text_representation": {"available": False}},
     )
-    with pytest.raises(PreservedMaterialMeasurementError, match="no available text"):
+    with pytest.raises(PreservedMaterialMeasurementError, match="preserves no decoded text"):
         measure_recurrence(
             [without_text],
             declared=_recurrence_declared("the"),
