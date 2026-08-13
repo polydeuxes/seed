@@ -1,9 +1,16 @@
-# Book fidelity: corruption testimony 001
+# Book fidelity observations 001
 
-Testimony about the Book, gathered while doing other work between `#2499` and
-`#2508` on 2026-08-12. **No entry here is a repair.** Each records something
-found, what establishes it, and what a repair would have to decide. Several
-were found only because a clause merged the same day made them visible.
+Observations about the Book, gathered while doing other work between `#2499`
+and `#2508` on 2026-08-12. **No entry here is a repair**, and not every entry
+establishes a defect: each says for itself whether it records a defect, a
+suspicion, an Unknown, or a target for investigation. The earlier title said
+corruption, which pre-classified entries that explicitly decline to accuse.
+
+**Every count below was measured against commit `b75785bf6b2f`** and is a
+repository observation, not a durable fact. The repository moves; a number here
+read later is testimony about that commit and nothing else. Recording exact
+counts without their as-of boundary is the same present-tense mistake §2
+accuses `05.Testimony` of making.
 
 The Book is one witness. Where an entry says the Book asserts something false
 about the repository, the repository was checked; where an entry says a word
@@ -36,8 +43,10 @@ and the rest appear in no chapter.
 **A repair must decide** whether an anchor section without a live witness is
 removed or refilled. Removal is honest and loses the Book's claim to be
 grounded; refilling requires judging what currently witnesses each clause,
-which is not mechanical. Removal-only first is the safer order, because a
-wrong anchor is worse than no anchor.
+which is not mechanical.
+
+*Proposed disposition, not an observation:* removal-only first, because a wrong
+anchor is worse than no anchor.
 
 ## 2. `05.Testimony` describes a deleted module in the present tense
 
@@ -95,25 +104,31 @@ coined deliberately — they came out of generated code filling a void where the
 grammar had no term. The responsibility test then sorted them differently:
 
 ```
-assertion   owner, producing act, established standing — earned it.
-            But never audited AS VOCABULARY. One document exists and it
-            concerns relation assertions, not the word. It carries
-            01.Standing.D.1, D.2, 01.Uptake.A and everything built today.
+assertion   load-bearing: carries 01.Standing.D.1, D.2, 01.Uptake.A and
+            everything built today. Active law supplies its owner, its
+            producing act, and its standing distinctions. A dedicated
+            vocabulary audit has not occurred; one document exists and it
+            concerns relation assertions, not the word.
 session     0 occurrences in numbered chapters, 199 in recovery documents.
             Four dedicated investigations, all about projection cost, none
             asking whether the distinction is irreducible. #2504 established
             the distinction under a different name: locality.
-workspace   1 occurrence in numbered chapters, in 06.Standing.A's boundary list.
+workspace   used throughout 06.Standing.B, which #2504 added, and once in
+            06.Standing.A's boundary list. An earlier draft of this entry
+            said "1 occurrence in numbered chapters" -- counted before
+            #2504 merged, and left standing after. This document became an
+            instance of the drift it documents, in the same entry that
+            cites #2504.
 governor    0 occurrences anywhere in the Book. Session shorthand only.
 
-Counted before this document existed. This document uses both words to
-describe them, so re-running the count now returns a larger number that
-this file is responsible for.
+Counted before this document existed. It uses the words it describes, so
+re-running the counts now returns larger numbers this file is responsible for.
 ```
 
-**`assertion` is the largest unexamined assumption in the Book.** It passes the
-test on inspection; it has never been put through the pass that removed
-`candidate convergence`.
+**`assertion` carries more than any other word here and has never been put
+through the pass that removed `candidate convergence`.** Whether it would
+survive that pass is not adjudicated here; a document recording that an audit
+is missing should not pre-decide its outcome.
 
 ## 7. Two clauses leave Unknowns that later work has drifted past
 
@@ -126,6 +141,48 @@ Recorded so a repair does not read them as settled:
 - `#2286` left the Compare/Standing crossing *unrecovered, not excluded*, and
   `01.Standing.D.2` deliberately does not settle it. An improvement loop that
   carries Standing into a Compare would establish it silently.
+
+## 9. `premise_chain` describes itself as a support basis, and no longer is
+
+`preserved_material_measurement.premise_chain` says:
+
+> `05.Testimony:27` requires a consumed input's support basis to be preserved.
+> This is that basis, recovered.
+
+After `#2486` that is false. A support basis is an explicit scope, boundary,
+selection rule and commitment. A chain of `premise_event_id`s records what one
+finding stood on, which is a different thing from the basis of the population a
+measurement consumed. Documentary, and it shows how fast the physiology outran
+its own prose — the module gained `SupportBasis` and kept prose calling
+something else by that name.
+
+## 10. Three seams found in the measurement path itself
+
+Recorded here because each is a Book question, not only a code one.
+
+- **No clause establishes that a measured occurrence population is
+  identity-distinct.** `01.External:28` requires the bounded scope to be
+  disclosed and says nothing about identity. The runtime refuses a repeated
+  occurrence on the strength of what `occurrences_examined` asserts; the
+  constitutional rule is unrecovered.
+- **`counting_scope` is a required disclosure bound to nothing.** It is a
+  non-empty string, and `#2508` proved only that declarations in one batch
+  *agree* on it. Agreement among declarations is not fidelity to the population
+  consumed. A measurement may declare "the complete English corpus" over three
+  occurrences and nothing detects it.
+- **`SupportBasis` scope is one workspace, one session, one kind, one
+  boundary** — while `#2508` made a multi-locality consuming act lawful and
+  `06.Standing.B` holds that same workspace is not same locality. A population
+  spanning two localities cannot be described by one basis without either
+  misstating the scope or silently narrowing the population.
+
+## 11. `available` carries two meanings
+
+`text_representation.available` records a *historical* outcome: at ingress, a
+decoder formed a text representation. `#2496` governs a different thing —
+present-tense material availability, asked of the holder and never read from the
+ledger. One word carries both, which is enough to make a reader take the first
+for a violation of the second. Recorded because the confusion cost real time.
 
 ## 8. `06.Standing.A` was a junk drawer, and is two nouns lighter
 

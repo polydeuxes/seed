@@ -875,3 +875,14 @@ def test_one_occurrence_twice_in_a_population_is_refused(recurrence_occurrences)
     declared = _declared_for("the")
     with pytest.raises(PreservedMaterialMeasurementError, match="more than once"):
         measure_recurrences(doubled, declared=declared, counts_in=_counts_in(declared))
+
+
+def test_the_positional_path_also_refuses_a_repeated_occurrence(occurrences):
+    """`measure_occupancy` asserts a count of occurrences too."""
+
+    with pytest.raises(PreservedMaterialMeasurementError, match="more than once"):
+        measure_occupancy(
+            list(occurrences) + [occurrences[0]],
+            declared=_declared(),
+            occupant_of=_first_word,
+        )

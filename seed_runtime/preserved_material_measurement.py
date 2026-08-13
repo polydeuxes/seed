@@ -293,13 +293,20 @@ def _locality_of(event: Event) -> str:
 def _distinct_population(occurrences: Iterable[Event]) -> list[Event]:
     """The occurrences to measure, refusing a repeated occurrence identity.
 
-    `01.External:28` requires a finding to disclose the bounded scope within
-    which occurrences were counted. One occurrence appearing twice in a
-    population is counted twice, so ``occurrences_examined`` would report a
-    population larger than the one that exists and every count drawn from it
-    would carry that inflation. The duplication is recoverable from
-    ``consumed_event_ids``, which is not the same as not having misstated the
-    scope.
+    The rule is not `01.External:28`, which requires the bounded scope to be
+    disclosed and says nothing about identity-distinctness. It comes from what
+    ``occurrences_examined`` asserts: a number of occurrences. One preserved
+    occurrence referenced twice is one occurrence, so counting it twice reports
+    a population larger than the one that exists, and every count drawn from it
+    carries that inflation.
+
+    Refused rather than deduplicated. Silently collapsing would decide that the
+    caller meant one, and refusing rather than pretending is the same choice
+    this module makes about material it cannot measure.
+
+    No clause currently establishes that a measured occurrence population is
+    identity-distinct. This act refuses on the strength of what its own
+    disclosure claims, and the constitutional question is open.
     """
 
     population = list(occurrences)
@@ -334,11 +341,22 @@ def _measurable_text(event: Event) -> str:
             "representation, and this measurement measures text"
         )
     if "decoded_text" not in event.payload:
-        # The coordinate says a text representation is available and the
-        # material does not carry one. Reading the flag and trusting it would
-        # rest the finding on a claim about the material rather than on the
-        # material, and would surface as a KeyError rather than as a refusal
-        # stating what was wrong.
+        # The occurrence says a text representation was formed and carries no
+        # decoded text. That is incoherent material, and reading the coordinate
+        # and trusting it would rest the finding on a claim about the material
+        # rather than on the material, surfacing as a KeyError rather than as a
+        # refusal stating what was wrong.
+        #
+        # `text_representation.available` records a *historical* outcome: at
+        # ingress, this decoder formed a text representation. It is not the
+        # present-tense availability `#2496` governs, which is asked of the
+        # holder and never read from the ledger. One word carries both, which
+        # is why this looked at first like a `#2496` violation and is not one.
+        #
+        # This refusal closes the incoherent case only. Whether gating on the
+        # historical coordinate at all is faithful -- an occurrence recording
+        # that no representation was formed, while carrying decoded text, is
+        # still refused by the check above -- remains unresolved here.
         raise PreservedMaterialMeasurementError(
             f"{event.id} declares an available text representation but "
             "preserves no decoded text"
@@ -494,7 +512,7 @@ def measure_occupancy(
     counts: dict[str, int] = {}
     consumed: list[str] = []
     measured = 0
-    for event in occurrences:
+    for event in _distinct_population(occurrences):
         if event.kind != INGRESS_OCCURRED_KIND:
             raise PreservedMaterialMeasurementError(
                 f"only preserved ingress occurrences may be measured: {event.kind}"
