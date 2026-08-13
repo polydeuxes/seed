@@ -199,7 +199,7 @@ established. PESC appears in no active-law chapter.
 
 ```text
 status          never adopted (removed from active law 2026-08-13)
-closest grammar bounded candidate set · what support was taken from
+closest grammar none established generally
 ```
 
 Entered active law through this session's own `01.Standing.D.2`, in the clause
@@ -214,21 +214,23 @@ It does not gloss to `support basis`. An earlier version of this entry said it
 did, which restates the definition `#2514` withdrew: what an act consumed is
 broader than the support its result stands on.
 
-What it *does* gloss to is **bounded candidate set**, which `02.Selection`
-establishes — *"a selection act consumes a bounded candidate set plus a
-selection basis."* That is the distinction the word kept carrying:
+It does not gloss to `bounded candidate set` either. That belongs to Selection
+— *"a selection act consumes a bounded candidate set plus a selection basis"* —
+and a measurement walking occurrences does not establish that they were
+candidates in a Selection. Resolving it there would give support-basis
+formation a Selection topology by borrowing the nearest established set-word,
+which is the move the word itself kept making.
 
-```text
-support basis           what was taken
-bounded candidate set   what it was taken from
-```
+In a measurement it is ordinary English for the occurrences walked, which
+`01.External:28` already reaches through *the bounded scope within which
+occurrences were counted*. Where an actual Selection is separately warranted,
+`bounded candidate set` may apply to that Selection — not to this.
 
-The word came back three times, twice inside the very changes removing it, and
-each time it was carrying the second of those. A compact representation of
-support must distinguish *some of a set* from *all of it*, and that sentence
-cannot be written without naming the set. It was reappearing because the
-sentence needed a referent, not because the noun was sticky — and the referent
-already had a name one chapter over.
+The word returned three times, twice inside the changes removing it, because a
+compact representation of support must distinguish some material from other
+material in the same boundary, and that sentence needs a referent. **That the
+sentence needs one does not mean a noun must be minted for it**: the clause now
+says what the representation must distinguish, without naming the set.
 
 Recorded because the miss is instructive: the same session excised
 `assimilation` for being a noun in a title while the body said the thing
