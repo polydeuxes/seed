@@ -252,6 +252,7 @@ def measure_recurrence(
     *,
     declared: DeclaredMeasurement,
     occurrences_of: "callable[[str], int]",
+    preserved_in: EventLedger | None = None,
 ) -> RecurrenceFinding:
     """Count how often one representation occurs across preserved material.
 
@@ -273,7 +274,7 @@ def measure_recurrence(
     examined = 0
     carrying = 0
     total = 0
-    for event in _distinct_population(occurrences):
+    for event in _as_preserved(_distinct_population(occurrences), preserved_in):
         text = _measurable_text(event)
         consumed.append(event.id)
         localities[_locality_of(event)] = None
@@ -349,6 +350,37 @@ def _distinct_population(occurrences: Iterable[Event]) -> list[Event]:
     return population
 
 
+def _as_preserved(
+    population: "list[Event]", ledger: EventLedger | None
+) -> "list[Event]":
+    """The preserved occurrences these identities name, where a ledger says so.
+
+    An `Event` is directly constructible with any id and any payload, so an
+    object bearing a preserved identity may carry different material. Checking
+    that an occurrence with that identity exists establishes the identity and
+    not the material: `#2510` closed this where a support basis was declared,
+    by reading the occurrence rather than trusting the object, and every other
+    path kept trusting the object.
+
+    Where a ledger is supplied the material is read from it. Where none is, the
+    act measures what it was given and cannot state that it measured preserved
+    material -- which is a limit on the finding, not a permission.
+    """
+
+    if ledger is None:
+        return population
+    preserved = []
+    for event in population:
+        recorded = ledger.get(event.id)
+        if recorded is None:
+            raise PreservedMaterialMeasurementError(
+                f"{event.id} is not preserved in the ledger this measurement "
+                "reads its material from"
+            )
+        preserved.append(recorded)
+    return preserved
+
+
 def _measurable_text(event: Event) -> str:
     """The text this occurrence preserved, or a refusal stating why not.
 
@@ -398,6 +430,7 @@ def measure_recurrences(
     *,
     declared: "dict[str, DeclaredMeasurement]",
     counts_in: "callable[[str], dict[str, int]]",
+    preserved_in: EventLedger | None = None,
     support_basis: SupportBasis | None = None,
     support_recovery: SupportRecovery | None = None,
 ) -> tuple[RecurrenceFinding, ...]:
@@ -464,7 +497,7 @@ def measure_recurrences(
     examined = 0
     carrying: dict[str, int] = {name: 0 for name in declared}
     total: dict[str, int] = {name: 0 for name in declared}
-    walked = _distinct_population(occurrences)
+    walked = _as_preserved(_distinct_population(occurrences), preserved_in)
     if support_basis is not None and support_recovery is not None:
         # A finding claiming support from preserved occurrences must have
         # measured the material those occurrences carry. An `Event` can be
@@ -624,6 +657,7 @@ def measure_occupancy(
     *,
     declared: DeclaredMeasurement,
     occupant_of: "callable[[str], str | None]",
+    preserved_in: EventLedger | None = None,
 ) -> MeasurementFinding:
     """Count which representations occupy a position across preserved material.
 
@@ -636,7 +670,7 @@ def measure_occupancy(
     counts: dict[str, int] = {}
     consumed: list[str] = []
     measured = 0
-    for event in _distinct_population(occurrences):
+    for event in _as_preserved(_distinct_population(occurrences), preserved_in):
         text = _measurable_text(event)
         consumed.append(event.id)
         occupant = occupant_of(text)
@@ -726,9 +760,11 @@ def record_measurement_findings(
     # boundary only where a support basis was declared; a measurement without
     # one reached the recorder unchecked.
     #
-    # A finding carrying a verified basis is exempt: `#2510` established its
-    # population against this ledger before the finding existed, and the
-    # enumeration is not in the payload to check.
+    # An earlier version exempted findings carrying a support basis, calling
+    # them verified. Carrying a basis is not being verified against one: both
+    # `RecurrenceFinding` and `SupportBasis` are directly constructible, and a
+    # finding verified against one ledger may be handed to another. This
+    # function has no witness for either, so it exempts nothing.
     #
     # Identities are collected across the whole call before any read, because
     # every finding of one pass carries the same population and checking per
@@ -736,7 +772,6 @@ def record_measurement_findings(
     consumed_ids = {
         event_id
         for finding, _ in supplied
-        if getattr(finding, "support_basis", None) is None
         for event_id in finding.consumed_event_ids
     }
     for event_id in consumed_ids:
