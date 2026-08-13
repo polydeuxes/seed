@@ -120,6 +120,12 @@ def test_sqlite_persisted_id_prefixes_exclude_deleted_planning_artifacts():
         # The performed occurrence is distinct from the proposed exact Act and
         # is likewise carried durably by its Evidence and result.
         "adjacent_byte_pair_measurement_occurrence",
+        # Seed-native byte Measurement and pair-input Applicability likewise
+        # preserve exact Act identities separately from their occurrences.
+        "byte_measurement_act",
+        "byte_measurement_occurrence",
+        "byte_pair_applicability_act",
+        "byte_pair_applicability_occurrence",
     )
 
 

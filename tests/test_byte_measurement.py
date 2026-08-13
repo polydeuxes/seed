@@ -212,6 +212,9 @@ def test_a_self_consistent_truncated_source_claim_is_refused():
         BYTE_MEASUREMENT_CONVENTION,
         {name: event.payload[name] for name in BYTE_RESULT_COORDINATES},
     )
+    ledger.get(event.payload["responsible_act_evidence_id"]).payload[
+        "result_commitment"
+    ] = evidence.payload["production_commitment"]
     with pytest.raises(ByteMeasurementError, match="complete bounded source read"):
         assertions_of_recorded_byte_measurement(ledger, event.id)
 
@@ -524,12 +527,16 @@ def test_applicability_identity_is_bound_to_one_exact_act_occurrence():
     first = _pair_input_applicability(
         source,
         target_act_id="pair-act-1",
+        applicability_act_id="applicability-act-1",
+        applicability_act_occurrence_id="applicability-occurrence-1",
         consumer_workspace_id="w",
         measurement_session_id="measurement",
     )
     second = _pair_input_applicability(
         source,
         target_act_id="pair-act-2",
+        applicability_act_id="applicability-act-2",
+        applicability_act_occurrence_id="applicability-occurrence-2",
         consumer_workspace_id="w",
         measurement_session_id="measurement",
     )
@@ -551,6 +558,8 @@ def test_pair_applicability_has_real_non_applicable_and_unknown_outcomes():
     inapplicable = _pair_input_applicability(
         source,
         target_act_id="pair-act-other-workspace",
+        applicability_act_id="applicability-act-inapplicable",
+        applicability_act_occurrence_id="applicability-occurrence-inapplicable",
         consumer_workspace_id="other",
         measurement_session_id="measurement",
     )
@@ -567,6 +576,8 @@ def test_pair_applicability_has_real_non_applicable_and_unknown_outcomes():
     unknown = _pair_input_applicability(
         unknown_source,
         target_act_id="pair-act-unknown-authority",
+        applicability_act_id="applicability-act-unknown",
+        applicability_act_occurrence_id="applicability-occurrence-unknown",
         consumer_workspace_id="w",
         measurement_session_id="measurement",
     )
@@ -576,7 +587,7 @@ def test_pair_applicability_has_real_non_applicable_and_unknown_outcomes():
     assert unknown["unknowns"][-1] == unknown["determination_basis"]
 
 
-def test_negative_pair_applicability_is_recorded_and_the_target_act_does_not_occur():
+def test_negative_pair_applicability_is_recorded_without_claiming_target_act_occurrence():
     ledger = _ledger("ta\n")
     source = _byte_source(ledger)
 
@@ -591,6 +602,13 @@ def test_negative_pair_applicability_is_recorded_and_the_target_act_does_not_occ
     recovered = get_recorded_pair_input_applicability(ledger, result.id)
     assert recovered["dimensions"]["standing"] == "inapplicable"
     assert recovered["target_act_occurrence_id"] is None
+    assert recovered["applicability_act_id"] != recovered[
+        "applicability_act_occurrence_id"
+    ]
+    applicability_evidence = ledger.get(result.payload["responsible_act_evidence_id"])
+    assert applicability_evidence.payload["applicability_act_occurrence_id"] == (
+        recovered["applicability_act_occurrence_id"]
+    )
     assert recovered["dimensions"]["source_provenance"] == (
         "not consumed across the workspace boundary"
     )
@@ -636,6 +654,10 @@ def test_seed_native_measurement_and_result_assertions_keep_distinct_responsibil
         SEED_NATIVE_MEASUREMENT_RESPONSIBLE_BOUNDARY
     )
     assert result.payload["producer"] == RESPONSIBILITY_UNRECOVERED
+    assert source.payload["responsibility"] != result.payload["responsibility"]
+    assert source.payload["responsible_boundary"] == (
+        SEED_NATIVE_MEASUREMENT_RESPONSIBLE_BOUNDARY
+    )
     for assertion in result.payload["assertions"]:
         assert assertion["dimensions"]["responsibility"] != result.payload["responsibility"]
 

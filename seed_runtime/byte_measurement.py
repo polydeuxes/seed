@@ -49,11 +49,18 @@ BYTE_RESULT_COORDINATES = frozenset(
         "dimensions",
         "producing_act",
         "producer",
+        "target_act_id",
+        "act_occurrence_id",
+        "responsibility",
+        "responsible_boundary",
         "measurement_rule",
         "source_session_ids",
         "completeness_boundary",
         "assertions",
     }
+)
+BYTE_MEASUREMENT_RESPONSIBLE_ACT_EVIDENCE_KIND = (
+    "operator.measurement.byte_responsible_act_evidenced"
 )
 BYTE_PAIR_RESULT_COORDINATES = BYTE_RESULT_COORDINATES | {
     "target_act_id",
@@ -80,11 +87,16 @@ BYTE_PAIR_APPLICABILITY_RESULT_COORDINATES = frozenset(
         "responsibility",
         "responsible_boundary",
         "responsibility_basis",
+        "applicability_act_id",
+        "applicability_act_occurrence_id",
         "target_act_id",
         "input_assertion_ref",
         "applicability",
         "target_act_outcome",
     }
+)
+BYTE_PAIR_APPLICABILITY_ACT_EVIDENCE_KIND = (
+    "operator.measurement.adjacent_byte_pair_applicability_act_evidenced"
 )
 BYTE_MEASUREMENT_RULE = (
     "each individual byte of exact captured ingress material; equal only when "
@@ -114,8 +126,12 @@ BYTE_PAIR_PURPOSE = (
     "bounded source population"
 )
 SEED_NATIVE_MEASUREMENT_RESPONSIBLE_BOUNDARY = "Seed"
+BYTE_MEASUREMENT_RESPONSIBILITY = (
+    "perform the bounded exact-byte Measurement and produce only the findings "
+    "warranted by its exact source population, rule, Scope, Authority, and limits"
+)
 BYTE_PAIR_MEASUREMENT_RESPONSIBILITY = (
-    "preserve the lawful production of exact adjacent-byte-pair findings from an "
+    "produce exact adjacent-byte-pair findings from an "
     "applicable exact bounded source population without exceeding the source's "
     "Scope, provenance, occurrence identities, Authority, Unknowns, or limits"
 )
@@ -255,6 +271,8 @@ def _pair_input_applicability(
     source: RecordedByteAssertion,
     *,
     target_act_id: str,
+    applicability_act_id: str,
+    applicability_act_occurrence_id: str,
     consumer_workspace_id: str,
     measurement_session_id: str,
 ) -> dict[str, Any]:
@@ -268,6 +286,8 @@ def _pair_input_applicability(
         "target_act": "declared adjacent-byte-pair Measurement",
         "responsibility": BYTE_PAIR_MEASUREMENT_RESPONSIBILITY,
         "responsible_boundary": SEED_NATIVE_MEASUREMENT_RESPONSIBLE_BOUNDARY,
+        "applicability_act_id": applicability_act_id,
+        "applicability_act_occurrence_id": applicability_act_occurrence_id,
         "purpose": BYTE_PAIR_PURPOSE,
     }
     if consumer_workspace_id != scope["workspace_id"]:
@@ -356,6 +376,8 @@ def _pair_input_applicability(
         "responsibility": BYTE_PAIR_MEASUREMENT_RESPONSIBILITY,
         "responsible_boundary": SEED_NATIVE_MEASUREMENT_RESPONSIBLE_BOUNDARY,
         "responsibility_basis": BYTE_PAIR_RESPONSIBILITY_BASIS,
+        "applicability_act_id": applicability_act_id,
+        "applicability_act_occurrence_id": applicability_act_occurrence_id,
         "target_act": "declared adjacent-byte-pair Measurement",
         "purpose": BYTE_PAIR_PURPOSE,
         "consumer_context": {
@@ -785,6 +807,8 @@ def record_byte_count_layer(
         raise ByteMeasurementError(
             "byte Measurement recording requires an exact session"
         )
+    target_act_id = new_id("byte_measurement_act")
+    act_occurrence_id = new_id("byte_measurement_occurrence")
     measured = measure_byte_counts(
         ledger, workspace_id=workspace_id, source_session_ids=source_session_ids
     )
@@ -801,6 +825,10 @@ def record_byte_count_layer(
         },
         "producing_act": "declared Measurement",
         "producer": RESPONSIBILITY_UNRECOVERED,
+        "target_act_id": target_act_id,
+        "act_occurrence_id": act_occurrence_id,
+        "responsibility": BYTE_MEASUREMENT_RESPONSIBILITY,
+        "responsible_boundary": SEED_NATIVE_MEASUREMENT_RESPONSIBLE_BOUNDARY,
         "measurement_rule": BYTE_MEASUREMENT_RULE,
         "source_session_ids": list(measured.source_session_ids),
         "completeness_boundary": {
@@ -808,6 +836,26 @@ def record_byte_count_layer(
         },
         "assertions": _assertions(measured),
     }
+    responsible_act_evidence = ledger.append(
+        BYTE_MEASUREMENT_RESPONSIBLE_ACT_EVIDENCE_KIND,
+        workspace_id,
+        {
+            "target_act_id": target_act_id,
+            "act_occurrence_id": act_occurrence_id,
+            "act": "declared exact-byte Measurement",
+            "responsibility": BYTE_MEASUREMENT_RESPONSIBILITY,
+            "responsible_boundary": SEED_NATIVE_MEASUREMENT_RESPONSIBLE_BOUNDARY,
+            "result_commitment": production_commitment(
+                BYTE_MEASUREMENT_CONVENTION, result_payload
+            ),
+            "standing": "occurred",
+            "authority_warrant": (
+                "Evidence concerning this exact bounded responsible Measurement "
+                "occurrence only; establishes no Producer identity"
+            ),
+        },
+        session_id=recording_session_id,
+    )
     evidence = _record_production_evidence(
         ledger,
         workspace_id=workspace_id,
@@ -818,7 +866,7 @@ def record_byte_count_layer(
         result_identity="byte-count-measurement-occurrence",
         produced_content=result_payload,
         producer=RESPONSIBILITY_UNRECOVERED,
-        responsibility=RESPONSIBILITY_UNRECOVERED,
+        responsibility=BYTE_MEASUREMENT_RESPONSIBILITY,
     )
     return ledger.append(
         BYTE_MEASUREMENT_RECORDED_KIND,
@@ -826,6 +874,7 @@ def record_byte_count_layer(
         {
             **result_payload,
             "production_evidence_id": evidence.id,
+            "responsible_act_evidence_id": responsible_act_evidence.id,
             "occurrence_preservation": BYTE_OCCURRENCE_PRESERVATION,
         },
         session_id=recording_session_id,
@@ -847,6 +896,7 @@ def assertions_of_recorded_byte_measurement(
     payload = event.payload
     if set(payload) != BYTE_RESULT_COORDINATES | {
         "production_evidence_id",
+        "responsible_act_evidence_id",
         "occurrence_preservation",
     }:
         raise ByteMeasurementError(
@@ -856,6 +906,14 @@ def assertions_of_recorded_byte_measurement(
         payload.get("occurrence_preservation") != BYTE_OCCURRENCE_PRESERVATION
         or payload.get("producing_act") != "declared Measurement"
         or payload.get("producer") != RESPONSIBILITY_UNRECOVERED
+        or payload.get("responsibility") != BYTE_MEASUREMENT_RESPONSIBILITY
+        or payload.get("responsible_boundary")
+        != SEED_NATIVE_MEASUREMENT_RESPONSIBLE_BOUNDARY
+        or not isinstance(payload.get("target_act_id"), str)
+        or not payload["target_act_id"]
+        or not isinstance(payload.get("act_occurrence_id"), str)
+        or not payload["act_occurrence_id"]
+        or payload["target_act_id"] == payload["act_occurrence_id"]
         or payload.get("dimensions")
         != {
             "identity": "byte-count-measurement-occurrence",
@@ -890,7 +948,7 @@ def assertions_of_recorded_byte_measurement(
         or evidence.payload.get("dimensions", {}).get("producer")
         != RESPONSIBILITY_UNRECOVERED
         or evidence.payload.get("dimensions", {}).get("responsibility")
-        != RESPONSIBILITY_UNRECOVERED
+        != BYTE_MEASUREMENT_RESPONSIBILITY
     ):
         raise ByteMeasurementError(
             f"{event_id} names no exact byte Measurement production Evidence"
@@ -901,6 +959,34 @@ def assertions_of_recorded_byte_measurement(
     ):
         raise ByteMeasurementError(
             f"{event_id} does not carry the exact produced byte Measurement result"
+        )
+    act_evidence_id = payload.get("responsible_act_evidence_id")
+    act_evidence = ledger.get(act_evidence_id) if isinstance(act_evidence_id, str) else None
+    expected_act_evidence = {
+        "target_act_id": payload["target_act_id"],
+        "act_occurrence_id": payload["act_occurrence_id"],
+        "act": "declared exact-byte Measurement",
+        "responsibility": BYTE_MEASUREMENT_RESPONSIBILITY,
+        "responsible_boundary": SEED_NATIVE_MEASUREMENT_RESPONSIBLE_BOUNDARY,
+        "result_commitment": production_commitment(
+            BYTE_MEASUREMENT_CONVENTION, produced
+        ),
+        "standing": "occurred",
+        "authority_warrant": (
+            "Evidence concerning this exact bounded responsible Measurement "
+            "occurrence only; establishes no Producer identity"
+        ),
+    }
+    if (
+        act_evidence is None
+        or act_evidence.kind != BYTE_MEASUREMENT_RESPONSIBLE_ACT_EVIDENCE_KIND
+        or act_evidence.workspace_id != event.workspace_id
+        or act_evidence.session_id != event.session_id
+        or ledger.integrity_of(act_evidence.id) == CORRUPTED
+        or act_evidence.payload != expected_act_evidence
+    ):
+        raise ByteMeasurementError(
+            f"{event_id} names no exact responsible byte Measurement occurrence Evidence"
         )
     boundary_value = payload.get("completeness_boundary")
     sessions_value = payload.get("source_session_ids")
@@ -1084,11 +1170,35 @@ def _record_pair_input_applicability(
         "responsibility": BYTE_PAIR_MEASUREMENT_RESPONSIBILITY,
         "responsible_boundary": SEED_NATIVE_MEASUREMENT_RESPONSIBLE_BOUNDARY,
         "responsibility_basis": BYTE_PAIR_RESPONSIBILITY_BASIS,
+        "applicability_act_id": claim["applicability_act_id"],
+        "applicability_act_occurrence_id": claim[
+            "applicability_act_occurrence_id"
+        ],
         "target_act_id": claim["target_act_id"],
         "input_assertion_ref": source.reference,
         "applicability": claim,
         "target_act_outcome": "not established by this Applicability claim",
     }
+    applicability_act_evidence = ledger.append(
+        BYTE_PAIR_APPLICABILITY_ACT_EVIDENCE_KIND,
+        workspace_id,
+        {
+            "applicability_act_id": claim["applicability_act_id"],
+            "applicability_act_occurrence_id": claim[
+                "applicability_act_occurrence_id"
+            ],
+            "act": "input Applicability determination",
+            "responsibility": BYTE_PAIR_MEASUREMENT_RESPONSIBILITY,
+            "responsible_boundary": SEED_NATIVE_MEASUREMENT_RESPONSIBLE_BOUNDARY,
+            "input_assertion_ref": source.reference,
+            "target_act_id": claim["target_act_id"],
+            "result_commitment": production_commitment(
+                BYTE_PAIR_APPLICABILITY_CONVENTION, result_payload
+            ),
+            "standing": "occurred",
+        },
+        session_id=recording_session_id,
+    )
     evidence = _record_production_evidence(
         ledger,
         workspace_id=workspace_id,
@@ -1104,7 +1214,11 @@ def _record_pair_input_applicability(
     return ledger.append(
         BYTE_PAIR_APPLICABILITY_RECORDED_KIND,
         workspace_id,
-        {**result_payload, "production_evidence_id": evidence.id},
+        {
+            **result_payload,
+            "production_evidence_id": evidence.id,
+            "responsible_act_evidence_id": applicability_act_evidence.id,
+        },
         session_id=recording_session_id,
     )
 
@@ -1125,7 +1239,8 @@ def get_recorded_pair_input_applicability(
     evidence_id = payload.get("production_evidence_id")
     evidence = ledger.get(evidence_id) if isinstance(evidence_id, str) else None
     if set(payload) != BYTE_PAIR_APPLICABILITY_RESULT_COORDINATES | {
-        "production_evidence_id"
+        "production_evidence_id",
+        "responsible_act_evidence_id",
     }:
         raise ByteMeasurementError(
             f"{event_id} does not carry the exact Applicability result surface"
@@ -1149,6 +1264,34 @@ def get_recorded_pair_input_applicability(
     ):
         raise ByteMeasurementError(
             f"{event_id} names no exact Applicability production Evidence"
+        )
+    act_evidence_id = payload.get("responsible_act_evidence_id")
+    act_evidence = ledger.get(act_evidence_id) if isinstance(act_evidence_id, str) else None
+    expected_act_evidence = {
+        "applicability_act_id": payload["applicability_act_id"],
+        "applicability_act_occurrence_id": payload[
+            "applicability_act_occurrence_id"
+        ],
+        "act": "input Applicability determination",
+        "responsibility": BYTE_PAIR_MEASUREMENT_RESPONSIBILITY,
+        "responsible_boundary": SEED_NATIVE_MEASUREMENT_RESPONSIBLE_BOUNDARY,
+        "input_assertion_ref": payload["input_assertion_ref"],
+        "target_act_id": payload["target_act_id"],
+        "result_commitment": production_commitment(
+            BYTE_PAIR_APPLICABILITY_CONVENTION, produced
+        ),
+        "standing": "occurred",
+    }
+    if (
+        act_evidence is None
+        or act_evidence.kind != BYTE_PAIR_APPLICABILITY_ACT_EVIDENCE_KIND
+        or act_evidence.workspace_id != event.workspace_id
+        or act_evidence.session_id != event.session_id
+        or ledger.integrity_of(act_evidence.id) == CORRUPTED
+        or act_evidence.payload != expected_act_evidence
+    ):
+        raise ByteMeasurementError(
+            f"{event_id} names no exact Applicability determination occurrence Evidence"
         )
     claim = payload.get("applicability")
     dimensions = claim.get("dimensions") if isinstance(claim, dict) else None
@@ -1182,6 +1325,11 @@ def get_recorded_pair_input_applicability(
         or claim.get("responsible_boundary")
         != SEED_NATIVE_MEASUREMENT_RESPONSIBLE_BOUNDARY
         or claim.get("responsibility_basis") != BYTE_PAIR_RESPONSIBILITY_BASIS
+        or claim.get("applicability_act_id") != payload.get("applicability_act_id")
+        or claim.get("applicability_act_occurrence_id")
+        != payload.get("applicability_act_occurrence_id")
+        or payload.get("applicability_act_id")
+        == payload.get("applicability_act_occurrence_id")
         or claim.get("target_act") != "declared adjacent-byte-pair Measurement"
         or claim.get("purpose") != BYTE_PAIR_PURPOSE
         or payload.get("dimensions", {}).get("standing") != standing
@@ -1217,9 +1365,15 @@ def record_adjacent_byte_pair_count_layer(
         consumer_workspace_id=workspace_id,
         measurement_session_id=recording_session_id,
     )
+    applicability_act_id = new_id("byte_pair_applicability_act")
+    applicability_act_occurrence_id = new_id(
+        "byte_pair_applicability_occurrence"
+    )
     applicability = _pair_input_applicability(
         source,
         target_act_id=target_act_id,
+        applicability_act_id=applicability_act_id,
+        applicability_act_occurrence_id=applicability_act_occurrence_id,
         consumer_workspace_id=workspace_id,
         measurement_session_id=recording_session_id,
     )
@@ -1317,6 +1471,10 @@ def _validate_recorded_pair_input_applicability(
         "target_act": "declared adjacent-byte-pair Measurement",
         "responsibility": BYTE_PAIR_MEASUREMENT_RESPONSIBILITY,
         "responsible_boundary": SEED_NATIVE_MEASUREMENT_RESPONSIBLE_BOUNDARY,
+        "applicability_act_id": claim.get("applicability_act_id"),
+        "applicability_act_occurrence_id": claim.get(
+            "applicability_act_occurrence_id"
+        ),
         "purpose": BYTE_PAIR_PURPOSE,
     }
     consumer_context = {
@@ -1348,6 +1506,10 @@ def _validate_recorded_pair_input_applicability(
         "responsibility": BYTE_PAIR_MEASUREMENT_RESPONSIBILITY,
         "responsible_boundary": SEED_NATIVE_MEASUREMENT_RESPONSIBLE_BOUNDARY,
         "responsibility_basis": BYTE_PAIR_RESPONSIBILITY_BASIS,
+        "applicability_act_id": claim.get("applicability_act_id"),
+        "applicability_act_occurrence_id": claim.get(
+            "applicability_act_occurrence_id"
+        ),
         "target_act": "declared adjacent-byte-pair Measurement",
         "purpose": BYTE_PAIR_PURPOSE,
         "consumer_context": consumer_context,
