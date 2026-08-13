@@ -145,8 +145,6 @@ def test_recorded_results_replay_the_complete_bounded_source_read():
     assert all(item.recorded_occurrence_id == event.id for item in recovered)
     evidence = ledger.get(event.payload["production_evidence_id"])
     assert evidence.kind == PRODUCTION_EVIDENCE_KIND
-    assert event.payload["producer"] == RESPONSIBILITY_UNRECOVERED
-    assert evidence.payload["dimensions"]["producer"] == RESPONSIBILITY_UNRECOVERED
     assert "occurrence_preservation" not in evidence.payload["production_coordinates"]
 
     count = next(
@@ -381,13 +379,14 @@ def test_pair_count_and_recurrence_are_separate_results():
     assert by_pair["7461"][1]["support_basis"]["local_assertion_ids"] == [
         by_pair["7461"][0]["dimensions"]["identity"]
     ]
-    assert by_pair["7461"][0]["support_basis"]["assertion_refs"] == [
-        next(
-            item.reference
-            for item in assertions_of_recorded_byte_measurement(ledger, source.id)
-            if item.result == "exact_source_material_set"
-        )
-    ]
+    moved_ref = by_pair["7461"][0]["support_basis"]["assertion_refs"][0]
+    original = next(
+        item
+        for item in assertions_of_recorded_byte_measurement(ledger, source.id)
+        if item.result == "exact_source_material_set"
+    )
+    assert moved_ref["assertion_id"] == original.assertion_id
+    assert moved_ref["recorded_occurrence_id"] != original.recorded_occurrence_id
     applicability = input_applicability_of_recorded_adjacent_byte_pair_measurement(
         ledger, event.id
     )
@@ -428,7 +427,13 @@ def test_recorded_pair_results_replay_the_complete_bounded_source_read():
     detached = count.payload
     detached["dimensions"]["standing"] = "invented"
     assert count.payload["dimensions"]["standing"] == "measured"
-    assert count.support_assertion_refs[0]["recorded_occurrence_id"] == source.id
+    assert count.support_assertion_refs[0]["recorded_occurrence_id"] != source.id
+    movement = ledger.get(count.support_assertion_refs[0]["recorded_occurrence_id"])
+    assert movement.payload["source_assertion_ref"]["recorded_occurrence_id"] == source.id
+    assert movement.payload["assertion_id"] == count.support_assertion_refs[0]["assertion_id"]
+    assert movement.payload["source_locality"] == "byte-measurement"
+    assert movement.payload["target_locality"] == "measurement"
+    assert "dimensions" not in movement.payload
 
 
 def test_pair_recovery_refuses_a_self_consistent_truncated_result_population():
@@ -588,49 +593,22 @@ def test_pair_applicability_has_real_non_applicable_and_unknown_outcomes():
     assert unknown["unknowns"][-1] == unknown["determination_basis"]
 
 
-def test_negative_pair_applicability_is_recorded_without_claiming_target_act_occurrence():
+def test_cross_workspace_pair_use_is_refused_before_locality_movement():
     ledger = _ledger("ta\n")
     source = _byte_source(ledger)
 
-    result = record_adjacent_byte_pair_count_layer(
-        ledger,
-        source_measurement_event_id=source.id,
-        workspace_id="other",
-        recording_session_id="measurement",
-    )
-
-    assert result.kind == BYTE_PAIR_APPLICABILITY_RECORDED_KIND
-    recovered = get_recorded_pair_input_applicability(ledger, result.id)
-    assert recovered["dimensions"]["standing"] == "inapplicable"
-    assert recovered["target_act_occurrence_id"] is None
-    assert recovered["applicability_act_id"] != recovered[
-        "applicability_act_occurrence_id"
-    ]
-    applicability_evidence = ledger.get(result.payload["responsible_act_evidence_id"])
-    assert applicability_evidence.payload["applicability_act_occurrence_id"] == (
-        recovered["applicability_act_occurrence_id"]
-    )
-    assert recovered["dimensions"]["source_provenance"] == (
-        "not consumed across the workspace boundary"
-    )
-    assert recovered["scope_locality"] == {
-        "consumer_workspace_id": "other",
-        "measurement_session_id": "measurement",
-    }
-    for coordinate in (
-        "input_standing",
-        "input_authority",
-        "input_unknowns",
-        "input_limits",
-    ):
-        assert recovered[coordinate]["carried"] is False
-    assert recovered["coordinate_treatment"]["negative_authority"]["carried"] is False
-    assert (
-        result.payload["target_act_outcome"]
-        == "not established by this Applicability claim"
-    )
+    with pytest.raises(ByteMeasurementError, match="does not authorize a workspace"):
+        record_adjacent_byte_pair_count_layer(
+            ledger,
+            source_measurement_event_id=source.id,
+            workspace_id="other",
+            recording_session_id="measurement",
+        )
     assert not any(
-        event.kind == BYTE_PAIR_MEASUREMENT_RECORDED_KIND
+        event.kind in {
+            BYTE_PAIR_APPLICABILITY_RECORDED_KIND,
+            BYTE_PAIR_MEASUREMENT_RECORDED_KIND,
+        }
         for event in ledger.list_session("other", "measurement")
     )
 
@@ -654,7 +632,6 @@ def test_seed_native_measurement_and_result_assertions_keep_distinct_responsibil
     assert applicability["responsible_boundary"] == (
         SEED_NATIVE_MEASUREMENT_RESPONSIBLE_BOUNDARY
     )
-    assert result.payload["producer"] == RESPONSIBILITY_UNRECOVERED
     assert source.payload["responsibility"] != result.payload["responsibility"]
     assert source.payload["responsible_boundary"] == (
         SEED_NATIVE_MEASUREMENT_RESPONSIBLE_BOUNDARY

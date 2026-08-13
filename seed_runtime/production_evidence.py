@@ -1,6 +1,6 @@
 """Private physiology for Evidence concerning one exact produced result.
 
-This does not recover a Producer or Responsibility. It preserves, from inside
+This does not establish Responsibility. It preserves, from inside
 an act after that act has fixed its result, Evidence committing to the exact
 coordinates produced. The resulting Event is Evidence concerning the
 production occurrence; it is not that occurrence by identity.
@@ -59,7 +59,6 @@ def _record_production_evidence(
     produced_result_kind: str,
     result_identity: str,
     produced_content: dict[str, Any],
-    producer: str,
     responsibility: str,
 ) -> Event:
     """Preserve Evidence from inside an act for its already-fixed result."""
@@ -76,16 +75,15 @@ def _record_production_evidence(
                 ),
                 "standing": "produced",
                 "producing_act": producing_act,
-                "producer_evidence": (
+                "production_occurrence_evidence": (
                     "preserved at the producing boundary after this exact "
                     "result was fixed; the result carries the relation to this"
                 ),
-                "producer": producer,
                 "responsibility": responsibility,
                 "authority_warrant": (
                     "establishes production of this exact result at this "
-                    "producing boundary; establishes no producer identity, "
-                    "responsibility, authorization, or successful return from "
+                    "producing boundary; establishes no responsibility, "
+                    "authorization, or successful return from "
                     "an enclosing call"
                 ),
                 "occurrence_preservation": (

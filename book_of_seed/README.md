@@ -9,13 +9,13 @@ It is not a roadmap, API reference, generated topology, complete inventory, or s
 - A **Book** is a major constitutional district, family, or kind.
 - A **Chapter** concerns one bounded concept, responsibility, distinction, constraint, relationship, or unresolved constitutional question.
 - `[UNRESOLVED]` marks a question for which the current repository does not safely support a constitutional resolution.
-- Representative anchors are illustrative. Seed must inspect the repository to recover current producers, consumers, fields, topology, discrepancies, and residue.
+- Representative anchors are illustrative. Seed must inspect the repository to recover current responsible occurrences, consumers, fields, topology, discrepancies, and residue.
 
 The first pass deliberately favors concise distinctions over comprehensive prose. The [concordance](concordance.md) is a navigation aid, not an ontology. Cross-cutting questions without a stable chapter home live in [unresolved.md](unresolved.md).
 
 Book numbers are stable citation addresses only. They do not prescribe reading order, dependency order, constitutional sequence, or implementation movement.
 
-Book VII is intentionally absent. Its former operational topic collection was excised after its surviving constitutional distinctions were relocated to their owning Books; the bounded disposition is recorded in [Book VII Operational Topic Collection Excision 001](book_vii_operational_topic_collection_excision_001.md).
+Book VII is intentionally absent. Its former implementation topic collection was excised after its surviving constitutional distinctions were relocated to their owning Books; the bounded disposition is recorded in [Book VII Implementation Topic Collection Excision 001](book_vii_operational_topic_collection_excision_001.md).
 
 ## Responsibility
 
@@ -30,7 +30,7 @@ Book VII is intentionally absent. Its former operational topic collection was ex
 
 #### Owner / responsible boundary
 
-Identifies who bears and answers for the exact responsibility. It is distinct from the subject addressed, the producer, the consumer, and any separately assigned establishment boundary.
+Identifies who bears and answers for the exact responsibility. It is distinct from the subject addressed, the responsible occurrence, the consumer, and any separately assigned establishment boundary.
 
 #### Subject or material addressed
 
@@ -69,7 +69,7 @@ These branches are required where the exact responsibility consumes input materi
 
 #### Input source
 
-Identifies where the exact consumed material came from. Source does not establish producer identity or provenance by itself.
+Identifies where the exact consumed material came from. Source does not establish provenance by itself.
 
 #### Provenance
 
@@ -142,21 +142,13 @@ Identifies the evidence supporting the exact act-occurrence claim, failed-act-oc
 
 These branches apply where the exact responsibility produces a result.
 
-#### Producer / production boundary
+#### Production boundary
 
-Identifies the responsible boundary that forms or produces the exact result.
-
-```text
-owner != producer automatically
-source != producer
-producer != consumer
-```
-
-Any local identity among these boundaries must be positively established.
+Identifies the exact responsible Act boundary that forms or produces the result.
 
 #### Production occurrence
 
-Identifies the exact occurrence that produces the result.
+Identifies the exact occurrence that produces the result. Production Evidence binds this occurrence to the exact result; no additional producing-participant coordinate is implied.
 
 ```text
 act occurrence
@@ -273,7 +265,7 @@ The Responsibility hierarchy is a Book-root presentation and traversal structure
 ```text
 structural branch present != branch value established
 coordinate unresolved != coordinate Unknown
-same owner != same act, producer, establishment boundary, or consumer
+same owner != same act, responsible occurrence, establishment boundary, or consumer
 same occurrence != same claim
 ```
 
@@ -291,6 +283,6 @@ Change the Book when constitutional grammar, a durable distinction, or the statu
 3. [Goals and Advancement](03-goals-and-advancement/)
 4. [Inquiry](04-inquiry/)
 5. [Evidence and Knowledge](05-evidence-and-knowledge/)
-6. [State and Projection](06-state-and-projection/)
-7. **Intentionally absent** — see [Book VII Operational Topic Collection Excision 001](book_vii_operational_topic_collection_excision_001.md).
+6. [Standing and Projection](06-standing-and-projection/)
+7. **Intentionally absent** — see [Book VII Implementation Topic Collection Excision 001](book_vii_operational_topic_collection_excision_001.md).
 8. [Authority, Communication, and Stopping](08-authority-communication-and-stopping/)

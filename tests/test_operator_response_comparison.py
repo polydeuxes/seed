@@ -182,7 +182,7 @@ def test_match_with_applicable_binding_identifies_alternative():
 
     identified = finding["identification"]["identified_alternative"]
     assert finding["identification"]["basis"] == "identified"
-    assert identified["role"] == "local-stop"
+    assert identified["role"] == "presentation-navigation"
     assert identified["response_coordinate"] == "3"
     assert identified["alternative_id"] == (
         presentation["coordinate_bindings"]["3"]
@@ -442,14 +442,14 @@ def test_exit_boundary_is_explicit_and_unambiguous():
         "operator.presentation.emitted",
     ]
 
-    # The recorded local-stop coordinate is disjoint from the exit byte
+    # The recorded presentation coordinate is disjoint from the exit byte
     # form, and choosing it flows through recorded Compare/Identification
     # without closing the interaction or recording a stopping occurrence.
     exchange_ledger = EventLedger()
     presentation, _, finding = _exchange(exchange_ledger, "3\n")
     assert "exit" not in presentation["coordinate_bindings"]
     assert finding["identification"]["identified_alternative"]["role"] == (
-        "local-stop"
+        "presentation-navigation"
     )
     kinds = {event.kind for event in exchange_ledger.list("w")}
     assert "operator.ingress.stopping_occurred" not in kinds

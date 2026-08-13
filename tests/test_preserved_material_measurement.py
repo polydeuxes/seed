@@ -1408,7 +1408,7 @@ def test_responsibility_does_not_follow_the_provenance(recurrence_occurrences):
     ),
     )
     # Provenance differs; Responsibility does not follow it. `#2439` recovered
-    # Producer, Act and Standing for declared measurement and left the
+    # production occurrence, Act and Standing for declared measurement and left the
     # Responsibility unrecovered, and that stays true either way.
     assert unbound.payload["dimensions"]["source_provenance"] != bound.payload[
         "dimensions"
@@ -1422,7 +1422,7 @@ def test_responsibility_does_not_follow_the_provenance(recurrence_occurrences):
 
 # --------------------------------------------------------------------------
 # The production witness. `01.Constructors` separates mechanical construction
-# from a witnessed producer return; these fix which is which.
+# from a witnessed producing-act return; these fix which is which.
 # --------------------------------------------------------------------------
 
 
@@ -1527,7 +1527,7 @@ def test_changing_any_produced_coordinate_cannot_reuse_the_witness(
 def test_recording_cannot_overwrite_what_the_measurement_established(
     recurrence_occurrences,
 ):
-    """`extra` may add recording coordinates; it may not own producer ones."""
+    """`extra` may add recording coordinates; it may not own production occurrence ones."""
 
     ledger, occurrences = recurrence_occurrences
     finding = _produced(ledger, occurrences)
@@ -1629,7 +1629,7 @@ def test_no_public_operation_attaches_production_to_an_arbitrary_finding():
     assert not [n for n in public if "production" in n or "produce" in n]
 
 
-def test_the_witness_claims_no_producer_and_no_responsibility(
+def test_the_witness_claims_no_responsibility(
     recurrence_occurrences,
 ):
     ledger, occurrences = recurrence_occurrences
@@ -1637,7 +1637,6 @@ def test_the_witness_claims_no_producer_and_no_responsibility(
     witness = [
         e for e in ledger.list("w") if e.kind == PRODUCTION_EVIDENCE_KIND
     ][-1]
-    assert witness.payload["dimensions"]["producer"] == RESPONSIBILITY_UNRECOVERED
     assert witness.payload["dimensions"]["responsibility"] == RESPONSIBILITY_UNRECOVERED
     assert "not that occurrence by identity" in (
         witness.payload["dimensions"]["occurrence_preservation"]

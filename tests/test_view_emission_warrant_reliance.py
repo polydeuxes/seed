@@ -26,7 +26,7 @@ def test_projection_chapter_distinguishes_current_implementation_from_true_fact_
         "book_of_seed/08-authority-communication-and-stopping/"
         "representation-emission-and-consumer-boundaries.md"
     )
-    assert "A current-facing Fact View is a further standing-bearing emission" in emission
+    assert "A current-facing Fact View warrants present Applicability only" in emission
 
 
 def test_amendment_records_required_reliance_answers_and_surface_table():

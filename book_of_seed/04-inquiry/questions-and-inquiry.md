@@ -14,11 +14,11 @@ Question-shaped external material is testimony, not an internal constitutional q
 ### 04.Question.A — Question standing is not answer standing
 A bounded question may establish the identity, provenance, scope, evidence demand, and lawful stop conditions for an inquiry posture, but it does not establish the answer, select the outcome, authorize unbounded investigation, or convert the operator's wording into repository knowledge. Reformulation, frontier membership, or advancement demand may carry the question forward only within preserved evidence, authority, uncertainty, and negative-authority limits.
 
-### 04.Question.B — Inquiry origination requires bounded translation
-An operator ask, prompt phrase, uncertainty statement, reformulation, or presentation label may create attributed testimony or inquiry pressure only. Seed may initiate internal inquiry after a bounded translation preserves identity, source, scope, evidence demand, authority limit, uncertainty, and lawful stop. That translation does not make the operator's wording repository knowledge, assign universal inquiry ownership, retire neighboring questions, establish an answer, or authorize investigation beyond the translated boundary.
+### 04.Question.B — Inquiry origination requires bounded source-attributed representation formation
+An operator ask, prompt phrase, uncertainty statement, reformulation, or presentation label may create attributed testimony or inquiry pressure only. Seed may initiate internal inquiry after a bounded source-attributed representation formation preserves identity, source, scope, evidence demand, authority limit, uncertainty, and lawful stop. That source-attributed representation formation does not make the operator's wording repository knowledge, assign universal inquiry ownership, retire neighboring questions, establish an answer, or authorize investigation beyond the source-attributed boundary.
 
 ### 04.Question.C — Question relations are local and non-collapsing
-A relation involving inquiry pressure, an inquiry demand, a bounded question, a finding, an answer, completion, communication, or later re-entry exists only where the exact source standing, target standing, crossing evidence or warrant, authority boundary, and surviving limits are preserved for that local relation. Naming several such standings in one report, graph, implementation surface, or sequence does not establish a canonical node inventory, universal pipeline, constitutional ordering, or missing edge. No relation carries stronger answer, evidentiary warrant, authority, completion, retirement, receipt, reliance, correction, reopening, execution, or mutation standing unless that stronger standing is separately established.
+A relation involving inquiry pressure, an inquiry demand, a bounded question, a finding, an answer, completion, communication, or later re-entry exists only where the exact source standing, addressed subject standing, crossing evidence or warrant, authority boundary, and surviving limits are preserved for that local relation. Naming several such standings in one report, graph, implementation surface, or sequence does not establish a canonical node inventory, universal pipeline, constitutional ordering, or missing edge. No relation carries stronger answer, evidentiary warrant, authority, completion, retirement, arrival, reliance, correction, reopening, act occurrence, or mutation standing unless that stronger standing is separately established.
 
 External grammar cannot inject an internal question. Operator material may remain testimony, pressure, goals, constraints, corrections, or responses; Seed owns the constitutional act that forms any internal question from that material. An implementation taxonomy such as `QuestionFamily`, an exposed inventory, exact family label, dispatch map, or presentation surface is realization testimony only. It may support compatibility routing or bounded implementation eligibility, but it does not become Seed's constitutional question taxonomy or establish applicability to a goal by existence.
 
@@ -44,9 +44,9 @@ bounded Seed question
 operator response as further testimony
 ```
 
-This ownership is constitutional even where the current executable dialogue loop is incomplete. Missing realization does not transfer inquiry origination or question formation to the operator. Public `ask --question-family` behavior may remain a bounded compatibility or diagnostic dispatch surface, but operator invocation of that surface does not inject an internal question, own Seed's view composition, establish constitutional applicability, or canonize the implementation's family inventory.
+This ownership is constitutional even where the current realizable dialogue loop is incomplete. Missing realization does not transfer inquiry origination or question formation to the operator. Public `ask --question-family` behavior may remain a bounded compatibility or diagnostic dispatch surface, but operator invocation of that surface does not inject an internal question, own Seed's view composition, establish constitutional applicability, or canonize the implementation's family inventory.
 
-Preserved Unknowns include the complete executable default dialogue loop, the future compatibility treatment of public ask surfaces, and which internal question-forming responsibilities realize the constitutional act in every district. Those realization Unknowns do not weaken the ownership boundary.
+Preserved Unknowns include the complete realizable default dialogue loop, the future compatibility treatment of public ask surfaces, and which internal question-forming responsibilities realize the constitutional act in every district. Those realization Unknowns do not weaken the ownership boundary.
 
 ## Important distinctions
 - external question-shaped prose != internal constitutional question
@@ -62,12 +62,11 @@ Preserved Unknowns include the complete executable default dialogue loop, the fu
 - `seed_runtime/question_surface_inventory.py`
 
 ## Counterexamples or failure modes
-- Promoting every open string in state to a constitutional question.
+- Promoting every open string in condition to a constitutional question.
 - Treating operator prose as an already-formed internal question.
 - Treating an implementation family inventory as Seed's constitutional ontology.
 - Losing lineage when reformulating a question.
 
 ## Related chapters
 - [Inquiry frontiers](inquiry-frontiers.md)
-- [Construction and establishment](../03-goals-and-advancement/construction-and-establishment.md)
 - [Testimony and established fact](../05-evidence-and-knowledge/testimony-and-established-fact.md)

@@ -76,10 +76,8 @@ does not supply — regardless of how well it reads.
 is not this.
 
 ```text
-not the closed-choice machinery   twenty of the word's thirty-five uses in
-                                  active law are presented alternatives and
-                                  bounded presentation C, which belong to
-                                  operator-goal establishment, not here
+not closed-choice machinery       presented alternatives are bounded test and
+                                  interaction representations, not this root
 not session Standing              a current implementation projects Standing
                                   "for a session"; that is not what a person
                                   sees, and no clause warrants it

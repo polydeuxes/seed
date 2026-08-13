@@ -35,10 +35,6 @@ MEASUREMENT_AUTHORITY = (
     "literal Measurement Evidence only; establishes no relation, similarity, "
     "profile, meaning, or Standing movement"
 )
-MEASUREMENT_PRODUCER_EVIDENCE = (
-    "the recorded producing occurrence this payload is appended as; a live "
-    "producer return is not durable producer-to-result Evidence unless recorded"
-)
 MEASUREMENT_UNKNOWNS = (
     "why this exact coordinate Assertion has this production count remains Unknown",
 )
@@ -301,8 +297,6 @@ def _measurement_event(
                 "authority_warrant": MEASUREMENT_AUTHORITY,
             },
             "producing_act": "declared Measurement",
-            "producer": "this Seed",
-            "producer_evidence": MEASUREMENT_PRODUCER_EVIDENCE,
             "measurement_subject": (
                 "recorded recurrence-subject coordinate Assertions"
             ),
@@ -370,8 +364,6 @@ def assertions_of_recorded_coordinate_assertion_count(
             "authority_warrant": MEASUREMENT_AUTHORITY,
         }
         or event.payload.get("producing_act") != "declared Measurement"
-        or event.payload.get("producer") != "this Seed"
-        or event.payload.get("producer_evidence") != MEASUREMENT_PRODUCER_EVIDENCE
         or event.payload.get("measurement_subject")
         != "recorded recurrence-subject coordinate Assertions"
     ):

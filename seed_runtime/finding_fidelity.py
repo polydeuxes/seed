@@ -19,7 +19,7 @@ concerns* — and the witness is the recorded event itself.
 
 **What it does not do.** It revises nothing. `01.Uptake.A` holds that evidence
 becoming available "does not by itself change any consumer assertion, standing,
-confidence, reliance, or current result", and that an upstream producer owns its
+confidence, reliance, or current result", and that an upstream production occurrence owns its
 production and availability testimony, "not any consumer's applicability,
 admission, Uptake, reliance, or downstream revision". A finding found unfaithful
 here keeps whatever standing it had; what changes is that this comparison's
@@ -197,7 +197,6 @@ def get_recorded_fidelity_finding(
         or not isinstance(dimensions, dict)
         or dimensions.get("identity") != f"fidelity:{source_id}"
         or dimensions.get("producing_act") != "bounded fidelity comparison"
-        or dimensions.get("producer") != RESPONSIBILITY_UNRECOVERED
         or dimensions.get("responsibility") != RESPONSIBILITY_UNRECOVERED
         or dimensions.get("scope_workspace") != event.workspace_id
         or dimensions.get("scope_locality")
@@ -401,7 +400,6 @@ def compare_recorded_finding(ledger: EventLedger, event_id: str) -> Event:
                 ),
                 "standing": standing,
                 "producing_act": "bounded fidelity comparison",
-                "producer": RESPONSIBILITY_UNRECOVERED,
                 "responsibility": RESPONSIBILITY_UNRECOVERED,
                 "authority_warrant": authority_boundary,
                 "scope_workspace": recorded.workspace_id,
@@ -465,7 +463,6 @@ def compare_recorded_finding(ledger: EventLedger, event_id: str) -> Event:
         produced_result_kind=FIDELITY_RESULT_KIND,
         result_identity=f"fidelity:{event_id}",
         produced_content=result_payload,
-        producer=RESPONSIBILITY_UNRECOVERED,
         responsibility=RESPONSIBILITY_UNRECOVERED,
     )
     return ledger.append(

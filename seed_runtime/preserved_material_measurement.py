@@ -81,7 +81,7 @@ MATERIAL_AS_SUPPLIED = (
 # `#2431` identified "declared-measurement-over-preserved-material" as inherited
 # contamination: it wrote the Act into the Responsibility slot for a declared
 # measurement whose production Responsibility had never been recovered. `#2439`
-# then recovered the partial shape and kept it partial -- Producer "this Seed",
+# then recovered the partial shape and kept it partial -- production occurrence "this Seed",
 # Act a declared measurement, Standing measured, and a Responsibility that stays
 # unrecovered. That is ordinary rather than contradictory.
 RESPONSIBILITY_UNRECOVERED = "unrecovered"
@@ -265,8 +265,8 @@ class RecurrenceFinding:
     # it and measured 96.8% on 500 findings over 2,000 occurrences.
     support_basis: SupportBasis | None = None
     # Which preserved production evidence concerns this result. Named for the
-    # evidence rather than for a producer: it holds an occurrence reference,
-    # and the Producer stays unrecovered. `produced_by` said otherwise by
+    # evidence rather than for a production occurrence: it holds an occurrence reference,
+    # and the production occurrence stays unrecovered. `produced_by` said otherwise by
     # ordinary reading while the payload beside it said unrecovered. `01.Constructors`
     # holds that a separately constructed representation with identical fields
     # does not carry the witnessed return's standing "unless that standing is
@@ -600,7 +600,6 @@ def _record_production(
         produced_result_kind=RECURRENCE_RESULT_KIND,
         result_identity=finding.declared.representation_measured,
         produced_content=_produced_content(finding),
-        producer=RESPONSIBILITY_UNRECOVERED,
         responsibility=RESPONSIBILITY_UNRECOVERED,
     )
 

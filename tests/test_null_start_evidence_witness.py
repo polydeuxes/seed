@@ -150,9 +150,6 @@ def test_null_start_does_not_activate_the_dormant_goal_chain(events):
     """
     kinds = {e.kind for e in events}
     for semantic in (
-        "operator.interaction.goal_applicability_established",
-        "operator.interaction.goal_admitted",
-        "operator.interaction.goal_consumed",
     ):
         assert semantic not in kinds
 

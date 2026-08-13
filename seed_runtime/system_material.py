@@ -43,7 +43,7 @@ harness that ran a subprocess can attest to running it; it cannot attest on
 behalf of a party it merely names.
 
 So no record here says Seed invoked anything. When Seed may invoke on its own
-authority, that is a separate recovery, and only the producer of the invoking
+authority, that is a separate recovery, and only the production occurrence of the invoking
 Act changes — the eye does not.
 
 ## The exchange is declared, not derived from an invocation

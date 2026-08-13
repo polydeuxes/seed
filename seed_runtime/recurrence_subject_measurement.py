@@ -40,10 +40,6 @@ MEASUREMENT_AUTHORITY = (
     "literal Measurement Evidence only; establishes no nested coordinate, "
     "relation, similarity, profile, meaning, or Standing movement"
 )
-MEASUREMENT_PRODUCER_EVIDENCE = (
-    "the recorded producing occurrence this payload is appended as; a live "
-    "producer return is not durable producer-to-result Evidence unless recorded"
-)
 MEASUREMENT_UNKNOWNS = (
     "why the recurrence subject carries this exact coordinate value remains Unknown",
 )
@@ -241,8 +237,6 @@ def _measurement_event(
                 "authority_warrant": MEASUREMENT_AUTHORITY,
             },
             "producing_act": "declared Measurement",
-            "producer": "this Seed",
-            "producer_evidence": MEASUREMENT_PRODUCER_EVIDENCE,
             "measurement_subject": "one recovered recurrence Assertion subject",
             "source_assertion_ref": finding.source.reference,
             "assertions": list(assertions),
@@ -305,8 +299,6 @@ def assertions_of_recorded_recurrence_subject_coordinates(
             "authority_warrant": MEASUREMENT_AUTHORITY,
         }
         or event.payload.get("producing_act") != "declared Measurement"
-        or event.payload.get("producer") != "this Seed"
-        or event.payload.get("producer_evidence") != MEASUREMENT_PRODUCER_EVIDENCE
         or event.payload.get("measurement_subject")
         != "one recovered recurrence Assertion subject"
         or not isinstance(source_ref, dict)

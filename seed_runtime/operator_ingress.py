@@ -12,7 +12,7 @@ from seed_runtime.operator_ingress_representation import (
 )
 
 
-# Who supplied the material an occurrence preserves. Not the Producer of the
+# Who supplied the material an occurrence preserves. Not the production occurrence of the
 # recording occurrence, which is this Seed in both directions, and not authorship
 # — an operator who supplies a book did not write it. `#2490` records why this
 # has to exist before Seed preserves what it emitted: without it a later
@@ -264,7 +264,7 @@ def run_operator_ingress_attempt(
 
     The occurrence names no Presentation.  A relation between this preserved
     material and any preserved Presentation is its own bounded Assertion with
-    its own participants, producer, occurrence, and Evidence; it does not live
+    its own participants, production occurrence, occurrence, and Evidence; it does not live
     inside one participant's record, and no such relation is established
     here.
     """

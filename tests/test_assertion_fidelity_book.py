@@ -18,7 +18,7 @@ def test_assertion_owns_only_fidelity_of_its_standing():
     clause = _assertion_clause()
     assert "exact asserted content as its own subject" in clause
     assert "owns the Responsibility for fidelity of its Standing" in clause
-    assert "Producer != Assertion owner" in clause
+    assert "Producing occurrence != Assertion owner" in clause
     assert "producing Act != Assertion Responsibility" in clause
 
 

@@ -110,7 +110,7 @@ def _assertions_by_result(event):
 
 
 def test_the_assertion_owns_fidelity_not_its_production(compared):
-    """Producer, producing Act, and the result's owner remain distinct."""
+    """The producing Act and the result's fidelity owner remain distinct."""
     event = record_measured_count(
         compared, workspace_id="w", session_id="s1",
         finding=_by_right(compared)["word"])
@@ -127,10 +127,6 @@ def test_the_assertion_owns_fidelity_not_its_production(compared):
         for assertion in assertions
     )
     assert event.payload["producing_act"] == "declared measurement"
-    assert all(
-        assertion["responsibility_owner"] != event.payload["producer"]
-        for assertion in assertions
-    )
     assert all(
         assertion["dimensions"]["responsibility"]
         != event.payload["producing_act"]
@@ -1293,12 +1289,12 @@ def test_every_probe_and_pass_reads_one_prefix_despite_a_concurrent_append(compa
 
 
 # --------------------------------------------------------------------------
-# Producer is not the Responsibility, and not the occurrence either.
+# The production occurrence remains exactly recoverable.
 # --------------------------------------------------------------------------
 
 
 def test_a_durable_producing_occurrence_is_identifiable_and_verifies(tmp_path):
-    """`#2439` proved producer_evidence existed, not that it identifies one.
+    """Historical production Evidence remains occurrence-bound.
 
     The producing occurrence is the event carrying the payload, so its own id
     cannot appear inside that payload. What must hold is that the enclosing
@@ -1354,60 +1350,6 @@ def test_a_durable_producing_occurrence_is_identifiable_and_verifies(tmp_path):
         ) == recovered[0]
     finally:
         reopened.close()
-
-
-def test_the_record_names_a_producer(compared):
-    """`#2423` found no production *owner*; owner is not Producer.
-
-    `01.External:31` lists producer beside provenance as its own dimension, so
-    the absence of a recovered owner does not remove the Producer.
-    """
-    event = record_measured_count(
-        compared, workspace_id="w", session_id="s1",
-        finding=_by_right(compared)["word"])
-    assert event.payload["producer"] == "this Seed"
-    assert event.payload["producer_evidence"]
-    assert "06.Constructors:13" in event.payload["producer_evidence"]
-
-
-def test_the_producer_is_not_the_producing_occurrence(compared):
-    """Collapsing participant into occurrence is the same compression."""
-    event = record_measured_count(
-        compared, workspace_id="w", session_id="s1",
-        finding=_by_right(compared)["word"])
-    assert event.payload["producer"] != event.id
-    assert event.id not in event.payload["producer"]
-
-
-def test_the_producer_is_not_the_provenance(compared):
-    """`01.Kinds:73`: represented provenance != verified producer occurrence."""
-    event = record_measured_count(
-        compared, workspace_id="w", session_id="s1",
-        finding=_by_right(compared)["word"])
-    assert event.payload["producer"] != event.payload["dimensions"][
-        "source_provenance"]
-
-
-def test_the_assertion_responsibility_stands_beside_a_known_producer(compared):
-    """The result owns fidelity while its producing participant remains known."""
-    event = record_measured_count(
-        compared, workspace_id="w", session_id="s1",
-        finding=_by_right(compared)["word"])
-    assert event.payload["producer"] == "this Seed"
-    assertions = event.payload["assertions"]
-    assert all(
-        assertion["responsibility_owner"] == "this recorded assertion"
-        for assertion in assertions
-    )
-    assert all(
-        assertion["dimensions"]["responsibility"]
-        == MEASURED_ASSERTION_FIDELITY_RESPONSIBILITY
-        for assertion in assertions
-    )
-    assert all(
-        assertion["dimensions"]["standing"] == "measured"
-        for assertion in assertions
-    )
 
 
 # --------------------------------------------------------------------------

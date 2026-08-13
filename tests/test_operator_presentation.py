@@ -89,7 +89,6 @@ def test_console_forms_c0_before_first_ingress_and_preserves_lineage_only():
     assert c0_formed.payload["session_standing_as_of_event_id"] is None
     assert c0_formed.payload["prior_exchange_finding"] is None
     assert c0_formed.payload["recovered_meaning_relation"] is None
-    assert c0_formed.payload["current_interaction_goal"] is None
     assert c0_formed.payload["unknowns"] == []
     # The console attaches no Presentation to the capture: several emissions
     # may precede it and nothing determines which, if any, it relates to.
@@ -132,7 +131,6 @@ def test_no_compare_or_identification_follows_console_ingress():
     assert standing["comparisons"] == {}
     assert standing["identifications"] == {}
     assert standing["latest_exchange_finding"] is None
-    assert standing["latest_interaction_goal_standing"] is None
 
 
 def test_c0_presents_standing_with_no_developer_semantics():
@@ -149,7 +147,6 @@ def test_c0_presents_standing_with_no_developer_semantics():
     assert payload["session_standing_as_of_event_id"] is None
     assert payload["prior_exchange_finding"] is None
     assert payload["recovered_meaning_relation"] is None
-    assert payload["current_interaction_goal"] is None
     assert payload["unknowns"] == []
     assert payload["conflicts"] == []
 
@@ -162,8 +159,6 @@ def test_c0_presents_standing_with_no_developer_semantics():
         "Show current Standing",
         "establish no such goal and stop locally",
         "developer-supplied",
-        "potential-goal",
-        "consumer_treatment",
     ):
         assert injected not in flattened, injected
     rendered = render_operator_presentation(c0)
@@ -294,11 +289,7 @@ def test_alternatives_carry_complete_coordinates_and_evidence_lineage():
     purposes = set()
     for alternative in presentation["alternatives"]:
         assert alternative["alternative_id"]
-        assert alternative["role"] in {
-            "potential-goal",
-            "presentation-navigation",
-            "local-stop",
-        }
+        assert alternative["role"] == "presentation-navigation"
         assert alternative["response_coordinate"]
         assert alternative["rendered_label"]
         source = alternative["represented_source"]
@@ -323,45 +314,6 @@ def test_alternatives_carry_complete_coordinates_and_evidence_lineage():
         )
     # The three representation relations carry distinct purposes.
     assert len(purposes) == 3
-
-
-def test_grammar_acquisition_candidate_is_developer_supplied_not_inferred():
-    ledger = EventLedger()
-    _fixture_presentation(ledger)
-
-    presentation = list(_standing(ledger)["presentations"].values())[-1]
-    goal_alternatives = [
-        alternative
-        for alternative in presentation["alternatives"]
-        if alternative["role"] == "potential-goal"
-    ]
-    assert len(goal_alternatives) == 1
-    source = goal_alternatives[0]["represented_source"]
-    assert source["meaning"] == "establish richer shared grammar with the operator"
-    assert source["attribution"] == "developer-supplied"
-    for field in (source["meaning"], source["kind"], source["reference"]):
-        assert "Klingon" not in field
-
-
-def test_local_stop_alternative_is_not_represented_as_a_goal():
-    ledger = EventLedger()
-    _fixture_presentation(ledger)
-
-    presentation = list(_standing(ledger)["presentations"].values())[-1]
-    stops = [
-        alternative
-        for alternative in presentation["alternatives"]
-        if alternative["role"] == "local-stop"
-    ]
-    assert len(stops) == 1
-    assert stops[0]["role"] != "potential-goal"
-    assert stops[0]["represented_source"]["kind"] == (
-        "developer-supplied-local-stop-treatment"
-    )
-    assert (
-        stops[0]["represented_source"]["meaning"]
-        == "establish no such goal and stop locally"
-    )
 
 
 def test_no_new_meaning_candidate_is_synthesized():

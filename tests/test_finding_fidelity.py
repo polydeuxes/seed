@@ -286,7 +286,6 @@ def test_it_claims_no_owner_and_no_correction_authority(recorded):
     ledger, event = recorded
     result = compare_recorded_finding(ledger, event.id)
     dims = result.payload["dimensions"]
-    assert dims["producer"] == RESPONSIBILITY_UNRECOVERED
     assert dims["responsibility"] == RESPONSIBILITY_UNRECOVERED
     assert "correction authority" in dims["authority_warrant"]
     assert result.payload["revises"] == []

@@ -48,7 +48,6 @@ BYTE_RESULT_COORDINATES = frozenset(
     {
         "dimensions",
         "producing_act",
-        "producer",
         "target_act_id",
         "act_occurrence_id",
         "responsibility",
@@ -83,7 +82,6 @@ BYTE_PAIR_APPLICABILITY_RESULT_COORDINATES = frozenset(
     {
         "dimensions",
         "producing_act",
-        "producer",
         "responsibility",
         "responsible_boundary",
         "assigned_by_responsibility",
@@ -98,6 +96,11 @@ BYTE_PAIR_APPLICABILITY_RESULT_COORDINATES = frozenset(
 )
 BYTE_PAIR_APPLICABILITY_ACT_EVIDENCE_KIND = (
     "operator.measurement.adjacent_byte_pair_applicability_act_evidenced"
+)
+ASSERTION_LOCALITY_MOVEMENT_KIND = "operator.assertion.locality_movement_recorded"
+ASSERTION_LOCALITY_MOVEMENT_RESPONSIBILITY = (
+    "make one exact preserved Assertion available in another locality of the "
+    "same workspace without changing its identity, Standing, or carried limits"
 )
 BYTE_MEASUREMENT_RULE = (
     "each individual byte of exact captured ingress material; equal only when "
@@ -586,11 +589,140 @@ def _prepare_pair_source(
         raise ByteMeasurementError(
             "adjacent-byte-pair Measurement requires an exact source-material-set Assertion"
         )
+    source = _move_byte_assertion_to_locality(
+        ledger,
+        source=source,
+        target_workspace_id=consumer_workspace_id,
+        target_locality=measurement_session_id,
+    )
     payload = source.payload
     scope = payload["assertion_scope"]
     content = payload["dimensions"]["content"]
     target_act_id = new_id("adjacent_byte_pair_measurement_act")
     return source, scope, content, target_act_id
+
+
+def _move_byte_assertion_to_locality(
+    ledger: EventLedger,
+    *,
+    source: RecordedByteAssertion,
+    target_workspace_id: str,
+    target_locality: str,
+) -> RecordedByteAssertion:
+    """Preserve one same-workspace Assertion movement without copying its claim."""
+
+    source_event = ledger.get(source.recorded_occurrence_id)
+    if source_event is None or source_event.workspace_id != target_workspace_id:
+        raise ByteMeasurementError(
+            "Assertion locality movement does not authorize a workspace crossing"
+        )
+    source_locality = source_event.session_id
+    if source_locality == target_locality:
+        return source
+    if source_locality is None:
+        raise ByteMeasurementError("Assertion locality movement requires source locality")
+    movement_occurrence_id = new_id("assertion_locality_movement")
+    payload = source.payload
+    movement = ledger.append(
+        ASSERTION_LOCALITY_MOVEMENT_KIND,
+        target_workspace_id,
+        {
+            "movement_occurrence_id": movement_occurrence_id,
+            "responsibility": ASSERTION_LOCALITY_MOVEMENT_RESPONSIBILITY,
+            "responsible_boundary": SEED_NATIVE_MEASUREMENT_RESPONSIBLE_BOUNDARY,
+            "source_assertion_ref": source.reference,
+            "assertion_id": source.assertion_id,
+            "source_locality": source_locality,
+            "target_locality": target_locality,
+            "assertion_commitment": production_commitment(
+                "assertion_locality_movement_v1", payload
+            ),
+            "surviving_coordinates": [
+                "Evidence",
+                "Authority",
+                "Scope",
+                "Unknowns",
+                "limits",
+                "Standing",
+            ],
+            "authority_warrant": (
+                "same-workspace locality movement of this exact Assertion only; "
+                "establishes no changed identity, Standing, or cross-workspace use"
+            ),
+        },
+        session_id=target_locality,
+    )
+    return RecordedByteAssertion(
+        assertion_id=source.assertion_id,
+        recorded_occurrence_id=movement.id,
+        byte_hex=source.byte_hex,
+        result=source.result,
+        _payload_json=_canonical(payload),
+        _support_assertion_refs_json=_canonical(list(source.support_assertion_refs)),
+    )
+
+
+def _recover_moved_byte_assertion(
+    ledger: EventLedger, movement_event_id: str
+) -> RecordedByteAssertion | None:
+    movement = ledger.get(movement_event_id)
+    if movement is None or movement.kind != ASSERTION_LOCALITY_MOVEMENT_KIND:
+        return None
+    if ledger.integrity_of(movement.id) == CORRUPTED:
+        raise ByteMeasurementError("Assertion locality movement is corrupted")
+    source_ref = movement.payload.get("source_assertion_ref")
+    if not isinstance(source_ref, dict):
+        raise ByteMeasurementError("Assertion movement carries no exact source")
+    source_results = assertions_of_recorded_byte_measurement(
+        ledger, source_ref.get("recorded_occurrence_id")
+    )
+    source = next(
+        (
+            item
+            for item in source_results or ()
+            if item.assertion_id == source_ref.get("assertion_id")
+        ),
+        None,
+    )
+    if source is None:
+        raise ByteMeasurementError("Assertion movement source cannot be recovered")
+    source_event = ledger.get(source.recorded_occurrence_id)
+    if source_event is None:
+        raise ByteMeasurementError("Assertion movement source occurrence is unavailable")
+    expected = {
+        "movement_occurrence_id": movement.payload.get("movement_occurrence_id"),
+        "responsibility": ASSERTION_LOCALITY_MOVEMENT_RESPONSIBILITY,
+        "responsible_boundary": SEED_NATIVE_MEASUREMENT_RESPONSIBLE_BOUNDARY,
+        "source_assertion_ref": source.reference,
+        "assertion_id": source.assertion_id,
+        "source_locality": source_event.session_id,
+        "target_locality": movement.session_id,
+        "assertion_commitment": production_commitment(
+            "assertion_locality_movement_v1", source.payload
+        ),
+        "surviving_coordinates": [
+            "Evidence",
+            "Authority",
+            "Scope",
+            "Unknowns",
+            "limits",
+            "Standing",
+        ],
+        "authority_warrant": (
+            "same-workspace locality movement of this exact Assertion only; "
+            "establishes no changed identity, Standing, or cross-workspace use"
+        ),
+    }
+    if movement.payload != expected:
+        raise ByteMeasurementError("Assertion locality movement is not exact")
+    return RecordedByteAssertion(
+        assertion_id=source.assertion_id,
+        recorded_occurrence_id=movement.id,
+        byte_hex=source.byte_hex,
+        result=source.result,
+        _payload_json=_canonical(source.payload),
+        _support_assertion_refs_json=_canonical(list(source.support_assertion_refs)),
+    )
 
 
 def _measure_adjacent_byte_pair_counts_through(
@@ -831,7 +963,6 @@ def record_byte_count_layer(
                 "authority_warrant": MEASUREMENT_AUTHORITY,
         },
         "producing_act": "declared Measurement",
-        "producer": RESPONSIBILITY_UNRECOVERED,
         "target_act_id": target_act_id,
         "act_occurrence_id": act_occurrence_id,
         "responsibility": BYTE_MEASUREMENT_RESPONSIBILITY,
@@ -858,7 +989,7 @@ def record_byte_count_layer(
             "standing": "occurred",
             "authority_warrant": (
                 "Evidence concerning this exact bounded responsible Measurement "
-                "occurrence only; establishes no Producer identity"
+                "occurrence only; establishes no responsibility"
             ),
         },
         session_id=recording_session_id,
@@ -872,7 +1003,6 @@ def record_byte_count_layer(
         produced_result_kind=BYTE_MEASUREMENT_RESULT_KIND,
         result_identity="byte-count-measurement-occurrence",
         produced_content=result_payload,
-        producer=RESPONSIBILITY_UNRECOVERED,
         responsibility=BYTE_MEASUREMENT_RESPONSIBILITY,
     )
     return ledger.append(
@@ -912,7 +1042,6 @@ def assertions_of_recorded_byte_measurement(
     if (
         payload.get("occurrence_preservation") != BYTE_OCCURRENCE_PRESERVATION
         or payload.get("producing_act") != "declared Measurement"
-        or payload.get("producer") != RESPONSIBILITY_UNRECOVERED
         or payload.get("responsibility") != BYTE_MEASUREMENT_RESPONSIBILITY
         or payload.get("responsible_boundary")
         != SEED_NATIVE_MEASUREMENT_RESPONSIBLE_BOUNDARY
@@ -952,8 +1081,6 @@ def assertions_of_recorded_byte_measurement(
         != BYTE_MEASUREMENT_RESULT_KIND
         or evidence.payload.get("production_coordinates")
         != sorted(BYTE_RESULT_COORDINATES)
-        or evidence.payload.get("dimensions", {}).get("producer")
-        != RESPONSIBILITY_UNRECOVERED
         or evidence.payload.get("dimensions", {}).get("responsibility")
         != BYTE_MEASUREMENT_RESPONSIBILITY
     ):
@@ -981,7 +1108,7 @@ def assertions_of_recorded_byte_measurement(
         "standing": "occurred",
         "authority_warrant": (
             "Evidence concerning this exact bounded responsible Measurement "
-            "occurrence only; establishes no Producer identity"
+            "occurrence only; establishes no responsibility"
         ),
     }
     if (
@@ -1145,7 +1272,7 @@ def _record_pair_responsible_act_evidence(
             "standing": "occurred",
             "authority_warrant": (
                 "Evidence concerning this exact bounded responsible Measurement "
-                "occurrence only; establishes no Producer identity or authority "
+                "occurrence only; establishes no responsibility or authority "
                 "for another Act"
             ),
         },
@@ -1173,7 +1300,6 @@ def _record_pair_input_applicability(
             "authority_warrant": BYTE_PAIR_APPLICABILITY_AUTHORITY,
         },
         "producing_act": "input Applicability determination",
-        "producer": RESPONSIBILITY_UNRECOVERED,
         "responsibility": BYTE_PAIR_INPUT_APPLICABILITY_RESPONSIBILITY,
         "responsible_boundary": SEED_NATIVE_MEASUREMENT_RESPONSIBLE_BOUNDARY,
         "assigned_by_responsibility": BYTE_PAIR_MEASUREMENT_RESPONSIBILITY,
@@ -1217,7 +1343,6 @@ def _record_pair_input_applicability(
         produced_result_kind=BYTE_PAIR_APPLICABILITY_RESULT_KIND,
         result_identity=claim["dimensions"]["identity"],
         produced_content=result_payload,
-        producer=RESPONSIBILITY_UNRECOVERED,
         responsibility=BYTE_PAIR_INPUT_APPLICABILITY_RESPONSIBILITY,
     )
     return ledger.append(
@@ -1424,7 +1549,6 @@ def record_adjacent_byte_pair_count_layer(
             "authority_warrant": PAIR_MEASUREMENT_AUTHORITY,
         },
         "producing_act": "declared Measurement",
-        "producer": RESPONSIBILITY_UNRECOVERED,
         "target_act_id": measured.target_act_id,
         "act_occurrence_id": measured.act_occurrence_id,
         "responsibility": BYTE_PAIR_MEASUREMENT_RESPONSIBILITY,
@@ -1454,7 +1578,6 @@ def record_adjacent_byte_pair_count_layer(
         produced_result_kind=BYTE_PAIR_MEASUREMENT_RESULT_KIND,
         result_identity="adjacent-byte-pair-count-measurement-occurrence",
         produced_content=result_payload,
-        producer=RESPONSIBILITY_UNRECOVERED,
         responsibility=BYTE_PAIR_MEASUREMENT_RESPONSIBILITY,
     )
     return ledger.append(
@@ -1602,7 +1725,6 @@ def assertions_of_recorded_adjacent_byte_pair_measurement(
     if (
         payload.get("occurrence_preservation") != BYTE_PAIR_OCCURRENCE_PRESERVATION
         or payload.get("producing_act") != "declared Measurement"
-        or payload.get("producer") != RESPONSIBILITY_UNRECOVERED
         or payload.get("responsibility") != BYTE_PAIR_MEASUREMENT_RESPONSIBILITY
         or not isinstance(payload.get("target_act_id"), str)
         or not payload["target_act_id"]
@@ -1628,8 +1750,6 @@ def assertions_of_recorded_adjacent_byte_pair_measurement(
         != BYTE_PAIR_MEASUREMENT_RESULT_KIND
         or evidence.payload.get("production_coordinates")
         != sorted(BYTE_PAIR_RESULT_COORDINATES)
-        or evidence.payload.get("dimensions", {}).get("producer")
-        != RESPONSIBILITY_UNRECOVERED
         or evidence.payload.get("dimensions", {}).get("responsibility")
         != BYTE_PAIR_MEASUREMENT_RESPONSIBILITY
     ):
@@ -1672,7 +1792,7 @@ def assertions_of_recorded_adjacent_byte_pair_measurement(
         "standing": "occurred",
         "authority_warrant": (
             "Evidence concerning this exact bounded responsible Measurement "
-            "occurrence only; establishes no Producer identity or authority "
+            "occurrence only; establishes no responsibility or authority "
             "for another Act"
         ),
     }
@@ -1708,18 +1828,11 @@ def assertions_of_recorded_adjacent_byte_pair_measurement(
         or not all(isinstance(value, str) and value for value in source_ref.values())
     ):
         raise ByteMeasurementError(f"{event_id} carries no exact source Assertion")
-    source_results = assertions_of_recorded_byte_measurement(
+    source = _recover_moved_byte_assertion(
         ledger, source_ref["recorded_occurrence_id"]
     )
-    source = next(
-        (
-            item
-            for item in source_results or ()
-            if item.assertion_id == source_ref["assertion_id"]
-            and item.result == "exact_source_material_set"
-        ),
-        None,
-    )
+    if source is not None and source.assertion_id != source_ref["assertion_id"]:
+        source = None
     if source is None or event.session_id is None:
         raise ByteMeasurementError(
             f"{event_id} does not carry its exact consumed source Assertion"

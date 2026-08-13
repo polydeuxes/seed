@@ -12,7 +12,6 @@ from seed_runtime.assertion_comparison import (
 from seed_runtime.comparison_result_measurement import (
     COMPARISON_RESULT_COUNT_RECORDED_KIND,
     ComparisonResultMeasurementError,
-    MEASUREMENT_PRODUCER_EVIDENCE,
     assertions_of_recorded_comparison_result_count,
     assertions_from_comparison_result_count,
     get_recorded_comparison_result_count_assertion,
@@ -240,7 +239,6 @@ def test_recording_preserves_exact_set_and_derived_count_separately():
     production_set, count, recurrence = event.payload["assertions"]
 
     assert event.kind == COMPARISON_RESULT_COUNT_RECORDED_KIND
-    assert event.payload["producer_evidence"] == MEASUREMENT_PRODUCER_EVIDENCE
     assert "result_content" not in event.payload
     assert production_set["result"] == "exact_production_set"
     assert production_set["support_basis"]["assertion_refs"] == [

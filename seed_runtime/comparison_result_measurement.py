@@ -41,10 +41,6 @@ MEASUREMENT_AUTHORITY = (
     "literal Measurement Evidence only; establishes no profile, "
     "similarity, relation, meaning, or Standing movement"
 )
-MEASUREMENT_PRODUCER_EVIDENCE = (
-    "the recorded producing occurrence this payload is appended as; a live "
-    "producer return is not durable producer-to-result Evidence unless recorded"
-)
 MEASUREMENT_UNKNOWNS = (
     "why this exact comparison result has this count remains Unknown",
 )
@@ -403,8 +399,6 @@ def _comparison_result_count_event(
                 "authority_warrant": MEASUREMENT_AUTHORITY,
             },
             "producing_act": "declared Measurement",
-            "producer": "this Seed",
-            "producer_evidence": MEASUREMENT_PRODUCER_EVIDENCE,
             "measurement_subject": "recorded positional-result comparison Assertions",
             "assertions": list(assertions),
         },
@@ -492,8 +486,6 @@ def assertions_of_recorded_comparison_result_count(
             "authority_warrant": MEASUREMENT_AUTHORITY,
         }
         or event.payload.get("producing_act") != "declared Measurement"
-        or event.payload.get("producer") != "this Seed"
-        or event.payload.get("producer_evidence") != MEASUREMENT_PRODUCER_EVIDENCE
         or event.payload.get("measurement_subject")
         != "recorded positional-result comparison Assertions"
     ):

@@ -758,41 +758,9 @@ def record_measured_count(
 ) -> Event:
     """Preserve the distinct Assertions one recurrence Measurement produced.
 
-    The record carries a **Producer** distinct from its Responsibility.
-    `#2423` recovered that declared measurement has no production *owner* in
-    active law, and `#2431` then wrote the Act into the Responsibility
-    coordinate, which asserts the owner that recovery says is absent. But owner
-    and Producer are different coordinates: `01.External:31` requires a
-    candidate to preserve "each applicable producer, source-role,
-    formation-occurrence, scope, authority, and provenance dimension", listing
-    producer beside provenance rather than as it.
-
-    The old aggregate result's Responsibility slot had been answering a production-ownership
-    question that belongs elsewhere.  Production ownership remains separate
-    and is not resolved here.  The producing Act is declared Measurement, this
-    Seed is its Producer, and the recorded occurrence is Producer Evidence.
-    Each distinct result owns a different, continuing Responsibility: the
-    fidelity of its own Standing to the coordinates it carries.
-
-    So the shape is:
-
-    ```text
-      Producer          this Seed
-      Producer Evidence the exact recorded producing occurrence
-      Act               declared measurement
-      results           distinct bounded measured Assertions
-      each Standing     measured
-      each owner        that Assertion
-      Responsibility    fidelity of that Assertion's Standing
-    ```
-
-    `06.Constructors:13` is what licenses the Producer Assertion and limits it:
-    a live producer return is not durable producer-to-result Evidence *unless
-    recorded or represented*. The Producer therefore rests on the recorded
-    occurrence, and the occurrence is Evidence **for** the Producer rather than
-    being the Producer — `01.Kinds:73` keeps represented provenance and verified
-    producer occurrence apart, and collapsing participant into occurrence would
-    be the same compression in different nouns.
+    Production Evidence binds the exact responsible Measurement occurrence to
+    these exact results. Each result Assertion separately owns fidelity of its
+    Standing to its carried coordinates.
     """
 
     declared = dict(finding.distinction.declared)
@@ -815,11 +783,8 @@ def record_measured_count(
         },
         "assertions": [assertion.to_json_dict() for assertion in assertions],
         "producing_act": "declared measurement",
-        "producer": "this Seed",
-        "producer_evidence": (
-            "the recorded producing occurrence this payload is appended as; a "
-            "live producer return is not durable producer-to-result evidence "
-            "unless recorded (06.Constructors:13)"
+        "production_occurrence_evidence": (
+            "the recorded producing occurrence this payload is appended as"
         ),
         "measurement_subject": (
             "recorded comparison occurrences and recorded measurement occurrences"

@@ -63,5 +63,5 @@ def test_book_does_not_turn_persistent_standing_into_production_demand():
 
     assert "lawfully persistent result standing is not current production demand" in clause
     assert "does not lose its standing merely because a later consumer does not consume it" in clause
-    assert "does not permit a producer to be implemented or invoked without a current responsibility" in clause
-    assert "does not by itself establish producer demand, candidate-formation demand" in clause
+    assert "does not permit an act to be implemented or invoked without a current responsibility" in clause
+    assert "does not by itself establish production demand, candidate-formation demand" in clause
