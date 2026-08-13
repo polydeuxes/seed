@@ -44,6 +44,7 @@ from typing import Any, Iterable
 from seed_runtime.events import EventLedger
 from seed_runtime.event import Event
 from seed_runtime.ids import new_id
+from seed_runtime.support_basis import SupportBasis, support_commitment
 
 MEASUREMENT_RECORDED_KIND = "operator.measurement.finding_recorded"
 INGRESS_OCCURRED_KIND = "operator.ingress.ingress_occurred"
@@ -205,11 +206,18 @@ class RecurrenceFinding:
     # How many times it occurred in total across them. This is the recurrence.
     total_count: int
     consumed_event_ids: tuple[str, ...]
+    # The basis of the population consumed, where one was declared. Every
+    # finding of one pass stands on the same population, so preserving the
+    # enumeration in each copies that population once per representation.
+    # `#2486` measured exactly this at 97% of a stored finding and built
+    # SupportBasis to carry the basis instead. This path was written without
+    # it and measured 96.8% on 500 findings over 2,000 occurrences.
+    support_basis: SupportBasis | None = None
     boundary_notes: tuple[str, ...] = field(default=BOUNDARY_NOTES)
     convention: str = MEASUREMENT_CONVENTION
 
     def to_json_dict(self) -> dict[str, Any]:
-        return {
+        carried: dict[str, Any] = {
             "convention": self.convention,
             "representation_measured": self.declared.representation_measured,
             "equivalence_rule": self.declared.equivalence_rule,
@@ -224,6 +232,13 @@ class RecurrenceFinding:
             "consumed_count": len(self.consumed_event_ids),
             "boundary_notes": list(self.boundary_notes),
         }
+        if self.support_basis is not None:
+            # The basis replaces the enumeration rather than accompanying it.
+            # Carrying both preserves the cost the basis exists to avoid, and
+            # leaves two representations of one support free to disagree.
+            carried["consumed_support"] = self.support_basis.to_json_dict()
+            carried.pop("consumed_event_ids")
+        return carried
 
 
 def measure_recurrence(
@@ -370,6 +385,7 @@ def measure_recurrences(
     *,
     declared: "dict[str, DeclaredMeasurement]",
     counts_in: "callable[[str], dict[str, int]]",
+    support_basis: SupportBasis | None = None,
 ) -> tuple[RecurrenceFinding, ...]:
     """Measure many representations across one pass of the material.
 
@@ -458,6 +474,23 @@ def measure_recurrences(
                 carrying[representation] += 1
                 total[representation] += count
     population = tuple(consumed)
+    if support_basis is not None:
+        # A basis carried but never checked would let a finding preserve a
+        # commitment to a population the act did not walk. `support_commitment`
+        # is a pure function of the rule and the ordered identities, so the act
+        # can confirm the basis describes what it actually consumed.
+        if support_commitment(support_basis.selection_rule, population) != (
+            support_basis.commitment
+        ):
+            raise PreservedMaterialMeasurementError(
+                "the declared support basis does not commit to the population "
+                "this measurement consumed"
+            )
+        if support_basis.support_count != len(population):
+            raise PreservedMaterialMeasurementError(
+                f"the declared support basis counts {support_basis.support_count} "
+                f"occurrences and this measurement consumed {len(population)}"
+            )
     consumed_localities = tuple(localities)
     return tuple(
         RecurrenceFinding(
@@ -467,6 +500,7 @@ def measure_recurrences(
             occurrences_carrying=carrying[representation],
             total_count=total[representation],
             consumed_event_ids=population,
+            support_basis=support_basis,
         )
         for representation, declaration in declared.items()
     )

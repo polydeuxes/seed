@@ -45,6 +45,7 @@ from seed_runtime.preserved_material_measurement import (
     record_measurement_finding,
 )
 from seed_runtime.operator_console import run_persistent_operator_console
+from seed_runtime.support_basis import declare_complete_population
 
 MATERIAL = (
     "_The_ is the definite article.\n"
@@ -886,3 +887,72 @@ def test_the_positional_path_also_refuses_a_repeated_occurrence(occurrences):
             declared=_declared(),
             occupant_of=_first_word,
         )
+
+# --------------------------------------------------------------------------
+# One pass consumes one population, so one basis describes every finding.
+# `#2486` built SupportBasis for exactly this and the recurrence path was
+# written without it.
+# --------------------------------------------------------------------------
+
+
+def _basis_for(occurrences, ledger):
+    return declare_complete_population(
+        workspace_id="w",
+        session_id="r",
+        occurrence_kind=INGRESS_OCCURRED_KIND,
+        boundary=ledger.capture_boundary(),
+        identities=[e.id for e in occurrences],
+    )
+
+
+def test_a_declared_basis_replaces_the_enumeration(recurrence_occurrences):
+    ledger, occurrences = recurrence_occurrences
+    declared = _declared_for("the", "cat")
+    findings = measure_recurrences(
+        occurrences,
+        declared=declared,
+        counts_in=_counts_in(declared),
+        support_basis=_basis_for(occurrences, ledger),
+    )
+    for finding in findings:
+        carried = finding.to_json_dict()
+        assert "consumed_event_ids" not in carried
+        assert carried["consumed_support"]["support_count"] == len(occurrences)
+        # the act still knows what it walked, in memory, while it runs
+        assert finding.consumed_event_ids == tuple(e.id for e in occurrences)
+
+
+def test_a_basis_that_does_not_commit_to_the_population_is_refused(
+    recurrence_occurrences,
+):
+    ledger, occurrences = recurrence_occurrences
+    declared = _declared_for("the")
+    wrong = _basis_for(occurrences[:1], ledger)
+    with pytest.raises(PreservedMaterialMeasurementError, match="does not commit"):
+        measure_recurrences(
+            occurrences,
+            declared=declared,
+            counts_in=_counts_in(declared),
+            support_basis=wrong,
+        )
+
+
+def test_findings_with_and_without_a_basis_agree_on_everything_else(
+    recurrence_occurrences,
+):
+    ledger, occurrences = recurrence_occurrences
+    declared = _declared_for("the", "zebra")
+    plain = measure_recurrences(
+        occurrences, declared=declared, counts_in=_counts_in(declared)
+    )
+    based = measure_recurrences(
+        occurrences,
+        declared=declared,
+        counts_in=_counts_in(declared),
+        support_basis=_basis_for(occurrences, ledger),
+    )
+    for a, b in zip(plain, based):
+        left, right = a.to_json_dict(), b.to_json_dict()
+        left.pop("consumed_event_ids")
+        right.pop("consumed_support")
+        assert left == right
