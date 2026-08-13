@@ -33,6 +33,7 @@ from seed_runtime.production_evidence import (
     PRODUCTION_EVIDENCE_KIND,
     production_commitment,
 )
+from seed_runtime.support_basis import support_commitment
 
 
 @pytest.fixture
@@ -85,6 +86,14 @@ def test_the_fidelity_finding_carries_evidence_that_the_act_produced_it(recorded
     assert evidence.payload["production_coordinates"] == sorted(content)
     assert evidence.payload["production_commitment"] == production_commitment(
         FIDELITY_CONVENTION, content
+    )
+
+
+def test_production_and_support_commitments_have_distinct_mechanical_domains():
+    content = {"a": "b"}
+    represented = '{"a":"b"}'
+    assert production_commitment("x", content) != support_commitment(
+        "x", (represented,)
     )
 
 
@@ -317,6 +326,27 @@ def test_absent_locality_remains_absent(recorded):
     result = compare_recorded_finding(ledger, without_locality.id)
     assert result.payload["dimensions"]["scope_locality"] is None
     assert result.payload["dimensions"]["scope_workspace"] == "w"
+
+
+def test_foreign_workspace_production_evidence_is_not_faithful(recorded):
+    ledger, event = recorded
+    foreign = ledger.append(
+        MEASUREMENT_RECORDED_KIND,
+        "other-workspace",
+        dict(event.payload),
+        session_id="r",
+    )
+    result = compare_recorded_finding(ledger, foreign.id)
+    assert result.payload["dimensions"]["standing"] == UNFAITHFUL_CROSSING
+    assert result.payload["observed_crossings"] == [
+        {
+            "kind": FIDELITY_UNKNOWN,
+            "observation": (
+                "the named production evidence belongs to a different "
+                "workspace than the recorded finding"
+            ),
+        }
+    ]
 
 
 def test_corrupted_implementation_witness_is_refused(tmp_path):

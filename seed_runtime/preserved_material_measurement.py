@@ -1073,6 +1073,11 @@ def record_measurement_findings(
                 f"{finding.production_evidence_id} is named as this result's "
                 "evidence and is not preserved production evidence"
             )
+        if evidence.workspace_id != workspace_id:
+            raise PreservedMaterialMeasurementError(
+                "production evidence and its recorded recurrence finding must "
+                "belong to the same workspace"
+            )
         if evidence.payload.get("produced_result_kind") != RECURRENCE_RESULT_KIND:
             raise PreservedMaterialMeasurementError(
                 f"{finding.production_evidence_id} is production evidence for "

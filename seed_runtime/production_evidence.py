@@ -12,23 +12,39 @@ for caller-constructed objects.
 
 from __future__ import annotations
 
+import hashlib
 import json
 from typing import Any
 
 from seed_runtime.event import Event
 from seed_runtime.events import EventLedger
-from seed_runtime.support_basis import support_commitment
 
 PRODUCTION_EVIDENCE_KIND = "operator.production.evidence_recorded"
+_PRODUCTION_COMMITMENT_DOMAIN = b"seed.production-evidence.v1\0"
+
+
+def _commit_part(digest: "hashlib._Hash", value: str) -> None:
+    """Commit one exact representation without borrowing another domain."""
+
+    if not isinstance(value, str):
+        raise TypeError(
+            "a production commitment part is an exact representation, not "
+            f"{type(value).__name__}"
+        )
+    encoded = value.encode("utf-8")
+    digest.update(len(encoded).to_bytes(8, "big"))
+    digest.update(encoded)
 
 
 def production_commitment(convention: str, content: dict[str, Any]) -> str:
-    """Commit to every coordinate the producing act established."""
+    """Commit to every coordinate under the production-evidence domain."""
 
-    return support_commitment(
-        convention,
-        (json.dumps(content, sort_keys=True, separators=(",", ":")),),
+    digest = hashlib.sha256(_PRODUCTION_COMMITMENT_DOMAIN)
+    _commit_part(digest, convention)
+    _commit_part(
+        digest, json.dumps(content, sort_keys=True, separators=(",", ":"))
     )
+    return digest.hexdigest()
 
 
 def _record_production_evidence(

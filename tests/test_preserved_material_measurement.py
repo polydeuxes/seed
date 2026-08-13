@@ -1585,6 +1585,22 @@ def test_production_and_recording_may_be_in_different_localities(
     assert event.kind == MEASUREMENT_RECORDED_KIND
 
 
+def test_production_evidence_cannot_be_borrowed_across_workspaces(
+    recurrence_occurrences,
+):
+    ledger, occurrences = recurrence_occurrences
+    finding = _produced(ledger, occurrences)
+    with pytest.raises(
+        PreservedMaterialMeasurementError, match="same workspace"
+    ):
+        record_measurement_finding(
+            ledger,
+            workspace_id="another-workspace",
+            session_id="r",
+            finding=finding,
+        )
+
+
 def test_no_public_operation_attaches_production_to_an_arbitrary_finding():
     import seed_runtime.preserved_material_measurement as module
 

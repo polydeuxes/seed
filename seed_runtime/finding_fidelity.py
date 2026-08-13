@@ -150,6 +150,14 @@ def compare_recorded_finding(ledger: EventLedger, event_id: str) -> Event:
                 conflicts.append(
                     "the named production-evidence occurrence is corrupted"
                 )
+            elif evidence.workspace_id != recorded.workspace_id:
+                observed.append(
+                    _crossing(
+                        FIDELITY_UNKNOWN,
+                        "the named production evidence belongs to a different "
+                        "workspace than the recorded finding",
+                    )
+                )
             elif evidence.kind != PRODUCTION_EVIDENCE_KIND:
                 observed.append(
                     _crossing(
