@@ -2,8 +2,6 @@
 
 from __future__ import annotations
 
-from copy import deepcopy
-
 import pytest
 
 from seed_runtime.event import Event
@@ -129,14 +127,31 @@ def test_a_produced_fidelity_finding_is_occurrence_bound_and_recoverable(recorde
     assert recovered.reference == {"recorded_occurrence_id": result.id}
 
 
-def test_recovered_payload_cannot_mutate_the_in_memory_ledger(recorded):
+def test_recovery_exposes_no_mutable_result_payload(recorded):
     ledger, event = recorded
     result = compare_recorded_finding(ledger, event.id)
-    before = deepcopy(ledger.get(result.id).payload)
     recovered = get_recorded_fidelity_finding(ledger, result.id)
-    recovered.payload["unknowns"].append("invented after recovery")
-    recovered.payload["dimensions"]["standing"] = "invented"
-    assert ledger.get(result.id).payload == before
+    assert not hasattr(recovered, "payload")
+    assert recovered.standing == result.payload["dimensions"]["standing"]
+
+
+def test_recovery_does_not_revalidate_the_historical_input(recorded):
+    ledger, event = recorded
+    result = compare_recorded_finding(ledger, event.id)
+    # Recovery of F stands on F's intact recording occurrence and production
+    # Evidence. Its source identity travels, but current source availability is
+    # a later consumer's responsibility. The in-memory ledger has no deletion
+    # API, so this exact copy demonstrates that recovery does not require the
+    # source to retain its old kind or shape.
+    ledger._by_id[event.id] = Event(
+        id=event.id,
+        kind="representation.changed.after.fidelity",
+        workspace_id=event.workspace_id,
+        payload={},
+        session_id=event.session_id,
+    )
+    recovered = get_recorded_fidelity_finding(ledger, result.id)
+    assert recovered.source_finding_event_id == event.id
 
 
 def test_a_fidelity_shaped_event_without_production_evidence_is_not_recovered(

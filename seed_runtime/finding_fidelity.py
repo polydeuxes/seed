@@ -35,7 +35,6 @@ recorded and a later responsible act may follow them; this act does not.
 
 from __future__ import annotations
 
-from copy import deepcopy
 from dataclasses import dataclass
 
 from seed_runtime.event import Event
@@ -107,7 +106,6 @@ class RecordedFidelityFinding:
     production_evidence_id: str
     source_finding_event_id: str
     standing: str
-    payload: dict[str, object]
 
     @property
     def reference(self) -> dict[str, str]:
@@ -208,25 +206,11 @@ def get_recorded_fidelity_finding(
         raise FindingFidelityError(
             f"{event_id} carries an incoherent Fidelity result shell"
         )
-    source = ledger.get(source_id)
-    if (
-        source is None
-        or source.kind != MEASUREMENT_RECORDED_KIND
-        or source.workspace_id != event.workspace_id
-        or source.payload.get("measurement_form") != "recurrence"
-    ):
-        raise FindingFidelityError(
-            f"{event_id} does not address the recurrence finding it examined"
-        )
     return RecordedFidelityFinding(
         recorded_occurrence_id=event.id,
         production_evidence_id=evidence.id,
         source_finding_event_id=source_id,
         standing=standing,
-        # EventLedger.get() returns its stored Event object. Recovery must not
-        # expose a mutable alias through which a caller can silently rewrite
-        # the in-memory ledger without another occurrence or integrity signal.
-        payload=deepcopy(payload),
     )
 
 
