@@ -640,7 +640,7 @@ def test_ledger_recovery_refuses_changed_outer_compare_law(
         )
 
 
-def test_recorded_compare_does_not_perform_automatic_uptake(comparable):
+def test_recorded_compare_does_not_perform_automatic_reliance(comparable):
     ledger, left, right = comparable
     event = record_positional_result_comparison(
         ledger,
@@ -652,7 +652,7 @@ def test_recorded_compare_does_not_perform_automatic_uptake(comparable):
     )
 
     assert all(
-        "Uptake" in assertion["forbidden_inferences"][-1]
+        "reliance" in assertion["forbidden_inferences"][-1]
         for assertion in event.payload["assertions"]
     )
     assert all("applicability" not in assertion for assertion in event.payload["assertions"])

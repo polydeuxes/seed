@@ -17,13 +17,10 @@ evidence is not the producing occurrence by identity. The expectation is exact
 and local — *the recorded result is the result its production evidence
 concerns* — and the witness is the recorded event itself.
 
-**What it does not do.** It revises nothing. `01.Uptake.A` holds that evidence
-becoming available "does not by itself change any exact Act Assertion, standing,
-confidence, reliance, or current result", and that an upstream production occurrence owns its
-production and availability testimony, "not any exact Act's applicability,
-admission, Uptake, reliance, or downstream revision". A finding found unfaithful
-here keeps whatever standing it had; what changes is that this comparison's
-result exists and may be consumed.
+**What it does not do.** It revises nothing. `06.Standing.B` establishes that
+making an Assertion available at another locality does not revise its Standing,
+establish Applicability, or demand another Act. A finding found unfaithful here
+keeps whatever Standing it had; this comparison establishes only its own result.
 
 **It does not walk anything.** A fidelity finding concerning one recorded
 finding is available to whatever consumes it, and each later act determines its
@@ -441,12 +438,12 @@ def compare_recorded_finding(ledger: EventLedger, event_id: str) -> Event:
         "lawful_stopping_point": (
                 "produce this Fidelity finding concerning this exact represented "
                 "relation and stop; do not traverse lineage or determine "
-                "downstream applicability, admission, Uptake, reliance, or "
+                "downstream applicability, admission, reliance, or "
                 "revision"
         ),
         "revises": [],
         "forbidden_inferences": [
-                "This revises nothing (01.Uptake.A); availability is not "
+                "This revises nothing (06.Standing.B); availability is not "
                 "revision.",
                 "This establishes no responsibility and names no owner.",
                 "Faithful within this scope is not faithful generally.",

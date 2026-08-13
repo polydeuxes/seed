@@ -13,7 +13,7 @@ Seed may form a bounded representation from exact source material for a declared
 
 The representation carries only the Standing warranted by its source, responsible formation, purpose, Scope, Evidence, provenance, Authority limits, conflicts, limits, and responsibly established Unknowns.
 
-A View is bounded for an exact Act purpose and formed from exact source material. Forming it establishes only that it was formed by a responsible occurrence within that occurrence's purpose, Scope, Authority, and Evidence. Emission, egress representation, warrant, reliance, and exact Act uptake are related but not synonyms, and are governed at their own boundaries: emission in Book VIII, and Uptake in Assertion-preserving Uptake.
+A View is bounded to an exact Act purpose and exact source material. Its formation establishes only the responsible formation occurrence within that occurrence's purpose, Scope, Authority, and Evidence. Formation, emission, egress representation, Warrant, and later reliance remain distinct.
 
 Not every View is a standing-bearing assertion of its contents. A View may be only a navigation artifact, inventory, or provenance index when its contract asserts only source visibility, identity, location, or faithful transformation. Such a View must not assert standing stronger than its source warrants and must make its bounded assertion and limits recoverable; operator-facing visibility, compactness, or a class name supplies no warrant. When a View does carry standing, its constitutional kind is determined by a warranted combination: constitutional subject, input standing, the forming occurrence's Authority and Evidence, emitted assertion, exact Act purpose, disclosure contract, and reliance authority. Input artifact kind and representation shape may supply evidence for that combination, but they do not automatically determine the View kind. The decisive dimension for a standing-bearing View is the standing of the assertion Seed is warranted to emit to the exact Act.
 
@@ -34,7 +34,7 @@ A View asserts only what the supplied sources expose within its purpose, Scope, 
 - View != evidence
 - View output != answer
 - View output != evidence meeting an exact Act requirement
-- read-only representation selection or composition != assertion-preserving Uptake by itself
+- read-only representation selection or composition != warranted participation in another exact Act
 - read-only selection != no constitutional occurrence
 - non-mutating act != forming a View automatically
 - composition compatibility != general selection standing
@@ -55,4 +55,3 @@ A View asserts only what the supplied sources expose within its purpose, Scope, 
 - [Events, facts, and standing](events-facts-and-standing.md)
 - [Projection and current standing](projection-and-current-standing.md)
 - [Representation, emission, and exact Act boundaries](../08-authority-communication-and-stopping/representation-emission-and-locality.md)
-- [Assertion-preserving Uptake](../01-grammar-and-standing/assertion-preserving-uptake.md)

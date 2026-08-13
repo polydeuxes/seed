@@ -64,4 +64,3 @@ External material may carry or propose a meaning assertion without thereby warra
 ## Related chapters
 - [Constitutional kinds and artifact standing](constitutional-kinds-and-artifact-standing.md)
 - [Testimony and established fact](../05-evidence-and-knowledge/testimony-and-established-fact.md)
-- [Assertion-preserving Uptake](assertion-preserving-uptake.md)

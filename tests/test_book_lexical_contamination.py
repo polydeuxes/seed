@@ -88,6 +88,8 @@ BANNED: tuple[tuple[str, str], ...] = (
     (r"\bactors?\b", "actor"),
     (r"\bproducers?\b|producer[-_]", "producer"),
     (r"\bconsumers?\b|consumer[-_]", "consumer"),
+    (r"\buptake\b|uptake[-_]", "uptake"),
+    (r"\bhandoffs?\b|handoff[-_]", "handoff"),
 )
 
 # The discriminator, corrected.

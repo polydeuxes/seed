@@ -270,7 +270,7 @@ def test_a_content_mismatch_does_not_invent_which_crossing_caused_it(
 
 
 def test_the_comparison_revises_nothing(recorded):
-    """`01.Uptake.A`: availability is not revision."""
+    """`06.Standing.B`: availability is not revision."""
 
     ledger, event = recorded
     altered = dict(event.payload)

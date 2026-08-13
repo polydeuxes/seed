@@ -31,7 +31,7 @@ A derived artifact need not be preserved when the understanding it carries can b
 - FactView != Fact establishment boundary
 - read model != underlying record
 - cache freshness != truth
-- visibility != uptake
+- visibility != participation in an exact Act
 - diagnostic finding != cluster mutation
 - implementation visibility != implementation authority
 - rebuildable derived artifact != required retained artifact
@@ -49,6 +49,5 @@ A derived artifact need not be preserved when the understanding it carries can b
 - Collapsing projected material into current constitutional standing because replay completed.
 
 ## Related chapters
-- [Assertion-preserving Uptake](../01-grammar-and-standing/assertion-preserving-uptake.md)
 - [Events, facts, and standing](events-facts-and-standing.md)
 - [Ownership, discrepancy, and residue](ownership-discrepancy-and-residue.md)

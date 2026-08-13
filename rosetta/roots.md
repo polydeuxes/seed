@@ -43,6 +43,21 @@ Responsibility, Act, purpose, Applicability, warranted participation or
 reliance, and Act occurrence. It names no additional participant or
 constitutional coordinate.
 
+## Uptake
+
+`Uptake` is ordinary shorthand for available material later participating in
+another bounded Act. In Seed grammar it expands to locality movement or
+availability, Applicability, Admission where required, exact purpose,
+warranted participation or reliance, and the Act occurrence. It names no
+relation family or additional occurrence.
+
+## Handoff
+
+`Handoff` is ordinary shorthand for movement between localities or for a
+separately established change in Responsibility or Authority. Movement does
+not imply that one participant gave material to another. The exact movement,
+Responsibility assignment, or Authority transition must be named instead.
+
 ---
 
 ## Presentation

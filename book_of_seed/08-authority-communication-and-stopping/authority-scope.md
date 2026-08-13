@@ -7,9 +7,9 @@ The origin, binding, extent, and non-transferability of authority across Seed's 
 What grants authority for a bounded goal or act, and how is that authority prevented from expanding in transit?
 
 ## Bounded resolution
-Operator material and explicit approvals may contribute authority only after interpretation and scope binding. Internal models, selections, records, and provider emissions, transport structures, or ordinary-language handoff labels cannot create or enlarge that authority.
+Operator material and explicit approvals may contribute authority only after interpretation and scope binding. Internal models, selections, records, and provider emissions, transport structures, or ordinary-language transition labels cannot create or enlarge that authority.
 
-Policy wording may describe a bounded representation of authority granted for an exact recipient or responsible boundary, act or movement, purpose, scope, conditions, temporal standing, negative authority, and Unknowns. That representation does not create, enlarge, transfer, or renew the authority it represents. Its lawful exact Act use is ordinary Uptake of represented authority within those preserved limits. Policy is not an independent constitutional kind, authority source, selection family, or implementation governor.
+Policy wording may describe a bounded representation of authority granted for an exact recipient or responsible boundary, act or movement, purpose, scope, conditions, temporal standing, negative authority, and Unknowns. That representation does not create, enlarge, transfer, or renew the authority it represents. Its lawful exact Act use is warranted use of represented authority within those preserved limits. Policy is not an independent constitutional kind, authority source, selection family, or implementation governor.
 
 ## Addressable boundaries for bounded reliance witnesses
 

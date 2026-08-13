@@ -29,7 +29,6 @@ Constitutional movement is a warranted transition in lawful position, standing, 
 - Treating navigation metadata as an active constitutional edge.
 
 ## Related chapters
-- [Assertion-preserving Uptake](../01-grammar-and-standing/assertion-preserving-uptake.md)
 - [Demands and opened movement](demands-and-opened-movement.md)
 - [Stopping and completion](../08-authority-communication-and-stopping/stopping-and-completion.md)
 

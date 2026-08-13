@@ -124,7 +124,7 @@ POSITIONAL_RESULT_COMPARISON_FORBIDDEN_INFERENCES = (
     "literal sameness is not similarity, relation, or recurrence",
     "literal difference is not conflict",
     "recording does not establish Applicability, admission, consumption, "
-    "Uptake, or Standing movement",
+    "reliance, or Standing movement",
 )
 
 
@@ -943,7 +943,7 @@ def record_assertion_production_comparison(
     session_id: str,
     comparison: AssertionProductionComparison,
 ) -> Event:
-    """Preserve each literal Compare result without performing its Uptake."""
+    """Preserve each literal Compare result without establishing later reliance."""
 
     input_refs = tuple(
         {
@@ -1015,7 +1015,7 @@ def record_assertion_production_comparison(
                     "literal difference is not conflict",
                     "new availability does not revise either compared Assertion",
                     "recording does not establish Applicability, admission, "
-                    "consumption, or Uptake",
+                    "consumption, or reliance",
                 ],
             }
         )

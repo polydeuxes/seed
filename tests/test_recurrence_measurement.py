@@ -483,7 +483,7 @@ def test_assertion_production_compare_records_each_literal_result_separately(com
     )
 
 
-def test_recording_comparison_results_does_not_establish_uptake_or_revision(compared):
+def test_recording_comparison_results_does_not_establish_reliance_or_revision(compared):
     finding = _by_right(compared)["word"]
     first = record_measured_count(
         compared, workspace_id="w", session_id="s1", finding=finding
@@ -510,7 +510,7 @@ def test_recording_comparison_results_does_not_establish_uptake_or_revision(comp
     assert "recording does not establish Applicability" in rendered
     assert "applicability" not in event.payload
     assert "admission" not in event.payload
-    assert "uptake" not in event.payload
+    assert "reliance" not in event.payload
     assert "revision" not in event.payload
 
 

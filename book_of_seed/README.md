@@ -104,7 +104,7 @@ Warrant
 
 #### Warrant exact Act and reliance purpose
 
-Where the exact Warrant has an established exact Act, this branch identifies that exact Act and the purpose for which the Warrant may be relied upon. Warrant production does not create an exact Act, reliance purpose, later reliance, or Uptake by identity.
+Where the exact Warrant has an established exact Act, this branch identifies that exact Act and the purpose for which the Warrant may be relied upon. Warrant production does not create an exact Act, reliance purpose, or later reliance by identity.
 
 ### Act-occurrence and non-occurrence branches
 
@@ -225,10 +225,6 @@ Identifies any separately established Authorization consumed by the exact downst
 #### Applicability and admission standing
 
 Identifies any act-local applicability or admission standing required before material may participate in the downstream act. Applicability, admission, consumption, and reliance remain distinct.
-
-#### Exact Act and Uptake relation
-
-Identifies the exact Act, material consumed, act-local act, purpose, and resulting Uptake relation where a downstream exact Act exists. A produced result does not establish an exact Act or Uptake by identity.
 
 #### Constraint
 

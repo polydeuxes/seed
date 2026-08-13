@@ -14,11 +14,10 @@ What this module demonstrates is narrow and structural:
     a later session projection can reference them
     a later presentation formation carries those references
 
-That is the substrate later Uptake would require.  It is **not** Uptake,
+That is the substrate later reliance would require. It is **not** reliance,
 consumption, admission, a finding, or new Standing, none of which are
-demonstrated here.  `01.Uptake` keeps applicable, admitted, and consumed as
-distinct standings, and carrying an event id as evidence establishes none of
-them.
+demonstrated here. `01.Kinds` keeps applicable, admitted, and consumed distinct,
+and carrying an event id as Evidence establishes none of them.
 
 Two further limits.  Only presentation formations were inspected; the other
 operator event kinds are also later occurrences and are not shown to reference
