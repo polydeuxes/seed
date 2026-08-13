@@ -38,7 +38,6 @@ from seed_runtime.preserved_material_measurement import (
     _produced_content,
     RESPONSIBILITY_UNRECOVERED,
     MATERIAL_READ_FROM_LEDGER,
-    MEASUREMENT_PRODUCED_KIND,
     MEASUREMENT_RECORDED_KIND,
     RecurrenceFinding,
     DeclaredMeasurement,
@@ -50,6 +49,7 @@ from seed_runtime.preserved_material_measurement import (
     preserved_ingress_occurrences,
     record_measurement_finding,
 )
+from seed_runtime.production_evidence import PRODUCTION_EVIDENCE_KIND
 from seed_runtime.operator_console import run_persistent_operator_console
 from seed_runtime.support_basis import (
     SupportBasisError,
@@ -1585,6 +1585,43 @@ def test_production_and_recording_may_be_in_different_localities(
     assert event.kind == MEASUREMENT_RECORDED_KIND
 
 
+def test_production_evidence_cannot_be_borrowed_across_workspaces(
+    recurrence_occurrences,
+):
+    ledger, occurrences = recurrence_occurrences
+    finding = _produced(ledger, occurrences)
+    with pytest.raises(
+        PreservedMaterialMeasurementError, match="same workspace"
+    ):
+        record_measurement_finding(
+            ledger,
+            workspace_id="another-workspace",
+            session_id="r",
+            finding=finding,
+        )
+
+
+def test_recurrence_recorder_requires_its_production_convention(
+    recurrence_occurrences,
+):
+    ledger, occurrences = recurrence_occurrences
+    finding = _produced(ledger, occurrences)
+    evidence = ledger.get(finding.production_evidence_id)
+    forged = ledger.append(
+        PRODUCTION_EVIDENCE_KIND,
+        "w",
+        {**evidence.payload, "production_convention": "another convention"},
+        session_id="r",
+    )
+    altered = _rebuilt(finding, production_evidence_id=forged.id)
+    with pytest.raises(
+        PreservedMaterialMeasurementError, match="different production convention"
+    ):
+        record_measurement_finding(
+            ledger, workspace_id="w", session_id="r", finding=altered
+        )
+
+
 def test_no_public_operation_attaches_production_to_an_arbitrary_finding():
     import seed_runtime.preserved_material_measurement as module
 
@@ -1598,7 +1635,7 @@ def test_the_witness_claims_no_producer_and_no_responsibility(
     ledger, occurrences = recurrence_occurrences
     _produced(ledger, occurrences)
     witness = [
-        e for e in ledger.list("w") if e.kind == MEASUREMENT_PRODUCED_KIND
+        e for e in ledger.list("w") if e.kind == PRODUCTION_EVIDENCE_KIND
     ][-1]
     assert witness.payload["dimensions"]["producer"] == RESPONSIBILITY_UNRECOVERED
     assert witness.payload["dimensions"]["responsibility"] == RESPONSIBILITY_UNRECOVERED

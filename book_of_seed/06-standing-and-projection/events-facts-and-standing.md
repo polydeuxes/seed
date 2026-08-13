@@ -18,6 +18,8 @@ Append-only records, established facts, projected material, and current lawful c
 ### 06.Standing.B — Occurrence locality is a carried boundary coordinate
 Occurrences preserved within one workspace may carry a bounded locality coordinate, and consuming acts preserve that locality where applicable, in the sense `01.Standing.E.1` already requires applicability to preserve as scope and locality and as consumer context. Same workspace does not mean same locality, and same locality does not mean same occurrence.
 
+Workspace is a boundary of standing, not merely another locality label. Addressability of material or Evidence from one workspace does not make it applicable within another. Cross-workspace consumption requires a separately warranted responsible occurrence that preserves the source and destination workspace, purpose, authority, scope, provenance, Unknowns, and surviving limits applicable to that movement. Where no such warrant is available, the proposed cross-workspace use is refused or remains Unknown; the material or Evidence is not thereby false or unfaithful. This clause does not establish the owner, Act, or representation of a future cross-workspace movement.
+
 Chronology alone does not establish locality. Occurrences carrying one locality need not be contiguous in any recorded order, and position within a preserved sequence establishes neither membership nor exclusion.
 
 Where a responsible act consumes material distinguished by locality, it preserves the applicable locality of what it consumed. Where that act records material under a distinct locality, the consumed and produced locality coordinates remain distinct, so that material the act produced is not later consumed as material it was given.

@@ -44,13 +44,17 @@ and co-presence is what a finding reports.
 
 from __future__ import annotations
 
-import json
 from dataclasses import dataclass, field, replace
 from typing import Any, Iterable
 
 from seed_runtime.events import EventLedger
 from seed_runtime.event import Event
 from seed_runtime.ids import new_id
+from seed_runtime.production_evidence import (
+    PRODUCTION_EVIDENCE_KIND,
+    _record_production_evidence,
+    production_commitment as _production_content_commitment,
+)
 from seed_runtime.support_basis import (
     SupportBasis,
     SupportRecovery,
@@ -58,8 +62,8 @@ from seed_runtime.support_basis import (
 )
 
 MEASUREMENT_RECORDED_KIND = "operator.measurement.finding_recorded"
-MEASUREMENT_PRODUCED_KIND = "operator.measurement.production_occurred"
 INGRESS_OCCURRED_KIND = "operator.ingress.ingress_occurred"
+RECURRENCE_RESULT_KIND = "recurrence Measurement finding"
 
 MEASUREMENT_CONVENTION = "preserved_material_declared_measurement_v1"
 
@@ -516,14 +520,44 @@ def _produced_content(finding) -> dict[str, Any]:
 def _production_commitment(finding) -> str:
     """A commitment over the content above, so any change to it is a change."""
 
-    return support_commitment(
-        MEASUREMENT_CONVENTION,
-        (
-            json.dumps(
-                _produced_content(finding), sort_keys=True, separators=(",", ":")
-            ),
-        ),
+    return _production_content_commitment(
+        MEASUREMENT_CONVENTION, _produced_content(finding)
     )
+
+
+def _recorded_production_commitment(
+    recorded: Event, production_coordinates: tuple[str, ...]
+) -> str:
+    """The production commitment a recorded finding's own content implies.
+
+    The production evidence names the exact top-level coordinates the act
+    produced. Recording may lawfully add other coordinates, so neither an
+    exclusion list nor every key left in the recorded payload recovers this
+    boundary. `material_provenance` is the one produced coordinate represented
+    inside the recorder-owned dimensions object.
+    """
+
+    payload = recorded.payload
+    content: dict[str, Any] = {}
+    for key in production_coordinates:
+        if key == "material_provenance":
+            dimensions = payload.get("dimensions")
+            if (
+                not isinstance(dimensions, dict)
+                or "source_provenance" not in dimensions
+            ):
+                raise PreservedMaterialMeasurementError(
+                    "the recorded finding does not preserve its produced "
+                    "material provenance"
+                )
+            content[key] = dimensions["source_provenance"]
+        elif key not in payload:
+            raise PreservedMaterialMeasurementError(
+                f"the recorded finding does not preserve produced coordinate {key}"
+            )
+        else:
+            content[key] = payload[key]
+    return _production_content_commitment(MEASUREMENT_CONVENTION, content)
 
 
 def _record_production(
@@ -557,42 +591,17 @@ def _record_production(
     the production occurrence by identity.
     """
 
-    return ledger.append(
-        MEASUREMENT_PRODUCED_KIND,
-        workspace_id,
-        {
-            "dimensions": {
-                "identity": (
-                    "measurement-production:"
-                    f"{finding.declared.representation_measured}"
-                ),
-                "content": (
-                    "evidence that a declared measurement produced this result "
-                    "at its producing boundary"
-                ),
-                "standing": "produced",
-                "producing_act": "declared measurement",
-                "producer_evidence": (
-                    "preserved at the producing boundary, after this "
-                    "result was fixed; the result carries the relation to this"
-                ),
-                "producer": RESPONSIBILITY_UNRECOVERED,
-                "responsibility": RESPONSIBILITY_UNRECOVERED,
-                "authority_warrant": (
-                    "establishes that this measuring act produced this exact "
-                    "result at this producing boundary; "
-                    "establishes no producer identity, responsibility, or "
-                    "authorization"
-                ),
-                "occurrence_preservation": (
-                    "evidence concerning a production occurrence, durably "
-                    "recorded; not that occurrence by identity"
-                ),
-            },
-            "production_commitment": _production_commitment(finding),
-            "representation_measured": finding.declared.representation_measured,
-        },
+    return _record_production_evidence(
+        ledger,
+        workspace_id=workspace_id,
         session_id=session_id,
+        convention=MEASUREMENT_CONVENTION,
+        producing_act="declared Measurement",
+        produced_result_kind=RECURRENCE_RESULT_KIND,
+        result_identity=finding.declared.representation_measured,
+        produced_content=_produced_content(finding),
+        producer=RESPONSIBILITY_UNRECOVERED,
+        responsibility=RESPONSIBILITY_UNRECOVERED,
     )
 
 
@@ -1059,10 +1068,25 @@ def record_measurement_findings(
                 "preserves that evidence and the result it returns carries it"
             )
         evidence = ledger.get(finding.production_evidence_id)
-        if evidence is None or evidence.kind != MEASUREMENT_PRODUCED_KIND:
+        if evidence is None or evidence.kind != PRODUCTION_EVIDENCE_KIND:
             raise PreservedMaterialMeasurementError(
                 f"{finding.production_evidence_id} is named as this result's "
                 "evidence and is not preserved production evidence"
+            )
+        if evidence.workspace_id != workspace_id:
+            raise PreservedMaterialMeasurementError(
+                "production evidence and its recorded recurrence finding must "
+                "belong to the same workspace"
+            )
+        if evidence.payload.get("produced_result_kind") != RECURRENCE_RESULT_KIND:
+            raise PreservedMaterialMeasurementError(
+                f"{finding.production_evidence_id} is production evidence for "
+                "a different kind of result"
+            )
+        if evidence.payload.get("production_convention") != MEASUREMENT_CONVENTION:
+            raise PreservedMaterialMeasurementError(
+                f"{finding.production_evidence_id} is production evidence "
+                "under a different production convention"
             )
         if evidence.payload["production_commitment"] != _production_commitment(
             finding
