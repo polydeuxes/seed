@@ -218,21 +218,35 @@ plainly, named that pattern out loud, and then shipped an instance of it. Four
 readings walked past it, three of them hunting contamination. The word sounded
 native because it *was* native — this session put it there.
 
-## commitment
+## digest · commitment
 
 ```text
-status          never adopted
-closest grammar none recovered
+status          mechanical
+closest grammar none, and none expected
 ```
 
-Zero occurrences in active law; 22 in `support_basis.py`, where it names the
-digest over a selection rule and its ordered identities. It is what makes a
-support basis checkable without its enumeration.
+Neither appears in active law. `digest` is used 71 times in `seed_runtime` and
+`commitment` 73.
 
-Implementation vocabulary. The Book requires a support basis to be preserved
-and, since `05.Testimony.E`, says what one is — it says nothing about how a
-preserved basis is made checkable. That mechanism is chosen, not recovered, and
-is recorded here rather than promoted.
+**What they name.** A *digest* is a short value computed from a longer one, so
+that the same input always gives the same value and different inputs almost
+never do. A *commitment* is a digest kept so someone later can check whether
+they have the same thing, without holding the original to compare against.
+
+**Mechanical, and not candidates.** An earlier version of this entry said the
+mechanism was "chosen, not recovered", which implied it was awaiting a clause,
+and then explained `commitment` using `digest` as though that word were
+settled. It is not; both are equally absent from active law. Both exist because
+comparing large ordered things on a real machine, without holding both,
+requires computing something smaller first. Preserving a support basis is
+constitutional; the arithmetic that makes a preserved one checkable is not, and
+will not become so by being examined harder.
+
+The distinction earns its place because the vocabulary hunt fails in two
+directions. A word can be contamination wearing a technical coat — `state`,
+`aggregation` and `candidate convergence` all were. A word can also be plumbing
+audited as though it were making a claim. Recording *this will not need a
+clause* closes a question instead of leaving it open.
 
 ## occurrences examined
 

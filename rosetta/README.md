@@ -37,6 +37,16 @@ external / ordinary words   English that was never constitutional but
 implementation vocabulary   runtime and repository names that are not
                             constitutional grammar
 
+mechanical                  names for how something is done on this machine
+                            in this language, which will not need a clause
+                            and are recorded so they stop being audited as
+                            though they might
+
+mechanical                  names for how something is done on this machine
+                            in this language, which will not need a clause
+                            and are recorded so they stop being audited as
+                            though they might
+
 worked explanation          ordinary-language answers to questions like
                             "what does Standing mean"
 ```
