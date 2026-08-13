@@ -540,13 +540,16 @@ def measure_recurrences(
                 "accepting one requires a SupportRecovery to establish that "
                 "the population consumed is that selection"
             )
-        selected = support_recovery.recover(support_basis)
-        if selected != population:
-            raise PreservedMaterialMeasurementError(
-                "the declared support basis selects "
-                f"{len(selected)} occurrences through its boundary and this "
-                f"measurement consumed {len(population)} of them"
-            )
+        # `recover` performs the basis's own selection through the boundary and
+        # refuses unless the result reproduces the committed digest. Together
+        # with the commitment check above -- which ties the population walked to
+        # that same digest -- the population consumed is the selection declared.
+        #
+        # A third comparison of the two results was written here and removed: it
+        # cannot fail while both checks hold, and mutation testing found no test
+        # that could reach it. A guard nothing can reach reads as a proof and is
+        # not one.
+        support_recovery.recover(support_basis)
     return tuple(
         RecurrenceFinding(
             declared=declaration,
