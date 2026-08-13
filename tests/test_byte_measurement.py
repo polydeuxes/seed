@@ -15,6 +15,7 @@ from seed_runtime.byte_measurement import (
     record_byte_count_layer,
 )
 from seed_runtime.events import EventLedger
+from seed_runtime.event import Event
 from seed_runtime.operator_console import run_persistent_operator_console
 from seed_runtime.production_evidence import (
     PRODUCTION_EVIDENCE_KIND,
@@ -138,7 +139,7 @@ def test_recorded_results_replay_the_complete_bounded_source_read():
     }
     assert count.payload["assertion_scope"] == {
         "workspace_id": "w",
-        "source_session_ids": ("source",),
+        "source_session_ids": ["source"],
     }
     assert count.payload["dimensions"]["source_provenance"]
     assert count.payload["dimensions"]["authority_warrant"]
@@ -151,10 +152,24 @@ def test_recorded_results_replay_the_complete_bounded_source_read():
         },
     )
 
-    with pytest.raises(TypeError):
-        count.payload["dimensions"]["standing"] = "invented"
-    with pytest.raises(TypeError):
-        count.support_assertion_refs[0]["assertion_id"] = "invented"
+    detached_payload = count.payload
+    detached_payload["dimensions"]["standing"] = "invented"
+    assert count.payload["dimensions"]["standing"] == "measured"
+
+    detached_refs = count.support_assertion_refs
+    detached_refs[0]["assertion_id"] = "invented"
+    assert count.support_assertion_refs[0]["assertion_id"] != "invented"
+
+    # Recovery preserves exact durable JSON kinds. It does not protect the
+    # result by transmuting lists to tuples or dicts to proxy objects.
+    represented = Event(
+        id="re-presented",
+        kind="test.representation",
+        workspace_id="w",
+        payload=count.payload,
+    )
+    assert type(represented.payload) is dict
+    assert type(represented.payload["assertion_scope"]["source_session_ids"]) is list
 
 
 def test_a_self_consistent_truncated_source_claim_is_refused():

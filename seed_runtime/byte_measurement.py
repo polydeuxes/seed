@@ -13,11 +13,9 @@ meaning, relation, or significance.
 
 from __future__ import annotations
 
-from collections.abc import Mapping
 from dataclasses import dataclass
 import hashlib
 import json
-from types import MappingProxyType
 from typing import Any, Iterable
 
 from seed_runtime.events import CORRUPTED, EventLedger, EventLedgerBoundary
@@ -90,8 +88,20 @@ class RecordedByteAssertion:
     recorded_occurrence_id: str
     byte_hex: str | None
     result: str
-    payload: Mapping[str, Any]
-    support_assertion_refs: tuple[Mapping[str, str], ...]
+    _payload_json: str
+    _support_assertion_refs_json: str
+
+    @property
+    def payload(self) -> dict[str, Any]:
+        """Return one detached copy of the exact recovered JSON representation."""
+
+        return json.loads(self._payload_json)
+
+    @property
+    def support_assertion_refs(self) -> tuple[dict[str, str], ...]:
+        """Return detached occurrence-bound local support addresses."""
+
+        return tuple(json.loads(self._support_assertion_refs_json))
 
     @property
     def reference(self) -> dict[str, str]:
@@ -105,16 +115,6 @@ def _canonical(value: Any) -> str:
     return json.dumps(
         value, ensure_ascii=False, sort_keys=True, separators=(",", ":")
     )
-
-
-def _immutable(value: Any) -> Any:
-    """Detach and recursively freeze a recovered JSON representation."""
-
-    if isinstance(value, dict):
-        return MappingProxyType({key: _immutable(item) for key, item in value.items()})
-    if isinstance(value, (list, tuple)):
-        return tuple(_immutable(item) for item in value)
-    return value
 
 
 def _identity(
@@ -546,15 +546,15 @@ def assertions_of_recorded_byte_measurement(
                 recorded_occurrence_id=event.id,
                 byte_hex=assertion["assertion_subject"].get("byte_hex"),
                 result=assertion["result"],
-                payload=_immutable(assertion),
-                support_assertion_refs=tuple(
-                    MappingProxyType(
+                _payload_json=_canonical(assertion),
+                _support_assertion_refs_json=_canonical(
+                    [
                         {
                             "recorded_occurrence_id": event.id,
                             "assertion_id": local_id,
                         }
-                    )
-                    for local_id in local_ids
+                        for local_id in local_ids
+                    ]
                 ),
             )
         )
