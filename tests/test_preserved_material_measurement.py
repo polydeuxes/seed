@@ -1112,7 +1112,7 @@ def test_an_identity_the_ledger_does_not_preserve_is_refused(
         boundary=ledger.capture_boundary(),
         identities=[absent.id],
     )
-    with pytest.raises(Exception, match="not preserved|recovered support"):
+    with pytest.raises(PreservedMaterialMeasurementError, match="not preserved in the ledger"):
         measure_recurrences(
             [absent],
             declared=declared,
@@ -1135,3 +1135,48 @@ def test_the_positional_path_also_refuses_incoherent_material(recurrence_occurre
     )
     with pytest.raises(PreservedMaterialMeasurementError, match="preserves no decoded text"):
         measure_occupancy([lying], declared=_declared(), occupant_of=_first_word)
+
+
+def test_a_finding_over_unpreserved_material_cannot_be_recorded():
+    """The recorder states provenance it never established."""
+
+    ledger = EventLedger()
+    forged = Event(
+        id="evt_never_preserved",
+        kind=INGRESS_OCCURRED_KIND,
+        workspace_id="w",
+        session_id="r",
+        payload={
+            "decoded_text": "zebra zebra",
+            "material_origin": "operator",
+            "text_representation": {"available": True},
+        },
+    )
+    finding = measure_recurrence(
+        [forged],
+        declared=_recurrence_declared("zebra"),
+        occurrences_of=_counts("zebra"),
+    )
+    assert finding.total_count == 2  # the measurement itself is not the guard
+    with pytest.raises(PreservedMaterialMeasurementError, match="preserves no such ingress"):
+        record_measurement_finding(
+            ledger, workspace_id="w", session_id="r", finding=finding
+        )
+
+
+def test_the_positional_path_cannot_record_unpreserved_material_either():
+    ledger = EventLedger()
+    forged = Event(
+        id="evt_also_never_preserved",
+        kind=INGRESS_OCCURRED_KIND,
+        workspace_id="w",
+        session_id="r",
+        payload={"decoded_text": "the cat", "text_representation": {"available": True}},
+    )
+    finding = measure_occupancy(
+        [forged], declared=_declared(), occupant_of=_first_word
+    )
+    with pytest.raises(PreservedMaterialMeasurementError, match="preserves no such ingress"):
+        record_measurement_finding(
+            ledger, workspace_id="w", session_id="r", finding=finding
+        )

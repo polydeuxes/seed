@@ -718,6 +718,34 @@ def record_measurement_findings(
             raise PreservedMaterialMeasurementError(
                 "a premise must be a recorded measurement finding"
             )
+    # Every recorded finding states `source_provenance` as "preserved
+    # operator-ingress occurrences". Premises were established here and the
+    # occurrences that claim were made about never were, so a finding measured
+    # over directly constructed `Event` objects recorded that provenance about
+    # material this ledger does not hold. `#2510` closed that at the input
+    # boundary only where a support basis was declared; a measurement without
+    # one reached the recorder unchecked.
+    #
+    # A finding carrying a verified basis is exempt: `#2510` established its
+    # population against this ledger before the finding existed, and the
+    # enumeration is not in the payload to check.
+    #
+    # Identities are collected across the whole call before any read, because
+    # every finding of one pass carries the same population and checking per
+    # finding would restore the cost `#2486` removed.
+    consumed_ids = {
+        event_id
+        for finding, _ in supplied
+        if getattr(finding, "support_basis", None) is None
+        for event_id in finding.consumed_event_ids
+    }
+    for event_id in consumed_ids:
+        occurrence = ledger.get(event_id)
+        if occurrence is None or occurrence.kind != INGRESS_OCCURRED_KIND:
+            raise PreservedMaterialMeasurementError(
+                f"{event_id} is recorded as a consumed preserved occurrence "
+                "and this ledger preserves no such ingress occurrence"
+            )
     events = [
         Event(
             id=new_id("evt"),
