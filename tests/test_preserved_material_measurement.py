@@ -858,11 +858,11 @@ def test_batch_and_single_survive_the_recording_boundary_identically(
     )
     ]
     # Occurrence identity is the Event id, which is outside the payload. The
-    # one payload coordinate that legitimately differs is `produced_by`: these
+    # one payload coordinate that legitimately differs is `production_evidence_id`: these
     # are two productions of the same content, and each names its own evidence.
     def _without_its_own_evidence(event):
         payload = dict(event.payload)
-        payload.pop("produced_by", None)
+        payload.pop("production_evidence_id", None)
         return payload
 
     assert [_without_its_own_evidence(e) for e in singly] == [
@@ -1436,7 +1436,7 @@ def _rebuilt(finding, **changed):
         "total_count": finding.total_count,
         "consumed_event_ids": finding.consumed_event_ids,
         "support_basis": finding.support_basis,
-        "produced_by": finding.produced_by,
+        "production_evidence_id": finding.production_evidence_id,
     }
     fields.update(changed)
     return RecurrenceFinding(**fields)
@@ -1468,7 +1468,7 @@ def test_an_identical_finding_nobody_produced_cannot_reuse_the_witness(
 
     ledger, occurrences = recurrence_occurrences
     produced = _produced(ledger, occurrences)
-    constructed = _rebuilt(produced, produced_by=None)
+    constructed = _rebuilt(produced, production_evidence_id=None)
     # Every measured coordinate is identical. Only the relation is absent.
     assert _produced_content(constructed) == _produced_content(produced)
     with pytest.raises(PreservedMaterialMeasurementError, match="names no production"):
@@ -1605,3 +1605,42 @@ def test_the_witness_claims_no_producer_and_no_responsibility(
     assert "not that occurrence by identity" in (
         witness.payload["dimensions"]["occurrence_preservation"]
     )
+
+
+@pytest.mark.parametrize(
+    "addition",
+    [
+        {"dimensions": {"identity": "something else"}},
+        {"mutates_cluster": True},
+        {"unknowns": ["one nobody established"]},
+        {"lineage": ["evt_invented"]},
+        {"total_count": 999},
+    ],
+)
+def test_recording_may_not_replace_any_coordinate_the_payload_owns(
+    recurrence_occurrences, addition
+):
+    """`extra` checked only the finding's keys, so the payload's own were
+    reachable -- a supplied `dimensions` replaced the whole object and erased
+    the measurement's provenance by omission."""
+
+    ledger, occurrences = recurrence_occurrences
+    finding = _produced(ledger, occurrences)
+    with pytest.raises(PreservedMaterialMeasurementError, match="may not replace"):
+        record_measurement_finding(
+            ledger, workspace_id="w", session_id="r", finding=finding, extra=addition
+        )
+
+
+def test_recording_may_still_add_its_own_coordinate(recurrence_occurrences):
+    ledger, occurrences = recurrence_occurrences
+    finding = _produced(ledger, occurrences)
+    event = record_measurement_finding(
+        ledger,
+        workspace_id="w",
+        session_id="r",
+        finding=finding,
+        extra={"a_recording_coordinate": "kept"},
+    )
+    assert event.payload["a_recording_coordinate"] == "kept"
+    assert event.payload["dimensions"]["source_provenance"]
