@@ -38,7 +38,6 @@ from seed_runtime.preserved_material_measurement import (
     _produced_content,
     RESPONSIBILITY_UNRECOVERED,
     MATERIAL_READ_FROM_LEDGER,
-    MEASUREMENT_PRODUCED_KIND,
     MEASUREMENT_RECORDED_KIND,
     RecurrenceFinding,
     DeclaredMeasurement,
@@ -50,6 +49,7 @@ from seed_runtime.preserved_material_measurement import (
     preserved_ingress_occurrences,
     record_measurement_finding,
 )
+from seed_runtime.production_evidence import PRODUCTION_EVIDENCE_KIND
 from seed_runtime.operator_console import run_persistent_operator_console
 from seed_runtime.support_basis import (
     SupportBasisError,
@@ -1598,7 +1598,7 @@ def test_the_witness_claims_no_producer_and_no_responsibility(
     ledger, occurrences = recurrence_occurrences
     _produced(ledger, occurrences)
     witness = [
-        e for e in ledger.list("w") if e.kind == MEASUREMENT_PRODUCED_KIND
+        e for e in ledger.list("w") if e.kind == PRODUCTION_EVIDENCE_KIND
     ][-1]
     assert witness.payload["dimensions"]["producer"] == RESPONSIBILITY_UNRECOVERED
     assert witness.payload["dimensions"]["responsibility"] == RESPONSIBILITY_UNRECOVERED

@@ -38,13 +38,20 @@ from __future__ import annotations
 from seed_runtime.event import Event
 from seed_runtime.events import CORRUPTED, EventLedger
 from seed_runtime.preserved_material_measurement import (
-    MEASUREMENT_PRODUCED_KIND,
+    MEASUREMENT_CONVENTION,
     MEASUREMENT_RECORDED_KIND,
     PreservedMaterialMeasurementError,
+    RECURRENCE_RESULT_KIND,
     RESPONSIBILITY_UNRECOVERED,
+)
+from seed_runtime.production_evidence import (
+    PRODUCTION_EVIDENCE_KIND,
+    _record_production_evidence,
 )
 
 FIDELITY_FINDING_KIND = "operator.fidelity.finding_recorded"
+FIDELITY_RESULT_KIND = "finding Fidelity finding"
+FIDELITY_CONVENTION = "recorded_recurrence_finding_fidelity_v1"
 
 FAITHFUL_WITHIN_SCOPE = "faithful within scope"
 UNFAITHFUL_CROSSING = "unfaithful boundary crossing"
@@ -143,13 +150,26 @@ def compare_recorded_finding(ledger: EventLedger, event_id: str) -> Event:
                 conflicts.append(
                     "the named production-evidence occurrence is corrupted"
                 )
-            elif evidence.kind != MEASUREMENT_PRODUCED_KIND:
+            elif evidence.kind != PRODUCTION_EVIDENCE_KIND:
                 observed.append(
                     _crossing(
                         INVENTION,
                         "the named occurrence is represented as production "
                         "evidence, but its recorded kind does not represent "
                         "production evidence",
+                    )
+                )
+            elif (
+                evidence.payload.get("produced_result_kind")
+                != RECURRENCE_RESULT_KIND
+                or evidence.payload.get("production_convention")
+                != MEASUREMENT_CONVENTION
+            ):
+                observed.append(
+                    _crossing(
+                        INVENTION,
+                        "the named production evidence concerns a different "
+                        "kind of result or production convention",
                     )
                 )
             else:
@@ -210,11 +230,8 @@ def compare_recorded_finding(ledger: EventLedger, event_id: str) -> Event:
         "scope only; no certification, completion, owner map, score, or "
         "correction authority"
     )
-    return ledger.append(
-        FIDELITY_FINDING_KIND,
-        recorded.workspace_id,
-        {
-            "dimensions": {
+    result_payload = {
+        "dimensions": {
                 "identity": f"fidelity:{event_id}",
                 "content": (
                     "a recorded measurement finding compared against the "
@@ -232,51 +249,67 @@ def compare_recorded_finding(ledger: EventLedger, event_id: str) -> Event:
                     else None
                 ),
                 "occurrence_preservation": "fidelity comparison durably recorded",
-            },
-            "constitutional_subject": (
+        },
+        "constitutional_subject": (
                 "the recorded finding's represented relation to the production "
                 "evidence it names"
             ),
-            "bounded_expectation": (
+        "bounded_expectation": (
                 "the recorded finding names preserved production evidence, and "
                 "that evidence concerns this exact recorded content"
             ),
-            "implementation_witness": event_id,
-            "production_evidence": named,
-            "evidence_and_provenance": {
+        "implementation_witness": event_id,
+        "production_evidence": named,
+        "evidence_and_provenance": {
                 "recorded_finding": _provenance(recorded, recorded_integrity),
                 "production_evidence": (
                     _provenance(evidence, evidence_integrity)
                     if evidence is not None and evidence_integrity is not None
                     else None
                 ),
-            },
-            "authority_boundary": authority_boundary,
-            "preserved_invariants": [
+        },
+        "authority_boundary": authority_boundary,
+        "preserved_invariants": [
                 "the comparison is limited to one recorded finding and the "
                 "production evidence it names",
                 "content equality alone does not supply a production relation",
                 "the comparison does not revise its witness or traverse its "
                 "support and premise relations",
-            ],
-            "observed_crossings": observed,
-            "conflicts": conflicts,
-            "unknowns": unknowns,
-            "lawful_stopping_point": (
+        ],
+        "observed_crossings": observed,
+        "conflicts": conflicts,
+        "unknowns": unknowns,
+        "lawful_stopping_point": (
                 "produce this Fidelity finding concerning this exact represented "
                 "relation and stop; do not traverse lineage or determine "
                 "downstream applicability, admission, Uptake, reliance, or "
                 "revision"
-            ),
-            "revises": [],
-            "forbidden_inferences": [
+        ),
+        "revises": [],
+        "forbidden_inferences": [
                 "This revises nothing (01.Uptake.A); availability is not "
                 "revision.",
                 "This establishes no responsibility and names no owner.",
                 "Faithful within this scope is not faithful generally.",
                 "A crossing observed here is not a crossing observed of "
                 "whatever this finding stood on.",
-            ],
-        },
+        ],
+    }
+    production_evidence = _record_production_evidence(
+        ledger,
+        workspace_id=recorded.workspace_id,
+        session_id=recorded.session_id,
+        convention=FIDELITY_CONVENTION,
+        producing_act="bounded Fidelity comparison",
+        produced_result_kind=FIDELITY_RESULT_KIND,
+        result_identity=f"fidelity:{event_id}",
+        produced_content=result_payload,
+        producer=RESPONSIBILITY_UNRECOVERED,
+        responsibility=RESPONSIBILITY_UNRECOVERED,
+    )
+    return ledger.append(
+        FIDELITY_FINDING_KIND,
+        recorded.workspace_id,
+        {**result_payload, "production_evidence_id": production_evidence.id},
         session_id=recorded.session_id,
     )
