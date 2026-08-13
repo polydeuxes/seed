@@ -45,7 +45,11 @@ from seed_runtime.preserved_material_measurement import (
     record_measurement_finding,
 )
 from seed_runtime.operator_console import run_persistent_operator_console
-from seed_runtime.support_basis import SupportRecovery, declare_complete_population
+from seed_runtime.support_basis import (
+    SupportBasisError,
+    SupportRecovery,
+    declare_complete_population,
+)
 
 MATERIAL = (
     "_The_ is the definite article.\n"
@@ -1045,7 +1049,7 @@ def test_a_basis_claiming_completeness_over_a_subset_is_refused(
         identities=[e.id for e in subset],
     )
     declared = _declared_for("the")
-    with pytest.raises(Exception) as caught:
+    with pytest.raises(SupportBasisError, match="recovered support"):
         measure_recurrences(
             subset,
             declared=declared,
@@ -1053,6 +1057,65 @@ def test_a_basis_claiming_completeness_over_a_subset_is_refused(
             support_basis=basis,
             support_recovery=SupportRecovery(ledger),
         )
-    # Refused either by the measurement or by recovery reproducing the digest;
-    # what matters is that a subset cannot preserve a completeness claim.
-    assert "support" in str(caught.value).lower()
+
+
+def test_a_finding_measures_what_the_ledger_carries_not_what_was_handed_in(
+    recurrence_occurrences,
+):
+    """An Event can be constructed with any id and any payload."""
+
+    ledger, occurrences = recurrence_occurrences
+    # Same identities the ledger preserves; different material.
+    forged = [
+        Event(
+            id=e.id,
+            kind=e.kind,
+            workspace_id="w",
+            session_id="r",
+            payload={
+                "decoded_text": "zebra zebra zebra",
+                "material_origin": "operator",
+                "text_representation": {"available": True},
+            },
+        )
+        for e in occurrences
+    ]
+    declared = _declared_for("zebra")
+    findings = measure_recurrences(
+        forged,
+        declared=declared,
+        counts_in=_counts_in(declared),
+        support_basis=_basis_for(occurrences, ledger),
+        support_recovery=SupportRecovery(ledger),
+    )
+    # The ledger carries no "zebra". The handed-in objects carried nine.
+    assert findings[0].total_count == 0
+
+
+def test_an_identity_the_ledger_does_not_preserve_is_refused(
+    recurrence_occurrences,
+):
+    ledger, occurrences = recurrence_occurrences
+    absent = Event(
+        id="evt_not_in_ledger",
+        kind=INGRESS_OCCURRED_KIND,
+        workspace_id="w",
+        session_id="r",
+        payload={"decoded_text": "the", "text_representation": {"available": True}},
+    )
+    declared = _declared_for("the")
+    basis = declare_complete_population(
+        workspace_id="w",
+        session_id="r",
+        occurrence_kind=INGRESS_OCCURRED_KIND,
+        boundary=ledger.capture_boundary(),
+        identities=[absent.id],
+    )
+    with pytest.raises(Exception, match="not preserved|recovered support"):
+        measure_recurrences(
+            [absent],
+            declared=declared,
+            counts_in=_counts_in(declared),
+            support_basis=basis,
+            support_recovery=SupportRecovery(ledger),
+        )

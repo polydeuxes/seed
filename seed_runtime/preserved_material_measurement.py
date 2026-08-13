@@ -456,6 +456,28 @@ def measure_recurrences(
     carrying: dict[str, int] = {name: 0 for name in declared}
     total: dict[str, int] = {name: 0 for name in declared}
     walked = _distinct_population(occurrences)
+    if support_basis is not None and support_recovery is not None:
+        # A finding claiming support from preserved occurrences must have
+        # measured the material those occurrences carry. An `Event` can be
+        # constructed directly with any id and any payload, so a caller could
+        # hand this act an object bearing a recovered identity and different
+        # text: the identities would commit correctly, the basis would recover,
+        # and the finding would preserve a basis for material it never saw.
+        #
+        # So where a basis is declared, the material is read from the ledger
+        # the basis is recovered against. The supplied objects still determine
+        # which occurrences are consumed and in what order; they do not supply
+        # what was measured.
+        preserved = []
+        for event in walked:
+            recorded = support_recovery.ledger.get(event.id)
+            if recorded is None:
+                raise PreservedMaterialMeasurementError(
+                    f"{event.id} is not preserved in the ledger this support "
+                    "basis is recovered against"
+                )
+            preserved.append(recorded)
+        walked = preserved
     for event in walked:
         text = _measurable_text(event)
         consumed.append(event.id)
