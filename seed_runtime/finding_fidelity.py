@@ -8,12 +8,14 @@ boundary crossing, mixed, or Unknown, and it must not become global
 certification, a completion declaration, an owner map, a score, a registry, a
 public diagnostic, or correction authority.
 
-**What this compares.** One recorded measurement finding and the production
-evidence that finding names. `#2517` established that represented relation: a
-measuring act preserves evidence of what it produced, and the result carries
-the reference. The evidence is not the producing occurrence by identity. The
-expectation is exact and local — *the recorded result is the result its
-production evidence concerns* — and the witness is the recorded event itself.
+**What this compares.** One recorded recurrence Measurement finding and the
+production evidence that finding names. `#2517` established that represented
+relation for recurrence only: a measuring act preserves evidence of what it
+produced, and the result carries the reference. Positional Measurement has not
+adopted that production witness and is outside this comparator's scope. The
+evidence is not the producing occurrence by identity. The expectation is exact
+and local — *the recorded result is the result its production evidence
+concerns* — and the witness is the recorded event itself.
 
 **What it does not do.** It revises nothing. `01.Uptake.A` holds that evidence
 becoming available "does not by itself change any consumer assertion, standing,
@@ -73,7 +75,7 @@ def _crossing(kind: str, observation: str) -> dict[str, str]:
 
 
 def compare_recorded_finding(ledger: EventLedger, event_id: str) -> Event:
-    """Compare one recorded finding against the production evidence it names.
+    """Compare one recorded recurrence finding and its production evidence.
 
     The bounded expectation, stated so it can be wrong: a recorded measurement
     finding names production evidence, that evidence is preserved, and it
@@ -85,6 +87,12 @@ def compare_recorded_finding(ledger: EventLedger, event_id: str) -> Event:
         raise FindingFidelityError(
             f"{event_id} is not a recorded measurement finding, and this "
             "comparison compares one against its production evidence"
+        )
+    if recorded.payload.get("measurement_form") != "recurrence":
+        raise FindingFidelityError(
+            f"{event_id} is not a recorded recurrence Measurement finding; "
+            "this comparison does not apply recurrence's production-evidence "
+            "expectation to an unmigrated Measurement form"
         )
     recorded_integrity = ledger.integrity_of(event_id)
     if recorded_integrity == CORRUPTED:
@@ -139,8 +147,9 @@ def compare_recorded_finding(ledger: EventLedger, event_id: str) -> Event:
                 observed.append(
                     _crossing(
                         INVENTION,
-                        "the named occurrence is supplied with production-"
-                        "evidence standing that its recorded kind does not carry",
+                        "the named occurrence is represented as production "
+                        "evidence, but its recorded kind does not represent "
+                        "production evidence",
                     )
                 )
             else:

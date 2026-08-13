@@ -6,6 +6,7 @@ import pytest
 
 from seed_runtime.event import Event
 from seed_runtime.events import EventLedger
+from seed_runtime.adjacent_pair_measurement import measure_after
 from seed_runtime.finding_fidelity import (
     ERASURE,
     FAITHFUL_WITHIN_SCOPE,
@@ -165,6 +166,20 @@ def test_only_a_recorded_measurement_finding_may_be_compared(recorded):
     other = ledger.append("unrelated.kind", "w", {}, session_id="r")
     with pytest.raises(FindingFidelityError, match="not a recorded measurement"):
         compare_recorded_finding(ledger, other.id)
+
+
+def test_positional_measurement_is_outside_the_recurrence_fidelity_scope(recorded):
+    ledger, event = recorded
+    occurrence = ledger.get(event.payload["consumed_event_ids"][0])
+    finding = measure_after(
+        [occurrence], "the", counting_scope="this locality"
+    )
+    positional = record_measurement_finding(
+        ledger, workspace_id="w", session_id="r", finding=finding
+    )
+    assert "production_evidence_id" not in positional.payload
+    with pytest.raises(FindingFidelityError, match="not a recorded recurrence"):
+        compare_recorded_finding(ledger, positional.id)
 
 
 def test_unavailable_named_evidence_leaves_fidelity_unknown(recorded):
