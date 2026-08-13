@@ -45,7 +45,7 @@ from seed_runtime.preserved_material_measurement import (
     record_measurement_finding,
 )
 from seed_runtime.operator_console import run_persistent_operator_console
-from seed_runtime.support_basis import declare_complete_population
+from seed_runtime.support_basis import SupportRecovery, declare_complete_population
 
 MATERIAL = (
     "_The_ is the definite article.\n"
@@ -913,6 +913,7 @@ def test_a_declared_basis_replaces_the_enumeration(recurrence_occurrences):
         declared=declared,
         counts_in=_counts_in(declared),
         support_basis=_basis_for(occurrences, ledger),
+        support_recovery=SupportRecovery(ledger),
     )
     for finding in findings:
         carried = finding.to_json_dict()
@@ -950,6 +951,7 @@ def test_findings_with_and_without_a_basis_agree_on_everything_else(
         declared=declared,
         counts_in=_counts_in(declared),
         support_basis=_basis_for(occurrences, ledger),
+        support_recovery=SupportRecovery(ledger),
     )
     for a, b in zip(plain, based):
         left, right = a.to_json_dict(), b.to_json_dict()
@@ -1012,3 +1014,45 @@ def test_a_basis_selecting_another_occurrence_kind_is_refused(
             counts_in=_counts_in(declared),
             support_basis=basis,
         )
+
+
+def test_a_basis_is_refused_without_the_means_to_establish_its_selection(
+    recurrence_occurrences,
+):
+    ledger, occurrences = recurrence_occurrences
+    declared = _declared_for("the")
+    with pytest.raises(PreservedMaterialMeasurementError, match="requires a SupportRecovery"):
+        measure_recurrences(
+            occurrences,
+            declared=declared,
+            counts_in=_counts_in(declared),
+            support_basis=_basis_for(occurrences, ledger),
+        )
+
+
+def test_a_basis_claiming_completeness_over_a_subset_is_refused(
+    recurrence_occurrences,
+):
+    """The checks on ids, count, locality and kind all pass on a subset."""
+
+    ledger, occurrences = recurrence_occurrences
+    subset = list(occurrences)[:-1]
+    basis = declare_complete_population(
+        workspace_id="w",
+        session_id="r",
+        occurrence_kind=INGRESS_OCCURRED_KIND,
+        boundary=ledger.capture_boundary(),
+        identities=[e.id for e in subset],
+    )
+    declared = _declared_for("the")
+    with pytest.raises(Exception) as caught:
+        measure_recurrences(
+            subset,
+            declared=declared,
+            counts_in=_counts_in(declared),
+            support_basis=basis,
+            support_recovery=SupportRecovery(ledger),
+        )
+    # Refused either by the measurement or by recovery reproducing the digest;
+    # what matters is that a subset cannot preserve a completeness claim.
+    assert "support" in str(caught.value).lower()

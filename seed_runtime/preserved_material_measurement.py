@@ -44,7 +44,11 @@ from typing import Any, Iterable
 from seed_runtime.events import EventLedger
 from seed_runtime.event import Event
 from seed_runtime.ids import new_id
-from seed_runtime.support_basis import SupportBasis, support_commitment
+from seed_runtime.support_basis import (
+    SupportBasis,
+    SupportRecovery,
+    support_commitment,
+)
 
 MEASUREMENT_RECORDED_KIND = "operator.measurement.finding_recorded"
 INGRESS_OCCURRED_KIND = "operator.ingress.ingress_occurred"
@@ -386,6 +390,7 @@ def measure_recurrences(
     declared: "dict[str, DeclaredMeasurement]",
     counts_in: "callable[[str], dict[str, int]]",
     support_basis: SupportBasis | None = None,
+    support_recovery: SupportRecovery | None = None,
 ) -> tuple[RecurrenceFinding, ...]:
     """Measure many representations across one pass of the material.
 
@@ -516,13 +521,32 @@ def measure_recurrences(
                     f"{support_basis.occurrence_kind} and {event.id} is "
                     f"{event.kind}"
                 )
-        # `boundary_commitment` stays unverified here. A boundary is opaque and
-        # only an EventLedger interprets it; this act consumes an iterable of
-        # occurrences and holds no ledger to ask. What that leaves open is
-        # whether the population is the whole of the selection through that
-        # prefix, rather than a subset of it that happens to share the scope.
-        # The count and commitment bound how far that can diverge; they do not
-        # close it.
+        # A basis declares a selection rule -- every preserved occurrence of
+        # this scope's kind through this boundary -- and the checks above prove
+        # only that the population consumed is *within* that description. A
+        # caller supplying three of four occurrences through the same boundary
+        # would pass all of them, and the finding would then preserve a basis
+        # claiming completeness the act never established.
+        #
+        # Verifying that requires interpreting the boundary, which only an
+        # EventLedger does, so a basis is accepted only where the act is given
+        # the means to check it. Implementation inconvenience does not move the
+        # obligation to a later reader: once the enumeration is replaced, a
+        # recovery discovering the lie arrives after the false basis is
+        # preserved.
+        if support_recovery is None:
+            raise PreservedMaterialMeasurementError(
+                "a support basis declares a selection through a boundary, and "
+                "accepting one requires a SupportRecovery to establish that "
+                "the population consumed is that selection"
+            )
+        selected = support_recovery.recover(support_basis)
+        if selected != population:
+            raise PreservedMaterialMeasurementError(
+                "the declared support basis selects "
+                f"{len(selected)} occurrences through its boundary and this "
+                f"measurement consumed {len(population)} of them"
+            )
     return tuple(
         RecurrenceFinding(
             declared=declaration,
