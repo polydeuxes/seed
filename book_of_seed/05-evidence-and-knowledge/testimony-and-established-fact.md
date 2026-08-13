@@ -26,6 +26,8 @@ A recorded claim, diagnostic finding, or evidence record may be consumed as attr
 ### 05.Testimony.E — Bounded testimony comparison without source-local erasure
 A bounded comparison may consume multiple independently preserved testimonies or findings only while preserving each input's attribution, provenance, support basis, subject, scope, authority, confidence or uncertainty, Unknowns, standing, and forbidden inferences as that input carries them, but no input must possess every coordinate. Preserving forbids erasing or strengthening what an input carries; it does not supply what an input lacks, and no input acquires a coordinate by being compared. It may produce bounded relation standing inside the comparison boundary, such as agreement, disagreement, contradiction, conflict, refinement, unmet requirements, or Unknown; the list does not require exactly one relation and does not define a universal enum or implementation schema.
 
+An input's support basis is what its producing act consumed. Preserving it does not require preserving an enumeration of every supporting occurrence, and no structure for it is established here; an implementation choosing one is choosing, not recovering.
+
 Comparison alone does not establish truth, warrant, reliance, source independence, implementation permission, or reconciliation merely because material agrees, contradicts, repeats, or can be compared. Comparison is not reconciliation; agreement is not truth; contradiction is not failure; repetition is not independent corroboration; and comparison occurrence does not erase any input's standing.
 
 

@@ -224,6 +224,37 @@ not accused*; this is the evidence, and it is now closer to accused.
 Neither is repaired here. Both are single-word excisions of the kind `#2502` and
 `#2503` performed, and both want their own scoped change.
 
+## 13. Two words the operator saw first, and none of us caught
+
+Recorded because the failure is instructive: both were sitting in plain sight
+across a full day of vocabulary work, and four separate readings — three of them
+explicitly hunting contamination — walked past them.
+
+**`population`** appeared exactly once in the numbered chapters, in the *title*
+of `01.Standing.D.2`, entered by this session's own amendment the previous day.
+The clause body never used it and said the thing plainly. That is the identical
+shape as `assimilation`, which the same session had excised hours earlier after
+naming the pattern out loud: *a noun living in a title while the body says the
+thing plainly.* Named, then committed.
+
+**`support basis`** appears twice, both inside coordinate lists of what an
+artifact must preserve — `05.Testimony:27` and `08.Emission:41` — and was never
+defined. `support` as a verb is established 83 times; the noun phrase is not the
+verb. `#2486` built a `SupportBasis` class on it and its module opened by citing
+`05.Testimony:27` as though the clause supplied the structure. The clause names a
+coordinate that must survive and says nothing about its shape.
+
+Both are addressed in the same change as this entry: the title now says what the
+body says, `05.Testimony.E` now bounds the coordinate without inventing a shape
+for it, and the module records that its four parts are chosen rather than
+recovered.
+
+**Why it was missed** is the part worth keeping. Every reading was looking for
+words that *sound* imported — `aggregation`, `assimilation`, `convergence`. These
+two sound native, and one of them was native, in the sense that this session put
+it there. A vocabulary audit that trusts its own recent output has a blind spot
+exactly the size of its own recent output.
+
 ---
 
 ## What this testimony is not
