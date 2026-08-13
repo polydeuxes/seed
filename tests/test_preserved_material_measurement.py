@@ -35,6 +35,7 @@ import pytest
 from seed_runtime.events import EventLedger
 from seed_runtime.preserved_material_measurement import (
     MATERIAL_AS_SUPPLIED,
+    RESPONSIBILITY_UNRECOVERED,
     MATERIAL_READ_FROM_LEDGER,
     MEASUREMENT_RECORDED_KIND,
     RecurrenceFinding,
@@ -1360,7 +1361,7 @@ def test_the_basis_path_reports_the_ledger_it_read_from(recurrence_occurrences):
     assert finding.material_provenance == MATERIAL_READ_FROM_LEDGER
 
 
-def test_the_responsibility_label_follows_the_provenance(recurrence_occurrences):
+def test_responsibility_does_not_follow_the_provenance(recurrence_occurrences):
     ledger, occurrences = recurrence_occurrences
     unbound = record_measurement_finding(
         ledger,
@@ -1383,5 +1384,14 @@ def test_the_responsibility_label_follows_the_provenance(recurrence_occurrences)
             preserved_in=ledger,
         ),
     )
-    assert "supplied" in unbound.payload["dimensions"]["responsibility"]
-    assert "preserved" in bound.payload["dimensions"]["responsibility"]
+    # Provenance differs; Responsibility does not follow it. `#2439` recovered
+    # Producer, Act and Standing for declared measurement and left the
+    # Responsibility unrecovered, and that stays true either way.
+    assert unbound.payload["dimensions"]["source_provenance"] != bound.payload[
+        "dimensions"
+    ]["source_provenance"]
+    assert (
+        unbound.payload["dimensions"]["responsibility"]
+        == bound.payload["dimensions"]["responsibility"]
+        == RESPONSIBILITY_UNRECOVERED
+    )

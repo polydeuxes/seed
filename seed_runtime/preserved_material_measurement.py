@@ -66,6 +66,14 @@ MATERIAL_AS_SUPPLIED = (
     "occurrences as supplied to this measurement, not read from a ledger"
 )
 
+# `#2431` identified "declared-measurement-over-preserved-material" as inherited
+# contamination: it wrote the Act into the Responsibility slot for a declared
+# measurement whose production Responsibility had never been recovered. `#2439`
+# then recovered the partial shape and kept it partial -- Producer "this Seed",
+# Act a declared measurement, Standing measured, and a Responsibility that stays
+# unrecovered. That is ordinary rather than contradictory.
+RESPONSIBILITY_UNRECOVERED = "unrecovered"
+
 BOUNDARY_NOTES: tuple[str, ...] = (
     "A finding reports a count within its stated scope and nothing further.",
     "Recurrence establishes that a representation occurs more than once only.",
@@ -753,15 +761,13 @@ def _measurement_finding_payload(
             "source_provenance": getattr(
                 finding, "material_provenance", MATERIAL_AS_SUPPLIED
             ),
-            # Follows the provenance rather than asserting it. A finding whose
-            # material was supplied recorded this label anyway, so its two
-            # coordinates contradicted each other in one payload.
-            "responsibility": (
-                "declared-measurement-over-preserved-material"
-                if getattr(finding, "material_provenance", MATERIAL_AS_SUPPLIED)
-                == MATERIAL_READ_FROM_LEDGER
-                else "declared-measurement-over-supplied-material"
-            ),
+            # Not derived from the provenance. An earlier version made this
+            # follow material_provenance, which compresses two coordinates
+            # `#2439` had just separated and mints the sibling of a string
+            # `#2431` had already called contamination. Where the material came
+            # from and under whose Responsibility the production is owned are
+            # different questions, and only the first has been recovered.
+            "responsibility": RESPONSIBILITY_UNRECOVERED,
             "authority_warrant": (
                 "measurement evidence only; establishes no meaning, relation, "
                 "or standing beyond the measurement assertion"
