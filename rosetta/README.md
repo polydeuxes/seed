@@ -24,9 +24,9 @@ keeps dead vocabulary present in the grammar. It lives here.
 ## Scope
 
 ```text
-the two roots               Examination and Presentation: the inward and
-                            outward directions across Seed's boundary,
-                            named in ordinary English
+Responsibility spine        ordinary-English traversal of the same spine used
+                            by the Book and instantiated by runtime occurrences;
+                            Examination and Presentation are directional views
 
 retired vocabulary          words the Book no longer uses, and what
                             current grammar covers what they covered
@@ -87,8 +87,9 @@ to four current terms and to no single one of them.
 
 ## Files
 
-- [The two roots](roots.md)
+- [Responsibility spine](roots.md)
 - [Retired vocabulary](retired-vocabulary.md)
 
-The roots are the spine. Every other entry either hangs beneath one of them or
-is a word that named nothing and is recorded only so its removal stays legible.
+The Book's Responsibility spine supplies the orientation. Rosetta words hang
+from the exact coordinates they translate, or record a word that named nothing
+so its removal stays legible.

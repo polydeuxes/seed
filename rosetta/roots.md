@@ -1,32 +1,49 @@
-# The two roots
+# Responsibility spine
 
 Translation testimony. **No entry here carries constitutional Authority**, and
 nothing here is citable as law — see [README](README.md). Where this file names
 a clause, the clause is the authority and this is the gloss.
 
-A *root* is one of the two directions across Seed's boundary, named in ordinary
-English so a person can hold the whole shape in mind before reading any grammar.
+Rosetta has no independent constitutional topology. It follows the Book's
+Responsibility spine and supplies ordinary-English glosses for the coordinates
+and relations encountered there.
 
 ```text
-                        the boundary
-
-    world  ── Examination ──>  Seed
-    world  <─ Presentation ──  Seed
+Responsibility
+    ├── responsible boundary
+    ├── subject or material
+    ├── exact Act
+    ├── Authority / Evidence
+    ├── purpose / Scope / locality
+    ├── inputs
+    │   ├── source / provenance
+    │   ├── Applicability
+    │   └── Admission, where required
+    ├── Act occurrence
+    ├── production
+    │   └── result / Assertion
+    ├── Standing
+    └── movement / neighboring responsibilities
 ```
 
-Everything else in this directory hangs beneath one of these two, or beneath
-neither and is simply a retired word.
+The Book defines that spine. Runtime occurrences instantiate it. Rosetta keeps
+the same orientation while translating the dense parts into ordinary English.
 
-Two roots and not three: **Emission is not a root.** It is the outward
-occurrence of sending something already formed, and the Book keeps it strictly
-apart from the forming — *"Forming a representation is not an emission
-occurrence"* (`06.Representations`). A person sees a Presentation; the sending
-of it is a separate event in Seed's account of itself.
+Examination and Presentation are directional views across this spine, not
+structural roots:
 
-Two roots and not one: the directions are not mirror images. The outward
-direction has a clause that names the whole responsibility. The inward
-direction does not. That asymmetry is recorded below rather than smoothed over,
-because the symmetry is attractive enough to invent.
+```text
+world  ── Examination gloss ──>  Responsibility spine
+world  <─ Presentation gloss ──  Responsibility spine
+```
+
+The directions are not mirror images. Presentation maps to bounded formation
+and separately evidenced emission. Examination compresses several inward
+responsibilities and has no single Book clause. Emission is not a third view;
+it is an exact outward occurrence distinct from formation.
+
+The following shorthands hang from exact parts of the spine rather than naming
+additional branches.
 
 ## Producer
 
@@ -63,7 +80,7 @@ Responsibility assignment, or Authority transition must be named instead.
 ## Presentation
 
 ```text
-role            root — the outward face
+role            outward view across the Responsibility spine
 book standing   none as a responsibility. `presentation` appears in active law
                 as rendering vocabulary, as closed-choice machinery, and as an
                 ordinary verb
@@ -107,7 +124,7 @@ is not this.
 
 ```text
 not closed-choice machinery       presented alternatives are bounded test and
-                                  interaction representations, not this root
+                                  interaction representations, not this view
 not session Standing              a current implementation projects Standing
                                   "for a session"; that is not what a person
                                   sees, and no clause warrants it
@@ -124,7 +141,7 @@ not a UI                          rendering is a surface over the formation
 Act distinct from the exact Act that forms it remains **Unknown** unless
 separately established."*
 
-So the Book declines to say that forming-outward is its own Act. This root is a
+So the Book declines to say that forming-outward is its own Act. This view is a
 human word for a direction, and does not settle that question.
 
 ---
@@ -132,7 +149,7 @@ human word for a direction, and does not settle that question.
 ## Examination
 
 ```text
-role            root — the inward face
+role            inward view across the Responsibility spine
 book standing   none. `examination` was retired from active law 2026-08-03 and
                 stands at zero occurrences; see retired-vocabulary.md
 maps to         no single clause. several bounded responsibilities
@@ -174,8 +191,8 @@ It was, and it was removed. The chapter now called Inquiry was
 compressed several responsibilities — comparison, applicability determination,
 and relation establishment among them — into one word that sounded like an act.
 
-That is precisely the property that makes it a good root here and a bad clause
-there. As a root it says *this direction, all of it*. As law it would claim
+That is precisely the property that makes it a useful view here and a bad clause
+there. As a view it says *this direction, all of it*. As law it would claim
 there is one act where there are several.
 
 The verb survives in active law, with applicability as the thing doing the
@@ -190,9 +207,8 @@ not a stage                   the responsibilities beneath it have no
 not meaning-making            measurement and recurrence establish no
                               meaning, which is a titled clause
 not admission                 material arriving is not material admitted
-not a return path to law      the noun is retired. a lexical gate that would
-                              guard against its return is proposed and not yet
-                              merged, so nothing currently prevents the drift
+not a return path to law      the noun is retired; Rosetta does not restore its
+                              constitutional Standing
                               except attention
 ```
 
@@ -215,5 +231,5 @@ standing, they name no act, and an argument that turns on one of them has not
 yet reached the grammar.
 
 The test that keeps them honest: **if a sentence about Seed would change
-meaning when the root word is replaced by the clauses beneath it, the sentence
+meaning when the Rosetta word is replaced by the clauses beneath it, the sentence
 was resting on the English.**
