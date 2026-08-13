@@ -19,22 +19,22 @@ class ExecutionStatus:
     completed: bool = False
 
 
-class ExecutionStatusConsumer(Protocol):
+class ExecutionStatusSink(Protocol):
     """Consumes transient execution status without owning execution state."""
 
     def consume(self, status: ExecutionStatus) -> None:
         """Observe an execution-status update."""
 
 
-class NullExecutionStatusConsumer:
-    """Default status consumer that preserves execution behavior by doing nothing."""
+class NullExecutionStatusSink:
+    """Default status sink that preserves execution behavior by doing nothing."""
 
     def consume(self, status: ExecutionStatus) -> None:
         return None
 
 
-class RecordingExecutionStatusConsumer:
-    """In-memory consumer for tests and non-persistent status inspection."""
+class RecordingExecutionStatusSink:
+    """In-memory sink for tests and non-persistent status inspection."""
 
     def __init__(self) -> None:
         self.statuses: list[ExecutionStatus] = []
@@ -43,7 +43,7 @@ class RecordingExecutionStatusConsumer:
         self.statuses.append(status)
 
 
-class CliExecutionStatusConsumer:
+class CliExecutionStatusSink:
     """Render execution status as CLI operator feedback."""
 
     def __init__(
@@ -73,13 +73,13 @@ class CliExecutionStatusConsumer:
 class ExecutionStatusEmitter:
     """Construct and emit status updates without consuming or rendering them.
 
-    Producers use this boundary to publish renderer-independent status payloads.
-    Consumers remain responsible for recording, rendering, or ignoring those
-    payloads; the emitter does not own execution state or consumer behavior.
+    Responsible occurrences use this boundary to publish renderer-independent status payloads.
+    Sinks remain responsible for recording, rendering, or ignoring those
+    payloads; the emitter does not own execution state or sink behavior.
     """
 
-    def __init__(self, consumer: ExecutionStatusConsumer | None) -> None:
-        self.consumer = consumer
+    def __init__(self, sink: ExecutionStatusSink | None) -> None:
+        self.sink = sink
 
     def emit(
         self,
@@ -90,11 +90,11 @@ class ExecutionStatusEmitter:
         total: int | None = None,
         completed: bool = False,
     ) -> None:
-        """Publish one status update when a consumer is attached."""
+        """Publish one status update when a sink is attached."""
 
-        if self.consumer is None:
+        if self.sink is None:
             return
-        self.consumer.consume(
+        self.sink.consume(
             ExecutionStatus(
                 phase=phase,
                 message=message,
@@ -138,7 +138,7 @@ class ProgressCadence:
 
 
 class ObservationProducerLifecycle:
-    """Shared transient lifecycle vocabulary for observation producers.
+    """Shared transient lifecycle vocabulary for observation occurrences.
 
     The lifecycle standardizes operator-visible work phases around existing
     observation collection, normalization, ingestion, and event writing paths.
@@ -147,21 +147,21 @@ class ObservationProducerLifecycle:
     """
 
     def __init__(
-        self, consumer: ExecutionStatusConsumer | None, source_name: str
+        self, sink: ExecutionStatusSink | None, source_name: str
     ) -> None:
-        self.consumer = consumer
+        self.sink = sink
         self.source_name = source_name
 
     def collecting(self) -> None:
         emit_status(
-            self.consumer,
+            self.sink,
             "observation_collection",
             f"Collecting {self.source_name} observations...",
         )
 
     def collected(self, count: int) -> None:
         emit_status(
-            self.consumer,
+            self.sink,
             "observation_collection",
             f"Collected {count} observations.",
             current=count,
@@ -171,7 +171,7 @@ class ObservationProducerLifecycle:
 
     def normalizing(self, count: int) -> None:
         emit_status(
-            self.consumer,
+            self.sink,
             "observation_normalization",
             f"Normalizing {self.source_name} observations...",
             current=0,
@@ -180,7 +180,7 @@ class ObservationProducerLifecycle:
 
     def normalized(self, count: int) -> None:
         emit_status(
-            self.consumer,
+            self.sink,
             "observation_normalization",
             f"Normalized {count} observations.",
             current=count,
@@ -190,7 +190,7 @@ class ObservationProducerLifecycle:
 
     def ingesting(self, count: int) -> None:
         emit_status(
-            self.consumer,
+            self.sink,
             "observation_ingestion",
             f"Ingesting {self.source_name} observations...",
             current=0,
@@ -199,7 +199,7 @@ class ObservationProducerLifecycle:
 
     def completed(self, count: int) -> None:
         emit_status(
-            self.consumer,
+            self.sink,
             "observation_lifecycle",
             f"Completed {self.source_name} observation lifecycle.",
             current=count,
@@ -209,7 +209,7 @@ class ObservationProducerLifecycle:
 
 
 def emit_progress_if_due(
-    consumer: ExecutionStatusConsumer | None,
+    sink: ExecutionStatusSink | None,
     cadence: ProgressCadence,
     phase: str,
     message: str,
@@ -219,10 +219,10 @@ def emit_progress_if_due(
 ) -> None:
     """Emit loop progress only when bounded cadence says it is useful."""
 
-    if consumer is None or not cadence.should_emit(current, total):
+    if sink is None or not cadence.should_emit(current, total):
         return
     emit_status(
-        consumer,
+        sink,
         phase,
         message,
         current=current,
@@ -233,7 +233,7 @@ def emit_progress_if_due(
 
 
 def emit_status(
-    consumer: ExecutionStatusConsumer | None,
+    sink: ExecutionStatusSink | None,
     phase: str,
     message: str,
     *,
@@ -241,9 +241,9 @@ def emit_status(
     total: int | None = None,
     completed: bool = False,
 ) -> None:
-    """Emit one transient execution-status update if a consumer is present."""
+    """Emit one transient execution-status update if a sink is present."""
 
-    ExecutionStatusEmitter(consumer).emit(
+    ExecutionStatusEmitter(sink).emit(
         phase,
         message,
         current=current,

@@ -18,9 +18,9 @@ and local — *the recorded result is the result its production evidence
 concerns* — and the witness is the recorded event itself.
 
 **What it does not do.** It revises nothing. `01.Uptake.A` holds that evidence
-becoming available "does not by itself change any consumer assertion, standing,
+becoming available "does not by itself change any exact Act Assertion, standing,
 confidence, reliance, or current result", and that an upstream production occurrence owns its
-production and availability testimony, "not any consumer's applicability,
+production and availability testimony, "not any exact Act's applicability,
 admission, Uptake, reliance, or downstream revision". A finding found unfaithful
 here keeps whatever standing it had; what changes is that this comparison's
 result exists and may be consumed.
@@ -29,7 +29,7 @@ result exists and may be consumed.
 finding is available to whatever consumes it, and each later act determines its
 own applicability for its own inputs — `01.Standing.E.1`. Walking the support
 basis and premise edges and revising what is found there would be that
-determination made centrally, for consumers that never made it. The edges are
+determination made centrally, for exact Acts that never made it. The edges are
 recorded and a later responsible act may follow them; this act does not.
 """
 
@@ -98,7 +98,7 @@ class RecordedFidelityFinding:
     """One exact Fidelity result recovered from its recording occurrence.
 
     Constructing this representation does not establish that recovery occurred.
-    A later consumer must resolve its recorded-occurrence reference through the
+    A later Act must resolve its recorded-occurrence reference through the
     ledger rather than trust the dataclass by shape.
     """
 

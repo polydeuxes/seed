@@ -127,6 +127,8 @@ def test_sqlite_persisted_id_prefixes_exclude_deleted_planning_artifacts():
         "byte_pair_applicability_act",
         "byte_pair_applicability_occurrence",
         "assertion_locality_movement",
+        "assertion_locality_movement_act",
+        "assertion_locality_movement_occurrence",
     )
 
 

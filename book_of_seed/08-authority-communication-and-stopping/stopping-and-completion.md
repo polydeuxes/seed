@@ -4,7 +4,7 @@
 The grounds for stopping inquiry or movement and the stronger claim that a bounded goal is complete.
 
 ## Core question
-Which exact evidenced conditions can warrant a bounded responsible consumer stopping its present act, a responsible stopping occurrence at a competent boundary that establishes a bounded stop, or the stronger completion claim for an exact bounded goal?
+Which exact evidenced conditions can warrant a bounded responsible exact Act stopping its present act, a responsible stopping occurrence at a competent boundary that establishes a bounded stop, or the stronger completion claim for an exact bounded goal?
 
 ## Bounded resolution
 Current evidence exposes several distinct possible non-movement conditions, including existing bounded horizons, constraint prohibitions, explicit goal standing, exhaustion findings, impossibility findings, operator boundaries, evidence gaps, capability Unknowns, authority gaps, resource limits, unresolved causation, preservation failure, or satisfied scope. This set is illustrative rather than exhaustive; no projection, status field, or condition establishes stopping or completion by identity. `[UNRESOLVED]` The relations among these conditions, including whether any ordering is required, and the evidence that warrants a bounded stopping occurrence or the stronger completion claim for an exact bounded goal remain unclear.
@@ -34,6 +34,6 @@ Where a bounded Stop is established, the stopping occurrence preserves the exact
 
 ## Constrained movement stopping correction 001
 
-Stopping may be constrained by evidence gap, capability Unknown, authority gap, resource limits, unresolved causation, preservation failure, satisfied scope, or operator boundary. A consumer may respond to such standings with a Stop, deferral, narrowing, return to inquiry, exposure of unmet requirements, or consumer-local non-reliance without making the condition a failure or completion by identity or assigning consumer-local non-reliance to Stopping. Unknown does not warrant invented movement, and a constraint result that requires a later Stop does not perform the governed movement or establish the Stopping occurrence.
+Stopping may be constrained by evidence gap, capability Unknown, authority gap, resource limits, unresolved causation, preservation failure, satisfied scope, or operator boundary. An exact Act may respond to such standings with a Stop, deferral, narrowing, return to inquiry, exposure of unmet requirements, or act-local non-reliance without making the condition a failure or completion by identity or assigning act-local non-reliance to Stopping. Unknown does not warrant invented movement, and a constraint result that requires a later Stop does not perform the governed movement or establish the Stopping occurrence.
 
 Stopping is not failure.

@@ -24,7 +24,7 @@ def test_projection_chapter_distinguishes_current_implementation_from_true_fact_
     assert "that inventory shape is not the constitutional definition of a FactView" in text
     emission = _read(
         "book_of_seed/08-authority-communication-and-stopping/"
-        "representation-emission-and-consumer-boundaries.md"
+        "representation-emission-and-locality.md"
     )
     assert "A current-facing Fact View warrants present Applicability only" in emission
 

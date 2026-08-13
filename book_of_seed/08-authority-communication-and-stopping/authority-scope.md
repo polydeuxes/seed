@@ -9,12 +9,12 @@ What grants authority for a bounded goal or act, and how is that authority preve
 ## Bounded resolution
 Operator material and explicit approvals may contribute authority only after interpretation and scope binding. Internal models, selections, records, and provider emissions, transport structures, or ordinary-language handoff labels cannot create or enlarge that authority.
 
-Policy wording may describe a bounded representation of authority granted for an exact recipient or responsible boundary, act or movement, purpose, scope, conditions, temporal standing, negative authority, and Unknowns. That representation does not create, enlarge, transfer, or renew the authority it represents. Its lawful consumer use is ordinary Uptake of represented authority within those preserved limits. Policy is not an independent constitutional kind, authority source, selection family, or implementation governor.
+Policy wording may describe a bounded representation of authority granted for an exact recipient or responsible boundary, act or movement, purpose, scope, conditions, temporal standing, negative authority, and Unknowns. That representation does not create, enlarge, transfer, or renew the authority it represents. Its lawful exact Act use is ordinary Uptake of represented authority within those preserved limits. Policy is not an independent constitutional kind, authority source, selection family, or implementation governor.
 
 ## Addressable boundaries for bounded reliance witnesses
 
 ### 08.Authority.A — Bounded reliance without standing expansion
-A downstream consumer may rely on warranted content only for the bounded role, purpose, source or provenance, evidence, authority, scope, confidence or uncertainty, and Unknown boundaries preserved by that warrant. Reliance consumes the warranted content without strengthening its standing, expanding its authority, proving truth or ownership, authorizing implementation, or erasing negative authority. When a completed consumer act would otherwise invite over-inference, it must preserve both the lawful reliance and the required non-reliance, and must stop where the warrant stops.
+A downstream Act may rely on warranted content only for the bounded role, purpose, source or provenance, evidence, authority, scope, confidence or uncertainty, and Unknown boundaries preserved by that warrant. Reliance consumes the warranted content without strengthening its standing, expanding its authority, proving truth or ownership, authorizing implementation, or erasing negative authority. When a completed exact Act would otherwise invite over-inference, it must preserve both the lawful reliance and the required non-reliance, and must stop where the warrant stops.
 
 
 ### 08.Authority.B — Admission is bounded participation, not ratification
@@ -36,7 +36,7 @@ Seed may analyze source packets, support paths, source roles, boundary mismatche
 
 ## Related chapters
 - [Selection and authorization](../03-goals-and-advancement/selection-and-authorization.md)
-- [Representation, emission, and consumer boundaries](representation-emission-and-consumer-boundaries.md)
+- [Representation, emission, and exact Act boundaries](representation-emission-and-locality.md)
 
 ## Authorization boundary correction 001
 

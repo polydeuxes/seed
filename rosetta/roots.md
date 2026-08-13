@@ -28,6 +28,21 @@ direction has a clause that names the whole responsibility. The inward
 direction does not. That asymmetry is recorded below rather than smoothed over,
 because the symmetry is attractive enough to invent.
 
+## Producer
+
+`Producer` is ordinary shorthand for the side from which a result comes. In
+Seed grammar it expands to an exact Responsibility, Act, Act occurrence,
+production relation, result Assertion, Evidence, Authority, provenance, and
+locality. It names no additional participant or constitutional coordinate.
+
+## Consumer
+
+`Consumer` is ordinary shorthand for the side at which material may
+participate in another Act. In Seed grammar it expands to the exact locality,
+Responsibility, Act, purpose, Applicability, warranted participation or
+reliance, and Act occurrence. It names no additional participant or
+constitutional coordinate.
+
 ---
 
 ## Presentation

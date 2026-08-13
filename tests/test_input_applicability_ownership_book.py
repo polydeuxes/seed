@@ -25,7 +25,7 @@ def test_book_distinguishes_input_exclusion_from_whole_act_nonperformance():
     clause = _clause()
 
     assert "upstream applicability is not downstream admission" in clause
-    assert "admission remains required only where the exact consumer-local act requires it" in clause
+    assert "admission remains required only where the exact act-local act requires it" in clause
     assert "It does not by itself establish admission" in clause
     assert "may not participate in, be consumed by, or be relied upon in that act" in clause
     assert "no act result may claim reliance on, support from, consumption of, or participation by the excluded input" in clause
@@ -62,6 +62,6 @@ def test_book_does_not_turn_persistent_standing_into_production_demand():
     clause = _clause()
 
     assert "lawfully persistent result standing is not current production demand" in clause
-    assert "does not lose its standing merely because a later consumer does not consume it" in clause
+    assert "does not lose its standing merely because a later Act does not consume it" in clause
     assert "does not permit an act to be implemented or invoked without a current responsibility" in clause
     assert "does not by itself establish production demand, candidate-formation demand" in clause

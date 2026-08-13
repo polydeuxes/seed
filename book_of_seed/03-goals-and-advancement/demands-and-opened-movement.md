@@ -12,7 +12,7 @@ Demand established does not open movement. Establishment establishes bounded req
 
 ## Canonical family grammar
 
-Demand is the canonical constitutional vocabulary. The former `Need*` vocabulary represented the same local Demand standing and was not a separate constitutional kind, and there is no Need -> Demand transition: no responsible occurrence, responsible act, warrant, distinct output, or consumer establishes such a crossing.
+Demand is the canonical constitutional vocabulary. The former `Need*` vocabulary represented the same local Demand standing and was not a separate constitutional kind, and there is no Need -> Demand transition: no responsible occurrence, responsible act, warrant, distinct output, or exact Act establishes such a crossing.
 
 The canonical goal-advancement Demand families are clarification, inquiry, authority, and implementation realization. They are not an exhaustive constitutional Demand taxonomy, and a Demand may arise outside these families.
 
@@ -46,7 +46,7 @@ Named Gap distinctions remain useful when bounded by evidence, responsibility, r
 
 ## Bounded common-grammar counterexample
 
-A possible Demand may arise before an interpreted operator goal exists. For example, a responsible consumer may repeatedly fail or stop while attempting consumer-local interpretation of the same preserved operator ingress because the common-grammar standing required by that exact consumer for that exact interpretation act is not established. The exact operator material remains uninterpreted. Recurrence supplies measurement evidence only: it is not meaning, Demand, selection, authority, or act occurrence, and it does not select English or a retained-understanding revision mechanism.
+A possible Demand may arise before an interpreted operator goal exists. For example, a responsible exact Act may repeatedly fail or stop while attempting act-local interpretation of the same preserved operator ingress because the common-grammar standing required by that exact Act for that exact interpretation act is not established. The exact operator material remains uninterpreted. Recurrence supplies measurement evidence only: it is not meaning, Demand, selection, authority, or act occurrence, and it does not select English or a retained-understanding revision mechanism.
 
 That evidence may become applicable to a separately responsible establishment of whether a bounded Demand exists. Demand establishment requires its own responsible occurrence and must preserve the required result, responsibility, scope, source evidence, materiality, applicability, material Unknowns, and conflicts. Recurrence alone does not establish a Demand.
 
@@ -54,7 +54,7 @@ The possible subject proposed for Demand establishment may be characterized as:
 
 ```text
 required result:
-    common-grammar standing required by the exact consumer
+    common-grammar standing required by the exact Act
     to interpret the exact preserved ingress for its declared act and purpose
 
 possible Demand characterization if separately established:
@@ -71,7 +71,7 @@ separately established competency:
     not the Demand by identity
 ```
 
-The possible relation is consumer-relative, material-relative, and act- and purpose-relative; it is not a global language condition or a competency by identity. This counterexample demonstrates only that the four canonical families are not a universal taxonomy. It creates no pre-goal responsible occurrence, fifth family, acquisition mechanism, authority, or act occurrence path. A separately established competency might be one candidate way to satisfy the possible bounded relation, but a competency candidate is not a Capability established.
+The possible relation is exact Act-relative, material-relative, and act- and purpose-relative; it is not a global language condition or a competency by identity. This counterexample demonstrates only that the four canonical families are not a universal taxonomy. It creates no pre-goal responsible occurrence, fifth family, acquisition mechanism, authority, or act occurrence path. A separately established competency might be one candidate way to satisfy the possible bounded relation, but a competency candidate is not a Capability established.
 
 ## Related chapters
 

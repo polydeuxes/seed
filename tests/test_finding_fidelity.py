@@ -140,7 +140,7 @@ def test_recovery_does_not_revalidate_the_historical_input(recorded):
     result = compare_recorded_finding(ledger, event.id)
     # Recovery of F stands on F's intact recording occurrence and production
     # Evidence. Its source identity travels, but current source availability is
-    # a later consumer's responsibility. The in-memory ledger has no deletion
+    # a later Act's responsibility. The in-memory ledger has no deletion
     # API, so this exact copy demonstrates that recovery does not require the
     # source to retain its old kind or shape.
     ledger._by_id[event.id] = Event(
@@ -313,7 +313,7 @@ def test_it_preserves_what_the_clause_requires(recorded):
 
 
 def test_it_does_not_walk_what_the_finding_stood_on(recorded):
-    """Each consumer determines its own applicability -- `01.Standing.E.1`."""
+    """Each exact Act determines its own applicability -- `01.Standing.E.1`."""
 
     ledger, event = recorded
     before = len(ledger.list("w"))

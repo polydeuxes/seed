@@ -13,7 +13,7 @@ import zlib
 from typing import Any, Iterable, Iterator
 
 from seed_runtime.execution_status import (
-    ExecutionStatusConsumer,
+    ExecutionStatusSink,
     ProgressCadence,
     emit_progress_if_due,
     emit_status,
@@ -243,7 +243,7 @@ class EventLedger:
         self,
         events: Iterable[Event],
         *,
-        status_consumer: ExecutionStatusConsumer | None = None,
+        status_sink: ExecutionStatusSink | None = None,
     ) -> list[Event]:
         """Record pre-built events in order and return the stored events.
 
@@ -255,7 +255,7 @@ class EventLedger:
         self._validate_batch(stored_events)
         total = len(stored_events)
         emit_status(
-            status_consumer,
+            status_sink,
             "event_persistence",
             "Writing events",
             current=0,
@@ -265,7 +265,7 @@ class EventLedger:
         for index, event in enumerate(stored_events, start=1):
             self._store(event)
             emit_progress_if_due(
-                status_consumer,
+                status_sink,
                 cadence,
                 "event_persistence",
                 "Writing events",
@@ -452,6 +452,8 @@ class SQLiteEventLedger(EventLedger):
         "byte_measurement_occurrence", "byte_pair_applicability_act",
         "byte_pair_applicability_occurrence",
         "assertion_locality_movement",
+        "assertion_locality_movement_act",
+        "assertion_locality_movement_occurrence",
     })
 
     _PERSISTED_ID_PREFIXES = (
@@ -488,6 +490,8 @@ class SQLiteEventLedger(EventLedger):
         "byte_pair_applicability_act",
         "byte_pair_applicability_occurrence",
         "assertion_locality_movement",
+        "assertion_locality_movement_act",
+        "assertion_locality_movement_occurrence",
     )
 
     def __init__(self, database_path: str) -> None:
@@ -619,14 +623,14 @@ class SQLiteEventLedger(EventLedger):
         self,
         events: Iterable[Event],
         *,
-        status_consumer: ExecutionStatusConsumer | None = None,
+        status_sink: ExecutionStatusSink | None = None,
     ) -> list[Event]:
         """Persist pre-built events in order using a single SQLite transaction."""
         stored_events = [event.model_copy(deep=True) for event in events]
         self._validate_sqlite_batch(stored_events)
         total = len(stored_events)
         emit_status(
-            status_consumer,
+            status_sink,
             "event_persistence",
             "Writing events",
             current=0,
@@ -647,7 +651,7 @@ class SQLiteEventLedger(EventLedger):
                 self._insert_prefix_commitment(event, event_rowid)
                 self._persist_reservations(self._observed_suffixes(event))
                 emit_progress_if_due(
-                    status_consumer,
+                    status_sink,
                     cadence,
                     "event_persistence",
                     "Writing events",

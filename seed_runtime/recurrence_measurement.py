@@ -196,7 +196,7 @@ class MeasuredAssertion:
                 "event_ids": list(self.support_event_ids),
                 # These dependencies are local to the same producing
                 # occurrence. Recovery binds each to that occurrence's id
-                # before exposing it to a downstream consumer.
+                # before exposing it to a downstream Act.
                 "local_assertion_ids": list(self.support_assertion_ids),
             },
             "completeness_boundary": (

@@ -86,6 +86,8 @@ BANNED: tuple[tuple[str, str], ...] = (
     # unconstrained compatibility shape; storage survival does not establish
     # Book grammar.
     (r"\bactors?\b", "actor"),
+    (r"\bproducers?\b|producer[-_]", "producer"),
+    (r"\bconsumers?\b|consumer[-_]", "consumer"),
 )
 
 # The discriminator, corrected.

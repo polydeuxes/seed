@@ -1008,7 +1008,7 @@ def record_assertion_production_comparison(
                 "unknowns": [
                     "whether a literal difference is Applicable to either input "
                     "Assertion remains Unknown",
-                    "whether any consumer will admit or consume this result remains "
+                    "whether any exact Act will admit or consume this result remains "
                     "Unknown",
                 ],
                 "forbidden_inferences": [

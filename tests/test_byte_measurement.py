@@ -386,7 +386,8 @@ def test_pair_count_and_recurrence_are_separate_results():
         if item.result == "exact_source_material_set"
     )
     assert moved_ref["assertion_id"] == original.assertion_id
-    assert moved_ref["recorded_occurrence_id"] != original.recorded_occurrence_id
+    assert moved_ref["recorded_occurrence_id"] == original.recorded_occurrence_id
+    assert event.payload["source_movement_event_id"] != original.recorded_occurrence_id
     applicability = input_applicability_of_recorded_adjacent_byte_pair_measurement(
         ledger, event.id
     )
@@ -394,7 +395,7 @@ def test_pair_count_and_recurrence_are_separate_results():
     assert applicability["input_assertion_ref"] == event.payload["source_assertion_ref"]
     assert applicability["purpose"]
     assert applicability["target_act"] == "declared adjacent-byte-pair Measurement"
-    assert applicability["consumer_context"] == {
+    assert applicability["act_context"] == {
         "workspace_id": "w",
         "measurement_session_id": "measurement",
     }
@@ -427,12 +428,30 @@ def test_recorded_pair_results_replay_the_complete_bounded_source_read():
     detached = count.payload
     detached["dimensions"]["standing"] = "invented"
     assert count.payload["dimensions"]["standing"] == "measured"
-    assert count.support_assertion_refs[0]["recorded_occurrence_id"] != source.id
-    movement = ledger.get(count.support_assertion_refs[0]["recorded_occurrence_id"])
+    assert count.support_assertion_refs[0]["recorded_occurrence_id"] == source.id
+    movement = ledger.get(event.payload["source_movement_event_id"])
     assert movement.payload["source_assertion_ref"]["recorded_occurrence_id"] == source.id
     assert movement.payload["assertion_id"] == count.support_assertion_refs[0]["assertion_id"]
     assert movement.payload["source_locality"] == "byte-measurement"
     assert movement.payload["target_locality"] == "measurement"
+    assert movement.payload["movement_act_id"] != movement.payload[
+        "movement_act_occurrence_id"
+    ]
+    act_evidence = ledger.get(movement.payload["movement_act_evidence_event_id"])
+    assert act_evidence.payload["movement_act_id"] == movement.payload[
+        "movement_act_id"
+    ]
+    assert act_evidence.payload["movement_act_occurrence_id"] == movement.payload[
+        "movement_act_occurrence_id"
+    ]
+    original = next(
+        item
+        for item in assertions_of_recorded_byte_measurement(ledger, source.id)
+        if item.assertion_id == movement.payload["assertion_id"]
+    )
+    assert movement.payload["assertion_commitment"] != production_commitment(
+        "assertion_locality_movement_v1", original.payload
+    )
     assert "dimensions" not in movement.payload
 
 
@@ -534,7 +553,7 @@ def test_applicability_identity_is_bound_to_one_exact_target_act():
         target_act_id="pair-act-1",
         applicability_act_id="applicability-act-1",
         applicability_act_occurrence_id="applicability-occurrence-1",
-        consumer_workspace_id="w",
+        act_workspace_id="w",
         measurement_session_id="measurement",
     )
     second = _pair_input_applicability(
@@ -542,7 +561,7 @@ def test_applicability_identity_is_bound_to_one_exact_target_act():
         target_act_id="pair-act-2",
         applicability_act_id="applicability-act-2",
         applicability_act_occurrence_id="applicability-occurrence-2",
-        consumer_workspace_id="w",
+        act_workspace_id="w",
         measurement_session_id="measurement",
     )
 
@@ -566,7 +585,7 @@ def test_pair_applicability_has_real_non_applicable_and_unknown_outcomes():
         target_act_id="pair-act-other-workspace",
         applicability_act_id="applicability-act-inapplicable",
         applicability_act_occurrence_id="applicability-occurrence-inapplicable",
-        consumer_workspace_id="other",
+        act_workspace_id="other",
         measurement_session_id="measurement",
     )
     carried = source.payload
@@ -584,7 +603,7 @@ def test_pair_applicability_has_real_non_applicable_and_unknown_outcomes():
         target_act_id="pair-act-unknown-authority",
         applicability_act_id="applicability-act-unknown",
         applicability_act_occurrence_id="applicability-occurrence-unknown",
-        consumer_workspace_id="w",
+        act_workspace_id="w",
         measurement_session_id="measurement",
     )
 

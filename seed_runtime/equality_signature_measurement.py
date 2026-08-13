@@ -41,7 +41,7 @@ MEASUREMENT_AUTHORITY = (
     "relation, meaning, significance, or Standing movement"
 )
 MEASUREMENT_UNKNOWNS = (
-    "whether any coordinate agreement or distinction matters to a later Consumer "
+    "whether any coordinate agreement or distinction matters to a later exact Act "
     "remains Unknown",
 )
 FORBIDDEN_INFERENCES = (

@@ -7,7 +7,7 @@ The warrant required for code that can build an artifact to lawfully produce a c
 When is a constructor an authorized production boundary rather than a convenient public function?
 
 ## Bounded resolution
-A constructor consumes values or representations and produces another representation. Mechanical construction proves only that the output can be built. A witnessed return from a responsible owner can add observer-held occurrence standing that a separately constructed artifact with identical fields does not carry, unless that standing is separately represented or preserved. A separately constructed artifact can sometimes satisfy a later consumer's local type, registration, or identity-coherence checks, but that success proves only consumer-local admissibility. It does not prove the named production boundary occurred, that focus evidence was consumed, or that exact-key selection occurred. In the current repository this boundary is often a Python function or rule; constitutionally, the requirement is an authorized responsible occurrence whose realization validates the required identity, provenance, standing, and warrant before asserting selection, establishment, admission, or occurrence. Public reachability does not provide that warrant.
+A constructor consumes values or representations and produces another representation. Mechanical construction proves only that the output can be built. A witnessed return from a responsible owner can add observer-held occurrence standing that a separately constructed artifact with identical fields does not carry, unless that standing is separately represented or preserved. A separately constructed artifact can sometimes satisfy a later exact Act's local type, registration, or identity-coherence checks, but that success proves only act-local admissibility. It does not prove the named production boundary occurred, that focus evidence was consumed, or that exact-key selection occurred. In the current repository this boundary is often a Python function or rule; constitutionally, the requirement is an authorized responsible occurrence whose realization validates the required identity, provenance, standing, and warrant before asserting selection, establishment, admission, or occurrence. Public reachability does not provide that warrant.
 
 ## Important distinctions
 - live responsible occurrence return != durable responsible occurrence-to-result evidence unless recorded or represented
@@ -25,7 +25,7 @@ A constructor consumes values or representations and produces another representa
 - Treating every exported helper as a canonical ingress.
 - Bypassing an admission boundary because the addressed subject model can be instantiated directly.
 - Treating a dataclass instance returned by an arbitrary caller as proof that the named selection or establishment occurred.
-- Treating a directly constructed selection artifact as proof that the responsible occurrence selected from the same candidate universe the consumer later receives.
+- Treating a directly constructed selection artifact as proof that the responsible occurrence selected from the same candidate universe the exact Act later receives.
 
 ## Related chapters
 - [Constitutional kinds and artifact standing](constitutional-kinds-and-artifact-standing.md)

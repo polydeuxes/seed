@@ -9,7 +9,7 @@ It is not a roadmap, API reference, generated topology, complete inventory, or s
 - A **Book** is a major constitutional district, family, or kind.
 - A **Chapter** concerns one bounded concept, responsibility, distinction, constraint, relationship, or unresolved constitutional question.
 - `[UNRESOLVED]` marks a question for which the current repository does not safely support a constitutional resolution.
-- Representative anchors are illustrative. Seed must inspect the repository to recover current responsible occurrences, consumers, fields, topology, discrepancies, and residue.
+- Representative anchors are illustrative. Seed must inspect the repository to recover current responsible occurrences, exact Acts, fields, topology, discrepancies, and residue.
 
 The first pass deliberately favors concise distinctions over comprehensive prose. The [concordance](concordance.md) is a navigation aid, not an ontology. Cross-cutting questions without a stable chapter home live in [unresolved.md](unresolved.md).
 
@@ -30,7 +30,7 @@ Book VII is intentionally absent. Its former implementation topic collection was
 
 #### Owner / responsible boundary
 
-Identifies who bears and answers for the exact responsibility. It is distinct from the subject addressed, the responsible occurrence, the consumer, and any separately assigned establishment boundary.
+Identifies who bears and answers for the exact responsibility. It is distinct from the subject addressed, the responsible occurrence, the exact Act, and any separately assigned establishment boundary.
 
 #### Subject or material addressed
 
@@ -102,9 +102,9 @@ Warrant
 != Authority
 ```
 
-#### Warrant consumer and reliance purpose
+#### Warrant exact Act and reliance purpose
 
-Where the exact Warrant has an established consumer, this branch identifies that consumer and the purpose for which the Warrant may be relied upon. Warrant production does not create a consumer, reliance purpose, later reliance, or Uptake by identity.
+Where the exact Warrant has an established exact Act, this branch identifies that exact Act and the purpose for which the Warrant may be relied upon. Warrant production does not create an exact Act, reliance purpose, later reliance, or Uptake by identity.
 
 ### Act-occurrence and non-occurrence branches
 
@@ -212,7 +212,7 @@ standing-establishment occurrence
 
 ### Conditional preservation, standing, and neighboring branches
 
-These branches are exposed only where the exact responsibility instantiates them. Some may precede the act, govern it, preserve its occurrence, or belong to a later consumer. They remain governed by their independently owned constitutional grammar.
+These branches are exposed only where the exact responsibility instantiates them. Some may precede the act, govern it, preserve its occurrence, or belong to a later exact Act. They remain governed by their independently owned constitutional grammar.
 
 #### Preservation testimony
 
@@ -224,11 +224,11 @@ Identifies any separately established Authorization consumed by the exact downst
 
 #### Applicability and admission standing
 
-Identifies any exact consumer-local applicability or admission standing required before material may participate in the downstream act. Applicability, admission, consumption, and reliance remain distinct.
+Identifies any act-local applicability or admission standing required before material may participate in the downstream act. Applicability, admission, consumption, and reliance remain distinct.
 
-#### Consumer and Uptake relation
+#### Exact Act and Uptake relation
 
-Identifies the exact consumer, material consumed, consumer-local act, purpose, and resulting Uptake relation where a downstream consumer exists. A produced result does not establish a consumer or Uptake by identity.
+Identifies the exact Act, material consumed, act-local act, purpose, and resulting Uptake relation where a downstream exact Act exists. A produced result does not establish an exact Act or Uptake by identity.
 
 #### Constraint
 
@@ -265,7 +265,7 @@ The Responsibility hierarchy is a Book-root presentation and traversal structure
 ```text
 structural branch present != branch value established
 coordinate unresolved != coordinate Unknown
-same owner != same act, responsible occurrence, establishment boundary, or consumer
+same owner != same act, responsible occurrence, establishment boundary, or exact Act
 same occurrence != same claim
 ```
 

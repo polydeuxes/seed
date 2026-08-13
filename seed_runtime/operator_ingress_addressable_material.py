@@ -52,7 +52,7 @@ UNKNOWNS = (
     "operator intent Unknown",
     "operator goal Unknown",
     "Seed-question applicability Unknown",
-    "next-consumer applicability Unknown",
+    "next-Act Applicability Unknown",
 )
 AUTHORITY_LIMITS = (
     "addressability and exact-material carriage only",

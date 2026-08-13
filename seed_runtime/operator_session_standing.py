@@ -652,7 +652,7 @@ def advance_operator_session_standing(
             # The structural Authority coordinates are reconstructed from
             # recorded testimony, and the carried separation must equal the
             # reconstruction -- a forged standing, support, Evidence, or
-            # Scope is refused rather than exposed to a later consumer.
+            # Scope is refused rather than exposed to a later Act.
             reconstructed_separation = {
                 "source_authority": {
                     "standing": "bounded",

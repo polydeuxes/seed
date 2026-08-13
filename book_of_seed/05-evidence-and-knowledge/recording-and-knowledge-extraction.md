@@ -13,10 +13,10 @@ A recording boundary may create a retrievable representation of attributed event
 ## Addressable boundaries for recorded-change witnesses
 
 ### 05.Recording.A — Recorded assertion standing
-A recording boundary may create retrievable assertion-bearing material within its declared preservation horizon. The produced standing is that a record exists and preserves an attributed assertion. The bounded consumer may take up that recorded assertion as attributed material. The forbidden inference is that the represented external occurrence, current lawful condition, factual truth, renewed occurrence, or consumer arrival has been established merely because the record exists or remains retrievable.
+A recording boundary may create retrievable assertion-bearing material within its declared preservation horizon. The produced standing is that a record exists and preserves an attributed assertion. The bounded exact Act may take up that recorded assertion as attributed material. The forbidden inference is that the represented external occurrence, current lawful condition, factual truth, renewed occurrence, or exact Act arrival has been established merely because the record exists or remains retrievable.
 
 ### 05.Recording.B — Diagnostic-run-scoped recording
-When recorded material is admitted only for diagnostic purposes, consumers must preserve the scoped subject of that recording unless a separate establishment boundary supplies additional standing. The produced effect is bounded availability to the diagnostic consumer, not mutation of cluster truth, universal condition, reliance, or arrival.
+When recorded material is admitted only for diagnostic purposes, exact Acts must preserve the scoped subject of that recording unless a separate establishment boundary supplies additional standing. The produced effect is bounded availability to the diagnostic exact Act, not mutation of cluster truth, universal condition, reliance, or arrival.
 
 
 ### 05.Recording.C — Preservation and discard of implementation measurements
@@ -63,7 +63,7 @@ Recording may preserve already produced measurement testimony and already produc
 - record exists != recorded assertion true automatically
 - record exists != recorded standing lawfully established
 - preservation decision != standing-establishment decision
-- extraction occurrence != original act occurrence occurrence
+- extraction occurrence != original act occurrence
 - recording != knowledge extraction
 - event ledger write != cluster mutation
 - retrievable record != established fact
