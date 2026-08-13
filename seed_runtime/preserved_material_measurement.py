@@ -529,10 +529,10 @@ def _production_commitment(finding) -> str:
 def _record_production(
     ledger: EventLedger, *, workspace_id: str, session_id: str, finding
 ) -> Event:
-    """Preserve, from inside the producing act, that it returned this result.
+    """Preserve, from inside the producing act, that it produced this result.
 
     The distinction is not that this is private. Privacy is mechanics. It is
-    that production standing is preserved at the producing return boundary, and
+    that production standing is preserved at the producing boundary, and
     the result carries the relation to it — so a separately constructed
     representation with identical fields carries no such relation, which is the
     counterexample `01.Constructors` states. An earlier attempt exposed this
@@ -573,13 +573,14 @@ def _record_production(
                 "standing": "produced",
                 "producing_act": "declared measurement",
                 "producer_evidence": (
-                    "preserved at the producing return boundary, after this "
+                    "preserved at the producing boundary, after this "
                     "result was fixed; the result carries the relation to this"
                 ),
                 "producer": RESPONSIBILITY_UNRECOVERED,
                 "responsibility": RESPONSIBILITY_UNRECOVERED,
                 "authority_warrant": (
-                    "establishes that this measuring act returned this result; "
+                    "establishes that this measuring act produced this exact "
+                    "result at this producing boundary; "
                     "establishes no producer identity, responsibility, or "
                     "authorization"
                 ),
