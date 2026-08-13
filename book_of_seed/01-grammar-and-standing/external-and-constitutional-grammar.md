@@ -27,6 +27,11 @@ A Fidelity finding is produced only by a bounded comparison that brings constitu
 ### 01.External.E — Measurement and recurrence do not establish meaning
 A declared measurement may produce bounded findings of exact equality, count, recurrence, prefix occurrence, the result of a declared predicate, or adjacency within its measurement boundary. Those findings do not establish structural, grammatical, or semantic meaning, or constitutional standing beyond the measurement assertion. A recurrence assertion must disclose the representation or projection measured, the rule by which equivalence or sameness was determined, and the bounded scope within which occurrences were counted. A consumer's purpose separately governs lawful reliance, acceptable aggregation, and acceptable representational loss; purpose is not therefore a required coordinate of every exact count.
 
+### 01.External.E.1 — An occurrence population is counted by occurrence identity
+Where a declared measurement counts preserved occurrences, membership in the counted population is by exact occurrence identity. Repeated reference to one preserved occurrence does not establish a further occurrence and does not increase an occurrence count. A count of references, where a responsible act warrants one, is a different declared subject from a count of occurrences and discloses which it counted.
+
+This concerns identity, not content. Two occurrences preserving identical material are two occurrences, and nothing here makes them one.
+
 ### 01.External.F — Candidate production remains attributed
 A candidate must preserve each applicable producer, source-role, formation-occurrence, scope, authority, and provenance dimension where known. Where a dimension is unresolved, its Unknown or unresolved standing must remain explicit. A Seed-produced candidate, operator-supplied candidate testimony, and external-source candidate or rule testimony may therefore have different production standing without closing the possible source roles into an exhaustive taxonomy. Consuming, comparing, transporting, or re-presenting candidate material does not relocate its production or establish a missing formation occurrence. An Unknown producer is not an invented producer; an Unknown formation occurrence does not mean that no candidate exists; and Unknown provenance must not be silently supplied.
 

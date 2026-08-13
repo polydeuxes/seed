@@ -176,6 +176,35 @@ Recorded here because each is a Book question, not only a code one.
   spanning two localities cannot be described by one basis without either
   misstating the scope or silently narrowing the population.
 
+## 12. Two words in `01.External` with no body behind them
+
+Found while placing `01.External.E.1`, testing each nearby word against the
+discriminator the lexical gate uses — whether active law defines the term, names
+its occurrence, or names its boundary.
+
+**`assimilation`** appears exactly once in the numbered chapters: in the *title*
+of `01.External.B — Addressability without assimilation`. The clause body never
+uses it, and says the thing plainly instead — external material may become
+addressable "without becoming Constitutional Grammar." A title carrying a noun
+its own body does not need.
+
+**`aggregation`** is undefined and its runtime witness was withdrawn.
+`01.External:28` says a consumer's purpose "separately governs lawful reliance,
+acceptable aggregation, and acceptable representational loss." No clause states
+what an aggregation is, names an aggregating occurrence, or names its boundary.
+Meanwhile `recurrence_measurement.py` carries *"the old aggregate result's
+Responsibility slot had been answering…"* and `tests/test_recurrence_measurement`
+holds `test_the_old_aggregate_result_is_not_recorded_beside_the_assertions`.
+
+So the shape is `context views` again: **the aggregate result was withdrawn from
+the runtime and the word stayed in the clause.** It is also the word most likely
+to be read as licence for the collective-standing move `01.Standing.D` refuses,
+which is why it was flagged in §5 before this evidence existed. §5 said *flagged,
+not accused*; this is the evidence, and it is now closer to accused.
+
+Neither is repaired here. Both are single-word excisions of the kind `#2502` and
+`#2503` performed, and both want their own scoped change.
+
 ## 11. `available` carries two meanings
 
 `text_representation.available` records a *historical* outcome: at ingress, a
