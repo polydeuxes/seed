@@ -526,6 +526,31 @@ def _production_commitment(finding) -> str:
     )
 
 
+def _recorded_production_commitment(recorded: Event) -> str:
+    """The production commitment a recorded finding's own content implies.
+
+    A recorded payload is the finding's carried content plus what recording
+    composed around it, so the content the producing act committed to is
+    recoverable: take the keys the finding carries, and read
+    `material_provenance` back out of the dimensions where the recorder states
+    it. `#2517` made that safe by refusing recording additions that replace any
+    coordinate the payload owns -- without that, this recomputation would be
+    over content a recorder could have altered.
+    """
+
+    payload = recorded.payload
+    content = {
+        key: value
+        for key, value in payload.items()
+        if key not in _RECORDING_OWNED and key != "production_evidence_id"
+    }
+    content["material_provenance"] = payload["dimensions"]["source_provenance"]
+    return support_commitment(
+        MEASUREMENT_CONVENTION,
+        (json.dumps(content, sort_keys=True, separators=(",", ":")),),
+    )
+
+
 def _record_production(
     ledger: EventLedger, *, workspace_id: str, session_id: str, finding
 ) -> Event:
