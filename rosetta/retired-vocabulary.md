@@ -199,7 +199,8 @@ established. PESC appears in no active-law chapter.
 
 ```text
 status          never adopted (removed from active law 2026-08-13)
-closest grammar support basis · the preserved occurrences an act consumed
+closest grammar none. where the runtime must preserve what a result stood
+                on, the coordinate is `support basis`
 ```
 
 Entered active law through this session's own `01.Standing.D.2`, in the clause
@@ -207,10 +208,13 @@ title, on 2026-08-12. The body never used it and said the thing plainly:
 *not every preserved Assertion*. Removed the next day.
 
 It survives in `seed_runtime` as ordinary English for the bounded set of
-occurrences one act consumed — 47 uses across the measurement modules. That is
-implementation vocabulary and carries no standing. Where the runtime needs to
-*preserve* what it consumed, the coordinate is `support basis`, which
-`05.Testimony.E` now bounds.
+occurrences one act walked — 47 uses across the measurement modules. That is
+implementation vocabulary and carries no standing.
+
+It does not gloss to `support basis`. An earlier version of this entry said it
+did, which restates the definition `#2514` withdrew: what an act consumed is
+broader than the support its result stands on. The support basis is a
+different coordinate that the runtime may preserve *about* such a set.
 
 Recorded because the miss is instructive: the same session excised
 `assimilation` for being a noun in a title while the body said the thing
@@ -233,14 +237,15 @@ that the same input always gives the same value and different inputs almost
 never do. A *commitment* is a digest kept so someone later can check whether
 they have the same thing, without holding the original to compare against.
 
-**Mechanical, and not candidates.** An earlier version of this entry said the
+**Mechanical.** Their mechanical role warrants no constitutional clause. That
+is a statement about what they are doing here, not a prediction that no clause
+will ever concern them. An earlier version of this entry said the
 mechanism was "chosen, not recovered", which implied it was awaiting a clause,
 and then explained `commitment` using `digest` as though that word were
 settled. It is not; both are equally absent from active law. Both exist because
 comparing large ordered things on a real machine, without holding both,
 requires computing something smaller first. Preserving a support basis is
-constitutional; the arithmetic that makes a preserved one checkable is not, and
-will not become so by being examined harder.
+constitutional; the arithmetic that makes a preserved one checkable is not.
 
 The distinction earns its place because the vocabulary hunt fails in two
 directions. A word can be contamination wearing a technical coat — `state`,
