@@ -194,3 +194,92 @@ Absent from active law. The phrase entered through the same correction round as
 `relation grammar`, as attributed PESC orientation vocabulary: a bounded
 proposed equivalence concerning a Presentation, explicitly not thereby true or
 established. PESC appears in no active-law chapter.
+
+## population
+
+```text
+status          never adopted (removed from active law 2026-08-13)
+closest grammar none established generally
+```
+
+Entered active law through this session's own `01.Standing.D.2`, in the clause
+title, on 2026-08-12. The body never used it and said the thing plainly:
+*not every preserved Assertion*. Removed the next day.
+
+It survives in `seed_runtime` as ordinary English for the bounded set of
+occurrences one act walked — 47 uses across the measurement modules. That is
+implementation vocabulary and carries no standing.
+
+It does not gloss to `support basis`. An earlier version of this entry said it
+did, which restates the definition `#2514` withdrew: what an act consumed is
+broader than the support its result stands on.
+
+It does not gloss to `bounded candidate set` either. That belongs to Selection
+— *"a selection act consumes a bounded candidate set plus a selection basis"* —
+and a measurement walking occurrences does not establish that they were
+candidates in a Selection. Resolving it there would give support-basis
+formation a Selection topology by borrowing the nearest established set-word,
+which is the move the word itself kept making.
+
+In a measurement it is ordinary English for the occurrences walked, which
+`01.External:28` already reaches through *the bounded scope within which
+occurrences were counted*. Where an actual Selection is separately warranted,
+`bounded candidate set` may apply to that Selection — not to this.
+
+The word returned three times, twice inside the changes removing it, because a
+compact representation of support must distinguish some material from other
+material in the same boundary, and that sentence needs a referent. **That the
+sentence needs one does not mean a noun must be minted for it**: the clause now
+says what the representation must distinguish, without naming the set.
+
+Recorded because the miss is instructive: the same session excised
+`assimilation` for being a noun in a title while the body said the thing
+plainly, named that pattern out loud, and then shipped an instance of it. Four
+readings walked past it, three of them hunting contamination. The word sounded
+native because it *was* native — this session put it there.
+
+## digest · commitment
+
+```text
+status          mechanical
+closest grammar none established for this mechanical role
+```
+
+Neither appears in active law. `digest` is used 71 times in `seed_runtime` and
+`commitment` 73.
+
+**What they name.** A *digest* is a short value computed from a longer one, so
+that the same input always gives the same value and different inputs almost
+never do. A *commitment* is a digest kept so someone later can check whether
+they have the same thing, without holding the original to compare against.
+
+**Mechanical.** Their mechanical role warrants no constitutional clause. That
+is a statement about what they are doing here, not a prediction that no clause
+will ever concern them. An earlier version of this entry said the
+mechanism was "chosen, not recovered", which implied it was awaiting a clause,
+and then explained `commitment` using `digest` as though that word were
+settled. It is not; both are equally absent from active law. Both exist because
+comparing large ordered things on a real machine, without holding both,
+requires computing something smaller first. Preserving a support basis is
+constitutional; the arithmetic that makes a preserved one checkable is not.
+
+The distinction earns its place because the vocabulary hunt fails in two
+directions. A word can be contamination wearing a technical coat — `state`,
+`aggregation` and `candidate convergence` all were. A word can also be plumbing
+audited as though it were making a claim. Recording that *this mechanical role
+establishes no constitutional distinction* closes this audit question, which is
+a statement about what was examined and not a forecast.
+
+## occurrences examined
+
+```text
+status          never adopted
+closest grammar bounded scope (01.External:28)
+```
+
+`examined` is absent from active law; `occurrences_examined` is the runtime's
+name for the size of the scope a measurement counted within. `01.External:28`
+requires a recurrence assertion to disclose *the bounded scope within which
+occurrences were counted*; this field is that disclosure's measured size.
+
+Ordinary English for an established requirement, not a second coordinate.
