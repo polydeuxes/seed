@@ -864,7 +864,7 @@ def test_material_declaring_text_it_does_not_carry_is_refused(recurrence_occurre
 
 
 def test_one_occurrence_twice_in_a_population_is_refused(recurrence_occurrences):
-    """`01.External:28`: the disclosed scope is the scope counted within."""
+    """`01.External.E.1`: each counted occurrence is distinguished by identity."""
 
     _, occurrences = recurrence_occurrences
     doubled = list(occurrences) + [occurrences[0]]

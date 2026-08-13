@@ -142,6 +142,16 @@ Recorded so a repair does not read them as settled:
   `01.Standing.D.2` deliberately does not settle it. An improvement loop that
   carries Standing into a Compare would establish it silently.
 
+## 8. `06.Standing.A` was a junk drawer, and is two nouns lighter
+
+`candidate convergence` (`#2502`) and `context views` (`#2503`) are gone. Both
+were undefined, unowned, and named things that no longer existed —
+`context_views.py` was deleted by `#1880`, which touched no Book file.
+
+Recorded here because the mechanism is general: **code was withdrawn and the
+Book was not checked.** That is not a subtle failure and it will recur
+mechanically. Every entry in section 1 is the same mechanism.
+
 ## 9. `premise_chain` describes itself as a support basis, and no longer is
 
 `preserved_material_measurement.premise_chain` says:
@@ -160,11 +170,12 @@ something else by that name.
 
 Recorded here because each is a Book question, not only a code one.
 
-- **No clause establishes that a measured occurrence population is
-  identity-distinct.** `01.External:28` requires the bounded scope to be
-  disclosed and says nothing about identity. The runtime refuses a repeated
-  occurrence on the strength of what `occurrences_examined` asserts; the
-  constitutional rule is unrecovered.
+- **At the surveyed commit, no clause established that occurrence counts are
+  distinguished by occurrence identity.** `01.External:28` requires the bounded
+  scope to be disclosed and says nothing about identity, so the runtime refused
+  a repeated occurrence on the strength of what `occurrences_examined` asserts.
+  `01.External.E.1`, added in the same change as this observation, establishes
+  it; the entry is kept because the gap is what produced the clause.
 - **`counting_scope` is a required disclosure bound to nothing.** It is a
   non-empty string, and `#2508` proved only that declarations in one batch
   *agree* on it. Agreement among declarations is not fidelity to the population
@@ -175,6 +186,14 @@ Recorded here because each is a Book question, not only a code one.
   `06.Standing.B` holds that same workspace is not same locality. A population
   spanning two localities cannot be described by one basis without either
   misstating the scope or silently narrowing the population.
+
+## 11. `available` carries two meanings
+
+`text_representation.available` records a *historical* outcome: at ingress, a
+decoder formed a text representation. `#2496` governs a different thing —
+present-tense material availability, asked of the holder and never read from the
+ledger. One word carries both, which is enough to make a reader take the first
+for a violation of the second. Recorded because the confusion cost real time.
 
 ## 12. Two words in `01.External` with no body behind them
 
@@ -204,24 +223,6 @@ not accused*; this is the evidence, and it is now closer to accused.
 
 Neither is repaired here. Both are single-word excisions of the kind `#2502` and
 `#2503` performed, and both want their own scoped change.
-
-## 11. `available` carries two meanings
-
-`text_representation.available` records a *historical* outcome: at ingress, a
-decoder formed a text representation. `#2496` governs a different thing —
-present-tense material availability, asked of the holder and never read from the
-ledger. One word carries both, which is enough to make a reader take the first
-for a violation of the second. Recorded because the confusion cost real time.
-
-## 8. `06.Standing.A` was a junk drawer, and is two nouns lighter
-
-`candidate convergence` (`#2502`) and `context views` (`#2503`) are gone. Both
-were undefined, unowned, and named things that no longer existed —
-`context_views.py` was deleted by `#1880`, which touched no Book file.
-
-Recorded here because the mechanism is general: **code was withdrawn and the
-Book was not checked.** That is not a subtle failure and it will recur
-mechanically. Every entry in section 1 is the same mechanism.
 
 ---
 

@@ -304,9 +304,10 @@ def _distinct_population(occurrences: Iterable[Event]) -> list[Event]:
     caller meant one, and refusing rather than pretending is the same choice
     this module makes about material it cannot measure.
 
-    No clause currently establishes that a measured occurrence population is
-    identity-distinct. This act refuses on the strength of what its own
-    disclosure claims, and the constitutional question is open.
+    `01.External.E.1` establishes the rule: each counted occurrence is
+    distinguished by exact occurrence identity, and repeated reference to one
+    preserved occurrence does not establish another. That clause was added
+    because this refusal had nothing behind it.
     """
 
     population = list(occurrences)
