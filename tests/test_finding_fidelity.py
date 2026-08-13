@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from copy import deepcopy
+
 import pytest
 
 from seed_runtime.event import Event
@@ -118,13 +120,23 @@ def test_a_produced_fidelity_finding_is_occurrence_bound_and_recoverable(recorde
     ledger, event = recorded
     result = compare_recorded_finding(ledger, event.id)
     recovered = get_recorded_fidelity_finding(ledger, result.id)
-    assert recovered.producing_event_id == result.id
+    assert recovered.recorded_occurrence_id == result.id
     assert recovered.production_evidence_id == result.payload[
         "production_evidence_id"
     ]
     assert recovered.source_finding_event_id == event.id
     assert recovered.standing == FAITHFUL_WITHIN_SCOPE
-    assert recovered.reference == {"producing_event_id": result.id}
+    assert recovered.reference == {"recorded_occurrence_id": result.id}
+
+
+def test_recovered_payload_cannot_mutate_the_in_memory_ledger(recorded):
+    ledger, event = recorded
+    result = compare_recorded_finding(ledger, event.id)
+    before = deepcopy(ledger.get(result.id).payload)
+    recovered = get_recorded_fidelity_finding(ledger, result.id)
+    recovered.payload["unknowns"].append("invented after recovery")
+    recovered.payload["dimensions"]["standing"] = "invented"
+    assert ledger.get(result.id).payload == before
 
 
 def test_a_fidelity_shaped_event_without_production_evidence_is_not_recovered(
@@ -158,7 +170,7 @@ def test_fidelity_recovery_survives_durable_reopen(tmp_path):
 
     reopened = SQLiteEventLedger(path)
     recovered = get_recorded_fidelity_finding(reopened, result_id)
-    assert recovered.producing_event_id == result_id
+    assert recovered.recorded_occurrence_id == result_id
     assert recovered.standing == FAITHFUL_WITHIN_SCOPE
     reopened.close()
 

@@ -35,6 +35,7 @@ recorded and a later responsible act may follow them; this act does not.
 
 from __future__ import annotations
 
+from copy import deepcopy
 from dataclasses import dataclass
 
 from seed_runtime.event import Event
@@ -95,9 +96,14 @@ class FindingFidelityError(ValueError):
 
 @dataclass(frozen=True)
 class RecordedFidelityFinding:
-    """One exact produced Fidelity finding recovered from its occurrence."""
+    """One exact Fidelity result recovered from its recording occurrence.
 
-    producing_event_id: str
+    Constructing this representation does not establish that recovery occurred.
+    A later consumer must resolve its recorded-occurrence reference through the
+    ledger rather than trust the dataclass by shape.
+    """
+
+    recorded_occurrence_id: str
     production_evidence_id: str
     source_finding_event_id: str
     standing: str
@@ -105,7 +111,13 @@ class RecordedFidelityFinding:
 
     @property
     def reference(self) -> dict[str, str]:
-        return {"producing_event_id": self.producing_event_id}
+        """Address this durable recording occurrence for later re-recovery.
+
+        This is not a reference to the producing Act occurrence or to the
+        production-Evidence occurrence. Those identities remain distinct.
+        """
+
+        return {"recorded_occurrence_id": self.recorded_occurrence_id}
 
 
 def get_recorded_fidelity_finding(
@@ -207,11 +219,14 @@ def get_recorded_fidelity_finding(
             f"{event_id} does not address the recurrence finding it examined"
         )
     return RecordedFidelityFinding(
-        producing_event_id=event.id,
+        recorded_occurrence_id=event.id,
         production_evidence_id=evidence.id,
         source_finding_event_id=source_id,
         standing=standing,
-        payload=payload,
+        # EventLedger.get() returns its stored Event object. Recovery must not
+        # expose a mutable alias through which a caller can silently rewrite
+        # the in-memory ledger without another occurrence or integrity signal.
+        payload=deepcopy(payload),
     )
 
 
