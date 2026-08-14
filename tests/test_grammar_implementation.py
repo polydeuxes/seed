@@ -840,6 +840,7 @@ def test_participation_requires_exact_subject_role_and_act_occurrence():
     bundle = _recorded_applicability()
 
     assert grammar["structural_edges"]["participation"] == {
+        "book_clause": "01.Standing.E.1",
         "from": "subject",
         "to": "Act_occurrence",
         "coordinate": "role",

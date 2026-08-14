@@ -3,17 +3,20 @@
   "spine": "Responsibility",
   "structural_edges": {
     "carriage": {
+      "book_clause": "01.Carriage.A",
       "from": "content",
       "to": "carriage_occurrence",
       "requires": ["exact_relation", "occurrence_witness"]
     },
     "participation": {
+      "book_clause": "01.Standing.E.1",
       "from": "subject",
       "to": "Act_occurrence",
       "coordinate": "role",
       "requires": ["exact_relation", "occurrence_witness"]
     },
     "yield": {
+      "book_clause": "02.Acts.A",
       "from": "Act_occurrence",
       "to": "result",
       "requires": ["exact_relation", "occurrence_witness"]

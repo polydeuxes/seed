@@ -4,7 +4,7 @@ Navigation only. Entries do not grant constitutional identity or Standing.
 
 | Coordinate | Chapter |
 |---|---|
-| supplied source coordinates | [Source coordinates and grammar](chapters/01-source-coordinates-and-grammar.md) |
+| Carriage and supplied source coordinates | [Carriage and source coordinates](chapters/01-source-coordinates-and-grammar.md) |
 | Assertion Standing | [Constitutional Standing](chapters/02-constitutional-standing.md) |
 | Act and occurrence | [Acts and occurrences](chapters/03-acts-and-occurrences.md) |
 | Constraint | [Constraints and preconditions](chapters/04-constraints-and-preconditions.md) |

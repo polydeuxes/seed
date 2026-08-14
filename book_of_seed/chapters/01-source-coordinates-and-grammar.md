@@ -1,18 +1,22 @@
-# Source Coordinates and Grammar
+# Carriage and Source Coordinates
 
 ## Constitutional subject
 
-The boundary between supplied material and Seed Standing.
+The carriage of exact content and the boundary between supplied material and Seed Standing.
 
 ## Bounded resolution
 
 Provider vocabulary, representations, confidence labels, and connective text enter as material carrying source coordinates. Seed preserves their source, supplied context, Scope, uncertainty, Authority limits, provenance or provenance Unknown, known loss, conflicts, and surviving limits.
 
-An supplied representation may become Seed-addressable without becoming Evidence, applicable input, adopted law, truth, or native grammar. Equal content under another source or occurrence does not establish equal identity or Standing.
+A supplied representation may become Seed-addressable without becoming Evidence, applicable input, adopted law, truth, or native grammar. Equal content under another source or occurrence does not establish equal identity or Standing.
 
 An exact Responsibility may use supplied material only through its own Applicability and other required boundaries. Every applicable source coordinate and limit travels with the material. Dropping a limit is erasure; supplying an unsupported coordinate is invention; treating supplied material as repository truth is mutation; assigning Authority from source identity is relocation.
 
 Developer-supplied connective text is material carrying source coordinates. It may assert a narrow relation within an exact representation, but equivalent text under another subject, source, Scope, occurrence, or support-relation Standing does not identify the same relation. Unsupported coordinates remain Unknown or uninstantiated.
+
+### 01.Carriage.A — Exact content is carried by an exact occurrence
+
+**Carriage** is the exact evidenced relation from content to the occurrence that carries it. Carriage != content, occurrence, representation, digest, provenance, Evidence, or Standing. Content and occurrence co-presence does not supply Carriage. The same content may be carried by distinct occurrences; each Carriage remains bound to its exact occurrence. Equivalent representation or matching digest does not supply Carriage.
 
 ### 01.Source.A — Addressability preserves source coordinates
 
