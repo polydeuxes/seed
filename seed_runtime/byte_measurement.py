@@ -119,16 +119,16 @@ BYTE_PAIR_MEASUREMENT_RULE = (
     "each ordered pair of consecutive bytes within one exact captured ingress "
     "material occurrence; equal only when both byte values are identical in order"
 )
-MEASUREMENT_AUTHORITY = (
+MEASUREMENT_EVIDENCE_SCOPE = (
     "literal byte-count Measurement Evidence only; establishes no character, "
     "word, language, position, adjacency, grammar, represented relation, or relation; it "
     "establishes new bounded byte Standing and does not revise source Standing"
 )
-SOURCE_SET_AUTHORITY = (
+SOURCE_SET_EVIDENCE_SCOPE = (
     "exact bounded source-material Measurement Evidence only; establishes no "
     "character, word, language, position, adjacency, grammar, represented relation, or relation"
 )
-PAIR_MEASUREMENT_AUTHORITY = (
+PAIR_MEASUREMENT_EVIDENCE_SCOPE = (
     "declared exact-source and literal ordered adjacent-byte-pair Measurement "
     "Evidence only; establishes no character, word, language, grammar, represented relation, "
     "relation beyond the exact measured adjacency and order or significance; "
@@ -369,9 +369,13 @@ def _pair_input_applicability(
             "value": input_limits,
             "treatment": "preserved as limits on this exact use",
         }
-    elif payload["dimensions"]["authority"] != SOURCE_SET_AUTHORITY:
+    elif (
+        payload["dimensions"].get("authority") != "unestablished"
+        or payload["dimensions"].get("evidence_scope")
+        != SOURCE_SET_EVIDENCE_SCOPE
+    ):
         standing = "Unknown"
-        basis = "the input carries no recognized Authority for this exact source-material use"
+        basis = "the input carries no recognized Evidence scope for this exact source-material use"
         applicability_scope = scope
         source_provenance = payload["dimensions"]["source_provenance"]
         input_standing = payload["dimensions"]["standing"]
@@ -693,7 +697,8 @@ def _move_byte_assertion_to_locality(
             "source_assertion_ref": source.reference,
             "source_locality": source_locality,
             "destination_locality": destination_locality,
-            "authority": (
+            "authority": "unestablished",
+            "evidence_scope": (
                 "evidences this exact same-workspace Assertion locality movement"
             ),
         },
@@ -722,7 +727,8 @@ def _move_byte_assertion_to_locality(
                 "limits",
                 "Standing",
             ],
-            "authority": (
+            "authority": "unestablished",
+            "movement_scope": (
                 "same-workspace locality movement of this exact Assertion only; "
                 "establishes no changed identity, Standing, or cross-workspace use"
             ),
@@ -789,7 +795,8 @@ def _validate_moved_byte_assertion(
         "source_assertion_ref": source.reference,
         "source_locality": source_event.locality_id,
         "destination_locality": movement.locality_id,
-        "authority": (
+        "authority": "unestablished",
+        "evidence_scope": (
             "evidences this exact same-workspace Assertion locality movement"
         ),
     }
@@ -824,7 +831,8 @@ def _validate_moved_byte_assertion(
             "limits",
             "Standing",
         ],
-        "authority": (
+        "authority": "unestablished",
+        "movement_scope": (
             "same-workspace locality movement of this exact Assertion only; "
             "establishes no changed identity, Standing, or cross-workspace use"
         ),
@@ -964,7 +972,8 @@ def _assertions(measured: MeasuredByteInputs) -> list[dict[str, Any]]:
                     "complete declared ingress read through one boundary"
                 ),
                 "responsibility": MEASURED_ASSERTION_RESPONSIBILITY,
-                "authority": SOURCE_SET_AUTHORITY,
+                "authority": "unestablished",
+                "evidence_scope": SOURCE_SET_EVIDENCE_SCOPE,
             },
             "subject_kind": "assertion",
             "responsible_boundary": "this recorded assertion",
@@ -1008,7 +1017,8 @@ def _assertions(measured: MeasuredByteInputs) -> list[dict[str, Any]]:
                 "standing": "measured",
                 "source_provenance": provenance,
                 "responsibility": MEASURED_ASSERTION_RESPONSIBILITY,
-                "authority": MEASUREMENT_AUTHORITY,
+                "authority": "unestablished",
+                "evidence_scope": MEASUREMENT_EVIDENCE_SCOPE,
             },
             "subject_kind": "assertion",
             "responsible_boundary": "this recorded assertion",
@@ -1081,7 +1091,8 @@ def record_byte_count_layer(
                 ),
                 "standing": "measured",
                 "source_provenance": "complete declared ingress read through one boundary",
-                "authority": MEASUREMENT_AUTHORITY,
+                "authority": "unestablished",
+                "evidence_scope": MEASUREMENT_EVIDENCE_SCOPE,
         },
         "yielding_act": "declared Measurement",
         "downstream_act_id": downstream_act_id,
@@ -1114,7 +1125,8 @@ def record_byte_count_layer(
                 BYTE_MEASUREMENT_CONVENTION, result_payload
             ),
             "standing": "occurred",
-            "authority": (
+            "authority": "unestablished",
+            "evidence_scope": (
                 "Evidence concerning this exact bounded responsible Measurement "
                 "occurrence only; establishes no responsibility"
             ),
@@ -1191,7 +1203,8 @@ def assertions_of_recorded_byte_measurement(
             "source_provenance": (
                 "complete declared ingress read through one boundary"
             ),
-            "authority": MEASUREMENT_AUTHORITY,
+            "authority": "unestablished",
+            "evidence_scope": MEASUREMENT_EVIDENCE_SCOPE,
         }
     ):
         raise ByteMeasurementError(
@@ -1243,7 +1256,8 @@ def assertions_of_recorded_byte_measurement(
             BYTE_MEASUREMENT_CONVENTION, yielded
         ),
         "standing": "occurred",
-        "authority": (
+        "authority": "unestablished",
+        "evidence_scope": (
             "Evidence concerning this exact bounded responsible Measurement "
             "occurrence only; establishes no responsibility"
         ),
@@ -1344,7 +1358,8 @@ def _pair_assertions(measured: MeasuredBytePairInputs) -> list[dict[str, Any]]:
                 "standing": "measured",
                 "source_provenance": provenance,
                 "responsibility": MEASURED_ASSERTION_RESPONSIBILITY,
-                "authority": PAIR_MEASUREMENT_AUTHORITY,
+                "authority": "unestablished",
+                "evidence_scope": PAIR_MEASUREMENT_EVIDENCE_SCOPE,
             },
             "subject_kind": "assertion",
             "responsible_boundary": "this recorded assertion",
@@ -1419,7 +1434,8 @@ def _record_pair_responsible_act_evidence(
                 BYTE_PAIR_MEASUREMENT_CONVENTION, yielded_content
             ),
             "standing": "occurred",
-            "authority": (
+            "authority": "unestablished",
+            "evidence_scope": (
                 "Evidence concerning this exact bounded responsible Measurement "
                 "occurrence only; establishes no responsibility or authority "
                 "for another Act"
@@ -1713,7 +1729,8 @@ def record_adjacent_byte_pair_count_layer(
             ),
             "standing": "measured",
             "source_provenance": "the exact reconstructed source-material-set Assertion",
-            "authority": PAIR_MEASUREMENT_AUTHORITY,
+            "authority": "unestablished",
+            "evidence_scope": PAIR_MEASUREMENT_EVIDENCE_SCOPE,
         },
         "yielding_act": "declared Measurement",
         "downstream_act_id": measured.downstream_act_id,
@@ -1903,7 +1920,8 @@ def assertions_of_recorded_adjacent_byte_pair_measurement(
         ),
         "standing": "measured",
         "source_provenance": "the exact reconstructed source-material-set Assertion",
-        "authority": PAIR_MEASUREMENT_AUTHORITY,
+        "authority": "unestablished",
+        "evidence_scope": PAIR_MEASUREMENT_EVIDENCE_SCOPE,
     }
     if (
         payload.get("occurrence_preservation") != BYTE_PAIR_OCCURRENCE_PRESERVATION
@@ -1982,7 +2000,8 @@ def assertions_of_recorded_adjacent_byte_pair_measurement(
             BYTE_PAIR_MEASUREMENT_CONVENTION, yielded
         ),
         "standing": "occurred",
-        "authority": (
+        "authority": "unestablished",
+        "evidence_scope": (
             "Evidence concerning this exact bounded responsible Measurement "
             "occurrence only; establishes no responsibility or authority "
             "for another Act"
@@ -2126,17 +2145,19 @@ def assertions_of_recorded_adjacent_byte_pair_measurement(
             or assertion.get("conflicts") != "Unknown"
             or not isinstance(dimensions, dict)
             or set(dimensions)
-            != {
-                "identity",
-                "content",
-                "standing",
-                "source_provenance",
-                "responsibility",
-                "authority",
-            }
+                != {
+                    "identity",
+                    "content",
+                    "standing",
+                    "source_provenance",
+                    "responsibility",
+                    "authority",
+                    "evidence_scope",
+                }
             or dimensions.get("standing") != "measured"
             or dimensions.get("responsibility") != MEASURED_ASSERTION_RESPONSIBILITY
-            or dimensions.get("authority") != PAIR_MEASUREMENT_AUTHORITY
+            or dimensions.get("authority") != "unestablished"
+            or dimensions.get("evidence_scope") != PAIR_MEASUREMENT_EVIDENCE_SCOPE
             or assertion.get("unknowns") != list(BYTE_PAIR_UNKNOWNS)
             or assertion.get("forbidden_inferences")
             != list(BYTE_PAIR_FORBIDDEN_INFERENCES)

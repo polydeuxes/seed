@@ -173,7 +173,8 @@ def record_operator_representation(
                 REPRESENTATION_CONVENTION, result_payload
             ),
             "standing": "occurred",
-            "authority": (
+            "authority": "unestablished",
+            "evidence_scope": (
                 "Evidence concerning this exact Representation Act occurrence only"
             ),
         },
@@ -201,7 +202,8 @@ def record_operator_representation(
             "content_kind": "bounded Representation",
             "carried_content": result_payload,
             "standing": "carried",
-            "authority": (
+            "authority": "unestablished",
+            "evidence_scope": (
                 "Evidence only for this exact Representation-to-occurrence Carriage"
             ),
         },
@@ -378,7 +380,8 @@ def emit_operator_representation(
             "content_kind": "text",
             "carried_content": emitted_representation,
             "standing": "carried",
-            "authority": (
+            "authority": "unestablished",
+            "evidence_scope": (
                 "Evidence only for the exact text-to-emission-attempt Carriage"
             ),
         },
@@ -457,7 +460,8 @@ def emit_operator_representation(
                 REPRESENTATION_EMISSION_CONVENTION, yielded_content
             ),
             "standing": "occurred",
-            "authority": (
+            "authority": "unestablished",
+            "evidence_scope": (
                 "Evidence concerning this exact emission Act occurrence and "
                 "the Representation participating in its exact input role only"
             ),
@@ -472,7 +476,8 @@ def emit_operator_representation(
             "content_kind": "text",
             "carried_content": emitted_representation,
             "standing": "carried",
-            "authority": (
+            "authority": "unestablished",
+            "evidence_scope": (
                 "Evidence only for the exact text-to-emission-occurrence Carriage"
             ),
         },

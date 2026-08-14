@@ -267,7 +267,8 @@ def record_assertion_yield_comparison(
                         "support_basis"
                     ),
                     "responsibility": COMPARISON_ASSERTION_STANDING_COORDINATE_RESPONSIBILITY,
-                    "authority": (
+                    "authority": "unestablished",
+                    "evidence_scope": (
                         "literal comparison evidence only; establishes no conflict, "
                         "represented relation, preference, revision, or strengthening"
                     ),
@@ -312,7 +313,8 @@ def record_assertion_yield_comparison(
                 "content": f"{len(assertions)} distinct comparison Assertions recorded",
                 "standing": "recorded",
                 "source_provenance": "two occurrence-bound Assertion yields",
-                "authority": "literal Compare results only",
+                "authority": "unestablished",
+                "evidence_scope": "literal Compare results only",
                 "scope_locality": f"workspace:{workspace_id};locality:{locality_id}",
                 "occurrence_preservation": "comparison occurrence durably recorded",
             },

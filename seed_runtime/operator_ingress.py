@@ -23,9 +23,18 @@ SEED_ORIGIN = "this Seed"
 
 
 def _dimensions(
-    *, identity, content, standing, source, responsibility, authority, scope, occurrence
+    *,
+    identity,
+    content,
+    standing,
+    source,
+    responsibility,
+    authority,
+    scope,
+    occurrence,
+    evidence_scope=None,
 ):
-    return {
+    dimensions = {
         "identity": identity,
         "content": content,
         "standing": standing,
@@ -35,6 +44,9 @@ def _dimensions(
         "scope_locality": scope,
         "occurrence_preservation": occurrence,
     }
+    if evidence_scope is not None:
+        dimensions["evidence_scope"] = evidence_scope
+    return dimensions
 
 
 def _record(ledger, kind, workspace, session, attempt, dimensions, **extra):
@@ -310,7 +322,8 @@ def run_operator_ingress_attempt(
                 standing="occurred",
                 source=ingress_decoder_outcome_event.id,
                 responsibility="operator-ingress",
-                authority="occurrence-only; represented relation Unknown",
+                authority="unestablished",
+                evidence_scope="occurrence only; represented relation Unknown",
                 scope=f"workspace:{workspace_id};locality:{locality_id}",
                 occurrence="exact material preserved; no text representation available",
             ),
@@ -387,7 +400,8 @@ def run_operator_ingress_attempt(
             standing="occurred",
             source=ingress_decoder_outcome_event.id,
             responsibility="operator-ingress",
-            authority="occurrence-only; represented relation Unknown",
+            authority="unestablished",
+            evidence_scope="occurrence only; represented relation Unknown",
             scope=f"workspace:{workspace_id};locality:{locality_id}",
             occurrence=(
                 "strictly decoded text preserves capture and decoder-outcome provenance"

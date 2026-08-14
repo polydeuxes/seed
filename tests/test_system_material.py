@@ -63,7 +63,8 @@ def test_a_declaration_records_a_declaration_not_an_act():
         "declared_performer": "operator system-material harness",
         "on_behalf_of": "this Seed",
     }
-    support = declaration.payload["dimensions"]["authority"]
+    assert declaration.payload["dimensions"]["authority"] == "unestablished"
+    support = declaration.payload["dimensions"]["evidence_scope"]
     assert "establishes no act of it" in support
     assert "no Evidence or Authority for this Seed to invoke" in support
     # No coordinate asserts that Seed did not invoke. Not established that it

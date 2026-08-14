@@ -165,7 +165,8 @@ def test_recorded_results_replay_the_complete_bounded_source_read():
         "source_locality_ids": ["source"],
     }
     assert count.payload["dimensions"]["source_provenance"]
-    assert count.payload["dimensions"]["authority"]
+    assert count.payload["dimensions"]["authority"] == "unestablished"
+    assert count.payload["dimensions"]["evidence_scope"]
     assert count.payload["unknowns"]
     assert count.payload["conflicts"] == "Unknown"
     assert count.payload["forbidden_inferences"]

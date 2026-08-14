@@ -114,9 +114,10 @@ def occurrences(session):
 
 def test_the_material_measured_is_the_session_s_own_occurrences(occurrences):
     assert len(occurrences) == 5
+    assert all(event.payload["dimensions"]["authority"] == "unestablished" for event in occurrences)
     assert all(
-        event.payload["dimensions"]["authority"]
-        == "occurrence-only; represented relation Unknown"
+        event.payload["dimensions"]["evidence_scope"]
+        == "occurrence only; represented relation Unknown"
         for event in occurrences
     )
 
@@ -265,9 +266,10 @@ def test_the_recorded_authority_states_the_clause_s_own_limit(session, occurrenc
             occurrences, declared=_declared(), occupant_of=_after_delimiter
         ),
     )
-    authority = event.payload["dimensions"]["authority"]
-    assert "measurement evidence only" in authority
-    assert "no represented relation, relation" in authority
+    assert event.payload["dimensions"]["authority"] == "unestablished"
+    evidence_scope = event.payload["dimensions"]["evidence_scope"]
+    assert "measurement evidence only" in evidence_scope
+    assert "no represented relation, relation" in evidence_scope
     assert event.payload["unknowns"] == [
         "what any measured representation means remains Unknown"
     ]

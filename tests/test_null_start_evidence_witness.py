@@ -5,7 +5,7 @@ from an empty ledger over fixed operator material and reports exactly what Seed
 preserved.  Its assertions are deliberately confined to *what is present in the
 record*.  Nothing here asserts represented relation, relation, structure, or intent, because
 none of that is established by ingress -- ``operator.material.occurred``
-records ``authority="occurrence-only; represented relation Unknown"``.
+records occurrence-only Evidence while the represented relation remains ``Unknown``.
 
 `render_null_start_evidence` yields the human-readable dump for inspection.
 Run it directly to look through the microscope:
@@ -101,8 +101,9 @@ def test_decoded_representation_is_preserved_for_every_ingress(events):
 def test_ingress_asserts_only_occurrence_and_records_represented_relation_unknown(events):
     """Ingress states its own limit in its own record."""
     for event in (e for e in events if e.kind == OCCURRED):
-        authority = event.payload["dimensions"]["authority"]
-        assert authority == "occurrence-only; represented relation Unknown"
+        dimensions = event.payload["dimensions"]
+        assert dimensions["authority"] == "unestablished"
+        assert dimensions["evidence_scope"] == "occurrence only; represented relation Unknown"
 
 
 def test_capture_asserts_only_occurrence_evidence(events):

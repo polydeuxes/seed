@@ -177,7 +177,8 @@ class MeasuredAssertion:
                     "occurrences"
                 ),
                 "responsibility": MEASURED_ASSERTION_STANDING_COORDINATE_RESPONSIBILITY,
-                "authority": (
+                "authority": "unestablished",
+                "evidence_scope": (
                     "measurement evidence only; establishes no relation between "
                     "the exchanges, no source independence, and no corroboration"
                 ),
@@ -773,7 +774,8 @@ def record_measured_count(
                 "recorded comparison occurrences and recorded measurement "
                 "occurrences"
             ),
-            "authority": (
+            "authority": "unestablished",
+            "evidence_scope": (
                 "measurement evidence only; establishes no relation between the "
                 "exchanges, no source independence, and no corroboration"
             ),

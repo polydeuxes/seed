@@ -2647,6 +2647,21 @@ def test_runtime_has_no_inventory_abstraction():
     assert {path: hits for path, hits in contaminated.items() if hits} == {}
 
 
+def test_runtime_authority_does_not_carry_evidence_scope_prose():
+    contaminated = {}
+    pattern = re.compile(
+        r'"authority"\s*:\s*(?:"[^"\n]*(?:Evidence|evidence|evidences)|'
+        r'\([^)]{0,400}(?:Evidence|evidence|evidences))',
+        re.MULTILINE,
+    )
+    for path in sorted(RUNTIME.glob("*.py")):
+        matches = [match.group(0) for match in pattern.finditer(path.read_text())]
+        if matches:
+            contaminated[path.name] = matches
+
+    assert contaminated == {}
+
+
 def test_runtime_does_not_reuse_fidelity_as_a_result_kind():
     retired = re.compile(r"\bfidelity\w*\b|fidelity[-_]", re.IGNORECASE)
     runtime_root = GRAMMAR.parents[1] / "seed_runtime"

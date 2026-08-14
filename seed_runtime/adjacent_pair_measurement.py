@@ -785,7 +785,8 @@ def _record_adjacent_pair_observation_result(
                 ADJACENT_PAIR_OBSERVATION_CONVENTION, result_payload
             ),
             "standing": "occurred",
-            "authority": "Evidence concerning this exact bounded Measurement occurrence only",
+            "authority": "unestablished",
+            "evidence_scope": "this exact bounded Measurement occurrence only",
         },
         locality_id=locality_id,
     )
@@ -811,7 +812,8 @@ def _record_adjacent_pair_observation_result(
             "content_kind": "exact adjacent-pair observations",
             "carried_content": result_payload,
             "standing": "carried",
-            "authority": "Evidence only for this exact result-to-occurrence Carriage",
+            "authority": "unestablished",
+            "evidence_scope": "this exact result-to-occurrence Carriage only",
         },
         locality_id=locality_id,
     )
@@ -827,7 +829,8 @@ def _record_adjacent_pair_observation_result(
                 "source_provenance": [adjacency_evidence_event_id, *source_ids],
                 "responsibility": ADJACENT_PAIR_OBSERVATION_RESPONSIBILITY,
                 "responsible_boundary": "this Seed",
-                "authority": (
+                "authority": "unestablished",
+                "evidence_scope": (
                     "measurement Evidence only; establishes no classification, "
                     "represented relation, or Standing beyond this result"
                 ),

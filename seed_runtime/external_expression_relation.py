@@ -262,7 +262,8 @@ def record_external_expression_relation(
             "responsible_act_evidence_id": act_evidence.id,
             "yield_evidence_id": yield_evidence.id,
             "carriage_evidence_id": carriage_evidence.id,
-            "authority": (
+            "authority": "unestablished",
+            "evidence_scope": (
                 "preserves this source-carried relation Assertion only; does not "
                 "make it grammar beyond this source or establish another source's use"
             ),

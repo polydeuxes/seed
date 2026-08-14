@@ -15,7 +15,8 @@ and `01.Source:28` grants the finding and states its conditions:
 Those three disclosures are required fields here, not commentary.
 
 **What this is for is Seed's own preserved material.** Occurrences recorded
-through operator ingress carry ``authority="occurrence-only; represented relation Unknown"``,
+through operator ingress carry occurrence-only Evidence while the represented relation
+remains ``Unknown``,
 and reading a file directly and measuring it yields a result that vanishes
 with the process and that no later act can have as input; `#2368` did that and it was
 withdrawn.
@@ -999,7 +1000,8 @@ def _measurement_finding_payload(
             # from and which responsible boundary bears the Measurement Responsibility are
             # different questions, and only the first has been validated.
             "responsibility": RESPONSIBILITY_UNESTABLISHED,
-            "authority": (
+            "authority": "unestablished",
+            "evidence_scope": (
                 "measurement evidence only; establishes no represented relation, relation, "
                 "or standing beyond the measurement assertion"
             ),

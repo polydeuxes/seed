@@ -326,10 +326,13 @@ def form_operator_ingress_addressable_material(
     if payload.get("provenance_occurrence_refs") != [raw_ref, decoder_outcome_ref]:
         _refuse("provenance occurrences must preserve capture followed by decoder outcome")
     dimensions = payload.get("dimensions")
-    if not isinstance(dimensions, dict) or dimensions.get("authority") != (
-        "occurrence-only; represented relation Unknown"
+    if (
+        not isinstance(dimensions, dict)
+        or dimensions.get("authority") != "unestablished"
+        or dimensions.get("evidence_scope")
+        != "occurrence only; represented relation Unknown"
     ):
-        _refuse("occurrence-only authority with represented relation Unknown is required")
+        _refuse("occurrence Evidence scope with represented relation Unknown is required")
     recorded = ledger.get(ingress_occurrence.id)
     if recorded is None or recorded != ingress_occurrence:
         _refuse("the supplied ingress occurrence is not the recorded occurrence")

@@ -474,7 +474,8 @@ def test_adjacent_pair_observation_measurement_records_exact_coordinates_and_rec
             for event in material
         ],
     ]
-    assert recorded.payload["dimensions"]["authority"].endswith(
+    assert recorded.payload["dimensions"]["authority"] == "unestablished"
+    assert recorded.payload["dimensions"]["evidence_scope"].endswith(
         "Standing beyond this result"
     )
 

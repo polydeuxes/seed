@@ -110,7 +110,8 @@ def _record_yield_evidence(
                 ),
                 "responsibility": responsibility,
                 "responsible_boundary": responsible_boundary,
-                "authority": (
+                "authority": "unestablished",
+                "evidence_scope": (
                     "establishes the exact occurrence-to-result edge at this "
                     "Act boundary; establishes no responsibility, "
                     "authorization, or successful return from "
