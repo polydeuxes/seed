@@ -220,6 +220,9 @@ def _recorded_applicability() -> dict:
         "pair_act_evidence": ledger.get(
             pair_measurement.payload["responsible_act_evidence_id"]
         ),
+        "pair_content_evidence": ledger.get(
+            pair_measurement.payload["yield_evidence_id"]
+        ),
     }
 
 
@@ -498,8 +501,14 @@ def _occurrence_result_requirements(bundle: dict) -> dict[str, bool]:
             "occurrence_witness": False,
             "intact_evidence": False,
         }
-    same_occurrence = carrier.payload.get("act_occurrence_id") == (
-        act_evidence.payload.get("act_occurrence_id")
+    carrier_occurrence_coordinate = bundle.get(
+        "carrier_occurrence_coordinate", "act_occurrence_id"
+    )
+    act_evidence_occurrence_coordinate = bundle.get(
+        "act_evidence_occurrence_coordinate", "act_occurrence_id"
+    )
+    same_occurrence = carrier.payload.get(carrier_occurrence_coordinate) == (
+        act_evidence.payload.get(act_evidence_occurrence_coordinate)
     ) == content_evidence.payload.get("dimensions", {}).get("act_occurrence_id")
     yield_coordinates = content_evidence.payload.get("yield_coordinates")
     if not isinstance(yield_coordinates, list) or not all(
@@ -905,6 +914,111 @@ def _emission_structural_edge_fidelity_cases() -> dict[str, dict[str, str]]:
     }
 
 
+def _yield_requirement_bundles(
+    exact: dict,
+    alternate: dict,
+    corrupted: dict,
+    *,
+    unrelated_value,
+) -> dict[str, dict]:
+    missing = dict(exact)
+    missing_carrier = exact["carrier"].model_copy(deep=True)
+    yielded_coordinates = exact["content_evidence"].payload["yield_coordinates"]
+    missing_coordinate = next(
+        coordinate
+        for coordinate in yielded_coordinates
+        if coordinate != "act_occurrence_id"
+    )
+    missing_carrier.payload.pop(missing_coordinate)
+    missing["carrier"] = missing_carrier
+
+    wrong_occurrence = dict(exact)
+    wrong_act_evidence = exact["act_evidence"].model_copy(deep=True)
+    wrong_content_evidence = exact["content_evidence"].model_copy(deep=True)
+    carrier_occurrence_coordinate = exact.get(
+        "carrier_occurrence_coordinate", "act_occurrence_id"
+    )
+    act_evidence_occurrence_coordinate = exact.get(
+        "act_evidence_occurrence_coordinate", "act_occurrence_id"
+    )
+    alternate_occurrence = alternate["carrier"].payload[
+        carrier_occurrence_coordinate
+    ]
+    wrong_act_evidence.payload[act_evidence_occurrence_coordinate] = (
+        alternate_occurrence
+    )
+    wrong_content_evidence.payload["dimensions"]["act_occurrence_id"] = (
+        alternate_occurrence
+    )
+    wrong_occurrence["act_evidence"] = wrong_act_evidence
+    wrong_occurrence["content_evidence"] = wrong_content_evidence
+
+    unrelated = dict(exact)
+    unrelated_carrier = exact["carrier"].model_copy(
+        deep=True, update={"id": unrelated_value}
+    )
+    unrelated["carrier"] = unrelated_carrier
+
+    corrupted["ledger"].mark_corrupted(corrupted["content_evidence"].id)
+    return {
+        "exact": exact,
+        "edge_missing": missing,
+        "wrong_occurrence": wrong_occurrence,
+        "corrupted_evidence": corrupted,
+        "unrelated_change": unrelated,
+    }
+
+
+def _byte_pair_yield_requirement_bundles() -> dict[str, dict[str, dict]]:
+    applicability = _recorded_applicability()
+    alternate_applicability = _recorded_applicability()
+    corrupted_applicability = _recorded_applicability()
+    for bundle in (
+        applicability,
+        alternate_applicability,
+        corrupted_applicability,
+    ):
+        bundle["carrier_occurrence_coordinate"] = (
+            "applicability_act_occurrence_id"
+        )
+        bundle["act_evidence_occurrence_coordinate"] = (
+            "applicability_act_occurrence_id"
+        )
+
+    pair = {
+        "ledger": applicability["ledger"],
+        "carrier": applicability["pair_carrier"],
+        "act_evidence": applicability["pair_act_evidence"],
+        "content_evidence": applicability["pair_content_evidence"],
+    }
+    alternate_pair = {
+        "ledger": alternate_applicability["ledger"],
+        "carrier": alternate_applicability["pair_carrier"],
+        "act_evidence": alternate_applicability["pair_act_evidence"],
+        "content_evidence": alternate_applicability["pair_content_evidence"],
+    }
+    corrupted_pair_source = _recorded_applicability()
+    corrupted_pair = {
+        "ledger": corrupted_pair_source["ledger"],
+        "carrier": corrupted_pair_source["pair_carrier"],
+        "act_evidence": corrupted_pair_source["pair_act_evidence"],
+        "content_evidence": corrupted_pair_source["pair_content_evidence"],
+    }
+
+    return {
+        "byte_pair_applicability": _yield_requirement_bundles(
+            applicability,
+            alternate_applicability,
+            corrupted_applicability,
+            unrelated_value=alternate_applicability["carrier"].id,
+        ),
+        "byte_pair_measurement": _yield_requirement_bundles(
+            pair,
+            alternate_pair,
+            corrupted_pair,
+            unrelated_value=alternate_pair["carrier"].id,
+        ),
+    }
 def _additional_live_structural_edge_fidelity_cases() -> dict[
     tuple[str, str], dict[str, str]
 ]:
@@ -1061,6 +1175,15 @@ def _live_structural_edge_fidelity_cases() -> dict[
         }
     )
     registered.update(_additional_live_structural_edge_fidelity_cases())
+    registered.update(
+        {
+            ("yield", boundary): {
+                case: _occurrence_result_witness(bundle)
+                for case, bundle in cases.items()
+            }
+            for boundary, cases in _byte_pair_yield_requirement_bundles().items()
+        }
+    )
     return registered
 
 
@@ -1379,6 +1502,25 @@ def test_every_yield_evidence_site_declares_its_live_boundary():
 
     assert len(declared) == len(set(declared))
     assert set(declared) == set(YIELD_LIVE_BOUNDARIES)
+
+
+def test_byte_pair_yield_adversaries_change_one_requirement_each():
+    expected = {
+        "exact": (True, True, True),
+        "edge_missing": (False, True, True),
+        "wrong_occurrence": (True, False, True),
+        "corrupted_evidence": (True, True, False),
+        "unrelated_change": (True, True, True),
+    }
+    boundaries = _byte_pair_yield_requirement_bundles()
+
+    assert {
+        boundary: {
+            case: tuple(_occurrence_result_requirements(bundle).values())
+            for case, bundle in cases.items()
+        }
+        for boundary, cases in boundaries.items()
+    } == {boundary: expected for boundary in boundaries}
 
 
 def test_emission_attempt_carriage_adversaries_change_one_requirement_each():
