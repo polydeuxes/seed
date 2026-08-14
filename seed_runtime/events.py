@@ -8,6 +8,7 @@ from dataclasses import dataclass
 from datetime import datetime
 import hashlib
 import json
+import re
 import sqlite3
 import zlib
 from typing import Any, Iterable, Iterator
@@ -73,6 +74,26 @@ _DIGESTED_FIELDS = (
 # 50 microseconds per payload — about one second across the 205,328 reads the
 # count layer performs.
 _PAYLOAD_COMPRESSION_LEVEL = 1
+
+
+_EVENT_ID = re.compile(r"^evt_\d+$")
+
+
+def _payload_references(
+    payload: Any, relation: str = "", ordinal: int = 0
+) -> list[tuple[str, str, int]]:
+    """Every occurrence id this payload holds, with the field that held it."""
+
+    found: list[tuple[str, str, int]] = []
+    if isinstance(payload, dict):
+        for key, nested in payload.items():
+            found.extend(_payload_references(nested, key, 0))
+    elif isinstance(payload, list):
+        for position, nested in enumerate(payload):
+            found.extend(_payload_references(nested, relation, position))
+    elif isinstance(payload, str) and _EVENT_ID.match(payload):
+        found.append((relation, payload, ordinal))
+    return found
 
 
 def _stored_payload(serialized: str) -> str | bytes:
@@ -470,6 +491,30 @@ class SQLiteEventLedger(EventLedger):
                 correlation_id TEXT,
                 content_hash TEXT NOT NULL
             )
+            """)
+        # The references occurrences already carry, lifted out of the payload
+        # so they can be read in both directions.
+        #
+        # This table is not an occurrence. It records no Assertion, establishes
+        # no Standing, and adds no relation: every row restates a reference the
+        # payload holds, and the payload stays the authority. Discarding it and
+        # rebuilding it from the payloads would give the same rows, which is
+        # what makes it mechanics rather than testimony.
+        self._connection.execute("""
+            CREATE TABLE IF NOT EXISTS event_references (
+                source_id TEXT NOT NULL,
+                relation TEXT NOT NULL,
+                destination_id TEXT NOT NULL,
+                ordinal INTEGER NOT NULL
+            )
+            """)
+        self._connection.execute("""
+            CREATE INDEX IF NOT EXISTS idx_event_references_destination
+            ON event_references (destination_id)
+            """)
+        self._connection.execute("""
+            CREATE INDEX IF NOT EXISTS idx_event_references_source
+            ON event_references (source_id)
             """)
         # Minted identifier counters, kept durably instead of reconstructed.
         #
@@ -902,7 +947,73 @@ class SQLiteEventLedger(EventLedger):
             """,
             self._row_values(event),
         )
+        self._insert_references_without_commit(event)
         return int(cursor.lastrowid)
+
+    def _insert_references_without_commit(self, event: Event) -> None:
+        """Index the occurrence references this payload already carries.
+
+        Nothing is inferred. An edge exists where the payload holds the exact
+        id of an occurrence already in this ledger, and the edge's relation is
+        the field name that carried it. The same references, readable in the
+        one direction JSON cannot be read in.
+        """
+
+        # One payload may hold the same reference under the same field in more
+        # than one place. That is one relation restated, not two, and indexing
+        # it twice would make `references_to` report a count no occurrence
+        # carries.
+        references = list(dict.fromkeys(_payload_references(event.payload)))
+        if not references:
+            return
+        known = {
+            row[0]
+            for row in self._connection.execute(
+                "SELECT id FROM events WHERE id IN (%s)"
+                % ",".join("?" * len(references)),
+                tuple(destination for _, destination, _ in references),
+            )
+        }
+        self._connection.executemany(
+            "INSERT INTO event_references"
+            " (source_id, relation, destination_id, ordinal) VALUES (?, ?, ?, ?)",
+            [
+                (event.id, relation, destination, ordinal)
+                for relation, destination, ordinal in references
+                if destination in known
+            ],
+        )
+
+    def references_to(self, event_id: str) -> list[tuple[str, str]]:
+        """Which occurrences reference this one, and under what relation.
+
+        The question the payload column cannot answer. A `LIKE` over stored
+        JSON reads every payload and grows with both the occurrence count and
+        the payload size; this reads an index. `#2524` measured the two on the
+        same material: 1.68ms against 0.14ms at 411 occurrences, and 17.05ms
+        against 0.15ms at 3,141 -- the scan grows, the index does not.
+        """
+
+        return [
+            (relation, source)
+            for source, relation in self._connection.execute(
+                "SELECT source_id, relation FROM event_references"
+                " WHERE destination_id = ? ORDER BY source_id, relation",
+                (event_id,),
+            )
+        ]
+
+    def references_from(self, event_id: str) -> list[tuple[str, str]]:
+        """Which occurrences this one references, and under what relation."""
+
+        return [
+            (relation, destination)
+            for relation, destination in self._connection.execute(
+                "SELECT relation, destination_id FROM event_references"
+                " WHERE source_id = ? ORDER BY relation, ordinal",
+                (event_id,),
+            )
+        ]
 
     @staticmethod
     def _row_values(event: Event) -> tuple:
