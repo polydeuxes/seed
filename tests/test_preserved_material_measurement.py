@@ -632,6 +632,24 @@ def test_every_finding_carries_the_same_participating_inputs(recurrence_occurren
     assert all(f.occurrences_examined == len(occurrences) for f in findings)
 
 
+def test_one_pass_is_one_act_occurrence_with_distinct_results(
+    recurrence_occurrences,
+):
+    ledger, occurrences = recurrence_occurrences
+    declared = _declared_for("the", "cat", "zebra")
+    findings = measure_recurrences(
+        occurrences,
+        declared=declared,
+        counts_in=_counts_in(declared),
+        yield_in=(ledger, "w", "r"),
+    )
+
+    assert len({finding.downstream_act_id for finding in findings}) == 1
+    assert len({finding.act_occurrence_id for finding in findings}) == 1
+    assert len({finding.declared.representation_measured for finding in findings}) == 3
+    assert len({finding.yield_evidence_id for finding in findings}) == 3
+
+
 def test_a_declared_representation_that_never_occurs_still_gets_a_finding(
     recurrence_occurrences,
 ):

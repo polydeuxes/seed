@@ -860,6 +860,11 @@ def measure_recurrences(
         # that could reach it. A guard nothing can reach reads as a proof and is
         # not one.
         support_validator.validate(support_basis)
+    # One invocation performs one bounded Measurement occurrence.  Its exact
+    # results remain distinct, but result fan-out does not mint another Act or
+    # occurrence for each representation measured during the same pass.
+    downstream_act_id = new_id("preserved_recurrence_measurement_act")
+    act_occurrence_id = new_id("preserved_recurrence_measurement_occurrence")
     findings = tuple(
         RecurrenceFinding(
             declared=declaration,
@@ -870,6 +875,8 @@ def measure_recurrences(
             total_count=total[representation],
             input_event_ids=inputs,
             support_basis=support_basis,
+            downstream_act_id=downstream_act_id,
+            act_occurrence_id=act_occurrence_id,
         )
         for representation, declaration in declared.items()
     )
