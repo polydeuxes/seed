@@ -368,6 +368,7 @@ def test_no_synthetic_developer_source_evidence_event_is_created():
         "operator.ingress.representation_examined",
         "operator.ingress.ingress_occurred",
         "operator.representation.formed",
+        "operator.representation.emission_attempted",
         "operator.representation.emitted",
         "operator.exchange.comparison_occurred",
         "operator.exchange.identification_occurred",
@@ -439,6 +440,7 @@ def test_exit_boundary_is_explicit_and_unambiguous():
     )
     assert [event.kind for event in ledger.list("w")] == [
         "operator.representation.formed",
+        "operator.representation.emission_attempted",
         "operator.representation.emitted",
     ]
 

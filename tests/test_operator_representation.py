@@ -80,14 +80,16 @@ def test_console_forms_c0_before_first_ingress_and_preserves_provenance_only():
     kinds = [event.kind for event in ledger.list("w")]
     assert kinds == [
         "operator.representation.formed",
+        "operator.representation.emission_attempted",
         "operator.representation.emitted",
         *_INGRESS_KINDS,
         "operator.representation.formed",
+        "operator.representation.emission_attempted",
         "operator.representation.emitted",
     ]
     assert "operator.exchange.comparison_occurred" not in kinds
     assert "operator.exchange.identification_occurred" not in kinds
-    c0_formed, c0_emitted = ledger.list("w")[:2]
+    c0_formed, _, c0_emitted = ledger.list("w")[:3]
     assert c0_formed.payload["session_standing_as_of_event_id"] is None
     assert c0_formed.payload["prior_exchange_finding"] is None
     assert c0_formed.payload["represented_relation"] is None
@@ -224,9 +226,11 @@ def test_console_presents_standing_only_across_an_ingress():
     kinds = [event.kind for event in ledger.list("w")]
     assert kinds == [
         "operator.representation.formed",
+        "operator.representation.emission_attempted",
         "operator.representation.emitted",
         *_INGRESS_KINDS,
         "operator.representation.formed",
+        "operator.representation.emission_attempted",
         "operator.representation.emitted",
     ]
     # No automatic exchange, reconstruction, relation, or result-establishment occurrence.
@@ -235,12 +239,12 @@ def test_console_presents_standing_only_across_an_ingress():
     assert "operator.representation.source_validated" not in kinds
     assert "operator.representation.represented_relation_established" not in kinds
 
-    c0, _, _, _, ingress, c1, _ = ledger.list("w")
+    c0, _, _, _, _, ingress, c1, _, _ = ledger.list("w")
     # C1 is formed from Standing that now contains the preserved ingress.
     # C1's Standing was taken through the last event recorded before it,
     # C0's own formation and emission included.
     assert (
-        c1.payload["session_standing_as_of_event_id"] == ledger.list("w")[4].id
+        c1.payload["session_standing_as_of_event_id"] == ingress.id
     )
     assert c0.payload["alternatives"] == [] and c1.payload["alternatives"] == []
     assert "produced_after_representation_ref" not in ingress.payload
@@ -403,6 +407,7 @@ def test_first_interaction_attaches_no_representation_to_the_capture():
     assert kinds == {
         *_INGRESS_KINDS,
         "operator.representation.formed",
+        "operator.representation.emission_attempted",
         "operator.representation.emitted",
     }
     ingress = next(
@@ -461,11 +466,16 @@ def test_emission_preserves_the_exact_text_written_to_its_boundary():
     assert emission.payload["write_length"] == len(output.getvalue())
     assert emission.payload["material_origin"] == "this Seed"
     assert emission.payload["provenance_occurrence_refs"] == [
-        representation["formed_event_id"]
+        representation["formed_event_id"],
+        representation["emission_attempt_event_id"],
     ]
+    attempt = ledger.get(representation["emission_attempt_event_id"])
+    assert attempt.payload["attempted_representation"] == output.getvalue()
+    assert attempt.payload["dimensions"]["standing"].endswith("outcome Unknown")
+    assert representation["emission_outcome_event_id"] == emission.id
 
 
-def test_partial_output_write_does_not_create_an_emission_occurrence():
+def test_partial_output_write_preserves_attempt_and_failed_occurrences():
     class PartialOutput(StringIO):
         def write(self, value):
             super().write(value[:-1])
@@ -487,5 +497,79 @@ def test_partial_output_write_does_not_create_an_emission_occurrence():
         )
 
     assert [event.kind for event in ledger.list("w")] == [
-        "operator.representation.formed"
+        "operator.representation.formed",
+        "operator.representation.emission_attempted",
+        "operator.representation.emission_outcome_recorded",
     ]
+    failure = ledger.get(representation["emission_outcome_event_id"])
+    assert failure.payload["failure_phase"] == "text_stream_write"
+    assert failure.payload["outcome"] == "write_failed"
+    assert failure.payload["reported_write_length"] == (
+        failure.payload["expected_write_length"] - 1
+    )
+    assert failure.payload["emitted_event_id"] is None
+    assert representation["emitted_event_id"] is None
+
+
+def test_flush_failure_does_not_erase_the_completed_text_stream_write():
+    class FlushFailure(StringIO):
+        def flush(self):
+            raise OSError("flush failed")
+
+    ledger = EventLedger()
+    representation = form_operator_representation(
+        ledger,
+        workspace_id="w",
+        session_id="s",
+        session_standing=_standing(ledger),
+    )
+
+    with pytest.raises(OSError, match="flush failed"):
+        emit_operator_representation(
+            ledger, representation=representation, output_stream=FlushFailure()
+        )
+
+    assert [event.kind for event in ledger.list("w")] == [
+        "operator.representation.formed",
+        "operator.representation.emission_attempted",
+        "operator.representation.emitted",
+        "operator.representation.emission_outcome_recorded",
+    ]
+    emitted = ledger.get(representation["emitted_event_id"])
+    failure = ledger.get(representation["emission_outcome_event_id"])
+    assert emitted.payload["output_boundary"] == "text_stream_write"
+    assert failure.payload["failure_phase"] == "text_stream_flush"
+    assert failure.payload["outcome"] == "flush_failed_after_emission"
+    assert failure.payload["emitted_event_id"] == emitted.id
+    assert failure.payload["error_type"] == "OSError"
+
+
+def test_process_death_after_attempt_leaves_output_outcome_unknown():
+    class SimulatedProcessDeath(BaseException):
+        pass
+
+    class CrashingOutput(StringIO):
+        def write(self, value):
+            raise SimulatedProcessDeath()
+
+    ledger = EventLedger()
+    representation = form_operator_representation(
+        ledger,
+        workspace_id="w",
+        session_id="s",
+        session_standing=_standing(ledger),
+    )
+
+    with pytest.raises(SimulatedProcessDeath):
+        emit_operator_representation(
+            ledger, representation=representation, output_stream=CrashingOutput()
+        )
+
+    assert [event.kind for event in ledger.list("w")] == [
+        "operator.representation.formed",
+        "operator.representation.emission_attempted",
+    ]
+    recovered = list(_standing(ledger)["representations"].values())[-1]
+    assert recovered["emission_attempt_event_id"] is not None
+    assert recovered["emission_outcome_event_id"] is None
+    assert recovered["emitted_event_id"] is None

@@ -102,10 +102,10 @@ absence-of-act-occurrence finding
 != act occurrence
 
 absence finding
-!= lawful Stop automatically
+!= lawful Stop by identity
 
 absence finding
-!= failure automatically
+!= failure by identity
 ```
 
 #### Occurrence or non-occurrence evidence
@@ -168,13 +168,13 @@ Where the subject is not a result, the standing retains the exact identity of it
 
 ```text
 result
-!= established standing automatically
+!= established standing by identity
 
 subject existence
 != standing established
 
 standing-establishment occurrence
-!= Act occurrence automatically
+!= Act occurrence by identity
 ```
 
 ### Conditional preservation, standing, and neighboring branches

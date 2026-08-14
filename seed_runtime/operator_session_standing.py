@@ -15,7 +15,9 @@ _SUBJECT_BY_KIND = {
     "operator.ingress.stopping_occurred": "interaction_closure",
 }
 _REPRESENTATION_FORMED_KIND = "operator.representation.formed"
+_REPRESENTATION_EMISSION_ATTEMPTED_KIND = "operator.representation.emission_attempted"
 _REPRESENTATION_EMITTED_KIND = "operator.representation.emitted"
+_REPRESENTATION_EMISSION_OUTCOME_KIND = "operator.representation.emission_outcome_recorded"
 _COMPARISON_KIND = "operator.exchange.comparison_occurred"
 _IDENTIFICATION_KIND = "operator.exchange.identification_occurred"
 _SOURCE_VALIDATED_KIND = "operator.representation.source_validated"
@@ -24,7 +26,9 @@ _SUPPORTED_KINDS = {
     *_SUBJECT_BY_KIND,
     "operator.ingress.representation_examined",
     _REPRESENTATION_FORMED_KIND,
+    _REPRESENTATION_EMISSION_ATTEMPTED_KIND,
     _REPRESENTATION_EMITTED_KIND,
+    _REPRESENTATION_EMISSION_OUTCOME_KIND,
     _COMPARISON_KIND,
     _IDENTIFICATION_KIND,
     _SOURCE_VALIDATED_KIND,
@@ -181,6 +185,8 @@ def advance_operator_session_standing(
             representations[payload["representation_ref"]] = {
                 "representation_id": payload["representation_ref"],
                 "formed_event_id": event.id,
+                "emission_attempt_event_id": None,
+                "emission_outcome_event_id": None,
                 "emitted_event_id": None,
                 "formation_result": payload["formation_result"],
                 "alternatives": payload["alternatives"],
@@ -195,6 +201,15 @@ def advance_operator_session_standing(
                 "unknowns": payload["unknowns"],
                 "conflicts": payload["conflicts"],
             }
+            continue
+        if event.kind == _REPRESENTATION_EMISSION_ATTEMPTED_KIND:
+            representation_ref = event.payload["representation_ref"]
+            if representation_ref not in representations:
+                raise ValueError(
+                    "representation emission attempt without recorded formation: "
+                    f"{representation_ref}"
+                )
+            representations[representation_ref]["emission_attempt_event_id"] = event.id
             continue
         if event.kind == _REPRESENTATION_EMITTED_KIND:
             representation_ref = event.payload["representation_ref"]
@@ -211,7 +226,31 @@ def advance_operator_session_standing(
                     "representation emission does not name its recorded "
                     "formation occurrence"
                 )
+            if (
+                event.payload["attempt_ref"]
+                != representations[representation_ref]["emission_attempt_event_id"]
+            ):
+                raise ValueError(
+                    "representation emission does not name its recorded attempt"
+                )
             representations[representation_ref]["emitted_event_id"] = event.id
+            representations[representation_ref]["emission_outcome_event_id"] = event.id
+            continue
+        if event.kind == _REPRESENTATION_EMISSION_OUTCOME_KIND:
+            representation_ref = event.payload["representation_ref"]
+            if representation_ref not in representations:
+                raise ValueError(
+                    "representation emission outcome without recorded formation: "
+                    f"{representation_ref}"
+                )
+            if (
+                event.payload["attempt_ref"]
+                != representations[representation_ref]["emission_attempt_event_id"]
+            ):
+                raise ValueError(
+                    "representation emission outcome does not name its recorded attempt"
+                )
+            representations[representation_ref]["emission_outcome_event_id"] = event.id
             continue
         if event.kind == _COMPARISON_KIND:
             payload = event.payload

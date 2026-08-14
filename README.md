@@ -28,7 +28,7 @@ Evidence. Neither silently substitutes for the other.
 - `docs/reports/` — historical reports retained as records, not current
   architectural Authority.
 - `dormant/` — retired implementation and data retained for inspection.
-- `scripts/` and `toolkits/` — repository utilities and examples.
+- `scripts/` — repository maintenance commands.
 
 ## Run checks
 

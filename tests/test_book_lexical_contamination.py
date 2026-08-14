@@ -91,6 +91,7 @@ BANNED: tuple[tuple[str, str], ...] = (
     (r"\bowners?\b|owner[-_]", "owner"),
     (r"\bownership\w*\b|ownership[-_]", "ownership*"),
     (r"\bowns\b|\bowned\b|\bowning\b", "owns/owned/owning"),
+    (r"\bautomatically\b", "automatically"),
     (r"\buptake\b|uptake[-_]", "uptake"),
     (r"\bhandoffs?\b|handoff[-_]", "handoff"),
     (r"\blineage\b|lineage[-_]", "lineage"),

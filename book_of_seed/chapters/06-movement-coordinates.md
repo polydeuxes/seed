@@ -17,7 +17,7 @@ runtime write, recorded Event, route change, represented-condition update,
 cache change, or displayed label does not establish movement by identity.
 
 Movement is not an Act occurrence by identity. Changed Standing does not open
-later movement automatically.
+later movement by identity.
 
 ## Important distinctions
 

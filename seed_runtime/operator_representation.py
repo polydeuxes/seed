@@ -15,7 +15,9 @@ from seed_runtime.ids import new_id
 REPRESENTATION_FORMED_KIND = "operator.representation.formed"
 from seed_runtime.operator_ingress import SEED_ORIGIN
 
+REPRESENTATION_EMISSION_ATTEMPTED_KIND = "operator.representation.emission_attempted"
 REPRESENTATION_EMITTED_KIND = "operator.representation.emitted"
+REPRESENTATION_EMISSION_OUTCOME_KIND = "operator.representation.emission_outcome_recorded"
 
 def _dimensions(
     *, identity, content, standing, source, responsibility, authority, scope, occurrence
@@ -69,7 +71,7 @@ def form_operator_representation(
                 "represented_source": dict(source["represented_source"]),
                 # Each A-to-G representation relation preserves its own
                 # boundary; Representation-level coordinates do not transfer
-                # to it automatically.
+                # to it by identity.
                 "representation": {
                     "formation_result": source["representation_result_boundary"],
                     "scope": scope,
@@ -159,6 +161,8 @@ def form_operator_representation(
         "alternatives": alternatives,
         "coordinate_bindings": coordinate_bindings,
         "formed_event_id": formed_event.id,
+        "emission_attempt_event_id": None,
+        "emission_outcome_event_id": None,
         "emitted_event_id": None,
         "session_standing_as_of_event_id": session_standing["as_of_event_id"],
         "prior_exchange_finding": prior_exchange_finding,
@@ -237,18 +241,85 @@ def emit_operator_representation(
     effects beyond that output boundary require separate Evidence.
     """
     emitted_representation = render_operator_representation(representation)
-    written = output_stream.write(emitted_representation)
-    if type(written) is not int or written != len(emitted_representation):
-        raise ValueError("output boundary did not accept the exact representation")
-    output_stream.flush()
     stream_encoding_metadata = getattr(output_stream, "encoding", None)
     if type(stream_encoding_metadata) is not str or not stream_encoding_metadata:
         stream_encoding_metadata = None
+    scope = (
+        f"workspace:{representation['workspace_id']};"
+        f"session:{representation['session_id']}"
+    )
+    attempt_event = ledger.append(
+        REPRESENTATION_EMISSION_ATTEMPTED_KIND,
+        representation["workspace_id"],
+        {
+            "representation_ref": representation["representation_id"],
+            "formed_event_id": representation["formed_event_id"],
+            "dimensions": _dimensions(
+                identity=f"emission-attempt:{representation['representation_id']}",
+                content="exact text prepared for the declared output boundary",
+                standing="attempt recorded; output-boundary outcome Unknown",
+                source=representation["formed_event_id"],
+                responsibility="bounded-representation-emission",
+                authority=(
+                    "attempt occurrence only; establishes no output-boundary "
+                    "acceptance or downstream effect"
+                ),
+                scope=scope,
+                occurrence="emission attempt durably recorded before output",
+            ),
+            "material_origin": SEED_ORIGIN,
+            "attempted_representation": emitted_representation,
+            "attempted_representation_kind": "text",
+            "output_boundary": "text_stream_write",
+            "stream_encoding_metadata": stream_encoding_metadata,
+            "known_loss": [],
+            "unknowns": [
+                "output-boundary acceptance remains Unknown until an outcome is recorded",
+                "effects beyond the output boundary remain Unknown",
+            ],
+            "conflicts": [],
+            "provenance_occurrence_refs": [representation["formed_event_id"]],
+            "mutates_cluster": False,
+        },
+        session_id=representation["session_id"],
+    )
+    representation["emission_attempt_event_id"] = attempt_event.id
+
+    try:
+        written = output_stream.write(emitted_representation)
+    except Exception as error:
+        failed_event = _record_emission_failure_outcome(
+            ledger,
+            representation=representation,
+            attempt_event_id=attempt_event.id,
+            scope=scope,
+            stream_encoding_metadata=stream_encoding_metadata,
+            phase="text_stream_write",
+            written=None,
+            error=error,
+        )
+        representation["emission_outcome_event_id"] = failed_event.id
+        raise
+
+    if type(written) is not int or written != len(emitted_representation):
+        failed_event = _record_emission_failure_outcome(
+            ledger,
+            representation=representation,
+            attempt_event_id=attempt_event.id,
+            scope=scope,
+            stream_encoding_metadata=stream_encoding_metadata,
+            phase="text_stream_write",
+            written=written,
+            error=None,
+        )
+        representation["emission_outcome_event_id"] = failed_event.id
+        raise ValueError("output boundary did not accept the exact representation")
+
     emitted_event = ledger.append(
         REPRESENTATION_EMITTED_KIND,
         representation["workspace_id"],
         {
-            "attempt_ref": None,
+            "attempt_ref": attempt_event.id,
             "representation_ref": representation["representation_id"],
             "formed_event_id": representation["formed_event_id"],
             "dimensions": _dimensions(
@@ -261,16 +332,9 @@ def emit_operator_representation(
                     "emission occurrence only; effects beyond the output "
                     "boundary require separate Evidence"
                 ),
-                scope=(
-                    f"workspace:{representation['workspace_id']};"
-                    f"session:{representation['session_id']}"
-                ),
+                scope=scope,
                 occurrence="emission occurrence durably recorded",
             ),
-            # Source role only. The exact emitted material is deliberately not
-            # preserved here yet: it becomes safe to preserve once a measurement
-            # can decline Seed-origin material, which is what this coordinate
-            # makes possible and what a later act must actually do.
             "material_origin": SEED_ORIGIN,
             "emitted_representation": emitted_representation,
             "emitted_representation_kind": "text",
@@ -280,10 +344,97 @@ def emit_operator_representation(
             "known_loss": [],
             "unknowns": [],
             "conflicts": [],
-            "provenance_occurrence_refs": [representation["formed_event_id"]],
+            "provenance_occurrence_refs": [
+                representation["formed_event_id"],
+                attempt_event.id,
+            ],
             "mutates_cluster": False,
         },
         session_id=representation["session_id"],
     )
+    representation["emission_outcome_event_id"] = emitted_event.id
     representation["emitted_event_id"] = emitted_event.id
+    try:
+        output_stream.flush()
+    except Exception as error:
+        failed_event = _record_emission_failure_outcome(
+            ledger,
+            representation=representation,
+            attempt_event_id=attempt_event.id,
+            scope=scope,
+            stream_encoding_metadata=stream_encoding_metadata,
+            phase="text_stream_flush",
+            written=written,
+            error=error,
+            emitted_event_id=emitted_event.id,
+        )
+        representation["emission_outcome_event_id"] = failed_event.id
+        raise
     return representation
+
+
+def _record_emission_failure_outcome(
+    ledger: EventLedger,
+    *,
+    representation: dict[str, Any],
+    attempt_event_id: str,
+    scope: str,
+    stream_encoding_metadata: str | None,
+    phase: str,
+    written: Any,
+    error: Exception | None,
+    emitted_event_id: str | None = None,
+):
+    """Preserve the bounded failure without inferring downstream state."""
+    if type(written) is int and written >= 0:
+        reported_write_length: int | None = written
+    else:
+        reported_write_length = None
+    outcome = (
+        "flush_failed_after_emission"
+        if emitted_event_id is not None
+        else "write_failed"
+    )
+    return ledger.append(
+        REPRESENTATION_EMISSION_OUTCOME_KIND,
+        representation["workspace_id"],
+        {
+            "attempt_ref": attempt_event_id,
+            "representation_ref": representation["representation_id"],
+            "formed_event_id": representation["formed_event_id"],
+            "emitted_event_id": emitted_event_id,
+            "dimensions": _dimensions(
+                identity=f"emission-outcome:{attempt_event_id}:{phase}",
+                content=f"{phase} did not complete the emission call",
+                standing=outcome,
+                source=attempt_event_id,
+                responsibility="bounded-representation-emission",
+                authority=(
+                    "failure occurrence only; establishes no downstream effect "
+                    "and no acceptance beyond the reported write result"
+                ),
+                scope=scope,
+                occurrence="emission failure durably recorded",
+            ),
+            "failure_phase": phase,
+            "outcome": outcome,
+            "reported_write_length": reported_write_length,
+            "expected_write_length": len(
+                render_operator_representation(representation)
+            ),
+            "error_type": type(error).__name__ if error is not None else None,
+            "error_message": str(error) if error is not None else None,
+            "output_boundary": "text_stream_write",
+            "stream_encoding_metadata": stream_encoding_metadata,
+            "known_loss": [],
+            "unknowns": ["effects beyond the output boundary remain Unknown"],
+            "conflicts": [],
+            "provenance_occurrence_refs": [
+                representation["formed_event_id"],
+                attempt_event_id,
+                *([emitted_event_id] if emitted_event_id is not None else []),
+            ],
+            "mutates_cluster": False,
+        },
+        session_id=representation["session_id"],
+    )

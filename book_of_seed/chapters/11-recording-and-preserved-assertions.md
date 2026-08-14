@@ -60,7 +60,7 @@ Recording may preserve measurement or observation Assertions and already establi
 - operator omission != authority for Seed to forget
 - Seed preservation != obligation to expose every sample beyond its boundary
 - act occurrence != recording occurrence
-- record exists != recorded assertion true automatically
+- record exists != recorded Assertion Standing established by identity
 - record exists != recorded standing lawfully established
 - preservation decision != standing-establishment decision
 - extraction occurrence != original act occurrence

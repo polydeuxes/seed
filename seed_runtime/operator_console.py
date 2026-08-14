@@ -50,7 +50,7 @@ def run_persistent_operator_console(
     output_stream: TextIO,
     process_boundary_escape: bool = True,
 ) -> None:
-    """Own process-local repetition around bounded operator interactions."""
+    """Repeat bounded operator interactions within this process."""
     # A console that declined to install the escape does not announce it.
     if process_boundary_escape:
         output_stream.write("Seed console: `exit` exits.\n")
@@ -73,7 +73,11 @@ def run_persistent_operator_console(
     session_standing = _advance_over(
         ledger,
         session_standing,
-        (representation["formed_event_id"], representation["emitted_event_id"]),
+        (
+            representation["formed_event_id"],
+            representation["emission_attempt_event_id"],
+            representation["emitted_event_id"],
+        ),
         workspace_id=workspace_id,
         session_id=session_id,
     )
@@ -125,6 +129,7 @@ def run_persistent_operator_console(
                 session_standing,
                 (
                     representation["formed_event_id"],
+                    representation["emission_attempt_event_id"],
                     representation["emitted_event_id"],
                 ),
                 workspace_id=workspace_id,

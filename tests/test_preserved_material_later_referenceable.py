@@ -150,6 +150,7 @@ def test_no_act_condition_change_is_claimed_here(ledger):
     }
     assert observed_operator_event_kinds == {
         "operator.representation.formed",
+        "operator.representation.emission_attempted",
         "operator.representation.emitted",
         "operator.ingress.raw_material_captured",
         "operator.ingress.representation_examined",
