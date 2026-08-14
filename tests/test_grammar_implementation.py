@@ -14,6 +14,11 @@ from seed_runtime.byte_measurement import (
 )
 from seed_runtime.events import EventLedger
 from seed_runtime.operator_console import run_persistent_operator_console
+from seed_runtime.operator_representation import (
+    REPRESENTATION_EMISSION_INPUT_ROLE,
+    emit_operator_representation,
+    record_operator_representation,
+)
 from seed_runtime.yield_evidence import yield_commitment
 
 
@@ -188,6 +193,32 @@ def _recorded_applicability() -> dict:
     }
 
 
+def _emission_road() -> dict:
+    ledger = EventLedger()
+    representation = record_operator_representation(
+        ledger,
+        workspace_id="w",
+        session_id="emission",
+        session_standing={"as_of_event_id": None},
+    )
+    emit_operator_representation(
+        ledger,
+        representation=representation,
+        output_stream=StringIO(),
+    )
+    carrier = ledger.get(representation["emitted_event_id"])
+    return {
+        "ledger": ledger,
+        "carrier": carrier,
+        "attempt": ledger.get(representation["emission_attempt_event_id"]),
+        "act_evidence": ledger.get(
+            carrier.payload["responsible_act_evidence_id"]
+        ),
+        "carriage_evidence": ledger.get(carrier.payload["carriage_evidence_id"]),
+        "content_evidence": ledger.get(carrier.payload["yield_evidence_id"]),
+    }
+
+
 def _assertion_witness(bundle: dict) -> dict[str, str]:
     assertion = bundle["source_assertion"]
     carrier = bundle["carrier"]
@@ -330,6 +361,53 @@ def _occurrence_result_witness(bundle: dict) -> str:
     return EXACT if same_occurrence and same_result and evidence_is_carried else MISSING
 
 
+def _emission_carriage_witness(bundle: dict) -> str:
+    carrier = bundle["carrier"]
+    evidence = bundle["carriage_evidence"]
+    if evidence is None:
+        return MISSING
+    exact_relation = (
+        carrier.payload.get("emitted_representation")
+        == evidence.payload.get("carried_content")
+    )
+    exact_occurrence = (
+        carrier.payload.get("act_occurrence_id")
+        == evidence.payload.get("act_occurrence_id")
+    )
+    evidence_is_carried = carrier.payload.get("carriage_evidence_id") == evidence.id
+    return (
+        EXACT
+        if exact_relation and exact_occurrence and evidence_is_carried
+        else MISSING
+    )
+
+
+def _emission_participation_witness(bundle: dict) -> str:
+    carrier = bundle["carrier"]
+    evidence = bundle["act_evidence"]
+    if evidence is None:
+        return MISSING
+    exact_relation = (
+        carrier.payload.get("representation_ref")
+        == evidence.payload.get("representation_ref")
+        and carrier.payload.get("input_role")
+        == evidence.payload.get("input_role")
+        == REPRESENTATION_EMISSION_INPUT_ROLE
+    )
+    exact_occurrence = (
+        carrier.payload.get("act_occurrence_id")
+        == evidence.payload.get("act_occurrence_id")
+    )
+    evidence_is_carried = (
+        carrier.payload.get("responsible_act_evidence_id") == evidence.id
+    )
+    return (
+        EXACT
+        if exact_relation and exact_occurrence and evidence_is_carried
+        else MISSING
+    )
+
+
 def _structural_edge_fidelity_cases() -> dict[str, dict[str, str]]:
     carriage = _byte_measurement_road()
     alternate_carriage = _byte_measurement_road()
@@ -412,6 +490,63 @@ def _structural_edge_fidelity_cases() -> dict[str, dict[str, str]]:
         },
         "yield": {
             "exact": _occurrence_result_witness(yielded),
+            "edge_missing": _occurrence_result_witness(missing_yield),
+            "wrong_occurrence": _occurrence_result_witness(wrong_yield),
+            "unrelated_change": _occurrence_result_witness(unrelated_yield),
+        },
+    }
+
+
+def _emission_structural_edge_fidelity_cases() -> dict[str, dict[str, str]]:
+    emission = _emission_road()
+    alternate = _emission_road()
+
+    missing_carriage = dict(emission)
+    missing_carriage["carriage_evidence"] = None
+    wrong_carriage = dict(emission)
+    wrong_carriage["carriage_evidence"] = alternate["carriage_evidence"]
+    unrelated_carriage = dict(emission)
+    unrelated_carriage_carrier = emission["carrier"].model_copy(deep=True)
+    unrelated_carriage_carrier.payload["yield_evidence_id"] = "other-yield-evidence"
+    unrelated_carriage["carrier"] = unrelated_carriage_carrier
+
+    missing_participation = dict(emission)
+    missing_participation["act_evidence"] = None
+    wrong_participation = dict(emission)
+    wrong_participation["act_evidence"] = alternate["act_evidence"]
+    unrelated_participation = dict(emission)
+    unrelated_participation_carrier = emission["carrier"].model_copy(deep=True)
+    unrelated_participation_carrier.payload["carriage_evidence_id"] = (
+        "other-carriage-evidence"
+    )
+    unrelated_participation["carrier"] = unrelated_participation_carrier
+
+    missing_yield = dict(emission)
+    missing_yield["content_evidence"] = None
+    wrong_yield = dict(emission)
+    wrong_yield["content_evidence"] = alternate["content_evidence"]
+    unrelated_yield = dict(emission)
+    unrelated_yield_carrier = emission["carrier"].model_copy(deep=True)
+    unrelated_yield_carrier.payload["input_role"] = "other-role"
+    unrelated_yield["carrier"] = unrelated_yield_carrier
+
+    return {
+        "carriage": {
+            "exact": _emission_carriage_witness(emission),
+            "edge_missing": _emission_carriage_witness(missing_carriage),
+            "wrong_occurrence": _emission_carriage_witness(wrong_carriage),
+            "unrelated_change": _emission_carriage_witness(unrelated_carriage),
+        },
+        "participation": {
+            "exact": _emission_participation_witness(emission),
+            "edge_missing": _emission_participation_witness(missing_participation),
+            "wrong_occurrence": _emission_participation_witness(wrong_participation),
+            "unrelated_change": _emission_participation_witness(
+                unrelated_participation
+            ),
+        },
+        "yield": {
+            "exact": _occurrence_result_witness(emission),
             "edge_missing": _occurrence_result_witness(missing_yield),
             "wrong_occurrence": _occurrence_result_witness(wrong_yield),
             "unrelated_change": _occurrence_result_witness(unrelated_yield),
@@ -674,6 +809,15 @@ def test_every_structural_edge_has_live_fidelity_cases():
     for edge, spec in specs.items():
         for adversary in spec["requires"].values():
             assert cases[edge][adversary] == MISSING
+
+
+def test_emission_instantiates_every_structural_edge_at_its_boundary():
+    grammar = json.loads(GRAMMAR.read_text(encoding="utf-8"))
+    cases = _emission_structural_edge_fidelity_cases()
+    expected = grammar["implementation_witness"]["fidelity_cases"]
+
+    assert set(cases) == set(grammar["structural_edges"])
+    assert cases == {edge: expected for edge in grammar["structural_edges"]}
 
 
 def test_changed_structural_edge_anatomy_is_detected():

@@ -18,6 +18,12 @@ _REPRESENTATION_RECORDED_KIND = "operator.representation.recorded"
 _REPRESENTATION_EMISSION_ATTEMPTED_KIND = "operator.representation.emission_attempted"
 _REPRESENTATION_EMITTED_KIND = "operator.representation.emitted"
 _REPRESENTATION_EMISSION_OUTCOME_KIND = "operator.representation.emission_outcome_recorded"
+_REPRESENTATION_EMISSION_ACT_EVIDENCE_KIND = (
+    "operator.representation.emission_act_evidenced"
+)
+_REPRESENTATION_EMISSION_CARRIAGE_EVIDENCE_KIND = (
+    "operator.representation.emission_carriage_evidenced"
+)
 _COMPARISON_KIND = "operator.exchange.comparison_occurred"
 _IDENTIFICATION_KIND = "operator.exchange.identification_occurred"
 _SOURCE_VALIDATED_KIND = "operator.representation.source_validated"
@@ -29,6 +35,8 @@ _SUPPORTED_KINDS = {
     _REPRESENTATION_EMISSION_ATTEMPTED_KIND,
     _REPRESENTATION_EMITTED_KIND,
     _REPRESENTATION_EMISSION_OUTCOME_KIND,
+    _REPRESENTATION_EMISSION_ACT_EVIDENCE_KIND,
+    _REPRESENTATION_EMISSION_CARRIAGE_EVIDENCE_KIND,
     _COMPARISON_KIND,
     _IDENTIFICATION_KIND,
     _SOURCE_VALIDATED_KIND,
@@ -201,6 +209,13 @@ def advance_operator_session_standing(
                 "unknowns": payload["unknowns"],
                 "conflicts": payload["conflicts"],
             }
+            continue
+        if event.kind in {
+            _REPRESENTATION_EMISSION_ACT_EVIDENCE_KIND,
+            _REPRESENTATION_EMISSION_CARRIAGE_EVIDENCE_KIND,
+        }:
+            # These Events preserve exact edge Evidence. They do not add or
+            # revise session Standing by identity.
             continue
         if event.kind == _REPRESENTATION_EMISSION_ATTEMPTED_KIND:
             representation_ref = event.payload["representation_ref"]

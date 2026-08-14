@@ -11,6 +11,7 @@ from typing import Any, TextIO
 
 from seed_runtime.events import EventLedger
 from seed_runtime.ids import new_id
+from seed_runtime.yield_evidence import _record_yield_evidence, yield_commitment
 
 REPRESENTATION_RECORDED_KIND = "operator.representation.recorded"
 from seed_runtime.operator_ingress import SEED_ORIGIN
@@ -18,6 +19,17 @@ from seed_runtime.operator_ingress import SEED_ORIGIN
 REPRESENTATION_EMISSION_ATTEMPTED_KIND = "operator.representation.emission_attempted"
 REPRESENTATION_EMITTED_KIND = "operator.representation.emitted"
 REPRESENTATION_EMISSION_OUTCOME_KIND = "operator.representation.emission_outcome_recorded"
+REPRESENTATION_EMISSION_ACT_EVIDENCE_KIND = (
+    "operator.representation.emission_act_evidenced"
+)
+REPRESENTATION_EMISSION_CARRIAGE_EVIDENCE_KIND = (
+    "operator.representation.emission_carriage_evidenced"
+)
+REPRESENTATION_EMISSION_CONVENTION = "operator_representation_emission_v1"
+REPRESENTATION_EMISSION_INPUT_ROLE = "exact bounded Representation"
+REPRESENTATION_EMISSION_RESPONSIBILITY = (
+    "write one exact rendered Representation to its declared text-stream boundary"
+)
 
 def _dimensions(
     *, identity, content, standing, source, responsibility, authority, scope, occurrence
@@ -241,6 +253,7 @@ def emit_operator_representation(
     effects beyond that output boundary require separate Evidence.
     """
     emitted_representation = render_operator_representation(representation)
+    emission_act_id = new_id("operator_representation_emission_act")
     stream_encoding_metadata = getattr(output_stream, "encoding", None)
     if type(stream_encoding_metadata) is not str or not stream_encoding_metadata:
         stream_encoding_metadata = None
@@ -254,12 +267,13 @@ def emit_operator_representation(
         {
             "representation_ref": representation["representation_id"],
             "representation_event_id": representation["representation_event_id"],
+            "emission_act_id": emission_act_id,
             "dimensions": _dimensions(
                 identity=f"emission-attempt:{representation['representation_id']}",
                 content="exact text prepared for the declared output boundary",
                 standing="attempt recorded; output-boundary outcome Unknown",
                 source=representation["representation_event_id"],
-                responsibility="bounded-representation-emission",
+                responsibility=REPRESENTATION_EMISSION_RESPONSIBILITY,
                 authority=(
                     "attempt occurrence only; establishes no output-boundary "
                     "acceptance or downstream effect"
@@ -315,19 +329,83 @@ def emit_operator_representation(
         representation["emission_outcome_event_id"] = failed_event.id
         raise ValueError("output boundary did not accept the exact representation")
 
+    act_occurrence_id = new_id("operator_representation_emission_occurrence")
+    boundary_result = {
+        "boundary": "text_stream_write",
+        "accepted_representation": emitted_representation,
+        "accepted_representation_kind": "text",
+        "accepted_length": written,
+    }
+    result_payload = {
+        "emission_act_id": emission_act_id,
+        "act_occurrence_id": act_occurrence_id,
+        "representation_ref": representation["representation_id"],
+        "representation_event_id": representation["representation_event_id"],
+        "input_role": REPRESENTATION_EMISSION_INPUT_ROLE,
+        "boundary_result": boundary_result,
+    }
+    responsible_act_evidence = ledger.append(
+        REPRESENTATION_EMISSION_ACT_EVIDENCE_KIND,
+        representation["workspace_id"],
+        {
+            "emission_act_id": emission_act_id,
+            "act_occurrence_id": act_occurrence_id,
+            "act": "exact bounded Representation emission",
+            "responsibility": REPRESENTATION_EMISSION_RESPONSIBILITY,
+            "responsible_boundary": "this Seed",
+            "representation_ref": representation["representation_id"],
+            "representation_event_id": representation["representation_event_id"],
+            "input_role": REPRESENTATION_EMISSION_INPUT_ROLE,
+            "result_commitment": yield_commitment(
+                REPRESENTATION_EMISSION_CONVENTION, result_payload
+            ),
+            "standing": "occurred",
+            "authority": (
+                "Evidence concerning this exact emission Act occurrence and "
+                "the Representation participating in its exact input role only"
+            ),
+        },
+        session_id=representation["session_id"],
+    )
+    carriage_evidence = ledger.append(
+        REPRESENTATION_EMISSION_CARRIAGE_EVIDENCE_KIND,
+        representation["workspace_id"],
+        {
+            "act_occurrence_id": act_occurrence_id,
+            "content_kind": "text",
+            "carried_content": emitted_representation,
+            "standing": "carried",
+            "authority": (
+                "Evidence only for the exact text-to-emission-occurrence Carriage"
+            ),
+        },
+        session_id=representation["session_id"],
+    )
+    yield_evidence = _record_yield_evidence(
+        ledger,
+        workspace_id=representation["workspace_id"],
+        session_id=representation["session_id"],
+        convention=REPRESENTATION_EMISSION_CONVENTION,
+        yielding_act="exact bounded Representation emission",
+        act_occurrence_id=act_occurrence_id,
+        yielded_result_kind="text-stream boundary result",
+        result_identity=f"emission-boundary-result:{act_occurrence_id}",
+        yielded_content=result_payload,
+        responsibility=REPRESENTATION_EMISSION_RESPONSIBILITY,
+        responsible_boundary="this Seed",
+    )
     emitted_event = ledger.append(
         REPRESENTATION_EMITTED_KIND,
         representation["workspace_id"],
         {
             "attempt_ref": attempt_event.id,
-            "representation_ref": representation["representation_id"],
-            "representation_event_id": representation["representation_event_id"],
+            **result_payload,
             "dimensions": _dimensions(
-                identity=f"emission:{representation['representation_id']}",
+                identity=act_occurrence_id,
                 content="representation rendering written to console output stream",
                 standing="emitted",
                 source=representation["representation_event_id"],
-                responsibility="bounded-representation-emission",
+                responsibility=REPRESENTATION_EMISSION_RESPONSIBILITY,
                 authority=(
                     "emission occurrence only; effects beyond the output "
                     "boundary require separate Evidence"
@@ -341,6 +419,9 @@ def emit_operator_representation(
             "output_boundary": "text_stream_write",
             "stream_encoding_metadata": stream_encoding_metadata,
             "write_length": written,
+            "responsible_act_evidence_id": responsible_act_evidence.id,
+            "carriage_evidence_id": carriage_evidence.id,
+            "yield_evidence_id": yield_evidence.id,
             "known_loss": [],
             "unknowns": [],
             "conflicts": [],
@@ -414,7 +495,7 @@ def _record_emission_failure_outcome(
                 content=f"{phase} did not complete the emission call",
                 standing=outcome,
                 source=attempt_event_id,
-                responsibility="bounded-representation-emission",
+                responsibility=REPRESENTATION_EMISSION_RESPONSIBILITY,
                 authority=(
                     "failure occurrence only; establishes no downstream effect "
                     "and no acceptance beyond the reported write result"

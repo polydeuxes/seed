@@ -17,6 +17,11 @@ _INGRESS_KINDS = (
     "operator.ingress.decoder_outcome_recorded",
     "operator.ingress.ingress_occurred",
 )
+_EMISSION_EDGE_EVIDENCE_KINDS = (
+    "operator.representation.emission_act_evidenced",
+    "operator.representation.emission_carriage_evidenced",
+    "operator.yield.evidence_recorded",
+)
 
 
 def _run_console(text, *, workspace="w", session="s"):
@@ -81,15 +86,22 @@ def test_console_forms_c0_before_first_ingress_and_preserves_provenance_only():
     assert kinds == [
         "operator.representation.recorded",
         "operator.representation.emission_attempted",
+        *_EMISSION_EDGE_EVIDENCE_KINDS,
         "operator.representation.emitted",
         *_INGRESS_KINDS,
         "operator.representation.recorded",
         "operator.representation.emission_attempted",
+        *_EMISSION_EDGE_EVIDENCE_KINDS,
         "operator.representation.emitted",
     ]
     assert "operator.exchange.comparison_occurred" not in kinds
     assert "operator.exchange.identification_occurred" not in kinds
-    c0_formed, _, c0_emitted = ledger.list("w")[:3]
+    c0_formed = ledger.list("w")[0]
+    c0_emitted = next(
+        event
+        for event in ledger.list("w")
+        if event.kind == "operator.representation.emitted"
+    )
     assert c0_formed.payload["session_standing_as_of_event_id"] is None
     assert c0_formed.payload["prior_exchange_finding"] is None
     assert c0_formed.payload["represented_relation"] is None
@@ -227,10 +239,12 @@ def test_console_presents_standing_only_across_an_ingress():
     assert kinds == [
         "operator.representation.recorded",
         "operator.representation.emission_attempted",
+        *_EMISSION_EDGE_EVIDENCE_KINDS,
         "operator.representation.emitted",
         *_INGRESS_KINDS,
         "operator.representation.recorded",
         "operator.representation.emission_attempted",
+        *_EMISSION_EDGE_EVIDENCE_KINDS,
         "operator.representation.emitted",
     ]
     # No exchange, reconstruction, relation, or result-Standing occurrence follows by identity.
@@ -239,7 +253,14 @@ def test_console_presents_standing_only_across_an_ingress():
     assert "operator.representation.source_validated" not in kinds
     assert "operator.representation.represented_relation_established" not in kinds
 
-    c0, _, _, _, _, ingress, c1, _, _ = ledger.list("w")
+    events = ledger.list("w")
+    representations = [
+        event for event in events if event.kind == "operator.representation.recorded"
+    ]
+    c0, c1 = representations
+    ingress = next(
+        event for event in events if event.kind == "operator.ingress.ingress_occurred"
+    )
     # C1 is formed from Standing that now contains the preserved ingress.
     # C1's Standing was taken through the last event recorded before it,
     # C0's own representation Act and emission included.
@@ -411,6 +432,7 @@ def test_first_interaction_attaches_no_representation_to_the_capture():
         *_INGRESS_KINDS,
         "operator.representation.recorded",
         "operator.representation.emission_attempted",
+        *_EMISSION_EDGE_EVIDENCE_KINDS,
         "operator.representation.emitted",
     }
     ingress = next(
@@ -475,6 +497,31 @@ def test_emission_preserves_the_exact_text_written_to_its_boundary():
     attempt = ledger.get(representation["emission_attempt_event_id"])
     assert attempt.payload["attempted_representation"] == output.getvalue()
     assert attempt.payload["dimensions"]["standing"].endswith("outcome Unknown")
+    assert attempt.id != emission.payload["act_occurrence_id"]
+    assert emission.payload["input_role"] == "exact bounded Representation"
+    assert emission.payload["boundary_result"] == {
+        "boundary": "text_stream_write",
+        "accepted_representation": output.getvalue(),
+        "accepted_representation_kind": "text",
+        "accepted_length": len(output.getvalue()),
+    }
+    act_evidence = ledger.get(emission.payload["responsible_act_evidence_id"])
+    carriage_evidence = ledger.get(emission.payload["carriage_evidence_id"])
+    yield_evidence = ledger.get(emission.payload["yield_evidence_id"])
+    assert act_evidence.payload["representation_ref"] == representation[
+        "representation_id"
+    ]
+    assert act_evidence.payload["act_occurrence_id"] == emission.payload[
+        "act_occurrence_id"
+    ]
+    assert carriage_evidence.payload["carried_content"] == output.getvalue()
+    assert carriage_evidence.payload["act_occurrence_id"] == emission.payload[
+        "act_occurrence_id"
+    ]
+    assert carriage_evidence.payload["act_occurrence_id"] != attempt.id
+    assert yield_evidence.payload["dimensions"]["act_occurrence_id"] == emission.payload[
+        "act_occurrence_id"
+    ]
     assert representation["emission_outcome_event_id"] == emission.id
 
 
@@ -566,6 +613,7 @@ def test_flush_failure_does_not_erase_the_completed_text_stream_write():
     assert [event.kind for event in ledger.list("w")] == [
         "operator.representation.recorded",
         "operator.representation.emission_attempted",
+        *_EMISSION_EDGE_EVIDENCE_KINDS,
         "operator.representation.emitted",
         "operator.representation.emission_outcome_recorded",
     ]
