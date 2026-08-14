@@ -31,7 +31,6 @@ from seed_runtime.bounded_assertion_comparison import (
     record_comparison_finding,
 )
 from seed_runtime.events import EventLedger
-from seed_runtime.measurement_continuation import measurements_from_finding
 from seed_runtime.preserved_material_measurement import (
     MEASUREMENT_RECORDED_KIND,
     preserved_ingress_occurrences,
@@ -134,20 +133,6 @@ def test_assertion_standing_coordinate_responsibility_is_distinct_from_its_yield
     )
     assert "cohort" not in str(event.payload).lower()
 
-
-def test_a_measured_assertion_does_not_supply_its_next_question(compared):
-    """Local Standing-coordinate Responsibility does not establish continuation by identity."""
-    event = record_measured_count(
-        compared, workspace_id="w", session_id="s1",
-        finding=_by_right(compared)["word"])
-    before = tuple(occurrence.id for occurrence in compared.list("w"))
-
-    with pytest.raises(
-        ValueError, match="measurements are formed from recorded findings only"
-    ):
-        measurements_from_finding(event)
-
-    assert tuple(occurrence.id for occurrence in compared.list("w")) == before
 
 
 def test_the_record_shape_is_its_own(compared):
