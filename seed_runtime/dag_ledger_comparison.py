@@ -35,13 +35,13 @@ class DagLedgerComparison:
                 ordinal INTEGER NOT NULL
             );
             CREATE INDEX IF NOT EXISTS idx_edges_source
-                ON edges (source_id, relation);
+                ON edges (source_id, relation, ordinal, destination_id);
             CREATE INDEX IF NOT EXISTS idx_edges_destination
-                ON edges (destination_id, relation);
+                ON edges (destination_id, relation, source_id);
             """
         )
 
-    def load(self, events: Iterable[Any], known_ids: set[str]) -> int:
+    def load(self, events: Iterable[Any]) -> int:
         """Write each occurrence once, and one edge per reference it carries.
 
         A reference is a payload string that names another occurrence present
@@ -51,6 +51,7 @@ class DagLedgerComparison:
         """
 
         edge_count = 0
+        earlier_ids: set[str] = set()
         for event in events:
             self._connection.execute(
                 "INSERT OR REPLACE INTO nodes VALUES (?, ?, ?, ?, ?)",
@@ -62,14 +63,14 @@ class DagLedgerComparison:
                     json.dumps(event.payload, default=str),
                 ),
             )
-            for relation, destination, ordinal in _references(
-                event.payload, known_ids
-            ):
+            references = dict.fromkeys(_references(event.payload, earlier_ids))
+            for relation, destination, ordinal in references:
                 self._connection.execute(
                     "INSERT INTO edges VALUES (?, ?, ?, ?)",
                     (event.id, relation, destination, ordinal),
                 )
                 edge_count += 1
+            earlier_ids.add(event.id)
         self._connection.commit()
         return edge_count
 

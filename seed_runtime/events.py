@@ -519,12 +519,12 @@ class SQLiteEventLedger(EventLedger):
             )
             """)
         self._connection.execute("""
-            CREATE INDEX IF NOT EXISTS idx_event_references_destination
-            ON event_references (destination_id)
+            CREATE INDEX IF NOT EXISTS idx_event_references_destination_covering
+            ON event_references (destination_id, relation, source_id)
             """)
         self._connection.execute("""
-            CREATE INDEX IF NOT EXISTS idx_event_references_source
-            ON event_references (source_id)
+            CREATE INDEX IF NOT EXISTS idx_event_references_source_covering
+            ON event_references (source_id, relation, ordinal, destination_id)
             """)
         # Minted identifier counters, kept durably instead of reconstructed.
         #
@@ -1035,11 +1035,13 @@ class SQLiteEventLedger(EventLedger):
         occurrence count and the payload size. This reads an index.
         """
 
+        cursor = self._connection.cursor()
+        cursor.row_factory = None
         return [
             (relation, source)
-            for source, relation in self._connection.execute(
+            for source, relation in cursor.execute(
                 "SELECT source_id, relation FROM event_references"
-                " WHERE destination_id = ? ORDER BY source_id, relation",
+                " WHERE destination_id = ? ORDER BY relation, source_id",
                 (event_id,),
             )
         ]
@@ -1047,9 +1049,11 @@ class SQLiteEventLedger(EventLedger):
     def references_from(self, event_id: str) -> list[tuple[str, str]]:
         """Which occurrences this one references, and under what relation."""
 
+        cursor = self._connection.cursor()
+        cursor.row_factory = None
         return [
             (relation, destination)
-            for relation, destination in self._connection.execute(
+            for relation, destination in cursor.execute(
                 "SELECT relation, destination_id FROM event_references"
                 " WHERE source_id = ? ORDER BY relation, ordinal",
                 (event_id,),
