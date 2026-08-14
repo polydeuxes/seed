@@ -1525,6 +1525,27 @@ def test_evidence_for_one_result_does_not_carry_another(recurrence_occurrences):
         )
 
 
+def test_results_of_one_act_occurrence_cannot_exchange_yield_evidence(
+    recurrence_occurrences,
+):
+    ledger, occurrences = recurrence_occurrences
+    declared = _declared_for("the", "cat")
+    left, right = measure_recurrences(
+        occurrences,
+        declared=declared,
+        counts_in=_counts_in(declared),
+        yield_in=(ledger, "w", "r"),
+    )
+    assert left.act_occurrence_id == right.act_occurrence_id
+    assert left.yield_evidence_id != right.yield_evidence_id
+
+    borrowed = _rebuilt(left, yield_evidence_id=right.yield_evidence_id)
+    with pytest.raises(PreservedMaterialMeasurementError, match="different result"):
+        record_measurement_finding(
+            ledger, workspace_id="w", locality_id="r", finding=borrowed
+        )
+
+
 @pytest.mark.parametrize(
     "changed",
     [
