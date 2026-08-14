@@ -331,7 +331,7 @@ def test_the_occurrence_claims_nothing_about_any_other_source(tmp_path):
     Bytes read from a file are both at once, so recording that this process held
     them establishes nothing about whether anything else does. No locator
     recorded is not no external source — the same rule that made a filename
-    testimony rather than truth.
+    attribution rather than truth.
     """
 
     ledger = EventLedger()

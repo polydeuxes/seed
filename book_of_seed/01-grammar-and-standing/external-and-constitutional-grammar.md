@@ -6,13 +6,13 @@ The boundary between attributed external material and Seed Standing.
 
 ## Bounded resolution
 
-Provider vocabulary, representations, confidence labels, and connective text enter as attributed testimony. Seed preserves their source, external context, Scope, uncertainty, Authority limits, provenance or provenance Unknown, known loss, conflicts, and surviving limits.
+Provider vocabulary, representations, confidence labels, and connective text enter as attributed material. Seed preserves their source, external context, Scope, uncertainty, Authority limits, provenance or provenance Unknown, known loss, conflicts, and surviving limits.
 
 An external representation may become Seed-addressable without becoming Evidence, applicable input, adopted law, truth, or native grammar. Equal content under another source or occurrence does not establish equal identity or Standing.
 
 An exact Responsibility may use external material only through its own Applicability and other required boundaries. Every applicable source coordinate and limit travels with the material. Dropping a limit is erasure; supplying an unsupported coordinate is invention; treating external material as repository truth is mutation; making its source the Authority owner is relocation.
 
-Developer-supplied connective text is bounded testimony. It may assert a narrow relation within an exact presentation, but equivalent text under another subject, source, Scope, occurrence, or Warrant does not identify the same relation. Unsupported coordinates remain Unknown or uninstantiated.
+Developer-supplied connective text is attributed material. It may assert a narrow relation within an exact presentation, but equivalent text under another subject, source, Scope, occurrence, or Warrant does not identify the same relation. Unsupported coordinates remain Unknown or uninstantiated.
 
 ### 01.External.A — Addressability preserves attribution
 
@@ -56,4 +56,4 @@ External material may assert that X represents or identifies Y. Formation preser
 ## Related chapters
 
 - [Constitutional Standing](constitutional-standing.md)
-- [Testimony and Assertion Standing](../05-evidence-and-knowledge/testimony-and-assertion-standing.md)
+- [Attributed Assertions and Standing](../05-evidence-and-knowledge/testimony-and-assertion-standing.md)

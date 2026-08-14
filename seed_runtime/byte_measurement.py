@@ -1183,7 +1183,7 @@ def assertions_of_recorded_byte_measurement(
     ):
         raise ByteMeasurementError(
             f"{event_id} does not preserve its exact Measurement and "
-            "recording-occurrence testimony"
+            "recording-occurrence attribution"
         )
     evidence_id = payload.get("production_evidence_id")
     evidence = ledger.get(evidence_id) if isinstance(evidence_id, str) else None
@@ -1882,7 +1882,7 @@ def assertions_of_recorded_adjacent_byte_pair_measurement(
         or payload.get("measurement_rule") != BYTE_PAIR_MEASUREMENT_RULE
     ):
         raise ByteMeasurementError(
-            f"{event_id} does not preserve its exact pair Measurement testimony"
+            f"{event_id} does not preserve its exact pair Measurement attribution"
         )
     evidence_id = payload.get("production_evidence_id")
     evidence = ledger.get(evidence_id) if isinstance(evidence_id, str) else None

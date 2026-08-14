@@ -43,7 +43,7 @@ from dataclasses import dataclass
 import json
 from typing import Any, Iterable, Iterator
 
-from seed_runtime.bounded_testimony_comparison import COMPARISON_RECORDED_KIND
+from seed_runtime.bounded_assertion_comparison import COMPARISON_RECORDED_KIND
 from seed_runtime.events import EventLedger, EventLedgerBoundary
 from seed_runtime.event import Event
 from seed_runtime.preserved_material_measurement import MEASUREMENT_RECORDED_KIND

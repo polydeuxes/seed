@@ -460,7 +460,7 @@ def test_foreign_workspace_production_evidence_is_not_faithful(recorded):
     assert "cross-workspace movement" in " ".join(result.payload["unknowns"])
 
 
-def test_recording_testimony_is_not_part_of_the_produced_fidelity_result(recorded):
+def test_recording_attribution_is_not_part_of_the_produced_fidelity_result(recorded):
     ledger, event = recorded
     result = compare_recorded_finding(ledger, event.id)
     evidence = ledger.get(result.payload["production_evidence_id"])

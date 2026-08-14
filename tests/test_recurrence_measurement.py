@@ -26,7 +26,7 @@ from seed_runtime.assertion_comparison import (
     compare_assertion_productions,
     record_assertion_production_comparison,
 )
-from seed_runtime.bounded_testimony_comparison import (
+from seed_runtime.bounded_assertion_comparison import (
     compare_preserved_findings,
     record_comparison_finding,
 )

@@ -6,7 +6,7 @@ Scope is active constitutional law only:
     book_of_seed/README.md
     book_of_seed/concordance.md
 
-Historical reports under ``book_of_seed/`` are testimony and are left to rot
+Historical reports under ``book_of_seed/`` are attribution and are left to rot
 unchanged.  ``rosetta/`` is specifically permitted to carry retired and
 external vocabulary; that is why it exists.
 
@@ -97,6 +97,7 @@ BANNED: tuple[tuple[str, str], ...] = (
     (r"\bgaps?\b|gap[-_]", "gap"),
     (r"\bgoals?\b", "goal"),
     (r"\bdemands?\b", "demand"),
+    (r"\btestimon(?:y|ies)\b|attribution[-_]", "attribution"),
 )
 
 # The discriminator, corrected.

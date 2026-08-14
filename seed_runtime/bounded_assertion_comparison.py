@@ -1,7 +1,7 @@
 """One bounded comparison of preserved findings, owned by its own occurrence.
 
-`05.Testimony.E` permits a bounded comparison to consume multiple independently
-preserved testimonies or findings while preserving each input's coordinates as
+`05.Attribution.B` permits a bounded comparison to consume multiple independently
+preserved attributed Assertions or findings while preserving each input's coordinates as
 that input carries them. `compare_occurrence_implementation_form_recovery_001`
 records the owner: **the bounded comparison boundary that consumes them, local
 to the instantiated comparison and not named universally.**
@@ -19,7 +19,7 @@ artifact Seed does not hold.
 **What it produces is distinctions, and a relation only where one is
 established.** Two measurements over different bounded exchanges are not in
 disagreement because their results differ — each is exact within its own scope.
-`05.Testimony.E:29` holds: agreement is not truth, and comparison establishes no
+`05.Attribution.B:29` holds: agreement is not truth, and comparison establishes no
 warrant, reliance, or corroboration.
 """
 
@@ -37,7 +37,7 @@ from seed_runtime.preserved_material_measurement import (
 
 COMPARISON_RECORDED_KIND = "operator.measurement.comparison_recorded"
 
-# `05.Testimony.E`'s coordinates, and where a recorded measurement finding
+# `05.Attribution.B`'s coordinates, and where a recorded measurement finding
 # carries each. A coordinate absent from an input is named as absent and never
 # supplied: the clause forbids erasing or strengthening what an input carries
 # and does not supply what an input lacks.
@@ -53,7 +53,7 @@ INPUT_COORDINATES: dict[str, tuple[str, ...]] = {
     "forbidden_inferences": ("boundary_notes",),
 }
 
-# The family `05.Testimony.E` names. It is not an enum: the clause says the list
+# The family `05.Attribution.B` names. It is not an enum: the clause says the list
 # does not require exactly one relation and defines no universal schema.
 UNKNOWN_RELATION = "Unknown"
 
@@ -178,7 +178,7 @@ def compare_preserved_findings(
 
     ids = tuple(event_ids)
     if len(ids) != 2:
-        # Two, exactly. `05.Testimony.E` says "multiple", and an earlier form of
+        # Two, exactly. `05.Attribution.B` says "multiple", and an earlier form of
         # this function accepted any number and intersected them all — n-ary
         # comparison implemented while its own report called it unbuilt. What
         # more than two inputs jointly establish is not recovered, and a set
@@ -286,7 +286,7 @@ def record_comparison_finding(
 
     payload = {
         "dimensions": {
-            "identity": "bounded-testimony-comparison",
+            "identity": "bounded-assertion-comparison",
             "content": f"{len(finding.inputs)} preserved findings compared",
             "standing": "compared",
             "source_provenance": "recorded measurement findings",

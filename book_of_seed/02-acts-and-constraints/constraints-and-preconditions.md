@@ -19,7 +19,7 @@ An access condition, visible route, available representation, mechanism candidat
 - act != constraint on an act
 - constraint != sequential pipeline stage
 - approval requirement != approval
-- precondition testimony != act result
+- precondition attributed material != act result
 - passing constraint != complete authority
 
 ## Counterexamples or failure modes
@@ -42,6 +42,6 @@ Direct answer preserved by this clause: Does a constraint result perform the mov
 
 ## Applicability decomposition correction 001
 
-Constraint findings and precondition testimony preserve only the condition established at the boundary that produced them. A passing constraint finding, schema check, precondition check, reachability observation, or feasibility finding does not establish complete authority or act occurrence, or establish selected mechanism standing, representation fitness, recipient availability, emission, invocation, result recording, or temporal applicability beyond the finding's scope.
+Constraint findings and precondition attributed material preserve only the condition established at the boundary that produced them. A passing constraint finding, schema check, precondition check, reachability observation, or feasibility finding does not establish complete authority or act occurrence, or establish selected mechanism standing, representation fitness, recipient availability, emission, invocation, result recording, or temporal applicability beyond the finding's scope.
 
 Resource and other local conditions remain exact coordinates rather than one scalar that compresses constraint satisfaction, reachability, resources, Authority, approval, representation fitness, locality, and temporal Applicability. When an exact Act relies on a condition Assertion, unestablished coordinates remain Unknown, and the Act preserves its source, subject, Scope, requirement, result, temporal Standing, limits, and Unknowns.

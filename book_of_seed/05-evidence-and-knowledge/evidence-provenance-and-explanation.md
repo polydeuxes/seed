@@ -35,5 +35,5 @@ Explanation is a representation exposing Evidence, provenance, conflicts, and re
 
 ## Related chapters
 
-- [Testimony and Assertion Standing](testimony-and-assertion-standing.md)
+- [Attributed Assertions and Standing](testimony-and-assertion-standing.md)
 - [Recording and knowledge extraction](recording-and-knowledge-extraction.md)

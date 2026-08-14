@@ -18,7 +18,7 @@ import sqlite3
 import pytest
 
 from seed_runtime.event import Event
-from seed_runtime.bounded_testimony_comparison import (
+from seed_runtime.bounded_assertion_comparison import (
     BoundedComparisonError,
     compare_preserved_findings,
 )

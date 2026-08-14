@@ -289,7 +289,7 @@ def advance_operator_session_standing(
                 if payload[field] != expected:
                     raise ValueError(
                         "comparison does not agree with the result derived "
-                        f"from recorded testimony on {field}"
+                        f"from recorded attribution on {field}"
                     )
             comparisons[payload["comparison_ref"]] = {
                 "comparison_ref": payload["comparison_ref"],
@@ -406,7 +406,7 @@ def advance_operator_session_standing(
         if event.kind == _SOURCE_RECOVERED_KIND:
             payload = event.payload
             # A recovery is admitted into Standing only where the recorded
-            # formation testimony and the recorded identification agree with
+            # formation attribution and the recorded identification agree with
             # every coordinate it carries.
             presentation = presentations.get(payload["presentation_ref"])
             if presentation is None:
@@ -433,13 +433,13 @@ def advance_operator_session_standing(
                 if payload["source"][key] != recorded_source[key]:
                     raise ValueError(
                         "source recovery does not agree with recorded "
-                        f"formation testimony on source {key}"
+                        f"formation attribution on source {key}"
                     )
             for key in ("role", "response_coordinate"):
                 if payload["alternative"][key] != recorded_alternative[key]:
                     raise ValueError(
                         "source recovery does not agree with recorded "
-                        f"formation testimony on alternative {key}"
+                        f"formation attribution on alternative {key}"
                     )
             if (
                 payload["presentation_formed_event_id"]
@@ -530,7 +530,7 @@ def advance_operator_session_standing(
             if payload["representation"] != recorded_alternative["representation"]:
                 raise ValueError(
                     "source recovery does not agree with recorded formation "
-                    "testimony on the representation boundary"
+                    "attribution on the representation boundary"
                 )
             if payload["recovery_ref"] in source_recoveries:
                 raise ValueError(
@@ -554,7 +554,7 @@ def advance_operator_session_standing(
                 "alternative": payload["alternative"],
                 "source": payload["source"],
                 # The complete representation boundary, reconstructed from
-                # the recorded formation testimony it was validated against.
+                # the recorded formation attribution it was validated against.
                 "representation": recorded_alternative["representation"],
             }
             source_recoveries[payload["recovery_ref"]] = recovery
@@ -625,7 +625,7 @@ def advance_operator_session_standing(
                     "source_reference",
                 ),
                 # The proposition and its attribution must equal the recorded
-                # formation testimony exactly; a forged M is refused here.
+                # formation attribution exactly; a forged M is refused here.
                 (payload["proposition"], recorded_source["represented_result"], "proposition"),
                 (
                     payload["source_attribution"],
@@ -650,7 +650,7 @@ def advance_operator_session_standing(
                         f"source recovery on {coordinate}"
                     )
             # The structural Authority coordinates are reconstructed from
-            # recorded testimony, and the carried separation must equal the
+            # recorded attribution, and the carried separation must equal the
             # reconstruction -- a forged standing, support, Evidence, or
             # Scope is refused rather than exposed to a later Act.
             reconstructed_separation = {
@@ -704,18 +704,18 @@ def advance_operator_session_standing(
                     if carried.get(field) != value:
                         raise ValueError(
                             "represented relation does not agree with recorded "
-                            f"testimony on {name}.{field}"
+                            f"attribution on {name}.{field}"
                         )
                 authority_separation[name] = {
                     **reconstructed,
-                    "testimony": carried.get("testimony"),
+                    "attribution": carried.get("attribution"),
                 }
             # The relation's remaining Standing coordinates are production occurrence
             # invariants at this boundary; a forged loss, Unknown, or
             # conflict inventory is refused rather than exposed.
             reconstructed_relation_standing = {
                 "warrant_basis": (
-                    "attributed developer-supplied relation testimony "
+                    "attributed developer-supplied relation Assertion "
                     "preserved by the recorded formation occurrence"
                 ),
                 "known_loss": [],
@@ -729,7 +729,7 @@ def advance_operator_session_standing(
                 if payload[field] != value:
                     raise ValueError(
                         "represented relation does not agree with recorded "
-                        f"testimony on {field}"
+                        f"attribution on {field}"
                     )
             if payload["relation_ref"] in represented_relations:
                 raise ValueError(

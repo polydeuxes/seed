@@ -31,7 +31,7 @@ The normal constitutional relationship is:
 ```text
 external or operator material
 ↓
-attributed testimony, pressure, result conditions, constraints, corrections, or response
+attributed attributed material, pressure, result conditions, constraints, corrections, or response
 ↓
 Seed-side interpretation and bounded standing establishment
 ↓
@@ -41,7 +41,7 @@ Seed-owned applicability, selection, and composition of lawful internal means
 ↓
 bounded Seed question
 ↓
-operator response as further testimony
+operator response as further attributed material
 ```
 
 This ownership is constitutional even where the current realizable dialogue loop is incomplete. Missing realization does not transfer inquiry origination or question formation to the operator. Public `ask --question-family` behavior may remain a bounded compatibility or diagnostic dispatch surface, but operator invocation of that surface does not inject an internal question, own Seed's view composition, establish constitutional applicability, or canonize the implementation's family inventory.
@@ -50,7 +50,7 @@ Preserved Unknowns include the complete realizable default dialogue loop, the fu
 
 ## Important distinctions
 - external question-shaped prose != internal constitutional question
-- operator testimony != inquiry origination
+- operator attributed material != inquiry origination
 - question surface != inquiry standing
 - implementation question family != constitutional question taxonomy
 - uncertainty statement != inquiry origination
@@ -69,4 +69,4 @@ Preserved Unknowns include the complete realizable default dialogue loop, the fu
 
 ## Related chapters
 - [Inquiry frontiers](inquiry-frontiers.md)
-- [Testimony and Assertion Standing](../05-evidence-and-knowledge/testimony-and-assertion-standing.md)
+- [Attribution and Assertion Standing](../05-evidence-and-knowledge/attributed material-and-assertion-standing.md)

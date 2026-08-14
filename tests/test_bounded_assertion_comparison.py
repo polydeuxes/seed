@@ -1,6 +1,6 @@
-"""The smallest bounded testimony comparison, and what it refuses to conclude.
+"""The smallest bounded attribution comparison, and what it refuses to conclude.
 
-`05.Testimony.E` permits it. `#2416` recovered its owner as local to each
+`05.Attribution.B` permits it. `#2416` recovered its owner as local to each
 instantiated comparison and never universal, so these tests pin that the
 comparison is an occurrence and not a service: nothing survives a call, and
 there is no object to hold.
@@ -18,7 +18,7 @@ from io import StringIO
 
 import pytest
 
-from seed_runtime.bounded_testimony_comparison import (
+from seed_runtime.bounded_assertion_comparison import (
     COMPARISON_RECORDED_KIND,
     INPUT_COORDINATES,
     BoundedComparisonError,

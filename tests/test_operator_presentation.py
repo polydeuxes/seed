@@ -73,7 +73,7 @@ def test_console_forms_c0_before_first_ingress_and_preserves_provenance_only():
 
     # A current Presentation existing does not make the newest ingress and the
     # most recently emitted Presentation participants in one Compare.  The
-    # occurrence and its produced-after testimony are preserved; no Compare or
+    # occurrence and its produced-after attribution are preserved; no Compare or
     # Identification follows.
     kinds = [event.kind for event in ledger.list("w")]
     assert kinds == [
@@ -118,7 +118,7 @@ def test_no_compare_or_identification_follows_console_ingress():
     assert "operator.presentation.represented_relation_established" not in kinds
     assert not any(kind.startswith("operator.interaction.") for kind in kinds)
 
-    # Every ingress still carries its exact produced-after testimony.
+    # Every ingress still carries its exact produced-after attribution.
     presentations = [e for e in ledger.list("w") if e.kind == "operator.presentation.formed"]
     ingresses = [e for e in ledger.list("w") if e.kind == "operator.ingress.ingress_occurred"]
     assert len(ingresses) == 3

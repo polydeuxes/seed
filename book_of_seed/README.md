@@ -2,7 +2,7 @@
 
 The Book of Seed preserves the durable constitutional grammar needed to interpret Seed. It names bounded concepts, keeps important non-equivalences visible, offers a few representative repository anchors, and records questions that remain constitutionally unsettled.
 
-It is not a roadmap, API reference, generated topology, complete inventory, or substitute for repository inspection. Existing implementation and tests are evidence of current practice, not automatic constitutional authority. Historical audits and roadmaps are locators and testimony only.
+It is not a roadmap, API reference, generated topology, complete inventory, or substitute for repository inspection. Existing implementation and tests are Evidence of current practice, not automatic constitutional Authority. Historical audits and roadmaps are attributed records only.
 
 ## Resolution model
 
@@ -218,9 +218,9 @@ standing-establishment occurrence
 
 These branches are exposed only where the exact responsibility instantiates them. Some may precede the act, govern it, preserve its occurrence, or belong to a later exact Act. They remain governed by their independently owned constitutional grammar.
 
-#### Preservation testimony
+#### Preservation record
 
-Identifies any separately retained representation or testimony preserving an act, production, standing-establishment, Warrant, result, or other occurrence. Preservation testimony does not prove the preserved occurrence by identity.
+Identifies any separately retained representation or record preserving an Act, production, Standing establishment, Warrant, result, or other occurrence. A preservation record does not prove the preserved occurrence by identity.
 
 #### Separate Authorization standing
 

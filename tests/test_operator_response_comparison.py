@@ -190,11 +190,11 @@ def test_match_with_applicable_binding_identifies_alternative():
 
 
 def _record_malformed_presentation(ledger, mutate_bindings, *, workspace="w", session="s"):
-    """Record Presentation testimony whose binding relation is malformed.
+    """Record Presentation attribution whose binding relation is malformed.
 
     A well-formed formation supplies the payload shape; the malformed C is
     then recorded as its own formation and emission events, so the broken
-    binding belongs to recorded testimony rather than a mutated dictionary.
+    binding belongs to recorded attribution rather than a mutated dictionary.
     """
     template = form_operator_presentation(
         ledger,

@@ -3,7 +3,7 @@
 A third boundary, distinct from the two that exist:
 
 ```text
-  operator -> Seed    operator-origin    testimony and instruction
+  operator -> Seed    operator-origin    attribution and instruction
   Seed -> system      Seed-origin        the emission occurrence
   system -> Seed      system-origin      here
 ```
@@ -25,7 +25,7 @@ established here.
 
 **It is not Seed observing itself.** Seed's own emission is an act Seed
 performed and an occurrence already recorded directly; discovering it through an
-observer would manufacture a second testimony path about something Seed knows
+observer would manufacture a second attribution path about something Seed knows
 first-hand. `#2490` recorded the reason attribution comes first: Seed's account
 of a fire must never become material asserting a fire, and separating
 system-origin from Seed-origin is what keeps that separate.

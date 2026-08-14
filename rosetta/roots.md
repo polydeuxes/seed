@@ -133,6 +133,14 @@ locality-bound material or Standing concerning a desired result. `Demand`
 glosses that an exact Responsibility/Act/result boundary remains unmet. None
 adds an object, occurrence, or Standing by name.
 
+## Testimony
+
+`Testimony` is ordinary shorthand for an Assertion attributed to an exact
+source occurrence. Seed grammar preserves the source, asserted content,
+provenance, Evidence, Scope, Authority limits, locality, conflicts, Unknowns,
+and surviving limits. Attribution establishes that the source asserted the
+content; it does not establish stronger Seed Standing.
+
 ## Artifact
 
 `Artifact` is ordinary shorthand for a durably represented result, Assertion,

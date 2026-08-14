@@ -19,7 +19,7 @@ class CapturedOperatorMaterial:
     delimiter_hex: str | None
     capture_boundary: str
     byte_material_origin: str
-    encoding_testimony: str | None
+    encoding_attribution: str | None
     known_loss: tuple[str, ...]
 
     def __post_init__(self) -> None:
@@ -30,8 +30,8 @@ class CapturedOperatorMaterial:
             or type(self.capture_boundary) is not str
             or type(self.byte_material_origin) is not str
             or (
-                self.encoding_testimony is not None
-                and type(self.encoding_testimony) is not str
+                self.encoding_attribution is not None
+                and type(self.encoding_attribution) is not str
             )
             or type(self.known_loss) is not tuple
         )
@@ -43,7 +43,7 @@ class CapturedOperatorMaterial:
             raise OperatorIngressRepresentationError(
                 "malformed captured operator material"
             )
-        if self.encoding_testimony == "" or any(
+        if self.encoding_attribution == "" or any(
             type(item) is not str for item in self.known_loss
         ):
             raise OperatorIngressRepresentationError(
@@ -114,7 +114,7 @@ def capture_stdin_material(input_stream: TextIO | BinaryIO) -> CapturedOperatorM
     """Read one framed occurrence without passing production stdin through TextIO."""
     # Every fallible stream-interface check available before the destructive read
     # must precede it; subsequent capture fields derive from the observed material.
-    testimony = _encoding_testimony(input_stream)
+    attribution = _encoding_attribution(input_stream)
     binary = getattr(input_stream, "buffer", None)
     if binary is not None:
         material = binary.readline()
@@ -136,7 +136,7 @@ def capture_stdin_material(input_stream: TextIO | BinaryIO) -> CapturedOperatorM
             # Compatibility for programmatic text streams.  This adapter is honest
             # about the earlier framing/decoding rather than calling recreated bytes
             # original transport material.
-            adapter_encoding = testimony or "utf-8"
+            adapter_encoding = attribution or "utf-8"
             material = value.encode(adapter_encoding, errors="strict")
             boundary = "text-stream adapter after prior decoding"
             byte_material_origin = "text_reencoding_after_prior_decoding"
@@ -154,18 +154,18 @@ def capture_stdin_material(input_stream: TextIO | BinaryIO) -> CapturedOperatorM
         delimiter_hex=delimiter,
         capture_boundary=boundary,
         byte_material_origin=byte_material_origin,
-        encoding_testimony=testimony,
+        encoding_attribution=attribution,
         known_loss=loss,
     )
 
 
-def _encoding_testimony(input_stream: TextIO | BinaryIO) -> str | None:
-    raw_testimony = getattr(input_stream, "encoding", None)
-    if raw_testimony is None:
+def _encoding_attribution(input_stream: TextIO | BinaryIO) -> str | None:
+    raw_attribution = getattr(input_stream, "encoding", None)
+    if raw_attribution is None:
         return None
-    if type(raw_testimony) is not str:
+    if type(raw_attribution) is not str:
         raise OperatorIngressRepresentationError("malformed stream encoding metadata")
-    return raw_testimony or None
+    return raw_attribution or None
 
 
 def examine_text_representation(
@@ -176,10 +176,10 @@ def examine_text_representation(
         raise OperatorIngressRepresentationError(
             "cannot examine EOF as operator-ingress material"
         )
-    mechanism = capture.encoding_testimony or "utf-8"
+    mechanism = capture.encoding_attribution or "utf-8"
     selection = (
-        "stream_encoding_testimony"
-        if capture.encoding_testimony is not None
+        "stream_encoding_attribution"
+        if capture.encoding_attribution is not None
         else "implementation_utf8_fallback"
     )
     try:

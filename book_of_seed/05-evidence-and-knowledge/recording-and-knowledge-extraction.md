@@ -7,7 +7,7 @@ The boundary between preserving events or diagnostic output and deriving knowled
 Which bounded responsibility may take up recorded material, and what standing, if any, may it establish?
 
 ## Bounded resolution
-A recording boundary may create a retrievable representation of attributed events, findings, testimony, or established standing within the preservation horizon supplied by the recorder. Extraction from recorded material is a separate constitutional responsibility with its own evidence, reconciliation, and standing limits; successful extraction does not itself establish knowledge. Diagnostic recording should remain scoped to its diagnostic run unless a separate establishment boundary supplies additional standing. Diagnostic rendering, metrics output, CLI report text, and operator capture are not Seed preservation by identity; Seed preservation, when warranted, belongs to the retained testimony or compressed standing and not to the external surface that displayed it. Implementation measurement production, implementation understanding establishment, diagnostic rendering, and recording/preservation are separate responsibilities. Recording may preserve already produced measurement testimony or already established baseline, deviation, or transition standing; it does not produce the upstream measurement, comparison authority, baseline standing, deviation standing, or transition standing merely by storing a representation.
+A recording boundary may create a retrievable representation of attributed events, findings, Assertions, or established Standing within its preservation horizon. Recovery from recorded material is a separate Responsibility with its own Evidence and Standing limits; recovery does not establish stronger Standing. Diagnostic rendering, metrics, CLI text, and operator capture are not Seed preservation by identity. Measurement production, Standing establishment, rendering, and recording remain separate Acts.
 
 
 ## Addressable boundaries for recorded-change witnesses
@@ -20,10 +20,10 @@ When recorded material is admitted only to a diagnostic Act, that Act preserves 
 
 
 ### 05.Recording.C — Preservation and discard of implementation measurements
-Seed need not preserve every implementation measurement. Non-rebuildable is not equal to preservation-required: a raw measurement that cannot be reconstructed after process exit is preserved only when discarding it would erase material evidence or understanding of reality not otherwise retained. Seed must preserve warranted evidence or compressed standing to retain its materially warranted understanding of implementation reality. Preservation decision != standing-establishment decision: recording may preserve attributed testimony or already established standing, but record exists != recorded standing was lawfully established. A measurement within an established tolerance may be discarded when its loss does not alter or erase that understanding. A material deviation must preserve warranted measurement and comparison context to retain the challenge to prior understanding. When changed ordinary behavior is lawfully established, Seed may preserve the prior baseline, transition standing, new baseline, and warranted supporting evidence without permanently retaining every contributing raw measurement.
+Seed need not preserve every implementation measurement. A measurement is preserved when discarding it would erase material Evidence or established Standing not otherwise retained. Recording may preserve an attributed Assertion or already established Standing; record existence does not establish that Standing. A material deviation preserves its measurement and Compare coordinates.
 
-### 05.Recording.D — Recording implementation testimony and standing
-Recording may preserve already produced measurement testimony and already produced runtime/resource observation testimony within its declared preservation horizon and standing limits. Recording may preserve already established baseline standing, deviation standing, or transition standing. It does not produce the testimony, establish ordinary behavior, perform comparison, recognize material deviation, establish baseline transition, or create authority for future prediction merely by storing a representation. Recording a measurement series does not establish an implementation baseline. Recording a difference does not establish material deviation. Recording repeated samples does not establish a baseline transition.
+### 05.Recording.D — Recording implementation Assertions and Standing
+Recording may preserve produced measurement or observation Assertions and already established baseline, deviation, or transition Standing. It does not produce the upstream Assertion, perform Compare, establish ordinary behavior or transition, or create Authority for prediction merely by storing a representation.
 
 
 
@@ -34,7 +34,7 @@ Recording may preserve already produced measurement testimony and already produc
 - diagnostic rendering != measurement preservation
 - implementation measurement != recording
 - measurement occurrence != recorded measurement
-- recording measurement testimony != producing measurement testimony
+- recording a measurement Assertion != producing it
 - implementation measurement != act occurrence
 - implementation measurement != act occurrence record
 - implementation measurement != act result
@@ -54,7 +54,7 @@ Recording may preserve already produced measurement testimony and already produc
 - one unusual sample != changed ordinary behavior
 - baseline transition establishment != transition recording
 - non-rebuildable != preservation-required
-- act-status testimony cadence != act timing testimony
+- act-status Assertion cadence != act-timing Assertion
 - act occurrence status != implementation measurement
 - operator capture != Seed preservation
 - operator omission != authority for Seed to forget
@@ -81,6 +81,6 @@ Recording may preserve already produced measurement testimony and already produc
 - Attaching diagnostic-only output directly to hosts or services.
 
 ## Related chapters
-- [Testimony and Assertion Standing](testimony-and-assertion-standing.md)
+- [Attributed Assertions and Standing](testimony-and-assertion-standing.md)
 - [Events and Standing](../06-standing-and-projection/events-and-standing.md)
 - [Acts and act artifacts](../02-acts-and-constraints/acts-and-act-artifacts.md)
