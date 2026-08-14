@@ -1,4 +1,4 @@
-# Book I: Grammar and Standing
+# Grammar and Standing
 
 This Book concerns the grammar, Evidence, and Authority by which Seed can recognize constitutional subjects without confusing encountered representations with law.
 

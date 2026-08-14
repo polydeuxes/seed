@@ -81,7 +81,7 @@ BANNED: tuple[tuple[str, str], ...] = (
     (r"\blearn\w*\b", "learn*"),
     # `actor` entered with the retired generalized runtime as a closed list of
     # user/model/system/tool/builder/approver labels.  It names no Responsibility
-    # that established production occurrence or attributed-source distinctions do not
+    # that established production occurrence or source-relation distinctions do not
     # already carry.  The durable occurrence column is retained as
     # unconstrained compatibility shape; storage survival does not establish
     # Book grammar.
@@ -98,7 +98,7 @@ BANNED: tuple[tuple[str, str], ...] = (
     (r"\bgoals?\b", "goal"),
     (r"\bdemands?\b", "demand"),
     (r"\btestimon(?:y|ies)\b|testimony[-_]", "testimony"),
-    (r"\battributions?\b|attribution[-_]", "attribution"),
+    (r"\battribut\w*\b|attribut[-_]", "attribut*"),
     (r"\bconstructors?\b|constructor[-_]", "constructor"),
     (r"\bproduction authority\b", "production authority"),
     (r"\bproduc\w*\b|produc[-_]", "produc*"),
@@ -135,7 +135,7 @@ BANNED: tuple[tuple[str, str], ...] = (
 #
 # `05.Recording.A` passes: a recording boundary may create retrievable
 # assertion-bearing material, and the produced standing is that a record exists
-# and preserves an attributed assertion.  Owner, act, standing.
+# and preserves an Assertion carrying source coordinates. Owner, act, standing.
 #
 # `learning` and `translation` fail it.  Neither has a clause naming who does
 # it.  Sentence-initial capitals are not evidence either way; `Remembering`
@@ -160,7 +160,7 @@ BANNED: tuple[tuple[str, str], ...] = (
 #                 this gate is not the place to decide which repair applies.
 #   actor         BANNED.  Historical reconciliation called it coarse event
 #                 authorship vocabulary, but it carries no Responsibility not
-#                 already carried by established production occurrence or attributed-source
+#                 already carried by established production occurrence or source-relation
 #                 distinctions.  `#2450` removed its closed runtime grammar
 #                 while retaining the durable column as an unconstrained
 #                 compatibility label.  That physical field does not earn

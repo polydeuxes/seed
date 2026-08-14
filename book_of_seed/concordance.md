@@ -12,9 +12,7 @@ Navigation only. Entries do not grant constitutional identity or Standing.
 | movement | Movement and Selection | [Movement coordinates](03-goals-and-advancement/orientation-and-movement.md) |
 | result boundary | Movement and Selection | [Result boundaries and movement](03-goals-and-advancement/demands-and-opened-movement.md) |
 | Authorization | Movement and Selection | [Selection and Authorization](03-goals-and-advancement/selection-and-authorization.md) |
-| Question | Inquiry | [Questions and inquiry](04-inquiry/questions-and-inquiry.md) |
-| frontier | Inquiry | [Inquiry frontiers](04-inquiry/inquiry-frontiers.md) |
-| source relations and normalization | Evidence and Provenance | [Source-relative Assertions and Standing](05-evidence-and-knowledge/testimony-and-assertion-standing.md) |
+| source relations and normalization | Evidence and Provenance | [Assertion Source Coordinates and Standing](05-evidence-and-knowledge/assertion-source-coordinates-and-standing.md) |
 | Evidence and provenance | Evidence and Provenance | [Evidence and provenance](05-evidence-and-knowledge/evidence-provenance-and-explanation.md) |
 | recording and preserved Assertions | Evidence and Provenance | [Recording and preserved Assertions](05-evidence-and-knowledge/recording-and-knowledge-extraction.md) |
 | Event and current Standing | Standing and Locality | [Events and Standing](06-standing-and-locality/events-and-standing.md) |

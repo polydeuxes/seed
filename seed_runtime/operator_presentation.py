@@ -101,7 +101,7 @@ def form_operator_presentation(
             f"{len(alternatives)} alternatives, roles, response-coordinate "
             "bindings, and represented provenance occurrences durably recorded"
         )
-        formation_result += " with attributed bounded alternatives"
+        formation_result += " with bounded alternatives and preserved source roles"
         known_loss.append(
             "rendered label compresses represented candidate relation"
         )

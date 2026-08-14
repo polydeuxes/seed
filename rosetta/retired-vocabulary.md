@@ -46,7 +46,7 @@ constitutional State object."
 `StateProjector` and `ProjectionStore` remain in the runtime as implementation
 testimony. They carry two observations: full replay becomes pathological at
 scale, and incremental derivation can preserve replay equivalence. Neither
-warrants the noun.
+supports the noun.
 
 ## Claim and Fact
 
@@ -61,7 +61,7 @@ identity and coordinates; equal content in two Assertions does not join them by
 identity.
 
 `Fact` is ordinary shorthand for an Assertion described as having established
-Standing. It is not a higher constitutional species. Evidence, Warrant,
+Standing. It is not a higher constitutional species. Evidence, Support,
 Authority, Scope, provenance, occurrence history, and Standing carry every
 distinction the word compressed.
 
@@ -184,7 +184,7 @@ No Proposal responsibility, act, occurrence, or standing exists, and none is
 required.
 
 Neighbouring modifiers correspond to recovered acts — selected/Selection,
-warranted/Warrant, admitted/Admission, attributed/attribution. `proposed`
+support relation, Admission, source coordinates/source relation. `proposed`
 corresponds to none. The same construction recurs in unrelated clauses
 (`proposed act`, `proposed use`) with the same ordinary sense.
 
@@ -212,7 +212,7 @@ closest grammar a candidate claim concerning the presented thing
 ```
 
 Absent from active law. The phrase entered through the same correction round as
-`relation grammar`, as attributed PESC orientation vocabulary: a bounded
+`relation grammar`, as PESC orientation vocabulary with recorded source coordinates: a bounded
 proposed equivalence concerning a Presentation, explicitly not thereby true or
 established. PESC appears in no active-law chapter.
 
@@ -244,7 +244,7 @@ which is the move the word itself kept making.
 
 In a measurement it is ordinary English for the occurrences walked, which
 `01.External:28` already reaches through *the bounded scope within which
-occurrences were counted*. Where an actual Selection is separately warranted,
+occurrences were counted*. Where an actual Selection is separately supported,
 `bounded candidate set` may apply to that Selection — not to this.
 
 The word returned three times, twice inside the changes removing it, because a
@@ -274,7 +274,7 @@ that the same input always gives the same value and different inputs almost
 never do. A *commitment* is a digest kept so someone later can check whether
 they have the same thing, without holding the original to compare against.
 
-**Mechanical.** Their mechanical role warrants no constitutional clause. That
+**Mechanical.** Their mechanical role supports no constitutional clause. That
 is a statement about what they are doing here, not a prediction that no clause
 will ever concern them. An earlier version of this entry said the
 mechanism was "chosen, not recovered", which implied it was awaiting a clause,

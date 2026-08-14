@@ -1,4 +1,4 @@
-# Book II: Acts and Constraints
+# Acts and Constraints
 
 This Book concerns acts, their representations, and the constraints that govern whether acts may proceed.
 

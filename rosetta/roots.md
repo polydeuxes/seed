@@ -83,7 +83,7 @@ locality. It names no additional participant or constitutional coordinate.
 
 `Consumer` is ordinary shorthand for the side at which material may
 participate in another Act. In Seed grammar it expands to the exact locality,
-Responsibility, Act, purpose, Applicability, warranted participation or
+Responsibility, Act, purpose, Applicability, supported participation or
 input-to-result support, and Act occurrence. It names no additional participant or
 constitutional coordinate.
 
@@ -92,7 +92,7 @@ constitutional coordinate.
 `Uptake` is ordinary shorthand for available material later participating in
 another bounded Act. In Seed grammar it expands to locality movement or
 availability, Applicability, Admission where required, exact purpose,
-warranted participation or input-to-result support, and the Act occurrence. It names no
+supported participation or input-to-result support, and the Act occurrence. It names no
 relation family or additional occurrence.
 
 ## Handoff
@@ -164,7 +164,7 @@ Constraints. It adds no coordinate when those remain unchanged.
 
 ## Meaning
 
-`Meaning` is ordinary shorthand for an exact warranted relation such as X
+`Meaning` is ordinary shorthand for an exact supported relation such as X
 representing or identifying Y. The relation carries its own participants,
 Assertion, Evidence, Authority, Scope, locality, occurrence, limits, and
 Standing; the shorthand adds no relation kind.
@@ -188,16 +188,10 @@ coordinates do not establish that the named source asserted the content.
 
 ## Attribution
 
-`Attribution` is ordinary shorthand for a claimed or warranted relation between
-an Assertion and source coordinates. A source label or mechanically observed
+`Attribution` is ordinary shorthand for an asserted relation between an
+Assertion and source coordinates. A source label or mechanically observed
 material origin does not establish that relation. The relation is another
-Assertion with its own Evidence, Warrant, occurrence, and Standing.
-
-## Artifact
-
-`Artifact` is ordinary shorthand for a durably represented result, Assertion,
-record, or other material. Its exact kind, occurrence, Evidence, Standing, and
-preservation boundary must be named instead.
+Assertion with its own Evidence, support relation, occurrence, and Standing.
 
 ## Constructor
 
@@ -206,23 +200,6 @@ representation or result. Invocation may participate in an exact production
 Act, but public reachability, direct instantiation, constructability, or the
 returned shape establishes none of Responsibility, Authority, Act occurrence,
 production occurrence, production Evidence, or Standing.
-
-## Warrant
-
-`Warrant` is ordinary shorthand for why Seed is entitled to carry particular
-Standing. Seed grammar represents the exact relation Assertion connecting
-Evidence, Authority, Scope, provenance, and limits to the supported Assertion,
-together with that relation's responsible Act, occurrence, and Standing. The
-shorthand adds no subject or coordinate.
-
-## Projection and View
-
-`Projection` and `View` are ordinary lenses over bounded formation toward
-emission. In runtime they may also name mechanical replay, selection, caching,
-or formatting. Seed grammar names the source material, formation
-Responsibility/Act/occurrence, exact result boundary, preserved loss and
-limits, representation, emission occurrence, and later Applicability. Neither
-lens adds a constitutional subject.
 
 ---
 
@@ -249,7 +226,7 @@ Two established things, in order, owned separately.
 a responsible occurrence forms a bounded representation
     from exact source material, for a declared purpose
         ↓
-that representation carries only the Standing warranted by
+that representation carries only the Standing supported by
     its source, responsible formation, purpose, Scope, Evidence,
     provenance, Authority limits, conflicts, limits, and
     responsibly established Unknowns
@@ -262,7 +239,7 @@ honest. It is not a disposition or an intention. It is a bound on what the thing
 you are looking at is permitted to carry.
 
 This is why a fluent answer can be a failure and an awkward one can be correct.
-If Seed has met a word twice and says something that would only be warranted by
+If Seed has met a word twice and says something that would only be supported by
 meeting it ten thousand times, the Presentation carries standing its formation
 does not supply — regardless of how well it reads.
 
@@ -276,7 +253,7 @@ not closed-choice machinery       presented alternatives are bounded test and
                                   interaction representations, not this view
 not session Standing              a current implementation projects Standing
                                   "for a session"; that is not what a person
-                                  sees, and no clause warrants it
+                                  sees, and no clause supports it
 not Emission                      forming and sending are separate occurrences
 not receipt                       that you saw it is not part of Seed's act
 not a UI                          rendering is a surface over the formation
@@ -315,10 +292,10 @@ from *there is something out there* to *Seed has something it can work with*.
 Not one thing, and this is the honest part of the entry.
 
 ```text
-material arrives and is preserved as an occurrence, attributed to
+material arrives and is preserved with recorded material origin naming
     its origin — operator, this Seed, or system
         ↓
-external material may become addressable as source-attributed material
+external material may become addressable as material carrying source coordinates
     without becoming constitutional grammar          (01.External.B)
         ↓
 a declared measurement may produce bounded findings — equality, count,
@@ -335,8 +312,8 @@ English is for and what the Book cannot afford.
 
 ### Why this word is not in the Book
 
-It was, and it was removed. The chapter now called Inquiry was
-`inquiry-and-examination` until the noun came out on 2026-08-03, because it had
+It was, and it was removed. The former active Inquiry chapter was
+`inquiry-and-examination` before the district was retired, because it had
 compressed several responsibilities — comparison, applicability determination,
 and relation establishment among them — into one word that sounded like an act.
 

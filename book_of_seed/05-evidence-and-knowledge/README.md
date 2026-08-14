@@ -1,7 +1,7 @@
-# Book V: Evidence and Provenance
+# Evidence and Provenance
 
-This Book concerns attributed material, Evidence, provenance, and the boundaries by which recorded material may support Assertion Standing.
+This Book concerns material carrying source coordinates, Evidence, provenance, and the boundaries by which recorded material may support Assertion Standing.
 
-- [Source-relative Assertions and Standing](testimony-and-assertion-standing.md)
+- [Assertion Source Coordinates and Standing](assertion-source-coordinates-and-standing.md)
 - [Evidence, provenance, and explanation](evidence-provenance-and-explanation.md)
 - [Recording and preserved Assertions](recording-and-knowledge-extraction.md)

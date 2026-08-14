@@ -1,4 +1,4 @@
-# Book VIII: Authority, Emission, and Stopping
+# Authority, Emission, and Stopping
 
 This Book concerns bounded Authority, representation, emission, Act-local input support, Responsibility transition, and lawful stopping.
 

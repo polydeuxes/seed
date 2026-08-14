@@ -4,7 +4,7 @@
 Bounded representation and movement between localities.
 
 ## Bounded resolution
-Operator input is attributed material at its ingress locality. It does not become Seed truth, an established represented relation, Authority, or Standing by arrival.
+Operator input is material carrying source coordinates at its ingress locality. It does not become Seed truth, an established represented relation, Authority, or Standing by arrival.
 
 A representation preserves its subject, content, source, provenance, Standing, Evidence, Authority, Scope, locality, conflicts, Unknowns, and limits where established. Missing coordinates remain absent or Unknown; presentation vocabulary does not instantiate them.
 
@@ -30,7 +30,7 @@ Authority does not move merely because material moves.
 - material movement != Authority movement
 - Assertion identity != Assertion occurrence
 - locality movement != workspace movement
-- operator attributed material != Seed truth
+- operator material != Seed truth
 
 ## Related chapters
 - [Constitutional standing](../01-grammar-and-standing/constitutional-standing.md)

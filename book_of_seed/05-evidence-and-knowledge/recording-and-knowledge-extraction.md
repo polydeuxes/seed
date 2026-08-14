@@ -7,20 +7,20 @@ The boundary between preserving events or diagnostic output and deriving knowled
 Which bounded responsibility may take up recorded material, and what standing, if any, may it establish?
 
 ## Bounded resolution
-A recording boundary may create an addressable representation of attributed events, findings, Assertions, or established Standing within its preservation horizon. A later exact Act may resolve that record reference, validate the coordinates it needs, and expose the same preserved Assertion locally. Those steps are part of that Act's input boundary; they establish no separate Responsibility, subject, occurrence, or stronger Standing. Diagnostic rendering, metrics, CLI text, and operator capture are not Seed preservation by identity. Measurement, Standing establishment, rendering, and recording remain separate Acts.
+A recording boundary may create an addressable representation of Events carrying source coordinates, findings, Assertions, or established Standing within its preservation horizon. A later exact Act may resolve that record reference, validate the coordinates it needs, and expose the same preserved Assertion locally. Those steps are part of that Act's input boundary; they establish no separate Responsibility, subject, occurrence, or stronger Standing. Diagnostic rendering, metrics, CLI text, and operator capture are not Seed preservation by identity. Measurement, Standing establishment, rendering, and recording remain separate Acts.
 
 
 ## Addressable boundaries for recorded-change witnesses
 
 ### 05.Recording.A — Recorded assertion standing
-A recording boundary may establish that a retrievable record exists and preserves an attributed Assertion within its declared horizon. A later exact Act may consider that Assertion through Applicability. Record existence does not establish the represented external occurrence, current condition, truth, renewed occurrence, or arrival at another Act.
+A recording boundary may establish that a retrievable record exists and preserves an Assertion carrying source coordinates within its declared horizon. A later exact Act may consider that Assertion through Applicability. Record existence does not establish the represented external occurrence, current condition, truth, renewed occurrence, or arrival at another Act.
 
 ### 05.Recording.B — Diagnostic-run-scoped recording
 When recorded material is admitted only to a diagnostic Act, that Act preserves the scoped subject of the recording unless a separate establishment boundary supplies additional Standing. The result is bounded availability, not mutation of cluster truth or universal condition.
 
 
 ### 05.Recording.C — Preservation and discard of implementation measurements
-Seed need not preserve every implementation measurement. A measurement is preserved when discarding it would erase material Evidence or established Standing not otherwise retained. Recording may preserve an attributed Assertion or already established Standing; record existence does not establish that Standing. A material deviation preserves its measurement and Compare coordinates.
+Seed need not preserve every implementation measurement. A measurement is preserved when discarding it would erase material Evidence or established Standing not otherwise retained. Recording may preserve an Assertion carrying source coordinates or already established Standing; record existence does not establish that Standing. A material deviation preserves its measurement and Compare coordinates.
 
 ### 05.Recording.D — Recording implementation Assertions and Standing
 Recording may preserve measurement or observation Assertions and already established baseline, deviation, or transition Standing. It does not establish the upstream Assertion, perform Compare, establish ordinary behavior or transition, or create Authority for prediction merely by storing a representation.
@@ -81,6 +81,6 @@ Recording may preserve measurement or observation Assertions and already establi
 - Attaching diagnostic-only output directly to hosts or services.
 
 ## Related chapters
-- [Source-relative Assertions and Standing](testimony-and-assertion-standing.md)
+- [Assertion Source Coordinates and Standing](assertion-source-coordinates-and-standing.md)
 - [Events and Standing](../06-standing-and-locality/events-and-standing.md)
 - [Acts and occurrences](../02-acts-and-constraints/acts-and-occurrences.md)

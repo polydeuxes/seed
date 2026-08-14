@@ -8,7 +8,7 @@ A third boundary, distinct from the two that exist:
   system -> Seed      system-origin      here
 ```
 
-**This is what a second eye sees.** Material attributed to the system — a
+**This is what a second eye sees.** System-origin material — a
 directory listing, a file's contents, a program's output, a process exiting, a
 file changing, a device delivering something. It is the first Evidence available
 to Seed that neither the operator supplied nor Seed produced.
@@ -148,7 +148,7 @@ def declare_invocation(
     session_id: str,
     declared: DeclaredInvocation,
 ) -> Event:
-    """Record that an invocation was declared, and by whom it is attributed.
+    """Record that an invocation was declared, and with which declared source role.
 
     Not that it was performed. Nothing here observed an act, and the support
     says so rather than the payload asserting a performance the function cannot
@@ -168,7 +168,7 @@ def declare_invocation(
                     "content": declared.invocation,
                     "standing": "declared",
                     "source_provenance": (
-                        f"attributed to {declared.declared_performer} by the declaring caller"
+                        f"source role {declared.declared_performer} supplied by the declaring caller"
                     ),
                     "responsibility": "declared-system-invocation",
                     "authority": (
@@ -203,7 +203,7 @@ def preserve_system_material(
     exact_bytes: bytes,
     observed_boundary: str,
 ) -> Event:
-    """Record that exact system-attributed material occurred.
+    """Record that exact system-origin material occurred.
 
     No invocation is required or referenced. Material the system produced
     because someone asked, and material it produced because a process exited or

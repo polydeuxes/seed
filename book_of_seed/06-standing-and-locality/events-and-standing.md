@@ -6,7 +6,7 @@ The relation among preserved Events, Assertion-bearing material, and bounded cur
 
 ## Bounded resolution
 
-An Event preserves what its responsible recording occurrence records. Recording an attributed Assertion does not establish its content beyond the Standing established by the responsible establishment occurrence.
+An Event preserves what its responsible recording occurrence records. Recording an Assertion carrying source coordinates does not establish its content beyond the Standing established by the responsible establishment occurrence.
 
 Replay, Selection, aggregation, ranking, suppression, caching, and read-model construction may expose preserved material under exact rules and boundaries. They do not create upstream Evidence, occurrence time, Applicability, or current Standing by identity. A responsible Act may use exposed material only through its exact Evidence, established support relations, Authority, Scope, locality, freshness, conflict, expiry, Unknowns, and surviving limits.
 
@@ -50,4 +50,4 @@ Locality is a boundary coordinate, not a constitutional subject. It owns no Resp
 ## Related chapters
 
 - [Recording and knowledge extraction](../05-evidence-and-knowledge/recording-and-knowledge-extraction.md)
-- [Source-relative Assertions and Standing](../05-evidence-and-knowledge/testimony-and-assertion-standing.md)
+- [Assertion Source Coordinates and Standing](../05-evidence-and-knowledge/assertion-source-coordinates-and-standing.md)

@@ -2,11 +2,11 @@
 
 The Book of Seed preserves the durable constitutional grammar needed to interpret Seed. It names bounded concepts, keeps important non-equivalences visible, offers a few representative repository anchors, and records questions that remain constitutionally unsettled.
 
-It is not a roadmap, API reference, generated topology, complete inventory, or substitute for repository inspection. Existing implementation and tests are Evidence of current practice, not automatic constitutional Authority. Historical audits and roadmaps are attributed records only.
+It is not a roadmap, API reference, generated topology, complete inventory, or substitute for repository inspection. Existing implementation and tests are Evidence of current practice, not automatic constitutional Authority. Historical audits and roadmaps are records outside active law.
 
 ## Resolution model
 
-- A **Book** is a major constitutional district, family, or kind.
+- A **Book** is a major constitutional district.
 - A **Chapter** concerns one bounded concept, responsibility, distinction, constraint, relationship, or unresolved constitutional question.
 - `[UNRESOLVED]` marks a question for which the current repository does not safely support a constitutional resolution.
 - Representative anchors are illustrative. Seed must inspect the repository for current responsible occurrences, exact Acts, fields, topology, discrepancies, and residue.
@@ -16,10 +16,6 @@ The first pass deliberately favors concise distinctions over comprehensive prose
 [`grammar.json`](grammar.json) carries machine-readable clause coordinates used
 by tests. Tests validate that grammar rather than freezing explanatory prose.
 The Markdown Books explain and orient the same clauses.
-
-Book numbers are stable citation addresses only. They do not prescribe reading order, dependency order, constitutional sequence, or implementation movement.
-
-Book VII is intentionally absent. Its former implementation topic collection was excised after its surviving constitutional distinctions were relocated to their owning Books; the bounded disposition is recorded in [Book VII Implementation Topic Collection Excision 001](book_vii_operational_topic_collection_excision_001.md).
 
 ## Responsibility
 
@@ -77,7 +73,7 @@ Identifies where the exact input material came from. Source does not establish p
 
 #### Provenance
 
-Identifies the attributed source, preservation, and occurrence history required by the exact use. Source and provenance remain distinct.
+Identifies the source, preservation, and occurrence history required by the exact use. Source and provenance remain distinct.
 
 ### Conditional support-relation branches
 
@@ -228,7 +224,7 @@ Stopping
 != relation by identity
 ```
 
-The Responsibility hierarchy is a Book-root presentation and traversal structure. It does not create a new constitutional kind, reassign ownership among existing constitutional subjects, require one universal populated shape, or replace the exact grammar of the numbered Books.
+The Responsibility hierarchy is the Book's presentation and traversal structure. It does not create a new constitutional kind, reassign ownership among existing constitutional subjects, require one universal populated shape, or replace the exact grammar of the Books.
 
 ```text
 structural branch present != branch value established
@@ -246,11 +242,9 @@ Change the Book when constitutional grammar, a durable distinction, or the statu
 
 ## Books
 
-1. [Grammar and Standing](01-grammar-and-standing/)
-2. [Acts and Constraints](02-acts-and-constraints/)
-3. [Movement and Selection](03-goals-and-advancement/)
-4. [Inquiry](04-inquiry/)
-5. [Evidence and Provenance](05-evidence-and-knowledge/)
-6. [Standing and Locality](06-standing-and-locality/)
-7. **Intentionally absent** — see [Book VII Implementation Topic Collection Excision 001](book_vii_operational_topic_collection_excision_001.md).
-8. [Authority, Emission, and Stopping](08-authority-communication-and-stopping/)
+- [Grammar and Standing](01-grammar-and-standing/)
+- [Acts and Constraints](02-acts-and-constraints/)
+- [Movement and Selection](03-goals-and-advancement/)
+- [Evidence and Provenance](05-evidence-and-knowledge/)
+- [Standing and Locality](06-standing-and-locality/)
+- [Authority, Emission, and Stopping](08-authority-communication-and-stopping/)

@@ -9,7 +9,7 @@ Which selections establish only bounded Selection Standing, and what separate Au
 ## Bounded resolution
 Selection narrows a bounded candidate set through a responsible Selection Act and preserves its basis. Selection does not grant Authority or Authorization. Representation selection chooses representations for one exact Act and result boundary. General Selection may choose an established subject where the responsible boundary validates the required Evidence. Selection Standing establishes no later Act or movement by identity.
 
-Exact candidate-identity resolution is not Selection. A resolver may compare attributed material with a bounded candidate set and establish that exactly one candidate identity matches. That matching does not establish a Selection occurrence, responsible boundary, basis, addressed Act, Applicability, or later movement.
+Exact candidate-identity resolution is not Selection. A resolver may compare material carrying source coordinates with a bounded candidate set and establish that exactly one candidate identity matches. That matching does not establish a Selection occurrence, responsible boundary, basis, addressed Act, Applicability, or later movement.
 
 ## Important distinctions
 - candidate identity resolved != candidate selected
@@ -39,4 +39,4 @@ It may identify a selected mechanism, representation, route, or subject for an e
 
 It does not authorize an act, establish mechanism fitness, satisfy Constraints, form or emit a request representation, invoke a mechanism, establish that the requested act occurred, or record a result.
 
-Authorization Standing requires a separately established Authority boundary preserving the Authority subject, granting source, responsible boundary, authorized Act or movement, addressed subject, result boundary, Scope, temporal Standing, Constraints, Evidence, occurrence, negative Authority, and remaining Unknowns. Approval attributed material may be Evidence for that boundary; adjacent wording or references do not grant Authority by identity.
+Authorization Standing requires a separately established Authority boundary preserving the Authority subject, granting source, responsible boundary, authorized Act or movement, addressed subject, result boundary, Scope, temporal Standing, Constraints, Evidence, occurrence, negative Authority, and remaining Unknowns. Approval material with preserved source coordinates may be Evidence for that boundary; adjacent wording or references do not grant Authority by identity.

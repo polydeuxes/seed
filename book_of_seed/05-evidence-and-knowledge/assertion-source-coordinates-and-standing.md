@@ -1,4 +1,4 @@
-# Source-Relative Assertions and Standing
+# Assertion Source Coordinates and Standing
 
 ## Constitutional subject
 
@@ -36,4 +36,3 @@ Temporal coordinates distinguish what time an Assertion describes, when Evidence
 
 - [Evidence and provenance](evidence-provenance-and-explanation.md)
 - [Recording and preserved Assertions](recording-and-knowledge-extraction.md)
-- [Questions and inquiry](../04-inquiry/questions-and-inquiry.md)

@@ -56,13 +56,13 @@ Responsibility for ensuring applicability is established does not require the ac
 
 An Applicability determination may establish only **applicable**, **inapplicable**, **conflicting**, or **Unknown** for the exact input-to-Act relation and preserved coordinates. It does not establish Admission, participation, truth, a support relation for the input's Assertion, Authorization, Act occurrence, downstream Standing, or movement. An excluded input may not participate in that Act, and no result may assert that it supports the result.
 
-Exclusion of one proposed input does not by itself establish whether the exact act occurs. That determination remains with the responsibility assigned to perform the exact act, under the conditions, relations, evidence, authority, scope, and other boundaries assigned to that responsibility for the exact occurrence. One rejected candidate is not all candidates rejected; candidate exclusion establishes neither Authorization, act prohibition, nor a lawful Stop; act occurrence without an excluded input does not mean that input was applicable; and an act result is not a result supported by an excluded input. A lawful Stop requires its own competent act, authority, evidence, and attributed material; absence of act occurrence is not by itself a lawful Stop, and an implementation return or quiescence is not by itself a lawful Stop.
+Exclusion of one proposed input does not by itself establish whether the exact act occurs. That determination remains with the responsibility assigned to perform the exact act, under the conditions, relations, evidence, authority, scope, and other boundaries assigned to that responsibility for the exact occurrence. One rejected candidate is not all candidates rejected; candidate exclusion establishes neither Authorization, act prohibition, nor a lawful Stop; act occurrence without an excluded input does not mean that input was applicable; and an act result is not a result supported by an excluded input. A lawful Stop requires its own competent act, authority, evidence, and material carrying source coordinates; absence of act occurrence is not by itself a lawful Stop, and an implementation return or quiescence is not by itself a lawful Stop.
 
 An alternative input does not participate by availability, similarity, equal content, or exclusion of another input. Before participation, the Act-owning Responsibility determines or validates Applicability for that exact input-to-Act relation and every coordinate the Act requires. Whether one input may occupy another's exact role remains **Unknown** unless a responsible occurrence establishes that relation for the exact Act, result boundary, and Scope.
 
 One bounded responsible occurrence may determine Applicability for inputs, exclude **inapplicable**, **conflicting**, or **Unknown** inputs, perform the exact Act or establish no Act occurrence within its assigned boundaries, and, where independently established, establish bounded output Standing. These remain independently recoverable Assertions with their own exact coordinates. Same occurrence is not same Assertion; Applicability success is not Act occurrence; Act occurrence is not output Standing automatically established; and output Standing is not downstream Applicability or Admission.
 
-An established Act may establish only the bounded Standing of its own result when its Evidence and Authority support that exact Assertion. Result existence does not automatically establish Standing. Lawfully established Standing persists without later participation, but persistence does not establish another Act, Responsibility, result boundary, or occurrence. Applicability does not establish a result, Question formation, or implementation Authority.
+An established Act may establish only the bounded Standing of its own result when its Evidence and Authority support that exact Assertion. Result existence does not automatically establish Standing. Lawfully established Standing persists without later participation, but persistence does not establish another Act, Responsibility, result boundary, or occurrence. Applicability does not establish a result, another Assertion, or implementation Authority.
 
 ### 01.Standing.F — Dimensional characterization
 Seed commonly orients exact constitutional subjects and relations through approximately eight recurring macro-dimensional families:
@@ -112,7 +112,6 @@ Acts, constraints, and relations are structurally distinct from dimensions. They
 - participation != an established input-to-result support relation
 
 ## Representative repository anchors
-- `seed_runtime/inquiry_artifacts.py::InquiryArtifactVisibility`
 
 ## Counterexamples or failure modes
 - Calling any serialized dictionary a constitutional subject.

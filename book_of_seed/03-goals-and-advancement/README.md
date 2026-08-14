@@ -1,4 +1,4 @@
-# Book III: Movement and Selection
+# Movement and Selection
 
 This Book concerns movement, Selection, Authorization, and the exact result boundaries under which they occur.
 

@@ -1,7 +1,7 @@
 """One bounded comparison of preserved findings, owned by its own occurrence.
 
 `01.Standing.E` permits a bounded comparison to have as input multiple independently
-preserved attributed Assertions or findings while preserving each input's coordinates as
+preserved source-relative Assertions or findings while preserving each input's coordinates as
 that input carries them. `historical comparison report`
 records the owner: **the bounded comparison boundary in which they participate, local
 to the instantiated comparison and not named universally.**

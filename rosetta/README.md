@@ -39,7 +39,7 @@ implementation vocabulary   runtime and repository names that are not
 
 
 mechanical                  names for how something is done on this machine
-                            in this language, whose mechanical role warrants
+                            in this language, whose mechanical role supports
                             no constitutional clause, recorded so they stop
                             being audited as though it might
 
@@ -64,7 +64,7 @@ done here.
 ## Constitutional authority
 
 `01.External` governs the boundary this directory sits on: external vocabulary
-may be translated, attributed, and compared **without thereby becoming
+may retain source coordinates and be compared **without thereby becoming
 constitutional grammar**. That chapter is the authority *for* a Rosetta. It is
 not itself a Rosetta, and this directory is not a chapter.
 

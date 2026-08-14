@@ -657,7 +657,7 @@ def advance_operator_session_standing(
             reconstructed_separation = {
                 "source_authority": {
                     "standing": "bounded",
-                    "supports": ["source-supplied-with-attributed-relation"],
+                    "supports": ["source-supplied-with-relation-Assertion"],
                     "evidence_event_ids": [reconstruction["presentation_formed_event_id"]],
                     "scope": {
                         "source_identity": reconstruction["source"]["identity"],
@@ -716,7 +716,7 @@ def advance_operator_session_standing(
             # conflict inventory is refused rather than exposed.
             reconstructed_relation_standing = {
                 "support_relation_standing": (
-                    "attributed developer-supplied relation Assertion "
+                    "developer-supplied relation Assertion "
                     "preserved by the recorded formation occurrence"
                 ),
                 "known_loss": [],

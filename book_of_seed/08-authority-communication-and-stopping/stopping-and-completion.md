@@ -17,7 +17,7 @@ Where a bounded Stop is established, the stopping occurrence preserves the exact
 - no selected movement != no remaining required result
 - bounded exhaustion != global impossibility
 - local stop != process termination
-- attributed wording != Stopping by identity
+- source-labelled wording != Stopping by identity
 - a preventing condition != a Stopping occurrence
 
 ## Representative repository anchors

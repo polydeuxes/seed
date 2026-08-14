@@ -19,7 +19,7 @@ An access condition, visible route, available representation, mechanism candidat
 - act != constraint on an act
 - constraint != sequential pipeline stage
 - approval requirement != approval
-- precondition attributed material != act result
+- precondition material carrying source coordinates != act result
 - passing constraint != complete authority
 
 ## Counterexamples or failure modes
