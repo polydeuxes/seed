@@ -440,6 +440,8 @@ class SQLiteEventLedger(EventLedger):
         "finding_yield_comparison_act_occurrence",
         "adjacent_pair_observation_measurement_act",
         "adjacent_pair_observation_measurement_occurrence",
+        "adjacent_pair_observation_compare_act",
+        "adjacent_pair_observation_compare_occurrence",
         "external_expression_relation_act",
         "external_expression_relation_act_occurrence",
     })

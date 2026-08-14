@@ -22,6 +22,8 @@ from seed_runtime.adjacent_pair_measurement import (
     observe_emitted_representation_adjacency,
     compare_emitted_representation_adjacency,
     record_emitted_representation_adjacency,
+    record_adjacent_pair_observation_compare,
+    get_recorded_adjacent_pair_observation_compare,
     compare_adjacent_pair_observations,
     record_adjacent_pair_observations,
     get_recorded_adjacent_pair_observations,
@@ -730,6 +732,30 @@ def test_emitted_representation_adjacency_requires_exact_carriage():
         repeated_emission.payload["emitted_representation"]
         == emission.payload["emitted_representation"]
     )
+    repeated_observations = record_emitted_representation_adjacency(
+        ledger,
+        emission_event_id=repeated_emission.id,
+    )
+    recorded_compare = record_adjacent_pair_observation_compare(
+        ledger,
+        workspace_id="w",
+        session_id="emission-observation",
+        observation_event_ids=(
+            recorded_observations.id,
+            repeated_observations.id,
+        ),
+    )
+    recovered_compare = get_recorded_adjacent_pair_observation_compare(
+        ledger,
+        recorded_compare.id,
+    )
+    assert recovered_compare == compare_emitted_representation_adjacency(
+        ledger,
+        emission_event_ids=(emission.id, repeated_emission.id),
+    )
+    assert [
+        item["subject_ref"] for item in recorded_compare.payload["participation"]
+    ] == [recorded_observations.id, repeated_observations.id]
     wrong_occurrence = emission.model_copy(deep=True)
     wrong_occurrence.payload["carriage_evidence_id"] = repeated_emission.payload[
         "carriage_evidence_id"

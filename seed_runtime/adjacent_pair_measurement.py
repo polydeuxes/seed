@@ -65,6 +65,18 @@ ADJACENT_PAIR_OBSERVATION_CARRIAGE_EVIDENCE_KIND = (
     "operator.measurement.adjacent_pair_observation_carriage_evidenced"
 )
 ADJACENT_PAIR_OBSERVATION_CONVENTION = "adjacent_pair_observation_v1"
+ADJACENT_PAIR_OBSERVATION_COMPARE_RECORDED_KIND = (
+    "operator.measurement.adjacent_pair_observation_compare_recorded"
+)
+ADJACENT_PAIR_OBSERVATION_COMPARE_ACT_EVIDENCE_KIND = (
+    "operator.measurement.adjacent_pair_observation_compare_act_evidenced"
+)
+ADJACENT_PAIR_OBSERVATION_COMPARE_CARRIAGE_EVIDENCE_KIND = (
+    "operator.measurement.adjacent_pair_observation_compare_carriage_evidenced"
+)
+ADJACENT_PAIR_OBSERVATION_COMPARE_CONVENTION = (
+    "adjacent_pair_observation_compare_v1"
+)
 ADJACENT_PAIR_OBSERVATION_RESPONSIBILITY = (
     "observe one adjacent position on each side of every exact occurrence of "
     "each ordered pair recovered from one exact finding"
@@ -73,6 +85,11 @@ PAIR_FINDING_PARTICIPATION_ROLE = "recovered ordered-pair finding"
 SOURCE_OCCURRENCE_PARTICIPATION_ROLE = "exact preserved source occurrence"
 EMISSION_CARRIAGE_PARTICIPATION_ROLE = "exact emission Carriage Evidence"
 EMISSION_OCCURRENCE_PARTICIPATION_ROLE = "exact emission occurrence"
+OBSERVATION_COMPARE_INPUT_ROLE = "exact recorded adjacent-pair observations"
+ADJACENT_PAIR_OBSERVATION_COMPARE_RESPONSIBILITY = (
+    "compare exact recorded adjacent-pair observations without identifying "
+    "equal representations as equal occurrences or relations"
+)
 
 
 @dataclass(frozen=True)
@@ -1180,6 +1197,210 @@ def get_recorded_adjacent_pair_observations(
             "a carried adjacent-pair observation names different Evidence"
         )
     return observations
+
+
+def record_adjacent_pair_observation_compare(
+    ledger: EventLedger,
+    *,
+    workspace_id: str,
+    session_id: str,
+    observation_event_ids: Iterable[str],
+) -> Event:
+    """Compare exact durable observation results and preserve the bounded result."""
+
+    input_ids = tuple(observation_event_ids)
+    if (
+        len(input_ids) < 2
+        or any(not isinstance(value, str) or not value for value in input_ids)
+        or len(set(input_ids)) != len(input_ids)
+    ):
+        raise PreservedMaterialMeasurementError(
+            "observation Compare requires at least two distinct recorded observation occurrences"
+        )
+    observations: list[AdjacentPairObservation] = []
+    for event_id in input_ids:
+        event = ledger.get(event_id)
+        recovered = get_recorded_adjacent_pair_observations(ledger, event_id)
+        if (
+            event is None
+            or recovered is None
+            or event.workspace_id != workspace_id
+            or event.session_id != session_id
+        ):
+            raise PreservedMaterialMeasurementError(
+                "an observation Compare input does not reconstruct in this locality"
+            )
+        observations.extend(recovered)
+    compared = compare_adjacent_pair_observations(observations)
+    act_id = new_id("adjacent_pair_observation_compare_act")
+    act_occurrence_id = new_id("adjacent_pair_observation_compare_occurrence")
+    result_payload = {
+        "observation_event_ids": list(input_ids),
+        "comparison": compared,
+    }
+    participation = [
+        {
+            "subject_ref": event_id,
+            "role": OBSERVATION_COMPARE_INPUT_ROLE,
+            "act_occurrence_id": act_occurrence_id,
+        }
+        for event_id in input_ids
+    ]
+    act_evidence = ledger.append(
+        ADJACENT_PAIR_OBSERVATION_COMPARE_ACT_EVIDENCE_KIND,
+        workspace_id,
+        {
+            "target_act_id": act_id,
+            "act_occurrence_id": act_occurrence_id,
+            "act": "Compare exact adjacent-pair observation results",
+            "responsibility": ADJACENT_PAIR_OBSERVATION_COMPARE_RESPONSIBILITY,
+            "responsible_boundary": "this Seed",
+            "participation": participation,
+            "result_commitment": yield_commitment(
+                ADJACENT_PAIR_OBSERVATION_COMPARE_CONVENTION,
+                result_payload,
+            ),
+            "standing": "occurred",
+        },
+        session_id=session_id,
+    )
+    yield_evidence = _record_yield_evidence(
+        ledger,
+        workspace_id=workspace_id,
+        session_id=session_id,
+        convention=ADJACENT_PAIR_OBSERVATION_COMPARE_CONVENTION,
+        yielding_act="Compare exact adjacent-pair observation results",
+        act_occurrence_id=act_occurrence_id,
+        yielded_result_kind="bounded adjacent-pair observation comparison",
+        result_identity=f"adjacent-pair-observation-compare:{act_occurrence_id}",
+        yielded_content=result_payload,
+        responsibility=ADJACENT_PAIR_OBSERVATION_COMPARE_RESPONSIBILITY,
+        responsible_boundary="this Seed",
+    )
+    carriage_evidence = ledger.append(
+        ADJACENT_PAIR_OBSERVATION_COMPARE_CARRIAGE_EVIDENCE_KIND,
+        workspace_id,
+        {
+            "act_occurrence_id": act_occurrence_id,
+            "carried_content": result_payload,
+            "standing": "carried",
+        },
+        session_id=session_id,
+    )
+    return ledger.append(
+        ADJACENT_PAIR_OBSERVATION_COMPARE_RECORDED_KIND,
+        workspace_id,
+        {
+            **result_payload,
+            "target_act_id": act_id,
+            "act_occurrence_id": act_occurrence_id,
+            "responsibility": ADJACENT_PAIR_OBSERVATION_COMPARE_RESPONSIBILITY,
+            "responsible_boundary": "this Seed",
+            "participation": participation,
+            "responsible_act_evidence_id": act_evidence.id,
+            "yield_evidence_id": yield_evidence.id,
+            "carriage_evidence_id": carriage_evidence.id,
+            "unknowns": [
+                "whether any repeated external arrangement represents a grammar distinction remains Unknown"
+            ],
+            "mutates_cluster": False,
+        },
+        session_id=session_id,
+    )
+
+
+def get_recorded_adjacent_pair_observation_compare(
+    ledger: EventLedger,
+    event_id: str,
+) -> dict[str, object] | None:
+    """Recover one durable Compare result without repeating the Compare."""
+
+    carrier = ledger.get(event_id)
+    if carrier is None:
+        return None
+    if (
+        carrier.kind != ADJACENT_PAIR_OBSERVATION_COMPARE_RECORDED_KIND
+        or ledger.integrity_of(event_id) == CORRUPTED
+    ):
+        raise PreservedMaterialMeasurementError(
+            "the recorded observation Compare is absent or corrupted"
+        )
+    input_ids = carrier.payload.get("observation_event_ids")
+    compared = carrier.payload.get("comparison")
+    if (
+        not isinstance(input_ids, list)
+        or len(input_ids) < 2
+        or len(set(input_ids)) != len(input_ids)
+        or not all(isinstance(value, str) and value for value in input_ids)
+        or not isinstance(compared, dict)
+    ):
+        raise PreservedMaterialMeasurementError(
+            "the recorded observation Compare carries malformed coordinates"
+        )
+    result_payload = {
+        "observation_event_ids": input_ids,
+        "comparison": compared,
+    }
+    act_evidence = ledger.get(carrier.payload.get("responsible_act_evidence_id"))
+    yield_evidence = ledger.get(carrier.payload.get("yield_evidence_id"))
+    carriage_evidence = ledger.get(carrier.payload.get("carriage_evidence_id"))
+    evidence = (act_evidence, yield_evidence, carriage_evidence)
+    if any(
+        item is None or ledger.integrity_of(item.id) == CORRUPTED
+        for item in evidence
+    ):
+        raise PreservedMaterialMeasurementError(
+            "the recorded observation Compare carries absent or corrupted edge Evidence"
+        )
+    assert act_evidence is not None
+    assert yield_evidence is not None
+    assert carriage_evidence is not None
+    act_occurrence_id = carrier.payload.get("act_occurrence_id")
+    commitment = yield_commitment(
+        ADJACENT_PAIR_OBSERVATION_COMPARE_CONVENTION,
+        result_payload,
+    )
+    expected_participation = [
+        {
+            "subject_ref": input_id,
+            "role": OBSERVATION_COMPARE_INPUT_ROLE,
+            "act_occurrence_id": act_occurrence_id,
+        }
+        for input_id in input_ids
+    ]
+    if (
+        act_evidence.kind != ADJACENT_PAIR_OBSERVATION_COMPARE_ACT_EVIDENCE_KIND
+        or carriage_evidence.kind
+        != ADJACENT_PAIR_OBSERVATION_COMPARE_CARRIAGE_EVIDENCE_KIND
+        or yield_evidence.kind != "operator.yield.evidence_recorded"
+        or act_evidence.payload.get("act_occurrence_id") != act_occurrence_id
+        or yield_evidence.payload.get("dimensions", {}).get("act_occurrence_id")
+        != act_occurrence_id
+        or carriage_evidence.payload.get("act_occurrence_id") != act_occurrence_id
+        or act_evidence.payload.get("result_commitment") != commitment
+        or yield_evidence.payload.get("yield_commitment") != commitment
+        or yield_evidence.payload.get("yield_convention")
+        != ADJACENT_PAIR_OBSERVATION_COMPARE_CONVENTION
+        or carriage_evidence.payload.get("carried_content") != result_payload
+        or act_evidence.payload.get("participation") != expected_participation
+        or carrier.payload.get("participation") != expected_participation
+    ):
+        raise PreservedMaterialMeasurementError(
+            "the recorded observation Compare edge Evidence concerns different coordinates"
+        )
+    for input_id in input_ids:
+        event = ledger.get(input_id)
+        if (
+            event is None
+            or ledger.integrity_of(input_id) == CORRUPTED
+            or event.workspace_id != carrier.workspace_id
+            or event.session_id != carrier.session_id
+            or get_recorded_adjacent_pair_observations(ledger, input_id) is None
+        ):
+            raise PreservedMaterialMeasurementError(
+                "a recorded observation Compare input does not reconstruct"
+            )
+    return compared
 
 
 
