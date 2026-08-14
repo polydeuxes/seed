@@ -2690,37 +2690,11 @@ def test_every_carriage_evidence_kind_is_declared_once_and_registered():
     )
 
 
-def test_participation_declares_a_structural_edge_it_records_no_evidence_for():
-    """The refusal, recorded rather than resolved.
-
-    `grammar.json` declares three structural edges and gives all three the
-    same requirements -- exact_relation, occurrence_witness, intact_evidence.
-    Yield and Carriage each record evidence occurrences that can be discovered
-    and held to that. Participation records none: its only runtime appearance
-    is a payload field on another edge's act evidence.
-
-    So the Yield pattern cannot reach it. That is evidence about the grammar,
-    not a gap in the audit, and this test states which of the two it is. It
-    fails as soon as a participation evidence boundary exists, which is the
-    point at which the registry above should gain a third family.
-    """
-
-    grammar = json.loads(GRAMMAR.read_text(encoding="utf-8"))
-    edges = grammar["structural_edges"]
-    assert set(edges) == {"carriage", "participation", "yield"}
-    for name in edges:
-        assert "intact_evidence" in edges[name]["requires"], name
-
-    assert _declared_kind_constants("YIELD_EVIDENCE_KIND") or YIELD_LIVE_BOUNDARIES
-    assert _declared_kind_constants("CARRIAGE_EVIDENCE_KIND")
-    assert _declared_kind_constants("PARTICIPATION_EVIDENCE_KIND") == {}
-
-
 # Every module recording a `scope_locality` dimension. 06.Standing.B makes
 # locality a coordinate in its own right, and 01.Standing.E.1 enumerates Scope
 # and locality separately among the coordinates Applicability is determined
-# for. This compound field carries both in one string, so neither can be read
-# without parsing the other. The list is a regression boundary, not approval.
+# for. This compound field carries both in one string. A regression boundary,
+# not approval.
 SCOPE_LOCALITY_COMPOUND_SITES = 21
 
 
@@ -2742,3 +2716,112 @@ def test_no_new_site_compounds_scope_with_locality():
         f"{SCOPE_LOCALITY_COMPOUND_SITES}. 06.Standing.B carries locality as "
         "its own coordinate; a new site glues it to Scope again."
     )
+
+
+# Every live structural-edge instantiation, and the Evidence each one rests on.
+#
+# The edge-evidence-kind audit above answers a narrower question than it looks
+# like it answers: it finds occurrences of a dedicated Carriage Evidence
+# species. `_assertion_carriage_requirements` is a live Carriage boundary whose
+# intact_evidence is the integrity of the carrier occurrence itself, and it
+# declares no such constant. So having a `*_CARRIAGE_EVIDENCE_KIND` is not what
+# makes a Carriage edge live.
+#
+# `grammar.json` requires exact_relation, occurrence_witness, and
+# intact_evidence of all three edges. It does not require that the Evidence
+# arrive as its own event species, and requiring one would manufacture an
+# Evidence noun the Book does not ask for -- one occurrence may lawfully
+# evidence more than one exact relation.
+#
+# So the registry names where each boundary's Evidence comes from, and stays
+# agnostic about which species supplies it.
+STRUCTURAL_EDGE_EVIDENCE = {
+    "_assertion_carriage_requirements": ("carriage", "the carrier occurrence itself"),
+    "_emission_carriage_requirements": ("carriage", "a carriage-evidence occurrence"),
+    "_emission_attempt_carriage_requirements": (
+        "carriage",
+        "an emission-attempt carriage-evidence occurrence",
+    ),
+    "_representation_carriage_requirements": (
+        "carriage",
+        "a representation carriage-evidence occurrence",
+    ),
+    "_emission_participation_requirements": (
+        "participation",
+        "the responsible emission Act evidence occurrence",
+    ),
+    "_participation_requirements": (
+        "participation",
+        "the responsible pair Act evidence occurrence",
+    ),
+    "_occurrence_result_requirements": ("yield", "a Yield-evidence occurrence"),
+}
+
+
+def _requirement_witnesses() -> set[str]:
+    """Every live edge witness, found by reading this module rather than listing it."""
+
+    tree = ast.parse(Path(__file__).read_text(encoding="utf-8"))
+    return {
+        node.name
+        for node in tree.body
+        if isinstance(node, ast.FunctionDef)
+        and node.name.startswith("_")
+        and node.name.endswith("_requirements")
+    }
+
+
+def test_every_live_edge_witness_names_its_edge_and_its_evidence():
+    """Independent discovery equated with the registry, for all three edges."""
+
+    assert _requirement_witnesses() == set(STRUCTURAL_EDGE_EVIDENCE), (
+        "\nLive edge witnesses and the registry disagree.\n"
+        f"  only live:     {sorted(_requirement_witnesses() - set(STRUCTURAL_EDGE_EVIDENCE))}\n"
+        f"  only registry: {sorted(set(STRUCTURAL_EDGE_EVIDENCE) - _requirement_witnesses())}"
+    )
+
+    edges = json.loads(GRAMMAR.read_text(encoding="utf-8"))["structural_edges"]
+    for witness, (edge, evidence) in STRUCTURAL_EDGE_EVIDENCE.items():
+        assert edge in edges, f"{witness} names {edge}, which is not a structural edge"
+        assert evidence, witness
+
+
+def test_all_three_structural_edges_have_a_live_witness():
+    """Participation included.
+
+    An earlier revision of this file concluded Participation recorded no
+    Evidence. It records no dedicated Participation Evidence species, which is
+    a different and much weaker claim: two live boundaries rest on responsible
+    Act evidence occurrences, whose integrity is checked exactly as the other
+    edges' is.
+    """
+
+    edges = json.loads(GRAMMAR.read_text(encoding="utf-8"))["structural_edges"]
+    witnessed = {edge for edge, _ in STRUCTURAL_EDGE_EVIDENCE.values()}
+    assert witnessed == set(edges)
+
+
+def test_every_live_edge_witness_returns_its_edge_required_coordinates():
+    """The vector each witness reports is the one its edge declares."""
+
+    edges = json.loads(GRAMMAR.read_text(encoding="utf-8"))["structural_edges"]
+    source = Path(__file__).read_text(encoding="utf-8")
+    tree = ast.parse(source)
+    for node in tree.body:
+        if not isinstance(node, ast.FunctionDef):
+            continue
+        if node.name not in STRUCTURAL_EDGE_EVIDENCE:
+            continue
+        edge, _ = STRUCTURAL_EDGE_EVIDENCE[node.name]
+        required = set(edges[edge]["requires"])
+        reported = {
+            key.value
+            for sub in ast.walk(node)
+            if isinstance(sub, ast.Dict)
+            for key in sub.keys
+            if isinstance(key, ast.Constant) and isinstance(key.value, str)
+        }
+        assert required <= reported, (
+            f"{node.name} witnesses {edge}, which requires {sorted(required)}; "
+            f"it reports {sorted(reported)}"
+        )
