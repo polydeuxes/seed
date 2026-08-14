@@ -1,36 +1,27 @@
 #!/usr/bin/env python3
-"""Render audio material where one measurable coordinate changes at a time.
+"""Render sample material where one measurable coordinate changes at a time.
 
 The harness knows how it constructed each specimen. Seed receives only the
-material. Nothing here names what the difference between two specimens means.
+material. Nothing here names what a difference between two specimens means.
 
-Every coordinate is held fixed except the one a ladder varies:
+**Raw samples, no container.** A WAV header carries the sample count in its
+RIFF and data length fields, so a ladder varying only the number of samples
+changes the header too, and a Compare over whole files sees two coordinates
+move. These files are little-endian signed 16-bit samples and nothing else.
+
+**Period length in samples is what a specimen carries.** Frequency is a
+relation between that length and a separately declared sample rate --
+`sample_rate / period_length` -- and composing it is not this harness's to do.
 
 ```text
-  A   occurrence count      one, two, three occurrences at 60 Hz
-  B   frequency             one occurrence at 1 Hz, 60 Hz, 120 Hz
+  A   repetition       one exact 800-sample block, once, twice, three times
+  B   period length    one exact block of 48000, 800, 400 samples
 ```
 
-Sample rate, amplitude, channel count, sample width, and the duration of each
-occurrence are identical across every specimen either ladder renders. A
-difference between two of them is the coordinate its ladder varies, and
-nothing else.
-
-**Samples are written, not encoded.** The visual ladder found that H.264
-perturbs exact pixel equality, so two frames differing only by compression
-compare unequal. Uncompressed PCM has no such step: identical construction
-gives identical bytes, and a Compare over these specimens can be exact
-without a tolerance nothing established.
-
-Sequential occurrences and simultaneous components are different material and
-are not mixed here. Repeating an occurrence three times is ladder A. Sounding
-three frequencies at once is a different candidate relation and gets its own
-ladder when there is a reason to build one.
-
-Usage:
-
-    audio_ladder_harness.py --out-dir rungs/
-    audio_ladder_harness.py --out-dir rungs/ --frequencies 1,60,120 --counts 1,2,3
+Ladder A holds the block identical and varies how many times it occurs, with
+nothing between the repeats. Ladder B holds the repeat count at one and varies
+how long the block is. A specimen in either is a whole number of periods, so
+neither ladder moves cycle count and period length together.
 """
 
 from __future__ import annotations
@@ -38,64 +29,44 @@ from __future__ import annotations
 import argparse
 import math
 import struct
-import wave
 from pathlib import Path
 
 SAMPLE_RATE = 48000
-SAMPLE_WIDTH = 2
-CHANNELS = 1
 AMPLITUDE = 8000
-OCCURRENCE_SECONDS = 0.25
-SILENCE_SECONDS = 0.25
-BASE_FREQUENCY = 60.0
+BASE_PERIOD_SAMPLES = 800
 
 
-def _occurrence(frequency: float) -> bytes:
-    """One occurrence: exact samples, no encoder between them and the file."""
+def periodic_block(period_samples: int) -> bytes:
+    """Exactly one period, as little-endian signed 16-bit samples."""
 
-    count = int(SAMPLE_RATE * OCCURRENCE_SECONDS)
     return b"".join(
         struct.pack(
             "<h",
-            int(AMPLITUDE * math.sin(2.0 * math.pi * frequency * index / SAMPLE_RATE)),
+            int(AMPLITUDE * math.sin(2.0 * math.pi * index / period_samples)),
         )
-        for index in range(count)
+        for index in range(period_samples)
     )
 
 
-def _silence() -> bytes:
-    return b"\x00\x00" * int(SAMPLE_RATE * SILENCE_SECONDS)
+def repetition_ladder(out_dir: Path, counts: list[int]) -> list[Path]:
+    """How many times the block occurs varies. The block does not."""
 
-
-def write_wave(path: Path, frames: bytes) -> None:
-    with wave.open(str(path), "wb") as handle:
-        handle.setnchannels(CHANNELS)
-        handle.setsampwidth(SAMPLE_WIDTH)
-        handle.setframerate(SAMPLE_RATE)
-        handle.writeframes(frames)
-
-
-def count_ladder(out_dir: Path, counts: list[int]) -> list[Path]:
-    """Occurrence count varies. Frequency, and everything else, does not."""
-
+    block = periodic_block(BASE_PERIOD_SAMPLES)
     written = []
-    single = _occurrence(BASE_FREQUENCY)
-    gap = _silence()
     for count in counts:
-        frames = gap.join([single] * count)
-        path = out_dir / f"A-{count}x{BASE_FREQUENCY:g}hz.wav"
-        write_wave(path, frames)
+        path = out_dir / f"A-{count}x{BASE_PERIOD_SAMPLES}samples.pcm"
+        path.write_bytes(block * count)
         written.append(path)
     return written
 
 
-def frequency_ladder(out_dir: Path, frequencies: list[float]) -> list[Path]:
-    """Frequency varies. Occurrence count, and everything else, does not."""
+def period_ladder(out_dir: Path, periods: list[int]) -> list[Path]:
+    """How long one period is varies. The count of periods does not."""
 
     written = []
-    for frequency in frequencies:
-        path = out_dir / f"B-1x{frequency:g}hz.wav"
-        write_wave(path, _occurrence(frequency))
+    for period in periods:
+        path = out_dir / f"B-1x{period}samples.pcm"
+        path.write_bytes(periodic_block(period))
         written.append(path)
     return written
 
@@ -104,17 +75,20 @@ def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--out-dir", type=Path, required=True)
     parser.add_argument("--counts", default="1,2,3")
-    parser.add_argument("--frequencies", default="1,60,120")
+    parser.add_argument("--periods", default="48000,800,400")
     args = parser.parse_args()
 
     args.out_dir.mkdir(parents=True, exist_ok=True)
     counts = [int(value) for value in args.counts.split(",")]
-    frequencies = [float(value) for value in args.frequencies.split(",")]
+    periods = [int(value) for value in args.periods.split(",")]
 
-    for path in count_ladder(args.out_dir, counts) + frequency_ladder(
-        args.out_dir, frequencies
+    for path in repetition_ladder(args.out_dir, counts) + period_ladder(
+        args.out_dir, periods
     ):
-        print(f"{path.name:22} {path.stat().st_size:8} bytes")
+        print(f"{path.name:28} {path.stat().st_size:8} bytes")
+    print(
+        f"\nsample rate {SAMPLE_RATE} is declared here, not carried by any specimen."
+    )
     return 0
 
 
