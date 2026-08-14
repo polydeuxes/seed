@@ -78,12 +78,18 @@ def test_every_rung_partitions_the_same_material():
         assert covered == list(range(256))
 
 
+def _members(rung: dict) -> set[tuple[int, ...]]:
+    """A rung as the classes it holds, however those classes are keyed."""
+
+    return {tuple(sorted(members)) for members in rung.values()}
+
+
 def test_each_rung_reads_the_one_below_it():
-    """Rung n+1 is what refine returns for rung n, not a fresh measurement."""
+    """Rung n+1 holds what refining rung n yields, not a fresh measurement."""
 
     rungs = climb("utf-8")
     for lower, upper in zip(rungs, rungs[1:]):
-        assert refine("utf-8", lower) == upper
+        assert _members(refine("utf-8", lower)) == _members(upper)
 
 
 def test_witnesses_climb_to_different_heights():

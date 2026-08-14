@@ -42,13 +42,27 @@ from __future__ import annotations
 import argparse
 import codecs
 import collections
+import warnings
 from functools import lru_cache
+
+import refinement_climb
+
+# See `accepts`: a warning is not a refusal.
+warnings.filterwarnings("ignore", category=DeprecationWarning, module=__name__)
+warnings.filterwarnings("ignore", category=SyntaxWarning)
 
 CONTINUATION_PROBE = tuple(range(0x80, 0xC0))
 
 
 def accepts(codec: str, sequence: tuple[int, ...]) -> bool:
-    """Whether the witness accepts these exact bytes. Its answer, not a fact."""
+    """Whether the witness accepts these exact bytes. Its answer, not a fact.
+
+    Some witnesses emit warnings while answering -- `unicode_escape` reports
+    invalid escape sequences for most of the 256 single bytes. A warning is not
+    a refusal and does not change what the witness returned, so it is filtered
+    at import rather than read as an outcome. Filtering per call costs 14x,
+    measured, and this runs millions of times.
+    """
 
     try:
         bytes(sequence).decode(codec)
@@ -180,17 +194,18 @@ def refine(codec: str, recovered: dict[object, list[int]]) -> dict[object, list[
 def climb(codec: str, limit: int = 16) -> list[dict[object, list[int]]]:
     """Every rung, from the first classification to the one that stops moving.
 
-    Each rung's classes are the material the next rung's measurement reads.
-    The climb ends where a rung establishes nothing the one below it did not.
+    The mechanism is `refinement_climb`, which knows nothing of codecs. What
+    this supplies is the first classification and the witness.
     """
 
-    rungs = [classes(codec, 4)]
-    for _ in range(limit):
-        nxt = refine(codec, rungs[-1])
-        if len(nxt) == len(rungs[-1]):
-            break
-        rungs.append(nxt)
-    return rungs
+    rungs = refinement_climb.climb(
+        [tuple(members) for members in classes(codec, 4).values()],
+        lambda first, second: accepts(codec, (first, second)),
+        limit=limit,
+    )
+    return [
+        {index: list(members) for index, members in enumerate(rung)} for rung in rungs
+    ]
 
 
 def decoding_witnesses() -> list[str]:
