@@ -29,8 +29,8 @@ An access condition, visible route, available representation, mechanism candidat
 
 ## Related chapters
 - [Acts and occurrences](acts-and-occurrences.md)
-- [Selection and authorization](../03-goals-and-advancement/selection-and-authorization.md)
-- [Stopping and completion](../08-authority-communication-and-stopping/stopping-and-completion.md)
+- [Selection and authorization](selection-and-authorization.md)
+- [Stopping and completion](stopping-and-completion.md)
 
 ## Constrained movement constraint correction 001
 

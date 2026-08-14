@@ -31,5 +31,5 @@ Movement is not a rule call or Act occurrence by identity. Standing is not a dur
 - Treating navigation metadata as an active constitutional edge.
 
 ## Related chapters
-- [Result boundaries and movement](demands-and-opened-movement.md)
-- [Stopping and completion](../08-authority-communication-and-stopping/stopping-and-completion.md)
+- [Result boundaries and movement](result-boundaries-and-movement.md)
+- [Stopping and completion](stopping-and-completion.md)

@@ -33,6 +33,6 @@ Authority does not move merely because material moves.
 - operator material != Seed truth
 
 ## Related chapters
-- [Constitutional standing](../01-grammar-and-standing/constitutional-standing.md)
+- [Constitutional standing](constitutional-standing.md)
 - [Authority scope](authority-scope.md)
-- [Events and Standing](../06-standing-and-locality/events-and-standing.md)
+- [Events and Standing](events-and-standing.md)

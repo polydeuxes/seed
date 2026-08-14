@@ -49,7 +49,7 @@ The current implementation is primarily Python and includes:
 * `seed_runtime/` — runtime domain models, projection, observations, evidence, state views, policy, capability inventory, recommendations, and supporting services;
 * `tests/` — executable coverage for the implemented behavior and architecture invariants;
 * `docs/` — architectural thesis, navigation, reconciliations, vocabularies, audits, and status documents;
-* `capability_catalog/`, `predicate_catalog/`, `relationship_catalog/`, and `entity_type_catalog/` — checked-in catalog data used by the runtime;
+* `dormant/catalogs/` — retired catalog representations retained for inspection;
 * `scripts/` and `toolkits/` — local scripts and toolkit examples around the runtime boundary.
 
 ## What Does Seed Not Own?
@@ -74,7 +74,7 @@ For a new contributor, use this short path:
 2. [`docs/seed.md`](docs/seed.md) — concise architectural thesis / constitutional statement.
 3. [`docs/ontology.md`](docs/ontology.md) — concise architectural vocabulary and boundaries.
 4. [`docs/README.md`](docs/README.md) — documentation navigation map.
-5. [`book_of_seed/README.md`](book_of_seed/README.md) — durable constitutional grammar and its Book-level navigation.
+5. [`book_of_seed/README.md`](book_of_seed/README.md) — durable constitutional grammar and chapter navigation.
 6. [`docs/architectural_status_and_next_frontier.md`](docs/architectural_status_and_next_frontier.md) — current status and active frontier.
 7. [`docs/architectural_knowledge_map.md`](docs/architectural_knowledge_map.md) — concern map and routing to owning documents.
 

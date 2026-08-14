@@ -43,5 +43,5 @@ Repository Evidence supports distinct Selection forms. Representation selection 
 - Treating preserved non-selected alternatives as completing the responsible occurrence Evidence when identity, basis, or exact Act validation is still missing.
 
 ## Related chapters
-- [Selection and authorization](../03-goals-and-advancement/selection-and-authorization.md)
-- [Evidence, provenance, and explanation](../05-evidence-and-knowledge/evidence-provenance-and-explanation.md)
+- [Selection and authorization](selection-and-authorization.md)
+- [Evidence, provenance, and explanation](evidence-provenance-and-explanation.md)

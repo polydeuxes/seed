@@ -1,13 +1,12 @@
 # Book of Seed
 
-The Book of Seed preserves the durable constitutional grammar needed to interpret Seed. It names bounded concepts, keeps important non-equivalences visible, offers a few representative repository anchors, and records questions that remain constitutionally unsettled.
+The Book of Seed preserves the durable constitutional grammar needed to interpret Seed. It names bounded concepts, keeps important non-equivalences visible, and offers a few representative repository anchors.
 
 It is not a roadmap, API reference, generated topology, complete inventory, or substitute for repository inspection. Existing implementation and tests are Evidence of current practice, not automatic constitutional Authority. Historical audits and roadmaps are records outside active law.
 
 ## Resolution model
 
-- A **Book** is a major constitutional district.
-- A **Chapter** concerns one bounded concept, responsibility, distinction, constraint, relationship, or unresolved constitutional question.
+- A **Chapter** concerns one bounded concept, Responsibility, distinction, constraint, or relation.
 - `[UNRESOLVED]` marks a question for which the current repository does not safely support a constitutional resolution.
 - Representative anchors are illustrative. Seed must inspect the repository for current responsible occurrences, exact Acts, fields, topology, discrepancies, and residue.
 
@@ -15,7 +14,7 @@ The first pass deliberately favors concise distinctions over comprehensive prose
 
 [`grammar.json`](grammar.json) carries machine-readable clause coordinates used
 by tests. Tests validate that grammar rather than freezing explanatory prose.
-The Markdown Books explain and orient the same clauses.
+The Markdown chapters explain and orient the same clauses.
 
 ## Responsibility
 
@@ -224,7 +223,7 @@ Stopping
 != relation by identity
 ```
 
-The Responsibility hierarchy is the Book's presentation and traversal structure. It does not create a new constitutional kind, reassign ownership among existing constitutional subjects, require one universal populated shape, or replace the exact grammar of the Books.
+The Responsibility hierarchy is the Book's presentation and traversal structure. It does not create a new constitutional kind, reassign ownership among existing constitutional subjects, require one universal populated shape, or replace the exact grammar of the chapters.
 
 ```text
 structural branch present != branch value established
@@ -240,11 +239,21 @@ same occurrence != same Assertion
 
 Change the Book when constitutional grammar, a durable distinction, or the status of an unresolved constitutional question changes. Do not update it merely because a function moves, a field is added, a pipeline is rewired, or a new diagnostic projects the same grammar.
 
-## Books
+## Chapters
 
-- [Grammar and Standing](01-grammar-and-standing/)
-- [Acts and Constraints](02-acts-and-constraints/)
-- [Movement and Selection](03-goals-and-advancement/)
-- [Evidence and Provenance](05-evidence-and-knowledge/)
-- [Standing and Locality](06-standing-and-locality/)
-- [Authority, Emission, and Stopping](08-authority-communication-and-stopping/)
+- [External and constitutional grammar](chapters/external-and-constitutional-grammar.md)
+- [Constitutional Standing](chapters/constitutional-standing.md)
+- [Acts and occurrences](chapters/acts-and-occurrences.md)
+- [Constraints and preconditions](chapters/constraints-and-preconditions.md)
+- [Selection and Selection Acts](chapters/selection-and-selection-acts.md)
+- [Movement coordinates](chapters/orientation-and-movement.md)
+- [Result boundaries and movement](chapters/result-boundaries-and-movement.md)
+- [Selection and Authorization](chapters/selection-and-authorization.md)
+- [Assertion source coordinates and Standing](chapters/assertion-source-coordinates-and-standing.md)
+- [Evidence and provenance](chapters/evidence-provenance-and-explanation.md)
+- [Recording and preserved Assertions](chapters/recording-and-knowledge-extraction.md)
+- [Events and Standing](chapters/events-and-standing.md)
+- [Responsibility discrepancy and residue](chapters/ownership-discrepancy-and-residue.md)
+- [Authority Scope](chapters/authority-scope.md)
+- [Representation, emission, and locality](chapters/representation-emission-and-locality.md)
+- [Stopping and completion](chapters/stopping-and-completion.md)

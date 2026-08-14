@@ -28,9 +28,9 @@ Where a bounded Stop is established, the stopping occurrence preserves the exact
 - Continuing movement after the bounded result condition is satisfied.
 
 ## Related chapters
-- [Orientation and movement](../03-goals-and-advancement/orientation-and-movement.md)
-- [Result boundaries and movement](../03-goals-and-advancement/demands-and-opened-movement.md)
-- [Constraints and preconditions](../02-acts-and-constraints/constraints-and-preconditions.md)
+- [Orientation and movement](orientation-and-movement.md)
+- [Result boundaries and movement](result-boundaries-and-movement.md)
+- [Constraints and preconditions](constraints-and-preconditions.md)
 
 ## Constrained movement stopping correction 001
 

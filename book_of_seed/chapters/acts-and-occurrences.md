@@ -33,5 +33,5 @@ A Responsibility bounds what Standing may be established, preserved, or revised 
 
 ## Related chapters
 - [Constraints and preconditions](constraints-and-preconditions.md)
-- [Assertion Source Coordinates and Standing](../05-evidence-and-knowledge/assertion-source-coordinates-and-standing.md)
-- [Recording and knowledge extraction](../05-evidence-and-knowledge/recording-and-knowledge-extraction.md)
+- [Assertion Source Coordinates and Standing](assertion-source-coordinates-and-standing.md)
+- [Recording and knowledge extraction](recording-and-knowledge-extraction.md)

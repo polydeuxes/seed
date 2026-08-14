@@ -49,5 +49,5 @@ Locality is a boundary coordinate, not a constitutional subject. It owns no Resp
 
 ## Related chapters
 
-- [Recording and knowledge extraction](../05-evidence-and-knowledge/recording-and-knowledge-extraction.md)
-- [Assertion Source Coordinates and Standing](../05-evidence-and-knowledge/assertion-source-coordinates-and-standing.md)
+- [Recording and knowledge extraction](recording-and-knowledge-extraction.md)
+- [Assertion Source Coordinates and Standing](assertion-source-coordinates-and-standing.md)

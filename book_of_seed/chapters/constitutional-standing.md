@@ -118,5 +118,5 @@ Acts, constraints, and relations are structurally distinct from dimensions. They
 - Inferring standing solely from a public export.
 
 ## Related chapters
-- [Authority Scope](../08-authority-communication-and-stopping/authority-scope.md)
-- [Recording and knowledge extraction](../05-evidence-and-knowledge/recording-and-knowledge-extraction.md)
+- [Authority Scope](authority-scope.md)
+- [Recording and knowledge extraction](recording-and-knowledge-extraction.md)

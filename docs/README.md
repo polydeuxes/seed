@@ -4,6 +4,8 @@ This directory contains Seed's architectural thesis, status documents, reconcili
 
 This file is the documentation navigation authority. It is a map, not an encyclopedia: it routes readers to the documents that own each answer without restating their full arguments.
 
+Historical repository reports are retained under [`reports/`](reports/). They are records, not current architectural authority.
+
 ---
 
 ## Start Here

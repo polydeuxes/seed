@@ -36,5 +36,5 @@ Neither a result condition nor a bounded distinction requires another Act. Selec
 
 - [Movement coordinates](orientation-and-movement.md)
 - [Selection and Authorization](selection-and-authorization.md)
-- [Constraints and preconditions](../02-acts-and-constraints/constraints-and-preconditions.md)
-- [Stopping and completion](../08-authority-communication-and-stopping/stopping-and-completion.md)
+- [Constraints and preconditions](constraints-and-preconditions.md)
+- [Stopping and completion](stopping-and-completion.md)

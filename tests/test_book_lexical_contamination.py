@@ -2,7 +2,7 @@
 
 Scope is active constitutional law only:
 
-    book_of_seed/[0-9][0-9]-*/**/*.md
+    book_of_seed/chapters/*.md
     book_of_seed/README.md
     book_of_seed/concordance.md
 
@@ -114,6 +114,7 @@ BANNED: tuple[tuple[str, str], ...] = (
     (r"\bartifacts?\b|artifact[-_]", "artifact"),
     (r"\bprojections?\b|projection[-_]", "projection"),
     (r"\bviews?\b|view[-_]", "view"),
+    (r"\bdistricts?\b", "district"),
 )
 
 # The discriminator, corrected.
@@ -171,7 +172,7 @@ COMPILED = tuple((re.compile(pattern, re.IGNORECASE), label) for pattern, label 
 
 def book_proper_files() -> list[Path]:
     """Active law only.  Reports and rosetta/ are out of scope by design."""
-    files = sorted(BOOK.glob("[0-9][0-9]-*/**/*.md"))
+    files = sorted((BOOK / "chapters").glob("*.md"))
     for extra in ("README.md", "concordance.md", "grammar.json"):
         candidate = BOOK / extra
         if candidate.exists():
@@ -215,7 +216,7 @@ def render_violations(found: list[tuple[str, int, str, str]]) -> str:
 
 def test_book_proper_scope_excludes_reports_and_rosetta():
     files = {p.relative_to(ROOT).as_posix() for p in book_proper_files()}
-    assert any(f.startswith("book_of_seed/0") for f in files)
+    assert any(f.startswith("book_of_seed/chapters/") for f in files)
     assert not any("/rosetta/" in f or f.startswith("rosetta/") for f in files)
     # A historical report sitting directly under book_of_seed/ is out of scope.
     assert not any(

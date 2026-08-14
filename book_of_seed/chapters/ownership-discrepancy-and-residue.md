@@ -24,5 +24,5 @@ Assertions concerning ownership are evaluated by comparing implementation behavi
 - Preserving a legacy side path as law because tests still characterize it.
 
 ## Related chapters
-- [Constitutional Standing](../01-grammar-and-standing/constitutional-standing.md)
-- [Authority scope](../08-authority-communication-and-stopping/authority-scope.md)
+- [Constitutional Standing](constitutional-standing.md)
+- [Authority scope](authority-scope.md)

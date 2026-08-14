@@ -19,7 +19,7 @@ This branch turns the Seed blueprint into a runnable Python prototype and has no
 - Builder candidate generation, candidate validation, and registration flow for moving validated generated toolkits into the registry.
 - First harmless generated-style toolkit, `host_notes`, which records and lists host notes only in Seed's ledger.
 
-- Semantic catalogs for `PredicateCatalog` (what can be known), `RelationshipCatalog` (how entities connect), `EntityTypeCatalog` (what kind of thing an entity is), `CapabilityCatalog` (what can be done or handed off), and `InferenceCatalog` (deterministic reasoning rules).
+- Retired catalog representations remain under `dormant/catalogs/`; live runtime code does not read them.
 - Live read-only ingestion examples for Ansible inventory, Prometheus, and local host observation.
 - ProjectionStore-backed cached current state on top of the append-only EventLedger, with rebuild/status CLI surfaces for cache maintenance.
 - Operator queries for state summaries, impact analysis, why explanations, unhealthy/down filtering, graph issues, relationships, entity types, and current facts.

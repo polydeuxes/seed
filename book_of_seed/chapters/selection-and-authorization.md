@@ -27,9 +27,9 @@ Exact candidate-identity resolution is not Selection. A resolver may compare mat
 - Treating exact key matching as semantic judgment or Authority to move.
 
 ## Related chapters
-- [Selection and acts of selection](../02-acts-and-constraints/selection-and-selection-acts.md)
-- [Authority scope](../08-authority-communication-and-stopping/authority-scope.md)
-- [Constraints and preconditions](../02-acts-and-constraints/constraints-and-preconditions.md)
+- [Selection and acts of selection](selection-and-selection-acts.md)
+- [Authority scope](authority-scope.md)
+- [Constraints and preconditions](constraints-and-preconditions.md)
 
 ## Selection and authorization decompression correction 001
 

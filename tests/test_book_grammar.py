@@ -4,7 +4,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 GRAMMAR = ROOT / "book_of_seed/grammar.json"
-BOOK = ROOT / "book_of_seed/01-grammar-and-standing/constitutional-standing.md"
+BOOK = ROOT / "book_of_seed/chapters/constitutional-standing.md"
 
 
 def test_machine_readable_grammar_uses_responsibility_spine():

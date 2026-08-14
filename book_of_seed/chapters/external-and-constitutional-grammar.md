@@ -56,4 +56,4 @@ External material may assert that X represents or identifies Y. Formation preser
 ## Related chapters
 
 - [Constitutional Standing](constitutional-standing.md)
-- [Assertion Source Coordinates and Standing](../05-evidence-and-knowledge/assertion-source-coordinates-and-standing.md)
+- [Assertion Source Coordinates and Standing](assertion-source-coordinates-and-standing.md)
