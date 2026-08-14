@@ -10,6 +10,7 @@ from seed_runtime.source_change import (
     SourceChangeError,
     SourceEdit,
     apply_source_edits,
+    compare_source_checks,
     observe_source_files,
     render_source_diff,
     run_source_check,
@@ -18,7 +19,7 @@ from seed_runtime.source_change import (
 
 def _repository(tmp_path: Path) -> Path:
     root = tmp_path / "other-repository"
-    root.mkdir()
+    root.mkdir(parents=True)
     (root / "app.py").write_text("VALUE = 1\n", encoding="utf-8")
     (root / "check.py").write_text(
         "from app import VALUE\nraise SystemExit(0 if VALUE == 2 else 7)\n",
@@ -101,7 +102,14 @@ def test_equivalent_path_spellings_cannot_bypass_duplicate_refusal(tmp_path):
     root = _repository(tmp_path)
     observation = observe_source_files(root, ("app.py",))[0]
     first = SourceEdit.from_observation(observation, b"VALUE = 2\n")
-    second = SourceEdit("./app.py", observation.identity, b"VALUE = 3\n")
+    second = SourceEdit(
+        observation.source_root,
+        observation.source_root_device,
+        observation.source_root_inode,
+        "./app.py",
+        observation.identity,
+        b"VALUE = 3\n",
+    )
 
     with pytest.raises(SourceChangeError):
         apply_source_edits(root, (first, second))
@@ -174,3 +182,89 @@ def test_replacement_keeps_existing_permission_bits(tmp_path):
     )
 
     assert path.stat().st_mode & 0o777 == 0o744
+
+
+def test_identical_path_and_bytes_in_another_repository_are_not_the_same_input(
+    tmp_path,
+):
+    first_root = _repository(tmp_path / "first")
+    second_root = _repository(tmp_path / "second")
+    first = observe_source_files(first_root, ("app.py",))[0]
+    second = observe_source_files(second_root, ("app.py",))[0]
+
+    assert first.relative_path == second.relative_path
+    assert first.identity == second.identity
+    assert first.source_root != second.source_root
+    edit = SourceEdit.from_observation(first, b"VALUE = 2\n")
+
+    with pytest.raises(SourceChangeError, match="different repository root"):
+        apply_source_edits(second_root, (edit,))
+    assert (second_root / "app.py").read_bytes() == second.material
+
+
+def test_replacing_a_repository_at_the_same_path_invalidates_old_edits(tmp_path):
+    root = _repository(tmp_path)
+    observation = observe_source_files(root, ("app.py",))[0]
+    edit = SourceEdit.from_observation(observation, b"VALUE = 2\n")
+
+    root.rename(tmp_path / "retired-repository")
+    replacement_root = _repository(tmp_path)
+    replacement = observe_source_files(replacement_root, ("app.py",))[0]
+    assert replacement.source_root == observation.source_root
+    assert replacement.identity == observation.identity
+    assert (
+        replacement.source_root_device,
+        replacement.source_root_inode,
+    ) != (
+        observation.source_root_device,
+        observation.source_root_inode,
+    )
+
+    with pytest.raises(SourceChangeError, match="different repository root"):
+        apply_source_edits(replacement_root, (edit,))
+    assert (replacement_root / "app.py").read_bytes() == replacement.material
+
+
+def test_check_comparison_reports_distinctions_without_calling_one_a_fix(tmp_path):
+    root = _repository(tmp_path)
+    exact_check = (
+        sys.executable,
+        "-c",
+        "ns={}; exec(open('app.py', encoding='utf-8').read(), ns); "
+        "raise SystemExit(0 if ns['VALUE'] == 2 else 7)",
+    )
+    before = run_source_check(root, exact_check)
+    observation = observe_source_files(root, ("app.py",))[0]
+    apply_source_edits(
+        root,
+        (SourceEdit.from_observation(observation, b"VALUE = 2\n"),),
+    )
+    after = run_source_check(root, exact_check)
+
+    comparison = compare_source_checks(before, after)
+    assert before.returncode == 7
+    assert after.returncode == 0
+    assert comparison.returncode_same is False
+    assert comparison.stdout_relation == "same"
+    assert comparison.stderr_relation == "same"
+    assert not hasattr(comparison, "improved")
+    assert not hasattr(comparison, "fixed")
+
+
+def test_equal_truncated_prefixes_do_not_establish_equal_check_output(tmp_path):
+    root = _repository(tmp_path)
+    left = run_source_check(
+        root,
+        (sys.executable, "-c", "print('a' * 64 + 'left')"),
+        max_output_bytes=64,
+    )
+    right = run_source_check(
+        root,
+        (sys.executable, "-c", "print('a' * 64 + 'rite')"),
+        max_output_bytes=64,
+    )
+
+    comparison = compare_source_checks(left, right)
+    assert left.stdout == right.stdout == b"a" * 64
+    assert left.stdout_total_bytes == right.stdout_total_bytes
+    assert comparison.stdout_relation == "Unknown"

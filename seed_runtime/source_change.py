@@ -55,6 +55,9 @@ def _source_path(root: Path, relative_path: str) -> Path:
 
 @dataclass(frozen=True)
 class SourceObservation:
+    source_root: str
+    source_root_device: int
+    source_root_inode: int
     relative_path: str
     material: bytes
     identity: MaterialIdentity
@@ -62,8 +65,13 @@ class SourceObservation:
     @classmethod
     def read(cls, root: Path, relative_path: str) -> "SourceObservation":
         path = _source_path(root, relative_path)
+        resolved_root = root.resolve(strict=True)
+        root_stat = resolved_root.stat()
         material = path.read_bytes()
         return cls(
+            source_root=str(resolved_root),
+            source_root_device=root_stat.st_dev,
+            source_root_inode=root_stat.st_ino,
             relative_path=str(_relative_path(relative_path)),
             material=material,
             identity=MaterialIdentity.of(material),
@@ -72,11 +80,22 @@ class SourceObservation:
 
 @dataclass(frozen=True)
 class SourceEdit:
+    source_root: str
+    source_root_device: int
+    source_root_inode: int
     relative_path: str
     expected: MaterialIdentity
     replacement: bytes
 
     def __post_init__(self) -> None:
+        if not isinstance(self.source_root, str) or not self.source_root:
+            raise SourceChangeError("a source edit requires its exact repository root")
+        for name in ("source_root_device", "source_root_inode"):
+            value = getattr(self, name)
+            if type(value) is not int or value < 0:
+                raise SourceChangeError(
+                    f"a source edit requires an exact repository {name}"
+                )
         object.__setattr__(self, "relative_path", str(_relative_path(self.relative_path)))
         if not isinstance(self.expected, MaterialIdentity):
             raise SourceChangeError("a source edit requires its exact observed identity")
@@ -90,6 +109,9 @@ class SourceEdit:
         if not isinstance(observation, SourceObservation):
             raise SourceChangeError("a source edit requires an exact observation")
         return cls(
+            source_root=observation.source_root,
+            source_root_device=observation.source_root_device,
+            source_root_inode=observation.source_root_inode,
             relative_path=observation.relative_path,
             expected=observation.identity,
             replacement=replacement,
@@ -127,6 +149,56 @@ class SourceCheckResult:
     @property
     def stderr_complete(self) -> bool:
         return len(self.stderr) == self.stderr_total_bytes
+
+
+@dataclass(frozen=True)
+class SourceCheckComparison:
+    before_argv: tuple[str, ...]
+    after_argv: tuple[str, ...]
+    returncode_same: bool
+    stdout_relation: str
+    stderr_relation: str
+
+
+def _stream_relation(
+    left: bytes,
+    left_total: int,
+    right: bytes,
+    right_total: int,
+) -> str:
+    if left != right or left_total != right_total:
+        return "different"
+    if len(left) == left_total == len(right) == right_total:
+        return "same"
+    return "Unknown"
+
+
+def compare_source_checks(
+    before: SourceCheckResult, after: SourceCheckResult
+) -> SourceCheckComparison:
+    """Report exact check-result distinctions without ranking either result."""
+
+    if not isinstance(before, SourceCheckResult) or not isinstance(
+        after, SourceCheckResult
+    ):
+        raise SourceChangeError("source check comparison requires two check results")
+    return SourceCheckComparison(
+        before_argv=before.argv,
+        after_argv=after.argv,
+        returncode_same=before.returncode == after.returncode,
+        stdout_relation=_stream_relation(
+            before.stdout,
+            before.stdout_total_bytes,
+            after.stdout,
+            after.stdout_total_bytes,
+        ),
+        stderr_relation=_stream_relation(
+            before.stderr,
+            before.stderr_total_bytes,
+            after.stderr,
+            after.stderr_total_bytes,
+        ),
+    )
 
 
 def observe_source_files(
@@ -174,11 +246,21 @@ def apply_source_edits(
     """
 
     source_root = Path(root)
+    resolved_root = source_root.resolve(strict=True)
+    root_stat = resolved_root.stat()
+    exact_root = str(resolved_root)
     supplied = tuple(edits)
     if not supplied:
         raise SourceChangeError("a source change requires at least one edit")
     if not all(isinstance(edit, SourceEdit) for edit in supplied):
         raise SourceChangeError("every source change must be a SourceEdit")
+    if any(
+        edit.source_root != exact_root
+        or edit.source_root_device != root_stat.st_dev
+        or edit.source_root_inode != root_stat.st_ino
+        for edit in supplied
+    ):
+        raise SourceChangeError("a source edit belongs to a different repository root")
     paths = tuple(edit.relative_path for edit in supplied)
     if len(set(paths)) != len(paths):
         raise SourceChangeError("one source path may be changed only once per call")
