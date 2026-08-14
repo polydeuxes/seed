@@ -10,24 +10,36 @@ holds the high half, that the grouping starts at offset zero -- these are
 coordinates the harness knows. A `.pcm` suffix and a `--period 800` argument
 are the harness talking about its material, not the material.
 
-**What the material can carry instead.** Under the true grouping, byte
-positions do not behave alike. Given samples whose magnitudes stay small, the
-high byte carries only sign extension while the low byte varies freely:
+**What the material carries instead.** Partition the bytes by offset under a
+candidate stride. Each offset has an exact set of byte values observed at it,
+and those sets are measurable without interpreting them:
 
 ```text
-  amplitude 100, grouped by 2   position 0: 201 distinct values
-                                position 1:   2
-  amplitude 100, grouped by 3   position 0: 144   1: 145   2: 172
+  amplitude 100, stride 2   |support(2,0)| = 201    |support(2,1)| = 2
+  amplitude 100, stride 3   144, 145, 172
+  amplitude 100, stride 4   159, 2, 157, 2
+  amplitude 8000, stride 2  198, 64
 ```
 
-Width 3 is flat, so it explains nothing. Width 2 is the smallest width whose
-positions differ markedly, and width 4 agrees with it because it is two of
-them. The grouping is then a finding about the material rather than a fact
-supplied with it.
+`201 != 2` is the measurement. What it is *about* -- that one offset holds a
+high half, that the values at it are sign extension, that a stride of 2 is a
+sample -- is not measured here and is not asserted here.
 
-An amplitude near the sample width's range hides this -- at 8000 the high byte
-takes 64 values and the asymmetry is much weaker. So the ladder renders a
-descent, and the recovery gets easier as it goes.
+**The rule that would select a framing from this is unrecovered.** Support
+sizes differ at every stride and every amplitude above, so inequality alone
+selects nothing. An earlier revision used a fourfold ratio, which chose stride
+2 for no reason the material supplies; that threshold is withdrawn rather than
+replaced by a different one.
+
+What a rule would have to distinguish, once warranted:
+
+```text
+  candidate stride     its offsets' supports stand in some exact relation
+  primitive candidate  a candidate stride no proper divisor of which is one
+```
+
+The second is what would separate stride 2 from stride 4, which agrees with it
+because it is two of them. Neither is established.
 
 The harness may still testify to how it constructed a specimen. That testimony
 is attributed, and is not what makes the framing usable.
@@ -56,28 +68,21 @@ def block(amplitude: int) -> bytes:
 
 
 def position_diversity(raw: bytes, width: int) -> dict[int, int]:
-    """Distinct byte values at each position, under a candidate grouping."""
+    """How many distinct byte values each offset carries under this stride."""
 
     return {
-        offset: len({raw[i] for i in range(offset, len(raw), width)})
-        for offset in range(width)
+        offset: len(support)
+        for offset, support in position_support(raw, width).items()
     }
 
 
-def recovered_width(raw: bytes, widths: tuple[int, ...] = (1, 2, 3, 4, 6, 8)) -> int | None:
-    """The smallest candidate width whose positions differ markedly.
+def position_support(raw: bytes, stride: int) -> dict[int, frozenset[int]]:
+    """The exact set of byte values observed at each offset under this stride."""
 
-    A width whose positions all carry a similar spread of values explains
-    nothing about the material. Returns nothing where no candidate does.
-    """
-
-    for width in widths:
-        if width == 1:
-            continue
-        spread = position_diversity(raw, width)
-        if min(spread.values()) * 4 <= max(spread.values()):
-            return width
-    return None
+    return {
+        offset: frozenset(raw[i] for i in range(offset, len(raw), stride))
+        for offset in range(stride)
+    }
 
 
 def main() -> int:
@@ -87,14 +92,18 @@ def main() -> int:
     args = parser.parse_args()
 
     args.out_dir.mkdir(parents=True, exist_ok=True)
-    print(f"  {'specimen':28}{'bytes':>8}{'recovered width':>17}  positions under it")
+    print(f"  {'specimen':26}{'bytes':>7}   support sizes by offset, per stride")
     for amplitude in (int(v) for v in args.amplitudes.split(",")):
         raw = block(amplitude)
         path = args.out_dir / f"F-amplitude{amplitude}.pcm"
         path.write_bytes(raw)
-        width = recovered_width(raw)
-        spread = position_diversity(raw, width) if width else {}
-        print(f"  {path.name:28}{len(raw):>8}{str(width):>17}  {spread}")
+        measured = "   ".join(
+            f"{stride}:{list(position_diversity(raw, stride).values())}"
+            for stride in (2, 3, 4)
+        )
+        print(f"  {path.name:26}{len(raw):>7}   {measured}")
+    print("\n  No stride is selected. Support sizes differ under every stride,")
+    print("  so the rule that would choose one is unrecovered.")
     return 0
 
 

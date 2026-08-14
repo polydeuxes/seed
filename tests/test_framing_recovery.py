@@ -1,8 +1,8 @@
-"""Whether a byte grouping is recoverable from material that does not state it.
+"""What positional support measures, and what it does not select.
 
-A specimen is bytes. That two of them are one sample, and which of the two
-carries the high half, are coordinates the harness knows. These pin what the
-material can and cannot supply on its own.
+A specimen is bytes. Partitioning them by offset under a candidate stride is
+exact, and so are the resulting value sets. Which stride, if any, frames the
+material is a further question these do not answer.
 """
 
 from __future__ import annotations
@@ -15,44 +15,65 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts"))
 from framing_ladder_harness import (  # noqa: E402
     block,
     position_diversity,
-    recovered_width,
+    position_support,
 )
 
 
-def test_a_grouping_no_position_distinguishes_is_not_recovered():
-    """Material whose magnitudes fill the sample width recovers nothing.
+def test_support_is_the_exact_set_of_values_at_each_offset():
+    raw = block(100)
+    support = position_support(raw, 2)
 
-    At amplitude 8000 the high byte takes 64 values, so no candidate width has
-    positions that behave markedly differently, and the finding is absence
-    rather than a guess.
+    assert support[0] == frozenset(raw[0::2])
+    assert support[1] == frozenset(raw[1::2])
+    assert position_diversity(raw, 2) == {0: len(support[0]), 1: len(support[1])}
+
+
+def test_one_offset_carries_two_values_where_another_carries_many():
+    """The measurement, stated as the comparison it is.
+
+    What the two values are about is not measured here. Reading them as a high
+    half, or as sign extension, is an interpretation of why, and no occurrence
+    established it.
     """
 
-    assert recovered_width(block(8000)) is None
+    diversity = position_diversity(block(100), 2)
+
+    assert diversity[0] == 201
+    assert diversity[1] == 2
+    assert diversity[0] != diversity[1]
 
 
-def test_small_magnitudes_make_the_grouping_recoverable():
-    """The high byte carries only sign extension, and the split is the evidence."""
+def test_support_sizes_differ_under_every_stride_so_inequality_selects_nothing():
+    """Why the earlier fourfold ratio was doing all the work.
 
-    for amplitude in (2000, 500, 100, 20):
-        assert recovered_width(block(amplitude)) == 2, amplitude
+    An earlier revision selected a stride where one offset's support was four
+    times another's. Inequality alone admits every stride at every amplitude,
+    so the threshold, not the material, was choosing.
+    """
 
-
-def test_the_recovered_width_is_the_one_the_harness_constructed():
-    spread = position_diversity(block(100), 2)
-    assert spread[1] * 4 <= spread[0], spread
-    assert spread[1] == 2
-
-
-def test_a_width_that_explains_nothing_is_flat():
-    """Width 3 divides no sample, so its positions carry a similar spread."""
-
-    spread = position_diversity(block(100), 3)
-    assert min(spread.values()) * 4 > max(spread.values()), spread
+    for amplitude in (8000, 2000, 500, 100, 20):
+        raw = block(amplitude)
+        for stride in (2, 3, 4):
+            sizes = set(position_diversity(raw, stride).values())
+            assert len(sizes) > 1, (amplitude, stride, sizes)
 
 
-def test_recovery_does_not_depend_on_the_filename_or_a_declared_period():
-    """Only the bytes are consulted."""
+def test_a_stride_and_its_multiple_carry_the_same_distinction():
+    """Stride 4 agrees with stride 2 because it is two of them.
 
-    raw = block(100)
-    assert recovered_width(raw) == recovered_width(bytes(raw))
-    assert recovered_width(raw[:800]) == 2
+    Separating a primitive candidate from a composite one is what a selection
+    rule would have to do, and no rule here does it.
+    """
+
+    diversity = position_diversity(block(100), 4)
+
+    assert diversity[1] == diversity[3] == position_diversity(block(100), 2)[1]
+
+
+def test_no_module_level_name_states_a_recovered_framing():
+    """The verdict is withdrawn, not renamed."""
+
+    import framing_ladder_harness as harness
+
+    assert not hasattr(harness, "recovered_width")
+    assert not [name for name in dir(harness) if "sample_width" in name]
