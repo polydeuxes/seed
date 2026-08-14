@@ -17,25 +17,25 @@ from seed_runtime.event import Event
 
 
 def _exercise_scoped_reads(ledger):
-    first = ledger.append("wanted", "w", {"n": 1}, session_id="s")
-    ledger.append("other", "elsewhere", {"n": 2}, session_id="s")
+    first = ledger.append("wanted", "w", {"n": 1}, locality_id="s")
+    ledger.append("other", "elsewhere", {"n": 2}, locality_id="s")
     boundary = ledger.capture_boundary()
-    ledger.append("wanted", "w", {"n": 3}, session_id="s")
-    ledger.append("wanted", "w", {"n": 4}, session_id="later")
+    ledger.append("wanted", "w", {"n": 3}, locality_id="s")
+    ledger.append("wanted", "w", {"n": 4}, locality_id="later")
 
     assert [event.id for event in ledger.list(through=boundary)] == [
         first.id,
         ledger.list()[1].id,
     ]
     assert [event.id for event in ledger.list("w", through=boundary)] == [first.id]
-    assert [event.id for event in ledger.list_session(
+    assert [event.id for event in ledger.list_locality(
         "w", "s", through=boundary
     )] == [first.id]
-    assert [event.id for event in ledger.iter_session_kind(
+    assert [event.id for event in ledger.iter_locality_kind(
         "w", "s", "wanted", through=boundary
     )] == [first.id]
-    assert ledger.has_session("w", "s", through=boundary) is True
-    assert ledger.has_session("w", "later", through=boundary) is False
+    assert ledger.has_locality("w", "s", through=boundary) is True
+    assert ledger.has_locality("w", "later", through=boundary) is False
     return boundary
 
 
@@ -242,31 +242,31 @@ def _identity_read_matches_occurrence_read(ledger):
 
     boundaries = [None]
     ledger.append_many([
-        Event(id="i1", kind="ingress", workspace_id="w", session_id="s"),
-        Event(id="i2", kind="other", workspace_id="w", session_id="s"),
-        Event(id="i3", kind="ingress", workspace_id="w", session_id="other"),
+        Event(id="i1", kind="ingress", workspace_id="w", locality_id="s"),
+        Event(id="i2", kind="other", workspace_id="w", locality_id="s"),
+        Event(id="i3", kind="ingress", workspace_id="w", locality_id="other"),
     ])
     boundaries.append(ledger.capture_boundary())
     ledger.append_many([
-        Event(id="i4", kind="ingress", workspace_id="w", session_id="s"),
-        Event(id="i5", kind="ingress", workspace_id="other", session_id="s"),
+        Event(id="i4", kind="ingress", workspace_id="w", locality_id="s"),
+        Event(id="i5", kind="ingress", workspace_id="other", locality_id="s"),
     ])
     boundaries.append(ledger.capture_boundary())
 
     for boundary in boundaries:
         occurrences = [
             event.id
-            for event in ledger.iter_session_kind("w", "s", "ingress", through=boundary)
+            for event in ledger.iter_locality_kind("w", "s", "ingress", through=boundary)
         ]
         identities = list(
-            ledger.iter_session_kind_ids("w", "s", "ingress", through=boundary)
+            ledger.iter_locality_kind_ids("w", "s", "ingress", through=boundary)
         )
         assert identities == occurrences
 
-    assert list(ledger.iter_session_kind_ids("w", "s", "ingress")) == ["i1", "i4"]
-    assert list(ledger.iter_session_kind_ids("w", "s", "ingress",
+    assert list(ledger.iter_locality_kind_ids("w", "s", "ingress")) == ["i1", "i4"]
+    assert list(ledger.iter_locality_kind_ids("w", "s", "ingress",
                                              through=boundaries[1])) == ["i1"]
-    assert list(ledger.iter_session_kind_ids("w", "s", "absent")) == []
+    assert list(ledger.iter_locality_kind_ids("w", "s", "absent")) == []
 
 
 def test_an_in_memory_identity_read_matches_its_occurrence_read():
@@ -331,7 +331,7 @@ def test_a_digest_requires_every_recorded_field():
     complete = {
         "id": "e", "kind": "k", "workspace_id": "w", "actor": "system",
         "timestamp": "2026-01-01T00:00:00+00:00", "payload": "{}",
-        "session_id": None, "causation_id": None, "correlation_id": None,
+        "locality_id": None, "causation_id": None, "correlation_id": None,
     }
     assert _content_digest(complete)
 

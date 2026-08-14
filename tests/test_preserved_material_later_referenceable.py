@@ -22,7 +22,7 @@ and carrying an event id as Evidence establishes none of them.
 Two further limits.  Only representation representation_events were inspected; the other
 operator event kinds are also later occurrences and are not shown to reference
 the whole past.  And `#2350` left open whether
-`read_operator_session_standing` is a lawful constitutional read
+`read_operator_locality_standing` is a lawful constitutional read
 occurrence -- executing it proves the substrate exists, not that the read
 is lawful.
 
@@ -43,8 +43,8 @@ from io import StringIO
 import pytest
 
 from seed_runtime.events import EventLedger
-from seed_runtime.operator_session_standing import (
-    read_operator_session_standing,
+from seed_runtime.operator_locality_standing import (
+    read_operator_locality_standing,
 )
 from seed_runtime.operator_console import run_persistent_operator_console
 
@@ -65,7 +65,7 @@ def ledger() -> EventLedger:
     run_persistent_operator_console(
         ledger=led,
         workspace_id="w",
-        session_id="s",
+        locality_id="s",
         input_stream=StringIO("first\nsecond\nthird\nexit\n"),
         output_stream=StringIO(),
     )
@@ -88,7 +88,7 @@ def test_later_representations_retain_references_to_earlier_preserved_material(
     representation_events = [e for e in events if e.kind == RECORDED]
     assert len(representation_events) >= 3
     boundaries = [
-        e.payload["session_standing_as_of_event_id"] for e in representation_events
+        e.payload["locality_standing_as_of_event_id"] for e in representation_events
     ]
     # The first representation Act's read was empty.  Recording that absence is
     # itself preserved source coordinates, not an absent occurrence.
@@ -103,7 +103,7 @@ def test_later_representations_retain_references_to_earlier_preserved_material(
 def test_later_reference_does_not_alter_earlier_events(ledger):
     """Referencing preserved material leaves that material byte-identical."""
     before = _payload_snapshot(ledger.list())
-    read_operator_session_standing(ledger, workspace_id="w", session_id="s")
+    read_operator_locality_standing(ledger, workspace_id="w", locality_id="s")
     after = _payload_snapshot(
         e for e in ledger.list() if e.id in before
     )
@@ -117,7 +117,7 @@ def test_representation_appends_nothing(ledger):
     constitutional occurrence.  This read reads without appending.
     """
     count_before = len(ledger.list())
-    read_operator_session_standing(ledger, workspace_id="w", session_id="s")
+    read_operator_locality_standing(ledger, workspace_id="w", locality_id="s")
     assert len(ledger.list()) == count_before
 
 
@@ -133,7 +133,7 @@ def test_each_representation_act_is_appended_after_every_event_it_references(led
     positions = {event.id: index for index, event in enumerate(events)}
     # Each representation Act appears after the occurrence its boundary names.
     for representation_event in representation_events:
-        boundary = representation_event.payload["session_standing_as_of_event_id"]
+        boundary = representation_event.payload["locality_standing_as_of_event_id"]
         if boundary is not None:
             assert positions[boundary] < positions[representation_event.id]
 
@@ -169,7 +169,7 @@ def render_evidence_growth() -> str:
     run_persistent_operator_console(
         ledger=led,
         workspace_id="w",
-        session_id="s",
+        locality_id="s",
         input_stream=StringIO("first\nsecond\nthird\nexit\n"),
         output_stream=StringIO(),
     )
@@ -177,7 +177,7 @@ def render_evidence_growth() -> str:
     for event in (e for e in led.list() if e.kind == RECORDED):
         lines.append(
             f"  {event.id}  as_of="
-            f"{event.payload['session_standing_as_of_event_id']}"
+            f"{event.payload['locality_standing_as_of_event_id']}"
         )
     return "\n".join(lines)
 

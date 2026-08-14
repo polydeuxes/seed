@@ -55,7 +55,7 @@ BYTE_RESULT_COORDINATES = frozenset(
         "responsible_boundary",
         "responsibility_assignment_evidence",
         "measurement_rule",
-        "source_session_ids",
+        "source_locality_ids",
         "completeness_boundary",
         "assertions",
     }
@@ -188,7 +188,7 @@ class MeasuredByteCount:
 @dataclass(frozen=True)
 class MeasuredByteInputs:
     workspace_id: str
-    source_session_ids: tuple[str, ...]
+    source_locality_ids: tuple[str, ...]
     completeness_boundary: EventLedgerBoundary
     source_material: tuple[dict[str, str], ...]
     counts: tuple[MeasuredByteCount, ...]
@@ -205,7 +205,7 @@ class MeasuredBytePairCount:
 @dataclass(frozen=True)
 class MeasuredBytePairInputs:
     workspace_id: str
-    source_session_ids: tuple[str, ...]
+    source_locality_ids: tuple[str, ...]
     completeness_boundary: EventLedgerBoundary
     source_material: tuple[dict[str, str], ...]
     source_assertion_ref: dict[str, str]
@@ -320,7 +320,7 @@ def _pair_input_applicability(
     applicability_act_id: str,
     applicability_act_occurrence_id: str,
     act_workspace_id: str,
-    measurement_session_id: str,
+    measurement_locality_id: str,
 ) -> dict[str, Any]:
     """Determine this source Assertion's use by this exact pair Measurement."""
 
@@ -344,7 +344,7 @@ def _pair_input_applicability(
         basis = "exact Act workspace differs from the input's bounded workspace"
         applicability_scope = {
             "act_workspace_id": act_workspace_id,
-            "measurement_session_id": measurement_session_id,
+            "measurement_locality_id": measurement_locality_id,
         }
         source_provenance: Any = "not input across the workspace boundary"
         input_standing: Any = {"carried": False, "reason": basis}
@@ -404,7 +404,7 @@ def _pair_input_applicability(
                 "scope": applicability_scope,
                 "act_context": {
                     "workspace_id": act_workspace_id,
-                    "measurement_session_id": measurement_session_id,
+                    "measurement_locality_id": measurement_locality_id,
                 },
                 "standing": standing,
             }
@@ -434,7 +434,7 @@ def _pair_input_applicability(
         "result_boundary": BYTE_PAIR_RESULT_BOUNDARY,
         "act_context": {
             "workspace_id": act_workspace_id,
-            "measurement_session_id": measurement_session_id,
+            "measurement_locality_id": measurement_locality_id,
         },
         "scope_locality": applicability_scope,
         "input_standing": input_standing,
@@ -481,7 +481,7 @@ def _raw_bytes(
         raw is None
         or raw.kind != RAW_MATERIAL_CAPTURED_KIND
         or raw.workspace_id != workspace_id
-        or raw.session_id != ingress.session_id
+        or raw.locality_id != ingress.locality_id
         or ledger.integrity_of(raw_id) == CORRUPTED
     ):
         raise ByteMeasurementError(
@@ -503,11 +503,11 @@ def measure_byte_counts(
     ledger: EventLedger,
     *,
     workspace_id: str,
-    source_session_ids: Iterable[str],
+    source_locality_ids: Iterable[str],
 ) -> MeasuredByteInputs:
     """Count every exact byte in every declared session through one boundary."""
 
-    sessions = tuple(dict.fromkeys(source_session_ids))
+    sessions = tuple(dict.fromkeys(source_locality_ids))
     if not sessions or any(not isinstance(item, str) or not item for item in sessions):
         raise ByteMeasurementError(
             "byte Measurement requires exact declared source sessions"
@@ -531,7 +531,7 @@ def _measure_byte_counts_through(
     missing = [
         session
         for session in sessions
-        if not ledger.has_session(workspace_id, session, through=boundary)
+        if not ledger.has_locality(workspace_id, session, through=boundary)
     ]
     if missing:
         raise ByteMeasurementError(
@@ -547,14 +547,14 @@ def _measure_byte_counts_through(
     for session in sessions:
         raw_through_boundary = {
             event.id: event
-            for event in ledger.iter_session_kind(
+            for event in ledger.iter_locality_kind(
                 workspace_id,
                 session,
                 RAW_MATERIAL_CAPTURED_KIND,
                 through=boundary,
             )
         }
-        for ingress in ledger.iter_session_kind(
+        for ingress in ledger.iter_locality_kind(
             workspace_id, session, INGRESS_OCCURRED_KIND, through=boundary
         ):
             if ledger.integrity_of(ingress.id) == CORRUPTED:
@@ -597,7 +597,7 @@ def _measure_byte_counts_through(
     )
     return MeasuredByteInputs(
         workspace_id=workspace_id,
-        source_session_ids=sessions,
+        source_locality_ids=sessions,
         completeness_boundary=boundary,
         source_material=tuple(source_material),
         counts=counts,
@@ -609,15 +609,15 @@ def _prepare_pair_source(
     *,
     source_measurement_event_id: str,
     act_workspace_id: str,
-    measurement_session_id: str,
+    measurement_locality_id: str,
 ) -> tuple[RecordedByteAssertion, dict[str, Any], dict[str, Any], str]:
     """Reconstruct one source before its act-local Applicability determination."""
 
     if (
         not isinstance(act_workspace_id, str)
         or not act_workspace_id
-        or not isinstance(measurement_session_id, str)
-        or not measurement_session_id
+        or not isinstance(measurement_locality_id, str)
+        or not measurement_locality_id
     ):
         raise ByteMeasurementError(
             "adjacent-byte-pair Measurement requires an exact Act workspace and session"
@@ -639,7 +639,7 @@ def _prepare_pair_source(
         ledger,
         source=source,
         destination_workspace_id=act_workspace_id,
-        destination_locality=measurement_session_id,
+        destination_locality=measurement_locality_id,
     )
     payload = source.payload
     scope = payload["assertion_scope"]
@@ -662,7 +662,7 @@ def _move_byte_assertion_to_locality(
         raise ByteMeasurementError(
             "Assertion locality movement does not authorize a workspace crossing"
         )
-    source_locality = source_event.session_id
+    source_locality = source_event.locality_id
     if source_locality == destination_locality:
         return source
     if source_locality is None:
@@ -697,7 +697,7 @@ def _move_byte_assertion_to_locality(
                 "evidences this exact same-workspace Assertion locality movement"
             ),
         },
-        session_id=destination_locality,
+        locality_id=destination_locality,
     )
     movement = ledger.append(
         ASSERTION_LOCALITY_MOVEMENT_KIND,
@@ -727,7 +727,7 @@ def _move_byte_assertion_to_locality(
                 "establishes no changed identity, Standing, or cross-workspace use"
             ),
         },
-        session_id=destination_locality,
+        locality_id=destination_locality,
     )
     return RecordedByteAssertion(
         assertion_id=source.assertion_id,
@@ -775,8 +775,8 @@ def _validate_moved_byte_assertion(
             "responsible_boundary": SEED_NATIVE_MEASUREMENT_RESPONSIBLE_BOUNDARY,
             "workspace_id": movement.workspace_id,
             "source_assertion_ref": source.reference,
-            "source_locality": source_event.session_id,
-            "destination_locality": movement.session_id,
+            "source_locality": source_event.locality_id,
+            "destination_locality": movement.locality_id,
             "determination": (
                 "the exact preserved Assertion moved between localities of this "
                 "same workspace"
@@ -787,8 +787,8 @@ def _validate_moved_byte_assertion(
             "movement_act_occurrence_id"
         ),
         "source_assertion_ref": source.reference,
-        "source_locality": source_event.session_id,
-        "destination_locality": movement.session_id,
+        "source_locality": source_event.locality_id,
+        "destination_locality": movement.locality_id,
         "authority": (
             "evidences this exact same-workspace Assertion locality movement"
         ),
@@ -813,8 +813,8 @@ def _validate_moved_byte_assertion(
         ],
         "source_assertion_ref": source.reference,
         "assertion_id": source.assertion_id,
-        "source_locality": source_event.session_id,
-        "destination_locality": movement.session_id,
+        "source_locality": source_event.locality_id,
+        "destination_locality": movement.locality_id,
         "assertion_commitment": _movement_commitment(source.payload),
         "surviving_coordinates": [
             "Evidence",
@@ -857,7 +857,7 @@ def _measure_adjacent_byte_pair_counts_through(
     missing = [
         session
         for session in sessions
-        if not ledger.has_session(workspace_id, session, through=boundary)
+        if not ledger.has_locality(workspace_id, session, through=boundary)
     ]
     if missing:
         raise ByteMeasurementError(
@@ -873,14 +873,14 @@ def _measure_adjacent_byte_pair_counts_through(
     for session in sessions:
         raw_through_boundary = {
             event.id: event
-            for event in ledger.iter_session_kind(
+            for event in ledger.iter_locality_kind(
                 workspace_id,
                 session,
                 RAW_MATERIAL_CAPTURED_KIND,
                 through=boundary,
             )
         }
-        for ingress in ledger.iter_session_kind(
+        for ingress in ledger.iter_locality_kind(
             workspace_id, session, INGRESS_OCCURRED_KIND, through=boundary
         ):
             if ledger.integrity_of(ingress.id) == CORRUPTED:
@@ -924,7 +924,7 @@ def _measure_adjacent_byte_pair_counts_through(
     )
     return MeasuredBytePairInputs(
         workspace_id=workspace_id,
-        source_session_ids=sessions,
+        source_locality_ids=sessions,
         completeness_boundary=boundary,
         source_material=tuple(source_material),
         source_assertion_ref=source_assertion_ref,
@@ -939,7 +939,7 @@ def _measure_adjacent_byte_pair_counts_through(
 def _assertions(measured: MeasuredByteInputs) -> list[dict[str, Any]]:
     scope = {
         "workspace_id": measured.workspace_id,
-        "source_session_ids": list(measured.source_session_ids),
+        "source_locality_ids": list(measured.source_locality_ids),
     }
     source_subject = {"measurement_rule": BYTE_MEASUREMENT_RULE}
     source_content = {
@@ -1058,19 +1058,19 @@ def record_byte_count_layer(
     ledger: EventLedger,
     *,
     workspace_id: str,
-    source_session_ids: Iterable[str],
-    recording_session_id: str,
+    source_locality_ids: Iterable[str],
+    recording_locality_id: str,
 ):
     """Record one bounded Measurement occurrence with distinct byte results."""
 
-    if not isinstance(recording_session_id, str) or not recording_session_id:
+    if not isinstance(recording_locality_id, str) or not recording_locality_id:
         raise ByteMeasurementError(
             "byte Measurement recording requires an exact session"
         )
     downstream_act_id = new_id("byte_measurement_act")
     act_occurrence_id = new_id("byte_measurement_occurrence")
     measured = measure_byte_counts(
-        ledger, workspace_id=workspace_id, source_session_ids=source_session_ids
+        ledger, workspace_id=workspace_id, source_locality_ids=source_locality_ids
     )
     result_payload = {
         "dimensions": {
@@ -1092,7 +1092,7 @@ def record_byte_count_layer(
             measured
         ),
         "measurement_rule": BYTE_MEASUREMENT_RULE,
-        "source_session_ids": list(measured.source_session_ids),
+        "source_locality_ids": list(measured.source_locality_ids),
         "completeness_boundary": {
             "commitment": measured.completeness_boundary.commitment
         },
@@ -1119,12 +1119,12 @@ def record_byte_count_layer(
                 "occurrence only; establishes no responsibility"
             ),
         },
-        session_id=recording_session_id,
+        locality_id=recording_locality_id,
     )
     evidence = _record_yield_evidence(
         ledger,
         workspace_id=workspace_id,
-        session_id=recording_session_id,
+        locality_id=recording_locality_id,
         convention=BYTE_MEASUREMENT_CONVENTION,
         yielding_act="declared Measurement",
         act_occurrence_id=act_occurrence_id,
@@ -1144,7 +1144,7 @@ def record_byte_count_layer(
             "responsible_act_evidence_id": responsible_act_evidence.id,
             "occurrence_preservation": BYTE_OCCURRENCE_PRESERVATION,
         },
-        session_id=recording_session_id,
+        locality_id=recording_locality_id,
     )
 
 
@@ -1252,7 +1252,7 @@ def assertions_of_recorded_byte_measurement(
         act_evidence is None
         or act_evidence.kind != BYTE_MEASUREMENT_RESPONSIBLE_ACT_EVIDENCE_KIND
         or act_evidence.workspace_id != event.workspace_id
-        or act_evidence.session_id != event.session_id
+        or act_evidence.locality_id != event.locality_id
         or ledger.integrity_of(act_evidence.id) == CORRUPTED
         or act_evidence.payload != expected_act_evidence
     ):
@@ -1260,16 +1260,16 @@ def assertions_of_recorded_byte_measurement(
             f"{event_id} names no exact responsible byte Measurement occurrence Evidence"
         )
     boundary_value = payload.get("completeness_boundary")
-    sessions_value = payload.get("source_session_ids")
+    localities_value = payload.get("source_locality_ids")
     if (
         payload.get("measurement_rule") != BYTE_MEASUREMENT_RULE
         or not isinstance(boundary_value, dict)
         or set(boundary_value) != {"commitment"}
         or not isinstance(boundary_value["commitment"], str)
-        or not isinstance(sessions_value, list)
-        or not sessions_value
-        or any(not isinstance(item, str) or not item for item in sessions_value)
-        or len(set(sessions_value)) != len(sessions_value)
+        or not isinstance(localities_value, list)
+        or not localities_value
+        or any(not isinstance(item, str) or not item for item in localities_value)
+        or len(set(localities_value)) != len(localities_value)
     ):
         raise ByteMeasurementError(
             f"{event_id} does not carry the exact byte Measurement boundary"
@@ -1278,7 +1278,7 @@ def assertions_of_recorded_byte_measurement(
     measured = _measure_byte_counts_through(
         ledger,
         workspace_id=event.workspace_id,
-        sessions=tuple(sessions_value),
+        sessions=tuple(localities_value),
         boundary=boundary,
     )
     if payload.get("responsibility_assignment_evidence") != (
@@ -1319,7 +1319,7 @@ def assertions_of_recorded_byte_measurement(
 def _pair_assertions(measured: MeasuredBytePairInputs) -> list[dict[str, Any]]:
     scope = {
         "workspace_id": measured.workspace_id,
-        "source_session_ids": list(measured.source_session_ids),
+        "source_locality_ids": list(measured.source_locality_ids),
     }
     results: list[dict[str, Any]] = []
 
@@ -1392,7 +1392,7 @@ def _record_pair_responsible_act_evidence(
     ledger: EventLedger,
     *,
     measured: MeasuredBytePairInputs,
-    recording_session_id: str,
+    recording_locality_id: str,
     yielded_content: dict[str, Any],
 ):
     """Preserve Evidence concerning this exact bounded responsible Act."""
@@ -1425,7 +1425,7 @@ def _record_pair_responsible_act_evidence(
                 "for another Act"
             ),
         },
-        session_id=recording_session_id,
+        locality_id=recording_locality_id,
     )
 
 
@@ -1435,7 +1435,7 @@ def _record_pair_input_applicability(
     source: RecordedByteAssertion,
     applicability_assertion: dict[str, Any],
     workspace_id: str,
-    recording_session_id: str,
+    recording_locality_id: str,
 ):
     """Preserve Applicability whether or not the downstream Measurement occurs."""
 
@@ -1485,12 +1485,12 @@ def _record_pair_input_applicability(
             ),
             "standing": "occurred",
         },
-        session_id=recording_session_id,
+        locality_id=recording_locality_id,
     )
     evidence = _record_yield_evidence(
         ledger,
         workspace_id=workspace_id,
-        session_id=recording_session_id,
+        locality_id=recording_locality_id,
         convention=BYTE_PAIR_APPLICABILITY_CONVENTION,
         yielding_act="input Applicability determination",
         act_occurrence_id=applicability_assertion["applicability_act_occurrence_id"],
@@ -1509,7 +1509,7 @@ def _record_pair_input_applicability(
             "yield_evidence_id": evidence.id,
             "responsible_act_evidence_id": applicability_act_evidence.id,
         },
-        session_id=recording_session_id,
+        locality_id=recording_locality_id,
     )
 
 
@@ -1542,7 +1542,7 @@ def get_recorded_pair_input_applicability(
         evidence is None
         or evidence.kind != YIELD_EVIDENCE_KIND
         or evidence.workspace_id != event.workspace_id
-        or evidence.session_id != event.session_id
+        or evidence.locality_id != event.locality_id
         or ledger.integrity_of(evidence.id) == CORRUPTED
         or evidence.payload.get("yield_convention")
         != BYTE_PAIR_APPLICABILITY_CONVENTION
@@ -1585,7 +1585,7 @@ def get_recorded_pair_input_applicability(
         act_evidence is None
         or act_evidence.kind != BYTE_PAIR_APPLICABILITY_ACT_EVIDENCE_KIND
         or act_evidence.workspace_id != event.workspace_id
-        or act_evidence.session_id != event.session_id
+        or act_evidence.locality_id != event.locality_id
         or ledger.integrity_of(act_evidence.id) == CORRUPTED
         or act_evidence.payload != expected_act_evidence
     ):
@@ -1658,11 +1658,11 @@ def record_adjacent_byte_pair_count_layer(
     *,
     source_measurement_event_id: str,
     workspace_id: str,
-    recording_session_id: str,
+    recording_locality_id: str,
 ):
     """Record exact adjacent-byte-pair counts without crossing capture boundaries."""
 
-    if not isinstance(recording_session_id, str) or not recording_session_id:
+    if not isinstance(recording_locality_id, str) or not recording_locality_id:
         raise ByteMeasurementError(
             "adjacent-byte-pair Measurement recording requires an exact session"
         )
@@ -1670,7 +1670,7 @@ def record_adjacent_byte_pair_count_layer(
         ledger,
         source_measurement_event_id=source_measurement_event_id,
         act_workspace_id=workspace_id,
-        measurement_session_id=recording_session_id,
+        measurement_locality_id=recording_locality_id,
     )
     applicability_act_id = new_id("byte_pair_applicability_act")
     applicability_act_occurrence_id = new_id(
@@ -1682,14 +1682,14 @@ def record_adjacent_byte_pair_count_layer(
         applicability_act_id=applicability_act_id,
         applicability_act_occurrence_id=applicability_act_occurrence_id,
         act_workspace_id=workspace_id,
-        measurement_session_id=recording_session_id,
+        measurement_locality_id=recording_locality_id,
     )
     applicability_event = _record_pair_input_applicability(
         ledger,
         source=source,
         applicability_assertion=applicability,
         workspace_id=workspace_id,
-        recording_session_id=recording_session_id,
+        recording_locality_id=recording_locality_id,
     )
     if applicability["dimensions"]["standing"] != "applicable":
         return applicability_event
@@ -1697,7 +1697,7 @@ def record_adjacent_byte_pair_count_layer(
     measured = _measure_adjacent_byte_pair_counts_through(
         ledger,
         workspace_id=scope["workspace_id"],
-        sessions=tuple(scope["source_session_ids"]),
+        sessions=tuple(scope["source_locality_ids"]),
         boundary=EventLedgerBoundary(content["completeness_boundary"]["commitment"]),
         source_assertion_ref=source.reference,
         source_movement_event_id=source.locality_movement_event_id,
@@ -1729,7 +1729,7 @@ def record_adjacent_byte_pair_count_layer(
         "input_role": BYTE_PAIR_INPUT_ROLE,
         "input_applicability": measured.input_applicability,
         "input_applicability_event_id": applicability_event.id,
-        "source_session_ids": list(measured.source_session_ids),
+        "source_locality_ids": list(measured.source_locality_ids),
         "completeness_boundary": {
             "commitment": measured.completeness_boundary.commitment
         },
@@ -1738,13 +1738,13 @@ def record_adjacent_byte_pair_count_layer(
     responsible_act_evidence = _record_pair_responsible_act_evidence(
         ledger,
         measured=measured,
-        recording_session_id=recording_session_id,
+        recording_locality_id=recording_locality_id,
         yielded_content=result_payload,
     )
     evidence = _record_yield_evidence(
         ledger,
         workspace_id=measured.workspace_id,
-        session_id=recording_session_id,
+        locality_id=recording_locality_id,
         convention=BYTE_PAIR_MEASUREMENT_CONVENTION,
         yielding_act="declared Measurement",
         act_occurrence_id=measured.act_occurrence_id,
@@ -1764,7 +1764,7 @@ def record_adjacent_byte_pair_count_layer(
             "responsible_act_evidence_id": responsible_act_evidence.id,
             "occurrence_preservation": BYTE_PAIR_OCCURRENCE_PRESERVATION,
         },
-        session_id=recording_session_id,
+        locality_id=recording_locality_id,
     )
 
 
@@ -1796,7 +1796,7 @@ def _validate_recorded_pair_input_applicability(
     }
     act_context = {
         "workspace_id": event.workspace_id,
-        "measurement_session_id": event.session_id,
+        "measurement_locality_id": event.locality_id,
     }
     identity = "byte-pair-applicability:" + hashlib.sha256(
         _canonical(
@@ -1992,7 +1992,7 @@ def assertions_of_recorded_adjacent_byte_pair_measurement(
         act_evidence is None
         or act_evidence.kind != BYTE_PAIR_RESPONSIBLE_ACT_EVIDENCE_KIND
         or act_evidence.workspace_id != event.workspace_id
-        or act_evidence.session_id != event.session_id
+        or act_evidence.locality_id != event.locality_id
         or ledger.integrity_of(act_evidence.id) == CORRUPTED
         or act_evidence.payload != expected_act_evidence
     ):
@@ -2000,15 +2000,15 @@ def assertions_of_recorded_adjacent_byte_pair_measurement(
             f"{event_id} names no exact responsible pair Measurement occurrence Evidence"
         )
     boundary_value = payload.get("completeness_boundary")
-    sessions_value = payload.get("source_session_ids")
+    localities_value = payload.get("source_locality_ids")
     if (
         not isinstance(boundary_value, dict)
         or set(boundary_value) != {"commitment"}
         or not isinstance(boundary_value["commitment"], str)
-        or not isinstance(sessions_value, list)
-        or not sessions_value
-        or any(not isinstance(item, str) or not item for item in sessions_value)
-        or len(set(sessions_value)) != len(sessions_value)
+        or not isinstance(localities_value, list)
+        or not localities_value
+        or any(not isinstance(item, str) or not item for item in localities_value)
+        or len(set(localities_value)) != len(localities_value)
     ):
         raise ByteMeasurementError(
             f"{event_id} does not carry the exact pair Measurement boundary"
@@ -2039,7 +2039,7 @@ def assertions_of_recorded_adjacent_byte_pair_measurement(
         source = None
     if source is not None and source.assertion_id != source_ref["assertion_id"]:
         source = None
-    if source is None or event.session_id is None:
+    if source is None or event.locality_id is None:
         raise ByteMeasurementError(
             f"{event_id} does not carry its exact input source Assertion"
         )
@@ -2060,7 +2060,7 @@ def assertions_of_recorded_adjacent_byte_pair_measurement(
     }
     if (
         event.workspace_id != source_scope["workspace_id"]
-        or sessions_value != source_scope["source_session_ids"]
+        or localities_value != source_scope["source_locality_ids"]
         or boundary_value != source_content["completeness_boundary"]
         or payload.get("responsibility_assignment_evidence")
         != expected_assignment_evidence
@@ -2086,7 +2086,7 @@ def assertions_of_recorded_adjacent_byte_pair_measurement(
         )
     expected_scope = {
         "workspace_id": event.workspace_id,
-        "source_session_ids": sessions_value,
+        "source_locality_ids": localities_value,
     }
     assertions = payload.get("assertions")
     if not isinstance(assertions, list):

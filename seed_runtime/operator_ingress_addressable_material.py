@@ -335,11 +335,11 @@ def form_operator_ingress_addressable_material(
         _refuse("the supplied ingress occurrence is not the recorded occurrence")
     raw = ledger.get(raw_ref)
     decoder_outcome = ledger.get(decoder_outcome_ref)
-    common = (ingress_occurrence.workspace_id, ingress_occurrence.session_id, attempt)
+    common = (ingress_occurrence.workspace_id, ingress_occurrence.locality_id, attempt)
     if raw is None or (
         raw.kind != "operator.ingress.raw_material_captured"
         or raw.payload.get("material_role") != "initial_ingress"
-        or (raw.workspace_id, raw.session_id, raw.payload.get("attempt_ref")) != common
+        or (raw.workspace_id, raw.locality_id, raw.payload.get("attempt_ref")) != common
     ):
         _refuse("initial raw-material provenance is missing or foreign")
     if decoder_outcome is None or (
@@ -350,7 +350,7 @@ def form_operator_ingress_addressable_material(
         or decoder_outcome.payload.get("decoder_outcome") != "decoded"
         or (
             decoder_outcome.workspace_id,
-            decoder_outcome.session_id,
+            decoder_outcome.locality_id,
             decoder_outcome.payload.get("attempt_ref"),
         )
         != common
@@ -387,7 +387,7 @@ def form_operator_ingress_addressable_material(
         provenance=provenance,
         scope=(
             f"workspace:{ingress_occurrence.workspace_id}",
-            f"session:{ingress_occurrence.session_id}",
+            f"locality:{ingress_occurrence.locality_id}",
             f"attempt:{attempt}",
         ),
         known_loss=tuple(payload.get("known_loss", ())),

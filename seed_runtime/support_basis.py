@@ -120,7 +120,7 @@ class SupportBasis:
     """Where a finding's support lives, and what it must reconstruct to."""
 
     workspace_id: str
-    session_id: str
+    locality_id: str
     occurrence_kind: str
     boundary_commitment: str
     selection_rule: str
@@ -140,7 +140,7 @@ class SupportBasis:
             raise SupportBasisError(
                 f"a support basis must declare a recognised selection: {self.selection_rule!r}"
             )
-        for name in ("workspace_id", "session_id", "occurrence_kind",
+        for name in ("workspace_id", "locality_id", "occurrence_kind",
                      "boundary_commitment", "commitment"):
             value = getattr(self, name)
             if not isinstance(value, str) or not value:
@@ -161,7 +161,7 @@ class SupportBasis:
         return {
             "scope": {
                 "workspace_id": self.workspace_id,
-                "session_id": self.session_id,
+                "locality_id": self.locality_id,
                 "occurrence_kind": self.occurrence_kind,
             },
             "boundary": {"commitment": self.boundary_commitment},
@@ -178,7 +178,7 @@ class SupportBasis:
             scope = value["scope"]
             return cls(
                 workspace_id=scope["workspace_id"],
-                session_id=scope["session_id"],
+                locality_id=scope["locality_id"],
                 occurrence_kind=scope["occurrence_kind"],
                 boundary_commitment=value["boundary"]["commitment"],
                 selection_rule=value["selection_rule"],
@@ -192,7 +192,7 @@ class SupportBasis:
 def declare_complete_inputs(
     *,
     workspace_id: str,
-    session_id: str,
+    locality_id: str,
     occurrence_kind: str,
     boundary: EventLedgerBoundary,
     identities: Iterable[str],
@@ -202,7 +202,7 @@ def declare_complete_inputs(
     ordered = tuple(identities)
     return SupportBasis(
         workspace_id=workspace_id,
-        session_id=session_id,
+        locality_id=locality_id,
         occurrence_kind=occurrence_kind,
         boundary_commitment=boundary.commitment,
         selection_rule=COMPLETE_INGRESS_INPUTS,
@@ -249,7 +249,7 @@ class SupportValidator:
     def validate(self, basis: SupportBasis) -> tuple[str, ...]:
         key = (
             basis.workspace_id,
-            basis.session_id,
+            basis.locality_id,
             basis.occurrence_kind,
             basis.boundary_commitment,
             basis.commitment,
@@ -280,9 +280,9 @@ class SupportValidator:
         # distinction the code does not have.
         self.reads += 1
         identities = tuple(
-            self._ledger.iter_session_kind_ids(
+            self._ledger.iter_locality_kind_ids(
                 basis.workspace_id,
-                basis.session_id,
+                basis.locality_id,
                 basis.occurrence_kind,
                 through=EventLedgerBoundary(basis.boundary_commitment),
             )

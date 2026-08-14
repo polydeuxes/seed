@@ -43,19 +43,19 @@ SCOPE = "one bounded exchange"
 @pytest.fixture
 def ledger():
     led = EventLedger()
-    for session_id, material in BODIES.items():
+    for locality_id, material in BODIES.items():
         run_persistent_operator_console(
-            ledger=led, workspace_id="w", session_id=session_id,
+            ledger=led, workspace_id="w", locality_id=locality_id,
             input_stream=StringIO(material + "exit\n"), output_stream=StringIO())
     return led
 
 
-def _finding(led, session_id, representation="a", scope=SCOPE):
+def _finding(led, locality_id, representation="a", scope=SCOPE):
     occurrences = preserved_ingress_occurrences(
-        led, workspace_id="w", session_id=session_id
+        led, workspace_id="w", locality_id=locality_id
     )
     return record_measurement_finding(
-        led, workspace_id="w", session_id=session_id,
+        led, workspace_id="w", locality_id=locality_id,
         finding=measure_after(occurrences, representation, counting_scope=scope),
     )
 
@@ -92,7 +92,7 @@ def test_an_input_compared_with_itself_is_refused(ledger):
 
 def test_only_recorded_measurement_findings_may_participate(ledger):
     one = _finding(ledger, "s1")
-    ingress = preserved_ingress_occurrences(ledger, workspace_id="w", session_id="s1")[0]
+    ingress = preserved_ingress_occurrences(ledger, workspace_id="w", locality_id="s1")[0]
     with pytest.raises(BoundedComparisonError, match="not a recorded measurement"):
         compare_preserved_findings(ledger, [one.id, ingress.id])
 
@@ -106,7 +106,7 @@ def test_an_unpreserved_input_is_refused(ledger):
 def test_the_recorded_responsible_boundary_is_local_to_the_occurrence(ledger):
     a, b = _finding(ledger, "s1"), _finding(ledger, "s2")
     event = record_comparison_finding(
-        ledger, workspace_id="w", session_id="s1",
+        ledger, workspace_id="w", locality_id="s1",
         finding=compare_preserved_findings(ledger, [a.id, b.id]))
     assert "local to the instantiated comparison" in event.payload["responsible_boundary"]
     assert "not named beyond this comparison" in event.payload["responsible_boundary"]
@@ -139,9 +139,9 @@ def test_an_absent_coordinate_is_named_and_not_supplied(ledger):
 
 def test_the_support_basis_travels_with_its_input(ledger):
     seed = _finding(ledger, "s1")
-    occurrences = preserved_ingress_occurrences(ledger, workspace_id="w", session_id="s1")
+    occurrences = preserved_ingress_occurrences(ledger, workspace_id="w", locality_id="s1")
     standing_on = record_measurement_finding(
-        ledger, workspace_id="w", session_id="s1",
+        ledger, workspace_id="w", locality_id="s1",
         finding=measure_after(occurrences, "is", counting_scope=SCOPE, premise_event_id=seed.id))
     other = _finding(ledger, "s2")
     finding = compare_preserved_findings(ledger, [standing_on.id, other.id])
@@ -227,7 +227,7 @@ def test_the_distinctions_are_literal(ledger):
     assert by_name["equivalence_rule"].same
     assert not by_name["bounded_exchange"].same
     assert by_name["bounded_exchange"].values == (
-        "workspace:w;session:s1", "workspace:w;session:s2")
+        "workspace:w;locality:s1", "workspace:w;locality:s2")
 
 
 # --------------------------------------------------------------------------
@@ -238,7 +238,7 @@ def test_the_distinctions_are_literal(ledger):
 def test_the_comparison_is_recorded_as_its_own_kind(ledger):
     a, b = _finding(ledger, "s1"), _finding(ledger, "s2")
     event = record_comparison_finding(
-        ledger, workspace_id="w", session_id="s1",
+        ledger, workspace_id="w", locality_id="s1",
         finding=compare_preserved_findings(ledger, [a.id, b.id]))
     assert event.kind == COMPARISON_RECORDED_KIND
     assert event.payload["input_event_ids"] == [a.id, b.id]
@@ -248,7 +248,7 @@ def test_the_comparison_is_recorded_as_its_own_kind(ledger):
 def test_the_record_refuses_the_inferences_the_clause_forbids(ledger):
     a, b = _finding(ledger, "s1"), _finding(ledger, "s2")
     event = record_comparison_finding(
-        ledger, workspace_id="w", session_id="s1",
+        ledger, workspace_id="w", locality_id="s1",
         finding=compare_preserved_findings(ledger, [a.id, b.id]))
     notes = " ".join(event.payload["boundary_notes"])
     assert "is not a relation between what they measured" in notes
@@ -262,7 +262,7 @@ def test_recording_a_comparison_does_not_disturb_its_inputs(ledger):
     a, b = _finding(ledger, "s1"), _finding(ledger, "s2")
     before = (dict(a.payload), dict(b.payload))
     record_comparison_finding(
-        ledger, workspace_id="w", session_id="s1",
+        ledger, workspace_id="w", locality_id="s1",
         finding=compare_preserved_findings(ledger, [a.id, b.id]))
     assert (ledger.get(a.id).payload, ledger.get(b.id).payload) == before
 
@@ -272,7 +272,7 @@ def test_a_comparison_is_not_a_measurement(ledger):
 
     a, b = _finding(ledger, "s1"), _finding(ledger, "s2")
     event = record_comparison_finding(
-        ledger, workspace_id="w", session_id="s1",
+        ledger, workspace_id="w", locality_id="s1",
         finding=compare_preserved_findings(ledger, [a.id, b.id]))
     assert event.kind != MEASUREMENT_RECORDED_KIND
     assert "occupancies" not in event.payload

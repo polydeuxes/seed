@@ -24,8 +24,8 @@ import pytest
 from seed_runtime.events import EventLedger, SQLiteEventLedger
 from seed_runtime.operator_console import run_persistent_operator_console
 from seed_runtime import process_entry
-from seed_runtime.operator_session_standing import (
-    read_operator_session_standing,
+from seed_runtime.operator_locality_standing import (
+    read_operator_locality_standing,
 )
 from seed_runtime.preserved_material_measurement import (
     preserved_ingress_occurrences,
@@ -46,8 +46,8 @@ def _console(monkeypatch, material: str, argv: list[str]) -> None:
 def _sessions(ledger: EventLedger, workspace_id: str = "local") -> list[str]:
     seen: list[str] = []
     for event in ledger.list(workspace_id):
-        if event.session_id is not None and event.session_id not in seen:
-            seen.append(event.session_id)
+        if event.locality_id is not None and event.locality_id not in seen:
+            seen.append(event.locality_id)
     return seen
 
 
@@ -120,11 +120,11 @@ def test_both_lifetimes_share_one_workspace(two_lifetimes):
 def test_each_lifetime_holds_only_its_own_ingress(two_lifetimes):
     first, second = _sessions(two_lifetimes)
 
-    def material(session_id):
+    def material(locality_id):
         return [
             event.payload["decoded_text"]
             for event in preserved_ingress_occurrences(
-                two_lifetimes, workspace_id="local", session_id=session_id
+                two_lifetimes, workspace_id="local", locality_id=locality_id
             )
         ]
 
@@ -139,11 +139,11 @@ def test_a_reopened_console_does_not_continue_the_prior_standing(two_lifetimes):
     because two invocations never shared history to continue.
     """
     first, second = _sessions(two_lifetimes)
-    prior = read_operator_session_standing(
-        two_lifetimes, workspace_id="local", session_id=first
+    prior = read_operator_locality_standing(
+        two_lifetimes, workspace_id="local", locality_id=first
     )
-    later = read_operator_session_standing(
-        two_lifetimes, workspace_id="local", session_id=second
+    later = read_operator_locality_standing(
+        two_lifetimes, workspace_id="local", locality_id=second
     )
 
     assert len(prior["representations"]) == 3
@@ -154,8 +154,8 @@ def test_a_reopened_console_does_not_continue_the_prior_standing(two_lifetimes):
 def test_the_earlier_lifetime_remains_projectable(two_lifetimes):
     """Bounding the read must not lose what it stopped reading."""
     first = _sessions(two_lifetimes)[0]
-    standing = read_operator_session_standing(
-        two_lifetimes, workspace_id="local", session_id=first
+    standing = read_operator_locality_standing(
+        two_lifetimes, workspace_id="local", locality_id=first
     )
     assert len(standing["representations"]) == 3
 
@@ -167,37 +167,37 @@ def test_the_earlier_lifetime_remains_projectable(two_lifetimes):
 
 def test_a_session_read_returns_only_that_session(two_lifetimes):
     first, second = _sessions(two_lifetimes)
-    for session_id in (first, second):
-        events = two_lifetimes.list_session("local", session_id)
+    for locality_id in (first, second):
+        events = two_lifetimes.list_locality("local", locality_id)
         assert events
-        assert {e.session_id for e in events} == {session_id}
-    assert len(two_lifetimes.list_session("local", first)) + len(
-        two_lifetimes.list_session("local", second)
+        assert {e.locality_id for e in events} == {locality_id}
+    assert len(two_lifetimes.list_locality("local", first)) + len(
+        two_lifetimes.list_locality("local", second)
     ) == len(two_lifetimes.list("local"))
 
 
 def test_a_fresh_session_reads_none_of_the_history(two_lifetimes):
     """The console's startup read, which is the growing read."""
     assert two_lifetimes.list("local")
-    assert two_lifetimes.list_session("local", "never-recorded") == []
-    standing = read_operator_session_standing(
-        two_lifetimes, workspace_id="local", session_id="never-recorded"
+    assert two_lifetimes.list_locality("local", "never-recorded") == []
+    standing = read_operator_locality_standing(
+        two_lifetimes, workspace_id="local", locality_id="never-recorded"
     )
     assert standing["representations"] == {}
 
 
 def test_the_in_memory_ledger_scopes_the_same_way():
     ledger = EventLedger()
-    for session_id in ("a", "b"):
+    for locality_id in ("a", "b"):
         run_persistent_operator_console(
             ledger=ledger,
             workspace_id="w",
-            session_id=session_id,
+            locality_id=locality_id,
             input_stream=StringIO("material\nexit\n"),
             output_stream=StringIO(),
         )
-    assert {e.session_id for e in ledger.list_session("w", "a")} == {"a"}
-    assert len(ledger.list_session("w", "a")) < len(ledger.list("w"))
+    assert {e.locality_id for e in ledger.list_locality("w", "a")} == {"a"}
+    assert len(ledger.list_locality("w", "a")) < len(ledger.list("w"))
 
 
 # --------------------------------------------------------------------------
@@ -210,11 +210,11 @@ def test_a_caller_supplied_session_id_remains_exact():
     run_persistent_operator_console(
         ledger=ledger,
         workspace_id="w",
-        session_id="chosen-by-the-caller",
+        locality_id="chosen-by-the-caller",
         input_stream=StringIO("material\nexit\n"),
         output_stream=StringIO(),
     )
-    assert {event.session_id for event in ledger.list("w")} == {
+    assert {event.locality_id for event in ledger.list("w")} == {
         "chosen-by-the-caller"
     }
 
@@ -260,7 +260,7 @@ def test_separate_processes_receive_separate_sessions(db):
             [
                 event.payload["decoded_text"]
                 for event in preserved_ingress_occurrences(
-                    ledger, workspace_id="local", session_id=session
+                    ledger, workspace_id="local", locality_id=session
                 )
             ]
             for session in sessions

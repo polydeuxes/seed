@@ -23,9 +23,9 @@ from io import StringIO
 import pytest
 
 from seed_runtime.events import EventLedger, SQLiteEventLedger
-from seed_runtime.operator_session_standing import (
-    advance_operator_session_standing,
-    read_operator_session_standing,
+from seed_runtime.operator_locality_standing import (
+    advance_operator_locality_standing,
+    read_operator_locality_standing,
 )
 from seed_runtime.operator_console import run_persistent_operator_console
 
@@ -45,7 +45,7 @@ def _console(material, ledger=None):
     run_persistent_operator_console(
         ledger=ledger,
         workspace_id="w",
-        session_id="s",
+        locality_id="s",
         input_stream=StringIO(material),
         output_stream=output,
     )
@@ -55,7 +55,7 @@ def _console(material, ledger=None):
 def _replay(events):
     ledger = EventLedger()
     ledger.extend(events)
-    return read_operator_session_standing(ledger, workspace_id="w", session_id="s")
+    return read_operator_locality_standing(ledger, workspace_id="w", locality_id="s")
 
 
 def _ingress_event(index, *, unknowns):
@@ -70,13 +70,13 @@ def _ingress_event(index, *, unknowns):
             "material_role": "initial_ingress",
             "unknowns": list(unknowns),
         },
-        session_id="s",
+        locality_id="s",
     )
 
 
 def _advance(events, prior=None):
-    return advance_operator_session_standing(
-        events, workspace_id="w", session_id="s", prior=prior
+    return advance_operator_locality_standing(
+        events, workspace_id="w", locality_id="s", prior=prior
     )
 
 
@@ -122,8 +122,8 @@ def test_replay_still_works_and_agrees_with_a_single_advance():
         ledger, _ = _console(material)
         events = ledger.list("w")
         assert _advance(events) == _replay(events)
-        assert read_operator_session_standing(
-            ledger, workspace_id="w", session_id="s"
+        assert read_operator_locality_standing(
+            ledger, workspace_id="w", locality_id="s"
         ) == _replay(events)
 
 
@@ -150,13 +150,13 @@ def test_the_console_never_replays_the_session(monkeypatch):
     calls = []
     from seed_runtime import operator_console
 
-    original = operator_console.read_operator_session_standing
+    original = operator_console.read_operator_locality_standing
 
     def record(ledger, **kwargs):
         calls.append(len(ledger.list(kwargs["workspace_id"])))
         return original(ledger, **kwargs)
 
-    monkeypatch.setattr(operator_console, "read_operator_session_standing", record)
+    monkeypatch.setattr(operator_console, "read_operator_locality_standing", record)
     _console("alpha\nbeta\ngamma\ndelta\nexit\n")
     assert calls == [0]
 
@@ -166,14 +166,14 @@ def test_each_advance_reads_only_what_an_act_just_recorded(monkeypatch):
     from seed_runtime import operator_console
 
     sizes = []
-    original = operator_console.advance_operator_session_standing
+    original = operator_console.advance_operator_locality_standing
 
     def record(events, **kwargs):
         events = list(events)
         sizes.append(len(events))
         return original(events, **kwargs)
 
-    monkeypatch.setattr(operator_console, "advance_operator_session_standing", record)
+    monkeypatch.setattr(operator_console, "advance_operator_locality_standing", record)
     _console("alpha\nbeta\ngamma\ndelta\nexit\n")
     assert set(sizes) <= {2, 3}, sizes
 
@@ -250,8 +250,8 @@ def test_the_console_keeps_no_earlier_standing():
     """The only holder hands its Standing forward and retains nothing."""
     ledger, output = _console("alpha\nbeta\ngamma\nexit\n")
     assert output.count("Bounded Representation") == 4
-    assert read_operator_session_standing(
-        ledger, workspace_id="w", session_id="s"
+    assert read_operator_locality_standing(
+        ledger, workspace_id="w", locality_id="s"
     ) == _replay(ledger.list("w"))
 
 
@@ -267,7 +267,7 @@ def test_c0_still_forms_from_empty_standing():
         for event in ledger.list("w")
         if event.kind == "operator.representation.recorded"
     )
-    assert formed.payload["session_standing_as_of_event_id"] is None
+    assert formed.payload["locality_standing_as_of_event_id"] is None
 
 
 def test_the_session_records_the_same_occurrences_it_always_did():

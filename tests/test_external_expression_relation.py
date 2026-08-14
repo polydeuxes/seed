@@ -40,7 +40,7 @@ def _source(
             )
         },
         actor="operator",
-        session_id="s",
+        locality_id="s",
     )
 
 
@@ -57,7 +57,7 @@ def test_source_carried_expression_relation_is_recorded_and_reconstructed():
     event = record_external_expression_relation(
         ledger,
         workspace_id="w",
-        session_id="s",
+        locality_id="s",
         source_occurrence_id=source.id,
         machine_grammar=GRAMMAR,
     )
@@ -65,7 +65,7 @@ def test_source_carried_expression_relation_is_recorded_and_reconstructed():
     result = reconstruct_external_expression_relations(
         ledger,
         workspace_id="w",
-        session_id="s",
+        locality_id="s",
         external_expression="Producer",
         machine_grammar=GRAMMAR,
     )
@@ -99,7 +99,7 @@ def test_absent_expression_relation_preserves_unknown():
     result = reconstruct_external_expression_relations(
         EventLedger(),
         workspace_id="w",
-        session_id="s",
+        locality_id="s",
         external_expression="Producer",
         machine_grammar=GRAMMAR,
     )
@@ -124,7 +124,7 @@ def test_equal_expression_does_not_collapse_different_source_relations():
         record_external_expression_relation(
             ledger,
             workspace_id="w",
-            session_id="s",
+            locality_id="s",
             source_occurrence_id=source.id,
             machine_grammar=GRAMMAR,
         )
@@ -132,7 +132,7 @@ def test_equal_expression_does_not_collapse_different_source_relations():
     result = reconstruct_external_expression_relations(
         ledger,
         workspace_id="w",
-        session_id="s",
+        locality_id="s",
         external_expression="Producer",
         machine_grammar=GRAMMAR,
     )
@@ -155,7 +155,7 @@ def test_current_grammar_difference_does_not_rewrite_preserved_assertion():
     event = record_external_expression_relation(
         ledger,
         workspace_id="w",
-        session_id="s",
+        locality_id="s",
         source_occurrence_id=source.id,
         machine_grammar=GRAMMAR,
     )
@@ -165,7 +165,7 @@ def test_current_grammar_difference_does_not_rewrite_preserved_assertion():
     result = reconstruct_external_expression_relations(
         ledger,
         workspace_id="w",
-        session_id="s",
+        locality_id="s",
         external_expression="Producer",
         machine_grammar=changed,
     )
@@ -192,7 +192,7 @@ def test_training_material_must_match_the_supplied_machine_grammar():
         record_external_expression_relation(
             ledger,
             workspace_id="w",
-            session_id="s",
+            locality_id="s",
             source_occurrence_id=source.id,
             machine_grammar=GRAMMAR,
         )
@@ -217,7 +217,7 @@ def test_same_shaped_non_operator_material_cannot_train_a_relation():
                 }
             ),
         },
-        session_id="s",
+        locality_id="s",
     )
 
     with pytest.raises(
@@ -227,7 +227,7 @@ def test_same_shaped_non_operator_material_cannot_train_a_relation():
         record_external_expression_relation(
             ledger,
             workspace_id="w",
-            session_id="s",
+            locality_id="s",
             source_occurrence_id=source.id,
             machine_grammar=GRAMMAR,
         )
@@ -244,7 +244,7 @@ def test_recovery_refuses_a_carrier_rewritten_away_from_its_source():
     event = record_external_expression_relation(
         ledger,
         workspace_id="w",
-        session_id="s",
+        locality_id="s",
         source_occurrence_id=source.id,
         machine_grammar=GRAMMAR,
     )
@@ -254,7 +254,7 @@ def test_recovery_refuses_a_carrier_rewritten_away_from_its_source():
         EXTERNAL_EXPRESSION_RELATION_RECORDED_KIND,
         "w",
         changed,
-        session_id="s",
+        locality_id="s",
     )
 
     with pytest.raises(

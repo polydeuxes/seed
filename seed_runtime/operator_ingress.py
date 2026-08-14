@@ -47,7 +47,7 @@ def _record(ledger, kind, workspace, session, attempt, dimensions, **extra):
             "mutates_cluster": False,
             **extra,
         },
-        session_id=session,
+        locality_id=session,
     )
 
 
@@ -175,7 +175,7 @@ def _capture_representation(
             source=capture.capture_boundary,
             responsibility="competent-raw-material-capture",
             authority="occurrence evidence only",
-            scope=f"workspace:{workspace};session:{session};role:{material_role}",
+            scope=f"workspace:{workspace};locality:{session};role:{material_role}",
             occurrence="exact boundary bytes durably preserved as hexadecimal",
         ),
         material_role=material_role,
@@ -252,14 +252,14 @@ def run_operator_ingress_attempt(
     *,
     ledger: EventLedger,
     workspace_id: str,
-    session_id: str,
+    locality_id: str,
     captured_ingress: CapturedOperatorMaterial,
     output_stream: TextIO,
-    session_standing: dict[str, object] | None = None,
+    locality_standing: dict[str, object] | None = None,
 ) -> dict[str, object]:
     """Capture, examine, and project one bounded non-EOF ingress attempt.
 
-    ``session_standing`` is already-projected Standing from this session's
+    ``locality_standing`` is already-projected Standing from this session's
     earlier recorded events.  It is carried on the returned attempt_standing for
     the Representation to expose; it is not recorded, interpreted, or used to
     alter this attempt's own occurrence handling.
@@ -282,7 +282,7 @@ def run_operator_ingress_attempt(
     ) = _capture_representation(
         ledger=ledger,
         workspace=workspace_id,
-        session=session_id,
+        session=locality_id,
         attempt=attempt,
         captured_material=captured_ingress,
         material_role="initial_ingress",
@@ -302,7 +302,7 @@ def run_operator_ingress_attempt(
             ledger,
             "operator.ingress.ingress_occurred",
             workspace_id,
-            session_id,
+            locality_id,
             attempt,
             _dimensions(
                 identity=attempt,
@@ -311,7 +311,7 @@ def run_operator_ingress_attempt(
                 source=ingress_decoder_outcome_event.id,
                 responsibility="operator-ingress",
                 authority="occurrence-only; represented relation Unknown",
-                scope=f"workspace:{workspace_id};session:{session_id}",
+                scope=f"workspace:{workspace_id};locality:{locality_id}",
                 occurrence="exact material preserved; no text representation available",
             ),
             material_origin=OPERATOR_ORIGIN,
@@ -338,7 +338,7 @@ def run_operator_ingress_attempt(
             ledger,
             "operator.ingress.stopping_occurred",
             workspace_id,
-            session_id,
+            locality_id,
             attempt,
             _dimensions(
                 identity=f"stop:{ingress_decoder_outcome_event.id}",
@@ -369,8 +369,8 @@ def run_operator_ingress_attempt(
             f"decode under {ingress_decoder_outcome.mechanism}.\n"
         )
         output_stream.flush()
-        if session_standing is not None:
-            attempt_standing["session_standing"] = session_standing
+        if locality_standing is not None:
+            attempt_standing["locality_standing"] = locality_standing
         return attempt_standing
     raw_ingress = ingress_decoder_outcome.represented_text
     ingress_kind = "empty" if raw_ingress in {"\n", "\r\n"} else "text"
@@ -379,7 +379,7 @@ def run_operator_ingress_attempt(
         ledger,
         "operator.ingress.ingress_occurred",
         workspace_id,
-        session_id,
+        locality_id,
         attempt,
         _dimensions(
             identity=attempt,
@@ -388,7 +388,7 @@ def run_operator_ingress_attempt(
             source=ingress_decoder_outcome_event.id,
             responsibility="operator-ingress",
             authority="occurrence-only; represented relation Unknown",
-            scope=f"workspace:{workspace_id};session:{session_id}",
+            scope=f"workspace:{workspace_id};locality:{locality_id}",
             occurrence=(
                 "strictly decoded text preserves capture and decoder-outcome provenance"
             ),
@@ -415,6 +415,6 @@ def run_operator_ingress_attempt(
         ledger=ledger,
         attempt=attempt,
     )
-    if session_standing is not None:
-        attempt_standing["session_standing"] = session_standing
+    if locality_standing is not None:
+        attempt_standing["locality_standing"] = locality_standing
     return attempt_standing

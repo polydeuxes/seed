@@ -51,7 +51,7 @@ def run(stream) -> tuple[list, str]:
     run_operator_ingress_attempt(
         ledger=ledger,
         workspace_id="w",
-        session_id="s",
+        locality_id="s",
         captured_ingress=capture_stdin_material(stream),
         output_stream=output,
     )

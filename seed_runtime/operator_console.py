@@ -11,9 +11,9 @@ from seed_runtime.operator_representation import (
     emit_operator_representation,
     record_operator_representation,
 )
-from seed_runtime.operator_session_standing import (
-    advance_operator_session_standing,
-    read_operator_session_standing,
+from seed_runtime.operator_locality_standing import (
+    advance_operator_locality_standing,
+    read_operator_locality_standing,
 )
 
 
@@ -25,7 +25,7 @@ def _is_console_exit(material: bytes, encoding: str | None) -> bool:
         return False
 
 
-def _advance_over(ledger, standing, event_ids, *, workspace_id, session_id):
+def _advance_over(ledger, standing, event_ids, *, workspace_id, locality_id):
     """Advance carried Standing over occurrences a responsible act just recorded.
 
     The identifiers come from the act that recorded them, so nothing here
@@ -33,10 +33,10 @@ def _advance_over(ledger, standing, event_ids, *, workspace_id, session_id):
     identifier.
     """
 
-    return advance_operator_session_standing(
+    return advance_operator_locality_standing(
         [ledger.get(event_id) for event_id in event_ids],
         workspace_id=workspace_id,
-        session_id=session_id,
+        locality_id=locality_id,
         prior=standing,
     )
 
@@ -45,7 +45,7 @@ def run_persistent_operator_console(
     *,
     ledger: EventLedger,
     workspace_id: str,
-    session_id: str,
+    locality_id: str,
     input_stream: TextIO,
     output_stream: TextIO,
     process_boundary_escape: bool = True,
@@ -58,28 +58,28 @@ def run_persistent_operator_console(
     # Standing is carried through the session rather than re-projected before
     # each interaction. Each responsible act returns the occurrences it
     # recorded, so the console advances over exactly those occurrences.
-    session_standing = read_operator_session_standing(
-        ledger, workspace_id=workspace_id, session_id=session_id
+    locality_standing = read_operator_locality_standing(
+        ledger, workspace_id=workspace_id, locality_id=locality_id
     )
     representation = record_operator_representation(
         ledger,
         workspace_id=workspace_id,
-        session_id=session_id,
-        session_standing=session_standing,
+        locality_id=locality_id,
+        locality_standing=locality_standing,
     )
     representation = emit_operator_representation(
         ledger, representation=representation, output_stream=output_stream
     )
-    session_standing = _advance_over(
+    locality_standing = _advance_over(
         ledger,
-        session_standing,
+        locality_standing,
         (
             representation["representation_event_id"],
             representation["emission_attempt_event_id"],
             representation["emitted_event_id"],
         ),
         workspace_id=workspace_id,
-        session_id=session_id,
+        locality_id=locality_id,
     )
     while True:
         captured_ingress = capture_stdin_material(input_stream)
@@ -98,19 +98,19 @@ def run_persistent_operator_console(
         attempt_record = run_operator_ingress_attempt(
             ledger=ledger,
             workspace_id=workspace_id,
-            session_id=session_id,
+            locality_id=locality_id,
             captured_ingress=captured_ingress,
             output_stream=output_stream,
-            session_standing=(
-                session_standing if session_standing["event_count"] else None
+            locality_standing=(
+                locality_standing if locality_standing["event_count"] else None
             ),
         )
-        session_standing = _advance_over(
+        locality_standing = _advance_over(
             ledger,
-            session_standing,
+            locality_standing,
             attempt_record["event_ids"],
             workspace_id=workspace_id,
-            session_id=session_id,
+            locality_id=locality_id,
         )
         if attempt_record["current_standing"]["preserved_ingress"] is not None:
             # The yielded Representation is preserved independently. No Compare
@@ -118,20 +118,20 @@ def run_persistent_operator_console(
             representation = record_operator_representation(
                 ledger,
                 workspace_id=workspace_id,
-                session_id=session_id,
-                session_standing=session_standing,
+                locality_id=locality_id,
+                locality_standing=locality_standing,
             )
             representation = emit_operator_representation(
                 ledger, representation=representation, output_stream=output_stream
             )
-            session_standing = _advance_over(
+            locality_standing = _advance_over(
                 ledger,
-                session_standing,
+                locality_standing,
                 (
                     representation["representation_event_id"],
                     representation["emission_attempt_event_id"],
                     representation["emitted_event_id"],
                 ),
                 workspace_id=workspace_id,
-                session_id=session_id,
+                locality_id=locality_id,
             )

@@ -208,7 +208,7 @@ def get_recorded_finding_yield_comparison(
         or dimensions.get("responsibility") != RESPONSIBILITY_UNESTABLISHED
         or dimensions.get("scope_workspace") != event.workspace_id
         or dimensions.get("scope_locality")
-        != (f"session:{event.session_id}" if event.session_id is not None else None)
+        != (f"locality:{event.locality_id}" if event.locality_id is not None else None)
     ):
         raise RecordedFindingYieldComparisonError(
             f"{event_id} carries an incoherent Compare result shell"
@@ -228,7 +228,7 @@ def _provenance(event: Event, integrity: str) -> dict[str, object]:
         "event_id": event.id,
         "event_kind": event.kind,
         "workspace_id": event.workspace_id,
-        "session_id": event.session_id,
+        "locality_id": event.locality_id,
         "integrity": integrity,
     }
 
@@ -411,8 +411,8 @@ def compare_recorded_finding_yield(ledger: EventLedger, event_id: str) -> Event:
                 "authority": authority_boundary,
                 "scope_workspace": recorded.workspace_id,
                 "scope_locality": (
-                    f"session:{recorded.session_id}"
-                    if recorded.session_id is not None
+                    f"locality:{recorded.locality_id}"
+                    if recorded.locality_id is not None
                     else None
                 ),
             },
@@ -464,7 +464,7 @@ def compare_recorded_finding_yield(ledger: EventLedger, event_id: str) -> Event:
     yield_evidence = _record_yield_evidence(
         ledger,
         workspace_id=recorded.workspace_id,
-        session_id=recorded.session_id,
+        locality_id=recorded.locality_id,
         convention=FINDING_YIELD_COMPARISON_CONVENTION,
         yielding_act="bounded finding Yield Compare",
         act_occurrence_id=act_occurrence_id,
@@ -482,5 +482,5 @@ def compare_recorded_finding_yield(ledger: EventLedger, event_id: str) -> Event:
             "yield_evidence_id": yield_evidence.id,
             "occurrence_preservation": COMPARISON_OCCURRENCE_PRESERVATION,
         },
-        session_id=recorded.session_id,
+        locality_id=recorded.locality_id,
     )

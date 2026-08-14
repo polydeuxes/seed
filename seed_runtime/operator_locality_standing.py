@@ -66,8 +66,8 @@ def _record_distinct(collected: list[str], value: str) -> None:
         collected.insert(index, value)
 
 
-def read_operator_session_standing(
-    ledger: EventLedger, *, workspace_id: str, session_id: str
+def read_operator_locality_standing(
+    ledger: EventLedger, *, workspace_id: str, locality_id: str
 ) -> dict[str, Any]:
     """Project bounded session-local Standing by replaying the whole session.
 
@@ -75,21 +75,21 @@ def read_operator_session_standing(
     `#2376` established that advancing from a prior Standing over only the
     occurrences after its boundary yields the same result, so a caller that
     already holds its Standing and knows what it just recorded should use
-    :func:`advance_operator_session_standing` instead of replaying.
+    :func:`advance_operator_locality_standing` instead of replaying.
     """
 
-    return advance_operator_session_standing(
-        ledger.list_session(workspace_id, session_id),
+    return advance_operator_locality_standing(
+        ledger.list_locality(workspace_id, locality_id),
         workspace_id=workspace_id,
-        session_id=session_id,
+        locality_id=locality_id,
     )
 
 
-def advance_operator_session_standing(
+def advance_operator_locality_standing(
     events: Iterable[Event],
     *,
     workspace_id: str,
-    session_id: str,
+    locality_id: str,
     prior: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     """Advance bounded session-local Standing over an exact sequence of events.
@@ -126,7 +126,7 @@ def advance_operator_session_standing(
     Represented relation candidates are never yielded here; each preserved ingress keeps
     the authority its own event recorded.
     """
-    scope = f"workspace:{workspace_id};session:{session_id}"
+    scope = f"workspace:{workspace_id};locality:{locality_id}"
     attempts: dict[str, dict[str, Any]] = {}
     preserved_ingress_occurrences: list[dict[str, Any]] = []
     interaction_closures: list[dict[str, Any]] = []
@@ -172,7 +172,7 @@ def advance_operator_session_standing(
         event_count = prior["event_count"]
 
     for event in events:
-        if event.session_id != session_id:
+        if event.locality_id != locality_id:
             continue
         if not (
             event.kind.startswith("operator.ingress.")
@@ -214,8 +214,8 @@ def advance_operator_session_standing(
                 "representation_result": payload["representation_result"],
                 "alternatives": payload["alternatives"],
                 "coordinate_bindings": payload["coordinate_bindings"],
-                "session_standing_as_of_event_id": payload[
-                    "session_standing_as_of_event_id"
+                "locality_standing_as_of_event_id": payload[
+                    "locality_standing_as_of_event_id"
                 ],
                 "prior_exchange_finding": payload.get("prior_exchange_finding"),
                 "scope": payload["dimensions"]["scope_locality"],
@@ -881,7 +881,7 @@ def advance_operator_session_standing(
 
     return {
         "workspace_id": workspace_id,
-        "session_id": session_id,
+        "locality_id": locality_id,
         "as_of_event_id": as_of_event_id,
         "event_count": event_count,
         "attempts": attempts,

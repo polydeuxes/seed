@@ -138,6 +138,6 @@ class Event(SeedModel):
     actor: str = "system"
     timestamp: datetime = Field(default_factory=utc_now)
     payload: dict[str, Any] = Field(default_factory=dict)
-    session_id: str | None = None
+    locality_id: str | None = None
     causation_id: str | None = None
     correlation_id: str | None = None

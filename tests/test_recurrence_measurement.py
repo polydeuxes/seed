@@ -68,7 +68,7 @@ def _compare_all(ledger, findings):
     for i, a in enumerate(names):
         for b in names[i + 1:]:
             record_comparison_finding(
-                ledger, workspace_id="w", session_id=a,
+                ledger, workspace_id="w", locality_id=a,
                 finding=compare_preserved_findings(
                     ledger, [findings[a], findings[b]]))
 
@@ -76,16 +76,16 @@ def _compare_all(ledger, findings):
 @pytest.fixture
 def compared():
     ledger = EventLedger()
-    for session_id, material in EXCHANGES.items():
+    for locality_id, material in EXCHANGES.items():
         run_persistent_operator_console(
-            ledger=ledger, workspace_id="w", session_id=session_id,
+            ledger=ledger, workspace_id="w", locality_id=locality_id,
             input_stream=StringIO(material + "exit\n"), output_stream=StringIO())
     findings = {}
-    for session_id in EXCHANGES:
+    for locality_id in EXCHANGES:
         occ = preserved_ingress_occurrences(
-            ledger, workspace_id="w", session_id=session_id)
-        findings[session_id] = record_measurement_finding(
-            ledger, workspace_id="w", session_id=session_id,
+            ledger, workspace_id="w", locality_id=locality_id)
+        findings[locality_id] = record_measurement_finding(
+            ledger, workspace_id="w", locality_id=locality_id,
             finding=measure_after(occ, "a", counting_scope=SCOPE)).id
     _compare_all(ledger, findings)
     return ledger
@@ -111,7 +111,7 @@ def _assertions_by_result(event):
 def test_assertion_standing_coordinate_responsibility_is_distinct_from_its_yield(compared):
     """The yielding Act and the result's Standing-coordinate responsible boundary remain distinct."""
     event = record_measured_count(
-        compared, workspace_id="w", session_id="s1",
+        compared, workspace_id="w", locality_id="s1",
         finding=_by_right(compared)["word"])
     assertions = event.payload["assertions"]
     assert assertions
@@ -137,7 +137,7 @@ def test_assertion_standing_coordinate_responsibility_is_distinct_from_its_yield
 
 def test_the_record_shape_is_its_own(compared):
     event = record_measured_count(
-        compared, workspace_id="w", session_id="s1",
+        compared, workspace_id="w", locality_id="s1",
         finding=_by_right(compared)["word"])
     assert event.kind == EXCHANGE_COUNT_RECORDED_KIND
     assert event.kind != MEASUREMENT_RECORDED_KIND
@@ -149,7 +149,7 @@ def test_the_record_shape_is_its_own(compared):
 def test_one_occurrence_preserves_every_distinct_result(compared):
     finding = _by_right(compared)["word"]
     event = record_measured_count(
-        compared, workspace_id="w", session_id="s1", finding=finding
+        compared, workspace_id="w", locality_id="s1", finding=finding
     )
     assertions = _assertions_by_result(event)
 
@@ -172,7 +172,7 @@ def test_recorded_assertions_are_addressable_through_their_occurrence(compared):
     event = record_measured_count(
         compared,
         workspace_id="w",
-        session_id="s1",
+        locality_id="s1",
         finding=_by_right(compared)["word"],
     )
     assertions = assertions_of_recorded_measurement(event)
@@ -215,7 +215,7 @@ def test_validation_refuses_assertion_identity_that_does_not_match_content(compa
     event = record_measured_count(
         compared,
         workspace_id="w",
-        session_id="s1",
+        locality_id="s1",
         finding=_by_right(compared)["word"],
     ).model_copy(deep=True)
     assertion = _assertions_by_result(event)["count"]
@@ -231,7 +231,7 @@ def test_validation_refuses_non_assertion_and_unresolved_local_support(compared)
     event = record_measured_count(
         compared,
         workspace_id="w",
-        session_id="s1",
+        locality_id="s1",
         finding=_by_right(compared)["word"],
     ).model_copy(deep=True)
     _assertions_by_result(event)["count"]["subject_kind"] = "not-an-assertion"
@@ -241,7 +241,7 @@ def test_validation_refuses_non_assertion_and_unresolved_local_support(compared)
     event = record_measured_count(
         compared,
         workspace_id="w",
-        session_id="s1",
+        locality_id="s1",
         finding=_by_right(compared)["word"],
     ).model_copy(deep=True)
     _assertions_by_result(event)["count"]["support_basis"][
@@ -254,10 +254,10 @@ def test_validation_refuses_non_assertion_and_unresolved_local_support(compared)
 def test_assertion_identity_and_yielding_occurrence_remain_distinct(compared):
     finding = _by_right(compared)["word"]
     first = record_measured_count(
-        compared, workspace_id="w", session_id="s1", finding=finding
+        compared, workspace_id="w", locality_id="s1", finding=finding
     )
     second = record_measured_count(
-        compared, workspace_id="w", session_id="s1", finding=finding
+        compared, workspace_id="w", locality_id="s1", finding=finding
     )
     first_count = _assertions_by_result(first)["count"]
     second_count = _assertions_by_result(second)["count"]
@@ -276,10 +276,10 @@ def test_assertion_identity_and_yielding_occurrence_remain_distinct(compared):
 def test_two_yields_of_one_assertion_can_be_compared_without_relation(compared):
     finding = _by_right(compared)["word"]
     first = record_measured_count(
-        compared, workspace_id="w", session_id="s1", finding=finding
+        compared, workspace_id="w", locality_id="s1", finding=finding
     )
     second = record_measured_count(
-        compared, workspace_id="w", session_id="s1", finding=finding
+        compared, workspace_id="w", locality_id="s1", finding=finding
     )
     first_count = next(
         assertion
@@ -310,7 +310,7 @@ def test_two_yields_of_one_assertion_can_be_compared_without_relation(compared):
 def test_assertion_compare_distinguishes_absence_from_carried_none(compared):
     finding = _by_right(compared)["word"]
     first = record_measured_count(
-        compared, workspace_id="w", session_id="s1", finding=finding
+        compared, workspace_id="w", locality_id="s1", finding=finding
     )
     altered_payload = first.model_copy(deep=True).payload
     altered_count = next(
@@ -324,7 +324,7 @@ def test_assertion_compare_distinguishes_absence_from_carried_none(compared):
         first.kind,
         first.workspace_id,
         altered_payload,
-        session_id=first.session_id,
+        locality_id=first.locality_id,
     )
     first_count = next(
         assertion
@@ -354,7 +354,7 @@ def test_assertion_compare_distinguishes_absence_from_carried_none(compared):
 def test_assertion_compare_exposes_changed_support_without_strengthening_it(compared):
     finding = _by_right(compared)["word"]
     first = record_measured_count(
-        compared, workspace_id="w", session_id="s1", finding=finding
+        compared, workspace_id="w", locality_id="s1", finding=finding
     )
     altered_payload = first.model_copy(deep=True).payload
     altered_measured_in = next(
@@ -369,7 +369,7 @@ def test_assertion_compare_exposes_changed_support_without_strengthening_it(comp
         first.kind,
         first.workspace_id,
         altered_payload,
-        session_id=first.session_id,
+        locality_id=first.locality_id,
     )
     first_assertion = next(
         assertion
@@ -400,7 +400,7 @@ def test_assertion_compare_refuses_self_and_different_assertions(compared):
     event = record_measured_count(
         compared,
         workspace_id="w",
-        session_id="s1",
+        locality_id="s1",
         finding=_by_right(compared)["word"],
     )
     assertions = assertions_of_recorded_measurement(event)
@@ -427,10 +427,10 @@ def test_assertion_compare_refuses_self_and_different_assertions(compared):
 def test_assertion_yield_compare_records_each_literal_result_separately(compared):
     finding = _by_right(compared)["word"]
     first = record_measured_count(
-        compared, workspace_id="w", session_id="s1", finding=finding
+        compared, workspace_id="w", locality_id="s1", finding=finding
     )
     second = record_measured_count(
-        compared, workspace_id="w", session_id="s1", finding=finding
+        compared, workspace_id="w", locality_id="s1", finding=finding
     )
     first_count = next(
         item for item in assertions_of_recorded_measurement(first)
@@ -447,7 +447,7 @@ def test_assertion_yield_compare_records_each_literal_result_separately(compared
     event = record_assertion_yield_comparison(
         compared,
         workspace_id="w",
-        session_id="s1",
+        locality_id="s1",
         comparison=comparison,
     )
     assertions = assertions_of_recorded_assertion_comparison(event)
@@ -471,10 +471,10 @@ def test_assertion_yield_compare_records_each_literal_result_separately(compared
 def test_recording_comparison_results_does_not_establish_support_or_revision(compared):
     finding = _by_right(compared)["word"]
     first = record_measured_count(
-        compared, workspace_id="w", session_id="s1", finding=finding
+        compared, workspace_id="w", locality_id="s1", finding=finding
     )
     second = record_measured_count(
-        compared, workspace_id="w", session_id="s1", finding=finding
+        compared, workspace_id="w", locality_id="s1", finding=finding
     )
     left = next(
         item for item in assertions_of_recorded_measurement(first)
@@ -488,7 +488,7 @@ def test_recording_comparison_results_does_not_establish_support_or_revision(com
         compared, (left.reference, right.reference)
     )
     event = record_assertion_yield_comparison(
-        compared, workspace_id="w", session_id="s1", comparison=comparison
+        compared, workspace_id="w", locality_id="s1", comparison=comparison
     )
 
     rendered = str(event.payload)
@@ -502,10 +502,10 @@ def test_recording_comparison_results_does_not_establish_support_or_revision(com
 def test_recorded_comparison_assertion_identity_is_recomputed(compared):
     finding = _by_right(compared)["word"]
     first = record_measured_count(
-        compared, workspace_id="w", session_id="s1", finding=finding
+        compared, workspace_id="w", locality_id="s1", finding=finding
     )
     second = record_measured_count(
-        compared, workspace_id="w", session_id="s1", finding=finding
+        compared, workspace_id="w", locality_id="s1", finding=finding
     )
     left = assertions_of_recorded_measurement(first)[0]
     right = assertions_of_recorded_measurement(second)[0]
@@ -513,7 +513,7 @@ def test_recorded_comparison_assertion_identity_is_recomputed(compared):
         compared, (left.reference, right.reference)
     )
     event = record_assertion_yield_comparison(
-        compared, workspace_id="w", session_id="s1", comparison=comparison
+        compared, workspace_id="w", locality_id="s1", comparison=comparison
     ).model_copy(deep=True)
     event.payload["assertions"][0]["dimensions"]["identity"] = "asserted-not-canonical"
 
@@ -524,10 +524,10 @@ def test_recorded_comparison_assertion_identity_is_recomputed(compared):
 def test_validation_refuses_a_self_consistent_forged_compare_result(compared):
     finding = _by_right(compared)["word"]
     first = record_measured_count(
-        compared, workspace_id="w", session_id="s1", finding=finding
+        compared, workspace_id="w", locality_id="s1", finding=finding
     )
     second = record_measured_count(
-        compared, workspace_id="w", session_id="s1", finding=finding
+        compared, workspace_id="w", locality_id="s1", finding=finding
     )
     left = assertions_of_recorded_measurement(first)[0]
     right = assertions_of_recorded_measurement(second)[0]
@@ -535,7 +535,7 @@ def test_validation_refuses_a_self_consistent_forged_compare_result(compared):
         compared, (left.reference, right.reference)
     )
     event = record_assertion_yield_comparison(
-        compared, workspace_id="w", session_id="s1", comparison=comparison
+        compared, workspace_id="w", locality_id="s1", comparison=comparison
     ).model_copy(deep=True)
     assertion = event.payload["assertions"][0]
     content = assertion["dimensions"]["content"]
@@ -548,7 +548,7 @@ def test_validation_refuses_a_self_consistent_forged_compare_result(compared):
         ],
         inputs=assertion["support_basis"]["assertion_refs"],
         workspace_id="w",
-        session_id="s1",
+        locality_id="s1",
         **content,
     )
 
@@ -559,10 +559,10 @@ def test_validation_refuses_a_self_consistent_forged_compare_result(compared):
 def test_validation_requires_the_exact_compare_coordinate_set(compared):
     finding = _by_right(compared)["word"]
     first = record_measured_count(
-        compared, workspace_id="w", session_id="s1", finding=finding
+        compared, workspace_id="w", locality_id="s1", finding=finding
     )
     second = record_measured_count(
-        compared, workspace_id="w", session_id="s1", finding=finding
+        compared, workspace_id="w", locality_id="s1", finding=finding
     )
     left = assertions_of_recorded_measurement(first)[0]
     right = assertions_of_recorded_measurement(second)[0]
@@ -570,7 +570,7 @@ def test_validation_requires_the_exact_compare_coordinate_set(compared):
         compared, (left.reference, right.reference)
     )
     event = record_assertion_yield_comparison(
-        compared, workspace_id="w", session_id="s1", comparison=comparison
+        compared, workspace_id="w", locality_id="s1", comparison=comparison
     ).model_copy(deep=True)
     event.payload["assertions"].pop()
 
@@ -581,10 +581,10 @@ def test_validation_requires_the_exact_compare_coordinate_set(compared):
 def test_comparison_assertion_identity_includes_its_recorded_scope(compared):
     finding = _by_right(compared)["word"]
     first = record_measured_count(
-        compared, workspace_id="w", session_id="s1", finding=finding
+        compared, workspace_id="w", locality_id="s1", finding=finding
     )
     second = record_measured_count(
-        compared, workspace_id="w", session_id="s1", finding=finding
+        compared, workspace_id="w", locality_id="s1", finding=finding
     )
     left = assertions_of_recorded_measurement(first)[0]
     right = assertions_of_recorded_measurement(second)[0]
@@ -593,10 +593,10 @@ def test_comparison_assertion_identity_includes_its_recorded_scope(compared):
     )
 
     first_record = record_assertion_yield_comparison(
-        compared, workspace_id="w", session_id="s1", comparison=comparison
+        compared, workspace_id="w", locality_id="s1", comparison=comparison
     )
     second_record = record_assertion_yield_comparison(
-        compared, workspace_id="w", session_id="s2", comparison=comparison
+        compared, workspace_id="w", locality_id="s2", comparison=comparison
     )
 
     first_ids = {
@@ -613,10 +613,10 @@ def test_comparison_assertion_identity_includes_its_recorded_scope(compared):
 def test_recording_refuses_a_comparison_not_established_from_its_inputs(compared):
     finding = _by_right(compared)["word"]
     first = record_measured_count(
-        compared, workspace_id="w", session_id="s1", finding=finding
+        compared, workspace_id="w", locality_id="s1", finding=finding
     )
     second = record_measured_count(
-        compared, workspace_id="w", session_id="s1", finding=finding
+        compared, workspace_id="w", locality_id="s1", finding=finding
     )
     left = assertions_of_recorded_measurement(first)[0]
     right = assertions_of_recorded_measurement(second)[0]
@@ -633,28 +633,28 @@ def test_recording_refuses_a_comparison_not_established_from_its_inputs(compared
 
     with pytest.raises(AssertionComparisonError, match="does not match"):
         record_assertion_yield_comparison(
-            compared, workspace_id="w", session_id="s1", comparison=forged
+            compared, workspace_id="w", locality_id="s1", comparison=forged
         )
 
 
 def test_recorded_assertion_stream_obeys_sessions_and_boundary(compared):
     finding = _by_right(compared)["word"]
     first = record_measured_count(
-        compared, workspace_id="w", session_id="s1", finding=finding
+        compared, workspace_id="w", locality_id="s1", finding=finding
     )
     boundary = compared.capture_boundary()
     record_measured_count(
-        compared, workspace_id="w", session_id="s1", finding=finding
+        compared, workspace_id="w", locality_id="s1", finding=finding
     )
     record_measured_count(
-        compared, workspace_id="w", session_id="s2", finding=finding
+        compared, workspace_id="w", locality_id="s2", finding=finding
     )
 
     reconstructed = list(
         iter_recorded_measured_assertions(
             compared,
             workspace_id="w",
-            session_ids=("s1",),
+            locality_ids=("s1",),
             through=boundary,
         )
     )
@@ -678,7 +678,7 @@ def test_exact_sets_keep_completeness_separate_from_support(compared):
         encoded = assertions[result].to_json_dict()
         assert encoded["completeness_boundary"] == boundary
         assert encoded["completeness_scope"]["workspace_id"] == "w"
-        assert encoded["completeness_scope"]["session_ids"] == list(DECLARED)
+        assert encoded["completeness_scope"]["locality_ids"] == list(DECLARED)
         assert encoded["completeness_scope"]["requires_session_existence"] is True
         assert finding.input_ledger_boundary.commitment not in (
             encoded["support_basis"]["event_ids"]
@@ -756,7 +756,7 @@ def test_scope_and_rule_are_part_of_assertion_identity(compared):
 def test_measuring_without_any_comparison_is_refused():
     ledger = EventLedger()
     run_persistent_operator_console(
-        ledger=ledger, workspace_id="w", session_id="s",
+        ledger=ledger, workspace_id="w", locality_id="s",
         input_stream=StringIO("a word\nexit\n"), output_stream=StringIO())
     with pytest.raises(RecurrenceMeasurementError, match="not preserved material"):
         measure_exchange_counts(
@@ -828,11 +828,11 @@ def test_the_declared_identity_includes_the_counting_scope(compared):
 def test_measurements_declaring_different_scopes_do_not_group(compared):
     """Two measurements under different declared scopes are not the same one."""
     other = {}
-    for session_id in ("s1", "s2"):
+    for locality_id in ("s1", "s2"):
         occ = preserved_ingress_occurrences(
-            compared, workspace_id="w", session_id=session_id)
-        other[session_id] = record_measurement_finding(
-            compared, workspace_id="w", session_id=session_id,
+            compared, workspace_id="w", locality_id=locality_id)
+        other[locality_id] = record_measurement_finding(
+            compared, workspace_id="w", locality_id=locality_id,
             finding=measure_after(occ, "a", counting_scope="a different scope")).id
     _compare_all(compared, other)
 
@@ -870,7 +870,7 @@ def test_participating_measurements_travel_not_only_the_comparisons(compared):
 def test_every_exchange_s_measurement_is_among_the_support(compared):
     finding = _by_right(compared)["word"]
     supporting = {
-        compared.get(i).session_id
+        compared.get(i).locality_id
         for i in finding.input_event_ids
         if compared.get(i).kind == MEASUREMENT_RECORDED_KIND
     }
@@ -886,7 +886,7 @@ def test_the_input_ledger_boundary_is_preserved_as_read_provenance(compared):
         "commitment": boundary.commitment,
     }
     recorded = record_measured_count(
-        compared, workspace_id="w", session_id="s1", finding=finding
+        compared, workspace_id="w", locality_id="s1", finding=finding
     )
     assert "input_ledger_boundary" not in recorded.payload
     assertions = _assertions_by_result(recorded)
@@ -904,7 +904,7 @@ def test_the_old_aggregate_result_is_not_recorded_beside_the_assertions(compared
     event = record_measured_count(
         compared,
         workspace_id="w",
-        session_id="s1",
+        locality_id="s1",
         finding=_by_right(compared)["word"],
     )
     old_aggregate_fields = {
@@ -948,15 +948,15 @@ def test_only_relevant_evidence_places_an_exchange_in_the_second_result(compared
     exact_coordinate = next(
         event
         for event in compared.list("w")
-        if event.kind == MEASUREMENT_RECORDED_KIND and event.session_id == "s4"
+        if event.kind == MEASUREMENT_RECORDED_KIND and event.locality_id == "s4"
     )
     occurrences = preserved_ingress_occurrences(
-        compared, workspace_id="w", session_id="s4"
+        compared, workspace_id="w", locality_id="s4"
     )
     unrelated = record_measurement_finding(
         compared,
         workspace_id="w",
-        session_id="s4",
+        locality_id="s4",
         finding=measure_after(occurrences, "nothing", counting_scope=SCOPE),
     )
 
@@ -999,12 +999,12 @@ def test_recurrence_is_established_only_above_one(compared):
 def _add_s5(ledger):
     """An exchange that measures a different coordinate entirely."""
     run_persistent_operator_console(
-        ledger=ledger, workspace_id="w", session_id="s5",
+        ledger=ledger, workspace_id="w", locality_id="s5",
         input_stream=StringIO("nothing relevant here\nexit\n"),
         output_stream=StringIO())
-    occ = preserved_ingress_occurrences(ledger, workspace_id="w", session_id="s5")
+    occ = preserved_ingress_occurrences(ledger, workspace_id="w", locality_id="s5")
     return record_measurement_finding(
-        ledger, workspace_id="w", session_id="s5",
+        ledger, workspace_id="w", locality_id="s5",
         finding=measure_after(occ, "nothing", counting_scope=SCOPE))
 
 
@@ -1025,7 +1025,7 @@ def test_the_third_result_preserves_its_complete_read_not_copied_ids(compared):
 
     assert "s5" in finding.coordinate_not_measured
     assert unrelated.id not in finding.input_event_ids
-    reconstructed = compared.iter_session_kind(
+    reconstructed = compared.iter_locality_kind(
         "w",
         "s5",
         MEASUREMENT_RECORDED_KIND,
@@ -1071,7 +1071,7 @@ def test_the_counting_scope_states_the_declaration(compared):
     both described a set the act discovered rather than one it was given.
     """
     event = record_measured_count(
-        compared, workspace_id="w", session_id="s1",
+        compared, workspace_id="w", locality_id="s1",
         finding=_by_right(compared)["word"])
     scope = event.payload["counting_scope"]
     assert "declared to this measurement" in scope
@@ -1081,7 +1081,7 @@ def test_the_counting_scope_states_the_declaration(compared):
 
 def test_the_record_refuses_source_independence_and_corroboration(compared):
     event = record_measured_count(
-        compared, workspace_id="w", session_id="s1",
+        compared, workspace_id="w", locality_id="s1",
         finding=_by_right(compared)["word"])
     refused = " ".join(event.payload["forbidden_inferences"])
     assert "independently preserved is not independent" in refused
@@ -1102,7 +1102,7 @@ def test_the_rendering_states_the_literal_sentence(compared):
 def test_the_vocabulary_is_gone(compared):
     """`cohort`, `population`, `body`, `survey`, `exposed` earned no place."""
     event = record_measured_count(
-        compared, workspace_id="w", session_id="s1",
+        compared, workspace_id="w", locality_id="s1",
         finding=_by_right(compared)["word"])
     rendered = str(event.payload).lower()
     for word in ("cohort", "population", "survey", "exposed", "bodies"):
@@ -1122,8 +1122,8 @@ def test_a_payload_string_cannot_manufacture_an_exchange(compared):
     """
     compared.append(
         "operator.measurement.finding_recorded", "w",
-        {"dimensions": {"scope_locality": "workspace:w;session:ghost"}},
-        session_id="s1",
+        {"dimensions": {"scope_locality": "workspace:w;locality:ghost"}},
+        locality_id="s1",
     )
     with pytest.raises(RecurrenceMeasurementError, match="no recorded occurrence"):
         measure_exchange_counts(
@@ -1133,25 +1133,25 @@ def test_a_payload_string_cannot_manufacture_an_exchange(compared):
 def test_durable_validation_does_not_read_the_whole_workspace(tmp_path):
     """`#2416` removed this shape and measured 20x; it must not return.
 
-    Asserted on the durable ledger, where `list_session` is an indexed query.
-    The in-memory ledger implements `list_session` as a comprehension over the
+    Asserted on the durable ledger, where `list_locality` is an indexed query.
+    The in-memory ledger implements `list_locality` as a comprehension over the
     workspace list, which `#2416` recorded, so it cannot witness this.
     """
     from seed_runtime.events import SQLiteEventLedger
 
     ledger = SQLiteEventLedger(str(tmp_path / "seed.db"))
     try:
-        for session_id, material in EXCHANGES.items():
+        for locality_id, material in EXCHANGES.items():
             run_persistent_operator_console(
-                ledger=ledger, workspace_id="w", session_id=session_id,
+                ledger=ledger, workspace_id="w", locality_id=locality_id,
                 input_stream=StringIO(material + "exit\n"),
                 output_stream=StringIO())
         findings = {}
-        for session_id in EXCHANGES:
+        for locality_id in EXCHANGES:
             occ = preserved_ingress_occurrences(
-                ledger, workspace_id="w", session_id=session_id)
-            findings[session_id] = record_measurement_finding(
-                ledger, workspace_id="w", session_id=session_id,
+                ledger, workspace_id="w", locality_id=locality_id)
+            findings[locality_id] = record_measurement_finding(
+                ledger, workspace_id="w", locality_id=locality_id,
                 finding=measure_after(occ, "a", counting_scope=SCOPE)).id
         _compare_all(ledger, findings)
 
@@ -1166,7 +1166,7 @@ def test_durable_validation_does_not_read_the_whole_workspace(tmp_path):
     selects = [q for q in statements if q.strip().upper().startswith("SELECT *")]
     assert selects, "the measurement read something"
     for query in selects:
-        assert "session_id" in query, query
+        assert "locality_id" in query, query
         assert "kind" in query, query
         assert "FROM events WHERE workspace_id" in query, query
     # Two passes name each session and exact relevant kind; none sweeps the
@@ -1187,11 +1187,11 @@ def test_comparison_events_are_folded_without_being_retained(compared):
 
     references = []
     live_counts = []
-    original_iterator = compared.iter_session_kind
+    original_iterator = compared.iter_locality_kind
 
-    def tracked_iterator(workspace_id, session_id, kind, *, through=None):
+    def tracked_iterator(workspace_id, locality_id, kind, *, through=None):
         for stored in original_iterator(
-            workspace_id, session_id, kind, through=through
+            workspace_id, locality_id, kind, through=through
         ):
             if kind != "operator.measurement.comparison_recorded":
                 yield stored
@@ -1205,7 +1205,7 @@ def test_comparison_events_are_folded_without_being_retained(compared):
             yield generated
             del generated
 
-    compared.iter_session_kind = tracked_iterator
+    compared.iter_locality_kind = tracked_iterator
     measure_exchange_counts(
         compared, workspace_id="w", bounded_exchanges=DECLARED
     )
@@ -1218,8 +1218,8 @@ def test_comparison_events_are_folded_without_being_retained(compared):
 
 def test_every_probe_and_pass_reads_one_prefix_despite_a_concurrent_append(compared):
     boundary = compared.capture_boundary()
-    original_has_session = compared.has_session
-    original_iterator = compared.iter_session_kind
+    original_has_locality = compared.has_locality
+    original_iterator = compared.iter_locality_kind
     seen_boundaries = []
     appended = False
 
@@ -1234,13 +1234,13 @@ def test_every_probe_and_pass_reads_one_prefix_despite_a_concurrent_append(compa
         "after-boundary",
     ]
 
-    def tracked_has_session(workspace_id, session_id, *, through=None):
+    def tracked_has_locality(workspace_id, locality_id, *, through=None):
         seen_boundaries.append(through)
-        return original_has_session(
-            workspace_id, session_id, through=through
+        return original_has_locality(
+            workspace_id, locality_id, through=through
         )
 
-    def tracked_iterator(workspace_id, session_id, kind, *, through=None):
+    def tracked_iterator(workspace_id, locality_id, kind, *, through=None):
         nonlocal appended
         seen_boundaries.append(through)
         if not appended:
@@ -1250,16 +1250,16 @@ def test_every_probe_and_pass_reads_one_prefix_despite_a_concurrent_append(compa
                 comparison.workspace_id,
                 payload,
                 actor=comparison.actor,
-                session_id=comparison.session_id,
+                locality_id=comparison.locality_id,
                 causation_id=comparison.causation_id,
                 correlation_id=comparison.correlation_id,
             )
         yield from original_iterator(
-            workspace_id, session_id, kind, through=through
+            workspace_id, locality_id, kind, through=through
         )
 
-    compared.has_session = tracked_has_session
-    compared.iter_session_kind = tracked_iterator
+    compared.has_locality = tracked_has_locality
+    compared.iter_locality_kind = tracked_iterator
     findings = measure_exchange_counts(
         compared, workspace_id="w", bounded_exchanges=DECLARED
     )
@@ -1290,23 +1290,23 @@ def test_a_durable_yielding_occurrence_is_identifiable_and_verifies(tmp_path):
     path = str(tmp_path / "seed.db")
     ledger = SQLiteEventLedger(path)
     try:
-        for session_id, material in EXCHANGES.items():
+        for locality_id, material in EXCHANGES.items():
             run_persistent_operator_console(
-                ledger=ledger, workspace_id="w", session_id=session_id,
+                ledger=ledger, workspace_id="w", locality_id=locality_id,
                 input_stream=StringIO(material + "exit\n"),
                 output_stream=StringIO())
         findings = {}
-        for session_id in EXCHANGES:
+        for locality_id in EXCHANGES:
             occ = preserved_ingress_occurrences(
-                ledger, workspace_id="w", session_id=session_id)
-            findings[session_id] = record_measurement_finding(
-                ledger, workspace_id="w", session_id=session_id,
+                ledger, workspace_id="w", locality_id=locality_id)
+            findings[locality_id] = record_measurement_finding(
+                ledger, workspace_id="w", locality_id=locality_id,
                 finding=measure_after(occ, "a", counting_scope=SCOPE)).id
         _compare_all(ledger, findings)
         counted = measure_exchange_counts(
             ledger, workspace_id="w", bounded_exchanges=DECLARED)
         event = record_measured_count(
-            ledger, workspace_id="w", session_id="s1", finding=counted[0])
+            ledger, workspace_id="w", locality_id="s1", finding=counted[0])
         boundary = ledger.capture_boundary()
 
         assert ledger.get(event.id).id == event.id
@@ -1320,7 +1320,7 @@ def test_a_durable_yielding_occurrence_is_identifiable_and_verifies(tmp_path):
             iter_recorded_measured_assertions(
                 reopened,
                 workspace_id="w",
-                session_ids=("s1",),
+                locality_ids=("s1",),
                 through=boundary,
             )
         )
@@ -1359,7 +1359,7 @@ def test_counting_recurrence_does_not_strengthen_any_comparison(compared):
         assert comparison.payload["bounded_relation"] == "Unknown"
 
     event = record_measured_count(
-        compared, workspace_id="w", session_id="s1", finding=finding)
+        compared, workspace_id="w", locality_id="s1", finding=finding)
     refused = " ".join(event.payload["forbidden_inferences"])
     assert "not independent corroboration" in refused
     assert "establishes no relation between the" in refused

@@ -41,7 +41,7 @@ def _ledger(text="猫\n狗\n"):
     run_persistent_operator_console(
         ledger=ledger,
         workspace_id="w",
-        session_id="source",
+        locality_id="source",
         input_stream=StringIO(text + "exit\n"),
         output_stream=StringIO(),
     )
@@ -52,14 +52,14 @@ def _byte_source(ledger):
     return record_byte_count_layer(
         ledger,
         workspace_id="w",
-        source_session_ids=("source",),
-        recording_session_id="byte-measurement",
+        source_locality_ids=("source",),
+        recording_locality_id="byte-measurement",
     )
 
 
 def test_exact_bytes_supply_the_measured_subjects_without_whitespace():
     measured = measure_byte_counts(
-        _ledger(), workspace_id="w", source_session_ids=("source",)
+        _ledger(), workspace_id="w", source_locality_ids=("source",)
     )
     counts = {item.byte_hex: item for item in measured.counts}
 
@@ -76,7 +76,7 @@ def test_exact_bytes_supply_the_measured_subjects_without_whitespace():
 
 def test_the_complete_declared_sessions_supply_the_inputs():
     measured = measure_byte_counts(
-        _ledger("a\nb\n"), workspace_id="w", source_session_ids=("source",)
+        _ledger("a\nb\n"), workspace_id="w", source_locality_ids=("source",)
     )
     assert len(measured.source_material) == 2
     assert all(
@@ -90,8 +90,8 @@ def test_count_and_recurrence_are_distinct_results():
     event = record_byte_count_layer(
         _ledger("ab\n"),
         workspace_id="w",
-        source_session_ids=("source",),
-        recording_session_id="measurement",
+        source_locality_ids=("source",),
+        recording_locality_id="measurement",
     )
     by_byte = {}
     for assertion in event.payload["assertions"]:
@@ -109,8 +109,8 @@ def test_recurrence_exists_only_above_one():
     event = record_byte_count_layer(
         _ledger("aa\n"),
         workspace_id="w",
-        source_session_ids=("source",),
-        recording_session_id="measurement",
+        source_locality_ids=("source",),
+        recording_locality_id="measurement",
     )
     results = [
         item["result"]
@@ -124,8 +124,8 @@ def test_the_rule_is_mechanics_not_an_unchecked_callable():
     event = record_byte_count_layer(
         _ledger("the cat\n"),
         workspace_id="w",
-        source_session_ids=("source",),
-        recording_session_id="measurement",
+        source_locality_ids=("source",),
+        recording_locality_id="measurement",
     )
     assert event.payload["measurement_rule"] == BYTE_MEASUREMENT_RULE
     assert event.kind == BYTE_MEASUREMENT_RECORDED_KIND
@@ -137,8 +137,8 @@ def test_recorded_results_replay_the_complete_bounded_source_read():
     event = record_byte_count_layer(
         ledger,
         workspace_id="w",
-        source_session_ids=("source",),
-        recording_session_id="measurement",
+        source_locality_ids=("source",),
+        recording_locality_id="measurement",
     )
     reconstructed = assertions_of_recorded_byte_measurement(ledger, event.id)
     assert reconstructed
@@ -162,7 +162,7 @@ def test_recorded_results_replay_the_complete_bounded_source_read():
     }
     assert count.payload["assertion_scope"] == {
         "workspace_id": "w",
-        "source_session_ids": ["source"],
+        "source_locality_ids": ["source"],
     }
     assert count.payload["dimensions"]["source_provenance"]
     assert count.payload["dimensions"]["authority"]
@@ -193,7 +193,7 @@ def test_recorded_results_replay_the_complete_bounded_source_read():
         payload=count.payload,
     )
     assert type(represented.payload) is dict
-    assert type(represented.payload["assertion_scope"]["source_session_ids"]) is list
+    assert type(represented.payload["assertion_scope"]["source_locality_ids"]) is list
 
 
 def test_a_self_consistent_truncated_source_assertion_is_refused():
@@ -201,8 +201,8 @@ def test_a_self_consistent_truncated_source_assertion_is_refused():
     event = record_byte_count_layer(
         ledger,
         workspace_id="w",
-        source_session_ids=("source",),
-        recording_session_id="measurement",
+        source_locality_ids=("source",),
+        recording_locality_id="measurement",
     )
     assertions = event.payload["assertions"]
     source = assertions[0]
@@ -226,8 +226,8 @@ def test_recording_occurrence_evidence_is_validated_exactly():
     event = record_byte_count_layer(
         ledger,
         workspace_id="w",
-        source_session_ids=("source",),
-        recording_session_id="measurement",
+        source_locality_ids=("source",),
+        recording_locality_id="measurement",
     )
     event.payload["occurrence_preservation"] = "something else"
     with pytest.raises(ByteMeasurementError, match="recording-occurrence Evidence"):
@@ -240,14 +240,14 @@ def test_raw_material_appended_after_the_boundary_cannot_enter_the_read():
         "operator.ingress.ingress_occurred",
         "w",
         {"raw_material_event_id": "not-yet-present"},
-        session_id="source",
+        locality_id="source",
     )
     boundary = ledger.capture_boundary()
     raw = ledger.append(
         "operator.ingress.raw_material_captured",
         "w",
         {"exact_bytes_hex": "61", "byte_count": 1},
-        session_id="source",
+        locality_id="source",
     )
     ingress.payload["raw_material_event_id"] = raw.id
     with pytest.raises(ByteMeasurementError, match="not intact raw material"):
@@ -262,14 +262,14 @@ def test_raw_material_appended_after_the_boundary_cannot_enter_the_read():
 def test_a_missing_declared_session_is_refused():
     with pytest.raises(ByteMeasurementError, match="absent"):
         measure_byte_counts(
-            _ledger(), workspace_id="w", source_session_ids=("missing",)
+            _ledger(), workspace_id="w", source_locality_ids=("missing",)
         )
 
 
 def test_raw_material_must_match_its_exact_byte_coordinates():
     ledger = _ledger("a\n")
     ingress = next(
-        ledger.iter_session_kind(
+        ledger.iter_locality_kind(
             "w", "source", "operator.ingress.ingress_occurred"
         )
     )
@@ -277,14 +277,14 @@ def test_raw_material_must_match_its_exact_byte_coordinates():
     raw.payload["exact_bytes_hex"] = "not hex"
     with pytest.raises(ByteMeasurementError, match="malformed"):
         measure_byte_counts(
-            ledger, workspace_id="w", source_session_ids=("source",)
+            ledger, workspace_id="w", source_locality_ids=("source",)
         )
 
 
 def test_one_raw_occurrence_cannot_be_counted_through_two_ingress_references():
     ledger = _ledger("a\n")
     ingress = next(
-        ledger.iter_session_kind(
+        ledger.iter_locality_kind(
             "w", "source", "operator.ingress.ingress_occurred"
         )
     )
@@ -292,12 +292,12 @@ def test_one_raw_occurrence_cannot_be_counted_through_two_ingress_references():
         "operator.ingress.ingress_occurred",
         "w",
         {"raw_material_event_id": ingress.payload["raw_material_event_id"]},
-        session_id="source",
+        locality_id="source",
     )
 
     with pytest.raises(ByteMeasurementError, match="cannot enter.*twice"):
         measure_byte_counts(
-            ledger, workspace_id="w", source_session_ids=("source",)
+            ledger, workspace_id="w", source_locality_ids=("source",)
         )
 
 
@@ -308,7 +308,7 @@ def test_every_overlapping_adjacent_byte_pair_is_measured():
         ledger,
         source_measurement_event_id=source.id,
         workspace_id="w",
-        recording_session_id="measurement",
+        recording_locality_id="measurement",
     )
     counts = {
         item["assertion_subject"]["pair_hex"]: item["dimensions"]["content"]
@@ -328,7 +328,7 @@ def test_adjacent_pairs_never_cross_ingress_capture_boundaries():
         ledger,
         source_measurement_event_id=source.id,
         workspace_id="w",
-        recording_session_id="measurement",
+        recording_locality_id="measurement",
     )
     counts = {
         item["assertion_subject"]["pair_hex"]: item["dimensions"]["content"][
@@ -349,7 +349,7 @@ def test_adjacent_pair_measurement_remains_byte_not_character_based():
         ledger,
         source_measurement_event_id=source.id,
         workspace_id="w",
-        recording_session_id="measurement",
+        recording_locality_id="measurement",
     )
     counts = {
         item["assertion_subject"]["pair_hex"]
@@ -369,7 +369,7 @@ def test_pair_count_and_recurrence_are_separate_results():
         ledger,
         source_measurement_event_id=source.id,
         workspace_id="w",
-        recording_session_id="measurement",
+        recording_locality_id="measurement",
     )
     assert event.kind == BYTE_PAIR_MEASUREMENT_RECORDED_KIND
     by_pair = {}
@@ -401,7 +401,7 @@ def test_pair_count_and_recurrence_are_separate_results():
     assert applicability["downstream_act"] == "declared adjacent-byte-pair Measurement"
     assert applicability["act_context"] == {
         "workspace_id": "w",
-        "measurement_session_id": "measurement",
+        "measurement_locality_id": "measurement",
     }
     assert applicability["input_unknowns"]
     assert applicability["input_limits"]
@@ -419,7 +419,7 @@ def test_recorded_pair_results_replay_the_complete_bounded_source_read():
         ledger,
         source_measurement_event_id=source.id,
         workspace_id="w",
-        recording_session_id="measurement",
+        recording_locality_id="measurement",
     )
 
     reconstructed = assertions_of_recorded_adjacent_byte_pair_measurement(
@@ -470,7 +470,7 @@ def test_pair_validation_refuses_a_self_consistent_truncated_result_inputs():
         ledger,
         source_measurement_event_id=source.id,
         workspace_id="w",
-        recording_session_id="measurement",
+        recording_locality_id="measurement",
     )
     event.payload["assertions"] = event.payload["assertions"][:-1]
     evidence = ledger.get(event.payload["yield_evidence_id"])
@@ -494,7 +494,7 @@ def test_pair_validation_does_not_perform_the_pair_measurement_again(monkeypatch
         ledger,
         source_measurement_event_id=source.id,
         workspace_id="w",
-        recording_session_id="measurement",
+        recording_locality_id="measurement",
     )
 
     def forbidden(*args, **kwargs):
@@ -517,7 +517,7 @@ def test_pair_validation_refuses_unsupported_input_applicability():
         ledger,
         source_measurement_event_id=source.id,
         workspace_id="w",
-        recording_session_id="measurement",
+        recording_locality_id="measurement",
     )
     event.payload["input_applicability"]["result_boundary"] = "some other use"
     evidence = ledger.get(event.payload["yield_evidence_id"])
@@ -541,7 +541,7 @@ def test_zero_observed_pairs_is_a_lawful_addressable_result():
         ledger,
         source_measurement_event_id=source.id,
         workspace_id="w",
-        recording_session_id="measurement",
+        recording_locality_id="measurement",
     )
 
     assert event.payload["assertions"] == []
@@ -562,7 +562,7 @@ def test_applicability_identity_is_bound_to_one_exact_downstream_act():
         applicability_act_id="applicability-act-1",
         applicability_act_occurrence_id="applicability-occurrence-1",
         act_workspace_id="w",
-        measurement_session_id="measurement",
+        measurement_locality_id="measurement",
     )
     second = _pair_input_applicability(
         source,
@@ -570,7 +570,7 @@ def test_applicability_identity_is_bound_to_one_exact_downstream_act():
         applicability_act_id="applicability-act-2",
         applicability_act_occurrence_id="applicability-occurrence-2",
         act_workspace_id="w",
-        measurement_session_id="measurement",
+        measurement_locality_id="measurement",
     )
 
     assert first["dimensions"]["identity"] != second["dimensions"]["identity"]
@@ -594,7 +594,7 @@ def test_pair_applicability_has_real_non_applicable_and_unknown_outcomes():
         applicability_act_id="applicability-act-inapplicable",
         applicability_act_occurrence_id="applicability-occurrence-inapplicable",
         act_workspace_id="other",
-        measurement_session_id="measurement",
+        measurement_locality_id="measurement",
     )
     carried = source.payload
     carried["dimensions"]["authority"] = "unrecognized"
@@ -612,7 +612,7 @@ def test_pair_applicability_has_real_non_applicable_and_unknown_outcomes():
         applicability_act_id="applicability-act-unknown",
         applicability_act_occurrence_id="applicability-occurrence-unknown",
         act_workspace_id="w",
-        measurement_session_id="measurement",
+        measurement_locality_id="measurement",
     )
     conflicting_payload = source.payload
     conflicting_payload["dimensions"]["standing"] = "reported"
@@ -630,7 +630,7 @@ def test_pair_applicability_has_real_non_applicable_and_unknown_outcomes():
         applicability_act_id="applicability-act-conflicting",
         applicability_act_occurrence_id="applicability-occurrence-conflicting",
         act_workspace_id="w",
-        measurement_session_id="measurement",
+        measurement_locality_id="measurement",
     )
 
     assert inapplicable["dimensions"]["standing"] == "inapplicable"
@@ -652,14 +652,14 @@ def test_cross_workspace_pair_use_is_refused_before_locality_movement():
             ledger,
             source_measurement_event_id=source.id,
             workspace_id="other",
-            recording_session_id="measurement",
+            recording_locality_id="measurement",
         )
     assert not any(
         event.kind in {
             BYTE_PAIR_APPLICABILITY_RECORDED_KIND,
             BYTE_PAIR_MEASUREMENT_RECORDED_KIND,
         }
-        for event in ledger.list_session("other", "measurement")
+        for event in ledger.list_locality("other", "measurement")
     )
 
 
@@ -670,7 +670,7 @@ def test_seed_native_measurement_and_result_assertions_keep_distinct_responsibil
         ledger,
         source_measurement_event_id=source.id,
         workspace_id="w",
-        recording_session_id="measurement",
+        recording_locality_id="measurement",
     )
     applicability = get_recorded_pair_input_applicability(
         ledger, result.payload["input_applicability_event_id"]
@@ -721,7 +721,7 @@ def test_locality_movement_assignment_is_earned_from_the_exact_source():
         ledger,
         source_measurement_event_id=source.id,
         workspace_id="w",
-        recording_session_id="measurement",
+        recording_locality_id="measurement",
     )
     movement = ledger.get(pair.payload["source_movement_event_id"])
     assignment = movement.payload["responsibility_assignment_evidence"]
@@ -746,7 +746,7 @@ def test_pair_act_identity_is_not_its_occurrence_identity():
         ledger,
         source_measurement_event_id=source.id,
         workspace_id="w",
-        recording_session_id="measurement",
+        recording_locality_id="measurement",
     )
 
     assert result.payload["downstream_act_id"] != result.payload["act_occurrence_id"]
@@ -763,7 +763,7 @@ def test_pair_validation_refuses_more_carrying_occurrences_than_total_pairs():
         ledger,
         source_measurement_event_id=source.id,
         workspace_id="w",
-        recording_session_id="measurement",
+        recording_locality_id="measurement",
     )
     count = next(
         assertion

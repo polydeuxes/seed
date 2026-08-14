@@ -13,14 +13,14 @@ from seed_runtime.operator_representation import (
 from seed_runtime.operator_response_comparison import (
     run_operator_response_comparison_and_identification,
 )
-from seed_runtime.operator_session_standing import read_operator_session_standing
+from seed_runtime.operator_locality_standing import read_operator_locality_standing
 from tests.closed_choice_fixture import CLOSED_CHOICE_FIXTURE_SOURCES
 from seed_runtime.operator_console import run_persistent_operator_console
 
 
 def _standing(ledger, *, workspace="w", session="s"):
-    return read_operator_session_standing(
-        ledger, workspace_id=workspace, session_id=session
+    return read_operator_locality_standing(
+        ledger, workspace_id=workspace, locality_id=session
     )
 
 
@@ -28,8 +28,8 @@ def _emit_representation(ledger, *, workspace="w", session="s"):
     representation = record_operator_representation(
         ledger,
         workspace_id=workspace,
-        session_id=session,
-        session_standing=_standing(ledger, workspace=workspace, session=session),
+        locality_id=session,
+        locality_standing=_standing(ledger, workspace=workspace, session=session),
         alternative_sources=CLOSED_CHOICE_FIXTURE_SOURCES,
     )
     return emit_operator_representation(
@@ -41,7 +41,7 @@ def _capture_after(ledger, representation, text, *, workspace="w", session="s"):
     attempt_standing = run_operator_ingress_attempt(
         ledger=ledger,
         workspace_id=workspace,
-        session_id=session,
+        locality_id=session,
         captured_ingress=capture_stdin_material(StringIO(text)),
         output_stream=StringIO(),
     )
@@ -52,7 +52,7 @@ def _compare(ledger, representation, ingress_event_id, *, workspace="w", session
     return run_operator_response_comparison_and_identification(
         ledger,
         workspace_id=workspace,
-        session_id=session,
+        locality_id=session,
         representation=representation,
         response_ingress_event_id=ingress_event_id,
     )
@@ -74,8 +74,8 @@ def test_compare_requires_an_emitted_representation_with_recorded_reference():
     representation = record_operator_representation(
         ledger,
         workspace_id="w",
-        session_id="s",
-        session_standing=_standing(ledger),
+        locality_id="s",
+        locality_standing=_standing(ledger),
         alternative_sources=CLOSED_CHOICE_FIXTURE_SOURCES,
     )
     ingress_event_id = _capture_after(ledger, representation, "1\n")
@@ -199,8 +199,8 @@ def _record_malformed_representation(ledger, mutate_bindings, *, workspace="w", 
     template = record_operator_representation(
         ledger,
         workspace_id=workspace,
-        session_id=session,
-        session_standing=_standing(ledger, workspace=workspace, session=session),
+        locality_id=session,
+        locality_standing=_standing(ledger, workspace=workspace, session=session),
         alternative_sources=CLOSED_CHOICE_FIXTURE_SOURCES,
     )
     template_payload = ledger.get(template["representation_event_id"]).payload
@@ -217,12 +217,12 @@ def _record_malformed_representation(ledger, mutate_bindings, *, workspace="w", 
         },
     }
     formed = ledger.append(
-        "operator.representation.recorded", workspace, payload, session_id=session
+        "operator.representation.recorded", workspace, payload, locality_id=session
     )
     malformed_representation = {
         "representation_id": representation_id,
         "workspace_id": workspace,
-        "session_id": session,
+        "locality_id": session,
         "representation_event_id": formed.id,
         "emitted_event_id": None,
         "alternatives": template_payload["alternatives"],
@@ -409,7 +409,7 @@ def test_session_projector_validates_findings_deterministically():
     assert latest["comparison"]["matched_coordinate"] == "1"
     assert latest["identification"]["basis"] == "identified"
 
-    ledger.append("unrelated.kind", "w", {"noise": True}, session_id="s")
+    ledger.append("unrelated.kind", "w", {"noise": True}, locality_id="s")
     assert _standing(ledger) == before
 
 
@@ -420,8 +420,8 @@ def test_later_representation_reads_findings_without_stronger_standing():
     later = record_operator_representation(
         ledger,
         workspace_id="w",
-        session_id="s",
-        session_standing=_standing(ledger),
+        locality_id="s",
+        locality_standing=_standing(ledger),
         alternative_sources=CLOSED_CHOICE_FIXTURE_SOURCES,
     )
     finding = later["prior_exchange_finding"]
@@ -440,7 +440,7 @@ def test_exit_boundary_is_explicit_and_unambiguous():
     run_persistent_operator_console(
         ledger=ledger,
         workspace_id="w",
-        session_id="s",
+        locality_id="s",
         input_stream=StringIO("exit\n"),
         output_stream=output,
     )
@@ -483,7 +483,7 @@ def test_projector_refuses_identification_paired_with_wrong_comparison():
             "identification_ref": "operator_alternative_identification_forged",
             "comparison_event_id": "evt_nonexistent",
         },
-        session_id="s",
+        locality_id="s",
     )
     with pytest.raises(ValueError, match="does not agree with its recorded"):
         _standing(ledger)
@@ -500,8 +500,8 @@ def test_matched_but_unidentified_is_not_rendered_as_no_match():
     later = record_operator_representation(
         ledger,
         workspace_id="w",
-        session_id="s",
-        session_standing=_standing(ledger),
+        locality_id="s",
+        locality_standing=_standing(ledger),
         alternative_sources=CLOSED_CHOICE_FIXTURE_SOURCES,
     )
     from seed_runtime.operator_representation import render_operator_representation
@@ -534,8 +534,8 @@ def test_exchange_findings_are_exposed_by_a_later_representation():
     later = record_operator_representation(
         ledger,
         workspace_id="w",
-        session_id="s",
-        session_standing=standing,
+        locality_id="s",
+        locality_standing=standing,
         alternative_sources=CLOSED_CHOICE_FIXTURE_SOURCES,
     )
     rendered = render_operator_representation(later)

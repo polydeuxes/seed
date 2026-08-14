@@ -32,21 +32,21 @@ BODIES = {
 }
 
 
-def _whole_workspace_read(ledger, *, workspace_id, session_id):
+def _whole_workspace_read(ledger, *, workspace_id, locality_id):
     """What `preserved_ingress_occurrences` did before `#2416`."""
     return [
         event
         for event in ledger.list(workspace_id)
-        if event.session_id == session_id and event.kind == INGRESS_OCCURRED_KIND
+        if event.locality_id == locality_id and event.kind == INGRESS_OCCURRED_KIND
     ]
 
 
 def _fill(ledger):
-    for session_id, material in BODIES.items():
+    for locality_id, material in BODIES.items():
         run_persistent_operator_console(
             ledger=ledger,
             workspace_id="w",
-            session_id=session_id,
+            locality_id=locality_id,
             input_stream=StringIO(material + "exit\n"),
             output_stream=StringIO(),
         )
@@ -70,26 +70,26 @@ def durable_ledger(tmp_path):
 # --------------------------------------------------------------------------
 
 
-@pytest.mark.parametrize("session_id", sorted(BODIES))
-def test_the_occurrences_are_identical_in_memory(memory_ledger, session_id):
+@pytest.mark.parametrize("locality_id", sorted(BODIES))
+def test_the_occurrences_are_identical_in_memory(memory_ledger, locality_id):
     bounded = preserved_ingress_occurrences(
-        memory_ledger, workspace_id="w", session_id=session_id
+        memory_ledger, workspace_id="w", locality_id=locality_id
     )
     whole = _whole_workspace_read(
-        memory_ledger, workspace_id="w", session_id=session_id
+        memory_ledger, workspace_id="w", locality_id=locality_id
     )
     assert bounded
     assert [e.id for e in bounded] == [e.id for e in whole]
     assert [e.payload for e in bounded] == [e.payload for e in whole]
 
 
-@pytest.mark.parametrize("session_id", sorted(BODIES))
-def test_the_occurrences_are_identical_durably(durable_ledger, session_id):
+@pytest.mark.parametrize("locality_id", sorted(BODIES))
+def test_the_occurrences_are_identical_durably(durable_ledger, locality_id):
     bounded = preserved_ingress_occurrences(
-        durable_ledger, workspace_id="w", session_id=session_id
+        durable_ledger, workspace_id="w", locality_id=locality_id
     )
     whole = _whole_workspace_read(
-        durable_ledger, workspace_id="w", session_id=session_id
+        durable_ledger, workspace_id="w", locality_id=locality_id
     )
     assert bounded
     assert [e.id for e in bounded] == [e.id for e in whole]
@@ -98,24 +98,24 @@ def test_the_occurrences_are_identical_durably(durable_ledger, session_id):
 
 def test_each_body_still_gets_only_its_own_material(durable_ledger):
     held = {
-        session_id: [
+        locality_id: [
             event.payload["decoded_text"]
             for event in preserved_ingress_occurrences(
-                durable_ledger, workspace_id="w", session_id=session_id
+                durable_ledger, workspace_id="w", locality_id=locality_id
             )
         ]
-        for session_id in BODIES
+        for locality_id in BODIES
     }
     assert held == {
-        session_id: material.splitlines(keepends=True)
-        for session_id, material in BODIES.items()
+        locality_id: material.splitlines(keepends=True)
+        for locality_id, material in BODIES.items()
     }
 
 
 def test_an_unrecorded_session_reads_empty(durable_ledger):
     assert (
         preserved_ingress_occurrences(
-            durable_ledger, workspace_id="w", session_id="never-recorded"
+            durable_ledger, workspace_id="w", locality_id="never-recorded"
         )
         == []
     )
@@ -124,12 +124,12 @@ def test_an_unrecorded_session_reads_empty(durable_ledger):
 @pytest.mark.parametrize("ledger_name", ("memory_ledger", "durable_ledger"))
 def test_one_kind_is_streamed_from_only_one_session(request, ledger_name):
     ledger = request.getfixturevalue(ledger_name)
-    yielded = ledger.iter_session_kind("w", "s1", INGRESS_OCCURRED_KIND)
+    yielded = ledger.iter_locality_kind("w", "s1", INGRESS_OCCURRED_KIND)
 
     assert iter(yielded) is yielded
     events = list(yielded)
     assert events
-    assert {event.session_id for event in events} == {"s1"}
+    assert {event.locality_id for event in events} == {"s1"}
     assert {event.kind for event in events} == {INGRESS_OCCURRED_KIND}
 
 
@@ -137,8 +137,8 @@ def test_one_kind_is_streamed_from_only_one_session(request, ledger_name):
 def test_session_existence_comes_from_any_recorded_kind(request, ledger_name):
     ledger = request.getfixturevalue(ledger_name)
 
-    assert ledger.has_session("w", "s1") is True
-    assert ledger.has_session("w", "never-recorded") is False
+    assert ledger.has_locality("w", "s1") is True
+    assert ledger.has_locality("w", "never-recorded") is False
 
 
 # --------------------------------------------------------------------------
@@ -151,7 +151,7 @@ def test_the_session_read_seeks_rather_than_scans(durable_ledger):
     try:
         plan = connection.execute(
             "EXPLAIN QUERY PLAN "
-            "SELECT * FROM events WHERE workspace_id = ? AND session_id = ? "
+            "SELECT * FROM events WHERE workspace_id = ? AND locality_id = ? "
             "ORDER BY rowid",
             ("w", "s1"),
         ).fetchall()
@@ -175,7 +175,7 @@ def test_the_index_covers_the_boundary_sessions_are_selected_by(durable_ledger):
 
     assert sql is not None
     assert "workspace_id" in sql[0]
-    assert "session_id" in sql[0]
+    assert "locality_id" in sql[0]
 
 
 def test_the_kind_stream_seeks_by_workspace_session_and_kind(durable_ledger):
@@ -183,7 +183,7 @@ def test_the_kind_stream_seeks_by_workspace_session_and_kind(durable_ledger):
     try:
         plan = connection.execute(
             "EXPLAIN QUERY PLAN "
-            "SELECT * FROM events WHERE workspace_id = ? AND session_id = ? "
+            "SELECT * FROM events WHERE workspace_id = ? AND locality_id = ? "
             "AND kind = ? ORDER BY rowid",
             ("w", "s1", INGRESS_OCCURRED_KIND),
         ).fetchall()
@@ -202,7 +202,7 @@ def test_the_index_is_created_on_an_existing_ledger(tmp_path):
     connection.execute(
         "CREATE TABLE events (id TEXT PRIMARY KEY, kind TEXT NOT NULL, "
         "workspace_id TEXT NOT NULL, actor TEXT NOT NULL, timestamp TEXT "
-        "NOT NULL, payload TEXT NOT NULL, session_id TEXT, causation_id TEXT, "
+        "NOT NULL, payload TEXT NOT NULL, locality_id TEXT, causation_id TEXT, "
         "correlation_id TEXT, content_hash TEXT NOT NULL)"
     )
     connection.commit()

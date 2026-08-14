@@ -49,7 +49,7 @@ def run_null_start() -> list:
     run_persistent_operator_console(
         ledger=ledger,
         workspace_id="w",
-        session_id="s",
+        locality_id="s",
         input_stream=StringIO("\n".join([E1, E2, E3]) + "\nexit\n"),
         output_stream=StringIO(),
     )

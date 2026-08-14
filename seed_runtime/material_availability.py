@@ -210,7 +210,7 @@ def record_transient_material(
     ledger: EventLedger,
     *,
     workspace_id: str,
-    session_id: str,
+    locality_id: str,
     holder: ProcessLocalMaterial,
     identity: MaterialIdentity,
     material_origin: str,
@@ -232,7 +232,7 @@ def record_transient_material(
 
     for name, value in (("material_origin", material_origin),
                         ("observed_boundary", observed_boundary),
-                        ("session_id", session_id)):
+                        ("locality_id", locality_id)):
         if type(value) is not str or not value.strip():
             raise MaterialAvailabilityError(
                 f"transient material requires {name} as an exact representation"
@@ -256,7 +256,7 @@ def record_transient_material(
             id=new_id("evt"),
             kind=MATERIAL_OCCURRED_KIND,
             workspace_id=workspace_id,
-            session_id=session_id,
+            locality_id=locality_id,
             payload={
                 "dimensions": {
                     "identity": new_id("transient_material"),
@@ -268,7 +268,7 @@ def record_transient_material(
                         "occurrence-only; represented relation Unknown. Records that material "
                         "occurred, never that it is available now"
                     ),
-                    "scope_locality": f"workspace:{workspace_id};session:{session_id}",
+                    "scope_locality": f"workspace:{workspace_id};locality:{locality_id}",
                     "occurrence_preservation": (
                         "identity and extent durably recorded; the material itself "
                         "was held process-locally and is not preserved here"

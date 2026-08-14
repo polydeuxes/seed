@@ -279,7 +279,7 @@ def record_comparison_finding(
     ledger: EventLedger,
     *,
     workspace_id: str,
-    session_id: str,
+    locality_id: str,
     finding: ComparisonFinding,
 ) -> Event:
     """Preserve one comparison occurrence so a later act may have it participate."""
@@ -295,7 +295,7 @@ def record_comparison_finding(
                 "comparison evidence only; the bounded relation holds inside this "
                 "comparison boundary and establishes nothing beyond it"
             ),
-            "scope_locality": f"workspace:{workspace_id};session:{session_id}",
+            "scope_locality": f"workspace:{workspace_id};locality:{locality_id}",
             "occurrence_preservation": "comparison occurrence durably recorded",
         },
         "responsible_boundary": (
@@ -312,5 +312,5 @@ def record_comparison_finding(
         **finding.to_json_dict(),
     }
     return ledger.append(
-        COMPARISON_RECORDED_KIND, workspace_id, payload, session_id=session_id
+        COMPARISON_RECORDED_KIND, workspace_id, payload, locality_id=locality_id
     )

@@ -35,7 +35,7 @@ MATERIAL = b"the cat jumped the fence\n" * 40
 def _record(ledger, holder, identity, **changes):
     fields = dict(
         workspace_id="w",
-        session_id="s",
+        locality_id="s",
         holder=holder,
         identity=identity,
         material_origin="operator",
@@ -242,7 +242,7 @@ def test_every_refusal_can_be_reached(tmp_path):
         with pytest.raises(MaterialAvailabilityError, match="incomplete"):
             MaterialIdentity.from_json_dict(partial)
 
-    for name in ("material_origin", "observed_boundary", "session_id"):
+    for name in ("material_origin", "observed_boundary", "locality_id"):
         for value in ("", "   ", None, 1, []):
             with pytest.raises(MaterialAvailabilityError, match=name):
                 _record(ledger, holder, identity, **{name: value})

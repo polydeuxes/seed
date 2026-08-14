@@ -1,8 +1,8 @@
 """A representation records the occurrence its Standing was taken through, not the prefix.
 
-`session_standing_evidence_ids` copied session Standing's whole append-order
+`locality_standing_evidence_ids` copied session Standing's whole append-order
 event-reference copy into every `operator.representation.recorded` payload, beside
-`session_standing_as_of_event_id`, which already names that occurrence.
+`locality_standing_as_of_event_id`, which already names that occurrence.
 
 `#2372` established that the copy was exactly derivable from the boundary
 across 67 representation_events, that its only non-test reader passed it straight through,
@@ -24,7 +24,7 @@ from io import StringIO
 import pytest
 
 from seed_runtime.events import EventLedger
-from seed_runtime.operator_session_standing import read_operator_session_standing
+from seed_runtime.operator_locality_standing import read_operator_locality_standing
 from seed_runtime.operator_console import run_persistent_operator_console
 
 RECORDED = "operator.representation.recorded"
@@ -42,7 +42,7 @@ def _console(material):
     run_persistent_operator_console(
         ledger=ledger,
         workspace_id="w",
-        session_id="s",
+        locality_id="s",
         input_stream=StringIO(material),
         output_stream=output,
     )
@@ -50,7 +50,7 @@ def _console(material):
 
 
 def _standing(ledger):
-    return read_operator_session_standing(ledger, workspace_id="w", session_id="s")
+    return read_operator_locality_standing(ledger, workspace_id="w", locality_id="s")
 
 
 @pytest.fixture(scope="module")
@@ -66,13 +66,13 @@ def session():
 def test_no_representation_act_records_a_history_copy(session):
     ledger, _ = session
     for event in ledger.list("w"):
-        assert "session_standing_evidence_ids" not in event.payload
+        assert "locality_standing_evidence_ids" not in event.payload
 
 
 def test_no_projected_representation_exposes_one(session):
     ledger, _ = session
     for representation in _standing(ledger)["representations"].values():
-        assert "session_standing_evidence_ids" not in representation
+        assert "locality_standing_evidence_ids" not in representation
 
 
 def test_recorded_payload_size_does_not_grow_with_session_length():
@@ -96,8 +96,8 @@ def test_the_first_representation_act_records_absence_of_a_prior_occurrence(sess
     """Recorded absence, not absence of participation."""
     ledger, _ = session
     first = next(e for e in ledger.list("w") if e.kind == RECORDED)
-    assert "session_standing_as_of_event_id" in first.payload
-    assert first.payload["session_standing_as_of_event_id"] is None
+    assert "locality_standing_as_of_event_id" in first.payload
+    assert first.payload["locality_standing_as_of_event_id"] is None
 
 
 def test_each_boundary_reaches_strictly_further_than_the_last(session):
@@ -105,7 +105,7 @@ def test_each_boundary_reaches_strictly_further_than_the_last(session):
     events = ledger.list("w")
     positions = {event.id: index for index, event in enumerate(events)}
     boundaries = [
-        e.payload["session_standing_as_of_event_id"]
+        e.payload["locality_standing_as_of_event_id"]
         for e in events
         if e.kind == RECORDED
     ]
@@ -125,7 +125,7 @@ def test_the_boundary_still_determines_the_participating_prefix(session):
             return []
         collected = []
         for event in events:
-            if event.session_id != "s":
+            if event.locality_id != "s":
                 continue
             if not any(event.kind.startswith(family) for family in FAMILIES):
                 continue
@@ -135,7 +135,7 @@ def test_the_boundary_still_determines_the_participating_prefix(session):
         return collected
 
     for representation_event in (e for e in events if e.kind == RECORDED):
-        boundary = representation_event.payload["session_standing_as_of_event_id"]
+        boundary = representation_event.payload["locality_standing_as_of_event_id"]
         input = prefix_through(boundary)
         assert (input and input[-1] == boundary) or boundary is None
 
@@ -145,7 +145,7 @@ def test_every_boundary_precedes_the_representation_act_that_records_it(session)
     events = ledger.list("w")
     positions = {event.id: index for index, event in enumerate(events)}
     for representation_event in (e for e in events if e.kind == RECORDED):
-        boundary = representation_event.payload["session_standing_as_of_event_id"]
+        boundary = representation_event.payload["locality_standing_as_of_event_id"]
         if boundary is not None:
             assert positions[boundary] < positions[representation_event.id]
 

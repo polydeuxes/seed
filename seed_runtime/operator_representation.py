@@ -61,8 +61,8 @@ def record_operator_representation(
     ledger: EventLedger,
     *,
     workspace_id: str,
-    session_id: str,
-    session_standing: dict[str, Any],
+    locality_id: str,
+    locality_standing: dict[str, Any],
     alternative_sources: tuple[dict[str, Any], ...] = (),
 ) -> dict[str, Any]:
     """Record one exact bounded Representation and its exact Act occurrence.
@@ -81,7 +81,7 @@ def record_operator_representation(
     representation_id = new_id("operator_representation")
     representation_act_id = new_id("operator_representation_act")
     act_occurrence_id = new_id("operator_representation_act_occurrence")
-    scope = f"workspace:{workspace_id};session:{session_id}"
+    scope = f"workspace:{workspace_id};locality:{locality_id}"
     alternatives = []
     coordinate_bindings: dict[str, str] = {}
     for position, source in enumerate(alternative_sources, start=1):
@@ -134,11 +134,11 @@ def record_operator_representation(
         )
     # The latest recorded exchange finding, exposed exactly as recorded;
     # representation Act neither strengthens nor reinterprets it.
-    prior_exchange_finding = session_standing.get("latest_exchange_finding")
+    prior_exchange_finding = locality_standing.get("latest_exchange_finding")
     # The reconstructed source relation is exposed only when it belongs to the
     # exact latest finding's identification.
     represented_relation = None
-    latest_relation = session_standing.get("latest_represented_relation")
+    latest_relation = locality_standing.get("latest_represented_relation")
     if (
         prior_exchange_finding is not None
         and latest_relation is not None
@@ -153,7 +153,7 @@ def record_operator_representation(
         "representation_result": representation_result,
         "alternatives": alternatives,
         "coordinate_bindings": coordinate_bindings,
-        "session_standing_as_of_event_id": session_standing["as_of_event_id"],
+        "locality_standing_as_of_event_id": locality_standing["as_of_event_id"],
         "prior_exchange_finding": prior_exchange_finding,
         "represented_relation": represented_relation,
         "known_loss": known_loss,
@@ -177,12 +177,12 @@ def record_operator_representation(
                 "Evidence concerning this exact Representation Act occurrence only"
             ),
         },
-        session_id=session_id,
+        locality_id=locality_id,
     )
     yield_evidence = _record_yield_evidence(
         ledger,
         workspace_id=workspace_id,
-        session_id=session_id,
+        locality_id=locality_id,
         convention=REPRESENTATION_CONVENTION,
         yielding_act="bounded Representation Act",
         act_occurrence_id=act_occurrence_id,
@@ -205,7 +205,7 @@ def record_operator_representation(
                 "Evidence only for this exact Representation-to-occurrence Carriage"
             ),
         },
-        session_id=session_id,
+        locality_id=locality_id,
     )
     representation_event = ledger.append(
         REPRESENTATION_RECORDED_KIND,
@@ -217,7 +217,7 @@ def record_operator_representation(
                 identity=act_occurrence_id,
                 content=content,
                 standing="recorded",
-                source=session_standing["as_of_event_id"],
+                source=locality_standing["as_of_event_id"],
                 responsibility=REPRESENTATION_RESPONSIBILITY,
                 authority=(
                     "representation Act occurrence only; establishes no Selection, "
@@ -231,14 +231,14 @@ def record_operator_representation(
             "carriage_evidence_id": carriage_evidence.id,
             "mutates_cluster": False,
         },
-        session_id=session_id,
+        locality_id=locality_id,
     )
     return {
         "representation_id": representation_id,
         "representation_act_id": representation_act_id,
         "act_occurrence_id": act_occurrence_id,
         "workspace_id": workspace_id,
-        "session_id": session_id,
+        "locality_id": locality_id,
         "representation_result": representation_result,
         "alternatives": alternatives,
         "coordinate_bindings": coordinate_bindings,
@@ -247,7 +247,7 @@ def record_operator_representation(
         "emission_attempt_carriage_evidence_id": None,
         "emission_outcome_event_id": None,
         "emitted_event_id": None,
-        "session_standing_as_of_event_id": session_standing["as_of_event_id"],
+        "locality_standing_as_of_event_id": locality_standing["as_of_event_id"],
         "prior_exchange_finding": prior_exchange_finding,
         "represented_relation": represented_relation,
         "known_loss": known_loss,
@@ -330,7 +330,7 @@ def emit_operator_representation(
         stream_encoding_metadata = None
     scope = (
         f"workspace:{representation['workspace_id']};"
-        f"session:{representation['session_id']}"
+        f"locality:{representation['locality_id']}"
     )
     attempt_event = ledger.append(
         REPRESENTATION_EMISSION_ATTEMPTED_KIND,
@@ -366,7 +366,7 @@ def emit_operator_representation(
             "provenance_occurrence_refs": [representation["representation_event_id"]],
             "mutates_cluster": False,
         },
-        session_id=representation["session_id"],
+        locality_id=representation["locality_id"],
     )
     representation["emission_attempt_event_id"] = attempt_event.id
     attempt_carriage_evidence = ledger.append(
@@ -382,7 +382,7 @@ def emit_operator_representation(
                 "Evidence only for the exact text-to-emission-attempt Carriage"
             ),
         },
-        session_id=representation["session_id"],
+        locality_id=representation["locality_id"],
     )
     representation["emission_attempt_carriage_evidence_id"] = (
         attempt_carriage_evidence.id
@@ -456,7 +456,7 @@ def emit_operator_representation(
                 "the Representation participating in its exact input role only"
             ),
         },
-        session_id=representation["session_id"],
+        locality_id=representation["locality_id"],
     )
     carriage_evidence = ledger.append(
         REPRESENTATION_EMISSION_CARRIAGE_EVIDENCE_KIND,
@@ -470,12 +470,12 @@ def emit_operator_representation(
                 "Evidence only for the exact text-to-emission-occurrence Carriage"
             ),
         },
-        session_id=representation["session_id"],
+        locality_id=representation["locality_id"],
     )
     yield_evidence = _record_yield_evidence(
         ledger,
         workspace_id=representation["workspace_id"],
-        session_id=representation["session_id"],
+        locality_id=representation["locality_id"],
         convention=REPRESENTATION_EMISSION_CONVENTION,
         yielding_act="exact bounded Representation emission",
         act_occurrence_id=act_occurrence_id,
@@ -523,7 +523,7 @@ def emit_operator_representation(
             ],
             "mutates_cluster": False,
         },
-        session_id=representation["session_id"],
+        locality_id=representation["locality_id"],
     )
     representation["emission_outcome_event_id"] = emitted_event.id
     representation["emitted_event_id"] = emitted_event.id
@@ -615,5 +615,5 @@ def _record_emission_failure_outcome(
             ],
             "mutates_cluster": False,
         },
-        session_id=representation["session_id"],
+        locality_id=representation["locality_id"],
     )

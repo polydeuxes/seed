@@ -125,7 +125,7 @@ def _distinction_assertion_identity(
     compared_assertion_id: str,
     inputs: Iterable[dict[str, str]],
     workspace_id: str,
-    session_id: str,
+    locality_id: str,
     coordinate: str,
     present: Iterable[bool],
     values: Iterable[Any],
@@ -135,7 +135,7 @@ def _distinction_assertion_identity(
         "compared_assertion_id": compared_assertion_id,
         "inputs": list(inputs),
         "workspace_id": workspace_id,
-        "session_id": session_id,
+        "locality_id": locality_id,
         "coordinate": coordinate,
         "present": list(present),
         "values": list(values),
@@ -224,7 +224,7 @@ def record_assertion_yield_comparison(
     ledger: EventLedger,
     *,
     workspace_id: str,
-    session_id: str,
+    locality_id: str,
     comparison: AssertionYieldComparison,
 ) -> Event:
     """Preserve each literal Compare result without establishing later input support."""
@@ -253,7 +253,7 @@ def record_assertion_yield_comparison(
             compared_assertion_id=comparison.assertion_id,
             inputs=input_refs,
             workspace_id=workspace_id,
-            session_id=session_id,
+            locality_id=locality_id,
             **content,
         )
         assertions.append(
@@ -285,7 +285,7 @@ def record_assertion_yield_comparison(
                 },
                 "assertion_scope": {
                     "workspace_id": workspace_id,
-                    "session_id": session_id,
+                    "locality_id": locality_id,
                     "compared_yields": list(input_refs),
                 },
                 "support_basis": {"assertion_refs": list(input_refs)},
@@ -313,7 +313,7 @@ def record_assertion_yield_comparison(
                 "standing": "recorded",
                 "source_provenance": "two occurrence-bound Assertion yields",
                 "authority": "literal Compare results only",
-                "scope_locality": f"workspace:{workspace_id};session:{session_id}",
+                "scope_locality": f"workspace:{workspace_id};locality:{locality_id}",
                 "occurrence_preservation": "comparison occurrence durably recorded",
             },
             "yielding_act": "Compare",
@@ -322,7 +322,7 @@ def record_assertion_yield_comparison(
             "inputs": list(input_refs),
             "assertions": assertions,
         },
-        session_id=session_id,
+        locality_id=locality_id,
     )
 
 
@@ -383,9 +383,9 @@ def assertions_of_recorded_assertion_comparison(
             or input_refs != outer_inputs
             or scope.get("compared_yields") != input_refs
             or not isinstance(scope.get("workspace_id"), str)
-            or not isinstance(scope.get("session_id"), str)
+            or not isinstance(scope.get("locality_id"), str)
             or scope.get("workspace_id") != event.workspace_id
-            or scope.get("session_id") != event.session_id
+            or scope.get("locality_id") != event.locality_id
             or subject.get("compared_assertion_id")
             != outer_inputs[0]["assertion_id"]
             or subject.get("coordinate") != content.get("coordinate")
@@ -422,7 +422,7 @@ def assertions_of_recorded_assertion_comparison(
             compared_assertion_id=subject["compared_assertion_id"],
             inputs=input_refs,
             workspace_id=scope.get("workspace_id"),
-            session_id=scope.get("session_id"),
+            locality_id=scope.get("locality_id"),
             coordinate=content["coordinate"],
             present=content["present"],
             values=content["values"],

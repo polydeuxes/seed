@@ -169,7 +169,7 @@ def record_external_expression_relation(
     ledger: EventLedger,
     *,
     workspace_id: str,
-    session_id: str,
+    locality_id: str,
     source_occurrence_id: str,
     machine_grammar: dict[str, object],
 ) -> Event:
@@ -180,7 +180,7 @@ def record_external_expression_relation(
         source is None
         or ledger.integrity_of(source_occurrence_id) == CORRUPTED
         or source.workspace_id != workspace_id
-        or source.session_id != session_id
+        or source.locality_id != locality_id
     ):
         raise ExternalExpressionRelationError(
             "the external-expression source occurrence does not reconstruct locally"
@@ -224,12 +224,12 @@ def record_external_expression_relation(
             "result_commitment": commitment,
             "standing": "occurred",
         },
-        session_id=session_id,
+        locality_id=locality_id,
     )
     yield_evidence = _record_yield_evidence(
         ledger,
         workspace_id=workspace_id,
-        session_id=session_id,
+        locality_id=locality_id,
         convention=EXTERNAL_EXPRESSION_RELATION_CONVENTION,
         yielding_act="preserve one external-expression relation Assertion",
         act_occurrence_id=act_occurrence_id,
@@ -248,7 +248,7 @@ def record_external_expression_relation(
             "carried_content": result,
             "standing": "carried",
         },
-        session_id=session_id,
+        locality_id=locality_id,
     )
     return ledger.append(
         EXTERNAL_EXPRESSION_RELATION_RECORDED_KIND,
@@ -267,7 +267,7 @@ def record_external_expression_relation(
                 "make it grammar beyond this source or establish another source's use"
             ),
         },
-        session_id=session_id,
+        locality_id=locality_id,
     )
 
 
@@ -293,7 +293,7 @@ def get_recorded_external_expression_relation(
         source is None
         or ledger.integrity_of(source_id) == CORRUPTED
         or source.workspace_id != carrier.workspace_id
-        or source.session_id != carrier.session_id
+        or source.locality_id != carrier.locality_id
     ):
         raise ExternalExpressionRelationError(
             "the external-expression source occurrence does not reconstruct"
@@ -384,16 +384,16 @@ def reconstruct_external_expression_relations(
     ledger: EventLedger,
     *,
     workspace_id: str,
-    session_id: str,
+    locality_id: str,
     external_expression: str,
     machine_grammar: dict[str, object],
 ) -> dict[str, object]:
     """Return every exact source-carried relation and its current grammar match."""
 
     assertions = []
-    for event in ledger.iter_session_kind(
+    for event in ledger.iter_locality_kind(
         workspace_id,
-        session_id,
+        locality_id,
         EXTERNAL_EXPRESSION_RELATION_RECORDED_KIND,
     ):
         recorded = get_recorded_external_expression_relation(ledger, event.id)

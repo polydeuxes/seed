@@ -40,7 +40,7 @@ def _declared(**changes):
 def _preserve(ledger, returned=b"a.txt\nb.txt\n", **changes):
     fields = dict(
         workspace_id="w",
-        session_id="sys_000001",
+        locality_id="sys_000001",
         exact_bytes=returned,
         observed_boundary="operator harness, subprocess stdout",
     )
@@ -49,7 +49,7 @@ def _preserve(ledger, returned=b"a.txt\nb.txt\n", **changes):
 
 
 def _declare(ledger, **changes):
-    fields = dict(workspace_id="w", session_id="sys_000001", declared=_declared())
+    fields = dict(workspace_id="w", locality_id="sys_000001", declared=_declared())
     fields.update(changes)
     return declare_invocation(ledger, **fields)
 
@@ -115,7 +115,7 @@ def test_returned_material_is_system_origin_and_exact():
 def test_material_without_a_text_representation_is_still_material():
     ledger = EventLedger()
     decoded = _preserve(ledger, returned=b"a.txt\nb.txt\n")
-    rejected = _preserve(ledger, returned=b"\xff\xfe\x00", session_id="sys_000002")
+    rejected = _preserve(ledger, returned=b"\xff\xfe\x00", locality_id="sys_000002")
 
     assert decoded.payload["text_representation"]["available"] is True
     assert decoded.payload["text_representation"]["decoder_outcome"] == "decoded"
@@ -138,12 +138,12 @@ def test_empty_material_is_material():
 
 def test_the_exchange_is_declared_by_the_caller():
     ledger = EventLedger()
-    first = _preserve(ledger, session_id="sys_000001")
-    second = _preserve(ledger, session_id="sys_000002")
+    first = _preserve(ledger, locality_id="sys_000001")
+    second = _preserve(ledger, locality_id="sys_000002")
 
-    assert first.session_id == "sys_000001"
-    assert second.session_id == "sys_000002"
-    assert first.payload["dimensions"]["scope_locality"] == "workspace:w;session:sys_000001"
+    assert first.locality_id == "sys_000001"
+    assert second.locality_id == "sys_000002"
+    assert first.payload["dimensions"]["scope_locality"] == "workspace:w;locality:sys_000001"
 
 
 def test_a_declared_invocation_requires_each_attribution():
@@ -163,9 +163,9 @@ def test_preservation_refuses_what_it_cannot_preserve_exactly():
             _preserve(ledger, observed_boundary=value)
     for value in ("", "  ", None, 1, []):
         with pytest.raises(SystemMaterialError, match="bounded exchange"):
-            _preserve(ledger, session_id=value)
+            _preserve(ledger, locality_id=value)
         with pytest.raises(SystemMaterialError, match="bounded exchange"):
-            _declare(ledger, session_id=value)
+            _declare(ledger, locality_id=value)
 
 
 def test_exact_bytes_are_validated_or_refused_never_guessed():
@@ -227,14 +227,14 @@ def test_subject_identities_stay_distinct_across_a_durable_reopen(tmp_path):
             material = preserve_system_material(
                 ledger,
                 workspace_id="w",
-                session_id=f"sys_{index}",
+                locality_id=f"sys_{index}",
                 exact_bytes=f"material {index}".encode(),
                 observed_boundary="operator harness",
             )
             declaration = declare_invocation(
                 ledger,
                 workspace_id="w",
-                session_id=f"sys_{index}",
+                locality_id=f"sys_{index}",
                 declared=_declared(),
             )
         finally:

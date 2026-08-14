@@ -47,7 +47,7 @@ def _recorded_in(ledger):
                 "material_origin": "operator",
                 "text_representation": {"available": True},
             },
-            session_id="r",
+            locality_id="r",
         )
     ]
     finding = measure_recurrence(
@@ -61,7 +61,7 @@ def _recorded_in(ledger):
         yield_in=(ledger, "w", "r"),
     )
     event = record_measurement_finding(
-        ledger, workspace_id="w", session_id="r", finding=finding
+        ledger, workspace_id="w", locality_id="r", finding=finding
     )
     return ledger, event
 
@@ -111,7 +111,7 @@ def test_result_shape_without_the_yield_relation_has_no_witness(recorded):
     constructed = dict(result.payload)
     constructed.pop("yield_evidence_id")
     forged = ledger.append(
-        FINDING_YIELD_COMPARISON_KIND, "w", constructed, session_id="r"
+        FINDING_YIELD_COMPARISON_KIND, "w", constructed, locality_id="r"
     )
     assert "yield_evidence_id" not in forged.payload
     assert result.payload["yield_evidence_id"] is not None
@@ -151,7 +151,7 @@ def test_validation_does_not_revalidate_the_historical_input(recorded):
         kind="representation.changed.after.comparison",
         workspace_id=event.workspace_id,
         payload={},
-        session_id=event.session_id,
+        locality_id=event.locality_id,
     )
     reconstructed = get_recorded_finding_yield_comparison(ledger, result.id)
     assert reconstructed.source_finding_event_id == event.id
@@ -164,7 +164,7 @@ def test_a_comparison_shaped_event_without_yield_evidence_is_not_validated(
     result = compare_recorded_finding_yield(ledger, event.id)
     forged = dict(result.payload)
     forged.pop("yield_evidence_id")
-    occurrence = ledger.append(FINDING_YIELD_COMPARISON_KIND, "w", forged, session_id="r")
+    occurrence = ledger.append(FINDING_YIELD_COMPARISON_KIND, "w", forged, locality_id="r")
     with pytest.raises(RecordedFindingYieldComparisonError, match="coordinate surfaces"):
         get_recorded_finding_yield_comparison(ledger, occurrence.id)
 
@@ -174,7 +174,7 @@ def test_a_changed_comparison_result_cannot_borrow_the_yield_evidence(recorded):
     result = compare_recorded_finding_yield(ledger, event.id)
     altered = dict(result.payload)
     altered["unknowns"] = ["an Unknown the comparison did not yield"]
-    occurrence = ledger.append(FINDING_YIELD_COMPARISON_KIND, "w", altered, session_id="r")
+    occurrence = ledger.append(FINDING_YIELD_COMPARISON_KIND, "w", altered, locality_id="r")
     with pytest.raises(RecordedFindingYieldComparisonError, match="different Compare result"):
         get_recorded_finding_yield_comparison(ledger, occurrence.id)
 
@@ -205,13 +205,13 @@ def test_comparison_validation_refuses_an_unsupported_yield_coordinate(recorded)
             "yield_coordinates": evidence.payload["yield_coordinates"]
             + ["unsupported"],
         },
-        session_id="r",
+        locality_id="r",
     )
     forged_result = ledger.append(
         FINDING_YIELD_COMPARISON_KIND,
         "w",
         {**result.payload, "yield_evidence_id": forged_evidence.id},
-        session_id="r",
+        locality_id="r",
     )
     with pytest.raises(RecordedFindingYieldComparisonError, match="exact Compare result contract"):
         get_recorded_finding_yield_comparison(ledger, forged_result.id)
@@ -237,7 +237,7 @@ def test_a_finding_naming_no_yield_evidence_preserves_erasure(recorded):
         MEASUREMENT_RECORDED_KIND,
         "w",
         {**event.payload, "yield_evidence_id": None},
-        session_id="r",
+        locality_id="r",
     )
     result = compare_recorded_finding_yield(ledger, forged.id)
     assert result.payload["dimensions"]["standing"] == DIFFERS_FROM_YIELD_EVIDENCE
@@ -258,7 +258,7 @@ def test_a_content_mismatch_does_not_assert_which_crossing_caused_it(
     ledger, event = recorded
     altered = dict(event.payload)
     altered["total_count"] = 999
-    forged = ledger.append(MEASUREMENT_RECORDED_KIND, "w", altered, session_id="r")
+    forged = ledger.append(MEASUREMENT_RECORDED_KIND, "w", altered, locality_id="r")
     result = compare_recorded_finding_yield(ledger, forged.id)
     assert result.payload["dimensions"]["standing"] == DIFFERS_FROM_YIELD_EVIDENCE
     assert result.payload["observed_crossings"] == [
@@ -278,7 +278,7 @@ def test_the_comparison_revises_nothing(recorded):
     ledger, event = recorded
     altered = dict(event.payload)
     altered["total_count"] = 999
-    forged = ledger.append(MEASUREMENT_RECORDED_KIND, "w", altered, session_id="r")
+    forged = ledger.append(MEASUREMENT_RECORDED_KIND, "w", altered, locality_id="r")
     compare_recorded_finding_yield(ledger, forged.id)
     # The finding found differing is exactly as it was.
     assert ledger.get(forged.id).payload["total_count"] == 999
@@ -332,7 +332,7 @@ def test_it_does_not_walk_what_the_finding_stood_on(recorded):
 
 def test_only_a_recorded_measurement_finding_may_be_compared(recorded):
     ledger, _ = recorded
-    other = ledger.append("unrelated.kind", "w", {}, session_id="r")
+    other = ledger.append("unrelated.kind", "w", {}, locality_id="r")
     with pytest.raises(RecordedFindingYieldComparisonError, match="not a recorded measurement"):
         compare_recorded_finding_yield(ledger, other.id)
 
@@ -344,7 +344,7 @@ def test_positional_measurement_is_outside_the_recurrence_comparison_scope(recor
         [occurrence], "the", counting_scope="this locality"
     )
     positional = record_measurement_finding(
-        ledger, workspace_id="w", session_id="r", finding=finding
+        ledger, workspace_id="w", locality_id="r", finding=finding
     )
     assert "yield_evidence_id" not in positional.payload
     with pytest.raises(RecordedFindingYieldComparisonError, match="not a recorded recurrence"):
@@ -359,7 +359,7 @@ def test_unavailable_named_evidence_leaves_comparison_unknown(recorded):
         MEASUREMENT_RECORDED_KIND,
         "w",
         {**event.payload, "yield_evidence_id": "evt_never_appended"},
-        session_id="r",
+        locality_id="r",
     )
     result = compare_recorded_finding_yield(ledger, forged.id)
     assert result.payload["dimensions"]["standing"] == COMPARISON_UNKNOWN
@@ -369,12 +369,12 @@ def test_unavailable_named_evidence_leaves_comparison_unknown(recorded):
 
 def test_a_finding_naming_something_that_is_not_yield_evidence(recorded):
     ledger, event = recorded
-    unrelated = ledger.append("unrelated.kind", "w", {}, session_id="r")
+    unrelated = ledger.append("unrelated.kind", "w", {}, locality_id="r")
     forged = ledger.append(
         MEASUREMENT_RECORDED_KIND,
         "w",
         {**event.payload, "yield_evidence_id": unrelated.id},
-        session_id="r",
+        locality_id="r",
     )
     result = compare_recorded_finding_yield(ledger, forged.id)
     assert (
@@ -401,7 +401,7 @@ def test_lawful_recording_additions_do_not_change_the_yielded_result(recorded):
     added = record_measurement_finding(
         ledger,
         workspace_id="w",
-        session_id="r",
+        locality_id="r",
         finding=finding,
         extra={"a_recording_coordinate": "kept"},
     )
@@ -420,13 +420,13 @@ def test_missing_yield_commitment_is_erasure(recorded):
             "yielded_result_kind": RECURRENCE_RESULT_KIND,
             "yield_convention": MEASUREMENT_CONVENTION,
         },
-        session_id="r",
+        locality_id="r",
     )
     forged = ledger.append(
         MEASUREMENT_RECORDED_KIND,
         "w",
         {**event.payload, "yield_evidence_id": evidence.id},
-        session_id="r",
+        locality_id="r",
     )
     result = compare_recorded_finding_yield(ledger, forged.id)
     assert result.payload["observed_crossings"][0]["kind"] == ERASURE
@@ -437,7 +437,7 @@ def test_missing_recorded_yielded_coordinate_is_erasure(recorded):
     altered = dict(event.payload)
     altered["dimensions"] = dict(altered["dimensions"])
     altered["dimensions"].pop("source_provenance")
-    forged = ledger.append(MEASUREMENT_RECORDED_KIND, "w", altered, session_id="r")
+    forged = ledger.append(MEASUREMENT_RECORDED_KIND, "w", altered, locality_id="r")
     result = compare_recorded_finding_yield(ledger, forged.id)
     assert result.payload["observed_crossings"][0]["kind"] == ERASURE
 
@@ -445,7 +445,7 @@ def test_missing_recorded_yielded_coordinate_is_erasure(recorded):
 def test_absent_locality_remains_absent(recorded):
     ledger, event = recorded
     without_locality = ledger.append(
-        MEASUREMENT_RECORDED_KIND, "w", dict(event.payload), session_id=None
+        MEASUREMENT_RECORDED_KIND, "w", dict(event.payload), locality_id=None
     )
     result = compare_recorded_finding_yield(ledger, without_locality.id)
     assert result.payload["dimensions"]["scope_locality"] is None
@@ -458,7 +458,7 @@ def test_foreign_workspace_yield_evidence_is_not_agreeing(recorded):
         MEASUREMENT_RECORDED_KIND,
         "other-workspace",
         dict(event.payload),
-        session_id="r",
+        locality_id="r",
     )
     result = compare_recorded_finding_yield(ledger, foreign.id)
     assert result.payload["dimensions"]["standing"] == COMPARISON_UNKNOWN
@@ -490,7 +490,7 @@ def test_corrupted_recorded_finding_ref_is_refused(tmp_path):
             "material_origin": "operator",
             "text_representation": {"available": True},
         },
-        session_id="r",
+        locality_id="r",
     )
     finding = measure_recurrence(
         [occurrence],
@@ -503,7 +503,7 @@ def test_corrupted_recorded_finding_ref_is_refused(tmp_path):
         yield_in=(ledger, "w", "r"),
     )
     event = record_measurement_finding(
-        ledger, workspace_id="w", session_id="r", finding=finding
+        ledger, workspace_id="w", locality_id="r", finding=finding
     )
     ledger._connection.execute("DROP TRIGGER events_refuse_update")
     ledger._connection.execute(
@@ -527,7 +527,7 @@ def test_corrupted_yield_evidence_leaves_comparison_unknown(tmp_path):
             "material_origin": "operator",
             "text_representation": {"available": True},
         },
-        session_id="r",
+        locality_id="r",
     )
     finding = measure_recurrence(
         [occurrence],
@@ -540,7 +540,7 @@ def test_corrupted_yield_evidence_leaves_comparison_unknown(tmp_path):
         yield_in=(ledger, "w", "r"),
     )
     event = record_measurement_finding(
-        ledger, workspace_id="w", session_id="r", finding=finding
+        ledger, workspace_id="w", locality_id="r", finding=finding
     )
     ledger._connection.execute("DROP TRIGGER events_refuse_update")
     ledger._connection.execute(

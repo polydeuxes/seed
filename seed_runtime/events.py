@@ -53,11 +53,11 @@ class LedgerIntegrityError(Exception):
     """A durable store cannot supply the integrity its occurrences require."""
 
 # Every persisted field, because an occurrence moved between sessions is as
-# altered as one whose payload changed, and `session_id` is now the boundary
+# altered as one whose payload changed, and `locality_id` is now the boundary
 # keeping bounded exchanges apart.
 _DIGESTED_FIELDS = (
     "id", "kind", "workspace_id", "actor", "timestamp", "payload",
-    "session_id", "causation_id", "correlation_id",
+    "locality_id", "causation_id", "correlation_id",
 )
 
 
@@ -150,7 +150,7 @@ def _content_digest(row: dict) -> str:
     """A stable digest over the whole recorded row.
 
     Every digested field must be present. `row.get` returned `None` for an
-    absent field and for a null one alike, so a row missing `session_id`
+    absent field and for a null one alike, so a row missing `locality_id`
     digested identically to a row whose session is null — two different rows
     committing to one digest. Unreachable through SQLite, where every column
     exists, and refused rather than left to depend on that.
@@ -176,7 +176,7 @@ def _canonical_occurrence_bytes(event: Event) -> bytes:
         "actor": event.actor,
         "timestamp": event.timestamp.isoformat(),
         "payload": event.payload,
-        "session_id": event.session_id,
+        "locality_id": event.locality_id,
         "causation_id": event.causation_id,
         "correlation_id": event.correlation_id,
     }
@@ -215,7 +215,7 @@ class EventLedger:
         payload: dict[str, Any] | None = None,
         *,
         actor: str = "system",
-        session_id: str | None = None,
+        locality_id: str | None = None,
         causation_id: str | None = None,
         correlation_id: str | None = None,
     ) -> Event:
@@ -226,7 +226,7 @@ class EventLedger:
             workspace_id=workspace_id,
             actor=actor,
             payload=payload or {},
-            session_id=session_id,
+            locality_id=locality_id,
             causation_id=causation_id,
             correlation_id=correlation_id,
         )
@@ -303,10 +303,10 @@ class EventLedger:
         """
         return UNVERIFIABLE
 
-    def list_session(
+    def list_locality(
         self,
         workspace_id: str,
-        session_id: str,
+        locality_id: str,
         *,
         through: EventLedgerBoundary | None = None,
     ) -> list[Event]:
@@ -319,13 +319,13 @@ class EventLedger:
         return [
             event
             for event in self.list(workspace_id, through=through)
-            if event.session_id == session_id
+            if event.locality_id == locality_id
         ]
 
-    def has_session(
+    def has_locality(
         self,
         workspace_id: str,
-        session_id: str,
+        locality_id: str,
         *,
         through: EventLedgerBoundary | None = None,
     ) -> bool:
@@ -334,14 +334,14 @@ class EventLedger:
         for event in self._by_workspace.get(workspace_id, ()):
             if self._by_id_position[event.id] > position:
                 break
-            if event.session_id == session_id:
+            if event.locality_id == locality_id:
                 return True
         return False
 
-    def iter_session_kind(
+    def iter_locality_kind(
         self,
         workspace_id: str,
-        session_id: str,
+        locality_id: str,
         kind: str,
         *,
         through: EventLedgerBoundary | None = None,
@@ -351,26 +351,26 @@ class EventLedger:
         for event in self._by_workspace.get(workspace_id, ()):
             if self._by_id_position[event.id] > position:
                 break
-            if event.session_id == session_id and event.kind == kind:
+            if event.locality_id == locality_id and event.kind == kind:
                 yield event
 
-    def iter_session_kind_ids(
+    def iter_locality_kind_ids(
         self,
         workspace_id: str,
-        session_id: str,
+        locality_id: str,
         kind: str,
         *,
         through: EventLedgerBoundary | None = None,
     ) -> Iterator[str]:
         """Yield the identities of one kind from one session, in append order.
 
-        The same bounded rows in the same order as `iter_session_kind`, returning
+        The same bounded rows in the same order as `iter_locality_kind`, returning
         only their identities. It does not reconstruct or inspect occurrence
         payloads. A caller requiring occurrence content must use the occurrence
         read; `integrity_of` remains the separate integrity boundary.
         """
-        for event in self.iter_session_kind(
-            workspace_id, session_id, kind, through=through
+        for event in self.iter_locality_kind(
+            workspace_id, locality_id, kind, through=through
         ):
             yield event.id
 
@@ -465,7 +465,7 @@ class SQLiteEventLedger(EventLedger):
                 actor TEXT NOT NULL,
                 timestamp TEXT NOT NULL,
                 payload TEXT NOT NULL,
-                session_id TEXT,
+                locality_id TEXT,
                 causation_id TEXT,
                 correlation_id TEXT,
                 content_hash TEXT NOT NULL
@@ -531,11 +531,11 @@ class SQLiteEventLedger(EventLedger):
         # bounded in what it answers and not in what it reads.
         self._connection.execute("""
             CREATE INDEX IF NOT EXISTS idx_events_workspace_session
-            ON events(workspace_id, session_id)
+            ON events(workspace_id, locality_id)
             """)
         self._connection.execute("""
             CREATE INDEX IF NOT EXISTS idx_events_workspace_session_kind
-            ON events(workspace_id, session_id, kind)
+            ON events(workspace_id, locality_id, kind)
             """)
         self._ensure_prefix_commitments()
         self._connection.commit()
@@ -554,7 +554,7 @@ class SQLiteEventLedger(EventLedger):
         payload: dict[str, Any] | None = None,
         *,
         actor: str = "system",
-        session_id: str | None = None,
+        locality_id: str | None = None,
         causation_id: str | None = None,
         correlation_id: str | None = None,
     ) -> Event:
@@ -564,7 +564,7 @@ class SQLiteEventLedger(EventLedger):
             workspace_id=workspace_id,
             actor=actor,
             payload=payload or {},
-            session_id=session_id,
+            locality_id=locality_id,
             causation_id=causation_id,
             correlation_id=correlation_id,
         )
@@ -659,54 +659,54 @@ class SQLiteEventLedger(EventLedger):
     ) -> list[Event]:
         return self.list(workspace_id, through=through)
 
-    def list_session(
+    def list_locality(
         self,
         workspace_id: str,
-        session_id: str,
+        locality_id: str,
         *,
         through: EventLedgerBoundary | None = None,
     ) -> list[Event]:
         rowid = self._rowid_through(through)
         boundary = "" if rowid is None else "AND rowid <= ? "
         args: tuple[Any, ...] = (
-            (workspace_id, session_id)
+            (workspace_id, locality_id)
             if rowid is None
-            else (workspace_id, session_id, rowid)
+            else (workspace_id, locality_id, rowid)
         )
         rows = self._connection.execute(
-            "SELECT * FROM events WHERE workspace_id = ? AND session_id = ? "
+            "SELECT * FROM events WHERE workspace_id = ? AND locality_id = ? "
             + boundary
             + "ORDER BY rowid",
             args,
         ).fetchall()
         return [self._row_to_event(row) for row in rows]
 
-    def has_session(
+    def has_locality(
         self,
         workspace_id: str,
-        session_id: str,
+        locality_id: str,
         *,
         through: EventLedgerBoundary | None = None,
     ) -> bool:
         rowid = self._rowid_through(through)
         boundary = "" if rowid is None else "AND rowid <= ? "
         args: tuple[Any, ...] = (
-            (workspace_id, session_id)
+            (workspace_id, locality_id)
             if rowid is None
-            else (workspace_id, session_id, rowid)
+            else (workspace_id, locality_id, rowid)
         )
         row = self._connection.execute(
-            "SELECT 1 FROM events WHERE workspace_id = ? AND session_id = ? "
+            "SELECT 1 FROM events WHERE workspace_id = ? AND locality_id = ? "
             + boundary
             + "LIMIT 1",
             args,
         ).fetchone()
         return row is not None
 
-    def iter_session_kind(
+    def iter_locality_kind(
         self,
         workspace_id: str,
-        session_id: str,
+        locality_id: str,
         kind: str,
         *,
         through: EventLedgerBoundary | None = None,
@@ -714,27 +714,27 @@ class SQLiteEventLedger(EventLedger):
         rowid = self._rowid_through(through)
         boundary = "" if rowid is None else "AND rowid <= ? "
         args: tuple[Any, ...] = (
-            (workspace_id, session_id, kind)
+            (workspace_id, locality_id, kind)
             if rowid is None
-            else (workspace_id, session_id, kind, rowid)
+            else (workspace_id, locality_id, kind, rowid)
         )
         rows = self._connection.execute(
-            "SELECT * FROM events WHERE workspace_id = ? AND session_id = ? "
+            "SELECT * FROM events WHERE workspace_id = ? AND locality_id = ? "
             "AND kind = ? " + boundary + "ORDER BY rowid",
             args,
         )
         for row in rows:
             yield self._row_to_event(row)
 
-    def iter_session_kind_ids(
+    def iter_locality_kind_ids(
         self,
         workspace_id: str,
-        session_id: str,
+        locality_id: str,
         kind: str,
         *,
         through: EventLedgerBoundary | None = None,
     ) -> Iterator[str]:
-        """Read one column of the same bounded rows `iter_session_kind` reads.
+        """Read one column of the same bounded rows `iter_locality_kind` reads.
 
         The same row selection, boundary and order, returning only identities.
 
@@ -754,12 +754,12 @@ class SQLiteEventLedger(EventLedger):
         rowid = self._rowid_through(through)
         boundary = "" if rowid is None else "AND rowid <= ? "
         args: tuple[Any, ...] = (
-            (workspace_id, session_id, kind)
+            (workspace_id, locality_id, kind)
             if rowid is None
-            else (workspace_id, session_id, kind, rowid)
+            else (workspace_id, locality_id, kind, rowid)
         )
         rows = self._connection.execute(
-            "SELECT id FROM events WHERE workspace_id = ? AND session_id = ? "
+            "SELECT id FROM events WHERE workspace_id = ? AND locality_id = ? "
             "AND kind = ? " + boundary + "ORDER BY rowid",
             args,
         )
@@ -770,7 +770,7 @@ class SQLiteEventLedger(EventLedger):
         """Recompute the stored row's digest and compare it with the recorded one.
 
         Verification belongs where the guarantee is asserted. `#2416` made
-        ordinary reads cheap, and putting a digest on `get` or `list_session`
+        ordinary reads cheap, and putting a digest on `get` or `list_locality`
         would charge every reader for an obligation only an Act with participating inputs
         carries.
         """
@@ -897,7 +897,7 @@ class SQLiteEventLedger(EventLedger):
     def _insert_without_commit(self, event: Event) -> int:
         cursor = self._connection.execute(
             """
-            INSERT INTO events (id, kind, workspace_id, actor, timestamp, payload, session_id, causation_id, correlation_id, content_hash)
+            INSERT INTO events (id, kind, workspace_id, actor, timestamp, payload, locality_id, causation_id, correlation_id, content_hash)
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """,
             self._row_values(event),
@@ -913,7 +913,7 @@ class SQLiteEventLedger(EventLedger):
             "actor": event.actor,
             "timestamp": event.timestamp.isoformat(),
             "payload": json.dumps(event.payload),
-            "session_id": event.session_id,
+            "locality_id": event.locality_id,
             "causation_id": event.causation_id,
             "correlation_id": event.correlation_id,
         }
@@ -952,7 +952,7 @@ class SQLiteEventLedger(EventLedger):
             actor=row["actor"],
             timestamp=datetime.fromisoformat(row["timestamp"]),
             payload=payload,
-            session_id=row["session_id"],
+            locality_id=row["locality_id"],
             causation_id=row["causation_id"],
             correlation_id=row["correlation_id"],
         )
@@ -996,8 +996,8 @@ class SQLiteEventLedger(EventLedger):
         found: dict[str, int] = {}
         reservable = self._RESERVABLE_PREFIXES
         values = _walk_values(event.payload)
-        if event.session_id is not None:
-            values = chain(values, (event.session_id,))
+        if event.locality_id is not None:
+            values = chain(values, (event.locality_id,))
         for value in values:
             if not isinstance(value, str):
                 continue

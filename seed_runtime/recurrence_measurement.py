@@ -206,7 +206,7 @@ class MeasuredAssertion:
             "completeness_scope": (
                 {
                     "workspace_id": self.scope["workspace_id"],
-                    "session_ids": list(self.scope["bounded_exchanges"]),
+                    "locality_ids": list(self.scope["bounded_exchanges"]),
                     "occurrence_kinds": list(self.completeness_occurrence_kinds),
                     "requires_session_existence": True,
                 }
@@ -317,7 +317,7 @@ def assertions_of_recorded_measurement(event: Event) -> tuple[RecordedMeasuredAs
             RecordedMeasuredAssertion(
                 assertion_id=identity,
                 yielding_event_id=event.id,
-                yielding_session_id=event.session_id,
+                yielding_session_id=event.locality_id,
                 result=result,
                 payload=assertion,
             )
@@ -384,15 +384,15 @@ def iter_recorded_measured_assertions(
     ledger: EventLedger,
     *,
     workspace_id: str,
-    session_ids: Iterable[str],
+    locality_ids: Iterable[str],
     through: EventLedgerBoundary | None = None,
 ) -> Iterator[RecordedMeasuredAssertion]:
     """Stream Assertions from exact declared sessions through one boundary."""
 
-    for session_id in tuple(dict.fromkeys(session_ids)):
-        for event in ledger.iter_session_kind(
+    for locality_id in tuple(dict.fromkeys(locality_ids)):
+        for event in ledger.iter_locality_kind(
             workspace_id,
-            session_id,
+            locality_id,
             EXCHANGE_COUNT_RECORDED_KIND,
             through=through,
         ):
@@ -419,12 +419,12 @@ def occurrences_of_declared_exchanges(
     """Yield each declared exchange's occurrences for compatibility.
 
     Recurrence measurement no longer has as input this list-returning helper: its
-    two passes use ``iter_session_kind`` so comparison Events are folded one at
+    two passes use ``iter_locality_kind`` so comparison Events are folded one at
     a time. Existing callers that require the complete occurrences of one
     exchange retain the per-exchange API introduced by ``#2441``.
     """
     for exchange in bounded_exchanges:
-        yield exchange, ledger.list_session(workspace_id, exchange)
+        yield exchange, ledger.list_locality(workspace_id, exchange)
 
 
 def _declared_of_measurement(event: Event) -> tuple[tuple[str, str], ...] | None:
@@ -491,12 +491,12 @@ def measure_exchange_counts(
     unestablished: list[str] = []
 
     for exchange in declared_exchanges:
-        if not ledger.has_session(
+        if not ledger.has_locality(
             workspace_id, exchange, through=input_ledger_boundary
         ):
             unestablished.append(exchange)
             continue
-        for event in ledger.iter_session_kind(
+        for event in ledger.iter_locality_kind(
             workspace_id,
             exchange,
             MEASUREMENT_RECORDED_KIND,
@@ -523,7 +523,7 @@ def measure_exchange_counts(
     support: dict[MeasuredDistinction, set[str]] = {}
     comparison_seen = False
     for exchange in declared_exchanges:
-        for event in ledger.iter_session_kind(
+        for event in ledger.iter_locality_kind(
             workspace_id,
             exchange,
             COMPARISON_RECORDED_KIND,
@@ -752,7 +752,7 @@ def record_measured_count(
     ledger: EventLedger,
     *,
     workspace_id: str,
-    session_id: str,
+    locality_id: str,
     finding: MeasuredCountFinding,
 ) -> Event:
     """Preserve the distinct Assertions one recurrence Measurement yielded.
@@ -777,7 +777,7 @@ def record_measured_count(
                 "measurement evidence only; establishes no relation between the "
                 "exchanges, no source independence, and no corroboration"
             ),
-            "scope_locality": f"workspace:{workspace_id};session:{session_id}",
+            "scope_locality": f"workspace:{workspace_id};locality:{locality_id}",
             "occurrence_preservation": "count finding durably recorded",
         },
         "assertions": [assertion.to_json_dict() for assertion in assertions],
@@ -802,5 +802,5 @@ def record_measured_count(
         "forbidden_inferences": list(FORBIDDEN_INFERENCES),
     }
     return ledger.append(
-        EXCHANGE_COUNT_RECORDED_KIND, workspace_id, payload, session_id=session_id
+        EXCHANGE_COUNT_RECORDED_KIND, workspace_id, payload, locality_id=locality_id
     )

@@ -28,7 +28,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         run_persistent_operator_console(
             ledger=ledger,
             workspace_id=args.workspace,
-            session_id=new_id("session"),
+            locality_id=new_id("session"),
             input_stream=sys.stdin,
             output_stream=sys.stdout,
         )

@@ -48,7 +48,7 @@ def run_operator_response_comparison_and_identification(
     ledger: EventLedger,
     *,
     workspace_id: str,
-    session_id: str,
+    locality_id: str,
     representation: dict[str, Any],
     response_ingress_event_id: str,
 ) -> dict[str, Any]:
@@ -81,7 +81,7 @@ def run_operator_response_comparison_and_identification(
     emitted_event_id = representation["emitted_event_id"]
     _require(representation_event_id is not None, "representation has no representation occurrence Evidence")
     _require(emitted_event_id is not None, "representation has no emission evidence")
-    scope = f"workspace:{workspace_id};session:{session_id}"
+    scope = f"workspace:{workspace_id};locality:{locality_id}"
 
     # The recorded representation payload is the sole source of C's alternatives,
     # coordinate bindings, and scope.  The supplied representation identifies
@@ -95,7 +95,7 @@ def run_operator_response_comparison_and_identification(
     )
     _require(
         representation_event.workspace_id == workspace_id
-        and representation_event.session_id == session_id,
+        and representation_event.locality_id == locality_id,
         "representation event belongs to another workspace or session",
     )
     _require(
@@ -125,7 +125,7 @@ def run_operator_response_comparison_and_identification(
     )
     _require(
         emitted_event.workspace_id == workspace_id
-        and emitted_event.session_id == session_id,
+        and emitted_event.locality_id == locality_id,
         "emission event belongs to another workspace or session",
     )
     _require(
@@ -145,7 +145,7 @@ def run_operator_response_comparison_and_identification(
     )
     _require(
         ingress_event.workspace_id == workspace_id
-        and ingress_event.session_id == session_id,
+        and ingress_event.locality_id == locality_id,
         "response ingress belongs to another workspace or session",
     )
     # The ingress no longer names a Representation: a relation between two
@@ -167,7 +167,7 @@ def run_operator_response_comparison_and_identification(
     )
     _require(
         capture_event.workspace_id == workspace_id
-        and capture_event.session_id == session_id,
+        and capture_event.locality_id == locality_id,
         "capture event belongs to another workspace or session",
     )
     _require(
@@ -242,7 +242,7 @@ def run_operator_response_comparison_and_identification(
             "provenance_occurrence_refs": exchange_provenance_refs,
             "mutates_cluster": False,
         },
-        session_id=session_id,
+        locality_id=locality_id,
     )
 
     # Distinct Identification: has as input the comparison finding, exact C, and
@@ -317,7 +317,7 @@ def run_operator_response_comparison_and_identification(
             "provenance_occurrence_refs": [comparison_event.id, representation_event_id],
             "mutates_cluster": False,
         },
-        session_id=session_id,
+        locality_id=locality_id,
     )
     return {
         "comparison": {

@@ -145,7 +145,7 @@ def declare_invocation(
     ledger: EventLedger,
     *,
     workspace_id: str,
-    session_id: str,
+    locality_id: str,
     declared: DeclaredInvocation,
 ) -> Event:
     """Record that an invocation was declared, and with which declared source role.
@@ -155,13 +155,13 @@ def declare_invocation(
     establish.
     """
 
-    _require_exchange(session_id)
+    _require_exchange(locality_id)
     return ledger.append_many([
         Event(
             id=new_id("evt"),
             kind=SYSTEM_INVOCATION_DECLARED_KIND,
             workspace_id=workspace_id,
-            session_id=session_id,
+            locality_id=locality_id,
             payload={
                 "dimensions": {
                     "identity": new_id("system_invocation"),
@@ -175,7 +175,7 @@ def declare_invocation(
                         "records that an invocation was declared; establishes no "
                         "act of it, and no Evidence or Authority for this Seed to invoke"
                     ),
-                    "scope_locality": f"workspace:{workspace_id};session:{session_id}",
+                    "scope_locality": f"workspace:{workspace_id};locality:{locality_id}",
                     "occurrence_preservation": "declaration durably recorded",
                 },
                 "declared_invocation": declared.to_json_dict(),
@@ -199,7 +199,7 @@ def preserve_system_material(
     ledger: EventLedger,
     *,
     workspace_id: str,
-    session_id: str,
+    locality_id: str,
     exact_bytes: bytes,
     observed_boundary: str,
 ) -> Event:
@@ -217,14 +217,14 @@ def preserve_system_material(
         raise SystemMaterialError("system material must be exact bytes")
     if type(observed_boundary) is not str or not observed_boundary.strip():
         raise SystemMaterialError("system material requires the boundary it was observed at")
-    _require_exchange(session_id)
+    _require_exchange(locality_id)
 
     return ledger.append_many([
         Event(
             id=new_id("evt"),
             kind=SYSTEM_MATERIAL_OCCURRED_KIND,
             workspace_id=workspace_id,
-            session_id=session_id,
+            locality_id=locality_id,
             payload={
                 "dimensions": {
                     "identity": new_id("system_material"),
@@ -233,7 +233,7 @@ def preserve_system_material(
                     "source_provenance": observed_boundary,
                     "responsibility": "system-material-occurrence",
                     "authority": "occurrence-only; represented relation Unknown",
-                    "scope_locality": f"workspace:{workspace_id};session:{session_id}",
+                    "scope_locality": f"workspace:{workspace_id};locality:{locality_id}",
                     "occurrence_preservation": "exact material durably recorded",
                 },
                 "material_origin": SYSTEM_ORIGIN,
@@ -255,8 +255,8 @@ def preserve_system_material(
     ])[0]
 
 
-def _require_exchange(session_id: str) -> None:
-    if type(session_id) is not str or not session_id.strip():
+def _require_exchange(locality_id: str) -> None:
+    if type(locality_id) is not str or not locality_id.strip():
         raise SystemMaterialError("system occurrences require an exact bounded exchange")
 
 

@@ -173,15 +173,15 @@ def _byte_measurement_road() -> dict:
     run_persistent_operator_console(
         ledger=ledger,
         workspace_id="w",
-        session_id="source",
+        locality_id="source",
         input_stream=StringIO("ta\nexit\n"),
         output_stream=StringIO(),
     )
     measurement = record_byte_count_layer(
         ledger,
         workspace_id="w",
-        source_session_ids=("source",),
-        recording_session_id="byte-measurement",
+        source_locality_ids=("source",),
+        recording_locality_id="byte-measurement",
     )
     assertion = next(
         item
@@ -204,21 +204,21 @@ def _recorded_applicability() -> dict:
     run_persistent_operator_console(
         ledger=ledger,
         workspace_id="w",
-        session_id="source",
+        locality_id="source",
         input_stream=StringIO("ta\nexit\n"),
         output_stream=StringIO(),
     )
     byte_measurement = record_byte_count_layer(
         ledger,
         workspace_id="w",
-        source_session_ids=("source",),
-        recording_session_id="byte-measurement",
+        source_locality_ids=("source",),
+        recording_locality_id="byte-measurement",
     )
     pair_measurement = record_adjacent_byte_pair_count_layer(
         ledger,
         source_measurement_event_id=byte_measurement.id,
         workspace_id="w",
-        recording_session_id="measurement",
+        recording_locality_id="measurement",
     )
     carrier = ledger.get(pair_measurement.payload["input_applicability_event_id"])
     recovered = get_recorded_pair_input_applicability(ledger, carrier.id)
@@ -248,8 +248,8 @@ def _emission_road() -> dict:
     representation = record_operator_representation(
         ledger,
         workspace_id="w",
-        session_id="emission",
-        session_standing={"as_of_event_id": None},
+        locality_id="emission",
+        locality_standing={"as_of_event_id": None},
     )
     emit_operator_representation(
         ledger,
@@ -277,8 +277,8 @@ def _repeated_emission_attempt_road() -> tuple[dict, dict]:
     representation = record_operator_representation(
         ledger,
         workspace_id="w",
-        session_id="repeated-emission-attempt",
-        session_standing={"as_of_event_id": None},
+        locality_id="repeated-emission-attempt",
+        locality_standing={"as_of_event_id": None},
     )
     emit_operator_representation(
         ledger,
@@ -341,8 +341,8 @@ def _representation_road() -> dict:
     representation = record_operator_representation(
         ledger,
         workspace_id="w",
-        session_id="representation",
-        session_standing={"as_of_event_id": None},
+        locality_id="representation",
+        locality_standing={"as_of_event_id": None},
     )
     carrier = ledger.get(representation["representation_event_id"])
     return {
@@ -361,8 +361,8 @@ def _repeated_representation_road() -> tuple[dict, dict]:
         representation = record_operator_representation(
             ledger,
             workspace_id="w",
-            session_id="repeated-representation",
-            session_standing={"as_of_event_id": None},
+            locality_id="repeated-representation",
+            locality_standing={"as_of_event_id": None},
         )
         carrier = ledger.get(representation["representation_event_id"])
         return {
@@ -398,10 +398,10 @@ def _preserved_material_yield_road() -> dict:
         INGRESS_OCCURRED_KIND,
         "w",
         {"decoded_text": "the cat", "material_origin": "operator"},
-        session_id="preserved-material-yield",
+        locality_id="preserved-material-yield",
     )
     occurrences = preserved_ingress_occurrences(
-        ledger, workspace_id="w", session_id="preserved-material-yield"
+        ledger, workspace_id="w", locality_id="preserved-material-yield"
     )
     finding = measure_recurrence(
         occurrences,
@@ -416,7 +416,7 @@ def _preserved_material_yield_road() -> dict:
     carrier = record_measurement_finding(
         ledger,
         workspace_id="w",
-        session_id="preserved-material-yield",
+        locality_id="preserved-material-yield",
         finding=finding,
     )
     bundle = _yield_bundle(ledger, carrier)
@@ -447,12 +447,12 @@ def _external_expression_yield_road() -> dict:
                 sort_keys=True,
             ),
         },
-        session_id="external-expression-yield",
+        locality_id="external-expression-yield",
     )
     carrier = record_external_expression_relation(
         ledger,
         workspace_id="w",
-        session_id="external-expression-yield",
+        locality_id="external-expression-yield",
         source_occurrence_id=source.id,
         machine_grammar=grammar,
     )
@@ -474,21 +474,21 @@ def _adjacent_observation_yield_road(*, compare: bool = False) -> dict:
             INGRESS_OCCURRED_KIND,
             "w",
             {"decoded_text": text, "material_origin": "operator"},
-            session_id="adjacent-observation-yield",
+            locality_id="adjacent-observation-yield",
         )
     occurrences = preserved_ingress_occurrences(
-        ledger, workspace_id="w", session_id="adjacent-observation-yield"
+        ledger, workspace_id="w", locality_id="adjacent-observation-yield"
     )
     finding = record_measurement_finding(
         ledger,
         workspace_id="w",
-        session_id="adjacent-observation-yield",
+        locality_id="adjacent-observation-yield",
         finding=measure_after(occurrences, "a", counting_scope="exact fixture"),
     )
     first = record_adjacent_pair_observations(
         ledger,
         workspace_id="w",
-        session_id="adjacent-observation-yield",
+        locality_id="adjacent-observation-yield",
         finding_event_id=finding.id,
     )
     if not compare:
@@ -496,8 +496,8 @@ def _adjacent_observation_yield_road(*, compare: bool = False) -> dict:
     representation = record_operator_representation(
         ledger,
         workspace_id="w",
-        session_id="adjacent-observation-yield",
-        session_standing={"as_of_event_id": None},
+        locality_id="adjacent-observation-yield",
+        locality_standing={"as_of_event_id": None},
     )
     first_emission = emit_operator_representation(
         ledger, representation=representation, output_stream=StringIO()
@@ -515,7 +515,7 @@ def _adjacent_observation_yield_road(*, compare: bool = False) -> dict:
     carrier = record_adjacent_pair_observation_compare(
         ledger,
         workspace_id="w",
-        session_id="adjacent-observation-yield",
+        locality_id="adjacent-observation-yield",
         observation_event_ids=(first.id, second.id),
     )
     return _yield_bundle(ledger, carrier)
@@ -1321,7 +1321,7 @@ def _additional_live_structural_edge_fidelity_cases() -> dict[
         attempt["attempt_carriage_evidence"].kind,
         "w",
         changed_relation_payload,
-        session_id="repeated-emission-attempt",
+        locality_id="repeated-emission-attempt",
     )
     wrong_attempt = dict(attempt)
     wrong_attempt["attempt_carriage_evidence"] = alternate_attempt[
@@ -1528,10 +1528,10 @@ def _movement_witness(bundle: dict) -> dict[str, str]:
             EXACT if movement.payload["source_assertion_ref"] == source else MISSING
         ),
         "source_locality": (
-            EXACT if movement.payload["source_locality"] == source_event.session_id else MISSING
+            EXACT if movement.payload["source_locality"] == source_event.locality_id else MISSING
         ),
         "destination_locality": (
-            EXACT if movement.payload["destination_locality"] == movement.session_id else MISSING
+            EXACT if movement.payload["destination_locality"] == movement.locality_id else MISSING
         ),
         "movement_Act": (
             EXACT if movement_act_edge else MISSING
@@ -1625,8 +1625,8 @@ def test_implementation_witness_discriminates_content_carriage_and_digest():
     ledger = EventLedger()
     content = {"a": 1, "b": 2}
 
-    first = ledger.append("test.carriage", "w", dict(content), session_id="s")
-    second = ledger.append("test.carriage", "w", dict(content), session_id="s")
+    first = ledger.append("test.carriage", "w", dict(content), locality_id="s")
+    second = ledger.append("test.carriage", "w", dict(content), locality_id="s")
     assert first.payload == second.payload
     assert first.id != second.id
     assert yield_commitment("test", first.payload) == yield_commitment(
@@ -1788,7 +1788,7 @@ def test_emission_attempt_carriage_adversaries_change_one_requirement_each():
         exact["attempt_carriage_evidence"].kind,
         "w",
         changed,
-        session_id="repeated-emission-attempt",
+        locality_id="repeated-emission-attempt",
     )
 
     corrupted, _ = _repeated_emission_attempt_road()
@@ -2135,7 +2135,7 @@ def test_changed_structural_edge_anatomy_is_detected():
 def test_content_and_carriage_endpoints_do_not_establish_carriage_relation():
     ledger = EventLedger()
     content = {"subject": "x", "standing": "Unknown"}
-    carriage = ledger.append("test.carriage", "w", dict(content), session_id="s")
+    carriage = ledger.append("test.carriage", "w", dict(content), locality_id="s")
 
     assert (
         _content_carriage_witness(
@@ -2144,7 +2144,7 @@ def test_content_and_carriage_endpoints_do_not_establish_carriage_relation():
         == EXACT
     )
     second_carriage = ledger.append(
-        "test.carriage", "w", dict(content), session_id="s"
+        "test.carriage", "w", dict(content), locality_id="s"
     )
     assert content
     assert second_carriage.payload == carriage.payload
@@ -2251,11 +2251,11 @@ def test_assertion_clause_is_checked_against_a_live_byte_assertion():
 
 def test_asserted_content_identity_includes_scope_but_not_carriage():
     ledger = EventLedger()
-    for session_id in ("source-one", "source-two"):
+    for locality_id in ("source-one", "source-two"):
         run_persistent_operator_console(
             ledger=ledger,
             workspace_id="w",
-            session_id=session_id,
+            locality_id=locality_id,
             input_stream=StringIO("t\nexit\n"),
             output_stream=StringIO(),
         )
@@ -2263,20 +2263,20 @@ def test_asserted_content_identity_includes_scope_but_not_carriage():
     first = record_byte_count_layer(
         ledger,
         workspace_id="w",
-        source_session_ids=("source-one",),
-        recording_session_id="measurement-one",
+        source_locality_ids=("source-one",),
+        recording_locality_id="measurement-one",
     )
     repeated = record_byte_count_layer(
         ledger,
         workspace_id="w",
-        source_session_ids=("source-one",),
-        recording_session_id="measurement-two",
+        source_locality_ids=("source-one",),
+        recording_locality_id="measurement-two",
     )
     other_scope = record_byte_count_layer(
         ledger,
         workspace_id="w",
-        source_session_ids=("source-two",),
-        recording_session_id="measurement-three",
+        source_locality_ids=("source-two",),
+        recording_locality_id="measurement-three",
     )
 
     def count_assertion(event):
@@ -2714,3 +2714,31 @@ def test_participation_declares_a_structural_edge_it_records_no_evidence_for():
     assert _declared_kind_constants("YIELD_EVIDENCE_KIND") or YIELD_LIVE_BOUNDARIES
     assert _declared_kind_constants("CARRIAGE_EVIDENCE_KIND")
     assert _declared_kind_constants("PARTICIPATION_EVIDENCE_KIND") == {}
+
+
+# Every module recording a `scope_locality` dimension. 06.Standing.B makes
+# locality a coordinate in its own right, and 01.Standing.E.1 enumerates Scope
+# and locality separately among the coordinates Applicability is determined
+# for. This compound field carries both in one string, so neither can be read
+# without parsing the other. The list is a regression boundary, not approval.
+SCOPE_LOCALITY_COMPOUND_SITES = 21
+
+
+def test_no_new_site_compounds_scope_with_locality():
+    """Hold the compound coordinate where it is until it is decomposed.
+
+    Splitting it changes the dimensions block of every recorded occurrence,
+    and so every recorded identity that commits to one. That is a decision
+    about durable material rather than a rename, and it is not made here.
+    What is made here is the boundary: the count may fall, never rise.
+    """
+
+    sites = sum(
+        path.read_text(encoding="utf-8").count("scope_locality")
+        for path in sorted(RUNTIME.glob("*.py"))
+    )
+    assert sites <= SCOPE_LOCALITY_COMPOUND_SITES, (
+        f"\n{sites} sites compound Scope with locality, up from "
+        f"{SCOPE_LOCALITY_COMPOUND_SITES}. 06.Standing.B carries locality as "
+        "its own coordinate; a new site glues it to Scope again."
+    )

@@ -99,7 +99,7 @@ def test_the_refusal_survives_reopening(path):
 
 
 def test_a_recorded_occurrence_verifies(ledger):
-    event = ledger.append("k", "w", {"a": 1}, session_id="s")
+    event = ledger.append("k", "w", {"a": 1}, locality_id="s")
     assert ledger.integrity_of(event.id) == VERIFIED
 
 
@@ -116,11 +116,11 @@ def test_a_rewrite_that_drops_the_guard_is_detected(ledger, path):
 
 
 def test_moving_an_occurrence_between_sessions_is_detected(ledger, path):
-    """`session_id` is the boundary keeping bounded exchanges apart."""
-    event = ledger.append("k", "w", {"a": 1}, session_id="s1")
+    """`locality_id` is the boundary keeping bounded exchanges apart."""
+    event = ledger.append("k", "w", {"a": 1}, locality_id="s1")
     con = _raw(path)
     con.execute("DROP TRIGGER events_refuse_update")
-    con.execute("UPDATE events SET session_id = 's2' WHERE id = ?", (event.id,))
+    con.execute("UPDATE events SET locality_id = 's2' WHERE id = ?", (event.id,))
     con.commit()
     con.close()
 
@@ -134,7 +134,7 @@ def test_moving_an_occurrence_between_sessions_is_detected(ledger, path):
      ("causation_id", "evt_x"), ("correlation_id", "evt_y")],
 )
 def test_every_persisted_field_is_covered(ledger, path, column, value):
-    event = ledger.append("k", "w", {"a": 1}, session_id="s")
+    event = ledger.append("k", "w", {"a": 1}, locality_id="s")
     con = _raw(path)
     con.execute("DROP TRIGGER events_refuse_update")
     con.execute(f"UPDATE events SET {column} = ? WHERE id = ?", (value, event.id))
@@ -160,7 +160,7 @@ def test_rewriting_the_row_and_its_digest_together_is_not_detected(ledger, path)
     """
     from seed_runtime.events import _content_digest
 
-    event = ledger.append("k", "w", {"a": 1}, session_id="s")
+    event = ledger.append("k", "w", {"a": 1}, locality_id="s")
     con = _raw(path)
     con.execute("DROP TRIGGER events_refuse_update")
     row = dict(con.execute("SELECT * FROM events WHERE id = ?", (event.id,)).fetchone())
@@ -179,7 +179,7 @@ def test_verified_durable_rehydration_still_rejects_nested_secret_fields(path):
     from seed_runtime.events import _content_digest
 
     ledger = SQLiteEventLedger(path)
-    event = ledger.append("k", "w", {"a": 1}, session_id="s")
+    event = ledger.append("k", "w", {"a": 1}, locality_id="s")
     ledger.close()
 
     con = _raw(path)
@@ -206,7 +206,7 @@ def test_screened_durable_rehydration_still_runs_event_validation(path):
     from seed_runtime.events import _content_digest
 
     ledger = SQLiteEventLedger(path)
-    event = ledger.append("k", "w", {"a": 1}, session_id="s")
+    event = ledger.append("k", "w", {"a": 1}, locality_id="s")
     ledger.close()
 
     con = _raw(path)
@@ -234,7 +234,7 @@ def _legacy_store(path, rows=1):
     con.execute(
         "CREATE TABLE events (id TEXT PRIMARY KEY, kind TEXT NOT NULL, "
         "workspace_id TEXT NOT NULL, actor TEXT NOT NULL, timestamp TEXT NOT NULL, "
-        "payload TEXT NOT NULL, session_id TEXT, causation_id TEXT, correlation_id TEXT)"
+        "payload TEXT NOT NULL, locality_id TEXT, causation_id TEXT, correlation_id TEXT)"
     )
     for i in range(rows):
         con.execute(
@@ -265,7 +265,7 @@ def test_a_nullable_schema_holding_an_undigested_row_is_refused(path):
     con.execute(
         "CREATE TABLE events (id TEXT PRIMARY KEY, kind TEXT NOT NULL, "
         "workspace_id TEXT NOT NULL, actor TEXT NOT NULL, timestamp TEXT NOT NULL, "
-        "payload TEXT NOT NULL, session_id TEXT, causation_id TEXT, "
+        "payload TEXT NOT NULL, locality_id TEXT, causation_id TEXT, "
         "correlation_id TEXT, content_hash TEXT)"
     )
     con.execute(
@@ -335,15 +335,15 @@ def test_a_comparison_refuses_a_corrupted_input(path, monkeypatch):
     from seed_runtime.operator_console import run_persistent_operator_console
 
     led = SQLiteEventLedger(path)
-    for session_id in ("s1", "s2"):
+    for locality_id in ("s1", "s2"):
         run_persistent_operator_console(
-            ledger=led, workspace_id="w", session_id=session_id,
+            ledger=led, workspace_id="w", locality_id=locality_id,
             input_stream=StringIO("a noun is a word\nexit\n"), output_stream=StringIO())
     ids = []
-    for session_id in ("s1", "s2"):
-        occ = preserved_ingress_occurrences(led, workspace_id="w", session_id=session_id)
+    for locality_id in ("s1", "s2"):
+        occ = preserved_ingress_occurrences(led, workspace_id="w", locality_id=locality_id)
         ids.append(record_measurement_finding(
-            led, workspace_id="w", session_id=session_id,
+            led, workspace_id="w", locality_id=locality_id,
             finding=measure_after(occ, "a", counting_scope="s")).id)
     led.close()
 
@@ -370,16 +370,16 @@ def test_a_comparison_records_each_input_s_integrity(path):
 
     led = SQLiteEventLedger(path)
     try:
-        for session_id in ("s1", "s2"):
+        for locality_id in ("s1", "s2"):
             run_persistent_operator_console(
-                ledger=led, workspace_id="w", session_id=session_id,
+                ledger=led, workspace_id="w", locality_id=locality_id,
                 input_stream=StringIO("a noun is a word\nexit\n"),
                 output_stream=StringIO())
         ids = []
-        for session_id in ("s1", "s2"):
-            occ = preserved_ingress_occurrences(led, workspace_id="w", session_id=session_id)
+        for locality_id in ("s1", "s2"):
+            occ = preserved_ingress_occurrences(led, workspace_id="w", locality_id=locality_id)
             ids.append(record_measurement_finding(
-                led, workspace_id="w", session_id=session_id,
+                led, workspace_id="w", locality_id=locality_id,
                 finding=measure_after(occ, "a", counting_scope="s")).id)
         finding = compare_preserved_findings(led, ids)
         assert [i.integrity for i in finding.inputs] == [VERIFIED, VERIFIED]
@@ -397,13 +397,13 @@ def test_an_unverifiable_input_is_recorded_rather_than_refused():
 
     led = EventLedger()
     ids = []
-    for session_id in ("s1", "s2"):
+    for locality_id in ("s1", "s2"):
         run_persistent_operator_console(
-            ledger=led, workspace_id="w", session_id=session_id,
+            ledger=led, workspace_id="w", locality_id=locality_id,
             input_stream=StringIO("a noun is a word\nexit\n"), output_stream=StringIO())
-        occ = preserved_ingress_occurrences(led, workspace_id="w", session_id=session_id)
+        occ = preserved_ingress_occurrences(led, workspace_id="w", locality_id=locality_id)
         ids.append(record_measurement_finding(
-            led, workspace_id="w", session_id=session_id,
+            led, workspace_id="w", locality_id=locality_id,
             finding=measure_after(occ, "a", counting_scope="s")).id)
 
     finding = compare_preserved_findings(led, ids)
@@ -426,11 +426,11 @@ def test_a_nullable_digest_schema_is_refused_even_when_fully_digested(path):
     con.execute(
         "CREATE TABLE events (id TEXT PRIMARY KEY, kind TEXT NOT NULL, "
         "workspace_id TEXT NOT NULL, actor TEXT NOT NULL, timestamp TEXT NOT NULL, "
-        "payload TEXT NOT NULL, session_id TEXT, causation_id TEXT, "
+        "payload TEXT NOT NULL, locality_id TEXT, causation_id TEXT, "
         "correlation_id TEXT, content_hash TEXT)"
     )
     row = {"id": "evt_000001", "kind": "k", "workspace_id": "w", "actor": "system",
-           "timestamp": "2026-01-01T00:00:00", "payload": "{}", "session_id": "s",
+           "timestamp": "2026-01-01T00:00:00", "payload": "{}", "locality_id": "s",
            "causation_id": None, "correlation_id": None}
     con.execute(
         "INSERT INTO events VALUES (?,?,?,?,?,?,?,?,?,?)",
@@ -463,7 +463,7 @@ def test_reservations_are_read_from_the_table_not_from_history(path):
     """
     led = SQLiteEventLedger(path)
     try:
-        led.append("k", "w", {"ref": "operator_material_000042"}, session_id="session_000007")
+        led.append("k", "w", {"ref": "operator_material_000042"}, locality_id="session_000007")
         led.append("k", "w", {"ref": "system_material_000005"})
     finally:
         led.close()
@@ -545,7 +545,7 @@ def test_a_batch_commits_its_reservations_with_its_occurrences(path):
     try:
         led.append_many([
             Event(id=f"evt_10000{i}", kind="k", workspace_id="w",
-                  payload={"ref": f"operator_material_0000{40 + i}"}, session_id="session_000009")
+                  payload={"ref": f"operator_material_0000{40 + i}"}, locality_id="session_000009")
             for i in range(3)
         ])
     finally:
@@ -573,7 +573,7 @@ def test_a_batch_leaves_no_occurrence_without_its_reservation(path):
     led = SQLiteEventLedger(path)
     led.append_many([
         Event(id="evt_100001", kind="k", workspace_id="w",
-              payload={"ref": "operator_material_000077"}, session_id="s")
+              payload={"ref": "operator_material_000077"}, locality_id="s")
     ])
     led.close()
 
@@ -602,8 +602,8 @@ def test_reservable_suffix_observation_matches_a_per_prefix_scan():
     def per_prefix_scan(event):
         found = {}
         values = list(_walk_values(event.payload))
-        if event.session_id is not None:
-            values.append(event.session_id)
+        if event.locality_id is not None:
+            values.append(event.locality_id)
         for value in values:
             if not isinstance(value, str):
                 continue
@@ -646,7 +646,7 @@ def test_reservable_suffix_observation_matches_a_per_prefix_scan():
             kind="k",
             workspace_id="w",
             payload=payload,
-            session_id=rng.choice([None, identifier(), f"session_{rng.randint(0, 9999)}"]),
+            locality_id=rng.choice([None, identifier(), f"session_{rng.randint(0, 9999)}"]),
         )
         assert ledger._observed_numbers(event) == per_prefix_scan(event)
 
@@ -692,18 +692,18 @@ def test_a_cache_hit_still_refuses_a_contradictory_support_count():
 
     ledger = EventLedger()
     ledger.append_many([
-        Event(id=f"evt_{index}", kind="ingress", workspace_id="w", session_id="s")
+        Event(id=f"evt_{index}", kind="ingress", workspace_id="w", locality_id="s")
         for index in range(4)
     ])
     boundary = ledger.capture_boundary()
-    identities = tuple(ledger.iter_session_kind_ids("w", "s", "ingress", through=boundary))
+    identities = tuple(ledger.iter_locality_kind_ids("w", "s", "ingress", through=boundary))
     honest = declare_complete_inputs(
-        workspace_id="w", session_id="s", occurrence_kind="ingress",
+        workspace_id="w", locality_id="s", occurrence_kind="ingress",
         boundary=boundary, identities=identities,
     )
     forged = SupportBasis(
         workspace_id=honest.workspace_id,
-        session_id=honest.session_id,
+        locality_id=honest.locality_id,
         occurrence_kind=honest.occurrence_kind,
         boundary_commitment=honest.boundary_commitment,
         selection_rule=honest.selection_rule,
@@ -746,7 +746,7 @@ def test_every_support_basis_refusal_can_be_reached():
 
     def basis(**changes):
         fields = dict(
-            workspace_id="w", session_id="s", occurrence_kind="k",
+            workspace_id="w", locality_id="s", occurrence_kind="k",
             boundary_commitment="b", selection_rule=COMPLETE_INGRESS_INPUTS,
             commitment=support_commitment(COMPLETE_INGRESS_INPUTS, ()),
             support_count=0,
@@ -770,7 +770,7 @@ def test_every_support_basis_refusal_can_be_reached():
         with pytest.raises(SupportBasisError):
             SupportBasis.from_json_dict(dict(basis().to_json_dict(), selection_rule=value))
 
-    for name in ("workspace_id", "session_id", "occurrence_kind",
+    for name in ("workspace_id", "locality_id", "occurrence_kind",
                  "boundary_commitment", "commitment"):
         with pytest.raises(SupportBasisError, match=f"requires {name}"):
             basis(**{name: ""})
@@ -867,7 +867,7 @@ def test_a_digest_does_not_move_when_a_payload_is_compressed(tmp_path):
         row = {
             "id": "evt_1", "kind": "k", "workspace_id": "w", "actor": "system",
             "timestamp": "2026-01-01T00:00:00+00:00", "payload": serialized,
-            "session_id": None, "causation_id": None, "correlation_id": None,
+            "locality_id": None, "causation_id": None, "correlation_id": None,
         }
         digest = _content_digest(row)
         stored = _stored_payload(serialized)

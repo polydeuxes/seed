@@ -34,7 +34,7 @@ class DagLedgerComparison:
                 id TEXT PRIMARY KEY,
                 kind TEXT NOT NULL,
                 workspace_id TEXT NOT NULL,
-                session_id TEXT,
+                locality_id TEXT,
                 payload TEXT NOT NULL
             );
             CREATE TABLE IF NOT EXISTS edges (
@@ -67,7 +67,7 @@ class DagLedgerComparison:
                     event.id,
                     event.kind,
                     event.workspace_id,
-                    getattr(event, "session_id", None),
+                    getattr(event, "locality_id", None),
                     json.dumps(event.payload, default=str),
                 ),
             )

@@ -380,7 +380,7 @@ def measure_recurrence(
         evidence = _record_yield(
             yield_in[0],
             workspace_id=yield_in[1],
-            session_id=yield_in[2],
+            locality_id=yield_in[2],
             finding=finding,
         )
         finding = replace(finding, yield_evidence_id=evidence.id)
@@ -394,7 +394,7 @@ def _locality_of(event: Event) -> str | None:
     coordinate. Where one is not carried, this returns ``None``, and a finding
     records that absence rather than a value standing in for it.
 
-    An earlier version rendered a missing `session_id` as ``session:None``, and
+    An earlier version rendered a missing `locality_id` as ``session:None``, and
     the version after it returned ``workspace:w``. Both replaced an absent
     coordinate with an asserted one: the first supplied a locality named None,
     the second answered the locality question with the workspace, which
@@ -403,9 +403,9 @@ def _locality_of(event: Event) -> str | None:
     a locality that was not carried.
     """
 
-    if event.session_id is None:
+    if event.locality_id is None:
         return None
-    return f"workspace:{event.workspace_id};session:{event.session_id}"
+    return f"workspace:{event.workspace_id};locality:{event.locality_id}"
 
 
 def _distinct_inputs(occurrences: Iterable[Event]) -> list[Event]:
@@ -576,7 +576,7 @@ def _recorded_yield_commitment(
 
 
 def _record_yield(
-    ledger: EventLedger, *, workspace_id: str, session_id: str, finding
+    ledger: EventLedger, *, workspace_id: str, locality_id: str, finding
 ) -> Event:
     """Preserve, from inside the yielding act, that it yielded this result.
 
@@ -609,7 +609,7 @@ def _record_yield(
     return _record_yield_evidence(
         ledger,
         workspace_id=workspace_id,
-        session_id=session_id,
+        locality_id=locality_id,
         convention=MEASUREMENT_CONVENTION,
         yielding_act="declared Measurement",
         act_occurrence_id=finding.act_occurrence_id,
@@ -820,7 +820,7 @@ def measure_recurrences(
         # different responsibility and arrives too late to prevent it.
         declared_locality = (
             f"workspace:{support_basis.workspace_id};"
-            f"session:{support_basis.session_id}"
+            f"locality:{support_basis.locality_id}"
         )
         if input_localities != (declared_locality,):
             raise PreservedMaterialMeasurementError(
@@ -893,7 +893,7 @@ def measure_recurrences(
             evidence = _record_yield(
                 yield_in[0],
                 workspace_id=yield_in[1],
-                session_id=yield_in[2],
+                locality_id=yield_in[2],
                 finding=finding,
             )
             witnessed.append(replace(finding, yield_evidence_id=evidence.id))
@@ -902,7 +902,7 @@ def measure_recurrences(
 
 
 def preserved_ingress_occurrences(
-    ledger: EventLedger, *, workspace_id: str, session_id: str
+    ledger: EventLedger, *, workspace_id: str, locality_id: str
 ) -> list[Event]:
     """Every preserved ingress occurrence carrying this locality, in append order.
 
@@ -920,7 +920,7 @@ def preserved_ingress_occurrences(
 
     return [
         event
-        for event in ledger.list_session(workspace_id, session_id)
+        for event in ledger.list_locality(workspace_id, locality_id)
         if event.kind == INGRESS_OCCURRED_KIND
     ]
 
@@ -970,7 +970,7 @@ def measure_occupancy(
 def _measurement_finding_payload(
     *,
     workspace_id: str,
-    session_id: str,
+    locality_id: str,
     finding: MeasurementFinding | RecurrenceFinding,
     extra: dict[str, Any] | None,
 ) -> dict[str, Any]:
@@ -1007,7 +1007,7 @@ def _measurement_finding_payload(
                 "measurement evidence only; establishes no represented relation, relation, "
                 "or standing beyond the measurement assertion"
             ),
-            "scope_locality": f"workspace:{workspace_id};session:{session_id}",
+            "scope_locality": f"workspace:{workspace_id};locality:{locality_id}",
             "occurrence_preservation": "declared measurement durably recorded",
         },
         "mutates_cluster": False,
@@ -1026,7 +1026,7 @@ def record_measurement_findings(
     ledger: EventLedger,
     *,
     workspace_id: str,
-    session_id: str,
+    locality_id: str,
     findings: Iterable[tuple[MeasurementFinding | RecurrenceFinding, dict[str, Any] | None]],
 ) -> list[Event]:
     """Preserve a bounded group of findings in one ledger transaction."""
@@ -1127,11 +1127,11 @@ def record_measurement_findings(
             workspace_id=workspace_id,
             payload=_measurement_finding_payload(
                 workspace_id=workspace_id,
-                session_id=session_id,
+                locality_id=locality_id,
                 finding=finding,
                 extra=extra,
             ),
-            session_id=session_id,
+            locality_id=locality_id,
         )
         for finding, extra in supplied
     ]
@@ -1142,7 +1142,7 @@ def record_measurement_finding(
     ledger: EventLedger,
     *,
     workspace_id: str,
-    session_id: str,
+    locality_id: str,
     finding: MeasurementFinding | RecurrenceFinding,
     extra: dict[str, Any] | None = None,
 ) -> Event:
@@ -1155,7 +1155,7 @@ def record_measurement_finding(
     return record_measurement_findings(
         ledger,
         workspace_id=workspace_id,
-        session_id=session_id,
+        locality_id=locality_id,
         findings=((finding, extra),),
     )[0]
 

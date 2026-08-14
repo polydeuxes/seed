@@ -29,14 +29,14 @@ MATERIAL = "alpha\nexit\nomega\n"
 def _run(escape: bool):
     ledger = EventLedger()
     run_persistent_operator_console(
-        ledger=ledger, workspace_id="w", session_id="s",
+        ledger=ledger, workspace_id="w", locality_id="s",
         input_stream=StringIO(MATERIAL),        # EOF terminates; no trailing exit
         output_stream=StringIO(),
         process_boundary_escape=escape,
     )
     return [
         e.payload["decoded_text"]
-        for e in preserved_ingress_occurrences(ledger, workspace_id="w", session_id="s")
+        for e in preserved_ingress_occurrences(ledger, workspace_id="w", locality_id="s")
     ]
 
 
@@ -52,10 +52,10 @@ def test_a_driven_console_may_preserve_the_token_as_material():
 def test_the_default_is_the_interactive_behaviour():
     ledger = EventLedger()
     run_persistent_operator_console(
-        ledger=ledger, workspace_id="w", session_id="s",
+        ledger=ledger, workspace_id="w", locality_id="s",
         input_stream=StringIO(MATERIAL), output_stream=StringIO())
     assert len(preserved_ingress_occurrences(
-        ledger, workspace_id="w", session_id="s")) == 1
+        ledger, workspace_id="w", locality_id="s")) == 1
 
 
 def test_eof_terminates_either_way():
@@ -63,23 +63,23 @@ def test_eof_terminates_either_way():
     for escape in (True, False):
         ledger = EventLedger()
         run_persistent_operator_console(
-            ledger=ledger, workspace_id="w", session_id="s",
+            ledger=ledger, workspace_id="w", locality_id="s",
             input_stream=StringIO("alpha\n"), output_stream=StringIO(),
             process_boundary_escape=escape)
         assert preserved_ingress_occurrences(
-            ledger, workspace_id="w", session_id="s")
+            ledger, workspace_id="w", locality_id="s")
 
 
 def test_the_material_is_preserved_byte_for_byte():
     """No escaping, no capitalisation, no rewriting of the source."""
     ledger = EventLedger()
     run_persistent_operator_console(
-        ledger=ledger, workspace_id="w", session_id="s",
+        ledger=ledger, workspace_id="w", locality_id="s",
         input_stream=StringIO("exit\nExit\nEXIT\n exit\n"),
         output_stream=StringIO(), process_boundary_escape=False)
     assert [
         e.payload["decoded_text"]
-        for e in preserved_ingress_occurrences(ledger, workspace_id="w", session_id="s")
+        for e in preserved_ingress_occurrences(ledger, workspace_id="w", locality_id="s")
     ] == ["exit\n", "Exit\n", "EXIT\n", " exit\n"]
 
 
@@ -101,7 +101,7 @@ def test_a_console_that_declines_the_escape_does_not_announce_it():
     out = StringIO()
     ledger = EventLedger()
     run_persistent_operator_console(
-        ledger=ledger, workspace_id="w", session_id="s",
+        ledger=ledger, workspace_id="w", locality_id="s",
         input_stream=StringIO(MATERIAL), output_stream=out,
         process_boundary_escape=False)
     assert "`exit` exits" not in out.getvalue()
@@ -111,6 +111,6 @@ def test_the_operator_console_still_announces_it():
     out = StringIO()
     ledger = EventLedger()
     run_persistent_operator_console(
-        ledger=ledger, workspace_id="w", session_id="s",
+        ledger=ledger, workspace_id="w", locality_id="s",
         input_stream=StringIO(MATERIAL), output_stream=out)
     assert "Seed console: `exit` exits." in out.getvalue()

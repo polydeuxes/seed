@@ -71,7 +71,7 @@ def _record_yield_evidence(
     ledger: EventLedger,
     *,
     workspace_id: str,
-    session_id: str | None,
+    locality_id: str | None,
     convention: str,
     yielding_act: str,
     act_occurrence_id: str,
@@ -129,5 +129,5 @@ def _record_yield_evidence(
             "yielded_result_kind": yielded_result_kind,
             "live_boundary": live_boundary,
         },
-        session_id=session_id,
+        locality_id=locality_id,
     )

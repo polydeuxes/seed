@@ -76,7 +76,7 @@ def test_reopened_live_process_allocates_a_new_session(tmp_path):
 
     ledger = SQLiteEventLedger(database)
     try:
-        sessions = {event.session_id for event in ledger.list("local")}
+        sessions = {event.locality_id for event in ledger.list("local")}
     finally:
         ledger.close()
     assert None not in sessions

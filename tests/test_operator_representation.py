@@ -8,7 +8,7 @@ from seed_runtime.operator_representation import (
     record_operator_representation,
     render_operator_representation,
 )
-from seed_runtime.operator_session_standing import read_operator_session_standing
+from seed_runtime.operator_locality_standing import read_operator_locality_standing
 from tests.closed_choice_fixture import CLOSED_CHOICE_FIXTURE_SOURCES
 from seed_runtime.operator_console import run_persistent_operator_console
 
@@ -36,7 +36,7 @@ def _run_console(text, *, workspace="w", session="s"):
     run_persistent_operator_console(
         ledger=ledger,
         workspace_id=workspace,
-        session_id=session,
+        locality_id=session,
         input_stream=StringIO(text),
         output_stream=output,
     )
@@ -52,8 +52,8 @@ def _fixture_representation(ledger, *, workspace="w", session="s"):
     representation = record_operator_representation(
         ledger,
         workspace_id=workspace,
-        session_id=session,
-        session_standing=_standing(ledger, workspace=workspace, session=session),
+        locality_id=session,
+        locality_standing=_standing(ledger, workspace=workspace, session=session),
         alternative_sources=CLOSED_CHOICE_FIXTURE_SOURCES,
     )
     emit_operator_representation(
@@ -63,8 +63,8 @@ def _fixture_representation(ledger, *, workspace="w", session="s"):
 
 
 def _standing(ledger, *, workspace="w", session="s"):
-    return read_operator_session_standing(
-        ledger, workspace_id=workspace, session_id=session
+    return read_operator_locality_standing(
+        ledger, workspace_id=workspace, locality_id=session
     )
 
 
@@ -72,8 +72,8 @@ def _form_and_emit(ledger, *, workspace="w", session="s"):
     representation = record_operator_representation(
         ledger,
         workspace_id=workspace,
-        session_id=session,
-        session_standing=_standing(ledger, workspace=workspace, session=session),
+        locality_id=session,
+        locality_standing=_standing(ledger, workspace=workspace, session=session),
         alternative_sources=CLOSED_CHOICE_FIXTURE_SOURCES,
     )
     return emit_operator_representation(
@@ -114,7 +114,7 @@ def test_console_forms_c0_before_first_ingress_and_preserves_provenance_only():
         for event in ledger.list("w")
         if event.kind == "operator.representation.emitted"
     )
-    assert c0_formed.payload["session_standing_as_of_event_id"] is None
+    assert c0_formed.payload["locality_standing_as_of_event_id"] is None
     assert c0_formed.payload["prior_exchange_finding"] is None
     assert c0_formed.payload["represented_relation"] is None
     assert c0_formed.payload["unknowns"] == []
@@ -165,14 +165,14 @@ def test_c0_presents_standing_with_no_developer_semantics():
     ledger = EventLedger()
     standing = _standing(ledger)
     c0 = record_operator_representation(
-        ledger, workspace_id="w", session_id="s", session_standing=standing
+        ledger, workspace_id="w", locality_id="s", locality_standing=standing
     )
     emit_operator_representation(ledger, representation=c0, output_stream=StringIO())
 
     # Empty Standing is legitimately input: the representation Act occurred and
     # recorded what it input, rather than being skipped.
     payload = ledger.get(c0["representation_event_id"]).payload
-    assert payload["session_standing_as_of_event_id"] is None
+    assert payload["locality_standing_as_of_event_id"] is None
     assert payload["prior_exchange_finding"] is None
     assert payload["represented_relation"] is None
     assert payload["unknowns"] == []
@@ -199,7 +199,7 @@ def test_representation_act_dimensions_record_only_coordinates_that_exist():
     standing = _standing(ledger)
 
     zero = record_operator_representation(
-        ledger, workspace_id="w", session_id="s", session_standing=standing
+        ledger, workspace_id="w", locality_id="s", locality_standing=standing
     )
     dimensions = ledger.get(zero["representation_event_id"]).payload["dimensions"]
     assert dimensions["content"] == (
@@ -224,8 +224,8 @@ def test_representation_act_dimensions_record_only_coordinates_that_exist():
     explicit = record_operator_representation(
         ledger,
         workspace_id="w",
-        session_id="s",
-        session_standing=standing,
+        locality_id="s",
+        locality_standing=standing,
         alternative_sources=CLOSED_CHOICE_FIXTURE_SOURCES,
     )
     # Exact alternative coordinates are recorded because they exist. The
@@ -279,7 +279,7 @@ def test_console_presents_standing_only_across_an_ingress():
     # C1's Standing was taken through the last event recorded before it,
     # C0's own representation Act and emission included.
     assert (
-        c1.payload["session_standing_as_of_event_id"] == ingress.id
+        c1.payload["locality_standing_as_of_event_id"] == ingress.id
     )
     assert c0.payload["alternatives"] == [] and c1.payload["alternatives"] == []
     assert "yielded_after_representation_ref" not in ingress.payload
@@ -315,7 +315,7 @@ def test_alternatives_carry_complete_coordinates_and_provenance_evidence():
     representation_record = list(standing["representations"].values())[-1]
     assert representation_record is not None
     assert representation_record["representation_result"]
-    assert representation_record["scope"] == "workspace:w;session:s"
+    assert representation_record["scope"] == "workspace:w;locality:s"
     # provenance is the input Standing's as-of boundary; None here is the
     # recorded absence of prior session events, not a fabricated Unknown.
     assert "provenance" in representation_record
@@ -328,7 +328,7 @@ def test_alternatives_carry_complete_coordinates_and_provenance_evidence():
     assert representation_record["conflicts"] == []
     # Absent for a representation Act from empty Standing: recorded absence of a prior
     # input occurrence, not absence of participation.
-    assert representation_record["session_standing_as_of_event_id"] is None
+    assert representation_record["locality_standing_as_of_event_id"] is None
     assert len(representation_record["alternatives"]) == 3
     representation_results = set()
     for alternative in representation_record["alternatives"]:
@@ -346,7 +346,7 @@ def test_alternatives_carry_complete_coordinates_and_provenance_evidence():
         relation_coordinates = alternative["representation"]
         assert relation_coordinates["representation_result"]
         representation_results.add(relation_coordinates["representation_result"])
-        assert relation_coordinates["scope"] == "workspace:w;session:s"
+        assert relation_coordinates["scope"] == "workspace:w;locality:s"
         assert relation_coordinates["provenance"] == source["reference"]
         assert relation_coordinates["evidence_event_ids"] == []
         assert relation_coordinates["known_loss"]
@@ -390,7 +390,7 @@ def test_representation_representation_is_deterministic_under_unrelated_events()
     _form_and_emit(ledger)
     before = _standing(ledger)
 
-    ledger.append("unrelated.kind", "w", {"noise": True}, session_id="s")
+    ledger.append("unrelated.kind", "w", {"noise": True}, locality_id="s")
     _form_and_emit(ledger, session="elsewhere")
     after = _standing(ledger)
 
@@ -423,7 +423,7 @@ def test_next_console_iteration_validates_c1_and_forms_c2():
     positions = {
         event.id: index for index, event in enumerate(console_ledger.list("w"))
     }
-    boundary = positions[c2["session_standing_as_of_event_id"]]
+    boundary = positions[c2["locality_standing_as_of_event_id"]]
     assert positions[c1["representation_event_id"]] < boundary
     assert positions[c1["emitted_event_id"]] < boundary
     # The represented source candidates keep stable exact identities
@@ -466,8 +466,8 @@ def test_representation_act_is_recorded_before_emission_and_they_stay_distinct()
     representation = record_operator_representation(
         ledger,
         workspace_id="w",
-        session_id="s",
-        session_standing=_standing(ledger),
+        locality_id="s",
+        locality_standing=_standing(ledger),
         alternative_sources=CLOSED_CHOICE_FIXTURE_SOURCES,
     )
     assert representation["emitted_event_id"] is None
@@ -514,8 +514,8 @@ def test_emission_preserves_the_exact_text_written_to_its_boundary():
     representation = record_operator_representation(
         ledger,
         workspace_id="w",
-        session_id="s",
-        session_standing=_standing(ledger),
+        locality_id="s",
+        locality_standing=_standing(ledger),
         alternative_sources=CLOSED_CHOICE_FIXTURE_SOURCES,
     )
     output = StringIO()
@@ -581,8 +581,8 @@ def test_partial_output_write_preserves_attempt_and_failed_occurrences():
     representation = record_operator_representation(
         ledger,
         workspace_id="w",
-        session_id="s",
-        session_standing=_standing(ledger),
+        locality_id="s",
+        locality_standing=_standing(ledger),
     )
 
     with pytest.raises(
@@ -619,8 +619,8 @@ def test_write_exception_preserves_unknown_boundary_acceptance():
     representation = record_operator_representation(
         ledger,
         workspace_id="w",
-        session_id="s",
-        session_standing=_standing(ledger),
+        locality_id="s",
+        locality_standing=_standing(ledger),
     )
     output = WriteFailure()
 
@@ -649,8 +649,8 @@ def test_flush_failure_does_not_erase_the_completed_text_stream_write():
     representation = record_operator_representation(
         ledger,
         workspace_id="w",
-        session_id="s",
-        session_standing=_standing(ledger),
+        locality_id="s",
+        locality_standing=_standing(ledger),
     )
 
     with pytest.raises(OSError, match="flush failed"):
@@ -687,8 +687,8 @@ def test_process_death_after_attempt_leaves_output_outcome_unknown():
     representation = record_operator_representation(
         ledger,
         workspace_id="w",
-        session_id="s",
-        session_standing=_standing(ledger),
+        locality_id="s",
+        locality_standing=_standing(ledger),
     )
 
     with pytest.raises(SimulatedProcessDeath):
