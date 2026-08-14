@@ -20,11 +20,30 @@ def _assert_structural_edge_clauses(grammar: dict, active_book: str) -> None:
         assert active_book.count(f"### {clause} ") == 1
 
 
-def test_machine_readable_grammar_uses_responsibility_spine():
+def test_machine_readable_grammar_traverses_responsibility_from_standing():
     grammar = json.loads(GRAMMAR.read_text(encoding="utf-8"))
 
-    assert grammar["version"] == 2
-    assert grammar["spine"] == "Responsibility"
+    assert grammar["version"] == 3
+    assert grammar["spine"] == {
+        "root": "Standing",
+        "path": [
+            "Standing",
+            "Responsibility",
+            "exact_Act",
+            "Act_occurrence",
+            "result",
+            "Standing",
+        ],
+        "responsibility_assignment_subject": (
+            "responsible_boundary_bears_Responsibility"
+        ),
+        "assignment_requires": "current_Standing",
+        "does_not_establish": [
+            "Responsibility_by_identity",
+            "Responsibility_occurrence",
+            "result_Standing_revision",
+        ],
+    }
     assert grammar["implementation_witness"]["discriminators"] == [
         "content",
         "locality",

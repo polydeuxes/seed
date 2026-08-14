@@ -1,6 +1,23 @@
 {
-  "version": 2,
-  "spine": "Responsibility",
+  "version": 3,
+  "spine": {
+    "root": "Standing",
+    "path": [
+      "Standing",
+      "Responsibility",
+      "exact_Act",
+      "Act_occurrence",
+      "result",
+      "Standing"
+    ],
+    "responsibility_assignment_subject": "responsible_boundary_bears_Responsibility",
+    "assignment_requires": "current_Standing",
+    "does_not_establish": [
+      "Responsibility_by_identity",
+      "Responsibility_occurrence",
+      "result_Standing_revision"
+    ]
+  },
   "fidelity": {
     "book_clause": "01.Source.C",
     "subject": "this_Seed",
@@ -179,6 +196,7 @@
       "responsibility": {
         "coordinates": [
           "Responsibility",
+          "Responsibility_assignment_Standing",
           "responsible_boundary",
           "exact_Act",
           "Act_occurrence",

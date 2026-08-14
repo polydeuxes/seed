@@ -729,6 +729,7 @@ def test_locality_movement_assignment_is_earned_from_the_exact_source():
 
     assert assignment == {
         "responsible_boundary": "this Seed",
+        "standing": "assigned",
         "workspace_id": "w",
         "source_assertion_ref": movement.payload["source_assertion_ref"],
         "source_locality": "byte-measurement",

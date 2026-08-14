@@ -11,6 +11,8 @@ A preserved representation or record may carry an Assertion made by another Resp
 
 This Seed carries only Standing it can warrant through its Evidence, Authority, Scope, and preserved limits. This is a constitutional bound, not a Responsibility assignment shared across exact Responsibilities; each exact Responsibility assignment retains its own responsible boundary, Act, Evidence, Authority, Scope, and limits.
 
+Seed may read a Responsibility only through current Standing concerning the exact Assertion that its responsible boundary bears that Responsibility. The assignment Assertion retains its own Evidence, Authority, Scope, limits, occurrence, and Standing. Responsibility != Standing; Standing concerning an assignment does not create, perform, or become the Responsibility.
+
 
 ## Addressable boundaries for availability and reachability
 

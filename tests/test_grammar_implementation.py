@@ -1696,6 +1696,7 @@ def _assert_structural_edge_anatomy(grammar: dict, specs: dict[str, dict]) -> No
 def _act_occurrence_witness(bundle: dict) -> dict[str, str]:
     carrier = bundle["carrier"]
     act_evidence = bundle["act_evidence"]
+    assignment = carrier.payload["responsibility_assignment_evidence"]
     joined = (
         act_evidence is not None
         and carrier.payload["downstream_act_id"]
@@ -1706,10 +1707,14 @@ def _act_occurrence_witness(bundle: dict) -> dict[str, str]:
         == act_evidence.payload["responsibility"]
         and carrier.payload["responsible_boundary"]
         == act_evidence.payload["responsible_boundary"]
+        and assignment
+        == act_evidence.payload.get("responsibility_assignment_evidence")
     )
-    assignment = carrier.payload["responsibility_assignment_evidence"]
     return {
         "Responsibility": EXACT if joined else MISSING,
+        "Responsibility_assignment_Standing": (
+            EXACT if joined and assignment.get("standing") == "assigned" else MISSING
+        ),
         "responsible_boundary": EXACT if joined else MISSING,
         "exact_Act": EXACT if joined else MISSING,
         "Act_occurrence": EXACT if joined else MISSING,
@@ -2773,6 +2778,23 @@ def test_act_and_occurrence_ids_do_not_establish_their_relation():
     assert witness["exact_Act"] == MISSING
     assert witness["Act_occurrence"] == MISSING
     assert witness["occurrence_Evidence"] == MISSING
+
+
+def test_responsibility_coordinates_do_not_establish_assignment_standing():
+    bundle = _byte_measurement_road()
+    assignment = dict(
+        bundle["carrier"].payload["responsibility_assignment_evidence"]
+    )
+    assignment.pop("standing")
+    bundle["carrier"].payload["responsibility_assignment_evidence"] = assignment
+    bundle["act_evidence"].payload["responsibility_assignment_evidence"] = dict(
+        assignment
+    )
+
+    witness = _act_occurrence_witness(bundle)
+    assert witness["Responsibility"] == EXACT
+    assert witness["responsible_boundary"] == EXACT
+    assert witness["Responsibility_assignment_Standing"] == MISSING
 
 
 def test_runtime_uses_yield_only_for_the_occurrence_to_result_edge():

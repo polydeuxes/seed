@@ -12,13 +12,28 @@ It is not a roadmap, API reference, generated topology, or substitute for reposi
 
 The [concordance](concordance.md) is a navigation aid, not an ontology.
 
-[`grammar.json`](grammar.json) carries machine-readable clause coordinates used
-by tests. Tests validate that grammar rather than freezing explanatory prose.
-The Markdown chapters explain and orient the same clauses.
+[`grammar.json`](grammar.json) is the machine representation of clause coordinates used
+by tests. The Markdown chapters are the explanatory representation of the same
+grammar. Neither representation is the Book by identity.
+
+## Standing
+
+Standing is the Book's reading root. Seed may read an exact Responsibility assignment only through current Standing concerning the Assertion that the exact responsible boundary bears that Responsibility. Standing does not create, perform, or become the Responsibility by identity.
+
+```text
+Standing
+→ Responsibility
+→ exact Act
+→ Act occurrence
+→ result
+→ Standing
+```
+
+The later Standing concerns the exact result or relation of the occurrence under Yield Evidence. It does not revise the Standing that admitted the Responsibility assignment unless a separate responsible occurrence establishes that change.
 
 ## Responsibility
 
-1. Responsibility is the Book's representation and traversal root for reading each exact responsibility and the branches it instantiates.
+1. Responsibility is the first branch read from current Standing concerning its exact assignment.
 2. The headings beneath it expose coordinates and relations; they do not change Responsibility assignments.
 3. Every instantiated responsibility must expose the branches required by that responsibility.
 4. A conditional branch remains uninstantiated until a responsible occurrence supplies its coordinate.
@@ -223,7 +238,7 @@ Stopping
 != relation by identity
 ```
 
-The Responsibility hierarchy is the Book's representation and traversal structure. It does not create a new constitutional kind, change Responsibility assignments, require one populated shape across exact Responsibilities, or replace the exact grammar of the chapters.
+The Standing-to-Responsibility hierarchy is the Book's reading structure. It does not create a new constitutional kind, change Responsibility assignments, require one populated shape across exact Responsibilities, or replace the exact grammar of the chapters.
 
 ```text
 structural branch present != branch value established

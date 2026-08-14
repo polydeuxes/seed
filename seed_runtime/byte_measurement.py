@@ -303,6 +303,7 @@ def _seed_native_measurement_assignment(
 
     return {
         "responsible_boundary": SEED_NATIVE_MEASUREMENT_RESPONSIBLE_BOUNDARY,
+        "standing": "assigned",
         "workspace_id": measured.workspace_id,
         "source_occurrence_refs": [dict(item) for item in measured.source_material],
         "completeness_boundary": measured.completeness_boundary.commitment,
@@ -676,6 +677,7 @@ def _move_byte_assertion_to_locality(
     payload = source.payload
     assignment_evidence = {
         "responsible_boundary": SEED_NATIVE_MEASUREMENT_RESPONSIBLE_BOUNDARY,
+        "standing": "assigned",
         "workspace_id": destination_workspace_id,
         "source_assertion_ref": source.reference,
         "source_locality": source_locality,
@@ -789,6 +791,7 @@ def _validate_moved_byte_assertion(
         "responsible_boundary": SEED_NATIVE_MEASUREMENT_RESPONSIBLE_BOUNDARY,
         "responsibility_assignment_evidence": {
             "responsible_boundary": SEED_NATIVE_MEASUREMENT_RESPONSIBLE_BOUNDARY,
+            "standing": "assigned",
             "workspace_id": movement.workspace_id,
             "source_assertion_ref": source.reference,
             "source_locality": source_event.locality_id,
@@ -2085,6 +2088,7 @@ def assertions_of_recorded_adjacent_byte_pair_measurement(
     source_content = source_payload["dimensions"]["content"]
     expected_assignment_evidence = {
         "responsible_boundary": SEED_NATIVE_MEASUREMENT_RESPONSIBLE_BOUNDARY,
+        "standing": "assigned",
         "workspace_id": source_scope["workspace_id"],
         "source_occurrence_refs": source_content["source_material"],
         "completeness_boundary": source_content["completeness_boundary"][

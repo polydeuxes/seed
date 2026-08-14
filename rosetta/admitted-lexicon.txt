@@ -365,7 +365,6 @@ expanding
 expansion
 expectation
 expiry
-explain
 explanation
 explanatory
 explicit
@@ -407,7 +406,6 @@ forget
 form
 formed
 forms
-freezing
 freshness
 from
 function
@@ -639,7 +637,6 @@ ordered
 ordering
 ordinarily
 ordinary
-orient
 orients
 origin
 original
@@ -719,7 +716,6 @@ proof
 proposal
 proposed
 proposition
-prose
 prove
 proven
 provenance
@@ -742,7 +738,6 @@ re
 reachability
 reachable
 read
-readable
 reading
 reality
 realization
@@ -973,7 +968,6 @@ transit
 transition
 transport
 travels
-traversal
 treating
 treatment
 true
