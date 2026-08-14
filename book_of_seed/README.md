@@ -161,7 +161,7 @@ Act occurrence
 
 #### Standing-occurrence evidence
 
-Identifies the evidence supporting the standing-establishment occurrence. Artifact existence, construction, recording, projection, or visibility does not establish standing by identity.
+Identifies the Evidence supporting the Standing-establishment occurrence. Representation existence, formation, recording, or visibility does not establish Standing by identity.
 
 #### Established standing
 

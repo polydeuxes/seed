@@ -132,6 +132,13 @@ identity, Responsibility, Act, occurrence, Evidence, Authority, Scope, or
 Standing coordinate. Stronger Standing does not turn an Assertion into another
 constitutional kind.
 
+## Artifact
+
+`Artifact` is ordinary shorthand for a representation, record, Assertion, or
+result preserved by an exact occurrence. The exact kind must be named because
+each carries different identity, Evidence, Authority, Scope, and Standing.
+Artifact adds no container subject or constitutional coordinate.
+
 ## Lineage
 
 `Lineage` is ordinary shorthand for an addressable representation of where

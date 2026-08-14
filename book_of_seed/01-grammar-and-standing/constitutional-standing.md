@@ -4,7 +4,7 @@
 The difference between representing a constitutional subject and possessing the standing of that subject.
 
 ## Core question
-Which kinds are constitutionally recognized, and what establishes an artifact's standing as one of them?
+Which kinds are constitutionally recognized, and what establishes a representation's Standing as one of them?
 
 ## Bounded resolution
 A preserved representation or record may carry an Assertion made by another Responsibility. Its shape may preserve identity, provenance, result, uncertainty, and boundaries; it does not establish that its Evidence, Authority, Scope, provenance, and limits support the Assertion. That relation requires its own Assertion and Standing.
@@ -18,7 +18,7 @@ This Seed carries only Standing it can warrant through its Evidence, Authority, 
 A result, preserved record, rendering, index entry, or otherwise reachable material may become locally visible to a bounded exact Act, observer, diagnostic, projection, or later inquiry without becoming accepted, admitted, supported, projected as truth, written to the event ledger, or authorized for mutation. Reachability can create a lawful possibility for a later act, but acceptance, input support, admission, projection, recording, and implementation action remain separate family-local boundaries.
 
 ### 01.Standing.B — Constitutional kind labels are not ontology closure
-A kind label, artifact form, characterization category, dataclass name, concordance entry, inventory row, or recurring report type may preserve a bounded Standing distinction for the subject and exact Act it names. It does not close Seed's constitutional ontology, make similarly named material equivalent, establish mandatory grammar, or supply Authority for the exact Act without preserved Evidence, provenance, Scope, Unknowns, and the applicable occurrence boundary.
+A kind label, representation form, characterization category, dataclass name, concordance entry, inventory row, or recurring report type may preserve a bounded Standing distinction for the subject and exact Act it names. It does not close Seed's constitutional ontology, make similarly named material equivalent, establish mandatory grammar, or supply Authority for the exact Act without preserved Evidence, provenance, Scope, Unknowns, and the applicable occurrence boundary.
 
 ### 01.Standing.C — Constructed behavior does not confer standing
 Compiled behavior, direct instantiation, stable serialization, and compatibility Evidence may witness what an observer, projection, adapter, or other mechanism does within a bounded implementation seam. They do not establish the Standing suggested by a name, output vocabulary, or observed behavior. Such Standing still requires its own subject, responsible occurrence, Evidence, Scope, Authority, and limits.
@@ -76,7 +76,7 @@ Seed commonly orients exact constitutional subjects and relations through approx
 7. scope / locality
 8. occurrence / preservation
 
-These families are broad constitutional questions, not mandatory fields or one universal artifact schema. Dimension != field, value, constitutional kind, subject-family registry, or implementation key. The paired labels are bounded compressions of neighboring concerns, not declarations that every pair is one indivisible scalar: standing is recurrent and cross-cutting; occurrence and preservation are related but independently variable; source and provenance are neighboring but not equivalent; and authority and support are neighboring but not equivalent. Approximately eight macro-dimensional families != exactly eight constitutional fields; this orientation is neither mathematically final nor closed.
+These families are broad constitutional questions, not mandatory fields or one universal representation schema. Dimension != field, value, constitutional kind, subject-family registry, or implementation key. The paired labels are bounded compressions of neighboring concerns, not declarations that every pair is one indivisible scalar: standing is recurrent and cross-cutting; occurrence and preservation are related but independently variable; source and provenance are neighboring but not equivalent; and authority and support are neighboring but not equivalent. Approximately eight macro-dimensional families != exactly eight constitutional fields; this orientation is neither mathematically final nor closed.
 
 Macro-dimensional families unfold into local coordinates under the exact subject, question, Act, Responsibility, result boundary, Scope, and Evidence boundary. The Book establishes no fixed coordinate count, registry, universal completeness requirement, or mandatory serialization schema. A coordinate may be applicable, inapplicable, known, **Unknown**, conflicting, or unresolved within that boundary.
 
@@ -87,8 +87,8 @@ Acts, constraints, and relations are structurally distinct from dimensions. They
 ## Important distinctions
 - occurrence Evidence may be local to an Act or observing boundary and absent from the result
 - represented provenance != verified result occurrence
-- artifact representation != constitutional standing
-- artifact shape != constitutional kind
+- representation != constitutional standing
+- representation shape != constitutional kind
 - schema validity != lawful provenance
 - public visibility != constitutional status
 - preserved assertion != support for the assertion
@@ -115,7 +115,7 @@ Acts, constraints, and relations are structurally distinct from dimensions. They
 - `seed_runtime/inquiry_artifacts.py::InquiryArtifactVisibility`
 
 ## Counterexamples or failure modes
-- Calling any serialized dictionary a constitutional artifact.
+- Calling any serialized dictionary a constitutional subject.
 - Inferring standing solely from a public export.
 
 ## Related chapters

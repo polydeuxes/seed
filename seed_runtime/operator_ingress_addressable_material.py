@@ -81,7 +81,7 @@ def operator_material_full_span_id(*, ingress_event_ref: str, exact_text: str) -
 
 @dataclass(frozen=True)
 class OperatorIngressAddressableMaterial:
-    artifact_type: str
+    representation_kind: str
     material_projection_id: str
     ingress_event_ref: str
     raw_material_event_ref: str
@@ -102,8 +102,8 @@ class OperatorIngressAddressableMaterial:
         self._validate_intrinsic_invariants()
 
     def _validate_intrinsic_invariants(self) -> None:
-        if self.artifact_type != "operator_ingress_addressable_material":
-            _refuse("wrong addressable material artifact_type")
+        if self.representation_kind != "operator_ingress_addressable_material":
+            _refuse("wrong addressable material representation_kind")
         for name in (
             "material_projection_id",
             "ingress_event_ref",
@@ -180,7 +180,7 @@ class OperatorIngressAddressableMaterial:
     def from_json_dict(
         cls, value: dict[str, object]
     ) -> OperatorIngressAddressableMaterial:
-        """Reconstruct the frozen artifact from its projection representation."""
+        """Reconstruct the frozen material from its projection representation."""
         if not isinstance(value, dict):
             _refuse("addressable material must be an object")
         material_value = value.get("exact_operator_material")
@@ -221,7 +221,7 @@ class OperatorIngressAddressableMaterial:
             ),
         )
         return cls(
-            artifact_type=_exact_string(value.get("artifact_type"), "artifact_type"),
+            representation_kind=_exact_string(value.get("representation_kind"), "representation_kind"),
             material_projection_id=_exact_string(
                 value.get("material_projection_id"), "material_projection_id"
             ),
@@ -301,12 +301,12 @@ def _intrinsic_int(value: object, name: str) -> None:
 
 
 def validate_operator_ingress_addressable_material(
-    artifact: OperatorIngressAddressableMaterial,
+    material: OperatorIngressAddressableMaterial,
 ) -> None:
-    """Validate the complete frozen artifact without consulting the ledger."""
-    if not isinstance(artifact, OperatorIngressAddressableMaterial):
-        _refuse("artifact must be OperatorIngressAddressableMaterial")
-    artifact._validate_intrinsic_invariants()
+    """Validate the complete frozen material without consulting the ledger."""
+    if not isinstance(material, OperatorIngressAddressableMaterial):
+        _refuse("material must be OperatorIngressAddressableMaterial")
+    material._validate_intrinsic_invariants()
 
 
 def form_operator_ingress_addressable_material(
@@ -382,7 +382,7 @@ def form_operator_ingress_addressable_material(
     )
     projection_id = addressable_material_projection_id(exact_material)
     return OperatorIngressAddressableMaterial(
-        artifact_type="operator_ingress_addressable_material",
+        representation_kind="operator_ingress_addressable_material",
         material_projection_id=projection_id,
         ingress_event_ref=ingress_occurrence.id,
         raw_material_event_ref=raw.id,

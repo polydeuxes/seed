@@ -14,7 +14,7 @@ the universal owner the reconstruction says does not exist.
 **What it has as input is what Seed recorded.** The inputs are recorded measurement
 findings. The pair findings used in the corpus experiments are computed in
 experiment code and never recorded; a comparison over those would have as input an
-artifact Seed does not hold.
+result Seed does not hold.
 
 **What it produces is distinctions, and a relation only where one is
 established.** Two measurements over different bounded exchanges are not in

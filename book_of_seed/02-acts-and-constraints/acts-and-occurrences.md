@@ -1,10 +1,10 @@
 # Acts and Occurrences
 
 ## Constitutional subject
-The classification of acts and the artifacts that report, propose, or preserve them.
+The distinction between exact Acts, their occurrences, and representations concerning them.
 
 ## Core question
-What establishes that an act occurred rather than that an act-shaped artifact exists?
+What establishes that an Act occurred rather than that an Act-shaped representation exists?
 
 ## Bounded resolution
 Validation of an Act-shaped result does not establish the Act occurrence. A downstream boundary may adopt, narrow, compare, or preserve attributed material without proving the upstream Act occurred unless its own Assertion requires that proof. Exact applicable inputs may participate in an Act occurrence, which may establish or preserve an exact result. The occurrence-to-result relation requires Evidence. Public code, direct instantiation, equal shape, and read-only behavior establish neither that occurrence nor its relation to the result.
@@ -15,7 +15,7 @@ A Responsibility bounds what Standing may be established, preserved, or revised 
 - boundary invocation != assertion-bearing branch != result construction != external effect
 - successful return != every asserted effect occurred
 - failed act != no occurrence automatically
-- act != artifact describing an act
+- Act != representation describing an Act
 - classification of language != occurrence of the classified act
 - proposal != occurrence
 - intent classification != enactment
@@ -27,7 +27,7 @@ A Responsibility bounds what Standing may be established, preserved, or revised 
 - Act occurrence-to-result relation != Assertion truth
 
 ## Counterexamples or failure modes
-- Treating a proposed, requested, or contemplated act artifact as evidence that a mechanism ran.
+- Treating a representation concerning a proposed, requested, or contemplated Act as Evidence that a mechanism ran.
 - Treating classified operator language as the requested act itself.
 - Treating direct construction of a selection result as evidence that exact focus evidence was validated.
 

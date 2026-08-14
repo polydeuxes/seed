@@ -7,7 +7,7 @@ The boundary between a selection record and the bounded act that chooses from a 
 What evidence proves that a lawful selection occurred for a particular candidate set?
 
 ## Bounded resolution
-A bounded candidate set and a selection basis supported by evidence or exact comparison participate in a selection Act, validates the identity and applicability required by that owner, and chooses zero or more candidates or preserves a lawful non-selection. Its artifact asserts that bounded result and preserves the identity, uncertainty, evidence, limits, and basis required for the intended Act to distinguish lawful non-selection from omission. Preservation of all non-selected alternatives is selector-specific: representation selection may require only selected registered names plus unsupported-key uncertainty. Direct construction proves only artifact constructibility. Selection does not itself establish Authorization, act occurrence, or open inquiry, or establish every downstream subject unless the responsible boundary explicitly does so.
+A bounded candidate set and a selection basis supported by Evidence or exact Compare participate in a Selection Act. The Act validates the identity and Applicability required by its Responsibility, then chooses zero or more candidates or establishes a bounded non-selection. Its result Assertion preserves the identity, uncertainty, Evidence, limits, and basis needed to distinguish non-selection from omission. Preservation of every non-selected alternative depends on the exact Selection Act: representation selection may require only selected registered names plus unsupported-key uncertainty. Direct representation formation proves only that the representation exists. Selection does not itself establish Authorization, another Act occurrence, open inquiry, or every downstream subject.
 
 Candidate-identity resolution is not itself a Selection Act. A resolver may compare attributed material with a bounded candidate set and establish that exactly one candidate identity matches. That occurrence does not establish a Selection occurrence, responsible boundary, Selection basis, addressed Act or result boundary, Applicability, or later movement.
 
@@ -16,15 +16,15 @@ Selection-to-exact Act participation is not singular. An exact Act may adopt sel
 Repository Evidence supports distinct Selection forms. Representation selection may choose registered names by exact deterministic keys for one formation Act. Other Selection Acts retain their own candidate sets and downstream limits. Shared vocabulary does not collapse them into one Act kind.
 
 ## Important distinctions
-- selection artifact != act of selection
+- selection result Assertion != Selection Act
 - candidate identity resolved != candidate selected
 - ranked candidate != selected candidate
 - selection record != authorization
 - selection != act occurrence or Authorization
 - selected candidate identity != candidate-set identity
 - selected result != preserved selection basis
-- artifact preservation != act-local validation
-- exact Act accepts artifact type != every Assertion in it supports that Act's result
+- result preservation != Act-local validation
+- exact Act accepts a representation kind != every Assertion in it supports that Act's result
 - selection standing != authorization standing
 - exact deterministic comparison != semantic judgment
 - candidate eligibility != selection
@@ -39,8 +39,8 @@ Repository Evidence supports distinct Selection forms. Representation selection 
 ## Counterexamples or failure modes
 - Taking the first displayed candidate as selected.
 - Treating exact candidate-identity resolution as proof of a Seed-owned selection act.
-- Reusing a selection artifact against a different candidate set.
-- Reusing a representation-selection artifact as if it established authorization or movement for another Act.
+- Reusing a selection result against a different candidate set.
+- Reusing a representation-selection result as if it established authorization or movement for another Act.
 - Treating omitted non-selected alternatives as invalidating a selector whose intended Act does not require them.
 - Treating preserved non-selected alternatives as completing the responsible occurrence Evidence when identity, basis, or exact Act validation is still missing.
 

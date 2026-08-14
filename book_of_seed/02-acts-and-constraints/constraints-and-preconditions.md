@@ -28,7 +28,7 @@ An access condition, visible route, available representation, mechanism candidat
 - Treating a local precondition finding as proof that the governed act occurred.
 
 ## Related chapters
-- [Acts and act artifacts](acts-and-act-artifacts.md)
+- [Acts and occurrences](acts-and-occurrences.md)
 - [Selection and authorization](../03-goals-and-advancement/selection-and-authorization.md)
 - [Stopping and completion](../08-authority-communication-and-stopping/stopping-and-completion.md)
 

@@ -2,6 +2,6 @@
 
 This Book concerns acts, their representations, and the constraints that govern whether acts may proceed.
 
-- [Acts and act artifacts](acts-and-act-artifacts.md)
+- [Acts and occurrences](acts-and-occurrences.md)
 - [Constraints and preconditions](constraints-and-preconditions.md)
-- [Selection artifacts and acts of selection](selection-artifacts-and-selection-acts.md)
+- [Selection and acts of selection](selection-and-selection-acts.md)

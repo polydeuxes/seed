@@ -7,7 +7,7 @@ from typing import BinaryIO, TextIO
 
 
 class OperatorIngressRepresentationError(ValueError):
-    """An operator-ingress representation artifact or metadata is malformed."""
+    """An operator-ingress representation or metadata is malformed."""
 
 
 @dataclass(frozen=True)
