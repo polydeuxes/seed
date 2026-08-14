@@ -254,6 +254,14 @@ def _repeated_emission_attempt_road() -> tuple[dict, dict]:
     first_evidence = ledger.get(
         representation["emission_attempt_carriage_evidence_id"]
     )
+    first_carrier = ledger.get(representation["emitted_event_id"])
+    first_act_evidence = ledger.get(
+        first_carrier.payload["responsible_act_evidence_id"]
+    )
+    first_carriage_evidence = ledger.get(
+        first_carrier.payload["carriage_evidence_id"]
+    )
+    first_yield_evidence = ledger.get(first_carrier.payload["yield_evidence_id"])
     emit_operator_representation(
         ledger,
         representation=representation,
@@ -263,16 +271,32 @@ def _repeated_emission_attempt_road() -> tuple[dict, dict]:
     second_evidence = ledger.get(
         representation["emission_attempt_carriage_evidence_id"]
     )
+    second_carrier = ledger.get(representation["emitted_event_id"])
+    second_act_evidence = ledger.get(
+        second_carrier.payload["responsible_act_evidence_id"]
+    )
+    second_carriage_evidence = ledger.get(
+        second_carrier.payload["carriage_evidence_id"]
+    )
+    second_yield_evidence = ledger.get(second_carrier.payload["yield_evidence_id"])
     return (
         {
             "ledger": ledger,
             "attempt": first_attempt,
             "attempt_carriage_evidence": first_evidence,
+            "carrier": first_carrier,
+            "act_evidence": first_act_evidence,
+            "carriage_evidence": first_carriage_evidence,
+            "content_evidence": first_yield_evidence,
         },
         {
             "ledger": ledger,
             "attempt": second_attempt,
             "attempt_carriage_evidence": second_evidence,
+            "carrier": second_carrier,
+            "act_evidence": second_act_evidence,
+            "carriage_evidence": second_carriage_evidence,
+            "content_evidence": second_yield_evidence,
         },
     )
 
@@ -419,16 +443,20 @@ def _applicability_witness(bundle: dict) -> dict[str, str]:
 
 
 def _occurrence_result_witness(bundle: dict) -> str:
+    requirements = _occurrence_result_requirements(bundle)
+    return EXACT if all(requirements.values()) else MISSING
+
+
+def _occurrence_result_requirements(bundle: dict) -> dict[str, bool]:
     carrier = bundle["carrier"]
     act_evidence = bundle["act_evidence"]
     content_evidence = bundle["content_evidence"]
     if act_evidence is None or content_evidence is None:
-        return MISSING
-    if (
-        bundle["ledger"].integrity_of(act_evidence.id) == CORRUPTED
-        or bundle["ledger"].integrity_of(content_evidence.id) == CORRUPTED
-    ):
-        return MISSING
+        return {
+            "exact_relation": False,
+            "occurrence_witness": False,
+            "intact_evidence": False,
+        }
     same_occurrence = carrier.payload.get("act_occurrence_id") == (
         act_evidence.payload.get("act_occurrence_id")
     ) == content_evidence.payload.get("dimensions", {}).get("act_occurrence_id")
@@ -436,7 +464,15 @@ def _occurrence_result_witness(bundle: dict) -> str:
     if not isinstance(yield_coordinates, list) or not all(
         isinstance(key, str) and key in carrier.payload for key in yield_coordinates
     ):
-        return MISSING
+        return {
+            "exact_relation": False,
+            "occurrence_witness": same_occurrence,
+            "intact_evidence": (
+                bundle["ledger"].integrity_of(act_evidence.id) != CORRUPTED
+                and bundle["ledger"].integrity_of(content_evidence.id)
+                != CORRUPTED
+            ),
+        }
     actual_result = {key: carrier.payload[key] for key in yield_coordinates}
     actual_commitment = yield_commitment(
         content_evidence.payload.get("yield_convention"), actual_result
@@ -450,16 +486,30 @@ def _occurrence_result_witness(bundle: dict) -> str:
         carrier.payload.get("responsible_act_evidence_id") == act_evidence.id
         and carrier.payload.get("yield_evidence_id") == content_evidence.id
     )
-    return EXACT if same_occurrence and same_result and evidence_is_carried else MISSING
+    return {
+        "exact_relation": same_result and evidence_is_carried,
+        "occurrence_witness": same_occurrence,
+        "intact_evidence": (
+            bundle["ledger"].integrity_of(act_evidence.id) != CORRUPTED
+            and bundle["ledger"].integrity_of(content_evidence.id) != CORRUPTED
+        ),
+    }
 
 
 def _emission_carriage_witness(bundle: dict) -> str:
+    requirements = _emission_carriage_requirements(bundle)
+    return EXACT if all(requirements.values()) else MISSING
+
+
+def _emission_carriage_requirements(bundle: dict) -> dict[str, bool]:
     carrier = bundle["carrier"]
     evidence = bundle["carriage_evidence"]
     if evidence is None:
-        return MISSING
-    if bundle["ledger"].integrity_of(evidence.id) == CORRUPTED:
-        return MISSING
+        return {
+            "exact_relation": False,
+            "occurrence_witness": False,
+            "intact_evidence": False,
+        }
     exact_relation = (
         carrier.payload.get("emitted_representation")
         == evidence.payload.get("carried_content")
@@ -469,11 +519,13 @@ def _emission_carriage_witness(bundle: dict) -> str:
         == evidence.payload.get("act_occurrence_id")
     )
     evidence_is_carried = carrier.payload.get("carriage_evidence_id") == evidence.id
-    return (
-        EXACT
-        if exact_relation and exact_occurrence and evidence_is_carried
-        else MISSING
-    )
+    return {
+        "exact_relation": exact_relation and evidence_is_carried,
+        "occurrence_witness": exact_occurrence,
+        "intact_evidence": (
+            bundle["ledger"].integrity_of(evidence.id) != CORRUPTED
+        ),
+    }
 
 
 def _emission_attempt_carriage_witness(bundle: dict) -> str:
@@ -509,12 +561,19 @@ def _emission_attempt_carriage_requirements(bundle: dict) -> dict[str, bool]:
 
 
 def _emission_participation_witness(bundle: dict) -> str:
+    requirements = _emission_participation_requirements(bundle)
+    return EXACT if all(requirements.values()) else MISSING
+
+
+def _emission_participation_requirements(bundle: dict) -> dict[str, bool]:
     carrier = bundle["carrier"]
     evidence = bundle["act_evidence"]
     if evidence is None:
-        return MISSING
-    if bundle["ledger"].integrity_of(evidence.id) == CORRUPTED:
-        return MISSING
+        return {
+            "exact_relation": False,
+            "occurrence_witness": False,
+            "intact_evidence": False,
+        }
     exact_relation = (
         carrier.payload.get("representation_ref")
         == evidence.payload.get("representation_ref")
@@ -529,11 +588,13 @@ def _emission_participation_witness(bundle: dict) -> str:
     evidence_is_carried = (
         carrier.payload.get("responsible_act_evidence_id") == evidence.id
     )
-    return (
-        EXACT
-        if exact_relation and exact_occurrence and evidence_is_carried
-        else MISSING
-    )
+    return {
+        "exact_relation": exact_relation and evidence_is_carried,
+        "occurrence_witness": exact_occurrence,
+        "intact_evidence": (
+            bundle["ledger"].integrity_of(evidence.id) != CORRUPTED
+        ),
+    }
 
 
 def _representation_carriage_witness(bundle: dict) -> str:
@@ -668,34 +729,39 @@ def _structural_edge_fidelity_cases() -> dict[str, dict[str, str]]:
     }
 
 
-def _emission_structural_edge_fidelity_cases() -> dict[str, dict[str, str]]:
-    emission = _emission_road()
-    alternate = _emission_road()
-    corrupted_carriage = _emission_road()
-    corrupted_carriage["ledger"].mark_corrupted(
-        corrupted_carriage["carriage_evidence"].id
-    )
-    corrupted_participation = _emission_road()
-    corrupted_participation["ledger"].mark_corrupted(
-        corrupted_participation["act_evidence"].id
-    )
-    corrupted_yield = _emission_road()
-    corrupted_yield["ledger"].mark_corrupted(
-        corrupted_yield["content_evidence"].id
-    )
+def _successful_emission_requirement_bundles() -> dict[str, dict[str, dict]]:
+    emission, alternate = _repeated_emission_attempt_road()
 
     missing_carriage = dict(emission)
-    missing_carriage["carriage_evidence"] = None
+    missing_carriage_evidence = emission["carriage_evidence"].model_copy(deep=True)
+    missing_carriage_evidence.payload["carried_content"] = "different content"
+    missing_carriage["carriage_evidence"] = missing_carriage_evidence
     wrong_carriage = dict(emission)
+    wrong_carriage_carrier = emission["carrier"].model_copy(deep=True)
+    wrong_carriage_carrier.payload["carriage_evidence_id"] = alternate[
+        "carriage_evidence"
+    ].id
+    wrong_carriage["carrier"] = wrong_carriage_carrier
     wrong_carriage["carriage_evidence"] = alternate["carriage_evidence"]
     unrelated_carriage = dict(emission)
     unrelated_carriage_carrier = emission["carrier"].model_copy(deep=True)
     unrelated_carriage_carrier.payload["yield_evidence_id"] = "other-yield-evidence"
     unrelated_carriage["carrier"] = unrelated_carriage_carrier
+    corrupted_carriage = _emission_road()
+    corrupted_carriage["ledger"].mark_corrupted(
+        corrupted_carriage["carriage_evidence"].id
+    )
 
     missing_participation = dict(emission)
-    missing_participation["act_evidence"] = None
+    missing_act_evidence = emission["act_evidence"].model_copy(deep=True)
+    missing_act_evidence.payload["input_role"] = "different-role"
+    missing_participation["act_evidence"] = missing_act_evidence
     wrong_participation = dict(emission)
+    wrong_participation_carrier = emission["carrier"].model_copy(deep=True)
+    wrong_participation_carrier.payload["responsible_act_evidence_id"] = alternate[
+        "act_evidence"
+    ].id
+    wrong_participation["carrier"] = wrong_participation_carrier
     wrong_participation["act_evidence"] = alternate["act_evidence"]
     unrelated_participation = dict(emission)
     unrelated_participation_carrier = emission["carrier"].model_copy(deep=True)
@@ -703,44 +769,69 @@ def _emission_structural_edge_fidelity_cases() -> dict[str, dict[str, str]]:
         "other-carriage-evidence"
     )
     unrelated_participation["carrier"] = unrelated_participation_carrier
+    corrupted_participation = _emission_road()
+    corrupted_participation["ledger"].mark_corrupted(
+        corrupted_participation["act_evidence"].id
+    )
 
     missing_yield = dict(emission)
     missing_yield_carrier = emission["carrier"].model_copy(deep=True)
     missing_yield_carrier.payload["yielded_result"]["accepted_length"] += 1
     missing_yield["carrier"] = missing_yield_carrier
     wrong_yield = dict(emission)
+    wrong_yield_carrier = emission["carrier"].model_copy(deep=True)
+    wrong_yield_carrier.payload["responsible_act_evidence_id"] = alternate[
+        "act_evidence"
+    ].id
+    wrong_yield_carrier.payload["yield_evidence_id"] = alternate[
+        "content_evidence"
+    ].id
+    wrong_yield["carrier"] = wrong_yield_carrier
+    wrong_yield["act_evidence"] = alternate["act_evidence"]
     wrong_yield["content_evidence"] = alternate["content_evidence"]
     unrelated_yield = dict(emission)
     unrelated_yield_carrier = emission["carrier"].model_copy(deep=True)
     unrelated_yield_carrier.payload["input_role"] = "other-role"
     unrelated_yield["carrier"] = unrelated_yield_carrier
-
+    corrupted_yield = _emission_road()
+    corrupted_yield["ledger"].mark_corrupted(
+        corrupted_yield["content_evidence"].id
+    )
     return {
         "carriage": {
-            "exact": _emission_carriage_witness(emission),
-            "edge_missing": _emission_carriage_witness(missing_carriage),
-            "wrong_occurrence": _emission_carriage_witness(wrong_carriage),
-            "corrupted_evidence": _emission_carriage_witness(corrupted_carriage),
-            "unrelated_change": _emission_carriage_witness(unrelated_carriage),
+            "exact": emission,
+            "edge_missing": missing_carriage,
+            "wrong_occurrence": wrong_carriage,
+            "corrupted_evidence": corrupted_carriage,
+            "unrelated_change": unrelated_carriage,
         },
         "participation": {
-            "exact": _emission_participation_witness(emission),
-            "edge_missing": _emission_participation_witness(missing_participation),
-            "wrong_occurrence": _emission_participation_witness(wrong_participation),
-            "corrupted_evidence": _emission_participation_witness(
-                corrupted_participation
-            ),
-            "unrelated_change": _emission_participation_witness(
-                unrelated_participation
-            ),
+            "exact": emission,
+            "edge_missing": missing_participation,
+            "wrong_occurrence": wrong_participation,
+            "corrupted_evidence": corrupted_participation,
+            "unrelated_change": unrelated_participation,
         },
         "yield": {
-            "exact": _occurrence_result_witness(emission),
-            "edge_missing": _occurrence_result_witness(missing_yield),
-            "wrong_occurrence": _occurrence_result_witness(wrong_yield),
-            "corrupted_evidence": _occurrence_result_witness(corrupted_yield),
-            "unrelated_change": _occurrence_result_witness(unrelated_yield),
+            "exact": emission,
+            "edge_missing": missing_yield,
+            "wrong_occurrence": wrong_yield,
+            "corrupted_evidence": corrupted_yield,
+            "unrelated_change": unrelated_yield,
         },
+    }
+
+
+def _emission_structural_edge_fidelity_cases() -> dict[str, dict[str, str]]:
+    bundles = _successful_emission_requirement_bundles()
+    witnesses = {
+        "carriage": _emission_carriage_witness,
+        "participation": _emission_participation_witness,
+        "yield": _occurrence_result_witness,
+    }
+    return {
+        edge: {case: witnesses[edge](bundle) for case, bundle in cases.items()}
+        for edge, cases in bundles.items()
     }
 
 
@@ -1204,6 +1295,50 @@ def test_emission_attempt_carriage_adversaries_change_one_requirement_each():
         "occurrence_witness": True,
         "intact_evidence": True,
     }
+
+
+def test_successful_emission_adversaries_change_one_requirement_each():
+    bundles = _successful_emission_requirement_bundles()
+    requirement_witnesses = {
+        "carriage": _emission_carriage_requirements,
+        "participation": _emission_participation_requirements,
+        "yield": _occurrence_result_requirements,
+    }
+    expected = {
+        "exact": {
+            "exact_relation": True,
+            "occurrence_witness": True,
+            "intact_evidence": True,
+        },
+        "edge_missing": {
+            "exact_relation": False,
+            "occurrence_witness": True,
+            "intact_evidence": True,
+        },
+        "wrong_occurrence": {
+            "exact_relation": True,
+            "occurrence_witness": False,
+            "intact_evidence": True,
+        },
+        "corrupted_evidence": {
+            "exact_relation": True,
+            "occurrence_witness": True,
+            "intact_evidence": False,
+        },
+        "unrelated_change": {
+            "exact_relation": True,
+            "occurrence_witness": True,
+            "intact_evidence": True,
+        },
+    }
+
+    assert {
+        edge: {
+            case: requirement_witnesses[edge](bundle)
+            for case, bundle in cases.items()
+        }
+        for edge, cases in bundles.items()
+    } == {edge: expected for edge in bundles}
 
 
 def test_attempt_and_success_have_distinct_carriages_for_the_same_text():
