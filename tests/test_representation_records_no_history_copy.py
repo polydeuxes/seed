@@ -1,7 +1,7 @@
 """A representation records the occurrence its Standing was taken through, not the prefix.
 
 `session_standing_evidence_ids` copied session Standing's whole append-order
-event inventory into every `operator.representation.recorded` payload, beside
+event-reference copy into every `operator.representation.recorded` payload, beside
 `session_standing_as_of_event_id`, which already names that occurrence.
 
 `#2372` established that the copy was exactly derivable from the boundary
@@ -59,11 +59,11 @@ def session():
 
 
 # --------------------------------------------------------------------------
-# No history inventory is durably recorded.
+# No history copy is durably recorded.
 # --------------------------------------------------------------------------
 
 
-def test_no_representation_act_records_a_history_inventory(session):
+def test_no_representation_act_records_a_history_copy(session):
     ledger, _ = session
     for event in ledger.list("w"):
         assert "session_standing_evidence_ids" not in event.payload
@@ -83,7 +83,7 @@ def test_recorded_payload_size_does_not_grow_with_session_length():
         representation_events = [e for e in ledger.list("w") if e.kind == RECORDED]
         sizes.append(len(str(representation_events[-1].payload)) - len(str(representation_events[0].payload)))
     # Payload size differs between first and last representation Act only by the
-    # boundary identifier, not by an inventory that grows with the session.
+    # boundary identifier, not by a copy that grows with the session.
     assert max(sizes) < 200, sizes
 
 

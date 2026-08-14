@@ -1,11 +1,20 @@
 {
   "version": 2,
   "spine": "Responsibility",
+  "fidelity": {
+    "book_clause": "01.Source.C",
+    "subject": "this_Seed",
+    "expectation": "machine_grammar",
+    "comparison": "deterministic_tests",
+    "witness": "live_implementation",
+    "result": "bounded_Fidelity_finding",
+    "does_not_establish": "global_certification"
+  },
   "structural_edges": {
     "carriage": {
       "book_clause": "01.Carriage.A",
       "from": "content",
-      "to": "carriage_occurrence",
+      "to": "occurrence",
       "requires": ["exact_relation", "occurrence_witness"]
     },
     "participation": {
@@ -218,7 +227,7 @@
       },
       "preserves": [
         "Assertion_identity",
-        "original_carriage_occurrence",
+        "original_occurrence",
         "Standing",
         "Assertion_Evidence",
         "Assertion_Authority",

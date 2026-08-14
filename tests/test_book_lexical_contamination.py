@@ -126,6 +126,11 @@ BANNED: tuple[tuple[str, str], ...] = (
     (r"\borientat\w*\b|orientat[-_]", "orientat*"),
     (r"\bexternal\w*\b|external[-_]", "external*"),
     (r"\bexecutions?\b|execution[-_]", "execution"),
+    (
+        r"\binvent(?:s|ed|ing|ion|ions)?\b|invent(?:s|ed|ing|ion|ions)?[-_]",
+        "invent*",
+    ),
+    (r"\binventor(?:y|ies)\b|inventory[-_]", "inventory"),
     (r"(?<![A-Za-z])presentation\w*\b|(?<![A-Za-z])presentation[-_]", "presentation*"),
 )
 
@@ -256,6 +261,8 @@ def test_identifier_separators_cannot_hide_retired_vocabulary():
         "requires_later_consumption": "consum*",
         "exact-reyield-edge": "reyield*",
         "production_evidence_id": "produc*",
+        "invented_relation": "invent*",
+        "coordinate_inventory": "inventory",
     }
 
     for identifier, expected_label in examples.items():
@@ -264,5 +271,5 @@ def test_identifier_separators_cannot_hide_retired_vocabulary():
         assert expected_label in labels
 
 
-if __name__ == "__main__":  # pragma: no cover - inventory entry point
+if __name__ == "__main__":  # pragma: no cover - command-line entry point
     print(render_violations(find_violations()))

@@ -1,6 +1,6 @@
 """A bounded comparison of a recorded finding and its yield evidence.
 
-`01.Source.D` grants this and states its conditions: a Fidelity finding is
+`01.Source.C` grants this and states its conditions: a Fidelity finding is
 yielded only by a bounded comparison bringing constitutional grammar, a
 bounded expectation, and an implementation witness under a declared seam or
 scope. Within that scope it may find the witness faithful, an unfaithful
@@ -59,7 +59,7 @@ UNFAITHFUL_CROSSING = "unfaithful boundary crossing"
 FIDELITY_UNKNOWN = "Unknown"
 
 ERASURE = "erasure"
-INVENTION = "invention"
+UNSUPPORTED_COORDINATE = "unsupported coordinate"
 
 FIDELITY_RESULT_COORDINATES = frozenset(
     {
@@ -279,7 +279,7 @@ def compare_recorded_finding(ledger: EventLedger, event_id: str) -> Event:
     elif not isinstance(named, str) or not named:
         observed.append(
             _crossing(
-                INVENTION,
+                UNSUPPORTED_COORDINATE,
                 "the recorded finding supplies something other than an exact "
                 "yield-evidence occurrence identity",
             )
@@ -310,7 +310,7 @@ def compare_recorded_finding(ledger: EventLedger, event_id: str) -> Event:
             elif evidence.kind != YIELD_EVIDENCE_KIND:
                 observed.append(
                     _crossing(
-                        INVENTION,
+                        UNSUPPORTED_COORDINATE,
                         "the named occurrence is represented as yield "
                         "evidence, but its recorded kind does not represent "
                         "yield evidence",
@@ -324,7 +324,7 @@ def compare_recorded_finding(ledger: EventLedger, event_id: str) -> Event:
             ):
                 observed.append(
                     _crossing(
-                        INVENTION,
+                        UNSUPPORTED_COORDINATE,
                         "the named yield evidence concerns a different "
                         "kind of result or yield convention",
                     )

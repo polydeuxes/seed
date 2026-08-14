@@ -2,7 +2,7 @@
 
 The Book of Seed preserves the durable constitutional grammar needed to interpret Seed. It names bounded concepts, keeps important non-equivalences visible, and offers a few representative repository anchors.
 
-It is not a roadmap, API reference, generated topology, complete inventory, or substitute for repository inspection. Existing implementation and tests are Evidence of current practice; they do not carry constitutional Authority by identity. Historical audits and roadmaps are records outside active law.
+It is not a roadmap, API reference, generated topology, or substitute for repository inspection. Existing implementation and tests are Evidence of current practice; they do not carry constitutional Authority by identity. Historical audits and roadmaps are records outside active law.
 
 ## Resolution model
 

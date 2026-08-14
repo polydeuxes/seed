@@ -54,18 +54,18 @@ def _digest_only_witness(digest: str) -> dict[str, str]:
 
 
 def _content_carriage_witness(
-    content: dict, *, carriage, carriage_occurrence_id: str
+    content: dict, *, carriage, occurrence_id: str
 ) -> str:
     if carriage is None:
         return MISSING
     return (
         EXACT
-        if carriage.id == carriage_occurrence_id and carriage.payload == content
+        if carriage.id == occurrence_id and carriage.payload == content
         else MISSING
     )
 
 
-def _assertion_carriage_witness(bundle: dict, *, carriage_occurrence_id: str) -> str:
+def _assertion_carriage_witness(bundle: dict, *, occurrence_id: str) -> str:
     assertion = bundle["source_assertion"]
     carrier = bundle["carrier"]
     carried = [
@@ -75,7 +75,7 @@ def _assertion_carriage_witness(bundle: dict, *, carriage_occurrence_id: str) ->
     ]
     exact_relation = carried == [assertion.payload]
     exact_occurrence = (
-        carrier.id == carriage_occurrence_id
+        carrier.id == occurrence_id
         == assertion.recorded_occurrence_id
     )
     return EXACT if exact_relation and exact_occurrence else MISSING
@@ -97,7 +97,7 @@ def _recorded_digest_witness(
     convention: str,
     digest: str,
     digest_carriage,
-    digest_carriage_occurrence_id: str,
+    digest_occurrence_id: str,
 ) -> str:
     if digest_carriage is None:
         return MISSING
@@ -105,7 +105,7 @@ def _recorded_digest_witness(
         yield_commitment(convention, representation) == digest
     )
     exact_carriage = (
-        digest_carriage.id == digest_carriage_occurrence_id
+        digest_carriage.id == digest_occurrence_id
         and digest_carriage.payload.get("yield_commitment") == digest
     )
     return EXACT if mechanically_matches and exact_carriage else MISSING
@@ -332,6 +332,7 @@ def _occurrence_result_witness(bundle: dict) -> str:
 
 def _structural_edge_fidelity_cases() -> dict[str, dict[str, str]]:
     carriage = _byte_measurement_road()
+    alternate_carriage = _byte_measurement_road()
     missing_carriage = dict(carriage)
     missing_carrier = carriage["carrier"].model_copy(deep=True)
     missing_carrier.payload["assertions"] = [
@@ -343,56 +344,56 @@ def _structural_edge_fidelity_cases() -> dict[str, dict[str, str]]:
     missing_carriage["carrier"] = missing_carrier
     unrelated_carriage = dict(carriage)
     unrelated_carrier = carriage["carrier"].model_copy(deep=True)
-    unrelated_carrier.payload["unrelated_test_coordinate"] = "ignored"
+    unrelated_carrier.payload["yield_evidence_id"] = "other-yield-evidence"
     unrelated_carriage["carrier"] = unrelated_carrier
 
     participation = _recorded_applicability()
+    alternate_participation = _recorded_applicability()
     missing_participation = dict(participation)
     missing_participation["pair_act_evidence"] = None
     wrong_participation = dict(participation)
     participation_evidence = participation["pair_act_evidence"]
-    wrong_participation_evidence = participation_evidence.model_copy(deep=True)
-    wrong_participation_evidence.payload["act_occurrence_id"] = (
-        "another_pair_measurement_occurrence"
-    )
-    wrong_participation["pair_act_evidence"] = wrong_participation_evidence
+    wrong_participation["pair_act_evidence"] = alternate_participation[
+        "pair_act_evidence"
+    ]
     unrelated_participation = dict(participation)
-    unrelated_participation_evidence = participation_evidence.model_copy(deep=True)
-    unrelated_participation_evidence.payload["unrelated_test_coordinate"] = "ignored"
-    unrelated_participation["pair_act_evidence"] = unrelated_participation_evidence
+    unrelated_participation_carrier = participation["pair_carrier"].model_copy(
+        deep=True
+    )
+    unrelated_participation_carrier.payload["yield_evidence_id"] = (
+        "other-yield-evidence"
+    )
+    unrelated_participation["pair_carrier"] = unrelated_participation_carrier
 
     yielded = _byte_measurement_road()
+    alternate_yield = _byte_measurement_road()
     missing_yield = dict(yielded)
     missing_yield["content_evidence"] = None
     wrong_yield = dict(yielded)
     yield_evidence = yielded["content_evidence"]
-    wrong_yield_evidence = yield_evidence.model_copy(deep=True)
-    wrong_yield_evidence.payload["dimensions"]["act_occurrence_id"] = (
-        "another_byte_measurement_occurrence"
-    )
-    wrong_yield["content_evidence"] = wrong_yield_evidence
+    wrong_yield["content_evidence"] = alternate_yield["content_evidence"]
     unrelated_yield = dict(yielded)
-    unrelated_yield_evidence = yield_evidence.model_copy(deep=True)
-    unrelated_yield_evidence.payload["unrelated_test_coordinate"] = "ignored"
-    unrelated_yield["content_evidence"] = unrelated_yield_evidence
+    unrelated_yield_carrier = yielded["carrier"].model_copy(deep=True)
+    unrelated_yield_carrier.payload["source_session_ids"] = ["other-session"]
+    unrelated_yield["carrier"] = unrelated_yield_carrier
 
     return {
         "carriage": {
             "exact": _assertion_carriage_witness(
                 carriage,
-                carriage_occurrence_id=carriage["carrier"].id,
+                occurrence_id=carriage["carrier"].id,
             ),
             "edge_missing": _assertion_carriage_witness(
                 missing_carriage,
-                carriage_occurrence_id=carriage["carrier"].id,
+                occurrence_id=carriage["carrier"].id,
             ),
             "wrong_occurrence": _assertion_carriage_witness(
                 carriage,
-                carriage_occurrence_id="another_byte_measurement_carriage",
+                occurrence_id=alternate_carriage["carrier"].id,
             ),
             "unrelated_change": _assertion_carriage_witness(
                 unrelated_carriage,
-                carriage_occurrence_id=carriage["carrier"].id,
+                occurrence_id=carriage["carrier"].id,
             ),
         },
         "participation": {
@@ -416,6 +417,51 @@ def _structural_edge_fidelity_cases() -> dict[str, dict[str, str]]:
             "unrelated_change": _occurrence_result_witness(unrelated_yield),
         },
     }
+
+
+def _structural_edge_implementation_specs() -> dict[str, dict]:
+    requirements = {
+        "exact_relation": "edge_missing",
+        "occurrence_witness": "wrong_occurrence",
+    }
+    return {
+        "carriage": {
+            "from": "content",
+            "to": "occurrence",
+            "requires": requirements,
+        },
+        "participation": {
+            "from": "subject",
+            "to": "Act_occurrence",
+            "coordinate": "role",
+            "requires": requirements,
+        },
+        "yield": {
+            "from": "Act_occurrence",
+            "to": "result",
+            "requires": requirements,
+        },
+    }
+
+
+def _assert_structural_edge_anatomy(grammar: dict, specs: dict[str, dict]) -> None:
+    assert set(specs) == set(grammar["structural_edges"])
+    relation_families = grammar["implementation_witness"]["relation_audit"][
+        "families"
+    ]
+    for edge, declared in grammar["structural_edges"].items():
+        witnessed = specs[edge]
+        declared_anatomy = {
+            key: value
+            for key, value in declared.items()
+            if key not in {"book_clause", "requires"}
+        }
+        witnessed_anatomy = {
+            key: value for key, value in witnessed.items() if key != "requires"
+        }
+        assert witnessed_anatomy == declared_anatomy
+        assert list(witnessed["requires"]) == declared["requires"]
+        assert declared["requires"] == relation_families[edge]
 
 
 def _act_occurrence_witness(bundle: dict) -> dict[str, str]:
@@ -505,7 +551,7 @@ def _movement_witness(bundle: dict) -> dict[str, str]:
         "Assertion_identity": (
             EXACT if movement.payload["assertion_id"] == moved.assertion_id else MISSING
         ),
-        "original_carriage_occurrence": (
+        "original_occurrence": (
             EXACT
             if moved.recorded_occurrence_id == source["recorded_occurrence_id"]
             else MISSING
@@ -599,16 +645,49 @@ def test_implementation_witness_discriminates_content_carriage_and_digest():
     ]
 
 
+def test_fidelity_is_this_seeds_bounded_machine_comparison():
+    grammar = json.loads(GRAMMAR.read_text(encoding="utf-8"))
+
+    assert grammar["fidelity"] == {
+        "book_clause": "01.Source.C",
+        "subject": "this_Seed",
+        "expectation": "machine_grammar",
+        "comparison": "deterministic_tests",
+        "witness": "live_implementation",
+        "result": "bounded_Fidelity_finding",
+        "does_not_establish": "global_certification",
+    }
+
+
 def test_every_structural_edge_has_live_fidelity_cases():
     grammar = json.loads(GRAMMAR.read_text(encoding="utf-8"))
     cases = _structural_edge_fidelity_cases()
+    specs = _structural_edge_implementation_specs()
     expected = grammar["implementation_witness"]["fidelity_cases"]
 
+    _assert_structural_edge_anatomy(grammar, specs)
     assert set(cases) == set(grammar["structural_edges"])
     assert all(set(edge_cases) == set(expected) for edge_cases in cases.values())
     assert cases == {
         edge: expected for edge in grammar["structural_edges"]
     }
+    for edge, spec in specs.items():
+        for adversary in spec["requires"].values():
+            assert cases[edge][adversary] == MISSING
+
+
+def test_changed_structural_edge_anatomy_is_detected():
+    grammar = json.loads(GRAMMAR.read_text(encoding="utf-8"))
+    grammar["structural_edges"]["yield"]["from"] = "result"
+
+    try:
+        _assert_structural_edge_anatomy(
+            grammar, _structural_edge_implementation_specs()
+        )
+    except AssertionError:
+        pass
+    else:
+        raise AssertionError("reversed Yield anatomy escaped implementation Fidelity")
 
 
 def test_content_and_carriage_endpoints_do_not_establish_carriage_relation():
@@ -618,7 +697,7 @@ def test_content_and_carriage_endpoints_do_not_establish_carriage_relation():
 
     assert (
         _content_carriage_witness(
-            content, carriage=carriage, carriage_occurrence_id=carriage.id
+            content, carriage=carriage, occurrence_id=carriage.id
         )
         == EXACT
     )
@@ -632,7 +711,7 @@ def test_content_and_carriage_endpoints_do_not_establish_carriage_relation():
         _content_carriage_witness(
             content,
             carriage=second_carriage,
-            carriage_occurrence_id=carriage.id,
+            occurrence_id=carriage.id,
         )
         == MISSING
     )
@@ -682,7 +761,7 @@ def test_digest_recomputation_is_not_a_recorded_digest_occurrence():
             convention=convention,
             digest=digest,
             digest_carriage=evidence,
-            digest_carriage_occurrence_id=evidence.id,
+            digest_occurrence_id=evidence.id,
         )
         == EXACT
     )
@@ -693,7 +772,7 @@ def test_digest_recomputation_is_not_a_recorded_digest_occurrence():
             convention=convention,
             digest=digest,
             digest_carriage=other_carriage,
-            digest_carriage_occurrence_id=evidence.id,
+            digest_occurrence_id=evidence.id,
         )
         == MISSING
     )
@@ -990,6 +1069,44 @@ def test_runtime_has_no_formation_layer():
 
 def test_runtime_has_no_execution_layer():
     retired = re.compile(r"\bexecutions?\b|execution[-_]", re.IGNORECASE)
+    runtime_root = GRAMMAR.parents[1] / "seed_runtime"
+    contaminated = {
+        path.relative_to(GRAMMAR.parents[1]).as_posix(): [
+            (line_number, line.rstrip())
+            for line_number, line in enumerate(
+                path.read_text(encoding="utf-8").splitlines(), start=1
+            )
+            if retired.search(line)
+        ]
+        for path in runtime_root.glob("*.py")
+    }
+
+    assert {path: hits for path, hits in contaminated.items() if hits} == {}
+
+
+def test_runtime_has_no_unsupported_coordinate_abstraction():
+    retired = re.compile(
+        r"\bin" + r"vent(?:s|ed|ing|ion|ions)?\b|in"
+        + r"vent(?:s|ed|ing|ion|ions)?[-_]",
+        re.IGNORECASE,
+    )
+    runtime_root = GRAMMAR.parents[1] / "seed_runtime"
+    contaminated = {
+        path.relative_to(GRAMMAR.parents[1]).as_posix(): [
+            (line_number, line.rstrip())
+            for line_number, line in enumerate(
+                path.read_text(encoding="utf-8").splitlines(), start=1
+            )
+            if retired.search(line)
+        ]
+        for path in runtime_root.glob("*.py")
+    }
+
+    assert {path: hits for path, hits in contaminated.items() if hits} == {}
+
+
+def test_runtime_has_no_inventory_abstraction():
+    retired = re.compile(r"\binventor(?:y|ies)\b|inventory[-_]", re.IGNORECASE)
     runtime_root = GRAMMAR.parents[1] / "seed_runtime"
     contaminated = {
         path.relative_to(GRAMMAR.parents[1]).as_posix(): [

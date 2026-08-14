@@ -47,7 +47,7 @@ def record_operator_representation(
     The Representation is bounded by the supplied projected session Standing.
     No alternatives are supplied by default; ``alternative_sources`` must be
     supplied by a caller with support for the eligibility and participation
-    relations those alternatives carry.  Representation Act neither invents sources
+    relations those alternatives carry.  Representation Act supplies no sources
     nor strengthens their standing, and no alternative's represented relation is derived
     from ingress material.  This module records what a Representation carries;
     it does not classify the resulting combination as a shape.

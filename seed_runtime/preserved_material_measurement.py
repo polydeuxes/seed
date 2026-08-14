@@ -396,7 +396,7 @@ def _locality_of(event: Event) -> str | None:
 
     An earlier version rendered a missing `session_id` as ``session:None``, and
     the version after it returned ``workspace:w``. Both replaced an absent
-    coordinate with an asserted one: the first invented a locality named None,
+    coordinate with an asserted one: the first supplied a locality named None,
     the second answered the locality question with the workspace, which
     `06.Standing.A` lists as a different member of the same boundary. Same
     workspace does not mean same locality, so the workspace cannot stand in for
@@ -755,7 +755,7 @@ def measure_recurrences(
         # This read establishes the same provenance `_as_preserved` does, so
         # the finding must carry it. Without this the basis path recorded
         # material as supplied while having read every occurrence from the
-        # ledger -- erasing an established provenance rather than inventing an
+        # ledger -- erasing an established provenance rather than supplying an
         # unestablished one, which is the same defect facing the other way.
         material_provenance = MATERIAL_READ_FROM_LEDGER
         preserved = []
@@ -991,7 +991,7 @@ def _measurement_finding_payload(
             # Stated from the finding rather than asserted here. The measuring
             # act knows whether it read its material from a ledger, and this
             # said "preserved operator-ingress occurrences" for every finding
-            # regardless -- inventing a provenance the act had declined.
+            # regardless -- supplying a provenance the act had declined.
             "source_provenance": getattr(
                 finding, "material_provenance", MATERIAL_AS_SUPPLIED
             ),

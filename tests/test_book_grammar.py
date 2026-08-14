@@ -33,6 +33,7 @@ def test_machine_readable_grammar_uses_responsibility_spine():
     assert grammar["clauses"]
     active_book = _active_book()
     _assert_structural_edge_clauses(grammar, active_book)
+    assert active_book.count(f"### {grammar['fidelity']['book_clause']} ") == 1
     for clause_id, clause in grammar["clauses"].items():
         assert clause["subject"]
         assert clause["responsibility"]

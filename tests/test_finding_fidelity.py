@@ -14,7 +14,7 @@ from seed_runtime.finding_fidelity import (
     FIDELITY_FINDING_KIND,
     FIDELITY_CONVENTION,
     FIDELITY_RESULT_KIND,
-    INVENTION,
+    UNSUPPORTED_COORDINATE,
     UNFAITHFUL_CROSSING,
     FindingFidelityError,
     compare_recorded_finding,
@@ -193,7 +193,7 @@ def test_fidelity_validation_survives_durable_reopen(tmp_path):
     reopened.close()
 
 
-def test_fidelity_validation_refuses_an_invented_yield_coordinate(recorded):
+def test_fidelity_validation_refuses_an_unsupported_yield_coordinate(recorded):
     ledger, event = recorded
     result = compare_recorded_finding(ledger, event.id)
     evidence = ledger.get(result.payload["yield_evidence_id"])
@@ -203,7 +203,7 @@ def test_fidelity_validation_refuses_an_invented_yield_coordinate(recorded):
         {
             **evidence.payload,
             "yield_coordinates": evidence.payload["yield_coordinates"]
-            + ["invented"],
+            + ["unsupported"],
         },
         session_id="r",
     )
@@ -295,7 +295,7 @@ def test_it_claims_no_responsibility_assignment_and_no_correction_authority(reco
 
 
 def test_it_preserves_what_the_clause_requires(recorded):
-    """`01.Source.D` names what a fidelity comparison must preserve."""
+    """`01.Source.C` names what a fidelity comparison must preserve."""
 
     ledger, event = recorded
     result = compare_recorded_finding(ledger, event.id)
@@ -377,7 +377,10 @@ def test_a_finding_naming_something_that_is_not_yield_evidence(recorded):
         session_id="r",
     )
     result = compare_recorded_finding(ledger, forged.id)
-    assert result.payload["observed_crossings"][0]["kind"] == INVENTION
+    assert (
+        result.payload["observed_crossings"][0]["kind"]
+        == UNSUPPORTED_COORDINATE
+    )
 
 
 def test_lawful_recording_additions_do_not_change_the_yielded_result(recorded):

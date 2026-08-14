@@ -752,7 +752,7 @@ def advance_operator_session_standing(
                 }
             # The relation's remaining Standing coordinates are carried
             # invariants at this boundary; a forged loss, Unknown, or
-            # conflict inventory is refused rather than exposed.
+            # conflicts are refused rather than exposed.
             reconstructed_relation_standing = {
                 "support_relation_standing": (
                     "developer-supplied relation Assertion "

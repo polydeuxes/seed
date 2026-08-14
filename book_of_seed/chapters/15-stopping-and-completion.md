@@ -34,6 +34,6 @@ Where a bounded Stop is established, the stopping occurrence preserves the exact
 
 ## Constrained movement stopping correction 001
 
-An exact Act may respond to a Constraint, Unknown, resource limit, unresolved causation, preservation failure, satisfied Scope, or operator boundary with a Stop, deferral, narrowing, return to inquiry, exposure of an unmet condition, or a refusal to establish a support relation. None makes the condition failure or completion by identity. Unknown does not support invented movement, and a Constraint result does not establish a later stopping occurrence.
+An exact Act may respond to a Constraint, Unknown, resource limit, unresolved causation, preservation failure, satisfied Scope, or operator boundary with a Stop, deferral, narrowing, return to inquiry, exposure of an unmet condition, or a refusal to establish a support relation. None makes the condition failure or completion by identity. Unknown does not support movement, and a Constraint result does not establish a later stopping occurrence.
 
 Stopping is not failure.
