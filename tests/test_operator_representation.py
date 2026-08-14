@@ -1,5 +1,7 @@
 from io import StringIO
 
+import pytest
+
 from seed_runtime.events import EventLedger
 from seed_runtime.operator_representation import (
     emit_operator_representation,
@@ -434,3 +436,56 @@ def test_formation_is_recorded_before_emission_and_they_stay_distinct():
     )
     reconstructed = list(_standing(ledger)["representations"].values())[-1]
     assert reconstructed["representation_id"] == representation["representation_id"]
+
+
+def test_emission_preserves_the_exact_text_written_to_its_boundary():
+    ledger = EventLedger()
+    representation = form_operator_representation(
+        ledger,
+        workspace_id="w",
+        session_id="s",
+        session_standing=_standing(ledger),
+        alternative_sources=CLOSED_CHOICE_FIXTURE_SOURCES,
+    )
+    output = StringIO()
+
+    emit_operator_representation(
+        ledger, representation=representation, output_stream=output
+    )
+
+    emission = ledger.get(representation["emitted_event_id"])
+    assert emission.payload["emitted_representation"] == output.getvalue()
+    assert emission.payload["emitted_representation_kind"] == "text"
+    assert emission.payload["output_boundary"] == "text_stream_write"
+    assert emission.payload["stream_encoding_metadata"] is None
+    assert emission.payload["write_length"] == len(output.getvalue())
+    assert emission.payload["material_origin"] == "this Seed"
+    assert emission.payload["provenance_occurrence_refs"] == [
+        representation["formed_event_id"]
+    ]
+
+
+def test_partial_output_write_does_not_create_an_emission_occurrence():
+    class PartialOutput(StringIO):
+        def write(self, value):
+            super().write(value[:-1])
+            return len(value) - 1
+
+    ledger = EventLedger()
+    representation = form_operator_representation(
+        ledger,
+        workspace_id="w",
+        session_id="s",
+        session_standing=_standing(ledger),
+    )
+
+    with pytest.raises(
+        ValueError, match="did not accept the exact representation"
+    ):
+        emit_operator_representation(
+            ledger, representation=representation, output_stream=PartialOutput()
+        )
+
+    assert [event.kind for event in ledger.list("w")] == [
+        "operator.representation.formed"
+    ]

@@ -236,8 +236,14 @@ def emit_operator_representation(
     Emission evidences only that the rendering was written to this boundary;
     effects beyond that output boundary require separate Evidence.
     """
-    output_stream.write(render_operator_representation(representation))
+    emitted_representation = render_operator_representation(representation)
+    written = output_stream.write(emitted_representation)
+    if type(written) is not int or written != len(emitted_representation):
+        raise ValueError("output boundary did not accept the exact representation")
     output_stream.flush()
+    stream_encoding_metadata = getattr(output_stream, "encoding", None)
+    if type(stream_encoding_metadata) is not str or not stream_encoding_metadata:
+        stream_encoding_metadata = None
     emitted_event = ledger.append(
         REPRESENTATION_EMITTED_KIND,
         representation["workspace_id"],
@@ -266,6 +272,11 @@ def emit_operator_representation(
             # can decline Seed-origin material, which is what this coordinate
             # makes possible and what a later act must actually do.
             "material_origin": SEED_ORIGIN,
+            "emitted_representation": emitted_representation,
+            "emitted_representation_kind": "text",
+            "output_boundary": "text_stream_write",
+            "stream_encoding_metadata": stream_encoding_metadata,
+            "write_length": written,
             "known_loss": [],
             "unknowns": [],
             "conflicts": [],
