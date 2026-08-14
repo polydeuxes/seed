@@ -34,7 +34,7 @@ Fidelity is bounded comparison of this Seed's live implementation witness with i
 
 A declared Measurement occurrence may carry bounded exact equality, count, recurrence, prefix occurrence, declared-predicate result, or adjacency findings. Its result carries nothing beyond the exact rule and boundary. Recurrence preserves the representation measured, sameness rule, and Scope.
 
-Where a Seed performs a Seed-native declared Measurement over exact material already preserved in its workspace, that Seed bears the Measurement Responsibility. The assignment does not identify the occurrence, make recording the Measurement occurrence, or transfer the resulting Assertion's fidelity Responsibility.
+Where a Seed performs a Seed-native declared Measurement over exact material already preserved in its workspace, that Seed bears the Measurement Responsibility. The assignment does not identify the occurrence, make recording the Measurement occurrence, or transfer the resulting Assertion's Standing-coordinate Responsibility.
 
 ### 01.Source.D.1 — Counts preserve occurrence identity
 

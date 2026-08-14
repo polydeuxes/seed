@@ -3,7 +3,7 @@
 Canonical Assertion identity establishes the shared subject.  Distinct
 yielding Event identities establish that there are two yield
 occurrences.  Compare reports literal sameness and difference across carried
-fidelity coordinates; it establishes no conflict, preference, truth, represented relation,
+Standing coordinates; it establishes no conflict, preference, truth, represented relation,
 or reason to revise either Assertion.
 """
 
@@ -61,7 +61,7 @@ class AssertionYieldComparison:
     act: str = "Compare"
     responsible_boundary: str = "this bounded comparison occurrence"
     responsibility: str = (
-        "preserve each input's carried fidelity coordinates and report literal "
+        "preserve each input's carried Standing coordinates and report literal "
         "sameness, difference, and absence only"
     )
 
@@ -107,9 +107,8 @@ POSITIONAL_RESULT_COMPARISON_RECORDED_KIND = (
     "operator.assertion.positional_result_comparison_recorded"
 )
 
-COMPARISON_ASSERTION_FIDELITY_RESPONSIBILITY = (
-    "preserve the fidelity of this comparison Assertion's Standing to its "
-    "carried coordinates"
+COMPARISON_ASSERTION_STANDING_COORDINATE_RESPONSIBILITY = (
+    "preserve this comparison Assertion's carried Standing coordinates"
 )
 POSITIONAL_RESULT_COMPARISON_PROVENANCE = (
     "the two exact positional result Assertion yields carried in support_basis"
@@ -540,7 +539,7 @@ def _positional_result_comparison_payload(
                     "content": content,
                     "standing": "compared",
                     "source_provenance": POSITIONAL_RESULT_COMPARISON_PROVENANCE,
-                    "responsibility": COMPARISON_ASSERTION_FIDELITY_RESPONSIBILITY,
+                    "responsibility": COMPARISON_ASSERTION_STANDING_COORDINATE_RESPONSIBILITY,
                     "authority": POSITIONAL_RESULT_COMPARISON_AUTHORITY,
                     "scope_locality": "the exact assertion_scope carried here",
                     "occurrence_preservation": (
@@ -637,7 +636,7 @@ def assertions_of_recorded_positional_result_comparison(
             or dimensions.get("source_provenance")
             != POSITIONAL_RESULT_COMPARISON_PROVENANCE
             or dimensions.get("responsibility")
-            != COMPARISON_ASSERTION_FIDELITY_RESPONSIBILITY
+            != COMPARISON_ASSERTION_STANDING_COORDINATE_RESPONSIBILITY
             or dimensions.get("authority")
             != POSITIONAL_RESULT_COMPARISON_AUTHORITY
             or dimensions.get("scope_locality")
@@ -983,7 +982,7 @@ def record_assertion_yield_comparison(
                         "the two exact occurrence-bound yields carried in "
                         "support_basis"
                     ),
-                    "responsibility": COMPARISON_ASSERTION_FIDELITY_RESPONSIBILITY,
+                    "responsibility": COMPARISON_ASSERTION_STANDING_COORDINATE_RESPONSIBILITY,
                     "authority": (
                         "literal comparison evidence only; establishes no conflict, "
                         "represented relation, preference, revision, or strengthening"

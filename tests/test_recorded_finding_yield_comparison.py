@@ -1,4 +1,4 @@
-"""A bounded comparison of a recorded finding and its yield evidence."""
+"""A bounded Compare of a recorded finding and its Yield Evidence."""
 
 from __future__ import annotations
 
@@ -7,18 +7,18 @@ import pytest
 from seed_runtime.event import Event
 from seed_runtime.events import EventLedger, SQLiteEventLedger
 from seed_runtime.adjacent_pair_measurement import measure_after
-from seed_runtime.finding_fidelity import (
+from seed_runtime.recorded_finding_yield_comparison import (
     ERASURE,
-    FAITHFUL_WITHIN_SCOPE,
-    FIDELITY_UNKNOWN,
-    FIDELITY_FINDING_KIND,
-    FIDELITY_CONVENTION,
-    FIDELITY_RESULT_KIND,
+    AGREES_WITH_YIELD_EVIDENCE,
+    COMPARISON_UNKNOWN,
+    FINDING_YIELD_COMPARISON_KIND,
+    FINDING_YIELD_COMPARISON_CONVENTION,
+    FINDING_YIELD_COMPARISON_RESULT_KIND,
     UNSUPPORTED_COORDINATE,
-    UNFAITHFUL_CROSSING,
-    FindingFidelityError,
-    compare_recorded_finding,
-    get_recorded_fidelity_finding,
+    DIFFERS_FROM_YIELD_EVIDENCE,
+    RecordedFindingYieldComparisonError,
+    compare_recorded_finding_yield,
+    get_recorded_finding_yield_comparison,
 )
 from seed_runtime.preserved_material_measurement import (
     INGRESS_OCCURRED_KIND,
@@ -71,20 +71,20 @@ def recorded():
     return _recorded_in(EventLedger())
 
 
-def test_a_finding_that_names_the_evidence_concerning_it_is_faithful(recorded):
+def test_a_finding_that_names_the_evidence_concerning_it_is_agreeing(recorded):
     ledger, event = recorded
-    result = compare_recorded_finding(ledger, event.id)
-    assert result.kind == FIDELITY_FINDING_KIND
-    assert result.payload["dimensions"]["standing"] == FAITHFUL_WITHIN_SCOPE
+    result = compare_recorded_finding_yield(ledger, event.id)
+    assert result.kind == FINDING_YIELD_COMPARISON_KIND
+    assert result.payload["dimensions"]["standing"] == AGREES_WITH_YIELD_EVIDENCE
     assert result.payload["observed_crossings"] == []
 
 
-def test_the_fidelity_finding_carries_evidence_that_the_act_yielded_it(recorded):
+def test_the_comparison_finding_carries_evidence_that_the_act_yielded_it(recorded):
     ledger, event = recorded
-    result = compare_recorded_finding(ledger, event.id)
+    result = compare_recorded_finding_yield(ledger, event.id)
     evidence = ledger.get(result.payload["yield_evidence_id"])
     assert evidence.kind == YIELD_EVIDENCE_KIND
-    assert evidence.payload["yielded_result_kind"] == FIDELITY_RESULT_KIND
+    assert evidence.payload["yielded_result_kind"] == FINDING_YIELD_COMPARISON_RESULT_KIND
     assert evidence.payload["dimensions"]["act_occurrence_id"] == result.payload[
         "act_occurrence_id"
     ]
@@ -93,7 +93,7 @@ def test_the_fidelity_finding_carries_evidence_that_the_act_yielded_it(recorded)
     content.pop("occurrence_preservation")
     assert evidence.payload["yield_coordinates"] == sorted(content)
     assert evidence.payload["yield_commitment"] == yield_commitment(
-        FIDELITY_CONVENTION, content
+        FINDING_YIELD_COMPARISON_CONVENTION, content
     )
 
 
@@ -107,40 +107,40 @@ def test_yield_and_support_commitments_have_distinct_mechanical_domains():
 
 def test_result_shape_without_the_yield_relation_has_no_witness(recorded):
     ledger, event = recorded
-    result = compare_recorded_finding(ledger, event.id)
+    result = compare_recorded_finding_yield(ledger, event.id)
     constructed = dict(result.payload)
     constructed.pop("yield_evidence_id")
     forged = ledger.append(
-        FIDELITY_FINDING_KIND, "w", constructed, session_id="r"
+        FINDING_YIELD_COMPARISON_KIND, "w", constructed, session_id="r"
     )
     assert "yield_evidence_id" not in forged.payload
     assert result.payload["yield_evidence_id"] is not None
 
 
-def test_a_yielded_fidelity_finding_is_occurrence_bound_and_addressable(recorded):
+def test_a_yielded_comparison_finding_is_occurrence_bound_and_addressable(recorded):
     ledger, event = recorded
-    result = compare_recorded_finding(ledger, event.id)
-    reconstructed = get_recorded_fidelity_finding(ledger, result.id)
+    result = compare_recorded_finding_yield(ledger, event.id)
+    reconstructed = get_recorded_finding_yield_comparison(ledger, result.id)
     assert reconstructed.recorded_occurrence_id == result.id
     assert reconstructed.yield_evidence_id == result.payload[
         "yield_evidence_id"
     ]
     assert reconstructed.source_finding_event_id == event.id
-    assert reconstructed.standing == FAITHFUL_WITHIN_SCOPE
+    assert reconstructed.standing == AGREES_WITH_YIELD_EVIDENCE
     assert reconstructed.reference == {"recorded_occurrence_id": result.id}
 
 
 def test_validation_exposes_no_mutable_result_payload(recorded):
     ledger, event = recorded
-    result = compare_recorded_finding(ledger, event.id)
-    reconstructed = get_recorded_fidelity_finding(ledger, result.id)
+    result = compare_recorded_finding_yield(ledger, event.id)
+    reconstructed = get_recorded_finding_yield_comparison(ledger, result.id)
     assert not hasattr(reconstructed, "payload")
     assert reconstructed.standing == result.payload["dimensions"]["standing"]
 
 
 def test_validation_does_not_revalidate_the_historical_input(recorded):
     ledger, event = recorded
-    result = compare_recorded_finding(ledger, event.id)
+    result = compare_recorded_finding_yield(ledger, event.id)
     # Reconstruction of F stands on F's intact recording occurrence and yield
     # Evidence. Its source identity travels, but current source availability is
     # a later Act's responsibility. The in-memory ledger has no deletion
@@ -148,54 +148,54 @@ def test_validation_does_not_revalidate_the_historical_input(recorded):
     # source to retain its old kind or shape.
     ledger._by_id[event.id] = Event(
         id=event.id,
-        kind="representation.changed.after.fidelity",
+        kind="representation.changed.after.comparison",
         workspace_id=event.workspace_id,
         payload={},
         session_id=event.session_id,
     )
-    reconstructed = get_recorded_fidelity_finding(ledger, result.id)
+    reconstructed = get_recorded_finding_yield_comparison(ledger, result.id)
     assert reconstructed.source_finding_event_id == event.id
 
 
-def test_a_fidelity_shaped_event_without_yield_evidence_is_not_validated(
+def test_a_comparison_shaped_event_without_yield_evidence_is_not_validated(
     recorded,
 ):
     ledger, event = recorded
-    result = compare_recorded_finding(ledger, event.id)
+    result = compare_recorded_finding_yield(ledger, event.id)
     forged = dict(result.payload)
     forged.pop("yield_evidence_id")
-    occurrence = ledger.append(FIDELITY_FINDING_KIND, "w", forged, session_id="r")
-    with pytest.raises(FindingFidelityError, match="coordinate surfaces"):
-        get_recorded_fidelity_finding(ledger, occurrence.id)
+    occurrence = ledger.append(FINDING_YIELD_COMPARISON_KIND, "w", forged, session_id="r")
+    with pytest.raises(RecordedFindingYieldComparisonError, match="coordinate surfaces"):
+        get_recorded_finding_yield_comparison(ledger, occurrence.id)
 
 
-def test_a_changed_fidelity_result_cannot_borrow_the_yield_evidence(recorded):
+def test_a_changed_comparison_result_cannot_borrow_the_yield_evidence(recorded):
     ledger, event = recorded
-    result = compare_recorded_finding(ledger, event.id)
+    result = compare_recorded_finding_yield(ledger, event.id)
     altered = dict(result.payload)
     altered["unknowns"] = ["an Unknown the comparison did not yield"]
-    occurrence = ledger.append(FIDELITY_FINDING_KIND, "w", altered, session_id="r")
-    with pytest.raises(FindingFidelityError, match="different Fidelity result"):
-        get_recorded_fidelity_finding(ledger, occurrence.id)
+    occurrence = ledger.append(FINDING_YIELD_COMPARISON_KIND, "w", altered, session_id="r")
+    with pytest.raises(RecordedFindingYieldComparisonError, match="different Compare result"):
+        get_recorded_finding_yield_comparison(ledger, occurrence.id)
 
 
-def test_fidelity_validation_survives_durable_reopen(tmp_path):
-    path = tmp_path / "fidelity-reconstruction.sqlite"
+def test_comparison_validation_survives_durable_reopen(tmp_path):
+    path = tmp_path / "comparison-reconstruction.sqlite"
     ledger, event = _recorded_in(SQLiteEventLedger(path))
-    result = compare_recorded_finding(ledger, event.id)
+    result = compare_recorded_finding_yield(ledger, event.id)
     result_id = result.id
     ledger.close()
 
     reopened = SQLiteEventLedger(path)
-    reconstructed = get_recorded_fidelity_finding(reopened, result_id)
+    reconstructed = get_recorded_finding_yield_comparison(reopened, result_id)
     assert reconstructed.recorded_occurrence_id == result_id
-    assert reconstructed.standing == FAITHFUL_WITHIN_SCOPE
+    assert reconstructed.standing == AGREES_WITH_YIELD_EVIDENCE
     reopened.close()
 
 
-def test_fidelity_validation_refuses_an_unsupported_yield_coordinate(recorded):
+def test_comparison_validation_refuses_an_unsupported_yield_coordinate(recorded):
     ledger, event = recorded
-    result = compare_recorded_finding(ledger, event.id)
+    result = compare_recorded_finding_yield(ledger, event.id)
     evidence = ledger.get(result.payload["yield_evidence_id"])
     forged_evidence = ledger.append(
         YIELD_EVIDENCE_KIND,
@@ -208,26 +208,26 @@ def test_fidelity_validation_refuses_an_unsupported_yield_coordinate(recorded):
         session_id="r",
     )
     forged_result = ledger.append(
-        FIDELITY_FINDING_KIND,
+        FINDING_YIELD_COMPARISON_KIND,
         "w",
         {**result.payload, "yield_evidence_id": forged_evidence.id},
         session_id="r",
     )
-    with pytest.raises(FindingFidelityError, match="exact Fidelity result contract"):
-        get_recorded_fidelity_finding(ledger, forged_result.id)
+    with pytest.raises(RecordedFindingYieldComparisonError, match="exact Compare result contract"):
+        get_recorded_finding_yield_comparison(ledger, forged_result.id)
 
 
-def test_corrupted_fidelity_occurrence_cannot_be_validated(tmp_path):
+def test_corrupted_comparison_occurrence_cannot_be_validated(tmp_path):
     ledger, event = _recorded_in(SQLiteEventLedger(tmp_path / "corrupt-result.sqlite"))
-    result = compare_recorded_finding(ledger, event.id)
+    result = compare_recorded_finding_yield(ledger, event.id)
     ledger._connection.execute("DROP TRIGGER events_refuse_update")
     ledger._connection.execute(
         "UPDATE events SET content_hash = ? WHERE id = ?",
         ("corrupted", result.id),
     )
     ledger._connection.commit()
-    with pytest.raises(FindingFidelityError, match="corrupted occurrence"):
-        get_recorded_fidelity_finding(ledger, result.id)
+    with pytest.raises(RecordedFindingYieldComparisonError, match="corrupted occurrence"):
+        get_recorded_finding_yield_comparison(ledger, result.id)
     ledger.close()
 
 
@@ -239,8 +239,8 @@ def test_a_finding_naming_no_yield_evidence_preserves_erasure(recorded):
         {**event.payload, "yield_evidence_id": None},
         session_id="r",
     )
-    result = compare_recorded_finding(ledger, forged.id)
-    assert result.payload["dimensions"]["standing"] == UNFAITHFUL_CROSSING
+    result = compare_recorded_finding_yield(ledger, forged.id)
+    assert result.payload["dimensions"]["standing"] == DIFFERS_FROM_YIELD_EVIDENCE
     assert result.payload["observed_crossings"] == [
         {
             "kind": ERASURE,
@@ -259,11 +259,11 @@ def test_a_content_mismatch_does_not_assert_which_crossing_caused_it(
     altered = dict(event.payload)
     altered["total_count"] = 999
     forged = ledger.append(MEASUREMENT_RECORDED_KIND, "w", altered, session_id="r")
-    result = compare_recorded_finding(ledger, forged.id)
-    assert result.payload["dimensions"]["standing"] == UNFAITHFUL_CROSSING
+    result = compare_recorded_finding_yield(ledger, forged.id)
+    assert result.payload["dimensions"]["standing"] == DIFFERS_FROM_YIELD_EVIDENCE
     assert result.payload["observed_crossings"] == [
         {
-            "kind": FIDELITY_UNKNOWN,
+            "kind": COMPARISON_UNKNOWN,
             "observation": (
                 "the named yield evidence does not concern this exact "
                 "recorded content"
@@ -279,15 +279,15 @@ def test_the_comparison_revises_nothing(recorded):
     altered = dict(event.payload)
     altered["total_count"] = 999
     forged = ledger.append(MEASUREMENT_RECORDED_KIND, "w", altered, session_id="r")
-    compare_recorded_finding(ledger, forged.id)
-    # The finding found unfaithful is exactly as it was.
+    compare_recorded_finding_yield(ledger, forged.id)
+    # The finding found differing is exactly as it was.
     assert ledger.get(forged.id).payload["total_count"] == 999
     assert ledger.get(forged.id).kind == MEASUREMENT_RECORDED_KIND
 
 
 def test_it_asserts_no_responsibility_assignment_and_no_correction_authority(recorded):
     ledger, event = recorded
-    result = compare_recorded_finding(ledger, event.id)
+    result = compare_recorded_finding_yield(ledger, event.id)
     dims = result.payload["dimensions"]
     assert dims["responsibility"] == RESPONSIBILITY_UNESTABLISHED
     assert "correction authority" in dims["authority"]
@@ -295,14 +295,14 @@ def test_it_asserts_no_responsibility_assignment_and_no_correction_authority(rec
 
 
 def test_it_preserves_what_the_clause_requires(recorded):
-    """`01.Source.C` names what a fidelity comparison must preserve."""
+    """`01.Source.C` names what a comparison comparison must preserve."""
 
     ledger, event = recorded
-    result = compare_recorded_finding(ledger, event.id)
+    result = compare_recorded_finding_yield(ledger, event.id)
     for coordinate in (
         "constitutional_subject",
-        "bounded_expectation",
-        "implementation_witness",
+        "compared_relation",
+        "recorded_finding_ref",
         "observed_crossings",
         "evidence_and_provenance",
         "authority_boundary",
@@ -320,24 +320,24 @@ def test_it_does_not_walk_what_the_finding_stood_on(recorded):
 
     ledger, event = recorded
     before = len(ledger.list("w"))
-    compare_recorded_finding(ledger, event.id)
+    compare_recorded_finding_yield(ledger, event.id)
     # Exactly this result and its yield Evidence. Nothing upstream was
     # touched and no downstream applicability was determined.
     appended = ledger.list("w")[before:]
     assert [event.kind for event in appended] == [
         YIELD_EVIDENCE_KIND,
-        FIDELITY_FINDING_KIND,
+        FINDING_YIELD_COMPARISON_KIND,
     ]
 
 
 def test_only_a_recorded_measurement_finding_may_be_compared(recorded):
     ledger, _ = recorded
     other = ledger.append("unrelated.kind", "w", {}, session_id="r")
-    with pytest.raises(FindingFidelityError, match="not a recorded measurement"):
-        compare_recorded_finding(ledger, other.id)
+    with pytest.raises(RecordedFindingYieldComparisonError, match="not a recorded measurement"):
+        compare_recorded_finding_yield(ledger, other.id)
 
 
-def test_positional_measurement_is_outside_the_recurrence_fidelity_scope(recorded):
+def test_positional_measurement_is_outside_the_recurrence_comparison_scope(recorded):
     ledger, event = recorded
     occurrence = ledger.get(event.payload["input_event_ids"][0])
     finding = measure_after(
@@ -347,11 +347,11 @@ def test_positional_measurement_is_outside_the_recurrence_fidelity_scope(recorde
         ledger, workspace_id="w", session_id="r", finding=finding
     )
     assert "yield_evidence_id" not in positional.payload
-    with pytest.raises(FindingFidelityError, match="not a recorded recurrence"):
-        compare_recorded_finding(ledger, positional.id)
+    with pytest.raises(RecordedFindingYieldComparisonError, match="not a recorded recurrence"):
+        compare_recorded_finding_yield(ledger, positional.id)
 
 
-def test_unavailable_named_evidence_leaves_fidelity_unknown(recorded):
+def test_unavailable_named_evidence_leaves_comparison_unknown(recorded):
     """Naming evidence is not having it."""
 
     ledger, event = recorded
@@ -361,8 +361,8 @@ def test_unavailable_named_evidence_leaves_fidelity_unknown(recorded):
         {**event.payload, "yield_evidence_id": "evt_never_appended"},
         session_id="r",
     )
-    result = compare_recorded_finding(ledger, forged.id)
-    assert result.payload["dimensions"]["standing"] == FIDELITY_UNKNOWN
+    result = compare_recorded_finding_yield(ledger, forged.id)
+    assert result.payload["dimensions"]["standing"] == COMPARISON_UNKNOWN
     assert result.payload["observed_crossings"] == []
     assert "unavailable" in " ".join(result.payload["unknowns"])
 
@@ -376,7 +376,7 @@ def test_a_finding_naming_something_that_is_not_yield_evidence(recorded):
         {**event.payload, "yield_evidence_id": unrelated.id},
         session_id="r",
     )
-    result = compare_recorded_finding(ledger, forged.id)
+    result = compare_recorded_finding_yield(ledger, forged.id)
     assert (
         result.payload["observed_crossings"][0]["kind"]
         == UNSUPPORTED_COORDINATE
@@ -405,9 +405,9 @@ def test_lawful_recording_additions_do_not_change_the_yielded_result(recorded):
         finding=finding,
         extra={"a_recording_coordinate": "kept"},
     )
-    assert compare_recorded_finding(ledger, added.id).payload["dimensions"][
+    assert compare_recorded_finding_yield(ledger, added.id).payload["dimensions"][
         "standing"
-    ] == FAITHFUL_WITHIN_SCOPE
+    ] == AGREES_WITH_YIELD_EVIDENCE
 
 
 def test_missing_yield_commitment_is_erasure(recorded):
@@ -428,7 +428,7 @@ def test_missing_yield_commitment_is_erasure(recorded):
         {**event.payload, "yield_evidence_id": evidence.id},
         session_id="r",
     )
-    result = compare_recorded_finding(ledger, forged.id)
+    result = compare_recorded_finding_yield(ledger, forged.id)
     assert result.payload["observed_crossings"][0]["kind"] == ERASURE
 
 
@@ -438,7 +438,7 @@ def test_missing_recorded_yielded_coordinate_is_erasure(recorded):
     altered["dimensions"] = dict(altered["dimensions"])
     altered["dimensions"].pop("source_provenance")
     forged = ledger.append(MEASUREMENT_RECORDED_KIND, "w", altered, session_id="r")
-    result = compare_recorded_finding(ledger, forged.id)
+    result = compare_recorded_finding_yield(ledger, forged.id)
     assert result.payload["observed_crossings"][0]["kind"] == ERASURE
 
 
@@ -447,12 +447,12 @@ def test_absent_locality_remains_absent(recorded):
     without_locality = ledger.append(
         MEASUREMENT_RECORDED_KIND, "w", dict(event.payload), session_id=None
     )
-    result = compare_recorded_finding(ledger, without_locality.id)
+    result = compare_recorded_finding_yield(ledger, without_locality.id)
     assert result.payload["dimensions"]["scope_locality"] is None
     assert result.payload["dimensions"]["scope_workspace"] == "w"
 
 
-def test_foreign_workspace_yield_evidence_is_not_faithful(recorded):
+def test_foreign_workspace_yield_evidence_is_not_agreeing(recorded):
     ledger, event = recorded
     foreign = ledger.append(
         MEASUREMENT_RECORDED_KIND,
@@ -460,28 +460,28 @@ def test_foreign_workspace_yield_evidence_is_not_faithful(recorded):
         dict(event.payload),
         session_id="r",
     )
-    result = compare_recorded_finding(ledger, foreign.id)
-    assert result.payload["dimensions"]["standing"] == FIDELITY_UNKNOWN
+    result = compare_recorded_finding_yield(ledger, foreign.id)
+    assert result.payload["dimensions"]["standing"] == COMPARISON_UNKNOWN
     assert result.payload["observed_crossings"] == []
     assert "cross-workspace movement" in " ".join(result.payload["unknowns"])
 
 
-def test_recording_coordinates_is_not_part_of_the_yielded_fidelity_result(recorded):
+def test_recording_coordinates_is_not_part_of_the_yielded_comparison_result(recorded):
     ledger, event = recorded
-    result = compare_recorded_finding(ledger, event.id)
+    result = compare_recorded_finding_yield(ledger, event.id)
     evidence = ledger.get(result.payload["yield_evidence_id"])
     assert "occurrence_preservation" not in evidence.payload[
         "yield_coordinates"
     ]
     assert result.payload["occurrence_preservation"].startswith(
-        "Fidelity finding durably recorded"
+        "recorded finding Yield comparison durably recorded"
     )
 
 
-def test_corrupted_implementation_witness_is_refused(tmp_path):
+def test_corrupted_recorded_finding_ref_is_refused(tmp_path):
     from seed_runtime.events import SQLiteEventLedger
 
-    ledger = SQLiteEventLedger(tmp_path / "fidelity.sqlite")
+    ledger = SQLiteEventLedger(tmp_path / "comparison.sqlite")
     occurrence = ledger.append(
         INGRESS_OCCURRED_KIND,
         "w",
@@ -510,15 +510,15 @@ def test_corrupted_implementation_witness_is_refused(tmp_path):
         "UPDATE events SET content_hash = ? WHERE id = ?", ("corrupted", event.id)
     )
     ledger._connection.commit()
-    with pytest.raises(FindingFidelityError, match="implementation witness"):
-        compare_recorded_finding(ledger, event.id)
+    with pytest.raises(RecordedFindingYieldComparisonError, match="recorded finding"):
+        compare_recorded_finding_yield(ledger, event.id)
     ledger.close()
 
 
-def test_corrupted_yield_evidence_leaves_fidelity_unknown(tmp_path):
+def test_corrupted_yield_evidence_leaves_comparison_unknown(tmp_path):
     from seed_runtime.events import SQLiteEventLedger
 
-    ledger = SQLiteEventLedger(tmp_path / "fidelity-evidence.sqlite")
+    ledger = SQLiteEventLedger(tmp_path / "comparison-evidence.sqlite")
     occurrence = ledger.append(
         INGRESS_OCCURRED_KIND,
         "w",
@@ -548,7 +548,7 @@ def test_corrupted_yield_evidence_leaves_fidelity_unknown(tmp_path):
         ("corrupted", finding.yield_evidence_id),
     )
     ledger._connection.commit()
-    result = compare_recorded_finding(ledger, event.id)
-    assert result.payload["dimensions"]["standing"] == FIDELITY_UNKNOWN
+    result = compare_recorded_finding_yield(ledger, event.id)
+    assert result.payload["dimensions"]["standing"] == COMPARISON_UNKNOWN
     assert "corrupted" in " ".join(result.payload["conflicts"])
     ledger.close()

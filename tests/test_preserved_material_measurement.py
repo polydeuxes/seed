@@ -711,7 +711,7 @@ def test_the_batch_refuses_the_same_material_the_single_measurement_refuses(
 
 
 # --------------------------------------------------------------------------
-# Fidelity of the one-pass batch: what it discloses must be what it did.
+# One-pass batch boundary: what it discloses must be what it did.
 # --------------------------------------------------------------------------
 
 

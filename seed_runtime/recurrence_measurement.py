@@ -50,9 +50,8 @@ from seed_runtime.preserved_material_measurement import MEASUREMENT_RECORDED_KIN
 
 EXCHANGE_COUNT_RECORDED_KIND = "operator.measurement.exchange_count_recorded"
 
-MEASURED_ASSERTION_FIDELITY_RESPONSIBILITY = (
-    "preserve the fidelity of this measured Assertion's Standing to its "
-    "carried coordinates"
+MEASURED_ASSERTION_STANDING_COORDINATE_RESPONSIBILITY = (
+    "preserve this measured Assertion's carried Standing coordinates"
 )
 
 # The declared identity a recurrence assertion is made under. Two occurrences
@@ -177,7 +176,7 @@ class MeasuredAssertion:
                     "recorded comparison occurrences and recorded measurement "
                     "occurrences"
                 ),
-                "responsibility": MEASURED_ASSERTION_FIDELITY_RESPONSIBILITY,
+                "responsibility": MEASURED_ASSERTION_STANDING_COORDINATE_RESPONSIBILITY,
                 "authority": (
                     "measurement evidence only; establishes no relation between "
                     "the exchanges, no source independence, and no corroboration"
@@ -759,7 +758,7 @@ def record_measured_count(
     """Preserve the distinct Assertions one recurrence Measurement yielded.
 
     Yield Evidence binds the exact responsible Measurement occurrence to
-    these exact results. Each result Assertion separately bears Responsibility for fidelity of its
+    these exact results. Each result Assertion separately bears Responsibility for preserving its
     Standing to its carried coordinates.
     """
 

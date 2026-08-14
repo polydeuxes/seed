@@ -126,7 +126,7 @@ def test_compare_preserves_exact_occurrence_bound_inputs(comparable):
         ("authority", "authority"),
     ),
 )
-def test_compare_does_not_erase_established_fidelity_coordinates(
+def test_compare_does_not_erase_established_standing_coordinates(
     comparable, coordinate, field
 ):
     ledger, left, right = comparable
@@ -475,7 +475,7 @@ def test_validation_refuses_changed_result_assertion_dimensions(
         ("forbidden_inferences", []),
     ),
 )
-def test_validation_refuses_changed_result_assertion_fidelity_shell(
+def test_validation_refuses_changed_result_assertion_standing_coordinate_shell(
     comparable, field, replacement
 ):
     ledger, left, right = comparable

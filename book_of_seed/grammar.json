@@ -90,7 +90,7 @@
       "subject": "Assertion",
       "identity": ["result", "subject", "Scope", "content"],
       "responsibility": {
-        "kind": "fidelity",
+        "kind": "Standing_coordinate_preservation",
         "addressed": "Standing",
         "coordinates": [
           "Evidence",

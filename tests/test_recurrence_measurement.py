@@ -41,7 +41,7 @@ from seed_runtime.recurrence_measurement import (
     DECLARED_IDENTITY,
     EXCHANGE_COUNT_RECORDED_KIND,
     FORBIDDEN_INFERENCES,
-    MEASURED_ASSERTION_FIDELITY_RESPONSIBILITY,
+    MEASURED_ASSERTION_STANDING_COORDINATE_RESPONSIBILITY,
     RecurrenceMeasurementError,
     assertions_of_recorded_measurement,
     assertions_from_measured_count,
@@ -109,8 +109,8 @@ def _assertions_by_result(event):
 # --------------------------------------------------------------------------
 
 
-def test_assertion_fidelity_responsibility_is_distinct_from_its_yield(compared):
-    """The yielding Act and the result's fidelity responsible boundary remain distinct."""
+def test_assertion_standing_coordinate_responsibility_is_distinct_from_its_yield(compared):
+    """The yielding Act and the result's Standing-coordinate responsible boundary remain distinct."""
     event = record_measured_count(
         compared, workspace_id="w", session_id="s1",
         finding=_by_right(compared)["word"])
@@ -118,7 +118,7 @@ def test_assertion_fidelity_responsibility_is_distinct_from_its_yield(compared):
     assert assertions
     assert all(
         assertion["dimensions"]["responsibility"]
-        == MEASURED_ASSERTION_FIDELITY_RESPONSIBILITY
+        == MEASURED_ASSERTION_STANDING_COORDINATE_RESPONSIBILITY
         for assertion in assertions
     )
     assert all(assertion["subject_kind"] == "assertion" for assertion in assertions)
@@ -136,7 +136,7 @@ def test_assertion_fidelity_responsibility_is_distinct_from_its_yield(compared):
 
 
 def test_a_measured_assertion_does_not_supply_its_next_question(compared):
-    """Local fidelity Responsibility does not establish continuation by identity."""
+    """Local Standing-coordinate Responsibility does not establish continuation by identity."""
     event = record_measured_count(
         compared, workspace_id="w", session_id="s1",
         finding=_by_right(compared)["word"])
@@ -315,7 +315,7 @@ def test_two_yields_of_one_assertion_can_be_compared_without_relation(compared):
     assert comparison.act == "Compare"
     assert comparison.responsible_boundary == "this bounded comparison occurrence"
     assert comparison.responsibility == (
-        "preserve each input's carried fidelity coordinates and report literal "
+        "preserve each input's carried Standing coordinates and report literal "
         "sameness, difference, and absence only"
     )
     assert all(distinction.same for distinction in comparison.distinctions)

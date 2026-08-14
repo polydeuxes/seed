@@ -29,8 +29,7 @@ COORDINATE_ASSERTION_COUNT_RECORDED_KIND = (
     "operator.measurement.coordinate_assertion_count_recorded"
 )
 MEASURED_ASSERTION_RESPONSIBILITY = (
-    "preserve the fidelity of this measured Assertion's Standing to its "
-    "carried coordinates"
+    "preserve this measured Assertion's carried Standing coordinates"
 )
 MEASUREMENT_AUTHORITY = (
     "literal Measurement Evidence only; establishes no relation, similarity, "

@@ -169,8 +169,7 @@ BYTE_PAIR_FORBIDDEN_INFERENCES = (
     "adjacency and order, or significance",
 )
 MEASURED_ASSERTION_RESPONSIBILITY = (
-    "preserve the fidelity of this measured Assertion's Standing to its "
-    "carried coordinates"
+    "preserve this measured Assertion's carried Standing coordinates"
 )
 
 

@@ -34,8 +34,7 @@ RECURRENCE_SUBJECT_COORDINATES_RECORDED_KIND = (
     "operator.measurement.recurrence_subject_coordinates_recorded"
 )
 MEASURED_ASSERTION_RESPONSIBILITY = (
-    "preserve the fidelity of this measured Assertion's Standing to its "
-    "carried coordinates"
+    "preserve this measured Assertion's carried Standing coordinates"
 )
 MEASUREMENT_AUTHORITY = (
     "literal Measurement Evidence only; establishes no nested coordinate, "

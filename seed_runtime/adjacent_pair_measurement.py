@@ -98,9 +98,8 @@ PAIR_MEASUREMENT_FORMS: tuple[str, ...] = (
     "after_same_left",
 )
 
-POSITIONAL_RESULT_FIDELITY_RESPONSIBILITY = (
-    "preserve the fidelity of this measured Assertion's Standing to its "
-    "carried coordinates"
+POSITIONAL_RESULT_STANDING_COORDINATE_RESPONSIBILITY = (
+    "preserve this measured Assertion's carried Standing coordinates"
 )
 
 
@@ -305,7 +304,7 @@ def _adjacent_pair_result_assertion_fields(
             "content": content,
             "standing": "measured",
             "source_provenance": "preserved operator-ingress occurrences",
-            "responsibility": POSITIONAL_RESULT_FIDELITY_RESPONSIBILITY,
+            "responsibility": POSITIONAL_RESULT_STANDING_COORDINATE_RESPONSIBILITY,
             "authority": (
                 "measurement evidence only; establishes no represented relation, relation, "
                 "kind, or standing beyond this measured Assertion"

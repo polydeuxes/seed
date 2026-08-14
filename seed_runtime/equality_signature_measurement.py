@@ -34,8 +34,7 @@ EQUALITY_SIGNATURE_RECORDED_KIND = (
 )
 SIGNATURE_RESULT = "exact_equality_signature"
 MEASURED_ASSERTION_RESPONSIBILITY = (
-    "preserve the fidelity of this measured Assertion's Standing to its "
-    "carried coordinates"
+    "preserve this measured Assertion's carried Standing coordinates"
 )
 MEASUREMENT_AUTHORITY = (
     "literal Measurement Evidence only; establishes no Equivalence, similarity, "
