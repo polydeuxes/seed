@@ -8,7 +8,7 @@ from io import StringIO
 
 import pytest
 
-from seed_runtime.events import EventLedger, InvalidLedgerBoundary
+from seed_runtime.events import EventLedger, InvalidLedgerBoundary, SQLiteEventLedger
 from seed_runtime.event import Event
 from seed_runtime.adjacent_pair_measurement import (
     EQUIVALENCE_RULE,
@@ -21,6 +21,7 @@ from seed_runtime.adjacent_pair_measurement import (
     observe_adjacent_pair_observations_from_finding,
     observe_emitted_representation_adjacency,
     compare_emitted_representation_adjacency,
+    record_emitted_representation_adjacency,
     compare_adjacent_pair_observations,
     record_adjacent_pair_observations,
     get_recorded_adjacent_pair_observations,
@@ -588,7 +589,9 @@ def test_adjacent_pair_observation_recovery_refuses_self_consistent_counterfeit_
     )
 
     altered_result = {
-        "finding_event_id": recorded.payload["finding_event_id"],
+        "adjacency_evidence_event_id": recorded.payload[
+            "adjacency_evidence_event_id"
+        ],
         "source_occurrence_ids": recorded.payload["source_occurrence_ids"],
         "observations": json.loads(json.dumps(recorded.payload["observations"])),
     }
@@ -690,6 +693,19 @@ def test_emitted_representation_adjacency_requires_exact_carriage():
         == emission.payload["carriage_evidence_id"]
         for item in observations
     )
+    recorded_observations = record_emitted_representation_adjacency(
+        ledger,
+        emission_event_id=emission.id,
+    )
+    assert get_recorded_adjacent_pair_observations(
+        ledger, recorded_observations.id
+    ) == observations
+    assert recorded_observations.payload["adjacency_evidence_event_id"] == (
+        emission.payload["carriage_evidence_id"]
+    )
+    assert [
+        item["subject_ref"] for item in recorded_observations.payload["participation"]
+    ] == [emission.payload["carriage_evidence_id"], emission.id]
 
     copied = emission.model_copy(deep=True)
     copied.payload["carriage_evidence_id"] = None
@@ -761,6 +777,39 @@ def test_emission_adjacency_compare_requires_distinct_real_occurrences():
             ledger,
             emission_event_ids=("missing-one", "missing-two"),
         )
+
+
+def test_emission_adjacency_refuses_corrupted_carriage_evidence(tmp_path):
+    ledger = SQLiteEventLedger(tmp_path / "emission-adjacency.sqlite")
+    representation = record_operator_representation(
+        ledger,
+        workspace_id="w",
+        session_id="s",
+        session_standing=read_operator_session_standing(
+            ledger, workspace_id="w", session_id="s"
+        ),
+        alternative_sources=CLOSED_CHOICE_FIXTURE_SOURCES,
+    )
+    emitted = emit_operator_representation(
+        ledger,
+        representation=representation,
+        output_stream=StringIO(),
+    )
+    emission = ledger.get(emitted["emitted_event_id"])
+    carriage_id = emission.payload["carriage_evidence_id"]
+    ledger._connection.execute("DROP TRIGGER events_refuse_update")
+    ledger._connection.execute(
+        "UPDATE events SET content_hash = ? WHERE id = ?",
+        ("corrupted", carriage_id),
+    )
+    ledger._connection.commit()
+
+    with pytest.raises(PreservedMaterialMeasurementError, match="Carriage Evidence"):
+        observe_emitted_representation_adjacency(
+            ledger,
+            emission_event_id=emission.id,
+        )
+    ledger.close()
 
 
 # --------------------------------------------------------------------------

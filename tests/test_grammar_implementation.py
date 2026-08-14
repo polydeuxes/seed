@@ -12,7 +12,7 @@ from seed_runtime.byte_measurement import (
     record_adjacent_byte_pair_count_layer,
     record_byte_count_layer,
 )
-from seed_runtime.events import EventLedger
+from seed_runtime.events import CORRUPTED, EventLedger
 from seed_runtime.operator_console import run_persistent_operator_console
 from seed_runtime.operator_representation import (
     REPRESENTATION_EMISSION_INPUT_ROLE,
@@ -29,6 +29,20 @@ INAPPLICABLE = "inapplicable"
 UNKNOWN = "Unknown"
 MISSING = "missing"
 CONTRADICTION = "contradiction"
+
+
+class _IntegrityAdversaryLedger(EventLedger):
+    def __init__(self):
+        super().__init__()
+        self._corrupted_ids: set[str] = set()
+
+    def mark_corrupted(self, event_id: str) -> None:
+        self._corrupted_ids.add(event_id)
+
+    def integrity_of(self, event_id: str) -> str:
+        if event_id in self._corrupted_ids:
+            return CORRUPTED
+        return super().integrity_of(event_id)
 
 
 def _clause(clause_id: str) -> dict:
@@ -83,7 +97,8 @@ def _assertion_carriage_witness(bundle: dict, *, occurrence_id: str) -> str:
         carrier.id == occurrence_id
         == assertion.recorded_occurrence_id
     )
-    return EXACT if exact_relation and exact_occurrence else MISSING
+    intact = bundle["ledger"].integrity_of(carrier.id) != CORRUPTED
+    return EXACT if exact_relation and exact_occurrence and intact else MISSING
 
 
 def _representation_digest_witness(
@@ -122,7 +137,7 @@ def _source_assertion():
 
 
 def _byte_measurement_road() -> dict:
-    ledger = EventLedger()
+    ledger = _IntegrityAdversaryLedger()
     run_persistent_operator_console(
         ledger=ledger,
         workspace_id="w",
@@ -153,7 +168,7 @@ def _byte_measurement_road() -> dict:
 def _recorded_applicability() -> dict:
     # RecordedByteAssertion deliberately carries no ledger handle. Recreate the
     # live road so every relation can be checked through its own occurrences.
-    ledger = EventLedger()
+    ledger = _IntegrityAdversaryLedger()
     run_persistent_operator_console(
         ledger=ledger,
         workspace_id="w",
@@ -194,7 +209,7 @@ def _recorded_applicability() -> dict:
 
 
 def _emission_road() -> dict:
-    ledger = EventLedger()
+    ledger = _IntegrityAdversaryLedger()
     representation = record_operator_representation(
         ledger,
         workspace_id="w",
@@ -369,6 +384,11 @@ def _occurrence_result_witness(bundle: dict) -> str:
     content_evidence = bundle["content_evidence"]
     if act_evidence is None or content_evidence is None:
         return MISSING
+    if (
+        bundle["ledger"].integrity_of(act_evidence.id) == CORRUPTED
+        or bundle["ledger"].integrity_of(content_evidence.id) == CORRUPTED
+    ):
+        return MISSING
     same_occurrence = carrier.payload.get("act_occurrence_id") == (
         act_evidence.payload.get("act_occurrence_id")
     ) == content_evidence.payload.get("dimensions", {}).get("act_occurrence_id")
@@ -397,6 +417,8 @@ def _emission_carriage_witness(bundle: dict) -> str:
     carrier = bundle["carrier"]
     evidence = bundle["carriage_evidence"]
     if evidence is None:
+        return MISSING
+    if bundle["ledger"].integrity_of(evidence.id) == CORRUPTED:
         return MISSING
     exact_relation = (
         carrier.payload.get("emitted_representation")
@@ -439,6 +461,8 @@ def _emission_participation_witness(bundle: dict) -> str:
     carrier = bundle["carrier"]
     evidence = bundle["act_evidence"]
     if evidence is None:
+        return MISSING
+    if bundle["ledger"].integrity_of(evidence.id) == CORRUPTED:
         return MISSING
     exact_relation = (
         carrier.payload.get("representation_ref")
@@ -485,6 +509,8 @@ def _representation_carriage_witness(bundle: dict) -> str:
 def _structural_edge_fidelity_cases() -> dict[str, dict[str, str]]:
     carriage = _byte_measurement_road()
     alternate_carriage = _byte_measurement_road()
+    corrupted_carriage = _byte_measurement_road()
+    corrupted_carriage["ledger"].mark_corrupted(corrupted_carriage["carrier"].id)
     missing_carriage = dict(carriage)
     missing_carrier = carriage["carrier"].model_copy(deep=True)
     missing_carrier.payload["assertions"] = [
@@ -501,6 +527,10 @@ def _structural_edge_fidelity_cases() -> dict[str, dict[str, str]]:
 
     participation = _recorded_applicability()
     alternate_participation = _recorded_applicability()
+    corrupted_participation = _recorded_applicability()
+    corrupted_participation["ledger"].mark_corrupted(
+        corrupted_participation["pair_act_evidence"].id
+    )
     missing_participation = dict(participation)
     missing_participation["pair_act_evidence"] = None
     wrong_participation = dict(participation)
@@ -519,6 +549,10 @@ def _structural_edge_fidelity_cases() -> dict[str, dict[str, str]]:
 
     yielded = _byte_measurement_road()
     alternate_yield = _byte_measurement_road()
+    corrupted_yield = _byte_measurement_road()
+    corrupted_yield["ledger"].mark_corrupted(
+        corrupted_yield["content_evidence"].id
+    )
     missing_yield = dict(yielded)
     missing_yield["content_evidence"] = None
     wrong_yield = dict(yielded)
@@ -545,6 +579,10 @@ def _structural_edge_fidelity_cases() -> dict[str, dict[str, str]]:
                 carriage,
                 occurrence_id=alternate_carriage["carrier"].id,
             ),
+            "corrupted_evidence": _assertion_carriage_witness(
+                corrupted_carriage,
+                occurrence_id=corrupted_carriage["carrier"].id,
+            ),
             "unrelated_change": _assertion_carriage_witness(
                 unrelated_carriage,
                 occurrence_id=carriage["carrier"].id,
@@ -560,6 +598,9 @@ def _structural_edge_fidelity_cases() -> dict[str, dict[str, str]]:
             "wrong_occurrence": _participation_witness(
                 wrong_participation, role=BYTE_PAIR_INPUT_ROLE
             ),
+            "corrupted_evidence": _participation_witness(
+                corrupted_participation, role=BYTE_PAIR_INPUT_ROLE
+            ),
             "unrelated_change": _participation_witness(
                 unrelated_participation, role=BYTE_PAIR_INPUT_ROLE
             ),
@@ -568,6 +609,7 @@ def _structural_edge_fidelity_cases() -> dict[str, dict[str, str]]:
             "exact": _occurrence_result_witness(yielded),
             "edge_missing": _occurrence_result_witness(missing_yield),
             "wrong_occurrence": _occurrence_result_witness(wrong_yield),
+            "corrupted_evidence": _occurrence_result_witness(corrupted_yield),
             "unrelated_change": _occurrence_result_witness(unrelated_yield),
         },
     }
@@ -576,6 +618,18 @@ def _structural_edge_fidelity_cases() -> dict[str, dict[str, str]]:
 def _emission_structural_edge_fidelity_cases() -> dict[str, dict[str, str]]:
     emission = _emission_road()
     alternate = _emission_road()
+    corrupted_carriage = _emission_road()
+    corrupted_carriage["ledger"].mark_corrupted(
+        corrupted_carriage["carriage_evidence"].id
+    )
+    corrupted_participation = _emission_road()
+    corrupted_participation["ledger"].mark_corrupted(
+        corrupted_participation["act_evidence"].id
+    )
+    corrupted_yield = _emission_road()
+    corrupted_yield["ledger"].mark_corrupted(
+        corrupted_yield["content_evidence"].id
+    )
 
     missing_carriage = dict(emission)
     missing_carriage["carriage_evidence"] = None
@@ -613,12 +667,16 @@ def _emission_structural_edge_fidelity_cases() -> dict[str, dict[str, str]]:
             "exact": _emission_carriage_witness(emission),
             "edge_missing": _emission_carriage_witness(missing_carriage),
             "wrong_occurrence": _emission_carriage_witness(wrong_carriage),
+            "corrupted_evidence": _emission_carriage_witness(corrupted_carriage),
             "unrelated_change": _emission_carriage_witness(unrelated_carriage),
         },
         "participation": {
             "exact": _emission_participation_witness(emission),
             "edge_missing": _emission_participation_witness(missing_participation),
             "wrong_occurrence": _emission_participation_witness(wrong_participation),
+            "corrupted_evidence": _emission_participation_witness(
+                corrupted_participation
+            ),
             "unrelated_change": _emission_participation_witness(
                 unrelated_participation
             ),
@@ -627,6 +685,7 @@ def _emission_structural_edge_fidelity_cases() -> dict[str, dict[str, str]]:
             "exact": _occurrence_result_witness(emission),
             "edge_missing": _occurrence_result_witness(missing_yield),
             "wrong_occurrence": _occurrence_result_witness(wrong_yield),
+            "corrupted_evidence": _occurrence_result_witness(corrupted_yield),
             "unrelated_change": _occurrence_result_witness(unrelated_yield),
         },
     }
@@ -636,6 +695,7 @@ def _structural_edge_implementation_specs() -> dict[str, dict]:
     requirements = {
         "exact_relation": "edge_missing",
         "occurrence_witness": "wrong_occurrence",
+        "intact_evidence": "corrupted_evidence",
     }
     return {
         "carriage": {
@@ -795,6 +855,8 @@ def _participation_witness(bundle: dict, *, role: str) -> str:
     pair = bundle["pair_carrier"]
     act_evidence = bundle["pair_act_evidence"]
     if act_evidence is None:
+        return MISSING
+    if bundle["ledger"].integrity_of(act_evidence.id) == CORRUPTED:
         return MISSING
     exact_subject = (
         applicability["input_assertion_ref"]
@@ -1189,7 +1251,7 @@ def test_participation_requires_exact_subject_role_and_act_occurrence():
         "from": "subject",
         "to": "Act_occurrence",
         "coordinate": "role",
-        "requires": ["exact_relation", "occurrence_witness"],
+        "requires": ["exact_relation", "occurrence_witness", "intact_evidence"],
     }
     assert _participation_witness(bundle, role=BYTE_PAIR_INPUT_ROLE) == EXACT
     assert _participation_witness(bundle, role="some other role") == MISSING
@@ -1212,10 +1274,10 @@ def test_unjoined_endpoints_do_not_witness_an_input_to_act_relation():
     assert grammar["relation_audit"] == {
         "endpoint_presence_establishes_relation": False,
         "families": {
-            "carriage": ["exact_relation", "occurrence_witness"],
+            "carriage": ["exact_relation", "occurrence_witness", "intact_evidence"],
             "candidate_participation": ["exact_relation", "occurrence_witness"],
-            "participation": ["exact_relation", "occurrence_witness"],
-            "yield": ["exact_relation", "occurrence_witness"],
+            "participation": ["exact_relation", "occurrence_witness", "intact_evidence"],
+            "yield": ["exact_relation", "occurrence_witness", "intact_evidence"],
             "representation_mechanically_matches_digest": [
                 "mechanical_recomputation"
             ],

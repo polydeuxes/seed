@@ -15,20 +15,20 @@
       "book_clause": "01.Carriage.A",
       "from": "content",
       "to": "occurrence",
-      "requires": ["exact_relation", "occurrence_witness"]
+      "requires": ["exact_relation", "occurrence_witness", "intact_evidence"]
     },
     "participation": {
       "book_clause": "01.Standing.E.1",
       "from": "subject",
       "to": "Act_occurrence",
       "coordinate": "role",
-      "requires": ["exact_relation", "occurrence_witness"]
+      "requires": ["exact_relation", "occurrence_witness", "intact_evidence"]
     },
     "yield": {
       "book_clause": "02.Acts.A",
       "from": "Act_occurrence",
       "to": "result",
-      "requires": ["exact_relation", "occurrence_witness"]
+      "requires": ["exact_relation", "occurrence_witness", "intact_evidence"]
     }
   },
   "input_role": {
@@ -53,10 +53,10 @@
     "relation_audit": {
       "endpoint_presence_establishes_relation": false,
       "families": {
-        "carriage": ["exact_relation", "occurrence_witness"],
+        "carriage": ["exact_relation", "occurrence_witness", "intact_evidence"],
         "candidate_participation": ["exact_relation", "occurrence_witness"],
-        "participation": ["exact_relation", "occurrence_witness"],
-        "yield": ["exact_relation", "occurrence_witness"],
+        "participation": ["exact_relation", "occurrence_witness", "intact_evidence"],
+        "yield": ["exact_relation", "occurrence_witness", "intact_evidence"],
         "representation_mechanically_matches_digest": [
           "mechanical_recomputation"
         ],
@@ -70,6 +70,7 @@
       "exact": "exact",
       "edge_missing": "missing",
       "wrong_occurrence": "missing",
+      "corrupted_evidence": "missing",
       "unrelated_change": "exact"
     },
     "non_equivalence": [

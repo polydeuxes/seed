@@ -71,6 +71,8 @@ ADJACENT_PAIR_OBSERVATION_RESPONSIBILITY = (
 )
 PAIR_FINDING_PARTICIPATION_ROLE = "recovered ordered-pair finding"
 SOURCE_OCCURRENCE_PARTICIPATION_ROLE = "exact preserved source occurrence"
+EMISSION_CARRIAGE_PARTICIPATION_ROLE = "exact emission Carriage Evidence"
+EMISSION_OCCURRENCE_PARTICIPATION_ROLE = "exact emission occurrence"
 
 
 @dataclass(frozen=True)
@@ -448,10 +450,13 @@ def observe_emitted_representation_adjacency(
         not isinstance(text, str)
         or carriage is None
         or carriage.kind != REPRESENTATION_EMISSION_CARRIAGE_EVIDENCE_KIND
+        or ledger.integrity_of(carriage.id) == CORRUPTED
         or carriage.workspace_id != emission.workspace_id
         or carriage.session_id != emission.session_id
         or carriage.payload.get("act_occurrence_id")
         != emission.payload.get("act_occurrence_id")
+        or carriage.payload.get("content_kind") != "text"
+        or carriage.payload.get("standing") != "carried"
         or carriage.payload.get("carried_content") != text
     ):
         raise PreservedMaterialMeasurementError(
@@ -496,6 +501,42 @@ def compare_emitted_representation_adjacency(
         )
     )
     return compare_adjacent_pair_observations(observations)
+
+
+def record_emitted_representation_adjacency(
+    ledger: EventLedger,
+    *,
+    emission_event_id: str,
+) -> Event:
+    """Preserve exact adjacency observed through one emission Carriage."""
+
+    emission = ledger.get(emission_event_id)
+    observations = observe_emitted_representation_adjacency(
+        ledger,
+        emission_event_id=emission_event_id,
+    )
+    assert emission is not None
+    carriage_id = emission.payload["carriage_evidence_id"]
+    return _record_adjacent_pair_observation_result(
+        ledger,
+        workspace_id=emission.workspace_id,
+        session_id=emission.session_id,
+        adjacency_evidence_event_id=carriage_id,
+        source_ids=(emission.id,),
+        observations=observations,
+        applicable_inputs=[
+            {
+                "input_ref": carriage_id,
+                "role": EMISSION_CARRIAGE_PARTICIPATION_ROLE,
+                "standing": "applicable",
+            },
+            {
+                "input_ref": emission.id,
+                "role": EMISSION_OCCURRENCE_PARTICIPATION_ROLE,
+                "standing": "applicable",
+            },
+        ],
+    )
 
 
 def observe_adjacent_pair_observations_from_finding(
@@ -684,6 +725,112 @@ def _adjacent_pair_observation_payload(
     }
 
 
+def _record_adjacent_pair_observation_result(
+    ledger: EventLedger,
+    *,
+    workspace_id: str,
+    session_id: str,
+    adjacency_evidence_event_id: str,
+    source_ids: tuple[str, ...],
+    observations: tuple[AdjacentPairObservation, ...],
+    applicable_inputs: list[dict[str, str]],
+) -> Event:
+    act_id = new_id("adjacent_pair_observation_measurement_act")
+    act_occurrence_id = new_id("adjacent_pair_observation_measurement_occurrence")
+    result_payload = {
+        "adjacency_evidence_event_id": adjacency_evidence_event_id,
+        "source_occurrence_ids": list(source_ids),
+        "observations": [
+            _adjacent_pair_observation_payload(observation)
+            for observation in observations
+        ],
+    }
+    participation = [
+        {
+            "subject_ref": item["input_ref"],
+            "role": item["role"],
+            "act_occurrence_id": act_occurrence_id,
+        }
+        for item in applicable_inputs
+    ]
+    act_evidence = ledger.append(
+        ADJACENT_PAIR_OBSERVATION_ACT_EVIDENCE_KIND,
+        workspace_id,
+        {
+            "target_act_id": act_id,
+            "act_occurrence_id": act_occurrence_id,
+            "act": "exact adjacent-pair observation Measurement",
+            "responsibility": ADJACENT_PAIR_OBSERVATION_RESPONSIBILITY,
+            "responsible_boundary": "this Seed",
+            "input_applicability": applicable_inputs,
+            "participation": participation,
+            "result_commitment": yield_commitment(
+                ADJACENT_PAIR_OBSERVATION_CONVENTION, result_payload
+            ),
+            "standing": "occurred",
+            "authority": "Evidence concerning this exact bounded Measurement occurrence only",
+        },
+        session_id=session_id,
+    )
+    yield_evidence = _record_yield_evidence(
+        ledger,
+        workspace_id=workspace_id,
+        session_id=session_id,
+        convention=ADJACENT_PAIR_OBSERVATION_CONVENTION,
+        yielding_act="exact adjacent-pair observation Measurement",
+        act_occurrence_id=act_occurrence_id,
+        yielded_result_kind="exact adjacent-pair observations",
+        result_identity=f"adjacent-pair-observation-result:{act_occurrence_id}",
+        yielded_content=result_payload,
+        responsibility=ADJACENT_PAIR_OBSERVATION_RESPONSIBILITY,
+        responsible_boundary="this Seed",
+    )
+    carriage_evidence = ledger.append(
+        ADJACENT_PAIR_OBSERVATION_CARRIAGE_EVIDENCE_KIND,
+        workspace_id,
+        {
+            "act_occurrence_id": act_occurrence_id,
+            "content_kind": "exact adjacent-pair observations",
+            "carried_content": result_payload,
+            "standing": "carried",
+            "authority": "Evidence only for this exact result-to-occurrence Carriage",
+        },
+        session_id=session_id,
+    )
+    return ledger.append(
+        ADJACENT_PAIR_OBSERVATION_RECORDED_KIND,
+        workspace_id,
+        {
+            **result_payload,
+            "dimensions": {
+                "identity": act_occurrence_id,
+                "content": "exact adjacent-pair observations",
+                "standing": "measured",
+                "source_provenance": [adjacency_evidence_event_id, *source_ids],
+                "responsibility": ADJACENT_PAIR_OBSERVATION_RESPONSIBILITY,
+                "responsible_boundary": "this Seed",
+                "authority": (
+                    "measurement Evidence only; establishes no classification, "
+                    "represented relation, or Standing beyond this result"
+                ),
+                "scope_locality": f"workspace:{workspace_id};session:{session_id}",
+                "occurrence_preservation": "one exact adjacent-pair observation Measurement occurrence recorded",
+            },
+            "target_act_id": act_id,
+            "act_occurrence_id": act_occurrence_id,
+            "responsible_act_evidence_id": act_evidence.id,
+            "participation": participation,
+            "yield_evidence_id": yield_evidence.id,
+            "carriage_evidence_id": carriage_evidence.id,
+            "known_loss": [],
+            "unknowns": ["what any carried representation means remains Unknown"],
+            "conflicts": [],
+            "mutates_cluster": False,
+        },
+        session_id=session_id,
+    )
+
+
 def record_adjacent_pair_observations(
     ledger: EventLedger,
     *,
@@ -720,16 +867,6 @@ def record_adjacent_pair_observations(
         finding_event_id=finding_event_id,
         occurrences=source_occurrences,
     )
-    act_id = new_id("adjacent_pair_observation_measurement_act")
-    act_occurrence_id = new_id("adjacent_pair_observation_measurement_occurrence")
-    result_payload = {
-        "finding_event_id": finding_event_id,
-        "source_occurrence_ids": list(source_ids),
-        "observations": [
-            _adjacent_pair_observation_payload(observation)
-            for observation in observations
-        ],
-    }
     applicable_inputs = [
         {
             "input_ref": finding_event_id,
@@ -745,100 +882,14 @@ def record_adjacent_pair_observations(
             for source_id in source_ids
         ],
     ]
-    participation = [
-        {
-            "subject_ref": item["input_ref"],
-            "role": item["role"],
-            "act_occurrence_id": act_occurrence_id,
-        }
-        for item in applicable_inputs
-    ]
-    act_evidence = ledger.append(
-        ADJACENT_PAIR_OBSERVATION_ACT_EVIDENCE_KIND,
-        workspace_id,
-        {
-            "target_act_id": act_id,
-            "act_occurrence_id": act_occurrence_id,
-            "act": "exact adjacent-pair observation Measurement",
-            "responsibility": ADJACENT_PAIR_OBSERVATION_RESPONSIBILITY,
-            "responsible_boundary": "this Seed",
-            "input_applicability": applicable_inputs,
-            "participation": participation,
-            "result_commitment": yield_commitment(
-                ADJACENT_PAIR_OBSERVATION_CONVENTION,
-                result_payload,
-            ),
-            "standing": "occurred",
-            "authority": (
-                "Evidence concerning this exact bounded Measurement occurrence only"
-            ),
-        },
-        session_id=session_id,
-    )
-    yield_evidence = _record_yield_evidence(
+    return _record_adjacent_pair_observation_result(
         ledger,
         workspace_id=workspace_id,
         session_id=session_id,
-        convention=ADJACENT_PAIR_OBSERVATION_CONVENTION,
-        yielding_act="exact adjacent-pair observation Measurement",
-        act_occurrence_id=act_occurrence_id,
-        yielded_result_kind="exact adjacent-pair observations",
-        result_identity=f"adjacent-pair-observation-result:{act_occurrence_id}",
-        yielded_content=result_payload,
-        responsibility=ADJACENT_PAIR_OBSERVATION_RESPONSIBILITY,
-        responsible_boundary="this Seed",
-    )
-    carriage_evidence = ledger.append(
-        ADJACENT_PAIR_OBSERVATION_CARRIAGE_EVIDENCE_KIND,
-        workspace_id,
-        {
-            "act_occurrence_id": act_occurrence_id,
-            "content_kind": "exact adjacent-pair observations",
-            "carried_content": result_payload,
-            "standing": "carried",
-            "authority": (
-                "Evidence only for this exact result-to-occurrence Carriage"
-            ),
-        },
-        session_id=session_id,
-    )
-    return ledger.append(
-        ADJACENT_PAIR_OBSERVATION_RECORDED_KIND,
-        workspace_id,
-        {
-            **result_payload,
-            "dimensions": {
-                "identity": act_occurrence_id,
-                "content": "exact adjacent-pair observations around recovered ordered pairs",
-                "standing": "measured",
-                "source_provenance": [finding_event_id, *source_ids],
-                "responsibility": ADJACENT_PAIR_OBSERVATION_RESPONSIBILITY,
-                "responsible_boundary": "this Seed",
-                "authority": (
-                    "measurement Evidence only; establishes no classification, "
-                    "represented relation, or Standing beyond this result"
-                ),
-                "scope_locality": (
-                    f"workspace:{workspace_id};session:{session_id}"
-                ),
-                "occurrence_preservation": (
-                    "one exact adjacent-pair observation Measurement occurrence recorded"
-                ),
-            },
-            "target_act_id": act_id,
-            "act_occurrence_id": act_occurrence_id,
-            "responsible_act_evidence_id": act_evidence.id,
-            "participation": participation,
-            "yield_evidence_id": yield_evidence.id,
-            "carriage_evidence_id": carriage_evidence.id,
-            "known_loss": [],
-            "unknowns": [
-                "what any carried representation means remains Unknown",
-            ],
-            "conflicts": [],
-            "mutates_cluster": False,
-        },
-        session_id=session_id,
+        adjacency_evidence_event_id=finding_event_id,
+        source_ids=tuple(source_ids),
+        observations=observations,
+        applicable_inputs=applicable_inputs,
     )
 
 
@@ -946,12 +997,12 @@ def get_recorded_adjacent_pair_observations(
         raise PreservedMaterialMeasurementError(
             "the adjacent-pair observation result carrier is absent or corrupted"
         )
-    finding_id = carrier.payload.get("finding_event_id")
+    adjacency_evidence_id = carrier.payload.get("adjacency_evidence_event_id")
     source_ids = carrier.payload.get("source_occurrence_ids")
     carried_observations = carrier.payload.get("observations")
     if (
-        not isinstance(finding_id, str)
-        or not finding_id
+        not isinstance(adjacency_evidence_id, str)
+        or not adjacency_evidence_id
         or not isinstance(source_ids, list)
         or not all(isinstance(value, str) and value for value in source_ids)
         or not isinstance(carried_observations, list)
@@ -960,7 +1011,7 @@ def get_recorded_adjacent_pair_observations(
             "the adjacent-pair observation result carries malformed result coordinates"
         )
     result_payload = {
-        "finding_event_id": finding_id,
+        "adjacency_evidence_event_id": adjacency_evidence_id,
         "source_occurrence_ids": source_ids,
         "observations": carried_observations,
     }
@@ -1009,21 +1060,93 @@ def get_recorded_adjacent_pair_observations(
         raise PreservedMaterialMeasurementError(
             "the adjacent-pair observation edge Evidence concerns different coordinates"
         )
-    expected_inputs = [
-        {
-            "input_ref": finding_id,
-            "role": PAIR_FINDING_PARTICIPATION_ROLE,
-            "standing": "applicable",
-        },
-        *[
+    anchor = ledger.get(adjacency_evidence_id)
+    sources: dict[str, Event] = {}
+    source_texts: dict[str, str] = {}
+    if anchor is not None and _is_established_after_measurement(anchor):
+        expected_inputs = [
             {
-                "input_ref": source_id,
-                "role": SOURCE_OCCURRENCE_PARTICIPATION_ROLE,
+                "input_ref": adjacency_evidence_id,
+                "role": PAIR_FINDING_PARTICIPATION_ROLE,
                 "standing": "applicable",
-            }
-            for source_id in source_ids
-        ],
-    ]
+            },
+            *[
+                {
+                    "input_ref": source_id,
+                    "role": SOURCE_OCCURRENCE_PARTICIPATION_ROLE,
+                    "standing": "applicable",
+                }
+                for source_id in source_ids
+            ],
+        ]
+        if (
+            ledger.integrity_of(adjacency_evidence_id) == CORRUPTED
+            or anchor.workspace_id != carrier.workspace_id
+            or anchor.session_id != carrier.session_id
+            or anchor.payload.get("input_event_ids") != source_ids
+        ):
+            raise PreservedMaterialMeasurementError(
+                "the adjacent-pair observation pair-finding Evidence does not reconstruct"
+            )
+        for source_id in source_ids:
+            source = ledger.get(source_id)
+            text = source.payload.get("decoded_text") if source is not None else None
+            if (
+                source is None
+                or source.kind != INGRESS_OCCURRED_KIND
+                or ledger.integrity_of(source_id) == CORRUPTED
+                or source.workspace_id != carrier.workspace_id
+                or source.session_id != carrier.session_id
+                or not isinstance(text, str)
+            ):
+                raise PreservedMaterialMeasurementError(
+                    "the adjacent-pair observation source Evidence does not reconstruct"
+                )
+            sources[source_id] = source
+            source_texts[source_id] = text
+    elif (
+        anchor is not None
+        and anchor.kind == REPRESENTATION_EMISSION_CARRIAGE_EVIDENCE_KIND
+        and ledger.integrity_of(anchor.id) != CORRUPTED
+        and len(source_ids) == 1
+    ):
+        source = ledger.get(source_ids[0])
+        text = source.payload.get("emitted_representation") if source is not None else None
+        if (
+            source is None
+            or source.kind != REPRESENTATION_EMITTED_KIND
+            or ledger.integrity_of(source.id) == CORRUPTED
+            or source.workspace_id != carrier.workspace_id
+            or source.session_id != carrier.session_id
+            or source.payload.get("carriage_evidence_id") != anchor.id
+            or anchor.payload.get("act_occurrence_id")
+            != source.payload.get("act_occurrence_id")
+            or anchor.payload.get("content_kind") != "text"
+            or anchor.payload.get("standing") != "carried"
+            or anchor.payload.get("carried_content") != text
+            or not isinstance(text, str)
+        ):
+            raise PreservedMaterialMeasurementError(
+                "the emitted-representation Carriage Evidence does not reconstruct"
+            )
+        sources[source.id] = source
+        source_texts[source.id] = text
+        expected_inputs = [
+            {
+                "input_ref": anchor.id,
+                "role": EMISSION_CARRIAGE_PARTICIPATION_ROLE,
+                "standing": "applicable",
+            },
+            {
+                "input_ref": source.id,
+                "role": EMISSION_OCCURRENCE_PARTICIPATION_ROLE,
+                "standing": "applicable",
+            },
+        ]
+    else:
+        raise PreservedMaterialMeasurementError(
+            "the adjacent-pair observation Evidence anchor does not reconstruct"
+        )
     expected_participation = [
         {
             "subject_ref": item["input_ref"],
@@ -1040,42 +1163,15 @@ def get_recorded_adjacent_pair_observations(
         raise PreservedMaterialMeasurementError(
             "the adjacent-pair observation Act Evidence concerns different inputs or Participation coordinates"
         )
-    finding = ledger.get(finding_id)
-    if (
-        finding is None
-        or ledger.integrity_of(finding_id) == CORRUPTED
-        or not _is_established_after_measurement(finding)
-        or finding.workspace_id != carrier.workspace_id
-        or finding.session_id != carrier.session_id
-        or finding.payload.get("input_event_ids") != source_ids
-    ):
-        raise PreservedMaterialMeasurementError(
-            "the adjacent-pair observation pair-finding Evidence does not reconstruct"
-        )
-    sources: dict[str, Event] = {}
-    for source_id in source_ids:
-        source = ledger.get(source_id)
-        if (
-            source is None
-            or source.kind != INGRESS_OCCURRED_KIND
-            or ledger.integrity_of(source_id) == CORRUPTED
-            or source.workspace_id != carrier.workspace_id
-            or source.session_id != carrier.session_id
-            or not isinstance(source.payload.get("decoded_text"), str)
-        ):
-            raise PreservedMaterialMeasurementError(
-                "the adjacent-pair observation source Evidence does not reconstruct"
-            )
-        sources[source_id] = source
     observations = tuple(
         _adjacent_pair_observation_from_payload(value)
         for value in carried_observations
     )
     if any(
-        observation.evidence.get("adjacency_evidence_event_id") != finding_id
+        observation.evidence.get("adjacency_evidence_event_id") != adjacency_evidence_id
         or observation.source_occurrence_id not in sources
         or observation.evidence.get("exact_representation")
-        != sources[observation.source_occurrence_id].payload.get("decoded_text")
+        != source_texts[observation.source_occurrence_id]
         or observation.evidence.get("workspace_id") != carrier.workspace_id
         or observation.evidence.get("session_id") != carrier.session_id
         for observation in observations
