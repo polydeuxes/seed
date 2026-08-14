@@ -26,9 +26,9 @@ An exact Act may accept as input supplied material only within its carried Scope
 
 A Fidelity finding compares an exact constitutional subject and bounded expectation with an implementation witness. It preserves its Evidence, provenance, Authority, Scope, conflicts, Unknowns, and observed erasure, invention, mutation, or Authority relocation. It establishes no global certification, correction Authority, or effect beyond its boundary.
 
-### 01.Source.D — Measurement establishes only its declared result
+### 01.Source.D — Measurement carries only its declared result
 
-A declared Measurement may establish bounded exact equality, count, recurrence, prefix occurrence, declared-predicate result, or adjacency findings. It establishes nothing beyond its exact rule and boundary. Recurrence preserves the representation measured, sameness rule, and Scope.
+A declared Measurement occurrence may carry bounded exact equality, count, recurrence, prefix occurrence, declared-predicate result, or adjacency findings. Its result carries nothing beyond the exact rule and boundary. Recurrence preserves the representation measured, sameness rule, and Scope.
 
 Where a Seed performs a Seed-native declared Measurement over exact material already preserved in its workspace, that Seed bears the Measurement Responsibility. The assignment does not identify the occurrence, make recording the Measurement occurrence, or transfer the resulting Assertion's fidelity Responsibility.
 

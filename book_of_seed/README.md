@@ -21,9 +21,9 @@ The Markdown chapters explain and orient the same clauses.
 1. Responsibility is the Book's representation and traversal root for reading each exact responsibility and the branches it instantiates.
 2. The headings beneath it expose coordinates and relations; they do not change Responsibility assignments.
 3. Every instantiated responsibility must expose the branches required by that responsibility.
-4. A conditional branch remains uninstantiated where that responsibility does not establish the coordinate.
-5. An instantiated coordinate whose value has not been resolved remains unresolved unless a responsible occurrence positively establishes Unknown.
-6. Recurrence, headings, adjacency, implementation shape, or plausible completion do not establish a branch value or identity.
+4. A conditional branch remains uninstantiated until a responsible occurrence supplies its coordinate.
+5. An instantiated coordinate whose value has not been resolved remains unresolved unless a responsible occurrence carries Unknown Standing for it.
+6. Recurrence, headings, adjacency, implementation shape, or plausible completion supply neither a branch value nor its identity.
 
 ### Required identifying branches
 
@@ -33,7 +33,7 @@ Identifies who bears and answers for the exact responsibility. It is distinct fr
 
 #### Subject or material addressed
 
-Identifies what the Responsibility concerns, evaluates, forms, preserves, establishes, or stops. Responsible-boundary identity does not establish subject identity.
+Identifies what the Responsibility concerns, evaluates, forms, preserves, or stops. Responsible-boundary identity does not supply subject identity.
 
 #### Exact responsible act
 
@@ -76,7 +76,7 @@ Identifies the source, preservation, and occurrence history required by the exac
 
 ### Conditional support-relation branches
 
-Where a Responsibility uses or establishes a substantive Assertion as support, the exact relation “these Evidence, Authority, Scope, provenance, and limits support this Assertion” is another Assertion. Its participants, responsible Act, occurrence, Evidence, Authority, Scope, conflicts, limits, Unknowns, and Standing remain independently recoverable. Nearby coordinates, reference presence, or adjacency do not establish that relation.
+Where a Responsibility uses a substantive Assertion as support, the exact relation “these Evidence, Authority, Scope, provenance, and limits support this Assertion” is another Assertion. Its participants, responsible Act, occurrence, Evidence, Authority, Scope, conflicts, limits, Unknowns, and Standing remain independently recoverable. Nearby coordinates, reference presence, or adjacency do not supply that relation.
 
 Support-relation Standing does not establish the supported Assertion's Standing, Applicability, Admission, or a later input-to-result support relation. Each requires its own responsible occurrence.
 
@@ -204,7 +204,7 @@ Constraint
 
 #### Lawful Stopping
 
-Where the exact responsibility establishes lawful Stopping, preserve separately the responsible boundary, stopping act, stopping occurrence, and bounded Stop result. Identity among those coordinates must not be inferred. It is not reclassified as a relation merely because it connects a reason-forming responsibility to the exact act for which Stopping is established. Absence of movement, unresolved material, a negative standing, or a preventing condition does not establish a Stop by identity.
+Where a stopping occurrence carries a lawful Stop result, preserve separately the responsible boundary, stopping Act, stopping occurrence, and bounded Stop result. Identity among those coordinates must not be inferred. It is not reclassified as a relation merely because it connects a reason-bearing responsibility to the exact Act addressed by the Stop. Absence of movement, unresolved material, negative Standing, or a preventing condition does not supply a Stop by identity.
 
 ```text
 absence of movement

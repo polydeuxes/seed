@@ -12,9 +12,9 @@ Unknowns, and Standing.
 
 ### 03.Movement.A — Movement is not mutation
 
-Movement establishes only the exact transition carried by its Assertion. A
+The movement occurrence carries only the exact transition in its Assertion. A
 runtime write, recorded Event, route change, represented-condition update,
-cache change, or displayed label does not establish movement by identity.
+cache change, or displayed label does not supply movement by identity.
 
 Movement is not an Act occurrence by identity. Changed Standing does not open
 later movement by identity.
