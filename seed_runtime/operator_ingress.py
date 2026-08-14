@@ -55,7 +55,7 @@ def project_operator_ingress_events(attempts, event, *, ledger=None) -> None:
     """Dispatch one operator-ingress event into the dedicated current view.
 
     ``attempts`` is the per-attempt projection mapping and is the whole of what
-    this projection consumes. It reads no entity, Fact, alias, relationship, or
+    this read consumes. It reads no entity, normalized Assertion, alias, relationship, or
     goal, so nothing here requires a whole-workspace projection to exist.
     """
     if not event.kind.startswith("operator.ingress."):
@@ -229,7 +229,7 @@ def _capture_representation(
 def _project_attempt(*, events, ledger, attempt):
     """Project one attempt from exactly the occurrences it recorded.
 
-    The whole-workspace projection this replaces rebuilt every entity, Fact,
+    The whole-workspace replay this replaces rebuilt every entity, normalized Assertion,
     alias, relationship, and index in order to return one bounded attempt, and
     it did so once per attempt, so occurrence *j* was replayed by every later
     attempt. The work here is constant in the number of earlier attempts.

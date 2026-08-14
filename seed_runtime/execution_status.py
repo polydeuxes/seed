@@ -143,7 +143,7 @@ class ObservationProducerLifecycle:
     The lifecycle standardizes operator-visible work phases around existing
     observation collection, normalization, ingestion, and event writing paths.
     It does not define observation semantics, create observations, append events,
-    or derive facts.
+    or derive Assertions.
     """
 
     def __init__(

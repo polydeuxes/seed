@@ -11,7 +11,7 @@ doubling -- an extrapolated 29 billion identifiers for one corpus file.
 
 `05.Evidence:19` refuses a copied causation identifier the standing of verified
 provenance, and `05.Testimony:18` states copied provenance references do not turn
-testimony into established fact. A longer list was never stronger evidence than
+testimony into established Standing. A longer list was never stronger Evidence than
 a shorter one.
 
 These tests pin the removal and the boundary that remains.

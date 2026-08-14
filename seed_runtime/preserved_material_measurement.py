@@ -221,7 +221,7 @@ class RecurrenceFinding:
     is the grant taken directly: what is measured is the representation itself,
     rather than a position defined relative to it.
 
-    That is a fact about what was measured, not about constitutional subject
+    That is an Assertion about what was measured, not about constitutional subject
     identity. The recorded identity remains `measurement:<representation>`, and
     `01.External:28` bounds the result to the measurement assertion. Nothing
     here establishes that the representation is the subject of anything, or

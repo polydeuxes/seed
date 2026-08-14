@@ -11,7 +11,7 @@ Three things wore one coat, and separating them is the whole of this module:
 **An occurrence records that material occurred. It does not record that the
 material is available.** Availability changes without anything being recorded —
 a process exits and every byte it held is gone — so a payload asserting
-`available` would be stating a present-tense fact in a permanent record, and
+`available` would be stating present-tense Standing in a permanent record, and
 would be wrong the moment the process ended while still reading as true. Current
 availability is asked of the holder, never read from the ledger.
 

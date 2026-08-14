@@ -124,7 +124,7 @@ def test_examination_claims_only_decoder_outcome(events):
 def test_console_ingress_is_line_bounded_not_document_bounded(events):
     """E3 arrives as several occurrences, not one.
 
-    This is a fact about the current ingress boundary, recorded here because it
+    This is a finding about the current ingress boundary, recorded here because it
     is not obvious and it bounds what any later measurement may range over.  A
     multi-line corpus does not enter as a single preserved material; each line
     is its own capture, examination, and ingress occurrence.

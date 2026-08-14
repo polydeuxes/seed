@@ -440,10 +440,10 @@ class SQLiteEventLedger(EventLedger):
     # invocation aborted on `duplicate presentation reference`. Nothing was
     # wrong with them before: no console had ever written durable history.
     # The prefixes `_observed_suffixes` may reserve, as a set for membership.
-    # `session` is reservable and is not persisted inside a payload, so it is
-    # named here in addition to the persisted prefixes rather than instead.
+    # Every entry is minted by current runtime code and may be carried by a
+    # durable occurrence. Retired vocabulary does not remain merely because an
+    # older ledger may contain a similarly shaped string.
     _RESERVABLE_PREFIXES = frozenset({
-        "obs", "obs_local_host", "evd", "evd_obs", "fact", "fact_obs", "need",
         "operator_presentation", "operator_ingress_attempt", "operator_material",
         "session", "system_invocation", "system_material", "transient_material",
         "operator_response_comparison", "operator_alternative_identification",
@@ -455,44 +455,6 @@ class SQLiteEventLedger(EventLedger):
         "assertion_locality_movement_act",
         "assertion_locality_movement_occurrence",
     })
-
-    _PERSISTED_ID_PREFIXES = (
-        "obs",
-        "obs_local_host",
-        "evd",
-        "evd_obs",
-        "fact",
-        "fact_obs",
-        "need",
-        "operator_presentation",
-        "operator_ingress_attempt",
-        "operator_material",
-        "session",
-        # `#2491` records why an unreserved prefix is not merely untidy. A
-        # subject identity minted from an unreserved prefix restarts at one in
-        # every process, so two independent durable subjects claimed
-        # `system_material_000001` across a reopen while their event rows stayed
-        # distinct and the store accepted both.
-        "system_invocation",
-        "system_material",
-        "transient_material",
-        # Found by sweeping for the defect rather than meeting it a fourth time.
-        # All three are minted on the console path and written into durable
-        # payloads — 553 times across the test suite — and none was reserved, so
-        # each restarted at one in every process.
-        "operator_response_comparison",
-        "operator_alternative_identification",
-        "presented_alternative",
-        "adjacent_byte_pair_measurement_act",
-        "adjacent_byte_pair_measurement_occurrence",
-        "byte_measurement_act",
-        "byte_measurement_occurrence",
-        "byte_pair_applicability_act",
-        "byte_pair_applicability_occurrence",
-        "assertion_locality_movement",
-        "assertion_locality_movement_act",
-        "assertion_locality_movement_occurrence",
-    )
 
     def __init__(self, database_path: str) -> None:
         self.database_path = database_path
@@ -1047,17 +1009,6 @@ class SQLiteEventLedger(EventLedger):
             """).fetchone()
         return int(row["max_suffix"] or 0)
 
-    def _reserve_persisted_payload_ids(self) -> None:
-        rows = self._connection.execute(
-            "SELECT payload FROM events ORDER BY rowid"
-        ).fetchall()
-        for row in rows:
-            try:
-                payload = json.loads(_serialized_payload(row["payload"]))
-            except (TypeError, json.JSONDecodeError):
-                continue
-            self._reserve_payload_ids(payload)
-
     def _observed_suffixes(self, event: Event) -> dict[str, int]:
         """Every reservable identifier this one occurrence carries.
 
@@ -1095,38 +1046,6 @@ class SQLiteEventLedger(EventLedger):
                 (prefix, max_suffix, max_suffix),
             )
             reserve_id_prefix(prefix, max_suffix)
-
-    def _reserve_persisted_session_ids(self) -> None:
-        """Session ids live in their own column, not in any payload.
-
-        A session id appears in `dimensions.scope` only as
-        `workspace:...;session:...`, which is not an identifier string, so
-        walking payloads never sees one.
-        """
-        rows = self._connection.execute(
-            "SELECT DISTINCT session_id FROM events WHERE session_id IS NOT NULL"
-        ).fetchall()
-        max_suffix = 0
-        for row in rows:
-            suffix = _numeric_suffix(row["session_id"], "session")
-            if suffix is not None:
-                max_suffix = max(max_suffix, suffix)
-        if max_suffix:
-            reserve_id_prefix("session", max_suffix)
-
-    def _reserve_payload_ids(self, payload: Any) -> None:
-        max_suffixes = {prefix: 0 for prefix in self._PERSISTED_ID_PREFIXES}
-        for value in _walk_values(payload):
-            if not isinstance(value, str):
-                continue
-            for prefix in self._PERSISTED_ID_PREFIXES:
-                suffix = _numeric_suffix(value, prefix)
-                if suffix is not None:
-                    max_suffixes[prefix] = max(max_suffixes[prefix], suffix)
-        for prefix, max_suffix in max_suffixes.items():
-            if max_suffix:
-                reserve_id_prefix(prefix, max_suffix)
-
 
 def _walk_values(value: Any) -> Iterable[Any]:
     if isinstance(value, dict):

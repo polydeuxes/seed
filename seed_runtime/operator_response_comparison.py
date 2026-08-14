@@ -11,7 +11,7 @@ RESPONSE_COMPARISON_KIND = "operator.exchange.comparison_occurred"
 IDENTIFICATION_KIND = "operator.exchange.identification_occurred"
 
 # Unknowns the Book positively establishes at this exact position: the
-# external fact is only that the operator produced material after emission.
+# external testimony is only that the operator produced material after emission.
 _MATCH_UNKNOWNS = (
     "operator intent Unknown",
     "operator selection occurrence Unknown",

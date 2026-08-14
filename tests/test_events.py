@@ -83,53 +83,11 @@ def test_durable_large_scalar_lists_do_not_repeat_secret_traversal(
     ledger.close()
 
 
-def test_sqlite_persisted_id_prefixes_exclude_deleted_planning_artifacts():
-    assert "plan" not in SQLiteEventLedger._PERSISTED_ID_PREFIXES
-    assert "handoff" not in SQLiteEventLedger._PERSISTED_ID_PREFIXES
-    assert "auth" not in SQLiteEventLedger._PERSISTED_ID_PREFIXES
-    assert SQLiteEventLedger._PERSISTED_ID_PREFIXES == (
-        "obs",
-        "obs_local_host",
-        "evd",
-        "evd_obs",
-        "fact",
-        "fact_obs",
-        "need",
-        # Added by `#2413`, which gave the console a durable ledger. They are
-        # here because the console persists them and a later process mints
-        # them again, not because they were found nearby.
-        "operator_presentation",
-        "operator_ingress_attempt",
-        "operator_material",
-        "session",
-        # Added by `#2491` on the same criterion. A durable store persists these
-        # subject identities and a later process mints them again, so before
-        # they were reserved two independent subjects claimed
-        # `system_material_000001` across a reopen.
-        "system_invocation",
-        "system_material",
-        # `#2496` on the same criterion again.
-        "transient_material",
-        # `#2497` found these by sweeping instead of waiting for a fourth.
-        "operator_response_comparison",
-        "operator_alternative_identification",
-        "presented_alternative",
-        # The exact pair-Measurement Act identity is carried durably by its
-        # Applicability, responsible-Act Evidence, and result occurrence.
-        "adjacent_byte_pair_measurement_act",
-        # The performed occurrence is distinct from the proposed exact Act and
-        # is likewise carried durably by its Evidence and result.
-        "adjacent_byte_pair_measurement_occurrence",
-        # Seed-native byte Measurement and pair-input Applicability likewise
-        # preserve exact Act identities separately from their occurrences.
-        "byte_measurement_act",
-        "byte_measurement_occurrence",
-        "byte_pair_applicability_act",
-        "byte_pair_applicability_occurrence",
-        "assertion_locality_movement",
-        "assertion_locality_movement_act",
-        "assertion_locality_movement_occurrence",
-    )
+def test_sqlite_reservable_prefixes_exclude_retired_vocabulary():
+    retired = {
+        "plan", "handoff", "auth", "need", "obs", "evd", "fact", "fact_obs"
+    }
+    assert retired.isdisjoint(SQLiteEventLedger._RESERVABLE_PREFIXES)
 
 
 # Prefixes minted for use inside one process and never written into a durable
@@ -162,7 +120,6 @@ def test_every_minted_prefix_is_reserved_or_declared_process_local():
     import re
 
     reserved = set(SQLiteEventLedger._RESERVABLE_PREFIXES)
-    reserved |= set(SQLiteEventLedger._PERSISTED_ID_PREFIXES)
     # `evt` is issued by the durable ledger from its own numbering.
     reserved.add("evt")
     reserved |= PROCESS_LOCAL_ID_PREFIXES

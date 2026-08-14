@@ -463,8 +463,8 @@ def test_reservations_are_read_from_the_table_not_from_history(path):
     """
     led = SQLiteEventLedger(path)
     try:
-        led.append("k", "w", {"ref": "obs_000042"}, session_id="session_000007")
-        led.append("k", "w", {"ref": "evd_000005"})
+        led.append("k", "w", {"ref": "operator_material_000042"}, session_id="session_000007")
+        led.append("k", "w", {"ref": "system_material_000005"})
     finally:
         led.close()
 
@@ -473,9 +473,9 @@ def test_reservations_are_read_from_the_table_not_from_history(path):
         kept = dict(con.execute("SELECT prefix, max_suffix FROM id_reservations"))
     finally:
         con.close()
-    assert kept["obs"] == 42
+    assert kept["operator_material"] == 42
     assert kept["session"] == 7
-    assert kept["evd"] == 5
+    assert kept["system_material"] == 5
 
 
 def test_a_reopened_store_does_not_reissue_identifiers(path):
@@ -483,13 +483,13 @@ def test_a_reopened_store_does_not_reissue_identifiers(path):
     from seed_runtime.ids import _next_values, new_id
 
     led = SQLiteEventLedger(path)
-    led.append("k", "w", {"ref": "obs_000042"})
+    led.append("k", "w", {"ref": "operator_material_000042"})
     led.close()
 
     _next_values.clear()          # a fresh process counts from 1
     led = SQLiteEventLedger(path)
     try:
-        assert new_id("obs") == "obs_000043"
+        assert new_id("operator_material") == "operator_material_000043"
     finally:
         led.close()
 
@@ -497,8 +497,8 @@ def test_a_reopened_store_does_not_reissue_identifiers(path):
 def test_a_reservation_only_ever_rises(path):
     led = SQLiteEventLedger(path)
     try:
-        led.append("k", "w", {"ref": "obs_000042"})
-        led.append("k", "w", {"ref": "obs_000007"})
+        led.append("k", "w", {"ref": "operator_material_000042"})
+        led.append("k", "w", {"ref": "operator_material_000007"})
     finally:
         led.close()
     con = _raw(path)
@@ -506,19 +506,19 @@ def test_a_reservation_only_ever_rises(path):
         kept = dict(con.execute("SELECT prefix, max_suffix FROM id_reservations"))
     finally:
         con.close()
-    assert kept["obs"] == 42
+    assert kept["operator_material"] == 42
 
 
 def test_the_counter_table_is_not_an_occurrence(path):
-    """It records no claim, so the events mutation refusal does not cover it."""
+    """It records no Assertion, so occurrence mutation refusal does not cover it."""
     led = SQLiteEventLedger(path)
     try:
-        event = led.append("k", "w", {"ref": "obs_000042"})
+        event = led.append("k", "w", {"ref": "operator_material_000042"})
     finally:
         led.close()
     con = _raw(path)
     try:
-        con.execute("UPDATE id_reservations SET max_suffix = 99 WHERE prefix = 'obs'")
+        con.execute("UPDATE id_reservations SET max_suffix = 99 WHERE prefix = 'operator_material'")
         con.commit()
     finally:
         con.close()
@@ -545,7 +545,7 @@ def test_a_batch_commits_its_reservations_with_its_occurrences(path):
     try:
         led.append_many([
             Event(id=f"evt_10000{i}", kind="k", workspace_id="w",
-                  payload={"ref": f"obs_0000{40 + i}"}, session_id="session_000009")
+                  payload={"ref": f"operator_material_0000{40 + i}"}, session_id="session_000009")
             for i in range(3)
         ])
     finally:
@@ -561,7 +561,7 @@ def test_a_batch_commits_its_reservations_with_its_occurrences(path):
     finally:
         con.close()
     assert stored == 3
-    assert kept["obs"] == 42
+    assert kept["operator_material"] == 42
     assert kept["session"] == 9
 
 
@@ -573,14 +573,14 @@ def test_a_batch_leaves_no_occurrence_without_its_reservation(path):
     led = SQLiteEventLedger(path)
     led.append_many([
         Event(id="evt_100001", kind="k", workspace_id="w",
-              payload={"ref": "obs_000077"}, session_id="s")
+              payload={"ref": "operator_material_000077"}, session_id="s")
     ])
     led.close()
 
     _next_values.clear()
     led = SQLiteEventLedger(path)
     try:
-        assert new_id("obs") == "obs_000078"
+        assert new_id("operator_material") == "operator_material_000078"
     finally:
         led.close()
 
@@ -591,13 +591,13 @@ def test_reservable_suffix_observation_matches_a_per_prefix_scan():
     A reservable identifier is a prefix, an underscore, and digits, so the
     digits begin just after the value's last underscore. This holds the split
     to that equivalence over generated payloads rather than over examples,
-    because the prefixes overlap (`obs` and `obs_local_host`) and a suffix of
+    because several movement prefixes overlap and a suffix of
     zero is deliberately not reserved.
     """
 
     from seed_runtime.events import _numeric_suffix, _walk_values
 
-    prefixes = tuple(SQLiteEventLedger._PERSISTED_ID_PREFIXES) + ("session",)
+    prefixes = tuple(SQLiteEventLedger._RESERVABLE_PREFIXES)
 
     def per_prefix_scan(event):
         found = {}
@@ -613,7 +613,7 @@ def test_reservable_suffix_observation_matches_a_per_prefix_scan():
                     found[prefix] = suffix
         return found
 
-    tokens = list(prefixes) + ["evt", "x", "", "obs_local", "need"]
+    tokens = list(prefixes) + ["evt", "x", "", "retired_fact", "need"]
     rng = random.Random(11)
 
     def identifier():
@@ -656,19 +656,22 @@ def test_a_reserved_suffix_of_zero_is_not_reserved():
     split must decline it too rather than reserve prefix zero."""
 
     ledger = SQLiteEventLedger.__new__(SQLiteEventLedger)
-    event = Event(id="evt_1", kind="k", workspace_id="w", payload={"a": "need_0"})
+    event = Event(id="evt_1", kind="k", workspace_id="w", payload={"a": "operator_material_0"})
     assert ledger._observed_suffixes(event) == {}
-    event = Event(id="evt_2", kind="k", workspace_id="w", payload={"a": "need_1"})
-    assert ledger._observed_suffixes(event) == {"need": 1}
+    event = Event(id="evt_2", kind="k", workspace_id="w", payload={"a": "operator_material_1"})
+    assert ledger._observed_suffixes(event) == {"operator_material": 1}
 
 
 def test_an_overlapping_prefix_reserves_the_longer_match():
     ledger = SQLiteEventLedger.__new__(SQLiteEventLedger)
     event = Event(
         id="evt_1", kind="k", workspace_id="w",
-        payload={"a": "obs_local_host_7", "b": "obs_4"},
+        payload={"a": "assertion_locality_movement_act_7", "b": "assertion_locality_movement_4"},
     )
-    assert ledger._observed_suffixes(event) == {"obs_local_host": 7, "obs": 4}
+    assert ledger._observed_suffixes(event) == {
+        "assertion_locality_movement_act": 7,
+        "assertion_locality_movement": 4,
+    }
 
 
 def test_a_cache_hit_still_refuses_a_contradictory_support_count():

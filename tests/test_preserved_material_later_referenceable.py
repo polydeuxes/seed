@@ -122,7 +122,7 @@ def test_projection_appends_nothing(ledger):
 
 
 def test_each_formation_is_appended_after_every_event_it_references(ledger):
-    """Narrow by intent: an ordering fact about the ledger, nothing more.
+    """Narrow by intent: an ordering finding about the ledger, nothing more.
 
     This says nothing about findings or Standing.  A presentation formation is
     not a finding, and its own recorded authority is "formation occurrence

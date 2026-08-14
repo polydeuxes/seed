@@ -7,7 +7,7 @@ Authority this module does not have.
 
 The hardest property held here is the one that keeps them separate: **an
 occurrence carries no availability coordinate at all**. A payload asserting
-`available` would state a present-tense fact in a permanent record, and would
+`available` would state present-tense Standing in a permanent record, and would
 read as true after it stopped being so.
 """
 

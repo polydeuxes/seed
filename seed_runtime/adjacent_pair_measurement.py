@@ -33,7 +33,7 @@ from the previous round's evidence rather than from the caller. Every measuremen
 records that finding as its premise, so what it stood on travels with it.
 
 **Comparing measurements is not performed here.** Two pairs sharing an
-alternative is a fact about two preserved findings. `05.Testimony:27` reserves
+alternative is an Assertion about two preserved findings. `05.Testimony:27` reserves
 consuming preserved findings to a bounded comparison, and none is performed.
 
 Nothing here establishes meaning, grammatical kind, relation, or truth. A pair
@@ -1158,7 +1158,7 @@ def enumerate_displacements(
 
     Nothing is preferred and nothing is chosen. An occurrence carrying the
     representation at index *i* has a position at displacement *d* whenever the
-    occurrence extends that far, so the displacements returned are a fact about
+    occurrence extends that far, so the displacements returned are a finding about
     how far the material reaches from where the representation sits.
 
     A displacement absent here is absent because no occurrence reaches it, not
