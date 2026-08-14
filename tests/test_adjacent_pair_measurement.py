@@ -447,6 +447,22 @@ def test_adjacent_pair_observation_measurement_records_exact_coordinates_and_rec
             for event in material
         ],
     ]
+    assert recorded.payload["participation"] == act_evidence.payload["participation"]
+    assert recorded.payload["participation"] == [
+        {
+            "subject_ref": finding.id,
+            "role": "recovered ordered-pair finding",
+            "act_occurrence_id": recorded.payload["act_occurrence_id"],
+        },
+        *[
+            {
+                "subject_ref": event.id,
+                "role": "exact preserved source occurrence",
+                "act_occurrence_id": recorded.payload["act_occurrence_id"],
+            }
+            for event in material
+        ],
+    ]
     assert recorded.payload["dimensions"]["authority"].endswith(
         "Standing beyond this result"
     )
@@ -519,6 +535,38 @@ def test_adjacent_pair_observation_recovery_refuses_changed_result_or_input_evid
         get_recorded_adjacent_pair_observations(
             ledger, altered_carrier.id
         )
+
+
+def test_adjacent_pair_observation_endpoints_do_not_establish_participation():
+    ledger, observations = _observation_road(("L a b R",), ("a",))
+    recorded = record_adjacent_pair_observations(
+        ledger,
+        workspace_id="w",
+        session_id="adjacent-observation",
+        finding_event_id=observations[0].evidence["pair_finding_event_id"],
+    )
+
+    missing = recorded.model_copy(deep=True)
+    missing.payload.pop("participation")
+    missing = ledger.append(
+        missing.kind,
+        missing.workspace_id,
+        missing.payload,
+        session_id=missing.session_id,
+    )
+    with pytest.raises(PreservedMaterialMeasurementError, match="Participation"):
+        get_recorded_adjacent_pair_observations(ledger, missing.id)
+
+    wrong = recorded.model_copy(deep=True)
+    wrong.payload["participation"][0]["act_occurrence_id"] = "other-occurrence"
+    wrong = ledger.append(
+        wrong.kind,
+        wrong.workspace_id,
+        wrong.payload,
+        session_id=wrong.session_id,
+    )
+    with pytest.raises(PreservedMaterialMeasurementError, match="Participation"):
+        get_recorded_adjacent_pair_observations(ledger, wrong.id)
 
 
 def test_adjacent_pair_observation_recovery_refuses_self_consistent_counterfeit_source_text():

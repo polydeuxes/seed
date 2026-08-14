@@ -65,6 +65,8 @@ ADJACENT_PAIR_OBSERVATION_RESPONSIBILITY = (
     "observe one adjacent position on each side of every exact occurrence of "
     "each ordered pair recovered from one exact finding"
 )
+PAIR_FINDING_PARTICIPATION_ROLE = "recovered ordered-pair finding"
+SOURCE_OCCURRENCE_PARTICIPATION_ROLE = "exact preserved source occurrence"
 
 
 @dataclass(frozen=True)
@@ -645,17 +647,25 @@ def record_adjacent_pair_observations(
     applicable_inputs = [
         {
             "input_ref": finding_event_id,
-            "role": "recovered ordered-pair finding",
+            "role": PAIR_FINDING_PARTICIPATION_ROLE,
             "standing": "applicable",
         },
         *[
             {
                 "input_ref": source_id,
-                "role": "exact preserved source occurrence",
+                "role": SOURCE_OCCURRENCE_PARTICIPATION_ROLE,
                 "standing": "applicable",
             }
             for source_id in source_ids
         ],
+    ]
+    participation = [
+        {
+            "subject_ref": item["input_ref"],
+            "role": item["role"],
+            "act_occurrence_id": act_occurrence_id,
+        }
+        for item in applicable_inputs
     ]
     act_evidence = ledger.append(
         ADJACENT_PAIR_OBSERVATION_ACT_EVIDENCE_KIND,
@@ -667,6 +677,7 @@ def record_adjacent_pair_observations(
             "responsibility": ADJACENT_PAIR_OBSERVATION_RESPONSIBILITY,
             "responsible_boundary": "this Seed",
             "input_applicability": applicable_inputs,
+            "participation": participation,
             "result_commitment": yield_commitment(
                 ADJACENT_PAIR_OBSERVATION_CONVENTION,
                 result_payload,
@@ -731,6 +742,7 @@ def record_adjacent_pair_observations(
             "target_act_id": act_id,
             "act_occurrence_id": act_occurrence_id,
             "responsible_act_evidence_id": act_evidence.id,
+            "participation": participation,
             "yield_evidence_id": yield_evidence.id,
             "carriage_evidence_id": carriage_evidence.id,
             "known_loss": [],
@@ -914,21 +926,33 @@ def get_recorded_adjacent_pair_observations(
     expected_inputs = [
         {
             "input_ref": finding_id,
-            "role": "recovered ordered-pair finding",
+            "role": PAIR_FINDING_PARTICIPATION_ROLE,
             "standing": "applicable",
         },
         *[
             {
                 "input_ref": source_id,
-                "role": "exact preserved source occurrence",
+                "role": SOURCE_OCCURRENCE_PARTICIPATION_ROLE,
                 "standing": "applicable",
             }
             for source_id in source_ids
         ],
     ]
-    if act_evidence.payload.get("input_applicability") != expected_inputs:
+    expected_participation = [
+        {
+            "subject_ref": item["input_ref"],
+            "role": item["role"],
+            "act_occurrence_id": act_occurrence_id,
+        }
+        for item in expected_inputs
+    ]
+    if (
+        act_evidence.payload.get("input_applicability") != expected_inputs
+        or act_evidence.payload.get("participation") != expected_participation
+        or carrier.payload.get("participation") != expected_participation
+    ):
         raise PreservedMaterialMeasurementError(
-            "the adjacent-pair observation Act Evidence concerns different inputs"
+            "the adjacent-pair observation Act Evidence concerns different inputs or Participation coordinates"
         )
     finding = ledger.get(finding_id)
     if (
