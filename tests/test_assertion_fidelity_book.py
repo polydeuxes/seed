@@ -1,31 +1,51 @@
+import json
 from pathlib import Path
 
 
-BOOK = (
-    Path(__file__).resolve().parents[1]
-    / "book_of_seed/01-grammar-and-standing/constitutional-standing.md"
-)
+GRAMMAR = Path(__file__).resolve().parents[1] / "book_of_seed/grammar.json"
 
 
-def _assertion_clause() -> str:
-    text = BOOK.read_text()
-    return text.split(
-        "### 01.Standing.D.1 — An Assertion owns fidelity of its Standing", 1
-    )[1].split("### 01.Standing.E", 1)[0]
+def _clause() -> dict:
+    grammar = json.loads(GRAMMAR.read_text(encoding="utf-8"))
+    return grammar["clauses"]["01.Standing.D.1"]
 
 
-def test_assertion_owns_only_fidelity_of_its_standing():
-    clause = _assertion_clause()
-    assert "exact asserted content as its own subject" in clause
-    assert "owns the Responsibility for fidelity of its Standing" in clause
-    assert "Producing occurrence != Assertion owner" in clause
-    assert "producing Act != Assertion Responsibility" in clause
+def test_assertion_fidelity_responsibility_has_exact_coordinates():
+    clause = _clause()
+
+    assert clause["subject"] == "Assertion"
+    assert clause["identity"] == ["asserted_content"]
+    assert clause["responsibility"] == {
+        "kind": "fidelity",
+        "addressed": "Standing",
+        "coordinates": [
+            "Evidence",
+            "provenance",
+            "Scope",
+            "Authority",
+            "conflicts",
+            "limits",
+            "Unknowns",
+            "Standing",
+        ],
+    }
+    assert set(clause["distinct_from"]) == {
+        "producing_Act",
+        "producing_occurrence",
+        "recording_occurrence",
+    }
 
 
-def test_assertion_ownership_creates_no_automatic_movement():
-    clause = _assertion_clause()
-    assert "does not require another Act merely because it exists" in clause
-    assert "does not automatically revise its Standing" in clause
-    assert "different exact asserted content identifies a different Assertion" in clause
-    assert "An **Unknown** does not create a demand to eliminate it" in clause
-    assert "not an inferred constitutional Stop" in clause
+def test_assertion_fidelity_does_not_manufacture_movement():
+    clause = _clause()
+
+    assert set(clause["does_not_establish"]) == {
+        "another_Act",
+        "Standing_revision",
+        "Stop",
+    }
+    assert clause["identity_change"] == {
+        "when": "asserted_content_changes",
+        "result": "different_Assertion",
+    }
+    assert clause["Unknown"]["requires_elimination"] is False

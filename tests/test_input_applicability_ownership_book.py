@@ -1,66 +1,68 @@
+import json
 from pathlib import Path
 
 
-ROOT = Path(__file__).resolve().parents[1]
-BOOK = ROOT / "book_of_seed/01-grammar-and-standing/constitutional-standing.md"
+GRAMMAR = Path(__file__).resolve().parents[1] / "book_of_seed/grammar.json"
 
 
-def _clause() -> str:
-    text = BOOK.read_text(encoding="utf-8")
-    return text.split("### 01.Standing.E.1", 1)[1].split("### 01.Standing.F", 1)[0]
+def _clause() -> dict:
+    grammar = json.loads(GRAMMAR.read_text(encoding="utf-8"))
+    return grammar["clauses"]["01.Standing.E.1"]
 
 
-def test_book_preserves_rebuttable_input_applicability_owner():
+def test_applicability_binds_input_to_one_exact_act():
     clause = _clause()
 
-    assert "responsibility assigned to perform an exact constitutional act" in clause
-    assert "responsible for ensuring that applicability is determined for every proposed input" in clause
-    assert "before that input participates in, is consumed by, or is relied upon" in clause
-    assert "Unless the Book explicitly assigns otherwise" in clause
-    assert "explicit Book assignment therefore overrides the ordinary owner" in clause
-    assert "assigned responsible occurrence for that exact downstream act" in clause
+    assert clause["subject"] == "input_to_exact_Act_relation"
+    assert clause["responsibility"] == {
+        "default": "exact_Act_Responsibility",
+        "override": "explicitly_assigned_responsible_occurrence",
+    }
+    assert set(clause["must_precede"]) == {
+        "participation",
+        "consumption",
+        "reliance",
+    }
+    assert {"input_identity", "exact_Act", "Scope", "locality", "Authority"} <= set(
+        clause["coordinates"]
+    )
 
 
-def test_book_distinguishes_input_exclusion_from_whole_act_nonperformance():
+def test_applicability_has_four_standings_and_preserves_exclusion():
     clause = _clause()
 
-    assert "upstream applicability is not downstream admission" in clause
-    assert "admission remains required only where the exact act-local act requires it" in clause
-    assert "It does not establish admission" in clause
-    assert "An excluded input may not participate in that Act" in clause
-    assert "no result may assert reliance on it" in clause
-    assert "Exclusion of one proposed input does not by itself establish whether the exact act occurs" in clause
-    assert "That determination remains with the responsibility assigned to perform the exact act" in clause
-    assert "under the conditions, relations, evidence, authority, scope, and other boundaries assigned to that responsibility" in clause
+    assert clause["standings"] == [
+        "applicable",
+        "inapplicable",
+        "conflicting",
+        "Unknown",
+    ]
+    assert clause["excluded_input"] == {
+        "may_participate": False,
+        "may_support_result": False,
+        "establishes_Act_nonoccurrence": False,
+        "establishes_Act_prohibition": False,
+    }
 
 
-def test_book_preserves_required_input_and_alternative_input_boundary():
+def test_composite_occurrence_keeps_results_distinct_and_recoverable():
     clause = _clause()
 
-    assert "An alternative proposed input does not participate by virtue of availability, similarity, equal proposition text or content" in clause
-    assert "the act-owning responsibility must determine or consume applicability standing for that exact input-to-act relation" in clause
-    assert "whatever standing, warrant, admission, authority, scope, provenance, or other relation that exact proposed use requires" in clause
-    assert "Required coordinates are local to the exact act and proposed use" in clause
-    assert "no coordinate is universally required merely because a subject is proposed as an input" in clause
-    assert "No unassigned input-set scalar standing, substitution standing, or Authorization is created" in clause
-    assert "One rejected candidate is not all candidates rejected" in clause
+    assert set(clause["same_occurrence_may_establish"]) == {
+        "Applicability",
+        "Act_occurrence_or_nonoccurrence",
+        "output_Standing",
+    }
+    assert clause["independently_recoverable"] is True
+    assert ["Applicability", "Act_occurrence"] in clause["distinct_from"]
+    assert ["Act_occurrence", "output_Standing"] in clause["distinct_from"]
+    assert ["output_Standing", "downstream_Applicability"] in clause["distinct_from"]
 
 
-def test_book_preserves_composite_occurrence_as_independent_assertions():
+def test_persistent_standing_does_not_create_an_act():
     clause = _clause()
 
-    assert "One bounded responsible occurrence may determine Applicability for inputs" in clause
-    assert "perform the exact Act or establish no Act occurrence within its assigned boundaries" in clause
-    assert "These remain independently recoverable Assertions" in clause
-    assert "Applicability success is not Act occurrence" in clause
-    assert "Act occurrence is not output Standing" in clause
-    assert "output Standing is not downstream Applicability" in clause
-
-
-def test_book_does_not_turn_persistent_standing_into_production_demand():
-    clause = _clause()
-
-    assert "lawfully persistent result standing is not current production demand" in clause
-    assert "does not lose its standing merely because a later Act does not consume it" in clause
-    assert "does not permit an act to be implemented or invoked without a current responsibility" in clause
-    assert "does not by itself establish production demand, candidate-formation demand" in clause
+    assert clause["persistent_Standing"] == {
+        "requires_later_consumption": False,
+        "establishes_new_Act": False,
+    }

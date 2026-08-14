@@ -13,6 +13,10 @@ It is not a roadmap, API reference, generated topology, complete inventory, or s
 
 The first pass deliberately favors concise distinctions over comprehensive prose. The [concordance](concordance.md) is a navigation aid, not an ontology. Cross-cutting questions without a stable chapter home live in [unresolved.md](unresolved.md).
 
+[`grammar.json`](grammar.json) carries machine-readable clause coordinates used
+by tests. Tests validate that grammar rather than freezing explanatory prose.
+The Markdown Books explain and orient the same clauses.
+
 Book numbers are stable citation addresses only. They do not prescribe reading order, dependency order, constitutional sequence, or implementation movement.
 
 Book VII is intentionally absent. Its former implementation topic collection was excised after its surviving constitutional distinctions were relocated to their owning Books; the bounded disposition is recorded in [Book VII Implementation Topic Collection Excision 001](book_vii_operational_topic_collection_excision_001.md).

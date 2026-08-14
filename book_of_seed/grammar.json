@@ -1,0 +1,92 @@
+{
+  "version": 1,
+  "spine": "Responsibility",
+  "clauses": {
+    "01.Standing.D.1": {
+      "subject": "Assertion",
+      "identity": ["asserted_content"],
+      "responsibility": {
+        "kind": "fidelity",
+        "addressed": "Standing",
+        "coordinates": [
+          "Evidence",
+          "provenance",
+          "Scope",
+          "Authority",
+          "conflicts",
+          "limits",
+          "Unknowns",
+          "Standing"
+        ]
+      },
+      "distinct_from": [
+        "producing_Act",
+        "producing_occurrence",
+        "recording_occurrence"
+      ],
+      "does_not_establish": [
+        "another_Act",
+        "Standing_revision",
+        "Stop"
+      ],
+      "identity_change": {
+        "when": "asserted_content_changes",
+        "result": "different_Assertion"
+      },
+      "Unknown": {
+        "requires_elimination": false
+      }
+    },
+    "01.Standing.E.1": {
+      "subject": "input_to_exact_Act_relation",
+      "responsibility": {
+        "default": "exact_Act_Responsibility",
+        "override": "explicitly_assigned_responsible_occurrence"
+      },
+      "must_precede": ["participation", "consumption", "reliance"],
+      "coordinates": [
+        "input_identity",
+        "exact_Act",
+        "subject",
+        "result_boundary",
+        "Scope",
+        "locality",
+        "Authority",
+        "participants_and_roles",
+        "provenance",
+        "Standing",
+        "Warrant",
+        "currentness",
+        "occurrence_identity",
+        "known_loss",
+        "conflicts",
+        "Unknowns",
+        "negative_Authority"
+      ],
+      "standings": ["applicable", "inapplicable", "conflicting", "Unknown"],
+      "excluded_input": {
+        "may_participate": false,
+        "may_support_result": false,
+        "establishes_Act_nonoccurrence": false,
+        "establishes_Act_prohibition": false
+      },
+      "same_occurrence_may_establish": [
+        "Applicability",
+        "Act_occurrence_or_nonoccurrence",
+        "output_Standing"
+      ],
+      "independently_recoverable": true,
+      "distinct_from": [
+        ["Applicability", "Admission"],
+        ["Applicability", "Act_occurrence"],
+        ["Act_occurrence", "output_Standing"],
+        ["output_Standing", "downstream_Applicability"],
+        ["output_Standing", "downstream_Admission"]
+      ],
+      "persistent_Standing": {
+        "requires_later_consumption": false,
+        "establishes_new_Act": false
+      }
+    }
+  }
+}
