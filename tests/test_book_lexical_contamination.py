@@ -298,12 +298,24 @@ if __name__ == "__main__":  # pragma: no cover - command-line entry point
     print(render_violations(find_violations()))
 
 
-LEXICON = ROOT / "rosetta" / "admitted-lexicon.txt"
+LEXICON = BOOK / "admitted-lexicon.txt"
+ROSETTA_LEXICON = ROOT / "rosetta" / "admitted-lexicon.txt"
 
 
 def admitted_lexicon() -> set[str]:
     """Every word active law may carry.  One word per line, sorted."""
     return set(_lexicon_entries())
+
+
+def test_book_and_rosetta_do_not_share_one_lexicon():
+    assert LEXICON == ROOT / "book_of_seed" / "admitted-lexicon.txt"
+    assert ROSETTA_LEXICON != LEXICON
+    assert not LEXICON.is_symlink()
+    assert not ROSETTA_LEXICON.is_symlink()
+    assert (
+        "# parent: ../book_of_seed/admitted-lexicon.txt"
+        in ROSETTA_LEXICON.read_text(encoding="utf-8").splitlines()
+    )
 
 
 def _lexicon_entries() -> dict[str, str]:
@@ -348,8 +360,9 @@ def test_book_proper_admits_only_lexicon_words():
     )
     assert not unadmitted, (
         "\nActive law carries vocabulary the lexicon does not admit.\n"
-        "Admit it in rosetta/admitted-lexicon.txt, with the reason, or "
-        "remove it:\n" + report
+        "Book vocabulary is not admitted by book_of_seed/admitted-lexicon.txt. "
+        "Remove it or request curation; automated agents must not amend the lexicon:\n"
+        + report
     )
 
 
