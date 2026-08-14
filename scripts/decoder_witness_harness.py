@@ -40,6 +40,7 @@ Usage:
 from __future__ import annotations
 
 import argparse
+import codecs
 import collections
 from functools import lru_cache
 
@@ -111,11 +112,77 @@ def classes(codec: str, max_length: int = 4) -> dict[object, list[int]]:
     return dict(grouped)
 
 
+def class_adjacency(
+    codec: str, recovered: dict[object, list[int]]
+) -> dict[tuple[object, object], bool]:
+    """Which recovered class may be followed by which, under this witness.
+
+    The classes are supplied, not recomputed. This measurement stands on the
+    earlier one and cannot be run without it: given other classes it reports
+    adjacency among those, and given none it reports nothing.
+
+    One representative is probed per class. Two bytes the earlier measurement
+    did not separate are not separated here either, which is what makes this
+    a measurement over classes rather than over bytes.
+    """
+
+    representatives = {key: members[0] for key, members in recovered.items()}
+    return {
+        (first_key, second_key): accepts(codec, (first, second))
+        for first_key, first in representatives.items()
+        for second_key, second in representatives.items()
+    }
+
+
+def decoding_witnesses() -> list[str]:
+    """Every codec on this machine that answers when handed bytes."""
+
+    import encodings
+    import pkgutil
+
+    found = []
+    for module in pkgutil.iter_modules(encodings.__path__):
+        try:
+            codecs.lookup(module.name)
+            b"A".decode(module.name)
+        except Exception:
+            continue
+        found.append(module.name)
+    return sorted(found)
+
+
+def survey() -> list[tuple[str, int, int]]:
+    """Each witness, its class count, and its admissible class pairs."""
+
+    rows = []
+    for name in decoding_witnesses():
+        try:
+            recovered = classes(name, 4)
+            adjacency = class_adjacency(name, recovered)
+        except Exception:
+            continue
+        rows.append((name, len(recovered), sum(adjacency.values())))
+    return rows
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--codec", default="utf-8")
     parser.add_argument("--max-length", type=int, default=4)
+    parser.add_argument("--survey", action="store_true")
     args = parser.parse_args()
+
+    if args.survey:
+        rows = survey()
+        shapes = collections.Counter((count, pairs) for _, count, pairs in rows)
+        print(f"  {len(rows)} witnesses measured at both ladders")
+        print(f"  {'classes':>8}{'admissible pairs':>18}{'witnesses':>11}   example")
+        for (count, pairs), many in sorted(
+            shapes.items(), key=lambda item: (-item[1], item[0])
+        ):
+            example = next(n for n, c, p in rows if (c, p) == (count, pairs))
+            print(f"  {count:>8}{pairs:>18}{many:>11}   {example}")
+        return 0
 
     grouped = classes(args.codec, args.max_length)
     print(f"  witness: the codec named {args.codec!r}")
