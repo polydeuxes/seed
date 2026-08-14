@@ -96,7 +96,7 @@ def test_advancing_one_occurrence_at_a_time_equals_replay(material):
 
 
 def test_advancing_in_the_console_s_own_groupings_equals_replay():
-    """Two Presentation occurrences, then three ingress occurrences, repeating."""
+    """Two Representation occurrences, then three ingress occurrences, repeating."""
     ledger, _ = _console("alpha\nbeta\ngamma\nexit\n")
     events = ledger.list("w")
     standing = _advance([])
@@ -212,7 +212,7 @@ def test_every_growable_accumulator_is_consumed_not_copied():
     advanced = _advance(events[5:], prior=prior)
     for coordinate in (
         "attempts",
-        "presentations",
+        "representations",
         "preserved_ingress_occurrences",
         "known_loss",
         "unknowns",
@@ -249,7 +249,7 @@ def test_repeated_values_are_recorded_once():
 def test_the_console_keeps_no_earlier_standing():
     """The only holder hands its Standing forward and retains nothing."""
     ledger, output = _console("alpha\nbeta\ngamma\nexit\n")
-    assert output.count("Bounded Presentation") == 4
+    assert output.count("Bounded Representation") == 4
     assert read_operator_session_standing(
         ledger, workspace_id="w", session_id="s"
     ) == _replay(ledger.list("w"))
@@ -265,7 +265,7 @@ def test_c0_still_forms_from_empty_standing():
     formed = next(
         event
         for event in ledger.list("w")
-        if event.kind == "operator.presentation.formed"
+        if event.kind == "operator.representation.formed"
     )
     assert formed.payload["session_standing_as_of_event_id"] is None
 
@@ -274,6 +274,6 @@ def test_the_session_records_the_same_occurrences_it_always_did():
     ledger, output = _console("alpha\nbeta\nexit\n")
     kinds = [event.kind for event in ledger.list("w")]
     assert kinds.count("operator.ingress.ingress_occurred") == 2
-    assert kinds.count("operator.presentation.formed") == 3
-    assert kinds.count("operator.presentation.emitted") == 3
-    assert output.count("Bounded Presentation") == 3
+    assert kinds.count("operator.representation.formed") == 3
+    assert kinds.count("operator.representation.emitted") == 3
+    assert output.count("Bounded Representation") == 3

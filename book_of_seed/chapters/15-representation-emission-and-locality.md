@@ -6,7 +6,7 @@ Bounded representation and movement between localities.
 ## Bounded resolution
 Operator input is material carrying source coordinates at its ingress locality. It does not become Seed truth, an established represented relation, Authority, or Standing by arrival.
 
-A representation preserves its subject, content, source, provenance, Standing, Evidence, Authority, Scope, locality, conflicts, Unknowns, and limits where established. Missing coordinates remain absent or Unknown; presentation vocabulary does not instantiate them.
+A representation preserves its subject, content, source, provenance, Standing, Evidence, Authority, Scope, locality, conflicts, Unknowns, and limits where established. Missing coordinates remain absent or Unknown; representation vocabulary does not instantiate them.
 
 Representation formation and emission are distinct occurrences. Emission establishes only that the exact representation was emitted from its locality toward its addressed boundary. Arrival, interpretation, Applicability, an input-to-result support relation, Responsibility transition, Authority transition, and effects beyond the boundary require their own Evidence.
 

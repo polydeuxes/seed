@@ -5,10 +5,10 @@ import pytest
 from seed_runtime.events import EventLedger
 from seed_runtime.operator_ingress import run_operator_ingress_attempt
 from seed_runtime.operator_ingress_representation import capture_stdin_material
-from seed_runtime.operator_presentation import (
-    emit_operator_presentation,
-    form_operator_presentation,
-    render_operator_presentation,
+from seed_runtime.operator_representation import (
+    emit_operator_representation,
+    form_operator_representation,
+    render_operator_representation,
 )
 from seed_runtime.operator_response_comparison import (
     run_operator_response_comparison_and_identification,
@@ -24,20 +24,20 @@ def _standing(ledger, *, workspace="w", session="s"):
     )
 
 
-def _emit_presentation(ledger, *, workspace="w", session="s"):
-    presentation = form_operator_presentation(
+def _emit_representation(ledger, *, workspace="w", session="s"):
+    representation = form_operator_representation(
         ledger,
         workspace_id=workspace,
         session_id=session,
         session_standing=_standing(ledger, workspace=workspace, session=session),
         alternative_sources=CLOSED_CHOICE_FIXTURE_SOURCES,
     )
-    return emit_operator_presentation(
-        ledger, presentation=presentation, output_stream=StringIO()
+    return emit_operator_representation(
+        ledger, representation=representation, output_stream=StringIO()
     )
 
 
-def _capture_after(ledger, presentation, text, *, workspace="w", session="s"):
+def _capture_after(ledger, representation, text, *, workspace="w", session="s"):
     attempt_standing = run_operator_ingress_attempt(
         ledger=ledger,
         workspace_id=workspace,
@@ -48,51 +48,51 @@ def _capture_after(ledger, presentation, text, *, workspace="w", session="s"):
     return attempt_standing["current_standing"]["preserved_ingress"]["evidence_event_id"]
 
 
-def _compare(ledger, presentation, ingress_event_id, *, workspace="w", session="s"):
+def _compare(ledger, representation, ingress_event_id, *, workspace="w", session="s"):
     return run_operator_response_comparison_and_identification(
         ledger,
         workspace_id=workspace,
         session_id=session,
-        presentation=presentation,
+        representation=representation,
         response_ingress_event_id=ingress_event_id,
     )
 
 
 def _exchange(ledger, text, *, workspace="w", session="s"):
-    presentation = _emit_presentation(ledger, workspace=workspace, session=session)
+    representation = _emit_representation(ledger, workspace=workspace, session=session)
     ingress_event_id = _capture_after(
-        ledger, presentation, text, workspace=workspace, session=session
+        ledger, representation, text, workspace=workspace, session=session
     )
     finding = _compare(
-        ledger, presentation, ingress_event_id, workspace=workspace, session=session
+        ledger, representation, ingress_event_id, workspace=workspace, session=session
     )
-    return presentation, ingress_event_id, finding
+    return representation, ingress_event_id, finding
 
 
-def test_compare_requires_an_emitted_presentation_with_recorded_reference():
+def test_compare_requires_an_emitted_representation_with_recorded_reference():
     ledger = EventLedger()
-    presentation = form_operator_presentation(
+    representation = form_operator_representation(
         ledger,
         workspace_id="w",
         session_id="s",
         session_standing=_standing(ledger),
         alternative_sources=CLOSED_CHOICE_FIXTURE_SOURCES,
     )
-    ingress_event_id = _capture_after(ledger, presentation, "1\n")
+    ingress_event_id = _capture_after(ledger, representation, "1\n")
 
     with pytest.raises(ValueError, match="no emission evidence"):
-        _compare(ledger, presentation, ingress_event_id)
+        _compare(ledger, representation, ingress_event_id)
 
     # The recorded-chain preconditions that remain are still enforced.
-    emitted = _emit_presentation(ledger)
-    with pytest.raises(ValueError, match="not a presentation formation event"):
+    emitted = _emit_representation(ledger)
+    with pytest.raises(ValueError, match="not a representation formation event"):
         _compare(
             ledger,
             {**emitted, "formed_event_id": ingress_event_id},
             _capture_after(ledger, emitted, "1\n"),
         )
 
-    # Nothing asserts here that an arbitrary recorded Presentation and an
+    # Nothing asserts here that an arbitrary recorded Representation and an
     # arbitrary recorded ingress may participate in one Compare.  The recency
     # pairing that was removed was false, and its absence does not make every
     # pairing applicable: 01.Standing.E.1 requires the Responsibility
@@ -103,16 +103,16 @@ def test_compare_requires_an_emitted_presentation_with_recorded_reference():
 
 def test_comparison_provenance_records_the_subjects_it_consumed():
     ledger = EventLedger()
-    presentation, ingress_event_id, finding = _exchange(ledger, "1\n")
+    representation, ingress_event_id, finding = _exchange(ledger, "1\n")
 
-    # The ingress names no Presentation; the comparison's provenance is what
+    # The ingress names no Representation; the comparison's provenance is what
     # records which subjects it input.
     ingress = ledger.get(ingress_event_id)
     assert not any(k.startswith("produced_after") for k in ingress.payload)
     comparison_event = ledger.get(finding["comparison"]["event_id"])
     assert comparison_event.payload["provenance_occurrence_refs"] == [
-        presentation["formed_event_id"],
-        presentation["emitted_event_id"],
+        representation["formed_event_id"],
+        representation["emitted_event_id"],
         ingress.payload["raw_material_event_id"],
         ingress_event_id,
     ]
@@ -135,7 +135,7 @@ def test_nonmatching_material_records_no_coordinate_match():
     assert finding["comparison"]["matched_coordinate"] is None
     assert finding["comparison"]["outcome"] == "no-coordinate-match"
     assert finding["identification"]["outcome"] == (
-        "no-presented-alternative-identified"
+        "no-represented-alternative-identified"
     )
     assert finding["identification"]["basis"] == "no-coordinate-match"
 
@@ -178,25 +178,25 @@ def test_compare_and_identification_are_distinct_recorded_results():
 
 def test_match_with_applicable_binding_identifies_alternative():
     ledger = EventLedger()
-    presentation, _, finding = _exchange(ledger, "3\n")
+    representation, _, finding = _exchange(ledger, "3\n")
 
     identified = finding["identification"]["identified_alternative"]
     assert finding["identification"]["basis"] == "identified"
-    assert identified["role"] == "presentation-navigation"
+    assert identified["role"] == "representation-navigation"
     assert identified["response_coordinate"] == "3"
     assert identified["alternative_id"] == (
-        presentation["coordinate_bindings"]["3"]
+        representation["coordinate_bindings"]["3"]
     )
 
 
-def _record_malformed_presentation(ledger, mutate_bindings, *, workspace="w", session="s"):
-    """Record Presentation source coordinates whose binding relation is malformed.
+def _record_malformed_representation(ledger, mutate_bindings, *, workspace="w", session="s"):
+    """Record Representation source coordinates whose binding relation is malformed.
 
     A well-formed formation supplies the payload shape; the malformed C is
     then recorded as its own formation and emission events, so the broken
     binding belongs to recorded payload rather than a mutated dictionary.
     """
-    template = form_operator_presentation(
+    template = form_operator_representation(
         ledger,
         workspace_id=workspace,
         session_id=session,
@@ -204,23 +204,23 @@ def _record_malformed_presentation(ledger, mutate_bindings, *, workspace="w", se
         alternative_sources=CLOSED_CHOICE_FIXTURE_SOURCES,
     )
     template_payload = ledger.get(template["formed_event_id"]).payload
-    presentation_id = template["presentation_id"] + "-malformed"
+    representation_id = template["representation_id"] + "-malformed"
     payload = {
         **template_payload,
-        "presentation_ref": presentation_id,
+        "representation_ref": representation_id,
         "coordinate_bindings": mutate_bindings(
             dict(template_payload["coordinate_bindings"])
         ),
         "dimensions": {
             **template_payload["dimensions"],
-            "identity": presentation_id,
+            "identity": representation_id,
         },
     }
     formed = ledger.append(
-        "operator.presentation.formed", workspace, payload, session_id=session
+        "operator.representation.formed", workspace, payload, session_id=session
     )
-    malformed_presentation = {
-        "presentation_id": presentation_id,
+    malformed_representation = {
+        "representation_id": representation_id,
         "workspace_id": workspace,
         "session_id": session,
         "formed_event_id": formed.id,
@@ -229,22 +229,22 @@ def _record_malformed_presentation(ledger, mutate_bindings, *, workspace="w", se
         "prior_exchange_finding": None,
         "represented_relation": None,
     }
-    emit_operator_presentation(
-        ledger, presentation=malformed_presentation, output_stream=StringIO()
+    emit_operator_representation(
+        ledger, representation=malformed_representation, output_stream=StringIO()
     )
     return {
-        "presentation_id": presentation_id,
+        "representation_id": representation_id,
         "formed_event_id": formed.id,
-        "emitted_event_id": malformed_presentation["emitted_event_id"],
+        "emitted_event_id": malformed_representation["emitted_event_id"],
     }
 
 
 def test_recorded_broken_binding_does_not_identify_an_alternative():
     # Recorded binding maps the matched coordinate to an alternative outside
-    # this exact presentation: no lawful identification, and no invented A.
+    # this exact representation: no lawful identification, and no invented A.
     ledger = EventLedger()
-    inapplicable = _record_malformed_presentation(
-        ledger, lambda bindings: {**bindings, "2": "presented_alternative_foreign"}
+    inapplicable = _record_malformed_representation(
+        ledger, lambda bindings: {**bindings, "2": "represented_alternative_foreign"}
     )
     ingress_event_id = _capture_after(ledger, inapplicable, "2\n")
     finding = _compare(ledger, inapplicable, ingress_event_id)
@@ -255,7 +255,7 @@ def test_recorded_broken_binding_does_not_identify_an_alternative():
     # Recorded coordinate whose binding is absent: match, then no lawful
     # identification -- distinct from no-coordinate-match.
     absent_ledger = EventLedger()
-    absent = _record_malformed_presentation(
+    absent = _record_malformed_representation(
         absent_ledger,
         lambda bindings: {k: v for k, v in bindings.items() if k != "2"},
     )
@@ -270,13 +270,13 @@ def test_mutated_representation_is_structurally_refused():
     # The recorded formation payload is authoritative; a supplied attempt_standing
     # that disagrees with it is refused rather than compared.
     ledger = EventLedger()
-    presentation = _emit_presentation(ledger)
-    ingress_event_id = _capture_after(ledger, presentation, "2\n")
+    representation = _emit_representation(ledger)
+    ingress_event_id = _capture_after(ledger, representation, "2\n")
 
-    mutated = dict(presentation)
+    mutated = dict(representation)
     mutated["coordinate_bindings"] = {
-        **presentation["coordinate_bindings"],
-        "2": "presented_alternative_foreign",
+        **representation["coordinate_bindings"],
+        "2": "represented_alternative_foreign",
     }
     with pytest.raises(ValueError, match="disagrees with recorded"):
         _compare(ledger, mutated, ingress_event_id)
@@ -284,20 +284,20 @@ def test_mutated_representation_is_structurally_refused():
 
 def test_incomplete_recorded_chain_is_refused():
     ledger = EventLedger()
-    first = _emit_presentation(ledger)
-    second = _emit_presentation(ledger)
+    first = _emit_representation(ledger)
+    second = _emit_representation(ledger)
     ingress_event_id = _capture_after(ledger, second, "1\n")
 
-    # Emission evidence naming a different presentation's emission.
+    # Emission evidence naming a different representation's emission.
     crossed = dict(second)
     crossed["emitted_event_id"] = first["emitted_event_id"]
-    with pytest.raises(ValueError, match="does not record this exact presentation"):
+    with pytest.raises(ValueError, match="does not record this exact representation"):
         _compare(ledger, crossed, ingress_event_id)
 
     # Formation evidence that is not a formation event.
     wrong_kind = dict(second)
     wrong_kind["formed_event_id"] = ingress_event_id
-    with pytest.raises(ValueError, match="not a presentation formation event"):
+    with pytest.raises(ValueError, match="not a representation formation event"):
         _compare(ledger, wrong_kind, ingress_event_id)
 
 
@@ -344,16 +344,16 @@ def test_identification_does_not_establish_represented_source():
 
 def test_formation_event_evidences_bindings_despite_empty_upstream_lists():
     ledger = EventLedger()
-    presentation, _, finding = _exchange(ledger, "1\n")
+    representation, _, finding = _exchange(ledger, "1\n")
 
     identification_event = ledger.get(finding["identification"]["event_id"])
-    assert identification_event.payload["presentation_formed_event_id"] == (
-        presentation["formed_event_id"]
+    assert identification_event.payload["representation_formed_event_id"] == (
+        representation["formed_event_id"]
     )
-    assert presentation["formed_event_id"] in (
+    assert representation["formed_event_id"] in (
         identification_event.payload["provenance_occurrence_refs"]
     )
-    formed_event = ledger.get(presentation["formed_event_id"])
+    formed_event = ledger.get(representation["formed_event_id"])
     for alternative in formed_event.payload["alternatives"]:
         assert alternative["representation"]["evidence_event_ids"] == []
 
@@ -367,8 +367,8 @@ def test_no_synthetic_developer_source_evidence_event_is_created():
         "operator.ingress.raw_material_captured",
         "operator.ingress.representation_examined",
         "operator.ingress.ingress_occurred",
-        "operator.presentation.formed",
-        "operator.presentation.emitted",
+        "operator.representation.formed",
+        "operator.representation.emitted",
         "operator.exchange.comparison_occurred",
         "operator.exchange.identification_occurred",
     }
@@ -376,14 +376,14 @@ def test_no_synthetic_developer_source_evidence_event_is_created():
 
 def test_cross_session_and_cross_workspace_material_cannot_participate():
     ledger = EventLedger()
-    foreign = _emit_presentation(ledger, workspace="w", session="other")
+    foreign = _emit_representation(ledger, workspace="w", session="other")
     ingress_event_id = _capture_after(ledger, foreign, "1\n")
 
     with pytest.raises(ValueError, match="another workspace or session"):
         _compare(ledger, foreign, ingress_event_id)
 
-    own = _emit_presentation(ledger)
-    foreign_workspace = _emit_presentation(ledger, workspace="w2")
+    own = _emit_representation(ledger)
+    foreign_workspace = _emit_representation(ledger, workspace="w2")
     own_ingress = _capture_after(ledger, own, "1\n")
     with pytest.raises(ValueError, match="another workspace or session"):
         _compare(ledger, foreign_workspace, own_ingress, workspace="w2")
@@ -406,11 +406,11 @@ def test_session_projector_validates_findings_deterministically():
     assert _standing(ledger) == before
 
 
-def test_later_presentation_consumes_findings_without_stronger_standing():
+def test_later_representation_consumes_findings_without_stronger_standing():
     ledger = EventLedger()
     _exchange(ledger, "1\n")
 
-    later = form_operator_presentation(
+    later = form_operator_representation(
         ledger,
         workspace_id="w",
         session_id="s",
@@ -438,18 +438,18 @@ def test_exit_boundary_is_explicit_and_unambiguous():
         output_stream=output,
     )
     assert [event.kind for event in ledger.list("w")] == [
-        "operator.presentation.formed",
-        "operator.presentation.emitted",
+        "operator.representation.formed",
+        "operator.representation.emitted",
     ]
 
-    # The recorded presentation coordinate is disjoint from the exit byte
+    # The recorded representation coordinate is disjoint from the exit byte
     # form, and choosing it flows through recorded Compare/Identification
     # without closing the interaction or recording a stopping occurrence.
     exchange_ledger = EventLedger()
-    presentation, _, finding = _exchange(exchange_ledger, "3\n")
-    assert "exit" not in presentation["coordinate_bindings"]
+    representation, _, finding = _exchange(exchange_ledger, "3\n")
+    assert "exit" not in representation["coordinate_bindings"]
     assert finding["identification"]["identified_alternative"]["role"] == (
-        "presentation-navigation"
+        "representation-navigation"
     )
     kinds = {event.kind for event in exchange_ledger.list("w")}
     assert "operator.ingress.stopping_occurred" not in kinds
@@ -476,35 +476,35 @@ def test_projector_refuses_identification_paired_with_wrong_comparison():
 
 def test_matched_but_unidentified_is_not_rendered_as_no_match():
     ledger = EventLedger()
-    malformed = _record_malformed_presentation(
-        ledger, lambda bindings: {**bindings, "2": "presented_alternative_foreign"}
+    malformed = _record_malformed_representation(
+        ledger, lambda bindings: {**bindings, "2": "represented_alternative_foreign"}
     )
     ingress_event_id = _capture_after(ledger, malformed, "2\n")
     _compare(ledger, malformed, ingress_event_id)
 
-    later = form_operator_presentation(
+    later = form_operator_representation(
         ledger,
         workspace_id="w",
         session_id="s",
         session_standing=_standing(ledger),
         alternative_sources=CLOSED_CHOICE_FIXTURE_SOURCES,
     )
-    from seed_runtime.operator_presentation import render_operator_presentation
+    from seed_runtime.operator_representation import render_operator_representation
 
-    rendered = render_operator_presentation(later)
+    rendered = render_operator_representation(later)
     assert (
         "coordinate 2 matched within" in rendered
-        and "no presented alternative was lawfully identified "
+        and "no represented alternative was lawfully identified "
         "(binding-inapplicable)" in rendered
     )
     assert "no coordinate match" not in rendered
     assert "corresponds to the captured material" not in rendered
 
 
-def test_exchange_findings_are_exposed_by_a_later_presentation():
+def test_exchange_findings_are_exposed_by_a_later_representation():
     # The console no longer selects participants by recency, so the exchange is
     # driven directly here.  What is proved is unchanged: recorded findings are
-    # exposed by a later Presentation without being strengthened.
+    # exposed by a later Representation without being strengthened.
     ledger = EventLedger()
     _, _, match = _exchange(ledger, "1\n")
     _, _, no_match = _exchange(ledger, "unmatched words\n")
@@ -516,14 +516,14 @@ def test_exchange_findings_are_exposed_by_a_later_presentation():
         "no-coordinate-match"
     )
 
-    later = form_operator_presentation(
+    later = form_operator_representation(
         ledger,
         workspace_id="w",
         session_id="s",
         session_standing=standing,
         alternative_sources=CLOSED_CHOICE_FIXTURE_SOURCES,
     )
-    rendered = render_operator_presentation(later)
+    rendered = render_operator_representation(later)
     assert "Prior exchange: no coordinate match within" in rendered
     assert "requested treatment remain Unknown" in rendered
     assert match["identification"]["basis"] == "identified"

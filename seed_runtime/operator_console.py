@@ -1,4 +1,4 @@
-"""Process-local repetition around bounded operator ingress and Presentation."""
+"""Process-local repetition around bounded operator ingress and Representation."""
 
 from __future__ import annotations
 
@@ -7,9 +7,9 @@ from typing import TextIO
 from seed_runtime.events import EventLedger
 from seed_runtime.operator_ingress import run_operator_ingress_attempt
 from seed_runtime.operator_ingress_representation import capture_stdin_material
-from seed_runtime.operator_presentation import (
-    emit_operator_presentation,
-    form_operator_presentation,
+from seed_runtime.operator_representation import (
+    emit_operator_representation,
+    form_operator_representation,
 )
 from seed_runtime.operator_session_standing import (
     advance_operator_session_standing,
@@ -61,19 +61,19 @@ def run_persistent_operator_console(
     session_standing = read_operator_session_standing(
         ledger, workspace_id=workspace_id, session_id=session_id
     )
-    presentation = form_operator_presentation(
+    representation = form_operator_representation(
         ledger,
         workspace_id=workspace_id,
         session_id=session_id,
         session_standing=session_standing,
     )
-    presentation = emit_operator_presentation(
-        ledger, presentation=presentation, output_stream=output_stream
+    representation = emit_operator_representation(
+        ledger, representation=representation, output_stream=output_stream
     )
     session_standing = _advance_over(
         ledger,
         session_standing,
-        (presentation["formed_event_id"], presentation["emitted_event_id"]),
+        (representation["formed_event_id"], representation["emitted_event_id"]),
         workspace_id=workspace_id,
         session_id=session_id,
     )
@@ -89,7 +89,7 @@ def run_persistent_operator_console(
             captured_ingress.exact_bytes, captured_ingress.stream_encoding_metadata
         ):
             return
-        # No Presentation is attached to this capture. Selecting one by
+        # No Representation is attached to this capture. Selecting one by
         # recency would assert a relation no occurrence determined.
         attempt_view = run_operator_ingress_attempt(
             ledger=ledger,
@@ -109,23 +109,23 @@ def run_persistent_operator_console(
             session_id=session_id,
         )
         if attempt_view["current_standing"]["preserved_ingress"] is not None:
-            # The produced Presentation is preserved independently. No Compare
+            # The produced Representation is preserved independently. No Compare
             # or Identification is inferred merely from temporal proximity.
-            presentation = form_operator_presentation(
+            representation = form_operator_representation(
                 ledger,
                 workspace_id=workspace_id,
                 session_id=session_id,
                 session_standing=session_standing,
             )
-            presentation = emit_operator_presentation(
-                ledger, presentation=presentation, output_stream=output_stream
+            representation = emit_operator_representation(
+                ledger, representation=representation, output_stream=output_stream
             )
             session_standing = _advance_over(
                 ledger,
                 session_standing,
                 (
-                    presentation["formed_event_id"],
-                    presentation["emitted_event_id"],
+                    representation["formed_event_id"],
+                    representation["emitted_event_id"],
                 ),
                 workspace_id=workspace_id,
                 session_id=session_id,

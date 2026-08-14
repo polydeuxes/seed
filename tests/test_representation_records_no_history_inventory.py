@@ -1,7 +1,7 @@
-"""A Presentation records the occurrence its Standing was taken through, not the prefix.
+"""A representation records the occurrence its Standing was taken through, not the prefix.
 
 `session_standing_evidence_ids` copied session Standing's whole append-order
-event inventory into every `operator.presentation.formed` payload, beside
+event inventory into every `operator.representation.formed` payload, beside
 `session_standing_as_of_event_id`, which already names that occurrence.
 
 `#2372` established that the copy was exactly derivable from the boundary
@@ -27,10 +27,10 @@ from seed_runtime.events import EventLedger
 from seed_runtime.operator_session_standing import read_operator_session_standing
 from seed_runtime.operator_console import run_persistent_operator_console
 
-FORMED = "operator.presentation.formed"
+FORMED = "operator.representation.formed"
 FAMILIES = (
     "operator.ingress.",
-    "operator.presentation.",
+    "operator.representation.",
     "operator.exchange.",
     "operator.interaction.",
 )
@@ -69,10 +69,10 @@ def test_no_formation_records_a_history_inventory(session):
         assert "session_standing_evidence_ids" not in event.payload
 
 
-def test_no_projected_presentation_exposes_one(session):
+def test_no_projected_representation_exposes_one(session):
     ledger, _ = session
-    for presentation in _standing(ledger)["presentations"].values():
-        assert "session_standing_evidence_ids" not in presentation
+    for representation in _standing(ledger)["representations"].values():
+        assert "session_standing_evidence_ids" not in representation
 
 
 def test_recorded_payload_size_does_not_grow_with_session_length():
@@ -162,11 +162,11 @@ def test_the_session_still_projects_deterministically(session):
 
 def test_the_console_still_presents_every_interaction(session):
     _, output = session
-    assert output.count("Bounded Presentation") == 5
+    assert output.count("Bounded Representation") == 5
 
 
 def test_standing_still_records_the_boundary_it_consumed_through(session):
-    """Removed from the Presentation, and the boundary remains on the read."""
+    """Removed from the Representation, and the boundary remains on the read."""
     ledger, _ = session
     standing = _standing(ledger)
     assert standing["as_of_event_id"] is not None

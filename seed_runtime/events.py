@@ -412,17 +412,17 @@ class SQLiteEventLedger(EventLedger):
     #
     # The four operator-console prefixes were absent until `#2413` connected
     # the console to a durable ledger, at which point the second `seed --db`
-    # invocation aborted on `duplicate presentation reference`. Nothing was
+    # invocation aborted on `duplicate representation reference`. Nothing was
     # wrong with them before: no console had ever written durable history.
     # The prefixes `_observed_suffixes` may reserve, as a set for membership.
     # Every entry is minted by current runtime code and may be carried by a
     # durable occurrence. Retired vocabulary does not remain merely because an
     # older ledger may contain a similarly shaped string.
     _RESERVABLE_PREFIXES = frozenset({
-        "operator_presentation", "operator_ingress_attempt", "operator_material",
+        "operator_representation", "operator_ingress_attempt", "operator_material",
         "session", "system_invocation", "system_material", "transient_material",
         "operator_response_comparison", "operator_alternative_identification",
-        "presented_alternative", "adjacent_byte_pair_measurement_act",
+        "represented_alternative", "adjacent_byte_pair_measurement_act",
         "adjacent_byte_pair_measurement_occurrence", "byte_measurement_act",
         "byte_measurement_occurrence", "byte_pair_applicability_act",
         "byte_pair_applicability_occurrence",

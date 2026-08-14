@@ -183,7 +183,7 @@ def test_recorded_results_replay_the_complete_bounded_source_read():
     # Reconstruction preserves exact durable JSON kinds. It does not protect the
     # result by transmuting lists to tuples or dicts to proxy objects.
     represented = Event(
-        id="re-presented",
+        id="re-represented",
         kind="test.representation",
         workspace_id="w",
         payload=count.payload,

@@ -1,4 +1,4 @@
-"""Recorded Compare and Identification over one bounded Presentation exchange."""
+"""Recorded Compare and Identification over one bounded Representation exchange."""
 
 from __future__ import annotations
 
@@ -49,11 +49,11 @@ def run_operator_response_comparison_and_identification(
     *,
     workspace_id: str,
     session_id: str,
-    presentation: dict[str, Any],
+    representation: dict[str, Any],
     response_ingress_event_id: str,
 ) -> dict[str, Any]:
     """Compare captured operator material with C's exact response coordinates,
-    then identify the corresponding presented alternative, as two distinct
+    then identify the corresponding represented alternative, as two distinct
     recorded results of one responsible occurrence.
 
     The compared representation is the ingress occurrence's recorded content
@@ -75,12 +75,12 @@ def run_operator_response_comparison_and_identification(
     of: that the material was not a response, candidate nonparticipation,
     or negative operator intent.
     """
-    _require(presentation is not None, "no presentation supplied")
-    presentation_ref = presentation["presentation_id"]
-    formed_event_id = presentation["formed_event_id"]
-    emitted_event_id = presentation["emitted_event_id"]
-    _require(formed_event_id is not None, "presentation has no formation evidence")
-    _require(emitted_event_id is not None, "presentation has no emission evidence")
+    _require(representation is not None, "no representation supplied")
+    representation_ref = representation["representation_id"]
+    formed_event_id = representation["formed_event_id"]
+    emitted_event_id = representation["emitted_event_id"]
+    _require(formed_event_id is not None, "representation has no formation evidence")
+    _require(emitted_event_id is not None, "representation has no emission evidence")
     scope = f"workspace:{workspace_id};session:{session_id}"
 
     # The recorded formation payload is the sole source of C's alternatives,
@@ -90,8 +90,8 @@ def run_operator_response_comparison_and_identification(
     formed_event = ledger.get(formed_event_id)
     _require(formed_event is not None, "formation event not recorded in this ledger")
     _require(
-        formed_event.kind == "operator.presentation.formed",
-        "formation evidence is not a presentation formation event",
+        formed_event.kind == "operator.representation.formed",
+        "formation evidence is not a representation formation event",
     )
     _require(
         formed_event.workspace_id == workspace_id
@@ -99,19 +99,19 @@ def run_operator_response_comparison_and_identification(
         "formation event belongs to another workspace or session",
     )
     _require(
-        formed_event.payload["presentation_ref"] == presentation_ref,
-        "formation event does not record this exact presentation",
+        formed_event.payload["representation_ref"] == representation_ref,
+        "formation event does not record this exact representation",
     )
     _require(
         formed_event.payload["dimensions"]["scope_locality"] == scope,
-        "presentation scope does not match this workspace and session",
+        "representation scope does not match this workspace and session",
     )
     alternatives = formed_event.payload["alternatives"]
     coordinate_bindings = formed_event.payload["coordinate_bindings"]
-    _require(bool(alternatives), "recorded presentation has no alternatives")
-    _require(bool(coordinate_bindings), "recorded presentation has no bindings")
+    _require(bool(alternatives), "recorded representation has no alternatives")
+    _require(bool(coordinate_bindings), "recorded representation has no bindings")
     for key in ("alternatives", "coordinate_bindings"):
-        supplied = presentation.get(key)
+        supplied = representation.get(key)
         _require(
             supplied is None or supplied == formed_event.payload[key],
             f"supplied representation disagrees with recorded {key}",
@@ -120,8 +120,8 @@ def run_operator_response_comparison_and_identification(
     emitted_event = ledger.get(emitted_event_id)
     _require(emitted_event is not None, "emission event not recorded in this ledger")
     _require(
-        emitted_event.kind == "operator.presentation.emitted",
-        "emission evidence is not a presentation emission event",
+        emitted_event.kind == "operator.representation.emitted",
+        "emission evidence is not a representation emission event",
     )
     _require(
         emitted_event.workspace_id == workspace_id
@@ -129,8 +129,8 @@ def run_operator_response_comparison_and_identification(
         "emission event belongs to another workspace or session",
     )
     _require(
-        emitted_event.payload["presentation_ref"] == presentation_ref,
-        "emission event does not record this exact presentation",
+        emitted_event.payload["representation_ref"] == representation_ref,
+        "emission event does not record this exact representation",
     )
     _require(
         emitted_event.payload["formed_event_id"] == formed_event_id,
@@ -148,7 +148,7 @@ def run_operator_response_comparison_and_identification(
         and ingress_event.session_id == session_id,
         "response ingress belongs to another workspace or session",
     )
-    # The ingress no longer names a Presentation: a relation between two
+    # The ingress no longer names a Representation: a relation between two
     # preserved subjects is its own bounded Assertion rather than a
     # coordinate of one participant.  Nothing here substitutes for the
     # missing determination, and its absence is not permission.  Per
@@ -205,9 +205,9 @@ def run_operator_response_comparison_and_identification(
         {
             "attempt_ref": response_attempt_ref,
             "comparison_ref": comparison_ref,
-            "presentation_ref": presentation_ref,
-            "presentation_formed_event_id": formed_event_id,
-            "presentation_emitted_event_id": emitted_event_id,
+            "representation_ref": representation_ref,
+            "representation_formed_event_id": formed_event_id,
+            "representation_emitted_event_id": emitted_event_id,
             "response_attempt_ref": response_attempt_ref,
             "response_capture_event_id": response_capture_event_id,
             "response_ingress_event_id": response_ingress_event_id,
@@ -217,7 +217,7 @@ def run_operator_response_comparison_and_identification(
             "outcome": comparison_outcome,
             "exact_act": (
                 "compare captured operator material with the emitted "
-                "presentation's exact response coordinates"
+                "representation's exact response coordinates"
             ),
             "dimensions": _dimensions(
                 identity=comparison_ref,
@@ -227,11 +227,11 @@ def run_operator_response_comparison_and_identification(
                 responsibility="bounded-response-comparison",
                 authority=(
                     "bounded by this exchange: captured material against this "
-                    "presentation's exact response coordinates; result bounded "
+                    "representation's exact response coordinates; result bounded "
                     "to match or no coordinate match; establishes no intent, "
                     "understanding, selection, authorization, or treatment"
                 ),
-                scope=f"{scope};exchange:{presentation_ref}->{response_attempt_ref}",
+                scope=f"{scope};exchange:{representation_ref}->{response_attempt_ref}",
                 occurrence="comparison occurrence durably recorded",
             ),
             "known_loss": [],
@@ -275,7 +275,7 @@ def run_operator_response_comparison_and_identification(
     identification_outcome = (
         "alternative-identified"
         if identified_alternative is not None
-        else "no-presented-alternative-identified"
+        else "no-represented-alternative-identified"
     )
     identification_ref = new_id("operator_alternative_identification")
     identification_event = ledger.append(
@@ -286,15 +286,15 @@ def run_operator_response_comparison_and_identification(
             "identification_ref": identification_ref,
             "comparison_ref": comparison_ref,
             "comparison_event_id": comparison_event.id,
-            "presentation_ref": presentation_ref,
-            "presentation_formed_event_id": formed_event_id,
+            "representation_ref": representation_ref,
+            "representation_formed_event_id": formed_event_id,
             "response_attempt_ref": response_attempt_ref,
             "identified_alternative": identified_alternative,
             "basis": basis,
             "outcome": identification_outcome,
             "exact_act": (
-                "identify which presented alternative corresponds to the "
-                "captured material within the exact presentation"
+                "identify which represented alternative corresponds to the "
+                "captured material within the exact representation"
             ),
             "dimensions": _dimensions(
                 identity=identification_ref,
@@ -303,12 +303,12 @@ def run_operator_response_comparison_and_identification(
                 source=comparison_event.id,
                 responsibility="bounded-alternative-identification",
                 authority=(
-                    "identifies a presented alternative within this exact "
-                    "presentation only; establishes no source reconstruction, "
+                    "identifies a represented alternative within this exact "
+                    "representation only; establishes no source reconstruction, "
                     "represented relation, intent, selection, authorization, result relation, or "
                     "treatment occurrence"
                 ),
-                scope=f"{scope};exchange:{presentation_ref}->{response_attempt_ref}",
+                scope=f"{scope};exchange:{representation_ref}->{response_attempt_ref}",
                 occurrence="identification occurrence durably recorded",
             ),
             "known_loss": [],

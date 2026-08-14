@@ -105,7 +105,7 @@ def test_one_attempt_behavior_unchanged_without_earlier_session_history():
     assert "session_standing" not in baseline
 
     # The console passes Standing containing C0 to the first interaction,
-    # and its interaction output is a bounded Presentation, not the Representation.
+    # and its interaction output is a bounded Representation, not the Representation.
     input_stream = StringIO("solo material\nexit\n")
     output_stream = StringIO()
     console_ledger = EventLedger()
@@ -117,7 +117,7 @@ def test_one_attempt_behavior_unchanged_without_earlier_session_history():
         output_stream=output_stream,
     )
     rendered = output_stream.getvalue()
-    assert "Bounded Presentation" in rendered
+    assert "Bounded Representation" in rendered
     assert "Session Standing" not in rendered
 
 
@@ -135,23 +135,23 @@ def test_console_supplies_prior_session_standing_to_later_interactions():
     )
 
     rendered = output_stream.getvalue()
-    assert rendered.count("Bounded Presentation") == 3
+    assert rendered.count("Bounded Representation") == 3
     standing = _standing(ledger)
-    assert len(standing["presentations"]) == 3
-    first_id, second_id, third_id = list(standing["presentations"])
-    assert list(standing["presentations"])[-1] == third_id
-    # The later Presentation's recorded formation input Standing taken
+    assert len(standing["representations"]) == 3
+    first_id, second_id, third_id = list(standing["representations"])
+    assert list(standing["representations"])[-1] == third_id
+    # The later Representation's recorded formation input Standing taken
     # through a strictly later occurrence than the first one's.
     positions = {event.id: index for index, event in enumerate(ledger.list("w"))}
-    first_presentation = standing["presentations"][first_id]
-    assert first_presentation["session_standing_as_of_event_id"] is None
+    first_representation = standing["representations"][first_id]
+    assert first_representation["session_standing_as_of_event_id"] is None
     later_boundary = positions[
-        standing["presentations"][third_id]["session_standing_as_of_event_id"]
+        standing["representations"][third_id]["session_standing_as_of_event_id"]
     ]
-    # The first Presentation's own formation and emission occurrences fall
+    # The first Representation's own formation and emission occurrences fall
     # inside the prefix the later formation input.
-    assert positions[first_presentation["formed_event_id"]] < later_boundary
-    assert positions[first_presentation["emitted_event_id"]] < later_boundary
+    assert positions[first_representation["formed_event_id"]] < later_boundary
+    assert positions[first_representation["emitted_event_id"]] < later_boundary
 
 
 def test_representation_does_not_mutate_ledger_or_synthesize_events():

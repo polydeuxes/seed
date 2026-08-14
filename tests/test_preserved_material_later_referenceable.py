@@ -12,14 +12,14 @@ What this module demonstrates is narrow and structural:
 
     earlier events remain preserved and unchanged
     a later session read can reference them
-    a later presentation formation carries those references
+    a later representation formation carries those references
 
 That is the substrate later input support would require. It is **not** input support,
 participation, admission, a finding, or new Standing, none of which are
 demonstrated here. `01.Kinds` keeps applicable, admitted, and input distinct,
 and carrying an event id as Evidence establishes none of them.
 
-Two further limits.  Only presentation formations were inspected; the other
+Two further limits.  Only representation formations were inspected; the other
 operator event kinds are also later occurrences and are not shown to reference
 the whole past.  And `#2350` left open whether
 `read_operator_session_standing` is a lawful constitutional read
@@ -48,7 +48,7 @@ from seed_runtime.operator_session_standing import (
 )
 from seed_runtime.operator_console import run_persistent_operator_console
 
-FORMED = "operator.presentation.formed"
+FORMED = "operator.representation.formed"
 
 
 def _payload_snapshot(events) -> dict[str, str]:
@@ -124,7 +124,7 @@ def test_representation_appends_nothing(ledger):
 def test_each_formation_is_appended_after_every_event_it_references(ledger):
     """Narrow by intent: an ordering finding about the ledger, nothing more.
 
-    This says nothing about findings or Standing.  A presentation formation is
+    This says nothing about findings or Standing.  A representation formation is
     not a finding, and its own recorded authority is "formation occurrence
     only; establishes no Selection, support relation, result relation, or response treatment".
     """
@@ -149,8 +149,8 @@ def test_no_act_condition_change_is_claimed_here(ledger):
         e.kind for e in ledger.list() if e.kind.startswith("operator.")
     }
     assert observed_operator_event_kinds == {
-        "operator.presentation.formed",
-        "operator.presentation.emitted",
+        "operator.representation.formed",
+        "operator.representation.emitted",
         "operator.ingress.raw_material_captured",
         "operator.ingress.representation_examined",
         "operator.ingress.ingress_occurred",

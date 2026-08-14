@@ -118,6 +118,7 @@ BANNED: tuple[tuple[str, str], ...] = (
     (r"\bknowledge\w*\b|knowledge[-_]", "knowledge*"),
     (r"\borientat\w*\b|orientat[-_]", "orientat*"),
     (r"\bexternal\w*\b|external[-_]", "external*"),
+    (r"(?<![A-Za-z])presentation\w*\b|(?<![A-Za-z])presentation[-_]", "presentation*"),
 )
 
 # The discriminator, corrected.

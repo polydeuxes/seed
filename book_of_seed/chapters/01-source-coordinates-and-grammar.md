@@ -12,7 +12,7 @@ An supplied representation may become Seed-addressable without becoming Evidence
 
 An exact Responsibility may use supplied material only through its own Applicability and other required boundaries. Every applicable source coordinate and limit travels with the material. Dropping a limit is erasure; supplying an unsupported coordinate is invention; treating supplied material as repository truth is mutation; making its source the Authority owner is relocation.
 
-Developer-supplied connective text is material carrying source coordinates. It may assert a narrow relation within an exact presentation, but equivalent text under another subject, source, Scope, occurrence, or support-relation Standing does not identify the same relation. Unsupported coordinates remain Unknown or uninstantiated.
+Developer-supplied connective text is material carrying source coordinates. It may assert a narrow relation within an exact representation, but equivalent text under another subject, source, Scope, occurrence, or support-relation Standing does not identify the same relation. Unsupported coordinates remain Unknown or uninstantiated.
 
 ### 01.Source.A — Addressability preserves source coordinates
 

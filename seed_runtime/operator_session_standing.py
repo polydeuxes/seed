@@ -14,17 +14,17 @@ _SUBJECT_BY_KIND = {
     "operator.ingress.ingress_occurred": "preserved_ingress",
     "operator.ingress.stopping_occurred": "interaction_closure",
 }
-_PRESENTATION_FORMED_KIND = "operator.presentation.formed"
-_PRESENTATION_EMITTED_KIND = "operator.presentation.emitted"
+_REPRESENTATION_FORMED_KIND = "operator.representation.formed"
+_REPRESENTATION_EMITTED_KIND = "operator.representation.emitted"
 _COMPARISON_KIND = "operator.exchange.comparison_occurred"
 _IDENTIFICATION_KIND = "operator.exchange.identification_occurred"
-_SOURCE_VALIDATED_KIND = "operator.presentation.source_validated"
-_REPRESENTED_RELATION_KIND = "operator.presentation.represented_relation_established"
+_SOURCE_VALIDATED_KIND = "operator.representation.source_validated"
+_REPRESENTED_RELATION_KIND = "operator.representation.represented_relation_established"
 _SUPPORTED_KINDS = {
     *_SUBJECT_BY_KIND,
     "operator.ingress.representation_examined",
-    _PRESENTATION_FORMED_KIND,
-    _PRESENTATION_EMITTED_KIND,
+    _REPRESENTATION_FORMED_KIND,
+    _REPRESENTATION_EMITTED_KIND,
     _COMPARISON_KIND,
     _IDENTIFICATION_KIND,
     _SOURCE_VALIDATED_KIND,
@@ -97,7 +97,7 @@ def advance_operator_session_standing(
     time and reinstate the quadratic this replaced. The console holds one
     Standing, hands it forward, and keeps no earlier one.
 
-    Accepts as input only ``operator.ingress.*`` and ``operator.presentation.*``
+    Accepts as input only ``operator.ingress.*`` and ``operator.representation.*``
     events stamped with this exact workspace and session, in append order.  The result is fully recomputable
     from the ledger and is not itself recorded: it exposes only standings,
     limits, and Unknowns the session's events already carry.  An empty
@@ -109,7 +109,7 @@ def advance_operator_session_standing(
     attempts: dict[str, dict[str, Any]] = {}
     preserved_ingress_occurrences: list[dict[str, Any]] = []
     interaction_closures: list[dict[str, Any]] = []
-    presentations: dict[str, dict[str, Any]] = {}
+    representations: dict[str, dict[str, Any]] = {}
     comparisons: dict[str, dict[str, Any]] = {}
     identifications: dict[str, dict[str, Any]] = {}
     latest_exchange_finding: dict[str, Any] | None = None
@@ -136,7 +136,7 @@ def advance_operator_session_standing(
         attempts = prior["attempts"]
         preserved_ingress_occurrences = prior["preserved_ingress_occurrences"]
         interaction_closures = prior["interaction_closures"]
-        presentations = prior["presentations"]
+        representations = prior["representations"]
         comparisons = prior["comparisons"]
         identifications = prior["identifications"]
         latest_exchange_finding = prior["latest_exchange_finding"]
@@ -155,7 +155,7 @@ def advance_operator_session_standing(
             continue
         if not (
             event.kind.startswith("operator.ingress.")
-            or event.kind.startswith("operator.presentation.")
+            or event.kind.startswith("operator.representation.")
             or event.kind.startswith("operator.exchange.")
             or event.kind.startswith("operator.interaction.")
         ):
@@ -171,15 +171,15 @@ def advance_operator_session_standing(
         ):
             for value in event.payload.get(key, ()):
                 _record_distinct(collected, value)
-        if event.kind == _PRESENTATION_FORMED_KIND:
+        if event.kind == _REPRESENTATION_FORMED_KIND:
             payload = event.payload
-            if payload["presentation_ref"] in presentations:
+            if payload["representation_ref"] in representations:
                 raise ValueError(
-                    "duplicate presentation reference: "
-                    f"{payload['presentation_ref']}"
+                    "duplicate representation reference: "
+                    f"{payload['representation_ref']}"
                 )
-            presentations[payload["presentation_ref"]] = {
-                "presentation_id": payload["presentation_ref"],
+            representations[payload["representation_ref"]] = {
+                "representation_id": payload["representation_ref"],
                 "formed_event_id": event.id,
                 "emitted_event_id": None,
                 "formation_result": payload["formation_result"],
@@ -196,22 +196,22 @@ def advance_operator_session_standing(
                 "conflicts": payload["conflicts"],
             }
             continue
-        if event.kind == _PRESENTATION_EMITTED_KIND:
-            presentation_ref = event.payload["presentation_ref"]
-            if presentation_ref not in presentations:
+        if event.kind == _REPRESENTATION_EMITTED_KIND:
+            representation_ref = event.payload["representation_ref"]
+            if representation_ref not in representations:
                 raise ValueError(
-                    "presentation emission without recorded formation: "
-                    f"{presentation_ref}"
+                    "representation emission without recorded formation: "
+                    f"{representation_ref}"
                 )
             if (
                 event.payload["formed_event_id"]
-                != presentations[presentation_ref]["formed_event_id"]
+                != representations[representation_ref]["formed_event_id"]
             ):
                 raise ValueError(
-                    "presentation emission does not name its recorded "
+                    "representation emission does not name its recorded "
                     "formation occurrence"
                 )
-            presentations[presentation_ref]["emitted_event_id"] = event.id
+            representations[representation_ref]["emitted_event_id"] = event.id
             continue
         if event.kind == _COMPARISON_KIND:
             payload = event.payload
@@ -223,16 +223,16 @@ def advance_operator_session_standing(
             # The comparison result is re-derived from recorded C and R;
             # a carried result that contradicts the recorded ingress
             # content or C's recorded coordinates is refused.
-            presentation = presentations.get(payload["presentation_ref"])
-            if presentation is None or (
-                payload["presentation_formed_event_id"]
-                != presentation["formed_event_id"]
-                or payload["presentation_emitted_event_id"]
-                != presentation["emitted_event_id"]
-                or presentation["emitted_event_id"] is None
+            representation = representations.get(payload["representation_ref"])
+            if representation is None or (
+                payload["representation_formed_event_id"]
+                != representation["formed_event_id"]
+                or payload["representation_emitted_event_id"]
+                != representation["emitted_event_id"]
+                or representation["emitted_event_id"] is None
             ):
                 raise ValueError(
-                    "comparison does not carry the recorded presentation "
+                    "comparison does not carry the recorded representation "
                     "occurrence provenance"
                 )
             response_attempt = attempts.get(payload["response_attempt_ref"])
@@ -249,13 +249,13 @@ def advance_operator_session_standing(
                     "comparison's response evidence does not agree with a "
                     "recorded ingress occurrence"
                 )
-            # The ingress records no Presentation reference, so no check
-            # here establishes that this Presentation and this ingress
+            # The ingress records no Representation reference, so no check
+            # here establishes that this Representation and this ingress
             # belong to one act.  That relation is unestablished.
             expected_representation = preserved_response["content"]
             expected_coordinate_set = sorted(
                 alternative["response_coordinate"]
-                for alternative in presentation["alternatives"]
+                for alternative in representation["alternatives"]
             )
             expected_match = (
                 expected_representation
@@ -295,7 +295,7 @@ def advance_operator_session_standing(
             comparisons[payload["comparison_ref"]] = {
                 "comparison_ref": payload["comparison_ref"],
                 "event_id": event.id,
-                "presentation_ref": payload["presentation_ref"],
+                "representation_ref": payload["representation_ref"],
                 "response_attempt_ref": payload["response_attempt_ref"],
                 "response_ingress_event_id": payload["response_ingress_event_id"],
                 "response_capture_event_id": payload["response_capture_event_id"],
@@ -318,7 +318,7 @@ def advance_operator_session_standing(
                 "event_id": event.id,
                 "comparison_ref": payload["comparison_ref"],
                 "comparison_event_id": payload["comparison_event_id"],
-                "presentation_ref": payload["presentation_ref"],
+                "representation_ref": payload["representation_ref"],
                 "response_attempt_ref": payload["response_attempt_ref"],
                 "identified_alternative": payload["identified_alternative"],
                 "basis": payload["basis"],
@@ -335,7 +335,7 @@ def advance_operator_session_standing(
             # mismatched pair is structurally refused rather than composed.
             for identification_key, comparison_key in (
                 ("comparison_event_id", "event_id"),
-                ("presentation_ref", "presentation_ref"),
+                ("representation_ref", "representation_ref"),
                 ("response_attempt_ref", "response_attempt_ref"),
             ):
                 if (
@@ -350,25 +350,25 @@ def advance_operator_session_standing(
             # reconstructed comparison and C's recorded bindings; the
             # carried basis, outcome, and complete identified alternative
             # must equal that reconstruction.
-            identification_presentation = presentations.get(
-                identification["presentation_ref"]
+            identification_representation = representations.get(
+                identification["representation_ref"]
             )
-            if identification_presentation is None:
+            if identification_representation is None:
                 raise ValueError(
-                    "identification names an unrecorded presentation: "
-                    f"{identification['presentation_ref']}"
+                    "identification names an unrecorded representation: "
+                    f"{identification['representation_ref']}"
                 )
             matched = comparison["matched_coordinate"]
             expected_identified = None
             if matched is None:
                 expected_basis = "no-coordinate-match"
             else:
-                bound_alternative_id = identification_presentation[
+                bound_alternative_id = identification_representation[
                     "coordinate_bindings"
                 ].get(matched)
                 recorded_by_id = {
                     alternative["alternative_id"]: alternative
-                    for alternative in identification_presentation["alternatives"]
+                    for alternative in identification_representation["alternatives"]
                 }
                 if bound_alternative_id is None:
                     expected_basis = "binding-absent"
@@ -386,7 +386,7 @@ def advance_operator_session_standing(
             expected_outcome = (
                 "alternative-identified"
                 if expected_identified is not None
-                else "no-presented-alternative-identified"
+                else "no-represented-alternative-identified"
             )
             if (
                 identification["basis"] != expected_basis
@@ -409,16 +409,16 @@ def advance_operator_session_standing(
             # A reconstruction is admitted into Standing only where the recorded
             # formation payload and the recorded identification agree with
             # every coordinate it carries.
-            presentation = presentations.get(payload["presentation_ref"])
-            if presentation is None:
+            representation = representations.get(payload["representation_ref"])
+            if representation is None:
                 raise ValueError(
-                    "source reconstruction names an unrecorded presentation: "
-                    f"{payload['presentation_ref']}"
+                    "source reconstruction names an unrecorded representation: "
+                    f"{payload['representation_ref']}"
                 )
             recorded_alternative = next(
                 (
                     alternative
-                    for alternative in presentation["alternatives"]
+                    for alternative in representation["alternatives"]
                     if alternative["alternative_id"]
                     == payload["alternative"]["alternative_id"]
                 ),
@@ -427,7 +427,7 @@ def advance_operator_session_standing(
             if recorded_alternative is None:
                 raise ValueError(
                     "source reconstruction names an alternative outside its "
-                    "recorded presentation"
+                    "recorded representation"
                 )
             recorded_source = recorded_alternative["represented_source"]
             for key in ("identity", "kind", "source_role", "reference"):
@@ -443,14 +443,14 @@ def advance_operator_session_standing(
                         f"formation payload on alternative {key}"
                     )
             if (
-                payload["presentation_formed_event_id"]
-                != presentation["formed_event_id"]
-                or payload["presentation_emitted_event_id"]
-                != presentation["emitted_event_id"]
+                payload["representation_formed_event_id"]
+                != representation["formed_event_id"]
+                or payload["representation_emitted_event_id"]
+                != representation["emitted_event_id"]
             ):
                 raise ValueError(
                     "source reconstruction does not carry the recorded "
-                    "presentation occurrence provenance"
+                    "representation occurrence provenance"
                 )
             supporting_identification = next(
                 (
@@ -462,8 +462,8 @@ def advance_operator_session_standing(
                 None,
             )
             if supporting_identification is None or (
-                supporting_identification["presentation_ref"]
-                != payload["presentation_ref"]
+                supporting_identification["representation_ref"]
+                != payload["representation_ref"]
                 or supporting_identification["basis"] != "identified"
                 or supporting_identification["outcome"]
                 != "alternative-identified"
@@ -497,7 +497,7 @@ def advance_operator_session_standing(
                 matched is None
                 or supporting_comparison["outcome"] != f"match:{matched}"
                 or recorded_alternative["response_coordinate"] != matched
-                or presentation["coordinate_bindings"].get(matched)
+                or representation["coordinate_bindings"].get(matched)
                 != payload["alternative"]["alternative_id"]
             ):
                 raise ValueError(
@@ -540,12 +540,12 @@ def advance_operator_session_standing(
             reconstruction = {
                 "validation_ref": payload["validation_ref"],
                 "event_id": event.id,
-                "presentation_ref": payload["presentation_ref"],
-                "presentation_formed_event_id": payload[
-                    "presentation_formed_event_id"
+                "representation_ref": payload["representation_ref"],
+                "representation_formed_event_id": payload[
+                    "representation_formed_event_id"
                 ],
-                "presentation_emitted_event_id": payload[
-                    "presentation_emitted_event_id"
+                "representation_emitted_event_id": payload[
+                    "representation_emitted_event_id"
                 ],
                 "comparison_event_id": payload["comparison_event_id"],
                 "identification_event_id": payload["identification_event_id"],
@@ -572,16 +572,16 @@ def advance_operator_session_standing(
                 )
             # The joined pair must agree on every shared coordinate; a
             # mismatched pair is structurally refused rather than composed.
-            presentation = presentations.get(payload["presentation_ref"])
-            if presentation is None:
+            representation = representations.get(payload["representation_ref"])
+            if representation is None:
                 raise ValueError(
-                    "represented relation names an unrecorded presentation: "
-                    f"{payload['presentation_ref']}"
+                    "represented relation names an unrecorded representation: "
+                    f"{payload['representation_ref']}"
                 )
             recorded_alternative = next(
                 (
                     alternative
-                    for alternative in presentation["alternatives"]
+                    for alternative in representation["alternatives"]
                     if alternative["alternative_id"] == payload["alternative_id"]
                 ),
                 None,
@@ -589,21 +589,21 @@ def advance_operator_session_standing(
             if recorded_alternative is None:
                 raise ValueError(
                     "represented relation names an alternative outside its "
-                    "recorded presentation"
+                    "recorded representation"
                 )
             recorded_source = recorded_alternative["represented_source"]
             recorded_representation = recorded_alternative["representation"]
             agreements = (
                 (validation_event_id, reconstruction["event_id"], "source_validation_event_id"),
                 (
-                    payload["presentation_ref"],
-                    reconstruction["presentation_ref"],
-                    "presentation_ref",
+                    payload["representation_ref"],
+                    reconstruction["representation_ref"],
+                    "representation_ref",
                 ),
                 (
-                    payload["presentation_formed_event_id"],
-                    reconstruction["presentation_formed_event_id"],
-                    "presentation_formed_event_id",
+                    payload["representation_formed_event_id"],
+                    reconstruction["representation_formed_event_id"],
+                    "representation_formed_event_id",
                 ),
                 (
                     payload["identification_event_id"],
@@ -658,7 +658,7 @@ def advance_operator_session_standing(
                 "source_authority": {
                     "standing": "bounded",
                     "supports": ["source-supplied-with-relation-Assertion"],
-                    "evidence_event_ids": [reconstruction["presentation_formed_event_id"]],
+                    "evidence_event_ids": [reconstruction["representation_formed_event_id"]],
                     "scope": {
                         "source_identity": reconstruction["source"]["identity"],
                         "proposition": recorded_source["represented_result"],
@@ -666,10 +666,10 @@ def advance_operator_session_standing(
                 },
                 "response_comparison_authority": {
                     "standing": "bounded",
-                    "supports": ["response-matched-coordinate-within-presentation"],
+                    "supports": ["response-matched-coordinate-within-representation"],
                     "evidence_event_ids": [reconstruction["comparison_event_id"]],
                     "scope": {
-                        "presentation_ref": reconstruction["presentation_ref"],
+                        "representation_ref": reconstruction["representation_ref"],
                         "response_attempt_ref": reconstruction["response_attempt_ref"],
                     },
                 },
@@ -677,7 +677,7 @@ def advance_operator_session_standing(
                     "standing": "established",
                     "supports": ["source-expresses-proposition"],
                     "evidence_event_ids": [
-                        reconstruction["presentation_formed_event_id"],
+                        reconstruction["representation_formed_event_id"],
                         reconstruction["event_id"],
                     ],
                     "scope": {
@@ -741,9 +741,9 @@ def advance_operator_session_standing(
                 "event_id": event.id,
                 "source_validation_event_id": validation_event_id,
                 "validation_ref": payload["validation_ref"],
-                "presentation_ref": payload["presentation_ref"],
-                "presentation_formed_event_id": payload[
-                    "presentation_formed_event_id"
+                "representation_ref": payload["representation_ref"],
+                "representation_formed_event_id": payload[
+                    "representation_formed_event_id"
                 ],
                 "identification_event_id": payload["identification_event_id"],
                 "alternative_id": payload["alternative_id"],
@@ -801,9 +801,9 @@ def advance_operator_session_standing(
         "attempts": attempts,
         "preserved_ingress_occurrences": preserved_ingress_occurrences,
         "interaction_closures": interaction_closures,
-        "presentations": presentations,
-        # No "current" Presentation is projected.  Emission order is
-        # reconstructible from `presentations`, which preserves formation and
+        "representations": representations,
+        # No "current" Representation is projected.  Emission order is
+        # reconstructible from `representations`, which preserves formation and
         # emission occurrences in append order; naming one of them current
         # would assert present relevance that no occurrence establishes.
         # Exactly the relation standings recorded by session events.  No

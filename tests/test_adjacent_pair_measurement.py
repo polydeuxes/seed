@@ -853,7 +853,7 @@ def test_comparability_restricts_representations_without_judging_them(occurrence
     assert set(restricted) <= set(enumerate_representations(occurrences))
 
 
-def test_measuring_after_an_representation_records_which(occurrences):
+def test_measuring_after_a_representation_records_which(occurrences):
     finding = measure_after(occurrences, "it", counting_scope="this session")
     assert finding.declared.measured_after == "it"
     assert finding.highest_count_occupancy.representation == "is"

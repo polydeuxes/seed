@@ -146,9 +146,9 @@ def test_a_reopened_console_does_not_continue_the_prior_standing(two_lifetimes):
         two_lifetimes, workspace_id="local", session_id=second
     )
 
-    assert len(prior["presentations"]) == 3
-    assert len(later["presentations"]) == 2
-    assert set(later["presentations"]).isdisjoint(prior["presentations"])
+    assert len(prior["representations"]) == 3
+    assert len(later["representations"]) == 2
+    assert set(later["representations"]).isdisjoint(prior["representations"])
 
 
 def test_the_earlier_lifetime_remains_projectable(two_lifetimes):
@@ -157,7 +157,7 @@ def test_the_earlier_lifetime_remains_projectable(two_lifetimes):
     standing = read_operator_session_standing(
         two_lifetimes, workspace_id="local", session_id=first
     )
-    assert len(standing["presentations"]) == 3
+    assert len(standing["representations"]) == 3
 
 
 # --------------------------------------------------------------------------
@@ -183,7 +183,7 @@ def test_a_fresh_session_reads_none_of_the_history(two_lifetimes):
     standing = read_operator_session_standing(
         two_lifetimes, workspace_id="local", session_id="never-recorded"
     )
-    assert standing["presentations"] == {}
+    assert standing["representations"] == {}
 
 
 def test_the_in_memory_ledger_scopes_the_same_way():
@@ -239,7 +239,7 @@ def test_a_reopened_console_process_does_not_abort(db):
 
     Every other test here runs its lifetimes inside one process, where the
     counters keep climbing and no identifier is ever reissued. The second real
-    `seed --db` invocation aborted on `duplicate presentation reference` until
+    `seed --db` invocation aborted on `duplicate representation reference` until
     the console's prefixes were reserved on open.
     """
     for material in ("first process\n", "second process\n", "third process\n"):

@@ -4,7 +4,7 @@ from typing import Any
 
 CLOSED_CHOICE_FIXTURE_SOURCES = (
     {
-        "role": "presentation-navigation",
+        "role": "representation-navigation",
         "rendered_label": "Show preserved ingress",
         "representation_result_boundary": "represent navigation to preserved ingress",
         "represented_source": {
@@ -16,7 +16,7 @@ CLOSED_CHOICE_FIXTURE_SOURCES = (
         },
     },
     {
-        "role": "presentation-navigation",
+        "role": "representation-navigation",
         "rendered_label": "Show current Standing",
         "representation_result_boundary": (
             "represent navigation to the current Standing Standing representation"
@@ -32,7 +32,7 @@ CLOSED_CHOICE_FIXTURE_SOURCES = (
         },
     },
     {
-        "role": "presentation-navigation",
+        "role": "representation-navigation",
         "rendered_label": "Show recorded exchange",
         "representation_result_boundary": "represent navigation to recorded exchange",
         "represented_source": {

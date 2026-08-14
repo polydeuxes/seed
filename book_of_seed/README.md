@@ -18,7 +18,7 @@ The Markdown chapters explain and orient the same clauses.
 
 ## Responsibility
 
-1. Responsibility is the Book's presentation and traversal root for reading each exact responsibility and the branches it instantiates.
+1. Responsibility is the Book's representation and traversal root for reading each exact responsibility and the branches it instantiates.
 2. The headings beneath it expose coordinates and relations; they do not reassign constitutional ownership.
 3. Every instantiated responsibility must expose the branches required by that responsibility.
 4. A conditional branch remains uninstantiated where that responsibility does not establish the coordinate.
@@ -223,7 +223,7 @@ Stopping
 != relation by identity
 ```
 
-The Responsibility hierarchy is the Book's presentation and traversal structure. It does not create a new constitutional kind, reassign ownership among existing constitutional subjects, require one universal populated shape, or replace the exact grammar of the chapters.
+The Responsibility hierarchy is the Book's representation and traversal structure. It does not create a new constitutional kind, reassign ownership among existing constitutional subjects, require one universal populated shape, or replace the exact grammar of the chapters.
 
 ```text
 structural branch present != branch value established

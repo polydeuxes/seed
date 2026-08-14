@@ -1,8 +1,8 @@
-"""Recorded formation and emission of bounded operator Presentations.
+"""Recorded formation and emission of bounded operator representations.
 
-A Presentation is a bounded representation of current session Standing. It
-may additionally represent presented alternatives where a caller supplies
-them with support.
+A Representation carries exact formed content from current session Standing.
+It may also carry alternatives whose source relations remain separately
+bounded.
 """
 
 from __future__ import annotations
@@ -12,10 +12,10 @@ from typing import Any, TextIO
 from seed_runtime.events import EventLedger
 from seed_runtime.ids import new_id
 
-PRESENTATION_FORMED_KIND = "operator.presentation.formed"
+REPRESENTATION_FORMED_KIND = "operator.representation.formed"
 from seed_runtime.operator_ingress import SEED_ORIGIN
 
-PRESENTATION_EMITTED_KIND = "operator.presentation.emitted"
+REPRESENTATION_EMITTED_KIND = "operator.representation.emitted"
 
 def _dimensions(
     *, identity, content, standing, source, responsibility, authority, scope, occurrence
@@ -32,7 +32,7 @@ def _dimensions(
     }
 
 
-def form_operator_presentation(
+def form_operator_representation(
     ledger: EventLedger,
     *,
     workspace_id: str,
@@ -40,25 +40,25 @@ def form_operator_presentation(
     session_standing: dict[str, Any],
     alternative_sources: tuple[dict[str, Any], ...] = (),
 ) -> dict[str, Any]:
-    """Form one exact bounded Presentation and record its formation occurrence.
+    """Form one exact bounded Representation and record its formation occurrence.
 
-    The Presentation is bounded by the supplied projected session Standing.
+    The Representation is bounded by the supplied projected session Standing.
     No alternatives are supplied by default; ``alternative_sources`` must be
     supplied by a caller with support for the eligibility and participation
     relations those alternatives carry.  Formation neither invents sources
     nor strengthens their standing, and no alternative's represented relation is derived
-    from ingress material.  This module records what a Presentation carries;
+    from ingress material.  This module records what a Representation carries;
     it does not classify the resulting combination as a shape.
 
-    Formation is not emission: the returned Presentation carries no emission
-    occurrence until :func:`emit_operator_presentation` records one.
+    Formation is not emission: the returned Representation carries no emission
+    occurrence until :func:`emit_operator_representation` records one.
     """
-    presentation_id = new_id("operator_presentation")
+    representation_id = new_id("operator_representation")
     scope = f"workspace:{workspace_id};session:{session_id}"
     alternatives = []
     coordinate_bindings: dict[str, str] = {}
     for position, source in enumerate(alternative_sources, start=1):
-        alternative_id = new_id("presented_alternative")
+        alternative_id = new_id("represented_alternative")
         coordinate = str(position)
         alternatives.append(
             {
@@ -68,7 +68,7 @@ def form_operator_presentation(
                 "rendered_label": source["rendered_label"],
                 "represented_source": dict(source["represented_source"]),
                 # Each A-to-G representation relation preserves its own
-                # boundary; Presentation-level coordinates do not transfer
+                # boundary; Representation-level coordinates do not transfer
                 # to it automatically.
                 "representation": {
                     "formation_result": source["representation_result_boundary"],
@@ -89,13 +89,13 @@ def form_operator_presentation(
         )
         coordinate_bindings[coordinate] = alternative_id
     formation_result = "bounded representation of current session Standing"
-    content = "bounded Presentation of current session Standing"
-    occurrence = "Presentation formation durably recorded"
+    content = "bounded Representation of current session Standing"
+    occurrence = "Representation formation durably recorded"
     known_loss: list[str] = []
     if alternatives:
         content = (
-            "bounded Presentation of current session Standing with "
-            f"{len(alternatives)} presented alternatives"
+            "bounded Representation of current session Standing with "
+            f"{len(alternatives)} represented alternatives"
         )
         occurrence = (
             f"{len(alternatives)} alternatives, roles, response-coordinate "
@@ -120,20 +120,20 @@ def form_operator_presentation(
     ):
         represented_relation = latest_relation
     formed_event = ledger.append(
-        PRESENTATION_FORMED_KIND,
+        REPRESENTATION_FORMED_KIND,
         workspace_id,
         {
             "attempt_ref": None,
-            "presentation_ref": presentation_id,
+            "representation_ref": representation_id,
             "dimensions": _dimensions(
-                identity=presentation_id,
+                identity=representation_id,
                 content=content,
                 standing="formed",
                 source=session_standing["as_of_event_id"],
-                responsibility="bounded-presentation-formation",
+                responsibility="bounded-representation-formation",
                 authority=(
-                    "formation occurrence only; establishes no selection, "
-                    "support, selection, or response treatment"
+                    "formation occurrence only; establishes no Selection, "
+                    "input support, or response treatment"
                 ),
                 scope=scope,
                 occurrence=occurrence,
@@ -152,7 +152,7 @@ def form_operator_presentation(
         session_id=session_id,
     )
     return {
-        "presentation_id": presentation_id,
+        "representation_id": representation_id,
         "workspace_id": workspace_id,
         "session_id": session_id,
         "formation_result": formation_result,
@@ -169,15 +169,15 @@ def form_operator_presentation(
     }
 
 
-def render_operator_presentation(presentation: dict[str, Any]) -> str:
-    """Render the bounded Presentation for the console output stream.
+def render_operator_representation(representation: dict[str, Any]) -> str:
+    """Render the bounded Representation for the console output stream.
 
     Rendering exposes tokens, labels, and roles.  A rendered label is not the
     represented candidate's full represented relation; that represented relation stays preserved in the
     recorded formation payload.
     """
-    lines = [f"Bounded Presentation {presentation['presentation_id']}"]
-    finding = presentation.get("prior_exchange_finding")
+    lines = [f"Bounded Representation {representation['representation_id']}"]
+    finding = representation.get("prior_exchange_finding")
     if finding is not None:
         identification = finding["identification"]
         comparison = finding["comparison"]
@@ -187,7 +187,7 @@ def render_operator_presentation(presentation: dict[str, Any]) -> str:
                 "Prior exchange: alternative "
                 f"{alternative['response_coordinate']} "
                 f"({alternative['rendered_label']}) corresponds to the "
-                f"captured material within {comparison['presentation_ref']}. "
+                f"captured material within {comparison['representation_ref']}. "
                 "Operator intent and selection remain Unknown."
             )
         elif comparison["matched_coordinate"] is not None:
@@ -196,17 +196,17 @@ def render_operator_presentation(presentation: dict[str, Any]) -> str:
             lines.append(
                 "Prior exchange: coordinate "
                 f"{comparison['matched_coordinate']} matched within "
-                f"{comparison['presentation_ref']}, but no presented "
+                f"{comparison['representation_ref']}, but no represented "
                 "alternative was lawfully identified "
                 f"({identification['basis']})."
             )
         else:
             lines.append(
                 "Prior exchange: no coordinate match within "
-                f"{comparison['presentation_ref']}; response represented relation and "
+                f"{comparison['representation_ref']}; response represented relation and "
                 "requested treatment remain Unknown."
             )
-    relation = presentation.get("represented_relation")
+    relation = representation.get("represented_relation")
     if relation is not None:
         lines.append(
             f"Reconstructed source {relation['source_identity']} expresses: "
@@ -215,9 +215,9 @@ def render_operator_presentation(presentation: dict[str, Any]) -> str:
             "selection remain Unknown; Operator Authority for this "
             "proposition remains unresolved."
         )
-    if presentation["alternatives"]:
+    if representation["alternatives"]:
         lines.append("Respond with exactly one token:")
-    for alternative in presentation["alternatives"]:
+    for alternative in representation["alternatives"]:
         lines.append(
             f"  {alternative['response_coordinate']}. {alternative['rendered_label']}"
             f"  [{alternative['role']}]"
@@ -225,39 +225,39 @@ def render_operator_presentation(presentation: dict[str, Any]) -> str:
     return "\n".join(lines) + "\n"
 
 
-def emit_operator_presentation(
+def emit_operator_representation(
     ledger: EventLedger,
     *,
-    presentation: dict[str, Any],
+    representation: dict[str, Any],
     output_stream: TextIO,
 ) -> dict[str, Any]:
-    """Write the Presentation to the output stream and record the emission.
+    """Write the Representation to the output stream and record the emission.
 
     Emission evidences only that the rendering was written to this boundary;
-    external realization remains separately evidenced.
+    effects beyond that output boundary require separate Evidence.
     """
-    output_stream.write(render_operator_presentation(presentation))
+    output_stream.write(render_operator_representation(representation))
     output_stream.flush()
     emitted_event = ledger.append(
-        PRESENTATION_EMITTED_KIND,
-        presentation["workspace_id"],
+        REPRESENTATION_EMITTED_KIND,
+        representation["workspace_id"],
         {
             "attempt_ref": None,
-            "presentation_ref": presentation["presentation_id"],
-            "formed_event_id": presentation["formed_event_id"],
+            "representation_ref": representation["representation_id"],
+            "formed_event_id": representation["formed_event_id"],
             "dimensions": _dimensions(
-                identity=f"emission:{presentation['presentation_id']}",
-                content="presentation rendering written to console output stream",
+                identity=f"emission:{representation['representation_id']}",
+                content="representation rendering written to console output stream",
                 standing="emitted",
-                source=presentation["formed_event_id"],
-                responsibility="bounded-presentation-emission",
+                source=representation["formed_event_id"],
+                responsibility="bounded-representation-emission",
                 authority=(
-                    "emission occurrence only; external realization separately "
-                    "evidenced"
+                    "emission occurrence only; effects beyond the output "
+                    "boundary require separate Evidence"
                 ),
                 scope=(
-                    f"workspace:{presentation['workspace_id']};"
-                    f"session:{presentation['session_id']}"
+                    f"workspace:{representation['workspace_id']};"
+                    f"session:{representation['session_id']}"
                 ),
                 occurrence="emission occurrence durably recorded",
             ),
@@ -269,10 +269,10 @@ def emit_operator_presentation(
             "known_loss": [],
             "unknowns": [],
             "conflicts": [],
-            "provenance_occurrence_refs": [presentation["formed_event_id"]],
+            "provenance_occurrence_refs": [representation["formed_event_id"]],
             "mutates_cluster": False,
         },
-        session_id=presentation["session_id"],
+        session_id=representation["session_id"],
     )
-    presentation["emitted_event_id"] = emitted_event.id
-    return presentation
+    representation["emitted_event_id"] = emitted_event.id
+    return representation

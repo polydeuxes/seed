@@ -261,11 +261,11 @@ def run_operator_ingress_attempt(
 
     ``session_standing`` is already-projected Standing from this session's
     earlier recorded events.  It is carried on the returned attempt_standing for
-    the Presentation to expose; it is not recorded, interpreted, or used to
+    the Representation to expose; it is not recorded, interpreted, or used to
     alter this attempt's own occurrence handling.
 
-    The occurrence names no Presentation.  A relation between this preserved
-    material and any preserved Presentation is its own bounded Assertion with
+    The occurrence names no Representation.  A relation between this preserved
+    material and any preserved Representation is its own bounded Assertion with
     its own participants, production occurrence, occurrence, and Evidence; it does not live
     inside one participant's record, and no such relation is established
     here.
