@@ -108,6 +108,7 @@ BANNED: tuple[tuple[str, str], ...] = (
     (r"\bconstructors?\b|constructor[-_]", "constructor"),
     (r"\bproduction authority\b", "production authority"),
     (r"\bproduc\w*\b|produc[-_]", "produc*"),
+    (r"\breyield\w*\b|reyield[-_]", "reyield*"),
     # `warrant` survives only in Seed's single Standing declaration. Elsewhere
     # the exact Evidence, Authority, Scope, support relation, occurrence, or
     # Standing must be named instead.

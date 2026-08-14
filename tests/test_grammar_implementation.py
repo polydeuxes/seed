@@ -955,9 +955,9 @@ def test_act_and_occurrence_ids_do_not_establish_their_relation():
     assert witness["occurrence_Evidence"] == MISSING
 
 
-def test_runtime_uses_yield_for_the_occurrence_to_result_edge():
+def test_runtime_uses_yield_only_for_the_occurrence_to_result_edge():
     retired = re.compile(
-        r"\bproduc(?:e(?:d|s)?|ing|tion\w*|er\w*)\b",
+        r"\b(?:produc(?:e(?:d|s)?|ing|tion\w*|er\w*)|reyield\w*)\b",
         re.IGNORECASE,
     )
     runtime_root = GRAMMAR.parents[1] / "seed_runtime"
