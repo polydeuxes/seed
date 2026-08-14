@@ -1,15 +1,15 @@
 # Selection and Authorization
 
 ## Constitutional subject
-The boundary between selecting a candidate for an exact declared purpose and separately establishing Authorization for an act or movement.
+The boundary between selecting a candidate for an exact Act and separately establishing Authorization for an Act or movement.
 
 ## Core question
 Which selections establish only bounded Selection standing, and what separate Warrant can establish Authorization?
 
 ## Bounded resolution
-Selection narrows a bounded candidate set through a responsible Selection act and preserves its basis. Selection does not itself grant Authority or Authorization. Representation selection chooses representations for one exact Act purpose. General Selection may choose an already-established subject for an exact declared purpose where the responsible owner validates the Evidence required for that Selection. The resulting Selection standing does not establish a resolution, route, realization, inquiry opening, Authorization, or movement unless another exact responsibility separately establishes that result.
+Selection narrows a bounded candidate set through a responsible Selection Act and preserves its basis. Selection does not grant Authority or Authorization. Representation selection chooses representations for one exact Act and result boundary. General Selection may choose an established subject where the responsible boundary validates the required Evidence. Selection Standing establishes no later Act or movement by identity.
 
-Exact candidate-identity resolution is not Selection. A resolver may compare attributed testimony with a bounded candidate set and establish that exactly one candidate identity matches. That exact identity matching does not establish a Selection occurrence, its responsible owner, its basis or declared purpose, current applicability, or later movement.
+Exact candidate-identity resolution is not Selection. A resolver may compare attributed testimony with a bounded candidate set and establish that exactly one candidate identity matches. That matching does not establish a Selection occurrence, responsible boundary, basis, addressed Act, Applicability, or later movement.
 
 ## Important distinctions
 - candidate identity resolved != candidate selected
@@ -36,8 +36,8 @@ Exact candidate-identity resolution is not Selection. A resolver may compare att
 
 Selection standing records a bounded choice among candidates and its basis.
 
-It may identify a selected mechanism, representation, route, or subject for a declared purpose.
+It may identify a selected mechanism, representation, route, or subject for an exact Act and result boundary.
 
 It does not authorize an act, establish mechanism fitness, satisfy Constraints, form or emit a request representation, invoke a mechanism, establish that the requested act occurred, or record a result.
 
-Authorization standing requires a separately warranted authority boundary preserving the authority subject, granting source, recipient or responsible boundary, act or movement authorized, scope, purpose, temporal standing, constraints, evidence, occurrence, negative authority, and remaining Unknowns. Approval testimony may be evidence for that boundary, but approval wording, selection, warrant, capability, feasibility, applicability, request formation, or recorded authorization reference is not an authority grant by identity.
+Authorization Standing requires a separately warranted Authority boundary preserving the Authority subject, granting source, responsible boundary, authorized Act or movement, addressed subject, result boundary, Scope, temporal Standing, Constraints, Evidence, occurrence, negative Authority, and remaining Unknowns. Approval testimony may be Evidence for that boundary; adjacent wording or references do not grant Authority by identity.

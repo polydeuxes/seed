@@ -286,7 +286,7 @@ def test_alternatives_carry_complete_coordinates_and_provenance_evidence():
     # consumed occurrence, not absence of consumption.
     assert presentation["session_standing_as_of_event_id"] is None
     assert len(presentation["alternatives"]) == 3
-    purposes = set()
+    formation_results = set()
     for alternative in presentation["alternatives"]:
         assert alternative["alternative_id"]
         assert alternative["role"] == "presentation-navigation"
@@ -301,7 +301,7 @@ def test_alternatives_carry_complete_coordinates_and_provenance_evidence():
         assert source["reference"]
         representation = alternative["representation"]
         assert representation["formation_result"]
-        purposes.add(representation["formation_result"])
+        formation_results.add(representation["formation_result"])
         assert representation["scope"] == "workspace:w;session:s"
         assert representation["provenance"] == source["reference"]
         assert representation["evidence_event_ids"] == []
@@ -312,8 +312,8 @@ def test_alternatives_carry_complete_coordinates_and_provenance_evidence():
             presentation["coordinate_bindings"][alternative["response_coordinate"]]
             == alternative["alternative_id"]
         )
-    # The three representation relations carry distinct purposes.
-    assert len(purposes) == 3
+    # The three representation relations carry distinct formation results.
+    assert len(formation_results) == 3
 
 
 def test_no_new_meaning_candidate_is_synthesized():

@@ -16,7 +16,7 @@ A recording boundary may create a retrievable representation of attributed event
 A recording boundary may create retrievable assertion-bearing material within its declared preservation horizon. The produced standing is that a record exists and preserves an attributed assertion. The bounded exact Act may take up that recorded assertion as attributed material. The forbidden inference is that the represented external occurrence, current lawful condition, factual truth, renewed occurrence, or exact Act arrival has been established merely because the record exists or remains retrievable.
 
 ### 05.Recording.B — Diagnostic-run-scoped recording
-When recorded material is admitted only for diagnostic purposes, exact Acts must preserve the scoped subject of that recording unless a separate establishment boundary supplies additional standing. The produced effect is bounded availability to the diagnostic exact Act, not mutation of cluster truth, universal condition, reliance, or arrival.
+When recorded material is admitted only to a diagnostic Act, that Act preserves the scoped subject of the recording unless a separate establishment boundary supplies additional Standing. The result is bounded availability, not mutation of cluster truth or universal condition.
 
 
 ### 05.Recording.C — Preservation and discard of implementation measurements

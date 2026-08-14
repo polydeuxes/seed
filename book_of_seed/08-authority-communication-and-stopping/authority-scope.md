@@ -9,16 +9,16 @@ What grants authority for a bounded goal or act, and how is that authority preve
 ## Bounded resolution
 Operator material and explicit approvals may contribute authority only after interpretation and scope binding. Internal models, selections, records, and provider emissions, transport structures, or ordinary-language transition labels cannot create or enlarge that authority.
 
-Policy wording may describe a bounded representation of authority granted for an exact recipient or responsible boundary, act or movement, purpose, scope, conditions, temporal standing, negative authority, and Unknowns. That representation does not create, enlarge, transfer, or renew the authority it represents. Its lawful exact Act use is warranted use of represented authority within those preserved limits. Policy is not an independent constitutional kind, authority source, selection family, or implementation governor.
+Policy wording may describe Authority granted for an exact responsible boundary, Act or movement, addressed subject, result boundary, Scope, conditions, temporal Standing, negative Authority, and Unknowns. The wording does not create, enlarge, transfer, or renew that Authority.
 
 ## Addressable boundaries for bounded reliance witnesses
 
 ### 08.Authority.A — Bounded reliance without standing expansion
-A downstream Act may rely on warranted content only for the bounded role, purpose, source or provenance, evidence, authority, scope, confidence or uncertainty, and Unknown boundaries preserved by that warrant. Reliance consumes the warranted content without strengthening its standing, expanding its authority, proving truth or ownership, authorizing implementation, or erasing negative authority. When a completed exact Act would otherwise invite over-inference, it must preserve both the lawful reliance and the required non-reliance, and must stop where the warrant stops.
+A downstream Act may rely on warranted content only for its exact role, addressed subject, result boundary, source or provenance, Evidence, Authority, Scope, confidence or uncertainty, and Unknown boundaries. Reliance does not strengthen Standing, expand Authority, prove truth or ownership, authorize implementation, or erase negative Authority.
 
 
 ### 08.Authority.B — Admission is bounded participation, not ratification
-A warrant, admissibility, applicability, warrant, reliance, or admission finding may let a supported subject participate in the next bounded constitutional posture only within its evidence, owner, purpose, authority, negative authority, confidence, and Unknown limits. It does not become truth, universal authority, implementation authority, mutation authority, Book ratification, or reusable approval unless a separate boundary grants that stronger status.
+A Warrant, Applicability, reliance, or Admission finding may let a supported subject participate in an exact Act only within its Evidence, responsible boundary, result boundary, Authority, negative Authority, confidence, and Unknown limits. It does not become truth, universal Authority, mutation Authority, Book ratification, or reusable approval.
 
 
 ### 08.Authority.C — Analytical competence is not adjudicative authority
@@ -40,4 +40,4 @@ Seed may analyze source packets, support paths, source roles, boundary mismatche
 
 ## Authorization boundary correction 001
 
-Authorization is a bounded standing established only by a responsible authority boundary. The boundary must preserve the authority subject, granting source, recipient or responsible boundary, authorized act or movement, scope, purpose, temporal standing, constraints, evidence, occurrence, negative authority, and Unknowns. Selection, approval testimony, mechanism capability, mechanism-fitness warrant, constraint result, precondition finding, feasibility, applicability, request representation, emission, invocation, enactment report, or result record may contribute evidence only within its own standing and does not grant authority by identity.
+Authorization is bounded Standing established only by a responsible Authority boundary. The boundary preserves the Authority subject, granting source, responsible boundary, authorized Act or movement, addressed subject, result boundary, Scope, temporal Standing, Constraints, Evidence, occurrence, negative Authority, and Unknowns. Other findings may contribute Evidence only within their own Standing and do not grant Authority by identity.

@@ -55,7 +55,7 @@ The possible subject proposed for Demand establishment may be characterized as:
 ```text
 required result:
     common-grammar standing required by the exact Act
-    to interpret the exact preserved ingress for its declared act and purpose
+    to interpret the exact preserved ingress for its exact result boundary
 
 possible Demand characterization if separately established:
     bounded relational Demand
@@ -71,7 +71,7 @@ separately established competency:
     not the Demand by identity
 ```
 
-The possible relation is exact Act-relative, material-relative, and act- and purpose-relative; it is not a global language condition or a competency by identity. This counterexample demonstrates only that the four canonical families are not a universal taxonomy. It creates no pre-goal responsible occurrence, fifth family, acquisition mechanism, authority, or act occurrence path. A separately established competency might be one candidate way to satisfy the possible bounded relation, but a competency candidate is not a Capability established.
+The possible relation is exact-Act-, material-, and result-boundary-relative; it is not a global language condition or competency by identity. This counterexample establishes no additional family, acquisition mechanism, Authority, or Act occurrence.
 
 ## Related chapters
 

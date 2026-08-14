@@ -8,7 +8,7 @@ Scope is active constitutional law only:
 
 Historical reports under ``book_of_seed/`` are testimony and are left to rot
 unchanged.  ``rosetta/`` is specifically permitted to carry retired and
-external vocabulary; that is its purpose.
+external vocabulary; that is why it exists.
 
 Each banned pattern names vocabulary that a recovery removed from
 constitutional grammar, or that a recovery found smuggles a claim.  A word
@@ -91,6 +91,7 @@ BANNED: tuple[tuple[str, str], ...] = (
     (r"\buptake\b|uptake[-_]", "uptake"),
     (r"\bhandoffs?\b|handoff[-_]", "handoff"),
     (r"\blineage\b|lineage[-_]", "lineage"),
+    (r"\bpurposes?\b|purpose[-_]", "purpose"),
 )
 
 # The discriminator, corrected.
