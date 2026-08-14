@@ -112,26 +112,85 @@ def classes(codec: str, max_length: int = 4) -> dict[object, list[int]]:
     return dict(grouped)
 
 
+ALL = "all"
+NONE = "none"
+MIXED = "mixed"
+
+
 def class_adjacency(
     codec: str, recovered: dict[object, list[int]]
-) -> dict[tuple[object, object], bool]:
-    """Which recovered class may be followed by which, under this witness.
+) -> dict[tuple[object, object], str]:
+    """Whether every, no, or some member pair of two classes is accepted.
 
     The classes are supplied, not recomputed. This measurement stands on the
-    earlier one and cannot be run without it: given other classes it reports
+    earlier one and cannot run without it: given other classes it reports
     adjacency among those, and given none it reports nothing.
 
-    One representative is probed per class. Two bytes the earlier measurement
-    did not separate are not separated here either, which is what makes this
-    a measurement over classes rather than over bytes.
+    Every member pair is probed, not one representative each. A representative
+    testifies only for itself: `0x80` and `0xff` are one class under the
+    earlier measurement and behave differently here, so a single member
+    reporting for its class would have stated `all` where the truth is `mixed`.
+
+    `mixed` is not a failure. It is this measurement finding the earlier
+    classification insufficient for its own purpose, which is what
+    :func:`refine` then acts on.
     """
 
-    representatives = {key: members[0] for key, members in recovered.items()}
-    return {
-        (first_key, second_key): accepts(codec, (first, second))
-        for first_key, first in representatives.items()
-        for second_key, second in representatives.items()
-    }
+    outcomes: dict[tuple[object, object], str] = {}
+    for first_key, firsts in recovered.items():
+        for second_key, seconds in recovered.items():
+            results = {
+                accepts(codec, (first, second))
+                for first in firsts
+                for second in seconds
+            }
+            outcomes[(first_key, second_key)] = (
+                ALL if results == {True} else NONE if results == {False} else MIXED
+            )
+    return outcomes
+
+
+def refine(codec: str, recovered: dict[object, list[int]]) -> dict[object, list[int]]:
+    """Split each class by how its members behaved, where they behaved apart.
+
+    A class whose members all behaved alike survives unchanged. A class the
+    adjacency measurement found mixed decomposes into the members that share
+    an outcome vector.
+
+    The earlier classification is not corrected by this. It was lawful for the
+    act that established it; this is a later act finding it insufficient for a
+    different purpose and establishing a finer one.
+    """
+
+    representatives = [members[0] for members in recovered.values()]
+    refined: dict[object, list[int]] = {}
+    for key, members in recovered.items():
+        grouped: dict[object, list[int]] = collections.defaultdict(list)
+        for byte in members:
+            signature = (
+                tuple(accepts(codec, (byte, other)) for other in representatives),
+                tuple(accepts(codec, (other, byte)) for other in representatives),
+            )
+            grouped[signature].append(byte)
+        for index, split in enumerate(grouped.values()):
+            refined[(key, index) if len(grouped) > 1 else key] = split
+    return refined
+
+
+def climb(codec: str, limit: int = 16) -> list[dict[object, list[int]]]:
+    """Every rung, from the first classification to the one that stops moving.
+
+    Each rung's classes are the material the next rung's measurement reads.
+    The climb ends where a rung establishes nothing the one below it did not.
+    """
+
+    rungs = [classes(codec, 4)]
+    for _ in range(limit):
+        nxt = refine(codec, rungs[-1])
+        if len(nxt) == len(rungs[-1]):
+            break
+        rungs.append(nxt)
+    return rungs
 
 
 def decoding_witnesses() -> list[str]:
@@ -151,17 +210,21 @@ def decoding_witnesses() -> list[str]:
     return sorted(found)
 
 
-def survey() -> list[tuple[str, int, int]]:
-    """Each witness, its class count, and its admissible class pairs."""
+def survey() -> list[tuple[str, int, int, int]]:
+    """Each witness: its first class count, its last, and how many rungs.
+
+    Grouping witnesses by counts is not grouping them by shape. Two witnesses
+    with the same number of classes and admissible pairs may relate them
+    differently, and nothing here compares those relations.
+    """
 
     rows = []
     for name in decoding_witnesses():
         try:
-            recovered = classes(name, 4)
-            adjacency = class_adjacency(name, recovered)
+            rungs = climb(name)
         except Exception:
             continue
-        rows.append((name, len(recovered), sum(adjacency.values())))
+        rows.append((name, len(rungs[0]), len(rungs[-1]), len(rungs)))
     return rows
 
 
@@ -174,14 +237,12 @@ def main() -> int:
 
     if args.survey:
         rows = survey()
-        shapes = collections.Counter((count, pairs) for _, count, pairs in rows)
-        print(f"  {len(rows)} witnesses measured at both ladders")
-        print(f"  {'classes':>8}{'admissible pairs':>18}{'witnesses':>11}   example")
-        for (count, pairs), many in sorted(
-            shapes.items(), key=lambda item: (-item[1], item[0])
-        ):
-            example = next(n for n, c, p in rows if (c, p) == (count, pairs))
-            print(f"  {count:>8}{pairs:>18}{many:>11}   {example}")
+        heights = collections.Counter(rungs for _, _, _, rungs in rows)
+        print(f"  {len(rows)} witnesses climbed")
+        print(f"  {'rungs':>6}{'witnesses':>11}   example, first classes to last")
+        for rungs, many in sorted(heights.items()):
+            name, first, last, _ = next(row for row in rows if row[3] == rungs)
+            print(f"  {rungs:>6}{many:>11}   {name:<18} {first} -> {last}")
         return 0
 
     grouped = classes(args.codec, args.max_length)
