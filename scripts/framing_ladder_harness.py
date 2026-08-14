@@ -31,18 +31,25 @@ selects nothing. An earlier revision used a fourfold ratio, which chose stride
 2 for no reason the material supplies; that threshold is withdrawn rather than
 replaced by a different one.
 
-**Nor does a stride say where a group begins.** Read from byte zero the two
-classes at stride 2 are 201 values and 2; read from byte one they are 2 and
-201, and the sets exchange exactly. Phase is a separate coordinate, and the
-partition's start is a choice this harness makes rather than a finding.
+**Phase is which source byte is treated as offset 0 of this partition.** Not
+where a group begins: nothing here establishes that a group exists. Read from
+byte zero the two classes at stride 2 are 201 values and 2; read from byte one
+they are 2 and 201, and the sets exchange exactly.
+
+The material's own extent is exact -- an occurrence begins at its first byte
+and ends at its last. That boundary is not an internal one. A partition
+starting at byte zero starts where the material does, which is a property of
+the partition and not evidence that anything inside the material is bounded
+there too.
 
 What a rule would have to distinguish, once warranted:
 
 ```text
   candidate stride     its offsets' supports stand in some exact relation
   primitive candidate  a candidate stride no proper divisor of which is one
-  phase                which offset a group begins at
-  boundary             that a group is bounded at all
+  partition phase      which source byte is offset 0 of the partition
+  grouping             that adjacent positions form a unit
+  group boundary       where such a unit would begin and end
 ```
 
 The second is what would separate stride 2 from stride 4, which agrees with it

@@ -113,3 +113,35 @@ def test_phase_defaults_to_a_choice_and_not_a_finding():
     raw = block(100)
     assert position_support(raw, 2) == position_support(raw, 2, phase=0)
     assert position_support(raw, 2) != position_support(raw, 2, phase=1)
+
+
+def test_the_materials_own_extent_is_not_an_internal_boundary():
+    """An occurrence begins at its first byte. Nothing inside it does.
+
+    A partition read from byte zero starts where the material starts, which
+    says something about the partition. Promoting it to "a unit also begins
+    here" would take the occurrence's exact extent as evidence about the
+    occurrence's contents.
+    """
+
+    raw = block(100)
+
+    # The extent is exact and available.
+    assert len(raw) == 1600
+
+    # And it is compatible with either partition phase, which is what makes it
+    # no evidence for one: the classes exchange rather than one disagreeing.
+    at_zero = position_support(raw, 2, phase=0)
+    at_one = position_support(raw, 2, phase=1)
+    assert {frozenset(at_zero.values())} == {frozenset(at_one.values())}
+
+
+def test_phase_zero_is_not_privileged_by_the_material():
+    """Every phase under a stride partitions the same material exactly."""
+
+    raw = block(100)
+    seen = [
+        frozenset(position_support(raw, 2, phase=phase).values())
+        for phase in (0, 1)
+    ]
+    assert seen[0] == seen[1]
