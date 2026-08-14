@@ -56,9 +56,7 @@ UNKNOWNS = (
     "next-Act Applicability Unknown",
 )
 AUTHORITY_LIMITS = (
-    "addressability and exact-material carriage only",
-    "decoder success establishes representation availability, not interpretation or competency",
-    "no interpretation candidate, support, selection, applicability, admission, result relation, required-result Standing, movement, authorization, or execution",
+    "addressability and carriage establish no other relation, Standing, Act, or occurrence",
 )
 
 
