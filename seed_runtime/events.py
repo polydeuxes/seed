@@ -429,6 +429,12 @@ class SQLiteEventLedger(EventLedger):
         "assertion_locality_movement",
         "assertion_locality_movement_act",
         "assertion_locality_movement_occurrence",
+        "preserved_material_measurement_act",
+        "preserved_material_measurement_occurrence",
+        "preserved_recurrence_measurement_act",
+        "preserved_recurrence_measurement_occurrence",
+        "fidelity_comparison_act",
+        "fidelity_comparison_act_occurrence",
     })
 
     def __init__(self, database_path: str) -> None:

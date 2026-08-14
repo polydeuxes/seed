@@ -36,6 +36,7 @@ from dataclasses import dataclass
 
 from seed_runtime.event import Event
 from seed_runtime.events import CORRUPTED, EventLedger
+from seed_runtime.ids import new_id
 from seed_runtime.preserved_material_measurement import (
     MEASUREMENT_CONVENTION,
     MEASUREMENT_RECORDED_KIND,
@@ -62,6 +63,8 @@ INVENTION = "invention"
 
 FIDELITY_RESULT_COORDINATES = frozenset(
     {
+        "target_act_id",
+        "act_occurrence_id",
         "dimensions",
         "constitutional_subject",
         "bounded_expectation",
@@ -171,6 +174,8 @@ def get_recorded_fidelity_finding(
         or evidence.payload.get("yielded_result_kind") != FIDELITY_RESULT_KIND
         or evidence.payload.get("yield_coordinates")
         != sorted(FIDELITY_RESULT_COORDINATES)
+        or evidence.payload.get("dimensions", {}).get("act_occurrence_id")
+        != payload.get("act_occurrence_id")
     ):
         raise FindingFidelityError(
             "the named yield Evidence does not describe the exact "
@@ -388,7 +393,11 @@ def compare_recorded_finding(ledger: EventLedger, event_id: str) -> Event:
         "scope only; no certification, completion, responsible-boundary map, score, or "
         "correction authority"
     )
+    target_act_id = new_id("fidelity_comparison_act")
+    act_occurrence_id = new_id("fidelity_comparison_act_occurrence")
     result_payload = {
+        "target_act_id": target_act_id,
+        "act_occurrence_id": act_occurrence_id,
         "dimensions": {
                 "identity": f"fidelity:{event_id}",
                 "content": (
@@ -457,6 +466,7 @@ def compare_recorded_finding(ledger: EventLedger, event_id: str) -> Event:
         session_id=recorded.session_id,
         convention=FIDELITY_CONVENTION,
         yielding_act="bounded Fidelity comparison",
+        act_occurrence_id=act_occurrence_id,
         yielded_result_kind=FIDELITY_RESULT_KIND,
         result_identity=f"fidelity:{event_id}",
         yielded_content=result_payload,

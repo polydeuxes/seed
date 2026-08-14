@@ -145,6 +145,9 @@ def test_recorded_results_replay_the_complete_bounded_source_read():
     assert all(item.recorded_occurrence_id == event.id for item in reconstructed)
     evidence = ledger.get(event.payload["yield_evidence_id"])
     assert evidence.kind == YIELD_EVIDENCE_KIND
+    assert evidence.payload["dimensions"]["act_occurrence_id"] == event.payload[
+        "act_occurrence_id"
+    ]
     assert "occurrence_preservation" not in evidence.payload["yield_coordinates"]
 
     count = next(

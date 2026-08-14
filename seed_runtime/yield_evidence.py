@@ -60,6 +60,7 @@ def _record_yield_evidence(
     session_id: str | None,
     convention: str,
     yielding_act: str,
+    act_occurrence_id: str,
     yielded_result_kind: str,
     result_identity: str,
     yielded_content: dict[str, Any],
@@ -68,18 +69,24 @@ def _record_yield_evidence(
 ) -> Event:
     """Preserve Evidence from inside an act for its already-fixed result."""
 
+    if not isinstance(act_occurrence_id, str) or not act_occurrence_id:
+        raise ValueError("Yield Evidence requires one exact Act occurrence identity")
+
     return ledger.append(
         YIELD_EVIDENCE_KIND,
         workspace_id,
         {
             "dimensions": {
-                "identity": f"yield-evidence:{result_identity}",
+                "identity": (
+                    f"yield-evidence:{act_occurrence_id}:{result_identity}"
+                ),
                 "content": (
                     f"evidence that {yielding_act} yielded this exact "
                     f"{yielded_result_kind} at its exact Act boundary"
                 ),
                 "standing": "yielded",
                 "yielding_act": yielding_act,
+                "act_occurrence_id": act_occurrence_id,
                 "occurrence_result_evidence": (
                     "preserved at the exact Act boundary after this exact "
                     "result was fixed; the result carries the relation to this"

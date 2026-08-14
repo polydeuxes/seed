@@ -863,6 +863,8 @@ def test_batch_and_single_survive_the_recording_boundary_identically(
     def _without_its_own_evidence(event):
         payload = dict(event.payload)
         payload.pop("yield_evidence_id", None)
+        payload.pop("target_act_id", None)
+        payload.pop("act_occurrence_id", None)
         return payload
 
     assert [_without_its_own_evidence(e) for e in singly] == [
@@ -1435,6 +1437,8 @@ def _rebuilt(finding, **changed):
         "occurrences_carrying": finding.occurrences_carrying,
         "total_count": finding.total_count,
         "input_event_ids": finding.input_event_ids,
+        "target_act_id": finding.target_act_id,
+        "act_occurrence_id": finding.act_occurrence_id,
         "support_basis": finding.support_basis,
         "yield_evidence_id": finding.yield_evidence_id,
     }
@@ -1607,6 +1611,9 @@ def test_recurrence_recorder_requires_its_yield_convention(
     ledger, occurrences = recurrence_occurrences
     finding = _yielded(ledger, occurrences)
     evidence = ledger.get(finding.yield_evidence_id)
+    assert evidence.payload["dimensions"]["act_occurrence_id"] == (
+        finding.act_occurrence_id
+    )
     forged = ledger.append(
         YIELD_EVIDENCE_KIND,
         "w",

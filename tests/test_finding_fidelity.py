@@ -85,6 +85,9 @@ def test_the_fidelity_finding_carries_evidence_that_the_act_yielded_it(recorded)
     evidence = ledger.get(result.payload["yield_evidence_id"])
     assert evidence.kind == YIELD_EVIDENCE_KIND
     assert evidence.payload["yielded_result_kind"] == FIDELITY_RESULT_KIND
+    assert evidence.payload["dimensions"]["act_occurrence_id"] == result.payload[
+        "act_occurrence_id"
+    ]
     content = dict(result.payload)
     content.pop("yield_evidence_id")
     content.pop("occurrence_preservation")

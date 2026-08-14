@@ -1128,6 +1128,7 @@ def record_byte_count_layer(
         session_id=recording_session_id,
         convention=BYTE_MEASUREMENT_CONVENTION,
         yielding_act="declared Measurement",
+        act_occurrence_id=act_occurrence_id,
         yielded_result_kind=BYTE_MEASUREMENT_RESULT_KIND,
         result_identity="byte-count-measurement-occurrence",
         yielded_content=result_payload,
@@ -1214,6 +1215,8 @@ def assertions_of_recorded_byte_measurement(
         != BYTE_MEASUREMENT_RESPONSIBILITY
         or evidence.payload.get("dimensions", {}).get("responsible_boundary")
         != SEED_NATIVE_MEASUREMENT_RESPONSIBLE_BOUNDARY
+        or evidence.payload.get("dimensions", {}).get("act_occurrence_id")
+        != payload["act_occurrence_id"]
     ):
         raise ByteMeasurementError(
             f"{event_id} names no exact byte Measurement yield Evidence"
@@ -1490,6 +1493,7 @@ def _record_pair_input_applicability(
         session_id=recording_session_id,
         convention=BYTE_PAIR_APPLICABILITY_CONVENTION,
         yielding_act="input Applicability determination",
+        act_occurrence_id=applicability_assertion["applicability_act_occurrence_id"],
         yielded_result_kind=BYTE_PAIR_APPLICABILITY_RESULT_KIND,
         result_identity=applicability_assertion["dimensions"]["identity"],
         yielded_content=result_payload,
@@ -1548,6 +1552,8 @@ def get_recorded_pair_input_applicability(
         != BYTE_PAIR_INPUT_APPLICABILITY_RESPONSIBILITY
         or evidence.payload.get("dimensions", {}).get("responsible_boundary")
         != SEED_NATIVE_MEASUREMENT_RESPONSIBLE_BOUNDARY
+        or evidence.payload.get("dimensions", {}).get("act_occurrence_id")
+        != payload["applicability_act_occurrence_id"]
         or evidence.payload.get("yield_commitment")
         != yield_commitment(BYTE_PAIR_APPLICABILITY_CONVENTION, yielded)
     ):
@@ -1740,6 +1746,7 @@ def record_adjacent_byte_pair_count_layer(
         session_id=recording_session_id,
         convention=BYTE_PAIR_MEASUREMENT_CONVENTION,
         yielding_act="declared Measurement",
+        act_occurrence_id=measured.act_occurrence_id,
         yielded_result_kind=BYTE_PAIR_MEASUREMENT_RESULT_KIND,
         result_identity="adjacent-byte-pair-count-measurement-occurrence",
         yielded_content=result_payload,
@@ -1928,6 +1935,8 @@ def assertions_of_recorded_adjacent_byte_pair_measurement(
         != BYTE_PAIR_MEASUREMENT_RESPONSIBILITY
         or evidence.payload.get("dimensions", {}).get("responsible_boundary")
         != SEED_NATIVE_MEASUREMENT_RESPONSIBLE_BOUNDARY
+        or evidence.payload.get("dimensions", {}).get("act_occurrence_id")
+        != payload["act_occurrence_id"]
     ):
         raise ByteMeasurementError(
             f"{event_id} names no exact adjacent-byte-pair yield Evidence"

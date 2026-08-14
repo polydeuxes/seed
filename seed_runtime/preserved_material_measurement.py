@@ -169,6 +169,14 @@ class MeasurementFinding:
     # coordinate for it. `#2486` measured why: copying the inputs into
     # every finding of a body cost 97% of the stored finding.
     input_event_ids: tuple[str, ...]
+    target_act_id: str = field(
+        default_factory=lambda: new_id("preserved_material_measurement_act"),
+        compare=False,
+    )
+    act_occurrence_id: str = field(
+        default_factory=lambda: new_id("preserved_material_measurement_occurrence"),
+        compare=False,
+    )
     # Where the measured material came from. Defaults to the weaker Assertion:
     # a finding that did not read from a ledger cannot say it measured
     # preserved material, and silence must not read as the stronger one.
@@ -253,6 +261,14 @@ class RecurrenceFinding:
     # How many times it occurred in total across them. This is the recurrence.
     total_count: int
     input_event_ids: tuple[str, ...]
+    target_act_id: str = field(
+        default_factory=lambda: new_id("preserved_recurrence_measurement_act"),
+        compare=False,
+    )
+    act_occurrence_id: str = field(
+        default_factory=lambda: new_id("preserved_recurrence_measurement_occurrence"),
+        compare=False,
+    )
     # Where the measured material came from. Defaults to the weaker Assertion:
     # a finding that did not read from a ledger cannot say it measured
     # preserved material, and silence must not read as the stronger one.
@@ -596,6 +612,7 @@ def _record_yield(
         session_id=session_id,
         convention=MEASUREMENT_CONVENTION,
         yielding_act="declared Measurement",
+        act_occurrence_id=finding.act_occurrence_id,
         yielded_result_kind=RECURRENCE_RESULT_KIND,
         result_identity=finding.declared.representation_measured,
         yielded_content=_yielded_content(finding),
@@ -965,6 +982,8 @@ def _measurement_finding_payload(
         carried["input_support"] = basis
         carried.pop("input_event_ids", None)
     return {
+        "target_act_id": finding.target_act_id,
+        "act_occurrence_id": finding.act_occurrence_id,
         "dimensions": {
             "identity": f"measurement:{finding.declared.representation_measured}",
             "content": finding.declared.counting_scope,
@@ -1085,6 +1104,13 @@ def record_measurement_findings(
             raise PreservedMaterialMeasurementError(
                 f"{finding.yield_evidence_id} is yield evidence "
                 "under a different yield convention"
+            )
+        if (
+            evidence.payload.get("dimensions", {}).get("act_occurrence_id")
+            != finding.act_occurrence_id
+        ):
+            raise PreservedMaterialMeasurementError(
+                "yield Evidence concerns a different Measurement occurrence"
             )
         if evidence.payload["yield_commitment"] != _yield_commitment(
             finding
