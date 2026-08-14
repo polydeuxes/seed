@@ -3,8 +3,9 @@ from io import StringIO
 from pathlib import Path
 
 from seed_runtime.byte_measurement import (
-    _pair_input_applicability,
     assertions_of_recorded_byte_measurement,
+    get_recorded_pair_input_applicability,
+    record_adjacent_byte_pair_count_layer,
     record_byte_count_layer,
 )
 from seed_runtime.events import EventLedger
@@ -64,6 +65,39 @@ def _source_assertion():
     return assertion
 
 
+def _recorded_applicability() -> dict:
+    # RecordedByteAssertion deliberately carries no ledger handle. Recreate the
+    # live road so every relation can be checked through its own occurrences.
+    ledger = EventLedger()
+    run_persistent_operator_console(
+        ledger=ledger,
+        workspace_id="w",
+        session_id="source",
+        input_stream=StringIO("ta\nexit\n"),
+        output_stream=StringIO(),
+    )
+    byte_measurement = record_byte_count_layer(
+        ledger,
+        workspace_id="w",
+        source_session_ids=("source",),
+        recording_session_id="byte-measurement",
+    )
+    pair_measurement = record_adjacent_byte_pair_count_layer(
+        ledger,
+        source_measurement_event_id=byte_measurement.id,
+        workspace_id="w",
+        recording_session_id="measurement",
+    )
+    carrier = ledger.get(pair_measurement.payload["input_applicability_event_id"])
+    recovered = get_recorded_pair_input_applicability(ledger, carrier.id)
+    return {
+        "applicability": recovered,
+        "carrier": carrier,
+        "act_evidence": ledger.get(carrier.payload["responsible_act_evidence_id"]),
+        "content_evidence": ledger.get(carrier.payload["production_evidence_id"]),
+    }
+
+
 def _assertion_witness(assertion) -> dict[str, str]:
     payload = assertion.payload
     dimensions = payload["dimensions"]
@@ -84,14 +118,40 @@ def _assertion_witness(assertion) -> dict[str, str]:
     }
 
 
-def _applicability_witness(applicability: dict) -> dict[str, str]:
+def _applicability_witness(bundle: dict) -> dict[str, str]:
+    applicability = bundle["applicability"]
+    carrier = bundle["carrier"]
+    act_evidence = bundle["act_evidence"]
+    content_evidence = bundle["content_evidence"]
     content = applicability["dimensions"]["content"]
     treatment = applicability["coordinate_treatment"]
+    input_edge = (
+        act_evidence is not None
+        and carrier.payload.get("input_assertion_ref")
+        == applicability.get("input_assertion_ref")
+        == act_evidence.payload.get("input_assertion_ref")
+    )
+    act_edge = (
+        act_evidence is not None
+        and carrier.payload.get("target_act_id")
+        == applicability.get("target_act_id")
+        == act_evidence.payload.get("target_act_id")
+    )
+    occurrence_edge = (
+        act_evidence is not None
+        and carrier.payload.get("applicability_act_occurrence_id")
+        == applicability.get("applicability_act_occurrence_id")
+        == act_evidence.payload.get("applicability_act_occurrence_id")
+    )
+    carried_result = (
+        content_evidence is not None
+        and carrier.payload.get("production_evidence_id") == content_evidence.id
+        and carrier.payload["dimensions"].get("standing")
+        == applicability["dimensions"].get("standing")
+    )
     return {
-        "input_identity": (
-            EXACT if applicability.get("input_assertion_ref") else MISSING
-        ),
-        "exact_Act": EXACT if applicability.get("target_act_id") else MISSING,
+        "input_identity": EXACT if input_edge else MISSING,
+        "exact_Act": EXACT if act_edge else MISSING,
         "subject": EXACT if content.get("target_act") else MISSING,
         "result_boundary": EXACT if applicability.get("result_boundary") else MISSING,
         "Scope": EXACT if applicability.get("scope_locality") else MISSING,
@@ -104,7 +164,7 @@ def _applicability_witness(applicability: dict) -> dict[str, str]:
             else MISSING
         ),
         "Standing": (
-            EXACT if applicability["dimensions"].get("standing") else MISSING
+            EXACT if carried_result else MISSING
         ),
         # Applicability explicitly establishes no input-to-result support
         # relation, but the runtime carries no coordinate saying so.
@@ -116,7 +176,7 @@ def _applicability_witness(applicability: dict) -> dict[str, str]:
             else MISSING
         ),
         "occurrence_identity": (
-            EXACT if applicability.get("applicability_act_occurrence_id") else MISSING
+            EXACT if occurrence_edge else MISSING
         ),
         "known_loss": (
             UNKNOWN
@@ -197,16 +257,7 @@ def test_assertion_clause_is_checked_against_a_live_byte_assertion():
 
 def test_applicability_clause_is_checked_against_a_live_pair_determination():
     clause = _clause("01.Standing.E.1")
-    source = _source_assertion()
-    applicability = _pair_input_applicability(
-        source,
-        target_act_id="pair-act",
-        applicability_act_id="applicability-act",
-        applicability_act_occurrence_id="applicability-occurrence",
-        act_workspace_id="w",
-        measurement_session_id="measurement",
-    )
-    witness = _applicability_witness(applicability)
+    witness = _applicability_witness(_recorded_applicability())
 
     assert set(witness) == set(clause["coordinates"])
     assert witness == {
@@ -228,3 +279,21 @@ def test_applicability_clause_is_checked_against_a_live_pair_determination():
         "Unknowns": EXACT,
         "negative_Authority": EXACT,
     }
+
+
+def test_unjoined_endpoints_do_not_witness_an_input_to_act_relation():
+    grammar = _witness_grammar()
+    bundle = _recorded_applicability()
+    bundle["act_evidence"] = None
+    witness = _applicability_witness(bundle)
+
+    assert bundle["applicability"]["input_assertion_ref"]
+    assert bundle["applicability"]["target_act_id"]
+    assert bundle["applicability"]["applicability_act_occurrence_id"]
+    assert grammar["relation_audit"] == {
+        "endpoint_presence_establishes_relation": False,
+        "requires": ["exact_relation", "occurrence_witness"],
+    }
+    assert witness["input_identity"] == MISSING
+    assert witness["exact_Act"] == MISSING
+    assert witness["occurrence_identity"] == MISSING

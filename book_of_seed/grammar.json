@@ -7,6 +7,10 @@
       "carriage_carries": "content",
       "digest_commits_to": "declared_canonical_representation"
     },
+    "relation_audit": {
+      "endpoint_presence_establishes_relation": false,
+      "requires": ["exact_relation", "occurrence_witness"]
+    },
     "non_equivalence": [
       ["content", "carriage"],
       ["content", "digest"],
