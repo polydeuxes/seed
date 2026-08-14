@@ -303,7 +303,7 @@ def _occurrence_result_witness(bundle: dict) -> str:
         return MISSING
     same_occurrence = carrier.payload.get("act_occurrence_id") == (
         act_evidence.payload.get("act_occurrence_id")
-    )
+    ) == content_evidence.payload.get("dimensions", {}).get("act_occurrence_id")
     same_result = act_evidence.payload.get("result_commitment") == (
         content_evidence.payload.get("yield_commitment")
     )
@@ -312,6 +312,75 @@ def _occurrence_result_witness(bundle: dict) -> str:
         and carrier.payload.get("yield_evidence_id") == content_evidence.id
     )
     return EXACT if same_occurrence and same_result and evidence_is_carried else MISSING
+
+
+def _structural_edge_fidelity_cases() -> dict[str, dict[str, str]]:
+    carriage_ledger = EventLedger()
+    content = {"subject": "edge-fixture", "standing": "Unknown"}
+    carriage = carriage_ledger.append(
+        "test.carriage", "w", dict(content), session_id="s"
+    )
+    wrong_carriage = carriage_ledger.append(
+        "test.carriage", "w", dict(content), session_id="s"
+    )
+
+    participation = _recorded_applicability()
+    missing_participation = dict(participation)
+    missing_participation["pair_act_evidence"] = None
+    wrong_participation = dict(participation)
+    participation_evidence = participation["pair_act_evidence"]
+    wrong_participation_evidence = participation_evidence.model_copy(deep=True)
+    wrong_participation_evidence.payload["act_occurrence_id"] = (
+        "another_pair_measurement_occurrence"
+    )
+    wrong_participation["pair_act_evidence"] = wrong_participation_evidence
+
+    yielded = _byte_measurement_road()
+    missing_yield = dict(yielded)
+    missing_yield["content_evidence"] = None
+    wrong_yield = dict(yielded)
+    yield_evidence = yielded["content_evidence"]
+    wrong_yield_evidence = yield_evidence.model_copy(deep=True)
+    wrong_yield_evidence.payload["dimensions"]["act_occurrence_id"] = (
+        "another_byte_measurement_occurrence"
+    )
+    wrong_yield["content_evidence"] = wrong_yield_evidence
+
+    return {
+        "carriage": {
+            "exact": _content_carriage_witness(
+                content,
+                carriage=carriage,
+                carriage_occurrence_id=carriage.id,
+            ),
+            "edge_missing": _content_carriage_witness(
+                content,
+                carriage=None,
+                carriage_occurrence_id=carriage.id,
+            ),
+            "wrong_occurrence": _content_carriage_witness(
+                content,
+                carriage=wrong_carriage,
+                carriage_occurrence_id=carriage.id,
+            ),
+        },
+        "participation": {
+            "exact": _participation_witness(
+                participation, role=BYTE_PAIR_INPUT_ROLE
+            ),
+            "edge_missing": _participation_witness(
+                missing_participation, role=BYTE_PAIR_INPUT_ROLE
+            ),
+            "wrong_occurrence": _participation_witness(
+                wrong_participation, role=BYTE_PAIR_INPUT_ROLE
+            ),
+        },
+        "yield": {
+            "exact": _occurrence_result_witness(yielded),
+            "edge_missing": _occurrence_result_witness(missing_yield),
+            "wrong_occurrence": _occurrence_result_witness(wrong_yield),
+        },
+    }
 
 
 def _act_occurrence_witness(bundle: dict) -> dict[str, str]:
@@ -493,6 +562,30 @@ def test_implementation_witness_discriminates_content_carriage_and_digest():
         ["content", "digest"],
         ["carriage", "digest"],
     ]
+
+
+def test_every_structural_edge_has_live_fidelity_cases():
+    grammar = json.loads(GRAMMAR.read_text(encoding="utf-8"))
+    cases = _structural_edge_fidelity_cases()
+
+    assert set(cases) == set(grammar["structural_edges"])
+    assert all(
+        set(edge_cases) == {"exact", "edge_missing", "wrong_occurrence"}
+        for edge_cases in cases.values()
+    )
+    assert {
+        edge: edge_cases["exact"] for edge, edge_cases in cases.items()
+    } == {edge: EXACT for edge in grammar["structural_edges"]}
+    assert {
+        edge: {
+            "edge_missing": edge_cases["edge_missing"],
+            "wrong_occurrence": edge_cases["wrong_occurrence"],
+        }
+        for edge, edge_cases in cases.items()
+    } == {
+        edge: {"edge_missing": MISSING, "wrong_occurrence": MISSING}
+        for edge in grammar["structural_edges"]
+    }
 
 
 def test_content_and_carriage_endpoints_do_not_establish_carriage_relation():
