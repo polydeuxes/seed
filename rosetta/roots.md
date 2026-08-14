@@ -32,16 +32,15 @@ about which Seed may carry an Assertion or Standing.
 
 ## Live implementation references
 
-These references witness current implementations; they do not define grammar.
+These references are representative witnesses, not a runtime inventory. They
+do not define grammar. An acquisition Act or result does not enter Rosetta
+unless an ordinary or retired word needs translation to an exact Seed
+distinction.
 
 ```text
 Measurement Responsibility / Act / occurrence / Assertions
     seed_runtime.byte_measurement::record_byte_count_layer
     seed_runtime.byte_measurement::record_adjacent_byte_pair_count_layer
-
-Adjacent-pair observation / occurrence-bound recovery
-    seed_runtime.adjacent_pair_measurement::record_adjacent_pair_observations
-    seed_runtime.adjacent_pair_measurement::get_recorded_adjacent_pair_observations
 
 Yield Evidence
     seed_runtime.yield_evidence::_record_yield_evidence

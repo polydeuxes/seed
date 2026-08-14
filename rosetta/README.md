@@ -61,6 +61,11 @@ This directory is not a landfill for everything ever removed, and not a
 banned-word registry. Banning is a curation decision; translation is the work
 done here.
 
+External acquisition is not Rosetta. Observed external material, occurrences,
+Assertions, and relations remain on their own bounded road; they do not enter
+this directory merely because Seed observed them. Implementation references in
+Rosetta are representative translation witnesses, not an implementation index.
+
 ## Constitutional authority
 
 `01.Source` governs the boundary this directory sits on: ordinary vocabulary
