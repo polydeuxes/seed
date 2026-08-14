@@ -296,3 +296,90 @@ def test_active_test_witnesses_carry_no_retired_narrative():
 
 if __name__ == "__main__":  # pragma: no cover - command-line entry point
     print(render_violations(find_violations()))
+
+
+LEXICON = ROOT / "rosetta" / "admitted-lexicon.txt"
+
+
+def admitted_lexicon() -> set[str]:
+    """Every word active law may carry.  One word per line, sorted."""
+    return set(_lexicon_entries())
+
+
+def _lexicon_entries() -> dict[str, str]:
+    """Each admitted word mapped to its reason, empty when none is given."""
+    entries: dict[str, str] = {}
+    for line in LEXICON.read_text(encoding="utf-8").split("\n"):
+        if not line.strip() or line.lstrip().startswith("#"):
+            continue
+        word, _, reason = line.partition("#")
+        entries[word.strip()] = reason.strip()
+    return entries
+
+
+def book_proper_words() -> dict[str, list[tuple[str, int]]]:
+    """Each word in active law, with every place it occurs."""
+    found: dict[str, list[tuple[str, int]]] = {}
+    for path in book_proper_files():
+        rel = path.relative_to(ROOT).as_posix()
+        for number, line in enumerate(path.read_text().split("\n"), start=1):
+            for word in re.findall(r"[A-Za-z]+", scan_active_line(line).lower()):
+                found.setdefault(word, []).append((rel, number))
+    return found
+
+
+def test_book_proper_admits_only_lexicon_words():
+    """The gate a banned list cannot be: a word not admitted is refused.
+
+    A blocklist must anticipate the word that contaminates.  This one need
+    not.  Vocabulary entering active law now costs a deliberate lexicon
+    entry, which is where the argument for admitting it belongs.
+    """
+
+    unadmitted = {
+        word: places
+        for word, places in book_proper_words().items()
+        if word not in admitted_lexicon()
+    }
+    report = "\n".join(
+        f"  {word} -- {places[0][0]}:{places[0][1]}"
+        + (f" and {len(places) - 1} more" if len(places) > 1 else "")
+        for word, places in sorted(unadmitted.items())
+    )
+    assert not unadmitted, (
+        "\nActive law carries vocabulary the lexicon does not admit.\n"
+        "Admit it in rosetta/admitted-lexicon.txt, with the reason, or "
+        "remove it:\n" + report
+    )
+
+
+def test_lexicon_cannot_readmit_banned_vocabulary():
+    """A failing whitelist may not be repaired by admitting a retired word.
+
+    Without this, the cheapest fix for the gate above is to append the
+    offending word to the lexicon -- which would let the blocklist's
+    recorded refusals be undone silently.
+    """
+
+    entries = _lexicon_entries()
+    readmitted = sorted(
+        word
+        for word, reason in entries.items()
+        if not reason
+        for pattern, _ in COMPILED
+        if pattern.search(word)
+    )
+    assert not readmitted, (
+        "\nThe lexicon admits refused vocabulary with no reason given: "
+        + ", ".join(readmitted)
+    )
+
+
+def test_lexicon_carries_no_unused_admissions():
+    """Admission is evidence of use, so a word no longer in law is retired."""
+
+    unused = sorted(admitted_lexicon() - set(book_proper_words()))
+    assert not unused, (
+        "\nThe lexicon admits words active law no longer carries: "
+        + ", ".join(unused)
+    )
