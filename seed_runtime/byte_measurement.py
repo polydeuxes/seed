@@ -978,6 +978,7 @@ def _assertions(measured: MeasuredBytePopulation) -> list[dict[str, Any]]:
                 ],
                 "local_assertion_ids": [],
             },
+            "conflicts": "Unknown",
             "unknowns": ["what the exact source bytes represent remains Unknown"],
             "forbidden_inferences": [
                 "an exact source-material set establishes no character, word, "
@@ -1014,6 +1015,7 @@ def _assertions(measured: MeasuredBytePopulation) -> list[dict[str, Any]]:
                 "event_ids": [],
                 "local_assertion_ids": local_support_ids,
             },
+            "conflicts": "Unknown",
             "unknowns": ["what this byte participates in or represents remains Unknown"],
             "forbidden_inferences": [
                 "an exact byte count or recurrence establishes no character, word, "
@@ -1345,6 +1347,7 @@ def _pair_assertions(measured: MeasuredBytePairPopulation) -> list[dict[str, Any
                 "assertion_refs": external_support_refs,
                 "local_assertion_ids": local_support_ids,
             },
+            "conflicts": "Unknown",
             "unknowns": list(BYTE_PAIR_UNKNOWNS),
             "forbidden_inferences": list(BYTE_PAIR_FORBIDDEN_INFERENCES),
         }
@@ -2069,6 +2072,7 @@ def assertions_of_recorded_adjacent_byte_pair_measurement(
         "assertion_subject",
         "assertion_scope",
         "support_basis",
+        "conflicts",
         "unknowns",
         "forbidden_inferences",
     }
@@ -2091,6 +2095,7 @@ def assertions_of_recorded_adjacent_byte_pair_measurement(
             or assertion.get("assertion_scope") != expected_scope
             or assertion.get("subject_kind") != "assertion"
             or assertion.get("responsible_boundary") != "this recorded assertion"
+            or assertion.get("conflicts") != "Unknown"
             or not isinstance(dimensions, dict)
             or set(dimensions)
             != {

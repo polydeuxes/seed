@@ -152,7 +152,10 @@ def _recorded_applicability() -> dict:
     }
 
 
-def _assertion_witness(assertion) -> dict[str, str]:
+def _assertion_witness(bundle: dict) -> dict[str, str]:
+    assertion = bundle["source_assertion"]
+    carrier = bundle["carrier"]
+    content_evidence = bundle["content_evidence"]
     payload = assertion.payload
     dimensions = payload["dimensions"]
     expected_identity = _identity(
@@ -161,16 +164,32 @@ def _assertion_witness(assertion) -> dict[str, str]:
         scope=payload["assertion_scope"],
         content=dimensions["content"],
     )
+    carried_assertion = next(
+        (
+            item
+            for item in carrier.payload["assertions"]
+            if item["dimensions"]["identity"] == assertion.assertion_id
+        ),
+        None,
+    )
+    evidence_edge = (
+        assertion.recorded_occurrence_id == carrier.id
+        and carried_assertion == payload
+        and content_evidence is not None
+        and carrier.payload.get("production_evidence_id") == content_evidence.id
+        and "assertions" in content_evidence.payload.get("production_coordinates", [])
+    )
     return {
         "identity": (
             EXACT if dimensions.get("identity") == expected_identity else CONTRADICTION
         ),
-        # support_basis is not silently promoted into Evidence.
-        "Evidence": MISSING,
+        # Evidence remains on the occurrence/result edge. It is recovered
+        # through the exact carriage, not copied from support_basis.
+        "Evidence": EXACT if evidence_edge else MISSING,
         "provenance": EXACT if dimensions.get("source_provenance") else MISSING,
         "Scope": EXACT if payload.get("assertion_scope") else MISSING,
         "Authority": EXACT if dimensions.get("authority") else MISSING,
-        "conflicts": MISSING,
+        "conflicts": UNKNOWN if payload.get("conflicts") == "Unknown" else MISSING,
         "limits": EXACT if payload.get("forbidden_inferences") else MISSING,
         "Unknowns": EXACT if payload.get("unknowns") else MISSING,
         "Standing": EXACT if dimensions.get("standing") else MISSING,
@@ -410,16 +429,16 @@ def test_a_digest_alone_witnesses_no_content_carriage_or_standing():
 
 def test_assertion_clause_is_checked_against_a_live_byte_assertion():
     clause = _clause("01.Standing.D.1")
-    witness = _assertion_witness(_source_assertion())
+    witness = _assertion_witness(_byte_measurement_road())
 
     assert set(witness) == {"identity", *clause["responsibility"]["coordinates"]}
     assert witness == {
         "identity": EXACT,
-        "Evidence": MISSING,
+        "Evidence": EXACT,
         "provenance": EXACT,
         "Scope": EXACT,
         "Authority": EXACT,
-        "conflicts": MISSING,
+        "conflicts": UNKNOWN,
         "limits": EXACT,
         "Unknowns": EXACT,
         "Standing": EXACT,

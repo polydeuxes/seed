@@ -164,6 +164,7 @@ def test_recorded_results_replay_the_complete_bounded_source_read():
     assert count.payload["dimensions"]["source_provenance"]
     assert count.payload["dimensions"]["authority"]
     assert count.payload["unknowns"]
+    assert count.payload["conflicts"] == "Unknown"
     assert count.payload["forbidden_inferences"]
     assert count.support_assertion_refs == (
         {
