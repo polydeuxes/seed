@@ -11,11 +11,14 @@ from seed_runtime.grammar_change import (
     GrammarChangeError,
     apply_grammar_creation,
     apply_grammar_change,
+    declared_grammar_checks,
     observe_grammar,
     propose_grammar_change,
     propose_grammar_creation,
     run_grammar_check,
+    run_declared_grammar_checks,
 )
+from seed_runtime.source_change import SourceEdit, apply_source_edits, observe_source_files
 
 
 def _repository(tmp_path: Path) -> Path:
@@ -165,3 +168,94 @@ def test_grammar_creation_refuses_a_symbolic_link_parent(tmp_path):
             b'{"checks": []}\n',
             relative_path="machine/grammar.json",
         )
+
+
+def test_foreign_grammar_checks_drive_bounded_code_conformance(tmp_path):
+    root = tmp_path / "other-repository"
+    machine = root / "machine"
+    machine.mkdir(parents=True)
+    (root / "value.py").write_text("VALUE = 1\n", encoding="utf-8")
+    (root / "check.py").write_text(
+        "ns={}; exec(open('value.py', encoding='utf-8').read(), ns)\n"
+        "raise SystemExit(0 if ns['VALUE'] == 2 else 11)\n",
+        encoding="utf-8",
+    )
+    argv = [sys.executable, "check.py"]
+    (machine / "grammar.json").write_text(
+        json.dumps(
+            {
+                "checks": [
+                    {
+                        "identity": "value-is-two",
+                        "argv": argv,
+                        "expected_returncode": 0,
+                    }
+                ]
+            }
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+    grammar = observe_grammar(root, relative_path="machine/grammar.json")
+
+    before = run_declared_grammar_checks(root, grammar)
+    assert before[0].declaration.identity == "value-is-two"
+    assert before[0].result.returncode == 11
+    assert before[0].returncode_matches is False
+
+    current_source = observe_source_files(root, ("value.py",))[0]
+    apply_source_edits(
+        root,
+        (SourceEdit.from_observation(current_source, b"VALUE = 2\n"),),
+    )
+    after = run_declared_grammar_checks(root, grammar)
+    assert after[0].result.returncode == 0
+    assert after[0].returncode_matches is True
+
+
+def test_changed_foreign_grammar_cannot_direct_old_check_declarations(tmp_path):
+    root = tmp_path / "other-repository"
+    (root / "machine").mkdir(parents=True)
+    grammar_path = root / "machine/grammar.json"
+    grammar_path.write_text(
+        json.dumps(
+            {
+                "checks": [
+                    {
+                        "identity": "first",
+                        "argv": [sys.executable, "-c", "raise SystemExit(0)"],
+                        "expected_returncode": 0,
+                    }
+                ]
+            }
+        ),
+        encoding="utf-8",
+    )
+    observed = observe_grammar(root, relative_path="machine/grammar.json")
+    grammar_path.write_text('{"checks": []}\n', encoding="utf-8")
+
+    with pytest.raises(GrammarChangeError, match="changed after observation"):
+        run_declared_grammar_checks(root, observed)
+
+
+def test_malformed_foreign_check_coordinates_are_refused(tmp_path):
+    root = _repository(tmp_path)
+    grammar_path = root / "book_of_seed/grammar.json"
+    grammar_path.write_text(
+        json.dumps(
+            {
+                "checks": [
+                    {
+                        "identity": "check",
+                        "argv": "python check.py",
+                        "expected_returncode": 0,
+                    }
+                ]
+            }
+        ),
+        encoding="utf-8",
+    )
+    observed = observe_grammar(root)
+
+    with pytest.raises(GrammarChangeError, match="malformed coordinates"):
+        declared_grammar_checks(observed)

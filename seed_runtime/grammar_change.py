@@ -48,6 +48,20 @@ class GrammarCreation:
     difference: str
 
 
+@dataclass(frozen=True)
+class DeclaredGrammarCheck:
+    identity: str
+    argv: tuple[str, ...]
+    expected_returncode: int
+
+
+@dataclass(frozen=True)
+class GrammarCheckFinding:
+    declaration: DeclaredGrammarCheck
+    result: SourceCheckResult
+    returncode_matches: bool
+
+
 def _grammar_object(material: bytes) -> dict:
     if type(material) is not bytes:
         raise GrammarChangeError("machine grammar must be exact bytes")
@@ -58,6 +72,54 @@ def _grammar_object(material: bytes) -> dict:
     if type(value) is not dict:
         raise GrammarChangeError("machine grammar must be one UTF-8 JSON object")
     return value
+
+
+def declared_grammar_checks(
+    observation: SourceObservation,
+) -> tuple[DeclaredGrammarCheck, ...]:
+    """Read exact check declarations from one observed machine grammar."""
+
+    if not isinstance(observation, SourceObservation):
+        raise GrammarChangeError("declared checks require one exact grammar observation")
+    grammar = _grammar_object(observation.material)
+    supplied = grammar.get("checks")
+    if type(supplied) is not list or not supplied:
+        raise GrammarChangeError("machine grammar carries no exact declared checks")
+    checks: list[DeclaredGrammarCheck] = []
+    for position, item in enumerate(supplied):
+        if type(item) is not dict or set(item) != {
+            "identity",
+            "argv",
+            "expected_returncode",
+        }:
+            raise GrammarChangeError(
+                f"machine grammar check {position} carries malformed coordinates"
+            )
+        identity = item["identity"]
+        argv = item["argv"]
+        expected = item["expected_returncode"]
+        if (
+            type(identity) is not str
+            or not identity
+            or type(argv) is not list
+            or not argv
+            or not all(type(part) is str and part for part in argv)
+            or type(expected) is not int
+        ):
+            raise GrammarChangeError(
+                f"machine grammar check {position} carries malformed coordinates"
+            )
+        checks.append(
+            DeclaredGrammarCheck(
+                identity=identity,
+                argv=tuple(argv),
+                expected_returncode=expected,
+            )
+        )
+    identities = [item.identity for item in checks]
+    if len(identities) != len(set(identities)):
+        raise GrammarChangeError("machine grammar check identities must be distinct")
+    return tuple(checks)
 
 
 def observe_grammar(
@@ -227,3 +289,41 @@ def run_grammar_check(
         )
     except SourceChangeError as exc:
         raise GrammarChangeError(str(exc)) from exc
+
+
+def run_declared_grammar_checks(
+    root: str | os.PathLike[str],
+    observation: SourceObservation,
+    *,
+    timeout_seconds: float = 60.0,
+    max_output_bytes: int = 1_000_000,
+) -> tuple[GrammarCheckFinding, ...]:
+    """Run the checks carried by one still-current foreign machine grammar."""
+
+    current = observe_grammar(root, relative_path=observation.relative_path)
+    if (
+        current.source_root != observation.source_root
+        or current.source_root_device != observation.source_root_device
+        or current.source_root_inode != observation.source_root_inode
+        or current.identity != observation.identity
+        or current.material != observation.material
+    ):
+        raise GrammarChangeError("machine grammar changed after observation")
+    findings = []
+    for declared in declared_grammar_checks(observation):
+        result = run_grammar_check(
+            root,
+            declared.argv,
+            timeout_seconds=timeout_seconds,
+            max_output_bytes=max_output_bytes,
+        )
+        findings.append(
+            GrammarCheckFinding(
+                declaration=declared,
+                result=result,
+                returncode_matches=(
+                    result.returncode == declared.expected_returncode
+                ),
+            )
+        )
+    return tuple(findings)
