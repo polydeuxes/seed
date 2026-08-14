@@ -440,6 +440,8 @@ class SQLiteEventLedger(EventLedger):
         "finding_yield_comparison_act_occurrence",
         "adjacent_pair_observation_measurement_act",
         "adjacent_pair_observation_measurement_occurrence",
+        "external_expression_relation_act",
+        "external_expression_relation_act_occurrence",
     })
 
     def __init__(self, database_path: str) -> None:
