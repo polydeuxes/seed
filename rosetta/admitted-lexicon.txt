@@ -187,7 +187,6 @@ complete
 completeness
 completing
 completion
-compression
 compresses
 compressions
 concept
@@ -238,7 +237,6 @@ corroboration
 corrupted
 count
 counted
-counterexample
 counterexamples
 counting
 counts
@@ -353,8 +351,6 @@ evidence
 evidenced
 exact
 exactly
-expressed
-expression
 exclude
 excluded
 exclusion
@@ -413,7 +409,6 @@ forms
 freshness
 from
 function
-fully
 further
 general
 generated
@@ -529,7 +524,6 @@ length
 let
 limit
 limits
-list
 live
 local
 localities
@@ -607,7 +601,6 @@ nor
 normalization
 not
 nothing
-number
 novelty
 object
 objective
@@ -727,7 +720,6 @@ prove
 proven
 provenance
 proves
-prose
 provider
 proving
 public
@@ -870,7 +862,6 @@ scope
 scoped
 seam
 second
-sections
 seed
 selected
 selecting
@@ -878,8 +869,6 @@ selection
 selections
 selector
 semantic
-sentence
-sentences
 separate
 separately
 sequential
@@ -909,7 +898,6 @@ stages
 stand
 standing
 standings
-statement
 status
 steps
 still
@@ -970,7 +958,6 @@ threshold
 through
 time
 timestamp
-title
 to
 together
 topology
@@ -1021,7 +1008,6 @@ validation
 validity
 value
 variable
-verb
 verification
 verified
 version
@@ -1044,7 +1030,6 @@ within
 without
 witness
 witnesses
-word
 wording
 would
 write

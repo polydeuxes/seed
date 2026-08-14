@@ -192,10 +192,6 @@ def scan_active_line(line: str) -> str:
     """Expose active language while ignoring only Markdown destinations."""
 
     scanned = re.sub(r"\]\([^)]*\)", "]()", line)
-    # Exact file addresses and hexadecimal digests in the machine
-    # representation are mechanical coordinates, not English vocabulary.
-    scanned = re.sub(r'"[^"\n]*\.md"', '""', scanned)
-    scanned = re.sub(r'"[0-9a-f]{64}"', '""', scanned)
     # Identifiers are language too. Snake-case and kebab-case may not hide
     # vocabulary that active prose is forbidden to carry.
     return re.sub(r"[_-]+", " ", scanned)

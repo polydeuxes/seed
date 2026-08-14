@@ -16,11 +16,6 @@ The [concordance](concordance.md) is a navigation aid, not an ontology.
 by tests. The Markdown chapters are the explanatory representation of the same
 grammar. Neither representation is the Book by identity.
 
-The chapter representation preserves exact chapter order, clause order, sentence
-order, and the bounded Standing of each sentence. The machine representation
-commits to that exact order. Changed sentences require both representations to be
-considered together.
-
 ## Standing
 
 Standing is the Book's reading root. Seed may read an exact Responsibility assignment only through current Standing concerning the Assertion that the exact responsible boundary bears that Responsibility. Standing does not create, perform, or become the Responsibility by identity.
