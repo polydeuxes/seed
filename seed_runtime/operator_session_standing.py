@@ -712,7 +712,7 @@ def advance_operator_session_standing(
                         "response_attempt_ref": reconstruction["response_attempt_ref"],
                     },
                 },
-                "relation_warrant": {
+                "support_relation_standing": {
                     "standing": "established",
                     "supports": ["source-expresses-proposition"],
                     "evidence_event_ids": [

@@ -1137,3 +1137,37 @@ def test_runtime_does_not_reuse_fidelity_as_a_result_kind():
     }
 
     assert {path: hits for path, hits in contaminated.items() if hits} == {}
+
+
+def test_runtime_has_no_view_abstraction():
+    retired = re.compile(r"\bviews?\b|view[-_]", re.IGNORECASE)
+    runtime_root = GRAMMAR.parents[1] / "seed_runtime"
+    contaminated = {
+        path.relative_to(GRAMMAR.parents[1]).as_posix(): [
+            (line_number, line.rstrip())
+            for line_number, line in enumerate(
+                path.read_text(encoding="utf-8").splitlines(), start=1
+            )
+            if retired.search(line)
+        ]
+        for path in runtime_root.glob("*.py")
+    }
+
+    assert {path: hits for path, hits in contaminated.items() if hits} == {}
+
+
+def test_runtime_reserves_warrant_for_the_seed_standing_declaration():
+    retired = re.compile(r"\bwarrant\w*\b|warrant[-_]", re.IGNORECASE)
+    runtime_root = GRAMMAR.parents[1] / "seed_runtime"
+    contaminated = {
+        path.relative_to(GRAMMAR.parents[1]).as_posix(): [
+            (line_number, line.rstrip())
+            for line_number, line in enumerate(
+                path.read_text(encoding="utf-8").splitlines(), start=1
+            )
+            if retired.search(line)
+        ]
+        for path in runtime_root.glob("*.py")
+    }
+
+    assert {path: hits for path, hits in contaminated.items() if hits} == {}
