@@ -1,6 +1,6 @@
 """Null-start evidence witness for E1/E2/E3.
 
-This module is a microscope, not a claim.  It runs the live operator console
+This module is a microscope, not a Assertion.  It runs the live operator console
 from an empty ledger over fixed operator material and reports exactly what Seed
 preserved.  Its assertions are deliberately confined to *what is present in the
 record*.  Nothing here asserts represented relation, relation, structure, or intent, because
@@ -144,7 +144,7 @@ def test_null_start_does_not_activate_the_dormant_result_chain(events):
 
     Narrow by intent.  This asserts only that the dormant Applicability /
     Admission / Participation chain did not run, which is consistent with its
-    gating input being fixture-only.  It makes no broader claim that no
+    gating input being fixture-only.  It makes no broader Assertion that no
     semantic standing of any kind was established -- this module is a
     microscope and should not issue negative constitutional findings.
     """

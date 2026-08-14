@@ -61,7 +61,7 @@ The Authority coordinate may be positively established, conflicting, responsibly
 
 #### Evidence
 
-Identifies the Evidence supporting the exact Responsibility, Act, occurrence, result, Standing, or relation claimed. Evidence does not establish Authority, a support relation, occurrence, or Standing by identity.
+Identifies the Evidence supporting the exact Responsibility, Act, occurrence, result, Standing, or relation asserted. Evidence does not establish Authority, a support relation, occurrence, or Standing by identity.
 
 #### Scope and locality
 
@@ -115,7 +115,7 @@ absence finding
 
 #### Occurrence or non-occurrence evidence
 
-Identifies the evidence supporting the exact act-occurrence claim, failed-act-occurrence claim, or absence-of-act-occurrence finding. An absence-of-act-occurrence finding must not fabricate the absent act's result.
+Identifies the evidence supporting the exact act-occurrence Assertion, failed-act-occurrence Assertion, or absence-of-act-occurrence finding. An absence-of-act-occurrence finding must not fabricate the absent act's result.
 
 ### Result branches
 
@@ -144,11 +144,11 @@ result
 
 ### Standing-establishment branches
 
-These branches apply where standing is claimed for a result, relation, assertion, or other bounded subject.
+These branches apply where Standing is established for a result, relation, Assertion, or other bounded subject.
 
 #### Standing-establishment boundary
 
-Identifies the responsible boundary that establishes the claimed Standing. It may be the result's Act boundary or a separately assigned Responsibility; identity must be established.
+Identifies the responsible boundary that establishes the Standing. It may be the result's Act boundary or a separately assigned Responsibility; identity must be established.
 
 #### Standing-establishment occurrence
 
@@ -234,7 +234,7 @@ The Responsibility hierarchy is a Book-root presentation and traversal structure
 structural branch present != branch value established
 coordinate unresolved != coordinate Unknown
 same owner != same act, responsible occurrence, establishment boundary, or exact Act
-same occurrence != same claim
+same occurrence != same Assertion
 ```
 
 ## Maintenance rule

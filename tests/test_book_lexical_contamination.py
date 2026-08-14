@@ -11,7 +11,7 @@ unchanged.  ``rosetta/`` is specifically permitted to carry retired and
 external vocabulary; that is why it exists.
 
 Each banned pattern names vocabulary that a reconstruction removed from
-constitutional grammar, or that a reconstruction found smuggles a claim.  A word
+constitutional grammar, or that a reconstruction found smuggles a Assertion.  A word
 being banned here does not make it forbidden English -- it makes it
 non-constitutional, and its explanation belongs in ``rosetta/``.
 """
@@ -109,6 +109,8 @@ BANNED: tuple[tuple[str, str], ...] = (
     (r"\bvalidatey\b|reconstruction[-_]", "reconstruction"),
     (r"\bconsum\w*\b|consum[-_]", "consum*"),
     (r"\breli\w*\b|reli[-_]", "reli*"),
+    (r"\bclaims?\b|claim[-_]", "claim"),
+    (r"\bfacts?\b|fact[-_]", "fact"),
 )
 
 # The discriminator, corrected.
@@ -141,12 +143,9 @@ BANNED: tuple[tuple[str, str], ...] = (
 #   examines      NOT banned.  `03.Prerequisite:36,104,122` have applicability
 #                 as the subject doing the examining.  Ordinary prose whose
 #                 subject is an established coordinate is not the retired noun.
-#   claim/fact    MUST GO, but the lexical guard waits for the active-law sweep.
-#                 Assertion is the constitutional subject. `claim` was asserted
-#                 content viewed apart from its carrier; `Fact` was an Assertion
-#                 described through established Standing. Neither adds identity,
-#                 Responsibility, Act, occurrence, or Standing. Runtime types may
-#                 retain legacy implementation names without promoting them.
+#   Assertion     The constitutional subject and ceiling for asserted content.
+#                 Claim and Fact are Rosetta shorthand only; both are guarded
+#                 above from returning to active law.
 #   artifact      NOT banned here, and it is not clean either.
 #                 `artifact_substitution_test_001` asked what distinction would
 #                 be lost if the word left Book proper and found **none**: its

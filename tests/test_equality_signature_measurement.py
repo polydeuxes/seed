@@ -207,7 +207,7 @@ def test_ledger_validation_refuses_a_self_consistent_false_signature():
         )
 
 
-def test_signature_does_not_claim_equivalence_or_select_a_subset():
+def test_signature_does_not_assertion_equivalence_or_select_a_subset():
     ledger = EventLedger()
     _comparison(ledger)
     record_equality_signature_layer(

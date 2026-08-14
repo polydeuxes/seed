@@ -42,7 +42,7 @@ SELF_SURVEY_RECORDED_KIND = "operator.measurement.self_survey_recorded"
 
 SELF_SURVEY_SCOPE = (
     "the measurement occurrences recorded by this session; occurrences "
-    "elsewhere are not counted and not claimed absent"
+    "elsewhere are not counted and not asserted absent"
 )
 
 
@@ -117,7 +117,7 @@ def record_self_survey(
     ``representation="displacement=1", occurrence_count=3226``. Nothing
     occupied a measured position there. The survey counted **recorded
     coordinate values across measurement occurrences**, and saying so in the
-    vocabulary of positional occupancy made the record claim a kind of thing it
+    vocabulary of positional occupancy made the record Assertion a kind of thing it
     is not.
 
     It was a downstream shape deciding an upstream subject, which is the shape

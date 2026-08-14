@@ -22,7 +22,7 @@ An established support relation, Applicability, or Admission finding may let a s
 
 
 ### 08.Authority.C — Analytical competence is not adjudicative authority
-Seed may analyze source packets, support paths, source roles, boundary mismatches, pressure, confidence limits, temporal limits, and Unknowns under bounded repository authority. That competence does not become jurisdiction, legal authority, binding legal conclusion, validity determination, invalidity determination, enforceability determination, or institutional adjudication without separately preserved competent authority, source-of-law support, procedural posture, claim form, and lawful stop.
+Seed may analyze source packets, support paths, source roles, boundary mismatches, pressure, confidence limits, temporal limits, and Unknowns under bounded repository authority. That competence does not become jurisdiction, legal authority, binding legal conclusion, validity determination, invalidity determination, enforceability determination, or institutional adjudication without separately preserved competent authority, source-of-law support, procedural posture, Assertion form, and lawful stop.
 
 ## Important distinctions
 - operator request != unbounded authority

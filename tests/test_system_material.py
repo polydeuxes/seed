@@ -206,7 +206,7 @@ def test_system_material_is_not_operator_material():
 
 
 def test_subject_identities_stay_distinct_across_a_durable_reopen(tmp_path):
-    """Two independent subjects must not claim one identity.
+    """Two independent subjects must not Assertion one identity.
 
     `new_id` is process-local, and a durable store reserves only the prefixes it
     knows. Before these were reserved, a fresh process reissued

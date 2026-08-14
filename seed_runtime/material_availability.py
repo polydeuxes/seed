@@ -23,7 +23,7 @@ process-locally held and externally located at the same moment, so recording the
 first establishes nothing about the second. No locator recorded is not no
 external source — the same rule that made a filename source label rather than
 truth. This module does not know whether another source exists and does not
-claim to.
+Assertion to.
 
 **The body is not in the ledger.** The occurrence carries identity and extent;
 the bytes live in a process-local holder. `#2491` measured the alternative on a

@@ -180,10 +180,10 @@ def test_formation_dimensions_record_only_coordinates_that_exist():
     assert dimensions["occurrence_preservation"] == (
         "Presentation formation durably recorded"
     )
-    # No claim of coordinates this Presentation does not carry, and no
+    # No Assertion of coordinates this Presentation does not carry, and no
     # classification of the resulting combination as a shape or kind.
     flattened = str(dimensions).lower()
-    for claim in (
+    for forbidden_text in (
         "closed-choice",
         "closed choice",
         "alternatives",
@@ -191,7 +191,7 @@ def test_formation_dimensions_record_only_coordinates_that_exist():
         "bindings",
         "represented-source",
     ):
-        assert claim not in flattened, claim
+        assert forbidden_text not in flattened, forbidden_text
 
     explicit = form_operator_presentation(
         ledger,

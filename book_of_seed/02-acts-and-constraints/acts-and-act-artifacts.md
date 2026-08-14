@@ -13,7 +13,7 @@ A Responsibility bounds what Standing may be established, preserved, or revised 
 
 ## Important distinctions
 - boundary invocation != assertion-bearing branch != result construction != external effect
-- successful return != every claimed effect occurred
+- successful return != every asserted effect occurred
 - failed act != no occurrence automatically
 - act != artifact describing an act
 - classification of language != occurrence of the classified act

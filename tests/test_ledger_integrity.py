@@ -147,7 +147,7 @@ def test_every_persisted_field_is_covered(ledger, path, column, value):
 
 
 # --------------------------------------------------------------------------
-# What is not claimed.
+# What is not asserted.
 # --------------------------------------------------------------------------
 
 
@@ -156,7 +156,7 @@ def test_rewriting_the_row_and_its_digest_together_is_not_detected(ledger, path)
 
     Someone able to write arbitrary SQL can drop the guard, rewrite the row,
     and recompute the digest. Detecting that needs an integrity root outside
-    the mutable database, which this does not have and does not claim.
+    the mutable database, which this does not have and does not Assertion.
     """
     from seed_runtime.events import _content_digest
 
@@ -413,11 +413,11 @@ def test_an_unverifiable_input_is_recorded_rather_than_refused():
 def test_a_nullable_digest_schema_is_refused_even_when_fully_digested(path):
     """The column being present is not the invariant.
 
-    `#2426` claimed that opening implies the store was born current, but only
+    `#2426` asserted that opening implies the store was born current, but only
     checked that the column existed and that no row was currently NULL. A store
     created by the withdrawn ALTER path is nullable, and one populated entirely
     with valid digests would have passed while still admitting an undigested
-    occurrence later. Prose claiming a property runtime does not enforce is the
+    occurrence later. Prose asserting a property runtime does not enforce is the
     same defect `#2421` removed from Compare's arity.
     """
     from seed_runtime.events import _content_digest
@@ -942,7 +942,7 @@ def test_damaged_compressed_storage_is_corruption_not_a_compressor_error(tmp_pat
 
     An earlier version of this test replaced the BLOB with `json.dumps(...)`,
     which SQLite returns as `str`, so `zlib.decompress` was never reached and
-    the test passed through the ordinary text path while claiming to exercise
+    the test passed through the ordinary text path while asserting to exercise
     compressed corruption. Curator caught it. Damaged compressed bytes had been
     leaking raw `zlib.error` and `UnicodeDecodeError` through `integrity_of`.
     """

@@ -1,7 +1,7 @@
 # Inquiry Frontiers
 
 ## Constitutional subject
-The bounded set of inquiry concerns that may be considered without claiming that later movement has occurred.
+The bounded set of inquiry concerns that may be considered without asserting that later movement has occurred.
 
 ## Core question
 How are frontier membership, exclusions, dependencies, and operative coherence established?
@@ -14,7 +14,7 @@ The inquiry frontier assembles bounded, evidenced inquiry possibilities. Members
 ### 04.Frontier.A — Frontier identity is conjunctive, not wording-derived
 A bounded inquiry frontier receives identity only by preserving the exact inquiry required result or uncertainty it concerns, its source and provenance, the present movement boundary or act-local context in which it matters, included and excluded scope, lawful stopping conditions, Unknowns, conflicts, and negative authority. Wording similarity, prompt adjacency, implementation labels, opaque references, list order, report titles, stale or unavailable attributed material, or a selected required result by itself do not establish an additional constitutional subject, establish the frontier, admit the inquiry, select sources or observations, authorize access, determine the answer, retire neighboring inquiry, write the event ledger, or mutate condition.
 
-### 04.Frontier.B — Positive frontier support requires claim-relative support
+### 04.Frontier.B — Positive frontier support requires Assertion-relative support
 For one bounded inquiry frontier, attributed material may participate only when an established relation connects its exact Evidence, Authority, Scope, provenance, and limits to the exact Assertion, addressed subject, result boundary, and frontier. Preservation, labels, grouping, or absence of explicit conflict do not establish that relation.
 
 Recorded or visible material is not applicable merely because it is preserved or visible. An exact Act may use it only under its addressed subject, result boundary, established support relations, and other local coordinates. Applicability does not establish Selection, mutation, truth, or later Act occurrence.

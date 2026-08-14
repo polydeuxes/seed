@@ -222,7 +222,7 @@ def test_the_survey_is_recorded_in_the_shape_of_what_it_measured(exhausted):
 
     An earlier version forced each coordinate through `Occupancy` as
     ``representation="displacement=1"``. Nothing occupied a measured position
-    there, and borrowing that vocabulary made the record claim a kind of thing
+    there, and borrowing that vocabulary made the record Assertion a kind of thing
     it is not. A downstream shape does not decide an upstream subject.
     """
     event = record_self_survey(

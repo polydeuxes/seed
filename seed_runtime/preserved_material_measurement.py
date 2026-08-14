@@ -23,7 +23,7 @@ withdrawn.
 A measurement given a ledger reads its material from that ledger. A measurement
 given occurrences measures what it was handed, which is lawful and weaker: the
 finding then says its material was supplied rather than preserved, and the two
-claims are recorded distinctly. This module used to describe only the first
+asserts are recorded distinctly. This module used to describe only the first
 while doing both.
 
 **What this produces is recorded.** Each finding is appended to the ledger, so a
@@ -169,7 +169,7 @@ class MeasurementFinding:
     # coordinate for it. `#2486` measured why: copying the population into
     # every finding of a body cost 97% of the stored finding.
     input_event_ids: tuple[str, ...]
-    # Where the measured material came from. Defaults to the weaker claim:
+    # Where the measured material came from. Defaults to the weaker Assertion:
     # a finding that did not read from a ledger cannot say it measured
     # preserved material, and silence must not read as the stronger one.
     material_provenance: str = MATERIAL_AS_SUPPLIED
@@ -253,7 +253,7 @@ class RecurrenceFinding:
     # How many times it occurred in total across them. This is the recurrence.
     total_count: int
     input_event_ids: tuple[str, ...]
-    # Where the measured material came from. Defaults to the weaker claim:
+    # Where the measured material came from. Defaults to the weaker Assertion:
     # a finding that did not read from a ledger cannot say it measured
     # preserved material, and silence must not read as the stronger one.
     material_provenance: str = MATERIAL_AS_SUPPLIED
@@ -629,7 +629,7 @@ def _measurable_text(event: Event) -> str:
     if "decoded_text" not in event.payload:
         # The occurrence says a text representation was formed and carries no
         # decoded text. That is incoherent material, and reading the coordinate
-        # and trusting it would rest the finding on a claim about the material
+        # and trusting it would rest the finding on a Assertion about the material
         # rather than on the material, surfacing as a KeyError rather than as a
         # refusal stating what was wrong.
         #
@@ -727,7 +727,7 @@ def measure_recurrences(
         _distinct_population(occurrences), preserved_in
     )
     if support_basis is not None and support_validator is not None:
-        # A finding claiming support from preserved occurrences must have
+        # A finding asserting support from preserved occurrences must have
         # measured the material those occurrences carry. An `Event` can be
         # constructed directly with any id and any payload, so a caller could
         # hand this act an object bearing a validated identity and different
@@ -824,7 +824,7 @@ def measure_recurrences(
         # only that the population is *within* that description. A
         # caller supplying three of four occurrences through the same boundary
         # would pass all of them, and the finding would then preserve a basis
-        # claiming completeness the act never established.
+        # asserting completeness the act never established.
         #
         # Verifying that requires interpreting the boundary, which only an
         # EventLedger does, so a basis is accepted only where the act is given
@@ -870,9 +870,9 @@ def measure_recurrences(
         # The evidence is still appended one at a time, so a later append
         # failing leaves earlier evidence preserved while this call returns
         # nothing. That evidence is not wrong: those results were produced at
-        # this boundary, and the claim it carries says produced rather than
+        # this boundary, and the Assertion it carries says produced rather than
         # returned for exactly this reason. Making the appends atomic would
-        # let it claim the stronger thing, and is not done here.
+        # let it Assertion the stronger thing, and is not done here.
         witnessed = []
         for finding in findings:
             evidence = _record_production(
@@ -1028,7 +1028,7 @@ def record_measurement_findings(
             )
     # Every recorded finding states `source_provenance` as "preserved
     # operator-ingress occurrences". Premises were established here and the
-    # occurrences that claim were made about never were, so a finding measured
+    # occurrences that Assertion were made about never were, so a finding measured
     # over directly constructed `Event` objects recorded that provenance about
     # material this ledger does not hold. `#2510` closed that at the input
     # boundary only where a support basis was declared; a measurement without
@@ -1141,7 +1141,7 @@ def premise_chain(ledger: EventLedger, event_id: str) -> list[str]:
 
     Not the runtime's `SupportBasis` representation. This is the chain of
     recorded premise findings one finding stood on, validated nearest premise
-    first. It preserves that dependency relation and claims nothing about the
+    first. It preserves that dependency relation and asserts nothing about the
     producing act's support basis; the prose called it that before the two
     were distinguished and kept calling it that after.
     """

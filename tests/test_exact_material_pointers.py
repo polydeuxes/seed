@@ -219,7 +219,7 @@ def test_an_account_without_a_addressable_formation_is_refused():
 #
 # Every live refusal in this representation boundary, fired. A refusal no test
 # reaches is a refusal nobody has verified, and after #2486 — where two of three
-# untested coordinate refusals turned out to admit values they claimed to
+# untested coordinate refusals turned out to admit values they asserted to
 # exclude — these are what stand between a malformed durable account and a
 # reconstruction that silently means something else.
 #

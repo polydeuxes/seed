@@ -647,7 +647,7 @@ def _move_byte_assertion_to_locality(
     target_workspace_id: str,
     target_locality: str,
 ) -> RecordedByteAssertion:
-    """Preserve one same-workspace Assertion movement without copying its claim."""
+    """Preserve one same-workspace Assertion movement without copying the Assertion."""
 
     source_event = ledger.get(source.recorded_occurrence_id)
     if source_event is None or source_event.workspace_id != target_workspace_id:
@@ -1416,19 +1416,19 @@ def _record_pair_input_applicability(
     ledger: EventLedger,
     *,
     source: RecordedByteAssertion,
-    claim: dict[str, Any],
+    applicability_assertion: dict[str, Any],
     workspace_id: str,
     recording_session_id: str,
 ):
     """Preserve Applicability whether or not the target Measurement occurs."""
 
-    standing = claim["dimensions"]["standing"]
+    standing = applicability_assertion["dimensions"]["standing"]
     result_payload = {
         "dimensions": {
-            "identity": claim["dimensions"]["identity"],
+            "identity": applicability_assertion["dimensions"]["identity"],
             "content": "exact source-Assertion to target-Act Applicability",
             "standing": standing,
-            "source_provenance": claim["dimensions"]["source_provenance"],
+            "source_provenance": applicability_assertion["dimensions"]["source_provenance"],
             "authority": BYTE_PAIR_APPLICABILITY_AUTHORITY,
         },
         "producing_act": "input Applicability determination",
@@ -1436,22 +1436,22 @@ def _record_pair_input_applicability(
         "responsible_boundary": SEED_NATIVE_MEASUREMENT_RESPONSIBLE_BOUNDARY,
         "assigned_by_responsibility": BYTE_PAIR_MEASUREMENT_RESPONSIBILITY,
         "responsibility_basis": BYTE_PAIR_RESPONSIBILITY_BASIS,
-        "applicability_act_id": claim["applicability_act_id"],
-        "applicability_act_occurrence_id": claim[
+        "applicability_act_id": applicability_assertion["applicability_act_id"],
+        "applicability_act_occurrence_id": applicability_assertion[
             "applicability_act_occurrence_id"
         ],
-        "target_act_id": claim["target_act_id"],
+        "target_act_id": applicability_assertion["target_act_id"],
         "input_assertion_ref": source.reference,
         "input_movement_event_id": source.locality_movement_event_id,
-        "applicability": claim,
-        "target_act_outcome": "not established by this Applicability claim",
+        "applicability": applicability_assertion,
+        "target_act_outcome": "not established by this Applicability Assertion",
     }
     applicability_act_evidence = ledger.append(
         BYTE_PAIR_APPLICABILITY_ACT_EVIDENCE_KIND,
         workspace_id,
         {
-            "applicability_act_id": claim["applicability_act_id"],
-            "applicability_act_occurrence_id": claim[
+            "applicability_act_id": applicability_assertion["applicability_act_id"],
+            "applicability_act_occurrence_id": applicability_assertion[
                 "applicability_act_occurrence_id"
             ],
             "act": "input Applicability determination",
@@ -1460,7 +1460,7 @@ def _record_pair_input_applicability(
             "assigned_by_responsibility": BYTE_PAIR_MEASUREMENT_RESPONSIBILITY,
             "input_assertion_ref": source.reference,
             "input_movement_event_id": source.locality_movement_event_id,
-            "target_act_id": claim["target_act_id"],
+            "target_act_id": applicability_assertion["target_act_id"],
             "result_commitment": production_commitment(
                 BYTE_PAIR_APPLICABILITY_CONVENTION, result_payload
             ),
@@ -1475,7 +1475,7 @@ def _record_pair_input_applicability(
         convention=BYTE_PAIR_APPLICABILITY_CONVENTION,
         producing_act="input Applicability determination",
         produced_result_kind=BYTE_PAIR_APPLICABILITY_RESULT_KIND,
-        result_identity=claim["dimensions"]["identity"],
+        result_identity=applicability_assertion["dimensions"]["identity"],
         produced_content=result_payload,
         responsibility=BYTE_PAIR_INPUT_APPLICABILITY_RESPONSIBILITY,
         responsible_boundary=SEED_NATIVE_MEASUREMENT_RESPONSIBLE_BOUNDARY,
@@ -1568,12 +1568,12 @@ def get_recorded_pair_input_applicability(
         raise ByteMeasurementError(
             f"{event_id} names no exact Applicability determination occurrence Evidence"
         )
-    claim = payload.get("applicability")
-    dimensions = claim.get("dimensions") if isinstance(claim, dict) else None
+    applicability_assertion = payload.get("applicability")
+    dimensions = applicability_assertion.get("dimensions") if isinstance(applicability_assertion, dict) else None
     standing = dimensions.get("standing") if isinstance(dimensions, dict) else None
     content = dimensions.get("content") if isinstance(dimensions, dict) else None
-    act_context = claim.get("act_context") if isinstance(claim, dict) else None
-    scope = claim.get("scope_locality") if isinstance(claim, dict) else None
+    act_context = applicability_assertion.get("act_context") if isinstance(applicability_assertion, dict) else None
+    scope = applicability_assertion.get("scope_locality") if isinstance(applicability_assertion, dict) else None
     expected_identity = (
         "byte-pair-applicability:"
         + hashlib.sha256(
@@ -1594,25 +1594,25 @@ def get_recorded_pair_input_applicability(
     if (
         standing not in {"applicable", "inapplicable", "conflicting", "Unknown"}
         or dimensions.get("identity") != expected_identity
-        or claim.get("result") != "input_applicability"
-        or claim.get("target_act_occurrence_id") is not None
-        or claim.get("responsibility")
+        or applicability_assertion.get("result") != "input_applicability"
+        or applicability_assertion.get("target_act_occurrence_id") is not None
+        or applicability_assertion.get("responsibility")
         != BYTE_PAIR_INPUT_APPLICABILITY_RESPONSIBILITY
-        or claim.get("responsible_boundary")
+        or applicability_assertion.get("responsible_boundary")
         != SEED_NATIVE_MEASUREMENT_RESPONSIBLE_BOUNDARY
-        or claim.get("assigned_by_responsibility")
+        or applicability_assertion.get("assigned_by_responsibility")
         != BYTE_PAIR_MEASUREMENT_RESPONSIBILITY
-        or claim.get("responsibility_basis") != BYTE_PAIR_RESPONSIBILITY_BASIS
-        or claim.get("applicability_act_id") != payload.get("applicability_act_id")
-        or claim.get("applicability_act_occurrence_id")
+        or applicability_assertion.get("responsibility_basis") != BYTE_PAIR_RESPONSIBILITY_BASIS
+        or applicability_assertion.get("applicability_act_id") != payload.get("applicability_act_id")
+        or applicability_assertion.get("applicability_act_occurrence_id")
         != payload.get("applicability_act_occurrence_id")
         or payload.get("applicability_act_id")
         == payload.get("applicability_act_occurrence_id")
-        or claim.get("target_act") != "declared adjacent-byte-pair Measurement"
-        or claim.get("result_boundary") != BYTE_PAIR_RESULT_BOUNDARY
+        or applicability_assertion.get("target_act") != "declared adjacent-byte-pair Measurement"
+        or applicability_assertion.get("result_boundary") != BYTE_PAIR_RESULT_BOUNDARY
         or payload.get("dimensions", {}).get("standing") != standing
-        or payload.get("target_act_id") != claim.get("target_act_id")
-        or payload.get("input_assertion_ref") != claim.get("input_assertion_ref")
+        or payload.get("target_act_id") != applicability_assertion.get("target_act_id")
+        or payload.get("input_assertion_ref") != applicability_assertion.get("input_assertion_ref")
         or payload.get("responsibility")
         != BYTE_PAIR_INPUT_APPLICABILITY_RESPONSIBILITY
         or payload.get("responsible_boundary")
@@ -1621,10 +1621,10 @@ def get_recorded_pair_input_applicability(
         != BYTE_PAIR_MEASUREMENT_RESPONSIBILITY
         or payload.get("responsibility_basis") != BYTE_PAIR_RESPONSIBILITY_BASIS
         or payload.get("target_act_outcome")
-        != "not established by this Applicability claim"
+        != "not established by this Applicability Assertion"
     ):
         raise ByteMeasurementError(f"{event_id} carries incoherent Applicability")
-    return json.loads(_canonical(claim))
+    return json.loads(_canonical(applicability_assertion))
 
 
 def record_adjacent_byte_pair_count_layer(
@@ -1661,7 +1661,7 @@ def record_adjacent_byte_pair_count_layer(
     applicability_event = _record_pair_input_applicability(
         ledger,
         source=source,
-        claim=applicability,
+        applicability_assertion=applicability,
         workspace_id=workspace_id,
         recording_session_id=recording_session_id,
     )
@@ -1740,7 +1740,7 @@ def record_adjacent_byte_pair_count_layer(
 
 
 def _validate_recorded_pair_input_applicability(
-    claim: Any,
+    applicability_assertion: Any,
     *,
     source: RecordedByteAssertion,
     event,
@@ -1758,8 +1758,8 @@ def _validate_recorded_pair_input_applicability(
         "responsibility": BYTE_PAIR_INPUT_APPLICABILITY_RESPONSIBILITY,
         "responsible_boundary": SEED_NATIVE_MEASUREMENT_RESPONSIBLE_BOUNDARY,
         "assigned_by_responsibility": BYTE_PAIR_MEASUREMENT_RESPONSIBILITY,
-        "applicability_act_id": claim.get("applicability_act_id"),
-        "applicability_act_occurrence_id": claim.get(
+        "applicability_act_id": applicability_assertion.get("applicability_act_id"),
+        "applicability_act_occurrence_id": applicability_assertion.get(
             "applicability_act_occurrence_id"
         ),
         "result_boundary": BYTE_PAIR_RESULT_BOUNDARY,
@@ -1795,8 +1795,8 @@ def _validate_recorded_pair_input_applicability(
         "responsible_boundary": SEED_NATIVE_MEASUREMENT_RESPONSIBLE_BOUNDARY,
         "assigned_by_responsibility": BYTE_PAIR_MEASUREMENT_RESPONSIBILITY,
         "responsibility_basis": BYTE_PAIR_RESPONSIBILITY_BASIS,
-        "applicability_act_id": claim.get("applicability_act_id"),
-        "applicability_act_occurrence_id": claim.get(
+        "applicability_act_id": applicability_assertion.get("applicability_act_id"),
+        "applicability_act_occurrence_id": applicability_assertion.get(
             "applicability_act_occurrence_id"
         ),
         "target_act": "declared adjacent-byte-pair Measurement",
@@ -1831,7 +1831,7 @@ def _validate_recorded_pair_input_applicability(
             "admission, represented relation, or authority for another use"
         ],
     }
-    if claim != expected:
+    if applicability_assertion != expected:
         raise ByteMeasurementError(
             f"{event.id} does not carry its exact historical input Applicability"
         )
@@ -2168,7 +2168,7 @@ def assertions_of_recorded_adjacent_byte_pair_measurement(
 def input_applicability_of_recorded_adjacent_byte_pair_measurement(
     ledger: EventLedger, event_id: str
 ) -> dict[str, Any] | None:
-    """Reconstruct the independent input-to-Act Applicability claim."""
+    """Validate the independent input-to-Act Applicability Assertion."""
 
     reconstructed = assertions_of_recorded_adjacent_byte_pair_measurement(ledger, event_id)
     if reconstructed is None:

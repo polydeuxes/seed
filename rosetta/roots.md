@@ -117,9 +117,24 @@ exact result. In Seed grammar that is a relation Assertion with its own
 participants, Evidence, Authority, Scope, occurrence, limits, Unknowns, and
 Standing. Input participation does not establish that support relation.
 
+## Claim
+
+`Claim` is ordinary shorthand for the content of an Assertion viewed apart
+from the exact representation carrying it. Seed grammar keeps the Assertion as
+the subject. Equal content across two Assertions requires an established
+relation; the shorthand creates no shared proposition object.
+
+## Fact
+
+`Fact` is ordinary shorthand for an Assertion described through established,
+bounded Standing. It is not a species above Assertion and does not add an
+identity, Responsibility, Act, occurrence, Evidence, Authority, Scope, or
+Standing coordinate. Stronger Standing does not turn an Assertion into another
+constitutional kind.
+
 ## Lineage
 
-`Lineage` is ordinary shorthand for a recoverable representation of where
+`Lineage` is ordinary shorthand for an addressable representation of where
 material came through. In Seed grammar it belongs beneath Provenance and may be
 represented by ordered source, occurrence, production, or preservation
 references. The representation helps an exact Act validate claimed provenance;

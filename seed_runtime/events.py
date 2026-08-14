@@ -20,8 +20,8 @@ from seed_runtime.event import Event, _decode_screened_event_payload
 #
 # `06.Standing:16` names append-only records permissively, among projected
 # material and context views. Nothing in active law requires append-only, and
-# nothing here claims history cannot change: a `DROP TRIGGER` followed by a
-# rewrite of both row and digest defeats this. The established claim is narrower
+# nothing here asserts history cannot change: a `DROP TRIGGER` followed by a
+# rewrite of both row and digest defeats this. The established Assertion is narrower
 # — mutation is refused by default, and undetected corruption becomes
 # detectable.
 VERIFIED = "verified"
@@ -492,7 +492,7 @@ class SQLiteEventLedger(EventLedger):
             # by the withdrawn ALTER path has a nullable digest column, and
             # could hold nothing but valid digests today while still admitting
             # an undigested occurrence tomorrow. Checking current rows would
-            # accept it and leave the claim false.
+            # accept it and leave the Assertion false.
             raise LedgerIntegrityError(
                 f"{database_path} declares content_hash nullable, so it was not "
                 "born with the current integrity schema. Holding no undigested "
@@ -500,7 +500,7 @@ class SQLiteEventLedger(EventLedger):
             )
         # Refuse the mutation the API never performs, so that code outside the
         # API cannot perform it either. A `DROP TRIGGER` removes this; that is
-        # what keeps the claim at "refused by default" rather than "immutable".
+        # what keeps the Assertion at "refused by default" rather than "immutable".
         self._connection.execute("""
             CREATE TRIGGER IF NOT EXISTS events_refuse_update
             BEFORE UPDATE ON events
@@ -754,7 +754,7 @@ class SQLiteEventLedger(EventLedger):
     def integrity_of(self, event_id: str) -> str:
         """Recompute the stored row's digest and compare it with the recorded one.
 
-        Verification belongs where the guarantee is claimed. `#2416` made
+        Verification belongs where the guarantee is asserted. `#2416` made
         ordinary reads cheap, and putting a digest on `get` or `list_session`
         would charge every reader for an obligation only an Act with participating inputs
         carries.

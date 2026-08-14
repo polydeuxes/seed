@@ -242,7 +242,7 @@ def test_a_finding_without_a_premise_records_none(session, occurrences):
 def test_a_premise_that_bounds_a_position_sharpens_the_next_finding(occurrences):
     """`#2387`'s measured result, at this module's scale.
 
-    This is not a claim that premises always sharpen. It records that the
+    This is not a Assertion that premises always sharpen. It records that the
     same material measured at two representations yields different concentrations.
     """
     unbounded = measure_occupancy(
@@ -446,7 +446,7 @@ def test_what_is_measured_is_the_representation_not_a_position(recurrence_occurr
     carried = finding.to_json_dict()
     assert carried["representation_measured"] == "the"
     assert carried["measurement_form"] == "recurrence"
-    # No positional coordinate is claimed, because none was measured.
+    # No positional coordinate is asserted, because none was measured.
     assert "measured_position" not in carried
     assert "measured_relative_to" not in carried
 
@@ -871,7 +871,7 @@ def test_batch_and_single_survive_the_recording_boundary_identically(
 
 
 def test_material_declaring_text_it_does_not_carry_is_refused(recurrence_occurrences):
-    """The flag is a claim about the material, not the material."""
+    """The flag is a Assertion about the material, not the material."""
 
     _, _ = recurrence_occurrences
     lying = Event(
@@ -1347,7 +1347,7 @@ def test_the_recorder_states_the_provenance_the_measurement_declared(
         ledger, workspace_id="w", session_id="r", finding=finding
     )
     # It records -- the identities exist and the Act occurred -- but it no
-    # longer claims the material was preserved.
+    # longer asserts the material was preserved.
     assert event.payload["dimensions"]["source_provenance"] == MATERIAL_AS_SUPPLIED
     assert "preserved" not in event.payload["dimensions"]["source_provenance"]
 

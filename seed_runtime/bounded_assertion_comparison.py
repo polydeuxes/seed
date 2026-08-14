@@ -202,7 +202,7 @@ def compare_preserved_findings(
             raise BoundedComparisonError(
                 f"{event_id} is {event.kind}, not a recorded measurement finding"
             )
-        # This act claims to preserve what it has as input, so this act verifies
+        # This act asserts to preserve what it has as input, so this act verifies
         # what it has as input. A corrupted input cannot be preserved, only copied.
         # `unverifiable` is recorded on the input rather than refused: an
         # in-memory ledger and any occurrence written before the digest

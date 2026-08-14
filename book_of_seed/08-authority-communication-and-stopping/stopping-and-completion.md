@@ -1,10 +1,10 @@
 # Stopping and Completion
 
 ## Constitutional subject
-The grounds for stopping inquiry or movement and the stronger claim that a bounded result condition is complete.
+The grounds for stopping inquiry or movement and the stronger Assertion that a bounded result condition is complete.
 
 ## Core question
-Which exact evidenced conditions can support a bounded responsible exact Act stopping its present act, a responsible stopping occurrence at a competent boundary that establishes a bounded stop, or the stronger completion claim for an exact bounded result condition?
+Which exact evidenced conditions can support a bounded responsible exact Act stopping its present act, a responsible stopping occurrence at a competent boundary that establishes a bounded stop, or the stronger completion Assertion for an exact bounded result condition?
 
 ## Bounded resolution
 Evidence may establish distinct reasons for non-movement: a Constraint, bounded horizon, exhaustion or impossibility finding, operator boundary, unresolved Evidence or Authority, resource limit, unresolved causation, preservation failure, or satisfied Scope. No emitted representation, status field, or condition establishes Stopping or completion by identity. `[UNRESOLVED]` Which relations among these coordinates establish a stopping occurrence or the stronger completion Assertion remains unclear.

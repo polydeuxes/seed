@@ -91,7 +91,7 @@ def test_unknown_conflict_and_absence_remain_distinct():
     # Unknowns are only what session events positively carry.
     assert standing["unknowns"] == ["true source-relative encoding Unknown"]
     # No session event records a conflict or a relation standing; both stay
-    # empty rather than being promoted to Unknown or to a negative claim.
+    # empty rather than being promoted to Unknown or to a negative Assertion.
     assert standing["conflicts"] == []
     assert standing["recorded_relation_standings"] == []
     assert "relation" not in " ".join(standing["unknowns"])

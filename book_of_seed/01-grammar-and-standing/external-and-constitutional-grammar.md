@@ -16,7 +16,7 @@ Developer-supplied connective text is attributed material. It may assert a narro
 
 ### 01.External.A — Addressability preserves source coordinates
 
-Formation preserves the supplied source identity or role, material origin, source occurrence where evidenced, external context, Scope, uncertainty, Authority limits, provenance, known loss, conflicts, and Unknowns. Addressability establishes none of the claimed source relation, Evidence, Applicability, Admission, Compare result, input support, truth, or adopted law.
+Formation preserves the supplied source identity or role, material origin, source occurrence where evidenced, external context, Scope, uncertainty, Authority limits, provenance, known loss, conflicts, and Unknowns. Addressability establishes none of the asserted source relation, Evidence, Applicability, Admission, Compare result, input support, truth, or adopted law.
 
 ### 01.External.B — Cross-boundary participation preserves limits
 

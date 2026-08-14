@@ -148,7 +148,7 @@ class SupportBasis:
         # A count coordinate must be able to be a count. `bool` is excluded
         # because it is an `int` in Python and `True == 1`, so a basis carrying
         # `True` would agree with a one-occurrence population — a coordinate
-        # claiming an exact count while carrying something that is not one.
+        # asserting an exact count while carrying something that is not one.
         if not isinstance(self.support_count, int) or isinstance(self.support_count, bool):
             raise SupportBasisError(
                 "a support basis requires an integer support count, not "

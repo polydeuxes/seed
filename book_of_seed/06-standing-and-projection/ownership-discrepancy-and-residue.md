@@ -1,13 +1,13 @@
 # Responsibility Discrepancy and Residue
 
 ## Constitutional subject
-The characterization of current responsibility, competing ownership claims, invalid paths, naming conflicts, and historical residue.
+The characterization of current responsibility, competing Assertions concerning ownership, invalid paths, naming conflicts, and historical residue.
 
 ## Core question
-How should Seed distinguish lawful current ownership from implementation adjacency, stale claims, and compatibility residue?
+How should Seed distinguish lawful current ownership from implementation adjacency, stale Assertions, and compatibility residue?
 
 ## Bounded resolution
-Ownership claims are evaluated by comparing implementation behavior, responsible occurrences, exact Acts, declarations, Evidence, Authority, Scope, and established support relations. Comparison can expose current ownership support, discrepancies, or residue, but does not by itself establish constitutional ownership. Discrepancies and residue should remain projected findings rather than manually frozen into this Book.
+Assertions concerning ownership are evaluated by comparing implementation behavior, responsible occurrences, exact Acts, declarations, Evidence, Authority, Scope, and established support relations. Comparison can expose current ownership support, discrepancies, or residue, but does not by itself establish constitutional ownership. Discrepancies and residue should remain projected findings rather than manually frozen into this Book.
 
 ## Important distinctions
 - implementation ownership != constitutional authority

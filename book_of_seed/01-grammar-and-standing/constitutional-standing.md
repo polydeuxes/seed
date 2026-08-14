@@ -45,7 +45,7 @@ A relation is its own bounded Assertion subject. Its Standing preserves each app
 
 One bounded relation form asserts that X identifies or represents Y. It preserves each applicable coordinate, including participants and roles, the relation Assertion, source identity, material origin, source occurrence where evidenced, Evidence, Scope, exact Act and result boundary, provenance, Authority, known loss, conflicts, limits, and Unknown or unresolved Standing.
 
-Material may carry the Assertion that X identifies or represents Y without supporting that relation. A responsible occurrence establishes only the relation its Authority, Evidence, Scope, provenance, conflicts, loss, and preserved **Unknowns**. A source label identifies a claimed source role; it establishes neither a source occurrence nor the represented relation.
+Material may carry the Assertion that X identifies or represents Y without supporting that relation. A responsible occurrence establishes only the relation its Authority, Evidence, Scope, provenance, conflicts, loss, and preserved **Unknowns**. A source label identifies an asserted source role; it establishes neither a source occurrence nor the represented relation.
 
 An established relation may receive an Act-local Applicability determination. Where the exact Act requires Admission, the relation must be admitted before participation. Applicable is not admitted; Admission is not participation; participation does not establish that the input supports the result. Each relation remains local to the exact Responsibility and Act.
 

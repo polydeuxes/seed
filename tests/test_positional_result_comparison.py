@@ -171,7 +171,7 @@ def test_compare_refuses_one_production_twice(comparable):
         )
 
 
-def test_compare_does_not_claim_relation_recurrence_or_meaning(comparable):
+def test_compare_does_not_assertion_relation_recurrence_or_meaning(comparable):
     ledger, left, right = comparable
     comparison = compare_positional_result_assertions(
         ledger, (left.reference, right.reference)

@@ -125,7 +125,7 @@ def test_a_fresh_holder_is_a_process_that_never_held_it():
 def test_an_occurrence_carries_no_availability_coordinate():
     """Availability is asked of a holder, never read from a record.
 
-    A payload saying `available` would be a present-tense claim in a permanent
+    A payload saying `available` would be a present-tense Assertion in a permanent
     record: true when written, wrong the moment the process ended, and reading
     as true either way. What the occurrence says instead is where the material
     was held at the time, which stays true forever.

@@ -258,8 +258,8 @@ def form_exact_material_pointers(
 ) -> ExactMaterialPointers:
     """Greedily find exact backward recurrence within the declared bounds.
 
-    The search is a storage-mechanics experiment, not a claim of optimal
-    compression, and not a claim to find every recurrence. At each position it
+    The search is a storage-mechanics experiment, not a Assertion of optimal
+    compression, and not a Assertion to find every recurrence. At each position it
     chooses the longest already-complete matching span among the candidates it
     considers.
 

@@ -64,7 +64,7 @@ def test_exact_bytes_supply_the_measured_subjects_without_whitespace():
     counts = {item.byte_hex: item for item in measured.counts}
 
     # UTF-8 猫 = e7 8c ab and 狗 = e7 8b 97.  No character boundary is used or
-    # claimed; these are the exact bytes Seed captured.
+    # asserted; these are the exact bytes Seed captured.
     assert counts["e7"].total_count == 2
     assert counts["8c"].total_count == 1
     assert counts["ab"].total_count == 1
@@ -192,7 +192,7 @@ def test_recorded_results_replay_the_complete_bounded_source_read():
     assert type(represented.payload["assertion_scope"]["source_session_ids"]) is list
 
 
-def test_a_self_consistent_truncated_source_claim_is_refused():
+def test_a_self_consistent_truncated_source_assertion_is_refused():
     ledger = _ledger("a\nb\n")
     event = record_byte_count_layer(
         ledger,
@@ -354,7 +354,7 @@ def test_adjacent_pair_measurement_remains_byte_not_character_based():
     }
 
     # UTF-8 bytes e7 8c ab plus the captured newline. These are adjacent bytes,
-    # not a claim that any pair is a character.
+    # not a Assertion that any pair is a character.
     assert counts == {"e78c", "8cab", "ab0a"}
 
 

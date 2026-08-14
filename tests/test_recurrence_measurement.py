@@ -530,7 +530,7 @@ def test_recorded_comparison_assertion_identity_is_recomputed(compared):
     event = record_assertion_production_comparison(
         compared, workspace_id="w", session_id="s1", comparison=comparison
     ).model_copy(deep=True)
-    event.payload["assertions"][0]["dimensions"]["identity"] = "claimed-not-canonical"
+    event.payload["assertions"][0]["dimensions"]["identity"] = "asserted-not-canonical"
 
     with pytest.raises(AssertionComparisonError, match="invalid identity"):
         assertions_of_recorded_assertion_comparison(event)
