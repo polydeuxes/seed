@@ -471,6 +471,33 @@ def observe_emitted_representation_adjacency(
     )
 
 
+def compare_emitted_representation_adjacency(
+    ledger: EventLedger,
+    *,
+    emission_event_ids: Iterable[str],
+) -> dict[str, object]:
+    """Compare exact positional observations from distinct emissions."""
+
+    identities = tuple(emission_event_ids)
+    if (
+        len(identities) < 2
+        or any(not isinstance(identity, str) or not identity for identity in identities)
+        or len(set(identities)) != len(identities)
+    ):
+        raise PreservedMaterialMeasurementError(
+            "emission adjacency Compare requires at least two distinct exact emission occurrences"
+        )
+    observations = tuple(
+        observation
+        for identity in identities
+        for observation in observe_emitted_representation_adjacency(
+            ledger,
+            emission_event_id=identity,
+        )
+    )
+    return compare_adjacent_pair_observations(observations)
+
+
 def observe_adjacent_pair_observations_from_finding(
     ledger: EventLedger,
     *,

@@ -20,6 +20,7 @@ from seed_runtime.adjacent_pair_measurement import (
     adjacent_pairs_from_finding,
     observe_adjacent_pair_observations_from_finding,
     observe_emitted_representation_adjacency,
+    compare_emitted_representation_adjacency,
     compare_adjacent_pair_observations,
     record_adjacent_pair_observations,
     get_recorded_adjacent_pair_observations,
@@ -726,6 +727,39 @@ def test_emitted_representation_adjacency_requires_exact_carriage():
     with pytest.raises(PreservedMaterialMeasurementError, match="Carriage Evidence"):
         observe_emitted_representation_adjacency(
             ledger, emission_event_id=wrong_occurrence.id
+        )
+
+    compared = compare_emitted_representation_adjacency(
+        ledger,
+        emission_event_ids=(emission.id, repeated_emission.id),
+    )
+    assert compared["observation_count"] == 2 * len(observations)
+    assert (
+        compared["distinct_fully_bounded_occurrences"]
+        == compared["fully_bounded_observation_count"]
+    )
+    assert (
+        compared["counterexamples"][
+            "representation_triple_groups_with_multiple_occurrences"
+        ]
+        > 0
+    )
+
+
+def test_emission_adjacency_compare_requires_distinct_real_occurrences():
+    ledger = EventLedger()
+    with pytest.raises(PreservedMaterialMeasurementError, match="at least two distinct"):
+        compare_emitted_representation_adjacency(
+            ledger,
+            emission_event_ids=("same", "same"),
+        )
+    with pytest.raises(
+        PreservedMaterialMeasurementError,
+        match="intact emission occurrence",
+    ):
+        compare_emitted_representation_adjacency(
+            ledger,
+            emission_event_ids=("missing-one", "missing-two"),
         )
 
 
