@@ -62,4 +62,4 @@ External material may assert that X represents or identifies Y. Source-attribute
 
 ## Related chapters
 - [Constitutional standing](constitutional-standing.md)
-- [Testimony and established fact](../05-evidence-and-knowledge/testimony-and-established-fact.md)
+- [Testimony and Assertion Standing](../05-evidence-and-knowledge/testimony-and-assertion-standing.md)

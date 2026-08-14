@@ -77,4 +77,4 @@ The possible relation is exact Act-relative, material-relative, and act- and pur
 
 - [Selection and authorization](selection-and-authorization.md)
 - [Inquiry frontiers](../04-inquiry/inquiry-frontiers.md)
-- [Testimony and established fact](../05-evidence-and-knowledge/testimony-and-established-fact.md)
+- [Testimony and Assertion Standing](../05-evidence-and-knowledge/testimony-and-assertion-standing.md)

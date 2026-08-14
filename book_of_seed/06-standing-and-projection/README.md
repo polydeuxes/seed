@@ -1,6 +1,6 @@
-# Book VI: Standing and Projection
+# Book VI: Standing
 
-This Book concerns events, facts, bounded current constitutional standing, bounded representations and Views, and recoverable current projections, including the difference between constitutional source material and material derived from it.
+This Book concerns Events, bounded current Standing, locality, and the difference between preserved source material and material exposed from it.
 
-- [Events, facts, and standing](events-facts-and-standing.md)
+- [Events and Standing](events-and-standing.md)
 - [Ownership, discrepancy, and residue](ownership-discrepancy-and-residue.md)

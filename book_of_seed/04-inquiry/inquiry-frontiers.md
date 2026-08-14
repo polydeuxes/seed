@@ -36,5 +36,5 @@ Recorded or visible material is not relevant to a local responsibility merely be
 
 ## Related chapters
 - [Questions and inquiry](questions-and-inquiry.md)
-- [Testimony and established fact](../05-evidence-and-knowledge/testimony-and-established-fact.md)
+- [Testimony and Assertion Standing](../05-evidence-and-knowledge/testimony-and-assertion-standing.md)
 - [Demands and opened movement](../03-goals-and-advancement/demands-and-opened-movement.md)

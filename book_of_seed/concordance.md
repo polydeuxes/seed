@@ -20,9 +20,7 @@ This is a lightweight navigation index. Aliases record repository or presentatio
 | constitutional question | Inquiry | [Questions and inquiry](04-inquiry/questions-and-inquiry.md) | bounded question, question surface | uncertainty, inquiry |
 | inquiry frontier | Inquiry | [Inquiry frontiers](04-inquiry/inquiry-frontiers.md) | bounded frontier, inquiry artifacts | boundary testimony, applicability |
 | testimony | Evidence and Knowledge | [Testimony and established fact](05-evidence-and-knowledge/testimony-and-established-fact.md) | observation, finding, claim expression, source claim | claim, fact, evidence |
-| Claim | Evidence and Knowledge | [Testimony and established fact](05-evidence-and-knowledge/testimony-and-established-fact.md) | claim, semantic claim, proposition | testimony, normalization, Fact |
-| normalization | Evidence and Knowledge | [Testimony and established fact](05-evidence-and-knowledge/testimony-and-established-fact.md) | normalized claim, canonical claim form | Claim, Fact, support |
-| Fact standing | Evidence and Knowledge | [Testimony and established fact](05-evidence-and-knowledge/testimony-and-established-fact.md) | established fact, bounded fact standing | Fact artifact, evidence, current standing, verified standing |
+| normalization | Evidence and Knowledge | [Testimony and Assertion Standing](05-evidence-and-knowledge/testimony-and-assertion-standing.md) | canonical representation of asserted content | Assertion, Evidence, Standing |
 | temporal standing | Evidence and Knowledge | [Testimony and established fact](05-evidence-and-knowledge/testimony-and-established-fact.md) | temporal applicability, support time, currentness | observed_at, expiry, projection, exact Act participation |
 | evidence | Evidence and Knowledge | [Evidence, provenance, and explanation](05-evidence-and-knowledge/evidence-provenance-and-explanation.md) | support, provenance | fact, explanation |
 | knowledge extraction | Evidence and Knowledge | [Recording and knowledge extraction](05-evidence-and-knowledge/recording-and-knowledge-extraction.md) | fact extraction, promotion | recording, reconciliation |

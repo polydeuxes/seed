@@ -69,4 +69,4 @@ Preserved Unknowns include the complete realizable default dialogue loop, the fu
 
 ## Related chapters
 - [Inquiry frontiers](inquiry-frontiers.md)
-- [Testimony and established fact](../05-evidence-and-knowledge/testimony-and-established-fact.md)
+- [Testimony and Assertion Standing](../05-evidence-and-knowledge/testimony-and-assertion-standing.md)

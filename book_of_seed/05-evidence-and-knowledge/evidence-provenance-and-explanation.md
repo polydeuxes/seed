@@ -1,75 +1,39 @@
-# Evidence, Provenance, and Explanation
+# Evidence and Provenance
 
 ## Constitutional subject
-The Evidence and provenance required to justify claims and explain current Standing without confusing explanation with establishment.
 
-## Core question
-What evidence and provenance are warranted to explain why Seed holds a claim at a given time?
+The Evidence and provenance on which exact Assertion Standing relies.
 
 ## Bounded resolution
-Evidence identifies source and collection context; fact support and explanations connect claims to their basis. Explanation exposes reasons and conflicts but does not itself create upstream truth. A provenance explanation may read preserved artifacts, reconstruct relationships among them, and make a bounded explanation assertion under its own warrant. That projection or explanation-construction act does not establish that upstream responsible acts occurred.
 
+Evidence preserves its source and collection boundary. Provenance preserves the recoverable source and occurrence references through which material arrived or was produced. Neither is truth, Applicability, Authority, causation, independent corroboration, or Standing by identity.
 
-## Addressable boundaries for support-binding witnesses
+Evidence may participate only when the exact Act can distinguish its identity from mere material existence and preserve the applicable source attribution, kind, context, subject, supported Assertion, Authority boundary, temporal boundary, and provenance. Missing coordinates remain Unknown or uninstantiated; nearby fields do not fill them.
 
-### 05.Evidence.A — Evidence support binding
-Evidence-shaped material has standing for an exact declared exact Act only when the exact Act can distinguish the named evidence identity from the material's existence and can represent the source attribution, evidence kind, source or collection context, bounded subject, supported claim, applicable authority boundary, preservation horizon, confidence or uncertainty label where used, and provenance relation required by that act. The produced standing is applicable represented support for that act. The forbidden inference is factual truth, independent corroboration, current lawful condition, act occurrence authorization, or universal evidence admission merely because an identifier, row, confidence value, or citation is present.
+An ordered provenance path is one representation of source and occurrence continuity. Reference resolution and internal coherence do not establish that every referenced occurrence happened as described, that one occurrence caused another, or that the material independently supports an Assertion.
 
-### 05.Evidence.B — Provenance representation and applicability
-A provenance reference may contribute only when the referenced material exists and is applicable to the exact assertion or support material within the declared Act. Representation, Applicability, internal coherence, independent verification, verified causation, and production occurrence remain distinct. An Act may rely on an ordered provenance path where that is its bounded requirement, but a string, foreign key, copied causation identifier, or internally coherent path does not establish verified provenance, production occurrence, Fact Standing, or independent support.
+A missing or unmatched support result remains bounded to the exact corpus, query, temporal boundary, Authority, and limits that produced it. It may establish only that bounded negative finding or Unknown. It does not establish falsehood, global absence, invalidity, or absence of an occurrence.
 
-
-### 05.Evidence.C — Bounded negative findings and preserved Unknowns
-A missing, unmatched, unsupported, or unpreserved support result may be stated only as a bounded negative finding inside the corpus, surface, query or claim form, temporal boundary, authority boundary, and limitations that produced it. That finding may preserve insufficiency, support loss, mismatch, comparison pressure, or Unknown standing for a later exact act. It must not be promoted into falsehood, disproof, global nonexistence, legal invalidity, historical absence, implementation absence, no-harm, no-event, no-authority, or established fact without separately preserved authority and evidence for that stronger claim.
-
-
-When a question asks for provenance and the applicable evidence does not preserve the required provenance dimensions, no View, projection, explanation, correlation, or rearrangement can recover that provenance from the same material. The original answer remains Unknown. The inquiry may still produce a new bounded evidentiary finding: within the identified corpus, surface, question form, observation boundary, and authority limit, the required provenance dimensions were absent or insufficient for answer recovery. That finding may orient later questions about which dimensions, observers, acts, preservation forms, exact Acts, standings, or Unknowns are required, but it must not be treated as the missing provenance itself.
-
-
-### 05.Evidence.D — Correlation and sequence are not causation
-Correlation, association, co-occurrence, sequence, proximity, adjacency, pattern, trend, repeated linkage, diagnostic adjacency, log adjacency, source-attributed causation, or model-inferred causation may orient inquiry or support a bounded claim that such a relation was observed. They do not establish causation, explanation, conduct, responsibility, legal causation, root cause, or proof that one event produced another without claim-appropriate evidence, authority, provenance, confidence limits, Unknown preservation, and lawful stop.
-
-### 05.Evidence.E — Attribution is not responsibility
-Attribution, association, attachment, ownership candidate, source-reported blame, account relation, device relation, address relation, role relation, deployment relation, or event association may preserve provenance or inquiry pressure only within its claim form. It does not establish responsibility, accountability, fault, blame, intent, negligence, liability, legal responsibility, moral responsibility, implementation ownership, or implementation pressure without separately preserved evidence, authority, temporal provenance, support path, confidence limits, Unknowns, and lawful stop.
-
-### 05.Evidence.F — Observability classification is not provenance
-A surface may make a claim, artifact, boundary, output, or relation directly observable; implementation Evidence may make a relation reconstructable; constitutional Evidence may make a pattern constitutionally inferable; and missing support may remain Unknown. These standings support only their bounded claim forms. They do not establish provenance, a complete occurrence path, runtime trace, Act-occurrence log, production occurrence, semantic explanation, or upstream constitutional movement without applicable preserved provenance, Authority, Evidence, limits, Unknowns, and lawful stopping.
-
-### 05.Evidence.G — Resolution and visibility are not semantic support
-Reference resolution, linkage, graph adjacency, membership, visibility, and representation labels may establish only the bounded representational relation their responsible rule warrants. They do not by themselves establish semantic support, applicability, admission, assertion adoption, truth, or reliance. Any stronger use requires claim-appropriate evidence, provenance, scope, authority, conflicts, limits, and a responsible exact Act boundary.
-
-### 05.Evidence.H — Meaning assertion carriage is not warrant production
-An artifact may preserve a meaning assertion, its attributed source, support or warrant references, scope, and limits. The artifact carries that assertion; it does not perform the warranting act. A separately responsible occurrence warrants a bounded meaning relation only within claim-appropriate authority, evidence, scope, provenance, conflicts, known loss, and preserved **Unknowns**. Artifact shape, adjacent fields, array inclusion, labels, resolved references, and repeated occurrence do not substitute for that production boundary.
+Explanation is a representation exposing Evidence, provenance, conflicts, and reasons already established. Constructing it may produce a new explanation Assertion under its own Responsibility; it does not create upstream truth or occurrences.
 
 ## Important distinctions
-- provenance represented != provenance verified
-- event reference != occurrence seal
-- evidence != fact
-- explanation != establishment
-- provenance reference != independent support
-- explanation construction != upstream establishment
-- projection act != new constitutional kind automatically
-- source-relative explanation != occurrence-relative explanation
-- not found in a bounded surface != does not exist
-- not preserved != false
-- evidence absence within a boundary != global absence
-- answer not recoverable != inquiry produced nothing
-- comparison pressure != adjudicative authority
-- correlation or sequence != causation
-- attribution != responsibility
-- observability classification != provenance
-- reference or linkage resolution != semantic support
-- artifact carries meaning assertion != responsible occurrence warrants assertion
+
+- material != Evidence
+- Evidence != Authority
+- Evidence != Standing
+- provenance reference != verified provenance
+- ordered references != causation
+- missing support != falsehood
+- explanation != upstream establishment
+- repeated source != independent corroboration
 
 ## Representative repository anchors
-- `seed_runtime/evidence.py::Evidence`
-- `seed_runtime/facts.py::FactSupport`
-- `seed_runtime/explanations.py::ExplanationBuilder`
 
-## Counterexamples or failure modes
-- Using a polished explanation as a substitute for support.
-- Counting multiple projections of one source as multiple sources.
+- `seed_runtime/evidence.py`
+- `seed_runtime/evidence_graph.py`
+- `seed_runtime/operator_ingress.py`
 
 ## Related chapters
-- [Testimony and established fact](testimony-and-established-fact.md)
-- [Representation, emission, and exact Act boundaries](../08-authority-communication-and-stopping/representation-emission-and-locality.md)
+
+- [Testimony and Assertion Standing](testimony-and-assertion-standing.md)
+- [Recording and knowledge extraction](recording-and-knowledge-extraction.md)

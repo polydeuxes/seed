@@ -10,7 +10,7 @@ A representation preserves its subject, content, source, provenance, Standing, E
 
 Representation formation and emission are distinct occurrences. Emission establishes only that the exact representation was emitted from its locality toward its addressed boundary. Arrival, interpretation, Applicability, reliance, responsibility transition, Authority transition, and external effect require their own Evidence.
 
-A current-facing Fact View warrants present Applicability only under its declared projection, purpose, as-of boundary, freshness, conflict treatment, and Unknowns.
+Current-facing material warrants present Applicability only under its exact formation rule, as-of boundary, freshness, conflict treatment, and Unknowns.
 
 An Assertion may move between localities in one workspace only through a responsible movement occurrence. Movement preserves the Assertion's identity and carried coordinates while recording its source occurrence, source locality, destination locality, Evidence, Authority, Scope, Unknowns, and limits. Movement does not copy or strengthen the Assertion, revise its Standing, establish Applicability, or authorize workspace crossing.
 
@@ -35,4 +35,4 @@ Authority does not move merely because material moves.
 ## Related chapters
 - [Constitutional standing](../01-grammar-and-standing/constitutional-standing.md)
 - [Authority scope](authority-scope.md)
-- [Events, facts, and standing](../06-standing-and-projection/events-facts-and-standing.md)
+- [Events and Standing](../06-standing-and-projection/events-and-standing.md)

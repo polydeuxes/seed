@@ -48,6 +48,27 @@ testimony. They carry two observations: full replay becomes pathological at
 scale, and incremental derivation can preserve replay equivalence. Neither
 warrants the noun.
 
+## Claim and Fact
+
+```text
+status          retired from constitutional grammar
+closest grammar Assertion · Standing
+```
+
+`Claim` is ordinary shorthand for the content being asserted when the speaker
+does not need to name its exact carrier. Seed preserves an Assertion with its
+identity and coordinates; equal content in two Assertions does not join them by
+identity.
+
+`Fact` is ordinary shorthand for an Assertion described as having established
+Standing. It is not a higher constitutional species. Evidence, Warrant,
+Authority, Scope, provenance, occurrence history, and Standing carry every
+distinction the word compressed.
+
+Runtime types named `Fact` remain implementation testimony until their storage,
+replay, selection, and read-model mechanics are decomposed. Their names do not
+establish Book grammar.
+
 ## Examination
 
 ```text

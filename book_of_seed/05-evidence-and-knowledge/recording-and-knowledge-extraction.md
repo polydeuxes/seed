@@ -66,7 +66,7 @@ Recording may preserve already produced measurement testimony and already produc
 - extraction occurrence != original act occurrence
 - recording != knowledge extraction
 - event ledger write != cluster mutation
-- retrievable record != established fact
+- retrievable record != established Assertion Standing
 - preservation != renewed occurrence
 - retrieval or availability != arrival or reliance
 - successful extraction != knowledge establishment
@@ -77,10 +77,10 @@ Recording may preserve already produced measurement testimony and already produc
 - `seed_runtime/observations.py::ObservationIngestor`
 
 ## Counterexamples or failure modes
-- Assuming all ledger payloads become facts during replay.
+- Assuming all ledger payloads acquire established Standing during replay.
 - Attaching diagnostic-only output directly to hosts or services.
 
 ## Related chapters
-- [Testimony and established fact](testimony-and-established-fact.md)
-- [Events, facts, and standing](../06-standing-and-projection/events-facts-and-standing.md)
+- [Testimony and Assertion Standing](testimony-and-assertion-standing.md)
+- [Events and Standing](../06-standing-and-projection/events-and-standing.md)
 - [Acts and act artifacts](../02-acts-and-constraints/acts-and-act-artifacts.md)

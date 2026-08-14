@@ -26,9 +26,9 @@ def test_book_distinguishes_input_exclusion_from_whole_act_nonperformance():
 
     assert "upstream applicability is not downstream admission" in clause
     assert "admission remains required only where the exact act-local act requires it" in clause
-    assert "It does not by itself establish admission" in clause
-    assert "may not participate in, be consumed by, or be relied upon in that act" in clause
-    assert "no act result may claim reliance on, support from, consumption of, or participation by the excluded input" in clause
+    assert "It does not establish admission" in clause
+    assert "An excluded input may not participate in that Act" in clause
+    assert "no result may assert reliance on it" in clause
     assert "Exclusion of one proposed input does not by itself establish whether the exact act occurs" in clause
     assert "That determination remains with the responsibility assigned to perform the exact act" in clause
     assert "under the conditions, relations, evidence, authority, scope, and other boundaries assigned to that responsibility" in clause
@@ -46,16 +46,15 @@ def test_book_preserves_required_input_and_alternative_input_boundary():
     assert "One rejected candidate is not all candidates rejected" in clause
 
 
-def test_book_preserves_composite_occurrence_as_independent_claims():
+def test_book_preserves_composite_occurrence_as_independent_assertions():
     clause = _clause()
 
-    assert "One bounded responsible occurrence may determine applicability for proposed inputs" in clause
-    assert "perform the exact act or establish no act occurrence within the act-owning responsibility's assigned boundaries" in clause
-    assert "These remain independently recoverable claims" in clause
-    assert "applicability success is not act occurrence" in clause
-    assert "one input excluded is neither act prohibited nor authorized" in clause
-    assert "act occurrence is not output standing" in clause
-    assert "output standing is not downstream applicability" in clause
+    assert "One bounded responsible occurrence may determine Applicability for inputs" in clause
+    assert "perform the exact Act or establish no Act occurrence within its assigned boundaries" in clause
+    assert "These remain independently recoverable Assertions" in clause
+    assert "Applicability success is not Act occurrence" in clause
+    assert "Act occurrence is not output Standing" in clause
+    assert "output Standing is not downstream Applicability" in clause
 
 
 def test_book_does_not_turn_persistent_standing_into_production_demand():
