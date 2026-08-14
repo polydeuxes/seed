@@ -11,7 +11,7 @@ A selection act consumes a bounded candidate set plus a selection basis supporte
 
 Candidate-identity resolution is not itself a Selection Act. A resolver may compare attributed material with a bounded candidate set and establish that exactly one candidate identity matches. That occurrence does not establish a Selection occurrence, responsible boundary, Selection basis, addressed Act or result boundary, Applicability, or later movement.
 
-Selection-to-exact Act participation is not singular. An exact Act may adopt selected-subject Standing under a different result boundary, narrow representation selection to selected registered names, or revalidate coherence between a selected subject and other attributed material. Acceptance of one Assertion does not accept every production Assertion.
+Selection-to-exact Act participation is not singular. An exact Act may adopt selected-subject Standing under a different result boundary, narrow representation selection to selected registered names, or revalidate coherence between a selected subject and other attributed material. Acceptance of one Assertion does not accept every Assertion established by the same Act.
 
 Repository Evidence supports distinct Selection forms. Representation selection may choose registered names by exact deterministic keys for one formation Act. Other Selection Acts retain their own candidate sets and downstream limits. Shared vocabulary does not collapse them into one Act kind.
 

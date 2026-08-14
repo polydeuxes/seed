@@ -154,6 +154,14 @@ Assertion with its own Evidence, Warrant, occurrence, and Standing.
 record, or other material. Its exact kind, occurrence, Evidence, Standing, and
 preservation boundary must be named instead.
 
+## Constructor
+
+`Constructor` is ordinary implementation shorthand for code that can form a
+representation or result. Invocation may participate in an exact production
+Act, but public reachability, direct instantiation, constructability, or the
+returned shape establishes none of Responsibility, Authority, Act occurrence,
+production occurrence, production Evidence, or Standing.
+
 ## Projection and View
 
 `Projection` and `View` are ordinary lenses over bounded formation toward

@@ -7,7 +7,7 @@ Conditions that govern whether and how an exact act may proceed.
 Which constraints govern an act, and at which boundary must each be satisfied?
 
 ## Bounded resolution
-A constraint consumes the proposed act or relevant context and produces or preserves a prohibition, requirement, condition, narrowing, or deferral applicable to that act. Its assertion is warranted by applicable authority, bound identity, and current evidence. Constraints may govern several different acts and may be checked at several boundaries; they are not thereby sequential movement stages. A constraint result may be consumed without the governed act occurring.
+A constraint consumes the proposed act or relevant context and establishes or preserves a prohibition, requirement, condition, narrowing, or deferral applicable to that act. Its assertion is warranted by applicable authority, bound identity, and current evidence. Constraints may govern several different acts and may be checked at several boundaries; they are not thereby sequential movement stages. A constraint result may be consumed without the governed act occurring.
 
 
 ## Addressable access and Act conditions
@@ -42,6 +42,6 @@ Direct answer preserved by this clause: Does a constraint result perform the mov
 
 ## Applicability decomposition correction 001
 
-Constraint findings and precondition attributed material preserve only the condition established at the boundary that produced them. A passing constraint finding, schema check, precondition check, reachability observation, or feasibility finding does not establish complete authority or act occurrence, or establish selected mechanism standing, representation fitness, recipient availability, emission, invocation, result recording, or temporal applicability beyond the finding's scope.
+Constraint findings and precondition material preserve only the condition established by their exact Act occurrence. A passing schema, precondition, reachability, or feasibility finding does not establish complete Authority, another Act occurrence, selected-mechanism Standing, representation fitness, locality availability, emission, invocation, recording, or temporal Applicability beyond its Scope.
 
 Resource and other local conditions remain exact coordinates rather than one scalar that compresses constraint satisfaction, reachability, resources, Authority, approval, representation fitness, locality, and temporal Applicability. When an exact Act relies on a condition Assertion, unestablished coordinates remain Unknown, and the Act preserves its source, subject, Scope, requirement, result, temporal Standing, limits, and Unknowns.

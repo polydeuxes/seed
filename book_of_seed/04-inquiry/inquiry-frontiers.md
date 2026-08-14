@@ -7,7 +7,7 @@ The bounded set of inquiry concerns that may be considered without claiming that
 How are frontier membership, exclusions, dependencies, and operative coherence established?
 
 ## Bounded resolution
-The inquiry frontier assembles bounded, evidenced inquiry possibilities. Membership creates visibility for consideration, not selection, authorization, or resolution. Frontier establishment is act-local: it may establish bounded identity coherence and operative frontier standing from warranted attributed material about the exact inquiry boundary without proving selected-required result truth, attributed material truth, production occurrence, inquiry opening or result knowledge.
+The inquiry frontier assembles bounded, evidenced inquiry possibilities. Membership creates visibility for consideration, not selection, authorization, or resolution. Frontier establishment is act-local: it may establish bounded identity coherence and operative frontier standing from warranted attributed material about the exact inquiry boundary without proving selected-required result truth, attributed material truth, result occurrence, inquiry opening or result knowledge.
 
 ## Addressable boundaries for frontier standing
 

@@ -26,7 +26,7 @@ Within one workspace, a Seed may make one exact preserved Assertion available in
 
 Where a Seed performs that movement over an exact Assertion already preserved in its workspace and both localities belong to that workspace, that Seed bears the movement Responsibility. The assignment must remain recoverable from the Assertion reference, workspace, localities, movement Act, and movement occurrence.
 
-Chronology alone does not establish locality, membership, causation, or response. A consuming Act preserves the applicable locality of its input separately from the locality of anything it produces.
+Chronology alone does not establish locality, membership, causation, or response. A consuming Act preserves the applicable locality of its input separately from the locality of anything it establishes.
 
 Locality is a boundary coordinate, not a constitutional subject. It owns no Responsibility and carries no Standing of its own. `session_id` is one implementation witness, not the constitutional definition.
 

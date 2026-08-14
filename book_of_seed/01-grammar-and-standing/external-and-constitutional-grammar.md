@@ -28,7 +28,7 @@ A Fidelity finding compares an exact constitutional subject and bounded expectat
 
 ### 01.External.D — Measurement establishes only its declared result
 
-A declared Measurement may produce bounded exact equality, count, recurrence, prefix occurrence, declared-predicate result, or adjacency findings. It establishes nothing beyond its exact rule and boundary. Recurrence preserves the representation measured, sameness rule, and Scope.
+A declared Measurement may establish bounded exact equality, count, recurrence, prefix occurrence, declared-predicate result, or adjacency findings. It establishes nothing beyond its exact rule and boundary. Recurrence preserves the representation measured, sameness rule, and Scope.
 
 Where a Seed performs a Seed-native declared Measurement over exact material already preserved in its workspace, that Seed bears the Measurement Responsibility. The assignment does not identify the occurrence, make recording the Measurement occurrence, or transfer the resulting Assertion's fidelity Responsibility.
 
@@ -38,7 +38,7 @@ Each counted occurrence is distinguished by exact occurrence identity. Repeated 
 
 ### 01.External.E — Candidates remain attributed
 
-A candidate preserves every applicable source role, formation occurrence, Scope, Authority, provenance, and Unknown. Carrying or comparing candidate material does not establish missing production coordinates.
+A candidate preserves every applicable source role, formation occurrence, Scope, Authority, provenance, and Unknown. Carrying or comparing candidate material does not establish a missing Act occurrence or occurrence-result relation.
 
 ### 01.External.F — External material may assert a relation
 

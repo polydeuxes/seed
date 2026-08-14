@@ -20,8 +20,8 @@
         ]
       },
       "distinct_from": [
-        "producing_Act",
-        "producing_occurrence",
+        "establishing_Act",
+        "establishing_occurrence",
         "recording_occurrence"
       ],
       "does_not_establish": [

@@ -99,6 +99,9 @@ BANNED: tuple[tuple[str, str], ...] = (
     (r"\bdemands?\b", "demand"),
     (r"\btestimon(?:y|ies)\b|testimony[-_]", "testimony"),
     (r"\battributions?\b|attribution[-_]", "attribution"),
+    (r"\bconstructors?\b|constructor[-_]", "constructor"),
+    (r"\bproduction authority\b", "production authority"),
+    (r"\bproduc\w*\b|produc[-_]", "produc*"),
 )
 
 # The discriminator, corrected.
@@ -173,7 +176,7 @@ COMPILED = tuple((re.compile(p, re.IGNORECASE), label) for p, label in BANNED)
 def book_proper_files() -> list[Path]:
     """Active law only.  Reports and rosetta/ are out of scope by design."""
     files = sorted(BOOK.glob("[0-9][0-9]-*/**/*.md"))
-    for extra in ("README.md", "concordance.md"):
+    for extra in ("README.md", "concordance.md", "grammar.json"):
         candidate = BOOK / extra
         if candidate.exists():
             files.append(candidate)

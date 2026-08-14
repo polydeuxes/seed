@@ -7,7 +7,7 @@ The difference between representing a constitutional subject and possessing the 
 Which kinds are constitutionally recognized, and what establishes an artifact's standing as one of them?
 
 ## Bounded resolution
-A preserved representation or record may carry an Assertion made by another Responsibility. Its shape may preserve identity, provenance, result, uncertainty, and boundaries; it does not supply Warrant. Standing depends on the exact production or establishment boundary and its validated inputs. A dedicated dataclass or concordance entry does not establish a constitutional kind.
+A preserved representation or record may carry an Assertion made by another Responsibility. Its shape may preserve identity, provenance, result, uncertainty, and boundaries; it does not supply Warrant. Standing depends on the exact responsible Act and establishment occurrence with their validated inputs. A dedicated dataclass or concordance entry does not establish a constitutional kind.
 
 Standing must not exceed what its Evidence, Authority, Scope, and preserved limits warrant. This is a constitutional bound, not a universal Responsibility owner; each exact Responsibility remains independently established and bounded.
 
@@ -15,13 +15,13 @@ Standing must not exceed what its Evidence, Authority, Scope, and preserved limi
 ## Addressable boundaries for availability and reachability
 
 ### 01.Standing.A — Reachability without promotion
-A produced, preserved, rendered, indexed, or otherwise reachable artifact may become locally visible to a bounded exact Act, observer, diagnostic, projection, or later inquiry without becoming accepted, admitted, relied upon, projected as truth, written to the event ledger, or authorized for mutation. Reachability can create a lawful possibility for a later act, but acceptance, reliance, admission, projection, recording, and implementation action remain separate family-local boundaries.
+A result, preserved record, rendering, index entry, or otherwise reachable material may become locally visible to a bounded exact Act, observer, diagnostic, projection, or later inquiry without becoming accepted, admitted, relied upon, projected as truth, written to the event ledger, or authorized for mutation. Reachability can create a lawful possibility for a later act, but acceptance, reliance, admission, projection, recording, and implementation action remain separate family-local boundaries.
 
 ### 01.Standing.B — Constitutional kind labels are not ontology closure
-A kind label, artifact form, characterization category, dataclass name, concordance entry, inventory row, or recurring report type may preserve a bounded standing distinction for the subject and exact Act it names. It does not close Seed's constitutional ontology, make all similarly named materials equivalent, establish a mandatory artifact grammar, or supply kind-specific production authority without preserved evidence, provenance, scope, confidence limits, Unknowns, and the applicable production or establishment boundary.
+A kind label, artifact form, characterization category, dataclass name, concordance entry, inventory row, or recurring report type may preserve a bounded Standing distinction for the subject and exact Act it names. It does not close Seed's constitutional ontology, make similarly named material equivalent, establish mandatory grammar, or supply Authority for the exact Act without preserved Evidence, provenance, Scope, Unknowns, and the applicable occurrence boundary.
 
 ### 01.Standing.C — Constructed behavior does not confer standing
-Compiled behavior, artifact construction, stable serialization, and compatibility evidence may witness what an observer, projection, adapter, or other constructed mechanism does within a bounded implementation seam. They do not establish the constitutional standing suggested by an artifact's name, output vocabulary, or observed behavior. Such standing still requires its own subject, responsible occurrence, evidence, scope, authority, limits, and kind-specific production or establishment boundary.
+Compiled behavior, direct instantiation, stable serialization, and compatibility Evidence may witness what an observer, projection, adapter, or other mechanism does within a bounded implementation seam. They do not establish the Standing suggested by a name, output vocabulary, or observed behavior. Such Standing still requires its own subject, responsible occurrence, Evidence, Scope, Authority, and limits.
 
 ### 01.Standing.D — Multiplicity does not establish a collective
 Co-presence or multiplicity does not establish membership, collective Standing, relation, topology, ordering, Selection, priority, focus, a shared Act or result boundary, or higher-order identity. Each stronger Assertion requires its own bounded subject and Warrant.
@@ -29,7 +29,7 @@ Co-presence or multiplicity does not establish membership, collective Standing, 
 ### 01.Standing.D.1 — An Assertion owns fidelity of its Standing
 A bounded **Assertion** is the exact asserted content as its own subject under its carried Evidence, provenance, Scope, Authority, conflicts, limits, **Unknowns**, and current Standing. An Assertion owns the Responsibility for fidelity of its Standing to those applicable coordinates. Assertion ownership is local to that bounded Assertion; it does not create a universal assertion manager, knowledge owner, or conflict resolver.
 
-The Assertion does not thereby perform or own the Act that produced it, produce itself, or become its producing occurrence. A responsible Act may produce an Assertion and establish only the bounded Standing warranted by that Act's Evidence and Authority. The Assertion's fidelity Responsibility begins with the produced result; it does not relocate production Responsibility or production Evidence into the result. Producing occurrence != Assertion owner, producing Act != Assertion Responsibility, and recorded occurrence != producing occurrence.
+The Assertion does not thereby perform or own the Act that established it, establish itself, or become that Act occurrence. A responsible Act may establish an Assertion and only the bounded Standing warranted by its Evidence and Authority. The Assertion's fidelity Responsibility begins with the result; it does not relocate the Act's Responsibility or occurrence-result Evidence into the result. Act occurrence != Assertion owner, result-establishing Act != Assertion Responsibility, and recorded occurrence != result-establishing occurrence.
 
 An Assertion having current Standing does not require another Act merely because it exists. New, changed, or conflicting material does not automatically revise its Standing; different exact asserted content identifies a different Assertion rather than revising this Assertion's identity. An **Unknown** does not create a required result to eliminate it. Further movement requires an applicable responsible occurrence with its own Act, Evidence, Scope, Authority, and limits. In the absence of such an occurrence, preserving the Assertion and its current Standing unchanged is lawful persistence, not an inferred constitutional Stop.
 
@@ -62,7 +62,7 @@ An alternative input does not participate by availability, similarity, equal con
 
 One bounded responsible occurrence may determine Applicability for inputs, exclude **inapplicable**, **conflicting**, or **Unknown** inputs, perform the exact Act or establish no Act occurrence within its assigned boundaries, and, where independently warranted, establish bounded output Standing. These remain independently recoverable Assertions with their own exact coordinates. Same occurrence is not same Assertion; Applicability success is not Act occurrence; Act occurrence is not output Standing automatically established; and output Standing is not downstream Applicability or Admission.
 
-A warranted Act may establish only the bounded Standing of its own result when its Evidence and Authority warrant that exact Assertion. Produced result does not automatically establish Standing. Lawfully established Standing persists without later consumption, but persistence does not establish another Act, Responsibility, result boundary, or occurrence. Applicability does not establish production, Question formation, or implementation Authority.
+A warranted Act may establish only the bounded Standing of its own result when its Evidence and Authority warrant that exact Assertion. Result existence does not automatically establish Standing. Lawfully established Standing persists without later consumption, but persistence does not establish another Act, Responsibility, result boundary, or occurrence. Applicability does not establish a result, Question formation, or implementation Authority.
 
 ### 01.Standing.F — Dimensional characterization
 Seed commonly orients exact constitutional subjects and relations through approximately eight recurring macro-dimensional families:
@@ -85,8 +85,8 @@ Acts, constraints, and relations are structurally distinct from dimensions. They
 **Unknown** Standing is not a closed taxonomy. A coordinate, relation, question, or Standing may remain **Unknown** when its required Evidence, Authority, provenance, occurrence, Applicability, or other local relation is not warranted or available. It remains bounded to its exact subject, question, Act, result boundary, Scope, Evidence, Authority, and responsible occurrence. Inapplicable != **Unknown**.
 
 ## Important distinctions
-- occurrence evidence may be local to a producing or observing boundary and absent from the resulting artifact
-- represented provenance != verified production occurrence
+- occurrence Evidence may be local to an Act or observing boundary and absent from the result
+- represented provenance != verified result occurrence
 - artifact representation != constitutional standing
 - artifact shape != constitutional kind
 - schema validity != lawful provenance
@@ -98,7 +98,7 @@ Acts, constraints, and relations are structurally distinct from dimensions. They
 - act-local standing != inherited responsible occurrence standing
 - constructed behavior != constitutional standing
 - multiplicity != collective standing
-- Assertion owner != responsible occurrence or producing Act
+- Assertion owner != responsible occurrence or result-establishing Act
 - Assertion Standing persists != automatic continuation or constitutional Stop
 - new or conflicting material available != Assertion automatically revised
 - Evidence that does not warrant a relation Assertion != its negation or an opposing strengthened relation
@@ -118,5 +118,5 @@ Acts, constraints, and relations are structurally distinct from dimensions. They
 - Inferring standing solely from a public export.
 
 ## Related chapters
-- [Constructors and production authority](constructors-and-production-authority.md)
+- [Authority Scope](../08-authority-communication-and-stopping/authority-scope.md)
 - [Recording and knowledge extraction](../05-evidence-and-knowledge/recording-and-knowledge-extraction.md)

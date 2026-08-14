@@ -6,7 +6,6 @@ Navigation only. Entries do not grant constitutional identity or Standing.
 |---|---|---|
 | external source coordinates | Grammar and Standing | [External and constitutional grammar](01-grammar-and-standing/external-and-constitutional-grammar.md) |
 | Assertion Standing | Grammar and Standing | [Constitutional Standing](01-grammar-and-standing/constitutional-standing.md) |
-| constructor and production Authority | Grammar and Standing | [Constructors and production Authority](01-grammar-and-standing/constructors-and-production-authority.md) |
 | Act and occurrence | Acts and Constraints | [Acts and occurrences](02-acts-and-constraints/acts-and-act-artifacts.md) |
 | Constraint | Acts and Constraints | [Constraints and preconditions](02-acts-and-constraints/constraints-and-preconditions.md) |
 | Selection | Acts and Constraints | [Selection and Selection Acts](02-acts-and-constraints/selection-artifacts-and-selection-acts.md) |

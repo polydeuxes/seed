@@ -25,7 +25,7 @@ Temporal coordinates distinguish what time an Assertion describes, when Evidence
 ## Important distinctions
 
 - source label != source relation
-- material origin != external production occurrence
+- material origin != external result occurrence
 - source occurrence absent != source occurrence invented
 - source relation Standing != asserted-content Standing
 - recording != establishment

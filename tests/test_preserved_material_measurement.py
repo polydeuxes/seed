@@ -1421,7 +1421,7 @@ def test_responsibility_does_not_follow_the_provenance(recurrence_occurrences):
 
 
 # --------------------------------------------------------------------------
-# The production witness. `01.Constructors` separates mechanical construction
+# The production witness. The Book HEAD separates mechanical construction
 # from a witnessed producing-act return; these fix which is which.
 # --------------------------------------------------------------------------
 
@@ -1464,7 +1464,7 @@ def test_a_produced_result_records(recurrence_occurrences):
 def test_an_identical_finding_nobody_produced_cannot_reuse_the_witness(
     recurrence_occurrences,
 ):
-    """The exact `01.Constructors` counterexample: identical fields."""
+    """The exact direct-instantiation counterexample: identical fields."""
 
     ledger, occurrences = recurrence_occurrences
     produced = _produced(ledger, occurrences)

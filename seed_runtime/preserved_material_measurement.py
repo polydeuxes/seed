@@ -267,7 +267,8 @@ class RecurrenceFinding:
     # Which preserved production evidence concerns this result. Named for the
     # evidence rather than for a production occurrence: it holds an occurrence reference,
     # and the production occurrence stays unrecovered. `produced_by` said otherwise by
-    # ordinary reading while the payload beside it said unrecovered. `01.Constructors`
+    # ordinary reading while the payload beside it said unrecovered. The
+    # production branches in the Book HEAD
     # holds that a separately constructed representation with identical fields
     # does not carry the witnessed return's standing "unless that standing is
     # separately represented or preserved". Content equality cannot supply it:
@@ -570,7 +571,7 @@ def _record_production(
     that production standing is preserved at the producing boundary, and
     the result carries the relation to it — so a separately constructed
     representation with identical fields carries no such relation, which is the
-    counterexample `01.Constructors` states. An earlier attempt exposed this
+    direct-instantiation counterexample states. An earlier attempt exposed this
     publicly, which made it a second recorder: a caller holding any object could
     record a production over it, establishing only that a caller possessed
     something and called a function.
@@ -584,7 +585,7 @@ def _record_production(
       not           that nothing else appended this kind directly
     ```
 
-    The second and third are the `01.Constructors` crossing and stay
+    The second and third are the production-occurrence crossing and stay
     unrecovered; the payload records them as such rather than filling them. The
     fourth is true of every kind in this ledger.
 

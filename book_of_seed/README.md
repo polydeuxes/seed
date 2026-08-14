@@ -77,21 +77,21 @@ Identifies where the exact consumed material came from. Source does not establis
 
 #### Provenance
 
-Identifies the attributed source, production, preservation, and occurrence history required by the exact use. Source and provenance remain distinct.
+Identifies the attributed source, preservation, and occurrence history required by the exact use. Source and provenance remain distinct.
 
 ### Conditional warrant branches
 
-These branches are required where the responsibility relies upon, produces, establishes, or presents a substantive assertion, relation, act, result, standing, or reliance claim.
+These branches are required where the Responsibility relies upon or establishes a substantive Assertion, relation, Act, result, Standing, or reliance claim.
 
 #### Warranted subject
 
 Identifies the exact assertion, relation, act, result, standing, or reliance claim that the Warrant supports. A nearby Warrant belonging to another subject or responsibility does not automatically occupy this coordinate.
 
-#### Warrant-producing boundary
+#### Warrant-establishing boundary
 
-Identifies the responsible boundary that produces the exact Warrant. It may differ from the responsibility that later consumes the Warrant.
+Identifies the responsible boundary that establishes the exact Warrant. It may differ from the responsibility that later consumes the Warrant.
 
-#### Warrant-producing occurrence
+#### Warrant-establishing occurrence
 
 Identifies the exact occurrence that establishes the Warrant. This occurrence must not be inferred from artifact carriage, reference presence, or adjacency.
 
@@ -108,7 +108,7 @@ Warrant
 
 #### Warrant exact Act and reliance boundary
 
-Where the exact Warrant has an established exact Act, this branch identifies that Act and the exact subject/result relation for which the Warrant may be relied upon. Warrant production does not create the Act, that reliance relation, or later reliance by identity.
+Where the exact Warrant has an established exact Act, this branch identifies that Act and the exact subject/result relation for which the Warrant may be relied upon. Establishing Warrant does not create the Act, that reliance relation, or later reliance by identity.
 
 ### Act-occurrence and non-occurrence branches
 
@@ -125,7 +125,7 @@ act
 
 #### Absence-of-act-occurrence finding
 
-Identifies the separately responsible occurrence and result that establish that the proposed exact act did not occur. The finding is not the absent act's occurrence. It may itself be a lawfully produced result under its own responsibility, evidence, Authority, scope, and Warrant.
+Identifies the separately responsible occurrence and result that establish that the proposed exact Act did not occur. The finding is not the absent Act's occurrence. It may itself be a lawful result under its own Responsibility, Evidence, Authority, Scope, and Warrant.
 
 ```text
 absence-of-act-occurrence finding
@@ -142,32 +142,25 @@ absence finding
 
 Identifies the evidence supporting the exact act-occurrence claim, failed-act-occurrence claim, or absence-of-act-occurrence finding. An absence-of-act-occurrence finding must not fabricate the absent act's result.
 
-### Result-production branches
+### Result branches
 
-These branches apply where the exact responsibility produces a result.
+These branches apply where the exact Act occurrence establishes or preserves a result. Publicly callable code, direct instantiation, constructability, and a returned shape do not establish the Act, its Authority, its occurrence, or its relation to the result.
 
-#### Production boundary
+#### Occurrence-result Evidence
 
-Identifies the exact responsible Act boundary that forms or produces the result.
-
-#### Production occurrence
-
-Identifies the exact occurrence that produces the result. Production Evidence binds this occurrence to the exact result; no additional producing-participant coordinate is implied.
+Identifies the Evidence that the exact Act occurrence established or preserved the exact result. Result existence and equal shape do not establish that relation.
 
 ```text
-act occurrence
-!= production occurrence
+same-shaped result
+!= same Act occurrence-to-result relation
+
+Act occurrence
+!= Standing-establishment occurrence
 ```
-
-The two may coincide only where the exact responsibility establishes that identity.
-
-#### Production-occurrence evidence
-
-Identifies the evidence warranting the production-occurrence claim. Result existence does not prove its producing occurrence.
 
 #### Result
 
-Identifies the exact result produced or preserved by the responsibility.
+Identifies the exact result established or preserved by the Act occurrence.
 
 ```text
 result
@@ -180,14 +173,14 @@ These branches apply where standing is claimed for a result, relation, assertion
 
 #### Standing-establishment boundary
 
-Identifies the responsible boundary that establishes the claimed standing. It may be the production boundary or a separately assigned responsibility; identity must be established.
+Identifies the responsible boundary that establishes the claimed Standing. It may be the result's Act boundary or a separately assigned Responsibility; identity must be established.
 
 #### Standing-establishment occurrence
 
 Identifies the exact occurrence that establishes the standing.
 
 ```text
-production occurrence
+Act occurrence
 != standing-establishment occurrence
 ```
 
@@ -199,19 +192,19 @@ Identifies the evidence warranting the standing-establishment occurrence. Artifa
 
 Identifies the exact standing established for the exact result, relation, assertion, input-to-act relation, or other bounded subject.
 
-Where the subject is a produced result, this is result standing.
+Where the subject is a result, this is result standing.
 
-Where the subject is not a produced result, the standing retains the exact identity of its own subject and must not be renamed result standing.
+Where the subject is not a result, the standing retains the exact identity of its own subject and must not be renamed result standing.
 
 ```text
-produced result
+result
 != established standing automatically
 
 subject existence
 != standing established
 
 standing-establishment occurrence
-!= production occurrence automatically
+!= Act occurrence automatically
 ```
 
 ### Conditional preservation, standing, and neighboring branches
@@ -220,7 +213,7 @@ These branches are exposed only where the exact responsibility instantiates them
 
 #### Preservation record
 
-Identifies any separately retained representation or record preserving an Act, production, Standing establishment, Warrant, result, or other occurrence. A preservation record does not prove the preserved occurrence by identity.
+Identifies any separately retained representation or record preserving an Act, Standing establishment, Warrant, result, or other occurrence. A preservation record does not prove the preserved occurrence by identity.
 
 #### Separate Authorization standing
 
@@ -241,7 +234,7 @@ Constraint
 
 #### Lawful Stopping
 
-Where the exact responsibility establishes lawful Stopping, preserve separately the responsible owner, stopping act, stopping occurrence, and bounded Stop result. Identity among those coordinates must not be inferred. It is not reclassified as a relation merely because it connects a reason-producing responsibility to the exact act for which Stopping is established. Absence of movement, unresolved material, a negative standing, or a preventing condition does not establish a Stop by identity.
+Where the exact responsibility establishes lawful Stopping, preserve separately the responsible owner, stopping act, stopping occurrence, and bounded Stop result. Identity among those coordinates must not be inferred. It is not reclassified as a relation merely because it connects a reason-forming responsibility to the exact act for which Stopping is established. Absence of movement, unresolved material, a negative standing, or a preventing condition does not establish a Stop by identity.
 
 ```text
 absence of movement

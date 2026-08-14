@@ -30,8 +30,8 @@ def test_assertion_fidelity_responsibility_has_exact_coordinates():
         ],
     }
     assert set(clause["distinct_from"]) == {
-        "producing_Act",
-        "producing_occurrence",
+        "establishing_Act",
+        "establishing_occurrence",
         "recording_occurrence",
     }
 
