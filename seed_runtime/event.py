@@ -53,7 +53,7 @@ def _require_preservable_payload(value: Any, path: str = "payload") -> None:
     JSON has no tuple and no non-string key, so a durable store silently
     returned `[1, 2]` for a tuple and `{"1": ...}` for an integer key while the
     in-memory ledger returned what the caller passed. The two share an API and
-    are used interchangeably, so one append produced two different occurrences
+    are used interchangeably, so one append yielded two different occurrences
     depending on which ledger held it, with nothing recorded to say so.
 
     Refused rather than coerced, and rather than declared as known loss: the

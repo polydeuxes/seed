@@ -41,7 +41,7 @@ def _record_distinct(collected: list[str], value: str) -> None:
 
     The returned coordinate is a sorted list of distinct strings, as it has
     always been.  Adding a value already present does nothing, so an advance
-    that produces no new value costs nothing.
+    that yields no new value costs nothing.
     """
 
     index = bisect_left(collected, value)
@@ -56,7 +56,7 @@ def read_operator_session_standing(
 
     Equivalent to advancing from no prior Standing over every recorded event.
     `#2376` established that advancing from a prior Standing over only the
-    occurrences after its boundary produces the same result, so a caller that
+    occurrences after its boundary yields the same result, so a caller that
     already holds its Standing and knows what it just recorded should use
     :func:`advance_operator_session_standing` instead of replaying.
     """
@@ -106,7 +106,7 @@ def advance_operator_session_standing(
     from the ledger and is not itself recorded: it exposes only standings,
     limits, and Unknowns the session's events already carry.  An empty
     coordinate is absence of record, not negative standing and not Unknown.
-    Represented relation candidates are never produced here; each preserved ingress keeps
+    Represented relation candidates are never yielded here; each preserved ingress keeps
     the authority its own event recorded.
     """
     scope = f"workspace:{workspace_id};session:{session_id}"
@@ -750,7 +750,7 @@ def advance_operator_session_standing(
                     **reconstructed,
                     "source_role": carried.get("source_role"),
                 }
-            # The relation's remaining Standing coordinates are production occurrence
+            # The relation's remaining Standing coordinates are yield occurrence
             # invariants at this boundary; a forged loss, Unknown, or
             # conflict inventory is refused rather than exposed.
             reconstructed_relation_standing = {

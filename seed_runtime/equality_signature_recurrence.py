@@ -1,7 +1,7 @@
-"""Count productions of exact equality-signature Assertions.
+"""Count yields of exact equality-signature Assertions.
 
 Canonical signature identity supplies the grouping boundary.  This declared
-Measurement produces an exact production set, its count, and recurrence only
+Measurement yields an exact yield set, its count, and recurrence only
 where the count exceeds one.  It forms no pairs and establishes no
 Equivalence, similarity, relation, profile, represented relation, or significance.
 """
@@ -39,12 +39,12 @@ MEASUREMENT_AUTHORITY = (
 MEASUREMENT_UNKNOWNS = (
     "why this exact equality signature recurs remains Unknown",
 )
-PRODUCTION_SET_FORBIDDEN_INFERENCES = (
-    "an exact production set is not recurrence, Equivalence, similarity, relation, "
+YIELD_SET_FORBIDDEN_INFERENCES = (
+    "an exact yield set is not recurrence, Equivalence, similarity, relation, "
     "profile, represented relation, significance, or Standing strength",
 )
 COUNT_FORBIDDEN_INFERENCES = (
-    "a production count does not itself produce recurrence, Equivalence, "
+    "a yield count does not itself yield recurrence, Equivalence, "
     "similarity, relation, profile, represented relation, significance, or Standing strength",
 )
 RECURRENCE_FORBIDDEN_INFERENCES = (
@@ -63,26 +63,26 @@ class MeasuredEqualitySignatureCount:
     signature_subject: dict[str, Any]
     signature_content: dict[str, Any]
     assertion_scope: dict[str, Any]
-    production_refs: tuple[dict[str, str], ...]
+    yield_refs: tuple[dict[str, str], ...]
     completeness_boundary: EventLedgerBoundary
     source_session_ids: tuple[str, ...]
 
     @property
     def count(self) -> int:
-        return len(self.production_refs)
+        return len(self.yield_refs)
 
 
 @dataclass(frozen=True)
 class RecordedEqualitySignatureCountAssertion:
     assertion_id: str
-    producing_event_id: str
+    yielding_event_id: str
     result: str
     payload: dict[str, Any]
 
     @property
     def reference(self) -> dict[str, str]:
         return {
-            "producing_event_id": self.producing_event_id,
+            "yielding_event_id": self.yielding_event_id,
             "assertion_id": self.assertion_id,
         }
 
@@ -169,7 +169,7 @@ def measure_equality_signature_counts(
             signature_subject=dict(exemplar.payload["assertion_subject"]),
             signature_content=dict(exemplar.payload["dimensions"]["content"]),
             assertion_scope=dict(exemplar.payload["assertion_scope"]),
-            production_refs=tuple(refs),
+            yield_refs=tuple(refs),
             completeness_boundary=boundary,
             source_session_ids=sessions,
         ))
@@ -187,11 +187,11 @@ def _subject(finding: MeasuredEqualitySignatureCount) -> dict[str, Any]:
 def _assertions(finding: MeasuredEqualitySignatureCount) -> list[dict[str, Any]]:
     subject = _subject(finding)
     scope = finding.assertion_scope
-    refs = list(finding.production_refs)
-    set_content = {"production_refs": refs}
-    count_content = {"production_count": finding.count}
+    refs = list(finding.yield_refs)
+    set_content = {"yield_refs": refs}
+    count_content = {"yield_count": finding.count}
     set_id = _identity(
-        result="exact_production_set", subject=subject, scope=scope, content=set_content
+        result="exact_yield_set", subject=subject, scope=scope, content=set_content
     )
     count_id = _identity(
         result="count", subject=subject, scope=scope, content=count_content
@@ -223,12 +223,12 @@ def _assertions(finding: MeasuredEqualitySignatureCount) -> list[dict[str, Any]]
     results = [
         {
             **shell(
-                result="exact_production_set",
+                result="exact_yield_set",
                 identity=set_id,
                 content=set_content,
-                provenance="recorded exact equality-signature Assertion productions",
+                provenance="recorded exact equality-signature Assertion yields",
                 support={"assertion_refs": refs},
-                forbidden=PRODUCTION_SET_FORBIDDEN_INFERENCES,
+                forbidden=YIELD_SET_FORBIDDEN_INFERENCES,
             ),
             "completeness_boundary": {
                 "commitment": finding.completeness_boundary.commitment
@@ -243,7 +243,7 @@ def _assertions(finding: MeasuredEqualitySignatureCount) -> list[dict[str, Any]]
             result="count",
             identity=count_id,
             content=count_content,
-            provenance="the exact production-set Assertion carried here",
+            provenance="the exact yield-set Assertion carried here",
             support={"local_assertion_ids": [set_id]},
             forbidden=COUNT_FORBIDDEN_INFERENCES,
         ),
@@ -285,7 +285,7 @@ def _event(
                 "source_provenance": "recorded exact equality-signature Assertions",
                 "authority": MEASUREMENT_AUTHORITY,
             },
-            "producing_act": "declared Measurement",
+            "yielding_act": "declared Measurement",
             "measurement_subject": "recorded exact equality-signature Assertions",
             "assertions": assertions,
         },
@@ -346,7 +346,7 @@ def assertions_of_recorded_equality_signature_count(
             "source_provenance": "recorded exact equality-signature Assertions",
             "authority": MEASUREMENT_AUTHORITY,
         }
-        or event.payload.get("producing_act") != "declared Measurement"
+        or event.payload.get("yielding_act") != "declared Measurement"
         or event.payload.get("measurement_subject")
         != "recorded exact equality-signature Assertions"
     ):
@@ -357,24 +357,24 @@ def assertions_of_recorded_equality_signature_count(
         item.get("result"): item for item in stated if isinstance(item, dict)
     }
     if set(by_result) not in (
-        {"exact_production_set", "count"},
-        {"exact_production_set", "count", "recurrence"},
+        {"exact_yield_set", "count"},
+        {"exact_yield_set", "count", "recurrence"},
     ):
         raise EqualitySignatureRecurrenceError(
             f"{event.id} does not carry the exact result set"
         )
-    production_set = by_result["exact_production_set"]
+    yield_set = by_result["exact_yield_set"]
     count = by_result["count"]
     recurrence = by_result.get("recurrence")
-    set_dimensions = production_set.get("dimensions")
+    set_dimensions = yield_set.get("dimensions")
     count_dimensions = count.get("dimensions")
-    subject = production_set.get("assertion_subject")
-    scope = production_set.get("assertion_scope")
+    subject = yield_set.get("assertion_subject")
+    scope = yield_set.get("assertion_scope")
     set_content = set_dimensions.get("content") if isinstance(set_dimensions, dict) else None
     count_content = count_dimensions.get("content") if isinstance(count_dimensions, dict) else None
-    refs = set_content.get("production_refs") if isinstance(set_content, dict) else None
-    boundary = production_set.get("completeness_boundary")
-    completeness_scope = production_set.get("completeness_scope")
+    refs = set_content.get("yield_refs") if isinstance(set_content, dict) else None
+    boundary = yield_set.get("completeness_boundary")
+    completeness_scope = yield_set.get("completeness_scope")
     if (
         not isinstance(subject, dict)
         or set(subject)
@@ -389,11 +389,11 @@ def assertions_of_recorded_equality_signature_count(
         or not refs
         or any(
             not isinstance(ref, dict)
-            or set(ref) != {"producing_event_id", "assertion_id"}
+            or set(ref) != {"yielding_event_id", "assertion_id"}
             or ref["assertion_id"] != subject["measured_assertion_id"]
             for ref in refs
         )
-        or production_set.get("support_basis") != {"assertion_refs": refs}
+        or yield_set.get("support_basis") != {"assertion_refs": refs}
         or not isinstance(boundary, dict)
         or set(boundary) != {"commitment"}
         or not isinstance(boundary["commitment"], str)
@@ -407,7 +407,7 @@ def assertions_of_recorded_equality_signature_count(
         != EQUALITY_SIGNATURE_RECORDED_KIND
         or count.get("assertion_subject") != subject
         or count.get("assertion_scope") != scope
-        or count_content != {"production_count": len(refs)}
+        or count_content != {"yield_count": len(refs)}
         or (recurrence is None) != (len(refs) == 1)
     ):
         raise EqualitySignatureRecurrenceError(
@@ -432,14 +432,14 @@ def assertions_of_recorded_equality_signature_count(
             )
 
     require_shell(
-        production_set,
+        yield_set,
         set_dimensions,
-        "recorded exact equality-signature Assertion productions",
+        "recorded exact equality-signature Assertion yields",
         {"assertion_refs": refs},
-        PRODUCTION_SET_FORBIDDEN_INFERENCES,
+        YIELD_SET_FORBIDDEN_INFERENCES,
     )
     set_id = _identity(
-        result="exact_production_set", subject=subject, scope=scope, content=set_content
+        result="exact_yield_set", subject=subject, scope=scope, content=set_content
     )
     count_id = _identity(
         result="count", subject=subject, scope=scope, content=count_content
@@ -447,7 +447,7 @@ def assertions_of_recorded_equality_signature_count(
     require_shell(
         count,
         count_dimensions,
-        "the exact production-set Assertion carried here",
+        "the exact yield-set Assertion carried here",
         {"local_assertion_ids": [set_id]},
         COUNT_FORBIDDEN_INFERENCES,
     )
@@ -460,7 +460,7 @@ def assertions_of_recorded_equality_signature_count(
         raise EqualitySignatureRecurrenceError(
             f"{event.id} carries a noncanonical Assertion or dependency"
         )
-    ordered = [production_set, count]
+    ordered = [yield_set, count]
     if recurrence is not None:
         recurrence_dimensions = recurrence.get("dimensions")
         recurrence_content = (
@@ -496,7 +496,7 @@ def assertions_of_recorded_equality_signature_count(
     return tuple(
         RecordedEqualitySignatureCountAssertion(
             assertion_id=item["dimensions"]["identity"],
-            producing_event_id=event.id,
+            yielding_event_id=event.id,
             result=item["result"],
             payload=item,
         )
@@ -507,12 +507,12 @@ def assertions_of_recorded_equality_signature_count(
 def get_recorded_equality_signature_count(
     ledger: EventLedger,
     *,
-    producing_event_id: str,
+    yielding_event_id: str,
     assertion_id: str,
 ) -> RecordedEqualitySignatureCountAssertion | None:
     """Resolve one result after proving its complete signature inputs."""
 
-    event = ledger.get(producing_event_id)
+    event = ledger.get(yielding_event_id)
     if event is None:
         return None
     if ledger.integrity_of(event.id) == CORRUPTED:
@@ -520,8 +520,8 @@ def get_recorded_equality_signature_count(
             "a corrupted Measurement occurrence cannot expose result Assertions"
         )
     reconstructed = assertions_of_recorded_equality_signature_count(event)
-    production_set = next(item for item in reconstructed if item.result == "exact_production_set")
-    payload = production_set.payload
+    yield_set = next(item for item in reconstructed if item.result == "exact_yield_set")
+    payload = yield_set.payload
     completeness_scope = payload["completeness_scope"]
     boundary = EventLedgerBoundary(payload["completeness_boundary"]["commitment"])
     measured_subject = payload["assertion_subject"]
@@ -550,7 +550,7 @@ def get_recorded_equality_signature_count(
         raise EqualitySignatureRecurrenceError(str(exc)) from exc
     if expected_refs != payload["support_basis"]["assertion_refs"]:
         raise EqualitySignatureRecurrenceError(
-            "the carried production set does not equal the complete bounded read"
+            "the carried yield set does not equal the complete bounded read"
         )
     for item in reconstructed:
         if item.assertion_id == assertion_id:

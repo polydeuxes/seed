@@ -90,7 +90,7 @@ def test_measurement_emits_exactly_the_validation_owned_immediate_surface():
     )
 
 
-def test_same_exact_coordinate_value_has_one_identity_and_distinct_productions():
+def test_same_exact_coordinate_value_has_one_identity_and_distinct_yields():
     ledger = _recurrence_inputs()
     recorded = record_recurrence_subject_coordinate_layer(
         ledger,
@@ -115,7 +115,7 @@ def test_same_exact_coordinate_value_has_one_identity_and_distinct_productions()
     ]
     assert len(coordinate_results) == 2
     assert len({item.assertion_id for item in coordinate_results}) == 1
-    assert len({item.producing_event_id for item in coordinate_results}) == 2
+    assert len({item.yielding_event_id for item in coordinate_results}) == 2
 
 
 def test_recording_preserves_one_source_and_three_distinct_results_per_occurrence():
@@ -141,7 +141,7 @@ def test_recording_preserves_one_source_and_three_distinct_results_per_occurrenc
     assert all(
         get_recorded_recurrence_subject_coordinate_assertion(
             ledger,
-            producing_event_id=event.id,
+            yielding_event_id=event.id,
             assertion_id=item.assertion_id,
         )
         == item
@@ -169,7 +169,7 @@ def test_validation_refuses_a_coordinate_value_that_disagrees_with_its_source():
     with pytest.raises(RecurrenceSubjectMeasurementError):
         get_recorded_recurrence_subject_coordinate_assertion(
             ledger,
-            producing_event_id=event.id,
+            yielding_event_id=event.id,
             assertion_id=assertion["dimensions"]["identity"],
         )
 
@@ -197,7 +197,7 @@ def test_validation_refuses_a_self_consistent_scope_not_carried_by_its_source():
     with pytest.raises(RecurrenceSubjectMeasurementError):
         get_recorded_recurrence_subject_coordinate_assertion(
             ledger,
-            producing_event_id=event.id,
+            yielding_event_id=event.id,
             assertion_id=assertion["dimensions"]["identity"],
         )
 

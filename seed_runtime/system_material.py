@@ -11,12 +11,12 @@ A third boundary, distinct from the two that exist:
 **This is what a second eye sees.** System-origin material — a
 directory listing, a file's contents, a program's output, a process exiting, a
 file changing, a device delivering something. It is the first Evidence available
-to Seed that neither the operator supplied nor Seed produced.
+to Seed that neither the operator supplied nor Seed yielded.
 
 **No invocation is required.** An earlier revision of this module made system
 material inherently the answer to an invocation, carried the invocation's
 identity as a coordinate of the material, and named the occurrence "returned".
-That is too narrow — the system produces material without anyone asking — and it
+That is too narrow — the system yields material without anyone asking — and it
 is the shape this repository has repeatedly refused: a relation between two
 preserved subjects is its own bounded subject, not a coordinate of one
 participant. An invocation and the material that followed it are two
@@ -43,7 +43,7 @@ harness that ran a subprocess can attest to running it; it cannot attest on
 behalf of a party it merely names.
 
 So no record here says Seed invoked anything. When Seed may invoke on its own
-authority, that is a separate reconstruction, and only the production occurrence of the invoking
+authority, that is a separate reconstruction, and only the yield occurrence of the invoking
 Act changes — the eye does not.
 
 ## The exchange is declared, not derived from an invocation
@@ -205,8 +205,8 @@ def preserve_system_material(
 ) -> Event:
     """Record that exact system-origin material occurred.
 
-    No invocation is required or referenced. Material the system produced
-    because someone asked, and material it produced because a process exited or
+    No invocation is required or referenced. Material the system yielded
+    because someone asked, and material it yielded because a process exited or
     a file changed, are the same kind of occurrence here. Whether some
     particular material followed some particular invocation is a relation
     between two preserved subjects, which is its own bounded subject and is not
@@ -246,7 +246,7 @@ def preserve_system_material(
                 ],
                 "unknowns": [
                     "what this material represents remains Unknown",
-                    "what produced it remains Unknown",
+                    "what yielded it remains Unknown",
                 ],
                 "mutates_cluster": False,
                 "provenance_occurrence_refs": [],

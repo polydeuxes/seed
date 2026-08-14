@@ -37,7 +37,7 @@ def test_a_reference_may_reuse_bytes_that_an_earlier_reference_reconstructed():
         parts=(
             LiteralPart(b"abcd"),
             ReferencePart(start=0, length=4),
-            # These bytes were themselves produced by the preceding reference.
+            # These bytes were themselves yielded by the preceding reference.
             ReferencePart(start=4, length=4),
         ),
     )
@@ -151,7 +151,7 @@ def test_encoder_parameters_are_exactly_bounded():
             form_exact_material_pointers(b"abc", candidate_limit=bad)
 
 
-def test_the_account_declares_the_representation_act_that_produced_it():
+def test_the_account_declares_the_representation_act_that_yielded_it():
     """The same material yields different accounts under different bounds, so
     an account that did not disclose its bounds would read as complete."""
 
@@ -436,4 +436,4 @@ def test_a_candidate_too_close_to_the_current_position_is_not_referenced():
             placed += part.length
         else:
             placed += len(part.exact_bytes)
-    assert references, "a run should still produce at least one reference"
+    assert references, "a run should still yield at least one reference"

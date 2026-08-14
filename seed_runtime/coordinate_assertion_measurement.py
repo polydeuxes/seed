@@ -1,7 +1,7 @@
-"""Count productions of exact recurrence-subject coordinate Assertions.
+"""Count yields of exact recurrence-subject coordinate Assertions.
 
 Canonical Assertion identity supplies the grouping rule.  The Measurement
-forms no pairs and produces only an exact production set, its count, and a
+forms no pairs and yields only an exact yield set, its count, and a
 recurrence result where that count exceeds one.
 """
 
@@ -37,14 +37,14 @@ MEASUREMENT_AUTHORITY = (
     "profile, represented relation, or Standing movement"
 )
 MEASUREMENT_UNKNOWNS = (
-    "why this exact coordinate Assertion has this production count remains Unknown",
+    "why this exact coordinate Assertion has this yield count remains Unknown",
 )
-PRODUCTION_SET_FORBIDDEN_INFERENCES = (
-    "an exact production set is not recurrence, relation, similarity, profile, "
+YIELD_SET_FORBIDDEN_INFERENCES = (
+    "an exact yield set is not recurrence, relation, similarity, profile, "
     "represented relation, or Standing strength",
 )
 COUNT_FORBIDDEN_INFERENCES = (
-    "count greater than one does not itself produce recurrence, relation, "
+    "count greater than one does not itself yield recurrence, relation, "
     "similarity, profile, represented relation, or Standing movement",
 )
 RECURRENCE_FORBIDDEN_INFERENCES = (
@@ -63,27 +63,27 @@ class MeasuredCoordinateAssertionCount:
     source_assertion_subject: dict[str, Any]
     exact_coordinate_value: Any
     assertion_scope: dict[str, Any]
-    production_refs: tuple[dict[str, str], ...]
+    yield_refs: tuple[dict[str, str], ...]
     workspace_id: str
     source_session_ids: tuple[str, ...]
     completeness_boundary: EventLedgerBoundary
 
     @property
     def count(self) -> int:
-        return len(self.production_refs)
+        return len(self.yield_refs)
 
 
 @dataclass(frozen=True)
 class RecordedCoordinateAssertionCount:
     assertion_id: str
-    producing_event_id: str
+    yielding_event_id: str
     result: str
     payload: dict[str, Any]
 
     @property
     def reference(self) -> dict[str, str]:
         return {
-            "producing_event_id": self.producing_event_id,
+            "yielding_event_id": self.yielding_event_id,
             "assertion_id": self.assertion_id,
         }
 
@@ -114,7 +114,7 @@ def _assertion_identity(
 def _rehydrate_coordinate_assertion(
     ledger: EventLedger, reference: dict[str, str]
 ) -> RecordedRecurrenceSubjectCoordinateAssertion:
-    event = ledger.get(reference["producing_event_id"])
+    event = ledger.get(reference["yielding_event_id"])
     if event is None:
         raise CoordinateAssertionMeasurementError(
             "a measured coordinate Assertion is no longer reconstructible"
@@ -179,7 +179,7 @@ def measure_coordinate_assertion_counts(
                 source_assertion_subject=payload["assertion_subject"],
                 exact_coordinate_value=payload["dimensions"]["content"]["exact_value"],
                 assertion_scope=payload["assertion_scope"],
-                production_refs=tuple(refs),
+                yield_refs=tuple(refs),
                 workspace_id=workspace_id,
                 source_session_ids=sessions,
                 completeness_boundary=boundary,
@@ -197,9 +197,9 @@ def _finding_assertions(
         "exact_coordinate_value": finding.exact_coordinate_value,
     }
     scope = dict(finding.assertion_scope)
-    set_content = {"production_refs": list(finding.production_refs)}
+    set_content = {"yield_refs": list(finding.yield_refs)}
     set_id = _assertion_identity(
-        result="exact_production_set",
+        result="exact_yield_set",
         subject=subject,
         scope=scope,
         content=set_content,
@@ -228,23 +228,23 @@ def _finding_assertions(
             "forbidden_inferences": list(forbidden),
         }
 
-    production_set = assertion_shell(
-        result="exact_production_set",
+    yield_set = assertion_shell(
+        result="exact_yield_set",
         content=set_content,
         identity=set_id,
-        provenance="recorded recurrence-subject coordinate Assertion productions",
-        support_basis={"assertion_refs": list(finding.production_refs)},
-        forbidden=PRODUCTION_SET_FORBIDDEN_INFERENCES,
+        provenance="recorded recurrence-subject coordinate Assertion yields",
+        support_basis={"assertion_refs": list(finding.yield_refs)},
+        forbidden=YIELD_SET_FORBIDDEN_INFERENCES,
     )
-    production_set["completeness_boundary"] = {
+    yield_set["completeness_boundary"] = {
         "commitment": finding.completeness_boundary.commitment
     }
-    production_set["completeness_scope"] = {
+    yield_set["completeness_scope"] = {
         "workspace_id": finding.workspace_id,
         "source_session_ids": list(finding.source_session_ids),
         "occurrence_kind": RECURRENCE_SUBJECT_COORDINATES_RECORDED_KIND,
     }
-    count_content = {"production_count": finding.count}
+    count_content = {"yield_count": finding.count}
     count_id = _assertion_identity(
         result="count", subject=subject, scope=scope, content=count_content
     )
@@ -252,11 +252,11 @@ def _finding_assertions(
         result="count",
         content=count_content,
         identity=count_id,
-        provenance="the exact production-set Assertion carried here",
+        provenance="the exact yield-set Assertion carried here",
         support_basis={"local_assertion_ids": [set_id]},
         forbidden=COUNT_FORBIDDEN_INFERENCES,
     )
-    assertions = [production_set, count]
+    assertions = [yield_set, count]
     if finding.count > 1:
         recurrence_content = {"recurrence_established": True}
         recurrence_id = _assertion_identity(
@@ -293,11 +293,11 @@ def _measurement_event(
                 "content": f"{len(assertions)} distinct measured Assertions recorded",
                 "standing": "recorded",
                 "source_provenance": (
-                    "recorded recurrence-subject coordinate Assertion productions"
+                    "recorded recurrence-subject coordinate Assertion yields"
                 ),
                 "authority": MEASUREMENT_AUTHORITY,
             },
-            "producing_act": "declared Measurement",
+            "yielding_act": "declared Measurement",
             "measurement_subject": (
                 "recorded recurrence-subject coordinate Assertions"
             ),
@@ -360,11 +360,11 @@ def assertions_of_recorded_coordinate_assertion_count(
             "content": f"{len(stated)} distinct measured Assertions recorded",
             "standing": "recorded",
             "source_provenance": (
-                "recorded recurrence-subject coordinate Assertion productions"
+                "recorded recurrence-subject coordinate Assertion yields"
             ),
             "authority": MEASUREMENT_AUTHORITY,
         }
-        or event.payload.get("producing_act") != "declared Measurement"
+        or event.payload.get("yielding_act") != "declared Measurement"
         or event.payload.get("measurement_subject")
         != "recorded recurrence-subject coordinate Assertions"
     ):
@@ -375,24 +375,24 @@ def assertions_of_recorded_coordinate_assertion_count(
         item.get("result"): item for item in stated if isinstance(item, dict)
     }
     if set(by_result) not in (
-        {"exact_production_set", "count"},
-        {"exact_production_set", "count", "recurrence"},
+        {"exact_yield_set", "count"},
+        {"exact_yield_set", "count", "recurrence"},
     ):
         raise CoordinateAssertionMeasurementError(
             f"{event.id} does not carry the exact result set"
         )
-    production_set = by_result["exact_production_set"]
+    yield_set = by_result["exact_yield_set"]
     count = by_result["count"]
     recurrence = by_result.get("recurrence")
-    set_dimensions = production_set.get("dimensions")
+    set_dimensions = yield_set.get("dimensions")
     count_dimensions = count.get("dimensions")
-    subject = production_set.get("assertion_subject")
-    scope = production_set.get("assertion_scope")
+    subject = yield_set.get("assertion_subject")
+    scope = yield_set.get("assertion_scope")
     set_content = set_dimensions.get("content") if isinstance(set_dimensions, dict) else None
     count_content = count_dimensions.get("content") if isinstance(count_dimensions, dict) else None
-    refs = set_content.get("production_refs") if isinstance(set_content, dict) else None
-    boundary = production_set.get("completeness_boundary")
-    completeness_scope = production_set.get("completeness_scope")
+    refs = set_content.get("yield_refs") if isinstance(set_content, dict) else None
+    boundary = yield_set.get("completeness_boundary")
+    completeness_scope = yield_set.get("completeness_scope")
     if (
         not isinstance(subject, dict)
         or set(subject)
@@ -405,11 +405,11 @@ def assertions_of_recorded_coordinate_assertion_count(
         or not refs
         or any(
             not isinstance(ref, dict)
-            or set(ref) != {"producing_event_id", "assertion_id"}
+            or set(ref) != {"yielding_event_id", "assertion_id"}
             or ref["assertion_id"] != subject["measured_assertion_id"]
             for ref in refs
         )
-        or production_set.get("support_basis") != {"assertion_refs": refs}
+        or yield_set.get("support_basis") != {"assertion_refs": refs}
         or not isinstance(boundary, dict)
         or set(boundary) != {"commitment"}
         or not isinstance(boundary["commitment"], str)
@@ -423,7 +423,7 @@ def assertions_of_recorded_coordinate_assertion_count(
         != RECURRENCE_SUBJECT_COORDINATES_RECORDED_KIND
         or count.get("assertion_subject") != subject
         or count.get("assertion_scope") != scope
-        or count_content != {"production_count": len(refs)}
+        or count_content != {"yield_count": len(refs)}
         or (recurrence is None) != (len(refs) == 1)
     ):
         raise CoordinateAssertionMeasurementError(
@@ -448,14 +448,14 @@ def assertions_of_recorded_coordinate_assertion_count(
             )
 
     require_shell(
-        production_set,
+        yield_set,
         set_dimensions,
-        "recorded recurrence-subject coordinate Assertion productions",
+        "recorded recurrence-subject coordinate Assertion yields",
         {"assertion_refs": refs},
-        PRODUCTION_SET_FORBIDDEN_INFERENCES,
+        YIELD_SET_FORBIDDEN_INFERENCES,
     )
     set_id = _assertion_identity(
-        result="exact_production_set", subject=subject, scope=scope, content=set_content
+        result="exact_yield_set", subject=subject, scope=scope, content=set_content
     )
     count_id = _assertion_identity(
         result="count", subject=subject, scope=scope, content=count_content
@@ -463,7 +463,7 @@ def assertions_of_recorded_coordinate_assertion_count(
     require_shell(
         count,
         count_dimensions,
-        "the exact production-set Assertion carried here",
+        "the exact yield-set Assertion carried here",
         {"local_assertion_ids": [set_id]},
         COUNT_FORBIDDEN_INFERENCES,
     )
@@ -476,7 +476,7 @@ def assertions_of_recorded_coordinate_assertion_count(
         raise CoordinateAssertionMeasurementError(
             f"{event.id} carries a noncanonical Assertion or dependency"
         )
-    ordered = [production_set, count]
+    ordered = [yield_set, count]
     if recurrence is not None:
         recurrence_dimensions = recurrence.get("dimensions")
         recurrence_content = (
@@ -512,7 +512,7 @@ def assertions_of_recorded_coordinate_assertion_count(
     return tuple(
         RecordedCoordinateAssertionCount(
             assertion_id=item["dimensions"]["identity"],
-            producing_event_id=event.id,
+            yielding_event_id=event.id,
             result=item["result"],
             payload=item,
         )
@@ -523,12 +523,12 @@ def assertions_of_recorded_coordinate_assertion_count(
 def get_recorded_coordinate_assertion_count(
     ledger: EventLedger,
     *,
-    producing_event_id: str,
+    yielding_event_id: str,
     assertion_id: str,
 ) -> RecordedCoordinateAssertionCount | None:
     """Resolve one result after proving its complete coordinate inputs."""
 
-    event = ledger.get(producing_event_id)
+    event = ledger.get(yielding_event_id)
     if event is None:
         return None
     if ledger.integrity_of(event.id) == CORRUPTED:
@@ -536,8 +536,8 @@ def get_recorded_coordinate_assertion_count(
             "a corrupted Measurement occurrence cannot expose result Assertions"
         )
     reconstructed = assertions_of_recorded_coordinate_assertion_count(event)
-    production_set = next(item for item in reconstructed if item.result == "exact_production_set")
-    payload = production_set.payload
+    yield_set = next(item for item in reconstructed if item.result == "exact_yield_set")
+    payload = yield_set.payload
     completeness_scope = payload["completeness_scope"]
     boundary = EventLedgerBoundary(payload["completeness_boundary"]["commitment"])
     expected_refs = []
@@ -565,7 +565,7 @@ def get_recorded_coordinate_assertion_count(
         raise CoordinateAssertionMeasurementError(str(exc)) from exc
     if expected_refs != payload["support_basis"]["assertion_refs"]:
         raise CoordinateAssertionMeasurementError(
-            "the carried production set does not equal the complete bounded read"
+            "the carried yield set does not equal the complete bounded read"
         )
     for item in reconstructed:
         if item.assertion_id == assertion_id:

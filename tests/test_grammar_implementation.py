@@ -13,7 +13,7 @@ from seed_runtime.byte_measurement import (
 )
 from seed_runtime.events import EventLedger
 from seed_runtime.operator_console import run_persistent_operator_console
-from seed_runtime.production_evidence import production_commitment
+from seed_runtime.yield_evidence import yield_commitment
 
 
 GRAMMAR = Path(__file__).resolve().parents[1] / "book_of_seed/grammar.json"
@@ -69,7 +69,7 @@ def _representation_digest_witness(
 ) -> str:
     return (
         EXACT
-        if production_commitment(convention, representation) == digest
+        if yield_commitment(convention, representation) == digest
         else MISSING
     )
 
@@ -85,11 +85,11 @@ def _recorded_digest_witness(
     if digest_carriage is None:
         return MISSING
     mechanically_matches = (
-        production_commitment(convention, representation) == digest
+        yield_commitment(convention, representation) == digest
     )
     exact_carriage = (
         digest_carriage.id == digest_carriage_occurrence_id
-        and digest_carriage.payload.get("production_commitment") == digest
+        and digest_carriage.payload.get("yield_commitment") == digest
     )
     return EXACT if mechanically_matches and exact_carriage else MISSING
 
@@ -124,7 +124,7 @@ def _byte_measurement_road() -> dict:
         "carrier": measurement,
         "source_assertion": assertion,
         "act_evidence": ledger.get(measurement.payload["responsible_act_evidence_id"]),
-        "content_evidence": ledger.get(measurement.payload["production_evidence_id"]),
+        "content_evidence": ledger.get(measurement.payload["yield_evidence_id"]),
     }
 
 
@@ -159,7 +159,7 @@ def _recorded_applicability() -> dict:
         "applicability": recovered,
         "carrier": carrier,
         "act_evidence": ledger.get(carrier.payload["responsible_act_evidence_id"]),
-        "content_evidence": ledger.get(carrier.payload["production_evidence_id"]),
+        "content_evidence": ledger.get(carrier.payload["yield_evidence_id"]),
         "movement": movement,
         "movement_act_evidence": ledger.get(
             movement.payload["movement_act_evidence_event_id"]
@@ -195,8 +195,8 @@ def _assertion_witness(bundle: dict) -> dict[str, str]:
         assertion.recorded_occurrence_id == carrier.id
         and carried_assertion == payload
         and content_evidence is not None
-        and carrier.payload.get("production_evidence_id") == content_evidence.id
-        and "assertions" in content_evidence.payload.get("production_coordinates", [])
+        and carrier.payload.get("yield_evidence_id") == content_evidence.id
+        and "assertions" in content_evidence.payload.get("yield_coordinates", [])
     )
     return {
         "identity": (
@@ -242,7 +242,7 @@ def _applicability_witness(bundle: dict) -> dict[str, str]:
     )
     carried_result = (
         content_evidence is not None
-        and carrier.payload.get("production_evidence_id") == content_evidence.id
+        and carrier.payload.get("yield_evidence_id") == content_evidence.id
         and carrier.payload["dimensions"].get("standing")
         == applicability["dimensions"].get("standing")
     )
@@ -304,11 +304,11 @@ def _occurrence_result_witness(bundle: dict) -> str:
         act_evidence.payload.get("act_occurrence_id")
     )
     same_result = act_evidence.payload.get("result_commitment") == (
-        content_evidence.payload.get("production_commitment")
+        content_evidence.payload.get("yield_commitment")
     )
     evidence_is_carried = (
         carrier.payload.get("responsible_act_evidence_id") == act_evidence.id
-        and carrier.payload.get("production_evidence_id") == content_evidence.id
+        and carrier.payload.get("yield_evidence_id") == content_evidence.id
     )
     return EXACT if same_occurrence and same_result and evidence_is_carried else MISSING
 
@@ -469,7 +469,7 @@ def test_implementation_witness_discriminates_content_carriage_and_digest():
     second = ledger.append("test.carriage", "w", dict(content), session_id="s")
     assert first.payload == second.payload
     assert first.id != second.id
-    assert production_commitment("test", first.payload) == production_commitment(
+    assert yield_commitment("test", first.payload) == yield_commitment(
         "test", second.payload
     )
 
@@ -477,12 +477,12 @@ def test_implementation_witness_discriminates_content_carriage_and_digest():
     second_json = '{\n  "b": 2,\n  "a": 1\n}'
     assert first_json != second_json
     assert json.loads(first_json) == json.loads(second_json)
-    assert production_commitment(
+    assert yield_commitment(
         "test", json.loads(first_json)
-    ) == production_commitment("test", json.loads(second_json))
+    ) == yield_commitment("test", json.loads(second_json))
 
     changed_content = {"a": 1, "b": 3}
-    assert production_commitment("test", content) != production_commitment(
+    assert yield_commitment("test", content) != yield_commitment(
         "test", changed_content
     )
 
@@ -523,7 +523,7 @@ def test_content_and_carriage_endpoints_do_not_establish_carriage_relation():
 
 def test_representation_and_digest_endpoints_do_not_establish_commitment_relation():
     representation = {"subject": "x", "standing": "Unknown"}
-    digest = production_commitment("test", representation)
+    digest = yield_commitment("test", representation)
 
     assert (
         _representation_digest_witness(
@@ -548,10 +548,10 @@ def test_digest_recomputation_is_not_a_recorded_digest_occurrence():
     carrier = bundle["carrier"]
     represented = {
         coordinate: carrier.payload[coordinate]
-        for coordinate in evidence.payload["production_coordinates"]
+        for coordinate in evidence.payload["yield_coordinates"]
     }
-    digest = evidence.payload["production_commitment"]
-    convention = evidence.payload["production_convention"]
+    digest = evidence.payload["yield_commitment"]
+    convention = evidence.payload["yield_convention"]
 
     assert (
         _representation_digest_witness(
@@ -584,7 +584,7 @@ def test_digest_recomputation_is_not_a_recorded_digest_occurrence():
 
 def test_a_digest_alone_witnesses_no_content_carriage_or_standing():
     grammar = _witness_grammar()
-    digest = production_commitment("test", {"a": 1})
+    digest = yield_commitment("test", {"a": 1})
     witness = _digest_only_witness(digest)
 
     assert witness == {
@@ -836,3 +836,20 @@ def test_act_and_occurrence_ids_do_not_establish_their_relation():
     assert witness["exact_Act"] == MISSING
     assert witness["Act_occurrence"] == MISSING
     assert witness["occurrence_Evidence"] == MISSING
+
+
+def test_runtime_uses_yield_for_the_occurrence_to_result_edge():
+    retired = "pro" + "duc"
+    runtime_root = GRAMMAR.parents[1] / "seed_runtime"
+    contaminated = {
+        path.relative_to(GRAMMAR.parents[1]).as_posix(): [
+            (line_number, line.rstrip())
+            for line_number, line in enumerate(
+                path.read_text(encoding="utf-8").splitlines(), start=1
+            )
+            if retired in line.casefold()
+        ]
+        for path in runtime_root.glob("*.py")
+    }
+
+    assert {path: hits for path, hits in contaminated.items() if hits} == {}

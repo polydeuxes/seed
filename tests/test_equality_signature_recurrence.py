@@ -64,7 +64,7 @@ def test_identity_groups_supply_exact_counts_without_pair_formation():
     assert sorted(item.count for item in findings) == [1, 3]
     assert sum(item.count for item in findings) == 4
     assert all(
-        {ref["assertion_id"] for ref in item.production_refs}
+        {ref["assertion_id"] for ref in item.yield_refs}
         == {item.measured_assertion_id}
         for item in findings
     )
@@ -112,15 +112,15 @@ def test_recording_fans_out_set_count_and_conditional_recurrence():
     assert sorted(len(items) for items in reconstructed) == [2, 3]
     by_count = {
         next(
-            item.payload["dimensions"]["content"]["production_count"]
+            item.payload["dimensions"]["content"]["yield_count"]
             for item in items
             if item.result == "count"
         ): {item.result for item in items}
         for items in reconstructed
     }
     assert by_count == {
-        1: {"exact_production_set", "count"},
-        3: {"exact_production_set", "count", "recurrence"},
+        1: {"exact_yield_set", "count"},
+        3: {"exact_yield_set", "count", "recurrence"},
     }
 
 
@@ -137,12 +137,12 @@ def test_ledger_validation_proves_the_complete_bounded_signature_set():
         for assertion in assertions_of_recorded_equality_signature_count(event):
             assert get_recorded_equality_signature_count(
                 ledger,
-                producing_event_id=event.id,
+                yielding_event_id=event.id,
                 assertion_id=assertion.assertion_id,
             ) == assertion
 
 
-def test_validation_refuses_a_self_consistent_truncated_production_set():
+def test_validation_refuses_a_self_consistent_truncated_yield_set():
     ledger = _signatures()
     record_equality_signature_count_layer(
         ledger,
@@ -155,18 +155,18 @@ def test_validation_refuses_a_self_consistent_truncated_production_set():
         for event in ledger.list_session("w", "counts")
         if len(event.payload["assertions"]) == 3
     )
-    production_set, count, recurrence = event.payload["assertions"]
-    refs = deepcopy(production_set["support_basis"]["assertion_refs"][:-1])
-    production_set["support_basis"] = {"assertion_refs": refs}
-    production_set["dimensions"]["content"] = {"production_refs": refs}
+    yield_set, count, recurrence = event.payload["assertions"]
+    refs = deepcopy(yield_set["support_basis"]["assertion_refs"][:-1])
+    yield_set["support_basis"] = {"assertion_refs": refs}
+    yield_set["dimensions"]["content"] = {"yield_refs": refs}
     set_id = _identity(
-        result="exact_production_set",
-        subject=production_set["assertion_subject"],
-        scope=production_set["assertion_scope"],
-        content=production_set["dimensions"]["content"],
+        result="exact_yield_set",
+        subject=yield_set["assertion_subject"],
+        scope=yield_set["assertion_scope"],
+        content=yield_set["dimensions"]["content"],
     )
-    production_set["dimensions"]["identity"] = set_id
-    count["dimensions"]["content"] = {"production_count": len(refs)}
+    yield_set["dimensions"]["identity"] = set_id
+    count["dimensions"]["content"] = {"yield_count": len(refs)}
     count_id = _identity(
         result="count",
         subject=count["assertion_subject"],
@@ -183,7 +183,7 @@ def test_validation_refuses_a_self_consistent_truncated_production_set():
     ):
         get_recorded_equality_signature_count(
             ledger,
-            producing_event_id=event.id,
+            yielding_event_id=event.id,
             assertion_id=set_id,
         )
 
@@ -203,10 +203,10 @@ def test_results_preserve_the_dependency_chain_without_copying_support():
     )
     by_result = {item["result"]: item for item in event.payload["assertions"]}
 
-    assert "assertion_refs" in by_result["exact_production_set"]["support_basis"]
+    assert "assertion_refs" in by_result["exact_yield_set"]["support_basis"]
     assert by_result["count"]["support_basis"] == {
         "local_assertion_ids": [
-            by_result["exact_production_set"]["dimensions"]["identity"]
+            by_result["exact_yield_set"]["dimensions"]["identity"]
         ]
     }
     assert by_result["recurrence"]["support_basis"] == {

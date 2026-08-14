@@ -111,7 +111,7 @@ class RepresentationExamination:
 
 
 def capture_stdin_material(input_stream: TextIO | BinaryIO) -> CapturedOperatorMaterial:
-    """Read one framed occurrence without passing production stdin through TextIO."""
+    """Read one framed occurrence without passing live stdin through TextIO."""
     # Every fallible stream-interface check available before the destructive read
     # must precede it; subsequent capture fields derive from the observed material.
     encoding_metadata = _stream_encoding_metadata(input_stream)

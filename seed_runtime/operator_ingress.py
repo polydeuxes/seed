@@ -12,7 +12,7 @@ from seed_runtime.operator_ingress_representation import (
 )
 
 
-# Who supplied the material an occurrence preserves. Not the production occurrence of the
+# Who supplied the material an occurrence preserves. Not the yield occurrence of the
 # recording occurrence, which is this Seed in both directions, and not authorship
 # — an operator who supplies a book did not write it. `#2490` records why this
 # has to exist before Seed preserves what it emitted: without it a later
@@ -206,7 +206,7 @@ def _capture_representation(
             # intended to repair.
             standing=examination.outcome,
             source=captured.id,
-            responsibility="bounded-representation-evidence-production",
+            responsibility="bounded-representation-evidence-yield",
             authority="decoder outcome evidence only",
             scope=f"captured-occurrence:{capture_ref}",
             occurrence="decoder examination durably recorded",
@@ -266,7 +266,7 @@ def run_operator_ingress_attempt(
 
     The occurrence names no Representation.  A relation between this preserved
     material and any preserved Representation is its own bounded Assertion with
-    its own participants, production occurrence, occurrence, and Evidence; it does not live
+    its own participants, yield occurrence, occurrence, and Evidence; it does not live
     inside one participant's record, and no such relation is established
     here.
     """

@@ -8,7 +8,7 @@ there is no object to hold.
 The restraint is pinned as carefully as the result. Two measurements over
 different bounded exchanges are each exact within their own scope, so differing
 results are not disagreement and matching results are not corroboration. A test
-that let this produce `agreement` across exchanges would be manufacturing the
+that let this yield `agreement` across exchanges would be manufacturing the
 cross-body conclusion the whole arc has been avoiding.
 """
 

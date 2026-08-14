@@ -4,7 +4,7 @@
 was ours: after each round a reader looked at the findings and said *measure on
 that one next*. These tests pin that nothing does that any more.
 
-A recorded finding now states the form of measurement that produced it and the
+A recorded finding now states the form of measurement that yielded it and the
 exact representations it was performed relative to. Without both, the next
 question cannot be formed from it without a reader restating the first, which
 is why a finding lacking them is refused as a source of measurements.
@@ -87,7 +87,7 @@ def seeded(session, occurrences):
 
 
 # --------------------------------------------------------------------------
-# A finding states what question produced it.
+# A finding states what question yielded it.
 # --------------------------------------------------------------------------
 
 

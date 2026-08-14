@@ -113,7 +113,7 @@ def run_persistent_operator_console(
             session_id=session_id,
         )
         if attempt_view["current_standing"]["preserved_ingress"] is not None:
-            # The produced Representation is preserved independently. No Compare
+            # The yielded Representation is preserved independently. No Compare
             # or Identification is inferred merely from temporal proximity.
             representation = form_operator_representation(
                 ledger,

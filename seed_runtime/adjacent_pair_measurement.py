@@ -25,7 +25,7 @@ after_same_left     what else occupies the right position, after the
 **The battery is fixed and applied symmetrically.** No question is asked of one
 pair and withheld from another, and none of the four is motivated by what a
 reader believes the representations are. They are adjacency and occupancy
-measurements, which `01.Source:28` permits a declared measurement to produce.
+measurements, which `01.Source:28` permits a declared measurement to yield.
 
 **The pairs are not supplied.** :func:`adjacent_pairs_from_finding` reads them out of a
 recorded measurement finding, so what this round measures relative to comes
@@ -106,7 +106,7 @@ POSITIONAL_RESULT_FIDELITY_RESPONSIBILITY = (
 
 @dataclass(frozen=True)
 class AdjacentPair:
-    """An ordered pair of representations whose adjacency was found reproducible.
+    """An ordered pair of representations whose adjacency was found repeatable.
 
     The name describes the measured arrangement and nothing else. It is not a
     constitutional kind, and it asserts nothing about either representation or
@@ -128,18 +128,18 @@ class AdjacentPair:
 
 @dataclass(frozen=True)
 class RecordedAdjacentPairResultAssertion:
-    """One exact positional result, addressable at its producing occurrence."""
+    """One exact positional result, addressable at its yielding occurrence."""
 
     assertion_id: str
-    producing_event_id: str
-    producing_session_id: str | None
+    yielding_event_id: str
+    yielding_session_id: str | None
     payload: dict[str, object]
     completeness_boundary: EventLedgerBoundary
 
     @property
     def reference(self) -> dict[str, str]:
         return {
-            "producing_event_id": self.producing_event_id,
+            "yielding_event_id": self.yielding_event_id,
             "assertion_id": self.assertion_id,
         }
 
@@ -261,7 +261,7 @@ def _adjacent_pair_result_assertion_fields(
 
     ``declared_support`` is the basis already declared for these inputs,
     bound to the identities it was declared over. A layer measures one bounded
-    inputs, so every finding it produces input the same identities under
+    inputs, so every finding it yields input the same identities under
     the same rule and yields the same basis — and declaring it per finding
     recomputed a digest over the whole inputs once per result, measured at
     28.7s against 23.1s on 21,972 results over 700 occurrences.
@@ -312,7 +312,7 @@ def _adjacent_pair_result_assertion_fields(
             ),
             "scope_locality": "the exact assertion_scope carried here",
             "occurrence_preservation": (
-                "one exact result preserved by its producing occurrence"
+                "one exact result preserved by its yielding occurrence"
             ),
         },
         "subject_kind": "assertion",
@@ -432,24 +432,24 @@ def assertion_of_recorded_adjacent_pair_result(
         )
     return RecordedAdjacentPairResultAssertion(
         assertion_id=identity,
-        producing_event_id=event.id,
-        producing_session_id=event.session_id,
+        yielding_event_id=event.id,
+        yielding_session_id=event.session_id,
         payload=payload,
         completeness_boundary=EventLedgerBoundary(boundary["commitment"]),
     )
 
 
 def get_recorded_adjacent_pair_result_assertion(
-    ledger: EventLedger, *, producing_event_id: str, assertion_id: str
+    ledger: EventLedger, *, yielding_event_id: str, assertion_id: str
 ) -> RecordedAdjacentPairResultAssertion | None:
     """Resolve one exact occurrence-bound positional result Assertion."""
 
-    event = ledger.get(producing_event_id)
+    event = ledger.get(yielding_event_id)
     if event is None:
         return None
-    if ledger.integrity_of(producing_event_id) == CORRUPTED:
+    if ledger.integrity_of(yielding_event_id) == CORRUPTED:
         raise PreservedMaterialMeasurementError(
-            "a corrupted producing occurrence cannot expose a result Assertion"
+            "a corrupted yielding occurrence cannot expose a result Assertion"
         )
     assertion = assertion_of_recorded_adjacent_pair_result(event)
     if assertion.assertion_id != assertion_id:
@@ -465,11 +465,11 @@ def _validate_result_assertion_ingress(
     *,
     validation: SupportValidator | None = None,
 ) -> None:
-    """Reconstruct the carried support basis and require it to reproduce.
+    """Reconstruct the carried support basis and require it to reyield.
 
     The occurrence no longer carries every supporting identity, so this no
     longer compares two lists. It performs the basis's own declared selection
-    against the ledger and refuses unless the result reproduces the committed
+    against the ledger and refuses unless the result reyields the committed
     digest.
 
     The check this replaces also validated the inputs from the ledger, so
@@ -531,7 +531,7 @@ def iter_recorded_adjacent_pair_result_assertions(
                 continue
             if ledger.integrity_of(event.id) == CORRUPTED:
                 raise PreservedMaterialMeasurementError(
-                    "a corrupted producing occurrence cannot expose a result Assertion"
+                    "a corrupted yielding occurrence cannot expose a result Assertion"
                 )
             assertion = assertion_of_recorded_adjacent_pair_result(event)
             _validate_result_assertion_ingress(
@@ -577,7 +577,7 @@ def adjacent_pairs_from_finding(ledger: EventLedger, finding_event_id: str) -> l
 
     The recorded finding names a left representation and the occupancies
     measured after it. Every occupancy is returned; none is filtered by count,
-    share, or a threshold. Which of them prove reproducible is what the
+    share, or a threshold. Which of them prove repeatable is what the
     measurement measures, not something decided here.
     """
 
@@ -724,7 +724,7 @@ class AdjacentPairMeasurementIndex:
 
     @property
     def event_ids(self) -> tuple[str, ...]:
-        """The exact input sequence every finding this index produces carries.
+        """The exact input sequence every finding this index yields carries.
 
         Exposed so a support binding can be formed over *this* tuple, which is
         what makes reuse checkable in constant time.
@@ -994,7 +994,7 @@ def record_adjacent_pair_measurement_layer(
         )
     )
     index = AdjacentPairMeasurementIndex(material)
-    # One inputs, declared once. Every finding this layer produces input
+    # One inputs, declared once. Every finding this layer yields input
     # exactly these identities through exactly this boundary.
     declared_support = _DeclaredSupportBinding(
         workspace_id=workspace_id,
@@ -1074,7 +1074,7 @@ def occupant_agreement_across_scopes(
     """How many independently bounded scopes returned the same occupant.
 
     Returns the agreed occupant, the number of scopes agreeing, and the number
-    that produced any answer. Agreement is the discriminator `#2390` found
+    that yielded any answer. Agreement is the discriminator `#2390` found
     survives; no share threshold is applied and none is proposed.
     """
 
@@ -1129,7 +1129,7 @@ def enumerate_representations(
     This is what removes the last supplied representation from the chain. The
     caller no longer says which representation to measure after; the material
     says which representations there are, and later measurements say which of
-    them anything reproducible follows from.
+    them anything repeatable follows from.
     """
 
     material = list(occurrences)

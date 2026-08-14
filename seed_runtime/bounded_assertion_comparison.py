@@ -16,7 +16,7 @@ findings. The pair findings used in the corpus experiments are computed in
 experiment code and never recorded; a comparison over those would have as input an
 result Seed does not hold.
 
-**What it produces is distinctions, and a relation only where one is
+**What it yields is distinctions, and a relation only where one is
 established.** Two measurements over different bounded exchanges are not in
 disagreement because their results differ — each is exact within its own scope.
 `01.Standing.E:29` holds: agreement is not truth, and comparison establishes no

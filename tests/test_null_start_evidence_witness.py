@@ -7,7 +7,7 @@ record*.  Nothing here asserts represented relation, relation, structure, or int
 none of that is established by ingress -- ``operator.ingress.ingress_occurred``
 records ``authority="occurrence-only; represented relation Unknown"``.
 
-`render_null_start_evidence` produces the human-readable dump for inspection.
+`render_null_start_evidence` yields the human-readable dump for inspection.
 Run it directly to look through the microscope:
 
     python -m tests.test_null_start_evidence_witness
@@ -23,7 +23,7 @@ import pytest
 from seed_runtime.events import EventLedger
 from seed_runtime.operator_console import run_persistent_operator_console
 
-# Fixed, reproducible operator material.
+# Fixed, repeatable operator material.
 #
 # IMPORTANT: this material is developer-chosen.  Any regularity visible in the
 # dump -- recurring newlines, a recurring "# " prefix, a recurring "is a word."
@@ -154,7 +154,7 @@ def test_null_start_does_not_activate_the_dormant_result_chain(events):
         assert semantic not in kinds
 
 
-def test_render_produces_inspectable_evidence():
+def test_render_yields_inspectable_evidence():
     rendered = render_null_start_evidence()
     assert "operator.ingress.ingress_occurred" in rendered
     assert "exact_bytes_hex" in rendered

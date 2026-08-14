@@ -1,6 +1,6 @@
 """A recorded finding supplies the next representation, and every pair gets the same battery.
 
-`#2391` validated ordered pairs whose adjacency reproduces across independently
+`#2391` validated ordered pairs whose adjacency reyields across independently
 bounded scopes, without a reader naming a representation, occupant, or
 delimiter. It left one unresolved boundary: the candidates were enumerated in a scratch run, so
 the loop was demonstrated rather than preserved.
@@ -312,7 +312,7 @@ def test_one_layer_records_every_pair_form_and_nothing_beyond(
     }
     assert all(event.payload["measurement_form"] != "after" for event in recorded)
     assert all(
-        assertion_of_recorded_adjacent_pair_result(event).producing_event_id
+        assertion_of_recorded_adjacent_pair_result(event).yielding_event_id
         == event.id
         for event in recorded
     )
@@ -321,7 +321,7 @@ def test_one_layer_records_every_pair_form_and_nothing_beyond(
     } == {boundary.commitment}
 
 
-def test_one_layer_preserves_duplicate_pair_subject_productions(
+def test_one_layer_preserves_duplicate_pair_subject_yields(
     session, recorded_finding
 ):
     second_premise = session.append(
@@ -338,7 +338,7 @@ def test_one_layer_preserves_duplicate_pair_subject_productions(
         session_id="s",
         counting_scope="this session",
     )
-    produced = [
+    yielded = [
         event
         for event in session.list("w")
         if event.payload.get("premise_event_id")
@@ -346,10 +346,10 @@ def test_one_layer_preserves_duplicate_pair_subject_productions(
     ]
 
     assert recorded_count == pair_count * 2 * 4
-    assert len(produced) == recorded_count
+    assert len(yielded) == recorded_count
     assert {
         premise: sum(
-            event.payload["premise_event_id"] == premise for event in produced
+            event.payload["premise_event_id"] == premise for event in yielded
         )
         for premise in (recorded_finding.id, second_premise.id)
     } == {
@@ -394,18 +394,18 @@ def test_one_layer_refuses_claimed_after_premises_without_exact_coordinates(
         session_id="s",
         counting_scope="this session",
     )
-    produced = [
+    yielded = [
         event
         for event in session.list("w")
         if event.payload.get("premise_event_id") is not None
     ]
 
     assert recorded_count == len(recorded_finding.payload["occupancies"]) * 4
-    assert {event.payload["premise_event_id"] for event in produced} == {
+    assert {event.payload["premise_event_id"] for event in yielded} == {
         recorded_finding.id
     }
     assert not ({event.id for event in malformed} & {
-        event.payload["premise_event_id"] for event in produced
+        event.payload["premise_event_id"] for event in yielded
     })
 
 
@@ -537,9 +537,9 @@ def test_each_pair_result_is_one_addressable_assertion(
 
     for event in recorded.values():
         assertion = assertion_of_recorded_adjacent_pair_result(event)
-        assert assertion.producing_event_id == event.id
+        assert assertion.yielding_event_id == event.id
         assert assertion.reference == {
-            "producing_event_id": event.id,
+            "yielding_event_id": event.id,
             "assertion_id": event.payload["dimensions"]["identity"],
         }
         assert event.payload["dimensions"]["content"] == {
@@ -553,7 +553,7 @@ def test_each_pair_result_is_one_addressable_assertion(
         assert event.payload["support_basis"]["basis"] == event.payload["input_support"]
         assert get_recorded_adjacent_pair_result_assertion(
             session,
-            producing_event_id=event.id,
+            yielding_event_id=event.id,
             assertion_id=assertion.assertion_id,
         ) == assertion
         input_events = list(
@@ -571,7 +571,7 @@ def test_each_pair_result_is_one_addressable_assertion(
         )
 
 
-def test_repeated_exact_result_has_one_assertion_identity_and_two_productions(
+def test_repeated_exact_result_has_one_assertion_identity_and_two_yields(
     session, occurrences, recorded_finding
 ):
     pair = AdjacentPair("it", "is")
@@ -602,7 +602,7 @@ def test_repeated_exact_result_has_one_assertion_identity_and_two_productions(
     first_assertion = assertion_of_recorded_adjacent_pair_result(first)
     second_assertion = assertion_of_recorded_adjacent_pair_result(second)
     assert first_assertion.assertion_id == second_assertion.assertion_id
-    assert first_assertion.producing_event_id != second_assertion.producing_event_id
+    assert first_assertion.yielding_event_id != second_assertion.yielding_event_id
 
 
 def test_result_assertion_identity_includes_exact_scope(
@@ -682,7 +682,7 @@ def test_ledger_validation_refuses_a_boundary_not_owned_by_the_ledger(
     with pytest.raises(InvalidLedgerBoundary):
         get_recorded_adjacent_pair_result_assertion(
             session,
-            producing_event_id=event.id,
+            yielding_event_id=event.id,
             assertion_id=assertion.assertion_id,
         )
 
@@ -720,32 +720,32 @@ def test_ledger_validation_refuses_an_incomplete_claimed_ingress_read(
     tampered(support_count=intact["support_count"] - 1)
     with pytest.raises(PreservedMaterialMeasurementError, match="support count"):
         get_recorded_adjacent_pair_result_assertion(
-            session, producing_event_id=event.id, assertion_id=assertion.assertion_id
+            session, yielding_event_id=event.id, assertion_id=assertion.assertion_id
         )
 
     tampered(commitment="0" * 64)
     with pytest.raises(PreservedMaterialMeasurementError, match="committed digest"):
         get_recorded_adjacent_pair_result_assertion(
-            session, producing_event_id=event.id, assertion_id=assertion.assertion_id
+            session, yielding_event_id=event.id, assertion_id=assertion.assertion_id
         )
 
     tampered(selection_rule="a selection nobody established")
     with pytest.raises(PreservedMaterialMeasurementError, match="reconstructible support basis"):
         get_recorded_adjacent_pair_result_assertion(
-            session, producing_event_id=event.id, assertion_id=assertion.assertion_id
+            session, yielding_event_id=event.id, assertion_id=assertion.assertion_id
         )
 
     scope = dict(intact["scope"], session_id="another")
     tampered(scope=scope)
     with pytest.raises(PreservedMaterialMeasurementError, match="outside its own scope"):
         get_recorded_adjacent_pair_result_assertion(
-            session, producing_event_id=event.id, assertion_id=assertion.assertion_id
+            session, yielding_event_id=event.id, assertion_id=assertion.assertion_id
         )
 
     event.payload["input_support"] = intact
     event.payload["support_basis"]["basis"] = intact
     assert get_recorded_adjacent_pair_result_assertion(
-        session, producing_event_id=event.id, assertion_id=assertion.assertion_id
+        session, yielding_event_id=event.id, assertion_id=assertion.assertion_id
     ) == assertion
 
 

@@ -1,4 +1,4 @@
-"""A bounded comparison of a recorded finding and its production evidence."""
+"""A bounded comparison of a recorded finding and its yield evidence."""
 
 from __future__ import annotations
 
@@ -30,9 +30,9 @@ from seed_runtime.preserved_material_measurement import (
     measure_recurrence,
     record_measurement_finding,
 )
-from seed_runtime.production_evidence import (
-    PRODUCTION_EVIDENCE_KIND,
-    production_commitment,
+from seed_runtime.yield_evidence import (
+    YIELD_EVIDENCE_KIND,
+    yield_commitment,
 )
 from seed_runtime.support_basis import support_commitment
 
@@ -58,7 +58,7 @@ def _recorded_in(ledger):
             counting_scope="this locality",
         ),
         occurrences_of=lambda text: text.split().count("the"),
-        produce_in=(ledger, "w", "r"),
+        yield_in=(ledger, "w", "r"),
     )
     event = record_measurement_finding(
         ledger, workspace_id="w", session_id="r", finding=finding
@@ -79,48 +79,48 @@ def test_a_finding_that_names_the_evidence_concerning_it_is_faithful(recorded):
     assert result.payload["observed_crossings"] == []
 
 
-def test_the_fidelity_finding_carries_evidence_that_the_act_produced_it(recorded):
+def test_the_fidelity_finding_carries_evidence_that_the_act_yielded_it(recorded):
     ledger, event = recorded
     result = compare_recorded_finding(ledger, event.id)
-    evidence = ledger.get(result.payload["production_evidence_id"])
-    assert evidence.kind == PRODUCTION_EVIDENCE_KIND
-    assert evidence.payload["produced_result_kind"] == FIDELITY_RESULT_KIND
+    evidence = ledger.get(result.payload["yield_evidence_id"])
+    assert evidence.kind == YIELD_EVIDENCE_KIND
+    assert evidence.payload["yielded_result_kind"] == FIDELITY_RESULT_KIND
     content = dict(result.payload)
-    content.pop("production_evidence_id")
+    content.pop("yield_evidence_id")
     content.pop("occurrence_preservation")
-    assert evidence.payload["production_coordinates"] == sorted(content)
-    assert evidence.payload["production_commitment"] == production_commitment(
+    assert evidence.payload["yield_coordinates"] == sorted(content)
+    assert evidence.payload["yield_commitment"] == yield_commitment(
         FIDELITY_CONVENTION, content
     )
 
 
-def test_production_and_support_commitments_have_distinct_mechanical_domains():
+def test_yield_and_support_commitments_have_distinct_mechanical_domains():
     content = {"a": "b"}
     represented = '{"a":"b"}'
-    assert production_commitment("x", content) != support_commitment(
+    assert yield_commitment("x", content) != support_commitment(
         "x", (represented,)
     )
 
 
-def test_result_shape_without_the_production_relation_has_no_witness(recorded):
+def test_result_shape_without_the_yield_relation_has_no_witness(recorded):
     ledger, event = recorded
     result = compare_recorded_finding(ledger, event.id)
     constructed = dict(result.payload)
-    constructed.pop("production_evidence_id")
+    constructed.pop("yield_evidence_id")
     forged = ledger.append(
         FIDELITY_FINDING_KIND, "w", constructed, session_id="r"
     )
-    assert "production_evidence_id" not in forged.payload
-    assert result.payload["production_evidence_id"] is not None
+    assert "yield_evidence_id" not in forged.payload
+    assert result.payload["yield_evidence_id"] is not None
 
 
-def test_a_produced_fidelity_finding_is_occurrence_bound_and_addressable(recorded):
+def test_a_yielded_fidelity_finding_is_occurrence_bound_and_addressable(recorded):
     ledger, event = recorded
     result = compare_recorded_finding(ledger, event.id)
     reconstructed = get_recorded_fidelity_finding(ledger, result.id)
     assert reconstructed.recorded_occurrence_id == result.id
-    assert reconstructed.production_evidence_id == result.payload[
-        "production_evidence_id"
+    assert reconstructed.yield_evidence_id == result.payload[
+        "yield_evidence_id"
     ]
     assert reconstructed.source_finding_event_id == event.id
     assert reconstructed.standing == FAITHFUL_WITHIN_SCOPE
@@ -138,7 +138,7 @@ def test_validation_exposes_no_mutable_result_payload(recorded):
 def test_validation_does_not_revalidate_the_historical_input(recorded):
     ledger, event = recorded
     result = compare_recorded_finding(ledger, event.id)
-    # Reconstruction of F stands on F's intact recording occurrence and production
+    # Reconstruction of F stands on F's intact recording occurrence and yield
     # Evidence. Its source identity travels, but current source availability is
     # a later Act's responsibility. The in-memory ledger has no deletion
     # API, so this exact copy demonstrates that reconstruction does not require the
@@ -154,23 +154,23 @@ def test_validation_does_not_revalidate_the_historical_input(recorded):
     assert reconstructed.source_finding_event_id == event.id
 
 
-def test_a_fidelity_shaped_event_without_production_evidence_is_not_validated(
+def test_a_fidelity_shaped_event_without_yield_evidence_is_not_validated(
     recorded,
 ):
     ledger, event = recorded
     result = compare_recorded_finding(ledger, event.id)
     forged = dict(result.payload)
-    forged.pop("production_evidence_id")
+    forged.pop("yield_evidence_id")
     occurrence = ledger.append(FIDELITY_FINDING_KIND, "w", forged, session_id="r")
     with pytest.raises(FindingFidelityError, match="coordinate surfaces"):
         get_recorded_fidelity_finding(ledger, occurrence.id)
 
 
-def test_a_changed_fidelity_result_cannot_borrow_the_production_evidence(recorded):
+def test_a_changed_fidelity_result_cannot_borrow_the_yield_evidence(recorded):
     ledger, event = recorded
     result = compare_recorded_finding(ledger, event.id)
     altered = dict(result.payload)
-    altered["unknowns"] = ["an Unknown the comparison did not produce"]
+    altered["unknowns"] = ["an Unknown the comparison did not yield"]
     occurrence = ledger.append(FIDELITY_FINDING_KIND, "w", altered, session_id="r")
     with pytest.raises(FindingFidelityError, match="different Fidelity result"):
         get_recorded_fidelity_finding(ledger, occurrence.id)
@@ -190,16 +190,16 @@ def test_fidelity_validation_survives_durable_reopen(tmp_path):
     reopened.close()
 
 
-def test_fidelity_validation_refuses_an_invented_production_coordinate(recorded):
+def test_fidelity_validation_refuses_an_invented_yield_coordinate(recorded):
     ledger, event = recorded
     result = compare_recorded_finding(ledger, event.id)
-    evidence = ledger.get(result.payload["production_evidence_id"])
+    evidence = ledger.get(result.payload["yield_evidence_id"])
     forged_evidence = ledger.append(
-        PRODUCTION_EVIDENCE_KIND,
+        YIELD_EVIDENCE_KIND,
         "w",
         {
             **evidence.payload,
-            "production_coordinates": evidence.payload["production_coordinates"]
+            "yield_coordinates": evidence.payload["yield_coordinates"]
             + ["invented"],
         },
         session_id="r",
@@ -207,7 +207,7 @@ def test_fidelity_validation_refuses_an_invented_production_coordinate(recorded)
     forged_result = ledger.append(
         FIDELITY_FINDING_KIND,
         "w",
-        {**result.payload, "production_evidence_id": forged_evidence.id},
+        {**result.payload, "yield_evidence_id": forged_evidence.id},
         session_id="r",
     )
     with pytest.raises(FindingFidelityError, match="exact Fidelity result contract"):
@@ -228,12 +228,12 @@ def test_corrupted_fidelity_occurrence_cannot_be_validated(tmp_path):
     ledger.close()
 
 
-def test_a_finding_naming_no_production_evidence_preserves_erasure(recorded):
+def test_a_finding_naming_no_yield_evidence_preserves_erasure(recorded):
     ledger, event = recorded
     forged = ledger.append(
         MEASUREMENT_RECORDED_KIND,
         "w",
-        {**event.payload, "production_evidence_id": None},
+        {**event.payload, "yield_evidence_id": None},
         session_id="r",
     )
     result = compare_recorded_finding(ledger, forged.id)
@@ -243,7 +243,7 @@ def test_a_finding_naming_no_production_evidence_preserves_erasure(recorded):
             "kind": ERASURE,
             "observation": (
                 "the recorded finding does not preserve the required relation "
-                "to production evidence"
+                "to yield evidence"
             ),
         }
     ]
@@ -262,7 +262,7 @@ def test_a_content_mismatch_does_not_invent_which_crossing_caused_it(
         {
             "kind": FIDELITY_UNKNOWN,
             "observation": (
-                "the named production evidence does not concern this exact "
+                "the named yield evidence does not concern this exact "
                 "recorded content"
             ),
         }
@@ -318,11 +318,11 @@ def test_it_does_not_walk_what_the_finding_stood_on(recorded):
     ledger, event = recorded
     before = len(ledger.list("w"))
     compare_recorded_finding(ledger, event.id)
-    # Exactly this result and its production Evidence. Nothing upstream was
+    # Exactly this result and its yield Evidence. Nothing upstream was
     # touched and no downstream applicability was determined.
     appended = ledger.list("w")[before:]
     assert [event.kind for event in appended] == [
-        PRODUCTION_EVIDENCE_KIND,
+        YIELD_EVIDENCE_KIND,
         FIDELITY_FINDING_KIND,
     ]
 
@@ -343,7 +343,7 @@ def test_positional_measurement_is_outside_the_recurrence_fidelity_scope(recorde
     positional = record_measurement_finding(
         ledger, workspace_id="w", session_id="r", finding=finding
     )
-    assert "production_evidence_id" not in positional.payload
+    assert "yield_evidence_id" not in positional.payload
     with pytest.raises(FindingFidelityError, match="not a recorded recurrence"):
         compare_recorded_finding(ledger, positional.id)
 
@@ -355,7 +355,7 @@ def test_unavailable_named_evidence_leaves_fidelity_unknown(recorded):
     forged = ledger.append(
         MEASUREMENT_RECORDED_KIND,
         "w",
-        {**event.payload, "production_evidence_id": "evt_never_appended"},
+        {**event.payload, "yield_evidence_id": "evt_never_appended"},
         session_id="r",
     )
     result = compare_recorded_finding(ledger, forged.id)
@@ -364,20 +364,20 @@ def test_unavailable_named_evidence_leaves_fidelity_unknown(recorded):
     assert "unavailable" in " ".join(result.payload["unknowns"])
 
 
-def test_a_finding_naming_something_that_is_not_production_evidence(recorded):
+def test_a_finding_naming_something_that_is_not_yield_evidence(recorded):
     ledger, event = recorded
     unrelated = ledger.append("unrelated.kind", "w", {}, session_id="r")
     forged = ledger.append(
         MEASUREMENT_RECORDED_KIND,
         "w",
-        {**event.payload, "production_evidence_id": unrelated.id},
+        {**event.payload, "yield_evidence_id": unrelated.id},
         session_id="r",
     )
     result = compare_recorded_finding(ledger, forged.id)
     assert result.payload["observed_crossings"][0]["kind"] == INVENTION
 
 
-def test_lawful_recording_additions_do_not_change_the_produced_result(recorded):
+def test_lawful_recording_additions_do_not_change_the_yielded_result(recorded):
     ledger, event = recorded
     # Build another lawful recording through the public recorder, because its
     # additive coordinate belongs to recording rather than Measurement.
@@ -390,7 +390,7 @@ def test_lawful_recording_additions_do_not_change_the_produced_result(recorded):
             counting_scope="this locality",
         ),
         occurrences_of=lambda text: text.split().count("the"),
-        produce_in=(ledger, "w", "r"),
+        yield_in=(ledger, "w", "r"),
     )
     added = record_measurement_finding(
         ledger,
@@ -404,29 +404,29 @@ def test_lawful_recording_additions_do_not_change_the_produced_result(recorded):
     ] == FAITHFUL_WITHIN_SCOPE
 
 
-def test_missing_production_commitment_is_erasure(recorded):
+def test_missing_yield_commitment_is_erasure(recorded):
     ledger, event = recorded
     evidence = ledger.append(
-        PRODUCTION_EVIDENCE_KIND,
+        YIELD_EVIDENCE_KIND,
         "w",
         {
-            "production_coordinates": ["total_count"],
-            "produced_result_kind": RECURRENCE_RESULT_KIND,
-            "production_convention": MEASUREMENT_CONVENTION,
+            "yield_coordinates": ["total_count"],
+            "yielded_result_kind": RECURRENCE_RESULT_KIND,
+            "yield_convention": MEASUREMENT_CONVENTION,
         },
         session_id="r",
     )
     forged = ledger.append(
         MEASUREMENT_RECORDED_KIND,
         "w",
-        {**event.payload, "production_evidence_id": evidence.id},
+        {**event.payload, "yield_evidence_id": evidence.id},
         session_id="r",
     )
     result = compare_recorded_finding(ledger, forged.id)
     assert result.payload["observed_crossings"][0]["kind"] == ERASURE
 
 
-def test_missing_recorded_produced_coordinate_is_erasure(recorded):
+def test_missing_recorded_yielded_coordinate_is_erasure(recorded):
     ledger, event = recorded
     altered = dict(event.payload)
     altered["dimensions"] = dict(altered["dimensions"])
@@ -446,7 +446,7 @@ def test_absent_locality_remains_absent(recorded):
     assert result.payload["dimensions"]["scope_workspace"] == "w"
 
 
-def test_foreign_workspace_production_evidence_is_not_faithful(recorded):
+def test_foreign_workspace_yield_evidence_is_not_faithful(recorded):
     ledger, event = recorded
     foreign = ledger.append(
         MEASUREMENT_RECORDED_KIND,
@@ -460,12 +460,12 @@ def test_foreign_workspace_production_evidence_is_not_faithful(recorded):
     assert "cross-workspace movement" in " ".join(result.payload["unknowns"])
 
 
-def test_recording_coordinates_is_not_part_of_the_produced_fidelity_result(recorded):
+def test_recording_coordinates_is_not_part_of_the_yielded_fidelity_result(recorded):
     ledger, event = recorded
     result = compare_recorded_finding(ledger, event.id)
-    evidence = ledger.get(result.payload["production_evidence_id"])
+    evidence = ledger.get(result.payload["yield_evidence_id"])
     assert "occurrence_preservation" not in evidence.payload[
-        "production_coordinates"
+        "yield_coordinates"
     ]
     assert result.payload["occurrence_preservation"].startswith(
         "Fidelity finding durably recorded"
@@ -494,7 +494,7 @@ def test_corrupted_implementation_witness_is_refused(tmp_path):
             counting_scope="this locality",
         ),
         occurrences_of=lambda text: text.split().count("the"),
-        produce_in=(ledger, "w", "r"),
+        yield_in=(ledger, "w", "r"),
     )
     event = record_measurement_finding(
         ledger, workspace_id="w", session_id="r", finding=finding
@@ -509,7 +509,7 @@ def test_corrupted_implementation_witness_is_refused(tmp_path):
     ledger.close()
 
 
-def test_corrupted_production_evidence_leaves_fidelity_unknown(tmp_path):
+def test_corrupted_yield_evidence_leaves_fidelity_unknown(tmp_path):
     from seed_runtime.events import SQLiteEventLedger
 
     ledger = SQLiteEventLedger(tmp_path / "fidelity-evidence.sqlite")
@@ -531,7 +531,7 @@ def test_corrupted_production_evidence_leaves_fidelity_unknown(tmp_path):
             counting_scope="this locality",
         ),
         occurrences_of=lambda text: text.split().count("the"),
-        produce_in=(ledger, "w", "r"),
+        yield_in=(ledger, "w", "r"),
     )
     event = record_measurement_finding(
         ledger, workspace_id="w", session_id="r", finding=finding
@@ -539,7 +539,7 @@ def test_corrupted_production_evidence_leaves_fidelity_unknown(tmp_path):
     ledger._connection.execute("DROP TRIGGER events_refuse_update")
     ledger._connection.execute(
         "UPDATE events SET content_hash = ? WHERE id = ?",
-        ("corrupted", finding.production_evidence_id),
+        ("corrupted", finding.yield_evidence_id),
     )
     ledger._connection.commit()
     result = compare_recorded_finding(ledger, event.id)

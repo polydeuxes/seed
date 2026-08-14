@@ -1,7 +1,7 @@
-"""Bounded Compare over two productions of one canonical Assertion.
+"""Bounded Compare over two yields of one canonical Assertion.
 
 Canonical Assertion identity establishes the shared subject.  Distinct
-producing Event identities establish that there are two production
+yielding Event identities establish that there are two yield
 occurrences.  Compare reports literal sameness and difference across carried
 fidelity coordinates; it establishes no conflict, preference, truth, represented relation,
 or reason to revise either Assertion.
@@ -39,9 +39,9 @@ class AssertionComparisonError(ValueError):
 
 
 @dataclass(frozen=True)
-class AssertionProductionInput:
+class AssertionYieldInput:
     assertion_id: str
-    producing_event_id: str
+    yielding_event_id: str
     integrity: str
 
 
@@ -54,9 +54,9 @@ class AssertionCoordinateDistinction:
 
 
 @dataclass(frozen=True)
-class AssertionProductionComparison:
+class AssertionYieldComparison:
     assertion_id: str
-    inputs: tuple[AssertionProductionInput, AssertionProductionInput]
+    inputs: tuple[AssertionYieldInput, AssertionYieldInput]
     distinctions: tuple[AssertionCoordinateDistinction, ...]
     act: str = "Compare"
     responsible_boundary: str = "this bounded comparison occurrence"
@@ -71,7 +71,7 @@ class PositionalResultInput:
     """One exact occurrence-bound positional result input by Compare."""
 
     assertion_id: str
-    producing_event_id: str
+    yielding_event_id: str
     integrity: str
 
 
@@ -100,8 +100,8 @@ class PositionalResultComparison:
     )
 
 
-ASSERTION_PRODUCTION_COMPARISON_RECORDED_KIND = (
-    "operator.assertion.production_comparison_recorded"
+ASSERTION_YIELD_COMPARISON_RECORDED_KIND = (
+    "operator.assertion.yield_comparison_recorded"
 )
 POSITIONAL_RESULT_COMPARISON_RECORDED_KIND = (
     "operator.assertion.positional_result_comparison_recorded"
@@ -112,7 +112,7 @@ COMPARISON_ASSERTION_FIDELITY_RESPONSIBILITY = (
     "carried coordinates"
 )
 POSITIONAL_RESULT_COMPARISON_PROVENANCE = (
-    "the two exact positional result Assertion productions carried in support_basis"
+    "the two exact positional result Assertion yields carried in support_basis"
 )
 POSITIONAL_RESULT_COMPARISON_AUTHORITY = (
     "literal comparison evidence only; establishes no relation, similarity, "
@@ -130,18 +130,18 @@ POSITIONAL_RESULT_COMPARISON_FORBIDDEN_INFERENCES = (
 
 
 @dataclass(frozen=True)
-class RecordedAssertionProductionDistinction:
-    """One addressable coordinate result inside its producing Compare occurrence."""
+class RecordedAssertionYieldDistinction:
+    """One addressable coordinate result inside its yielding Compare occurrence."""
 
     assertion_id: str
-    producing_event_id: str
+    yielding_event_id: str
     coordinate: str
     payload: dict[str, Any]
 
     @property
     def reference(self) -> dict[str, str]:
         return {
-            "producing_event_id": self.producing_event_id,
+            "yielding_event_id": self.yielding_event_id,
             "assertion_id": self.assertion_id,
         }
 
@@ -151,14 +151,14 @@ class RecordedPositionalResultDistinction:
     """One addressable coordinate result of a positional-result Compare."""
 
     assertion_id: str
-    producing_event_id: str
+    yielding_event_id: str
     coordinate: str
     payload: dict[str, Any]
 
     @property
     def reference(self) -> dict[str, str]:
         return {
-            "producing_event_id": self.producing_event_id,
+            "yielding_event_id": self.yielding_event_id,
             "assertion_id": self.assertion_id,
         }
 
@@ -232,7 +232,7 @@ def _distinction_assertion_identity(
         "values": list(values),
         "same": same,
     }
-    return "assertion-production-distinction:" + hashlib.sha256(
+    return "assertion-yield-distinction:" + hashlib.sha256(
         _canonical_json(identity).encode("utf-8")
     ).hexdigest()
 
@@ -263,28 +263,28 @@ def _positional_result_distinction_identity(
     ).hexdigest()
 
 
-def compare_assertion_productions(
+def compare_assertion_yields(
     ledger: EventLedger, references: Iterable[dict[str, str]]
-) -> AssertionProductionComparison:
-    """Compare two exact productions of the same canonical Assertion."""
+) -> AssertionYieldComparison:
+    """Compare two exact yields of the same canonical Assertion."""
 
     refs = tuple(references)
     if len(refs) != 2:
         raise AssertionComparisonError(
-            f"Assertion production Compare has as input exactly two inputs; {len(refs)} supplied"
+            f"Assertion yield Compare has as input exactly two inputs; {len(refs)} supplied"
         )
-    required = {"producing_event_id", "assertion_id"}
+    required = {"yielding_event_id", "assertion_id"}
     if any(set(reference) != required for reference in refs):
         raise AssertionComparisonError(
-            "each input must be one exact producing-event and Assertion identity pair"
+            "each input must be one exact yielding-event and Assertion identity pair"
         )
-    if refs[0] == refs[1] or refs[0]["producing_event_id"] == refs[1]["producing_event_id"]:
+    if refs[0] == refs[1] or refs[0]["yielding_event_id"] == refs[1]["yielding_event_id"]:
         raise AssertionComparisonError(
-            "one producing occurrence cannot be compared with itself"
+            "one yielding occurrence cannot be compared with itself"
         )
     if refs[0]["assertion_id"] != refs[1]["assertion_id"]:
         raise AssertionComparisonError(
-            "Assertion production Compare requires one canonical Assertion identity"
+            "Assertion yield Compare requires one canonical Assertion identity"
         )
 
     reconstructed: list[RecordedMeasuredAssertion] = []
@@ -292,23 +292,23 @@ def compare_assertion_productions(
     for reference in refs:
         assertion = get_recorded_measured_assertion(
             ledger,
-            producing_event_id=reference["producing_event_id"],
+            yielding_event_id=reference["yielding_event_id"],
             assertion_id=reference["assertion_id"],
         )
         if assertion is None:
             raise AssertionComparisonError(
-                "an Assertion reference does not resolve to its producing occurrence"
+                "an Assertion reference does not resolve to its yielding occurrence"
             )
-        integrity = ledger.integrity_of(assertion.producing_event_id)
+        integrity = ledger.integrity_of(assertion.yielding_event_id)
         if integrity == CORRUPTED:
             raise AssertionComparisonError(
-                "a corrupted producing occurrence cannot participate in Compare"
+                "a corrupted yielding occurrence cannot participate in Compare"
             )
         reconstructed.append(assertion)
         inputs.append(
-            AssertionProductionInput(
+            AssertionYieldInput(
                 assertion_id=assertion.assertion_id,
-                producing_event_id=assertion.producing_event_id,
+                yielding_event_id=assertion.yielding_event_id,
                 integrity=integrity,
             )
         )
@@ -326,7 +326,7 @@ def compare_assertion_productions(
                 values=values,
             )
         )
-    return AssertionProductionComparison(
+    return AssertionYieldComparison(
         assertion_id=refs[0]["assertion_id"],
         inputs=(inputs[0], inputs[1]),
         distinctions=tuple(distinctions),
@@ -348,14 +348,14 @@ def compare_positional_result_assertions(
         raise AssertionComparisonError(
             f"positional result Compare has as input exactly two inputs; {len(refs)} supplied"
         )
-    required = {"producing_event_id", "assertion_id"}
+    required = {"yielding_event_id", "assertion_id"}
     if any(set(reference) != required for reference in refs):
         raise AssertionComparisonError(
-            "each input must be one exact producing-event and Assertion identity pair"
+            "each input must be one exact yielding-event and Assertion identity pair"
         )
-    if refs[0] == refs[1] or refs[0]["producing_event_id"] == refs[1]["producing_event_id"]:
+    if refs[0] == refs[1] or refs[0]["yielding_event_id"] == refs[1]["yielding_event_id"]:
         raise AssertionComparisonError(
-            "one positional result production cannot be compared with itself"
+            "one positional result yield cannot be compared with itself"
         )
 
     reconstructed: list[RecordedAdjacentPairResultAssertion] = []
@@ -363,15 +363,15 @@ def compare_positional_result_assertions(
     for reference in refs:
         assertion = get_recorded_adjacent_pair_result_assertion(
             ledger,
-            producing_event_id=reference["producing_event_id"],
+            yielding_event_id=reference["yielding_event_id"],
             assertion_id=reference["assertion_id"],
         )
         if assertion is None:
             raise AssertionComparisonError(
                 "a positional result Assertion reference does not resolve to its "
-                "producing occurrence"
+                "yielding occurrence"
             )
-        integrity = ledger.integrity_of(assertion.producing_event_id)
+        integrity = ledger.integrity_of(assertion.yielding_event_id)
         reconstructed.append(assertion)
         integrities.append(integrity)
 
@@ -394,7 +394,7 @@ def _compare_validated_positional_result_assertions(
     inputs = tuple(
         PositionalResultInput(
             assertion_id=assertion.assertion_id,
-            producing_event_id=assertion.producing_event_id,
+            yielding_event_id=assertion.yielding_event_id,
             integrity=integrity,
         )
         for assertion, integrity in zip(reconstructed, integrity_values)
@@ -453,11 +453,11 @@ def iter_positional_result_comparison_inputs(
     session_ids: Iterable[str],
     through: "EventLedgerBoundary",
 ) -> Iterator[tuple[dict[str, str], dict[str, str]]]:
-    """Form every unordered production pair sharing one exact subject.
+    """Form every unordered yield pair sharing one exact subject.
 
     The caller fixes the eligible append extent. Equal carried subjects supply
     comparability; no count, threshold, ranking, result value, or semantic
-    category admits or excludes a production. Compare is not performed here.
+    category admits or excludes a yield. Compare is not performed here.
     """
 
     by_subject = _positional_result_assertions_by_subject(
@@ -481,7 +481,7 @@ def record_positional_result_comparison(
 
     input_refs = tuple(
         {
-            "producing_event_id": item.producing_event_id,
+            "yielding_event_id": item.yielding_event_id,
             "assertion_id": item.assertion_id,
         }
         for item in comparison.inputs
@@ -509,11 +509,11 @@ def _positional_result_comparison_payload(
     session_id: str,
     comparison: PositionalResultComparison,
 ) -> dict[str, Any]:
-    """Represent a comparison already reproduced from validated inputs."""
+    """Represent a comparison already reyielded from validated inputs."""
 
     input_refs = tuple(
         {
-            "producing_event_id": item.producing_event_id,
+            "yielding_event_id": item.yielding_event_id,
             "assertion_id": item.assertion_id,
         }
         for item in comparison.inputs
@@ -544,7 +544,7 @@ def _positional_result_comparison_payload(
                     "authority": POSITIONAL_RESULT_COMPARISON_AUTHORITY,
                     "scope_locality": "the exact assertion_scope carried here",
                     "occurrence_preservation": (
-                        "distinct Compare result preserved by its producing occurrence"
+                        "distinct Compare result preserved by its yielding occurrence"
                     ),
                 },
                 "subject_kind": "assertion",
@@ -557,7 +557,7 @@ def _positional_result_comparison_payload(
                 "assertion_scope": {
                     "workspace_id": workspace_id,
                     "session_id": session_id,
-                    "compared_productions": list(input_refs),
+                    "compared_yields": list(input_refs),
                 },
                 "support_basis": {"assertion_refs": list(input_refs)},
                 "unknowns": list(POSITIONAL_RESULT_COMPARISON_UNKNOWNS),
@@ -576,7 +576,7 @@ def _positional_result_comparison_payload(
                 "scope_locality": f"workspace:{workspace_id};session:{session_id}",
                 "occurrence_preservation": "comparison occurrence durably recorded",
             },
-            "producing_act": "Compare",
+            "yielding_act": "Compare",
             "responsible_boundary": comparison.responsible_boundary,
             "responsibility": comparison.responsibility,
             "compared_subject": dict(comparison.subject),
@@ -597,7 +597,7 @@ def assertions_of_recorded_positional_result_comparison(
     stated = event.payload.get("assertions")
     outer_inputs = event.payload.get("inputs")
     compared_subject = event.payload.get("compared_subject")
-    required_ref = {"producing_event_id", "assertion_id"}
+    required_ref = {"yielding_event_id", "assertion_id"}
     if (
         not isinstance(stated, list)
         or len(stated) != len(POSITIONAL_RESULT_COORDINATES)
@@ -610,8 +610,8 @@ def assertions_of_recorded_positional_result_comparison(
             or not all(isinstance(value, str) and value for value in reference.values())
             for reference in outer_inputs
         )
-        or outer_inputs[0]["producing_event_id"]
-        == outer_inputs[1]["producing_event_id"]
+        or outer_inputs[0]["yielding_event_id"]
+        == outer_inputs[1]["yielding_event_id"]
     ):
         raise AssertionComparisonError(
             f"{event.id} does not carry one bounded positional-result Compare"
@@ -643,7 +643,7 @@ def assertions_of_recorded_positional_result_comparison(
             or dimensions.get("scope_locality")
             != "the exact assertion_scope carried here"
             or dimensions.get("occurrence_preservation")
-            != "distinct Compare result preserved by its producing occurrence"
+            != "distinct Compare result preserved by its yielding occurrence"
             or not isinstance(content, dict)
             or set(content) != {"coordinate", "present", "values", "same"}
             or not isinstance(identity, str)
@@ -656,7 +656,7 @@ def assertions_of_recorded_positional_result_comparison(
             != {
                 "workspace_id": event.workspace_id,
                 "session_id": event.session_id,
-                "compared_productions": outer_inputs,
+                "compared_yields": outer_inputs,
             }
             or assertion.get("unknowns")
             != list(POSITIONAL_RESULT_COMPARISON_UNKNOWNS)
@@ -703,7 +703,7 @@ def assertions_of_recorded_positional_result_comparison(
         reconstructed.append(
             RecordedPositionalResultDistinction(
                 assertion_id=identity,
-                producing_event_id=event.id,
+                yielding_event_id=event.id,
                 coordinate=coordinate,
                 payload=assertion,
             )
@@ -716,11 +716,11 @@ def assertions_of_recorded_positional_result_comparison(
 
 
 def get_recorded_positional_result_distinction(
-    ledger: EventLedger, *, producing_event_id: str, assertion_id: str
+    ledger: EventLedger, *, yielding_event_id: str, assertion_id: str
 ) -> RecordedPositionalResultDistinction | None:
-    """Resolve one result only after reproducing its bounded Compare."""
+    """Resolve one result only after reyielding its bounded Compare."""
 
-    event = ledger.get(producing_event_id)
+    event = ledger.get(yielding_event_id)
     if event is None:
         return None
     reconstructed = _validate_recorded_positional_result_comparison(ledger, event)
@@ -760,7 +760,7 @@ def _require_recorded_positional_comparison_matches(
     """Require the carried occurrence and outputs to equal the replayed Act."""
 
     if (
-        event.payload.get("producing_act") != comparison.act
+        event.payload.get("yielding_act") != comparison.act
         or event.payload.get("responsible_boundary") != comparison.responsible_boundary
         or event.payload.get("responsibility") != comparison.responsibility
         or event.payload["compared_subject"] != comparison.subject
@@ -814,11 +814,11 @@ def iter_recorded_positional_result_distinctions(
             integrities = []
             for reference in event.payload["inputs"]:
                 ref = (
-                    reference["producing_event_id"],
+                    reference["yielding_event_id"],
                     reference["assertion_id"],
                 )
-                producing_event = ledger.get(ref[0])
-                if producing_event is None:
+                yielding_event = ledger.get(ref[0])
+                if yielding_event is None:
                     raise AssertionComparisonError(
                         "a positional result input is no longer reconstructible"
                     )
@@ -827,14 +827,14 @@ def iter_recorded_positional_result_distinctions(
                     raise AssertionComparisonError(
                         "a corrupted positional result cannot supply Compare"
                     )
-                assertion = assertion_of_recorded_adjacent_pair_result(producing_event)
+                assertion = assertion_of_recorded_adjacent_pair_result(yielding_event)
                 if assertion.assertion_id != ref[1]:
                     raise AssertionComparisonError(
                         "a positional result input reference changed"
                     )
                 if ref not in validated_refs:
                     _validate_result_assertion_ingress(
-                        ledger, producing_event, assertion, validation=validation
+                        ledger, yielding_event, assertion, validation=validation
                     )
                     validated_refs.add(ref)
                 input_assertions.append(assertion)
@@ -895,10 +895,10 @@ def record_positional_result_comparison_layer(
     for references in by_subject.values():
         reconstructed = []
         for reference in references:
-            event = ledger.get(reference["producing_event_id"])
+            event = ledger.get(reference["yielding_event_id"])
             if event is None:
                 raise AssertionComparisonError(
-                    "a validated positional result production is no longer reconstructible"
+                    "a validated positional result yield is no longer reconstructible"
                 )
             assertion = assertion_of_recorded_adjacent_pair_result(event)
             if assertion.assertion_id != reference["assertion_id"]:
@@ -910,8 +910,8 @@ def record_positional_result_comparison_layer(
             comparison = _compare_validated_positional_result_assertions(
                 (left, right),
                 integrities=(
-                    ledger.integrity_of(left.producing_event_id),
-                    ledger.integrity_of(right.producing_event_id),
+                    ledger.integrity_of(left.yielding_event_id),
+                    ledger.integrity_of(right.yielding_event_id),
                 ),
             )
             pending.append(
@@ -937,23 +937,23 @@ def record_positional_result_comparison_layer(
     return recorded
 
 
-def record_assertion_production_comparison(
+def record_assertion_yield_comparison(
     ledger: EventLedger,
     *,
     workspace_id: str,
     session_id: str,
-    comparison: AssertionProductionComparison,
+    comparison: AssertionYieldComparison,
 ) -> Event:
     """Preserve each literal Compare result without establishing later input support."""
 
     input_refs = tuple(
         {
-            "producing_event_id": item.producing_event_id,
+            "yielding_event_id": item.yielding_event_id,
             "assertion_id": item.assertion_id,
         }
         for item in comparison.inputs
     )
-    verified = compare_assertion_productions(ledger, input_refs)
+    verified = compare_assertion_yields(ledger, input_refs)
     if comparison != verified:
         raise AssertionComparisonError(
             "the supplied comparison does not match its occurrence-bound inputs"
@@ -980,7 +980,7 @@ def record_assertion_production_comparison(
                     "content": content,
                     "standing": "compared",
                     "source_provenance": (
-                        "the two exact occurrence-bound productions carried in "
+                        "the two exact occurrence-bound yields carried in "
                         "support_basis"
                     ),
                     "responsibility": COMPARISON_ASSERTION_FIDELITY_RESPONSIBILITY,
@@ -990,12 +990,12 @@ def record_assertion_production_comparison(
                     ),
                     "scope_locality": "the exact assertion_scope carried here",
                     "occurrence_preservation": (
-                        "distinct Compare result preserved by its producing occurrence"
+                        "distinct Compare result preserved by its yielding occurrence"
                     ),
                 },
                 "subject_kind": "assertion",
                 "responsible_boundary": "this recorded assertion",
-                "result": "assertion_production_coordinate_distinction",
+                "result": "assertion_yield_coordinate_distinction",
                 "assertion_subject": {
                     "compared_assertion_id": comparison.assertion_id,
                     "coordinate": distinction.coordinate,
@@ -1003,7 +1003,7 @@ def record_assertion_production_comparison(
                 "assertion_scope": {
                     "workspace_id": workspace_id,
                     "session_id": session_id,
-                    "compared_productions": list(input_refs),
+                    "compared_yields": list(input_refs),
                 },
                 "support_basis": {"assertion_refs": list(input_refs)},
                 "unknowns": [
@@ -1021,19 +1021,19 @@ def record_assertion_production_comparison(
             }
         )
     return ledger.append(
-        ASSERTION_PRODUCTION_COMPARISON_RECORDED_KIND,
+        ASSERTION_YIELD_COMPARISON_RECORDED_KIND,
         workspace_id,
         {
             "dimensions": {
-                "identity": "assertion-production-comparison-occurrence",
+                "identity": "assertion-yield-comparison-occurrence",
                 "content": f"{len(assertions)} distinct comparison Assertions recorded",
                 "standing": "recorded",
-                "source_provenance": "two occurrence-bound Assertion productions",
+                "source_provenance": "two occurrence-bound Assertion yields",
                 "authority": "literal Compare results only",
                 "scope_locality": f"workspace:{workspace_id};session:{session_id}",
                 "occurrence_preservation": "comparison occurrence durably recorded",
             },
-            "producing_act": "Compare",
+            "yielding_act": "Compare",
             "responsible_boundary": comparison.responsible_boundary,
             "responsibility": comparison.responsibility,
             "inputs": list(input_refs),
@@ -1045,12 +1045,12 @@ def record_assertion_production_comparison(
 
 def assertions_of_recorded_assertion_comparison(
     event: Event,
-) -> tuple[RecordedAssertionProductionDistinction, ...]:
+) -> tuple[RecordedAssertionYieldDistinction, ...]:
     """Reconstruct and verify every addressable result of one recorded Compare."""
 
-    if event.kind != ASSERTION_PRODUCTION_COMPARISON_RECORDED_KIND:
+    if event.kind != ASSERTION_YIELD_COMPARISON_RECORDED_KIND:
         raise AssertionComparisonError(
-            f"{event.id} is {event.kind}, not an Assertion production Compare occurrence"
+            f"{event.id} is {event.kind}, not an Assertion yield Compare occurrence"
         )
     stated = event.payload.get("assertions")
     outer_inputs = event.payload.get("inputs")
@@ -1058,7 +1058,7 @@ def assertions_of_recorded_assertion_comparison(
         raise AssertionComparisonError(
             f"{event.id} does not preserve its distinct comparison Assertions"
         )
-    required_ref = {"producing_event_id", "assertion_id"}
+    required_ref = {"yielding_event_id", "assertion_id"}
     if (
         not isinstance(outer_inputs, list)
         or len(outer_inputs) != 2
@@ -1068,12 +1068,12 @@ def assertions_of_recorded_assertion_comparison(
             or not all(isinstance(value, str) and value for value in reference.values())
             for reference in outer_inputs
         )
-        or outer_inputs[0]["producing_event_id"]
-        == outer_inputs[1]["producing_event_id"]
+        or outer_inputs[0]["yielding_event_id"]
+        == outer_inputs[1]["yielding_event_id"]
         or outer_inputs[0]["assertion_id"] != outer_inputs[1]["assertion_id"]
     ):
         raise AssertionComparisonError(
-            f"{event.id} does not carry two distinct productions of one Assertion"
+            f"{event.id} does not carry two distinct yields of one Assertion"
         )
     if len(stated) != len(COORDINATES):
         raise AssertionComparisonError(
@@ -1092,13 +1092,13 @@ def assertions_of_recorded_assertion_comparison(
         input_refs = support.get("assertion_refs") if isinstance(support, dict) else None
         if (
             assertion.get("subject_kind") != "assertion"
-            or assertion.get("result") != "assertion_production_coordinate_distinction"
+            or assertion.get("result") != "assertion_yield_coordinate_distinction"
             or not isinstance(content, dict)
             or not isinstance(subject, dict)
             or not isinstance(scope, dict)
             or not isinstance(input_refs, list)
             or input_refs != outer_inputs
-            or scope.get("compared_productions") != input_refs
+            or scope.get("compared_yields") != input_refs
             or not isinstance(scope.get("workspace_id"), str)
             or not isinstance(scope.get("session_id"), str)
             or scope.get("workspace_id") != event.workspace_id
@@ -1151,9 +1151,9 @@ def assertions_of_recorded_assertion_comparison(
             )
         seen.add(identity)
         reconstructed.append(
-            RecordedAssertionProductionDistinction(
+            RecordedAssertionYieldDistinction(
                 assertion_id=identity,
-                producing_event_id=event.id,
+                yielding_event_id=event.id,
                 coordinate=content["coordinate"],
                 payload=assertion,
             )

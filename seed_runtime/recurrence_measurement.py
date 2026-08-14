@@ -3,7 +3,7 @@
 **No new Act.** `#2351` reconstructed declared measurement and said no new act,
 noun, or grammar is required; recurrence and count are already its findings.
 This measures a different subject — recorded comparison and measurement
-occurrences instead of preserved material — and produces an exact count of the
+occurrences instead of preserved material — and yields an exact count of the
 bounded exchanges a distinction was measured in. Recurrence is one reading of
 that count, established only where the count exceeds one.
 A distinct record shape is established (`#2399`: a downstream shape must not
@@ -25,7 +25,7 @@ and recurrence is asserted only where N exceeds one.
 **Its result stands on both recorded kinds.** Recorded comparison occurrences
 say which exchanges measured the distinction. Recorded measurement occurrences
 say which exchanges measured the coordinate at all. Neither answers alone, so
-every occurrence of both kinds that produced the result travels as Evidence —
+every occurrence of both kinds that yielded the result travels as Evidence —
 `#2419` holds that preservation must not erase what a result stood on, and
 `#2429` recorded only the comparisons.
 
@@ -184,7 +184,7 @@ class MeasuredAssertion:
                 ),
                 "scope_locality": "the exact assertion_scope carried here",
                 "occurrence_preservation": (
-                    "distinct result preserved by its producing occurrence"
+                    "distinct result preserved by its yielding occurrence"
                 ),
             },
             "subject_kind": "assertion",
@@ -194,7 +194,7 @@ class MeasuredAssertion:
             "assertion_scope": dict(self.scope),
             "support_basis": {
                 "event_ids": list(self.support_event_ids),
-                # These dependencies are local to the same producing
+                # These dependencies are local to the same yielding
                 # occurrence. Reconstruction binds each to that occurrence's id
                 # before exposing it to a downstream Act.
                 "local_assertion_ids": list(self.support_assertion_ids),
@@ -225,11 +225,11 @@ class MeasuredAssertion:
 
 @dataclass(frozen=True)
 class RecordedMeasuredAssertion:
-    """One addressable Assertion preserved inside its producing occurrence."""
+    """One addressable Assertion preserved inside its yielding occurrence."""
 
     assertion_id: str
-    producing_event_id: str
-    producing_session_id: str | None
+    yielding_event_id: str
+    yielding_session_id: str | None
     result: str
     payload: dict[str, Any]
     support_assertion_refs: tuple[dict[str, str], ...] = ()
@@ -238,12 +238,12 @@ class RecordedMeasuredAssertion:
     def reference(self) -> dict[str, str]:
         return {
             "assertion_id": self.assertion_id,
-            "producing_event_id": self.producing_event_id,
+            "yielding_event_id": self.yielding_event_id,
         }
 
 
 def assertions_of_recorded_measurement(event: Event) -> tuple[RecordedMeasuredAssertion, ...]:
-    """Reconstruct every Assertion from one exact producing occurrence."""
+    """Reconstruct every Assertion from one exact yielding occurrence."""
 
     if event.kind != EXCHANGE_COUNT_RECORDED_KIND:
         raise RecurrenceMeasurementError(
@@ -317,8 +317,8 @@ def assertions_of_recorded_measurement(event: Event) -> tuple[RecordedMeasuredAs
         reconstructed.append(
             RecordedMeasuredAssertion(
                 assertion_id=identity,
-                producing_event_id=event.id,
-                producing_session_id=event.session_id,
+                yielding_event_id=event.id,
+                yielding_session_id=event.session_id,
                 result=result,
                 payload=assertion,
             )
@@ -365,13 +365,13 @@ def assertions_of_recorded_measurement(event: Event) -> tuple[RecordedMeasuredAs
         bound.append(
             RecordedMeasuredAssertion(
                 assertion_id=assertion.assertion_id,
-                producing_event_id=assertion.producing_event_id,
-                producing_session_id=assertion.producing_session_id,
+                yielding_event_id=assertion.yielding_event_id,
+                yielding_session_id=assertion.yielding_session_id,
                 result=assertion.result,
                 payload=assertion.payload,
                 support_assertion_refs=tuple(
                     {
-                        "producing_event_id": event.id,
+                        "yielding_event_id": event.id,
                         "assertion_id": local_id,
                     }
                     for local_id in local_ids
@@ -401,11 +401,11 @@ def iter_recorded_measured_assertions(
 
 
 def get_recorded_measured_assertion(
-    ledger: EventLedger, *, producing_event_id: str, assertion_id: str
+    ledger: EventLedger, *, yielding_event_id: str, assertion_id: str
 ) -> RecordedMeasuredAssertion | None:
     """Resolve one exact occurrence-bound Assertion reference."""
 
-    event = ledger.get(producing_event_id)
+    event = ledger.get(yielding_event_id)
     if event is None:
         return None
     for assertion in assertions_of_recorded_measurement(event):
@@ -668,7 +668,7 @@ def assertions_from_measured_count(
 
     This is result fan-out, not inference from one Assertion to another.  The
     three classifications retain their exact-set shape and therefore carry the
-    completeness boundary of the reads that produced them.  Count stands on
+    completeness boundary of the reads that yielded them.  Count stands on
     the measured-in Assertion, and recurrence stands on count only where the
     count establishes recurrence.
     """
@@ -756,9 +756,9 @@ def record_measured_count(
     session_id: str,
     finding: MeasuredCountFinding,
 ) -> Event:
-    """Preserve the distinct Assertions one recurrence Measurement produced.
+    """Preserve the distinct Assertions one recurrence Measurement yielded.
 
-    Production Evidence binds the exact responsible Measurement occurrence to
+    Yield Evidence binds the exact responsible Measurement occurrence to
     these exact results. Each result Assertion separately bears Responsibility for fidelity of its
     Standing to its carried coordinates.
     """
@@ -782,9 +782,9 @@ def record_measured_count(
             "occurrence_preservation": "count finding durably recorded",
         },
         "assertions": [assertion.to_json_dict() for assertion in assertions],
-        "producing_act": "declared measurement",
-        "production_occurrence_evidence": (
-            "the recorded producing occurrence this payload is appended as"
+        "yielding_act": "declared measurement",
+        "yield_occurrence_evidence": (
+            "the recorded yielding occurrence this payload is appended as"
         ),
         "measurement_subject": (
             "recorded comparison occurrences and recorded measurement occurrences"

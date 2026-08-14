@@ -78,7 +78,7 @@ ExactMaterialPart = LiteralPart | ReferencePart
 
 @dataclass(frozen=True)
 class ExactMaterialPointerRule:
-    """The declared bounds of the search that produced an account.
+    """The declared bounds of the search that yielded an account.
 
     Carried so an account of a bounded search discloses its bounds. Two
     accounts of the same material under different pointer_rules are different
@@ -147,7 +147,7 @@ class ExactMaterialPointers:
             raise ExactMaterialPointerError("parts must contain only literals or references")
         if not isinstance(self.pointer_rule, ExactMaterialPointerRule):
             raise ExactMaterialPointerError(
-                "an account must declare the pointer_rule that produced it"
+                "an account must declare the pointer_rule that yielded it"
             )
         reconstructed = reconstruct_exact_bytes(self, verify=False)
         if len(reconstructed) != self.byte_count:
@@ -234,7 +234,7 @@ def reconstruct_exact_bytes(
             reconstructed.extend(part.exact_bytes)
             continue
         end = part.start + part.length
-        # A reference may point to bytes produced by an earlier reference, but
+        # A reference may point to bytes yielded by an earlier reference, but
         # its complete source span must already exist before this part begins.
         if end > len(reconstructed):
             raise ExactMaterialPointerError(

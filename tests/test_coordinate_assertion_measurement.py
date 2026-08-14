@@ -52,7 +52,7 @@ def test_measurement_groups_only_by_canonical_coordinate_assertion_identity():
     )
     assert sum(finding.count for finding in findings) == len(source_assertions)
     assert all(
-        {ref["assertion_id"] for ref in finding.production_refs}
+        {ref["assertion_id"] for ref in finding.yield_refs}
         == {finding.source_assertion_id}
         for finding in findings
     )
@@ -73,22 +73,22 @@ def test_recording_preserves_set_count_and_only_evidenced_recurrence():
     reconstructed = [
         assertions_of_recorded_coordinate_assertion_count(event) for event in events
     ]
-    assert any([item.result for item in group] == ["exact_production_set", "count"] for group in reconstructed)
+    assert any([item.result for item in group] == ["exact_yield_set", "count"] for group in reconstructed)
     assert any(
         [item.result for item in group]
-        == ["exact_production_set", "count", "recurrence"]
+        == ["exact_yield_set", "count", "recurrence"]
         for group in reconstructed
     )
     for group in reconstructed:
         by_result = {item.result: item for item in group}
-        production_set = by_result["exact_production_set"]
+        yield_set = by_result["exact_yield_set"]
         count = by_result["count"]
-        refs = production_set.payload["support_basis"]["assertion_refs"]
+        refs = yield_set.payload["support_basis"]["assertion_refs"]
         assert count.payload["dimensions"]["content"] == {
-            "production_count": len(refs)
+            "yield_count": len(refs)
         }
         assert count.payload["support_basis"] == {
-            "local_assertion_ids": [production_set.assertion_id]
+            "local_assertion_ids": [yield_set.assertion_id]
         }
         assert ("recurrence" in by_result) == (len(refs) > 1)
         if "recurrence" in by_result:
@@ -111,7 +111,7 @@ def test_recorded_results_are_occurrence_bound_and_ledger_addressable():
     assert all(
         get_recorded_coordinate_assertion_count(
             ledger,
-            producing_event_id=event.id,
+            yielding_event_id=event.id,
             assertion_id=item.assertion_id,
         )
         == item
@@ -119,7 +119,7 @@ def test_recorded_results_are_occurrence_bound_and_ledger_addressable():
     )
 
 
-def test_validation_refuses_a_self_consistent_invented_production_set():
+def test_validation_refuses_a_self_consistent_invented_yield_set():
     ledger = _coordinate_inputs()
     record_coordinate_assertion_count_layer(
         ledger,
@@ -133,20 +133,20 @@ def test_validation_refuses_a_self_consistent_invented_production_set():
         if len(item.payload["assertions"][0]["support_basis"]["assertion_refs"])
         > 2
     )
-    production_set = event.payload["assertions"][0]
+    yield_set = event.payload["assertions"][0]
     count = event.payload["assertions"][1]
     recurrence = event.payload["assertions"][2]
-    refs = deepcopy(production_set["support_basis"]["assertion_refs"][:-1])
-    production_set["support_basis"] = {"assertion_refs": refs}
-    production_set["dimensions"]["content"] = {"production_refs": refs}
+    refs = deepcopy(yield_set["support_basis"]["assertion_refs"][:-1])
+    yield_set["support_basis"] = {"assertion_refs": refs}
+    yield_set["dimensions"]["content"] = {"yield_refs": refs}
     set_id = _assertion_identity(
-        result="exact_production_set",
-        subject=production_set["assertion_subject"],
-        scope=production_set["assertion_scope"],
-        content=production_set["dimensions"]["content"],
+        result="exact_yield_set",
+        subject=yield_set["assertion_subject"],
+        scope=yield_set["assertion_scope"],
+        content=yield_set["dimensions"]["content"],
     )
-    production_set["dimensions"]["identity"] = set_id
-    count["dimensions"]["content"] = {"production_count": len(refs)}
+    yield_set["dimensions"]["identity"] = set_id
+    count["dimensions"]["content"] = {"yield_count": len(refs)}
     count_id = _assertion_identity(
         result="count",
         subject=count["assertion_subject"],
@@ -160,7 +160,7 @@ def test_validation_refuses_a_self_consistent_invented_production_set():
     with pytest.raises(CoordinateAssertionMeasurementError):
         get_recorded_coordinate_assertion_count(
             ledger,
-            producing_event_id=event.id,
+            yielding_event_id=event.id,
             assertion_id=set_id,
         )
 
@@ -174,17 +174,17 @@ def test_validation_refuses_self_consistent_content_not_carried_by_source():
         recording_session_id="coordinate-counts",
     )
     event = ledger.list_session("w", "coordinate-counts")[0]
-    production_set, count, *rest = event.payload["assertions"]
+    yield_set, count, *rest = event.payload["assertions"]
     for assertion in event.payload["assertions"]:
         assertion["assertion_subject"] = deepcopy(assertion["assertion_subject"])
         assertion["assertion_subject"]["exact_coordinate_value"] = "invented"
     set_id = _assertion_identity(
-        result="exact_production_set",
-        subject=production_set["assertion_subject"],
-        scope=production_set["assertion_scope"],
-        content=production_set["dimensions"]["content"],
+        result="exact_yield_set",
+        subject=yield_set["assertion_subject"],
+        scope=yield_set["assertion_scope"],
+        content=yield_set["dimensions"]["content"],
     )
-    production_set["dimensions"]["identity"] = set_id
+    yield_set["dimensions"]["identity"] = set_id
     count_id = _assertion_identity(
         result="count",
         subject=count["assertion_subject"],
@@ -207,7 +207,7 @@ def test_validation_refuses_self_consistent_content_not_carried_by_source():
     with pytest.raises(CoordinateAssertionMeasurementError):
         get_recorded_coordinate_assertion_count(
             ledger,
-            producing_event_id=event.id,
+            yielding_event_id=event.id,
             assertion_id=set_id,
         )
 

@@ -83,7 +83,7 @@ def test_measurement_accepts_source_results_in_a_different_serialized_order():
     assertion = assertion_of_recorded_equality_signature(recorded)
     assert get_recorded_equality_signature(
         ledger,
-        producing_event_id=recorded.id,
+        yielding_event_id=recorded.id,
         assertion_id=assertion.assertion_id,
     ) == assertion
 
@@ -144,7 +144,7 @@ def test_ledger_validation_replays_the_complete_source_surface():
 
     assert get_recorded_equality_signature(
         ledger,
-        producing_event_id=event.id,
+        yielding_event_id=event.id,
         assertion_id=assertion.assertion_id,
     ) == assertion
 
@@ -202,7 +202,7 @@ def test_ledger_validation_refuses_a_self_consistent_false_signature():
     ):
         get_recorded_equality_signature(
             ledger,
-            producing_event_id=forged.id,
+            yielding_event_id=forged.id,
             assertion_id=assertion["dimensions"]["identity"],
         )
 

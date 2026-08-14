@@ -107,7 +107,7 @@ def test_every_minted_prefix_is_reserved_or_declared_process_local():
     ledger mechanics merely because it shares a helper.
 
     Rather than infer which calls are durable — which is the kind of inference
-    that produced this defect three times — every minted prefix must be either
+    that yielded this defect three times — every minted prefix must be either
     reserved or **declared** process-local above. Adding a prefix forces that
     decision into the open instead of leaving it to whoever reads the diff.
 

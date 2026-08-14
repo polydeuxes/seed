@@ -97,7 +97,7 @@ def test_independently_persisted_equal_prefixes_share_a_boundary(tmp_path):
 
 
 @pytest.mark.parametrize("durable", (False, True))
-def test_batched_and_repeated_appends_produce_the_same_boundary(tmp_path, durable):
+def test_batched_and_repeated_appends_yield_the_same_boundary(tmp_path, durable):
     events = [
         Event(id="e1", kind="first", workspace_id="w", payload={"n": 1}),
         Event(id="e2", kind="second", workspace_id="w", payload={"n": 2}),
@@ -286,7 +286,7 @@ def test_the_two_ledgers_preserve_the_same_payload(tmp_path):
 
     They share an API and are used interchangeably, and a durable store silently
     returned `[1, 2]` for a tuple and `{"1": ...}` for an integer key while the
-    in-memory ledger returned what the caller passed. The same append produced
+    in-memory ledger returned what the caller passed. The same append yielded
     two different occurrences depending on which ledger held it, with nothing
     recorded to say so.
     """

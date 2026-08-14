@@ -67,13 +67,13 @@ class MeasuredEqualitySignature:
 @dataclass(frozen=True)
 class RecordedEqualitySignatureAssertion:
     assertion_id: str
-    producing_event_id: str
+    yielding_event_id: str
     payload: dict[str, Any]
 
     @property
     def reference(self) -> dict[str, str]:
         return {
-            "producing_event_id": self.producing_event_id,
+            "yielding_event_id": self.yielding_event_id,
             "assertion_id": self.assertion_id,
         }
 
@@ -156,7 +156,7 @@ def measure_equality_signatures(
         )
         different = tuple(name for name in _surface() if name not in same)
         return MeasuredEqualitySignature(
-            source_event_id=results[0].producing_event_id,
+            source_event_id=results[0].yielding_event_id,
             source_assertions=tuple(by_coordinate[name] for name in _surface()),
             source_session_ids=sessions,
             same_coordinates=same,
@@ -184,11 +184,11 @@ def measure_equality_signatures(
         try:
             for result in chain((first,), reconstructed):
                 if current_event_id is None:
-                    current_event_id = result.producing_event_id
-                if result.producing_event_id != current_event_id:
+                    current_event_id = result.yielding_event_id
+                if result.yielding_event_id != current_event_id:
                     yield measured(current)
                     current = []
-                    current_event_id = result.producing_event_id
+                    current_event_id = result.yielding_event_id
                 current.append(result)
         except AssertionComparisonError as exc:
             raise EqualitySignatureMeasurementError(str(exc)) from exc
@@ -249,7 +249,7 @@ def _event(
                 "source_provenance": "one recorded positional-result Compare",
                 "authority": MEASUREMENT_AUTHORITY,
             },
-            "producing_act": "declared Measurement",
+            "yielding_act": "declared Measurement",
             "measurement_subject": "complete positional-result Compare coordinate surface",
             "source_compare_event_id": finding.source_event_id,
             "assertions": [assertion],
@@ -312,7 +312,7 @@ def assertion_of_recorded_equality_signature(
             "source_provenance": "one recorded positional-result Compare",
             "authority": MEASUREMENT_AUTHORITY,
         }
-        or event.payload.get("producing_act") != "declared Measurement"
+        or event.payload.get("yielding_act") != "declared Measurement"
         or event.payload.get("measurement_subject")
         != "complete positional-result Compare coordinate surface"
     ):
@@ -366,8 +366,8 @@ def assertion_of_recorded_equality_signature(
         or set(same) | set(different) != set(surface)
         or any(
             not isinstance(ref, dict)
-            or set(ref) != {"producing_event_id", "assertion_id"}
-            or ref["producing_event_id"] != source_event_id
+            or set(ref) != {"yielding_event_id", "assertion_id"}
+            or ref["yielding_event_id"] != source_event_id
             for ref in refs
         )
         or dimensions.get("identity") != _identity(scope=scope, content=content)
@@ -377,17 +377,17 @@ def assertion_of_recorded_equality_signature(
         )
     return RecordedEqualitySignatureAssertion(
         assertion_id=dimensions["identity"],
-        producing_event_id=event.id,
+        yielding_event_id=event.id,
         payload=assertion,
     )
 
 
 def get_recorded_equality_signature(
-    ledger: EventLedger, *, producing_event_id: str, assertion_id: str
+    ledger: EventLedger, *, yielding_event_id: str, assertion_id: str
 ) -> RecordedEqualitySignatureAssertion | None:
     """Resolve a signature after replaying its exact source Compare."""
 
-    event = ledger.get(producing_event_id)
+    event = ledger.get(yielding_event_id)
     if event is None:
         return None
     reconstructed = _validate_equality_signature(ledger, event)

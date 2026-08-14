@@ -1,7 +1,7 @@
-"""A bounded comparison of a recorded finding and its production evidence.
+"""A bounded comparison of a recorded finding and its yield evidence.
 
 `01.Source.D` grants this and states its conditions: a Fidelity finding is
-produced only by a bounded comparison bringing constitutional grammar, a
+yielded only by a bounded comparison bringing constitutional grammar, a
 bounded expectation, and an implementation witness under a declared seam or
 scope. Within that scope it may find the witness faithful, an unfaithful
 boundary crossing, mixed, or Unknown, and it must not become global
@@ -9,12 +9,12 @@ certification, a completion declaration, a responsible-boundary map, a score, a 
 public diagnostic, or correction authority.
 
 **What this compares.** One recorded recurrence Measurement finding and the
-production evidence that finding names. `#2517` established that represented
+yield evidence that finding names. `#2517` established that represented
 relation for recurrence only: a measuring act preserves evidence of what it
-produced, and the result carries the reference. Positional Measurement has not
-adopted that production witness and is outside this comparator's scope. The
-evidence is not the producing occurrence by identity. The expectation is exact
-and local — *the recorded result is the result its production evidence
+yielded, and the result carries the reference. Positional Measurement has not
+adopted that yield witness and is outside this comparator's scope. The
+evidence is not the yielding occurrence by identity. The expectation is exact
+and local — *the recorded result is the result its yield evidence
 concerns* — and the witness is the recorded event itself.
 
 **What it does not do.** It revises nothing. `06.Standing.B` establishes that
@@ -43,10 +43,10 @@ from seed_runtime.preserved_material_measurement import (
     RECURRENCE_RESULT_KIND,
     RESPONSIBILITY_UNESTABLISHED,
 )
-from seed_runtime.production_evidence import (
-    PRODUCTION_EVIDENCE_KIND,
-    _record_production_evidence,
-    production_commitment,
+from seed_runtime.yield_evidence import (
+    YIELD_EVIDENCE_KIND,
+    _record_yield_evidence,
+    yield_commitment,
 )
 
 FIDELITY_FINDING_KIND = "operator.fidelity.finding_recorded"
@@ -66,7 +66,7 @@ FIDELITY_RESULT_COORDINATES = frozenset(
         "constitutional_subject",
         "bounded_expectation",
         "implementation_witness",
-        "production_evidence",
+        "yield_evidence",
         "evidence_and_provenance",
         "authority_boundary",
         "preserved_invariants",
@@ -79,10 +79,10 @@ FIDELITY_RESULT_COORDINATES = frozenset(
     }
 )
 FIDELITY_RECORDING_COORDINATES = frozenset(
-    {"production_evidence_id", "occurrence_preservation"}
+    {"yield_evidence_id", "occurrence_preservation"}
 )
 FIDELITY_OCCURRENCE_PRESERVATION = (
-    "Fidelity finding durably recorded after its exact result was produced"
+    "Fidelity finding durably recorded after its exact result was yielded"
 )
 
 
@@ -100,7 +100,7 @@ class RecordedFidelityFinding:
     """
 
     recorded_occurrence_id: str
-    production_evidence_id: str
+    yield_evidence_id: str
     source_finding_event_id: str
     standing: str
 
@@ -108,8 +108,8 @@ class RecordedFidelityFinding:
     def reference(self) -> dict[str, str]:
         """Address this durable recording occurrence for later re-reconstruction.
 
-        This is not a reference to the producing Act occurrence or to the
-        production-Evidence occurrence. Those identities remain distinct.
+        This is not a reference to the yielding Act occurrence or to the
+        yield-Evidence occurrence. Those identities remain distinct.
         """
 
         return {"recorded_occurrence_id": self.recorded_occurrence_id}
@@ -121,7 +121,7 @@ def get_recorded_fidelity_finding(
     """Reconstruct one occurrence-bound Fidelity result without using it.
 
     Reconstruction establishes that the occurrence carries the exact result its
-    production Evidence commits to. It does not decide this finding's
+    yield Evidence commits to. It does not decide this finding's
     Applicability to any later Act, traverse its source finding, or revise
     anything.
     """
@@ -147,41 +147,41 @@ def get_recorded_fidelity_finding(
         raise FindingFidelityError(
             f"{event_id} does not preserve the Fidelity recording occurrence"
         )
-    evidence_id = payload.get("production_evidence_id")
+    evidence_id = payload.get("yield_evidence_id")
     if not isinstance(evidence_id, str) or not evidence_id:
         raise FindingFidelityError(
-            f"{event_id} names no exact production Evidence occurrence"
+            f"{event_id} names no exact yield Evidence occurrence"
         )
     evidence = ledger.get(evidence_id)
-    if evidence is None or evidence.kind != PRODUCTION_EVIDENCE_KIND:
+    if evidence is None or evidence.kind != YIELD_EVIDENCE_KIND:
         raise FindingFidelityError(
-            f"{evidence_id} is not preserved production Evidence"
+            f"{evidence_id} is not preserved yield Evidence"
         )
     if ledger.integrity_of(evidence_id) == CORRUPTED:
         raise FindingFidelityError(
-            "corrupted production Evidence cannot expose a Fidelity finding"
+            "corrupted yield Evidence cannot expose a Fidelity finding"
         )
     if evidence.workspace_id != event.workspace_id:
         raise FindingFidelityError(
-            "a Fidelity finding and its production Evidence must belong to "
+            "a Fidelity finding and its yield Evidence must belong to "
             "the same workspace"
         )
     if (
-        evidence.payload.get("production_convention") != FIDELITY_CONVENTION
-        or evidence.payload.get("produced_result_kind") != FIDELITY_RESULT_KIND
-        or evidence.payload.get("production_coordinates")
+        evidence.payload.get("yield_convention") != FIDELITY_CONVENTION
+        or evidence.payload.get("yielded_result_kind") != FIDELITY_RESULT_KIND
+        or evidence.payload.get("yield_coordinates")
         != sorted(FIDELITY_RESULT_COORDINATES)
     ):
         raise FindingFidelityError(
-            "the named production Evidence does not describe the exact "
+            "the named yield Evidence does not describe the exact "
             "Fidelity result contract"
         )
-    produced = {name: payload[name] for name in FIDELITY_RESULT_COORDINATES}
-    if evidence.payload.get("production_commitment") != production_commitment(
-        FIDELITY_CONVENTION, produced
+    yielded = {name: payload[name] for name in FIDELITY_RESULT_COORDINATES}
+    if evidence.payload.get("yield_commitment") != yield_commitment(
+        FIDELITY_CONVENTION, yielded
     ):
         raise FindingFidelityError(
-            "the named production Evidence concerns a different Fidelity result"
+            "the named yield Evidence concerns a different Fidelity result"
         )
     dimensions = payload.get("dimensions")
     source_id = payload.get("implementation_witness")
@@ -193,7 +193,7 @@ def get_recorded_fidelity_finding(
         not in {FAITHFUL_WITHIN_SCOPE, UNFAITHFUL_CROSSING, FIDELITY_UNKNOWN}
         or not isinstance(dimensions, dict)
         or dimensions.get("identity") != f"fidelity:{source_id}"
-        or dimensions.get("producing_act") != "bounded fidelity comparison"
+        or dimensions.get("yielding_act") != "bounded fidelity comparison"
         or dimensions.get("responsibility") != RESPONSIBILITY_UNESTABLISHED
         or dimensions.get("scope_workspace") != event.workspace_id
         or dimensions.get("scope_locality")
@@ -204,7 +204,7 @@ def get_recorded_fidelity_finding(
         )
     return RecordedFidelityFinding(
         recorded_occurrence_id=event.id,
-        production_evidence_id=evidence.id,
+        yield_evidence_id=evidence.id,
         source_finding_event_id=source_id,
         standing=standing,
     )
@@ -227,10 +227,10 @@ def _crossing(kind: str, observation: str) -> dict[str, str]:
 
 
 def compare_recorded_finding(ledger: EventLedger, event_id: str) -> Event:
-    """Compare one recorded recurrence finding and its production evidence.
+    """Compare one recorded recurrence finding and its yield evidence.
 
     The bounded expectation, stated so it can be wrong: a recorded measurement
-    finding names production evidence, that evidence is preserved, and it
+    finding names yield evidence, that evidence is preserved, and it
     concerns this exact recorded content.
     """
 
@@ -238,12 +238,12 @@ def compare_recorded_finding(ledger: EventLedger, event_id: str) -> Event:
     if recorded is None or recorded.kind != MEASUREMENT_RECORDED_KIND:
         raise FindingFidelityError(
             f"{event_id} is not a recorded measurement finding, and this "
-            "comparison compares one against its production evidence"
+            "comparison compares one against its yield evidence"
         )
     if recorded.payload.get("measurement_form") != "recurrence":
         raise FindingFidelityError(
             f"{event_id} is not a recorded recurrence Measurement finding; "
-            "this comparison does not apply recurrence's production-evidence "
+            "this comparison does not apply recurrence's yield-evidence "
             "expectation to an unmigrated Measurement form"
         )
     recorded_integrity = ledger.integrity_of(event_id)
@@ -260,7 +260,7 @@ def compare_recorded_finding(ledger: EventLedger, event_id: str) -> Event:
         "not bring under its scope"
     ]
     unresolved = False
-    named = recorded.payload.get("production_evidence_id")
+    named = recorded.payload.get("yield_evidence_id")
     evidence: Event | None = None
     evidence_integrity: str | None = None
     if named is None:
@@ -268,7 +268,7 @@ def compare_recorded_finding(ledger: EventLedger, event_id: str) -> Event:
             _crossing(
                 ERASURE,
                 "the recorded finding does not preserve the required relation "
-                "to production evidence",
+                "to yield evidence",
             )
         )
     elif not isinstance(named, str) or not named:
@@ -276,7 +276,7 @@ def compare_recorded_finding(ledger: EventLedger, event_id: str) -> Event:
             _crossing(
                 INVENTION,
                 "the recorded finding supplies something other than an exact "
-                "production-evidence occurrence identity",
+                "yield-evidence occurrence identity",
             )
         )
     else:
@@ -284,8 +284,8 @@ def compare_recorded_finding(ledger: EventLedger, event_id: str) -> Event:
         if evidence is None:
             unresolved = True
             unknowns.append(
-                "the named production evidence is unavailable; absence does "
-                "not establish that its occurrence or the production did not "
+                "the named yield evidence is unavailable; absence does "
+                "not establish that its occurrence or the yield did not "
                 "exist"
             )
         else:
@@ -293,45 +293,45 @@ def compare_recorded_finding(ledger: EventLedger, event_id: str) -> Event:
             if evidence_integrity == CORRUPTED:
                 unresolved = True
                 conflicts.append(
-                    "the named production-evidence occurrence is corrupted"
+                    "the named yield-evidence occurrence is corrupted"
                 )
             elif evidence.workspace_id != recorded.workspace_id:
                 unresolved = True
                 unknowns.append(
-                    "the named production evidence belongs to a different "
+                    "the named yield evidence belongs to a different "
                     "workspace, and no established cross-workspace movement is "
                     "available to this comparison"
                 )
-            elif evidence.kind != PRODUCTION_EVIDENCE_KIND:
+            elif evidence.kind != YIELD_EVIDENCE_KIND:
                 observed.append(
                     _crossing(
                         INVENTION,
-                        "the named occurrence is represented as production "
+                        "the named occurrence is represented as yield "
                         "evidence, but its recorded kind does not represent "
-                        "production evidence",
+                        "yield evidence",
                     )
                 )
             elif (
-                evidence.payload.get("produced_result_kind")
+                evidence.payload.get("yielded_result_kind")
                 != RECURRENCE_RESULT_KIND
-                or evidence.payload.get("production_convention")
+                or evidence.payload.get("yield_convention")
                 != MEASUREMENT_CONVENTION
             ):
                 observed.append(
                     _crossing(
                         INVENTION,
-                        "the named production evidence concerns a different "
-                        "kind of result or production convention",
+                        "the named yield evidence concerns a different "
+                        "kind of result or yield convention",
                     )
                 )
             else:
-                commitment = evidence.payload.get("production_commitment")
-                coordinates = evidence.payload.get("production_coordinates")
+                commitment = evidence.payload.get("yield_commitment")
+                coordinates = evidence.payload.get("yield_coordinates")
                 if commitment is None or coordinates is None:
                     observed.append(
                         _crossing(
                             ERASURE,
-                            "the production evidence omits the commitment or "
+                            "the yield evidence omits the commitment or "
                             "coordinate boundary required to compare it",
                         )
                     )
@@ -343,16 +343,16 @@ def compare_recorded_finding(ledger: EventLedger, event_id: str) -> Event:
                 ):
                     unresolved = True
                     unknowns.append(
-                        "the production evidence does not carry an interpretable "
+                        "the yield evidence does not carry an interpretable "
                         "commitment and exact coordinate boundary"
                     )
                 else:
                     from seed_runtime.preserved_material_measurement import (
-                        _recorded_production_commitment,
+                        _recorded_yield_commitment,
                     )
 
                     try:
-                        recorded_commitment = _recorded_production_commitment(
+                        recorded_commitment = _recorded_yield_commitment(
                             recorded, tuple(coordinates)
                         )
                     except PreservedMaterialMeasurementError:
@@ -360,7 +360,7 @@ def compare_recorded_finding(ledger: EventLedger, event_id: str) -> Event:
                             _crossing(
                                 ERASURE,
                                 "the recorded finding omits at least one exact "
-                                "coordinate its production evidence commits to",
+                                "coordinate its yield evidence commits to",
                             )
                         )
                     else:
@@ -368,11 +368,11 @@ def compare_recorded_finding(ledger: EventLedger, event_id: str) -> Event:
                             # The mismatch proves the bounded expectation failed.
                             # It does not prove which Fidelity crossing caused it:
                             # altered content and a misplaced evidence reference
-                            # produce the same witness here.
+                            # yield the same witness here.
                             observed.append(
                                 _crossing(
                                     FIDELITY_UNKNOWN,
-                                    "the named production evidence does not "
+                                    "the named yield evidence does not "
                                     "concern this exact recorded content",
                                 )
                             )
@@ -384,7 +384,7 @@ def compare_recorded_finding(ledger: EventLedger, event_id: str) -> Event:
         standing = FAITHFUL_WITHIN_SCOPE
 
     authority_boundary = (
-        "this comparison within this exact finding-to-production-evidence "
+        "this comparison within this exact finding-to-yield-evidence "
         "scope only; no certification, completion, responsible-boundary map, score, or "
         "correction authority"
     )
@@ -393,10 +393,10 @@ def compare_recorded_finding(ledger: EventLedger, event_id: str) -> Event:
                 "identity": f"fidelity:{event_id}",
                 "content": (
                     "a recorded measurement finding compared against the "
-                    "production evidence it names"
+                    "yield evidence it names"
                 ),
                 "standing": standing,
-                "producing_act": "bounded fidelity comparison",
+                "yielding_act": "bounded fidelity comparison",
                 "responsibility": RESPONSIBILITY_UNESTABLISHED,
                 "authority": authority_boundary,
                 "scope_workspace": recorded.workspace_id,
@@ -407,18 +407,18 @@ def compare_recorded_finding(ledger: EventLedger, event_id: str) -> Event:
                 ),
             },
         "constitutional_subject": (
-                "the recorded finding's represented relation to the production "
+                "the recorded finding's represented relation to the yield "
                 "evidence it names"
             ),
         "bounded_expectation": (
-                "the recorded finding names preserved production evidence, and "
+                "the recorded finding names preserved yield evidence, and "
                 "that evidence concerns this exact recorded content"
             ),
         "implementation_witness": event_id,
-        "production_evidence": named,
+        "yield_evidence": named,
         "evidence_and_provenance": {
                 "recorded_finding": _provenance(recorded, recorded_integrity),
-                "production_evidence": (
+                "yield_evidence": (
                     _provenance(evidence, evidence_integrity)
                     if evidence is not None and evidence_integrity is not None
                     else None
@@ -427,8 +427,8 @@ def compare_recorded_finding(ledger: EventLedger, event_id: str) -> Event:
         "authority_boundary": authority_boundary,
         "preserved_invariants": [
                 "the comparison is limited to one recorded finding and the "
-                "production evidence it names",
-                "content equality alone does not supply a production relation",
+                "yield evidence it names",
+                "content equality alone does not supply a yield relation",
                 "the comparison does not revise its witness or traverse its "
                 "support and premise relations",
         ],
@@ -436,7 +436,7 @@ def compare_recorded_finding(ledger: EventLedger, event_id: str) -> Event:
         "conflicts": conflicts,
         "unknowns": unknowns,
         "lawful_stopping_point": (
-                "produce this Fidelity finding concerning this exact represented "
+                "yield this Fidelity finding concerning this exact represented "
                 "relation and stop; do not traverse provenance references or determine "
                 "downstream applicability, admission, input support, or "
                 "revision"
@@ -451,15 +451,15 @@ def compare_recorded_finding(ledger: EventLedger, event_id: str) -> Event:
                 "whatever this finding stood on.",
         ],
     }
-    production_evidence = _record_production_evidence(
+    yield_evidence = _record_yield_evidence(
         ledger,
         workspace_id=recorded.workspace_id,
         session_id=recorded.session_id,
         convention=FIDELITY_CONVENTION,
-        producing_act="bounded Fidelity comparison",
-        produced_result_kind=FIDELITY_RESULT_KIND,
+        yielding_act="bounded Fidelity comparison",
+        yielded_result_kind=FIDELITY_RESULT_KIND,
         result_identity=f"fidelity:{event_id}",
-        produced_content=result_payload,
+        yielded_content=result_payload,
         responsibility=RESPONSIBILITY_UNESTABLISHED,
     )
     return ledger.append(
@@ -467,7 +467,7 @@ def compare_recorded_finding(ledger: EventLedger, event_id: str) -> Event:
         recorded.workspace_id,
         {
             **result_payload,
-            "production_evidence_id": production_evidence.id,
+            "yield_evidence_id": yield_evidence.id,
             "occurrence_preservation": FIDELITY_OCCURRENCE_PRESERVATION,
         },
         session_id=recorded.session_id,

@@ -1,7 +1,7 @@
 """A support basis, and why it is not a support enumeration.
 
 `01.Standing.E` requires an input's support basis to be preserved, and
-`01.Standing.E` bounds it: what a producing act input, with no enumeration
+`01.Standing.E` bounds it: what a yielding act input, with no enumeration
 required and **no structure established**. Until now this runtime preserved it as
 a list — every finding carried the complete ordered identity of every occurrence
 it input.
@@ -94,13 +94,13 @@ def _commit_part(digest: "hashlib._Hash", value: str) -> None:
 
 
 def support_commitment(selection_rule: str, identities: Iterable[str]) -> str:
-    """A digest over the exact ordered identities the selection produced.
+    """A digest over the exact ordered identities the selection yielded.
 
     The rule is committed alongside them, so two selections that happen to
     return the same identities from the same scope are not interchangeable.
 
     Its Standing is *"I represent this exact ordered support inputs"*, and a
-    representation under which two different inputss produce one digest
+    representation under which two different inputss yield one digest
     cannot carry that. The separated encoding this replaces could not: with
     a NUL between parts, `("a", "b\0c")` and `("a\0b", "c")` encoded
     identically, and so did rule `"a"` with identity `"b"` against rule
@@ -217,7 +217,7 @@ class SupportValidator:
     **Reuse here is not a skipped verification, and a cache hit does not read
     the ledger.** Every distinct uncached basis is validated from the ledger,
     has the basis's own selection performed, and is refused unless the result
-    reproduces the committed digest. A later reference to that exact verified
+    reyields the committed digest. A later reference to that exact verified
     basis may then reuse the validated inputs — which is lawful because the
     cache is keyed by the commitment, so a second basis reaches it only by
     committing to exactly the same identities under exactly the same rule, and
@@ -290,7 +290,7 @@ class SupportValidator:
         validated = support_commitment(basis.selection_rule, identities)
         if validated != basis.commitment:
             raise SupportBasisError(
-                "the validated support does not reproduce its committed digest"
+                "the validated support does not reyield its committed digest"
             )
         if len(identities) != basis.support_count:
             raise SupportBasisError(

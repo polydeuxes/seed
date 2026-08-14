@@ -1,12 +1,12 @@
-"""Private physiology for Evidence concerning one exact produced result.
+"""Private physiology for Evidence concerning one exact yielded result.
 
 This does not establish Responsibility. It preserves, from inside
 an act after that act has fixed its result, Evidence committing to the exact
-coordinates produced. The resulting Event is Evidence concerning the
-production occurrence; it is not that occurrence by identity.
+coordinates yielded. The resulting Event is Evidence concerning the
+yield occurrence; it is not that occurrence by identity.
 
 The helper is private implementation plumbing, not the guarantee. The result's
-carried relation to this Evidence distinguishes a produced result from an
+carried relation to this Evidence distinguishes a yielded result from an
 identical caller-constructed representation. Exposing a public operation that
 accepts arbitrary result content would instead create a second recorder able to
 manufacture that relation.
@@ -21,8 +21,8 @@ from typing import Any
 from seed_runtime.event import Event
 from seed_runtime.events import EventLedger
 
-PRODUCTION_EVIDENCE_KIND = "operator.production.evidence_recorded"
-_PRODUCTION_COMMITMENT_DOMAIN = b"seed.production-evidence.v1\0"
+YIELD_EVIDENCE_KIND = "operator.yield.evidence_recorded"
+_YIELD_COMMITMENT_DOMAIN = b"seed.yield-evidence.v1\0"
 
 
 def _commit_part(digest: "hashlib._Hash", value: str) -> None:
@@ -30,7 +30,7 @@ def _commit_part(digest: "hashlib._Hash", value: str) -> None:
 
     if not isinstance(value, str):
         raise TypeError(
-            "a production commitment part is an exact representation, not "
+            "a yield commitment part is an exact representation, not "
             f"{type(value).__name__}"
         )
     encoded = value.encode("utf-8")
@@ -38,14 +38,14 @@ def _commit_part(digest: "hashlib._Hash", value: str) -> None:
     digest.update(encoded)
 
 
-def production_commitment(convention: str, content: dict[str, Any]) -> str:
+def yield_commitment(convention: str, content: dict[str, Any]) -> str:
     """Commit to canonical JSON of declared coordinates in this domain.
 
     The digest does not identify literal carriage bytes. Distinct JSON texts
     that decode to the same coordinate values receive the same commitment.
     """
 
-    digest = hashlib.sha256(_PRODUCTION_COMMITMENT_DOMAIN)
+    digest = hashlib.sha256(_YIELD_COMMITMENT_DOMAIN)
     _commit_part(digest, convention)
     _commit_part(
         digest, json.dumps(content, sort_keys=True, separators=(",", ":"))
@@ -53,56 +53,56 @@ def production_commitment(convention: str, content: dict[str, Any]) -> str:
     return digest.hexdigest()
 
 
-def _record_production_evidence(
+def _record_yield_evidence(
     ledger: EventLedger,
     *,
     workspace_id: str,
     session_id: str | None,
     convention: str,
-    producing_act: str,
-    produced_result_kind: str,
+    yielding_act: str,
+    yielded_result_kind: str,
     result_identity: str,
-    produced_content: dict[str, Any],
+    yielded_content: dict[str, Any],
     responsibility: str,
     responsible_boundary: str = "unestablished",
 ) -> Event:
     """Preserve Evidence from inside an act for its already-fixed result."""
 
     return ledger.append(
-        PRODUCTION_EVIDENCE_KIND,
+        YIELD_EVIDENCE_KIND,
         workspace_id,
         {
             "dimensions": {
-                "identity": f"production-evidence:{result_identity}",
+                "identity": f"yield-evidence:{result_identity}",
                 "content": (
-                    f"evidence that {producing_act} produced this exact "
-                    f"{produced_result_kind} at its producing boundary"
+                    f"evidence that {yielding_act} yielded this exact "
+                    f"{yielded_result_kind} at its exact Act boundary"
                 ),
-                "standing": "produced",
-                "producing_act": producing_act,
-                "production_occurrence_evidence": (
-                    "preserved at the producing boundary after this exact "
+                "standing": "yielded",
+                "yielding_act": yielding_act,
+                "yield_occurrence_evidence": (
+                    "preserved at the exact Act boundary after this exact "
                     "result was fixed; the result carries the relation to this"
                 ),
                 "responsibility": responsibility,
                 "responsible_boundary": responsible_boundary,
                 "authority": (
-                    "establishes production of this exact result at this "
-                    "producing boundary; establishes no responsibility, "
+                    "establishes the exact occurrence-to-result edge at this "
+                    "Act boundary; establishes no responsibility, "
                     "authorization, or successful return from "
                     "an enclosing call"
                 ),
                 "occurrence_preservation": (
-                    "evidence concerning a production occurrence, durably "
+                    "evidence concerning a yield occurrence, durably "
                     "recorded; not that occurrence by identity"
                 ),
             },
-            "production_convention": convention,
-            "production_commitment": production_commitment(
-                convention, produced_content
+            "yield_convention": convention,
+            "yield_commitment": yield_commitment(
+                convention, yielded_content
             ),
-            "production_coordinates": sorted(produced_content),
-            "produced_result_kind": produced_result_kind,
+            "yield_coordinates": sorted(yielded_content),
+            "yielded_result_kind": yielded_result_kind,
         },
         session_id=session_id,
     )

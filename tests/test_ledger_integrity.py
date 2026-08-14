@@ -822,7 +822,7 @@ def test_a_commitment_distinguishes_order_and_rule_not_only_membership():
     # The parts must be unambiguous when a part contains whatever divides them.
     # An earlier encoding separated parts with a NUL, which held only while no
     # identity carried one — and nothing constrains an Event.id. Both of these
-    # produced one digest for two different inputss.
+    # yielded one digest for two different inputss.
     assert support_commitment(COMPLETE_INGRESS_INPUTS, ("a", "b\0c")) != \
            support_commitment(COMPLETE_INGRESS_INPUTS, ("a\0b", "c"))
     assert support_commitment("a", ("b",)) != support_commitment("a\0b", ())
@@ -872,7 +872,7 @@ def test_a_digest_does_not_move_when_a_payload_is_compressed(tmp_path):
         digest = _content_digest(row)
         stored = _stored_payload(serialized)
         # Whatever the store holds, it reconstructs the canonical string exactly,
-        # and digesting that reproduces the same commitment.
+        # and digesting that reyields the same commitment.
         assert _serialized_payload(stored) == serialized
         assert _content_digest(dict(row, payload=_serialized_payload(stored))) == digest
 

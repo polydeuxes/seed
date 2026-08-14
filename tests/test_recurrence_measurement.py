@@ -19,12 +19,12 @@ import pytest
 
 from seed_runtime.adjacent_pair_measurement import measure_after
 from seed_runtime.assertion_comparison import (
-    ASSERTION_PRODUCTION_COMPARISON_RECORDED_KIND,
+    ASSERTION_YIELD_COMPARISON_RECORDED_KIND,
     AssertionComparisonError,
     _distinction_assertion_identity,
     assertions_of_recorded_assertion_comparison,
-    compare_assertion_productions,
-    record_assertion_production_comparison,
+    compare_assertion_yields,
+    record_assertion_yield_comparison,
 )
 from seed_runtime.bounded_assertion_comparison import (
     compare_preserved_findings,
@@ -109,8 +109,8 @@ def _assertions_by_result(event):
 # --------------------------------------------------------------------------
 
 
-def test_assertion_fidelity_responsibility_is_distinct_from_its_production(compared):
-    """The producing Act and the result's fidelity responsible boundary remain distinct."""
+def test_assertion_fidelity_responsibility_is_distinct_from_its_yield(compared):
+    """The yielding Act and the result's fidelity responsible boundary remain distinct."""
     event = record_measured_count(
         compared, workspace_id="w", session_id="s1",
         finding=_by_right(compared)["word"])
@@ -126,10 +126,10 @@ def test_assertion_fidelity_responsibility_is_distinct_from_its_production(compa
         assertion["responsible_boundary"] == "this recorded assertion"
         for assertion in assertions
     )
-    assert event.payload["producing_act"] == "declared measurement"
+    assert event.payload["yielding_act"] == "declared measurement"
     assert all(
         assertion["dimensions"]["responsibility"]
-        != event.payload["producing_act"]
+        != event.payload["yielding_act"]
         for assertion in assertions
     )
     assert "cohort" not in str(event.payload).lower()
@@ -203,24 +203,24 @@ def test_recorded_assertions_are_addressable_through_their_occurrence(compared):
     for assertion in assertions:
         assert assertion.reference == {
             "assertion_id": assertion.assertion_id,
-            "producing_event_id": event.id,
+            "yielding_event_id": event.id,
         }
         assert get_recorded_measured_assertion(
             compared,
-            producing_event_id=event.id,
+            yielding_event_id=event.id,
             assertion_id=assertion.assertion_id,
         ) == assertion
 
     by_result = {assertion.result: assertion for assertion in assertions}
     assert by_result["count"].support_assertion_refs == (
         {
-            "producing_event_id": event.id,
+            "yielding_event_id": event.id,
             "assertion_id": by_result["measured_in"].assertion_id,
         },
     )
     assert by_result["recurrence"].support_assertion_refs == (
         {
-            "producing_event_id": event.id,
+            "yielding_event_id": event.id,
             "assertion_id": by_result["count"].assertion_id,
         },
     )
@@ -266,7 +266,7 @@ def test_validation_refuses_non_assertion_and_unresolved_local_support(compared)
         assertions_of_recorded_measurement(event)
 
 
-def test_assertion_identity_and_producing_occurrence_remain_distinct(compared):
+def test_assertion_identity_and_yielding_occurrence_remain_distinct(compared):
     finding = _by_right(compared)["word"]
     first = record_measured_count(
         compared, workspace_id="w", session_id="s1", finding=finding
@@ -283,12 +283,12 @@ def test_assertion_identity_and_producing_occurrence_remain_distinct(compared):
     assert first.id != second.id
     assert get_recorded_measured_assertion(
         compared,
-        producing_event_id=first.id,
+        yielding_event_id=first.id,
         assertion_id=first_count["dimensions"]["identity"],
-    ).producing_event_id == first.id
+    ).yielding_event_id == first.id
 
 
-def test_two_productions_of_one_assertion_can_be_compared_without_relation(compared):
+def test_two_yields_of_one_assertion_can_be_compared_without_relation(compared):
     finding = _by_right(compared)["word"]
     first = record_measured_count(
         compared, workspace_id="w", session_id="s1", finding=finding
@@ -307,7 +307,7 @@ def test_two_productions_of_one_assertion_can_be_compared_without_relation(compa
         if assertion.result == "count"
     )
 
-    comparison = compare_assertion_productions(
+    comparison = compare_assertion_yields(
         compared, (first_count.reference, second_count.reference)
     )
 
@@ -352,7 +352,7 @@ def test_assertion_compare_distinguishes_absence_from_carried_none(compared):
         if assertion.result == "count"
     )
 
-    comparison = compare_assertion_productions(
+    comparison = compare_assertion_yields(
         compared, (first_count.reference, second_count.reference)
     )
     distinction = next(
@@ -397,7 +397,7 @@ def test_assertion_compare_exposes_changed_support_without_strengthening_it(comp
         if assertion.result == "measured_in"
     )
 
-    comparison = compare_assertion_productions(
+    comparison = compare_assertion_yields(
         compared, (first_assertion.reference, second_assertion.reference)
     )
     distinctions = {
@@ -425,21 +425,21 @@ def test_assertion_compare_refuses_self_and_different_assertions(compared):
     )
 
     with pytest.raises(AssertionComparisonError, match="cannot be compared with itself"):
-        compare_assertion_productions(compared, (count.reference, count.reference))
+        compare_assertion_yields(compared, (count.reference, count.reference))
     with pytest.raises(AssertionComparisonError, match="one canonical Assertion"):
-        compare_assertion_productions(
+        compare_assertion_yields(
             compared,
             (
                 count.reference,
                 {
-                    "producing_event_id": "another-event",
+                    "yielding_event_id": "another-event",
                     "assertion_id": recurrence.assertion_id,
                 },
             ),
         )
 
 
-def test_assertion_production_compare_records_each_literal_result_separately(compared):
+def test_assertion_yield_compare_records_each_literal_result_separately(compared):
     finding = _by_right(compared)["word"]
     first = record_measured_count(
         compared, workspace_id="w", session_id="s1", finding=finding
@@ -455,11 +455,11 @@ def test_assertion_production_compare_records_each_literal_result_separately(com
         item for item in assertions_of_recorded_measurement(second)
         if item.result == "count"
     )
-    comparison = compare_assertion_productions(
+    comparison = compare_assertion_yields(
         compared, (first_count.reference, second_count.reference)
     )
 
-    event = record_assertion_production_comparison(
+    event = record_assertion_yield_comparison(
         compared,
         workspace_id="w",
         session_id="s1",
@@ -467,15 +467,15 @@ def test_assertion_production_compare_records_each_literal_result_separately(com
     )
     assertions = assertions_of_recorded_assertion_comparison(event)
 
-    assert event.kind == ASSERTION_PRODUCTION_COMPARISON_RECORDED_KIND
-    assert event.payload["producing_act"] == "Compare"
+    assert event.kind == ASSERTION_YIELD_COMPARISON_RECORDED_KIND
+    assert event.payload["yielding_act"] == "Compare"
     assert event.payload["responsible_boundary"] == "this bounded comparison occurrence"
     assert len(assertions) == len(comparison.distinctions) == 10
     assert {item.coordinate for item in assertions} == {
         item.coordinate for item in comparison.distinctions
     }
     assert len({item.assertion_id for item in assertions}) == 10
-    assert all(item.producing_event_id == event.id for item in assertions)
+    assert all(item.yielding_event_id == event.id for item in assertions)
     assert all(
         item.payload["support_basis"]["assertion_refs"]
         == [first_count.reference, second_count.reference]
@@ -499,10 +499,10 @@ def test_recording_comparison_results_does_not_establish_reliance_or_revision(co
         item for item in assertions_of_recorded_measurement(second)
         if item.result == "count"
     )
-    comparison = compare_assertion_productions(
+    comparison = compare_assertion_yields(
         compared, (left.reference, right.reference)
     )
-    event = record_assertion_production_comparison(
+    event = record_assertion_yield_comparison(
         compared, workspace_id="w", session_id="s1", comparison=comparison
     )
 
@@ -524,10 +524,10 @@ def test_recorded_comparison_assertion_identity_is_recomputed(compared):
     )
     left = assertions_of_recorded_measurement(first)[0]
     right = assertions_of_recorded_measurement(second)[0]
-    comparison = compare_assertion_productions(
+    comparison = compare_assertion_yields(
         compared, (left.reference, right.reference)
     )
-    event = record_assertion_production_comparison(
+    event = record_assertion_yield_comparison(
         compared, workspace_id="w", session_id="s1", comparison=comparison
     ).model_copy(deep=True)
     event.payload["assertions"][0]["dimensions"]["identity"] = "asserted-not-canonical"
@@ -546,10 +546,10 @@ def test_validation_refuses_a_self_consistent_invented_compare_result(compared):
     )
     left = assertions_of_recorded_measurement(first)[0]
     right = assertions_of_recorded_measurement(second)[0]
-    comparison = compare_assertion_productions(
+    comparison = compare_assertion_yields(
         compared, (left.reference, right.reference)
     )
-    event = record_assertion_production_comparison(
+    event = record_assertion_yield_comparison(
         compared, workspace_id="w", session_id="s1", comparison=comparison
     ).model_copy(deep=True)
     assertion = event.payload["assertions"][0]
@@ -581,10 +581,10 @@ def test_validation_requires_the_exact_compare_coordinate_set(compared):
     )
     left = assertions_of_recorded_measurement(first)[0]
     right = assertions_of_recorded_measurement(second)[0]
-    comparison = compare_assertion_productions(
+    comparison = compare_assertion_yields(
         compared, (left.reference, right.reference)
     )
-    event = record_assertion_production_comparison(
+    event = record_assertion_yield_comparison(
         compared, workspace_id="w", session_id="s1", comparison=comparison
     ).model_copy(deep=True)
     event.payload["assertions"].pop()
@@ -603,14 +603,14 @@ def test_comparison_assertion_identity_includes_its_recorded_scope(compared):
     )
     left = assertions_of_recorded_measurement(first)[0]
     right = assertions_of_recorded_measurement(second)[0]
-    comparison = compare_assertion_productions(
+    comparison = compare_assertion_yields(
         compared, (left.reference, right.reference)
     )
 
-    first_record = record_assertion_production_comparison(
+    first_record = record_assertion_yield_comparison(
         compared, workspace_id="w", session_id="s1", comparison=comparison
     )
-    second_record = record_assertion_production_comparison(
+    second_record = record_assertion_yield_comparison(
         compared, workspace_id="w", session_id="s2", comparison=comparison
     )
 
@@ -635,7 +635,7 @@ def test_recording_refuses_a_comparison_not_established_from_its_inputs(compared
     )
     left = assertions_of_recorded_measurement(first)[0]
     right = assertions_of_recorded_measurement(second)[0]
-    comparison = compare_assertion_productions(
+    comparison = compare_assertion_yields(
         compared, (left.reference, right.reference)
     )
     invented = replace(
@@ -647,7 +647,7 @@ def test_recording_refuses_a_comparison_not_established_from_its_inputs(compared
     )
 
     with pytest.raises(AssertionComparisonError, match="does not match"):
-        record_assertion_production_comparison(
+        record_assertion_yield_comparison(
             compared, workspace_id="w", session_id="s1", comparison=invented
         )
 
@@ -674,7 +674,7 @@ def test_recorded_assertion_stream_obeys_sessions_and_boundary(compared):
         )
     )
     assert len(reconstructed) == 5
-    assert {assertion.producing_event_id for assertion in reconstructed} == {first.id}
+    assert {assertion.yielding_event_id for assertion in reconstructed} == {first.id}
 
 
 def test_exact_sets_keep_completeness_separate_from_support(compared):
@@ -1289,14 +1289,14 @@ def test_every_probe_and_pass_reads_one_prefix_despite_a_concurrent_append(compa
 
 
 # --------------------------------------------------------------------------
-# The production occurrence remains exactly reconstructible.
+# The yield occurrence remains exactly reconstructible.
 # --------------------------------------------------------------------------
 
 
-def test_a_durable_producing_occurrence_is_identifiable_and_verifies(tmp_path):
-    """Historical production Evidence remains occurrence-bound.
+def test_a_durable_yielding_occurrence_is_identifiable_and_verifies(tmp_path):
+    """Historical yield Evidence remains occurrence-bound.
 
-    The producing occurrence is the event carrying the payload, so its own id
+    The yielding occurrence is the event carrying the payload, so its own id
     cannot appear inside that payload. What must hold is that the enclosing
     occurrence is exactly identifiable and verifiable once appended.
     """
@@ -1340,12 +1340,12 @@ def test_a_durable_producing_occurrence_is_identifiable_and_verifies(tmp_path):
             )
         )
         assert reconstructed
-        assert {assertion.producing_event_id for assertion in reconstructed} == {
+        assert {assertion.yielding_event_id for assertion in reconstructed} == {
             event.id
         }
         assert get_recorded_measured_assertion(
             reopened,
-            producing_event_id=event.id,
+            yielding_event_id=event.id,
             assertion_id=reconstructed[0].assertion_id,
         ) == reconstructed[0]
     finally:

@@ -132,7 +132,7 @@ def test_the_message_names_the_mechanism_the_examination_selected(
 
 
 # --------------------------------------------------------------------------
-# The retired wording is gone from what this path produces.
+# The retired wording is gone from what this path yields.
 # --------------------------------------------------------------------------
 
 

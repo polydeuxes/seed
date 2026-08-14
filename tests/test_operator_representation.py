@@ -75,7 +75,7 @@ def test_console_forms_c0_before_first_ingress_and_preserves_provenance_only():
 
     # A current Representation existing does not make the newest ingress and the
     # most recently emitted Representation participants in one Compare.  The
-    # occurrence and its produced-after occurrence relation are preserved; no Compare or
+    # occurrence and its yielded-after occurrence relation are preserved; no Compare or
     # Identification follows.
     kinds = [event.kind for event in ledger.list("w")]
     assert kinds == [
@@ -101,14 +101,14 @@ def test_console_forms_c0_before_first_ingress_and_preserves_provenance_only():
         for event in ledger.list("w")
         if event.kind == "operator.ingress.ingress_occurred"
     )
-    assert "produced_after_representation_ref" not in ingress.payload
-    assert "produced_after_representation_event_id" not in ingress.payload
-    assert "produced_after_representation_emitted_event_id" not in ingress.payload
+    assert "yielded_after_representation_ref" not in ingress.payload
+    assert "yielded_after_representation_event_id" not in ingress.payload
+    assert "yielded_after_representation_emitted_event_id" not in ingress.payload
     assert c0_emitted.kind == "operator.representation.emitted"
 
 
 def test_no_compare_or_identification_follows_console_ingress():
-    # The required proving: C emitted, E preserved, production provenance
+    # The required proving: C emitted, E preserved, yield provenance
     # retained, and no Compare or Identification occurrence.  Recency does not
     # make C and E participants in one act; 01.Standing.E.1 requires the act
     # responsible boundary to determine input-to-Act Applicability, and no reconstructed
@@ -122,12 +122,12 @@ def test_no_compare_or_identification_follows_console_ingress():
     assert "operator.representation.represented_relation_established" not in kinds
     assert not any(kind.startswith("operator.interaction.") for kind in kinds)
 
-    # Every ingress still carries its exact produced-after occurrence relation.
+    # Every ingress still carries its exact yielded-after occurrence relation.
     representations = [e for e in ledger.list("w") if e.kind == "operator.representation.formed"]
     ingresses = [e for e in ledger.list("w") if e.kind == "operator.ingress.ingress_occurred"]
     assert len(ingresses) == 3
     for ingress in ingresses:
-        assert "produced_after_representation_ref" not in ingress.payload
+        assert "yielded_after_representation_ref" not in ingress.payload
 
     # Standing read remains valid and records the occurrences.
     standing = _standing(ledger)
@@ -247,7 +247,7 @@ def test_console_presents_standing_only_across_an_ingress():
         c1.payload["session_standing_as_of_event_id"] == ingress.id
     )
     assert c0.payload["alternatives"] == [] and c1.payload["alternatives"] == []
-    assert "produced_after_representation_ref" not in ingress.payload
+    assert "yielded_after_representation_ref" not in ingress.payload
     # No developer result semantics anywhere in the session.
     session = str([e.payload for e in ledger.list("w")])
     assert "developer-supplied" not in session
@@ -416,7 +416,7 @@ def test_first_interaction_attaches_no_representation_to_the_capture():
         if event.kind == "operator.ingress.ingress_occurred"
     )
     first_representation = next(iter(_standing(ledger)["representations"].values()))
-    assert "produced_after_representation_ref" not in ingress.payload
+    assert "yielded_after_representation_ref" not in ingress.payload
     assert first_representation["representation_id"]
 
 

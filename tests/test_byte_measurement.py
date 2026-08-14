@@ -30,9 +30,9 @@ from seed_runtime.byte_measurement import (
 from seed_runtime.events import EventLedger
 from seed_runtime.event import Event
 from seed_runtime.operator_console import run_persistent_operator_console
-from seed_runtime.production_evidence import (
-    PRODUCTION_EVIDENCE_KIND,
-    production_commitment,
+from seed_runtime.yield_evidence import (
+    YIELD_EVIDENCE_KIND,
+    yield_commitment,
 )
 
 
@@ -143,9 +143,9 @@ def test_recorded_results_replay_the_complete_bounded_source_read():
     reconstructed = assertions_of_recorded_byte_measurement(ledger, event.id)
     assert reconstructed
     assert all(item.recorded_occurrence_id == event.id for item in reconstructed)
-    evidence = ledger.get(event.payload["production_evidence_id"])
-    assert evidence.kind == PRODUCTION_EVIDENCE_KIND
-    assert "occurrence_preservation" not in evidence.payload["production_coordinates"]
+    evidence = ledger.get(event.payload["yield_evidence_id"])
+    assert evidence.kind == YIELD_EVIDENCE_KIND
+    assert "occurrence_preservation" not in evidence.payload["yield_coordinates"]
 
     count = next(
         item
@@ -206,14 +206,14 @@ def test_a_self_consistent_truncated_source_assertion_is_refused():
     source["dimensions"]["content"]["source_material"] = source["dimensions"][
         "content"
     ]["source_material"][:1]
-    evidence = ledger.get(event.payload["production_evidence_id"])
-    evidence.payload["production_commitment"] = production_commitment(
+    evidence = ledger.get(event.payload["yield_evidence_id"])
+    evidence.payload["yield_commitment"] = yield_commitment(
         BYTE_MEASUREMENT_CONVENTION,
         {name: event.payload[name] for name in BYTE_RESULT_COORDINATES},
     )
     ledger.get(event.payload["responsible_act_evidence_id"]).payload[
         "result_commitment"
-    ] = evidence.payload["production_commitment"]
+    ] = evidence.payload["yield_commitment"]
     with pytest.raises(ByteMeasurementError, match="complete bounded source read"):
         assertions_of_recorded_byte_measurement(ledger, event.id)
 
@@ -454,7 +454,7 @@ def test_recorded_pair_results_replay_the_complete_bounded_source_read():
         for item in assertions_of_recorded_byte_measurement(ledger, source.id)
         if item.assertion_id == movement.payload["assertion_id"]
     )
-    assert movement.payload["assertion_commitment"] != production_commitment(
+    assert movement.payload["assertion_commitment"] != yield_commitment(
         "assertion_locality_movement_v1", original.payload
     )
     assert "dimensions" not in movement.payload
@@ -470,14 +470,14 @@ def test_pair_validation_refuses_a_self_consistent_truncated_result_inputs():
         recording_session_id="measurement",
     )
     event.payload["assertions"] = event.payload["assertions"][:-1]
-    evidence = ledger.get(event.payload["production_evidence_id"])
-    evidence.payload["production_commitment"] = production_commitment(
+    evidence = ledger.get(event.payload["yield_evidence_id"])
+    evidence.payload["yield_commitment"] = yield_commitment(
         BYTE_PAIR_MEASUREMENT_CONVENTION,
         {name: event.payload[name] for name in BYTE_PAIR_RESULT_COORDINATES},
     )
     act_evidence = ledger.get(event.payload["responsible_act_evidence_id"])
     act_evidence.payload["result_commitment"] = evidence.payload[
-        "production_commitment"
+        "yield_commitment"
     ]
 
     with pytest.raises(ByteMeasurementError, match="recurrence boundary"):
@@ -517,14 +517,14 @@ def test_pair_validation_refuses_invented_input_applicability():
         recording_session_id="measurement",
     )
     event.payload["input_applicability"]["result_boundary"] = "some other use"
-    evidence = ledger.get(event.payload["production_evidence_id"])
-    evidence.payload["production_commitment"] = production_commitment(
+    evidence = ledger.get(event.payload["yield_evidence_id"])
+    evidence.payload["yield_commitment"] = yield_commitment(
         BYTE_PAIR_MEASUREMENT_CONVENTION,
         {name: event.payload[name] for name in BYTE_PAIR_RESULT_COORDINATES},
     )
     act_evidence = ledger.get(event.payload["responsible_act_evidence_id"])
     act_evidence.payload["result_commitment"] = evidence.payload[
-        "production_commitment"
+        "yield_commitment"
     ]
 
     with pytest.raises(ByteMeasurementError, match="historical input Applicability"):
@@ -705,8 +705,8 @@ def test_seed_native_responsibility_is_earned_from_preserved_occurrences():
     assert assignment["completeness_boundary"] == source.payload[
         "completeness_boundary"
     ]["commitment"]
-    production_evidence = ledger.get(source.payload["production_evidence_id"])
-    assert production_evidence.payload["dimensions"]["responsible_boundary"] == (
+    yield_evidence = ledger.get(source.payload["yield_evidence_id"])
+    assert yield_evidence.payload["dimensions"]["responsible_boundary"] == (
         "this Seed"
     )
 
@@ -778,12 +778,12 @@ def test_pair_validation_refuses_more_carrying_occurrences_than_total_pairs():
         scope=count["assertion_scope"],
         content=count["dimensions"]["content"],
     )
-    commitment = production_commitment(
+    commitment = yield_commitment(
         BYTE_PAIR_MEASUREMENT_CONVENTION,
         {name: event.payload[name] for name in BYTE_PAIR_RESULT_COORDINATES},
     )
-    ledger.get(event.payload["production_evidence_id"]).payload[
-        "production_commitment"
+    ledger.get(event.payload["yield_evidence_id"]).payload[
+        "yield_commitment"
     ] = commitment
     ledger.get(event.payload["responsible_act_evidence_id"]).payload[
         "result_commitment"

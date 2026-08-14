@@ -124,10 +124,10 @@ def test_an_unrecorded_session_reads_empty(durable_ledger):
 @pytest.mark.parametrize("ledger_name", ("memory_ledger", "durable_ledger"))
 def test_one_kind_is_streamed_from_only_one_session(request, ledger_name):
     ledger = request.getfixturevalue(ledger_name)
-    produced = ledger.iter_session_kind("w", "s1", INGRESS_OCCURRED_KIND)
+    yielded = ledger.iter_session_kind("w", "s1", INGRESS_OCCURRED_KIND)
 
-    assert iter(produced) is produced
-    events = list(produced)
+    assert iter(yielded) is yielded
+    events = list(yielded)
     assert events
     assert {event.session_id for event in events} == {"s1"}
     assert {event.kind for event in events} == {INGRESS_OCCURRED_KIND}

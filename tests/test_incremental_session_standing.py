@@ -3,7 +3,7 @@
 The console projected session Standing from the first event of the session
 before every interaction, so occurrence *j* was reprojected by every later one.
 `#2376` established that advancing a prior Standing over only the occurrences
-after its boundary produces exactly the replayed result across 1,077 prefix
+after its boundary yields exactly the replayed result across 1,077 prefix
 pairs. The console now carries its Standing forward instead.
 
 **The guard is equivalence, not speed.** Every advance below is compared
@@ -222,7 +222,7 @@ def test_every_growable_accumulator_is_consumed_not_copied():
 
 
 def test_a_growing_unknown_set_does_not_reintroduce_per_advance_copying():
-    """Distinct Unknowns per occurrence, which acquisition would produce."""
+    """Distinct Unknowns per occurrence, which acquisition would yield."""
     standing = _advance([])
     held = standing["unknowns"]
     for index in range(200):

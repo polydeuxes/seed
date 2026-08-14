@@ -38,7 +38,7 @@ class EventLedgerBoundary:
     """An opaque commitment to one exact append prefix.
 
     Callers may retain and return the value, but only an EventLedger interprets
-    it. Equal ordered prefixes produce equal boundaries; a boundary does not
+    it. Equal ordered prefixes yield equal boundaries; a boundary does not
     expose an append position.
     """
 
@@ -122,7 +122,7 @@ def _serialized_payload(stored: str | bytes) -> str:
 def _digest_of_stored_row(row: "sqlite3.Row") -> str | None:
     """The digest of a stored row, or nothing when it cannot be reconstructed.
 
-    A row whose payload will not decompress cannot reproduce any digest, and
+    A row whose payload will not decompress cannot reyield any digest, and
     that is exactly what `integrity_of` reports rather than raising through its
     caller.
     """

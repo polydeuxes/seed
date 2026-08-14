@@ -1,4 +1,4 @@
-"""Literal Compare over exact positional result Assertion productions."""
+"""Literal Compare over exact positional result Assertion yields."""
 
 from dataclasses import replace
 from io import StringIO
@@ -112,9 +112,9 @@ def test_compare_preserves_exact_occurrence_bound_inputs(comparable):
         left.assertion_id,
         right.assertion_id,
     ]
-    assert [item.producing_event_id for item in comparison.inputs] == [
-        left.producing_event_id,
-        right.producing_event_id,
+    assert [item.yielding_event_id for item in comparison.inputs] == [
+        left.yielding_event_id,
+        right.yielding_event_id,
     ]
 
 
@@ -156,14 +156,14 @@ def test_compare_refuses_different_carried_subjects(comparable):
         )
 
 
-@pytest.mark.parametrize("references", [(), ({"producing_event_id": "x", "assertion_id": "y"},)])
+@pytest.mark.parametrize("references", [(), ({"yielding_event_id": "x", "assertion_id": "y"},)])
 def test_compare_requires_exactly_two_inputs(comparable, references):
     ledger, _, _ = comparable
     with pytest.raises(AssertionComparisonError, match="exactly two"):
         compare_positional_result_assertions(ledger, references)
 
 
-def test_compare_refuses_one_production_twice(comparable):
+def test_compare_refuses_one_yield_twice(comparable):
     ledger, left, _ = comparable
     with pytest.raises(AssertionComparisonError, match="cannot be compared with itself"):
         compare_positional_result_assertions(
@@ -184,7 +184,7 @@ def test_compare_does_not_assertion_relation_recurrence_or_meaning(comparable):
     assert "similarity=" not in represented
 
 
-def test_every_equal_subject_production_pair_is_formed_without_comparing(comparable):
+def test_every_equal_subject_yield_pair_is_formed_without_comparing(comparable):
     ledger, left, right = comparable
     boundary = ledger.capture_boundary()
     before = tuple(event.id for event in ledger.list("w"))
@@ -202,7 +202,7 @@ def test_every_equal_subject_production_pair_is_formed_without_comparing(compara
     assert tuple(event.id for event in ledger.list("w")) == before
 
 
-def test_representation_act_boundary_excludes_later_productions(comparable):
+def test_representation_act_boundary_excludes_later_yields(comparable):
     ledger, _, _ = comparable
     boundary = ledger.capture_boundary()
     _record_following(ledger, "s3", "it is green\n")
@@ -281,7 +281,7 @@ def test_validated_representation_act_retains_only_occurrence_bound_references(c
 
     assert grouped
     assert all(
-        set(reference) == {"producing_event_id", "assertion_id"}
+        set(reference) == {"yielding_event_id", "assertion_id"}
         for references in grouped.values()
         for reference in references
     )
@@ -315,7 +315,7 @@ def test_one_layer_records_every_formed_comparison_and_nothing_more(comparable):
         results = assertions_of_recorded_positional_result_comparison(event)
         assert get_recorded_positional_result_distinction(
             ledger,
-            producing_event_id=event.id,
+            yielding_event_id=event.id,
             assertion_id=results[0].assertion_id,
         ) == results[0]
 
@@ -426,7 +426,7 @@ def test_recorded_compare_results_are_occurrence_addressable(comparable):
     )
     for item in reconstructed:
         assert item.reference == {
-            "producing_event_id": event.id,
+            "yielding_event_id": event.id,
             "assertion_id": item.assertion_id,
         }
         assert item.payload["support_basis"]["assertion_refs"] == [
@@ -435,7 +435,7 @@ def test_recorded_compare_results_are_occurrence_addressable(comparable):
         ]
         assert get_recorded_positional_result_distinction(
             ledger,
-            producing_event_id=event.id,
+            yielding_event_id=event.id,
             assertion_id=item.assertion_id,
         ) == item
 
@@ -604,7 +604,7 @@ def test_ledger_validation_refuses_self_consistent_results_for_other_inputs(comp
     with pytest.raises(AssertionComparisonError, match="replayed Act"):
         get_recorded_positional_result_distinction(
             ledger,
-            producing_event_id=event.id,
+            yielding_event_id=event.id,
             assertion_id=reconstructed[0].assertion_id,
         )
 
@@ -612,7 +612,7 @@ def test_ledger_validation_refuses_self_consistent_results_for_other_inputs(comp
 @pytest.mark.parametrize(
     ("field", "replacement"),
     (
-        ("producing_act", "Measure"),
+        ("yielding_act", "Measure"),
         ("responsible_boundary", "an input Assertion"),
         ("responsibility", "revise the compared Assertions"),
     ),
@@ -635,7 +635,7 @@ def test_ledger_validation_refuses_changed_outer_compare_law(
     with pytest.raises(AssertionComparisonError, match="replayed Act"):
         get_recorded_positional_result_distinction(
             ledger,
-            producing_event_id=event.id,
+            yielding_event_id=event.id,
             assertion_id=reconstructed[0].assertion_id,
         )
 

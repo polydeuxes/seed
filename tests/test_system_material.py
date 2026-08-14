@@ -77,7 +77,7 @@ def test_a_declaration_records_a_declaration_not_a_performance():
 
 
 def test_system_material_requires_no_invocation():
-    """The system produces material nobody asked for, and it is still material.
+    """The system yields material nobody asked for, and it is still material.
 
     An earlier revision made system material inherently an invocation's answer
     and carried the invocation's identity inside it. That excluded unprompted

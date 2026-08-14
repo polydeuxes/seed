@@ -54,7 +54,7 @@ def test_measurement_counts_exact_results_without_collapsing_difference():
     assert {item.result_content["same"] for item in occupancy} == {False}
     assert {item.count for item in occupancy} == {1}
     assert {
-        item.production_refs[0]["producing_event_id"] for item in occupancy
+        item.yield_refs[0]["yielding_event_id"] for item in occupancy
     } == {first.id, second.id}
 
 
@@ -75,13 +75,13 @@ def test_measurement_groups_only_identical_complete_result_content():
 
     assert len(occupancy) == 1
     assert occupancy[0].count == 2
-    assert occupancy[0].production_refs == (
+    assert occupancy[0].yield_refs == (
         {
-            "producing_event_id": first.id,
+            "yielding_event_id": first.id,
             "assertion_id": first.payload["assertions"][1]["dimensions"]["identity"],
         },
         {
-            "producing_event_id": second.id,
+            "yielding_event_id": second.id,
             "assertion_id": second.payload["assertions"][1]["dimensions"]["identity"],
         },
     )
@@ -109,9 +109,9 @@ def test_measurement_boundary_excludes_later_comparison(monkeypatch):
     )
 
     refs = {
-        reference["producing_event_id"]
+        reference["yielding_event_id"]
         for finding in findings
-        for reference in finding.production_refs
+        for reference in finding.yield_refs
     }
     assert refs == {first.id}
     assert all(finding.completeness_boundary == captured for finding in findings)
@@ -208,10 +208,10 @@ def test_inputs_validates_each_reused_input_once(monkeypatch):
 
     assert len(calls) == 4
     assert set(calls) == {
-        a.producing_event_id,
-        b.producing_event_id,
-        c.producing_event_id,
-        d.producing_event_id,
+        a.yielding_event_id,
+        b.yielding_event_id,
+        c.yielding_event_id,
+        d.yielding_event_id,
     }
 
 
@@ -236,28 +236,28 @@ def test_recording_preserves_exact_set_and_derived_count_separately():
         session_id="counts",
         finding=finding,
     )
-    production_set, count, recurrence = event.payload["assertions"]
+    yield_set, count, recurrence = event.payload["assertions"]
 
     assert event.kind == COMPARISON_RESULT_COUNT_RECORDED_KIND
     assert "result_content" not in event.payload
-    assert production_set["result"] == "exact_production_set"
-    assert production_set["support_basis"]["assertion_refs"] == [
+    assert yield_set["result"] == "exact_yield_set"
+    assert yield_set["support_basis"]["assertion_refs"] == [
         {
-            "producing_event_id": first.id,
+            "yielding_event_id": first.id,
             "assertion_id": first.payload["assertions"][1]["dimensions"]["identity"],
         },
         {
-            "producing_event_id": second.id,
+            "yielding_event_id": second.id,
             "assertion_id": second.payload["assertions"][1]["dimensions"]["identity"],
         },
     ]
-    assert production_set["completeness_boundary"] == {
+    assert yield_set["completeness_boundary"] == {
         "commitment": finding.completeness_boundary.commitment
     }
     assert count["result"] == "count"
-    assert count["dimensions"]["content"] == {"production_count": 2}
+    assert count["dimensions"]["content"] == {"yield_count": 2}
     assert count["support_basis"] == {
-        "local_assertion_ids": [production_set["dimensions"]["identity"]]
+        "local_assertion_ids": [yield_set["dimensions"]["identity"]]
     }
     assert "completeness_boundary" not in count
     assert recurrence["result"] == "recurrence"
@@ -273,14 +273,14 @@ def test_recording_preserves_exact_set_and_derived_count_separately():
     assert "completeness_boundary" not in recurrence
     reconstructed = assertions_of_recorded_comparison_result_count(event)
     assert [item.result for item in reconstructed] == [
-        "exact_production_set",
+        "exact_yield_set",
         "count",
         "recurrence",
     ]
     assert (
         get_recorded_comparison_result_count_assertion(
             ledger,
-            producing_event_id=event.id,
+            yielding_event_id=event.id,
             assertion_id=recurrence["dimensions"]["identity"],
         ).result
         == "recurrence"
@@ -305,7 +305,7 @@ def test_count_one_is_recorded_without_a_recurrence_assertion():
 
     assert finding.count == 1
     assert [item["result"] for item in assertions] == [
-        "exact_production_set",
+        "exact_yield_set",
         "count",
     ]
     assert all(item["result"] != "recurrence" for item in assertions)
@@ -351,12 +351,12 @@ def test_recorded_assertions_are_occurrence_bound_and_ledger_addressable():
 
     reconstructed = assertions_of_recorded_comparison_result_count(event)
 
-    assert [item.result for item in reconstructed] == ["exact_production_set", "count"]
-    assert all(item.producing_event_id == event.id for item in reconstructed)
+    assert [item.result for item in reconstructed] == ["exact_yield_set", "count"]
+    assert all(item.yielding_event_id == event.id for item in reconstructed)
     assert all(
         get_recorded_comparison_result_count_assertion(
             ledger,
-            producing_event_id=event.id,
+            yielding_event_id=event.id,
             assertion_id=item.assertion_id,
         )
         == item
@@ -388,7 +388,7 @@ def test_validation_refuses_changed_local_dependency():
         assertions_of_recorded_comparison_result_count(event)
 
 
-def test_ledger_validation_refuses_an_incomplete_production_set():
+def test_ledger_validation_refuses_an_incomplete_yield_set():
     ledger = EventLedger()
     pair = AdjacentPair("it", "is")
     a = _record_following(ledger, "s1", "it is here\n", pair)
@@ -406,13 +406,13 @@ def test_ledger_validation_refuses_an_incomplete_production_set():
         ledger,
         workspace_id="w",
         session_id="counts",
-        finding=replace(finding, production_refs=finding.production_refs[:1]),
+        finding=replace(finding, yield_refs=finding.yield_refs[:1]),
     )
     count = event.payload["assertions"][1]
 
     with pytest.raises(ComparisonResultMeasurementError):
         get_recorded_comparison_result_count_assertion(
             ledger,
-            producing_event_id=event.id,
+            yielding_event_id=event.id,
             assertion_id=count["dimensions"]["identity"],
         )

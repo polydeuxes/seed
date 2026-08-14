@@ -75,13 +75,13 @@ BANNED: tuple[tuple[str, str], ...] = (
     # condition, trajectory, ..."), one passive definition, and one that says
     # Learning establishment "may be understood as" constrained movement, which
     # is a reading aid rather than an establishment.  No clause names a
-    # Learning responsible boundary, boundary, production occurrence, occurrence, responsibility, or act.
+    # Learning responsible boundary, boundary, yield occurrence, occurrence, responsibility, or act.
     # Active law itself denies "a universal Learning object" and denies
     # authorizing "general language learning".
     (r"\blearn\w*\b", "learn*"),
     # `actor` entered with the retired generalized runtime as a closed list of
     # user/model/system/tool/builder/approver labels.  It names no Responsibility
-    # that established production occurrence or source-relation distinctions do not
+    # that established yield occurrence or source-relation distinctions do not
     # already carry.  The durable occurrence column is retained as
     # unconstrained compatibility shape; storage survival does not establish
     # Book grammar.
@@ -137,7 +137,7 @@ BANNED: tuple[tuple[str, str], ...] = (
 #
 #     name the Responsibility no other established coordinate already carries,
 #     then reconstruct its responsible boundary, the act that establishes it, and the standing that
-#     production establishes
+#     yield establishes
 #
 #     unique Responsibility can be named  ->  admitted vocabulary, however
 #                                             ordinary it sounds
@@ -145,7 +145,7 @@ BANNED: tuple[tuple[str, str], ...] = (
 #                                             it must not enter as the doer
 #
 # `05.Recording.A` passes: a recording boundary may create retrievable
-# assertion-bearing material, and the produced standing is that a record exists
+# assertion-bearing material, and the yielded standing is that a record exists
 # and preserves an Assertion carrying source coordinates. Responsible boundary, act, standing.
 #
 # `learning` and `translation` fail it.  Neither has a clause naming who does
@@ -164,14 +164,14 @@ BANNED: tuple[tuple[str, str], ...] = (
 #                 representation, record, Assertion, result, or occurrence.
 #   assertion     UNRESOLVED, deliberately not banned here.  It fails the test
 #                 above -- `#2382` established that no clause names what
-#                 produces `the relation assertion` -- but `01.Kinds:28`
+#                 yields `the relation assertion` -- but `01.Kinds:28`
 #                 *requires* it as a coordinate, so banning it would flag
 #                 active law's own required text.  A required coordinate with
 #                 no responsible boundary is a different defect from a word with no responsible boundary, and
 #                 this gate is not the place to decide which repair applies.
 #   actor         BANNED.  Historical reconciliation called it coarse event
 #                 authorship vocabulary, but it carries no Responsibility not
-#                 already carried by established production occurrence or source-relation
+#                 already carried by established yield occurrence or source-relation
 #                 distinctions.  `#2450` removed its closed runtime grammar
 #                 while retaining the durable column as an unconstrained
 #                 compatibility label.  That physical field does not earn
