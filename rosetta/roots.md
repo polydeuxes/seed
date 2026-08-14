@@ -45,6 +45,33 @@ it is an exact outward occurrence distinct from formation.
 The following shorthands hang from exact parts of the spine rather than naming
 additional branches.
 
+### Implementation witnesses
+
+These anchors show current concrete instantiations; they do not define the
+grammar:
+
+```text
+Responsibility / Act / occurrence
+    seed_runtime/byte_measurement.py::record_byte_count_layer
+    seed_runtime/byte_measurement.py::record_adjacent_byte_pair_count_layer
+
+production relation / Evidence
+    seed_runtime/production_evidence.py::_record_production_evidence
+
+Assertion / occurrence-bound recovery
+    seed_runtime/byte_measurement.py::RecordedByteAssertion
+    seed_runtime/byte_measurement.py::assertions_of_recorded_byte_measurement
+
+locality movement
+    seed_runtime/byte_measurement.py::_move_byte_assertion_to_locality
+
+Applicability
+    seed_runtime/byte_measurement.py::get_recorded_pair_input_applicability
+
+Provenance path validation
+    seed_runtime/operator_ingress_addressable_material.py::form_operator_ingress_addressable_material
+```
+
 ## Producer
 
 `Producer` is ordinary shorthand for the side from which a result comes. In
@@ -218,7 +245,6 @@ not meaning-making            measurement and recurrence establish no
 not admission                 material arriving is not material admitted
 not a return path to law      the noun is retired; Rosetta does not restore its
                               constitutional Standing
-                              except attention
 ```
 
 ### Where the mapping is Unknown

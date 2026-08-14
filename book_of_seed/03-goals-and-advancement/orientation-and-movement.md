@@ -12,7 +12,9 @@ Orientation associates and presents goal dimensions; movement requires a separat
 ## Addressable boundaries for movement
 
 ### 03.Movement.A — Movement is not mutation
-Constitutional movement is a warranted transition in lawful position, standing, or advancement posture. It may be conceptual, evidentiary, responsibility-bearing, or projection-bound without mutating runtime condition, external systems, the event ledger, or cluster truth. Conversely, a runtime write, recorded event, route change, or projected condition update is not constitutional movement unless the responsible boundary also preserves the warrant, subject, authority, evidence, and limits for the transition claimed.
+Constitutional movement is a warranted transition in lawful position, standing, or advancement posture. It may be conceptual, evidentiary, temporal, responsibility-bearing, selection-bearing, authorization-bearing, or projection-bound without mutating runtime condition, external systems, the event ledger, or cluster truth. Conversely, a runtime write, recorded event, route change, projected condition update, cache change, or displayed label is not constitutional movement unless the responsible boundary preserves the warrant, subject, Authority, Evidence, Scope, and limits for the transition claimed.
+
+Movement is not a rule call or Act occurrence by identity. Standing is not a durable object by identity, a constitutional subject is not a class, a named constitutional subject does not require a dedicated artifact, and changed Standing does not automatically open later movement.
 
 ## Important distinctions
 - orientation != movement
@@ -31,11 +33,3 @@ Constitutional movement is a warranted transition in lawful position, standing, 
 ## Related chapters
 - [Demands and opened movement](demands-and-opened-movement.md)
 - [Stopping and completion](../08-authority-communication-and-stopping/stopping-and-completion.md)
-
-## Constrained movement grammar correction 001
-
-Constitutional movement is a warranted transition in lawful position, standing, or advancement posture. Movement is not mutation by identity. A changed record, projection, cache, external system, runtime value, or displayed label is not constitutional movement unless the responsible transition preserves its warrant, subject, evidence, authority, scope, and limits.
-
-Movement may be conceptual, evidentiary, temporal, responsibility-bearing, selection-bearing, authorization-bearing, projection-bound, or externally realized. These dimensions do not make movement a rule call, act-occurrence event, or implementation mutation. Standing is not a durable object by identity, a constitutional subject is not a class, a named constitutional subject does not require a dedicated artifact, and changed standing does not automatically open later movement.
-
-Direct answers preserved by this clause: Is every constitutional standing best understood as an object? No. Does every named constitutional subject require a dedicated artifact? No. Does constitutional movement require runtime mutation? No. Does changed standing automatically open later movement? No.
