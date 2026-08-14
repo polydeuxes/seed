@@ -22,12 +22,12 @@ under the declared rule and Scope
 
 and recurrence is asserted only where N exceeds one.
 
-**Its result stands on both recorded kinds.** Recorded comparison occurrences
-say which exchanges measured the distinction. Recorded measurement occurrences
-say which exchanges measured the coordinate at all. Neither answers alone, so
-every occurrence of both kinds that yielded the result travels as Evidence —
-`#2419` holds that preservation must not erase what a result stood on, and
-`#2429` recorded only the comparisons.
+**Its result stands on recorded Measurement occurrences.** Each occurrence
+already carries the declared identity and every exact occupancy it measured.
+Materializing every pairwise Compare between those occurrences adds no input to
+the count and grows quadratically with the number of bounded exchanges.  The
+measurement therefore folds each exact Measurement once.  Compare remains a
+separate Act when literal comparison is actually requested.
 
 **Grouping uses the whole declared identity.** `#2429` grouped on left
 representation, rule and position, then described the result as "under the
@@ -43,7 +43,6 @@ from dataclasses import dataclass
 import json
 from typing import Any, Iterable, Iterator
 
-from seed_runtime.bounded_assertion_comparison import COMPARISON_RECORDED_KIND
 from seed_runtime.events import EventLedger, EventLedgerBoundary
 from seed_runtime.event import Event
 from seed_runtime.preserved_material_measurement import MEASUREMENT_RECORDED_KIND
@@ -437,18 +436,6 @@ def _declared_of_measurement(event: Event) -> tuple[tuple[str, str], ...] | None
     return tuple(declared)
 
 
-def _declared_of_comparison(event: Event) -> tuple[tuple[str, str], ...] | None:
-    """The declared identity, only where both inputs declared it identically."""
-    stated = {d["coordinate"]: d for d in event.payload.get("distinctions", [])}
-    declared = []
-    for name in DECLARED_IDENTITY:
-        distinction = stated.get(name)
-        if distinction is None or not distinction["same"]:
-            return None
-        declared.append((name, str(distinction["values"][0])))
-    return tuple(declared)
-
-
 def measure_exchange_counts(
     ledger: EventLedger, *, workspace_id: str, bounded_exchanges: Iterable[str]
 ) -> list[MeasuredCountFinding]:
@@ -462,8 +449,9 @@ def measure_exchange_counts(
     recurrence assertion to disclose the bounded scope within which occurrences
     were counted, and a swept scope is not a declared one.
 
-    A comparison is recorded under one exchange's session while using a
-    finding from another, so no session-local mode is offered.
+    Each Measurement occurrence is read once.  Pairwise Compare occurrences
+    are neither required nor read: their endpoints contain no occupancy that
+    the Measurement occurrences do not already carry.
     """
 
     declared_exchanges = tuple(sorted(set(bounded_exchanges)))
@@ -481,15 +469,16 @@ def measure_exchange_counts(
     # session boundary does. Each declared exchange is read through that exact
     # boundary, so the existence check costs one bounded read per declared
     # exchange rather than a pass over the workspace.
-    # Pass one retains only compact indexes reconstructed from Measurement. Compare
-    # names its inputs by measurement occurrence id, so those indexes must exist
-    # before any comparison can be folded. The existence probe remains separate:
+    # The pass retains only compact indexes reconstructed from Measurement.
+    # The existence probe remains separate:
     # declaration chooses among established sessions, and a non-measurement
     # occurrence can establish a session without supplying a measured coordinate.
     measured_coordinate: dict[tuple, set[str]] = {}
     coordinate_evidence: dict[tuple, dict[str, set[str]]] = {}
-    session_of: dict[str, str] = {}
+    observed: dict[MeasuredDistinction, set[str]] = {}
+    observed_evidence: dict[MeasuredDistinction, set[str]] = {}
     unestablished: list[str] = []
+    measurement_seen = False
 
     for exchange in declared_exchanges:
         if not ledger.has_locality(
@@ -503,7 +492,7 @@ def measure_exchange_counts(
             MEASUREMENT_RECORDED_KIND,
             through=input_ledger_boundary,
         ):
-            session_of[event.id] = exchange
+            measurement_seen = True
             declared = _declared_of_measurement(event)
             if declared is None:
                 continue
@@ -511,6 +500,16 @@ def measure_exchange_counts(
             coordinate_evidence.setdefault(declared, {}).setdefault(
                 exchange, set()
             ).add(event.id)
+            for occupancy in event.payload.get("occupancies", []):
+                right = occupancy.get("representation")
+                if not isinstance(right, str):
+                    continue
+                key = MeasuredDistinction(
+                    right_representation=right,
+                    declared=declared,
+                )
+                observed.setdefault(key, set()).add(exchange)
+                observed_evidence.setdefault(key, set()).add(event.id)
 
     if unestablished:
         raise RecurrenceMeasurementError(
@@ -518,59 +517,19 @@ def measure_exchange_counts(
             f"{', '.join(unestablished)}. Declaring a measurement's Scope "
             "chooses among established exchanges; it does not establish them"
         )
-    # Pass two folds each Compare occurrence into the aggregates immediately.
-    # No comparison Event survives the iteration that supplied it.
-    recurs: dict[MeasuredDistinction, set[str]] = {}
-    support: dict[MeasuredDistinction, set[str]] = {}
-    comparison_seen = False
-    for exchange in declared_exchanges:
-        for event in ledger.iter_locality_kind(
-            workspace_id,
-            exchange,
-            COMPARISON_RECORDED_KIND,
-            through=input_ledger_boundary,
-        ):
-            comparison_seen = True
-            declared = _declared_of_comparison(event)
-            if declared is None:
-                continue
-            inputs = event.payload.get("inputs", [])
-            # An input's exchange is the recorded session of the occurrence it
-            # names, reconstructed from pass one's compact measurement index.
-            exchanges = [session_of.get(i.get("event_id")) for i in inputs]
-            if any(x is None or x not in declared_exchanges for x in exchanges):
-                continue
-            by_event = {i["event_id"]: x for i, x in zip(inputs, exchanges)}
-
-            def note(right: str, where: list[str]) -> None:
-                key = MeasuredDistinction(
-                    right_representation=right, declared=declared
-                )
-                recurs.setdefault(key, set()).update(where)
-                support.setdefault(key, set()).add(event.id)
-                support[key].update(i["event_id"] for i in inputs)
-
-            for right in event.payload.get("shared_occupants", []):
-                note(right, exchanges)
-            for event_id, occupants in event.payload.get(
-                "occupants_in_one_only", {}
-            ).items():
-                for right in occupants:
-                    note(right, [by_event[event_id]])
-
-    if not comparison_seen:
+    if not measurement_seen:
         raise RecurrenceMeasurementError(
-            "no recorded comparison occurrences to measure; this measurement's "
-            "subject is what Compare and Measurement recorded, not preserved "
-            "material"
+            "no recorded Measurement occurrences to measure; preserved material "
+            "beside this Act is not a measured input"
         )
 
     findings = []
     declared_set = set(declared_exchanges)
     for key in sorted(
-        recurs, key=lambda k: (-len(recurs[k]), k.left, k.right_representation)
+        observed,
+        key=lambda k: (-len(observed[k]), k.left, k.right_representation),
     ):
-        where = recurs[key]
+        where = observed[key]
         measured = measured_coordinate.get(key.declared, set())
         not_measured = declared_set - measured
         measured_without = measured - where
@@ -581,7 +540,7 @@ def measure_exchange_counts(
                 exchange, set()
             )
         }
-        measured_in_evidence = set(support[key])
+        measured_in_evidence = set(observed_evidence[key])
         evidence = measured_in_evidence | measured_without_evidence
         # The third result stands on the complete Measurement-kind read for
         # each declared exchange through the preserved ledger boundary. Copying
@@ -702,13 +661,13 @@ def assertions_from_measured_count(
         "measured_in",
         finding.measured_in,
         finding.measured_in_support_event_ids,
-        (COMPARISON_RECORDED_KIND,),
+        (MEASUREMENT_RECORDED_KIND,),
     )
     measured_without = exact_set(
         "measured_without_distinction",
         finding.measured_without_distinction,
         finding.measured_without_distinction_support_event_ids,
-        (MEASUREMENT_RECORDED_KIND, COMPARISON_RECORDED_KIND),
+        (MEASUREMENT_RECORDED_KIND,),
     )
     coordinate_not_measured = exact_set(
         "coordinate_not_measured",

@@ -61,6 +61,15 @@ class AssertionYieldComparison:
 ASSERTION_YIELD_COMPARISON_RECORDED_KIND = (
     "operator.assertion.yield_comparison_recorded"
 )
+ASSERTION_COMPARE_INPUT_LOCALITY_EVIDENCE_KIND = (
+    "operator.assertion.compare_input_locality_evidenced"
+)
+ASSERTION_COMPARE_INPUT_APPLICABILITY_KIND = (
+    "operator.assertion.compare_input_applicability_recorded"
+)
+ASSERTION_COMPARE_ACT_EVIDENCE_KIND = (
+    "operator.assertion.compare_act_evidenced"
+)
 
 COMPARISON_ASSERTION_STANDING_COORDINATE_RESPONSIBILITY = (
     "preserve this comparison Assertion's carried Standing coordinates"
@@ -241,6 +250,53 @@ def record_assertion_yield_comparison(
         raise AssertionComparisonError(
             "the supplied comparison does not match its occurrence-bound inputs"
         )
+    act_id = new_id("assertion_compare_act")
+    act_occurrence_id = new_id("assertion_compare_act_occurrence")
+    locality_evidence_ids = []
+    applicability_event_ids = []
+    participation = []
+    for input_ref in input_refs:
+        role = "compared Assertion"
+        locality_evidence = ledger.append(
+            ASSERTION_COMPARE_INPUT_LOCALITY_EVIDENCE_KIND,
+            workspace_id,
+            {
+                "first_subject": input_ref,
+                "second_subject": {
+                    "downstream_act_id": act_id,
+                    "act_occurrence_id": act_occurrence_id,
+                    "role": role,
+                },
+                "standing": "local",
+                "authority": "unestablished",
+                "evidence_scope": "this exact Assertion-to-Compare Locality only",
+            },
+            locality_id=locality_id,
+        )
+        applicability = ledger.append(
+            ASSERTION_COMPARE_INPUT_APPLICABILITY_KIND,
+            workspace_id,
+            {
+                "input_ref": input_ref,
+                "downstream_act_id": act_id,
+                "role": role,
+                "locality_evidence_id": locality_evidence.id,
+                "standing": "applicable",
+                "authority": "unestablished",
+                "evidence_scope": "this exact input-to-Compare relation only",
+            },
+            locality_id=locality_id,
+        )
+        locality_evidence_ids.append(locality_evidence.id)
+        applicability_event_ids.append(applicability.id)
+        participation.append(
+            {
+                "subject_ref": input_ref,
+                "role": role,
+                "act_occurrence_id": act_occurrence_id,
+                "applicability_event_id": applicability.id,
+            }
+        )
     assertions = []
     for distinction in comparison.distinctions:
         content = {
@@ -304,6 +360,23 @@ def record_assertion_yield_comparison(
                 ],
             }
         )
+    act_evidence = ledger.append(
+        ASSERTION_COMPARE_ACT_EVIDENCE_KIND,
+        workspace_id,
+        {
+            "downstream_act_id": act_id,
+            "act_occurrence_id": act_occurrence_id,
+            "act": "Compare",
+            "responsibility": comparison.responsibility,
+            "responsible_boundary": comparison.responsible_boundary,
+            "input_applicability_event_ids": applicability_event_ids,
+            "participation": participation,
+            "standing": "occurred",
+            "authority": "unestablished",
+            "evidence_scope": "this exact bounded Compare occurrence only",
+        },
+        locality_id=locality_id,
+    )
     return ledger.append(
         ASSERTION_YIELD_COMPARISON_RECORDED_KIND,
         workspace_id,
@@ -319,6 +392,12 @@ def record_assertion_yield_comparison(
                 "occurrence_preservation": "comparison occurrence durably recorded",
             },
             "yielding_act": "Compare",
+            "downstream_act_id": act_id,
+            "act_occurrence_id": act_occurrence_id,
+            "responsible_act_evidence_id": act_evidence.id,
+            "input_locality_evidence_ids": locality_evidence_ids,
+            "input_applicability_event_ids": applicability_event_ids,
+            "participation": participation,
             "responsible_boundary": comparison.responsible_boundary,
             "responsibility": comparison.responsibility,
             "inputs": list(input_refs),
@@ -359,6 +438,38 @@ def assertions_of_recorded_assertion_comparison(
     ):
         raise AssertionComparisonError(
             f"{event.id} does not carry two distinct yields of one Assertion"
+        )
+    act_occurrence_id = event.payload.get("act_occurrence_id")
+    locality_ids = event.payload.get("input_locality_evidence_ids")
+    applicability_ids = event.payload.get("input_applicability_event_ids")
+    participation = event.payload.get("participation")
+    if (
+        not isinstance(act_occurrence_id, str)
+        or not act_occurrence_id
+        or not isinstance(locality_ids, list)
+        or len(locality_ids) != len(outer_inputs)
+        or len(set(locality_ids)) != len(locality_ids)
+        or not all(isinstance(value, str) and value for value in locality_ids)
+        or not isinstance(applicability_ids, list)
+        or len(applicability_ids) != len(outer_inputs)
+        or len(set(applicability_ids)) != len(applicability_ids)
+        or not all(isinstance(value, str) and value for value in applicability_ids)
+        or participation
+        != [
+            {
+                "subject_ref": input_ref,
+                "role": "compared Assertion",
+                "act_occurrence_id": act_occurrence_id,
+                "applicability_event_id": applicability_id,
+            }
+            for input_ref, applicability_id in zip(
+                outer_inputs, applicability_ids
+            )
+        ]
+    ):
+        raise AssertionComparisonError(
+            f"{event.id} does not preserve exact input Locality, Applicability, "
+            "and Participation for its Compare occurrence"
         )
     if len(stated) != len(COORDINATES):
         raise AssertionComparisonError(

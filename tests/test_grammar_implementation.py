@@ -37,6 +37,16 @@ from seed_runtime.preserved_material_measurement import (
 from seed_runtime.recorded_finding_yield_comparison import (
     compare_recorded_finding_yield,
 )
+from seed_runtime.assertion_comparison import (
+    assertions_of_recorded_assertion_comparison,
+    compare_assertion_yields,
+    record_assertion_yield_comparison,
+)
+from seed_runtime.recurrence_measurement import (
+    assertions_of_recorded_measurement,
+    measure_exchange_counts,
+    record_measured_count,
+)
 from seed_runtime.yield_evidence import YIELD_LIVE_BOUNDARIES, yield_commitment
 
 
@@ -378,6 +388,143 @@ def _repeated_representation_road() -> tuple[dict, dict]:
         }
 
     return record(), record()
+
+
+def _assertion_compare_input_locality_roads() -> tuple[dict, dict]:
+    ledger = _IntegrityAdversaryLedger()
+    run_persistent_operator_console(
+        ledger=ledger,
+        workspace_id="w",
+        locality_id="assertion-compare-source",
+        input_stream=StringIO("a word\nexit\n"),
+        output_stream=StringIO(),
+    )
+    sources = preserved_ingress_occurrences(
+        ledger,
+        workspace_id="w",
+        locality_id="assertion-compare-source",
+    )
+    finding_event = record_measurement_finding(
+        ledger,
+        workspace_id="w",
+        locality_id="assertion-compare-source",
+        finding=measure_after(sources, "a", counting_scope="one source"),
+    )
+    counted = measure_exchange_counts(
+        ledger,
+        workspace_id="w",
+        bounded_exchanges=("assertion-compare-source",),
+    )[0]
+    first = record_measured_count(
+        ledger,
+        workspace_id="w",
+        locality_id="assertion-compare-source",
+        finding=counted,
+    )
+    second = record_measured_count(
+        ledger,
+        workspace_id="w",
+        locality_id="assertion-compare-source",
+        finding=counted,
+    )
+    first_count = next(
+        item for item in assertions_of_recorded_measurement(first)
+        if item.result == "count"
+    )
+    second_count = next(
+        item for item in assertions_of_recorded_measurement(second)
+        if item.result == "count"
+    )
+    comparison = compare_assertion_yields(
+        ledger, (first_count.reference, second_count.reference)
+    )
+
+    def record() -> dict:
+        carrier = record_assertion_yield_comparison(
+            ledger,
+            workspace_id="w",
+            locality_id="assertion-compare-target",
+            comparison=comparison,
+        )
+        evidence = ledger.get(carrier.payload["input_locality_evidence_ids"][0])
+        return {
+            "ledger": ledger,
+            "carrier": carrier,
+            "locality_evidence": evidence,
+        }
+
+    return record(), record()
+
+
+def _assertion_compare_input_locality_requirements(bundle: dict) -> dict[str, bool]:
+    carrier = bundle["carrier"]
+    evidence = bundle["locality_evidence"]
+    if evidence is None:
+        return {
+            "exact_relation": False,
+            "occurrence_witness": False,
+            "intact_evidence": False,
+        }
+    first_subject = evidence.payload.get("first_subject")
+    second_subject = evidence.payload.get("second_subject")
+    exact_relation = (
+        first_subject in carrier.payload.get("inputs", [])
+        and evidence.id in carrier.payload.get("input_locality_evidence_ids", [])
+    )
+    exact_occurrence = (
+        isinstance(second_subject, dict)
+        and second_subject.get("downstream_act_id")
+        == carrier.payload.get("downstream_act_id")
+        and second_subject.get("act_occurrence_id")
+        == carrier.payload.get("act_occurrence_id")
+    )
+    return {
+        "exact_relation": exact_relation,
+        "occurrence_witness": exact_occurrence,
+        "intact_evidence": (
+            bundle["ledger"].integrity_of(evidence.id) != CORRUPTED
+        ),
+    }
+
+
+def _assertion_compare_input_locality_cases() -> dict[str, str]:
+    exact, alternate = _assertion_compare_input_locality_roads()
+    missing = dict(exact)
+    missing_evidence = exact["locality_evidence"].model_copy(deep=True)
+    missing_evidence.payload["first_subject"] = {
+        "yielding_event_id": "not-an-input",
+        "assertion_id": "not-an-input",
+    }
+    missing["locality_evidence"] = missing_evidence
+    wrong_occurrence = dict(exact)
+    wrong_evidence = exact["locality_evidence"].model_copy(deep=True)
+    wrong_evidence.payload["second_subject"] = dict(
+        alternate["locality_evidence"].payload["second_subject"]
+    )
+    wrong_occurrence["locality_evidence"] = wrong_evidence
+    corrupted, _ = _assertion_compare_input_locality_roads()
+    corrupted["ledger"].mark_corrupted(corrupted["locality_evidence"].id)
+    unrelated = dict(exact)
+    unrelated_carrier = exact["carrier"].model_copy(deep=True)
+    unrelated_carrier.payload["assertions"] = list(
+        reversed(unrelated_carrier.payload["assertions"])
+    )
+    unrelated["carrier"] = unrelated_carrier
+
+    def witness(bundle: dict) -> str:
+        return (
+            EXACT
+            if all(_assertion_compare_input_locality_requirements(bundle).values())
+            else MISSING
+        )
+
+    return {
+        "exact": witness(exact),
+        "edge_missing": witness(missing),
+        "wrong_occurrence": witness(wrong_occurrence),
+        "corrupted_evidence": witness(corrupted),
+        "unrelated_change": witness(unrelated),
+    }
 
 
 def _yield_bundle(ledger, carrier) -> dict:
@@ -1457,6 +1604,9 @@ def _live_structural_edge_fidelity_cases() -> dict[
     )
     registered.update(_additional_live_structural_edge_fidelity_cases())
     registered[("locality", "assertion_movement")] = _locality_fidelity_cases()
+    registered[("locality", "assertion_compare_input")] = (
+        _assertion_compare_input_locality_cases()
+    )
     registered.update(
         {
             ("yield", boundary): {
@@ -2819,6 +2969,9 @@ def test_runtime_has_no_examination_species():
 
 
 LOCALITY_BOUNDARY_BY_KIND = {
+    "operator.assertion.compare_input_locality_evidenced": (
+        "assertion_compare_input"
+    ),
     "operator.external_expression.relation_locality_evidenced": (
         "external_expression_relation"
     ),
@@ -2926,6 +3079,10 @@ def test_no_new_site_compounds_scope_with_locality():
 # or a dedicated one. grammar.json requires exact_relation, occurrence_witness,
 # and intact_evidence, and names no species for them.
 STRUCTURAL_EDGE_EVIDENCE = {
+    "_assertion_compare_input_locality_requirements": (
+        "locality",
+        "an Assertion-to-Compare locality-evidence occurrence",
+    ),
     "_locality_requirements": (
         "locality",
         "the responsible movement Evidence occurrence",

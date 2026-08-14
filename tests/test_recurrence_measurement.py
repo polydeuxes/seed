@@ -468,6 +468,86 @@ def test_assertion_yield_compare_records_each_literal_result_separately(compared
     )
 
 
+def test_yielded_assertions_enter_compare_through_exact_input_relations(compared):
+    finding = _by_right(compared)["word"]
+    first = record_measured_count(
+        compared, workspace_id="w", locality_id="s1", finding=finding
+    )
+    second = record_measured_count(
+        compared, workspace_id="w", locality_id="s1", finding=finding
+    )
+    inputs = [
+        next(
+            item for item in assertions_of_recorded_measurement(event)
+            if item.result == "count"
+        )
+        for event in (first, second)
+    ]
+    recorded = record_assertion_yield_comparison(
+        compared,
+        workspace_id="w",
+        locality_id="s2",
+        comparison=compare_assertion_yields(
+            compared, tuple(item.reference for item in inputs)
+        ),
+    )
+
+    assert len(recorded.payload["input_locality_evidence_ids"]) == 2
+    assert len(recorded.payload["input_applicability_event_ids"]) == 2
+    for input_ref, locality_id, applicability_id, participation in zip(
+        recorded.payload["inputs"],
+        recorded.payload["input_locality_evidence_ids"],
+        recorded.payload["input_applicability_event_ids"],
+        recorded.payload["participation"],
+    ):
+        locality = compared.get(locality_id)
+        applicability = compared.get(applicability_id)
+        assert locality.payload["first_subject"] == input_ref
+        assert locality.payload["second_subject"]["act_occurrence_id"] == (
+            recorded.payload["act_occurrence_id"]
+        )
+        assert applicability.payload["input_ref"] == input_ref
+        assert applicability.payload["locality_evidence_id"] == locality.id
+        assert applicability.payload["standing"] == "applicable"
+        assert participation == {
+            "subject_ref": input_ref,
+            "role": "compared Assertion",
+            "act_occurrence_id": recorded.payload["act_occurrence_id"],
+            "applicability_event_id": applicability.id,
+        }
+
+
+def test_locality_and_applicability_do_not_substitute_for_participation(compared):
+    finding = _by_right(compared)["word"]
+    first = record_measured_count(
+        compared, workspace_id="w", locality_id="s1", finding=finding
+    )
+    second = record_measured_count(
+        compared, workspace_id="w", locality_id="s1", finding=finding
+    )
+    inputs = [
+        next(
+            item for item in assertions_of_recorded_measurement(event)
+            if item.result == "count"
+        )
+        for event in (first, second)
+    ]
+    recorded = record_assertion_yield_comparison(
+        compared,
+        workspace_id="w",
+        locality_id="s1",
+        comparison=compare_assertion_yields(
+            compared, tuple(item.reference for item in inputs)
+        ),
+    ).model_copy(deep=True)
+    assert recorded.payload["input_locality_evidence_ids"]
+    assert recorded.payload["input_applicability_event_ids"]
+    recorded.payload["participation"] = []
+
+    with pytest.raises(AssertionComparisonError, match="Participation"):
+        assertions_of_recorded_assertion_comparison(recorded)
+
+
 def test_recording_comparison_results_does_not_establish_support_or_revision(compared):
     finding = _by_right(compared)["word"]
     first = record_measured_count(
@@ -687,15 +767,12 @@ def test_exact_sets_keep_completeness_separate_from_support(compared):
 
     assert assertions["measured_in"].support_event_ids
     assert assertions["measured_in"].completeness_occurrence_kinds == (
-        "operator.measurement.comparison_recorded",
+        MEASUREMENT_RECORDED_KIND,
     )
     assert assertions["measured_without_distinction"].support_event_ids
     assert assertions[
         "measured_without_distinction"
-    ].completeness_occurrence_kinds == (
-        MEASUREMENT_RECORDED_KIND,
-        "operator.measurement.comparison_recorded",
-    )
+    ].completeness_occurrence_kinds == (MEASUREMENT_RECORDED_KIND,)
     assert assertions["coordinate_not_measured"].support_event_ids == ()
     assert assertions["coordinate_not_measured"].completeness_occurrence_kinds == (
         MEASUREMENT_RECORDED_KIND,
@@ -753,12 +830,12 @@ def test_scope_and_rule_are_part_of_assertion_identity(compared):
         )
 
 
-def test_measuring_without_any_comparison_is_refused():
+def test_material_beside_the_act_is_not_a_measurement_input():
     ledger = EventLedger()
     run_persistent_operator_console(
         ledger=ledger, workspace_id="w", locality_id="s",
         input_stream=StringIO("a word\nexit\n"), output_stream=StringIO())
-    with pytest.raises(RecurrenceMeasurementError, match="not preserved material"):
+    with pytest.raises(RecurrenceMeasurementError, match="not a measured input"):
         measure_exchange_counts(
             ledger, workspace_id="w",
             bounded_exchanges=["s"])
@@ -799,15 +876,14 @@ def test_a_declaration_of_established_exchanges_is_accepted(compared):
     assert all(f.bounded_exchanges == ("s1", "s2") for f in findings)
 
 
-def test_declaring_one_exchange_yields_no_findings_and_that_is_not_a_pass(compared):
-    """Recorded because it is what made the vacuous assertion look green.
-
-    A comparison has as input two exchanges. Declaring one leaves every comparison
-    with an undeclared input, so nothing contributes. That is correct behaviour
-    and an empty result, which no assertion over the result can witness.
-    """
-    assert measure_exchange_counts(
-        compared, workspace_id="w", bounded_exchanges=("s1",)) == []
+def test_one_exchange_yields_an_exact_count_without_claiming_recurrence(compared):
+    findings = measure_exchange_counts(
+        compared, workspace_id="w", bounded_exchanges=("s1",)
+    )
+    assert len(findings) == 1
+    assert findings[0].measured_in == ("s1",)
+    assert findings[0].exchange_count == 1
+    assert findings[0].recurrence_established is False
 
 
 # --------------------------------------------------------------------------
@@ -856,15 +932,10 @@ def test_measurements_declaring_different_scopes_do_not_group(compared):
 # --------------------------------------------------------------------------
 
 
-def test_participating_measurements_travel_not_only_the_comparisons(compared):
-    """`#2429` recorded only comparisons, while using measurements to establish
-    two of the three result sets."""
+def test_only_measurements_that_supply_the_count_travel_as_evidence(compared):
     finding = _by_right(compared)["word"]
     kinds = {compared.get(i).kind for i in finding.input_event_ids}
-    assert kinds == {
-        "operator.measurement.comparison_recorded",
-        MEASUREMENT_RECORDED_KIND,
-    }
+    assert kinds == {MEASUREMENT_RECORDED_KIND}
 
 
 def test_every_exchange_s_measurement_is_among_the_support(compared):
@@ -1169,19 +1240,19 @@ def test_durable_validation_does_not_read_the_whole_workspace(tmp_path):
         assert "locality_id" in query, query
         assert "kind" in query, query
         assert "FROM events WHERE workspace_id" in query, query
-    # Two passes name each session and exact relevant kind; none sweeps the
-    # workspace or materialises irrelevant occurrences.
-    assert len(selects) == 2 * len(DECLARED)
+    # One pass names each session and the exact relevant kind; none sweeps the
+    # workspace or materialises pairwise Compare occurrences.
+    assert len(selects) == len(DECLARED)
     assert sum(
         MEASUREMENT_RECORDED_KIND in query for query in selects
     ) == len(DECLARED)
-    assert sum(
+    assert not any(
         "operator.measurement.comparison_recorded" in query for query in selects
-    ) == len(DECLARED)
+    )
 
 
-def test_comparison_events_are_folded_without_being_retained(compared):
-    """The resource boundary is one streamed comparison, not all comparisons."""
+def test_measurement_events_are_folded_without_being_retained(compared):
+    """The resource boundary is one streamed Measurement, not all measurements."""
     import gc
     import weakref
 
@@ -1193,7 +1264,7 @@ def test_comparison_events_are_folded_without_being_retained(compared):
         for stored in original_iterator(
             workspace_id, locality_id, kind, through=through
         ):
-            if kind != "operator.measurement.comparison_recorded":
+            if kind != MEASUREMENT_RECORDED_KIND:
                 yield stored
                 continue
             gc.collect()
@@ -1342,21 +1413,21 @@ def test_a_durable_yielding_occurrence_is_identifiable_and_verifies(tmp_path):
 # --------------------------------------------------------------------------
 
 
-def test_counting_recurrence_does_not_strengthen_any_comparison(compared):
+def test_counting_recurrence_does_not_take_comparisons_as_input(compared):
     """The invariant. `recurs in 15` must never become `15 sources agree`.
 
-    Every comparison this count input still records `Unknown`, and the
-    count's own record refuses corroboration in its own words.
+    Pairwise Compare Events may exist beside the Measurements, but they do not
+    enter this Act merely by co-presence. The count's own record also refuses
+    corroboration in its own words.
     """
     finding = _by_right(compared)["word"]
     input = [compared.get(i) for i in finding.input_event_ids]
-    comparisons = [
-        e for e in input
-        if e.kind == "operator.measurement.comparison_recorded"
-    ]
-    assert comparisons
-    for comparison in comparisons:
-        assert comparison.payload["bounded_relation"] == "Unknown"
+    assert input
+    assert {event.kind for event in input} == {MEASUREMENT_RECORDED_KIND}
+    assert any(
+        event.kind == "operator.measurement.comparison_recorded"
+        for event in compared.list("w")
+    )
 
     event = record_measured_count(
         compared, workspace_id="w", locality_id="s1", finding=finding)
