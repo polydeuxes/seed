@@ -91,7 +91,7 @@ def test_same_exact_subject_supplies_a_bounded_compare(comparable):
     distinctions = {item.coordinate: item for item in comparison.distinctions}
 
     assert comparison.act == "Compare"
-    assert comparison.owner == "this bounded comparison occurrence"
+    assert comparison.responsible_boundary == "this bounded comparison occurrence"
     assert comparison.subject == left.payload["assertion_subject"]
     assert set(distinctions) == set(POSITIONAL_RESULT_COORDINATES)
     assert distinctions["positions_measured"].same is True
@@ -470,7 +470,7 @@ def test_validation_refuses_changed_result_assertion_dimensions(
 @pytest.mark.parametrize(
     ("field", "replacement"),
     (
-        ("responsibility_owner", "an input Assertion"),
+        ("responsible_boundary", "an input Assertion"),
         ("unknowns", ["nothing remains Unknown"]),
         ("forbidden_inferences", []),
     ),
@@ -613,7 +613,7 @@ def test_ledger_validation_refuses_self_consistent_results_for_other_inputs(comp
     ("field", "replacement"),
     (
         ("producing_act", "Measure"),
-        ("owner", "an input Assertion"),
+        ("responsible_boundary", "an input Assertion"),
         ("responsibility", "revise the compared Assertions"),
     ),
 )

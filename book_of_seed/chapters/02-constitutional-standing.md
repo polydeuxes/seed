@@ -9,7 +9,7 @@ Which kinds are constitutionally recognized, and what establishes a representati
 ## Bounded resolution
 A preserved representation or record may carry an Assertion made by another Responsibility. Its shape may preserve identity, provenance, result, uncertainty, and boundaries; it does not establish that its Evidence, Authority, Scope, provenance, and limits support the Assertion. That relation requires its own Assertion and Standing.
 
-This Seed carries only Standing it can warrant through its Evidence, Authority, Scope, and preserved limits. This is a constitutional bound, not a universal Responsibility owner; each exact Responsibility remains independently established and bounded.
+This Seed carries only Standing it can warrant through its Evidence, Authority, Scope, and preserved limits. This is a constitutional bound, not a universal Responsibility assignment; each exact Responsibility remains independently established and bounded.
 
 
 ## Addressable boundaries for availability and reachability
@@ -26,10 +26,10 @@ Compiled behavior, direct instantiation, stable serialization, and compatibility
 ### 01.Standing.D — Multiplicity does not establish a collective
 Co-presence or multiplicity does not establish membership, collective Standing, relation, topology, ordering, Selection, priority, focus, a shared Act or result boundary, or higher-order identity. Each stronger Assertion requires its own bounded subject and established support relation.
 
-### 01.Standing.D.1 — An Assertion owns fidelity of its Standing
-A bounded **Assertion** is the exact asserted content as its own subject under its carried Evidence, provenance, Scope, Authority, conflicts, limits, **Unknowns**, and current Standing. An Assertion owns the Responsibility for fidelity of its Standing to those applicable coordinates. That Responsibility remains local to the bounded Assertion.
+### 01.Standing.D.1 — An Assertion bears Responsibility for fidelity of its Standing
+A bounded **Assertion** is the exact asserted content as its own subject under its carried Evidence, provenance, Scope, Authority, conflicts, limits, **Unknowns**, and current Standing. An Assertion bears the Responsibility for fidelity of its Standing to those applicable coordinates. That Responsibility remains local to the bounded Assertion.
 
-The Assertion does not thereby perform or own the Act that established it, establish itself, or become that Act occurrence. A responsible Act may establish an Assertion and only the bounded Standing established by its Evidence and Authority. The Assertion's fidelity Responsibility begins with the result; it does not relocate the Act's Responsibility or occurrence-result Evidence into the result. Act occurrence != Assertion owner, result-establishing Act != Assertion Responsibility, and recorded occurrence != result-establishing occurrence.
+The Assertion does not thereby perform the Act that established it, establish itself, or become that Act occurrence. A responsible Act may establish an Assertion and only the bounded Standing established by its Evidence and Authority. The Assertion's fidelity Responsibility begins with the result; it does not relocate the Act's Responsibility or occurrence-result Evidence into the result. Act occurrence != Assertion responsible boundary, result-establishing Act != Assertion Responsibility, and recorded occurrence != result-establishing occurrence.
 
 An Assertion having current Standing does not require another Act merely because it exists. New, changed, or conflicting material does not automatically revise its Standing; different exact asserted content identifies a different Assertion rather than revising this Assertion's identity. An **Unknown** does not create a required result to eliminate it. Further movement requires an applicable responsible occurrence with its own Act, Evidence, Scope, Authority, and limits. In the absence of such an occurrence, preserving the Assertion and its current Standing unchanged is lawful persistence, not an inferred constitutional Stop.
 
@@ -49,16 +49,16 @@ Material may carry the Assertion that X identifies or represents Y without suppo
 
 An established relation may receive an Act-local Applicability determination. Where the exact Act requires Admission, the relation must be admitted before participation. Applicable is not admitted; Admission is not participation; participation does not establish that the input supports the result. Each relation remains local to the exact Responsibility and Act.
 
-### 01.Standing.E.1 — The exact act owner ordinarily owns input applicability
+### 01.Standing.E.1 — The exact Act responsible boundary ordinarily establishes input Applicability
 Unless the Book explicitly assigns otherwise, the Responsibility assigned to an exact Act ensures Applicability is determined for every input before participation. Applicability is determined for that Act's exact subject, content, result boundary, Scope, locality, Authority, participants and roles, and preserved limits. The determination preserves every applicable input and Act coordinate.
 
-Responsibility for ensuring applicability is established does not require the act owner to duplicate every applicability determination personally. The owner may determine applicability within the same bounded occurrence, or may validate Applicability Standing established by an explicitly assigned responsible occurrence for that exact downstream act. The latter standing must concern the exact input-to-act relation and coordinates, rather than generic usefulness, compatibility, availability, or possible relevance. An explicit Book assignment therefore overrides the ordinary owner; delegation does not create a universal applicability service. Applicability for one act is not applicability for another, and upstream applicability is not downstream admission. A later Act owns its own applicability, and admission remains required only where the exact act-local act requires it.
+Responsibility for establishing Applicability does not require its responsible boundary to duplicate every Applicability determination personally. The same bounded occurrence may determine Applicability, or an explicitly assigned responsible occurrence may establish Applicability Standing for that exact downstream Act. The latter Standing must concern the exact input-to-Act relation and coordinates, rather than generic usefulness, compatibility, availability, or possible relevance. An explicit Book assignment therefore changes the ordinary Responsibility assignment; it does not create a universal Applicability service. Applicability for one Act is not Applicability for another, and upstream Applicability is not downstream admission. A later Act establishes its own Applicability unless another exact responsible occurrence is assigned; admission remains required only where the exact Act requires it.
 
 An Applicability determination may establish only **applicable**, **inapplicable**, **conflicting**, or **Unknown** for the exact input-to-Act relation and preserved coordinates. It does not establish Admission, participation, truth, a support relation for the input's Assertion, Authorization, Act occurrence, downstream Standing, or movement. An excluded input may not participate in that Act, and no result may assert that it supports the result.
 
 Exclusion of one proposed input does not by itself establish whether the exact act occurs. That determination remains with the responsibility assigned to perform the exact act, under the conditions, relations, evidence, authority, scope, and other boundaries assigned to that responsibility for the exact occurrence. One rejected candidate is not all candidates rejected; candidate exclusion establishes neither Authorization, act prohibition, nor a lawful Stop; act occurrence without an excluded input does not mean that input was applicable; and an act result is not a result supported by an excluded input. A lawful Stop requires its own competent act, authority, evidence, and material carrying source coordinates; absence of act occurrence is not by itself a lawful Stop, and an implementation return or quiescence is not by itself a lawful Stop.
 
-An alternative input does not participate by availability, similarity, equal content, or exclusion of another input. Before participation, the Act-owning Responsibility determines or validates Applicability for that exact input-to-Act relation and every coordinate the Act requires. Whether one input may occupy another's exact role remains **Unknown** unless a responsible occurrence establishes that relation for the exact Act, result boundary, and Scope.
+An alternative input does not participate by availability, similarity, equal content, or exclusion of another input. Before participation, the Responsibility assigned to the Act determines or validates Applicability for that exact input-to-Act relation and every coordinate the Act requires. Whether one input may occupy another's exact role remains **Unknown** unless a responsible occurrence establishes that relation for the exact Act, result boundary, and Scope.
 
 One bounded responsible occurrence may determine Applicability for inputs, exclude **inapplicable**, **conflicting**, or **Unknown** inputs, perform the exact Act or establish no Act occurrence within its assigned boundaries, and, where independently established, establish bounded output Standing. These remain independently recoverable Assertions with their own exact coordinates. Same occurrence is not same Assertion; Applicability success is not Act occurrence; Act occurrence is not output Standing automatically established; and output Standing is not downstream Applicability or Admission.
 
@@ -80,7 +80,7 @@ These families are broad constitutional questions, not mandatory fields or one u
 
 Macro-dimensional families unfold into local coordinates under the exact subject, question, Act, Responsibility, result boundary, Scope, and Evidence boundary. The Book establishes no fixed coordinate count, registry, universal completeness requirement, or mandatory serialization schema. A coordinate may be applicable, inapplicable, known, **Unknown**, conflicting, or unresolved within that boundary.
 
-Acts, constraints, and relations are structurally distinct from dimensions. They may operate over, govern, or connect dimension-bearing subjects under their independently owned constitutional grammar. Dimension-bearing material != the responsible act over that material. Their presence in dimensional characterization does not make them additional dimensions, a mandatory intermediate layer, or one exhaustive taxonomy.
+Acts, constraints, and relations are structurally distinct from dimensions. They may operate over, govern, or connect dimension-bearing subjects under their independently established constitutional grammar. Dimension-bearing material != the responsible act over that material. Their presence in dimensional characterization does not make them additional dimensions, a mandatory intermediate layer, or one exhaustive taxonomy.
 
 **Unknown** Standing is not a closed taxonomy. A coordinate, relation, question, or Standing may remain **Unknown** when its required Evidence, Authority, provenance, occurrence, Applicability, or other local relation is not established or available. It remains bounded to its exact subject, question, Act, result boundary, Scope, Evidence, Authority, and responsible occurrence. Inapplicable != **Unknown**.
 
@@ -98,7 +98,7 @@ Acts, constraints, and relations are structurally distinct from dimensions. They
 - act-local standing != inherited responsible occurrence standing
 - constructed behavior != constitutional standing
 - multiplicity != collective standing
-- Assertion owner != responsible occurrence or result-establishing Act
+- Assertion responsible boundary != responsible occurrence or result-establishing Act
 - Assertion Standing persists != automatic continuation or constitutional Stop
 - new or conflicting material available != Assertion automatically revised
 - Evidence that does not support a relation Assertion != its negation or an opposing strengthened relation
@@ -118,5 +118,5 @@ Acts, constraints, and relations are structurally distinct from dimensions. They
 - Inferring standing solely from a public export.
 
 ## Related chapters
-- [Authority Scope](14-authority-scope.md)
+- [Authority Scope](13-authority-scope.md)
 - [Recording and preserved Assertions](11-recording-and-preserved-assertions.md)

@@ -790,7 +790,7 @@ class SQLiteEventLedger(EventLedger):
         self._advance_event_counter(event.id)
 
     def _ensure_prefix_commitments(self) -> None:
-        """Create or validate the ledger-owned append-prefix mechanics.
+        """Create or validate the ledger-local append-prefix mechanics.
 
         An existing store without the table receives one atomic derivation from
         the append sequence it currently represents. This does not alter or

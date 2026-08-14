@@ -5,7 +5,7 @@ produced only by a bounded comparison bringing constitutional grammar, a
 bounded expectation, and an implementation witness under a declared seam or
 scope. Within that scope it may find the witness faithful, an unfaithful
 boundary crossing, mixed, or Unknown, and it must not become global
-certification, a completion declaration, an owner map, a score, a registry, a
+certification, a completion declaration, a responsible-boundary map, a score, a registry, a
 public diagnostic, or correction authority.
 
 **What this compares.** One recorded recurrence Measurement finding and the
@@ -385,7 +385,7 @@ def compare_recorded_finding(ledger: EventLedger, event_id: str) -> Event:
 
     authority_boundary = (
         "this comparison within this exact finding-to-production-evidence "
-        "scope only; no certification, completion, owner map, score, or "
+        "scope only; no certification, completion, responsible-boundary map, score, or "
         "correction authority"
     )
     result_payload = {
@@ -445,7 +445,7 @@ def compare_recorded_finding(ledger: EventLedger, event_id: str) -> Event:
         "forbidden_inferences": [
                 "This revises nothing (06.Standing.B); availability is not "
                 "revision.",
-                "This establishes no responsibility and names no owner.",
+                "This establishes no Responsibility or responsible boundary.",
                 "Faithful within this scope is not faithful generally.",
                 "A crossing observed here is not a crossing observed of "
                 "whatever this finding stood on.",

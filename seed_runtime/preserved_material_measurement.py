@@ -88,7 +88,7 @@ RESPONSIBILITY_UNESTABLISHED = "unestablished"
 
 # What recording composes around a finding's own content. A caller adding to a
 # recorded finding may not replace any of it.
-_RECORDING_OWNED = frozenset(
+_RESERVED_RECORDING_COORDINATES = frozenset(
     {"dimensions", "mutates_cluster", "unknowns", "provenance_occurrence_refs"}
 )
 
@@ -204,7 +204,7 @@ class MeasurementFinding:
                 {"representation": o.representation, "occurrence_count": o.occurrence_count}
                 for o in self.occupancies
             ],
-            # Not "support_basis": the result-Assertion coordinate surface owns
+            # Not "support_basis": the result-Assertion coordinate surface carries
             # that key and its fields are merged over this dict, so naming both
             # the same silently replaced one with the other.
             "input_event_ids": list(self.input_event_ids),
@@ -460,7 +460,7 @@ def _as_preserved(
 def _additive_only(
     finding, carried: dict[str, Any], extra: dict[str, Any] | None
 ) -> dict[str, Any]:
-    """Recording coordinates, refused where they collide with owned ones.
+    """Recording coordinates, refused where they collide with reserved ones.
 
     Merging `extra` last let a caller record ``extra={"total_count": 999}`` over
     a produced count of three, so the durable result was one no act produced.
@@ -476,7 +476,7 @@ def _additive_only(
     silently discarded.
 
     So the rule is the whole recorded payload, not part of it: recording may
-    add a coordinate this payload does not already own, and may not replace
+    add a coordinate this payload does not already carry, and may not replace
     one. Refusal rather than silent handling in either direction.
 
     Recurrence only. The result-Assertion path composes its own dimensions
@@ -486,10 +486,10 @@ def _additive_only(
 
     if not extra:
         return {}
-    owned = set(carried)
+    reserved = set(carried)
     if isinstance(finding, RecurrenceFinding):
-        owned |= _RECORDING_OWNED
-    collisions = sorted(set(extra) & owned)
+        reserved |= _RESERVED_RECORDING_COORDINATES
+    collisions = sorted(set(extra) & reserved)
     if collisions:
         raise PreservedMaterialMeasurementError(
             "recording may add coordinates and may not replace ones already "
@@ -536,7 +536,7 @@ def _recorded_production_commitment(
     produced. Recording may lawfully add other coordinates, so neither an
     exclusion list nor every key left in the recorded payload reconstructs this
     boundary. `material_provenance` is the one produced coordinate represented
-    inside the recorder-owned dimensions object.
+    inside the recorder-established dimensions object.
     """
 
     payload = recorded.payload
@@ -581,7 +581,7 @@ def _record_production(
     ```text
       established   this measuring act produced this exact result
       not           who is authorized to perform it
-      not           under whose Responsibility the production is owned
+      not           which responsible boundary bears the production Responsibility
       not           that nothing else appended this kind directly
     ```
 
@@ -983,7 +983,7 @@ def _measurement_finding_payload(
             # follow material_provenance, which compresses two coordinates
             # `#2439` had just separated and mints the sibling of a string
             # `#2431` had already called contamination. Where the material came
-            # from and under whose Responsibility the production is owned are
+            # from and which responsible boundary bears the production Responsibility are
             # different questions, and only the first has been validated.
             "responsibility": RESPONSIBILITY_UNESTABLISHED,
             "authority": (

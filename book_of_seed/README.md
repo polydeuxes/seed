@@ -19,7 +19,7 @@ The Markdown chapters explain and orient the same clauses.
 ## Responsibility
 
 1. Responsibility is the Book's representation and traversal root for reading each exact responsibility and the branches it instantiates.
-2. The headings beneath it expose coordinates and relations; they do not reassign constitutional ownership.
+2. The headings beneath it expose coordinates and relations; they do not change Responsibility assignments.
 3. Every instantiated responsibility must expose the branches required by that responsibility.
 4. A conditional branch remains uninstantiated where that responsibility does not establish the coordinate.
 5. An instantiated coordinate whose value has not been resolved remains unresolved unless a responsible occurrence positively establishes Unknown.
@@ -27,13 +27,13 @@ The Markdown chapters explain and orient the same clauses.
 
 ### Required identifying branches
 
-#### Owner / responsible boundary
+#### Responsible boundary
 
 Identifies who bears and answers for the exact responsibility. It is distinct from the subject addressed, the responsible occurrence, the exact Act, and any separately assigned establishment boundary.
 
 #### Subject or material addressed
 
-Identifies what the Responsibility concerns, evaluates, forms, preserves, establishes, or stops. Owner identity does not establish subject identity.
+Identifies what the Responsibility concerns, evaluates, forms, preserves, establishes, or stops. Responsible-boundary identity does not establish subject identity.
 
 #### Exact responsible act
 
@@ -46,7 +46,7 @@ Identifies the exact Authority under which the responsible boundary may bear and
 ```text
 Authority
 != separate Authorization standing
-!= owner identity
+!= responsible-boundary identity
 != locality
 != admission
 != Authority carried by an input
@@ -179,7 +179,7 @@ standing-establishment occurrence
 
 ### Conditional preservation, standing, and neighboring branches
 
-These branches are exposed only where the exact responsibility instantiates them. Some may precede the act, govern it, preserve its occurrence, or belong to a later exact Act. They remain governed by their independently owned constitutional grammar.
+These branches are exposed only where the exact responsibility instantiates them. Some may precede the act, govern it, preserve its occurrence, or belong to a later exact Act. Each retains its independently established constitutional grammar.
 
 #### Preservation record
 
@@ -195,7 +195,7 @@ Identifies any act-local applicability or admission standing required before mat
 
 #### Constraint
 
-Constraint is an independently owned constitutional subject that may govern the exact proposed act, material, or responsibility. It is not reclassified as a relation merely because it governs another responsibility. Responsibility does not own the Constraint merely because the Constraint governs its act.
+Constraint is an independently bounded constitutional subject that may govern the exact proposed act, material, or responsibility. It is not reclassified as a relation merely because it governs another responsibility. A Constraint governing an Act does not assign that Constraint to the Act's Responsibility.
 
 ```text
 Constraint
@@ -204,7 +204,7 @@ Constraint
 
 #### Lawful Stopping
 
-Where the exact responsibility establishes lawful Stopping, preserve separately the responsible owner, stopping act, stopping occurrence, and bounded Stop result. Identity among those coordinates must not be inferred. It is not reclassified as a relation merely because it connects a reason-forming responsibility to the exact act for which Stopping is established. Absence of movement, unresolved material, a negative standing, or a preventing condition does not establish a Stop by identity.
+Where the exact responsibility establishes lawful Stopping, preserve separately the responsible boundary, stopping act, stopping occurrence, and bounded Stop result. Identity among those coordinates must not be inferred. It is not reclassified as a relation merely because it connects a reason-forming responsibility to the exact act for which Stopping is established. Absence of movement, unresolved material, a negative standing, or a preventing condition does not establish a Stop by identity.
 
 ```text
 absence of movement
@@ -223,12 +223,12 @@ Stopping
 != relation by identity
 ```
 
-The Responsibility hierarchy is the Book's representation and traversal structure. It does not create a new constitutional kind, reassign ownership among existing constitutional subjects, require one universal populated shape, or replace the exact grammar of the chapters.
+The Responsibility hierarchy is the Book's representation and traversal structure. It does not create a new constitutional kind, change Responsibility assignments, require one universal populated shape, or replace the exact grammar of the chapters.
 
 ```text
 structural branch present != branch value established
 coordinate unresolved != coordinate Unknown
-same owner != same act, responsible occurrence, establishment boundary, or exact Act
+same responsible boundary != same act, responsible occurrence, establishment boundary, or exact Act
 same occurrence != same Assertion
 ```
 
@@ -253,7 +253,6 @@ Change the Book when constitutional grammar, a durable distinction, or the statu
 - [Evidence and provenance](chapters/10-evidence-provenance-and-explanation.md)
 - [Recording and preserved Assertions](chapters/11-recording-and-preserved-assertions.md)
 - [Events and Standing](chapters/12-events-and-standing.md)
-- [Responsibility discrepancy and residue](chapters/13-ownership-discrepancy-and-residue.md)
-- [Authority Scope](chapters/14-authority-scope.md)
-- [Representation, emission, and locality](chapters/15-representation-emission-and-locality.md)
-- [Stopping and completion](chapters/16-stopping-and-completion.md)
+- [Authority Scope](chapters/13-authority-scope.md)
+- [Representation, emission, and locality](chapters/14-representation-emission-and-locality.md)
+- [Stopping and completion](chapters/15-stopping-and-completion.md)

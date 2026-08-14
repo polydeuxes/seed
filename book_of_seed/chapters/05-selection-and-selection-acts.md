@@ -36,7 +36,7 @@ Repository Evidence supports distinct Selection forms. Representation selection 
 
 ## Counterexamples or failure modes
 - Taking the first displayed candidate as selected.
-- Treating exact candidate-identity resolution as proof of a Seed-owned selection act.
+- Treating exact candidate-identity resolution as proof of a Selection Act assigned to Seed.
 - Reusing a selection result against a different candidate set.
 - Reusing a representation-selection result as if it established authorization or movement for another Act.
 - Treating omitted non-selected alternatives as invalidating a selector whose intended Act does not require them.

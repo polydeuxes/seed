@@ -959,7 +959,7 @@ def _assertions(measured: MeasuredBytePopulation) -> list[dict[str, Any]]:
                 "authority": SOURCE_SET_AUTHORITY,
             },
             "subject_kind": "assertion",
-            "responsibility_owner": "this recorded assertion",
+            "responsible_boundary": "this recorded assertion",
             "result": "exact_source_material_set",
             "assertion_subject": source_subject,
             "assertion_scope": scope,
@@ -1002,7 +1002,7 @@ def _assertions(measured: MeasuredBytePopulation) -> list[dict[str, Any]]:
                 "authority": MEASUREMENT_AUTHORITY,
             },
             "subject_kind": "assertion",
-            "responsibility_owner": "this recorded assertion",
+            "responsible_boundary": "this recorded assertion",
             "result": result,
             "assertion_subject": subject,
             "assertion_scope": scope,
@@ -1333,7 +1333,7 @@ def _pair_assertions(measured: MeasuredBytePairPopulation) -> list[dict[str, Any
                 "authority": PAIR_MEASUREMENT_AUTHORITY,
             },
             "subject_kind": "assertion",
-            "responsibility_owner": "this recorded assertion",
+            "responsible_boundary": "this recorded assertion",
             "result": result,
             "assertion_subject": subject,
             "assertion_scope": scope,
@@ -2056,7 +2056,7 @@ def assertions_of_recorded_adjacent_byte_pair_measurement(
     exact_keys = {
         "dimensions",
         "subject_kind",
-        "responsibility_owner",
+        "responsible_boundary",
         "result",
         "assertion_subject",
         "assertion_scope",
@@ -2082,7 +2082,7 @@ def assertions_of_recorded_adjacent_byte_pair_measurement(
             or result not in {"count", "recurrence"}
             or assertion.get("assertion_scope") != expected_scope
             or assertion.get("subject_kind") != "assertion"
-            or assertion.get("responsibility_owner") != "this recorded assertion"
+            or assertion.get("responsible_boundary") != "this recorded assertion"
             or not isinstance(dimensions, dict)
             or set(dimensions)
             != {

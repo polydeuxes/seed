@@ -21,14 +21,14 @@ Exact candidate-identity resolution is not Selection. A resolver may compare mat
 ## Representative repository anchors
 
 ## Counterexamples or failure modes
-- Treating candidate identity as a Seed-owned Selection occurrence.
+- Treating candidate identity as a Selection occurrence assigned to Seed.
 - Treating Selection as Authorization.
 - Treating an operator choice among labels as unlimited Authority.
 - Treating exact key matching as semantic judgment or Authority to move.
 
 ## Related chapters
 - [Selection and acts of selection](05-selection-and-selection-acts.md)
-- [Authority scope](14-authority-scope.md)
+- [Authority scope](13-authority-scope.md)
 - [Constraints and preconditions](04-constraints-and-preconditions.md)
 
 ## Selection and authorization decompression correction 001

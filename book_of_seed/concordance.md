@@ -16,7 +16,6 @@ Navigation only. Entries do not grant constitutional identity or Standing.
 | Evidence and provenance | [Evidence and provenance](chapters/10-evidence-provenance-and-explanation.md) |
 | recording and preserved Assertions | [Recording and preserved Assertions](chapters/11-recording-and-preserved-assertions.md) |
 | Event and current Standing | [Events and Standing](chapters/12-events-and-standing.md) |
-| Responsibility residue | [Responsibility discrepancy and residue](chapters/13-ownership-discrepancy-and-residue.md) |
-| Authority | [Authority Scope](chapters/14-authority-scope.md) |
-| representation and emission | [Representation, emission, and locality](chapters/15-representation-emission-and-locality.md) |
-| stopping | [Stopping and completion](chapters/16-stopping-and-completion.md) |
+| Authority | [Authority Scope](chapters/13-authority-scope.md) |
+| representation and emission | [Representation, emission, and locality](chapters/14-representation-emission-and-locality.md) |
+| stopping | [Stopping and completion](chapters/15-stopping-and-completion.md) |

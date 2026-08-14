@@ -121,7 +121,7 @@ def record_self_survey(
     is not.
 
     It was a downstream shape deciding an upstream subject, which is the shape
-    this campaign keeps finding: exact Act requirement is not ownership. So this
+    this campaign keeps finding: exact Act requirement is not Responsibility assignment. So this
     records its own coordinates.
 
     The subject is Seed's own occurrences and the authority is the same as any

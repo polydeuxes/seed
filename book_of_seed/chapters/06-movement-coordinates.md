@@ -28,4 +28,4 @@ later movement automatically.
 ## Related chapters
 
 - [Result boundaries and movement](07-result-boundaries-and-movement.md)
-- [Stopping and completion](16-stopping-and-completion.md)
+- [Stopping and completion](15-stopping-and-completion.md)

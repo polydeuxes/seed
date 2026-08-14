@@ -9,7 +9,7 @@ Which exact evidenced conditions can support a bounded responsible exact Act sto
 ## Bounded resolution
 Evidence may establish distinct reasons for non-movement: a Constraint, bounded horizon, exhaustion or impossibility finding, operator boundary, unresolved Evidence or Authority, resource limit, unresolved causation, preservation failure, or satisfied Scope. No emitted representation, status field, or condition establishes Stopping or completion by identity. `[UNRESOLVED]` Which relations among these coordinates establish a stopping occurrence or the stronger completion Assertion remains unclear.
 
-Where a bounded Stop is established, the stopping occurrence preserves the exact supported reason rather than silent absence. Supported irrelevance, unsupported material, missing required binding, outside-Authority Standing, and an Unknown established because a required binding remains unresolved remain distinguishable. This discipline does not make every unresolved coordinate establish a Stop or make Stopping the owner of the reason-establishing Responsibility.
+Where a bounded Stop is established, the stopping occurrence preserves the exact supported reason rather than silent absence. Supported irrelevance, unsupported material, missing required binding, outside-Authority Standing, and an Unknown established because a required binding remains unresolved remain distinguishable. This discipline does not make every unresolved coordinate establish a Stop or assign Stopping the reason-establishing Responsibility.
 
 ## Important distinctions
 - stopping != completion

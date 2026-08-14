@@ -75,7 +75,7 @@ BANNED: tuple[tuple[str, str], ...] = (
     # condition, trajectory, ..."), one passive definition, and one that says
     # Learning establishment "may be understood as" constrained movement, which
     # is a reading aid rather than an establishment.  No clause names a
-    # Learning owner, boundary, production occurrence, occurrence, responsibility, or act.
+    # Learning responsible boundary, boundary, production occurrence, occurrence, responsibility, or act.
     # Active law itself denies "a universal Learning object" and denies
     # authorizing "general language learning".
     (r"\blearn\w*\b", "learn*"),
@@ -88,6 +88,9 @@ BANNED: tuple[tuple[str, str], ...] = (
     (r"\bactors?\b", "actor"),
     (r"\bproducers?\b|producer[-_]", "producer"),
     (r"\bconsumers?\b|consumer[-_]", "consumer"),
+    (r"\bowners?\b|owner[-_]", "owner"),
+    (r"\bownership\w*\b|ownership[-_]", "ownership*"),
+    (r"\bowns\b|\bowned\b|\bowning\b", "owns/owned/owning"),
     (r"\buptake\b|uptake[-_]", "uptake"),
     (r"\bhandoffs?\b|handoff[-_]", "handoff"),
     (r"\blineage\b|lineage[-_]", "lineage"),
@@ -130,7 +133,7 @@ BANNED: tuple[tuple[str, str], ...] = (
 # The test is:
 #
 #     name the Responsibility no other established coordinate already carries,
-#     then reconstruct its owner, the act that produces it, and the standing that
+#     then reconstruct its responsible boundary, the act that establishes it, and the standing that
 #     production establishes
 #
 #     unique Responsibility can be named  ->  admitted vocabulary, however
@@ -140,7 +143,7 @@ BANNED: tuple[tuple[str, str], ...] = (
 #
 # `05.Recording.A` passes: a recording boundary may create retrievable
 # assertion-bearing material, and the produced standing is that a record exists
-# and preserves an Assertion carrying source coordinates. Owner, act, standing.
+# and preserves an Assertion carrying source coordinates. Responsible boundary, act, standing.
 #
 # `learning` and `translation` fail it.  Neither has a clause naming who does
 # it.  Sentence-initial capitals are not evidence either way; `Remembering`
@@ -161,7 +164,7 @@ BANNED: tuple[tuple[str, str], ...] = (
 #                 produces `the relation assertion` -- but `01.Kinds:28`
 #                 *requires* it as a coordinate, so banning it would flag
 #                 active law's own required text.  A required coordinate with
-#                 no owner is a different defect from a word with no owner, and
+#                 no responsible boundary is a different defect from a word with no responsible boundary, and
 #                 this gate is not the place to decide which repair applies.
 #   actor         BANNED.  Historical reconciliation called it coarse event
 #                 authorship vocabulary, but it carries no Responsibility not

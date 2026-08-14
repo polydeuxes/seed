@@ -1,6 +1,6 @@
 """The smallest bounded Assertion comparison, and what it refuses to conclude.
 
-`01.Standing.E` permits it. `#2416` reconstructed its owner as local to each
+`01.Standing.E` permits it. `#2416` reconstructed its responsible boundary as local to each
 instantiated comparison and never universal, so these tests pin that the
 comparison is an occurrence and not a service: nothing survives a call, and
 there is no object to hold.
@@ -103,13 +103,13 @@ def test_an_unpreserved_input_is_refused(ledger):
         compare_preserved_findings(ledger, [one.id, "evt_does_not_exist"])
 
 
-def test_the_recorded_owner_is_local_to_the_occurrence(ledger):
+def test_the_recorded_responsible_boundary_is_local_to_the_occurrence(ledger):
     a, b = _finding(ledger, "s1"), _finding(ledger, "s2")
     event = record_comparison_finding(
         ledger, workspace_id="w", session_id="s1",
         finding=compare_preserved_findings(ledger, [a.id, b.id]))
-    assert "local to the instantiated comparison" in event.payload["owner"]
-    assert "not named universally" in event.payload["owner"]
+    assert "local to the instantiated comparison" in event.payload["responsible_boundary"]
+    assert "not named universally" in event.payload["responsible_boundary"]
 
 
 # --------------------------------------------------------------------------

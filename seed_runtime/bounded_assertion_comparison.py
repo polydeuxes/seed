@@ -1,15 +1,15 @@
-"""One bounded comparison of preserved findings, owned by its own occurrence.
+"""One occurrence-local bounded comparison of preserved findings.
 
 `01.Standing.E` permits a bounded comparison to have as input multiple independently
 preserved source-relative Assertions or findings while preserving each input's coordinates as
 that input carries them. `historical comparison report`
-records the owner: **the bounded comparison boundary in which they participate, local
+records the responsible boundary: **the bounded comparison boundary in which they participate, local
 to the instantiated comparison and not named universally.**
 
 So this is a call, not a service. Each invocation is one comparison occurrence
-that owns itself. There is no comparator object, no registry, and no persistent
-boundary waiting to be filled — an owner that outlived its occurrence would be
-the universal owner the reconstruction says does not exist.
+with its own responsible boundary. There is no comparator object, no registry, and no persistent
+boundary waiting to be filled — a responsible boundary that outlived its occurrence would be
+the universal boundary the reconstruction says does not exist.
 
 **What it has as input is what Seed recorded.** The inputs are recorded measurement
 findings. The pair findings used in the corpus experiments are computed in
@@ -173,7 +173,7 @@ def compare_preserved_findings(
 ) -> ComparisonFinding:
     """Instantiate one comparison over preserved findings, or refuse.
 
-    The occurrence owns itself. Nothing survives the call.
+    The responsible boundary is local to the occurrence. Nothing survives the call.
     """
 
     ids = tuple(event_ids)
@@ -298,8 +298,8 @@ def record_comparison_finding(
             "scope_locality": f"workspace:{workspace_id};session:{session_id}",
             "occurrence_preservation": "comparison occurrence durably recorded",
         },
-        "owner": (
-            "this comparison occurrence; the owner is local to the instantiated "
+        "responsible_boundary": (
+            "this comparison occurrence; the responsible boundary is local to the instantiated "
             "comparison and is not named universally"
         ),
         "mutates_cluster": False,

@@ -219,7 +219,7 @@ def _finding_assertions(
                 "authority": MEASUREMENT_AUTHORITY,
             },
             "subject_kind": "assertion",
-            "responsibility_owner": "this recorded assertion",
+            "responsible_boundary": "this recorded assertion",
             "result": result,
             "assertion_subject": subject,
             "assertion_scope": scope,
@@ -433,7 +433,7 @@ def assertions_of_recorded_coordinate_assertion_count(
     def require_shell(item, dimensions, provenance, support, forbidden):
         if (
             item.get("subject_kind") != "assertion"
-            or item.get("responsibility_owner") != "this recorded assertion"
+            or item.get("responsible_boundary") != "this recorded assertion"
             or not isinstance(dimensions, dict)
             or dimensions.get("standing") != "measured"
             or dimensions.get("source_provenance") != provenance

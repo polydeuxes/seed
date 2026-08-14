@@ -132,7 +132,7 @@ def advance_operator_session_standing(
     if prior is not None:
         # Every accumulator the live event kinds read, taken over from the
         # Standing that already input the earlier occurrences.  Not copied:
-        # see the ownership note above.
+        # see the shared-accumulator note above.
         attempts = prior["attempts"]
         preserved_ingress_occurrences = prior["preserved_ingress_occurrences"]
         interaction_closures = prior["interaction_closures"]

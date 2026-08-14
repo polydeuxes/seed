@@ -59,7 +59,7 @@ class AssertionProductionComparison:
     inputs: tuple[AssertionProductionInput, AssertionProductionInput]
     distinctions: tuple[AssertionCoordinateDistinction, ...]
     act: str = "Compare"
-    owner: str = "this bounded comparison occurrence"
+    responsible_boundary: str = "this bounded comparison occurrence"
     responsibility: str = (
         "preserve each input's carried fidelity coordinates and report literal "
         "sameness, difference, and absence only"
@@ -93,7 +93,7 @@ class PositionalResultComparison:
     inputs: tuple[PositionalResultInput, PositionalResultInput]
     distinctions: tuple[PositionalResultCoordinateDistinction, ...]
     act: str = "Compare"
-    owner: str = "this bounded comparison occurrence"
+    responsible_boundary: str = "this bounded comparison occurrence"
     responsibility: str = (
         "preserve each positional result Assertion as carried and report literal "
         "coordinate sameness, difference, and absence only"
@@ -548,7 +548,7 @@ def _positional_result_comparison_payload(
                     ),
                 },
                 "subject_kind": "assertion",
-                "responsibility_owner": "this recorded assertion",
+                "responsible_boundary": "this recorded assertion",
                 "result": "positional_result_coordinate_distinction",
                 "assertion_subject": {
                     "compared_subject": dict(comparison.subject),
@@ -577,7 +577,7 @@ def _positional_result_comparison_payload(
                 "occurrence_preservation": "comparison occurrence durably recorded",
             },
             "producing_act": "Compare",
-            "owner": comparison.owner,
+            "responsible_boundary": comparison.responsible_boundary,
             "responsibility": comparison.responsibility,
             "compared_subject": dict(comparison.subject),
             "inputs": list(input_refs),
@@ -630,7 +630,7 @@ def assertions_of_recorded_positional_result_comparison(
         refs = support.get("assertion_refs") if isinstance(support, dict) else None
         if (
             assertion.get("subject_kind") != "assertion"
-            or assertion.get("responsibility_owner") != "this recorded assertion"
+            or assertion.get("responsible_boundary") != "this recorded assertion"
             or assertion.get("result") != "positional_result_coordinate_distinction"
             or not isinstance(dimensions, dict)
             or dimensions.get("standing") != "compared"
@@ -761,7 +761,7 @@ def _require_recorded_positional_comparison_matches(
 
     if (
         event.payload.get("producing_act") != comparison.act
-        or event.payload.get("owner") != comparison.owner
+        or event.payload.get("responsible_boundary") != comparison.responsible_boundary
         or event.payload.get("responsibility") != comparison.responsibility
         or event.payload["compared_subject"] != comparison.subject
     ):
@@ -994,7 +994,7 @@ def record_assertion_production_comparison(
                     ),
                 },
                 "subject_kind": "assertion",
-                "responsibility_owner": "this recorded assertion",
+                "responsible_boundary": "this recorded assertion",
                 "result": "assertion_production_coordinate_distinction",
                 "assertion_subject": {
                     "compared_assertion_id": comparison.assertion_id,
@@ -1034,7 +1034,7 @@ def record_assertion_production_comparison(
                 "occurrence_preservation": "comparison occurrence durably recorded",
             },
             "producing_act": "Compare",
-            "owner": comparison.owner,
+            "responsible_boundary": comparison.responsible_boundary,
             "responsibility": comparison.responsibility,
             "inputs": list(input_refs),
             "assertions": assertions,

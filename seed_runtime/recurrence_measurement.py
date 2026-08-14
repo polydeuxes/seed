@@ -188,7 +188,7 @@ class MeasuredAssertion:
                 ),
             },
             "subject_kind": "assertion",
-            "responsibility_owner": "this recorded assertion",
+            "responsible_boundary": "this recorded assertion",
             "result": self.result,
             "assertion_subject": dict(self.subject),
             "assertion_scope": dict(self.scope),
@@ -472,7 +472,7 @@ def measure_exchange_counts(
             "a declared measurement discloses the bounded scope within which "
             "occurrences were counted; no bounded exchanges were declared"
         )
-    # Every probe and both occurrence passes have as input one ledger-owned append
+    # Every probe and both occurrence passes have as input one ledger-local append
     # prefix. The boundary is carried as read provenance; it is not an Event
     # identity and does not strengthen the occurrences read through it.
     input_ledger_boundary = ledger.capture_boundary()
@@ -759,7 +759,7 @@ def record_measured_count(
     """Preserve the distinct Assertions one recurrence Measurement produced.
 
     Production Evidence binds the exact responsible Measurement occurrence to
-    these exact results. Each result Assertion separately owns fidelity of its
+    these exact results. Each result Assertion separately bears Responsibility for fidelity of its
     Standing to its carried coordinates.
     """
 

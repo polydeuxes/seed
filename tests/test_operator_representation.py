@@ -109,7 +109,7 @@ def test_no_compare_or_identification_follows_console_ingress():
     # The required proving: C emitted, E preserved, production provenance
     # retained, and no Compare or Identification occurrence.  Recency does not
     # make C and E participants in one act; 01.Standing.E.1 requires the act
-    # owner to determine input-to-act Applicability, and no reconstructed
+    # responsible boundary to determine input-to-Act Applicability, and no reconstructed
     # Responsibility presently proposes those subjects.
     ledger, _ = _run_console("hello\nsecond\nthird\n")
 

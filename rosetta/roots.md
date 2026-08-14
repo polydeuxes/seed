@@ -102,6 +102,15 @@ separately established change in Responsibility or Authority. Movement does
 not imply that one participant gave material to another. The exact movement,
 Responsibility assignment, or Authority transition must be named instead.
 
+## Owner and Ownership
+
+`Owner` and `Ownership` are ordinary shorthand for the responsible boundary
+that bears an exact Responsibility, or for an Assertion that a particular
+boundary bears it. Seed grammar names the responsible boundary and
+Responsibility directly. Authority, source, provenance, implementation
+locality, and an occurrence-result relation do not establish that assignment
+by identity.
+
 ## Consumption
 
 `Consumption` is ordinary shorthand for material participating as input in an

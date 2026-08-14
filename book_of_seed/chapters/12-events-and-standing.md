@@ -28,7 +28,7 @@ Where a Seed performs that movement over an exact Assertion already preserved in
 
 Chronology alone does not establish locality, membership, causation, or response. An Act preserves the applicable locality of each participating input separately from the locality of anything it establishes.
 
-Locality is a boundary coordinate, not a constitutional subject. It owns no Responsibility and carries no Standing of its own. `session_id` is one implementation witness, not the constitutional definition.
+Locality is a boundary coordinate, not a constitutional subject. No Responsibility is assigned to locality, and locality carries no Standing of its own. `session_id` is one implementation witness, not the constitutional definition.
 
 ## Important distinctions
 

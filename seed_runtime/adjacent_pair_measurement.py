@@ -316,7 +316,7 @@ def _adjacent_pair_result_assertion_fields(
             ),
         },
         "subject_kind": "assertion",
-        "responsibility_owner": "this recorded assertion",
+        "responsible_boundary": "this recorded assertion",
         "result": "position_occupancy",
         "assertion_subject": subject,
         "assertion_scope": scope,

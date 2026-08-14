@@ -221,7 +221,7 @@ def _assertion(finding: MeasuredEqualitySignature, *, workspace_id: str) -> dict
             "authority": MEASUREMENT_AUTHORITY,
         },
         "subject_kind": "assertion",
-        "responsibility_owner": "this recorded assertion",
+        "responsible_boundary": "this recorded assertion",
         "result": SIGNATURE_RESULT,
         "assertion_subject": _subject(),
         "assertion_scope": scope,
@@ -329,7 +329,7 @@ def assertion_of_recorded_equality_signature(
     surface = _surface()
     if (
         assertion.get("subject_kind") != "assertion"
-        or assertion.get("responsibility_owner") != "this recorded assertion"
+        or assertion.get("responsible_boundary") != "this recorded assertion"
         or assertion.get("result") != SIGNATURE_RESULT
         or assertion.get("assertion_subject") != _subject()
         or not isinstance(dimensions, dict)

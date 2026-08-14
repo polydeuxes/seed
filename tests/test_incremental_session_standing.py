@@ -179,7 +179,7 @@ def test_each_advance_consumes_only_what_an_act_just_recorded(monkeypatch):
 
 
 # --------------------------------------------------------------------------
-# The ownership contract.
+# The shared-accumulator contract.
 # --------------------------------------------------------------------------
 
 

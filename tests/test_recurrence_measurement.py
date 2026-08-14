@@ -109,8 +109,8 @@ def _assertions_by_result(event):
 # --------------------------------------------------------------------------
 
 
-def test_the_assertion_owns_fidelity_not_its_production(compared):
-    """The producing Act and the result's fidelity owner remain distinct."""
+def test_assertion_fidelity_responsibility_is_distinct_from_its_production(compared):
+    """The producing Act and the result's fidelity responsible boundary remain distinct."""
     event = record_measured_count(
         compared, workspace_id="w", session_id="s1",
         finding=_by_right(compared)["word"])
@@ -123,7 +123,7 @@ def test_the_assertion_owns_fidelity_not_its_production(compared):
     )
     assert all(assertion["subject_kind"] == "assertion" for assertion in assertions)
     assert all(
-        assertion["responsibility_owner"] == "this recorded assertion"
+        assertion["responsible_boundary"] == "this recorded assertion"
         for assertion in assertions
     )
     assert event.payload["producing_act"] == "declared measurement"
@@ -136,7 +136,7 @@ def test_the_assertion_owns_fidelity_not_its_production(compared):
 
 
 def test_a_measured_assertion_does_not_invent_its_next_question(compared):
-    """Local fidelity ownership is not an automatic automatic continuation requirement."""
+    """Local fidelity Responsibility does not require automatic continuation."""
     event = record_measured_count(
         compared, workspace_id="w", session_id="s1",
         finding=_by_right(compared)["word"])
@@ -313,7 +313,7 @@ def test_two_productions_of_one_assertion_can_be_compared_without_relation(compa
 
     assert comparison.assertion_id == first_count.assertion_id
     assert comparison.act == "Compare"
-    assert comparison.owner == "this bounded comparison occurrence"
+    assert comparison.responsible_boundary == "this bounded comparison occurrence"
     assert comparison.responsibility == (
         "preserve each input's carried fidelity coordinates and report literal "
         "sameness, difference, and absence only"
@@ -469,7 +469,7 @@ def test_assertion_production_compare_records_each_literal_result_separately(com
 
     assert event.kind == ASSERTION_PRODUCTION_COMPARISON_RECORDED_KIND
     assert event.payload["producing_act"] == "Compare"
-    assert event.payload["owner"] == "this bounded comparison occurrence"
+    assert event.payload["responsible_boundary"] == "this bounded comparison occurrence"
     assert len(assertions) == len(comparison.distinctions) == 10
     assert {item.coordinate for item in assertions} == {
         item.coordinate for item in comparison.distinctions

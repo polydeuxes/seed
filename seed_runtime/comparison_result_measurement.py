@@ -300,7 +300,7 @@ def assertions_from_comparison_result_count(
             "authority": MEASUREMENT_AUTHORITY,
         },
         "subject_kind": "assertion",
-        "responsibility_owner": "this recorded assertion",
+        "responsible_boundary": "this recorded assertion",
         "result": "exact_production_set",
         "assertion_subject": subject,
         "assertion_scope": scope,
@@ -333,7 +333,7 @@ def assertions_from_comparison_result_count(
             "authority": MEASUREMENT_AUTHORITY,
         },
         "subject_kind": "assertion",
-        "responsibility_owner": "this recorded assertion",
+        "responsible_boundary": "this recorded assertion",
         "result": "count",
         "assertion_subject": subject,
         "assertion_scope": scope,
@@ -361,7 +361,7 @@ def assertions_from_comparison_result_count(
                     "authority": MEASUREMENT_AUTHORITY,
                 },
                 "subject_kind": "assertion",
-                "responsibility_owner": "this recorded assertion",
+                "responsible_boundary": "this recorded assertion",
                 "result": "recurrence",
                 "assertion_subject": subject,
                 "assertion_scope": scope,
@@ -555,7 +555,7 @@ def assertions_of_recorded_comparison_result_count(
     def require_shell(item, item_dimensions, provenance, forbidden):
         if (
             item.get("subject_kind") != "assertion"
-            or item.get("responsibility_owner") != "this recorded assertion"
+            or item.get("responsible_boundary") != "this recorded assertion"
             or not isinstance(item_dimensions, dict)
             or item_dimensions.get("standing") != "measured"
             or item_dimensions.get("source_provenance") != provenance

@@ -1,6 +1,6 @@
 """Measure the immediate subject coordinates of recurrence Assertions.
 
-The input recurrence Assertion contract owns exactly three immediate
+The input recurrence Assertion contract carries exactly three immediate
 coordinates.  This Measurement preserves each complete value opaquely; it does
 not traverse nested dictionaries or lists, form cross-subject pairs, or infer
 relation, similarity, profile, or represented relation.
@@ -109,7 +109,7 @@ def measure_recurrence_subject_coordinates(
     workspace_id: str,
     source_session_ids: Iterable[str],
 ) -> Iterator[MeasuredRecurrenceSubjectCoordinates]:
-    """Measure exactly one reconstruction-owned coordinate layer and nothing beneath it."""
+    """Measure exactly one reconstructed coordinate layer and nothing beneath it."""
 
     sessions = tuple(dict.fromkeys(source_session_ids))
     if not sessions or any(not isinstance(value, str) or not value for value in sessions):
@@ -198,7 +198,7 @@ def _coordinate_assertions(
                     "authority": MEASUREMENT_AUTHORITY,
                 },
                 "subject_kind": "assertion",
-                "responsibility_owner": "this recorded assertion",
+                "responsible_boundary": "this recorded assertion",
                 "result": "recurrence_subject_coordinate_value",
                 "assertion_subject": {
                     "source_assertion_result": "recurrence",
@@ -334,7 +334,7 @@ def assertions_of_recorded_recurrence_subject_coordinates(
             or not isinstance(content, dict)
             or set(content) != {"exact_value"}
             or assertion.get("subject_kind") != "assertion"
-            or assertion.get("responsibility_owner") != "this recorded assertion"
+            or assertion.get("responsible_boundary") != "this recorded assertion"
             or assertion.get("result") != "recurrence_subject_coordinate_value"
             or assertion.get("support_basis") != {"assertion_refs": [source_ref]}
             or assertion.get("unknowns") != list(MEASUREMENT_UNKNOWNS)

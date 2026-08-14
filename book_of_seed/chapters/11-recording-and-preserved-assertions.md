@@ -29,7 +29,7 @@ Recording may preserve measurement or observation Assertions and already establi
 
 ## Important distinctions
 - diagnostic rendering != Assertion applicable to an exact Act
-- diagnostic rendering != measurement ownership
+- diagnostic rendering != Measurement Responsibility assignment
 - diagnostic rendering != Measurement
 - diagnostic rendering != measurement preservation
 - implementation measurement != recording

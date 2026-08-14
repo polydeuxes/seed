@@ -211,7 +211,7 @@ def _assertions(finding: MeasuredEqualitySignatureCount) -> list[dict[str, Any]]
                 "authority": MEASUREMENT_AUTHORITY,
             },
             "subject_kind": "assertion",
-            "responsibility_owner": "this recorded assertion",
+            "responsible_boundary": "this recorded assertion",
             "result": result,
             "assertion_subject": subject,
             "assertion_scope": scope,
@@ -417,7 +417,7 @@ def assertions_of_recorded_equality_signature_count(
     def require_shell(item, item_dimensions, provenance, support, forbidden):
         if (
             item.get("subject_kind") != "assertion"
-            or item.get("responsibility_owner") != "this recorded assertion"
+            or item.get("responsible_boundary") != "this recorded assertion"
             or not isinstance(item_dimensions, dict)
             or item_dimensions.get("standing") != "measured"
             or item_dimensions.get("source_provenance") != provenance

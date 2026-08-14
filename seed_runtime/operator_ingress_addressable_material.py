@@ -70,12 +70,12 @@ def _stable_id(prefix: str, value: object) -> str:
 
 
 def addressable_material_representation_id(material: ExactOperatorMaterial) -> str:
-    """Return the canonical identity owned by the addressable-material boundary."""
+    """Return the canonical identity established by the addressable-material boundary."""
     return _stable_id("operator-ingress-addressable-material", asdict(material))
 
 
 def operator_material_full_span_id(*, ingress_event_ref: str, exact_text: str) -> str:
-    """Return the addressable-material owner's canonical full-span identity."""
+    """Return the responsible boundary's canonical full-span material identity."""
     return _stable_id("operator-material-full-span", (ingress_event_ref, exact_text))
 
 

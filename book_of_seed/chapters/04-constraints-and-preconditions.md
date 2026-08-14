@@ -30,7 +30,7 @@ An access condition, visible route, available representation, mechanism candidat
 ## Related chapters
 - [Acts and occurrences](03-acts-and-occurrences.md)
 - [Selection and authorization](08-selection-and-authorization.md)
-- [Stopping and completion](16-stopping-and-completion.md)
+- [Stopping and completion](15-stopping-and-completion.md)
 
 ## Constrained movement constraint correction 001
 
