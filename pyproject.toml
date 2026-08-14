@@ -1,7 +1,7 @@
 [project]
 name = "seed"
 version = "0.1.0"
-description = "Context-native tool-growing runtime prototype"
+description = "Occurrence-bound Assertion runtime"
 requires-python = ">=3.11"
 dependencies = ["pydantic>=2,<3"]
 

@@ -21,9 +21,9 @@ Responsibility
 Three structural relations recur across live implementation roads:
 
 ```text
-content        ── Carriage ───────→ occurrence
-subject        ── Participation ──→ Act occurrence
-Act occurrence ── Yield ──────────→ result
+content ── Carriage → occurrence
+subject ── Participation(role) → Act occurrence
+Act occurrence ── Yield → result
 ```
 
 The endpoints do not supply a relation by co-presence. Each relation requires
@@ -36,21 +36,21 @@ These references witness current implementations; they do not define grammar.
 
 ```text
 Measurement Responsibility / Act / occurrence / Assertions
-    seed_runtime/byte_measurement.py::record_byte_count_layer
-    seed_runtime/byte_measurement.py::record_adjacent_byte_pair_count_layer
+    seed_runtime.byte_measurement::record_byte_count_layer
+    seed_runtime.byte_measurement::record_adjacent_byte_pair_count_layer
 
 Yield Evidence
-    seed_runtime/yield_evidence.py::_record_yield_evidence
+    seed_runtime.yield_evidence::_record_yield_evidence
 
 Assertion recovery and locality movement
-    seed_runtime/byte_measurement.py::assertions_of_recorded_byte_measurement
-    seed_runtime/byte_measurement.py::_move_byte_assertion_to_locality
+    seed_runtime.byte_measurement::assertions_of_recorded_byte_measurement
+    seed_runtime.byte_measurement::_move_byte_assertion_to_locality
 
 Applicability
-    seed_runtime/byte_measurement.py::get_recorded_pair_input_applicability
+    seed_runtime.byte_measurement::get_recorded_pair_input_applicability
 
 Emission Carriage / Participation / Yield
-    seed_runtime/operator_representation.py::emit_operator_representation
+    seed_runtime.operator_representation::emit_operator_representation
 
 Machine-grammar Fidelity
     tests/test_grammar_implementation.py
