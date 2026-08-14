@@ -93,45 +93,49 @@ def run_persistent_operator_console(
             captured_ingress.exact_bytes, captured_ingress.stream_encoding_metadata
         ):
             return
-        # No Representation is attached to this capture. Selecting one by
-        # recency would assert a relation no occurrence determined.
-        attempt_record = run_operator_ingress_attempt(
-            ledger=ledger,
-            workspace_id=workspace_id,
-            locality_id=locality_id,
-            captured_ingress=captured_ingress,
-            output_stream=output_stream,
-            locality_standing=(
-                locality_standing if locality_standing["event_count"] else None
-            ),
-        )
-        locality_standing = _advance_over(
-            ledger,
-            locality_standing,
-            attempt_record["event_ids"],
-            workspace_id=workspace_id,
-            locality_id=locality_id,
-        )
-        if attempt_record["current_standing"]["preserved_ingress"] is not None:
-            # The yielded Representation is preserved independently. No Compare
-            # or Identification is inferred merely from temporal proximity.
-            representation = record_operator_representation(
-                ledger,
+        # One interaction, one pair of commits. Each occurrence still reaches
+        # the store with its prefix commitment, and the emission attempt is
+        # flushed before the output boundary by the act that owns that order.
+        with ledger.batched():
+            # No Representation is attached to this capture. Selecting one by
+            # recency would assert a relation no occurrence determined.
+            attempt_record = run_operator_ingress_attempt(
+                ledger=ledger,
                 workspace_id=workspace_id,
                 locality_id=locality_id,
-                locality_standing=locality_standing,
-            )
-            representation = emit_operator_representation(
-                ledger, representation=representation, output_stream=output_stream
+                captured_ingress=captured_ingress,
+                output_stream=output_stream,
+                locality_standing=(
+                    locality_standing if locality_standing["event_count"] else None
+                ),
             )
             locality_standing = _advance_over(
                 ledger,
                 locality_standing,
-                (
-                    representation["representation_event_id"],
-                    representation["emission_attempt_event_id"],
-                    representation["emitted_event_id"],
-                ),
+                attempt_record["event_ids"],
                 workspace_id=workspace_id,
                 locality_id=locality_id,
             )
+            if attempt_record["current_standing"]["preserved_ingress"] is not None:
+                # The yielded Representation is preserved independently. No Compare
+                # or Identification is inferred merely from temporal proximity.
+                representation = record_operator_representation(
+                    ledger,
+                    workspace_id=workspace_id,
+                    locality_id=locality_id,
+                    locality_standing=locality_standing,
+                )
+                representation = emit_operator_representation(
+                    ledger, representation=representation, output_stream=output_stream
+                )
+                locality_standing = _advance_over(
+                    ledger,
+                    locality_standing,
+                    (
+                        representation["representation_event_id"],
+                        representation["emission_attempt_event_id"],
+                        representation["emitted_event_id"],
+                    ),
+                    workspace_id=workspace_id,
+                    locality_id=locality_id,
+                )

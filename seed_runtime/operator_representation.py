@@ -388,6 +388,12 @@ def emit_operator_representation(
         attempt_carriage_evidence.id
     )
 
+    # The attempt is durable before the output boundary sees anything. A
+    # caller batching its appends is deferring commits, not this ordering:
+    # an emission whose attempt was still uncommitted could reach the world
+    # and leave no record that it was tried.
+    ledger.flush()
+
     try:
         written = output_stream.write(emitted_representation)
     except Exception as error:

@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from collections import defaultdict
+from contextlib import contextmanager
 from itertools import chain
 from dataclasses import dataclass
 from datetime import datetime
@@ -218,6 +219,15 @@ def _next_prefix_commitment(previous: str, event: Event) -> str:
 
 class EventLedger:
     """Process-local append-only ledger for recording Seed runtime events."""
+
+    @contextmanager
+    def batched(self) -> Iterator[None]:
+        """The scope a durable ledger uses to commit once. Nothing here is durable."""
+
+        yield
+
+    def flush(self) -> None:
+        """No durable store to commit to."""
 
     def __init__(self) -> None:
         self._events: list[Event] = []
@@ -469,6 +479,7 @@ class SQLiteEventLedger(EventLedger):
 
     def __init__(self, database_path: str) -> None:
         self.database_path = database_path
+        self._batch_depth = 0
         self._connection = sqlite3.connect(database_path)
         self._connection.row_factory = sqlite3.Row
         # A durable prefix chain has to be extended by every writer. Older
@@ -842,11 +853,50 @@ class SQLiteEventLedger(EventLedger):
         self._connection.close()
 
     def _insert(self, event: Event) -> None:
-        with self._connection:
-            event_rowid = self._insert_without_commit(event)
-            self._insert_prefix_commitment(event, event_rowid)
-            self._persist_reservations(self._observed_numbers(event))
+        if self._batch_depth:
+            self._write_without_commit(event)
+        else:
+            with self._connection:
+                self._write_without_commit(event)
         self._advance_event_counter(event.id)
+
+    def _write_without_commit(self, event: Event) -> None:
+        event_rowid = self._insert_without_commit(event)
+        self._insert_prefix_commitment(event, event_rowid)
+        self._persist_reservations(self._observed_numbers(event))
+
+    @contextmanager
+    def batched(self) -> Iterator[None]:
+        """Hold one transaction open across appends until this scope closes.
+
+        What changes is how many times the store is committed, not what a
+        commit contains: each occurrence still reaches the store paired with
+        its prefix commitment, because both are written before either is
+        committed. A store that loses this scope loses whole occurrences and
+        keeps a chain that accounts for exactly the ones it kept.
+
+        Occurrences appended inside are not durable until the scope closes or
+        :meth:`flush` is called. An act that must not proceed until an
+        occurrence is durable calls `flush` itself; nothing here knows which
+        acts those are.
+        """
+
+        self._batch_depth += 1
+        try:
+            yield
+        except BaseException:
+            if self._batch_depth == 1:
+                self._connection.rollback()
+            raise
+        finally:
+            self._batch_depth -= 1
+        if not self._batch_depth:
+            self._connection.commit()
+
+    def flush(self) -> None:
+        """Commit what this scope has appended so far, and stay open."""
+
+        self._connection.commit()
 
     def _ensure_prefix_commitments(self) -> None:
         """Create or validate the ledger-local append-prefix mechanics.
