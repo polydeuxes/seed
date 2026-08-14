@@ -156,7 +156,6 @@
         ["output_Standing", "downstream_Admission"]
       ],
       "persistent_Standing": {
-        "requires_later_participation": false,
         "establishes_new_Act": false
       }
     },
