@@ -1,12 +1,9 @@
 # Responsibility spine
 
-Translation testimony. **No entry here carries constitutional Authority**, and
-nothing here is citable as law — see [README](README.md). Where this file names
-a clause, the clause is the authority and this is the gloss.
+Translation testimony only. The [Book of Seed](../book_of_seed/README.md) is
+the authority; this file has none.
 
-Rosetta has no independent constitutional topology. It follows the Book's
-Responsibility spine and supplies ordinary-English glosses for the coordinates
-and relations encountered there.
+Rosetta follows the same orientation as the Book and runtime:
 
 ```text
 Responsibility
@@ -14,370 +11,102 @@ Responsibility
     ├── subject or material
     ├── exact Act
     ├── Authority / Evidence
-    ├── purpose / Scope / locality
-    ├── inputs
-    │   ├── source / provenance
-    │   ├── Applicability
-    │   └── Admission, where required
+    ├── Scope / locality
+    ├── Applicability / Admission where required
     ├── Act occurrence
-    ├── production
-    │   └── result / Assertion
-    ├── Standing
-    └── movement / neighboring responsibilities
+    ├── result / Assertion
+    └── Standing
 ```
 
-The Book defines that spine. Runtime occurrences instantiate it. Rosetta keeps
-the same orientation while translating the dense parts into ordinary English.
-
-Examination and Presentation are directional views across this spine, not
-structural roots:
+Three structural relations recur across live implementation roads:
 
 ```text
-world  ── Examination gloss ──>  Responsibility spine
-world  <─ Presentation gloss ──  Responsibility spine
+content        ── Carriage ───────→ occurrence
+subject        ── Participation ──→ Act occurrence
+Act occurrence ── Yield ──────────→ result
 ```
 
-The directions are not mirror images. Presentation maps to bounded formation
-and separately evidenced emission. Examination compresses several inward
-responsibilities and has no single Book clause. Emission is not a third view;
-it is an exact outward occurrence distinct from formation.
+The endpoints do not supply a relation by co-presence. Each relation requires
+its exact Evidence. These three structural relations are not every relation
+about which Seed may carry an Assertion or Standing.
 
-The following shorthands hang from exact parts of the spine rather than naming
-additional branches.
+## Live implementation references
 
-### Implementation witnesses
-
-These anchors show current concrete instantiations; they do not define the
-grammar:
+These references witness current implementations; they do not define grammar.
 
 ```text
-Responsibility / Act / occurrence
+Measurement Responsibility / Act / occurrence / Assertions
     seed_runtime/byte_measurement.py::record_byte_count_layer
     seed_runtime/byte_measurement.py::record_adjacent_byte_pair_count_layer
 
-production relation / Evidence
-    seed_runtime/production_evidence.py::_record_production_evidence
+Yield Evidence
+    seed_runtime/yield_evidence.py::_record_yield_evidence
 
-Assertion / occurrence-bound recovery
-    seed_runtime/byte_measurement.py::RecordedByteAssertion
+Assertion recovery and locality movement
     seed_runtime/byte_measurement.py::assertions_of_recorded_byte_measurement
-
-locality movement
     seed_runtime/byte_measurement.py::_move_byte_assertion_to_locality
 
 Applicability
     seed_runtime/byte_measurement.py::get_recorded_pair_input_applicability
 
-Provenance path validation
-    seed_runtime/operator_ingress_addressable_material.py::form_operator_ingress_addressable_material
+Emission Carriage / Participation / Yield
+    seed_runtime/operator_representation.py::emit_operator_representation
+
+Machine-grammar Fidelity
+    tests/test_grammar_implementation.py
 ```
 
-## Producer
+## Directional shorthand
 
-`Producer` is ordinary shorthand for the side from which a result comes. In
-Seed grammar it expands to an exact Responsibility, Act, Act occurrence,
-production relation, result Assertion, Evidence, Authority, provenance, and
-locality. It names no additional participant or constitutional coordinate.
+`Examination` describes movement from presented material toward bounded Seed
+Assertions. `Presentation` describes movement from bounded Seed Assertions
+toward an emitted representation. Neither is a structural root, Act, or
+occurrence. They are directions across the Responsibility spine.
 
-## Consumer
+## Retired shorthand
 
-`Consumer` is ordinary shorthand for the side at which material may
-participate in another Act. In Seed grammar it expands to the exact locality,
-Responsibility, Act, purpose, Applicability, supported participation or
-input-to-result support, and Act occurrence. It names no additional participant or
-constitutional coordinate.
-
-## Uptake
-
-`Uptake` is ordinary shorthand for available material later participating in
-another bounded Act. In Seed grammar it expands to locality movement or
-availability, Applicability, Admission where required, exact purpose,
-supported participation or input-to-result support, and the Act occurrence. It names no
-relation family or additional occurrence.
-
-## Handoff
-
-`Handoff` is ordinary shorthand for movement between localities or for a
-separately established change in Responsibility or Authority. Movement does
-not imply that one participant gave material to another. The exact movement,
-Responsibility assignment, or Authority transition must be named instead.
-
-## Owner and Ownership
-
-`Owner` and `Ownership` are ordinary shorthand for the responsible boundary
-that bears an exact Responsibility, or for an Assertion that a particular
-boundary bears it. Seed grammar names the responsible boundary and
-Responsibility directly. Authority, source, provenance, implementation
-locality, and an occurrence-result relation do not establish that assignment
-by identity.
-
-## Consumption
-
-`Consumption` is ordinary shorthand for material participating as input in an
-exact Act. Material is not depleted or transferred by that participation.
-Availability, Applicability, Admission where required, the input occurrence,
-and the exact Act occurrence carry the distinctions; the shorthand adds no
-stage or coordinate.
-
-## Reliance
-
-`Reliance` is ordinary shorthand for saying that an exact input supports an
-exact result. In Seed grammar that is a relation Assertion with its own
-participants, Evidence, Authority, Scope, occurrence, limits, Unknowns, and
-Standing. Input participation does not establish that support relation.
-
-## Claim
-
-`Claim` is ordinary shorthand for the content of an Assertion viewed apart
-from the exact representation carrying it. Seed grammar keeps the Assertion as
-the subject. Equal content across two Assertions requires an established
-relation; the shorthand creates no shared proposition object.
-
-## Fact
-
-`Fact` is ordinary shorthand for an Assertion described through established,
-bounded Standing. It is not a species above Assertion and does not add an
-identity, Responsibility, Act, occurrence, Evidence, Authority, Scope, or
-Standing coordinate. Stronger Standing does not turn an Assertion into another
-constitutional kind.
-
-## Artifact
-
-`Artifact` is ordinary shorthand for a representation, record, Assertion, or
-result preserved by an exact occurrence. The exact kind must be named because
-each carries different identity, Evidence, Authority, Scope, and Standing.
-Artifact adds no container subject or constitutional coordinate.
-
-## Projection and View
-
-`Projection` and `View` are ordinary shorthand for a representation formed
-from preserved material under an exact rule and boundary. Seed grammar names
-the source material, formation Act and occurrence, rule, boundary, resulting
-representation, locality, and emission where one occurs. Neither shorthand
-adds a read model, cache, constitutional stage, or Standing by identity.
-
-## Lineage
-
-`Lineage` is ordinary shorthand for an addressable representation of where
-material came through. In Seed grammar it belongs beneath Provenance and may be
-represented by ordered source, occurrence, production, or preservation
-references. The representation helps an exact Act validate claimed provenance;
-it establishes no separate subject, Responsibility, Act, Standing, causation,
-production occurrence, or Applicability.
-
-## Purpose
-
-`Purpose` is ordinary shorthand for why an exact Responsibility/Act has its
-particular subject, result boundary, Scope, locality, Authority, and
-Constraints. It adds no coordinate when those remain unchanged.
-
-## Meaning
-
-`Meaning` is ordinary shorthand for an exact supported relation such as X
-representing or identifying Y. The relation carries its own participants,
-Assertion, Evidence, Authority, Scope, locality, occurrence, limits, and
-Standing; the shorthand adds no relation kind.
-
-## Capability, Gap, Goal, and Demand
-
-`Capability` glosses exact Responsibility/Act/Authority/Constraint and Evidence
-about what may occur. `Gap` glosses a bounded Compare or distinction between
-current Standing and an exact reference condition. `Goal` glosses
-locality-bound material or Standing concerning a desired result. `Demand`
-glosses that an exact Responsibility/Act/result boundary remains unmet. None
-adds an object, occurrence, or Standing by name.
-
-## Testimony
-
-`Testimony` is ordinary shorthand for asserted content carried with source
-coordinates. Seed grammar preserves the source identity or role, material
-origin, source occurrence where evidenced, provenance, Evidence, Scope,
-Authority limits, locality, conflicts, Unknowns, and surviving limits. Those
-coordinates do not establish that the named source asserted the content.
-
-## Attribution
-
-`Attribution` is ordinary shorthand for an asserted relation between an
-Assertion and source coordinates. A source label or mechanically observed
-material origin does not establish that relation. The relation is another
-Assertion with its own Evidence, support relation, occurrence, and Standing.
-
-## Constructor
-
-`Constructor` is ordinary implementation shorthand for code that can form a
-representation or result. Invocation may participate in an exact production
-Act, but public reachability, direct instantiation, constructability, or the
-returned shape establishes none of Responsibility, Authority, Act occurrence,
-production occurrence, production Evidence, or Standing.
-
-## Formation
-
-`Formation` is ordinary shorthand for an exact Act occurrence that forms a
-representation under an exact rule and boundary. Seed grammar names the Act,
-occurrence, rule, source material, result representation, Evidence, Authority,
-Scope, and locality directly. The shorthand adds no intermediate stage.
-
-## Establishment
-
-`Establishment` is ordinary shorthand for the relation between an exact
-responsible occurrence and the Standing it supports. Seed grammar preserves
-the responsible boundary, Act, occurrence, Evidence, Authority, Scope,
-subject, and Standing directly. The shorthand adds no object or occurrence.
-
----
-
-## Presentation
+The following words are ordinary compression. Expand them before reasoning
+about Seed:
 
 ```text
-role            outward view across the Responsibility spine
-book standing   none as a responsibility. `presentation` appears in active law
-                as rendering vocabulary, as closed-choice machinery, and as an
-                ordinary verb
-maps to         06.Representations (forming) · 08.Emission (sending)
+Producer       Act occurrence + Yield + result
+Consumer       subject + role + Applicability + Participation
+Consumption    Participation in an exact Act occurrence
+Uptake         availability + Applicability + Participation
+Handoff        movement, or an exact Responsibility/Authority change
+Lineage        ordered source and occurrence references beneath Provenance
+Artifact       exact representation, record, Assertion, or result
+Projection     exact Act occurrence + representation + its carried coordinates
+View           exact Act occurrence + representation + its carried coordinates
+Formation      exact Act occurrence + Yield + representation
+Constructor    callable implementation mechanism; no Authority by identity
+Owner          responsible boundary bearing an exact Responsibility
+Ownership      Assertion concerning that Responsibility assignment
+Claim          asserted content
+Fact           Assertion described through its bounded Standing
+Testimony      asserted content with carried source coordinates
+Attribution    Assertion concerning a source relation
+Purpose        the exact Act's other carried coordinates
+Meaning        Assertion concerning an exact represented relation
+Capability     exact Act / Authority / Constraints / Evidence
+Gap            bounded Compare result
+Goal           locality-bound material concerning a desired result
+Demand         shorthand that a bounded result is absent
+Reliance       Assertion that an exact input supports an exact result
+Recovery       later reading and validation of preserved coordinates
 ```
 
-### What a person means by it
+None of these shorthands adds a constitutional subject, relation, occurrence,
+or Standing. If the expansion loses a distinction, recover the missing exact
+coordinate rather than restoring the compressed noun.
 
-What Seed shows you. You typed something, Seed answered, and the answer you are
-looking at is the Presentation.
+## Mechanical words
 
-### What Seed is actually doing
+`digest` and `commitment` name implementation mechanisms. Recomputing a digest
+can show that declared representations match; it does not supply Content,
+Carriage, occurrence, Provenance, Evidence, or Standing.
 
-Two established things, in order, owned separately.
+## Use
 
-```text
-a responsible occurrence forms a bounded representation
-    from exact source material, for a declared purpose
-        ↓
-that representation carries only the Standing supported by
-    its source, responsible formation, purpose, Scope, Evidence,
-    provenance, Authority limits, conflicts, limits, and
-    responsibly established Unknowns
-        ↓
-emission occurs, separately, as its own occurrence
-```
-
-The middle line is the whole of what people mean when they say Seed should be
-honest. It is not a disposition or an intention. It is a bound on what the thing
-you are looking at is permitted to carry.
-
-This is why a fluent answer can be a failure and an awkward one can be correct.
-If Seed has met a word twice and says something that would only be supported by
-meeting it ten thousand times, the Presentation carries standing its formation
-does not supply — regardless of how well it reads.
-
-### What it must not become
-
-`presentation` is a crowded word in the repository, and most of what it names
-is not this.
-
-```text
-not closed-choice machinery       presented alternatives are bounded test and
-                                  interaction representations, not this view
-not session Standing              a current implementation projects Standing
-                                  "for a session"; that is not what a person
-                                  sees, and no clause supports it
-not Emission                      forming and sending are separate occurrences
-not receipt                       that you saw it is not part of Seed's act
-not a UI                          rendering is a surface over the formation
-                                  payload, and a rendered label is expressly
-                                  not the represented meaning
-```
-
-### Where the mapping is Unknown
-
-`06.Representations` closes with: *"Whether forming a representation names an
-Act distinct from the exact Act that forms it remains **Unknown** unless
-separately established."*
-
-So the Book declines to say that forming-outward is its own Act. This view is a
-human word for a direction, and does not settle that question.
-
----
-
-## Examination
-
-```text
-role            inward view across the Responsibility spine
-book standing   none. `examination` was retired from active law 2026-08-03 and
-                stands at zero occurrences; see retired-vocabulary.md
-maps to         no single clause. several bounded responsibilities
-```
-
-### What a person means by it
-
-Seed encountering something from outside and coming to hold it — a book, a line
-you typed, a file, a program's output. The word covers the whole inward trip
-from *there is something out there* to *Seed has something it can work with*.
-
-### What Seed is actually doing
-
-Not one thing, and this is the honest part of the entry.
-
-```text
-material arrives and is preserved with recorded material origin naming
-    its origin — operator, this Seed, or system
-        ↓
-supplied material may become addressable as material carrying source coordinates
-    without becoming constitutional grammar          (01.Source.B)
-        ↓
-a declared measurement may produce bounded findings — equality, count,
-    recurrence, prefix occurrence, a declared predicate, adjacency —
-    disclosing what was measured, the rule of sameness, and the bounded
-    scope                                            (01.Source:28)
-        ↓
-none of that establishes meaning                     (01.Source.E)
-```
-
-Four separate boundaries, no single act joining them. A person saying
-"Seed examined the book" is compressing all of it, which is what ordinary
-English is for and what the Book cannot afford.
-
-### Why this word is not in the Book
-
-It was, and it was removed. The former active Inquiry chapter was
-`inquiry-and-examination` before the district was retired, because it had
-compressed several responsibilities — comparison, applicability determination,
-and relation establishment among them — into one word that sounded like an act.
-
-That is precisely the property that makes it a useful view here and a bad clause
-there. As a view it says *this direction, all of it*. As law it would claim
-there is one act where there are several.
-
-The verb survives in active law, with applicability as the thing doing the
-examining. The noun does not.
-
-### What it must not become
-
-```text
-not an Act                    nothing performs an Examination
-not a stage                   the responsibilities beneath it have no
-                              required order
-not meaning-making            measurement and recurrence establish no
-                              meaning, which is a titled clause
-not admission                 material arriving is not material admitted
-not a return path to law      the noun is retired; Rosetta does not restore its
-                              constitutional Standing
-```
-
-### Where the mapping is Unknown
-
-Whether the inward direction has a single responsibility at all. The outward
-direction has one clause that names the whole of it; the inward direction has
-four boundaries and no clause joining them.
-
-That may be a gap, or it may be the true shape — one mouth and many senses is
-an ordinary way for an organism to be built. Nothing recovered so far decides
-it, and this entry does not either.
-
----
-
-## On using these words
-
-They are for talking to people, including ourselves at speed. They carry no
-standing, they name no act, and an argument that turns on one of them has not
-yet reached the grammar.
-
-The test that keeps them honest: **if a sentence about Seed would change
-meaning when the Rosetta word is replaced by the clauses beneath it, the sentence
-was resting on the English.**
+Rosetta is for translation. An argument that depends on a shorthand has not
+yet reached Seed grammar.

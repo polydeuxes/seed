@@ -47,6 +47,8 @@ from typing import Callable, Iterable, Iterator, Sequence
 
 from seed_runtime.events import CORRUPTED, EventLedger, EventLedgerBoundary
 from seed_runtime.event import Event
+from seed_runtime.ids import new_id
+from seed_runtime.yield_evidence import _record_yield_evidence, yield_commitment
 from seed_runtime.support_basis import (
     SupportBasis,
     SupportBasisError,
@@ -96,6 +98,20 @@ PAIR_MEASUREMENT_FORMS: tuple[str, ...] = (
 
 POSITIONAL_RESULT_STANDING_COORDINATE_RESPONSIBILITY = (
     "preserve this measured Assertion's carried Standing coordinates"
+)
+ADJACENT_PAIR_OBSERVATION_RECORDED_KIND = (
+    "operator.measurement.adjacent_pair_observation_recorded"
+)
+ADJACENT_PAIR_OBSERVATION_ACT_EVIDENCE_KIND = (
+    "operator.measurement.adjacent_pair_observation_act_evidenced"
+)
+ADJACENT_PAIR_OBSERVATION_CARRIAGE_EVIDENCE_KIND = (
+    "operator.measurement.adjacent_pair_observation_carriage_evidenced"
+)
+ADJACENT_PAIR_OBSERVATION_CONVENTION = "adjacent_pair_observation_v1"
+ADJACENT_PAIR_OBSERVATION_RESPONSIBILITY = (
+    "observe one adjacent position on each side of every exact occurrence of "
+    "each ordered pair recovered from one exact finding"
 )
 
 
@@ -169,12 +185,11 @@ class ExactAdjacentPairOccurrence:
 
 
 @dataclass(frozen=True)
-class AdjacentPairContextObservation:
+class AdjacentPairObservation:
     """One bounded position on each side of one exact pair occurrence.
 
     The representations are carried observations. They are not classified as
-    relation words, and equal representations do not identify equal candidate
-    relations.
+    relation words, and equal representations do not identify equal relations.
     """
 
     left_occurrence: PositionedRepresentationOccurrence | None
@@ -188,7 +203,7 @@ class AdjacentPairContextObservation:
         source_id = self.source_occurrence_id
         if not isinstance(source_id, str) or not source_id:
             raise PreservedMaterialMeasurementError(
-                "an adjacent context requires one exact source occurrence"
+                "an adjacent-pair observation requires one exact source occurrence"
             )
         if self.pair_occurrence.left.source_occurrence_id != source_id:
             raise PreservedMaterialMeasurementError(
@@ -240,7 +255,7 @@ class AdjacentPairContextObservation:
             or not isinstance(text, str)
         ):
             raise PreservedMaterialMeasurementError(
-                "the adjacent context does not preserve its exact Evidence"
+                "the adjacent-pair observation does not preserve its exact Evidence"
             )
         positions = _positions(text)
         carried = (
@@ -268,8 +283,8 @@ class AdjacentPairContextObservation:
         )
 
     @property
-    def candidate(self) -> dict[str, object] | None:
-        """Return one occurrence-bound candidate only when both sides exist."""
+    def fully_bounded_coordinates(self) -> dict[str, object] | None:
+        """Return the neutral coordinates only when both outer positions exist."""
 
         if self.left_occurrence is None or self.right_occurrence is None:
             return None
@@ -279,18 +294,18 @@ class AdjacentPairContextObservation:
                 "source_occurrence_id": self.source_occurrence_id,
                 "positions": list(self.exact_order),
             },
-            "left_node": {
+            "left_occurrence": {
                 "occurrence": list(self.left_occurrence.identity),
                 "representation": self.left_occurrence.representation,
             },
-            "candidate_edge": {
+            "pair_occurrence": {
                 "occurrence": list(self.pair_occurrence.identity),
                 "ordered_pair": [
                     self.pair_occurrence.pair.left,
                     self.pair_occurrence.pair.right,
                 ],
             },
-            "right_node": {
+            "right_occurrence": {
                 "occurrence": list(self.right_occurrence.identity),
                 "representation": self.right_occurrence.representation,
             },
@@ -767,22 +782,22 @@ def _positions(text: str) -> Sequence[str]:
     return text.split()
 
 
-def _observe_adjacent_pair_contexts(
+def _observe_adjacent_pair_observations(
     occurrences: Iterable[Event],
     pairs: Iterable[AdjacentPair],
     *,
     pair_finding_event_id: str,
-) -> tuple[AdjacentPairContextObservation, ...]:
+) -> tuple[AdjacentPairObservation, ...]:
     """Extend every exact pair occurrence one position in each direction.
 
-    Pair values select what is observed; they do not identify the resulting
-    candidates. Every observation is identified by its preserved source
+    Pair values select what is observed; they do not classify the resulting
+    coordinates. Every observation is identified by its preserved source
     occurrence and exact positions. Boundary absence is retained as absence,
-    rather than dropping the pair occurrence or filling a node.
+    rather than dropping the pair occurrence or filling a position.
     """
 
     bounded_pairs = tuple(dict.fromkeys(pairs))
-    observations: list[AdjacentPairContextObservation] = []
+    observations: list[AdjacentPairObservation] = []
     for source in occurrences:
         if source.kind != INGRESS_OCCURRED_KIND:
             raise PreservedMaterialMeasurementError(
@@ -829,7 +844,7 @@ def _observe_adjacent_pair_contexts(
                     if position is not None
                 )
                 observations.append(
-                    AdjacentPairContextObservation(
+                    AdjacentPairObservation(
                         left_occurrence=left,
                         pair_occurrence=ExactAdjacentPairOccurrence(
                             pair=pair,
@@ -856,12 +871,12 @@ def _observe_adjacent_pair_contexts(
     return tuple(observations)
 
 
-def observe_adjacent_pair_contexts_from_finding(
+def observe_adjacent_pair_observations_from_finding(
     ledger: EventLedger,
     *,
     finding_event_id: str,
     occurrences: Iterable[Event],
-) -> tuple[AdjacentPairContextObservation, ...]:
+) -> tuple[AdjacentPairObservation, ...]:
     """Observe only adjacent pairs recovered from one recorded finding."""
 
     finding = ledger.get(finding_event_id)
@@ -871,7 +886,7 @@ def observe_adjacent_pair_contexts_from_finding(
         )
     if not _is_established_after_measurement(finding):
         raise PreservedMaterialMeasurementError(
-            "adjacent contexts require an exact recorded displacement-one finding"
+            "adjacent-pair observations require an exact recorded displacement-one finding"
         )
     material = tuple(occurrences)
     recorded_ids = finding.payload.get("input_event_ids")
@@ -898,62 +913,62 @@ def observe_adjacent_pair_contexts_from_finding(
                 "the finding's source-occurrence Evidence does not reconstruct"
             )
     pairs = _adjacent_pairs_from_event(finding)
-    return _observe_adjacent_pair_contexts(
+    return _observe_adjacent_pair_observations(
         material,
         pairs,
         pair_finding_event_id=finding_event_id,
     )
 
 
-def compare_adjacent_pair_contexts(
-    observations: Iterable[AdjacentPairContextObservation],
+def compare_adjacent_pair_observations(
+    observations: Iterable[AdjacentPairObservation],
 ) -> dict[str, object]:
     """Report only distinctions that survive exact occurrence counterexamples.
 
     Representation equality is counted for comparison but never used as
-    candidate identity. The result reports only measured differences.
+    occurrence identity. The result reports only measured differences.
     """
 
     bounded = tuple(observations)
-    if not all(isinstance(item, AdjacentPairContextObservation) for item in bounded):
+    if not all(isinstance(item, AdjacentPairObservation) for item in bounded):
         raise PreservedMaterialMeasurementError(
-            "adjacent-context Compare requires exact bounded observations"
+            "adjacent-pair observation Compare requires exact bounded observations"
         )
     identities = [observation.identity for observation in bounded]
     if len(set(identities)) != len(identities):
         raise PreservedMaterialMeasurementError(
-            "the same exact adjacent-context observation was supplied more than once"
+            "the same exact adjacent-pair observation was supplied more than once"
         )
-    candidates = tuple(
-        candidate
+    complete = tuple(
+        coordinates
         for observation in bounded
-        if (candidate := observation.candidate) is not None
+        if (coordinates := observation.fully_bounded_coordinates) is not None
     )
     representation_groups: dict[
         tuple[str, tuple[str, str], str], list[dict[str, object]]
     ] = {}
-    edge_groups: dict[tuple[str, str], list[dict[str, object]]] = {}
-    endpoint_groups: dict[tuple[str, str], list[dict[str, object]]] = {}
-    for candidate in candidates:
-        left = candidate["left_node"]["representation"]
-        edge = tuple(candidate["candidate_edge"]["ordered_pair"])
-        right = candidate["right_node"]["representation"]
-        representation_groups.setdefault((left, edge, right), []).append(candidate)
-        edge_groups.setdefault(edge, []).append(candidate)
-        endpoint_groups.setdefault((left, right), []).append(candidate)
+    pair_groups: dict[tuple[str, str], list[dict[str, object]]] = {}
+    outer_groups: dict[tuple[str, str], list[dict[str, object]]] = {}
+    for coordinates in complete:
+        left = coordinates["left_occurrence"]["representation"]
+        pair = tuple(coordinates["pair_occurrence"]["ordered_pair"])
+        right = coordinates["right_occurrence"]["representation"]
+        representation_groups.setdefault((left, pair, right), []).append(coordinates)
+        pair_groups.setdefault(pair, []).append(coordinates)
+        outer_groups.setdefault((left, right), []).append(coordinates)
 
     return {
         "observation_count": len(bounded),
-        "candidate_count": len(candidates),
-        "boundary_observation_count": len(bounded) - len(candidates),
-        "distinct_occurrence_bound_candidates": len(
+        "fully_bounded_observation_count": len(complete),
+        "boundary_observation_count": len(bounded) - len(complete),
+        "distinct_fully_bounded_occurrences": len(
             {
                 (
-                    candidate["identity"]["pair_finding_event_id"],
-                    candidate["identity"]["source_occurrence_id"],
-                    tuple(candidate["identity"]["positions"]),
+                    coordinates["identity"]["pair_finding_event_id"],
+                    coordinates["identity"]["source_occurrence_id"],
+                    tuple(coordinates["identity"]["positions"]),
                 )
-                for candidate in candidates
+                for coordinates in complete
             }
         ),
         "distinct_representation_triples": len(representation_groups),
@@ -965,24 +980,24 @@ def compare_adjacent_pair_contexts(
                 len(
                     {
                         (
-                            candidate["left_node"]["representation"],
-                            candidate["right_node"]["representation"],
+                            coordinates["left_occurrence"]["representation"],
+                            coordinates["right_occurrence"]["representation"],
                         )
-                        for candidate in group
+                        for coordinates in group
                     }
                 )
                 > 1
-                for group in edge_groups.values()
+                for group in pair_groups.values()
             ),
             "endpoint_groups_with_multiple_ordered_pairs": sum(
                 len(
                     {
-                        tuple(candidate["candidate_edge"]["ordered_pair"])
-                        for candidate in group
+                        tuple(coordinates["pair_occurrence"]["ordered_pair"])
+                        for coordinates in group
                     }
                 )
                 > 1
-                for group in endpoint_groups.values()
+                for group in outer_groups.values()
             ),
         },
         "distinct_adjacency_coordinates": [
@@ -1009,6 +1024,417 @@ def compare_adjacent_pair_contexts(
             )
         ],
     }
+
+
+def _adjacent_pair_observation_payload(
+    observation: AdjacentPairObservation,
+) -> dict[str, object]:
+    def positioned(
+        occurrence: PositionedRepresentationOccurrence | None,
+    ) -> dict[str, object] | None:
+        if occurrence is None:
+            return None
+        return {
+            "source_occurrence_id": occurrence.source_occurrence_id,
+            "position": occurrence.position,
+            "representation": occurrence.representation,
+        }
+
+    return {
+        "left_occurrence": positioned(observation.left_occurrence),
+        "pair_occurrence": {
+            "ordered_pair": [
+                observation.pair_occurrence.pair.left,
+                observation.pair_occurrence.pair.right,
+            ],
+            "left": positioned(observation.pair_occurrence.left),
+            "right": positioned(observation.pair_occurrence.right),
+        },
+        "right_occurrence": positioned(observation.right_occurrence),
+        "source_occurrence_id": observation.source_occurrence_id,
+        "exact_order": list(observation.exact_order),
+        "evidence": dict(observation.evidence),
+    }
+
+
+def record_adjacent_pair_observations(
+    ledger: EventLedger,
+    *,
+    workspace_id: str,
+    session_id: str,
+    finding_event_id: str,
+) -> Event:
+    """Preserve one exact bounded adjacent-pair observation Measurement result."""
+
+    finding = ledger.get(finding_event_id)
+    if (
+        finding is None
+        or finding.workspace_id != workspace_id
+        or finding.session_id != session_id
+    ):
+        raise PreservedMaterialMeasurementError(
+            "the recovered pair finding is outside this Measurement locality"
+        )
+    source_ids = finding.payload.get("input_event_ids")
+    if not isinstance(source_ids, list):
+        raise PreservedMaterialMeasurementError(
+            "the recovered pair finding carries no exact source occurrences"
+        )
+    source_occurrences = []
+    for source_id in source_ids:
+        source = ledger.get(source_id) if isinstance(source_id, str) else None
+        if source is None:
+            raise PreservedMaterialMeasurementError(
+                "the recovered pair finding names an absent source occurrence"
+            )
+        source_occurrences.append(source)
+    observations = observe_adjacent_pair_observations_from_finding(
+        ledger,
+        finding_event_id=finding_event_id,
+        occurrences=source_occurrences,
+    )
+    act_id = new_id("adjacent_pair_observation_measurement_act")
+    act_occurrence_id = new_id("adjacent_pair_observation_measurement_occurrence")
+    result_payload = {
+        "finding_event_id": finding_event_id,
+        "source_occurrence_ids": list(source_ids),
+        "observations": [
+            _adjacent_pair_observation_payload(observation)
+            for observation in observations
+        ],
+    }
+    applicable_inputs = [
+        {
+            "input_ref": finding_event_id,
+            "role": "recovered ordered-pair finding",
+            "standing": "applicable",
+        },
+        *[
+            {
+                "input_ref": source_id,
+                "role": "exact preserved source occurrence",
+                "standing": "applicable",
+            }
+            for source_id in source_ids
+        ],
+    ]
+    act_evidence = ledger.append(
+        ADJACENT_PAIR_OBSERVATION_ACT_EVIDENCE_KIND,
+        workspace_id,
+        {
+            "target_act_id": act_id,
+            "act_occurrence_id": act_occurrence_id,
+            "act": "exact adjacent-pair observation Measurement",
+            "responsibility": ADJACENT_PAIR_OBSERVATION_RESPONSIBILITY,
+            "responsible_boundary": "this Seed",
+            "input_applicability": applicable_inputs,
+            "result_commitment": yield_commitment(
+                ADJACENT_PAIR_OBSERVATION_CONVENTION,
+                result_payload,
+            ),
+            "standing": "occurred",
+            "authority": (
+                "Evidence concerning this exact bounded Measurement occurrence only"
+            ),
+        },
+        session_id=session_id,
+    )
+    yield_evidence = _record_yield_evidence(
+        ledger,
+        workspace_id=workspace_id,
+        session_id=session_id,
+        convention=ADJACENT_PAIR_OBSERVATION_CONVENTION,
+        yielding_act="exact adjacent-pair observation Measurement",
+        act_occurrence_id=act_occurrence_id,
+        yielded_result_kind="exact adjacent-pair observations",
+        result_identity=f"adjacent-pair-observation-result:{act_occurrence_id}",
+        yielded_content=result_payload,
+        responsibility=ADJACENT_PAIR_OBSERVATION_RESPONSIBILITY,
+        responsible_boundary="this Seed",
+    )
+    carriage_evidence = ledger.append(
+        ADJACENT_PAIR_OBSERVATION_CARRIAGE_EVIDENCE_KIND,
+        workspace_id,
+        {
+            "act_occurrence_id": act_occurrence_id,
+            "content_kind": "exact adjacent-pair observations",
+            "carried_content": result_payload,
+            "standing": "carried",
+            "authority": (
+                "Evidence only for this exact result-to-occurrence Carriage"
+            ),
+        },
+        session_id=session_id,
+    )
+    return ledger.append(
+        ADJACENT_PAIR_OBSERVATION_RECORDED_KIND,
+        workspace_id,
+        {
+            **result_payload,
+            "dimensions": {
+                "identity": act_occurrence_id,
+                "content": "exact adjacent-pair observations around recovered ordered pairs",
+                "standing": "measured",
+                "source_provenance": [finding_event_id, *source_ids],
+                "responsibility": ADJACENT_PAIR_OBSERVATION_RESPONSIBILITY,
+                "responsible_boundary": "this Seed",
+                "authority": (
+                    "measurement Evidence only; establishes no classification, "
+                    "represented relation, or Standing beyond this result"
+                ),
+                "scope_locality": (
+                    f"workspace:{workspace_id};session:{session_id}"
+                ),
+                "occurrence_preservation": (
+                    "one exact adjacent-pair observation Measurement occurrence recorded"
+                ),
+            },
+            "target_act_id": act_id,
+            "act_occurrence_id": act_occurrence_id,
+            "responsible_act_evidence_id": act_evidence.id,
+            "yield_evidence_id": yield_evidence.id,
+            "carriage_evidence_id": carriage_evidence.id,
+            "known_loss": [],
+            "unknowns": [
+                "what any carried representation means remains Unknown",
+            ],
+            "conflicts": [],
+            "mutates_cluster": False,
+        },
+        session_id=session_id,
+    )
+
+
+def _adjacent_pair_observation_from_payload(
+    value: object,
+) -> AdjacentPairObservation:
+    if not isinstance(value, dict):
+        raise PreservedMaterialMeasurementError(
+            "a recorded adjacent-pair observation is not an exact coordinate mapping"
+        )
+
+    def positioned(item: object) -> PositionedRepresentationOccurrence | None:
+        if item is None:
+            return None
+        if not isinstance(item, dict):
+            raise PreservedMaterialMeasurementError(
+                "a recorded position is not an exact coordinate mapping"
+            )
+        source_id = item.get("source_occurrence_id")
+        position = item.get("position")
+        representation = item.get("representation")
+        if (
+            not isinstance(source_id, str)
+            or not source_id
+            or not isinstance(position, int)
+            or isinstance(position, bool)
+            or position < 0
+            or not isinstance(representation, str)
+            or not representation
+        ):
+            raise PreservedMaterialMeasurementError(
+                "a recorded position carries malformed coordinates"
+            )
+        return PositionedRepresentationOccurrence(
+            source_id,
+            position,
+            representation,
+        )
+
+    pair_value = value.get("pair_occurrence")
+    if not isinstance(pair_value, dict):
+        raise PreservedMaterialMeasurementError(
+            "a recorded adjacent-pair observation carries no exact pair occurrence"
+        )
+    ordered_pair = pair_value.get("ordered_pair")
+    if (
+        not isinstance(ordered_pair, list)
+        or len(ordered_pair) != 2
+        or not all(isinstance(item, str) and item for item in ordered_pair)
+    ):
+        raise PreservedMaterialMeasurementError(
+            "a recorded adjacent-pair observation carries no exact ordered pair"
+        )
+    pair_left = positioned(pair_value.get("left"))
+    pair_right = positioned(pair_value.get("right"))
+    if pair_left is None or pair_right is None:
+        raise PreservedMaterialMeasurementError(
+            "a recorded pair occurrence is missing one exact position"
+        )
+    source_id = value.get("source_occurrence_id")
+    exact_order = value.get("exact_order")
+    evidence = value.get("evidence")
+    if (
+        not isinstance(source_id, str)
+        or not source_id
+        or not isinstance(exact_order, list)
+        or not all(
+            isinstance(position, int)
+            and not isinstance(position, bool)
+            and position >= 0
+            for position in exact_order
+        )
+        or not isinstance(evidence, dict)
+    ):
+        raise PreservedMaterialMeasurementError(
+            "a recorded adjacent-pair observation carries malformed bounds"
+        )
+    return AdjacentPairObservation(
+        left_occurrence=positioned(value.get("left_occurrence")),
+        pair_occurrence=ExactAdjacentPairOccurrence(
+            AdjacentPair(*ordered_pair),
+            pair_left,
+            pair_right,
+        ),
+        right_occurrence=positioned(value.get("right_occurrence")),
+        source_occurrence_id=source_id,
+        exact_order=tuple(exact_order),
+        evidence=evidence,
+    )
+
+
+def get_recorded_adjacent_pair_observations(
+    ledger: EventLedger,
+    event_id: str,
+) -> tuple[AdjacentPairObservation, ...] | None:
+    """Recover an exact recorded result without repeating its Measurement."""
+
+    carrier = ledger.get(event_id)
+    if carrier is None:
+        return None
+    if (
+        carrier.kind != ADJACENT_PAIR_OBSERVATION_RECORDED_KIND
+        or ledger.integrity_of(event_id) == CORRUPTED
+    ):
+        raise PreservedMaterialMeasurementError(
+            "the adjacent-pair observation result carrier is absent or corrupted"
+        )
+    finding_id = carrier.payload.get("finding_event_id")
+    source_ids = carrier.payload.get("source_occurrence_ids")
+    carried_observations = carrier.payload.get("observations")
+    if (
+        not isinstance(finding_id, str)
+        or not finding_id
+        or not isinstance(source_ids, list)
+        or not all(isinstance(value, str) and value for value in source_ids)
+        or not isinstance(carried_observations, list)
+    ):
+        raise PreservedMaterialMeasurementError(
+            "the adjacent-pair observation result carries malformed result coordinates"
+        )
+    result_payload = {
+        "finding_event_id": finding_id,
+        "source_occurrence_ids": source_ids,
+        "observations": carried_observations,
+    }
+    act_evidence_id = carrier.payload.get("responsible_act_evidence_id")
+    yield_evidence_id = carrier.payload.get("yield_evidence_id")
+    carriage_evidence_id = carrier.payload.get("carriage_evidence_id")
+    if not all(
+        isinstance(value, str) and value
+        for value in (act_evidence_id, yield_evidence_id, carriage_evidence_id)
+    ):
+        raise PreservedMaterialMeasurementError(
+            "the adjacent-pair observation result carries malformed Evidence references"
+        )
+    act_evidence = ledger.get(act_evidence_id)
+    yield_evidence = ledger.get(yield_evidence_id)
+    carriage_evidence = ledger.get(carriage_evidence_id)
+    if (
+        act_evidence is None
+        or act_evidence.kind != ADJACENT_PAIR_OBSERVATION_ACT_EVIDENCE_KIND
+        or yield_evidence is None
+        or yield_evidence.kind != "operator.yield.evidence_recorded"
+        or carriage_evidence is None
+        or carriage_evidence.kind != ADJACENT_PAIR_OBSERVATION_CARRIAGE_EVIDENCE_KIND
+    ):
+        raise PreservedMaterialMeasurementError(
+            "the adjacent-pair observation result carries incomplete edge Evidence"
+        )
+    act_occurrence_id = carrier.payload.get("act_occurrence_id")
+    target_act_id = carrier.payload.get("target_act_id")
+    commitment = yield_commitment(ADJACENT_PAIR_OBSERVATION_CONVENTION, result_payload)
+    if (
+        not isinstance(act_occurrence_id, str)
+        or not isinstance(target_act_id, str)
+        or act_evidence.payload.get("target_act_id") != target_act_id
+        or act_evidence.payload.get("act_occurrence_id") != act_occurrence_id
+        or yield_evidence.payload.get("dimensions", {}).get("act_occurrence_id")
+        != act_occurrence_id
+        or carriage_evidence.payload.get("act_occurrence_id")
+        != act_occurrence_id
+        or act_evidence.payload.get("result_commitment") != commitment
+        or yield_evidence.payload.get("yield_commitment") != commitment
+        or yield_evidence.payload.get("yield_convention")
+        != ADJACENT_PAIR_OBSERVATION_CONVENTION
+        or carriage_evidence.payload.get("carried_content") != result_payload
+    ):
+        raise PreservedMaterialMeasurementError(
+            "the adjacent-pair observation edge Evidence concerns different coordinates"
+        )
+    expected_inputs = [
+        {
+            "input_ref": finding_id,
+            "role": "recovered ordered-pair finding",
+            "standing": "applicable",
+        },
+        *[
+            {
+                "input_ref": source_id,
+                "role": "exact preserved source occurrence",
+                "standing": "applicable",
+            }
+            for source_id in source_ids
+        ],
+    ]
+    if act_evidence.payload.get("input_applicability") != expected_inputs:
+        raise PreservedMaterialMeasurementError(
+            "the adjacent-pair observation Act Evidence concerns different inputs"
+        )
+    finding = ledger.get(finding_id)
+    if (
+        finding is None
+        or ledger.integrity_of(finding_id) == CORRUPTED
+        or not _is_established_after_measurement(finding)
+        or finding.workspace_id != carrier.workspace_id
+        or finding.session_id != carrier.session_id
+        or finding.payload.get("input_event_ids") != source_ids
+    ):
+        raise PreservedMaterialMeasurementError(
+            "the adjacent-pair observation pair-finding Evidence does not reconstruct"
+        )
+    sources: dict[str, Event] = {}
+    for source_id in source_ids:
+        source = ledger.get(source_id)
+        if (
+            source is None
+            or source.kind != INGRESS_OCCURRED_KIND
+            or ledger.integrity_of(source_id) == CORRUPTED
+            or source.workspace_id != carrier.workspace_id
+            or source.session_id != carrier.session_id
+            or not isinstance(source.payload.get("decoded_text"), str)
+        ):
+            raise PreservedMaterialMeasurementError(
+                "the adjacent-pair observation source Evidence does not reconstruct"
+            )
+        sources[source_id] = source
+    observations = tuple(
+        _adjacent_pair_observation_from_payload(value)
+        for value in carried_observations
+    )
+    if any(
+        observation.evidence.get("pair_finding_event_id") != finding_id
+        or observation.source_occurrence_id not in sources
+        or observation.evidence.get("exact_decoded_text")
+        != sources[observation.source_occurrence_id].payload.get("decoded_text")
+        or observation.evidence.get("workspace_id") != carrier.workspace_id
+        or observation.evidence.get("session_id") != carrier.session_id
+        for observation in observations
+    ):
+        raise PreservedMaterialMeasurementError(
+            "a carried adjacent-pair observation names different Evidence"
+        )
+    return observations
 
 
 def _position_measurements(pair: AdjacentPair) -> dict[str, Callable[[str], str | None]]:

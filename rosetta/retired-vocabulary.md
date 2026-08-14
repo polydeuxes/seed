@@ -1,306 +1,77 @@
 # Retired and ordinary vocabulary
 
-Translation testimony. **No entry here carries constitutional Authority**, and
-no mapping establishes equivalence — see [README](README.md).
+Translation testimony only. These entries carry no constitutional Authority.
 
-## Status values
+The compact mappings live in [Responsibility spine](roots.md). This file keeps
+only distinctions that are easy to lose during translation.
 
-```text
-retired         removed from active law
-never adopted   used in reports or discussion; never entered active law
-ordinary        present in active law as ordinary lowercase English,
-                carrying no constitutional subject
-```
-
-Where no single current term covers a retired word, the mapping says so.
-
----
-
-## State
+## Content, Carriage, and digest
 
 ```text
-status          retired in #2354
-closest grammar Standing · Representation · View · Projection
-                no single current equivalent
+same content != same Carriage
+same digest != same Carriage
+matching digest != occurrence
+matching digest != Provenance
+matching digest != Standing
 ```
 
-`State` named a single universal derived representation of everything Seed
-knows.
+A digest mechanically commits to a declared representation. It is not the
+content or the occurrence carrying that content.
 
-It erased boundaries. Current grammar derives a bounded representation from
-*relevant* evidence for an *exact* consumer purpose. `State` derived one
-representation from all evidence for no particular consumer. Rebuildability in
-active law is "bounded by the retained evidence, projection rules, and declared
-purpose."
-
-It also treated availability as a revision trigger: new evidence arriving
-caused a rebuild. Active law holds that "evidence becoming available does not
-by itself change any consumer assertion, standing, confidence, reliance, or
-current result. A revision requires a responsible consumer-local occurrence." A
-bounded representation rebuilt on every new event fails this clause regardless
-of its boundaries.
-
-Active law now mentions `State` only to deny it: "current standing is not a
-constitutional State object."
-
-`StateProjector` and `ProjectionStore` remain in the runtime as implementation
-testimony. They carry two observations: full replay becomes pathological at
-scale, and incremental derivation can preserve replay equivalence. Neither
-supports the noun.
-
-## Claim and Fact
+## Source shorthand
 
 ```text
-status          retired from constitutional grammar
-closest grammar Assertion · Standing
+material names source S
+!= S supplied or asserted A
 ```
 
-`Claim` is ordinary shorthand for the content being asserted when the speaker
-does not need to name its exact carrier. Seed preserves an Assertion with its
-identity and coordinates; equal content in two Assertions does not join them by
-identity.
+The latter is another Assertion requiring its own Evidence, occurrence, and
+Standing. `Testimony` and `Attribution` do not bridge that distinction.
 
-`Fact` is ordinary shorthand for an Assertion described as having established
-Standing. It is not a higher constitutional species. Evidence, Support,
-Authority, Scope, provenance, occurrence history, and Standing carry every
-distinction the word compressed.
+## Directional shorthand
 
-Runtime types named `Fact` remain implementation testimony until their storage,
-replay, selection, and read-model mechanics are decomposed. Their names do not
-establish Book grammar.
-
-## Examination
+`Producer`, `Consumer`, `Consumption`, `Uptake`, and `Handoff` narrate a
+direction through exact relations. They add no participant or stage.
 
 ```text
-status          retired  (removed from active law, 2026-08-03)
-closest grammar no single equivalent
+content ── Carriage ───────→ occurrence
+subject ── Participation ──→ Act occurrence
+Act occurrence ── Yield ───→ result
 ```
 
-The chapter now called Inquiry was `inquiry-and-examination` until Examination
-was removed. The word compressed several responsibilities — comparison,
-applicability determination, and relation establishment among them.
+## Assertion shorthand
 
-`examine` survives in active law as an ordinary verb, with *applicability* as
-the subject doing the examining.
+`Claim` describes asserted content. `Fact` describes an Assertion through its
+bounded Standing. Neither names a constitutional kind above Assertion.
 
-The noun is retired from the Book and retained as an inward directional view:
-see the [Responsibility spine](roots.md). The property that made it unusable as
-law — that it covers several responsibilities at once — is what makes it useful
-as ordinary English for a whole direction.
+## Representation shorthand
 
-## Consideration
+`Artifact`, `Projection`, `View`, `Formation`, and `Constructor` compress an
+exact representation-producing Act occurrence, its Yield, its result, and
+their carried coordinates. Callable code or matching shape supplies none of
+Responsibility, Authority, occurrence, Yield Evidence, or Standing.
 
-```text
-status          retired  (removed from active law, 2026-08-03)
-closest grammar Selection
-```
+## Provenance shorthand
 
-`consideration selection`, `selected-for-consideration standing`, `movement
-consideration`, and `candidate consideration` were removed. The surviving
-grammar is Selection: a responsible Selection act choosing from a bounded
-candidate set for an exact declared purpose.
+`Lineage` describes ordered source and occurrence references used to validate
+Provenance. The representation of that order is not Provenance, causation,
+Applicability, or Standing by identity.
 
-`consideration` survives twice as ordinary English, in a clause setting it
-against the real acts — membership creates visibility "for consideration, not
-selection, authorization, or resolution."
+## Orientation shorthand
 
-`consider` is an ordinary verb and names no Responsibility.
+`Purpose`, `Meaning`, `Capability`, `Gap`, `Goal`, and `Demand` summarize
+arrangements of exact Acts, relations, Scope, locality, Authority, Evidence,
+Constraints, Compare results, Assertions, and Standing. They add no coordinate
+when all those exact coordinates remain unchanged.
 
-## Lens
+## Population and candidate
 
-```text
-status          ordinary explanatory metaphor
-closest grammar View
-```
+`Population` does not name material walked by a Measurement. Name the exact
+bounded occurrences instead. `Candidate` belongs only to an exact Selection;
+observed material does not acquire Selection standing because code wishes to
+compare it.
 
-`Lens` capitalised does not appear in active law; only lowercase `lens` does.
-No independent Lens kind has been recovered.
+## Disposal rule
 
-The metaphor conveys the behaviour: same evidence, different lens, different
-bounded result. `View` is the preferred current translation. A lens is an
-apparatus that acts on what passes through it; a View is a bounded
-representation available to a particular consumer under particular coordinates,
-which is what the grammar describes.
-
-## Answer
-
-```text
-status          ordinary
-closest grammar no constitutional subject; a threshold word
-```
-
-Every substantive use of `answer` in active law limits what something does not
-amount to. No Answer act, formation, producer, occurrence, responsibility, or
-standing definition exists.
-
-`truth` behaves the same way: it appears throughout active law with explicit
-`!= truth` non-equivalences and no Truth kind. Both mark a threshold an
-occurrence may not claim to have reached.
-
-`lens output != answer` therefore establishes no second subject. It holds that
-forming a representation is not establishing that the representation satisfies
-the exact consumer purpose.
-
-## Composition
-
-```text
-status          ordinary
-closest grammar representation formation
-```
-
-`composition` describes how a particular representation was formed, not a
-separate occurrence. Active law places it in a list of verbs: a lens "exposes,
-selects, projects, or composes a bounded representation."
-
-Active law also lists the reification as an error — "treating the pipeline's
-projection-selection-composition call order as a universal constitutional
-sequence."
-
-## remembering
-
-```text
-status          ordinary  (capitalised only at sentence starts)
-closest grammar preserved evidence remaining available to a later consumer
-```
-
-Active law contains the sentence "Remembering is preservation of sufficient
-testimony or standing for later lawful recovery." Every capitalised occurrence
-is sentence-initial; every mid-sentence occurrence is lowercase, and the
-section heading is lowercase. The capital is orthographic.
-
-The underlying invariant holds independently: preserved material stays
-available for later lawful recovery, and a later occurrence consuming earlier
-material produces new occurrences rather than altering the old ones.
-
-## proposed input
-
-```text
-status          ordinary  (the phrase remains in active law)
-closest grammar input
-```
-
-`proposed` is ordinary grammatical qualification meaning *under consideration*.
-No Proposal responsibility, act, occurrence, or standing exists, and none is
-required.
-
-Neighbouring modifiers correspond to recovered acts — selected/Selection,
-support relation, Admission, source coordinates/source relation. `proposed`
-corresponds to none. The same construction recurs in unrelated clauses
-(`proposed act`, `proposed use`) with the same ordinary sense.
-
-## relation grammar
-
-```text
-status          never adopted
-closest grammar the constitutional dimensions applicable to the exact relation
-```
-
-Absent from active law. The phrase is the ordinary `<X> grammar` construction,
-which throughout active law means *the established grammar concerning X* — a
-medium through which responsibilities are expressed rather than a subject that
-is produced or owned. Active law uses that construction about twenty ways and
-gives none of them an owner.
-
-The phrase entered a report during a correction round whose stated subject was
-something else, and was cited as established vocabulary thereafter.
-
-## candidate equivalence
-
-```text
-status          never adopted
-closest grammar a candidate claim concerning the presented thing
-```
-
-Absent from active law. The phrase entered through the same correction round as
-`relation grammar`, as PESC orientation vocabulary with recorded source coordinates: a bounded
-proposed equivalence concerning a Presentation, explicitly not thereby true or
-established. PESC appears in no active-law chapter.
-
-## population
-
-```text
-status          never adopted (removed from active law 2026-08-13)
-closest grammar none established generally
-```
-
-Entered active law through this session's own `01.Standing.D.2`, in the clause
-title, on 2026-08-12. The body never used it and said the thing plainly:
-*not every preserved Assertion*. Removed the next day.
-
-It survives in `seed_runtime` as ordinary English for the bounded set of
-occurrences one act walked — 47 uses across the measurement modules. That is
-implementation vocabulary and carries no standing.
-
-It does not gloss to `support basis`. An earlier version of this entry said it
-did, which restates the definition `#2514` withdrew: what an act consumed is
-broader than the support its result stands on.
-
-It does not gloss to `bounded candidate set` either. That belongs to Selection
-— *"a selection act consumes a bounded candidate set plus a selection basis"* —
-and a measurement walking occurrences does not establish that they were
-candidates in a Selection. Resolving it there would give support-basis
-formation a Selection topology by borrowing the nearest established set-word,
-which is the move the word itself kept making.
-
-In a measurement it is ordinary English for the occurrences walked, which
-`01.Source:28` already reaches through *the bounded scope within which
-occurrences were counted*. Where an actual Selection is separately supported,
-`bounded candidate set` may apply to that Selection — not to this.
-
-The word returned three times, twice inside the changes removing it, because a
-compact representation of support must distinguish some material from other
-material in the same boundary, and that sentence needs a referent. **That the
-sentence needs one does not mean a noun must be minted for it**: the clause now
-says what the representation must distinguish, without naming the set.
-
-Recorded because the miss is instructive: the same session excised
-`assimilation` for being a noun in a title while the body said the thing
-plainly, named that pattern out loud, and then shipped an instance of it. Four
-readings walked past it, three of them hunting contamination. The word sounded
-native because it *was* native — this session put it there.
-
-## digest · commitment
-
-```text
-status          mechanical
-closest grammar none established for this mechanical role
-```
-
-Neither appears in active law. `digest` is used 71 times in `seed_runtime` and
-`commitment` 73.
-
-**What they name.** A *digest* is a short value computed from a longer one, so
-that the same input always gives the same value and different inputs almost
-never do. A *commitment* is a digest kept so someone later can check whether
-they have the same thing, without holding the original to compare against.
-
-**Mechanical.** Their mechanical role supports no constitutional clause. That
-is a statement about what they are doing here, not a prediction that no clause
-will ever concern them. An earlier version of this entry said the
-mechanism was "chosen, not recovered", which implied it was awaiting a clause,
-and then explained `commitment` using `digest` as though that word were
-settled. It is not; both are equally absent from active law. Both exist because
-comparing large ordered things on a real machine, without holding both,
-requires computing something smaller first. Preserving a support basis is
-constitutional; the arithmetic that makes a preserved one checkable is not.
-
-The distinction earns its place because the vocabulary hunt fails in two
-directions. A word can be contamination wearing a technical coat — `state`,
-`aggregation` and `candidate convergence` all were. A word can also be plumbing
-audited as though it were making a claim. Recording that *this mechanical role
-establishes no constitutional distinction* closes this audit question, which is
-a statement about what was examined and not a forecast.
-
-## occurrences examined
-
-```text
-status          never adopted
-closest grammar bounded scope (01.Source:28)
-```
-
-`examined` is absent from active law; `occurrences_examined` is the runtime's
-name for the size of the scope a measurement counted within. `01.Source:28`
-requires a recurrence assertion to disclose *the bounded scope within which
-occurrences were counted*; this field is that disclosure's measured size.
-
-Ordinary English for an established requirement, not a second coordinate.
+Do not preserve a deleted word merely because it was deleted. Keep a mapping
+only where it prevents loss of an exact distinction.
