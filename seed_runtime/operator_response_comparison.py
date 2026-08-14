@@ -215,7 +215,7 @@ def run_operator_response_comparison_and_identification(
             "coordinate_set": coordinate_set,
             "matched_coordinate": matched_coordinate,
             "outcome": comparison_outcome,
-            "purpose": (
+            "exact_act": (
                 "compare captured operator material with the emitted "
                 "presentation's exact response coordinates"
             ),
@@ -292,7 +292,7 @@ def run_operator_response_comparison_and_identification(
             "identified_alternative": identified_alternative,
             "basis": basis,
             "outcome": identification_outcome,
-            "purpose": (
+            "exact_act": (
                 "identify which presented alternative corresponds to the "
                 "captured material within the exact presentation"
             ),

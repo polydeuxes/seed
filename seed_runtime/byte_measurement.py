@@ -131,7 +131,7 @@ PAIR_MEASUREMENT_AUTHORITY = (
     "relation beyond the exact measured adjacency and order or significance; "
     "it establishes new bounded pair Standing and does not revise source Standing"
 )
-BYTE_PAIR_PURPOSE = (
+BYTE_PAIR_RESULT_BOUNDARY = (
     "establish exact counts of consecutive two-byte spans within the exact "
     "bounded source population"
 )
@@ -333,7 +333,7 @@ def _pair_input_applicability(
         "assigned_by_responsibility": BYTE_PAIR_MEASUREMENT_RESPONSIBILITY,
         "applicability_act_id": applicability_act_id,
         "applicability_act_occurrence_id": applicability_act_occurrence_id,
-        "purpose": BYTE_PAIR_PURPOSE,
+        "result_boundary": BYTE_PAIR_RESULT_BOUNDARY,
     }
     if act_workspace_id != scope["workspace_id"]:
         standing = "inapplicable"
@@ -381,7 +381,7 @@ def _pair_input_applicability(
         }
     else:
         standing = "applicable"
-        basis = "exact bounded source population matches this Act's declared input and purpose"
+        basis = "exact bounded source population matches this Act and result boundary"
         applicability_scope = scope
         source_provenance = payload["dimensions"]["source_provenance"]
         input_standing = payload["dimensions"]["standing"]
@@ -426,7 +426,7 @@ def _pair_input_applicability(
         "applicability_act_id": applicability_act_id,
         "applicability_act_occurrence_id": applicability_act_occurrence_id,
         "target_act": "declared adjacent-byte-pair Measurement",
-        "purpose": BYTE_PAIR_PURPOSE,
+        "result_boundary": BYTE_PAIR_RESULT_BOUNDARY,
         "act_context": {
             "workspace_id": act_workspace_id,
             "measurement_session_id": measurement_session_id,
@@ -1393,7 +1393,7 @@ def _record_pair_responsible_act_evidence(
             "responsibility_assignment_evidence": _seed_native_measurement_assignment(
                 measured
             ),
-            "purpose": BYTE_PAIR_PURPOSE,
+            "result_boundary": BYTE_PAIR_RESULT_BOUNDARY,
             "input_applicability_identity": measured.input_applicability["dimensions"][
                 "identity"
             ],
@@ -1608,7 +1608,7 @@ def get_recorded_pair_input_applicability(
         or payload.get("applicability_act_id")
         == payload.get("applicability_act_occurrence_id")
         or claim.get("target_act") != "declared adjacent-byte-pair Measurement"
-        or claim.get("purpose") != BYTE_PAIR_PURPOSE
+        or claim.get("result_boundary") != BYTE_PAIR_RESULT_BOUNDARY
         or payload.get("dimensions", {}).get("standing") != standing
         or payload.get("target_act_id") != claim.get("target_act_id")
         or payload.get("input_assertion_ref") != claim.get("input_assertion_ref")
@@ -1761,7 +1761,7 @@ def _validate_recorded_pair_input_applicability(
         "applicability_act_occurrence_id": claim.get(
             "applicability_act_occurrence_id"
         ),
-        "purpose": BYTE_PAIR_PURPOSE,
+        "result_boundary": BYTE_PAIR_RESULT_BOUNDARY,
     }
     act_context = {
         "workspace_id": event.workspace_id,
@@ -1799,7 +1799,7 @@ def _validate_recorded_pair_input_applicability(
             "applicability_act_occurrence_id"
         ),
         "target_act": "declared adjacent-byte-pair Measurement",
-        "purpose": BYTE_PAIR_PURPOSE,
+        "result_boundary": BYTE_PAIR_RESULT_BOUNDARY,
         "act_context": act_context,
         "scope_locality": scope,
         "input_standing": source_payload["dimensions"]["standing"],
@@ -1808,7 +1808,7 @@ def _validate_recorded_pair_input_applicability(
         "input_limits": source_payload["forbidden_inferences"],
         "conflicts": [],
         "determination_basis": (
-            "exact bounded source population matches this Act's declared input and purpose"
+            "exact bounded source population matches this Act and result boundary"
         ),
         "coordinate_treatment": {
             "known_loss": {"carried": False, "treatment": "not represented by input"},
@@ -1936,7 +1936,7 @@ def assertions_of_recorded_adjacent_byte_pair_measurement(
         "responsibility_assignment_evidence": payload[
             "responsibility_assignment_evidence"
         ],
-        "purpose": BYTE_PAIR_PURPOSE,
+        "result_boundary": BYTE_PAIR_RESULT_BOUNDARY,
         "input_applicability_identity": applicability_identity,
         "result_commitment": production_commitment(
             BYTE_PAIR_MEASUREMENT_CONVENTION, produced

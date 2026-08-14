@@ -270,7 +270,7 @@ def test_alternatives_carry_complete_coordinates_and_provenance_evidence():
     standing = _standing(ledger)
     presentation = list(standing["presentations"].values())[-1]
     assert presentation is not None
-    assert presentation["purpose"]
+    assert presentation["formation_result"]
     assert presentation["scope"] == "workspace:w;session:s"
     # provenance is the consumed Standing's as-of boundary; None here is the
     # recorded absence of prior session events, not a fabricated Unknown.
@@ -300,8 +300,8 @@ def test_alternatives_carry_complete_coordinates_and_provenance_evidence():
         assert source["meaning"]
         assert source["reference"]
         representation = alternative["representation"]
-        assert representation["purpose"]
-        purposes.add(representation["purpose"])
+        assert representation["formation_result"]
+        purposes.add(representation["formation_result"])
         assert representation["scope"] == "workspace:w;session:s"
         assert representation["provenance"] == source["reference"]
         assert representation["evidence_event_ids"] == []

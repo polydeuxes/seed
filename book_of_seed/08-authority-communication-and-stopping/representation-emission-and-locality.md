@@ -33,6 +33,6 @@ Authority does not move merely because material moves.
 - operator testimony != Seed truth
 
 ## Related chapters
-- [Constitutional kinds and artifact standing](../01-grammar-and-standing/constitutional-kinds-and-artifact-standing.md)
+- [Constitutional standing](../01-grammar-and-standing/constitutional-standing.md)
 - [Authority scope](authority-scope.md)
 - [Events, facts, and standing](../06-standing-and-projection/events-facts-and-standing.md)

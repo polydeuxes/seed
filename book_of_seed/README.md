@@ -59,9 +59,9 @@ The Authority coordinate may be positively established, conflicting, responsibly
 
 Identifies the evidence supporting the exact responsibility, act, occurrence, result, standing, or relation claimed. Evidence does not establish Authority, Warrant, occurrence, or standing by identity.
 
-#### Purpose, scope, and locality
+#### Scope and locality
 
-Preserve the exact purpose and bounded extent within which the responsibility and its claims apply. They do not establish Authority.
+Preserve the bounded extent and place within which the Responsibility, exact Act, subject, and result apply. They do not establish Authority.
 
 ### Conditional input branches
 
@@ -102,9 +102,9 @@ Warrant
 != Authority
 ```
 
-#### Warrant exact Act and reliance purpose
+#### Warrant exact Act and reliance boundary
 
-Where the exact Warrant has an established exact Act, this branch identifies that exact Act and the purpose for which the Warrant may be relied upon. Warrant production does not create an exact Act, reliance purpose, or later reliance by identity.
+Where the exact Warrant has an established exact Act, this branch identifies that Act and the exact subject/result relation for which the Warrant may be relied upon. Warrant production does not create the Act, that reliance relation, or later reliance by identity.
 
 ### Act-occurrence and non-occurrence branches
 

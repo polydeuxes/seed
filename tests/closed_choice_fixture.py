@@ -6,7 +6,7 @@ CLOSED_CHOICE_FIXTURE_SOURCES = (
     {
         "role": "presentation-navigation",
         "rendered_label": "Show preserved ingress",
-        "representation_purpose": "represent navigation to preserved ingress",
+        "representation_result_boundary": "represent navigation to preserved ingress",
         "represented_source": {
             "identity": "source:operator-ingress-navigation",
             "kind": "operator-ingress-navigation",
@@ -18,7 +18,7 @@ CLOSED_CHOICE_FIXTURE_SOURCES = (
     {
         "role": "presentation-navigation",
         "rendered_label": "Show current Standing",
-        "representation_purpose": (
+        "representation_result_boundary": (
             "represent navigation to the current Standing View"
         ),
         "represented_source": {
@@ -34,7 +34,7 @@ CLOSED_CHOICE_FIXTURE_SOURCES = (
     {
         "role": "presentation-navigation",
         "rendered_label": "Show recorded exchange",
-        "representation_purpose": "represent navigation to recorded exchange",
+        "representation_result_boundary": "represent navigation to recorded exchange",
         "represented_source": {
             "identity": "source:operator-exchange-navigation",
             "kind": "operator-exchange-navigation",

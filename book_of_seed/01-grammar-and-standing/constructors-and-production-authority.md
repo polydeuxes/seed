@@ -28,6 +28,6 @@ A constructor consumes values or representations and produces another representa
 - Treating a directly constructed selection artifact as proof that the responsible occurrence selected from the same candidate universe the exact Act later receives.
 
 ## Related chapters
-- [Constitutional kinds and artifact standing](constitutional-kinds-and-artifact-standing.md)
+- [Constitutional standing](constitutional-standing.md)
 - [Selection and authorization](../03-goals-and-advancement/selection-and-authorization.md)
 - [Authority scope](../08-authority-communication-and-stopping/authority-scope.md)

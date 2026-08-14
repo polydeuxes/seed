@@ -1,4 +1,4 @@
-# Constitutional Kinds and Artifact Standing
+# Constitutional Standing
 
 ## Constitutional subject
 The difference between representing a constitutional subject and possessing the standing of that subject.

@@ -181,7 +181,7 @@ def advance_operator_session_standing(
                 "presentation_id": payload["presentation_ref"],
                 "formed_event_id": event.id,
                 "emitted_event_id": None,
-                "purpose": payload["purpose"],
+                "formation_result": payload["formation_result"],
                 "alternatives": payload["alternatives"],
                 "coordinate_bindings": payload["coordinate_bindings"],
                 "session_standing_as_of_event_id": payload[
@@ -633,9 +633,9 @@ def advance_operator_session_standing(
                     "source_attribution",
                 ),
                 (
-                    payload["representation_purpose"],
-                    recorded_representation["purpose"],
-                    "representation_purpose",
+                    payload["representation_result_boundary"],
+                    recorded_representation["formation_result"],
+                    "representation_result_boundary",
                 ),
                 (
                     payload["representation_scope"],
@@ -750,7 +750,9 @@ def advance_operator_session_standing(
                 "proposition": payload["proposition"],
                 "source_attribution": payload["source_attribution"],
                 "source_reference": payload["source_reference"],
-                "representation_purpose": payload["representation_purpose"],
+                "representation_result_boundary": payload[
+                    "representation_result_boundary"
+                ],
                 "representation_scope": payload["representation_scope"],
                 "warrant_basis": reconstructed_relation_standing["warrant_basis"],
                 "authority_separation": authority_separation,

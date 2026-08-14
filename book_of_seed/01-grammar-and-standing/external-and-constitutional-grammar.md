@@ -37,22 +37,21 @@ This concerns identity, not content. Two occurrences preserving identical materi
 ### 01.External.F — Candidate production remains attributed
 A candidate must preserve each applicable responsible occurrence, source-role, formation-occurrence, scope, authority, and provenance dimension where known. Where a dimension is unresolved, its Unknown or unresolved standing must remain explicit. A Seed-produced candidate, operator-supplied candidate testimony, and external-source candidate or rule testimony may therefore have different production standing without closing the possible source roles into an exhaustive taxonomy. Consuming, comparing, transporting, or re-presenting candidate material does not relocate its production or establish a missing formation occurrence. An Unknown responsible occurrence is not an invented responsible occurrence; an Unknown formation occurrence does not mean that no candidate exists; and Unknown provenance must not be silently supplied.
 
-### 01.External.G — External material may propose meaning
-External material may carry or propose a meaning assertion without thereby warranting a Seed-native meaning relation. Source-attributed representation formation preserves the external source, attribution, scope, provenance, authority limits, known loss, conflicts, and **Unknowns** applicable to that assertion; it does not turn carriage, field adjacency, array inclusion, labels, reference resolution, artifact shape, or repetition into relation warrant. Any Seed-native warrant remains a separate bounded relation-standing responsibility under [Constitutional kinds and artifact standing](constitutional-kinds-and-artifact-standing.md).
+### 01.External.G — External material may propose a relation
+External material may assert that X represents or identifies Y. Source-attributed formation preserves the source, attribution, Scope, provenance, Authority limits, known loss, conflicts, and **Unknowns**; carriage, adjacency, labels, reference resolution, representation shape, or repetition do not warrant the relation. Any Seed-native Warrant requires a separate responsible relation-standing occurrence under [Constitutional standing](constitutional-standing.md).
 
 ## Important distinctions
 - source-attributed representation for use != Seed-native grammar
 - external grammar != constitutional grammar
 - Fidelity production != Fidelity consumption
-- Fidelity-shaped artifact != lawfully produced Fidelity finding
+- Fidelity-shaped representation != lawfully produced Fidelity finding
 - lexical recurrence != constitutional authority
 - attributed representation != adopted law
 - attachment != adoption
 - provider confidence != repository authority
-- measurement != structural, grammatical, or semantic meaning
+- measurement != a warranted representation or identification relation
 - candidate carriage or consumption != candidate production
-- material carries or proposes meaning != meaning relation warranted
-- external material carries or proposes meaning != Seed-native meaning relation warranted
+- carried relation assertion != warranted relation
 
 ## Representative repository anchors
 - `seed_runtime/candidate_external_grammar.py::CandidateExternalGrammarSet`
@@ -62,5 +61,5 @@ External material may carry or propose a meaning assertion without thereby warra
 - Promoting frequently used audit vocabulary without reachability or authority evidence.
 
 ## Related chapters
-- [Constitutional kinds and artifact standing](constitutional-kinds-and-artifact-standing.md)
+- [Constitutional standing](constitutional-standing.md)
 - [Testimony and established fact](../05-evidence-and-knowledge/testimony-and-established-fact.md)

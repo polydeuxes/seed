@@ -168,8 +168,8 @@ def test_compare_and_identification_are_distinct_recorded_results():
     assert comparison_event.kind == "operator.exchange.comparison_occurred"
     assert identification_event.kind == "operator.exchange.identification_occurred"
     assert identification_event.payload["comparison_event_id"] == comparison_event.id
-    assert comparison_event.payload["purpose"] != (
-        identification_event.payload["purpose"]
+    assert comparison_event.payload["exact_act"] != (
+        identification_event.payload["exact_act"]
     )
     assert comparison_event.payload["dimensions"]["responsibility"] != (
         identification_event.payload["dimensions"]["responsibility"]

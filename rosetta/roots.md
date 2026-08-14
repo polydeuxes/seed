@@ -111,6 +111,43 @@ references. The representation helps an exact Act validate claimed provenance;
 it establishes no separate subject, Responsibility, Act, Standing, causation,
 production occurrence, or Applicability.
 
+## Purpose
+
+`Purpose` is ordinary shorthand for why an exact Responsibility/Act has its
+particular subject, result boundary, Scope, locality, Authority, and
+Constraints. It adds no coordinate when those remain unchanged.
+
+## Meaning
+
+`Meaning` is ordinary shorthand for an exact warranted relation such as X
+representing or identifying Y. The relation carries its own participants,
+Assertion, Evidence, Authority, Scope, locality, occurrence, limits, and
+Standing; the shorthand adds no relation kind.
+
+## Capability, Gap, Goal, and Demand
+
+`Capability` glosses exact Responsibility/Act/Authority/Constraint and Evidence
+about what may occur. `Gap` glosses a bounded Compare or distinction between
+current Standing and an exact reference condition. `Goal` glosses
+locality-bound material or Standing concerning a desired result. `Demand`
+glosses that an exact Responsibility/Act/result boundary remains unmet. None
+adds an object, occurrence, or Standing by name.
+
+## Artifact
+
+`Artifact` is ordinary shorthand for a durably represented result, Assertion,
+record, or other material. Its exact kind, occurrence, Evidence, Standing, and
+preservation boundary must be named instead.
+
+## Projection and View
+
+`Projection` and `View` are ordinary lenses over bounded formation toward
+emission. In runtime they may also name mechanical replay, selection, caching,
+or formatting. Seed grammar names the source material, formation
+Responsibility/Act/occurrence, exact result boundary, preserved loss and
+limits, representation, emission occurrence, and later Applicability. Neither
+lens adds a constitutional subject.
+
 ---
 
 ## Presentation

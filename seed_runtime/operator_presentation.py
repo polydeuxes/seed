@@ -71,7 +71,7 @@ def form_operator_presentation(
                 # boundary; Presentation-level coordinates do not transfer
                 # to it automatically.
                 "representation": {
-                    "purpose": source["representation_purpose"],
+                    "formation_result": source["representation_result_boundary"],
                     "scope": scope,
                     "provenance": source["represented_source"]["reference"],
                     # No separately recorded source-evidence events exist
@@ -88,7 +88,7 @@ def form_operator_presentation(
             }
         )
         coordinate_bindings[coordinate] = alternative_id
-    purpose = "present the current bounded session Standing"
+    formation_result = "bounded representation of current session Standing"
     content = "bounded Presentation of current session Standing"
     occurrence = "Presentation formation durably recorded"
     known_loss: list[str] = []
@@ -101,7 +101,7 @@ def form_operator_presentation(
             f"{len(alternatives)} alternatives, roles, response-coordinate "
             "bindings, and represented provenance occurrences durably recorded"
         )
-        purpose += " with attributed bounded alternatives"
+        formation_result += " with attributed bounded alternatives"
         known_loss.append(
             "rendered label compresses represented candidate meaning"
         )
@@ -138,7 +138,7 @@ def form_operator_presentation(
                 scope=scope,
                 occurrence=occurrence,
             ),
-            "purpose": purpose,
+            "formation_result": formation_result,
             "alternatives": alternatives,
             "coordinate_bindings": coordinate_bindings,
             "session_standing_as_of_event_id": session_standing["as_of_event_id"],
@@ -155,7 +155,7 @@ def form_operator_presentation(
         "presentation_id": presentation_id,
         "workspace_id": workspace_id,
         "session_id": session_id,
-        "purpose": purpose,
+        "formation_result": formation_result,
         "alternatives": alternatives,
         "coordinate_bindings": coordinate_bindings,
         "formed_event_id": formed_event.id,

@@ -54,7 +54,6 @@ This establishes no further standing. A locality is not a constitutional subject
 
 ## Related chapters
 - [Recording and knowledge extraction](../05-evidence-and-knowledge/recording-and-knowledge-extraction.md)
-- [Projection and current standing](projection-and-current-standing.md)
 - [Testimony and established fact](../05-evidence-and-knowledge/testimony-and-established-fact.md)
 
 ## Temporal preservation, replay, and projection amendment 001

@@ -393,7 +393,7 @@ def test_pair_count_and_recurrence_are_separate_results():
     )
     assert applicability["dimensions"]["standing"] == "applicable"
     assert applicability["input_assertion_ref"] == event.payload["source_assertion_ref"]
-    assert applicability["purpose"]
+    assert applicability["result_boundary"]
     assert applicability["target_act"] == "declared adjacent-byte-pair Measurement"
     assert applicability["act_context"] == {
         "workspace_id": "w",
@@ -511,7 +511,7 @@ def test_pair_recovery_refuses_invented_input_applicability():
         workspace_id="w",
         recording_session_id="measurement",
     )
-    event.payload["input_applicability"]["purpose"] = "some other use"
+    event.payload["input_applicability"]["result_boundary"] = "some other use"
     evidence = ledger.get(event.payload["production_evidence_id"])
     evidence.payload["production_commitment"] = production_commitment(
         BYTE_PAIR_MEASUREMENT_CONVENTION,
