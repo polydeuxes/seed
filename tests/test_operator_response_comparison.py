@@ -241,7 +241,7 @@ def _record_malformed_representation(ledger, mutate_bindings, *, workspace="w", 
 
 def test_recorded_broken_binding_does_not_identify_an_alternative():
     # Recorded binding maps the matched coordinate to an alternative outside
-    # this exact representation: no lawful identification, and no invented A.
+    # this exact representation: no lawful identification, and no unsupported A.
     ledger = EventLedger()
     inapplicable = _record_malformed_representation(
         ledger, lambda bindings: {**bindings, "2": "represented_alternative_foreign"}

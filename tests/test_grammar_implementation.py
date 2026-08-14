@@ -272,7 +272,7 @@ def _applicability_witness(bundle: dict) -> dict[str, str]:
         "locality": EXACT if applicability.get("act_context") else MISSING,
         "Authority": EXACT if applicability["dimensions"].get("authority") else MISSING,
         # The relation endpoints already identify the exact input role and the
-        # exact addressed-Act role; no extra participant noun is invented.
+        # exact addressed-Act role; no extra participant noun is supplied.
         "participants_and_roles": EXACT if input_edge and act_edge else MISSING,
         "provenance": (
             EXACT

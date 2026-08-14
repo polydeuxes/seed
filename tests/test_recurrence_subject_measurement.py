@@ -159,10 +159,10 @@ def test_validation_refuses_a_coordinate_value_that_disagrees_with_its_source():
     )
     event = ledger.list_session("w", "coordinate-results")[0]
     assertion = event.payload["assertions"][0]
-    assertion["dimensions"]["content"] = {"exact_value": "invented"}
+    assertion["dimensions"]["content"] = {"exact_value": "unsupported"}
     assertion["dimensions"]["identity"] = _assertion_identity(
         coordinate=assertion["assertion_subject"]["coordinate"],
-        value="invented",
+        value="unsupported",
         scope=assertion["assertion_scope"],
     )
 

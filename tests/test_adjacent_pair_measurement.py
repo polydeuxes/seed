@@ -1087,7 +1087,7 @@ def test_an_unknown_form_is_refused_before_any_occurrence_is_visited():
     ]
     index = AdjacentPairMeasurementIndex(events)
     with pytest.raises(PreservedMaterialMeasurementError, match="unknown adjacent-pair form"):
-        index._answering_contexts(AdjacentPair(left="the", right="cat"), "invented")
+        index._answering_contexts(AdjacentPair(left="the", right="cat"), "unsupported")
 
 
 def test_a_support_binding_is_formed_over_its_inputs_not_paired_with_one():

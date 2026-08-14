@@ -119,7 +119,7 @@ def test_recorded_results_are_occurrence_bound_and_ledger_addressable():
     )
 
 
-def test_validation_refuses_a_self_consistent_invented_yield_set():
+def test_validation_refuses_a_self_consistent_forged_yield_set():
     ledger = _coordinate_inputs()
     record_coordinate_assertion_count_layer(
         ledger,
@@ -177,7 +177,7 @@ def test_validation_refuses_self_consistent_content_not_carried_by_source():
     yield_set, count, *rest = event.payload["assertions"]
     for assertion in event.payload["assertions"]:
         assertion["assertion_subject"] = deepcopy(assertion["assertion_subject"])
-        assertion["assertion_subject"]["exact_coordinate_value"] = "invented"
+        assertion["assertion_subject"]["exact_coordinate_value"] = "unsupported"
     set_id = _assertion_identity(
         result="exact_yield_set",
         subject=yield_set["assertion_subject"],

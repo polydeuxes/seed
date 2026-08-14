@@ -252,7 +252,7 @@ def test_a_finding_naming_no_yield_evidence_preserves_erasure(recorded):
     ]
 
 
-def test_a_content_mismatch_does_not_invent_which_crossing_caused_it(
+def test_a_content_mismatch_does_not_assert_which_crossing_caused_it(
     recorded,
 ):
     ledger, event = recorded

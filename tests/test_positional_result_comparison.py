@@ -542,7 +542,7 @@ def test_recording_recomputes_compare_from_occurrence_bound_inputs(comparable):
         )
 
 
-def test_validation_refuses_a_self_consistent_invented_compare_result(comparable):
+def test_validation_refuses_a_self_consistent_forged_compare_result(comparable):
     ledger, left, right = comparable
     event = record_positional_result_comparison(
         ledger,

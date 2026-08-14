@@ -135,7 +135,7 @@ def test_assertion_fidelity_responsibility_is_distinct_from_its_yield(compared):
     assert "cohort" not in str(event.payload).lower()
 
 
-def test_a_measured_assertion_does_not_invent_its_next_question(compared):
+def test_a_measured_assertion_does_not_supply_its_next_question(compared):
     """Local fidelity Responsibility does not establish continuation by identity."""
     event = record_measured_count(
         compared, workspace_id="w", session_id="s1",
@@ -536,7 +536,7 @@ def test_recorded_comparison_assertion_identity_is_recomputed(compared):
         assertions_of_recorded_assertion_comparison(event)
 
 
-def test_validation_refuses_a_self_consistent_invented_compare_result(compared):
+def test_validation_refuses_a_self_consistent_forged_compare_result(compared):
     finding = _by_right(compared)["word"]
     first = record_measured_count(
         compared, workspace_id="w", session_id="s1", finding=finding
@@ -638,7 +638,7 @@ def test_recording_refuses_a_comparison_not_established_from_its_inputs(compared
     comparison = compare_assertion_yields(
         compared, (left.reference, right.reference)
     )
-    invented = replace(
+    forged = replace(
         comparison,
         distinctions=(
             replace(comparison.distinctions[0], same=not comparison.distinctions[0].same),
@@ -648,7 +648,7 @@ def test_recording_refuses_a_comparison_not_established_from_its_inputs(compared
 
     with pytest.raises(AssertionComparisonError, match="does not match"):
         record_assertion_yield_comparison(
-            compared, workspace_id="w", session_id="s1", comparison=invented
+            compared, workspace_id="w", session_id="s1", comparison=forged
         )
 
 

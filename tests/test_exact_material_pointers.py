@@ -303,7 +303,7 @@ def test_a_serialized_account_is_refused_when_it_cannot_be_validated():
     for value in ("x", 7, None, []):
         with pytest.raises(ExactMaterialPointerError, match="each part must be an object"):
             ExactMaterialPointers.from_json_dict(dict(carried, parts=[value]))
-    for kind in ("invented", None, 7, "Literal"):
+    for kind in ("unsupported", None, 7, "Literal"):
         with pytest.raises(ExactMaterialPointerError, match="unknown exact-material part kind"):
             ExactMaterialPointers.from_json_dict(dict(carried, parts=[{"kind": kind}]))
     with pytest.raises(ExactMaterialPointerError, match="unknown exact-material part kind"):

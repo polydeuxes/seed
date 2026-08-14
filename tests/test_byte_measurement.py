@@ -177,12 +177,12 @@ def test_recorded_results_replay_the_complete_bounded_source_read():
     )
 
     detached_payload = count.payload
-    detached_payload["dimensions"]["standing"] = "invented"
+    detached_payload["dimensions"]["standing"] = "unsupported"
     assert count.payload["dimensions"]["standing"] == "measured"
 
     detached_refs = count.support_assertion_refs
-    detached_refs[0]["assertion_id"] = "invented"
-    assert count.support_assertion_refs[0]["assertion_id"] != "invented"
+    detached_refs[0]["assertion_id"] = "unsupported"
+    assert count.support_assertion_refs[0]["assertion_id"] != "unsupported"
 
     # Reconstruction preserves exact durable JSON kinds. It does not protect the
     # result by transmuting lists to tuples or dicts to proxy objects.
@@ -434,7 +434,7 @@ def test_recorded_pair_results_replay_the_complete_bounded_source_read():
     }
     count = next(item for item in reconstructed if item.pair_hex == "7461" and item.result == "count")
     detached = count.payload
-    detached["dimensions"]["standing"] = "invented"
+    detached["dimensions"]["standing"] = "unsupported"
     assert count.payload["dimensions"]["standing"] == "measured"
     assert count.support_assertion_refs[0]["recorded_occurrence_id"] == source.id
     movement = ledger.get(event.payload["source_movement_event_id"])
@@ -510,7 +510,7 @@ def test_pair_validation_does_not_perform_the_pair_measurement_again(monkeypatch
     assert assertions_of_recorded_adjacent_byte_pair_measurement(ledger, event.id)
 
 
-def test_pair_validation_refuses_invented_input_applicability():
+def test_pair_validation_refuses_unsupported_input_applicability():
     ledger = _ledger("tatatata\n")
     source = _byte_source(ledger)
     event = record_adjacent_byte_pair_count_layer(
