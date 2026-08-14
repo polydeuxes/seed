@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import os
 from pathlib import Path
 import sys
 
@@ -8,9 +9,11 @@ import pytest
 
 from seed_runtime.grammar_change import (
     GrammarChangeError,
+    apply_grammar_creation,
     apply_grammar_change,
     observe_grammar,
     propose_grammar_change,
+    propose_grammar_creation,
     run_grammar_check,
 )
 
@@ -83,3 +86,82 @@ def test_malformed_proposed_grammar_is_refused_before_source_changes(tmp_path, m
     with pytest.raises(GrammarChangeError, match="UTF-8 JSON object"):
         propose_grammar_change(current, material)
     assert (root / current.relative_path).read_bytes() == current.material
+
+
+def test_an_external_repository_can_acquire_its_first_machine_grammar(tmp_path):
+    root = tmp_path / "other-repository"
+    (root / "machine").mkdir(parents=True)
+    (root / "check.py").write_text(
+        "import json\n"
+        "g=json.load(open('machine/grammar.json', encoding='utf-8'))\n"
+        "raise SystemExit(0 if g.get('checks') == [['python', '-m', 'pytest']] else 8)\n",
+        encoding="utf-8",
+    )
+    proposed = b'{"checks": [["python", "-m", "pytest"]]}\n'
+
+    creation = propose_grammar_creation(
+        root,
+        proposed,
+        relative_path="machine/grammar.json",
+    )
+    assert not (root / "machine/grammar.json").exists()
+    assert creation.difference.startswith("--- /dev/null\n+++ b/machine/grammar.json\n")
+
+    observed = apply_grammar_creation(root, creation)
+    checked = run_grammar_check(root, (sys.executable, "check.py"))
+    assert observed.material == proposed
+    assert checked.returncode == 0
+
+
+def test_grammar_creation_never_overwrites_a_path_that_appeared_later(tmp_path):
+    root = tmp_path / "other-repository"
+    (root / "machine").mkdir(parents=True)
+    creation = propose_grammar_creation(
+        root,
+        b'{"checks": []}\n',
+        relative_path="machine/grammar.json",
+    )
+    destination = root / "machine/grammar.json"
+    destination.write_bytes(b'{"newer": true}\n')
+
+    with pytest.raises(GrammarChangeError, match="already exists"):
+        apply_grammar_creation(root, creation)
+    assert destination.read_bytes() == b'{"newer": true}\n'
+
+
+def test_grammar_creation_closes_the_last_moment_overwrite_race(
+    tmp_path, monkeypatch
+):
+    root = tmp_path / "other-repository"
+    (root / "machine").mkdir(parents=True)
+    creation = propose_grammar_creation(
+        root,
+        b'{"checks": []}\n',
+        relative_path="machine/grammar.json",
+    )
+    destination = root / "machine/grammar.json"
+    real_link = os.link
+
+    def competing_creation(source, target, **kwargs):
+        destination.write_bytes(b'{"competing": true}\n')
+        return real_link(source, target, **kwargs)
+
+    monkeypatch.setattr("seed_runtime.grammar_change.os.link", competing_creation)
+    with pytest.raises(GrammarChangeError, match="appeared after observation"):
+        apply_grammar_creation(root, creation)
+    assert destination.read_bytes() == b'{"competing": true}\n'
+
+
+def test_grammar_creation_refuses_a_symbolic_link_parent(tmp_path):
+    root = tmp_path / "other-repository"
+    outside = tmp_path / "outside"
+    root.mkdir()
+    outside.mkdir()
+    (root / "machine").symlink_to(outside, target_is_directory=True)
+
+    with pytest.raises(GrammarChangeError, match="symbolic link"):
+        propose_grammar_creation(
+            root,
+            b'{"checks": []}\n',
+            relative_path="machine/grammar.json",
+        )
