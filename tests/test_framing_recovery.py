@@ -77,3 +77,39 @@ def test_no_module_level_name_states_a_recovered_framing():
 
     assert not hasattr(harness, "recovered_width")
     assert not [name for name in dir(harness) if "sample_width" in name]
+
+
+def test_a_stride_does_not_say_where_a_group_begins():
+    """The same material read from byte one gives the same classes, exchanged.
+
+    A partition starts somewhere, and starting at byte zero is this harness's
+    choice. Positional structure at some stride is compatible with either
+    phase, so it does not establish a boundary.
+    """
+
+    raw = block(100)
+    at_zero = position_support(raw, 2, phase=0)
+    at_one = position_support(raw, 2, phase=1)
+
+    assert at_zero[0] == at_one[1]
+    assert at_zero[1] == at_one[0]
+    assert at_zero[0] != at_zero[1]
+
+
+def test_the_exchange_is_exact_rather_than_approximate():
+    raw = block(100)
+    at_zero = position_support(raw, 2, phase=0)
+    at_one = position_support(raw, 2, phase=1)
+
+    assert not at_zero[0] ^ at_one[1]
+    assert not at_zero[1] ^ at_one[0]
+    assert [len(v) for v in at_zero.values()] == [201, 2]
+    assert [len(v) for v in at_one.values()] == [2, 201]
+
+
+def test_phase_defaults_to_a_choice_and_not_a_finding():
+    """Reading from byte zero is what the default does, and only that."""
+
+    raw = block(100)
+    assert position_support(raw, 2) == position_support(raw, 2, phase=0)
+    assert position_support(raw, 2) != position_support(raw, 2, phase=1)

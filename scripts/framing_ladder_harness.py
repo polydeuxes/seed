@@ -31,15 +31,22 @@ selects nothing. An earlier revision used a fourfold ratio, which chose stride
 2 for no reason the material supplies; that threshold is withdrawn rather than
 replaced by a different one.
 
+**Nor does a stride say where a group begins.** Read from byte zero the two
+classes at stride 2 are 201 values and 2; read from byte one they are 2 and
+201, and the sets exchange exactly. Phase is a separate coordinate, and the
+partition's start is a choice this harness makes rather than a finding.
+
 What a rule would have to distinguish, once warranted:
 
 ```text
   candidate stride     its offsets' supports stand in some exact relation
   primitive candidate  a candidate stride no proper divisor of which is one
+  phase                which offset a group begins at
+  boundary             that a group is bounded at all
 ```
 
 The second is what would separate stride 2 from stride 4, which agrees with it
-because it is two of them. Neither is established.
+because it is two of them. None is established.
 
 The harness may still testify to how it constructed a specimen. That testimony
 is attributed, and is not what makes the framing usable.
@@ -67,20 +74,28 @@ def block(amplitude: int) -> bytes:
     )
 
 
-def position_diversity(raw: bytes, width: int) -> dict[int, int]:
+def position_diversity(raw: bytes, width: int, phase: int = 0) -> dict[int, int]:
     """How many distinct byte values each offset carries under this stride."""
 
     return {
         offset: len(support)
-        for offset, support in position_support(raw, width).items()
+        for offset, support in position_support(raw, width, phase).items()
     }
 
 
-def position_support(raw: bytes, stride: int) -> dict[int, frozenset[int]]:
-    """The exact set of byte values observed at each offset under this stride."""
+def position_support(
+    raw: bytes, stride: int, phase: int = 0
+) -> dict[int, frozenset[int]]:
+    """The exact set of byte values at each offset, under a stride and a phase.
 
+    A partition begins somewhere. Reading it from byte zero is a choice, and
+    the same material read from byte one yields the same classes exchanged, so
+    a positional structure at some stride does not say where a group starts.
+    """
+
+    body = raw[phase:]
     return {
-        offset: frozenset(raw[i] for i in range(offset, len(raw), stride))
+        offset: frozenset(body[i] for i in range(offset, len(body), stride))
         for offset in range(stride)
     }
 
