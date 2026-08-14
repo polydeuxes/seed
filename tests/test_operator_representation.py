@@ -22,6 +22,10 @@ _EMISSION_EDGE_EVIDENCE_KINDS = (
     "operator.representation.emission_carriage_evidenced",
     "operator.yield.evidence_recorded",
 )
+_REPRESENTATION_EDGE_EVIDENCE_KINDS = (
+    "operator.representation.act_evidenced",
+    "operator.yield.evidence_recorded",
+)
 
 
 def _run_console(text, *, workspace="w", session="s"):
@@ -84,11 +88,13 @@ def test_console_forms_c0_before_first_ingress_and_preserves_provenance_only():
     # Identification follows.
     kinds = [event.kind for event in ledger.list("w")]
     assert kinds == [
+        *_REPRESENTATION_EDGE_EVIDENCE_KINDS,
         "operator.representation.recorded",
         "operator.representation.emission_attempted",
         *_EMISSION_EDGE_EVIDENCE_KINDS,
         "operator.representation.emitted",
         *_INGRESS_KINDS,
+        *_REPRESENTATION_EDGE_EVIDENCE_KINDS,
         "operator.representation.recorded",
         "operator.representation.emission_attempted",
         *_EMISSION_EDGE_EVIDENCE_KINDS,
@@ -96,7 +102,11 @@ def test_console_forms_c0_before_first_ingress_and_preserves_provenance_only():
     ]
     assert "operator.exchange.comparison_occurred" not in kinds
     assert "operator.exchange.identification_occurred" not in kinds
-    c0_formed = ledger.list("w")[0]
+    c0_formed = next(
+        event
+        for event in ledger.list("w")
+        if event.kind == "operator.representation.recorded"
+    )
     c0_emitted = next(
         event
         for event in ledger.list("w")
@@ -237,11 +247,13 @@ def test_console_presents_standing_only_across_an_ingress():
 
     kinds = [event.kind for event in ledger.list("w")]
     assert kinds == [
+        *_REPRESENTATION_EDGE_EVIDENCE_KINDS,
         "operator.representation.recorded",
         "operator.representation.emission_attempted",
         *_EMISSION_EDGE_EVIDENCE_KINDS,
         "operator.representation.emitted",
         *_INGRESS_KINDS,
+        *_REPRESENTATION_EDGE_EVIDENCE_KINDS,
         "operator.representation.recorded",
         "operator.representation.emission_attempted",
         *_EMISSION_EDGE_EVIDENCE_KINDS,
@@ -430,6 +442,7 @@ def test_first_interaction_attaches_no_representation_to_the_capture():
     kinds = {event.kind for event in ledger.list("w")}
     assert kinds == {
         *_INGRESS_KINDS,
+        "operator.representation.act_evidenced",
         "operator.representation.recorded",
         "operator.representation.emission_attempted",
         *_EMISSION_EDGE_EVIDENCE_KINDS,
@@ -460,6 +473,22 @@ def test_representation_act_is_recorded_before_emission_and_they_stay_distinct()
     recorded = list(_standing(ledger)["representations"].values())[-1]
     assert recorded["representation_event_id"] == representation["representation_event_id"]
     assert recorded["emitted_event_id"] is None
+
+    representation_event = ledger.get(representation["representation_event_id"])
+    act_evidence = ledger.get(
+        representation_event.payload["responsible_act_evidence_id"]
+    )
+    yield_evidence = ledger.get(representation_event.payload["yield_evidence_id"])
+    assert representation["representation_act_id"] == act_evidence.payload[
+        "representation_act_id"
+    ]
+    assert representation["act_occurrence_id"] == act_evidence.payload[
+        "act_occurrence_id"
+    ]
+    assert representation["act_occurrence_id"] == yield_evidence.payload[
+        "dimensions"
+    ]["act_occurrence_id"]
+    assert "input_role" not in representation_event.payload
 
     emit_operator_representation(
         ledger, representation=representation, output_stream=StringIO()
@@ -547,6 +576,7 @@ def test_partial_output_write_preserves_attempt_and_failed_occurrences():
         )
 
     assert [event.kind for event in ledger.list("w")] == [
+        *_REPRESENTATION_EDGE_EVIDENCE_KINDS,
         "operator.representation.recorded",
         "operator.representation.emission_attempted",
         "operator.representation.emission_outcome_recorded",
@@ -611,6 +641,7 @@ def test_flush_failure_does_not_erase_the_completed_text_stream_write():
         )
 
     assert [event.kind for event in ledger.list("w")] == [
+        *_REPRESENTATION_EDGE_EVIDENCE_KINDS,
         "operator.representation.recorded",
         "operator.representation.emission_attempted",
         *_EMISSION_EDGE_EVIDENCE_KINDS,
@@ -648,6 +679,7 @@ def test_process_death_after_attempt_leaves_output_outcome_unknown():
         )
 
     assert [event.kind for event in ledger.list("w")] == [
+        *_REPRESENTATION_EDGE_EVIDENCE_KINDS,
         "operator.representation.recorded",
         "operator.representation.emission_attempted",
     ]

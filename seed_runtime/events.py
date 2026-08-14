@@ -419,7 +419,8 @@ class SQLiteEventLedger(EventLedger):
     # durable occurrence. Retired vocabulary does not remain merely because an
     # older ledger may contain a similarly shaped string.
     _RESERVABLE_PREFIXES = frozenset({
-        "operator_representation", "operator_representation_emission_act",
+        "operator_representation", "operator_representation_act",
+        "operator_representation_act_occurrence", "operator_representation_emission_act",
         "operator_representation_emission_occurrence", "operator_ingress_attempt",
         "operator_material",
         "session", "system_invocation", "system_material", "transient_material",

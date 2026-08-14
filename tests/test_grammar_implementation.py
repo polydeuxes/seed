@@ -219,6 +219,23 @@ def _emission_road() -> dict:
     }
 
 
+def _representation_road() -> dict:
+    ledger = EventLedger()
+    representation = record_operator_representation(
+        ledger,
+        workspace_id="w",
+        session_id="representation",
+        session_standing={"as_of_event_id": None},
+    )
+    carrier = ledger.get(representation["representation_event_id"])
+    return {
+        "ledger": ledger,
+        "carrier": carrier,
+        "act_evidence": ledger.get(carrier.payload["responsible_act_evidence_id"]),
+        "content_evidence": ledger.get(carrier.payload["yield_evidence_id"]),
+    }
+
+
 def _assertion_witness(bundle: dict) -> dict[str, str]:
     assertion = bundle["source_assertion"]
     carrier = bundle["carrier"]
@@ -818,6 +835,20 @@ def test_emission_instantiates_every_structural_edge_at_its_boundary():
 
     assert set(cases) == set(grammar["structural_edges"])
     assert cases == {edge: expected for edge in grammar["structural_edges"]}
+
+
+def test_representation_act_has_an_exact_yield_edge_without_asserting_participation():
+    representation = _representation_road()
+    alternate = _representation_road()
+    missing = dict(representation)
+    missing["content_evidence"] = None
+    wrong_occurrence = dict(representation)
+    wrong_occurrence["content_evidence"] = alternate["content_evidence"]
+
+    assert _occurrence_result_witness(representation) == EXACT
+    assert _occurrence_result_witness(missing) == MISSING
+    assert _occurrence_result_witness(wrong_occurrence) == MISSING
+    assert "input_role" not in representation["carrier"].payload
 
 
 def test_changed_structural_edge_anatomy_is_detected():

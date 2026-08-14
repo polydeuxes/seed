@@ -15,6 +15,7 @@ _SUBJECT_BY_KIND = {
     "operator.ingress.stopping_occurred": "interaction_closure",
 }
 _REPRESENTATION_RECORDED_KIND = "operator.representation.recorded"
+_REPRESENTATION_ACT_EVIDENCE_KIND = "operator.representation.act_evidenced"
 _REPRESENTATION_EMISSION_ATTEMPTED_KIND = "operator.representation.emission_attempted"
 _REPRESENTATION_EMITTED_KIND = "operator.representation.emitted"
 _REPRESENTATION_EMISSION_OUTCOME_KIND = "operator.representation.emission_outcome_recorded"
@@ -32,6 +33,7 @@ _SUPPORTED_KINDS = {
     *_SUBJECT_BY_KIND,
     "operator.ingress.decoder_outcome_recorded",
     _REPRESENTATION_RECORDED_KIND,
+    _REPRESENTATION_ACT_EVIDENCE_KIND,
     _REPRESENTATION_EMISSION_ATTEMPTED_KIND,
     _REPRESENTATION_EMITTED_KIND,
     _REPRESENTATION_EMISSION_OUTCOME_KIND,
@@ -183,6 +185,8 @@ def advance_operator_session_standing(
         ):
             for value in event.payload.get(key, ()):
                 _record_distinct(collected, value)
+        if event.kind == _REPRESENTATION_ACT_EVIDENCE_KIND:
+            continue
         if event.kind == _REPRESENTATION_RECORDED_KIND:
             payload = event.payload
             if payload["representation_ref"] in representations:

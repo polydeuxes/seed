@@ -19,6 +19,11 @@ from seed_runtime.operator_ingress import SEED_ORIGIN
 REPRESENTATION_EMISSION_ATTEMPTED_KIND = "operator.representation.emission_attempted"
 REPRESENTATION_EMITTED_KIND = "operator.representation.emitted"
 REPRESENTATION_EMISSION_OUTCOME_KIND = "operator.representation.emission_outcome_recorded"
+REPRESENTATION_ACT_EVIDENCE_KIND = "operator.representation.act_evidenced"
+REPRESENTATION_CONVENTION = "operator_representation_v1"
+REPRESENTATION_RESPONSIBILITY = (
+    "yield one bounded Representation from the exact carried session coordinates"
+)
 REPRESENTATION_EMISSION_ACT_EVIDENCE_KIND = (
     "operator.representation.emission_act_evidenced"
 )
@@ -68,6 +73,8 @@ def record_operator_representation(
     occurrence until :func:`emit_operator_representation` records one.
     """
     representation_id = new_id("operator_representation")
+    representation_act_id = new_id("operator_representation_act")
+    act_occurrence_id = new_id("operator_representation_act_occurrence")
     scope = f"workspace:{workspace_id};session:{session_id}"
     alternatives = []
     coordinate_bindings: dict[str, str] = {}
@@ -133,18 +140,64 @@ def record_operator_representation(
         == prior_exchange_finding["identification"]["event_id"]
     ):
         represented_relation = latest_relation
+    result_payload = {
+        "representation_ref": representation_id,
+        "representation_act_id": representation_act_id,
+        "act_occurrence_id": act_occurrence_id,
+        "representation_result": representation_result,
+        "alternatives": alternatives,
+        "coordinate_bindings": coordinate_bindings,
+        "session_standing_as_of_event_id": session_standing["as_of_event_id"],
+        "prior_exchange_finding": prior_exchange_finding,
+        "represented_relation": represented_relation,
+        "known_loss": known_loss,
+        "unknowns": [],
+        "conflicts": [],
+    }
+    responsible_act_evidence = ledger.append(
+        REPRESENTATION_ACT_EVIDENCE_KIND,
+        workspace_id,
+        {
+            "representation_act_id": representation_act_id,
+            "act_occurrence_id": act_occurrence_id,
+            "act": "bounded Representation Act",
+            "responsibility": REPRESENTATION_RESPONSIBILITY,
+            "responsible_boundary": "this Seed",
+            "result_commitment": yield_commitment(
+                REPRESENTATION_CONVENTION, result_payload
+            ),
+            "standing": "occurred",
+            "authority": (
+                "Evidence concerning this exact Representation Act occurrence only"
+            ),
+        },
+        session_id=session_id,
+    )
+    yield_evidence = _record_yield_evidence(
+        ledger,
+        workspace_id=workspace_id,
+        session_id=session_id,
+        convention=REPRESENTATION_CONVENTION,
+        yielding_act="bounded Representation Act",
+        act_occurrence_id=act_occurrence_id,
+        yielded_result_kind="bounded Representation",
+        result_identity=representation_id,
+        yielded_content=result_payload,
+        responsibility=REPRESENTATION_RESPONSIBILITY,
+        responsible_boundary="this Seed",
+    )
     representation_event = ledger.append(
         REPRESENTATION_RECORDED_KIND,
         workspace_id,
         {
             "attempt_ref": None,
-            "representation_ref": representation_id,
+            **result_payload,
             "dimensions": _dimensions(
-                identity=representation_id,
+                identity=act_occurrence_id,
                 content=content,
                 standing="recorded",
                 source=session_standing["as_of_event_id"],
-                responsibility="bounded-representation-act",
+                responsibility=REPRESENTATION_RESPONSIBILITY,
                 authority=(
                     "representation Act occurrence only; establishes no Selection, "
                     "input support, or response treatment"
@@ -152,21 +205,16 @@ def record_operator_representation(
                 scope=scope,
                 occurrence=occurrence,
             ),
-            "representation_result": representation_result,
-            "alternatives": alternatives,
-            "coordinate_bindings": coordinate_bindings,
-            "session_standing_as_of_event_id": session_standing["as_of_event_id"],
-            "prior_exchange_finding": prior_exchange_finding,
-            "represented_relation": represented_relation,
-            "known_loss": known_loss,
-            "unknowns": [],
-            "conflicts": [],
+            "responsible_act_evidence_id": responsible_act_evidence.id,
+            "yield_evidence_id": yield_evidence.id,
             "mutates_cluster": False,
         },
         session_id=session_id,
     )
     return {
         "representation_id": representation_id,
+        "representation_act_id": representation_act_id,
+        "act_occurrence_id": act_occurrence_id,
         "workspace_id": workspace_id,
         "session_id": session_id,
         "representation_result": representation_result,
