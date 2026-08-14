@@ -39,6 +39,10 @@ Measurement Responsibility / Act / occurrence / Assertions
     seed_runtime.byte_measurement::record_byte_count_layer
     seed_runtime.byte_measurement::record_adjacent_byte_pair_count_layer
 
+Adjacent-pair observation / occurrence-bound recovery
+    seed_runtime.adjacent_pair_measurement::record_adjacent_pair_observations
+    seed_runtime.adjacent_pair_measurement::get_recorded_adjacent_pair_observations
+
 Yield Evidence
     seed_runtime.yield_evidence::_record_yield_evidence
 
