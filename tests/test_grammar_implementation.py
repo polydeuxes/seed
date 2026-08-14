@@ -382,6 +382,7 @@ def _repeated_representation_road() -> tuple[dict, dict]:
 
 def _yield_bundle(ledger, carrier) -> dict:
     act_evidence_id = carrier.payload.get("responsible_act_evidence_id")
+    carriage_evidence_id = carrier.payload.get("carriage_evidence_id")
     return {
         "ledger": ledger,
         "carrier": carrier,
@@ -389,6 +390,11 @@ def _yield_bundle(ledger, carrier) -> dict:
             ledger.get(act_evidence_id) if isinstance(act_evidence_id, str) else None
         ),
         "content_evidence": ledger.get(carrier.payload["yield_evidence_id"]),
+        "carriage_evidence": (
+            ledger.get(carriage_evidence_id)
+            if isinstance(carriage_evidence_id, str)
+            else None
+        ),
     }
 
 
@@ -1239,6 +1245,56 @@ def _remaining_yield_requirement_bundles() -> dict[str, dict[str, dict]]:
     return boundaries
 
 
+def _carriage_requirement_bundles(
+    exact: dict, alternate: dict, corrupted: dict
+) -> dict[str, dict]:
+    missing = dict(exact)
+    missing_evidence = exact["carriage_evidence"].model_copy(deep=True)
+    carried_content = missing_evidence.payload["carried_content"]
+    if isinstance(carried_content, dict):
+        missing_evidence.payload["carried_content"] = {
+            **carried_content,
+            next(iter(carried_content)): "different-carried-coordinate",
+        }
+    else:
+        missing_evidence.payload["carried_content"] = "different-carried-content"
+    missing["carriage_evidence"] = missing_evidence
+
+    wrong_occurrence = dict(exact)
+    wrong_evidence = exact["carriage_evidence"].model_copy(deep=True)
+    wrong_evidence.payload["act_occurrence_id"] = alternate["carrier"].payload[
+        "act_occurrence_id"
+    ]
+    wrong_occurrence["carriage_evidence"] = wrong_evidence
+
+    corrupted["ledger"].mark_corrupted(corrupted["carriage_evidence"].id)
+    unrelated = dict(exact)
+    unrelated["carrier"] = exact["carrier"].model_copy(
+        deep=True, update={"id": alternate["carrier"].id}
+    )
+    return {
+        "exact": exact,
+        "edge_missing": missing,
+        "wrong_occurrence": wrong_occurrence,
+        "corrupted_evidence": corrupted,
+        "unrelated_change": unrelated,
+    }
+
+
+def _remaining_carriage_requirement_bundles() -> dict[str, dict[str, dict]]:
+    roads = {
+        "adjacent_pair_observation": _adjacent_observation_yield_road,
+        "adjacent_pair_observation_compare": (
+            lambda: _adjacent_observation_yield_road(compare=True)
+        ),
+        "external_expression_relation": _external_expression_yield_road,
+    }
+    return {
+        boundary: _carriage_requirement_bundles(road(), road(), road())
+        for boundary, road in roads.items()
+    }
+
+
 def _additional_live_structural_edge_fidelity_cases() -> dict[
     tuple[str, str], dict[str, str]
 ]:
@@ -1411,6 +1467,15 @@ def _live_structural_edge_fidelity_cases() -> dict[
                 for case, bundle in cases.items()
             }
             for boundary, cases in _remaining_yield_requirement_bundles().items()
+        }
+    )
+    registered.update(
+        {
+            ("carriage", boundary): {
+                case: _representation_carriage_witness(bundle)
+                for case, bundle in cases.items()
+            }
+            for boundary, cases in _remaining_carriage_requirement_bundles().items()
         }
     )
     return registered
@@ -1768,6 +1833,24 @@ def test_remaining_yield_adversaries_change_one_requirement_each():
     assert {
         boundary: {
             case: tuple(_occurrence_result_requirements(bundle).values())
+            for case, bundle in cases.items()
+        }
+        for boundary, cases in boundaries.items()
+    } == {boundary: expected for boundary in boundaries}
+
+
+def test_remaining_carriage_adversaries_change_one_requirement_each():
+    expected = {
+        "exact": (True, True, True),
+        "edge_missing": (False, True, True),
+        "wrong_occurrence": (True, False, True),
+        "corrupted_evidence": (True, True, False),
+        "unrelated_change": (True, True, True),
+    }
+    boundaries = _remaining_carriage_requirement_bundles()
+    assert {
+        boundary: {
+            case: tuple(_representation_carriage_requirements(bundle).values())
             for case, bundle in cases.items()
         }
         for boundary, cases in boundaries.items()
@@ -2632,14 +2715,25 @@ def test_runtime_has_no_examination_species():
     assert {path: hits for path, hits in contaminated.items() if hits} == {}
 
 
-CARRIAGE_LIVE_BOUNDARIES = (
-    "operator.external_expression.relation_carriage_evidenced",
-    "operator.measurement.adjacent_pair_observation_carriage_evidenced",
-    "operator.measurement.adjacent_pair_observation_compare_carriage_evidenced",
-    "operator.representation.carriage_evidenced",
-    "operator.representation.emission_attempt_carriage_evidenced",
-    "operator.representation.emission_carriage_evidenced",
-)
+CARRIAGE_BOUNDARY_BY_KIND = {
+    "operator.external_expression.relation_carriage_evidenced": (
+        "external_expression_relation"
+    ),
+    "operator.measurement.adjacent_pair_observation_carriage_evidenced": (
+        "adjacent_pair_observation"
+    ),
+    "operator.measurement.adjacent_pair_observation_compare_carriage_evidenced": (
+        "adjacent_pair_observation_compare"
+    ),
+    "operator.representation.carriage_evidenced": "representation_result",
+    "operator.representation.emission_attempt_carriage_evidenced": (
+        "emission_attempt"
+    ),
+    "operator.representation.emission_carriage_evidenced": (
+        "successful_emission"
+    ),
+}
+CARRIAGE_BOUNDARIES_EVIDENCED_BY_OCCURRENCE = {"byte_measurement"}
 
 
 def _declared_kind_constants(family: str) -> dict[str, list[str]]:
@@ -2683,10 +2777,17 @@ def test_every_carriage_evidence_kind_is_declared_once_and_registered():
         + "\n".join(f"  {kind} -- {', '.join(m)}" for kind, m in duplicated.items())
     )
 
-    assert set(discovered) == set(CARRIAGE_LIVE_BOUNDARIES), (
+    assert set(discovered) == set(CARRIAGE_BOUNDARY_BY_KIND), (
         "\nLive carriage boundaries and the registry disagree.\n"
-        f"  only live:     {sorted(set(discovered) - set(CARRIAGE_LIVE_BOUNDARIES))}\n"
-        f"  only registry: {sorted(set(CARRIAGE_LIVE_BOUNDARIES) - set(discovered))}"
+        f"  only live:     {sorted(set(discovered) - set(CARRIAGE_BOUNDARY_BY_KIND))}\n"
+        f"  only registry: {sorted(set(CARRIAGE_BOUNDARY_BY_KIND) - set(discovered))}"
+    )
+    registered = _live_structural_edge_fidelity_cases()
+    assert {
+        boundary for edge, boundary in registered if edge == "carriage"
+    } == (
+        set(CARRIAGE_BOUNDARY_BY_KIND.values())
+        | CARRIAGE_BOUNDARIES_EVIDENCED_BY_OCCURRENCE
     )
 
 
