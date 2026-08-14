@@ -12,14 +12,14 @@ What this module demonstrates is narrow and structural:
 
     earlier events remain preserved and unchanged
     a later session read can reference them
-    a later representation formation carries those references
+    a later representation Act carries those references
 
 That is the substrate later input support would require. It is **not** input support,
 participation, admission, a finding, or new Standing, none of which are
 demonstrated here. `01.Kinds` keeps applicable, admitted, and input distinct,
 and carrying an event id as Evidence establishes none of them.
 
-Two further limits.  Only representation formations were inspected; the other
+Two further limits.  Only representation representation_events were inspected; the other
 operator event kinds are also later occurrences and are not shown to reference
 the whole past.  And `#2350` left open whether
 `read_operator_session_standing` is a lawful constitutional read
@@ -75,9 +75,9 @@ def ledger() -> EventLedger:
 def test_later_formations_retain_references_to_earlier_preserved_material(
     ledger,
 ):
-    """Each formation's as-of boundary reaches further back than the last.
+    """Each representation Act's as-of boundary reaches further back than the last.
 
-    Reference, not participation of each referenced event.  The formation
+    Reference, not participation of each referenced event.  The representation Act
     has as input the read; what it carries forward is the exact occurrence
     that read was taken through.  `#2372` established that the boundary
     fixes the input prefix exactly, so an enumeration of that prefix adds
@@ -85,18 +85,18 @@ def test_later_formations_retain_references_to_earlier_preserved_material(
     """
     events = ledger.list()
     positions = {event.id: index for index, event in enumerate(events)}
-    formations = [e for e in events if e.kind == FORMED]
-    assert len(formations) >= 3
+    representation_events = [e for e in events if e.kind == FORMED]
+    assert len(representation_events) >= 3
     boundaries = [
-        e.payload["session_standing_as_of_event_id"] for e in formations
+        e.payload["session_standing_as_of_event_id"] for e in representation_events
     ]
-    # The first formation's read was empty.  Recording that absence is
+    # The first representation Act's read was empty.  Recording that absence is
     # itself preserved source coordinates, not an absent occurrence.
     assert boundaries[0] is None
     # Every later boundary reaches strictly further into the session.
     for earlier, later in zip(boundaries[1:], boundaries[2:]):
         assert positions[later] > positions[earlier]
-    # The last formation's boundary still stands after the first recorded event.
+    # The last representation Act's boundary still stands after the first recorded event.
     assert positions[boundaries[-1]] > positions[events[0].id]
 
 
@@ -121,21 +121,21 @@ def test_representation_appends_nothing(ledger):
     assert len(ledger.list()) == count_before
 
 
-def test_each_formation_is_appended_after_every_event_it_references(ledger):
+def test_each_representation_act_is_appended_after_every_event_it_references(ledger):
     """Narrow by intent: an ordering finding about the ledger, nothing more.
 
-    This says nothing about findings or Standing.  A representation formation is
-    not a finding, and its own recorded authority is "formation occurrence
+    This says nothing about findings or Standing.  A representation Act is
+    not a finding, and its own recorded authority is "representation Act occurrence
     only; establishes no Selection, support relation, result relation, or response treatment".
     """
     events = ledger.list()
-    formations = [e for e in events if e.kind == FORMED]
+    representation_events = [e for e in events if e.kind == FORMED]
     positions = {event.id: index for index, event in enumerate(events)}
-    # Each formation appears after the occurrence its boundary names.
-    for formation in formations:
-        boundary = formation.payload["session_standing_as_of_event_id"]
+    # Each representation Act appears after the occurrence its boundary names.
+    for representation_event in representation_events:
+        boundary = representation_event.payload["session_standing_as_of_event_id"]
         if boundary is not None:
-            assert positions[boundary] < positions[formation.id]
+            assert positions[boundary] < positions[representation_event.id]
 
 
 def test_no_act_condition_change_is_claimed_here(ledger):
@@ -167,7 +167,7 @@ def render_evidence_growth() -> str:
         input_stream=StringIO("first\nsecond\nthird\nexit\n"),
         output_stream=StringIO(),
     )
-    lines = ["formation -> the occurrence its Standing was taken through", ""]
+    lines = ["representation Act -> the occurrence its Standing was taken through", ""]
     for event in (e for e in led.list() if e.kind == FORMED):
         lines.append(
             f"  {event.id}  as_of="

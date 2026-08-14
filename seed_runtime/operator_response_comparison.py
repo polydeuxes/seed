@@ -77,43 +77,43 @@ def run_operator_response_comparison_and_identification(
     """
     _require(representation is not None, "no representation supplied")
     representation_ref = representation["representation_id"]
-    formed_event_id = representation["formed_event_id"]
+    representation_event_id = representation["representation_event_id"]
     emitted_event_id = representation["emitted_event_id"]
-    _require(formed_event_id is not None, "representation has no formation evidence")
+    _require(representation_event_id is not None, "representation has no representation occurrence Evidence")
     _require(emitted_event_id is not None, "representation has no emission evidence")
     scope = f"workspace:{workspace_id};session:{session_id}"
 
-    # The recorded formation payload is the sole source of C's alternatives,
+    # The recorded representation payload is the sole source of C's alternatives,
     # coordinate bindings, and scope.  The supplied representation identifies
     # which C to retrieve; it must not redefine C, so a representation that
     # disagrees with the recorded payload is structurally refused.
-    formed_event = ledger.get(formed_event_id)
-    _require(formed_event is not None, "formation event not recorded in this ledger")
+    representation_event = ledger.get(representation_event_id)
+    _require(representation_event is not None, "representation event not recorded in this ledger")
     _require(
-        formed_event.kind == "operator.representation.formed",
-        "formation evidence is not a representation formation event",
+        representation_event.kind == "operator.representation.formed",
+        "representation occurrence Evidence is not a representation event",
     )
     _require(
-        formed_event.workspace_id == workspace_id
-        and formed_event.session_id == session_id,
-        "formation event belongs to another workspace or session",
+        representation_event.workspace_id == workspace_id
+        and representation_event.session_id == session_id,
+        "representation event belongs to another workspace or session",
     )
     _require(
-        formed_event.payload["representation_ref"] == representation_ref,
-        "formation event does not record this exact representation",
+        representation_event.payload["representation_ref"] == representation_ref,
+        "representation event does not record this exact representation",
     )
     _require(
-        formed_event.payload["dimensions"]["scope_locality"] == scope,
+        representation_event.payload["dimensions"]["scope_locality"] == scope,
         "representation scope does not match this workspace and session",
     )
-    alternatives = formed_event.payload["alternatives"]
-    coordinate_bindings = formed_event.payload["coordinate_bindings"]
+    alternatives = representation_event.payload["alternatives"]
+    coordinate_bindings = representation_event.payload["coordinate_bindings"]
     _require(bool(alternatives), "recorded representation has no alternatives")
     _require(bool(coordinate_bindings), "recorded representation has no bindings")
     for key in ("alternatives", "coordinate_bindings"):
         supplied = representation.get(key)
         _require(
-            supplied is None or supplied == formed_event.payload[key],
+            supplied is None or supplied == representation_event.payload[key],
             f"supplied representation disagrees with recorded {key}",
         )
 
@@ -133,8 +133,8 @@ def run_operator_response_comparison_and_identification(
         "emission event does not record this exact representation",
     )
     _require(
-        emitted_event.payload["formed_event_id"] == formed_event_id,
-        "emission event does not record this exact formation occurrence",
+        emitted_event.payload["representation_event_id"] == representation_event_id,
+        "emission event does not record this exact representation Act occurrence",
     )
 
     ingress_event = ledger.get(response_ingress_event_id)
@@ -194,7 +194,7 @@ def run_operator_response_comparison_and_identification(
     )
     comparison_ref = new_id("operator_response_comparison")
     exchange_provenance_refs = [
-        formed_event_id,
+        representation_event_id,
         emitted_event_id,
         response_capture_event_id,
         response_ingress_event_id,
@@ -206,7 +206,7 @@ def run_operator_response_comparison_and_identification(
             "attempt_ref": response_attempt_ref,
             "comparison_ref": comparison_ref,
             "representation_ref": representation_ref,
-            "representation_formed_event_id": formed_event_id,
+            "representation_event_id": representation_event_id,
             "representation_emitted_event_id": emitted_event_id,
             "response_attempt_ref": response_attempt_ref,
             "response_capture_event_id": response_capture_event_id,
@@ -246,7 +246,7 @@ def run_operator_response_comparison_and_identification(
     )
 
     # Distinct Identification: has as input the comparison finding, exact C, and
-    # the recorded coordinate-to-alternative binding.  The formation event is
+    # the recorded coordinate-to-alternative binding.  The representation event is
     # the Evidence for the binding and the preserved A -> G representation
     # relations; each alternative's empty upstream evidence_event_ids means
     # only that no separately recorded developer-source event exists.
@@ -287,7 +287,7 @@ def run_operator_response_comparison_and_identification(
             "comparison_ref": comparison_ref,
             "comparison_event_id": comparison_event.id,
             "representation_ref": representation_ref,
-            "representation_formed_event_id": formed_event_id,
+            "representation_event_id": representation_event_id,
             "response_attempt_ref": response_attempt_ref,
             "identified_alternative": identified_alternative,
             "basis": basis,
@@ -314,7 +314,7 @@ def run_operator_response_comparison_and_identification(
             "known_loss": [],
             "unknowns": [],
             "conflicts": [],
-            "provenance_occurrence_refs": [comparison_event.id, formed_event_id],
+            "provenance_occurrence_refs": [comparison_event.id, representation_event_id],
             "mutates_cluster": False,
         },
         session_id=session_id,

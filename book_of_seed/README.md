@@ -29,7 +29,7 @@ The Markdown chapters explain and orient the same clauses.
 
 #### Responsible boundary
 
-Identifies who bears and answers for the exact responsibility. It is distinct from the subject addressed, the responsible occurrence, the exact Act, and any separately assigned establishment boundary.
+Identifies who bears and answers for the exact responsibility. It is distinct from the subject addressed, the responsible occurrence, the exact Act, and any separately assigned Standing boundary.
 
 #### Subject or material addressed
 
@@ -125,7 +125,7 @@ same-shaped result
 != same Act occurrence-to-result relation
 
 Act occurrence
-!= Standing-establishment occurrence
+!= Standing occurrence
 ```
 
 #### Result
@@ -137,28 +137,28 @@ result
 != result standing
 ```
 
-### Standing-establishment branches
+### Standing branches
 
 These branches apply where Standing is established for a result, relation, Assertion, or other bounded subject.
 
-#### Standing-establishment boundary
+#### Standing responsible boundary
 
 Identifies the responsible boundary that establishes the Standing. It may be the result's Act boundary or a separately assigned Responsibility; identity must be established.
 
-#### Standing-establishment occurrence
+#### Standing occurrence
 
 Identifies the exact occurrence that establishes the standing.
 
 ```text
 Act occurrence
-!= standing-establishment occurrence
+!= Standing occurrence
 ```
 
 #### Standing-occurrence evidence
 
-Identifies the Evidence supporting the Standing-establishment occurrence. Representation existence, formation, recording, or visibility does not establish Standing by identity.
+Identifies the Evidence supporting the Standing occurrence. Representation existence, a representation Act, recording, or visibility does not establish Standing by identity.
 
-#### Established standing
+#### Standing
 
 Identifies the exact standing established for the exact result, relation, assertion, input-to-act relation, or other bounded subject.
 
@@ -173,17 +173,17 @@ result
 subject existence
 != standing established
 
-standing-establishment occurrence
+Standing occurrence
 != Act occurrence by identity
 ```
 
 ### Conditional preservation, standing, and neighboring branches
 
-These branches are exposed only where the exact responsibility instantiates them. Some may precede the act, govern it, preserve its occurrence, or belong to a later exact Act. Each retains its independently established constitutional grammar.
+These branches are exposed only where the exact responsibility instantiates them. Some may precede the act, govern it, preserve its occurrence, or belong to a later exact Act. Each retains its exact constitutional grammar.
 
 #### Preservation record
 
-Identifies any separately retained representation or record preserving an Act, Standing establishment, support relation, result, or other occurrence. A preservation record does not prove the preserved occurrence by identity.
+Identifies any separately retained representation or record preserving an Act, Standing occurrence, support relation, result, or other occurrence. A preservation record does not prove the preserved occurrence by identity.
 
 #### Separate Authorization standing
 
@@ -228,14 +228,14 @@ The Responsibility hierarchy is the Book's representation and traversal structur
 ```text
 structural branch present != branch value established
 coordinate unresolved != coordinate Unknown
-same responsible boundary != same act, responsible occurrence, establishment boundary, or exact Act
+same responsible boundary != same act, responsible occurrence, Standing boundary, or exact Act
 same occurrence != same Assertion
 ```
 
 ## Maintenance rule
 
 > Maintain the constitutional grammar.  
-> Let Seed inspect the current implementation and emit only what that inspection establishes.
+> Let Seed inspect the current implementation and emit only bounded results supported by that inspection's Evidence.
 
 Change the Book when constitutional grammar, a durable distinction, or the status of an unresolved constitutional question changes. Do not update it merely because a function moves, a field is added, a pipeline is rewired, or a new diagnostic projects the same grammar.
 

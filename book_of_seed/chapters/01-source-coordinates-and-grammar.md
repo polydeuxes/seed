@@ -16,7 +16,7 @@ Developer-supplied connective text is material carrying source coordinates. It m
 
 ### 01.Source.A — Addressability preserves source coordinates
 
-Formation preserves the supplied source identity or role, material origin, source occurrence where evidenced, supplied context, Scope, uncertainty, Authority limits, provenance, known loss, conflicts, and Unknowns. Addressability establishes none of the asserted source relation, Evidence, Applicability, Admission, Compare result, input support, truth, or adopted law.
+The responsible representation Act occurrence preserves the supplied source identity or role, material origin, source occurrence where evidenced, supplied context, Scope, uncertainty, Authority limits, provenance, known loss, conflicts, and Unknowns. Addressability establishes none of the asserted source relation, Evidence, Applicability, Admission, Compare result, input support, truth, or adopted law.
 
 ### 01.Source.B — Cross-boundary participation preserves limits
 
@@ -38,11 +38,11 @@ Each counted occurrence is distinguished by exact occurrence identity. Repeated 
 
 ### 01.Source.E — Candidates preserve source coordinates
 
-A candidate preserves every applicable source role, formation occurrence, Scope, Authority, provenance, and Unknown. Carrying or comparing candidate material does not establish a missing Act occurrence or occurrence-result relation.
+A candidate preserves every applicable source role, representation Act occurrence, Scope, Authority, provenance, and Unknown. Carrying or comparing candidate material does not establish a missing Act occurrence or occurrence-result relation.
 
 ### 01.Source.F — Supplied material may assert a relation
 
-Supplied material may assert that X represents or identifies Y. Formation preserves source identity or role, material origin, source occurrence where evidenced, Scope, provenance, Authority limits, known loss, conflicts, and Unknowns. Carriage, labels, reference resolution, shape, or repetition do not support either the source relation or represented relation. Each requires a responsible occurrence.
+Supplied material may assert that X represents or identifies Y. The responsible representation Act occurrence preserves source identity or role, material origin, source occurrence where evidenced, Scope, provenance, Authority limits, known loss, conflicts, and Unknowns. Carriage, labels, reference resolution, shape, or repetition do not support either the source relation or represented relation. Each requires a responsible occurrence.
 
 ## Important distinctions
 

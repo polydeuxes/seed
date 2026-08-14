@@ -210,6 +210,20 @@ Act, but public reachability, direct instantiation, constructability, or the
 returned shape establishes none of Responsibility, Authority, Act occurrence,
 production occurrence, production Evidence, or Standing.
 
+## Formation
+
+`Formation` is ordinary shorthand for an exact Act occurrence that forms a
+representation under an exact rule and boundary. Seed grammar names the Act,
+occurrence, rule, source material, result representation, Evidence, Authority,
+Scope, and locality directly. The shorthand adds no intermediate stage.
+
+## Establishment
+
+`Establishment` is ordinary shorthand for the relation between an exact
+responsible occurrence and the Standing it supports. Seed grammar preserves
+the responsible boundary, Act, occurrence, Evidence, Authority, Scope,
+subject, and Standing directly. The shorthand adds no object or occurrence.
+
 ---
 
 ## Presentation

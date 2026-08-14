@@ -12,7 +12,7 @@ A responsible Compare may accept as input current Standing and that exact result
 
 The conditions under which an exact Act may occur remain decomposed as its Responsibility, Act, applicable mechanism and material, Authority, Constraints, locality, Evidence, and occurrence. Availability, reachability, or one supported condition does not establish the others or authorize the Act.
 
-Neither a result condition nor a bounded distinction requires another Act. Selection, Authorization, movement, revision, establishment, and Stopping each require their own responsible occurrence. A result condition met within one Scope does not establish completion outside that Scope.
+Neither a result condition nor a bounded distinction requires another Act. Selection, Authorization, movement, Standing revision, new Standing, and Stopping each require their own responsible occurrence. A result condition met within one Scope does not establish completion outside that Scope.
 
 ## Important distinctions
 

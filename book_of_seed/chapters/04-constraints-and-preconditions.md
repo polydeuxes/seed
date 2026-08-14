@@ -7,7 +7,7 @@ Conditions that govern whether and how an exact act may proceed.
 Which constraints govern an act, and at which boundary must each be satisfied?
 
 ## Bounded resolution
-A constraint concerns the proposed act or relevant context and establishes or preserves a prohibition, requirement, condition, narrowing, or deferral applicable to that act. Its assertion is established by applicable authority, bound identity, and current evidence. Constraints may govern several different acts and may be checked at several boundaries; they are not thereby sequential movement stages. A constraint result may participate in another Act without the governed act occurring.
+A constraint concerns the proposed act or relevant context and carries a prohibition, requirement, condition, narrowing, or deferral applicable to that act. A responsible occurrence may support that Assertion only through its applicable Authority, bound identity, and current Evidence. Constraints may govern several different acts and may be checked at several boundaries; they are not thereby sequential movement stages. A constraint result may participate in another Act without the governed act occurring.
 
 
 ## Addressable access and Act conditions

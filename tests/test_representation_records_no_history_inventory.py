@@ -5,7 +5,7 @@ event inventory into every `operator.representation.formed` payload, beside
 `session_standing_as_of_event_id`, which already names that occurrence.
 
 `#2372` established that the copy was exactly derivable from the boundary
-across 67 formations, that its only non-test reader passed it straight through,
+across 67 representation_events, that its only non-test reader passed it straight through,
 that no clause requires it, and that its durable growth converged on x4 per
 doubling -- an extrapolated 29 billion identifiers for one corpus file.
 
@@ -63,7 +63,7 @@ def session():
 # --------------------------------------------------------------------------
 
 
-def test_no_formation_records_a_history_inventory(session):
+def test_no_representation_act_records_a_history_inventory(session):
     ledger, _ = session
     for event in ledger.list("w"):
         assert "session_standing_evidence_ids" not in event.payload
@@ -76,13 +76,13 @@ def test_no_projected_representation_exposes_one(session):
 
 
 def test_recorded_payload_size_does_not_grow_with_session_length():
-    """The defect being removed: each formation carried every prior event id."""
+    """The defect being removed: each representation Act carried every prior event id."""
     sizes = []
     for lines in (5, 10, 20):
         ledger, _ = _console("material\n" * lines + "exit\n")
-        formations = [e for e in ledger.list("w") if e.kind == FORMED]
-        sizes.append(len(str(formations[-1].payload)) - len(str(formations[0].payload)))
-    # Payload size differs between first and last formation only by the
+        representation_events = [e for e in ledger.list("w") if e.kind == FORMED]
+        sizes.append(len(str(representation_events[-1].payload)) - len(str(representation_events[0].payload)))
+    # Payload size differs between first and last representation Act only by the
     # boundary identifier, not by an inventory that grows with the session.
     assert max(sizes) < 200, sizes
 
@@ -92,7 +92,7 @@ def test_recorded_payload_size_does_not_grow_with_session_length():
 # --------------------------------------------------------------------------
 
 
-def test_the_first_formation_records_absence_of_a_prior_occurrence(session):
+def test_the_first_representation_act_records_absence_of_a_prior_occurrence(session):
     """Recorded absence, not absence of participation."""
     ledger, _ = session
     first = next(e for e in ledger.list("w") if e.kind == FORMED)
@@ -134,20 +134,20 @@ def test_the_boundary_still_determines_the_consumed_prefix(session):
                 break
         return collected
 
-    for formation in (e for e in events if e.kind == FORMED):
-        boundary = formation.payload["session_standing_as_of_event_id"]
+    for representation_event in (e for e in events if e.kind == FORMED):
+        boundary = representation_event.payload["session_standing_as_of_event_id"]
         input = prefix_through(boundary)
         assert (input and input[-1] == boundary) or boundary is None
 
 
-def test_every_boundary_precedes_the_formation_that_records_it(session):
+def test_every_boundary_precedes_the_representation_act_that_records_it(session):
     ledger, _ = session
     events = ledger.list("w")
     positions = {event.id: index for index, event in enumerate(events)}
-    for formation in (e for e in events if e.kind == FORMED):
-        boundary = formation.payload["session_standing_as_of_event_id"]
+    for representation_event in (e for e in events if e.kind == FORMED):
+        boundary = representation_event.payload["session_standing_as_of_event_id"]
         if boundary is not None:
-            assert positions[boundary] < positions[formation.id]
+            assert positions[boundary] < positions[representation_event.id]
 
 
 # --------------------------------------------------------------------------

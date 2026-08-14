@@ -140,7 +140,7 @@ def test_console_supplies_prior_session_standing_to_later_interactions():
     assert len(standing["representations"]) == 3
     first_id, second_id, third_id = list(standing["representations"])
     assert list(standing["representations"])[-1] == third_id
-    # The later Representation's recorded formation input Standing taken
+    # The later Representation's recorded representation Act input Standing taken
     # through a strictly later occurrence than the first one's.
     positions = {event.id: index for index, event in enumerate(ledger.list("w"))}
     first_representation = standing["representations"][first_id]
@@ -148,9 +148,9 @@ def test_console_supplies_prior_session_standing_to_later_interactions():
     later_boundary = positions[
         standing["representations"][third_id]["session_standing_as_of_event_id"]
     ]
-    # The first Representation's own formation and emission occurrences fall
-    # inside the prefix the later formation input.
-    assert positions[first_representation["formed_event_id"]] < later_boundary
+    # The first Representation's own representation Act and emission occurrences fall
+    # inside the prefix the later representation Act input.
+    assert positions[first_representation["representation_event_id"]] < later_boundary
     assert positions[first_representation["emitted_event_id"]] < later_boundary
 
 

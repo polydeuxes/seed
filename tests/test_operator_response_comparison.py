@@ -85,10 +85,10 @@ def test_compare_requires_an_emitted_representation_with_recorded_reference():
 
     # The recorded-chain preconditions that remain are still enforced.
     emitted = _emit_representation(ledger)
-    with pytest.raises(ValueError, match="not a representation formation event"):
+    with pytest.raises(ValueError, match="not a representation event"):
         _compare(
             ledger,
-            {**emitted, "formed_event_id": ingress_event_id},
+            {**emitted, "representation_event_id": ingress_event_id},
             _capture_after(ledger, emitted, "1\n"),
         )
 
@@ -111,7 +111,7 @@ def test_comparison_provenance_records_the_subjects_it_consumed():
     assert not any(k.startswith("produced_after") for k in ingress.payload)
     comparison_event = ledger.get(finding["comparison"]["event_id"])
     assert comparison_event.payload["provenance_occurrence_refs"] == [
-        representation["formed_event_id"],
+        representation["representation_event_id"],
         representation["emitted_event_id"],
         ingress.payload["raw_material_event_id"],
         ingress_event_id,
@@ -192,8 +192,8 @@ def test_match_with_applicable_binding_identifies_alternative():
 def _record_malformed_representation(ledger, mutate_bindings, *, workspace="w", session="s"):
     """Record Representation source coordinates whose binding relation is malformed.
 
-    A well-formed formation supplies the payload shape; the malformed C is
-    then recorded as its own formation and emission events, so the broken
+    A well-formed representation Act supplies the payload shape; the malformed C is
+    then recorded as its own representation Act and emission events, so the broken
     binding belongs to recorded payload rather than a mutated dictionary.
     """
     template = form_operator_representation(
@@ -203,7 +203,7 @@ def _record_malformed_representation(ledger, mutate_bindings, *, workspace="w", 
         session_standing=_standing(ledger, workspace=workspace, session=session),
         alternative_sources=CLOSED_CHOICE_FIXTURE_SOURCES,
     )
-    template_payload = ledger.get(template["formed_event_id"]).payload
+    template_payload = ledger.get(template["representation_event_id"]).payload
     representation_id = template["representation_id"] + "-malformed"
     payload = {
         **template_payload,
@@ -223,7 +223,7 @@ def _record_malformed_representation(ledger, mutate_bindings, *, workspace="w", 
         "representation_id": representation_id,
         "workspace_id": workspace,
         "session_id": session,
-        "formed_event_id": formed.id,
+        "representation_event_id": formed.id,
         "emitted_event_id": None,
         "alternatives": template_payload["alternatives"],
         "prior_exchange_finding": None,
@@ -234,7 +234,7 @@ def _record_malformed_representation(ledger, mutate_bindings, *, workspace="w", 
     )
     return {
         "representation_id": representation_id,
-        "formed_event_id": formed.id,
+        "representation_event_id": formed.id,
         "emitted_event_id": malformed_representation["emitted_event_id"],
     }
 
@@ -267,7 +267,7 @@ def test_recorded_broken_binding_does_not_identify_an_alternative():
 
 
 def test_mutated_representation_is_structurally_refused():
-    # The recorded formation payload is authoritative; a supplied attempt_standing
+    # The recorded representation payload is authoritative; a supplied attempt_standing
     # that disagrees with it is refused rather than compared.
     ledger = EventLedger()
     representation = _emit_representation(ledger)
@@ -294,10 +294,10 @@ def test_incomplete_recorded_chain_is_refused():
     with pytest.raises(ValueError, match="does not record this exact representation"):
         _compare(ledger, crossed, ingress_event_id)
 
-    # Formation evidence that is not a formation event.
+    # Representation Act evidence that is not a representation event.
     wrong_kind = dict(second)
-    wrong_kind["formed_event_id"] = ingress_event_id
-    with pytest.raises(ValueError, match="not a representation formation event"):
+    wrong_kind["representation_event_id"] = ingress_event_id
+    with pytest.raises(ValueError, match="not a representation event"):
         _compare(ledger, wrong_kind, ingress_event_id)
 
 
@@ -342,19 +342,19 @@ def test_identification_does_not_establish_represented_source():
     assert "establish richer shared grammar with the operator" not in flattened
 
 
-def test_formation_event_evidences_bindings_despite_empty_upstream_lists():
+def test_representation_act_event_evidences_bindings_despite_empty_upstream_lists():
     ledger = EventLedger()
     representation, _, finding = _exchange(ledger, "1\n")
 
     identification_event = ledger.get(finding["identification"]["event_id"])
-    assert identification_event.payload["representation_formed_event_id"] == (
-        representation["formed_event_id"]
+    assert identification_event.payload["representation_event_id"] == (
+        representation["representation_event_id"]
     )
-    assert representation["formed_event_id"] in (
+    assert representation["representation_event_id"] in (
         identification_event.payload["provenance_occurrence_refs"]
     )
-    formed_event = ledger.get(representation["formed_event_id"])
-    for alternative in formed_event.payload["alternatives"]:
+    representation_event = ledger.get(representation["representation_event_id"])
+    for alternative in representation_event.payload["alternatives"]:
         assert alternative["representation"]["evidence_event_ids"] == []
 
 
@@ -420,9 +420,9 @@ def test_later_representation_consumes_findings_without_stronger_standing():
     )
     finding = later["prior_exchange_finding"]
     assert finding["identification"]["basis"] == "identified"
-    formed_event = ledger.get(later["formed_event_id"])
-    assert formed_event.payload["prior_exchange_finding"] == finding
-    rendered = str(formed_event.payload)
+    representation_event = ledger.get(later["representation_event_id"])
+    assert representation_event.payload["prior_exchange_finding"] == finding
+    rendered = str(representation_event.payload)
     assert "Operator selected" not in rendered
     assert "intended" not in rendered
 

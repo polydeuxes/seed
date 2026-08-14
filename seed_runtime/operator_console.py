@@ -74,7 +74,7 @@ def run_persistent_operator_console(
         ledger,
         session_standing,
         (
-            representation["formed_event_id"],
+            representation["representation_event_id"],
             representation["emission_attempt_event_id"],
             representation["emitted_event_id"],
         ),
@@ -128,7 +128,7 @@ def run_persistent_operator_console(
                 ledger,
                 session_standing,
                 (
-                    representation["formed_event_id"],
+                    representation["representation_event_id"],
                     representation["emission_attempt_event_id"],
                     representation["emitted_event_id"],
                 ),

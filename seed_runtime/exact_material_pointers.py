@@ -10,8 +10,8 @@ It establishes only a reversible representation of exact bytes:
 A reference establishes byte reuse only. It establishes no subject identity,
 represented relation, relation, grammar, or standing beyond exact reconstruction.
 
-**What this carries is the recurrence its declared formation found, not the
-recurrence present in the material.** The formation bounds the search, and the
+**What this carries is the recurrence its declared pointer_rule found, not the
+recurrence present in the material.** The pointer_rule bounds the search, and the
 same bytes yield different accounts under different bounds — 60,000 bytes of
 prose were 95.8% covered at a three-byte minimum and 52.2% covered at eight, and
 changing only the candidate bound moved hundreds of references. So:
@@ -24,12 +24,12 @@ changing only the candidate bound moved hundreds of references. So:
 
 An absent reference may mean the recurrence is shorter than the minimum, that
 its source fell outside the candidate bound, or that an earlier greedy choice
-input the bytes it would have matched. The formation is therefore carried in
+input the bytes it would have matched. The pointer_rule is therefore carried in
 the representation, because an account of a bounded search that does not
 disclose its bounds reads as a complete one.
 
-Reconstruction does not depend on the formation. The parts alone reconstruct
-exactly, and the formation bounds only what the account may be read to mean.
+Reconstruction does not depend on the pointer_rule. The parts alone reconstruct
+exactly, and the pointer_rule bounds only what the account may be read to mean.
 
 References are backward-only and non-overlapping with the bytes currently being
 formed. Every reference therefore terminates in material that is already fully
@@ -77,11 +77,11 @@ ExactMaterialPart = LiteralPart | ReferencePart
 
 
 @dataclass(frozen=True)
-class ExactMaterialFormation:
+class ExactMaterialPointerRule:
     """The declared bounds of the search that produced an account.
 
     Carried so an account of a bounded search discloses its bounds. Two
-    accounts of the same material under different formations are different
+    accounts of the same material under different pointer_rules are different
     findings rather than contradictory ones, and become comparable subjects.
     """
 
@@ -108,16 +108,16 @@ class ExactMaterialFormation:
         }
 
     @classmethod
-    def from_json_dict(cls, value: Any) -> "ExactMaterialFormation":
+    def from_json_dict(cls, value: Any) -> "ExactMaterialPointerRule":
         if not isinstance(value, dict):
-            raise ExactMaterialPointerError("a formation must be an object")
+            raise ExactMaterialPointerError("a pointer_rule must be an object")
         try:
             return cls(
                 minimum_reference_length=value["minimum_reference_length"],
                 candidate_limit=value["candidate_limit"],
             )
         except KeyError as exc:
-            raise ExactMaterialPointerError(f"a formation is incomplete: {exc}") from exc
+            raise ExactMaterialPointerError(f"a pointer_rule is incomplete: {exc}") from exc
 
 
 @dataclass(frozen=True)
@@ -127,7 +127,7 @@ class ExactMaterialPointers:
     byte_count: int
     sha256: str
     parts: tuple[ExactMaterialPart, ...]
-    formation: ExactMaterialFormation
+    pointer_rule: ExactMaterialPointerRule
     version: str = ENCODING_VERSION
 
     def __post_init__(self) -> None:
@@ -145,9 +145,9 @@ class ExactMaterialPointers:
             raise ExactMaterialPointerError("parts must be an exact tuple")
         if not all(isinstance(part, (LiteralPart, ReferencePart)) for part in self.parts):
             raise ExactMaterialPointerError("parts must contain only literals or references")
-        if not isinstance(self.formation, ExactMaterialFormation):
+        if not isinstance(self.pointer_rule, ExactMaterialPointerRule):
             raise ExactMaterialPointerError(
-                "an account must declare the formation that produced it"
+                "an account must declare the pointer_rule that produced it"
             )
         reconstructed = reconstruct_exact_bytes(self, verify=False)
         if len(reconstructed) != self.byte_count:
@@ -173,7 +173,7 @@ class ExactMaterialPointers:
             "version": self.version,
             "byte_count": self.byte_count,
             "sha256": self.sha256,
-            "formation": self.formation.to_json_dict(),
+            "pointer_rule": self.pointer_rule.to_json_dict(),
             "parts": encoded_parts,
         }
 
@@ -216,7 +216,7 @@ class ExactMaterialPointers:
             version=value.get("version"),
             byte_count=value.get("byte_count"),
             sha256=value.get("sha256"),
-            formation=ExactMaterialFormation.from_json_dict(value.get("formation")),
+            pointer_rule=ExactMaterialPointerRule.from_json_dict(value.get("pointer_rule")),
             parts=tuple(parts),
         )
 
@@ -269,7 +269,7 @@ def form_exact_material_pointers(
     times is not the earliest in the material.
 
     Both bounds are recorded on the result. They do not affect reconstruction,
-    which is exact under any formation; they bound what the account may be read
+    which is exact under any pointer_rule; they bound what the account may be read
     to mean.
     """
 
@@ -280,7 +280,7 @@ def form_exact_material_pointers(
     if type(candidate_limit) is not int or candidate_limit <= 0:
         raise ExactMaterialPointerError("candidate_limit must be a positive integer")
 
-    formation = ExactMaterialFormation(
+    pointer_rule = ExactMaterialPointerRule(
         minimum_reference_length=minimum_reference_length,
         candidate_limit=candidate_limit,
     )
@@ -290,7 +290,7 @@ def form_exact_material_pointers(
             byte_count=0,
             sha256=hashlib.sha256(b"").hexdigest(),
             parts=(),
-            formation=formation,
+            pointer_rule=pointer_rule,
         )
 
     index: dict[bytes, list[int]] = {}
@@ -349,5 +349,5 @@ def form_exact_material_pointers(
         byte_count=size,
         sha256=hashlib.sha256(exact_bytes).hexdigest(),
         parts=tuple(parts),
-        formation=formation,
+        pointer_rule=pointer_rule,
     )

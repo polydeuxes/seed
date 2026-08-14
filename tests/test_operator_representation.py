@@ -102,7 +102,7 @@ def test_console_forms_c0_before_first_ingress_and_preserves_provenance_only():
         if event.kind == "operator.ingress.ingress_occurred"
     )
     assert "produced_after_representation_ref" not in ingress.payload
-    assert "produced_after_representation_formed_event_id" not in ingress.payload
+    assert "produced_after_representation_event_id" not in ingress.payload
     assert "produced_after_representation_emitted_event_id" not in ingress.payload
     assert c0_emitted.kind == "operator.representation.emitted"
 
@@ -145,9 +145,9 @@ def test_c0_presents_standing_with_no_developer_semantics():
     )
     emit_operator_representation(ledger, representation=c0, output_stream=StringIO())
 
-    # Empty Standing is legitimately input: the formation occurred and
+    # Empty Standing is legitimately input: the representation Act occurred and
     # recorded what it input, rather than being skipped.
-    payload = ledger.get(c0["formed_event_id"]).payload
+    payload = ledger.get(c0["representation_event_id"]).payload
     assert payload["session_standing_as_of_event_id"] is None
     assert payload["prior_exchange_finding"] is None
     assert payload["represented_relation"] is None
@@ -170,19 +170,19 @@ def test_c0_presents_standing_with_no_developer_semantics():
     assert "Respond with exactly one token" not in rendered
 
 
-def test_formation_dimensions_record_only_coordinates_that_exist():
+def test_representation_act_dimensions_record_only_coordinates_that_exist():
     ledger = EventLedger()
     standing = _standing(ledger)
 
     zero = form_operator_representation(
         ledger, workspace_id="w", session_id="s", session_standing=standing
     )
-    dimensions = ledger.get(zero["formed_event_id"]).payload["dimensions"]
+    dimensions = ledger.get(zero["representation_event_id"]).payload["dimensions"]
     assert dimensions["content"] == (
         "bounded Representation of current session Standing"
     )
     assert dimensions["occurrence_preservation"] == (
-        "Representation formation durably recorded"
+        "Representation Act durably recorded"
     )
     # No Assertion of coordinates this Representation does not carry, and no
     # classification of the resulting combination as a shape or kind.
@@ -207,7 +207,7 @@ def test_formation_dimensions_record_only_coordinates_that_exist():
     # Exact alternative coordinates are recorded because they exist. The
     # combination is not classified: supplying alternatives does not make the
     # Representation a different constitutional kind.
-    dimensions = ledger.get(explicit["formed_event_id"]).payload["dimensions"]
+    dimensions = ledger.get(explicit["representation_event_id"]).payload["dimensions"]
     assert dimensions["content"] == (
         "bounded Representation of current session Standing with "
         "3 represented alternatives"
@@ -233,7 +233,7 @@ def test_console_presents_standing_only_across_an_ingress():
         "operator.representation.emission_attempted",
         "operator.representation.emitted",
     ]
-    # No automatic exchange, reconstruction, relation, or result-establishment occurrence.
+    # No exchange, reconstruction, relation, or result-Standing occurrence follows by identity.
     assert not any(k.startswith("operator.exchange.") for k in kinds)
     assert not any(k.startswith("operator.interaction.") for k in kinds)
     assert "operator.representation.source_validated" not in kinds
@@ -242,7 +242,7 @@ def test_console_presents_standing_only_across_an_ingress():
     c0, _, _, _, _, ingress, c1, _, _ = ledger.list("w")
     # C1 is formed from Standing that now contains the preserved ingress.
     # C1's Standing was taken through the last event recorded before it,
-    # C0's own formation and emission included.
+    # C0's own representation Act and emission included.
     assert (
         c1.payload["session_standing_as_of_event_id"] == ingress.id
     )
@@ -274,26 +274,26 @@ def test_alternatives_carry_complete_coordinates_and_provenance_evidence():
     _fixture_representation(ledger)
 
     standing = _standing(ledger)
-    formed_record = list(standing["representations"].values())[-1]
-    assert formed_record is not None
-    assert formed_record["formation_result"]
-    assert formed_record["scope"] == "workspace:w;session:s"
+    representation_record = list(standing["representations"].values())[-1]
+    assert representation_record is not None
+    assert representation_record["representation_result"]
+    assert representation_record["scope"] == "workspace:w;session:s"
     # provenance is the input Standing's as-of boundary; None here is the
     # recorded absence of prior session events, not a fabricated Unknown.
-    assert "provenance" in formed_record
-    assert formed_record["known_loss"] == [
+    assert "provenance" in representation_record
+    assert representation_record["known_loss"] == [
         "rendered label compresses represented candidate relation"
     ]
-    # No response occurrence exists at formation; that is absence, not
+    # No response occurrence exists at representation Act; that is absence, not
     # Unknown, so the formed Representation carries no Unknowns.
-    assert formed_record["unknowns"] == []
-    assert formed_record["conflicts"] == []
-    # Absent for a formation from empty Standing: recorded absence of a prior
+    assert representation_record["unknowns"] == []
+    assert representation_record["conflicts"] == []
+    # Absent for a representation Act from empty Standing: recorded absence of a prior
     # input occurrence, not absence of participation.
-    assert formed_record["session_standing_as_of_event_id"] is None
-    assert len(formed_record["alternatives"]) == 3
-    formation_results = set()
-    for alternative in formed_record["alternatives"]:
+    assert representation_record["session_standing_as_of_event_id"] is None
+    assert len(representation_record["alternatives"]) == 3
+    representation_results = set()
+    for alternative in representation_record["alternatives"]:
         assert alternative["alternative_id"]
         assert alternative["role"] == "representation-navigation"
         assert alternative["response_coordinate"]
@@ -306,8 +306,8 @@ def test_alternatives_carry_complete_coordinates_and_provenance_evidence():
         assert source["represented_result"]
         assert source["reference"]
         relation_coordinates = alternative["representation"]
-        assert relation_coordinates["formation_result"]
-        formation_results.add(relation_coordinates["formation_result"])
+        assert relation_coordinates["representation_result"]
+        representation_results.add(relation_coordinates["representation_result"])
         assert relation_coordinates["scope"] == "workspace:w;session:s"
         assert relation_coordinates["provenance"] == source["reference"]
         assert relation_coordinates["evidence_event_ids"] == []
@@ -315,11 +315,11 @@ def test_alternatives_carry_complete_coordinates_and_provenance_evidence():
         assert relation_coordinates["unknowns"] == []
         assert relation_coordinates["conflicts"] == []
         assert (
-            formed_record["coordinate_bindings"][alternative["response_coordinate"]]
+            representation_record["coordinate_bindings"][alternative["response_coordinate"]]
             == alternative["alternative_id"]
         )
-    # The three representation relations carry distinct formation results.
-    assert len(formation_results) == 3
+    # The three representation relations carry distinct representation Act results.
+    assert len(representation_results) == 3
 
 
 def test_no_new_represented_relation_candidate_is_synthesized():
@@ -380,16 +380,16 @@ def test_next_console_iteration_validates_c1_and_forms_c2():
     assert list(standing["representations"])[-1] == third_id
     c1 = standing["representations"][second_id]
     c2 = standing["representations"][third_id]
-    # C2's Standing boundary stands after C1's formation and emission
+    # C2's Standing boundary stands after C1's representation Act and emission
     # occurrences, so both fall inside the prefix it input.
     positions = {
         event.id: index for index, event in enumerate(console_ledger.list("w"))
     }
     boundary = positions[c2["session_standing_as_of_event_id"]]
-    assert positions[c1["formed_event_id"]] < boundary
+    assert positions[c1["representation_event_id"]] < boundary
     assert positions[c1["emitted_event_id"]] < boundary
     # The represented source candidates keep stable exact identities
-    # across formations.
+    # across representation Acts.
     identities = lambda representation: [
         alternative["represented_source"]["identity"]
         for alternative in representation["alternatives"]
@@ -420,7 +420,7 @@ def test_first_interaction_attaches_no_representation_to_the_capture():
     assert first_representation["representation_id"]
 
 
-def test_formation_is_recorded_before_emission_and_they_stay_distinct():
+def test_representation_act_is_recorded_before_emission_and_they_stay_distinct():
     ledger = EventLedger()
     representation = form_operator_representation(
         ledger,
@@ -430,10 +430,10 @@ def test_formation_is_recorded_before_emission_and_they_stay_distinct():
         alternative_sources=CLOSED_CHOICE_FIXTURE_SOURCES,
     )
     assert representation["emitted_event_id"] is None
-    # Formation is reconstructed; its emission coordinate stays unrecorded until
+    # Representation Act is reconstructed; its emission coordinate stays unrecorded until
     # an emission occurrence supplies it.
     recorded = list(_standing(ledger)["representations"].values())[-1]
-    assert recorded["formed_event_id"] == representation["formed_event_id"]
+    assert recorded["representation_event_id"] == representation["representation_event_id"]
     assert recorded["emitted_event_id"] is None
 
     emit_operator_representation(
@@ -466,7 +466,7 @@ def test_emission_preserves_the_exact_text_written_to_its_boundary():
     assert emission.payload["write_length"] == len(output.getvalue())
     assert emission.payload["material_origin"] == "this Seed"
     assert emission.payload["provenance_occurrence_refs"] == [
-        representation["formed_event_id"],
+        representation["representation_event_id"],
         representation["emission_attempt_event_id"],
     ]
     attempt = ledger.get(representation["emission_attempt_event_id"])

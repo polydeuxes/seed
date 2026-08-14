@@ -165,7 +165,7 @@ def _adjacent_pair_result_assertion_identity(
 class _DeclaredSupportBinding:
     """A support basis and the exact population object it was formed over.
 
-    **The binding is established by formation, not by adjacency.** An earlier
+    **The binding is carried by the representation event, not by adjacency.** An earlier
     revision was a dataclass holding an identities tuple and a `SupportBasis`
     side by side, with prose saying the second was bound to the first and
     nothing enforcing it — so a basis carrying a forged commitment and count

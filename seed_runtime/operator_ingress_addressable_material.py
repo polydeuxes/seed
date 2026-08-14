@@ -1,4 +1,4 @@
-"""Bounded formation of exact, source-addressable operator ingress material."""
+"""Exact, source-addressable operator ingress material."""
 
 from __future__ import annotations
 

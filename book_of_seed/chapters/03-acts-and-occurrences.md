@@ -23,7 +23,7 @@ A Responsibility bounds what Standing may be established, preserved, or revised 
 - selection representation != Act that established it
 - exact Act != exact Act constraint
 - coherence validated != upstream assertion re-proven
-- establishment of a new downstream subject != re-establishment of the upstream subject
+- Standing concerning a new downstream subject != revision of upstream-subject Standing
 - Act occurrence-to-result relation != Assertion truth
 
 ## Counterexamples or failure modes

@@ -24,7 +24,7 @@ Explanation is a representation exposing Evidence, provenance, conflicts, and re
 - provenance reference != verified provenance
 - ordered references != causation
 - missing support != falsehood
-- explanation != upstream establishment
+- explanation != upstream Standing
 - repeated source != independent corroboration
 
 ## Representative repository anchors

@@ -202,7 +202,7 @@ def test_every_equal_subject_production_pair_is_formed_without_comparing(compara
     assert tuple(event.id for event in ledger.list("w")) == before
 
 
-def test_formation_boundary_excludes_later_productions(comparable):
+def test_representation_act_boundary_excludes_later_productions(comparable):
     ledger, _, _ = comparable
     boundary = ledger.capture_boundary()
     _record_following(ledger, "s3", "it is green\n")
@@ -228,7 +228,7 @@ def test_formation_boundary_excludes_later_productions(comparable):
     assert len(current) == 12
 
 
-def test_formation_does_not_filter_different_result_content(comparable):
+def test_representation_act_does_not_filter_different_result_content(comparable):
     ledger, left, right = comparable
     formed = list(
         iter_positional_result_comparison_inputs(
@@ -245,7 +245,7 @@ def test_formation_does_not_filter_different_result_content(comparable):
     assert (left.reference, right.reference) in formed
 
 
-def test_formation_validates_each_session_boundary_once(comparable):
+def test_representation_act_validates_each_session_boundary_once(comparable):
     ledger, _, _ = comparable
     original = ledger.iter_session_kind
     ingress_reads = []
@@ -268,7 +268,7 @@ def test_formation_validates_each_session_boundary_once(comparable):
     assert [session_id for session_id, _ in ingress_reads] == ["s1", "s2"]
 
 
-def test_validated_formation_retains_only_occurrence_bound_references(comparable):
+def test_validated_representation_act_retains_only_occurrence_bound_references(comparable):
     import seed_runtime.assertion_comparison as module
 
     ledger, _, _ = comparable

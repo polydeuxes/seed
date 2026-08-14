@@ -7,7 +7,7 @@ The boundary between preserving Events or diagnostic output and later participat
 Which bounded responsibility may take up recorded material, and what standing, if any, may it establish?
 
 ## Bounded resolution
-A recording boundary may create an addressable representation of Events carrying source coordinates, findings, Assertions, or established Standing within its preservation horizon. A later exact Act may resolve that record reference, validate the coordinates it needs, and expose the same preserved Assertion locally. Those steps are part of that Act's input boundary; they establish no separate Responsibility, subject, occurrence, or stronger Standing. Diagnostic rendering, metrics, CLI text, and operator capture are not Seed preservation by identity. Measurement, Standing establishment, rendering, and recording remain separate Acts.
+A recording boundary may create an addressable representation of Events carrying source coordinates, findings, Assertions, or established Standing within its preservation horizon. A later exact Act may resolve that record reference, validate the coordinates it needs, and expose the same preserved Assertion locally. Those steps are part of that Act's input boundary; they establish no separate Responsibility, subject, occurrence, or stronger Standing. Diagnostic rendering, metrics, CLI text, and operator capture are not Seed preservation by identity. Measurement, a Standing-bearing occurrence, rendering, and recording remain separate Acts.
 
 
 ## Addressable boundaries for recorded-change witnesses
@@ -16,7 +16,7 @@ A recording boundary may create an addressable representation of Events carrying
 A recording boundary may establish that a retrievable record exists and preserves an Assertion carrying source coordinates within its declared horizon. A later exact Act may consider that Assertion through Applicability. Record existence does not establish the represented source occurrence, current condition, truth, renewed occurrence, or arrival at another Act.
 
 ### 05.Recording.B — Diagnostic-run-scoped recording
-When recorded material is admitted only to a diagnostic Act, that Act preserves the scoped subject of the recording unless a separate establishment boundary supplies additional Standing. The result is bounded availability, not mutation of cluster truth or universal condition.
+When recorded material is admitted only to a diagnostic Act, that Act preserves the scoped subject of the recording unless a separate responsible occurrence supplies additional Standing. The result is bounded availability, not mutation of cluster truth or universal condition.
 
 
 ### 05.Recording.C — Preservation and discard of implementation measurements
@@ -41,7 +41,7 @@ Recording may preserve measurement or observation Assertions and already establi
 - act-instance measurement != ambient runtime observation
 - runtime/resource observation != implementation baseline
 - act measurement != implementation baseline
-- baseline establishment != baseline recording
+- baseline Standing != baseline recording
 - retained measurement series != implementation baseline
 - recorded summary != established ordinary behavior
 - implementation baseline != predicted future duration
@@ -52,7 +52,7 @@ Recording may preserve measurement or observation Assertions and already establi
 - deviation != act failure
 - deviation != exact Act condition loss
 - one unusual sample != changed ordinary behavior
-- baseline transition establishment != transition recording
+- baseline-transition Standing != transition recording
 - non-rebuildable != preservation-required
 - act-status Assertion cadence != act-timing Assertion
 - act occurrence status != implementation measurement
@@ -62,14 +62,14 @@ Recording may preserve measurement or observation Assertions and already establi
 - act occurrence != recording occurrence
 - record exists != recorded Assertion Standing established by identity
 - record exists != recorded standing lawfully established
-- preservation decision != standing-establishment decision
+- preservation decision != Standing decision
 - extraction occurrence != original act occurrence
 - recording != later participation
 - event ledger write != cluster mutation
 - retrievable record != established Assertion Standing
 - preservation != renewed occurrence
 - retrieval or availability != arrival or input support
-- successful reading != Standing establishment
+- successful reading != Standing
 - process-local record != cross-restart persistent record
 
 ## Representative repository anchors

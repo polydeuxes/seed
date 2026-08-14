@@ -184,11 +184,11 @@ def advance_operator_session_standing(
                 )
             representations[payload["representation_ref"]] = {
                 "representation_id": payload["representation_ref"],
-                "formed_event_id": event.id,
+                "representation_event_id": event.id,
                 "emission_attempt_event_id": None,
                 "emission_outcome_event_id": None,
                 "emitted_event_id": None,
-                "formation_result": payload["formation_result"],
+                "representation_result": payload["representation_result"],
                 "alternatives": payload["alternatives"],
                 "coordinate_bindings": payload["coordinate_bindings"],
                 "session_standing_as_of_event_id": payload[
@@ -206,7 +206,7 @@ def advance_operator_session_standing(
             representation_ref = event.payload["representation_ref"]
             if representation_ref not in representations:
                 raise ValueError(
-                    "representation emission attempt without recorded formation: "
+                    "representation emission attempt without recorded representation event: "
                     f"{representation_ref}"
                 )
             representations[representation_ref]["emission_attempt_event_id"] = event.id
@@ -215,16 +215,16 @@ def advance_operator_session_standing(
             representation_ref = event.payload["representation_ref"]
             if representation_ref not in representations:
                 raise ValueError(
-                    "representation emission without recorded formation: "
+                    "representation emission without recorded representation event: "
                     f"{representation_ref}"
                 )
             if (
-                event.payload["formed_event_id"]
-                != representations[representation_ref]["formed_event_id"]
+                event.payload["representation_event_id"]
+                != representations[representation_ref]["representation_event_id"]
             ):
                 raise ValueError(
                     "representation emission does not name its recorded "
-                    "formation occurrence"
+                    "representation Act occurrence"
                 )
             if (
                 event.payload["attempt_ref"]
@@ -240,7 +240,7 @@ def advance_operator_session_standing(
             representation_ref = event.payload["representation_ref"]
             if representation_ref not in representations:
                 raise ValueError(
-                    "representation emission outcome without recorded formation: "
+                    "representation emission outcome without recorded representation event: "
                     f"{representation_ref}"
                 )
             if (
@@ -264,8 +264,8 @@ def advance_operator_session_standing(
             # content or C's recorded coordinates is refused.
             representation = representations.get(payload["representation_ref"])
             if representation is None or (
-                payload["representation_formed_event_id"]
-                != representation["formed_event_id"]
+                payload["representation_event_id"]
+                != representation["representation_event_id"]
                 or payload["representation_emitted_event_id"]
                 != representation["emitted_event_id"]
                 or representation["emitted_event_id"] is None
@@ -446,7 +446,7 @@ def advance_operator_session_standing(
         if event.kind == _SOURCE_VALIDATED_KIND:
             payload = event.payload
             # A reconstruction is admitted into Standing only where the recorded
-            # formation payload and the recorded identification agree with
+            # representation payload and the recorded identification agree with
             # every coordinate it carries.
             representation = representations.get(payload["representation_ref"])
             if representation is None:
@@ -473,17 +473,17 @@ def advance_operator_session_standing(
                 if payload["source"][key] != recorded_source[key]:
                     raise ValueError(
                         "source reconstruction does not agree with recorded "
-                        f"formation payload on source {key}"
+                        f"representation payload on source {key}"
                     )
             for key in ("role", "response_coordinate"):
                 if payload["alternative"][key] != recorded_alternative[key]:
                     raise ValueError(
                         "source reconstruction does not agree with recorded "
-                        f"formation payload on alternative {key}"
+                        f"representation payload on alternative {key}"
                     )
             if (
-                payload["representation_formed_event_id"]
-                != representation["formed_event_id"]
+                payload["representation_event_id"]
+                != representation["representation_event_id"]
                 or payload["representation_emitted_event_id"]
                 != representation["emitted_event_id"]
             ):
@@ -569,7 +569,7 @@ def advance_operator_session_standing(
                 )
             if payload["representation"] != recorded_alternative["representation"]:
                 raise ValueError(
-                    "source reconstruction does not agree with recorded formation "
+                    "source reconstruction does not agree with recorded representation Act "
                     "source coordinates on the representation boundary"
                 )
             if payload["validation_ref"] in source_validations:
@@ -580,8 +580,8 @@ def advance_operator_session_standing(
                 "validation_ref": payload["validation_ref"],
                 "event_id": event.id,
                 "representation_ref": payload["representation_ref"],
-                "representation_formed_event_id": payload[
-                    "representation_formed_event_id"
+                "representation_event_id": payload[
+                    "representation_event_id"
                 ],
                 "representation_emitted_event_id": payload[
                     "representation_emitted_event_id"
@@ -594,7 +594,7 @@ def advance_operator_session_standing(
                 "alternative": payload["alternative"],
                 "source": payload["source"],
                 # The complete representation boundary, reconstructed from
-                # the recorded formation payload it was validated against.
+                # the recorded representation payload it was validated against.
                 "representation": recorded_alternative["representation"],
             }
             source_validations[payload["validation_ref"]] = reconstruction
@@ -640,9 +640,9 @@ def advance_operator_session_standing(
                     "representation_ref",
                 ),
                 (
-                    payload["representation_formed_event_id"],
-                    reconstruction["representation_formed_event_id"],
-                    "representation_formed_event_id",
+                    payload["representation_event_id"],
+                    reconstruction["representation_event_id"],
+                    "representation_event_id",
                 ),
                 (
                     payload["identification_event_id"],
@@ -665,7 +665,7 @@ def advance_operator_session_standing(
                     "source_reference",
                 ),
                 # The proposition and its source role must equal the recorded
-                # formation payload exactly; a forged M is refused here.
+                # representation payload exactly; a forged M is refused here.
                 (payload["proposition"], recorded_source["represented_result"], "proposition"),
                 (
                     payload["source_role"],
@@ -674,7 +674,7 @@ def advance_operator_session_standing(
                 ),
                 (
                     payload["representation_result_boundary"],
-                    recorded_representation["formation_result"],
+                    recorded_representation["representation_result"],
                     "representation_result_boundary",
                 ),
                 (
@@ -697,7 +697,7 @@ def advance_operator_session_standing(
                 "source_authority": {
                     "standing": "bounded",
                     "supports": ["source-supplied-with-relation-Assertion"],
-                    "evidence_event_ids": [reconstruction["representation_formed_event_id"]],
+                    "evidence_event_ids": [reconstruction["representation_event_id"]],
                     "scope": {
                         "source_identity": reconstruction["source"]["identity"],
                         "proposition": recorded_source["represented_result"],
@@ -716,7 +716,7 @@ def advance_operator_session_standing(
                     "standing": "established",
                     "supports": ["source-expresses-proposition"],
                     "evidence_event_ids": [
-                        reconstruction["representation_formed_event_id"],
+                        reconstruction["representation_event_id"],
                         reconstruction["event_id"],
                     ],
                     "scope": {
@@ -756,7 +756,7 @@ def advance_operator_session_standing(
             reconstructed_relation_standing = {
                 "support_relation_standing": (
                     "developer-supplied relation Assertion "
-                    "preserved by the recorded formation occurrence"
+                    "preserved by the recorded Representation Act occurrence"
                 ),
                 "known_loss": [],
                 "unknowns": [
@@ -781,8 +781,8 @@ def advance_operator_session_standing(
                 "source_validation_event_id": validation_event_id,
                 "validation_ref": payload["validation_ref"],
                 "representation_ref": payload["representation_ref"],
-                "representation_formed_event_id": payload[
-                    "representation_formed_event_id"
+                "representation_event_id": payload[
+                    "representation_event_id"
                 ],
                 "identification_event_id": payload["identification_event_id"],
                 "alternative_id": payload["alternative_id"],
@@ -842,7 +842,7 @@ def advance_operator_session_standing(
         "interaction_closures": interaction_closures,
         "representations": representations,
         # No "current" Representation is projected.  Emission order is
-        # reconstructible from `representations`, which preserves formation and
+        # reconstructible from `representations`, which preserves representation Act and
         # emission occurrences in append order; naming one of them current
         # would assert present relevance that no occurrence establishes.
         # Exactly the relation standings recorded by session events.  No
