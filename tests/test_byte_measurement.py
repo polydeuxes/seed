@@ -74,7 +74,7 @@ def test_exact_bytes_supply_the_measured_subjects_without_whitespace():
     assert all(item.occurrences_examined == 2 for item in measured.counts)
 
 
-def test_the_complete_declared_sessions_supply_the_population():
+def test_the_complete_declared_sessions_supply_the_inputs():
     measured = measure_byte_counts(
         _ledger("a\nb\n"), workspace_id="w", source_session_ids=("source",)
     )
@@ -460,7 +460,7 @@ def test_recorded_pair_results_replay_the_complete_bounded_source_read():
     assert "dimensions" not in movement.payload
 
 
-def test_pair_validation_refuses_a_self_consistent_truncated_result_population():
+def test_pair_validation_refuses_a_self_consistent_truncated_result_inputs():
     ledger = _ledger("tatatata\n")
     source = _byte_source(ledger)
     event = record_adjacent_byte_pair_count_layer(

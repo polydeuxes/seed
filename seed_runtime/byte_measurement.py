@@ -1,4 +1,4 @@
-"""Measure exact bytes across a complete bounded ingress population.
+"""Measure exact bytes across complete bounded ingress occurrences.
 
 This is the first acquisition boundary that does not receive its measured
 subjects from a caller.  The subjects are the literal byte values carried by
@@ -72,6 +72,7 @@ BYTE_PAIR_RESULT_COORDINATES = BYTE_RESULT_COORDINATES | {
     "source_movement_event_id",
     "input_applicability",
     "input_applicability_event_id",
+    "input_role",
 }
 BYTE_PAIR_RESPONSIBLE_ACT_EVIDENCE_KIND = (
     "operator.measurement.adjacent_byte_pair_responsible_act_evidenced"
@@ -94,6 +95,7 @@ BYTE_PAIR_APPLICABILITY_RESULT_COORDINATES = frozenset(
         "target_act_id",
         "input_assertion_ref",
         "input_movement_event_id",
+        "input_role",
         "applicability",
         "target_act_outcome",
     }
@@ -123,7 +125,7 @@ MEASUREMENT_AUTHORITY = (
     "establishes new bounded byte Standing and does not revise source Standing"
 )
 SOURCE_SET_AUTHORITY = (
-    "exact bounded source-population Measurement Evidence only; establishes no "
+    "exact bounded source-material Measurement Evidence only; establishes no "
     "character, word, language, position, adjacency, grammar, represented relation, or relation"
 )
 PAIR_MEASUREMENT_AUTHORITY = (
@@ -134,16 +136,17 @@ PAIR_MEASUREMENT_AUTHORITY = (
 )
 BYTE_PAIR_RESULT_BOUNDARY = (
     "establish exact counts of consecutive two-byte spans within the exact "
-    "bounded source population"
+    "bounded source material"
 )
+BYTE_PAIR_INPUT_ROLE = "exact bounded source material for adjacent-byte Measurement"
 SEED_NATIVE_MEASUREMENT_RESPONSIBLE_BOUNDARY = "this Seed"
 BYTE_MEASUREMENT_RESPONSIBILITY = (
     "perform the bounded exact-byte Measurement and produce only the findings "
-    "established by its exact source population, rule, Scope, Authority, and limits"
+    "established by its exact source occurrences, rule, Scope, Authority, and limits"
 )
 BYTE_PAIR_MEASUREMENT_RESPONSIBILITY = (
     "produce exact adjacent-byte-pair findings from an "
-    "applicable exact bounded source population without exceeding the source's "
+    "applicable exact bounded source material without exceeding the source's "
     "Scope, provenance, occurrence identities, Authority, Unknowns, or limits"
 )
 BYTE_PAIR_INPUT_APPLICABILITY_RESPONSIBILITY = (
@@ -184,7 +187,7 @@ class MeasuredByteCount:
 
 
 @dataclass(frozen=True)
-class MeasuredBytePopulation:
+class MeasuredByteInputs:
     workspace_id: str
     source_session_ids: tuple[str, ...]
     completeness_boundary: EventLedgerBoundary
@@ -201,7 +204,7 @@ class MeasuredBytePairCount:
 
 
 @dataclass(frozen=True)
-class MeasuredBytePairPopulation:
+class MeasuredBytePairInputs:
     workspace_id: str
     source_session_ids: tuple[str, ...]
     completeness_boundary: EventLedgerBoundary
@@ -295,7 +298,7 @@ def _identity(
 
 
 def _seed_native_measurement_assignment(
-    measured: MeasuredBytePopulation | MeasuredBytePairPopulation,
+    measured: MeasuredByteInputs | MeasuredBytePairInputs,
 ) -> dict[str, Any]:
     """Expose why this exact preserved-material Measurement belongs here."""
 
@@ -327,6 +330,7 @@ def _pair_input_applicability(
     content = {
         "input_assertion_ref": source.reference,
         "input_movement_event_id": source.locality_movement_event_id,
+        "input_role": BYTE_PAIR_INPUT_ROLE,
         "target_act_id": target_act_id,
         "target_act": "declared adjacent-byte-pair Measurement",
         "responsibility": BYTE_PAIR_INPUT_APPLICABILITY_RESPONSIBILITY,
@@ -368,7 +372,7 @@ def _pair_input_applicability(
         }
     elif payload["dimensions"]["authority"] != SOURCE_SET_AUTHORITY:
         standing = "Unknown"
-        basis = "the input carries no recognized Authority for this exact source-population use"
+        basis = "the input carries no recognized Authority for this exact source-material use"
         applicability_scope = scope
         source_provenance = payload["dimensions"]["source_provenance"]
         input_standing = payload["dimensions"]["standing"]
@@ -382,7 +386,7 @@ def _pair_input_applicability(
         }
     else:
         standing = "applicable"
-        basis = "exact bounded source population matches this Act and result boundary"
+        basis = "exact bounded source material matches this Act and result boundary"
         applicability_scope = scope
         source_provenance = payload["dimensions"]["source_provenance"]
         input_standing = payload["dimensions"]["standing"]
@@ -418,6 +422,7 @@ def _pair_input_applicability(
         "result": "input_applicability",
         "input_assertion_ref": source.reference,
         "input_movement_event_id": source.locality_movement_event_id,
+        "input_role": BYTE_PAIR_INPUT_ROLE,
         "target_act_id": target_act_id,
         "target_act_occurrence_id": None,
         "responsibility": BYTE_PAIR_INPUT_APPLICABILITY_RESPONSIBILITY,
@@ -447,7 +452,7 @@ def _pair_input_applicability(
             "known_loss": {"carried": False, "treatment": "not represented by input"},
             "currentness": {
                 "carried": False,
-                "treatment": "not required for this historical bounded population",
+                "treatment": "not required for this historical bounded source material",
             },
             "negative_authority": negative_authority,
         },
@@ -500,7 +505,7 @@ def measure_byte_counts(
     *,
     workspace_id: str,
     source_session_ids: Iterable[str],
-) -> MeasuredBytePopulation:
+) -> MeasuredByteInputs:
     """Count every exact byte in every declared session through one boundary."""
 
     sessions = tuple(dict.fromkeys(source_session_ids))
@@ -523,7 +528,7 @@ def _measure_byte_counts_through(
     workspace_id: str,
     sessions: tuple[str, ...],
     boundary: EventLedgerBoundary,
-) -> MeasuredBytePopulation:
+) -> MeasuredByteInputs:
     missing = [
         session
         for session in sessions
@@ -591,7 +596,7 @@ def _measure_byte_counts_through(
         for value in range(256)
         if totals[value] > 0
     )
-    return MeasuredBytePopulation(
+    return MeasuredByteInputs(
         workspace_id=workspace_id,
         source_session_ids=sessions,
         completeness_boundary=boundary,
@@ -849,7 +854,7 @@ def _measure_adjacent_byte_pair_counts_through(
     input_applicability: dict[str, Any],
     target_act_id: str,
     act_occurrence_id: str,
-) -> MeasuredBytePairPopulation:
+) -> MeasuredBytePairInputs:
     missing = [
         session
         for session in sessions
@@ -918,7 +923,7 @@ def _measure_adjacent_byte_pair_counts_through(
         )
         for pair in sorted(totals)
     )
-    return MeasuredBytePairPopulation(
+    return MeasuredBytePairInputs(
         workspace_id=workspace_id,
         source_session_ids=sessions,
         completeness_boundary=boundary,
@@ -932,7 +937,7 @@ def _measure_adjacent_byte_pair_counts_through(
     )
 
 
-def _assertions(measured: MeasuredBytePopulation) -> list[dict[str, Any]]:
+def _assertions(measured: MeasuredByteInputs) -> list[dict[str, Any]]:
     scope = {
         "workspace_id": measured.workspace_id,
         "source_session_ids": list(measured.source_session_ids),
@@ -1308,7 +1313,7 @@ def assertions_of_recorded_byte_measurement(
     return tuple(reconstructed)
 
 
-def _pair_assertions(measured: MeasuredBytePairPopulation) -> list[dict[str, Any]]:
+def _pair_assertions(measured: MeasuredBytePairInputs) -> list[dict[str, Any]]:
     scope = {
         "workspace_id": measured.workspace_id,
         "source_session_ids": list(measured.source_session_ids),
@@ -1383,7 +1388,7 @@ def _pair_assertions(measured: MeasuredBytePairPopulation) -> list[dict[str, Any
 def _record_pair_responsible_act_evidence(
     ledger: EventLedger,
     *,
-    measured: MeasuredBytePairPopulation,
+    measured: MeasuredBytePairInputs,
     recording_session_id: str,
     produced_content: dict[str, Any],
 ):
@@ -1405,6 +1410,8 @@ def _record_pair_responsible_act_evidence(
             "input_applicability_identity": measured.input_applicability["dimensions"][
                 "identity"
             ],
+            "input_assertion_ref": measured.source_assertion_ref,
+            "input_role": BYTE_PAIR_INPUT_ROLE,
             "result_commitment": production_commitment(
                 BYTE_PAIR_MEASUREMENT_CONVENTION, produced_content
             ),
@@ -1450,6 +1457,7 @@ def _record_pair_input_applicability(
         "target_act_id": applicability_assertion["target_act_id"],
         "input_assertion_ref": source.reference,
         "input_movement_event_id": source.locality_movement_event_id,
+        "input_role": BYTE_PAIR_INPUT_ROLE,
         "applicability": applicability_assertion,
         "target_act_outcome": "not established by this Applicability Assertion",
     }
@@ -1467,6 +1475,7 @@ def _record_pair_input_applicability(
             "assigned_by_responsibility": BYTE_PAIR_MEASUREMENT_RESPONSIBILITY,
             "input_assertion_ref": source.reference,
             "input_movement_event_id": source.locality_movement_event_id,
+            "input_role": BYTE_PAIR_INPUT_ROLE,
             "target_act_id": applicability_assertion["target_act_id"],
             "result_commitment": production_commitment(
                 BYTE_PAIR_APPLICABILITY_CONVENTION, result_payload
@@ -1558,6 +1567,7 @@ def get_recorded_pair_input_applicability(
         "assigned_by_responsibility": BYTE_PAIR_MEASUREMENT_RESPONSIBILITY,
         "input_assertion_ref": payload["input_assertion_ref"],
         "input_movement_event_id": payload["input_movement_event_id"],
+        "input_role": payload["input_role"],
         "target_act_id": payload["target_act_id"],
         "result_commitment": production_commitment(
             BYTE_PAIR_APPLICABILITY_CONVENTION, produced
@@ -1620,6 +1630,8 @@ def get_recorded_pair_input_applicability(
         or payload.get("dimensions", {}).get("standing") != standing
         or payload.get("target_act_id") != applicability_assertion.get("target_act_id")
         or payload.get("input_assertion_ref") != applicability_assertion.get("input_assertion_ref")
+        or payload.get("input_role") != BYTE_PAIR_INPUT_ROLE
+        or applicability_assertion.get("input_role") != BYTE_PAIR_INPUT_ROLE
         or payload.get("responsibility")
         != BYTE_PAIR_INPUT_APPLICABILITY_RESPONSIBILITY
         or payload.get("responsible_boundary")
@@ -1707,6 +1719,7 @@ def record_adjacent_byte_pair_count_layer(
         "measurement_rule": BYTE_PAIR_MEASUREMENT_RULE,
         "source_assertion_ref": measured.source_assertion_ref,
         "source_movement_event_id": measured.source_movement_event_id,
+        "input_role": BYTE_PAIR_INPUT_ROLE,
         "input_applicability": measured.input_applicability,
         "input_applicability_event_id": applicability_event.id,
         "source_session_ids": list(measured.source_session_ids),
@@ -1760,6 +1773,7 @@ def _validate_recorded_pair_input_applicability(
     content = {
         "input_assertion_ref": source.reference,
         "input_movement_event_id": source.locality_movement_event_id,
+        "input_role": BYTE_PAIR_INPUT_ROLE,
         "target_act_id": target_act_id,
         "target_act": "declared adjacent-byte-pair Measurement",
         "responsibility": BYTE_PAIR_INPUT_APPLICABILITY_RESPONSIBILITY,
@@ -1796,6 +1810,7 @@ def _validate_recorded_pair_input_applicability(
         "result": "input_applicability",
         "input_assertion_ref": source.reference,
         "input_movement_event_id": source.locality_movement_event_id,
+        "input_role": BYTE_PAIR_INPUT_ROLE,
         "target_act_id": target_act_id,
         "target_act_occurrence_id": None,
         "responsibility": BYTE_PAIR_INPUT_APPLICABILITY_RESPONSIBILITY,
@@ -1816,7 +1831,7 @@ def _validate_recorded_pair_input_applicability(
         "input_limits": source_payload["forbidden_inferences"],
         "conflicts": [],
         "determination_basis": (
-            "exact bounded source population matches this Act and result boundary"
+            "exact bounded source material matches this Act and result boundary"
         ),
         "coordinate_treatment": {
             "support_relation_standing": {
@@ -1826,7 +1841,7 @@ def _validate_recorded_pair_input_applicability(
             "known_loss": {"carried": False, "treatment": "not represented by input"},
             "currentness": {
                 "carried": False,
-                "treatment": "not required for this historical bounded population",
+                "treatment": "not required for this historical bounded source material",
             },
             "negative_authority": {
                 "carried": True,
@@ -1950,6 +1965,8 @@ def assertions_of_recorded_adjacent_byte_pair_measurement(
         ],
         "result_boundary": BYTE_PAIR_RESULT_BOUNDARY,
         "input_applicability_identity": applicability_identity,
+        "input_assertion_ref": payload["source_assertion_ref"],
+        "input_role": payload["input_role"],
         "result_commitment": production_commitment(
             BYTE_PAIR_MEASUREMENT_CONVENTION, produced
         ),
@@ -2062,7 +2079,7 @@ def assertions_of_recorded_adjacent_byte_pair_measurement(
     }
     assertions = payload.get("assertions")
     if not isinstance(assertions, list):
-        raise ByteMeasurementError(f"{event_id} carries no pair result population")
+        raise ByteMeasurementError(f"{event_id} carries no pair result Assertions")
     by_pair: dict[str, dict[str, dict[str, Any]]] = {}
     exact_keys = {
         "dimensions",

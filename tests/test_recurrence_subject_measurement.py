@@ -37,7 +37,7 @@ def _record_compare(ledger, left, right):
     )
 
 
-def _recurrence_population():
+def _recurrence_inputs():
     ledger = EventLedger()
     first_pair = AdjacentPair("it", "is")
     first_left = _record_following(
@@ -66,7 +66,7 @@ def _recurrence_population():
 
 
 def test_measurement_emits_exactly_the_validation_owned_immediate_surface():
-    ledger = _recurrence_population()
+    ledger = _recurrence_inputs()
 
     findings = list(
         measure_recurrence_subject_coordinates(
@@ -91,7 +91,7 @@ def test_measurement_emits_exactly_the_validation_owned_immediate_surface():
 
 
 def test_same_exact_coordinate_value_has_one_identity_and_distinct_productions():
-    ledger = _recurrence_population()
+    ledger = _recurrence_inputs()
     recorded = record_recurrence_subject_coordinate_layer(
         ledger,
         workspace_id="w",
@@ -119,7 +119,7 @@ def test_same_exact_coordinate_value_has_one_identity_and_distinct_productions()
 
 
 def test_recording_preserves_one_source_and_three_distinct_results_per_occurrence():
-    ledger = _recurrence_population()
+    ledger = _recurrence_inputs()
     record_recurrence_subject_coordinate_layer(
         ledger,
         workspace_id="w",
@@ -150,7 +150,7 @@ def test_recording_preserves_one_source_and_three_distinct_results_per_occurrenc
 
 
 def test_validation_refuses_a_coordinate_value_that_disagrees_with_its_source():
-    ledger = _recurrence_population()
+    ledger = _recurrence_inputs()
     record_recurrence_subject_coordinate_layer(
         ledger,
         workspace_id="w",
@@ -175,7 +175,7 @@ def test_validation_refuses_a_coordinate_value_that_disagrees_with_its_source():
 
 
 def test_validation_refuses_a_self_consistent_scope_not_carried_by_its_source():
-    ledger = _recurrence_population()
+    ledger = _recurrence_inputs()
     record_recurrence_subject_coordinate_layer(
         ledger,
         workspace_id="w",
@@ -202,7 +202,7 @@ def test_validation_refuses_a_self_consistent_scope_not_carried_by_its_source():
         )
 
 
-def test_measurement_refuses_a_population_with_no_recurrence_assertions():
+def test_measurement_refuses_a_inputs_with_no_recurrence_assertions():
     ledger = EventLedger()
     pair = AdjacentPair("it", "is")
     left = _record_following(ledger, "s1", "it is here\n", pair)
@@ -222,7 +222,7 @@ def test_measurement_refuses_a_population_with_no_recurrence_assertions():
 
 
 def test_structural_validation_refuses_nested_coordinate_promotion():
-    ledger = _recurrence_population()
+    ledger = _recurrence_inputs()
     record_recurrence_subject_coordinate_layer(
         ledger,
         workspace_id="w",

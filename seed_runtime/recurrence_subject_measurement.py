@@ -432,7 +432,7 @@ def iter_recorded_recurrence_subject_coordinate_assertions(
     session_ids: Iterable[str],
     through: EventLedgerBoundary,
 ) -> Iterator[RecordedRecurrenceSubjectCoordinateAssertion]:
-    """Reconstruct one bounded coordinate-Assertion population efficiently."""
+    """Reconstruct one bounded coordinate-Assertion inputs efficiently."""
 
     sessions = tuple(dict.fromkeys(session_ids))
     if not sessions:
@@ -485,7 +485,7 @@ def iter_recorded_recurrence_subject_coordinate_assertions(
         raise RecurrenceSubjectMeasurementError(str(exc)) from exc
     if set(validated_sources) != source_refs:
         raise RecurrenceSubjectMeasurementError(
-            "coordinate Measurement population contains an unestablished recurrence source"
+            "coordinate Measurement inputs contains an unestablished recurrence source"
         )
 
     for session_id in sessions:

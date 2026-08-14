@@ -237,7 +237,7 @@ def _identity_read_matches_occurrence_read(ledger):
 
     Both ledgers are held to it, and at every boundary, because a caller that
     compares reconstructed identities against carried ones must not be able to reach
-    a different bounded population by reading less.
+    a different bounded inputs by reading less.
     """
 
     boundaries = [None]

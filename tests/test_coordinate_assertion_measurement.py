@@ -17,11 +17,11 @@ from seed_runtime.coordinate_assertion_measurement import (
 from seed_runtime.recurrence_subject_measurement import (
     record_recurrence_subject_coordinate_layer,
 )
-from tests.test_recurrence_subject_measurement import _recurrence_population
+from tests.test_recurrence_subject_measurement import _recurrence_inputs
 
 
-def _coordinate_population():
-    ledger = _recurrence_population()
+def _coordinate_inputs():
+    ledger = _recurrence_inputs()
     record_recurrence_subject_coordinate_layer(
         ledger,
         workspace_id="w",
@@ -32,7 +32,7 @@ def _coordinate_population():
 
 
 def test_measurement_groups_only_by_canonical_coordinate_assertion_identity():
-    ledger = _coordinate_population()
+    ledger = _coordinate_inputs()
 
     findings = list(
         measure_coordinate_assertion_counts(
@@ -59,7 +59,7 @@ def test_measurement_groups_only_by_canonical_coordinate_assertion_identity():
 
 
 def test_recording_preserves_set_count_and_only_evidenced_recurrence():
-    ledger = _coordinate_population()
+    ledger = _coordinate_inputs()
     recorded = record_coordinate_assertion_count_layer(
         ledger,
         workspace_id="w",
@@ -98,7 +98,7 @@ def test_recording_preserves_set_count_and_only_evidenced_recurrence():
 
 
 def test_recorded_results_are_occurrence_bound_and_ledger_addressable():
-    ledger = _coordinate_population()
+    ledger = _coordinate_inputs()
     record_coordinate_assertion_count_layer(
         ledger,
         workspace_id="w",
@@ -120,7 +120,7 @@ def test_recorded_results_are_occurrence_bound_and_ledger_addressable():
 
 
 def test_validation_refuses_a_self_consistent_invented_production_set():
-    ledger = _coordinate_population()
+    ledger = _coordinate_inputs()
     record_coordinate_assertion_count_layer(
         ledger,
         workspace_id="w",
@@ -166,7 +166,7 @@ def test_validation_refuses_a_self_consistent_invented_production_set():
 
 
 def test_validation_refuses_self_consistent_content_not_carried_by_source():
-    ledger = _coordinate_population()
+    ledger = _coordinate_inputs()
     record_coordinate_assertion_count_layer(
         ledger,
         workspace_id="w",
@@ -213,7 +213,7 @@ def test_validation_refuses_self_consistent_content_not_carried_by_source():
 
 
 def test_measurement_refuses_an_absent_declared_source_session():
-    ledger = _coordinate_population()
+    ledger = _coordinate_inputs()
     with pytest.raises(CoordinateAssertionMeasurementError, match="absent"):
         measure_coordinate_assertion_counts(
             ledger,
@@ -222,7 +222,7 @@ def test_measurement_refuses_an_absent_declared_source_session():
         )
 
 
-def test_measurement_refuses_an_empty_coordinate_population_eagerly():
+def test_measurement_refuses_an_empty_coordinate_inputs_eagerly():
     ledger = EventLedger()
     ledger.append("unrelated", "w", {}, session_id="coordinate-results")
 

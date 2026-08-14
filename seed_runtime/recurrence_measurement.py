@@ -11,7 +11,7 @@ decide an upstream subject); a distinct Responsibility is not.
 
 `#2429` called this a "cohort measurement" and wrote
 `cohort-measurement-over-recorded-comparisons` into every record. That named a
-Responsibility nothing established, and `cohort`, `population`, `body` and
+Responsibility nothing established, and `cohort`, `inputs`, `body` and
 `survey` were statistical vocabulary the grammar never needed. What the act
 reports is:
 

@@ -118,7 +118,7 @@ def test_measurement_boundary_excludes_later_comparison(monkeypatch):
     monkeypatch.setattr(ledger, "capture_boundary", original_capture)
 
 
-def test_measurement_requires_declared_established_population():
+def test_measurement_requires_declared_established_inputs():
     ledger = EventLedger()
     with pytest.raises(ComparisonResultMeasurementError, match="absent"):
         measure_comparison_result_counts(
@@ -126,7 +126,7 @@ def test_measurement_requires_declared_established_population():
         )
 
 
-def test_measurement_refuses_an_empty_comparison_population_eagerly():
+def test_measurement_refuses_an_empty_comparison_inputs_eagerly():
     ledger = EventLedger()
     ledger.append("unrelated", "w", {}, session_id="comparisons")
 
@@ -176,7 +176,7 @@ def test_digest_collision_does_not_establish_exact_result_equality(monkeypatch):
     assert all(item.count == 1 for item in occupancy)
 
 
-def test_population_validates_each_reused_input_once(monkeypatch):
+def test_inputs_validates_each_reused_input_once(monkeypatch):
     ledger = EventLedger()
     pair = AdjacentPair("it", "is")
     a = _record_following(ledger, "s1", "it is here\n", pair)

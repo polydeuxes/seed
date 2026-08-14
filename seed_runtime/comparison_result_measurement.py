@@ -143,7 +143,7 @@ def measure_comparison_result_counts(
     workspace_id: str,
     source_session_ids: Iterable[str],
 ) -> Iterator[MeasuredComparisonResultCount]:
-    """Count every exact carried result in one declared bounded population.
+    """Count every exact carried result in one declared bounded inputs.
 
     Exact content is the complete ``{coordinate, present, values, same}``
     result.  In particular, two different distinctions are not collapsed merely
@@ -221,7 +221,7 @@ def measure_comparison_result_counts(
         )
 
     # Rehydrate only the representative of the exact result being yielded.
-    # Population validation above is eager; callers may stream the findings
+    # Inputs validation above is eager; callers may stream the findings
     # without this function constructing a global collection of full payloads.
     def stream() -> Iterator[MeasuredComparisonResultCount]:
         for candidates in grouped.values():
@@ -700,11 +700,11 @@ def iter_recorded_comparison_result_count_assertions(
     session_ids: Iterable[str],
     through: EventLedgerBoundary,
 ) -> Iterator[RecordedComparisonResultCountAssertion]:
-    """Reconstruct a bounded count-Assertion population with shared verification.
+    """Reconstruct a bounded count-Assertion inputs with shared verification.
 
     Every producing occurrence is checked structurally.  Its production set is
-    then checked against the complete positional-result comparison population
-    through the boundary that occurrence carries.  Expected populations are
+    then checked against the complete positional-result comparison inputs
+    through the boundary that occurrence carries.  Expected inputss are
     built once per exact source scope/boundary during this invocation rather
     than replayed once per count occurrence.
     """

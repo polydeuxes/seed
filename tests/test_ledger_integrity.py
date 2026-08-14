@@ -323,7 +323,7 @@ def test_an_absent_occurrence_is_unverifiable(ledger):
 
 
 # --------------------------------------------------------------------------
-# The Act with participating inputs is where verification happens.
+# The Act with participating inputs are where verification happens.
 # --------------------------------------------------------------------------
 
 
@@ -678,7 +678,7 @@ def test_a_cache_hit_still_refuses_a_contradictory_support_count():
     """A forged count must be refused whichever validation reaches it first.
 
     `SupportValidator` keys on the commitment, not the count, so a second basis
-    committing to the same population reaches a cached result. Curator found
+    committing to the same inputs reaches a cached result. Curator found
     that the count check then never ran, which made catching a forged count
     depend on what the act happened to have validated earlier.
     """
@@ -687,7 +687,7 @@ def test_a_cache_hit_still_refuses_a_contradictory_support_count():
         SupportBasis,
         SupportBasisError,
         SupportValidator,
-        declare_complete_population,
+        declare_complete_inputs,
     )
 
     ledger = EventLedger()
@@ -697,7 +697,7 @@ def test_a_cache_hit_still_refuses_a_contradictory_support_count():
     ])
     boundary = ledger.capture_boundary()
     identities = tuple(ledger.iter_session_kind_ids("w", "s", "ingress", through=boundary))
-    honest = declare_complete_population(
+    honest = declare_complete_inputs(
         workspace_id="w", session_id="s", occurrence_kind="ingress",
         boundary=boundary, identities=identities,
     )
@@ -715,7 +715,7 @@ def test_a_cache_hit_still_refuses_a_contradictory_support_count():
     with pytest.raises(SupportBasisError, match="declared count"):
         SupportValidator(ledger).validate(forged)
 
-    # And refused after the same population has been cached, which is the path
+    # And refused after the same inputs has been cached, which is the path
     # that previously returned it.
     validation = SupportValidator(ledger)
     assert validation.validate(honest) == identities
@@ -738,7 +738,7 @@ def test_every_support_basis_refusal_can_be_reached():
     """
 
     from seed_runtime.support_basis import (
-        COMPLETE_INGRESS_POPULATION,
+        COMPLETE_INGRESS_INPUTS,
         SupportBasis,
         SupportBasisError,
         support_commitment,
@@ -747,8 +747,8 @@ def test_every_support_basis_refusal_can_be_reached():
     def basis(**changes):
         fields = dict(
             workspace_id="w", session_id="s", occurrence_kind="k",
-            boundary_commitment="b", selection_rule=COMPLETE_INGRESS_POPULATION,
-            commitment=support_commitment(COMPLETE_INGRESS_POPULATION, ()),
+            boundary_commitment="b", selection_rule=COMPLETE_INGRESS_INPUTS,
+            commitment=support_commitment(COMPLETE_INGRESS_INPUTS, ()),
             support_count=0,
         )
         fields.update(changes)
@@ -788,7 +788,7 @@ def test_every_support_basis_refusal_can_be_reached():
             basis(support_count=value)
 
     # `True` mattered most: it is an int and equals 1, so a basis carrying it
-    # would have agreed with a one-occurrence population.
+    # would have agreed with a one-occurrence inputs.
     assert True == 1
 
     with pytest.raises(SupportBasisError, match="not present"):
@@ -809,40 +809,40 @@ def test_a_commitment_distinguishes_order_and_rule_not_only_membership():
     under a different rule, must not commit to the same digest."""
 
     from seed_runtime.support_basis import (
-        COMPLETE_INGRESS_POPULATION, support_commitment,
+        COMPLETE_INGRESS_INPUTS, support_commitment,
     )
 
-    ordered = support_commitment(COMPLETE_INGRESS_POPULATION, ("a", "b", "c"))
-    assert ordered != support_commitment(COMPLETE_INGRESS_POPULATION, ("a", "c", "b"))
+    ordered = support_commitment(COMPLETE_INGRESS_INPUTS, ("a", "b", "c"))
+    assert ordered != support_commitment(COMPLETE_INGRESS_INPUTS, ("a", "c", "b"))
     assert ordered != support_commitment("another rule", ("a", "b", "c"))
-    assert ordered != support_commitment(COMPLETE_INGRESS_POPULATION, ("a", "b"))
-    assert support_commitment(COMPLETE_INGRESS_POPULATION, ("ab", "c")) != \
-           support_commitment(COMPLETE_INGRESS_POPULATION, ("a", "bc"))
+    assert ordered != support_commitment(COMPLETE_INGRESS_INPUTS, ("a", "b"))
+    assert support_commitment(COMPLETE_INGRESS_INPUTS, ("ab", "c")) != \
+           support_commitment(COMPLETE_INGRESS_INPUTS, ("a", "bc"))
 
     # The parts must be unambiguous when a part contains whatever divides them.
     # An earlier encoding separated parts with a NUL, which held only while no
     # identity carried one — and nothing constrains an Event.id. Both of these
-    # produced one digest for two different populations.
-    assert support_commitment(COMPLETE_INGRESS_POPULATION, ("a", "b\0c")) != \
-           support_commitment(COMPLETE_INGRESS_POPULATION, ("a\0b", "c"))
+    # produced one digest for two different inputss.
+    assert support_commitment(COMPLETE_INGRESS_INPUTS, ("a", "b\0c")) != \
+           support_commitment(COMPLETE_INGRESS_INPUTS, ("a\0b", "c"))
     assert support_commitment("a", ("b",)) != support_commitment("a\0b", ())
 
     # And the same requirement under the length prefix that replaced it.
     assert support_commitment("a", ("b",)) != support_commitment("ab", ())
-    assert support_commitment(COMPLETE_INGRESS_POPULATION, ("", "ab")) != \
-           support_commitment(COMPLETE_INGRESS_POPULATION, ("a", "b"))
-    assert support_commitment(COMPLETE_INGRESS_POPULATION, ("",)) != \
-           support_commitment(COMPLETE_INGRESS_POPULATION, ())
+    assert support_commitment(COMPLETE_INGRESS_INPUTS, ("", "ab")) != \
+           support_commitment(COMPLETE_INGRESS_INPUTS, ("a", "b"))
+    assert support_commitment(COMPLETE_INGRESS_INPUTS, ("",)) != \
+           support_commitment(COMPLETE_INGRESS_INPUTS, ())
     # Multi-byte identities are committed by encoded length, not character count.
-    assert support_commitment(COMPLETE_INGRESS_POPULATION, ("é",)) != \
-           support_commitment(COMPLETE_INGRESS_POPULATION, ("ab",))
+    assert support_commitment(COMPLETE_INGRESS_INPUTS, ("é",)) != \
+           support_commitment(COMPLETE_INGRESS_INPUTS, ("ab",))
 
     # A part that is not a representation is refused rather than leaking from
     # the encode. The rule is a part too, and is held to the same requirement.
     from seed_runtime.support_basis import SupportBasisError as _E
     for bad in (1, None, b"bytes", ["a"]):
         with pytest.raises(_E, match="must be a representation"):
-            support_commitment(COMPLETE_INGRESS_POPULATION, (bad,))
+            support_commitment(COMPLETE_INGRESS_INPUTS, (bad,))
         with pytest.raises(_E, match="must be a representation"):
             support_commitment(bad, ("a",))
 

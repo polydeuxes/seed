@@ -137,7 +137,7 @@ def measure_coordinate_assertion_counts(
     workspace_id: str,
     source_session_ids: Iterable[str],
 ) -> Iterator[MeasuredCoordinateAssertionCount]:
-    """Count every canonical coordinate Assertion in one bounded population."""
+    """Count every canonical coordinate Assertion in bounded inputs."""
 
     sessions = tuple(dict.fromkeys(source_session_ids))
     if not sessions or any(not isinstance(value, str) or not value for value in sessions):
@@ -526,7 +526,7 @@ def get_recorded_coordinate_assertion_count(
     producing_event_id: str,
     assertion_id: str,
 ) -> RecordedCoordinateAssertionCount | None:
-    """Resolve one result after proving its complete coordinate population."""
+    """Resolve one result after proving its complete coordinate inputs."""
 
     event = ledger.get(producing_event_id)
     if event is None:

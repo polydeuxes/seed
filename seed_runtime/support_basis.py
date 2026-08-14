@@ -21,9 +21,9 @@ recorded finding is 57,886 bytes and **56,000 of them are that enumeration**:
 ```
 
 The same identities are copied into every finding of a body, because every
-finding input the same complete bounded population. And the cost is paid three
+finding input the same complete bounded inputs. And the cost is paid three
 times — writing the enumeration, decoding it on every later read, and then
-re-deriving the population from the ledger in order to check it against itself.
+re-deriving the inputs from the ledger in order to check it against itself.
 
 **What is preserved here instead is the basis, and the enumeration remains one
 Representation of it.**
@@ -36,19 +36,19 @@ Representation of it.**
 ```
 
 **The selection rule is not metadata.** It is part of the basis's identity. Today
-every act has as input the complete population, so scope and boundary alone would
+every act has as input the complete inputs, so scope and boundary alone would
 reconstruct it — but an act that input three occurrences out of four thousand
 would be validated as having input all four thousand, and the reference
 would be silently false rather than merely lossy. The rule is what keeps a
 subset-Act with participating inputs representable, and an unrecognised rule is refused rather
-than assumed to mean the whole population.
+than assumed to mean the whole inputs.
 
 **The commitment is what makes validation checkable without the enumeration.**
-The check it replaces also validated the population from the ledger and compared
+The check it replaces also validated the inputs from the ledger and compared
 it against the carried list, so this is not a stronger guarantee — it preserves
 substantially the same exactness in a form that is compact and reusable. What
 the commitment adds is that a later change to the selection code cannot silently
-redefine what an old finding's support was, and that one verified population can
+redefine what an old finding's support was, and that one verified inputs can
 serve every finding referencing the same basis.
 """
 
@@ -64,10 +64,10 @@ _COMMITMENT_DOMAIN = b"seed.support-basis.v1\0"
 
 # Every selection a support basis may declare. A rule outside this set is
 # refused: a basis whose selection cannot be performed is not reconstructible, and
-# guessing that it meant the whole population is the failure this set exists to
+# guessing that it meant the whole inputs are the failure this set exists to
 # prevent.
-COMPLETE_INGRESS_POPULATION = "every preserved occurrence of the scope's kind through the boundary"
-SUPPORT_SELECTION_RULES: frozenset[str] = frozenset({COMPLETE_INGRESS_POPULATION})
+COMPLETE_INGRESS_INPUTS = "every preserved occurrence of the scope's kind through the boundary"
+SUPPORT_SELECTION_RULES: frozenset[str] = frozenset({COMPLETE_INGRESS_INPUTS})
 
 
 class SupportBasisError(ValueError):
@@ -99,13 +99,13 @@ def support_commitment(selection_rule: str, identities: Iterable[str]) -> str:
     The rule is committed alongside them, so two selections that happen to
     return the same identities from the same scope are not interchangeable.
 
-    Its Standing is *"I represent this exact ordered support population"*, and a
-    representation under which two different populations produce one digest
+    Its Standing is *"I represent this exact ordered support inputs"*, and a
+    representation under which two different inputss produce one digest
     cannot carry that. The separated encoding this replaces could not: with
     a NUL between parts, `("a", "b\0c")` and `("a\0b", "c")` encoded
     identically, and so did rule `"a"` with identity `"b"` against rule
     `"a\0b"` with no identities. Neither was a hash collision — both handed
-    SHA-256 the same input for different populations.
+    SHA-256 the same input for different inputss.
     """
 
     digest = hashlib.sha256(_COMMITMENT_DOMAIN)
@@ -147,7 +147,7 @@ class SupportBasis:
                 raise SupportBasisError(f"a support basis requires {name}")
         # A count coordinate must be able to be a count. `bool` is excluded
         # because it is an `int` in Python and `True == 1`, so a basis carrying
-        # `True` would agree with a one-occurrence population — a coordinate
+        # `True` would agree with a one-occurrence inputs — a coordinate
         # asserting an exact count while carrying something that is not one.
         if not isinstance(self.support_count, int) or isinstance(self.support_count, bool):
             raise SupportBasisError(
@@ -189,7 +189,7 @@ class SupportBasis:
             raise SupportBasisError(f"a support basis is incomplete: {exc}") from exc
 
 
-def declare_complete_population(
+def declare_complete_inputs(
     *,
     workspace_id: str,
     session_id: str,
@@ -205,8 +205,8 @@ def declare_complete_population(
         session_id=session_id,
         occurrence_kind=occurrence_kind,
         boundary_commitment=boundary.commitment,
-        selection_rule=COMPLETE_INGRESS_POPULATION,
-        commitment=support_commitment(COMPLETE_INGRESS_POPULATION, ordered),
+        selection_rule=COMPLETE_INGRESS_INPUTS,
+        commitment=support_commitment(COMPLETE_INGRESS_INPUTS, ordered),
         support_count=len(ordered),
     )
 
@@ -218,13 +218,13 @@ class SupportValidator:
     the ledger.** Every distinct uncached basis is validated from the ledger,
     has the basis's own selection performed, and is refused unless the result
     reproduces the committed digest. A later reference to that exact verified
-    basis may then reuse the validated population — which is lawful because the
+    basis may then reuse the validated inputs — which is lawful because the
     cache is keyed by the commitment, so a second basis reaches it only by
     committing to exactly the same identities under exactly the same rule, and
     because a hit still rechecks the declared count.
 
     `#2486` measured the reuse this exists for: reconstructing one count layer
-    performed 205,328 ingress reads over **16** distinct populations.
+    performed 205,328 ingress reads over **16** distinct inputss.
 
     An instance is bounded to one act. It holds identities, not occurrences.
     """
@@ -258,9 +258,9 @@ class SupportValidator:
         if cached is not None:
             # The count is rechecked here rather than keyed on. A commitment
             # identifies the actual support, so a basis carrying a count that
-            # contradicts it is refused — not admitted as a second population.
+            # contradicts it is refused — not admitted as a second inputs.
             # Without this the count check ran only on the first validation of a
-            # population, so whether a forged count was caught depended on what
+            # inputs, so whether a forged count was caught depended on what
             # this act happened to have validated earlier.
             if len(cached) != basis.support_count:
                 raise SupportBasisError(
@@ -271,7 +271,7 @@ class SupportValidator:
         # No rule check here. A basis refuses any selection outside
         # `SUPPORT_SELECTION_RULES` at construction, and that set has one
         # member, so a basis reaching this point can only carry the complete
-        # population — validation performs every rule a basis can hold.
+        # inputs — validation performs every rule a basis can hold.
         #
         # Where a second rule is added, two responsibilities separate here that
         # are currently one: a basis knowing a rule is *recognised*, and a

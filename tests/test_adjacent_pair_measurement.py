@@ -1090,13 +1090,13 @@ def test_an_unknown_form_is_refused_before_any_occurrence_is_visited():
         index._answering_contexts(AdjacentPair(left="the", right="cat"), "invented")
 
 
-def test_a_support_binding_is_formed_over_its_population_not_paired_with_one():
-    """Putting a basis beside a population does not bind it to that population.
+def test_a_support_binding_is_formed_over_its_inputs_not_paired_with_one():
+    """Putting a basis beside a inputs does not bind it to that inputs.
 
     An earlier revision was a dataclass holding an identities tuple and a
     `SupportBasis` side by side, with prose saying the second was bound to the
     first and nothing enforcing it. A basis carrying a forged commitment and
-    count could be placed beside an honest population and would be carried onto
+    count could be placed beside an honest inputs and would be carried onto
     every Assertion the layer recorded.
 
     The binding now forms the basis itself, so that state is not constructable
@@ -1109,7 +1109,7 @@ def test_a_support_binding_is_formed_over_its_population_not_paired_with_one():
         _DeclaredSupportBinding, _support_for,
     )
     from seed_runtime.preserved_material_measurement import INGRESS_OCCURRED_KIND
-    from seed_runtime.support_basis import declare_complete_population
+    from seed_runtime.support_basis import declare_complete_inputs
 
     def bodied(prefix):
         ledger = EventLedger()
@@ -1137,7 +1137,7 @@ def test_a_support_binding_is_formed_over_its_population_not_paired_with_one():
         boundary=boundary, identities=index.event_ids,
     )
     assert finding.input_event_ids is index.event_ids
-    assert binding.basis == declare_complete_population(
+    assert binding.basis == declare_complete_inputs(
         workspace_id="w", session_id="s", occurrence_kind=INGRESS_OCCURRED_KIND,
         boundary=boundary, identities=index.event_ids,
     )
@@ -1153,18 +1153,18 @@ def test_a_support_binding_is_formed_over_its_population_not_paired_with_one():
         finding=finding, declared_support=None,
     ) == binding.basis
 
-    # A different population of the same size is refused. Under a count check
+    # A different inputs of the same size is refused. Under a count check
     # this passed and carried a basis describing material never input.
     _, _, other_finding = bodied("other")
     assert len(other_finding.input_event_ids) == len(finding.input_event_ids)
     assert other_finding.input_event_ids != finding.input_event_ids
-    with pytest.raises(PreservedMaterialMeasurementError, match="population object"):
+    with pytest.raises(PreservedMaterialMeasurementError, match="input sequence"):
         _support_for(
             workspace_id="w", session_id="s", completeness_boundary=boundary,
             finding=other_finding, declared_support=binding,
         )
 
-    # An equal copy may well be the same population; the fast path simply has
+    # An equal copy may well be the same inputs; the fast path simply has
     # not established that, so it is refused rather than assumed. Built from a
     # list because `tuple(t)` returns `t` itself for a tuple.
     rebuilt = tuple(list(index.event_ids))
@@ -1173,15 +1173,15 @@ def test_a_support_binding_is_formed_over_its_population_not_paired_with_one():
         workspace_id="w", session_id="s", occurrence_kind=INGRESS_OCCURRED_KIND,
         boundary=boundary, identities=rebuilt,
     )
-    # Its basis is identical, because it is the same population.
+    # Its basis is identical, because it is the same inputs.
     assert equal_binding.basis == binding.basis
-    with pytest.raises(PreservedMaterialMeasurementError, match="population object"):
+    with pytest.raises(PreservedMaterialMeasurementError, match="input sequence"):
         _support_for(
             workspace_id="w", session_id="s", completeness_boundary=boundary,
             finding=finding, declared_support=equal_binding,
         )
 
-    # And the scope is still checked once the population object matches.
+    # And the scope is still checked once the input sequence matches.
     for changes in ({"session_id": "another"}, {"workspace_id": "another"}):
         elsewhere = _DeclaredSupportBinding(
             workspace_id=changes.get("workspace_id", "w"),

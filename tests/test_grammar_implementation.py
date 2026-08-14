@@ -3,6 +3,7 @@ from io import StringIO
 from pathlib import Path
 
 from seed_runtime.byte_measurement import (
+    BYTE_PAIR_INPUT_ROLE,
     _identity,
     _validate_moved_byte_assertion,
     assertions_of_recorded_byte_measurement,
@@ -30,6 +31,13 @@ def _clause(clause_id: str) -> dict:
 
 def _witness_grammar() -> dict:
     return json.loads(GRAMMAR.read_text(encoding="utf-8"))["implementation_witness"]
+
+
+def test_live_runtime_carries_no_retired_collective_vocabulary():
+    runtime = Path(__file__).resolve().parents[1] / "seed_runtime"
+    retired = "popu" + "lation"
+    found = [path for path in runtime.glob("*.py") if retired in path.read_text().lower()]
+    assert found == []
 
 
 def _digest_only_witness(digest: str) -> dict[str, str]:
@@ -156,6 +164,10 @@ def _recorded_applicability() -> dict:
         "movement_act_evidence": ledger.get(
             movement.payload["movement_act_evidence_event_id"]
         ),
+        "pair_carrier": pair_measurement,
+        "pair_act_evidence": ledger.get(
+            pair_measurement.payload["responsible_act_evidence_id"]
+        ),
     }
 
 
@@ -262,7 +274,7 @@ def _applicability_witness(bundle: dict) -> dict[str, str]:
         "currentness": (
             INAPPLICABLE
             if treatment.get("currentness", {}).get("treatment")
-            == "not required for this historical bounded population"
+            == "not required for this historical bounded source material"
             else MISSING
         ),
         "occurrence_identity": (
@@ -412,6 +424,40 @@ def _movement_witness(bundle: dict) -> dict[str, str]:
             for coordinate in ("Standing", "Scope", "Unknowns", "limits")
         },
     }
+
+
+def _participation_witness(bundle: dict, *, role: str) -> str:
+    applicability = bundle["applicability"]
+    pair = bundle["pair_carrier"]
+    act_evidence = bundle["pair_act_evidence"]
+    if act_evidence is None:
+        return MISSING
+    exact_subject = (
+        applicability["input_assertion_ref"]
+        == pair.payload["source_assertion_ref"]
+        == act_evidence.payload["input_assertion_ref"]
+    )
+    exact_role = (
+        role
+        == applicability["input_role"]
+        == pair.payload["input_role"]
+        == act_evidence.payload["input_role"]
+    )
+    exact_occurrence = (
+        pair.payload["act_occurrence_id"]
+        == act_evidence.payload["act_occurrence_id"]
+    )
+    applicable_to_act = (
+        applicability["dimensions"]["standing"] == "applicable"
+        and applicability["target_act_id"] == pair.payload["target_act_id"]
+        and applicability["dimensions"]["identity"]
+        == act_evidence.payload["input_applicability_identity"]
+    )
+    return (
+        EXACT
+        if exact_subject and exact_role and exact_occurrence and applicable_to_act
+        else MISSING
+    )
 
 
 def test_implementation_witness_discriminates_content_carriage_and_digest():
@@ -650,6 +696,47 @@ def test_applicability_clause_is_checked_against_a_live_pair_determination():
     }
 
 
+def test_input_is_an_open_act_local_role_before_participation():
+    grammar = json.loads(GRAMMAR.read_text(encoding="utf-8"))
+    bundle = _recorded_applicability()
+    applicability = bundle["applicability"]
+
+    assert grammar["input_role"] == {
+        "kind": "Act_local_role",
+        "subject_taxonomy_closed": False,
+        "preserves_subject_identity": True,
+        "distinct_from": [
+            "subject",
+            "carriage",
+            "Applicability",
+            "Admission",
+            "participation",
+            "input_to_result_support",
+        ],
+    }
+    assert applicability["input_role"] == BYTE_PAIR_INPUT_ROLE
+    assert applicability["target_act_occurrence_id"] is None
+
+
+def test_participation_requires_exact_subject_role_and_act_occurrence():
+    grammar = json.loads(GRAMMAR.read_text(encoding="utf-8"))
+    bundle = _recorded_applicability()
+
+    assert grammar["structural_edges"]["participation"] == {
+        "from": "subject",
+        "to": "Act_occurrence",
+        "coordinate": "role",
+        "requires": ["exact_relation", "occurrence_witness"],
+    }
+    assert _participation_witness(bundle, role=BYTE_PAIR_INPUT_ROLE) == EXACT
+    assert _participation_witness(bundle, role="some other role") == MISSING
+
+    assert bundle["applicability"]["dimensions"]["standing"] == "applicable"
+    assert bundle["pair_carrier"].payload["act_occurrence_id"]
+    bundle["pair_act_evidence"] = None
+    assert _participation_witness(bundle, role=BYTE_PAIR_INPUT_ROLE) == MISSING
+
+
 def test_unjoined_endpoints_do_not_witness_an_input_to_act_relation():
     grammar = _witness_grammar()
     bundle = _recorded_applicability()
@@ -662,12 +749,10 @@ def test_unjoined_endpoints_do_not_witness_an_input_to_act_relation():
     assert grammar["relation_audit"] == {
         "endpoint_presence_establishes_relation": False,
         "families": {
-            "content_to_carriage": ["exact_relation", "occurrence_witness"],
-            "input_to_Act": ["exact_relation", "occurrence_witness"],
-            "Act_occurrence_to_result": [
-                "exact_relation",
-                "occurrence_witness",
-            ],
+            "carriage": ["exact_relation", "occurrence_witness"],
+            "candidate_participation": ["exact_relation", "occurrence_witness"],
+            "participation": ["exact_relation", "occurrence_witness"],
+            "yield": ["exact_relation", "occurrence_witness"],
             "representation_mechanically_matches_digest": [
                 "mechanical_recomputation"
             ],

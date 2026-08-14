@@ -452,7 +452,7 @@ def iter_recorded_equality_signatures(
     session_ids: Iterable[str],
     through: EventLedgerBoundary,
 ) -> Iterator[RecordedEqualitySignatureAssertion]:
-    """Validate and stream a bounded population of signature Assertions."""
+    """Validate and stream bounded sequence of signature Assertions."""
 
     for session_id in tuple(dict.fromkeys(session_ids)):
         for event in ledger.iter_session_kind(

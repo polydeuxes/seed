@@ -55,7 +55,7 @@ from seed_runtime.support_basis import (
     SupportBasis,
     SupportBasisError,
     SupportValidator,
-    declare_complete_population,
+    declare_complete_inputs,
 )
 from seed_runtime.preserved_material_measurement import (
     INGRESS_OCCURRED_KIND,
@@ -163,13 +163,13 @@ def _adjacent_pair_result_assertion_identity(
 
 
 class _DeclaredSupportBinding:
-    """A support basis and the exact population object it was formed over.
+    """A support basis and the exact input sequence it was formed over.
 
     **The binding is carried by the representation event, not by adjacency.** An earlier
     revision was a dataclass holding an identities tuple and a `SupportBasis`
     side by side, with prose saying the second was bound to the first and
     nothing enforcing it — so a basis carrying a forged commitment and count
-    could be placed beside an honest population and would be carried onto every
+    could be placed beside an honest inputs and would be carried onto every
     Assertion the layer recorded. Putting two things in one dataclass does not
     establish a relation between them.
 
@@ -189,7 +189,7 @@ class _DeclaredSupportBinding:
         identities: tuple[str, ...],
     ) -> None:
         self._identities = identities
-        self._basis = declare_complete_population(
+        self._basis = declare_complete_inputs(
             workspace_id=workspace_id,
             session_id=session_id,
             occurrence_kind=occurrence_kind,
@@ -214,7 +214,7 @@ def _support_for(
     finding: MeasurementFinding,
     declared_support: "_DeclaredSupportBinding | None",
 ) -> SupportBasis:
-    """The basis for this finding, declared once per population where supplied.
+    """The basis for this finding, declared once per inputs where supplied.
 
     A supplied basis is required to describe this finding's own scope, boundary
     and extent. It is not re-derived from the identities, because re-deriving is
@@ -223,7 +223,7 @@ def _support_for(
     """
 
     if declared_support is None:
-        return declare_complete_population(
+        return declare_complete_inputs(
             workspace_id=workspace_id,
             session_id=session_id,
             occurrence_kind=INGRESS_OCCURRED_KIND,
@@ -232,7 +232,7 @@ def _support_for(
         )
     if finding.input_event_ids is not declared_support.identities:
         raise PreservedMaterialMeasurementError(
-            "a declared support binding was not formed over the population object "
+            "a declared support binding was not formed over the input sequence "
             "this finding carries"
         )
     basis = declared_support.basis
@@ -259,11 +259,11 @@ def _adjacent_pair_result_assertion_fields(
 ) -> dict[str, object]:
     """Form one result Assertion's carried coordinates.
 
-    ``declared_support`` is the basis already declared for this population,
+    ``declared_support`` is the basis already declared for these inputs,
     bound to the identities it was declared over. A layer measures one bounded
-    population, so every finding it produces input the same identities under
+    inputs, so every finding it produces input the same identities under
     the same rule and yields the same basis — and declaring it per finding
-    recomputed a digest over the whole population once per result, measured at
+    recomputed a digest over the whole inputs once per result, measured at
     28.7s against 23.1s on 21,972 results over 700 occurrences.
 
     It is required to match, not trusted. The layer holds one identities tuple
@@ -472,7 +472,7 @@ def _validate_result_assertion_ingress(
     against the ledger and refuses unless the result reproduces the committed
     digest.
 
-    The check this replaces also validated the population from the ledger, so
+    The check this replaces also validated the inputs from the ledger, so
     the guarantee is substantially the same one in a compact and reusable form.
     It is not stronger for using a commitment.
     """
@@ -724,17 +724,17 @@ class AdjacentPairMeasurementIndex:
 
     @property
     def event_ids(self) -> tuple[str, ...]:
-        """The exact population object every finding this index produces carries.
+        """The exact input sequence every finding this index produces carries.
 
         Exposed so a support binding can be formed over *this* tuple, which is
         what makes reuse checkable in constant time.
 
-        **An equal tuple is not a different population.** Two tuples with the
-        same contents describe the same exact ordered population, and the
+        **An equal tuple is not a different inputs.** Two tuples with the
+        same contents describe the same exact ordered inputs, and the
         support commitment says so. What object identity establishes is
-        narrower: that a finding came from the captured population whose basis
+        narrower: that a finding came from the captured inputs whose basis
         was already declared, without re-deriving anything. An equal copy may
-        well be the same population — the fast path simply has not established
+        well be the same inputs — the fast path simply has not established
         it, so it is refused rather than assumed.
         """
 
@@ -994,7 +994,7 @@ def record_adjacent_pair_measurement_layer(
         )
     )
     index = AdjacentPairMeasurementIndex(material)
-    # One population, declared once. Every finding this layer produces input
+    # One inputs, declared once. Every finding this layer produces input
     # exactly these identities through exactly this boundary.
     declared_support = _DeclaredSupportBinding(
         workspace_id=workspace_id,

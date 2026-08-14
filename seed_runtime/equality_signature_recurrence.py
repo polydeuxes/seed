@@ -113,7 +113,7 @@ def measure_equality_signature_counts(
     workspace_id: str,
     source_session_ids: Iterable[str],
 ) -> Iterator[MeasuredEqualitySignatureCount]:
-    """Group the complete bounded signature population by canonical identity."""
+    """Group the complete bounded signature inputs by canonical identity."""
 
     sessions = tuple(dict.fromkeys(source_session_ids))
     if not sessions or any(not isinstance(item, str) or not item for item in sessions):
@@ -510,7 +510,7 @@ def get_recorded_equality_signature_count(
     producing_event_id: str,
     assertion_id: str,
 ) -> RecordedEqualitySignatureCountAssertion | None:
-    """Resolve one result after proving its complete signature population."""
+    """Resolve one result after proving its complete signature inputs."""
 
     event = ledger.get(producing_event_id)
     if event is None:

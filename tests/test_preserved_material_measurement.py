@@ -54,7 +54,7 @@ from seed_runtime.operator_console import run_persistent_operator_console
 from seed_runtime.support_basis import (
     SupportBasisError,
     SupportValidator,
-    declare_complete_population,
+    declare_complete_inputs,
 )
 
 MATERIAL = (
@@ -305,10 +305,10 @@ def test_recording_a_finding_does_not_disturb_the_measured_occurrences(
 
 
 def test_material_without_a_text_representation_is_refused_not_skipped():
-    """A text measurement over a population containing non-text refuses.
+    """A text measurement over a inputs containing non-text refuses.
 
     Skipping would silently narrow the counting scope the finding goes on to
-    disclose, and a population measured is not a population partly measured. A
+    disclose, and a inputs measured is not a inputs partly measured. A
     selection admitting only text-representable material is its own declared
     scope and does not exist yet.
     """
@@ -583,7 +583,7 @@ def test_a_recurrence_finding_may_stand_on_a_premise(recurrence_occurrences):
 # Measuring many representations across one pass of the material.
 #
 # Many already-declared representations measured over one bounded occurrence
-# population. One at a time, that re-walks and re-splits the whole population
+# inputs. One at a time, that re-walks and re-splits the whole inputs
 # once per representation. These tests hold the findings identical; the speed
 # is measured in the PR, not asserted here.
 # --------------------------------------------------------------------------
@@ -619,14 +619,14 @@ def test_one_pass_produces_the_same_findings_as_one_at_a_time(recurrence_occurre
     assert [f.to_json_dict() for f in batched] == [f.to_json_dict() for f in singly]
 
 
-def test_every_finding_carries_the_same_consumed_population(recurrence_occurrences):
+def test_every_finding_carries_the_same_consumed_inputs(recurrence_occurrences):
     _, occurrences = recurrence_occurrences
     declared = _declared_for("the", "zebra")
     findings = measure_recurrences(
         occurrences, declared=declared, counts_in=_counts_in(declared)
     )
-    population = tuple(e.id for e in occurrences)
-    assert all(f.input_event_ids == population for f in findings)
+    inputs = tuple(e.id for e in occurrences)
+    assert all(f.input_event_ids == inputs for f in findings)
     assert all(f.occurrences_examined == len(occurrences) for f in findings)
 
 
@@ -890,7 +890,7 @@ def test_material_declaring_text_it_does_not_carry_is_refused(recurrence_occurre
         measure_recurrences([lying], declared=declared, counts_in=_counts_in(declared))
 
 
-def test_one_occurrence_twice_in_a_population_is_refused(recurrence_occurrences):
+def test_one_occurrence_twice_in_a_inputs_is_refused(recurrence_occurrences):
     """`01.Source.E.1`: each counted occurrence is distinguished by identity."""
 
     _, occurrences = recurrence_occurrences
@@ -915,14 +915,14 @@ def test_the_positional_path_also_refuses_a_repeated_occurrence(occurrences):
         )
 
 # --------------------------------------------------------------------------
-# One pass has as input one population, so one basis describes every finding.
+# One pass has as input one input sequence, so one basis describes every finding.
 # `#2486` built SupportBasis for exactly this and the recurrence path was
 # written without it.
 # --------------------------------------------------------------------------
 
 
 def _basis_for(occurrences, ledger):
-    return declare_complete_population(
+    return declare_complete_inputs(
         workspace_id="w",
         session_id="r",
         occurrence_kind=INGRESS_OCCURRED_KIND,
@@ -949,7 +949,7 @@ def test_a_declared_basis_replaces_the_enumeration(recurrence_occurrences):
         assert finding.input_event_ids == tuple(e.id for e in occurrences)
 
 
-def test_a_basis_that_does_not_commit_to_the_population_is_refused(
+def test_a_basis_that_does_not_commit_to_the_inputs_is_refused(
     recurrence_occurrences,
 ):
     ledger, occurrences = recurrence_occurrences
@@ -989,7 +989,7 @@ def test_findings_with_and_without_a_basis_agree_on_everything_else(
 def test_a_basis_scoped_to_one_locality_cannot_describe_several(
     recurrence_occurrences,
 ):
-    """Committing to the identities is not describing the population."""
+    """Committing to the identities is not describing the inputs."""
 
     ledger, occurrences = recurrence_occurrences
     elsewhere = ledger.append(
@@ -1002,19 +1002,19 @@ def test_a_basis_scoped_to_one_locality_cannot_describe_several(
         },
         session_id="other",
     )
-    population = list(occurrences) + [elsewhere]
+    inputs = list(occurrences) + [elsewhere]
     # The basis commits to exactly these identities and declares one locality.
-    basis = declare_complete_population(
+    basis = declare_complete_inputs(
         workspace_id="w",
         session_id="r",
         occurrence_kind=INGRESS_OCCURRED_KIND,
         boundary=ledger.capture_boundary(),
-        identities=[e.id for e in population],
+        identities=[e.id for e in inputs],
     )
     declared = _declared_for("the")
     with pytest.raises(PreservedMaterialMeasurementError, match="scoped to"):
         measure_recurrences(
-            population,
+            inputs,
             declared=declared,
             counts_in=_counts_in(declared),
             support_basis=basis,
@@ -1025,7 +1025,7 @@ def test_a_basis_selecting_another_occurrence_kind_is_refused(
     recurrence_occurrences,
 ):
     ledger, occurrences = recurrence_occurrences
-    basis = declare_complete_population(
+    basis = declare_complete_inputs(
         workspace_id="w",
         session_id="r",
         occurrence_kind="some.other.kind",
@@ -1063,7 +1063,7 @@ def test_a_basis_claiming_completeness_over_a_subset_is_refused(
 
     ledger, occurrences = recurrence_occurrences
     subset = list(occurrences)[:-1]
-    basis = declare_complete_population(
+    basis = declare_complete_inputs(
         workspace_id="w",
         session_id="r",
         occurrence_kind=INGRESS_OCCURRED_KIND,
@@ -1126,7 +1126,7 @@ def test_an_identity_the_ledger_does_not_preserve_is_refused(
         payload={"decoded_text": "the", "text_representation": {"available": True}},
     )
     declared = _declared_for("the")
-    basis = declare_complete_population(
+    basis = declare_complete_inputs(
         workspace_id="w",
         session_id="r",
         occurrence_kind=INGRESS_OCCURRED_KIND,
@@ -1282,7 +1282,7 @@ def test_carrying_a_basis_no_longer_exempts_a_finding_from_the_recorder():
         occurrences_carrying=finding.occurrences_carrying,
         total_count=finding.total_count,
         input_event_ids=finding.input_event_ids,
-        support_basis=declare_complete_population(
+        support_basis=declare_complete_inputs(
             workspace_id="w",
             session_id="r",
             occurrence_kind=INGRESS_OCCURRED_KIND,

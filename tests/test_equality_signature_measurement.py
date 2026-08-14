@@ -88,7 +88,7 @@ def test_measurement_accepts_source_results_in_a_different_serialized_order():
     ) == assertion
 
 
-def test_empty_population_refuses_before_an_iterator_is_returned():
+def test_empty_inputs_refuses_before_an_iterator_is_returned():
     ledger = EventLedger()
     ledger.append("unrelated", "w", {}, session_id="comparisons")
 

@@ -1,6 +1,37 @@
 {
   "version": 2,
   "spine": "Responsibility",
+  "structural_edges": {
+    "carriage": {
+      "from": "content",
+      "to": "carriage_occurrence",
+      "requires": ["exact_relation", "occurrence_witness"]
+    },
+    "participation": {
+      "from": "subject",
+      "to": "Act_occurrence",
+      "coordinate": "role",
+      "requires": ["exact_relation", "occurrence_witness"]
+    },
+    "yield": {
+      "from": "Act_occurrence",
+      "to": "result",
+      "requires": ["exact_relation", "occurrence_witness"]
+    }
+  },
+  "input_role": {
+    "kind": "Act_local_role",
+    "subject_taxonomy_closed": false,
+    "preserves_subject_identity": true,
+    "distinct_from": [
+      "subject",
+      "carriage",
+      "Applicability",
+      "Admission",
+      "participation",
+      "input_to_result_support"
+    ]
+  },
   "implementation_witness": {
     "discriminators": ["content", "carriage", "digest"],
     "relations": {
@@ -10,9 +41,10 @@
     "relation_audit": {
       "endpoint_presence_establishes_relation": false,
       "families": {
-        "content_to_carriage": ["exact_relation", "occurrence_witness"],
-        "input_to_Act": ["exact_relation", "occurrence_witness"],
-        "Act_occurrence_to_result": ["exact_relation", "occurrence_witness"],
+        "carriage": ["exact_relation", "occurrence_witness"],
+        "candidate_participation": ["exact_relation", "occurrence_witness"],
+        "participation": ["exact_relation", "occurrence_witness"],
+        "yield": ["exact_relation", "occurrence_witness"],
         "representation_mechanically_matches_digest": [
           "mechanical_recomputation"
         ],

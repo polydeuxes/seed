@@ -432,7 +432,7 @@ def _positional_result_assertions_by_subject(
     session_ids: Iterable[str],
     through: "EventLedgerBoundary",
 ) -> dict[str, list[dict[str, str]]]:
-    """Validate the population while retaining only compact references."""
+    """Validate the inputs while retaining only compact references."""
 
     grouped: dict[str, list[dict[str, str]]] = {}
     for assertion in iter_recorded_adjacent_pair_result_assertions(
@@ -791,7 +791,7 @@ def iter_recorded_positional_result_distinctions(
     session_ids: Iterable[str],
     through: "EventLedgerBoundary",
 ) -> Iterator[RecordedPositionalResultDistinction]:
-    """Validate and stream a bounded population of recorded Compare outputs.
+    """Validate and stream bounded sequence of recorded Compare outputs.
 
     Each occurrence-bound positional input receives its complete ingress proof
     once in this frozen invocation. Later uses retain only that compact

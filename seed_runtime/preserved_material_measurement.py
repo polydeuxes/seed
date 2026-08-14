@@ -164,9 +164,9 @@ class MeasurementFinding:
     occupancies: tuple[Occupancy, ...]
     # The identities this measurement input_ids, available while the act runs.
     # On the result-Assertion path a reconstructible support basis is formed from
-    # this population instead of preserving the enumeration in every result;
+    # these inputs instead of preserving the enumeration in every result;
     # the basis belongs to that path, and this dataclass does not own a second
-    # coordinate for it. `#2486` measured why: copying the population into
+    # coordinate for it. `#2486` measured why: copying the inputs into
     # every finding of a body cost 97% of the stored finding.
     input_event_ids: tuple[str, ...]
     # Where the measured material came from. Defaults to the weaker Assertion:
@@ -257,9 +257,9 @@ class RecurrenceFinding:
     # a finding that did not read from a ledger cannot say it measured
     # preserved material, and silence must not read as the stronger one.
     material_provenance: str = MATERIAL_AS_SUPPLIED
-    # The basis of the population input_ids, where one was declared. Every
-    # finding of one pass stands on the same population, so preserving the
-    # enumeration in each copies that population once per representation.
+    # The basis of the inputs input_ids, where one was declared. Every
+    # finding of one pass stands on the same inputs, so preserving the
+    # enumeration in each copies that inputs once per representation.
     # `#2486` measured exactly this at 97% of a stored finding and built
     # SupportBasis to carry the basis instead. This path was written without
     # it and measured 96.8% on 500 findings over 2,000 occurrences.
@@ -327,7 +327,7 @@ def measure_recurrence(
     and not an absence of one.
 
     Refuses the same material `measure_occupancy` refuses, for the same reason.
-    A measurement over a bounded population cannot measure text in material
+    A measurement over bounded inputs cannot measure text in material
     that has none, and skipping would silently narrow the scope the finding
     goes on to disclose.
     """
@@ -338,7 +338,7 @@ def measure_recurrence(
     carrying = 0
     total = 0
     walked, material_provenance = _as_preserved(
-        _distinct_population(occurrences), preserved_in
+        _distinct_inputs(occurrences), preserved_in
     )
     for event in walked:
         text = _measurable_text(event)
@@ -395,14 +395,14 @@ def _locality_of(event: Event) -> str | None:
     return f"workspace:{event.workspace_id};session:{event.session_id}"
 
 
-def _distinct_population(occurrences: Iterable[Event]) -> list[Event]:
+def _distinct_inputs(occurrences: Iterable[Event]) -> list[Event]:
     """The occurrences to measure, refusing a repeated occurrence identity.
 
     The rule is not `01.Source:28`, which requires the bounded scope to be
     disclosed and says nothing about identity-distinctness. It comes from what
     ``occurrences_examined`` asserts: a number of occurrences. One preserved
     occurrence referenced twice is one occurrence, so counting it twice reports
-    a population larger than the one that exists, and every count drawn from it
+    a inputs larger than the one that exists, and every count drawn from it
     carries that inflation.
 
     Refused rather than deduplicated. Silently collapsing would decide that the
@@ -415,19 +415,19 @@ def _distinct_population(occurrences: Iterable[Event]) -> list[Event]:
     because this refusal had nothing behind it.
     """
 
-    population = list(occurrences)
+    inputs = list(occurrences)
     seen: set[str] = set()
-    for event in population:
+    for event in inputs:
         if event.id in seen:
             raise PreservedMaterialMeasurementError(
-                f"{event.id} appears more than once in one measured population"
+                f"{event.id} appears more than once in one measured inputs"
             )
         seen.add(event.id)
-    return population
+    return inputs
 
 
 def _as_preserved(
-    population: "list[Event]", ledger: EventLedger | None
+    inputs: "list[Event]", ledger: EventLedger | None
 ) -> "tuple[list[Event], str]":
     """The preserved occurrences these identities name, where a ledger says so.
 
@@ -444,9 +444,9 @@ def _as_preserved(
     """
 
     if ledger is None:
-        return population, MATERIAL_AS_SUPPLIED
+        return inputs, MATERIAL_AS_SUPPLIED
     preserved = []
-    for event in population:
+    for event in inputs:
         recorded = ledger.get(event.id)
         if recorded is None:
             raise PreservedMaterialMeasurementError(
@@ -663,7 +663,7 @@ def measure_recurrences(
     """Measure many representations across one pass of the material.
 
     Measuring many declared representations over the same bounded occurrence
-    population, one at a time, re-walks and re-splits that population once per
+    inputs, one at a time, re-walks and re-splits that inputs once per
     representation. On 4,716 declared representations over 2,000 preserved
     occurrences that is 9.43 million redundant splits and 10.12s; one pass is
     0.02s, measured at **509x** in one tree with only the call path toggled.
@@ -679,7 +679,7 @@ def measure_recurrences(
 
     Findings are identical to calling `measure_recurrence` for each
     representation. Each carries its own declaration, the same input_ids
-    population, and the same three counts. This changes only how many times the
+    inputs, and the same three counts. This changes only how many times the
     material is walked.
 
     A representation counted but not declared is refused. The declared set is
@@ -708,14 +708,14 @@ def measure_recurrences(
             )
         scopes.add(declaration.counting_scope)
     if len(scopes) > 1:
-        # One pass has as input one population, so every finding it produces
-        # receives that population. A declaration disclosing a different
+        # One pass has as input one input sequence, so every finding it produces
+        # receives that inputs. A declaration disclosing a different
         # counting scope would have its scope assertion preserved beside a
-        # population the act did not draw from it. `01.Source:28` requires
+        # inputs the act did not draw from it. `01.Source:28` requires
         # the disclosed scope to be the scope within which occurrences were
         # counted, so the disagreement is refused rather than reconciled.
         raise PreservedMaterialMeasurementError(
-            "one pass has as input one population, so every declaration must "
+            "one pass has as input one input sequence, so every declaration must "
             f"disclose the same counting scope; got {len(scopes)}"
         )
     input_ids: list[str] = []
@@ -724,7 +724,7 @@ def measure_recurrences(
     carrying: dict[str, int] = {name: 0 for name in declared}
     total: dict[str, int] = {name: 0 for name in declared}
     walked, material_provenance = _as_preserved(
-        _distinct_population(occurrences), preserved_in
+        _distinct_inputs(occurrences), preserved_in
     )
     if support_basis is not None and support_validator is not None:
         # A finding asserting support from preserved occurrences must have
@@ -777,29 +777,29 @@ def measure_recurrences(
             if count:
                 carrying[representation] += 1
                 total[representation] += count
-    population = tuple(input_ids)
+    inputs = tuple(input_ids)
     input_localities = tuple(localities)
     if support_basis is not None:
         # A basis carried but never checked would let a finding preserve a
-        # commitment to a population the act did not walk. `support_commitment`
+        # commitment to a inputs the act did not walk. `support_commitment`
         # is a pure function of the rule and the ordered identities, so the act
         # can confirm the basis commits to what it actually input_ids.
-        if support_commitment(support_basis.selection_rule, population) != (
+        if support_commitment(support_basis.selection_rule, inputs) != (
             support_basis.commitment
         ):
             raise PreservedMaterialMeasurementError(
-                "the declared support basis does not commit to the population "
+                "the declared support basis does not commit to the inputs "
                 "this measurement input_ids"
             )
-        if support_basis.support_count != len(population):
+        if support_basis.support_count != len(inputs):
             raise PreservedMaterialMeasurementError(
                 f"the declared support basis counts {support_basis.support_count} "
-                f"occurrences and this measurement input_ids {len(population)}"
+                f"occurrences and this measurement input_ids {len(inputs)}"
             )
-        # Committing to the identities is not describing the population. The
+        # Committing to the identities is not describing the inputs. The
         # commitment is a digest over the rule and the ordered ids and says
         # nothing about scope, so a basis declaring one locality could be
-        # accepted for a population drawn from several: the ids match, and the
+        # accepted for a inputs drawn from several: the ids match, and the
         # preserved basis then asserts a scope the act never input_ids within.
         # The producing act refuses that now; a later validation failure is a
         # different responsibility and arrives too late to prevent it.
@@ -821,7 +821,7 @@ def measure_recurrences(
                 )
         # A basis declares a selection rule -- every preserved occurrence of
         # this scope's kind through this boundary -- and the checks above prove
-        # only that the population is *within* that description. A
+        # only that the inputs are *within* that description. A
         # caller supplying three of four occurrences through the same boundary
         # would pass all of them, and the finding would then preserve a basis
         # asserting completeness the act never established.
@@ -836,12 +836,12 @@ def measure_recurrences(
             raise PreservedMaterialMeasurementError(
                 "a support basis declares a selection through a boundary, and "
                 "accepting one requires a SupportValidator to establish that "
-                "the population is that selection"
+                "the inputs are that selection"
             )
         # `reconstruct` performs the basis's own selection through the boundary and
         # refuses unless the result reproduces the committed digest. Together
-        # with the commitment check above -- which ties the population walked to
-        # that same digest -- the population is the selection declared.
+        # with the commitment check above -- which ties the inputs walked to
+        # that same digest -- the inputs are the selection declared.
         #
         # A third comparison of the two results was written here and removed: it
         # cannot fail while both checks hold, and mutation testing found no test
@@ -856,7 +856,7 @@ def measure_recurrences(
             occurrences_examined=examined,
             occurrences_carrying=carrying[representation],
             total_count=total[representation],
-            input_event_ids=population,
+            input_event_ids=inputs,
             support_basis=support_basis,
         )
         for representation, declaration in declared.items()
@@ -929,7 +929,7 @@ def measure_occupancy(
     input_ids: list[str] = []
     measured = 0
     walked, material_provenance = _as_preserved(
-        _distinct_population(occurrences), preserved_in
+        _distinct_inputs(occurrences), preserved_in
     )
     for event in walked:
         text = _measurable_text(event)
@@ -1041,7 +1041,7 @@ def record_measurement_findings(
     # function has no witness for either, so it exempts nothing.
     #
     # Identities are collected across the whole call before any read, because
-    # every finding of one pass carries the same population and checking per
+    # every finding of one pass carries the same inputs and checking per
     # finding would restore the cost `#2486` removed.
     input_ids = {
         event_id
