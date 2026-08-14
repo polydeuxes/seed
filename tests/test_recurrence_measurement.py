@@ -1289,7 +1289,7 @@ def test_every_probe_and_pass_reads_one_prefix_despite_a_concurrent_append(compa
 
 
 # --------------------------------------------------------------------------
-# The yield occurrence remains exactly reconstructible.
+# The occurrence-to-result edge remains exactly reconstructible.
 # --------------------------------------------------------------------------
 
 

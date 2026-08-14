@@ -106,7 +106,7 @@ POSITIONAL_RESULT_FIDELITY_RESPONSIBILITY = (
 
 @dataclass(frozen=True)
 class AdjacentPair:
-    """An ordered pair of representations whose adjacency was found repeatable.
+    """An ordered pair of representations whose adjacency was found reproducible.
 
     The name describes the measured arrangement and nothing else. It is not a
     constitutional kind, and it asserts nothing about either representation or
@@ -465,11 +465,11 @@ def _validate_result_assertion_ingress(
     *,
     validation: SupportValidator | None = None,
 ) -> None:
-    """Reconstruct the carried support basis and require it to reyield.
+    """Reconstruct the carried support basis and require it to reproduce.
 
     The occurrence no longer carries every supporting identity, so this no
     longer compares two lists. It performs the basis's own declared selection
-    against the ledger and refuses unless the result reyields the committed
+    against the ledger and refuses unless the result reproduces the committed
     digest.
 
     The check this replaces also validated the inputs from the ledger, so
@@ -577,7 +577,7 @@ def adjacent_pairs_from_finding(ledger: EventLedger, finding_event_id: str) -> l
 
     The recorded finding names a left representation and the occupancies
     measured after it. Every occupancy is returned; none is filtered by count,
-    share, or a threshold. Which of them prove repeatable is what the
+    share, or a threshold. Which of them prove reproducible is what the
     measurement measures, not something decided here.
     """
 
@@ -1129,7 +1129,7 @@ def enumerate_representations(
     This is what removes the last supplied representation from the chain. The
     caller no longer says which representation to measure after; the material
     says which representations there are, and later measurements say which of
-    them anything repeatable follows from.
+    them anything reproducible follows from.
     """
 
     material = list(occurrences)

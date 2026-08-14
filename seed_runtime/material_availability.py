@@ -172,7 +172,7 @@ class ProcessLocalMaterial:
         """The exact material, or a refusal naming what is unavailable.
 
         The material is not re-digested. It is held *under* its digest, so
-        anything found under one reyields it by construction, and a check that
+        anything found under one reproduces it by construction, and a check that
         cannot fail is not free here: re-digesting was 98% of a 5 MB reconstruction
         and 100% of a 50 MB one, at 130 ms each.
 

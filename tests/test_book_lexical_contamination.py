@@ -75,13 +75,13 @@ BANNED: tuple[tuple[str, str], ...] = (
     # condition, trajectory, ..."), one passive definition, and one that says
     # Learning establishment "may be understood as" constrained movement, which
     # is a reading aid rather than an establishment.  No clause names a
-    # Learning responsible boundary, boundary, yield occurrence, occurrence, responsibility, or act.
+    # Learning responsible boundary, boundary, occurrence, responsibility, or act.
     # Active law itself denies "a universal Learning object" and denies
     # authorizing "general language learning".
     (r"\blearn\w*\b", "learn*"),
     # `actor` entered with the retired generalized runtime as a closed list of
     # user/model/system/tool/builder/approver labels.  It names no Responsibility
-    # that established yield occurrence or source-relation distinctions do not
+    # that established occurrence or source-relation distinctions do not
     # already carry.  The durable occurrence column is retained as
     # unconstrained compatibility shape; storage survival does not establish
     # Book grammar.
@@ -171,7 +171,7 @@ BANNED: tuple[tuple[str, str], ...] = (
 #                 this gate is not the place to decide which repair applies.
 #   actor         BANNED.  Historical reconciliation called it coarse event
 #                 authorship vocabulary, but it carries no Responsibility not
-#                 already carried by established yield occurrence or source-relation
+#                 already carried by established occurrence or source-relation
 #                 distinctions.  `#2450` removed its closed runtime grammar
 #                 while retaining the durable column as an unconstrained
 #                 compatibility label.  That physical field does not earn

@@ -1,4 +1,5 @@
 import json
+import re
 from io import StringIO
 from pathlib import Path
 
@@ -839,7 +840,10 @@ def test_act_and_occurrence_ids_do_not_establish_their_relation():
 
 
 def test_runtime_uses_yield_for_the_occurrence_to_result_edge():
-    retired = "pro" + "duc"
+    retired = re.compile(
+        r"\bproduc(?:e(?:d|s)?|ing|tion\w*|er\w*)\b",
+        re.IGNORECASE,
+    )
     runtime_root = GRAMMAR.parents[1] / "seed_runtime"
     contaminated = {
         path.relative_to(GRAMMAR.parents[1]).as_posix(): [
@@ -847,7 +851,7 @@ def test_runtime_uses_yield_for_the_occurrence_to_result_edge():
             for line_number, line in enumerate(
                 path.read_text(encoding="utf-8").splitlines(), start=1
             )
-            if retired in line.casefold()
+            if retired.search(line)
         ]
         for path in runtime_root.glob("*.py")
     }

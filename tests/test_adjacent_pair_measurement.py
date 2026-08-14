@@ -1,6 +1,6 @@
 """A recorded finding supplies the next representation, and every pair gets the same battery.
 
-`#2391` validated ordered pairs whose adjacency reyields across independently
+`#2391` validated ordered pairs whose adjacency reproduces across independently
 bounded scopes, without a reader naming a representation, occupant, or
 delimiter. It left one unresolved boundary: the candidates were enumerated in a scratch run, so
 the loop was demonstrated rather than preserved.

@@ -750,7 +750,7 @@ def advance_operator_session_standing(
                     **reconstructed,
                     "source_role": carried.get("source_role"),
                 }
-            # The relation's remaining Standing coordinates are yield occurrence
+            # The relation's remaining Standing coordinates are carried
             # invariants at this boundary; a forged loss, Unknown, or
             # conflict inventory is refused rather than exposed.
             reconstructed_relation_standing = {

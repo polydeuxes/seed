@@ -2,8 +2,8 @@
 
 This does not establish Responsibility. It preserves, from inside
 an act after that act has fixed its result, Evidence committing to the exact
-coordinates yielded. The resulting Event is Evidence concerning the
-yield occurrence; it is not that occurrence by identity.
+coordinates yielded. The resulting Event is Evidence concerning the exact
+occurrence-to-result edge; it is neither that edge nor either endpoint by identity.
 
 The helper is private implementation plumbing, not the guarantee. The result's
 carried relation to this Evidence distinguishes a yielded result from an
@@ -80,7 +80,7 @@ def _record_yield_evidence(
                 ),
                 "standing": "yielded",
                 "yielding_act": yielding_act,
-                "yield_occurrence_evidence": (
+                "occurrence_result_evidence": (
                     "preserved at the exact Act boundary after this exact "
                     "result was fixed; the result carries the relation to this"
                 ),
@@ -93,8 +93,8 @@ def _record_yield_evidence(
                     "an enclosing call"
                 ),
                 "occurrence_preservation": (
-                    "evidence concerning a yield occurrence, durably "
-                    "recorded; not that occurrence by identity"
+                    "Evidence concerning the exact occurrence-to-result edge, "
+                    "durably recorded; not the edge or Act occurrence by identity"
                 ),
             },
             "yield_convention": convention,

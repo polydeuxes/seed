@@ -872,7 +872,7 @@ def test_a_digest_does_not_move_when_a_payload_is_compressed(tmp_path):
         digest = _content_digest(row)
         stored = _stored_payload(serialized)
         # Whatever the store holds, it reconstructs the canonical string exactly,
-        # and digesting that reyields the same commitment.
+        # and digesting that reproduces the same commitment.
         assert _serialized_payload(stored) == serialized
         assert _content_digest(dict(row, payload=_serialized_payload(stored))) == digest
 

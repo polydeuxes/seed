@@ -783,8 +783,8 @@ def record_measured_count(
         },
         "assertions": [assertion.to_json_dict() for assertion in assertions],
         "yielding_act": "declared measurement",
-        "yield_occurrence_evidence": (
-            "the recorded yielding occurrence this payload is appended as"
+        "occurrence_result_evidence": (
+            "this exact recorded Measurement occurrence yielded the carried Assertions"
         ),
         "measurement_subject": (
             "recorded comparison occurrences and recorded measurement occurrences"

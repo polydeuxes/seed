@@ -1408,7 +1408,7 @@ def test_responsibility_does_not_follow_the_provenance(recurrence_occurrences):
     ),
     )
     # Provenance differs; Responsibility does not follow it. `#2439` reconstructed
-    # yield occurrence, Act and Standing for declared measurement and left the
+    # boundary participant, Act and Standing for declared measurement and left the
     # Responsibility unestablished, and that stays true either way.
     assert unbound.payload["dimensions"]["source_provenance"] != bound.payload[
         "dimensions"
@@ -1527,7 +1527,7 @@ def test_changing_any_yielded_coordinate_cannot_reuse_the_witness(
 def test_recording_cannot_overwrite_what_the_measurement_established(
     recurrence_occurrences,
 ):
-    """`extra` may add recording coordinates; it may not own yield occurrence ones."""
+    """`extra` may add recording coordinates; it may not replace Yield-edge ones."""
 
     ledger, occurrences = recurrence_occurrences
     finding = _yielded(ledger, occurrences)
@@ -1638,7 +1638,7 @@ def test_the_witness_claims_no_responsibility(
         e for e in ledger.list("w") if e.kind == YIELD_EVIDENCE_KIND
     ][-1]
     assert witness.payload["dimensions"]["responsibility"] == RESPONSIBILITY_UNESTABLISHED
-    assert "not that occurrence by identity" in (
+    assert "not the edge or Act occurrence by identity" in (
         witness.payload["dimensions"]["occurrence_preservation"]
     )
 

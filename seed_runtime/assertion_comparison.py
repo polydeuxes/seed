@@ -509,7 +509,7 @@ def _positional_result_comparison_payload(
     session_id: str,
     comparison: PositionalResultComparison,
 ) -> dict[str, Any]:
-    """Represent a comparison already reyielded from validated inputs."""
+    """Represent a comparison already reproduced from validated inputs."""
 
     input_refs = tuple(
         {
@@ -718,7 +718,7 @@ def assertions_of_recorded_positional_result_comparison(
 def get_recorded_positional_result_distinction(
     ledger: EventLedger, *, yielding_event_id: str, assertion_id: str
 ) -> RecordedPositionalResultDistinction | None:
-    """Resolve one result only after reyielding its bounded Compare."""
+    """Resolve one result only after reproducing its bounded Compare."""
 
     event = ledger.get(yielding_event_id)
     if event is None:

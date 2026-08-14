@@ -217,7 +217,7 @@ class SupportValidator:
     **Reuse here is not a skipped verification, and a cache hit does not read
     the ledger.** Every distinct uncached basis is validated from the ledger,
     has the basis's own selection performed, and is refused unless the result
-    reyields the committed digest. A later reference to that exact verified
+    reproduces the committed digest. A later reference to that exact verified
     basis may then reuse the validated inputs — which is lawful because the
     cache is keyed by the commitment, so a second basis reaches it only by
     committing to exactly the same identities under exactly the same rule, and
@@ -290,7 +290,7 @@ class SupportValidator:
         validated = support_commitment(basis.selection_rule, identities)
         if validated != basis.commitment:
             raise SupportBasisError(
-                "the validated support does not reyield its committed digest"
+                "the validated support does not reproduce its committed digest"
             )
         if len(identities) != basis.support_count:
             raise SupportBasisError(

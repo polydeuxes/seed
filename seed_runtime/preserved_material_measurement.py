@@ -81,7 +81,7 @@ MATERIAL_AS_SUPPLIED = (
 # `#2431` identified "declared-measurement-over-preserved-material" as inherited
 # contamination: it wrote the Act into the Responsibility slot for a declared
 # measurement whose exact Measurement Responsibility had never been validated. `#2439`
-# then validated the partial shape and kept it partial -- yield occurrence "this Seed",
+# then validated the partial shape and kept it partial -- boundary participant "this Seed",
 # Act a declared measurement, Standing measured, and a Responsibility that stays
 # unestablished. That is ordinary rather than contradictory.
 RESPONSIBILITY_UNESTABLISHED = "unestablished"
@@ -264,11 +264,8 @@ class RecurrenceFinding:
     # SupportBasis to carry the basis instead. This path was written without
     # it and measured 96.8% on 500 findings over 2,000 occurrences.
     support_basis: SupportBasis | None = None
-    # Which preserved yield evidence concerns this result. Named for the
-    # evidence rather than for a yield occurrence: it holds an occurrence reference,
-    # and the yield occurrence stays unestablished. `yielded_by` said otherwise by
-    # ordinary reading while the payload beside it said unestablished. The
-    # yield branches in the Book HEAD
+    # Which preserved Evidence concerns this result's exact Yield edge. The
+    # Evidence reference is neither the edge nor its Act occurrence by identity.
     # holds that a separately constructed representation with identical fields
     # does not carry the witnessed return's standing "unless that standing is
     # separately represented or preserved". Content equality cannot supply it:
@@ -586,12 +583,11 @@ def _record_yield(
       not           that nothing else appended this kind directly
     ```
 
-    The second and third are the yield-occurrence crossing and stay
-    unestablished; the payload records them as such rather than filling them. The
-    fourth is true of every kind in this ledger.
+    The three negative coordinates stay unestablished; the payload records them
+    as such rather than filling them.
 
-    This occurrence is preserved evidence concerning a yield. It is not
-    the yield occurrence by identity.
+    This occurrence is preserved Evidence concerning a Yield edge. It is not
+    that edge or its Act occurrence by identity.
     """
 
     return _record_yield_evidence(
@@ -840,7 +836,7 @@ def measure_recurrences(
                 "the inputs are that selection"
             )
         # `reconstruct` performs the basis's own selection through the boundary and
-        # refuses unless the result reyields the committed digest. Together
+        # refuses unless the result reproduces the committed digest. Together
         # with the commitment check above -- which ties the inputs walked to
         # that same digest -- the inputs are the selection declared.
         #

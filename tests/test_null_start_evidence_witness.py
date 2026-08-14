@@ -23,7 +23,7 @@ import pytest
 from seed_runtime.events import EventLedger
 from seed_runtime.operator_console import run_persistent_operator_console
 
-# Fixed, repeatable operator material.
+# Fixed, reproducible operator material.
 #
 # IMPORTANT: this material is developer-chosen.  Any regularity visible in the
 # dump -- recurring newlines, a recurring "# " prefix, a recurring "is a word."
