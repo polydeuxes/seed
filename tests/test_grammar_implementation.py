@@ -4,6 +4,7 @@ from pathlib import Path
 
 from seed_runtime.byte_measurement import (
     _identity,
+    _validate_moved_byte_assertion,
     assertions_of_recorded_byte_measurement,
     get_recorded_pair_input_applicability,
     record_adjacent_byte_pair_count_layer,
@@ -144,11 +145,17 @@ def _recorded_applicability() -> dict:
     )
     carrier = ledger.get(pair_measurement.payload["input_applicability_event_id"])
     recovered = get_recorded_pair_input_applicability(ledger, carrier.id)
+    movement = ledger.get(recovered["input_movement_event_id"])
     return {
+        "ledger": ledger,
         "applicability": recovered,
         "carrier": carrier,
         "act_evidence": ledger.get(carrier.payload["responsible_act_evidence_id"]),
         "content_evidence": ledger.get(carrier.payload["production_evidence_id"]),
+        "movement": movement,
+        "movement_act_evidence": ledger.get(
+            movement.payload["movement_act_evidence_event_id"]
+        ),
     }
 
 
@@ -292,6 +299,78 @@ def _occurrence_result_witness(bundle: dict) -> str:
         and carrier.payload.get("production_evidence_id") == content_evidence.id
     )
     return EXACT if same_occurrence and same_result and evidence_is_carried else MISSING
+
+
+def _movement_witness(bundle: dict) -> dict[str, str]:
+    ledger = bundle["ledger"]
+    movement = bundle["movement"]
+    act_evidence = bundle["movement_act_evidence"]
+    moved = _validate_moved_byte_assertion(ledger, movement.id)
+    source = moved.reference if moved is not None else None
+    source_event = ledger.get(source["recorded_occurrence_id"]) if source else None
+    occurrence_edge = (
+        act_evidence is not None
+        and movement.payload["movement_act_occurrence_id"]
+        == act_evidence.payload["movement_act_occurrence_id"]
+    )
+    movement_act_edge = (
+        act_evidence is not None
+        and movement.payload["movement_act_id"]
+        == act_evidence.payload["movement_act_id"]
+    )
+    return {
+        "workspace": (
+            EXACT if movement.workspace_id == source_event.workspace_id else MISSING
+        ),
+        "source_Assertion_reference": (
+            EXACT if movement.payload["source_assertion_ref"] == source else MISSING
+        ),
+        "source_locality": (
+            EXACT if movement.payload["source_locality"] == source_event.session_id else MISSING
+        ),
+        "destination_locality": (
+            EXACT if movement.payload["target_locality"] == movement.session_id else MISSING
+        ),
+        "movement_Act": (
+            EXACT if movement_act_edge else MISSING
+        ),
+        "movement_occurrence": EXACT if occurrence_edge else MISSING,
+        "movement_Evidence": (
+            EXACT
+            if act_evidence is not None
+            and movement.payload["movement_act_evidence_event_id"] == act_evidence.id
+            else MISSING
+        ),
+        "movement_Authority": (
+            EXACT if movement.payload.get("authority") else MISSING
+        ),
+        "Assertion_identity": (
+            EXACT if movement.payload["assertion_id"] == moved.assertion_id else MISSING
+        ),
+        "original_carriage_occurrence": (
+            EXACT
+            if moved.recorded_occurrence_id == source["recorded_occurrence_id"]
+            else MISSING
+        ),
+        "Assertion_Evidence": (
+            EXACT
+            if "Evidence" in movement.payload["surviving_coordinates"]
+            else MISSING
+        ),
+        "Assertion_Authority": (
+            EXACT
+            if "Authority" in movement.payload["surviving_coordinates"]
+            else MISSING
+        ),
+        **{
+            coordinate: (
+                EXACT
+                if coordinate in movement.payload["surviving_coordinates"]
+                else MISSING
+            )
+            for coordinate in ("Standing", "Scope", "Unknowns", "limits")
+        },
+    }
 
 
 def test_implementation_witness_discriminates_content_carriage_and_digest():
@@ -560,6 +639,40 @@ def test_unjoined_endpoints_do_not_witness_an_input_to_act_relation():
     assert witness["input_identity"] == MISSING
     assert witness["exact_Act"] == MISSING
     assert witness["occurrence_identity"] == MISSING
+
+
+def test_locality_movement_clause_is_checked_against_the_live_pair_road():
+    clause = _clause("06.Standing.B")
+    bundle = _recorded_applicability()
+    witness = _movement_witness(bundle)
+    expected_coordinates = {
+        *clause["responsibility"]["coordinates"],
+        *clause["preserves"],
+    }
+
+    assert set(witness) == expected_coordinates
+    assert set(witness.values()) == {EXACT}
+    movement = bundle["movement"]
+    assert "dimensions" not in movement.payload
+    assert movement.workspace_id == bundle["ledger"].get(
+        movement.payload["source_assertion_ref"]["recorded_occurrence_id"]
+    ).workspace_id
+    assert clause["result"] == "availability_at_destination_locality"
+
+
+def test_movement_endpoints_do_not_replace_movement_occurrence_evidence():
+    bundle = _recorded_applicability()
+    movement = bundle["movement"]
+    assert movement.payload["source_assertion_ref"]
+    assert movement.payload["target_locality"]
+    bundle["movement_act_evidence"] = None
+    witness = _movement_witness(bundle)
+
+    assert witness["source_Assertion_reference"] == EXACT
+    assert witness["destination_locality"] == EXACT
+    assert witness["movement_Act"] == MISSING
+    assert witness["movement_occurrence"] == MISSING
+    assert witness["movement_Evidence"] == MISSING
 
 
 def test_occurrence_and_result_endpoints_do_not_establish_their_relation():

@@ -4,7 +4,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 GRAMMAR = ROOT / "book_of_seed/grammar.json"
-BOOK = ROOT / "book_of_seed/chapters/02-constitutional-standing.md"
+CHAPTERS = ROOT / "book_of_seed/chapters"
 
 
 def test_machine_readable_grammar_uses_responsibility_spine():
@@ -18,7 +18,10 @@ def test_machine_readable_grammar_uses_responsibility_spine():
         "digest",
     ]
     assert grammar["clauses"]
+    active_book = "\n".join(
+        path.read_text(encoding="utf-8") for path in sorted(CHAPTERS.glob("*.md"))
+    )
     for clause_id, clause in grammar["clauses"].items():
         assert clause["subject"]
         assert clause["responsibility"]
-        assert f"### {clause_id}" in BOOK.read_text(encoding="utf-8")
+        assert active_book.count(f"### {clause_id} ") == 1

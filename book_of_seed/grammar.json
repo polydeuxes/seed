@@ -121,6 +121,52 @@
         "requires_later_consumption": false,
         "establishes_new_Act": false
       }
+    },
+    "06.Standing.B": {
+      "subject": "Assertion_locality_movement",
+      "identity": [
+        "source_Assertion_reference",
+        "source_locality",
+        "destination_locality",
+        "movement_Act"
+      ],
+      "responsibility": {
+        "boundary": "this_Seed_when_same_workspace_antecedent_is_exact",
+        "coordinates": [
+          "workspace",
+          "source_Assertion_reference",
+          "source_locality",
+          "destination_locality",
+          "movement_Act",
+          "movement_occurrence",
+          "movement_Evidence",
+          "movement_Authority"
+        ]
+      },
+      "preserves": [
+        "Assertion_identity",
+        "original_carriage_occurrence",
+        "Standing",
+        "Assertion_Evidence",
+        "Assertion_Authority",
+        "Scope",
+        "Unknowns",
+        "limits"
+      ],
+      "result": "availability_at_destination_locality",
+      "does_not_establish": [
+        "Assertion_copy",
+        "Assertion_strengthening",
+        "Standing_revision",
+        "Applicability",
+        "workspace_crossing",
+        "another_Act"
+      ],
+      "distinct_from": [
+        ["workspace", "locality"],
+        ["locality", "occurrence"],
+        ["movement_Act", "movement_occurrence"]
+      ]
     }
   }
 }
