@@ -151,6 +151,7 @@ def test_no_act_condition_change_is_claimed_here(ledger):
     assert observed_operator_event_kinds == {
         "operator.representation.recorded",
         "operator.representation.act_evidenced",
+        "operator.representation.carriage_evidenced",
         "operator.representation.emission_attempted",
         "operator.representation.emission_act_evidenced",
         "operator.representation.emission_carriage_evidenced",

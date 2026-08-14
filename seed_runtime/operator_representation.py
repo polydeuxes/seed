@@ -20,6 +20,9 @@ REPRESENTATION_EMISSION_ATTEMPTED_KIND = "operator.representation.emission_attem
 REPRESENTATION_EMITTED_KIND = "operator.representation.emitted"
 REPRESENTATION_EMISSION_OUTCOME_KIND = "operator.representation.emission_outcome_recorded"
 REPRESENTATION_ACT_EVIDENCE_KIND = "operator.representation.act_evidenced"
+REPRESENTATION_CARRIAGE_EVIDENCE_KIND = (
+    "operator.representation.carriage_evidenced"
+)
 REPRESENTATION_CONVENTION = "operator_representation_v1"
 REPRESENTATION_RESPONSIBILITY = (
     "yield one bounded Representation from the exact carried session coordinates"
@@ -186,6 +189,20 @@ def record_operator_representation(
         responsibility=REPRESENTATION_RESPONSIBILITY,
         responsible_boundary="this Seed",
     )
+    carriage_evidence = ledger.append(
+        REPRESENTATION_CARRIAGE_EVIDENCE_KIND,
+        workspace_id,
+        {
+            "act_occurrence_id": act_occurrence_id,
+            "content_kind": "bounded Representation",
+            "carried_content": result_payload,
+            "standing": "carried",
+            "authority": (
+                "Evidence only for this exact Representation-to-occurrence Carriage"
+            ),
+        },
+        session_id=session_id,
+    )
     representation_event = ledger.append(
         REPRESENTATION_RECORDED_KIND,
         workspace_id,
@@ -207,6 +224,7 @@ def record_operator_representation(
             ),
             "responsible_act_evidence_id": responsible_act_evidence.id,
             "yield_evidence_id": yield_evidence.id,
+            "carriage_evidence_id": carriage_evidence.id,
             "mutates_cluster": False,
         },
         session_id=session_id,
@@ -384,6 +402,7 @@ def emit_operator_representation(
         "accepted_representation_kind": "text",
         "accepted_length": written,
     }
+    yielded_content = {"yielded_result": boundary_result}
     result_payload = {
         "emission_act_id": emission_act_id,
         "act_occurrence_id": act_occurrence_id,
@@ -391,6 +410,7 @@ def emit_operator_representation(
         "representation_event_id": representation["representation_event_id"],
         "input_role": REPRESENTATION_EMISSION_INPUT_ROLE,
         "boundary_result": boundary_result,
+        **yielded_content,
     }
     responsible_act_evidence = ledger.append(
         REPRESENTATION_EMISSION_ACT_EVIDENCE_KIND,
@@ -405,7 +425,7 @@ def emit_operator_representation(
             "representation_event_id": representation["representation_event_id"],
             "input_role": REPRESENTATION_EMISSION_INPUT_ROLE,
             "result_commitment": yield_commitment(
-                REPRESENTATION_EMISSION_CONVENTION, result_payload
+                REPRESENTATION_EMISSION_CONVENTION, yielded_content
             ),
             "standing": "occurred",
             "authority": (
@@ -438,7 +458,7 @@ def emit_operator_representation(
         act_occurrence_id=act_occurrence_id,
         yielded_result_kind="text-stream boundary result",
         result_identity=f"emission-boundary-result:{act_occurrence_id}",
-        yielded_content=result_payload,
+        yielded_content=yielded_content,
         responsibility=REPRESENTATION_EMISSION_RESPONSIBILITY,
         responsible_boundary="this Seed",
     )

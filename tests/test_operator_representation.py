@@ -25,6 +25,7 @@ _EMISSION_EDGE_EVIDENCE_KINDS = (
 _REPRESENTATION_EDGE_EVIDENCE_KINDS = (
     "operator.representation.act_evidenced",
     "operator.yield.evidence_recorded",
+    "operator.representation.carriage_evidenced",
 )
 
 
@@ -443,6 +444,7 @@ def test_first_interaction_attaches_no_representation_to_the_capture():
     assert kinds == {
         *_INGRESS_KINDS,
         "operator.representation.act_evidenced",
+        "operator.representation.carriage_evidenced",
         "operator.representation.recorded",
         "operator.representation.emission_attempted",
         *_EMISSION_EDGE_EVIDENCE_KINDS,
@@ -479,6 +481,9 @@ def test_representation_act_is_recorded_before_emission_and_they_stay_distinct()
         representation_event.payload["responsible_act_evidence_id"]
     )
     yield_evidence = ledger.get(representation_event.payload["yield_evidence_id"])
+    carriage_evidence = ledger.get(
+        representation_event.payload["carriage_evidence_id"]
+    )
     assert representation["representation_act_id"] == act_evidence.payload[
         "representation_act_id"
     ]
@@ -488,6 +493,12 @@ def test_representation_act_is_recorded_before_emission_and_they_stay_distinct()
     assert representation["act_occurrence_id"] == yield_evidence.payload[
         "dimensions"
     ]["act_occurrence_id"]
+    assert representation["act_occurrence_id"] == carriage_evidence.payload[
+        "act_occurrence_id"
+    ]
+    assert carriage_evidence.payload["carried_content"]["representation_ref"] == (
+        representation["representation_id"]
+    )
     assert "input_role" not in representation_event.payload
 
     emit_operator_representation(

@@ -232,6 +232,7 @@ def _representation_road() -> dict:
         "ledger": ledger,
         "carrier": carrier,
         "act_evidence": ledger.get(carrier.payload["responsible_act_evidence_id"]),
+        "carriage_evidence": ledger.get(carrier.payload["carriage_evidence_id"]),
         "content_evidence": ledger.get(carrier.payload["yield_evidence_id"]),
     }
 
@@ -368,8 +369,19 @@ def _occurrence_result_witness(bundle: dict) -> str:
     same_occurrence = carrier.payload.get("act_occurrence_id") == (
         act_evidence.payload.get("act_occurrence_id")
     ) == content_evidence.payload.get("dimensions", {}).get("act_occurrence_id")
-    same_result = act_evidence.payload.get("result_commitment") == (
-        content_evidence.payload.get("yield_commitment")
+    yield_coordinates = content_evidence.payload.get("yield_coordinates")
+    if not isinstance(yield_coordinates, list) or not all(
+        isinstance(key, str) and key in carrier.payload for key in yield_coordinates
+    ):
+        return MISSING
+    actual_result = {key: carrier.payload[key] for key in yield_coordinates}
+    actual_commitment = yield_commitment(
+        content_evidence.payload.get("yield_convention"), actual_result
+    )
+    same_result = (
+        act_evidence.payload.get("result_commitment")
+        == content_evidence.payload.get("yield_commitment")
+        == actual_commitment
     )
     evidence_is_carried = (
         carrier.payload.get("responsible_act_evidence_id") == act_evidence.id
@@ -425,6 +437,27 @@ def _emission_participation_witness(bundle: dict) -> str:
     )
 
 
+def _representation_carriage_witness(bundle: dict) -> str:
+    carrier = bundle["carrier"]
+    evidence = bundle["carriage_evidence"]
+    if evidence is None:
+        return MISSING
+    content = evidence.payload.get("carried_content")
+    exact_content = isinstance(content, dict) and all(
+        carrier.payload.get(key) == value for key, value in content.items()
+    )
+    exact_occurrence = (
+        carrier.payload.get("act_occurrence_id")
+        == evidence.payload.get("act_occurrence_id")
+    )
+    evidence_is_carried = carrier.payload.get("carriage_evidence_id") == evidence.id
+    return (
+        EXACT
+        if exact_content and exact_occurrence and evidence_is_carried
+        else MISSING
+    )
+
+
 def _structural_edge_fidelity_cases() -> dict[str, dict[str, str]]:
     carriage = _byte_measurement_road()
     alternate_carriage = _byte_measurement_road()
@@ -469,7 +502,9 @@ def _structural_edge_fidelity_cases() -> dict[str, dict[str, str]]:
     wrong_yield["content_evidence"] = alternate_yield["content_evidence"]
     unrelated_yield = dict(yielded)
     unrelated_yield_carrier = yielded["carrier"].model_copy(deep=True)
-    unrelated_yield_carrier.payload["source_session_ids"] = ["other-session"]
+    unrelated_yield_carrier.payload["occurrence_preservation"] = (
+        "changed neighboring carriage coordinate"
+    )
     unrelated_yield["carrier"] = unrelated_yield_carrier
 
     return {
@@ -539,7 +574,9 @@ def _emission_structural_edge_fidelity_cases() -> dict[str, dict[str, str]]:
     unrelated_participation["carrier"] = unrelated_participation_carrier
 
     missing_yield = dict(emission)
-    missing_yield["content_evidence"] = None
+    missing_yield_carrier = emission["carrier"].model_copy(deep=True)
+    missing_yield_carrier.payload["yielded_result"]["accepted_length"] += 1
+    missing_yield["carrier"] = missing_yield_carrier
     wrong_yield = dict(emission)
     wrong_yield["content_evidence"] = alternate["content_evidence"]
     unrelated_yield = dict(emission)
@@ -844,7 +881,14 @@ def test_representation_act_has_an_exact_yield_edge_without_asserting_participat
     missing["content_evidence"] = None
     wrong_occurrence = dict(representation)
     wrong_occurrence["content_evidence"] = alternate["content_evidence"]
+    missing_carriage = dict(representation)
+    missing_carriage["carriage_evidence"] = None
+    wrong_carriage = dict(representation)
+    wrong_carriage["carriage_evidence"] = alternate["carriage_evidence"]
 
+    assert _representation_carriage_witness(representation) == EXACT
+    assert _representation_carriage_witness(missing_carriage) == MISSING
+    assert _representation_carriage_witness(wrong_carriage) == MISSING
     assert _occurrence_result_witness(representation) == EXACT
     assert _occurrence_result_witness(missing) == MISSING
     assert _occurrence_result_witness(wrong_occurrence) == MISSING
