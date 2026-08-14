@@ -232,7 +232,7 @@ def _attempt_standing(*, events, ledger, attempt):
     The whole-workspace replay this replaces rebuilt every entity, normalized Assertion,
     alias, relationship, and index in order to return one bounded attempt, and
     it did so once per attempt, so occurrence *j* was replayed by every later
-    attempt. The work here is constant in the number of earlier attempts.
+    attempt. The cost here is constant in the number of earlier attempts.
 
     Refusals the returned attempt_standing depends on are unchanged: the addressable
     material is still formed through `form_operator_ingress_addressable_material`,

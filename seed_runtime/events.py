@@ -747,7 +747,7 @@ class SQLiteEventLedger(EventLedger):
         `integrity_of` remains the separate integrity boundary.
 
         The signature-count inputs run measured why this is worth its own
-        method: one 300-occurrence ingress read costs 7.09 ms as Events and
+        read: one 300-occurrence ingress read costs 7.09 ms as Events and
         0.25 ms as identities, because 902 bytes of JSON per occurrence are
         decoded and discarded by a caller that keeps only the identity.
         """

@@ -151,7 +151,7 @@ def run_operator_response_comparison_and_identification(
     # The ingress no longer names a Representation: a relation between two
     # preserved subjects is its own bounded Assertion rather than a
     # coordinate of one participant.  Nothing here substitutes for the
-    # missing determination, and its absence is not permission.  Per
+    # missing determination, and its absence settles nothing.  Per
     # 01.Standing.E.1 the Responsibility performing this exact Act owes an
     # Applicability determination for each proposed input; a caller supplying
     # two references is not that determination, and no such route is

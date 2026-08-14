@@ -70,8 +70,8 @@ def material_digest(exact_bytes: bytes) -> str:
     disagree.
 
     They now agree by construction, which is what lets a pointer account and a
-    material identity for one body be recognised as concerning it without a
-    translation step.
+    material identity for one body be recognised as concerning it without an
+    intervening step.
     """
 
     if type(exact_bytes) is not bytes:
@@ -87,7 +87,7 @@ class MaterialIdentity:
 
     Carrying this instead of the body is what keeps an occurrence a constant
     size. It identifies; it does not reconstruct. Nothing reconstructs material from
-    a digest, and a reader holding one has learned what to ask for rather than
+    a digest, and a reader holding one knows what to ask for rather than
     what it says.
     """
 

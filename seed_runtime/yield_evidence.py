@@ -7,7 +7,7 @@ occurrence-to-result edge; it is neither that edge nor either endpoint by identi
 
 The helper is private implementation plumbing, not the guarantee. The result's
 carried relation to this Evidence distinguishes a yielded result from an
-identical caller-constructed representation. Exposing a public operation that
+identical caller-constructed representation. Exposing a public entry point that
 accepts arbitrary result content would instead create a second recorder able to
 manufacture that relation.
 """

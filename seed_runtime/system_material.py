@@ -10,7 +10,7 @@ A third boundary, distinct from the two that exist:
 
 **This is what a second eye sees.** System-origin material — a
 directory listing, a file's contents, a program's output, a process exiting, a
-file changing, a device delivering something. It is the first Evidence available
+file changing, a device sending something. It is the first Evidence available
 to Seed that neither the operator supplied nor Seed yielded.
 
 **No invocation is required.** An earlier revision of this module made system
@@ -35,10 +35,10 @@ system-origin from Seed-origin is what keeps that separate.
 **A declaration records that an invocation was declared.** It does not record
 that it was performed. This function receives a supplied declaration and cannot
 observe an act, so an earlier revision saying the named party *performed* the
-invocation, in the same occurrence that recorded the performance as Unknown, was
+invocation, in the same occurrence that recorded that act as Unknown, was
 carrying two contradictory Standings at once.
 
-What a caller may establish about performance is what the caller itself did. A
+What a caller may establish is what the caller itself did. A
 harness that ran a subprocess can attest to running it; it cannot attest on
 behalf of a party it merely names.
 
@@ -151,7 +151,7 @@ def declare_invocation(
     """Record that an invocation was declared, and with which declared source role.
 
     Not that it was performed. Nothing here observed an act, and the support
-    says so rather than the payload asserting a performance the function cannot
+    says so rather than the payload asserting an act the function cannot
     establish.
     """
 
@@ -173,7 +173,7 @@ def declare_invocation(
                     "responsibility": "declared-system-invocation",
                     "authority": (
                         "records that an invocation was declared; establishes no "
-                        "performance of it, and no Evidence or Authority for this Seed to invoke"
+                        "act of it, and no Evidence or Authority for this Seed to invoke"
                     ),
                     "scope_locality": f"workspace:{workspace_id};session:{session_id}",
                     "occurrence_preservation": "declaration durably recorded",

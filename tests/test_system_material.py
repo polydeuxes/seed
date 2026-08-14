@@ -54,7 +54,7 @@ def _declare(ledger, **changes):
     return declare_invocation(ledger, **fields)
 
 
-def test_a_declaration_records_a_declaration_not_a_performance():
+def test_a_declaration_records_a_declaration_not_an_act():
     ledger = EventLedger()
     declaration = _declare(ledger)
 
@@ -64,14 +64,14 @@ def test_a_declaration_records_a_declaration_not_a_performance():
         "on_behalf_of": "this Seed",
     }
     support = declaration.payload["dimensions"]["authority"]
-    assert "establishes no performance of it" in support
+    assert "establishes no act of it" in support
     assert "no Evidence or Authority for this Seed to invoke" in support
     # No coordinate asserts that Seed did not invoke. Not established that it
     # did is not established that it did not, and a caller may name Seed as the
     # declared performer.
     assert "seed_invoked" not in declaration.payload
     assert any("this Seed invoked" in item for item in declaration.payload["unknowns"])
-    # The occurrence must not assert a performance while recording it Unknown.
+    # The occurrence must not assert the act while recording it Unknown.
     assert any("remains Unknown" in item for item in declaration.payload["unknowns"])
     assert "performed by" not in declaration.payload["dimensions"]["source_provenance"]
 

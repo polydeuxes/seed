@@ -453,7 +453,7 @@ def _as_preserved(
 
     Where a ledger is supplied the material is read from it. Where none is, the
     act measures what it was given and cannot state that it measured preserved
-    material -- which is a limit on the finding, not a permission.
+    material -- which is a limit on the finding, not a license.
     """
 
     if ledger is None:

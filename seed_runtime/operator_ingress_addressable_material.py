@@ -93,7 +93,6 @@ class OperatorIngressAddressableMaterial:
     authority_limits: tuple[str, ...]
     read_only: bool = True
     writes_event_ledger: bool = False
-    mutates_state: bool = False
     mutates_cluster: bool = False
 
     def __post_init__(self) -> None:
@@ -124,7 +123,6 @@ class OperatorIngressAddressableMaterial:
             value is not False
             for value in (
                 self.writes_event_ledger,
-                self.mutates_state,
                 self.mutates_cluster,
             )
         ):
@@ -246,7 +244,6 @@ class OperatorIngressAddressableMaterial:
             writes_event_ledger=_exact_bool(
                 value.get("writes_event_ledger"), "writes_event_ledger"
             ),
-            mutates_state=_exact_bool(value.get("mutates_state"), "mutates_state"),
             mutates_cluster=_exact_bool(
                 value.get("mutates_cluster"), "mutates_cluster"
             ),
