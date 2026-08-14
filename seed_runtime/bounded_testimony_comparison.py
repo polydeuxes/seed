@@ -207,7 +207,7 @@ def compare_preserved_findings(
         # `unverifiable` is recorded on the input rather than refused: an
         # in-memory ledger and any occurrence written before the digest
         # existed are both lawfully unverifiable, and refusing them would
-        # demand a guarantee nothing ever offered.
+        # require a guarantee nothing ever offered.
         if ledger.integrity_of(event_id) == CORRUPTED:
             raise BoundedComparisonError(
                 f"{event_id} does not match its recorded digest; a corrupted "

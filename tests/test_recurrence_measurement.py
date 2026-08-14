@@ -136,7 +136,7 @@ def test_the_assertion_owns_fidelity_not_its_production(compared):
 
 
 def test_a_measured_assertion_does_not_invent_its_next_question(compared):
-    """Local fidelity ownership is not an automatic continuation demand."""
+    """Local fidelity ownership is not an automatic automatic continuation requirement."""
     event = record_measured_count(
         compared, workspace_id="w", session_id="s1",
         finding=_by_right(compared)["word"])

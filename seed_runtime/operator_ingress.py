@@ -56,7 +56,7 @@ def project_operator_ingress_events(attempts, event, *, ledger=None) -> None:
 
     ``attempts`` is the per-attempt projection mapping and is the whole of what
     this read consumes. It reads no entity, normalized Assertion, alias, relationship, or
-    goal, so nothing here requires a whole-workspace projection to exist.
+    result condition, so nothing here requires a whole-workspace projection to exist.
     """
     if not event.kind.startswith("operator.ingress."):
         return

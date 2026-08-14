@@ -4,26 +4,26 @@
 The standing of questions and their role in initiating or shaping bounded inquiry.
 
 ## Core question
-What makes a question constitutionally admissible and connected to an established goal or uncertainty?
+What makes a question constitutionally admissible and connected to an established result condition or uncertainty?
 
 ## Bounded resolution
-Question-shaped external material is testimony, not an internal constitutional question. Seed may consume attributed operator material, repository uncertainty, goals, constraints, corrections, or prior findings when forming a bounded question, but the internal question-forming act remains Seed-owned. Bounded questions require identity, provenance, scope, evidence demand, authority limits, uncertainty, and lawful stop conditions appropriate to the inquiry.
+Question-shaped external material is attributed material, not an internal constitutional question. Seed may consume operator material, repository uncertainty, result conditions, Constraints, corrections, or prior findings when forming a bounded question. The question-forming Act preserves identity, provenance, Scope, required Evidence, Authority limits, uncertainty, and lawful stop conditions.
 
 ## Addressable boundaries for question standing
 
 ### 04.Question.A — Question standing is not answer standing
-A bounded question may establish the identity, provenance, scope, evidence demand, and lawful stop conditions for an inquiry posture, but it does not establish the answer, select the outcome, authorize unbounded investigation, or convert the operator's wording into repository knowledge. Reformulation, frontier membership, or advancement demand may carry the question forward only within preserved evidence, authority, uncertainty, and negative-authority limits.
+A bounded question may establish identity, provenance, Scope, required Evidence, and lawful stop conditions. It does not establish the answer, select a result, authorize unbounded inquiry, or convert operator wording into Seed Standing.
 
 ### 04.Question.B — Inquiry origination requires bounded source-attributed representation formation
-An operator ask, prompt phrase, uncertainty statement, reformulation, or presentation label may create attributed testimony or inquiry pressure only. Seed may initiate internal inquiry after a bounded source-attributed representation formation preserves identity, source, scope, evidence demand, authority limit, uncertainty, and lawful stop. That source-attributed representation formation does not make the operator's wording repository knowledge, assign universal inquiry ownership, retire neighboring questions, establish an answer, or authorize investigation beyond the source-attributed boundary.
+An operator ask, prompt phrase, uncertainty statement, reformulation, or presentation label is attributed material. Seed may form a bounded question only while preserving its identity, source, Scope, required Evidence, Authority limit, uncertainty, and lawful stop. Formation does not make the operator wording Seed Standing, retire neighboring questions, establish an answer, or authorize inquiry beyond that boundary.
 
 ### 04.Question.C — Question relations are local and non-collapsing
-A relation involving inquiry pressure, an inquiry demand, a bounded question, a finding, an answer, completion, communication, or later re-entry exists only where the exact source standing, addressed subject standing, crossing evidence or warrant, authority boundary, and surviving limits are preserved for that local relation. Naming several such standings in one report, graph, implementation surface, or sequence does not establish a canonical node inventory, universal pipeline, constitutional ordering, or missing edge. No relation carries stronger answer, evidentiary warrant, authority, completion, retirement, arrival, reliance, correction, reopening, act occurrence, or mutation standing unless that stronger standing is separately established.
+A relation among an uncertainty, result condition, question, finding, answer, completion, emission, or later occurrence exists only where the exact source Standing, addressed subject, Evidence or Warrant, Authority, locality, and limits are preserved. Co-presence in one report, graph, implementation surface, or sequence establishes no ordering or missing relation.
 
-External grammar cannot inject an internal question. Operator material may remain testimony, pressure, goals, constraints, corrections, or responses; Seed owns the constitutional act that forms any internal question from that material. An implementation taxonomy such as `QuestionFamily`, an exposed inventory, exact family label, dispatch map, or presentation surface is realization testimony only. It may support compatibility routing or bounded implementation eligibility, but it does not become Seed's constitutional question taxonomy or establish applicability to a goal by existence.
+External grammar cannot inject an internal question. An implementation taxonomy, inventory, family label, dispatch map, or emitted surface may witness implementation behavior; it does not become a constitutional question taxonomy or establish Applicability by existence.
 
-### 04.Question.D — Questions constrain evidence demand without becoming Views
-A bounded question may require dimensions, observation boundaries, and lawful stop conditions, and may constrain which Views are applicable to a later act, and their selection, composition, or request formation. It does not by itself force one canonical View, supply the evidence it demands, or make a View into an answer. Some questions may be answered or lawfully stopped from already-preserved evidence; others may require selecting or composing a View or forming a bounded request. Applicability is determined for an exact act and its exact input; the applicability determined for one act is not the applicability determined for another, and neither is the evidence warrant required by the question. Each remains a separate standing preserved at its local boundary.
+### 04.Question.D — Questions constrain required Evidence
+A bounded question may require dimensions, observation boundaries, and lawful stop conditions. It does not supply its required Evidence or establish an answer. Applicability remains exact to each later Act and input.
 
 ### 04.Question.E — Normal internal questioning is Seed-owned
 The normal constitutional relationship is:
@@ -31,7 +31,7 @@ The normal constitutional relationship is:
 ```text
 external or operator material
 ↓
-attributed testimony, pressure, goals, constraints, corrections, or response
+attributed testimony, pressure, result conditions, constraints, corrections, or response
 ↓
 Seed-side interpretation and bounded standing establishment
 ↓

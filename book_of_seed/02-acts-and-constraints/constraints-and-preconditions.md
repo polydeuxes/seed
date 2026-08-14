@@ -10,10 +10,10 @@ Which constraints govern an act, and at which boundary must each be satisfied?
 A constraint consumes the proposed act or relevant context and produces or preserves a prohibition, requirement, condition, narrowing, or deferral applicable to that act. Its assertion is warranted by applicable authority, bound identity, and current evidence. Constraints may govern several different acts and may be checked at several boundaries; they are not thereby sequential movement stages. A constraint result may be consumed without the governed act occurring.
 
 
-## Addressable boundaries for access and capability boundaries
+## Addressable access and Act conditions
 
-### 02.Constraints.A — Access and capability do not authorize use
-An access condition, visible route, available artifact, capability candidate, catalog entry, projected capability, or read-only surface may support only the bounded access or capability standing it preserves. It does not by itself establish Authorization for the exact act, mutation, reliance beyond its warrant, event-ledger admission, or cluster change. Lawful use requires a separate authority, constraint, warrant, and responsible act boundary appropriate to the exact movement claimed.
+### 02.Constraints.A — Access and an Act condition do not authorize use
+An access condition, visible route, available representation, mechanism candidate, catalog entry, or read-only surface preserves only its exact evidenced condition. It does not by itself establish Authorization for the Act, mutation, reliance beyond its Warrant, event-ledger admission, or cluster change. Lawful use requires the exact Act's Authority, Constraints, Evidence, Responsibility, and occurrence boundary.
 
 ## Important distinctions
 - act != constraint on an act
@@ -44,4 +44,4 @@ Direct answer preserved by this clause: Does a constraint result perform the mov
 
 Constraint findings and precondition testimony preserve only the condition established at the boundary that produced them. A passing constraint finding, schema check, precondition check, reachability observation, or feasibility finding does not establish complete authority or act occurrence, or establish selected mechanism standing, representation fitness, recipient availability, emission, invocation, result recording, or temporal applicability beyond the finding's scope.
 
-Resource and other local conditions must remain exact coordinates rather than a scalar standing that silently compresses constraint satisfaction, capability standing, reachability, resource conditions, authority, approval, representation fitness, recipient availability, and temporal applicability. When an exact Act relies on condition testimony, unevidenced coordinates remain Unknown, and the exact Act must preserve the condition's source, subject, scope, bounded requirement, result, temporal standing, limits, and remaining Unknowns.
+Resource and other local conditions remain exact coordinates rather than one scalar that compresses constraint satisfaction, reachability, resources, Authority, approval, representation fitness, locality, and temporal Applicability. When an exact Act relies on a condition Assertion, unestablished coordinates remain Unknown, and the Act preserves its source, subject, Scope, requirement, result, temporal Standing, limits, and Unknowns.

@@ -4,7 +4,7 @@
 The origin, binding, extent, and non-transferability of authority across Seed's boundaries.
 
 ## Core question
-What grants authority for a bounded goal or act, and how is that authority prevented from expanding in transit?
+What grants authority for a bounded result condition or act, and how is that authority prevented from expanding in transit?
 
 ## Bounded resolution
 Operator material and explicit approvals may contribute authority only after interpretation and scope binding. Internal models, selections, records, and provider emissions, transport structures, or ordinary-language transition labels cannot create or enlarge that authority.

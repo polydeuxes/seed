@@ -139,8 +139,8 @@ def test_console_ingress_is_line_bounded_not_document_bounded(events):
     assert len(decoded) == 2 + len(E3.split("\n"))
 
 
-def test_null_start_does_not_activate_the_dormant_goal_chain(events):
-    """A null start records none of the goal chain's three event kinds.
+def test_null_start_does_not_activate_the_dormant_result_chain(events):
+    """A null start records none of the retired chain's three event kinds.
 
     Narrow by intent.  This asserts only that the dormant Applicability /
     Admission / Consumption chain did not run, which is consistent with its

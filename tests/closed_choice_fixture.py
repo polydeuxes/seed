@@ -1,4 +1,4 @@
-"""Explicit non-goal closed-choice fixture for exchange mechanics."""
+"""Explicit non-result-directed closed-choice fixture for exchange mechanics."""
 
 from typing import Any
 

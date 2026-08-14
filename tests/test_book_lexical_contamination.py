@@ -93,6 +93,10 @@ BANNED: tuple[tuple[str, str], ...] = (
     (r"\blineage\b|lineage[-_]", "lineage"),
     (r"\bpurposes?\b|purpose[-_]", "purpose"),
     (r"\bmeanings?\b|meaning[-_]", "meaning"),
+    (r"\bcapabilit(?:y|ies)\b|capability[-_]", "capability"),
+    (r"\bgaps?\b|gap[-_]", "gap"),
+    (r"\bgoals?\b", "goal"),
+    (r"\bdemands?\b", "demand"),
 )
 
 # The discriminator, corrected.
@@ -180,8 +184,11 @@ def find_violations() -> list[tuple[str, int, str, str]]:
     for path in book_proper_files():
         rel = path.relative_to(ROOT).as_posix()
         for number, line in enumerate(path.read_text().split("\n"), start=1):
+            # Stable historical file addresses may retain retired words.  The
+            # visible label is active law; a Markdown destination is not.
+            scanned = re.sub(r"\]\([^)]*\)", "]()", line)
             for pattern, label in COMPILED:
-                if pattern.search(line):
+                if pattern.search(scanned):
                     found.append((rel, number, label, line.strip()))
     return found
 

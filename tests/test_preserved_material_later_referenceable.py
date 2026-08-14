@@ -26,9 +26,9 @@ the whole past.  And `#2350` left open whether
 occurrence -- executing it proves the substrate exists, not that the projection
 is lawful.
 
-This module also does not test that Seed's *capability* changes over time.  No
+This module also does not test that Seed's exact Act conditions change over time.  No
 measurement act exists in the runtime, so there is no case where a later
-capability reaches material it previously could not.
+material access reaches material it previously could not.
 
 Run standalone to inspect the reference lists:
 
@@ -126,7 +126,7 @@ def test_each_formation_is_appended_after_every_event_it_references(ledger):
 
     This says nothing about findings or Standing.  A presentation formation is
     not a finding, and its own recorded authority is "formation occurrence
-    only; establishes no selection, warrant, goal, or response treatment".
+    only; establishes no selection, Warrant, result relation, or response treatment".
     """
     events = ledger.list()
     formations = [e for e in events if e.kind == FORMED]
@@ -138,12 +138,12 @@ def test_each_formation_is_appended_after_every_event_it_references(ledger):
             assert positions[boundary] < positions[formation.id]
 
 
-def test_no_capability_change_is_claimed_here(ledger):
+def test_no_act_condition_change_is_claimed_here(ledger):
     """Guard against this module being read as more than it is.
 
     Only one kind of consuming act runs in this session.  If a second
     measurement or finding act is added later, this assertion should fail and
-    be replaced by a real capability-change test.
+    be replaced by a real Act-condition-change test.
     """
     observed_operator_event_kinds = {
         e.kind for e in ledger.list() if e.kind.startswith("operator.")

@@ -2,7 +2,7 @@
 
 `#2391` recovered ordered pairs whose adjacency reproduces across independently
 bounded scopes, without a reader naming a representation, occupant, or
-delimiter. It left one gap: the candidates were enumerated in a scratch run, so
+delimiter. It left one unresolved boundary: the candidates were enumerated in a scratch run, so
 the loop was demonstrated rather than preserved.
 
 This closes that. :func:`adjacent_pairs_from_finding` reads pairs out of a recorded

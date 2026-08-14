@@ -89,7 +89,7 @@ class DeclaredInvocation:
 
     `declared_performer` is not decoration. An operator running a command so Seed
     can consume the result has not made Seed the invoker, and a record saying
-    otherwise would grant Seed a capability it does not hold.
+    otherwise would grant Seed Authority or mechanism Evidence it does not hold.
 
     It is *declared*, not established. Nothing here observed an act, so the
     coordinate carries an attribution a caller supplied and the occurrence says
@@ -173,7 +173,7 @@ def declare_invocation(
                     "responsibility": "declared-system-invocation",
                     "authority_warrant": (
                         "records that an invocation was declared; establishes no "
-                        "performance of it, and no capability of this Seed to invoke"
+                        "performance of it, and no Evidence or Authority for this Seed to invoke"
                     ),
                     "scope_locality": f"workspace:{workspace_id};session:{session_id}",
                     "occurrence_preservation": "declaration durably recorded",

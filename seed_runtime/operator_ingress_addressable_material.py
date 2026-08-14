@@ -50,14 +50,14 @@ class ExactOperatorMaterial:
 UNKNOWNS = (
     "communicative represented relation Unknown",
     "operator intent Unknown",
-    "operator goal Unknown",
+    "operator result relation Unknown",
     "Seed-question applicability Unknown",
     "next-Act Applicability Unknown",
 )
 AUTHORITY_LIMITS = (
     "addressability and exact-material carriage only",
     "decoder success establishes representation availability, not interpretation or competency",
-    "no interpretation candidate, warrant, selection, applicability, admission, goal, Demand, movement, authorization, or execution",
+    "no interpretation candidate, warrant, selection, applicability, admission, result relation, required-result Standing, movement, authorization, or execution",
 )
 
 

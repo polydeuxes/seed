@@ -50,7 +50,7 @@ Recording may preserve already produced measurement testimony and already produc
 - difference from one sample != material deviation
 - material deviation recognition != deviation recording
 - deviation != act failure
-- deviation != capability loss
+- deviation != exact Act condition loss
 - one unusual sample != changed ordinary behavior
 - baseline transition establishment != transition recording
 - non-rebuildable != preservation-required

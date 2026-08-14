@@ -19,7 +19,7 @@ concerns* — and the witness is the recorded event itself.
 
 **What it does not do.** It revises nothing. `06.Standing.B` establishes that
 making an Assertion available at another locality does not revise its Standing,
-establish Applicability, or demand another Act. A finding found unfaithful here
+establish Applicability, or require another Act. A finding found unfaithful here
 keeps whatever Standing it had; this comparison establishes only its own result.
 
 **It does not walk anything.** A fidelity finding concerning one recorded

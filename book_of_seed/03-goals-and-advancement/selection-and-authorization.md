@@ -14,7 +14,7 @@ Exact candidate-identity resolution is not Selection. A resolver may compare att
 ## Important distinctions
 - candidate identity resolved != candidate selected
 - Selection != Authorization
-- selected advancement Demand != priority, route, inquiry opening, or realization
+- selected advancement required result != priority, route, inquiry opening, or realization
 - closed-choice binding != Authorization for an act or movement
 - Selection standing != Authorization standing
 

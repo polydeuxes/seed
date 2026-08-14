@@ -157,7 +157,7 @@ def test_c0_presents_standing_with_no_developer_semantics():
     for injected in (
         "Establish richer shared grammar",
         "Show current Standing",
-        "establish no such goal and stop locally",
+        "establish no such result relation and stop locally",
         "developer-supplied",
     ):
         assert injected not in flattened, injected
@@ -227,7 +227,7 @@ def test_console_presents_standing_only_across_an_ingress():
         "operator.presentation.formed",
         "operator.presentation.emitted",
     ]
-    # No automatic exchange, recovery, relation, or goal occurrence.
+    # No automatic exchange, recovery, relation, or result-establishment occurrence.
     assert not any(k.startswith("operator.exchange.") for k in kinds)
     assert not any(k.startswith("operator.interaction.") for k in kinds)
     assert "operator.presentation.source_recovered" not in kinds
@@ -242,7 +242,7 @@ def test_console_presents_standing_only_across_an_ingress():
     )
     assert c0.payload["alternatives"] == [] and c1.payload["alternatives"] == []
     assert "produced_after_presentation_ref" not in ingress.payload
-    # No developer goal semantics anywhere in the session.
+    # No developer result semantics anywhere in the session.
     session = str([e.payload for e in ledger.list("w")])
     assert "developer-supplied" not in session
     assert "Establish richer shared grammar" not in session

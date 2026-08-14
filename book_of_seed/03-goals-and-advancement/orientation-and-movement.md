@@ -4,10 +4,10 @@
 The role of orientation in describing where attention or concern lies without claiming advancement.
 
 ## Core question
-What additional warrant turns orientation toward a goal into constitutional movement?
+What additional warrant turns orientation toward a result condition into constitutional movement?
 
 ## Bounded resolution
-Orientation associates and presents goal dimensions; movement requires a separately warranted transition that changes lawful position or standing.
+Orientation associates and presents result condition dimensions; movement requires a separately warranted transition that changes lawful position or standing.
 
 ## Addressable boundaries for movement
 
@@ -27,9 +27,9 @@ Movement is not a rule call or Act occurrence by identity. Standing is not a dur
 - `seed_runtime/source_navigation.py`
 
 ## Counterexamples or failure modes
-- Claiming progress because a goal was selected for display.
+- Claiming progress because a result condition was selected for display.
 - Treating navigation metadata as an active constitutional edge.
 
 ## Related chapters
-- [Demands and opened movement](demands-and-opened-movement.md)
+- [Result boundaries and movement](demands-and-opened-movement.md)
 - [Stopping and completion](../08-authority-communication-and-stopping/stopping-and-completion.md)

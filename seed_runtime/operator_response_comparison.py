@@ -305,7 +305,7 @@ def run_operator_response_comparison_and_identification(
                 authority=(
                     "identifies a presented alternative within this exact "
                     "presentation only; establishes no source recovery, "
-                    "represented relation, intent, selection, authorization, goal, or "
+                    "represented relation, intent, selection, authorization, result relation, or "
                     "treatment occurrence"
                 ),
                 scope=f"{scope};exchange:{presentation_ref}->{response_attempt_ref}",

@@ -7,11 +7,11 @@ def test_append_records_reality_in_order():
     ledger = EventLedger()
 
     ledger.append("user.message")
-    ledger.append("goal.created")
+    ledger.append("result_condition.recorded")
 
     assert len(ledger.list()) == 2
     assert ledger.list()[0].kind == "user.message"
-    assert ledger.list()[1].kind == "goal.created"
+    assert ledger.list()[1].kind == "result_condition.recorded"
 
 
 def test_get_returns_appended_event_by_id():

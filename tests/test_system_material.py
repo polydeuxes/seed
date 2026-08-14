@@ -65,7 +65,7 @@ def test_a_declaration_records_a_declaration_not_a_performance():
     }
     warrant = declaration.payload["dimensions"]["authority_warrant"]
     assert "establishes no performance of it" in warrant
-    assert "no capability of this Seed to invoke" in warrant
+    assert "no Evidence or Authority for this Seed to invoke" in warrant
     # No coordinate asserts that Seed did not invoke. Not established that it
     # did is not established that it did not, and a caller may name Seed as the
     # declared performer.
