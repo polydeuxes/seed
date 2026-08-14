@@ -9,7 +9,7 @@ It is not a roadmap, API reference, generated topology, complete inventory, or s
 - A **Book** is a major constitutional district, family, or kind.
 - A **Chapter** concerns one bounded concept, responsibility, distinction, constraint, relationship, or unresolved constitutional question.
 - `[UNRESOLVED]` marks a question for which the current repository does not safely support a constitutional resolution.
-- Representative anchors are illustrative. Seed must inspect the repository to recover current responsible occurrences, exact Acts, fields, topology, discrepancies, and residue.
+- Representative anchors are illustrative. Seed must inspect the repository for current responsible occurrences, exact Acts, fields, topology, discrepancies, and residue.
 
 The first pass deliberately favors concise distinctions over comprehensive prose. The [concordance](concordance.md) is a navigation aid, not an ontology. Cross-cutting questions without a stable chapter home live in [unresolved.md](unresolved.md).
 
@@ -240,7 +240,7 @@ same occurrence != same claim
 ## Maintenance rule
 
 > Maintain the constitutional grammar.  
-> Let Seed recover and project the current implementation.
+> Let Seed inspect the current implementation and emit only what that inspection establishes.
 
 Change the Book when constitutional grammar, a durable distinction, or the status of an unresolved constitutional question changes. Do not update it merely because a function moves, a field is added, a pipeline is rewired, or a new diagnostic projects the same grammar.
 

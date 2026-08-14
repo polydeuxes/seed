@@ -105,6 +105,7 @@ BANNED: tuple[tuple[str, str], ...] = (
     # Capital-W is the retired constitutional species.  Lowercase warrant is
     # still an ordinary verb in sentences such as "the Evidence warrants X".
     (r"\bWarrant\b|warrant[-_]", "Warrant"),
+    (r"\brecovery\b|recovery[-_]", "recovery"),
 )
 
 # The discriminator, corrected.

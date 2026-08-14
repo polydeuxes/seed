@@ -1,4 +1,4 @@
-# Recording and Assertion Recovery
+# Recording and Preserved Assertions
 
 ## Constitutional subject
 The boundary between preserving events or diagnostic output and deriving knowledge from recorded material.
@@ -7,7 +7,7 @@ The boundary between preserving events or diagnostic output and deriving knowled
 Which bounded responsibility may take up recorded material, and what standing, if any, may it establish?
 
 ## Bounded resolution
-A recording boundary may create a retrievable representation of attributed events, findings, Assertions, or established Standing within its preservation horizon. Recovery from recorded material is a separate Responsibility with its own Evidence and Standing limits; recovery does not establish stronger Standing. Diagnostic rendering, metrics, CLI text, and operator capture are not Seed preservation by identity. Measurement, Standing establishment, rendering, and recording remain separate Acts.
+A recording boundary may create an addressable representation of attributed events, findings, Assertions, or established Standing within its preservation horizon. A later exact Act may resolve that record reference, validate the coordinates it needs, and expose the same preserved Assertion locally. Those steps are part of that Act's input boundary; they establish no separate Responsibility, subject, occurrence, or stronger Standing. Diagnostic rendering, metrics, CLI text, and operator capture are not Seed preservation by identity. Measurement, Standing establishment, rendering, and recording remain separate Acts.
 
 
 ## Addressable boundaries for recorded-change witnesses

@@ -4,4 +4,4 @@ This Book concerns attributed material, Evidence, provenance, and the boundaries
 
 - [Source-relative Assertions and Standing](testimony-and-assertion-standing.md)
 - [Evidence, provenance, and explanation](evidence-provenance-and-explanation.md)
-- [Recording and Assertion recovery](recording-and-knowledge-extraction.md)
+- [Recording and preserved Assertions](recording-and-knowledge-extraction.md)

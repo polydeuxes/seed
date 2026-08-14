@@ -35,5 +35,5 @@ Temporal coordinates distinguish what time an Assertion describes, when Evidence
 ## Related chapters
 
 - [Evidence and provenance](evidence-provenance-and-explanation.md)
-- [Recording and Assertion recovery](recording-and-knowledge-extraction.md)
+- [Recording and preserved Assertions](recording-and-knowledge-extraction.md)
 - [Questions and inquiry](../04-inquiry/questions-and-inquiry.md)
