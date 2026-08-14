@@ -42,6 +42,22 @@ def _digest_only_witness(digest: str) -> dict[str, str]:
     }
 
 
+def _content_carriage_witness(content: dict, carriage) -> str:
+    if carriage is None:
+        return MISSING
+    return EXACT if carriage.payload == content else MISSING
+
+
+def _representation_digest_witness(
+    representation: dict, *, convention: str, digest: str
+) -> str:
+    return (
+        EXACT
+        if production_commitment(convention, representation) == digest
+        else MISSING
+    )
+
+
 def _source_assertion():
     road = _byte_measurement_road()
     return road["source_assertion"]
@@ -254,6 +270,41 @@ def test_implementation_witness_discriminates_content_carriage_and_digest():
         ["content", "digest"],
         ["carriage", "digest"],
     ]
+
+
+def test_content_and_carriage_endpoints_do_not_establish_carriage_relation():
+    ledger = EventLedger()
+    content = {"subject": "x", "standing": "Unknown"}
+    carriage = ledger.append("test.carriage", "w", dict(content), session_id="s")
+
+    assert _content_carriage_witness(content, carriage) == EXACT
+    unrelated_carriage = ledger.append(
+        "test.carriage", "w", {"subject": "y", "standing": "Unknown"}, session_id="s"
+    )
+    assert content
+    assert unrelated_carriage.id
+    assert _content_carriage_witness(content, unrelated_carriage) == MISSING
+
+
+def test_representation_and_digest_endpoints_do_not_establish_commitment_relation():
+    representation = {"subject": "x", "standing": "Unknown"}
+    digest = production_commitment("test", representation)
+
+    assert (
+        _representation_digest_witness(
+            representation, convention="test", digest=digest
+        )
+        == EXACT
+    )
+    changed_representation = {"subject": "x", "standing": "measured"}
+    assert changed_representation
+    assert digest
+    assert (
+        _representation_digest_witness(
+            changed_representation, convention="test", digest=digest
+        )
+        == MISSING
+    )
 
 
 def test_a_digest_alone_witnesses_no_content_carriage_or_standing():
