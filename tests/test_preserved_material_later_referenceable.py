@@ -153,6 +153,7 @@ def test_no_act_condition_change_is_claimed_here(ledger):
         "operator.representation.act_evidenced",
         "operator.representation.carriage_evidenced",
         "operator.representation.emission_attempted",
+        "operator.representation.emission_attempt_carriage_evidenced",
         "operator.representation.emission_act_evidenced",
         "operator.representation.emission_carriage_evidenced",
         "operator.yield.evidence_recorded",

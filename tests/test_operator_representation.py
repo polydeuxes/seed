@@ -18,6 +18,7 @@ _INGRESS_KINDS = (
     "operator.ingress.ingress_occurred",
 )
 _EMISSION_EDGE_EVIDENCE_KINDS = (
+    "operator.representation.emission_attempt_carriage_evidenced",
     "operator.representation.emission_act_evidenced",
     "operator.representation.emission_carriage_evidenced",
     "operator.yield.evidence_recorded",
@@ -535,7 +536,12 @@ def test_emission_preserves_the_exact_text_written_to_its_boundary():
         representation["emission_attempt_event_id"],
     ]
     attempt = ledger.get(representation["emission_attempt_event_id"])
+    attempt_carriage_evidence = ledger.get(
+        representation["emission_attempt_carriage_evidence_id"]
+    )
     assert attempt.payload["attempted_representation"] == output.getvalue()
+    assert attempt_carriage_evidence.payload["carried_content"] == output.getvalue()
+    assert attempt_carriage_evidence.payload["attempt_event_id"] == attempt.id
     assert attempt.payload["dimensions"]["standing"].endswith("outcome Unknown")
     assert attempt.id != emission.payload["act_occurrence_id"]
     assert emission.payload["input_role"] == "exact bounded Representation"
@@ -590,6 +596,7 @@ def test_partial_output_write_preserves_attempt_and_failed_occurrences():
         *_REPRESENTATION_EDGE_EVIDENCE_KINDS,
         "operator.representation.recorded",
         "operator.representation.emission_attempted",
+        "operator.representation.emission_attempt_carriage_evidenced",
         "operator.representation.emission_outcome_recorded",
     ]
     failure = ledger.get(representation["emission_outcome_event_id"])
@@ -693,8 +700,10 @@ def test_process_death_after_attempt_leaves_output_outcome_unknown():
         *_REPRESENTATION_EDGE_EVIDENCE_KINDS,
         "operator.representation.recorded",
         "operator.representation.emission_attempted",
+        "operator.representation.emission_attempt_carriage_evidenced",
     ]
     recovered = list(_standing(ledger)["representations"].values())[-1]
     assert recovered["emission_attempt_event_id"] is not None
+    assert recovered["emission_attempt_carriage_evidence_id"] is not None
     assert recovered["emission_outcome_event_id"] is None
     assert recovered["emitted_event_id"] is None

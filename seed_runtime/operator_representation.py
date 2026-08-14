@@ -33,6 +33,9 @@ REPRESENTATION_EMISSION_ACT_EVIDENCE_KIND = (
 REPRESENTATION_EMISSION_CARRIAGE_EVIDENCE_KIND = (
     "operator.representation.emission_carriage_evidenced"
 )
+REPRESENTATION_EMISSION_ATTEMPT_CARRIAGE_EVIDENCE_KIND = (
+    "operator.representation.emission_attempt_carriage_evidenced"
+)
 REPRESENTATION_EMISSION_CONVENTION = "operator_representation_emission_v1"
 REPRESENTATION_EMISSION_INPUT_ROLE = "exact bounded Representation"
 REPRESENTATION_EMISSION_RESPONSIBILITY = (
@@ -240,6 +243,7 @@ def record_operator_representation(
         "coordinate_bindings": coordinate_bindings,
         "representation_event_id": representation_event.id,
         "emission_attempt_event_id": None,
+        "emission_attempt_carriage_evidence_id": None,
         "emission_outcome_event_id": None,
         "emitted_event_id": None,
         "session_standing_as_of_event_id": session_standing["as_of_event_id"],
@@ -364,6 +368,24 @@ def emit_operator_representation(
         session_id=representation["session_id"],
     )
     representation["emission_attempt_event_id"] = attempt_event.id
+    attempt_carriage_evidence = ledger.append(
+        REPRESENTATION_EMISSION_ATTEMPT_CARRIAGE_EVIDENCE_KIND,
+        representation["workspace_id"],
+        {
+            "representation_ref": representation["representation_id"],
+            "attempt_event_id": attempt_event.id,
+            "content_kind": "text",
+            "carried_content": emitted_representation,
+            "standing": "carried",
+            "authority": (
+                "Evidence only for the exact text-to-emission-attempt Carriage"
+            ),
+        },
+        session_id=representation["session_id"],
+    )
+    representation["emission_attempt_carriage_evidence_id"] = (
+        attempt_carriage_evidence.id
+    )
 
     try:
         written = output_stream.write(emitted_representation)

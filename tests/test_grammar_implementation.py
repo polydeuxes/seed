@@ -211,6 +211,9 @@ def _emission_road() -> dict:
         "ledger": ledger,
         "carrier": carrier,
         "attempt": ledger.get(representation["emission_attempt_event_id"]),
+        "attempt_carriage_evidence": ledger.get(
+            representation["emission_attempt_carriage_evidence_id"]
+        ),
         "act_evidence": ledger.get(
             carrier.payload["responsible_act_evidence_id"]
         ),
@@ -407,6 +410,27 @@ def _emission_carriage_witness(bundle: dict) -> str:
     return (
         EXACT
         if exact_relation and exact_occurrence and evidence_is_carried
+        else MISSING
+    )
+
+
+def _emission_attempt_carriage_witness(bundle: dict) -> str:
+    attempt = bundle["attempt"]
+    evidence = bundle["attempt_carriage_evidence"]
+    if evidence is None:
+        return MISSING
+    exact_relation = (
+        attempt.payload.get("attempted_representation")
+        == evidence.payload.get("carried_content")
+    )
+    exact_occurrence = attempt.id == evidence.payload.get("attempt_event_id")
+    exact_subject = (
+        attempt.payload.get("representation_ref")
+        == evidence.payload.get("representation_ref")
+    )
+    return (
+        EXACT
+        if exact_relation and exact_occurrence and exact_subject
         else MISSING
     )
 
@@ -872,6 +896,29 @@ def test_emission_instantiates_every_structural_edge_at_its_boundary():
 
     assert set(cases) == set(grammar["structural_edges"])
     assert cases == {edge: expected for edge in grammar["structural_edges"]}
+
+
+def test_attempt_and_success_have_distinct_carriages_for_the_same_text():
+    emission = _emission_road()
+    alternate = _emission_road()
+    wrong_attempt = dict(emission)
+    wrong_attempt["attempt_carriage_evidence"] = alternate[
+        "attempt_carriage_evidence"
+    ]
+    success_evidence_in_attempt_slot = dict(emission)
+    success_evidence_in_attempt_slot["attempt_carriage_evidence"] = emission[
+        "carriage_evidence"
+    ]
+
+    assert emission["attempt"].payload["attempted_representation"] == emission[
+        "carrier"
+    ].payload["emitted_representation"]
+    assert _emission_attempt_carriage_witness(emission) == EXACT
+    assert _emission_attempt_carriage_witness(wrong_attempt) == MISSING
+    assert (
+        _emission_attempt_carriage_witness(success_evidence_in_attempt_slot)
+        == MISSING
+    )
 
 
 def test_representation_act_has_an_exact_yield_edge_without_asserting_participation():

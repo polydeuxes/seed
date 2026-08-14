@@ -28,6 +28,9 @@ _REPRESENTATION_EMISSION_ACT_EVIDENCE_KIND = (
 _REPRESENTATION_EMISSION_CARRIAGE_EVIDENCE_KIND = (
     "operator.representation.emission_carriage_evidenced"
 )
+_REPRESENTATION_EMISSION_ATTEMPT_CARRIAGE_EVIDENCE_KIND = (
+    "operator.representation.emission_attempt_carriage_evidenced"
+)
 _COMPARISON_KIND = "operator.exchange.comparison_occurred"
 _IDENTIFICATION_KIND = "operator.exchange.identification_occurred"
 _SOURCE_VALIDATED_KIND = "operator.representation.source_validated"
@@ -43,6 +46,7 @@ _SUPPORTED_KINDS = {
     _REPRESENTATION_EMISSION_OUTCOME_KIND,
     _REPRESENTATION_EMISSION_ACT_EVIDENCE_KIND,
     _REPRESENTATION_EMISSION_CARRIAGE_EVIDENCE_KIND,
+    _REPRESENTATION_EMISSION_ATTEMPT_CARRIAGE_EVIDENCE_KIND,
     _COMPARISON_KIND,
     _IDENTIFICATION_KIND,
     _SOURCE_VALIDATED_KIND,
@@ -205,6 +209,7 @@ def advance_operator_session_standing(
                 "representation_id": payload["representation_ref"],
                 "representation_event_id": event.id,
                 "emission_attempt_event_id": None,
+                "emission_attempt_carriage_evidence_id": None,
                 "emission_outcome_event_id": None,
                 "emitted_event_id": None,
                 "representation_result": payload["representation_result"],
@@ -236,6 +241,23 @@ def advance_operator_session_standing(
                     f"{representation_ref}"
                 )
             representations[representation_ref]["emission_attempt_event_id"] = event.id
+            continue
+        if event.kind == _REPRESENTATION_EMISSION_ATTEMPT_CARRIAGE_EVIDENCE_KIND:
+            representation_ref = event.payload["representation_ref"]
+            if representation_ref not in representations:
+                raise ValueError(
+                    "emission-attempt Carriage Evidence without recorded Representation: "
+                    f"{representation_ref}"
+                )
+            if event.payload["attempt_event_id"] != representations[
+                representation_ref
+            ]["emission_attempt_event_id"]:
+                raise ValueError(
+                    "emission-attempt Carriage Evidence names another attempt"
+                )
+            representations[representation_ref][
+                "emission_attempt_carriage_evidence_id"
+            ] = event.id
             continue
         if event.kind == _REPRESENTATION_EMITTED_KIND:
             representation_ref = event.payload["representation_ref"]
