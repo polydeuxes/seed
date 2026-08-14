@@ -1,11 +1,7 @@
 # Admitted lexicon -- every word active law may carry.
 #
-# A word absent from this file is refused. Adding one is the deliberate
-# act where the argument for admitting it belongs.
-#
-# A word the banned list refuses may appear here only with a reason on
-# the same line. That is the only way a recorded refusal may be reopened,
-# and it stays visible in the file rather than buried in a pattern.
+# A word absent from this file is refused.
+# A word the banned list refuses appears here only with a reason on its line.
 #
 a
 abandoned

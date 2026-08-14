@@ -2699,13 +2699,7 @@ SCOPE_LOCALITY_COMPOUND_SITES = 21
 
 
 def test_no_new_site_compounds_scope_with_locality():
-    """Hold the compound coordinate where it is until it is decomposed.
-
-    Splitting it changes the dimensions block of every recorded occurrence,
-    and so every recorded identity that commits to one. That is a decision
-    about durable material rather than a rename, and it is not made here.
-    What is made here is the boundary: the count may fall, never rise.
-    """
+    """The count of sites compounding Scope with locality may fall, never rise."""
 
     sites = sum(
         path.read_text(encoding="utf-8").count("scope_locality")
@@ -2718,23 +2712,12 @@ def test_no_new_site_compounds_scope_with_locality():
     )
 
 
-# Every live structural-edge instantiation, and the Evidence each one rests on.
+# Every live structural-edge witness, and where its Evidence comes from.
 #
-# The edge-evidence-kind audit above answers a narrower question than it looks
-# like it answers: it finds occurrences of a dedicated Carriage Evidence
-# species. `_assertion_carriage_requirements` is a live Carriage boundary whose
-# intact_evidence is the integrity of the carrier occurrence itself, and it
-# declares no such constant. So having a `*_CARRIAGE_EVIDENCE_KIND` is not what
-# makes a Carriage edge live.
-#
-# `grammar.json` requires exact_relation, occurrence_witness, and
-# intact_evidence of all three edges. It does not require that the Evidence
-# arrive as its own event species, and requiring one would manufacture an
-# Evidence noun the Book does not ask for -- one occurrence may lawfully
-# evidence more than one exact relation.
-#
-# So the registry names where each boundary's Evidence comes from, and stays
-# agnostic about which species supplies it.
+# A dedicated Evidence event species is not what makes an edge live: Evidence
+# may be the carrier occurrence itself, a responsible Act evidence occurrence,
+# or a dedicated one. grammar.json requires exact_relation, occurrence_witness,
+# and intact_evidence, and names no species for them.
 STRUCTURAL_EDGE_EVIDENCE = {
     "_assertion_carriage_requirements": ("carriage", "the carrier occurrence itself"),
     "_emission_carriage_requirements": ("carriage", "a carriage-evidence occurrence"),
@@ -2787,14 +2770,7 @@ def test_every_live_edge_witness_names_its_edge_and_its_evidence():
 
 
 def test_all_three_structural_edges_have_a_live_witness():
-    """Participation included.
-
-    An earlier revision of this file concluded Participation recorded no
-    Evidence. It records no dedicated Participation Evidence species, which is
-    a different and much weaker statement: two live boundaries rest on responsible
-    Act evidence occurrences, whose integrity is checked exactly as the other
-    edges' is.
-    """
+    """Each structural edge grammar.json declares has a live witness."""
 
     edges = json.loads(GRAMMAR.read_text(encoding="utf-8"))["structural_edges"]
     witnessed = {edge for edge, _ in STRUCTURAL_EDGE_EVIDENCE.values()}

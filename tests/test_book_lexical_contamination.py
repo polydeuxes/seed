@@ -354,12 +354,7 @@ def test_book_proper_admits_only_lexicon_words():
 
 
 def test_lexicon_cannot_readmit_banned_vocabulary():
-    """A failing whitelist may not be repaired by admitting a retired word.
-
-    Without this, the cheapest fix for the gate above is to append the
-    offending word to the lexicon -- which would let the blocklist's
-    recorded refusals be undone silently.
-    """
+    """A refused word is admitted only with a reason on its line."""
 
     entries = _lexicon_entries()
     readmitted = sorted(

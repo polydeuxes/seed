@@ -1,19 +1,10 @@
-"""A parallel edge-indexed store, built only to be compared against the ledger.
+"""A parallel edge-indexed store, for measuring against the ledger.
 
 This establishes nothing. It records no Assertion, owns no Responsibility, and
-is not a road any Act may consume. It exists so a storage question can be
-answered with measurements instead of preference.
+is not a road any Act may consume.
 
-The ledger already holds a graph. Occurrences point at other occurrences
-through payload fields -- `provenance_occurrence_refs`, `yield_evidence_id`,
-`raw_material_event_id`, and sixteen more -- but those pointers live inside
-JSON, so the database cannot index them. The consequence is asymmetric:
-following an occurrence's own references is cheap, and asking which
-occurrences reference it requires reading every payload.
-
-This module writes the same occurrences a second time with those references
-lifted into an indexed edge table, so both directions can be timed against the
-same material.
+It writes the same occurrences with their payload references lifted into an
+indexed edge table, so both traversal directions can be timed on one material.
 """
 
 from __future__ import annotations

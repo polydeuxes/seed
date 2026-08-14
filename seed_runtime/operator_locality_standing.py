@@ -9,10 +9,8 @@ from typing import Any, Iterable
 from seed_runtime.events import EventLedger
 from seed_runtime.event import Event
 
-# The writer of these occurrences declares their kinds. A reader holding its
-# own copy of a kind string is a second contract that can drift from the first
-# without either side failing: the writer keeps writing, the reader stops
-# seeing, and nothing reports the divergence.
+# The writer of these occurrences declares their kinds. A reader declaring its
+# own copy would be a second contract, free to drift from the first.
 from seed_runtime.operator_representation import (
     REPRESENTATION_RECORDED_KIND as _REPRESENTATION_RECORDED_KIND,
     REPRESENTATION_ACT_EVIDENCE_KIND as _REPRESENTATION_ACT_EVIDENCE_KIND,

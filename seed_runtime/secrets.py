@@ -26,14 +26,9 @@ SECRET_FREE_GRANT_METADATA_FIELDS = frozenset(
 def secret_boundary_key(name: object) -> str:
     """The form this boundary compares a payload key in.
 
-    Three foldings, not one: whitespace, case, and `-`/`_`. No input
-    evidence says these spellings name one field. This boundary imposes that
-    equality so a caller cannot slip `Token` past a check for `token`, which
-    is a widening every blocklist needs and an ownership rule would not.
-
-    Measured on one full road, 143 distinct payload keys occur and this
-    changes none of them. It earns its keep only against material Seed did
-    not write.
+    Three foldings: whitespace, case, and `-`/`_`. No input evidence says
+    these spellings name one field; this boundary imposes that equality so a
+    caller cannot slip `Token` past a check for `token`.
 
     Not the Book's Normalization (09.Assertion:15), which represents asserted
     content and source coordinates in another exact form. No Assertion,

@@ -495,11 +495,10 @@ class SQLiteEventLedger(EventLedger):
         # The references occurrences already carry, lifted out of the payload
         # so they can be read in both directions.
         #
-        # This table is not an occurrence. It records no Assertion, establishes
-        # no Standing, and adds no relation: every row restates a reference the
-        # payload holds, and the payload stays the authority. Discarding it and
-        # rebuilding it from the payloads would give the same rows, which is
-        # what makes it mechanics rather than testimony.
+        # Not an occurrence. It records no Assertion and establishes no
+        # Standing: every row restates a reference the payload holds, the
+        # payload stays the authority, and rebuilding from the payloads gives
+        # the same rows.
         self._connection.execute("""
             CREATE TABLE IF NOT EXISTS event_references (
                 source_id TEXT NOT NULL,
@@ -953,16 +952,11 @@ class SQLiteEventLedger(EventLedger):
     def _insert_references_without_commit(self, event: Event) -> None:
         """Index the occurrence references this payload already carries.
 
-        Nothing is inferred. An edge exists where the payload holds the exact
-        id of an occurrence already in this ledger, and the edge's relation is
-        the field name that carried it. The same references, readable in the
-        one direction JSON cannot be read in.
+        An edge exists where the payload holds the exact id of an occurrence
+        already in this ledger. Its relation is the field name that held it.
         """
 
-        # One payload may hold the same reference under the same field in more
-        # than one place. That is one relation restated, not two, and indexing
-        # it twice would make `references_to` report a count no occurrence
-        # carries.
+        # One reference held twice under one field is one relation.
         references = list(dict.fromkeys(_payload_references(event.payload)))
         if not references:
             return
@@ -987,11 +981,8 @@ class SQLiteEventLedger(EventLedger):
     def references_to(self, event_id: str) -> list[tuple[str, str]]:
         """Which occurrences reference this one, and under what relation.
 
-        The question the payload column cannot answer. A `LIKE` over stored
-        JSON reads every payload and grows with both the occurrence count and
-        the payload size; this reads an index. `#2524` measured the two on the
-        same material: 1.68ms against 0.14ms at 411 occurrences, and 17.05ms
-        against 0.15ms at 3,141 -- the scan grows, the index does not.
+        A `LIKE` over stored JSON reads every payload and grows with both the
+        occurrence count and the payload size. This reads an index.
         """
 
         return [

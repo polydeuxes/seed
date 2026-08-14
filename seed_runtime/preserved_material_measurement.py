@@ -394,13 +394,9 @@ def _locality_of(event: Event) -> str | None:
     coordinate. Where one is not carried, this returns ``None``, and a finding
     records that absence rather than a value standing in for it.
 
-    An earlier version rendered a missing `locality_id` as ``session:None``, and
-    the version after it returned ``workspace:w``. Both replaced an absent
-    coordinate with an asserted one: the first supplied a locality named None,
-    the second answered the locality question with the workspace, which
-    `06.Standing.A` lists as a different member of the same boundary. Same
-    workspace does not mean same locality, so the workspace cannot stand in for
-    a locality that was not carried.
+    The workspace does not stand in for an uncarried locality. `06.Standing.A`
+    lists them as different members of one boundary, and same workspace does
+    not mean same locality.
     """
 
     if event.locality_id is None:
