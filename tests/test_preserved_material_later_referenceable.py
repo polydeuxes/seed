@@ -48,7 +48,7 @@ from seed_runtime.operator_session_standing import (
 )
 from seed_runtime.operator_console import run_persistent_operator_console
 
-FORMED = "operator.representation.formed"
+RECORDED = "operator.representation.recorded"
 
 
 def _payload_snapshot(events) -> dict[str, str]:
@@ -85,7 +85,7 @@ def test_later_formations_retain_references_to_earlier_preserved_material(
     """
     events = ledger.list()
     positions = {event.id: index for index, event in enumerate(events)}
-    representation_events = [e for e in events if e.kind == FORMED]
+    representation_events = [e for e in events if e.kind == RECORDED]
     assert len(representation_events) >= 3
     boundaries = [
         e.payload["session_standing_as_of_event_id"] for e in representation_events
@@ -129,7 +129,7 @@ def test_each_representation_act_is_appended_after_every_event_it_references(led
     only; establishes no Selection, support relation, result relation, or response treatment".
     """
     events = ledger.list()
-    representation_events = [e for e in events if e.kind == FORMED]
+    representation_events = [e for e in events if e.kind == RECORDED]
     positions = {event.id: index for index, event in enumerate(events)}
     # Each representation Act appears after the occurrence its boundary names.
     for representation_event in representation_events:
@@ -149,7 +149,7 @@ def test_no_act_condition_change_is_claimed_here(ledger):
         e.kind for e in ledger.list() if e.kind.startswith("operator.")
     }
     assert observed_operator_event_kinds == {
-        "operator.representation.formed",
+        "operator.representation.recorded",
         "operator.representation.emission_attempted",
         "operator.representation.emitted",
         "operator.ingress.raw_material_captured",
@@ -168,7 +168,7 @@ def render_evidence_growth() -> str:
         output_stream=StringIO(),
     )
     lines = ["representation Act -> the occurrence its Standing was taken through", ""]
-    for event in (e for e in led.list() if e.kind == FORMED):
+    for event in (e for e in led.list() if e.kind == RECORDED):
         lines.append(
             f"  {event.id}  as_of="
             f"{event.payload['session_standing_as_of_event_id']}"

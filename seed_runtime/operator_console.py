@@ -9,7 +9,7 @@ from seed_runtime.operator_ingress import run_operator_ingress_attempt
 from seed_runtime.operator_ingress_representation import capture_stdin_material
 from seed_runtime.operator_representation import (
     emit_operator_representation,
-    form_operator_representation,
+    record_operator_representation,
 )
 from seed_runtime.operator_session_standing import (
     advance_operator_session_standing,
@@ -61,7 +61,7 @@ def run_persistent_operator_console(
     session_standing = read_operator_session_standing(
         ledger, workspace_id=workspace_id, session_id=session_id
     )
-    representation = form_operator_representation(
+    representation = record_operator_representation(
         ledger,
         workspace_id=workspace_id,
         session_id=session_id,
@@ -115,7 +115,7 @@ def run_persistent_operator_console(
         if attempt_view["current_standing"]["preserved_ingress"] is not None:
             # The yielded Representation is preserved independently. No Compare
             # or Identification is inferred merely from temporal proximity.
-            representation = form_operator_representation(
+            representation = record_operator_representation(
                 ledger,
                 workspace_id=workspace_id,
                 session_id=session_id,

@@ -1,7 +1,7 @@
 """A representation records the occurrence its Standing was taken through, not the prefix.
 
 `session_standing_evidence_ids` copied session Standing's whole append-order
-event inventory into every `operator.representation.formed` payload, beside
+event inventory into every `operator.representation.recorded` payload, beside
 `session_standing_as_of_event_id`, which already names that occurrence.
 
 `#2372` established that the copy was exactly derivable from the boundary
@@ -27,7 +27,7 @@ from seed_runtime.events import EventLedger
 from seed_runtime.operator_session_standing import read_operator_session_standing
 from seed_runtime.operator_console import run_persistent_operator_console
 
-FORMED = "operator.representation.formed"
+RECORDED = "operator.representation.recorded"
 FAMILIES = (
     "operator.ingress.",
     "operator.representation.",
@@ -80,7 +80,7 @@ def test_recorded_payload_size_does_not_grow_with_session_length():
     sizes = []
     for lines in (5, 10, 20):
         ledger, _ = _console("material\n" * lines + "exit\n")
-        representation_events = [e for e in ledger.list("w") if e.kind == FORMED]
+        representation_events = [e for e in ledger.list("w") if e.kind == RECORDED]
         sizes.append(len(str(representation_events[-1].payload)) - len(str(representation_events[0].payload)))
     # Payload size differs between first and last representation Act only by the
     # boundary identifier, not by an inventory that grows with the session.
@@ -95,7 +95,7 @@ def test_recorded_payload_size_does_not_grow_with_session_length():
 def test_the_first_representation_act_records_absence_of_a_prior_occurrence(session):
     """Recorded absence, not absence of participation."""
     ledger, _ = session
-    first = next(e for e in ledger.list("w") if e.kind == FORMED)
+    first = next(e for e in ledger.list("w") if e.kind == RECORDED)
     assert "session_standing_as_of_event_id" in first.payload
     assert first.payload["session_standing_as_of_event_id"] is None
 
@@ -107,7 +107,7 @@ def test_each_boundary_reaches_strictly_further_than_the_last(session):
     boundaries = [
         e.payload["session_standing_as_of_event_id"]
         for e in events
-        if e.kind == FORMED
+        if e.kind == RECORDED
     ]
     assert boundaries[0] is None
     later = [positions[b] for b in boundaries[1:]]
@@ -134,7 +134,7 @@ def test_the_boundary_still_determines_the_consumed_prefix(session):
                 break
         return collected
 
-    for representation_event in (e for e in events if e.kind == FORMED):
+    for representation_event in (e for e in events if e.kind == RECORDED):
         boundary = representation_event.payload["session_standing_as_of_event_id"]
         input = prefix_through(boundary)
         assert (input and input[-1] == boundary) or boundary is None
@@ -144,7 +144,7 @@ def test_every_boundary_precedes_the_representation_act_that_records_it(session)
     ledger, _ = session
     events = ledger.list("w")
     positions = {event.id: index for index, event in enumerate(events)}
-    for representation_event in (e for e in events if e.kind == FORMED):
+    for representation_event in (e for e in events if e.kind == RECORDED):
         boundary = representation_event.payload["session_standing_as_of_event_id"]
         if boundary is not None:
             assert positions[boundary] < positions[representation_event.id]

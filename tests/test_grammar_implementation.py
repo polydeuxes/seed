@@ -853,3 +853,15 @@ def test_runtime_uses_yield_for_the_occurrence_to_result_edge():
     }
 
     assert {path: hits for path, hits in contaminated.items() if hits} == {}
+
+
+def test_runtime_has_no_formation_layer():
+    retired = "forma" + "tion"
+    runtime_root = GRAMMAR.parents[1] / "seed_runtime"
+    contaminated = [
+        path.relative_to(GRAMMAR.parents[1]).as_posix()
+        for path in runtime_root.glob("*.py")
+        if retired in path.read_text(encoding="utf-8").casefold()
+    ]
+
+    assert contaminated == []

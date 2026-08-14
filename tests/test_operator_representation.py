@@ -5,7 +5,7 @@ import pytest
 from seed_runtime.events import EventLedger
 from seed_runtime.operator_representation import (
     emit_operator_representation,
-    form_operator_representation,
+    record_operator_representation,
     render_operator_representation,
 )
 from seed_runtime.operator_session_standing import read_operator_session_standing
@@ -38,7 +38,7 @@ def _fixture_representation(ledger, *, workspace="w", session="s"):
     The console no longer supplies alternatives; a caller with support does.
     These tests exercise the closed-choice shape itself, so they construct it.
     """
-    representation = form_operator_representation(
+    representation = record_operator_representation(
         ledger,
         workspace_id=workspace,
         session_id=session,
@@ -58,7 +58,7 @@ def _standing(ledger, *, workspace="w", session="s"):
 
 
 def _form_and_emit(ledger, *, workspace="w", session="s"):
-    representation = form_operator_representation(
+    representation = record_operator_representation(
         ledger,
         workspace_id=workspace,
         session_id=session,
@@ -79,11 +79,11 @@ def test_console_forms_c0_before_first_ingress_and_preserves_provenance_only():
     # Identification follows.
     kinds = [event.kind for event in ledger.list("w")]
     assert kinds == [
-        "operator.representation.formed",
+        "operator.representation.recorded",
         "operator.representation.emission_attempted",
         "operator.representation.emitted",
         *_INGRESS_KINDS,
-        "operator.representation.formed",
+        "operator.representation.recorded",
         "operator.representation.emission_attempted",
         "operator.representation.emitted",
     ]
@@ -123,7 +123,7 @@ def test_no_compare_or_identification_follows_console_ingress():
     assert not any(kind.startswith("operator.interaction.") for kind in kinds)
 
     # Every ingress still carries its exact yielded-after occurrence relation.
-    representations = [e for e in ledger.list("w") if e.kind == "operator.representation.formed"]
+    representations = [e for e in ledger.list("w") if e.kind == "operator.representation.recorded"]
     ingresses = [e for e in ledger.list("w") if e.kind == "operator.ingress.ingress_occurred"]
     assert len(ingresses) == 3
     for ingress in ingresses:
@@ -140,7 +140,7 @@ def test_no_compare_or_identification_follows_console_ingress():
 def test_c0_presents_standing_with_no_developer_semantics():
     ledger = EventLedger()
     standing = _standing(ledger)
-    c0 = form_operator_representation(
+    c0 = record_operator_representation(
         ledger, workspace_id="w", session_id="s", session_standing=standing
     )
     emit_operator_representation(ledger, representation=c0, output_stream=StringIO())
@@ -174,7 +174,7 @@ def test_representation_act_dimensions_record_only_coordinates_that_exist():
     ledger = EventLedger()
     standing = _standing(ledger)
 
-    zero = form_operator_representation(
+    zero = record_operator_representation(
         ledger, workspace_id="w", session_id="s", session_standing=standing
     )
     dimensions = ledger.get(zero["representation_event_id"]).payload["dimensions"]
@@ -197,7 +197,7 @@ def test_representation_act_dimensions_record_only_coordinates_that_exist():
     ):
         assert forbidden_text not in flattened, forbidden_text
 
-    explicit = form_operator_representation(
+    explicit = record_operator_representation(
         ledger,
         workspace_id="w",
         session_id="s",
@@ -225,11 +225,11 @@ def test_console_presents_standing_only_across_an_ingress():
 
     kinds = [event.kind for event in ledger.list("w")]
     assert kinds == [
-        "operator.representation.formed",
+        "operator.representation.recorded",
         "operator.representation.emission_attempted",
         "operator.representation.emitted",
         *_INGRESS_KINDS,
-        "operator.representation.formed",
+        "operator.representation.recorded",
         "operator.representation.emission_attempted",
         "operator.representation.emitted",
     ]
@@ -254,7 +254,7 @@ def test_console_presents_standing_only_across_an_ingress():
     assert "Establish richer shared grammar" not in session
 
 
-def test_c0_and_c1_are_formed_and_emitted_in_order():
+def test_c0_and_c1_are_recorded_and_emitted_in_order():
     ledger, output = _run_console("hello\n")
 
     events = ledger.list("w")
@@ -263,9 +263,12 @@ def test_c0_and_c1_are_formed_and_emitted_in_order():
         for index, event in enumerate(events)
         if event.kind == "operator.ingress.ingress_occurred"
     )
-    formed = [i for i, event in enumerate(events) if event.kind == "operator.representation.formed"]
+    recorded = [
+        i for i, event in enumerate(events)
+        if event.kind == "operator.representation.recorded"
+    ]
     emitted = [i for i, event in enumerate(events) if event.kind == "operator.representation.emitted"]
-    assert formed[0] < emitted[0] < ingress_index < formed[1] < emitted[1]
+    assert recorded[0] < emitted[0] < ingress_index < recorded[1] < emitted[1]
     assert output.count("Bounded Representation") == 2
 
 
@@ -406,7 +409,7 @@ def test_first_interaction_attaches_no_representation_to_the_capture():
     kinds = {event.kind for event in ledger.list("w")}
     assert kinds == {
         *_INGRESS_KINDS,
-        "operator.representation.formed",
+        "operator.representation.recorded",
         "operator.representation.emission_attempted",
         "operator.representation.emitted",
     }
@@ -422,7 +425,7 @@ def test_first_interaction_attaches_no_representation_to_the_capture():
 
 def test_representation_act_is_recorded_before_emission_and_they_stay_distinct():
     ledger = EventLedger()
-    representation = form_operator_representation(
+    representation = record_operator_representation(
         ledger,
         workspace_id="w",
         session_id="s",
@@ -445,7 +448,7 @@ def test_representation_act_is_recorded_before_emission_and_they_stay_distinct()
 
 def test_emission_preserves_the_exact_text_written_to_its_boundary():
     ledger = EventLedger()
-    representation = form_operator_representation(
+    representation = record_operator_representation(
         ledger,
         workspace_id="w",
         session_id="s",
@@ -482,7 +485,7 @@ def test_partial_output_write_preserves_attempt_and_failed_occurrences():
             return len(value) - 1
 
     ledger = EventLedger()
-    representation = form_operator_representation(
+    representation = record_operator_representation(
         ledger,
         workspace_id="w",
         session_id="s",
@@ -497,7 +500,7 @@ def test_partial_output_write_preserves_attempt_and_failed_occurrences():
         )
 
     assert [event.kind for event in ledger.list("w")] == [
-        "operator.representation.formed",
+        "operator.representation.recorded",
         "operator.representation.emission_attempted",
         "operator.representation.emission_outcome_recorded",
     ]
@@ -518,7 +521,7 @@ def test_write_exception_preserves_unknown_boundary_acceptance():
             raise OSError("write failed after an unreported boundary change")
 
     ledger = EventLedger()
-    representation = form_operator_representation(
+    representation = record_operator_representation(
         ledger,
         workspace_id="w",
         session_id="s",
@@ -548,7 +551,7 @@ def test_flush_failure_does_not_erase_the_completed_text_stream_write():
             raise OSError("flush failed")
 
     ledger = EventLedger()
-    representation = form_operator_representation(
+    representation = record_operator_representation(
         ledger,
         workspace_id="w",
         session_id="s",
@@ -561,7 +564,7 @@ def test_flush_failure_does_not_erase_the_completed_text_stream_write():
         )
 
     assert [event.kind for event in ledger.list("w")] == [
-        "operator.representation.formed",
+        "operator.representation.recorded",
         "operator.representation.emission_attempted",
         "operator.representation.emitted",
         "operator.representation.emission_outcome_recorded",
@@ -584,7 +587,7 @@ def test_process_death_after_attempt_leaves_output_outcome_unknown():
             raise SimulatedProcessDeath()
 
     ledger = EventLedger()
-    representation = form_operator_representation(
+    representation = record_operator_representation(
         ledger,
         workspace_id="w",
         session_id="s",
@@ -597,7 +600,7 @@ def test_process_death_after_attempt_leaves_output_outcome_unknown():
         )
 
     assert [event.kind for event in ledger.list("w")] == [
-        "operator.representation.formed",
+        "operator.representation.recorded",
         "operator.representation.emission_attempted",
     ]
     recovered = list(_standing(ledger)["representations"].values())[-1]

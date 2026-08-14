@@ -90,7 +90,7 @@ def run_operator_response_comparison_and_identification(
     representation_event = ledger.get(representation_event_id)
     _require(representation_event is not None, "representation event not recorded in this ledger")
     _require(
-        representation_event.kind == "operator.representation.formed",
+        representation_event.kind == "operator.representation.recorded",
         "representation occurrence Evidence is not a representation event",
     )
     _require(

@@ -7,7 +7,7 @@ from seed_runtime.operator_ingress import run_operator_ingress_attempt
 from seed_runtime.operator_ingress_representation import capture_stdin_material
 from seed_runtime.operator_representation import (
     emit_operator_representation,
-    form_operator_representation,
+    record_operator_representation,
     render_operator_representation,
 )
 from seed_runtime.operator_response_comparison import (
@@ -25,7 +25,7 @@ def _standing(ledger, *, workspace="w", session="s"):
 
 
 def _emit_representation(ledger, *, workspace="w", session="s"):
-    representation = form_operator_representation(
+    representation = record_operator_representation(
         ledger,
         workspace_id=workspace,
         session_id=session,
@@ -71,7 +71,7 @@ def _exchange(ledger, text, *, workspace="w", session="s"):
 
 def test_compare_requires_an_emitted_representation_with_recorded_reference():
     ledger = EventLedger()
-    representation = form_operator_representation(
+    representation = record_operator_representation(
         ledger,
         workspace_id="w",
         session_id="s",
@@ -196,7 +196,7 @@ def _record_malformed_representation(ledger, mutate_bindings, *, workspace="w", 
     then recorded as its own representation Act and emission events, so the broken
     binding belongs to recorded payload rather than a mutated dictionary.
     """
-    template = form_operator_representation(
+    template = record_operator_representation(
         ledger,
         workspace_id=workspace,
         session_id=session,
@@ -217,7 +217,7 @@ def _record_malformed_representation(ledger, mutate_bindings, *, workspace="w", 
         },
     }
     formed = ledger.append(
-        "operator.representation.formed", workspace, payload, session_id=session
+        "operator.representation.recorded", workspace, payload, session_id=session
     )
     malformed_representation = {
         "representation_id": representation_id,
@@ -367,7 +367,7 @@ def test_no_synthetic_developer_source_evidence_event_is_created():
         "operator.ingress.raw_material_captured",
         "operator.ingress.representation_examined",
         "operator.ingress.ingress_occurred",
-        "operator.representation.formed",
+        "operator.representation.recorded",
         "operator.representation.emission_attempted",
         "operator.representation.emitted",
         "operator.exchange.comparison_occurred",
@@ -411,7 +411,7 @@ def test_later_representation_consumes_findings_without_stronger_standing():
     ledger = EventLedger()
     _exchange(ledger, "1\n")
 
-    later = form_operator_representation(
+    later = record_operator_representation(
         ledger,
         workspace_id="w",
         session_id="s",
@@ -439,7 +439,7 @@ def test_exit_boundary_is_explicit_and_unambiguous():
         output_stream=output,
     )
     assert [event.kind for event in ledger.list("w")] == [
-        "operator.representation.formed",
+        "operator.representation.recorded",
         "operator.representation.emission_attempted",
         "operator.representation.emitted",
     ]
@@ -484,7 +484,7 @@ def test_matched_but_unidentified_is_not_rendered_as_no_match():
     ingress_event_id = _capture_after(ledger, malformed, "2\n")
     _compare(ledger, malformed, ingress_event_id)
 
-    later = form_operator_representation(
+    later = record_operator_representation(
         ledger,
         workspace_id="w",
         session_id="s",
@@ -518,7 +518,7 @@ def test_exchange_findings_are_exposed_by_a_later_representation():
         "no-coordinate-match"
     )
 
-    later = form_operator_representation(
+    later = record_operator_representation(
         ledger,
         workspace_id="w",
         session_id="s",

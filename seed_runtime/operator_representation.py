@@ -1,6 +1,6 @@
-"""Recorded representation Act and emission of bounded operator representations.
+"""Recorded Representation Acts and emission of their bounded results.
 
-A Representation carries exact formed content from current session Standing.
+A Representation carries exact content from current session Standing.
 It may also carry alternatives whose source relations remain separately
 bounded.
 """
@@ -12,7 +12,7 @@ from typing import Any, TextIO
 from seed_runtime.events import EventLedger
 from seed_runtime.ids import new_id
 
-REPRESENTATION_FORMED_KIND = "operator.representation.formed"
+REPRESENTATION_RECORDED_KIND = "operator.representation.recorded"
 from seed_runtime.operator_ingress import SEED_ORIGIN
 
 REPRESENTATION_EMISSION_ATTEMPTED_KIND = "operator.representation.emission_attempted"
@@ -34,7 +34,7 @@ def _dimensions(
     }
 
 
-def form_operator_representation(
+def record_operator_representation(
     ledger: EventLedger,
     *,
     workspace_id: str,
@@ -42,7 +42,7 @@ def form_operator_representation(
     session_standing: dict[str, Any],
     alternative_sources: tuple[dict[str, Any], ...] = (),
 ) -> dict[str, Any]:
-    """Form one exact bounded Representation and record its representation Act occurrence.
+    """Record one exact bounded Representation and its exact Act occurrence.
 
     The Representation is bounded by the supplied projected session Standing.
     No alternatives are supplied by default; ``alternative_sources`` must be
@@ -122,7 +122,7 @@ def form_operator_representation(
     ):
         represented_relation = latest_relation
     representation_event = ledger.append(
-        REPRESENTATION_FORMED_KIND,
+        REPRESENTATION_RECORDED_KIND,
         workspace_id,
         {
             "attempt_ref": None,
@@ -130,7 +130,7 @@ def form_operator_representation(
             "dimensions": _dimensions(
                 identity=representation_id,
                 content=content,
-                standing="formed",
+                standing="recorded",
                 source=session_standing["as_of_event_id"],
                 responsibility="bounded-representation-act",
                 authority=(

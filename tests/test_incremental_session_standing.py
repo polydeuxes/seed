@@ -265,7 +265,7 @@ def test_c0_still_forms_from_empty_standing():
     formed = next(
         event
         for event in ledger.list("w")
-        if event.kind == "operator.representation.formed"
+        if event.kind == "operator.representation.recorded"
     )
     assert formed.payload["session_standing_as_of_event_id"] is None
 
@@ -274,6 +274,6 @@ def test_the_session_records_the_same_occurrences_it_always_did():
     ledger, output = _console("alpha\nbeta\nexit\n")
     kinds = [event.kind for event in ledger.list("w")]
     assert kinds.count("operator.ingress.ingress_occurred") == 2
-    assert kinds.count("operator.representation.formed") == 3
+    assert kinds.count("operator.representation.recorded") == 3
     assert kinds.count("operator.representation.emitted") == 3
     assert output.count("Bounded Representation") == 3
