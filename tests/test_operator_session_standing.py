@@ -140,7 +140,7 @@ def test_console_supplies_prior_session_standing_to_later_interactions():
     assert len(standing["presentations"]) == 3
     first_id, second_id, third_id = list(standing["presentations"])
     assert list(standing["presentations"])[-1] == third_id
-    # The later Presentation's recorded formation consumed Standing taken
+    # The later Presentation's recorded formation input Standing taken
     # through a strictly later occurrence than the first one's.
     positions = {event.id: index for index, event in enumerate(ledger.list("w"))}
     first_presentation = standing["presentations"][first_id]
@@ -149,7 +149,7 @@ def test_console_supplies_prior_session_standing_to_later_interactions():
         standing["presentations"][third_id]["session_standing_as_of_event_id"]
     ]
     # The first Presentation's own formation and emission occurrences fall
-    # inside the prefix the later formation consumed.
+    # inside the prefix the later formation input.
     assert positions[first_presentation["formed_event_id"]] < later_boundary
     assert positions[first_presentation["emitted_event_id"]] < later_boundary
 

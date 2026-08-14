@@ -12,12 +12,6 @@ import sqlite3
 import zlib
 from typing import Any, Iterable, Iterator
 
-from seed_runtime.execution_status import (
-    ExecutionStatusSink,
-    ProgressCadence,
-    emit_progress_if_due,
-    emit_status,
-)
 from seed_runtime.ids import new_id, reserve_id_prefix
 from seed_runtime.event import Event, _decode_screened_event_payload
 
@@ -242,8 +236,6 @@ class EventLedger:
     def append_many(
         self,
         events: Iterable[Event],
-        *,
-        status_sink: ExecutionStatusSink | None = None,
     ) -> list[Event]:
         """Record pre-built events in order and return the stored events.
 
@@ -253,25 +245,8 @@ class EventLedger:
         """
         stored_events = [event.model_copy(deep=True) for event in events]
         self._validate_batch(stored_events)
-        total = len(stored_events)
-        emit_status(
-            status_sink,
-            "event_persistence",
-            "Writing events",
-            current=0,
-            total=total,
-        )
-        cadence = ProgressCadence()
-        for index, event in enumerate(stored_events, start=1):
+        for event in stored_events:
             self._store(event)
-            emit_progress_if_due(
-                status_sink,
-                cadence,
-                "event_persistence",
-                "Writing events",
-                current=index,
-                total=total,
-            )
         return stored_events
 
     def get(self, event_id: str) -> Event | None:
@@ -584,21 +559,10 @@ class SQLiteEventLedger(EventLedger):
     def append_many(
         self,
         events: Iterable[Event],
-        *,
-        status_sink: ExecutionStatusSink | None = None,
     ) -> list[Event]:
         """Persist pre-built events in order using a single SQLite transaction."""
         stored_events = [event.model_copy(deep=True) for event in events]
         self._validate_sqlite_batch(stored_events)
-        total = len(stored_events)
-        emit_status(
-            status_sink,
-            "event_persistence",
-            "Writing events",
-            current=0,
-            total=total,
-        )
-        cadence = ProgressCadence()
         # One transaction, occurrences and their identifier reservations
         # together. `#2428` stated that a reservation is written in the same
         # transaction as the occurrence that carried the identifier, and
@@ -608,18 +572,10 @@ class SQLiteEventLedger(EventLedger):
         # prevent. `evt` is partly shielded because open recovers the maximum
         # event id separately; the payload and session prefixes are not.
         with self._connection:
-            for index, event in enumerate(stored_events, start=1):
+            for event in stored_events:
                 event_rowid = self._insert_without_commit(event)
                 self._insert_prefix_commitment(event, event_rowid)
                 self._persist_reservations(self._observed_suffixes(event))
-                emit_progress_if_due(
-                    status_sink,
-                    cadence,
-                    "event_persistence",
-                    "Writing events",
-                    current=index,
-                    total=total,
-                )
         for event in stored_events:
             self._advance_event_counter(event.id)
         return stored_events
@@ -800,7 +756,7 @@ class SQLiteEventLedger(EventLedger):
 
         Verification belongs where the guarantee is claimed. `#2416` made
         ordinary reads cheap, and putting a digest on `get` or `list_session`
-        would charge every reader for an obligation only a consuming act
+        would charge every reader for an obligation only an Act with participating inputs
         carries.
         """
         row = self._connection.execute(

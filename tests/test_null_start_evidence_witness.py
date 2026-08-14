@@ -143,7 +143,7 @@ def test_null_start_does_not_activate_the_dormant_result_chain(events):
     """A null start records none of the retired chain's three event kinds.
 
     Narrow by intent.  This asserts only that the dormant Applicability /
-    Admission / Consumption chain did not run, which is consistent with its
+    Admission / Participation chain did not run, which is consistent with its
     gating input being fixture-only.  It makes no broader claim that no
     semantic standing of any kind was established -- this module is a
     microscope and should not issue negative constitutional findings.

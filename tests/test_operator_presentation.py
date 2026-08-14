@@ -141,8 +141,8 @@ def test_c0_presents_standing_with_no_developer_semantics():
     )
     emit_operator_presentation(ledger, presentation=c0, output_stream=StringIO())
 
-    # Empty Standing is legitimately consumed: the formation occurred and
-    # recorded what it consumed, rather than being skipped.
+    # Empty Standing is legitimately input: the formation occurred and
+    # recorded what it input, rather than being skipped.
     payload = ledger.get(c0["formed_event_id"]).payload
     assert payload["session_standing_as_of_event_id"] is None
     assert payload["prior_exchange_finding"] is None
@@ -272,7 +272,7 @@ def test_alternatives_carry_complete_coordinates_and_provenance_evidence():
     assert presentation is not None
     assert presentation["formation_result"]
     assert presentation["scope"] == "workspace:w;session:s"
-    # provenance is the consumed Standing's as-of boundary; None here is the
+    # provenance is the input Standing's as-of boundary; None here is the
     # recorded absence of prior session events, not a fabricated Unknown.
     assert "provenance" in presentation
     assert presentation["known_loss"] == [
@@ -283,7 +283,7 @@ def test_alternatives_carry_complete_coordinates_and_provenance_evidence():
     assert presentation["unknowns"] == []
     assert presentation["conflicts"] == []
     # Absent for a formation from empty Standing: recorded absence of a prior
-    # consumed occurrence, not absence of consumption.
+    # input occurrence, not absence of participation.
     assert presentation["session_standing_as_of_event_id"] is None
     assert len(presentation["alternatives"]) == 3
     formation_results = set()
@@ -364,7 +364,7 @@ def test_next_console_iteration_recovers_c1_and_forms_c2():
     assert recovered["coordinate_bindings"] == c1["coordinate_bindings"]
     assert recovered["emitted_event_id"] == c1["emitted_event_id"]
 
-    # Through the console: the second iteration consumes Standing containing
+    # Through the console: the second iteration has as input Standing containing
     # C1 and forms C2.
     console_ledger, output = _run_console("first\nsecond\n")
     standing = _standing(console_ledger)
@@ -375,7 +375,7 @@ def test_next_console_iteration_recovers_c1_and_forms_c2():
     c1 = standing["presentations"][second_id]
     c2 = standing["presentations"][third_id]
     # C2's Standing boundary stands after C1's formation and emission
-    # occurrences, so both fall inside the prefix it consumed.
+    # occurrences, so both fall inside the prefix it input.
     positions = {
         event.id: index for index, event in enumerate(console_ledger.list("w"))
     }

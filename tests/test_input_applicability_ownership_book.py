@@ -20,8 +20,8 @@ def test_applicability_binds_input_to_one_exact_act():
     }
     assert set(clause["must_precede"]) == {
         "participation",
-        "consumption",
-        "reliance",
+        "participation",
+        "input support",
     }
     assert {"input_identity", "exact_Act", "Scope", "locality", "Authority"} <= set(
         clause["coordinates"]

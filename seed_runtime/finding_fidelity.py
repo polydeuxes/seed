@@ -23,7 +23,7 @@ establish Applicability, or require another Act. A finding found unfaithful here
 keeps whatever Standing it had; this comparison establishes only its own result.
 
 **It does not walk anything.** A fidelity finding concerning one recorded
-finding is available to whatever consumes it, and each later act determines its
+finding is available to whatever Act has it participate, and each later act determines its
 own applicability for its own inputs — `01.Standing.E.1`. Walking the support
 basis and premise edges and revising what is found there would be that
 determination made centrally, for exact Acts that never made it. The edges are
@@ -118,7 +118,7 @@ class RecordedFidelityFinding:
 def get_recorded_fidelity_finding(
     ledger: EventLedger, event_id: str
 ) -> RecordedFidelityFinding | None:
-    """Recover one occurrence-bound Fidelity result without consuming it.
+    """Recover one occurrence-bound Fidelity result without using it.
 
     Recovery establishes that the occurrence carries the exact result its
     production Evidence commits to. It does not decide this finding's
@@ -438,7 +438,7 @@ def compare_recorded_finding(ledger: EventLedger, event_id: str) -> Event:
         "lawful_stopping_point": (
                 "produce this Fidelity finding concerning this exact represented "
                 "relation and stop; do not traverse provenance references or determine "
-                "downstream applicability, admission, reliance, or "
+                "downstream applicability, admission, input support, or "
                 "revision"
         ),
         "revises": [],

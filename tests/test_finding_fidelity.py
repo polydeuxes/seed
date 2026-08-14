@@ -336,7 +336,7 @@ def test_only_a_recorded_measurement_finding_may_be_compared(recorded):
 
 def test_positional_measurement_is_outside_the_recurrence_fidelity_scope(recorded):
     ledger, event = recorded
-    occurrence = ledger.get(event.payload["consumed_event_ids"][0])
+    occurrence = ledger.get(event.payload["input_event_ids"][0])
     finding = measure_after(
         [occurrence], "the", counting_scope="this locality"
     )
@@ -381,7 +381,7 @@ def test_lawful_recording_additions_do_not_change_the_produced_result(recorded):
     ledger, event = recorded
     # Build another lawful recording through the public recorder, because its
     # additive coordinate belongs to recording rather than Measurement.
-    occurrences = [ledger.get(event.payload["consumed_event_ids"][0])]
+    occurrences = [ledger.get(event.payload["input_event_ids"][0])]
     finding = measure_recurrence(
         occurrences,
         declared=DeclaredMeasurement(

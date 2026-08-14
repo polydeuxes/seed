@@ -343,7 +343,7 @@ def _pair_input_applicability(
             "act_workspace_id": act_workspace_id,
             "measurement_session_id": measurement_session_id,
         }
-        source_provenance: Any = "not consumed across the workspace boundary"
+        source_provenance: Any = "not input across the workspace boundary"
         input_standing: Any = {"carried": False, "reason": basis}
         input_authority: Any = {"carried": False, "reason": basis}
         input_unknowns: Any = {"carried": False, "reason": basis}
@@ -2002,7 +2002,7 @@ def assertions_of_recorded_adjacent_byte_pair_measurement(
         source = None
     if source is None or event.session_id is None:
         raise ByteMeasurementError(
-            f"{event_id} does not carry its exact consumed source Assertion"
+            f"{event_id} does not carry its exact input source Assertion"
         )
     source_payload = source.payload
     source_scope = source_payload["assertion_scope"]
@@ -2027,7 +2027,7 @@ def assertions_of_recorded_adjacent_byte_pair_measurement(
         != expected_assignment_evidence
     ):
         raise ByteMeasurementError(
-            f"{event_id} does not carry its exact consumed source boundary"
+            f"{event_id} does not carry its exact input source boundary"
         )
     _validate_recorded_pair_input_applicability(
         payload.get("input_applicability"),

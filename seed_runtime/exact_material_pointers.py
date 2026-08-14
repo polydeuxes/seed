@@ -24,7 +24,7 @@ changing only the candidate bound moved hundreds of references. So:
 
 An absent reference may mean the recurrence is shorter than the minimum, that
 its source fell outside the candidate bound, or that an earlier greedy choice
-consumed the bytes it would have matched. The formation is therefore carried in
+input the bytes it would have matched. The formation is therefore carried in
 the representation, because an account of a bounded search that does not
 disclose its bounds reads as a complete one.
 

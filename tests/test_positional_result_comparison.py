@@ -652,7 +652,7 @@ def test_recorded_compare_does_not_perform_automatic_reliance(comparable):
     )
 
     assert all(
-        "reliance" in assertion["forbidden_inferences"][-1]
+        "input support" in assertion["forbidden_inferences"][-1]
         for assertion in event.payload["assertions"]
     )
     assert all("applicability" not in assertion for assertion in event.payload["assertions"])

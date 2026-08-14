@@ -38,7 +38,7 @@ Identifies who bears and answers for the exact responsibility. It is distinct fr
 
 #### Subject or material addressed
 
-Identifies what the responsibility concerns, consumes, evaluates, forms, preserves, establishes, or stops. Owner identity does not establish subject identity.
+Identifies what the Responsibility concerns, evaluates, forms, preserves, establishes, or stops. Owner identity does not establish subject identity.
 
 #### Exact responsible act
 
@@ -69,11 +69,11 @@ Preserve the bounded extent and place within which the Responsibility, exact Act
 
 ### Conditional input branches
 
-These branches are required where the exact responsibility consumes input material.
+These branches are required where material participates in the exact Responsibility's Act.
 
 #### Input source
 
-Identifies where the exact consumed material came from. Source does not establish provenance by itself.
+Identifies where the exact input material came from. Source does not establish provenance by itself.
 
 #### Provenance
 
@@ -81,9 +81,9 @@ Identifies the attributed source, preservation, and occurrence history required 
 
 ### Conditional support-relation branches
 
-Where a Responsibility relies upon or establishes a substantive Assertion, the exact relation “these Evidence, Authority, Scope, provenance, and limits support this Assertion” is another Assertion. Its participants, responsible Act, occurrence, Evidence, Authority, Scope, conflicts, limits, Unknowns, and Standing remain independently recoverable. Nearby coordinates, reference presence, or adjacency do not establish that relation.
+Where a Responsibility uses or establishes a substantive Assertion as support, the exact relation “these Evidence, Authority, Scope, provenance, and limits support this Assertion” is another Assertion. Its participants, responsible Act, occurrence, Evidence, Authority, Scope, conflicts, limits, Unknowns, and Standing remain independently recoverable. Nearby coordinates, reference presence, or adjacency do not establish that relation.
 
-Support-relation Standing does not establish the supported Assertion's Standing, Applicability, Admission, or later reliance. Each requires its own responsible occurrence.
+Support-relation Standing does not establish the supported Assertion's Standing, Applicability, Admission, or a later input-to-result support relation. Each requires its own responsible occurrence.
 
 ### Act-occurrence and non-occurrence branches
 
@@ -192,11 +192,11 @@ Identifies any separately retained representation or record preserving an Act, S
 
 #### Separate Authorization standing
 
-Identifies any separately established Authorization consumed by the exact downstream act. It remains distinct from the responsibility's general Authority coordinate.
+Identifies any separately established Authorization input by the exact downstream act. It remains distinct from the responsibility's general Authority coordinate.
 
 #### Applicability and admission standing
 
-Identifies any act-local applicability or admission standing required before material may participate in the downstream act. Applicability, admission, consumption, and reliance remain distinct.
+Identifies any act-local applicability or admission standing required before material may participate in the downstream act. Applicability, admission, participation, and input support remain distinct.
 
 #### Constraint
 

@@ -34,7 +34,7 @@ records that finding as its premise, so what it stood on travels with it.
 
 **Comparing measurements is not performed here.** Two pairs sharing an
 alternative is an Assertion about two preserved findings. `01.Standing.E` reserves
-consuming preserved findings to a bounded comparison, and none is performed.
+using preserved findings to a bounded comparison, and none is performed.
 
 Nothing here establishes represented relation, grammatical kind, relation, or truth. A pair
 is an ordered pair that recurs. That two pairs return the same occupant is a
@@ -228,9 +228,9 @@ def _support_for(
             session_id=session_id,
             occurrence_kind=INGRESS_OCCURRED_KIND,
             boundary=completeness_boundary,
-            identities=finding.consumed_event_ids,
+            identities=finding.input_event_ids,
         )
-    if finding.consumed_event_ids is not declared_support.identities:
+    if finding.input_event_ids is not declared_support.identities:
         raise PreservedMaterialMeasurementError(
             "a declared support binding was not formed over the population object "
             "this finding carries"
@@ -261,7 +261,7 @@ def _adjacent_pair_result_assertion_fields(
 
     ``declared_support`` is the basis already declared for this population,
     bound to the identities it was declared over. A layer measures one bounded
-    population, so every finding it produces consumed the same identities under
+    population, so every finding it produces input the same identities under
     the same rule and yields the same basis — and declaring it per finding
     recomputed a digest over the whole population once per result, measured at
     28.7s against 23.1s on 21,972 results over 700 occurrences.
@@ -417,7 +417,7 @@ def assertion_of_recorded_adjacent_pair_result(
             "session_id": event.session_id,
             "occurrence_kind": INGRESS_OCCURRED_KIND,
         }
-        or support.get("basis") != payload.get("consumed_support")
+        or support.get("basis") != payload.get("input_support")
         or support.get("premise_event_id") != payload.get("premise_event_id")
     ):
         raise PreservedMaterialMeasurementError(
@@ -478,7 +478,7 @@ def _validate_result_assertion_ingress(
     """
 
     try:
-        basis = SupportBasis.from_json_dict(event.payload.get("consumed_support"))
+        basis = SupportBasis.from_json_dict(event.payload.get("input_support"))
     except SupportBasisError as exc:
         raise PreservedMaterialMeasurementError(
             f"{event.id} does not carry a recoverable support basis: {exc}"
@@ -492,7 +492,7 @@ def _validate_result_assertion_ingress(
         raise PreservedMaterialMeasurementError(
             f"{event.id} carries a support basis outside its own scope and boundary"
         )
-    if basis.support_count != event.payload.get("consumed_count"):
+    if basis.support_count != event.payload.get("input_count"):
         raise PreservedMaterialMeasurementError(
             f"{event.id} carries a support count its basis does not support"
         )
@@ -644,7 +644,7 @@ class AdjacentPairMeasurementIndex:
     """One tokenization of a bounded material set for many pair measurements.
 
     The index changes representation cost only.  Each answer retains the exact
-    first-match behavior, declaration, consumed occurrence identities, and
+    first-match behavior, declaration, input occurrence identities, and
     empty-result behavior of :func:`measure_adjacent_pair`.
     """
 
@@ -849,7 +849,7 @@ class AdjacentPairMeasurementIndex:
                 ),
                 positions_measured=positions_measured,
                 occupancies=occupancies,
-                consumed_event_ids=self._event_ids,
+                input_event_ids=self._event_ids,
             )
         return findings
 
@@ -981,7 +981,7 @@ def record_adjacent_pair_measurement_layer(
 
     The return is only the number of result occurrences recorded.  Results are
     not retained in a second in-memory collection after the ledger preserves
-    them, and this function does not consume the results into another layer.
+    them, and this function does not have as input the results into another layer.
     """
 
     boundary = ledger.capture_boundary()
@@ -994,7 +994,7 @@ def record_adjacent_pair_measurement_layer(
         )
     )
     index = AdjacentPairMeasurementIndex(material)
-    # One population, declared once. Every finding this layer produces consumed
+    # One population, declared once. Every finding this layer produces input
     # exactly these identities through exactly this boundary.
     declared_support = _DeclaredSupportBinding(
         workspace_id=workspace_id,

@@ -28,7 +28,7 @@ Recording may preserve measurement or observation Assertions and already establi
 
 
 ## Important distinctions
-- diagnostic rendering != Seed-consumable knowledge
+- diagnostic rendering != knowledge eligible to participate in an exact Act
 - diagnostic rendering != measurement ownership
 - diagnostic rendering != Measurement
 - diagnostic rendering != measurement preservation
@@ -68,7 +68,7 @@ Recording may preserve measurement or observation Assertions and already establi
 - event ledger write != cluster mutation
 - retrievable record != established Assertion Standing
 - preservation != renewed occurrence
-- retrieval or availability != arrival or reliance
+- retrieval or availability != arrival or input support
 - successful extraction != knowledge establishment
 - process-local record != cross-restart persistent record
 

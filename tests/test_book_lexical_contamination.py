@@ -106,6 +106,8 @@ BANNED: tuple[tuple[str, str], ...] = (
     # still an ordinary verb in sentences such as "the Evidence warrants X".
     (r"\bWarrant\b|warrant[-_]", "Warrant"),
     (r"\brecovery\b|recovery[-_]", "recovery"),
+    (r"\bconsum\w*\b|consum[-_]", "consum*"),
+    (r"\breli\w*\b|reli[-_]", "reli*"),
 )
 
 # The discriminator, corrected.

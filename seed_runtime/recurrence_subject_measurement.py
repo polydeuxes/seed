@@ -1,6 +1,6 @@
 """Measure the immediate subject coordinates of recurrence Assertions.
 
-The consumed recurrence Assertion contract owns exactly three immediate
+The input recurrence Assertion contract owns exactly three immediate
 coordinates.  This Measurement preserves each complete value opaquely; it does
 not traverse nested dictionaries or lists, form cross-subject pairs, or infer
 relation, similarity, profile, or represented relation.
@@ -398,7 +398,7 @@ def get_recorded_recurrence_subject_coordinate_assertion(
     )
     if source is None or source.result != "recurrence":
         raise RecurrenceSubjectMeasurementError(
-            "coordinate Measurement does not consume a recovered recurrence Assertion"
+            "coordinate Measurement does not have as input a recovered recurrence Assertion"
         )
     source_scope = source.payload["assertion_scope"]
     expected_scope = {

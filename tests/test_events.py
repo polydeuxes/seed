@@ -58,7 +58,7 @@ def test_event_secret_rejection_reaches_every_nested_container(payload):
 
 
 def test_event_secret_rejection_accepts_large_scalar_lists():
-    payload = {"consumed_event_ids": [f"evt_{index}" for index in range(10_000)]}
+    payload = {"input_event_ids": [f"evt_{index}" for index in range(10_000)]}
 
     event = EventLedger().append("k", "w", payload)
 
@@ -69,7 +69,7 @@ def test_durable_large_scalar_lists_do_not_repeat_secret_traversal(
     tmp_path, monkeypatch
 ):
     ledger = SQLiteEventLedger(str(tmp_path / "seed.db"))
-    payload = {"consumed_event_ids": [f"evt_{index}" for index in range(10_000)]}
+    payload = {"input_event_ids": [f"evt_{index}" for index in range(10_000)]}
     event = ledger.append("k", "w", payload)
 
     def unexpected_second_traversal(*args, **kwargs):

@@ -74,7 +74,7 @@ FORBIDDEN_INFERENCES: tuple[str, ...] = (
     "an exact count is a finding at any value; a count of one establishes no "
     "recurrence",
     "the count reports the bounded exchanges among the occurrences this "
-    "measurement consumed, not a property of the material",
+    "measurement input, not a property of the material",
     "an exchange that never measured the coordinate has not declined to measure "
     "the distinction",
     "measuring the same distinction establishes no relation between the "
@@ -119,8 +119,8 @@ class MeasuredCountFinding:
     measured_in: tuple[str, ...]
     measured_without_distinction: tuple[str, ...]
     coordinate_not_measured: tuple[str, ...]
-    consumed_event_ids: tuple[str, ...]
-    consumed_ledger_boundary: EventLedgerBoundary
+    input_event_ids: tuple[str, ...]
+    input_ledger_boundary: EventLedgerBoundary
     workspace_id: str
     bounded_exchanges: tuple[str, ...]
     measured_in_support_event_ids: tuple[str, ...] = ()
@@ -146,9 +146,9 @@ class MeasuredCountFinding:
             "recurrence_established": self.recurrence_established,
             "bounded_exchanges": list(self.bounded_exchanges),
             "workspace_id": self.workspace_id,
-            "consumed_event_ids": list(self.consumed_event_ids),
-            "consumed_ledger_boundary": {
-                "commitment": self.consumed_ledger_boundary.commitment,
+            "input_event_ids": list(self.input_event_ids),
+            "input_ledger_boundary": {
+                "commitment": self.input_ledger_boundary.commitment,
             },
         }
 
@@ -419,7 +419,7 @@ def occurrences_of_declared_exchanges(
 ) -> Iterator[tuple[str, list[Event]]]:
     """Yield each declared exchange's occurrences for compatibility.
 
-    Recurrence measurement no longer consumes this list-returning helper: its
+    Recurrence measurement no longer has as input this list-returning helper: its
     two passes use ``iter_session_kind`` so comparison Events are folded one at
     a time. Existing callers that require the complete occurrences of one
     exchange retain the per-exchange API introduced by ``#2441``.
@@ -462,7 +462,7 @@ def measure_exchange_counts(
     recurrence assertion to disclose the bounded scope within which occurrences
     were counted, and a swept scope is not a declared one.
 
-    A comparison is recorded under one exchange's session while consuming a
+    A comparison is recorded under one exchange's session while using a
     finding from another, so no session-local mode is offered.
     """
 
@@ -472,10 +472,10 @@ def measure_exchange_counts(
             "a declared measurement discloses the bounded scope within which "
             "occurrences were counted; no bounded exchanges were declared"
         )
-    # Every probe and both occurrence passes consume one ledger-owned append
+    # Every probe and both occurrence passes have as input one ledger-owned append
     # prefix. The boundary is carried as read provenance; it is not an Event
     # identity and does not strengthen the occurrences read through it.
-    consumed_ledger_boundary = ledger.capture_boundary()
+    input_ledger_boundary = ledger.capture_boundary()
     # Declaring the Scope chooses which established exchanges this measurement
     # concerns. It does not establish them: a recorded occurrence within the
     # session boundary does. Each declared exchange is read through that exact
@@ -493,7 +493,7 @@ def measure_exchange_counts(
 
     for exchange in declared_exchanges:
         if not ledger.has_session(
-            workspace_id, exchange, through=consumed_ledger_boundary
+            workspace_id, exchange, through=input_ledger_boundary
         ):
             unestablished.append(exchange)
             continue
@@ -501,7 +501,7 @@ def measure_exchange_counts(
             workspace_id,
             exchange,
             MEASUREMENT_RECORDED_KIND,
-            through=consumed_ledger_boundary,
+            through=input_ledger_boundary,
         ):
             session_of[event.id] = exchange
             declared = _declared_of_measurement(event)
@@ -528,7 +528,7 @@ def measure_exchange_counts(
             workspace_id,
             exchange,
             COMPARISON_RECORDED_KIND,
-            through=consumed_ledger_boundary,
+            through=input_ledger_boundary,
         ):
             comparison_seen = True
             declared = _declared_of_comparison(event)
@@ -594,8 +594,8 @@ def measure_exchange_counts(
                 measured_in=tuple(sorted(where)),
                 measured_without_distinction=tuple(sorted(measured_without)),
                 coordinate_not_measured=tuple(sorted(not_measured)),
-                consumed_event_ids=tuple(sorted(evidence)),
-                consumed_ledger_boundary=consumed_ledger_boundary,
+                input_event_ids=tuple(sorted(evidence)),
+                input_ledger_boundary=input_ledger_boundary,
                 workspace_id=workspace_id,
                 bounded_exchanges=declared_exchanges,
                 measured_in_support_event_ids=tuple(
@@ -694,7 +694,7 @@ def assertions_from_measured_count(
             content=content,
             scope=scope,
             support_event_ids=support,
-            completeness_boundary=finding.consumed_ledger_boundary,
+            completeness_boundary=finding.input_ledger_boundary,
             completeness_occurrence_kinds=occurrence_kinds,
         )
 

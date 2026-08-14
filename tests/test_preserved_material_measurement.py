@@ -2,15 +2,15 @@
 
 Two things separate this from the withdrawn probe at `#2368`.
 
-**What it consumes.** Occurrences come from the ledger, having been recorded
+**What it has as input.** Occurrences come from the ledger, having been recorded
 through operator ingress. `#2368` read a file directly, and a measurement over
 material Seed never received says nothing about Seed.
 
 **What becomes of the result.** Findings are appended to the ledger, so a later
-responsible act may consume them. `01.Standing.E` permits a bounded comparison
-to consume preserved findings while preserving each input's support basis,
+responsible act may have them participate. `01.Standing.E` permits a bounded comparison
+to have as input preserved findings while preserving each input's support basis,
 confidence, and standing. A finding that vanishes with the process cannot be
-consumed by anything.
+input by anything.
 
 `01.External:28` requires three disclosures of any recurrence assertion. They
 are required fields here, and an absent one is refused rather than defaulted.
@@ -131,7 +131,7 @@ def test_a_finding_names_every_occurrence_it_consumed(occurrences):
     finding = measure_occupancy(
         occurrences, declared=_declared(), occupant_of=_first_word
     )
-    assert finding.consumed_event_ids == tuple(e.id for e in occurrences)
+    assert finding.input_event_ids == tuple(e.id for e in occurrences)
 
 
 def test_an_absent_position_is_absent_not_unknown(occurrences):
@@ -140,7 +140,7 @@ def test_an_absent_position_is_absent_not_unknown(occurrences):
         occurrences, declared=_declared(), occupant_of=_after_delimiter
     )
     assert finding.positions_measured == 4
-    assert len(finding.consumed_event_ids) == 5
+    assert len(finding.input_event_ids) == 5
 
 
 # --------------------------------------------------------------------------
@@ -549,7 +549,7 @@ def test_a_recurrence_finding_records_through_the_existing_path(
     assert event.payload["representation_measured"] == "the"
     assert event.payload["equivalence_rule"].startswith("exact equality")
     assert event.payload["counting_scope"].startswith("preserved operator-ingress")
-    assert event.payload["consumed_event_ids"] == [e.id for e in occurrences]
+    assert event.payload["input_event_ids"] == [e.id for e in occurrences]
 
 
 def test_a_recurrence_finding_may_stand_on_a_premise(recurrence_occurrences):
@@ -626,7 +626,7 @@ def test_every_finding_carries_the_same_consumed_population(recurrence_occurrenc
         occurrences, declared=declared, counts_in=_counts_in(declared)
     )
     population = tuple(e.id for e in occurrences)
-    assert all(f.consumed_event_ids == population for f in findings)
+    assert all(f.input_event_ids == population for f in findings)
     assert all(f.occurrences_examined == len(occurrences) for f in findings)
 
 
@@ -763,7 +763,7 @@ def test_a_declared_representation_absent_from_the_result_counted_zero(
 
 
 def test_a_finding_preserves_the_localities_it_consumed(recurrence_occurrences):
-    """`06.Standing.B`: consumed locality is preserved and stays distinct from
+    """`06.Standing.B`: input locality is preserved and stays distinct from
     the locality recorded into."""
 
     ledger, _ = recurrence_occurrences
@@ -784,7 +784,7 @@ def test_a_finding_preserves_the_localities_it_consumed(recurrence_occurrences):
         occurrences_of=_counts("the"),
         produce_in=(ledger, "w", "r"),
     )
-    assert finding.consumed_localities == (
+    assert finding.input_localities == (
         "workspace:w;session:r",
         "workspace:w;session:other",
     )
@@ -792,7 +792,7 @@ def test_a_finding_preserves_the_localities_it_consumed(recurrence_occurrences):
     event = record_measurement_finding(
         ledger, workspace_id="w", session_id="recording", finding=finding
     )
-    assert event.payload["consumed_localities"] == [
+    assert event.payload["input_localities"] == [
         "workspace:w;session:r",
         "workspace:w;session:other",
     ]
@@ -825,7 +825,7 @@ def test_an_occurrence_carrying_no_locality_records_the_absence(
     )
     # No locality was carried, so none is recorded. The workspace is a
     # different member of `06.Standing.A`'s boundary and cannot stand in.
-    assert finding.consumed_localities == (None,)
+    assert finding.input_localities == (None,)
 
 
 def test_batch_and_single_survive_the_recording_boundary_identically(
@@ -915,7 +915,7 @@ def test_the_positional_path_also_refuses_a_repeated_occurrence(occurrences):
         )
 
 # --------------------------------------------------------------------------
-# One pass consumes one population, so one basis describes every finding.
+# One pass has as input one population, so one basis describes every finding.
 # `#2486` built SupportBasis for exactly this and the recurrence path was
 # written without it.
 # --------------------------------------------------------------------------
@@ -943,10 +943,10 @@ def test_a_declared_basis_replaces_the_enumeration(recurrence_occurrences):
     )
     for finding in findings:
         carried = finding.to_json_dict()
-        assert "consumed_event_ids" not in carried
-        assert carried["consumed_support"]["support_count"] == len(occurrences)
+        assert "input_event_ids" not in carried
+        assert carried["input_support"]["support_count"] == len(occurrences)
         # the act still knows what it walked, in memory, while it runs
-        assert finding.consumed_event_ids == tuple(e.id for e in occurrences)
+        assert finding.input_event_ids == tuple(e.id for e in occurrences)
 
 
 def test_a_basis_that_does_not_commit_to_the_population_is_refused(
@@ -981,8 +981,8 @@ def test_findings_with_and_without_a_basis_agree_on_everything_else(
     )
     for a, b in zip(plain, based):
         left, right = a.to_json_dict(), b.to_json_dict()
-        left.pop("consumed_event_ids")
-        right.pop("consumed_support")
+        left.pop("input_event_ids")
+        right.pop("input_support")
         assert left == right
 
 
@@ -1277,11 +1277,11 @@ def test_carrying_a_basis_no_longer_exempts_a_finding_from_the_recorder():
     # not evidence that any act verified it.
     attached = RecurrenceFinding(
         declared=finding.declared,
-        consumed_localities=finding.consumed_localities,
+        input_localities=finding.input_localities,
         occurrences_examined=finding.occurrences_examined,
         occurrences_carrying=finding.occurrences_carrying,
         total_count=finding.total_count,
-        consumed_event_ids=finding.consumed_event_ids,
+        input_event_ids=finding.input_event_ids,
         support_basis=declare_complete_population(
             workspace_id="w",
             session_id="r",
@@ -1430,11 +1430,11 @@ def _rebuilt(finding, **changed):
     fields = {
         "declared": finding.declared,
         "material_provenance": finding.material_provenance,
-        "consumed_localities": finding.consumed_localities,
+        "input_localities": finding.input_localities,
         "occurrences_examined": finding.occurrences_examined,
         "occurrences_carrying": finding.occurrences_carrying,
         "total_count": finding.total_count,
-        "consumed_event_ids": finding.consumed_event_ids,
+        "input_event_ids": finding.input_event_ids,
         "support_basis": finding.support_basis,
         "production_evidence_id": finding.production_evidence_id,
     }
@@ -1508,7 +1508,7 @@ def test_evidence_for_one_result_does_not_carry_another(recurrence_occurrences):
         {"occurrences_carrying": 999},
         {"occurrences_examined": 999},
         {"material_provenance": MATERIAL_READ_FROM_LEDGER},
-        {"consumed_localities": ("workspace:w;session:elsewhere",)},
+        {"input_localities": ("workspace:w;session:elsewhere",)},
         {"boundary_notes": ("a limit nobody measured",)},
     ],
 )

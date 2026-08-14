@@ -463,7 +463,7 @@ def test_an_absent_position_is_absent_not_unknown(occurrences, recorded_finding)
         premise_event_id=recorded_finding.id,
     )
     preceding = findings["preceding"]
-    assert preceding.positions_measured < len(preceding.consumed_event_ids)
+    assert preceding.positions_measured < len(preceding.input_event_ids)
     assert "Unknown" not in str(preceding.occupancies)
 
 
@@ -549,8 +549,8 @@ def test_each_pair_result_is_one_addressable_assertion(
         assert event.payload["completeness_boundary"] == {
             "commitment": boundary.commitment
         }
-        assert "consumed_event_ids" not in event.payload
-        assert event.payload["support_basis"]["basis"] == event.payload["consumed_support"]
+        assert "input_event_ids" not in event.payload
+        assert event.payload["support_basis"]["basis"] == event.payload["input_support"]
         assert get_recorded_adjacent_pair_result_assertion(
             session,
             producing_event_id=event.id,
@@ -564,8 +564,8 @@ def test_each_pair_result_is_one_addressable_assertion(
                 through=assertion.completeness_boundary,
             )
         )
-        basis = SupportBasis.from_json_dict(event.payload["consumed_support"])
-        assert basis.support_count == event.payload["consumed_count"]
+        basis = SupportBasis.from_json_dict(event.payload["input_support"])
+        assert basis.support_count == event.payload["input_count"]
         assert [item.id for item in recovered_ingress] == list(
             SupportRecovery(session).recover(basis)
         )
@@ -676,7 +676,7 @@ def test_ledger_recovery_refuses_a_boundary_not_owned_by_the_ledger(
     # Forged consistently in both places. A boundary the ledger never issued
     # must still be refused when nothing internally disagrees about it.
     event.payload["completeness_boundary"]["commitment"] = "not-a-ledger-prefix"
-    event.payload["consumed_support"]["boundary"]["commitment"] = "not-a-ledger-prefix"
+    event.payload["input_support"]["boundary"]["commitment"] = "not-a-ledger-prefix"
     event.payload["support_basis"]["basis"]["boundary"]["commitment"] = "not-a-ledger-prefix"
 
     with pytest.raises(InvalidLedgerBoundary):
@@ -708,12 +708,12 @@ def test_ledger_recovery_refuses_an_incomplete_claimed_ingress_read(
     # The occurrence no longer carries a list that could be shortened, so the
     # tamper surface is the basis. Every part of it must refuse, and each fails
     # for its own reason rather than one check covering the others.
-    intact = json.loads(json.dumps(event.payload["consumed_support"]))
+    intact = json.loads(json.dumps(event.payload["input_support"]))
 
     def tampered(**changes):
         basis = json.loads(json.dumps(intact))
         basis.update(changes)
-        event.payload["consumed_support"] = basis
+        event.payload["input_support"] = basis
         event.payload["support_basis"]["basis"] = basis
         return basis
 
@@ -742,7 +742,7 @@ def test_ledger_recovery_refuses_an_incomplete_claimed_ingress_read(
             session, producing_event_id=event.id, assertion_id=assertion.assertion_id
         )
 
-    event.payload["consumed_support"] = intact
+    event.payload["input_support"] = intact
     event.payload["support_basis"]["basis"] = intact
     assert get_recorded_adjacent_pair_result_assertion(
         session, producing_event_id=event.id, assertion_id=assertion.assertion_id
@@ -1077,7 +1077,7 @@ def test_answering_contexts_measure_what_every_context_would_have():
             )
             assert finding.positions_measured == measured, (pair, form)
             assert finding.occupancies == expected, (pair, form)
-            assert finding.consumed_event_ids == tuple(event.id for event in events)
+            assert finding.input_event_ids == tuple(event.id for event in events)
 
 
 def test_an_unknown_form_is_refused_before_any_occurrence_is_visited():
@@ -1136,7 +1136,7 @@ def test_a_support_binding_is_formed_over_its_population_not_paired_with_one():
         workspace_id="w", session_id="s", occurrence_kind=INGRESS_OCCURRED_KIND,
         boundary=boundary, identities=index.event_ids,
     )
-    assert finding.consumed_event_ids is index.event_ids
+    assert finding.input_event_ids is index.event_ids
     assert binding.basis == declare_complete_population(
         workspace_id="w", session_id="s", occurrence_kind=INGRESS_OCCURRED_KIND,
         boundary=boundary, identities=index.event_ids,
@@ -1154,10 +1154,10 @@ def test_a_support_binding_is_formed_over_its_population_not_paired_with_one():
     ) == binding.basis
 
     # A different population of the same size is refused. Under a count check
-    # this passed and carried a basis describing material never consumed.
+    # this passed and carried a basis describing material never input.
     _, _, other_finding = bodied("other")
-    assert len(other_finding.consumed_event_ids) == len(finding.consumed_event_ids)
-    assert other_finding.consumed_event_ids != finding.consumed_event_ids
+    assert len(other_finding.input_event_ids) == len(finding.input_event_ids)
+    assert other_finding.input_event_ids != finding.input_event_ids
     with pytest.raises(PreservedMaterialMeasurementError, match="population object"):
         _support_for(
             workspace_id="w", session_id="s", completeness_boundary=boundary,

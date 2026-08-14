@@ -1,7 +1,7 @@
-"""A driven console may present material the operator's escape would consume.
+"""A driven console may present material the operator's escape would have as input.
 
 `#2435` measured the deadlock: the Bash guide carries a line whose entire
-content is `exit`, the console's process-boundary escape consumes it as control,
+content is `exit`, the console's process-boundary escape treats it as control,
 and ingestion stopped at 2,957 of 54,264 lines while reporting nothing.
 
 This is bootstrap scaffolding and these tests say so. The interactive console is

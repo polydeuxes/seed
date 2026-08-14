@@ -7,7 +7,7 @@ The boundary between a selection record and the bounded act that chooses from a 
 What evidence proves that a lawful selection occurred for a particular candidate set?
 
 ## Bounded resolution
-A selection act consumes a bounded candidate set plus a selection basis supported by evidence or exact comparison, validates the identity and applicability required by that owner, and chooses zero or more candidates or preserves a lawful non-selection. Its artifact asserts that bounded result and preserves the identity, uncertainty, evidence, limits, and basis required for the intended Act to distinguish lawful non-selection from omission. Preservation of all non-selected alternatives is selector-specific: representation selection may require only selected registered names plus unsupported-key uncertainty. Direct construction proves only artifact constructibility. Selection does not itself establish Authorization, act occurrence, or open inquiry, or establish every downstream subject unless the responsible boundary explicitly does so.
+A bounded candidate set and a selection basis supported by evidence or exact comparison participate in a selection Act, validates the identity and applicability required by that owner, and chooses zero or more candidates or preserves a lawful non-selection. Its artifact asserts that bounded result and preserves the identity, uncertainty, evidence, limits, and basis required for the intended Act to distinguish lawful non-selection from omission. Preservation of all non-selected alternatives is selector-specific: representation selection may require only selected registered names plus unsupported-key uncertainty. Direct construction proves only artifact constructibility. Selection does not itself establish Authorization, act occurrence, or open inquiry, or establish every downstream subject unless the responsible boundary explicitly does so.
 
 Candidate-identity resolution is not itself a Selection Act. A resolver may compare attributed material with a bounded candidate set and establish that exactly one candidate identity matches. That occurrence does not establish a Selection occurrence, responsible boundary, Selection basis, addressed Act or result boundary, Applicability, or later movement.
 
@@ -24,7 +24,7 @@ Repository Evidence supports distinct Selection forms. Representation selection 
 - selected candidate identity != candidate-set identity
 - selected result != preserved selection basis
 - artifact preservation != act-local validation
-- exact Act accepts artifact type != exact Act lawfully relies on every assertion
+- exact Act accepts artifact type != every Assertion in it supports that Act's result
 - selection standing != authorization standing
 - exact deterministic comparison != semantic judgment
 - candidate eligibility != selection

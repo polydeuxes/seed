@@ -106,7 +106,7 @@ def test_comparison_provenance_records_the_subjects_it_consumed():
     presentation, ingress_event_id, finding = _exchange(ledger, "1\n")
 
     # The ingress names no Presentation; the comparison's provenance is what
-    # records which subjects it consumed.
+    # records which subjects it input.
     ingress = ledger.get(ingress_event_id)
     assert not any(k.startswith("produced_after") for k in ingress.payload)
     comparison_event = ledger.get(finding["comparison"]["event_id"])

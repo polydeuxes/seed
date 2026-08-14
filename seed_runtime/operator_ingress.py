@@ -16,7 +16,7 @@ from seed_runtime.operator_ingress_representation import (
 # recording occurrence, which is this Seed in both directions, and not authorship
 # — an operator who supplies a book did not write it. `#2490` records why this
 # has to exist before Seed preserves what it emitted: without it a later
-# measurement over "preserved material" cannot decline to consume Seed's own
+# measurement over "preserved material" cannot decline to have as input Seed's own
 # output, and Seed's account of a fire becomes material saying a fire occurred.
 OPERATOR_ORIGIN = "operator"
 SEED_ORIGIN = "this Seed"
@@ -55,7 +55,7 @@ def project_operator_ingress_events(attempts, event, *, ledger=None) -> None:
     """Dispatch one operator-ingress event into the dedicated current view.
 
     ``attempts`` is the per-attempt projection mapping and is the whole of what
-    this read consumes. It reads no entity, normalized Assertion, alias, relationship, or
+    this read has as input. It reads no entity, normalized Assertion, alias, relationship, or
     result condition, so nothing here requires a whole-workspace projection to exist.
     """
     if not event.kind.startswith("operator.ingress."):

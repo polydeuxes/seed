@@ -43,7 +43,7 @@
         "default": "exact_Act_Responsibility",
         "override": "explicitly_assigned_responsible_occurrence"
       },
-      "must_precede": ["participation", "consumption", "reliance"],
+      "must_precede": ["participation", "participation", "input support"],
       "coordinates": [
         "input_identity",
         "exact_Act",

@@ -10,7 +10,7 @@ pairs. The console now carries its Standing forward instead.
 against replay from zero through the same boundary. Timing is asserted nowhere;
 `test_the_console_never_replays_the_session` pins the architecture directly.
 
-The advance consumes its prior rather than copying it. Standing grows with the
+The advance takes over its prior rather than copying it. Standing grows with the
 session, so a copy per advance would cost the session length every time and
 reinstate the quadratic this replaced. That contract is exercised here so it
 cannot be softened by accident.
@@ -100,14 +100,14 @@ def test_advancing_in_the_console_s_own_groupings_equals_replay():
     ledger, _ = _console("alpha\nbeta\ngamma\nexit\n")
     events = ledger.list("w")
     standing = _advance([])
-    consumed = 0
+    input = 0
     for size in (2, 3, 2, 3, 2, 3, 2):
-        batch = events[consumed : consumed + size]
+        batch = events[input : input + size]
         if not batch:
             break
         standing = _advance(batch, prior=standing)
-        consumed += len(batch)
-        assert standing == _replay(events[:consumed])
+        input += len(batch)
+        assert standing == _replay(events[:input])
 
 
 def test_an_advance_over_no_occurrences_changes_nothing():
@@ -199,7 +199,7 @@ def test_the_advance_consumes_its_prior():
 
 
 def test_every_growable_accumulator_is_consumed_not_copied():
-    """The consuming-prior rule has to hold for all of them, not most of them.
+    """The prior-transfer rule has to hold for all of them, not most of them.
 
     `known_loss`, `unknowns` and `conflicts` were rebuilt from the prior on
     every advance and re-sorted on every return. They do not grow on the five

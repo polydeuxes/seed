@@ -167,7 +167,7 @@ def record_self_survey(
         "coordinates_observed_with_several": sorted(
             v.coordinate for v in variations if v.varied
         ),
-        "consumed_event_ids": [event.id for event in surveyed],
+        "input_event_ids": [event.id for event in surveyed],
         "unknowns": [
             "why any coordinate was recorded with the values it was remains Unknown"
         ],

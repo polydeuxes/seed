@@ -7,7 +7,7 @@ The standing of questions and their role in initiating or shaping bounded inquir
 What makes a question constitutionally admissible and connected to an established result condition or uncertainty?
 
 ## Bounded resolution
-Question-shaped external material is attributed material, not an internal constitutional question. Seed may consume operator material, repository uncertainty, result conditions, Constraints, corrections, or prior findings when forming a bounded question. The question-forming Act preserves identity, provenance, Scope, required Evidence, Authority limits, uncertainty, and lawful stop conditions.
+Question-shaped external material is attributed material, not an internal constitutional question. Seed may accept as input operator material, repository uncertainty, result conditions, Constraints, corrections, or prior findings when forming a bounded question. The question-forming Act preserves identity, provenance, Scope, required Evidence, Authority limits, uncertainty, and lawful stop conditions.
 
 ## Addressable boundaries for question standing
 

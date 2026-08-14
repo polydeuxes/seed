@@ -241,7 +241,7 @@ def test_the_comparison_is_recorded_as_its_own_kind(ledger):
         ledger, workspace_id="w", session_id="s1",
         finding=compare_preserved_findings(ledger, [a.id, b.id]))
     assert event.kind == COMPARISON_RECORDED_KIND
-    assert event.payload["consumed_event_ids"] == [a.id, b.id]
+    assert event.payload["input_event_ids"] == [a.id, b.id]
     assert event.payload["dimensions"]["standing"] == "compared"
 
 
@@ -253,7 +253,7 @@ def test_the_record_refuses_the_inferences_the_clause_forbids(ledger):
     notes = " ".join(event.payload["boundary_notes"])
     assert "is not a relation between what they measured" in notes
     assert "establishes no relation between" in notes
-    assert "no truth, warrant, reliance, source independence, or corroboration" in notes
+    assert "no truth, warrant, input support, source independence, or corroboration" in notes
     assert "whether the compared bodies stand in any relation remains Unknown" in (
         event.payload["unknowns"])
 

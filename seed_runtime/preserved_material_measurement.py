@@ -17,7 +17,7 @@ Those three disclosures are required fields here, not commentary.
 **What this is for is Seed's own preserved material.** Occurrences recorded
 through operator ingress carry ``authority="occurrence-only; represented relation Unknown"``,
 and reading a file directly and measuring it produces a result that vanishes
-with the process and that no later act can consume; `#2368` did that and it was
+with the process and that no later act can have as input; `#2368` did that and it was
 withdrawn.
 
 A measurement given a ledger reads its material from that ledger. A measurement
@@ -27,8 +27,8 @@ claims are recorded distinctly. This module used to describe only the first
 while doing both.
 
 **What this produces is recorded.** Each finding is appended to the ledger, so a
-later responsible act may consume it. `01.Standing.E` permits exactly that: a
-bounded comparison may consume preserved findings "only while preserving each
+later responsible act may have it participate. `01.Standing.E` permits exactly that: a
+bounded comparison may have as input preserved findings "only while preserving each
 input source coordinates, provenance, support basis, subject, scope, authority,
 confidence or uncertainty, Unknowns, standing, and forbidden inferences".
 
@@ -104,7 +104,7 @@ BOUNDARY_NOTES: tuple[str, ...] = (
 
 
 class PreservedMaterialMeasurementError(ValueError):
-    """Raised when a measurement cannot be declared or consumed as stated."""
+    """Raised when a measurement cannot use its declared inputs as stated."""
 
 
 @dataclass(frozen=True)
@@ -162,13 +162,13 @@ class MeasurementFinding:
     declared: DeclaredMeasurement
     positions_measured: int
     occupancies: tuple[Occupancy, ...]
-    # The identities this measurement consumed, available while the act runs.
+    # The identities this measurement input_ids, available while the act runs.
     # On the result-Assertion path a recoverable support basis is formed from
     # this population instead of preserving the enumeration in every result;
     # the basis belongs to that path, and this dataclass does not own a second
     # coordinate for it. `#2486` measured why: copying the population into
     # every finding of a body cost 97% of the stored finding.
-    consumed_event_ids: tuple[str, ...]
+    input_event_ids: tuple[str, ...]
     # Where the measured material came from. Defaults to the weaker claim:
     # a finding that did not read from a ledger cannot say it measured
     # preserved material, and silence must not read as the stronger one.
@@ -207,8 +207,8 @@ class MeasurementFinding:
             # Not "support_basis": the result-Assertion coordinate surface owns
             # that key and its fields are merged over this dict, so naming both
             # the same silently replaced one with the other.
-            "consumed_event_ids": list(self.consumed_event_ids),
-            "consumed_count": len(self.consumed_event_ids),
+            "input_event_ids": list(self.input_event_ids),
+            "input_count": len(self.input_event_ids),
             "boundary_notes": list(self.boundary_notes),
         }
 
@@ -236,28 +236,28 @@ class RecurrenceFinding:
     """
 
     declared: DeclaredMeasurement
-    # The localities the consumed occurrences carried. `06.Standing.B` requires
-    # an act consuming material distinguished by locality to preserve the
-    # locality of what it consumed, and to keep that distinct from the locality
+    # The localities the input_ids occurrences carried. `06.Standing.B` requires
+    # an act material participating in an Act distinguished by locality to preserve the
+    # locality of what it input_ids, and to keep that distinct from the locality
     # it records into. `None` in this tuple is an occurrence that carried no
     # locality, preserved rather than filled in.
     # Recording stamps the recording locality; without this
     # coordinate a finding drawn from two localities and recorded into a third
-    # asserts only the third, and the consumed localities survive as nothing
+    # asserts only the third, and the input_ids localities survive as nothing
     # but event identities a later reader would have to re-derive.
-    consumed_localities: tuple[str | None, ...]
+    input_localities: tuple[str | None, ...]
     # Preserved occurrences the measurement ran over. The denominator.
     occurrences_examined: int
     # How many of them carried the representation at least once.
     occurrences_carrying: int
     # How many times it occurred in total across them. This is the recurrence.
     total_count: int
-    consumed_event_ids: tuple[str, ...]
+    input_event_ids: tuple[str, ...]
     # Where the measured material came from. Defaults to the weaker claim:
     # a finding that did not read from a ledger cannot say it measured
     # preserved material, and silence must not read as the stronger one.
     material_provenance: str = MATERIAL_AS_SUPPLIED
-    # The basis of the population consumed, where one was declared. Every
+    # The basis of the population input_ids, where one was declared. Every
     # finding of one pass stands on the same population, so preserving the
     # enumeration in each copies that population once per representation.
     # `#2486` measured exactly this at 97% of a stored finding and built
@@ -291,12 +291,12 @@ class RecurrenceFinding:
             "counting_scope": self.declared.counting_scope,
             "premise_event_id": self.declared.premise_event_id,
             "measurement_form": "recurrence",
-            "consumed_localities": list(self.consumed_localities),
+            "input_localities": list(self.input_localities),
             "occurrences_examined": self.occurrences_examined,
             "occurrences_carrying": self.occurrences_carrying,
             "total_count": self.total_count,
-            "consumed_event_ids": list(self.consumed_event_ids),
-            "consumed_count": len(self.consumed_event_ids),
+            "input_event_ids": list(self.input_event_ids),
+            "input_count": len(self.input_event_ids),
             "boundary_notes": list(self.boundary_notes),
             "production_evidence_id": self.production_evidence_id,
         }
@@ -304,8 +304,8 @@ class RecurrenceFinding:
             # The basis replaces the enumeration rather than accompanying it.
             # Carrying both preserves the cost the basis exists to avoid, and
             # leaves two representations of one support free to disagree.
-            carried["consumed_support"] = self.support_basis.to_json_dict()
-            carried.pop("consumed_event_ids")
+            carried["input_support"] = self.support_basis.to_json_dict()
+            carried.pop("input_event_ids")
         return carried
 
 
@@ -332,7 +332,7 @@ def measure_recurrence(
     goes on to disclose.
     """
 
-    consumed: list[str] = []
+    input_ids: list[str] = []
     localities: dict[str | None, None] = {}
     examined = 0
     carrying = 0
@@ -342,7 +342,7 @@ def measure_recurrence(
     )
     for event in walked:
         text = _measurable_text(event)
-        consumed.append(event.id)
+        input_ids.append(event.id)
         localities[_locality_of(event)] = None
         count = occurrences_of(text)
         if not isinstance(count, int) or isinstance(count, bool) or count < 0:
@@ -357,11 +357,11 @@ def measure_recurrence(
     finding = RecurrenceFinding(
         declared=declared,
         material_provenance=material_provenance,
-        consumed_localities=tuple(localities),
+        input_localities=tuple(localities),
         occurrences_examined=examined,
         occurrences_carrying=carrying,
         total_count=total,
-        consumed_event_ids=tuple(consumed),
+        input_event_ids=tuple(input_ids),
     )
     if produce_in is not None:
         evidence = _record_production(
@@ -678,7 +678,7 @@ def measure_recurrences(
     representation per occurrence.
 
     Findings are identical to calling `measure_recurrence` for each
-    representation. Each carries its own declaration, the same consumed
+    representation. Each carries its own declaration, the same input_ids
     population, and the same three counts. This changes only how many times the
     material is walked.
 
@@ -708,17 +708,17 @@ def measure_recurrences(
             )
         scopes.add(declaration.counting_scope)
     if len(scopes) > 1:
-        # One pass consumes one population, so every finding it produces
+        # One pass has as input one population, so every finding it produces
         # receives that population. A declaration disclosing a different
         # counting scope would have its scope assertion preserved beside a
         # population the act did not draw from it. `01.External:28` requires
         # the disclosed scope to be the scope within which occurrences were
         # counted, so the disagreement is refused rather than reconciled.
         raise PreservedMaterialMeasurementError(
-            "one pass consumes one population, so every declaration must "
+            "one pass has as input one population, so every declaration must "
             f"disclose the same counting scope; got {len(scopes)}"
         )
-    consumed: list[str] = []
+    input_ids: list[str] = []
     localities: dict[str | None, None] = {}
     examined = 0
     carrying: dict[str, int] = {name: 0 for name in declared}
@@ -736,7 +736,7 @@ def measure_recurrences(
         #
         # So where a basis is declared, the material is read from the ledger
         # the basis is recovered against. The supplied objects still determine
-        # which occurrences are consumed and in what order; they do not supply
+        # which occurrences participate and in what order; they do not supply
         # what was measured.
         # This read establishes the same provenance `_as_preserved` does, so
         # the finding must carry it. Without this the basis path recorded
@@ -756,7 +756,7 @@ def measure_recurrences(
         walked = preserved
     for event in walked:
         text = _measurable_text(event)
-        consumed.append(event.id)
+        input_ids.append(event.id)
         localities[_locality_of(event)] = None
         examined += 1
         counted = counts_in(text)
@@ -777,40 +777,40 @@ def measure_recurrences(
             if count:
                 carrying[representation] += 1
                 total[representation] += count
-    population = tuple(consumed)
-    consumed_localities = tuple(localities)
+    population = tuple(input_ids)
+    input_localities = tuple(localities)
     if support_basis is not None:
         # A basis carried but never checked would let a finding preserve a
         # commitment to a population the act did not walk. `support_commitment`
         # is a pure function of the rule and the ordered identities, so the act
-        # can confirm the basis commits to what it actually consumed.
+        # can confirm the basis commits to what it actually input_ids.
         if support_commitment(support_basis.selection_rule, population) != (
             support_basis.commitment
         ):
             raise PreservedMaterialMeasurementError(
                 "the declared support basis does not commit to the population "
-                "this measurement consumed"
+                "this measurement input_ids"
             )
         if support_basis.support_count != len(population):
             raise PreservedMaterialMeasurementError(
                 f"the declared support basis counts {support_basis.support_count} "
-                f"occurrences and this measurement consumed {len(population)}"
+                f"occurrences and this measurement input_ids {len(population)}"
             )
         # Committing to the identities is not describing the population. The
         # commitment is a digest over the rule and the ordered ids and says
         # nothing about scope, so a basis declaring one locality could be
         # accepted for a population drawn from several: the ids match, and the
-        # preserved basis then asserts a scope the act never consumed within.
+        # preserved basis then asserts a scope the act never input_ids within.
         # The producing act refuses that now; a later recovery failure is a
         # different responsibility and arrives too late to prevent it.
         declared_locality = (
             f"workspace:{support_basis.workspace_id};"
             f"session:{support_basis.session_id}"
         )
-        if consumed_localities != (declared_locality,):
+        if input_localities != (declared_locality,):
             raise PreservedMaterialMeasurementError(
                 f"the declared support basis is scoped to {declared_locality} "
-                f"and this measurement consumed {list(consumed_localities)}"
+                f"and this measurement input_ids {list(input_localities)}"
             )
         for event in walked:
             if event.kind != support_basis.occurrence_kind:
@@ -821,7 +821,7 @@ def measure_recurrences(
                 )
         # A basis declares a selection rule -- every preserved occurrence of
         # this scope's kind through this boundary -- and the checks above prove
-        # only that the population consumed is *within* that description. A
+        # only that the population is *within* that description. A
         # caller supplying three of four occurrences through the same boundary
         # would pass all of them, and the finding would then preserve a basis
         # claiming completeness the act never established.
@@ -836,12 +836,12 @@ def measure_recurrences(
             raise PreservedMaterialMeasurementError(
                 "a support basis declares a selection through a boundary, and "
                 "accepting one requires a SupportRecovery to establish that "
-                "the population consumed is that selection"
+                "the population is that selection"
             )
         # `recover` performs the basis's own selection through the boundary and
         # refuses unless the result reproduces the committed digest. Together
         # with the commitment check above -- which ties the population walked to
-        # that same digest -- the population consumed is the selection declared.
+        # that same digest -- the population is the selection declared.
         #
         # A third comparison of the two results was written here and removed: it
         # cannot fail while both checks hold, and mutation testing found no test
@@ -852,11 +852,11 @@ def measure_recurrences(
         RecurrenceFinding(
             declared=declaration,
             material_provenance=material_provenance,
-            consumed_localities=consumed_localities,
+            input_localities=input_localities,
             occurrences_examined=examined,
             occurrences_carrying=carrying[representation],
             total_count=total[representation],
-            consumed_event_ids=population,
+            input_event_ids=population,
             support_basis=support_basis,
         )
         for representation, declaration in declared.items()
@@ -926,14 +926,14 @@ def measure_occupancy(
     """
 
     counts: dict[str, int] = {}
-    consumed: list[str] = []
+    input_ids: list[str] = []
     measured = 0
     walked, material_provenance = _as_preserved(
         _distinct_population(occurrences), preserved_in
     )
     for event in walked:
         text = _measurable_text(event)
-        consumed.append(event.id)
+        input_ids.append(event.id)
         occupant = occupant_of(text)
         if occupant is None:
             continue
@@ -948,7 +948,7 @@ def measure_occupancy(
         material_provenance=material_provenance,
         positions_measured=measured,
         occupancies=ordered,
-        consumed_event_ids=tuple(consumed),
+        input_event_ids=tuple(input_ids),
     )
 
 
@@ -965,8 +965,8 @@ def _measurement_finding_payload(
         # A result Assertion carries a recoverable support basis, so the
         # enumeration it replaces is not written beside it. `#2486` measured
         # the enumeration at 97% of a 4,000-line finding.
-        carried["consumed_support"] = basis
-        carried.pop("consumed_event_ids", None)
+        carried["input_support"] = basis
+        carried.pop("input_event_ids", None)
     return {
         "dimensions": {
             "identity": f"measurement:{finding.declared.representation_measured}",
@@ -1043,16 +1043,16 @@ def record_measurement_findings(
     # Identities are collected across the whole call before any read, because
     # every finding of one pass carries the same population and checking per
     # finding would restore the cost `#2486` removed.
-    consumed_ids = {
+    input_ids = {
         event_id
         for finding, _ in supplied
-        for event_id in finding.consumed_event_ids
+        for event_id in finding.input_event_ids
     }
-    for event_id in consumed_ids:
+    for event_id in input_ids:
         occurrence = ledger.get(event_id)
         if occurrence is None or occurrence.kind != INGRESS_OCCURRED_KIND:
             raise PreservedMaterialMeasurementError(
-                f"{event_id} is recorded as a consumed preserved occurrence "
+                f"{event_id} is recorded as a input_ids preserved occurrence "
                 "and this ledger preserves no such ingress occurrence"
             )
     # A recurrence finding is recordable where the act that produced it
@@ -1122,7 +1122,7 @@ def record_measurement_finding(
     finding: MeasurementFinding | RecurrenceFinding,
     extra: dict[str, Any] | None = None,
 ) -> Event:
-    """Preserve a finding so a later responsible act may consume it.
+    """Preserve a finding so a later responsible act may have it participate.
 
     The recorded authority states the clause's own limit. A finding is
     measurement evidence and is not relation, represented relation, or established standing.

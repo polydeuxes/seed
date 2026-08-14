@@ -11,14 +11,14 @@ Operator material and explicit approvals may contribute authority only after int
 
 Policy wording may describe Authority granted for an exact responsible boundary, Act or movement, addressed subject, result boundary, Scope, conditions, temporal Standing, negative Authority, and Unknowns. The wording does not create, enlarge, transfer, or renew that Authority.
 
-## Addressable boundaries for bounded reliance witnesses
+## Addressable boundaries for bounded input support witnesses
 
-### 08.Authority.A — Bounded reliance without standing expansion
-A downstream Act may rely on warranted content only for its exact role, addressed subject, result boundary, source or provenance, Evidence, Authority, Scope, confidence or uncertainty, and Unknown boundaries. Reliance does not strengthen Standing, expand Authority, prove truth or ownership, authorize implementation, or erase negative Authority.
+### 08.Authority.A — Bounded input support without standing expansion
+A downstream Act may stand on warranted content only for its exact role, addressed subject, result boundary, source or provenance, Evidence, Authority, Scope, confidence or uncertainty, and Unknown boundaries. Input support does not strengthen Standing, expand Authority, prove truth or ownership, authorize implementation, or erase negative Authority.
 
 
 ### 08.Authority.B — Admission is bounded participation, not ratification
-An established support relation, Applicability, reliance, or Admission finding may let a subject participate in an exact Act only within its Evidence, responsible boundary, result boundary, Authority, negative Authority, confidence, and Unknown limits. It does not become truth, universal Authority, mutation Authority, Book ratification, or reusable approval.
+An established support relation, Applicability, or Admission finding may let a subject participate in an exact Act only within its Evidence, responsible boundary, result boundary, Authority, negative Authority, confidence, and Unknown limits. It does not become truth, universal Authority, mutation Authority, Book ratification, or reusable approval.
 
 
 ### 08.Authority.C — Analytical competence is not adjudicative authority

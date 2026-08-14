@@ -177,7 +177,7 @@ def run_operator_response_comparison_and_identification(
 
     compared_representation = ingress_event.payload["dimensions"]["content"]
     # C's exact response coordinates are the recorded alternatives' own
-    # coordinates; the binding relation is consumed separately below, so a
+    # coordinates; the binding relation is input separately below, so a
     # recorded coordinate whose binding is absent stays distinguishable.
     coordinate_set = sorted(
         alternative["response_coordinate"] for alternative in alternatives
@@ -245,7 +245,7 @@ def run_operator_response_comparison_and_identification(
         session_id=session_id,
     )
 
-    # Distinct Identification: consumes the comparison finding, exact C, and
+    # Distinct Identification: has as input the comparison finding, exact C, and
     # the recorded coordinate-to-alternative binding.  The formation event is
     # the Evidence for the binding and the preserved A -> G representation
     # relations; each alternative's empty upstream evidence_event_ids means

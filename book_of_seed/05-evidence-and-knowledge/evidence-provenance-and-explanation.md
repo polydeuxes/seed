@@ -2,7 +2,7 @@
 
 ## Constitutional subject
 
-The Evidence and provenance on which exact Assertion Standing relies.
+The Evidence and provenance supporting exact Assertion Standing.
 
 ## Bounded resolution
 

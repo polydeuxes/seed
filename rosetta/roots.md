@@ -84,7 +84,7 @@ locality. It names no additional participant or constitutional coordinate.
 `Consumer` is ordinary shorthand for the side at which material may
 participate in another Act. In Seed grammar it expands to the exact locality,
 Responsibility, Act, purpose, Applicability, warranted participation or
-reliance, and Act occurrence. It names no additional participant or
+input-to-result support, and Act occurrence. It names no additional participant or
 constitutional coordinate.
 
 ## Uptake
@@ -92,7 +92,7 @@ constitutional coordinate.
 `Uptake` is ordinary shorthand for available material later participating in
 another bounded Act. In Seed grammar it expands to locality movement or
 availability, Applicability, Admission where required, exact purpose,
-warranted participation or reliance, and the Act occurrence. It names no
+warranted participation or input-to-result support, and the Act occurrence. It names no
 relation family or additional occurrence.
 
 ## Handoff
@@ -101,6 +101,21 @@ relation family or additional occurrence.
 separately established change in Responsibility or Authority. Movement does
 not imply that one participant gave material to another. The exact movement,
 Responsibility assignment, or Authority transition must be named instead.
+
+## Consumption
+
+`Consumption` is ordinary shorthand for material participating as input in an
+exact Act. Material is not depleted or transferred by that participation.
+Availability, Applicability, Admission where required, the input occurrence,
+and the exact Act occurrence carry the distinctions; the shorthand adds no
+stage or coordinate.
+
+## Reliance
+
+`Reliance` is ordinary shorthand for saying that an exact input supports an
+exact result. In Seed grammar that is a relation Assertion with its own
+participants, Evidence, Authority, Scope, occurrence, limits, Unknowns, and
+Standing. Input participation does not establish that support relation.
 
 ## Lineage
 

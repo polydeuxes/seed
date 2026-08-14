@@ -248,7 +248,7 @@ def _legacy_store(path, rows=1):
 def test_a_pre_digest_schema_is_refused_whether_or_not_it_holds_rows(path, rows):
     """Seed does not preserve a durable history nobody needs.
 
-    An earlier form classified undigested rows as UNVERIFIABLE and consumed
+    An earlier form classified undigested rows as UNVERIFIABLE and input
     them, leaving a supported path on which a durable occurrence carried no
     integrity. A later form refused populated pre-digest stores but migrated
     empty ones, which meant a new database was created by running a
@@ -323,7 +323,7 @@ def test_an_absent_occurrence_is_unverifiable(ledger):
 
 
 # --------------------------------------------------------------------------
-# The consuming act is where verification happens.
+# The Act with participating inputs is where verification happens.
 # --------------------------------------------------------------------------
 
 

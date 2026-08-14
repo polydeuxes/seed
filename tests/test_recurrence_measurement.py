@@ -7,7 +7,7 @@ count are already its findings. What changed here is the subject, not the Act.
 
 These tests pin the three corrections as carefully as the count: the whole
 declared identity governs grouping, every occurrence the result stood on
-travels with it, and the counting scope says exactly what was consumed.
+travels with it, and the counting scope says exactly what was input.
 """
 
 from __future__ import annotations
@@ -510,7 +510,7 @@ def test_recording_comparison_results_does_not_establish_reliance_or_revision(co
     assert "recording does not establish Applicability" in rendered
     assert "applicability" not in event.payload
     assert "admission" not in event.payload
-    assert "reliance" not in event.payload
+    assert "input support" not in event.payload
     assert "revision" not in event.payload
 
 
@@ -683,7 +683,7 @@ def test_exact_sets_keep_completeness_separate_from_support(compared):
         assertion.result: assertion
         for assertion in assertions_from_measured_count(finding)
     }
-    boundary = {"commitment": finding.consumed_ledger_boundary.commitment}
+    boundary = {"commitment": finding.input_ledger_boundary.commitment}
 
     for result in (
         "measured_in",
@@ -695,7 +695,7 @@ def test_exact_sets_keep_completeness_separate_from_support(compared):
         assert encoded["completeness_scope"]["workspace_id"] == "w"
         assert encoded["completeness_scope"]["session_ids"] == list(DECLARED)
         assert encoded["completeness_scope"]["requires_session_existence"] is True
-        assert finding.consumed_ledger_boundary.commitment not in (
+        assert finding.input_ledger_boundary.commitment not in (
             encoded["support_basis"]["event_ids"]
             + encoded["support_basis"]["local_assertion_ids"]
         )
@@ -817,7 +817,7 @@ def test_a_declaration_of_established_exchanges_is_accepted(compared):
 def test_declaring_one_exchange_yields_no_findings_and_that_is_not_a_pass(compared):
     """Recorded because it is what made the vacuous assertion look green.
 
-    A comparison consumes two exchanges. Declaring one leaves every comparison
+    A comparison has as input two exchanges. Declaring one leaves every comparison
     with an undeclared input, so nothing contributes. That is correct behaviour
     and an empty result, which no assertion over the result can witness.
     """
@@ -875,7 +875,7 @@ def test_the_consumed_measurements_travel_not_only_the_comparisons(compared):
     """`#2429` recorded only comparisons, while using measurements to establish
     two of the three result sets."""
     finding = _by_right(compared)["word"]
-    kinds = {compared.get(i).kind for i in finding.consumed_event_ids}
+    kinds = {compared.get(i).kind for i in finding.input_event_ids}
     assert kinds == {
         "operator.measurement.comparison_recorded",
         MEASUREMENT_RECORDED_KIND,
@@ -886,24 +886,24 @@ def test_every_exchange_s_measurement_is_among_the_support(compared):
     finding = _by_right(compared)["word"]
     supporting = {
         compared.get(i).session_id
-        for i in finding.consumed_event_ids
+        for i in finding.input_event_ids
         if compared.get(i).kind == MEASUREMENT_RECORDED_KIND
     }
     assert supporting == set(finding.bounded_exchanges)
 
 
-def test_the_consumed_ledger_boundary_is_preserved_as_read_provenance(compared):
+def test_the_input_ledger_boundary_is_preserved_as_read_provenance(compared):
     boundary = compared.capture_boundary()
     finding = _by_right(compared)["word"]
 
-    assert finding.consumed_ledger_boundary == boundary
-    assert finding.to_json_dict()["consumed_ledger_boundary"] == {
+    assert finding.input_ledger_boundary == boundary
+    assert finding.to_json_dict()["input_ledger_boundary"] == {
         "commitment": boundary.commitment,
     }
     recorded = record_measured_count(
         compared, workspace_id="w", session_id="s1", finding=finding
     )
-    assert "consumed_ledger_boundary" not in recorded.payload
+    assert "input_ledger_boundary" not in recorded.payload
     assertions = _assertions_by_result(recorded)
     for result in (
         "measured_in",
@@ -929,8 +929,8 @@ def test_the_old_aggregate_result_is_not_recorded_beside_the_assertions(compared
         "exchange_count",
         "recurrence_established",
         "bounded_exchanges",
-        "consumed_event_ids",
-        "consumed_ledger_boundary",
+        "input_event_ids",
+        "input_ledger_boundary",
         "workspace_id",
         "distinction",
     }
@@ -978,8 +978,8 @@ def test_only_relevant_evidence_places_an_exchange_in_the_second_result(compared
     finding = _by_right(compared)["word"]
 
     assert finding.measured_without_distinction == ("s4",)
-    assert exact_coordinate.id in finding.consumed_event_ids
-    assert unrelated.id not in finding.consumed_event_ids
+    assert exact_coordinate.id in finding.input_event_ids
+    assert unrelated.id not in finding.input_event_ids
 
 
 def test_a_count_of_one_is_a_finding_and_is_not_recurrence(compared):
@@ -1039,12 +1039,12 @@ def test_the_third_result_preserves_its_complete_read_not_an_id_inventory(compar
     finding = _by_right(compared, declared)["word"]
 
     assert "s5" in finding.coordinate_not_measured
-    assert unrelated.id not in finding.consumed_event_ids
+    assert unrelated.id not in finding.input_event_ids
     recovered = compared.iter_session_kind(
         "w",
         "s5",
         MEASUREMENT_RECORDED_KIND,
-        through=finding.consumed_ledger_boundary,
+        through=finding.input_ledger_boundary,
     )
     assert unrelated.id in {event.id for event in recovered}
 
@@ -1080,7 +1080,7 @@ def test_the_three_results_partition_the_bounded_exchanges(compared):
 
 
 def test_the_counting_scope_states_the_declaration(compared):
-    """`#2429` said "supplied to this Seed"; `#2430` said what it consumed.
+    """`#2429` said "supplied to this Seed"; `#2430` said what it input.
 
     Neither was the bounded scope `01.External:28` requires disclosed, because
     both described a set the act discovered rather than one it was given.
@@ -1282,7 +1282,7 @@ def test_every_probe_and_pass_reads_one_prefix_despite_a_concurrent_append(compa
     assert appended is True
     assert seen_boundaries
     assert set(seen_boundaries) == {boundary}
-    assert all(finding.consumed_ledger_boundary == boundary for finding in findings)
+    assert all(finding.input_ledger_boundary == boundary for finding in findings)
     assert "after-boundary" not in {
         finding.distinction.right_representation for finding in findings
     }
@@ -1353,20 +1353,20 @@ def test_a_durable_producing_occurrence_is_identifiable_and_verifies(tmp_path):
 
 
 # --------------------------------------------------------------------------
-# D consumes C without defeating C.
+# D has as input C without defeating C.
 # --------------------------------------------------------------------------
 
 
 def test_counting_recurrence_does_not_strengthen_any_comparison(compared):
     """The invariant. `recurs in 15` must never become `15 sources agree`.
 
-    Every comparison this count consumed still records `Unknown`, and the
+    Every comparison this count input still records `Unknown`, and the
     count's own record refuses corroboration in its own words.
     """
     finding = _by_right(compared)["word"]
-    consumed = [compared.get(i) for i in finding.consumed_event_ids]
+    input = [compared.get(i) for i in finding.input_event_ids]
     comparisons = [
-        e for e in consumed
+        e for e in input
         if e.kind == "operator.measurement.comparison_recorded"
     ]
     assert comparisons

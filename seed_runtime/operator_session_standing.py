@@ -76,7 +76,7 @@ def advance_operator_session_standing(
     With no `prior`, this projects from nothing and `events` must be the whole
     session. With a `prior`, `events` must be exactly the applicable
     occurrences recorded after `prior["as_of_event_id"]`, in append order; the
-    prefix it already consumed is not revisited.
+    prefix it already input is not revisited.
 
     The caller supplies those occurrences. Nothing here searches a ledger for
     them, because a responsible act that just recorded an occurrence already
@@ -87,7 +87,7 @@ def advance_operator_session_standing(
     refusals consult accumulated Standing rather than the ledger, which is why
     seeding preserves them (`#2376`).
 
-    **The advance consumes `prior`.** Its accumulators are taken over rather
+    **The advance has as input `prior`.** Its accumulators are taken over rather
     than copied, and the returned Standing shares them. A caller that needs the
     earlier Standing to stay as it was must project it again; there is no
     snapshot here.
@@ -97,7 +97,7 @@ def advance_operator_session_standing(
     time and reinstate the quadratic this replaced. The console holds one
     Standing, hands it forward, and keeps no earlier one.
 
-    Consumes only ``operator.ingress.*`` and ``operator.presentation.*``
+    Accepts as input only ``operator.ingress.*`` and ``operator.presentation.*``
     events stamped with this exact workspace and session, in append order.  The result is fully recomputable
     from the ledger and is not itself recorded: it exposes only standings,
     limits, and Unknowns the session's events already carry.  An empty
@@ -121,7 +121,7 @@ def advance_operator_session_standing(
     # A set would have to be rebuilt from the prior list and re-sorted on every
     # advance, which costs the accumulated size each time.  These coordinates
     # do not grow on the five live kinds today, but acquisition would make them
-    # grow, and the consuming-prior rule has to hold for every accumulator that
+    # grow, and the prior-transfer rule has to hold for every accumulator that
     # can.
     known_loss: list[str] = []
     unknowns: list[str] = []
@@ -131,7 +131,7 @@ def advance_operator_session_standing(
 
     if prior is not None:
         # Every accumulator the live event kinds read, taken over from the
-        # Standing that already consumed the earlier occurrences.  Not copied:
+        # Standing that already input the earlier occurrences.  Not copied:
         # see the ownership note above.
         attempts = prior["attempts"]
         preserved_ingress_occurrences = prior["preserved_ingress_occurrences"]

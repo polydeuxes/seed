@@ -1,4 +1,4 @@
-"""Transient execution-status events for operator-visible activity."""
+"""Transient activity-status events for operator-visible activity."""
 
 from __future__ import annotations
 
@@ -9,7 +9,7 @@ import sys
 
 
 @dataclass(frozen=True)
-class ExecutionStatus:
+class ActivityStatus:
     """Renderer-independent, non-authoritative activity visibility."""
 
     phase: str
@@ -19,32 +19,32 @@ class ExecutionStatus:
     completed: bool = False
 
 
-class ExecutionStatusSink(Protocol):
-    """Consumes transient execution status without owning execution state."""
+class ActivityStatusSink(Protocol):
+    """Receives transient activity status without owning activity state."""
 
-    def consume(self, status: ExecutionStatus) -> None:
-        """Observe an execution-status update."""
+    def receive(self, status: ActivityStatus) -> None:
+        """Observe an activity-status update."""
 
 
-class NullExecutionStatusSink:
-    """Default status sink that preserves execution behavior by doing nothing."""
+class NullActivityStatusSink:
+    """Default status sink that preserves activity behavior by doing nothing."""
 
-    def consume(self, status: ExecutionStatus) -> None:
+    def receive(self, status: ActivityStatus) -> None:
         return None
 
 
-class RecordingExecutionStatusSink:
+class RecordingActivityStatusSink:
     """In-memory sink for tests and non-persistent status inspection."""
 
     def __init__(self) -> None:
-        self.statuses: list[ExecutionStatus] = []
+        self.statuses: list[ActivityStatus] = []
 
-    def consume(self, status: ExecutionStatus) -> None:
+    def receive(self, status: ActivityStatus) -> None:
         self.statuses.append(status)
 
 
-class CliExecutionStatusSink:
-    """Render execution status as CLI operator feedback."""
+class CliActivityStatusSink:
+    """Render activity status as CLI operator feedback."""
 
     def __init__(
         self, stream: TextIO | None = None, *, progress_interval: int = 100
@@ -52,7 +52,7 @@ class CliExecutionStatusSink:
         self.stream = stream or sys.stderr
         self.progress_interval = max(1, progress_interval)
 
-    def consume(self, status: ExecutionStatus) -> None:
+    def receive(self, status: ActivityStatus) -> None:
         if status.current is not None and status.total is not None:
             if status.completed and status.message.endswith("."):
                 line = status.message
@@ -64,21 +64,21 @@ class CliExecutionStatusSink:
             line = status.message
         print(line, file=self.stream)
 
-    def _should_render_progress(self, status: ExecutionStatus) -> bool:
+    def _should_render_progress(self, status: ActivityStatus) -> bool:
         if status.current in (0, status.total):
             return True
         return status.current % self.progress_interval == 0
 
 
-class ExecutionStatusEmitter:
-    """Construct and emit status updates without consuming or rendering them.
+class ActivityStatusEmitter:
+    """Construct and emit status updates without receiving or rendering them.
 
-    Responsible occurrences use this boundary to publish renderer-independent status payloads.
+    Callers use this boundary to publish renderer-independent status payloads.
     Sinks remain responsible for recording, rendering, or ignoring those
-    payloads; the emitter does not own execution state or sink behavior.
+    payloads; the emitter does not own activity state or sink behavior.
     """
 
-    def __init__(self, sink: ExecutionStatusSink | None) -> None:
+    def __init__(self, sink: ActivityStatusSink | None) -> None:
         self.sink = sink
 
     def emit(
@@ -94,8 +94,8 @@ class ExecutionStatusEmitter:
 
         if self.sink is None:
             return
-        self.sink.consume(
-            ExecutionStatus(
+        self.sink.receive(
+            ActivityStatus(
                 phase=phase,
                 message=message,
                 current=current,
@@ -137,7 +137,7 @@ class ProgressCadence:
         self._last_emit_at = self.clock()
 
 
-class ObservationProducerLifecycle:
+class ObservationActivity:
     """Shared transient lifecycle vocabulary for observation occurrences.
 
     The lifecycle standardizes operator-visible work phases around existing
@@ -147,7 +147,7 @@ class ObservationProducerLifecycle:
     """
 
     def __init__(
-        self, sink: ExecutionStatusSink | None, source_name: str
+        self, sink: ActivityStatusSink | None, source_name: str
     ) -> None:
         self.sink = sink
         self.source_name = source_name
@@ -209,7 +209,7 @@ class ObservationProducerLifecycle:
 
 
 def emit_progress_if_due(
-    sink: ExecutionStatusSink | None,
+    sink: ActivityStatusSink | None,
     cadence: ProgressCadence,
     phase: str,
     message: str,
@@ -233,7 +233,7 @@ def emit_progress_if_due(
 
 
 def emit_status(
-    sink: ExecutionStatusSink | None,
+    sink: ActivityStatusSink | None,
     phase: str,
     message: str,
     *,
@@ -241,9 +241,9 @@ def emit_status(
     total: int | None = None,
     completed: bool = False,
 ) -> None:
-    """Emit one transient execution-status update if a sink is present."""
+    """Emit one transient activity-status update if a sink is present."""
 
-    ExecutionStatusEmitter(sink).emit(
+    ActivityStatusEmitter(sink).emit(
         phase,
         message,
         current=current,

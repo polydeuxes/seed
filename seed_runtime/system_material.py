@@ -88,7 +88,7 @@ class DeclaredInvocation:
     """What was invoked, who declares having performed it, and on whose behalf.
 
     `declared_performer` is not decoration. An operator running a command so Seed
-    can consume the result has not made Seed the invoker, and a record saying
+    can have as input the result has not made Seed the invoker, and a record saying
     otherwise would grant Seed Authority or mechanism Evidence it does not hold.
 
     It is *declared*, not established. Nothing here observed an act, so the

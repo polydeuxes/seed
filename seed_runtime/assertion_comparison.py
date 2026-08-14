@@ -68,7 +68,7 @@ class AssertionProductionComparison:
 
 @dataclass(frozen=True)
 class PositionalResultInput:
-    """One exact occurrence-bound positional result consumed by Compare."""
+    """One exact occurrence-bound positional result input by Compare."""
 
     assertion_id: str
     producing_event_id: str
@@ -124,8 +124,8 @@ POSITIONAL_RESULT_COMPARISON_UNKNOWNS = (
 POSITIONAL_RESULT_COMPARISON_FORBIDDEN_INFERENCES = (
     "literal sameness is not similarity, relation, or recurrence",
     "literal difference is not conflict",
-    "recording does not establish Applicability, admission, consumption, "
-    "reliance, or Standing movement",
+    "recording does not establish Applicability, admission, participation, "
+    "input support, or Standing movement",
 )
 
 
@@ -271,7 +271,7 @@ def compare_assertion_productions(
     refs = tuple(references)
     if len(refs) != 2:
         raise AssertionComparisonError(
-            f"Assertion production Compare consumes exactly two inputs; {len(refs)} supplied"
+            f"Assertion production Compare has as input exactly two inputs; {len(refs)} supplied"
         )
     required = {"producing_event_id", "assertion_id"}
     if any(set(reference) != required for reference in refs):
@@ -346,7 +346,7 @@ def compare_positional_result_assertions(
     refs = tuple(references)
     if len(refs) != 2:
         raise AssertionComparisonError(
-            f"positional result Compare consumes exactly two inputs; {len(refs)} supplied"
+            f"positional result Compare has as input exactly two inputs; {len(refs)} supplied"
         )
     required = {"producing_event_id", "assertion_id"}
     if any(set(reference) != required for reference in refs):
@@ -944,7 +944,7 @@ def record_assertion_production_comparison(
     session_id: str,
     comparison: AssertionProductionComparison,
 ) -> Event:
-    """Preserve each literal Compare result without establishing later reliance."""
+    """Preserve each literal Compare result without establishing later input support."""
 
     input_refs = tuple(
         {
@@ -1009,14 +1009,14 @@ def record_assertion_production_comparison(
                 "unknowns": [
                     "whether a literal difference is Applicable to either input "
                     "Assertion remains Unknown",
-                    "whether any exact Act will admit or consume this result remains "
+                    "whether any exact Act will admit or have as input this result remains "
                     "Unknown",
                 ],
                 "forbidden_inferences": [
                     "literal difference is not conflict",
                     "new availability does not revise either compared Assertion",
                     "recording does not establish Applicability, admission, "
-                    "consumption, or reliance",
+                    "participation, or input support",
                 ],
             }
         )

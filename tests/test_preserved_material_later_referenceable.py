@@ -14,9 +14,9 @@ What this module demonstrates is narrow and structural:
     a later session projection can reference them
     a later presentation formation carries those references
 
-That is the substrate later reliance would require. It is **not** reliance,
-consumption, admission, a finding, or new Standing, none of which are
-demonstrated here. `01.Kinds` keeps applicable, admitted, and consumed distinct,
+That is the substrate later input support would require. It is **not** input support,
+participation, admission, a finding, or new Standing, none of which are
+demonstrated here. `01.Kinds` keeps applicable, admitted, and input distinct,
 and carrying an event id as Evidence establishes none of them.
 
 Two further limits.  Only presentation formations were inspected; the other
@@ -77,10 +77,10 @@ def test_later_formations_retain_references_to_earlier_preserved_material(
 ):
     """Each formation's as-of boundary reaches further back than the last.
 
-    Reference, not consumption of each referenced event.  The formation
-    consumes the projection; what it carries forward is the exact occurrence
+    Reference, not participation of each referenced event.  The formation
+    has as input the projection; what it carries forward is the exact occurrence
     that projection was taken through.  `#2372` established that the boundary
-    fixes the consumed prefix exactly, so an enumeration of that prefix adds
+    fixes the input prefix exactly, so an enumeration of that prefix adds
     no distinction to it.
     """
     events = ledger.list()
@@ -141,7 +141,7 @@ def test_each_formation_is_appended_after_every_event_it_references(ledger):
 def test_no_act_condition_change_is_claimed_here(ledger):
     """Guard against this module being read as more than it is.
 
-    Only one kind of consuming act runs in this session.  If a second
+    Only one kind of Act with participating inputs runs in this session.  If a second
     measurement or finding act is added later, this assertion should fail and
     be replaced by a real Act-condition-change test.
     """

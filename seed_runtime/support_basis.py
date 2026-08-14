@@ -1,10 +1,10 @@
 """A support basis, and why it is not a support enumeration.
 
-`01.Standing.E` requires a consumed input's support basis to be preserved, and
-`01.Standing.E` bounds it: what a producing act consumed, with no enumeration
+`01.Standing.E` requires an input's support basis to be preserved, and
+`01.Standing.E` bounds it: what a producing act input, with no enumeration
 required and **no structure established**. Until now this runtime preserved it as
 a list — every finding carried the complete ordered identity of every occurrence
-it consumed.
+it input.
 
 **The four parts below are chosen, not recovered.** An earlier version of this
 paragraph read as though the clause supplied them. It does not; it names a
@@ -21,7 +21,7 @@ recorded finding is 57,886 bytes and **56,000 of them are that enumeration**:
 ```
 
 The same identities are copied into every finding of a body, because every
-finding consumed the same complete bounded population. And the cost is paid three
+finding input the same complete bounded population. And the cost is paid three
 times — writing the enumeration, decoding it on every later read, and then
 re-deriving the population from the ledger in order to check it against itself.
 
@@ -36,11 +36,11 @@ Representation of it.**
 ```
 
 **The selection rule is not metadata.** It is part of the basis's identity. Today
-every act consumes the complete population, so scope and boundary alone would
-reconstruct it — but an act that consumed three occurrences out of four thousand
-would be reconstructed as having consumed all four thousand, and the reference
+every act has as input the complete population, so scope and boundary alone would
+reconstruct it — but an act that input three occurrences out of four thousand
+would be reconstructed as having input all four thousand, and the reference
 would be silently false rather than merely lossy. The rule is what keeps a
-subset-consuming act representable, and an unrecognised rule is refused rather
+subset-Act with participating inputs representable, and an unrecognised rule is refused rather
 than assumed to mean the whole population.
 
 **The commitment is what makes recovery checkable without the enumeration.**

@@ -8,7 +8,7 @@ The exact coordinates by which current Standing may be compared with a bounded r
 
 Operator material or already-established Standing may identify an exact result condition within a workspace, Scope, and locality. The result condition is not a new constitutional subject by identity. It remains material or an Assertion carrying its own source, Evidence, Authority, Scope, locality, limits, conflicts, and Unknowns.
 
-A responsible Compare may consume current Standing and that exact result condition. Its result is a bounded distinction Assertion preserving the compared subjects, rule, Evidence, Authority, Scope, locality, occurrence, conflicts, limits, and Unknowns. Difference, incompatibility, absence, and Unknown remain distinct results.
+A responsible Compare may accept as input current Standing and that exact result condition. Its result is a bounded distinction Assertion preserving the compared subjects, rule, Evidence, Authority, Scope, locality, occurrence, conflicts, limits, and Unknowns. Difference, incompatibility, absence, and Unknown remain distinct results.
 
 The conditions under which an exact Act may occur remain decomposed as its Responsibility, Act, applicable mechanism and material, Authority, Constraints, locality, Evidence, and occurrence. Availability, reachability, or one supported condition does not establish the others or authorize the Act.
 

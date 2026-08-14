@@ -1,6 +1,5 @@
 from seed_runtime.event import Event
 from seed_runtime.events import EventLedger, SQLiteEventLedger
-from seed_runtime.execution_status import RecordingExecutionStatusSink
 
 
 def _events() -> list[Event]:
@@ -73,27 +72,3 @@ def test_sqlite_append_many_uses_one_transaction_for_many_events(tmp_path):
         assert len(reopened.list()) == 3
     finally:
         reopened.close()
-
-
-def test_append_many_progress_is_bounded_and_transient():
-    ledger = EventLedger()
-    events = [
-        Event(id=f"evt_write_{index}", kind="batch.progress", workspace_id="ws")
-        for index in range(1001)
-    ]
-    sink = RecordingExecutionStatusSink()
-
-    ledger.append_many(events, status_sink=sink)
-
-    progress = [
-        status
-        for status in sink.statuses
-        if status.phase == "event_persistence"
-        and status.current is not None
-        and status.total is not None
-    ]
-    assert [status.current for status in progress] == [0, 1, 501, 1001]
-    assert progress[-1].completed is True
-    assert [event.id for event in ledger.list_events("ws")] == [
-        event.id for event in events
-    ]

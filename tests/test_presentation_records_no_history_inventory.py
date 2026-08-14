@@ -88,12 +88,12 @@ def test_recorded_payload_size_does_not_grow_with_session_length():
 
 
 # --------------------------------------------------------------------------
-# The boundary that remains still fixes the consumed prefix.
+# The boundary that remains still fixes the input prefix.
 # --------------------------------------------------------------------------
 
 
 def test_the_first_formation_records_absence_of_a_prior_occurrence(session):
-    """Recorded absence, not absence of consumption."""
+    """Recorded absence, not absence of participation."""
     ledger, _ = session
     first = next(e for e in ledger.list("w") if e.kind == FORMED)
     assert "session_standing_as_of_event_id" in first.payload
@@ -136,8 +136,8 @@ def test_the_boundary_still_determines_the_consumed_prefix(session):
 
     for formation in (e for e in events if e.kind == FORMED):
         boundary = formation.payload["session_standing_as_of_event_id"]
-        consumed = prefix_through(boundary)
-        assert (consumed and consumed[-1] == boundary) or boundary is None
+        input = prefix_through(boundary)
+        assert (input and input[-1] == boundary) or boundary is None
 
 
 def test_every_boundary_precedes_the_formation_that_records_it(session):
@@ -171,4 +171,4 @@ def test_standing_still_records_the_boundary_it_consumed_through(session):
     standing = _standing(ledger)
     assert standing["as_of_event_id"] is not None
     assert standing["event_count"] > 0
-    assert "consumed_event_ids" not in standing
+    assert "input_event_ids" not in standing

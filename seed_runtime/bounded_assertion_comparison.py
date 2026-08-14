@@ -1,9 +1,9 @@
 """One bounded comparison of preserved findings, owned by its own occurrence.
 
-`01.Standing.E` permits a bounded comparison to consume multiple independently
+`01.Standing.E` permits a bounded comparison to have as input multiple independently
 preserved attributed Assertions or findings while preserving each input's coordinates as
 that input carries them. `compare_occurrence_implementation_form_recovery_001`
-records the owner: **the bounded comparison boundary that consumes them, local
+records the owner: **the bounded comparison boundary in which they participate, local
 to the instantiated comparison and not named universally.**
 
 So this is a call, not a service. Each invocation is one comparison occurrence
@@ -11,16 +11,16 @@ that owns itself. There is no comparator object, no registry, and no persistent
 boundary waiting to be filled — an owner that outlived its occurrence would be
 the universal owner the recovery says does not exist.
 
-**What it consumes is what Seed recorded.** The inputs are recorded measurement
+**What it has as input is what Seed recorded.** The inputs are recorded measurement
 findings. The pair findings used in the corpus experiments are computed in
-experiment code and never recorded; a comparison over those would consume an
+experiment code and never recorded; a comparison over those would have as input an
 artifact Seed does not hold.
 
 **What it produces is distinctions, and a relation only where one is
 established.** Two measurements over different bounded exchanges are not in
 disagreement because their results differ — each is exact within its own scope.
 `01.Standing.E:29` holds: agreement is not truth, and comparison establishes no
-warrant, reliance, or corroboration.
+warrant, input support, or corroboration.
 """
 
 from __future__ import annotations
@@ -63,7 +63,7 @@ BOUNDARY_NOTES: tuple[str, ...] = (
     "within its own scope",
     "a representation occurring in both findings establishes no relation between "
     "the bodies that carried it",
-    "this comparison establishes no truth, warrant, reliance, source independence, "
+    "this comparison establishes no truth, warrant, input support, source independence, "
     "or corroboration",
 )
 
@@ -184,7 +184,7 @@ def compare_preserved_findings(
         # more than two inputs jointly establish is not recovered, and a set
         # intersection over n findings is not that recovery.
         raise BoundedComparisonError(
-            "a bounded comparison consumes exactly two preserved findings; "
+            "a bounded comparison has as input exactly two preserved findings; "
             f"{len(ids)} supplied. Comparing more than two is unbuilt"
         )
     if len(set(ids)) != len(ids):
@@ -202,8 +202,8 @@ def compare_preserved_findings(
             raise BoundedComparisonError(
                 f"{event_id} is {event.kind}, not a recorded measurement finding"
             )
-        # This act claims to preserve what it consumes, so this act verifies
-        # what it consumes. A corrupted input cannot be preserved, only copied.
+        # This act claims to preserve what it has as input, so this act verifies
+        # what it has as input. A corrupted input cannot be preserved, only copied.
         # `unverifiable` is recorded on the input rather than refused: an
         # in-memory ledger and any occurrence written before the digest
         # existed are both lawfully unverifiable, and refusing them would
@@ -282,7 +282,7 @@ def record_comparison_finding(
     session_id: str,
     finding: ComparisonFinding,
 ) -> Event:
-    """Preserve one comparison occurrence so a later act may consume it."""
+    """Preserve one comparison occurrence so a later act may have it participate."""
 
     payload = {
         "dimensions": {
@@ -308,7 +308,7 @@ def record_comparison_finding(
             "whether the compared bodies stand in any relation remains Unknown",
         ],
         "boundary_notes": list(BOUNDARY_NOTES),
-        "consumed_event_ids": [i.event_id for i in finding.inputs],
+        "input_event_ids": [i.event_id for i in finding.inputs],
         **finding.to_json_dict(),
     }
     return ledger.append(
