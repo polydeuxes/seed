@@ -237,6 +237,46 @@ def _emission_road() -> dict:
     }
 
 
+def _repeated_emission_attempt_road() -> tuple[dict, dict]:
+    ledger = _IntegrityAdversaryLedger()
+    representation = record_operator_representation(
+        ledger,
+        workspace_id="w",
+        session_id="repeated-emission-attempt",
+        session_standing={"as_of_event_id": None},
+    )
+    emit_operator_representation(
+        ledger,
+        representation=representation,
+        output_stream=StringIO(),
+    )
+    first_attempt = ledger.get(representation["emission_attempt_event_id"])
+    first_evidence = ledger.get(
+        representation["emission_attempt_carriage_evidence_id"]
+    )
+    emit_operator_representation(
+        ledger,
+        representation=representation,
+        output_stream=StringIO(),
+    )
+    second_attempt = ledger.get(representation["emission_attempt_event_id"])
+    second_evidence = ledger.get(
+        representation["emission_attempt_carriage_evidence_id"]
+    )
+    return (
+        {
+            "ledger": ledger,
+            "attempt": first_attempt,
+            "attempt_carriage_evidence": first_evidence,
+        },
+        {
+            "ledger": ledger,
+            "attempt": second_attempt,
+            "attempt_carriage_evidence": second_evidence,
+        },
+    )
+
+
 def _representation_road() -> dict:
     ledger = _IntegrityAdversaryLedger()
     representation = record_operator_representation(
@@ -437,12 +477,19 @@ def _emission_carriage_witness(bundle: dict) -> str:
 
 
 def _emission_attempt_carriage_witness(bundle: dict) -> str:
+    requirements = _emission_attempt_carriage_requirements(bundle)
+    return EXACT if all(requirements.values()) else MISSING
+
+
+def _emission_attempt_carriage_requirements(bundle: dict) -> dict[str, bool]:
     attempt = bundle["attempt"]
     evidence = bundle["attempt_carriage_evidence"]
     if evidence is None:
-        return MISSING
-    if bundle["ledger"].integrity_of(evidence.id) == CORRUPTED:
-        return MISSING
+        return {
+            "exact_relation": False,
+            "occurrence_witness": False,
+            "intact_evidence": False,
+        }
     exact_relation = (
         attempt.payload.get("attempted_representation")
         == evidence.payload.get("carried_content")
@@ -452,11 +499,13 @@ def _emission_attempt_carriage_witness(bundle: dict) -> str:
         attempt.payload.get("representation_ref")
         == evidence.payload.get("representation_ref")
     )
-    return (
-        EXACT
-        if exact_relation and exact_occurrence and exact_subject
-        else MISSING
-    )
+    return {
+        "exact_relation": exact_relation and exact_subject,
+        "occurrence_witness": exact_occurrence,
+        "intact_evidence": (
+            bundle["ledger"].integrity_of(evidence.id) != CORRUPTED
+        ),
+    }
 
 
 def _emission_participation_witness(bundle: dict) -> str:
@@ -735,15 +784,21 @@ def _additional_live_structural_edge_fidelity_cases() -> dict[
     )
     unrelated_representation_yield["carrier"] = unrelated_representation_yield_carrier
 
-    attempt = _emission_road()
-    alternate_attempt = _emission_road()
+    attempt, alternate_attempt = _repeated_emission_attempt_road()
     missing_attempt = dict(attempt)
-    missing_attempt["attempt_carriage_evidence"] = None
+    changed_relation_payload = dict(attempt["attempt_carriage_evidence"].payload)
+    changed_relation_payload["carried_content"] = "different carried content"
+    missing_attempt["attempt_carriage_evidence"] = attempt["ledger"].append(
+        attempt["attempt_carriage_evidence"].kind,
+        "w",
+        changed_relation_payload,
+        session_id="repeated-emission-attempt",
+    )
     wrong_attempt = dict(attempt)
     wrong_attempt["attempt_carriage_evidence"] = alternate_attempt[
         "attempt_carriage_evidence"
     ]
-    corrupted_attempt = _emission_road()
+    corrupted_attempt, _ = _repeated_emission_attempt_road()
     corrupted_attempt["ledger"].mark_corrupted(
         corrupted_attempt["attempt_carriage_evidence"].id
     )
@@ -1095,6 +1150,60 @@ def test_every_registered_live_edge_instantiation_obeys_the_full_fidelity_matrix
     assert all(cases == expected for cases in registered.values())
     assert ("carriage", "representation_result") in registered
     assert ("carriage", "emission_attempt") in registered
+
+
+def test_emission_attempt_carriage_adversaries_change_one_requirement_each():
+    exact, alternate = _repeated_emission_attempt_road()
+    wrong_occurrence = dict(exact)
+    wrong_occurrence["attempt_carriage_evidence"] = alternate[
+        "attempt_carriage_evidence"
+    ]
+
+    missing_relation = dict(exact)
+    changed = dict(exact["attempt_carriage_evidence"].payload)
+    changed["carried_content"] = "different carried content"
+    missing_relation["attempt_carriage_evidence"] = exact["ledger"].append(
+        exact["attempt_carriage_evidence"].kind,
+        "w",
+        changed,
+        session_id="repeated-emission-attempt",
+    )
+
+    corrupted, _ = _repeated_emission_attempt_road()
+    corrupted["ledger"].mark_corrupted(
+        corrupted["attempt_carriage_evidence"].id
+    )
+
+    unrelated = dict(exact)
+    unrelated_attempt = exact["attempt"].model_copy(deep=True)
+    unrelated_attempt.payload["yield_evidence_id"] = "unrelated-yield"
+    unrelated["attempt"] = unrelated_attempt
+
+    assert _emission_attempt_carriage_requirements(exact) == {
+        "exact_relation": True,
+        "occurrence_witness": True,
+        "intact_evidence": True,
+    }
+    assert _emission_attempt_carriage_requirements(missing_relation) == {
+        "exact_relation": False,
+        "occurrence_witness": True,
+        "intact_evidence": True,
+    }
+    assert _emission_attempt_carriage_requirements(wrong_occurrence) == {
+        "exact_relation": True,
+        "occurrence_witness": False,
+        "intact_evidence": True,
+    }
+    assert _emission_attempt_carriage_requirements(corrupted) == {
+        "exact_relation": True,
+        "occurrence_witness": True,
+        "intact_evidence": False,
+    }
+    assert _emission_attempt_carriage_requirements(unrelated) == {
+        "exact_relation": True,
+        "occurrence_witness": True,
+        "intact_evidence": True,
+    }
 
 
 def test_attempt_and_success_have_distinct_carriages_for_the_same_text():
