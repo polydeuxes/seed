@@ -45,7 +45,7 @@ MEASUREMENT_UNKNOWNS = (
     "why the recurrence subject carries this exact coordinate value remains Unknown",
 )
 FORBIDDEN_INFERENCES = (
-    "an immediate coordinate value is not a nested projection, relation, "
+    "an immediate coordinate value is not a nested representation, relation, "
     "similarity, profile, represented relation, or Standing strength",
 )
 

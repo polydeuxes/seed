@@ -1,4 +1,4 @@
-"""Deterministic session-local Standing projection over preserved ingress events."""
+"""Deterministic session-local Standing read over preserved ingress events."""
 
 from __future__ import annotations
 
@@ -45,7 +45,7 @@ def _record_distinct(collected: list[str], value: str) -> None:
         collected.insert(index, value)
 
 
-def project_operator_session_standing(
+def read_operator_session_standing(
     ledger: EventLedger, *, workspace_id: str, session_id: str
 ) -> dict[str, Any]:
     """Project bounded session-local Standing by replaying the whole session.
@@ -73,7 +73,7 @@ def advance_operator_session_standing(
 ) -> dict[str, Any]:
     """Advance bounded session-local Standing over an exact sequence of events.
 
-    With no `prior`, this projects from nothing and `events` must be the whole
+    With no `prior`, this reads from nothing and `events` must be the whole
     session. With a `prior`, `events` must be exactly the applicable
     occurrences recorded after `prior["as_of_event_id"]`, in append order; the
     prefix it already input is not revisited.

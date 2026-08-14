@@ -139,6 +139,14 @@ result preserved by an exact occurrence. The exact kind must be named because
 each carries different identity, Evidence, Authority, Scope, and Standing.
 Artifact adds no container subject or constitutional coordinate.
 
+## Projection and View
+
+`Projection` and `View` are ordinary shorthand for a representation formed
+from preserved material under an exact rule and boundary. Seed grammar names
+the source material, formation Act and occurrence, rule, boundary, resulting
+representation, locality, and emission where one occurs. Neither shorthand
+adds a read model, cache, constitutional stage, or Standing by identity.
+
 ## Lineage
 
 `Lineage` is ordinary shorthand for an addressable representation of where

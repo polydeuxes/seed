@@ -69,7 +69,7 @@ def _stable_id(prefix: str, value: object) -> str:
     return f"{prefix}:{hashlib.sha256(encoded.encode()).hexdigest()}"
 
 
-def addressable_material_projection_id(material: ExactOperatorMaterial) -> str:
+def addressable_material_representation_id(material: ExactOperatorMaterial) -> str:
     """Return the canonical identity owned by the addressable-material boundary."""
     return _stable_id("operator-ingress-addressable-material", asdict(material))
 
@@ -82,7 +82,7 @@ def operator_material_full_span_id(*, ingress_event_ref: str, exact_text: str) -
 @dataclass(frozen=True)
 class OperatorIngressAddressableMaterial:
     representation_kind: str
-    material_projection_id: str
+    material_representation_id: str
     ingress_event_ref: str
     raw_material_event_ref: str
     representation_examination_event_ref: str
@@ -105,7 +105,7 @@ class OperatorIngressAddressableMaterial:
         if self.representation_kind != "operator_ingress_addressable_material":
             _refuse("wrong addressable material representation_kind")
         for name in (
-            "material_projection_id",
+            "material_representation_id",
             "ingress_event_ref",
             "raw_material_event_ref",
             "representation_examination_event_ref",
@@ -169,18 +169,18 @@ class OperatorIngressAddressableMaterial:
             material.exact_text,
         ):
             _refuse("source span must cover the complete exact material")
-        if self.material_projection_id != addressable_material_projection_id(material):
-            _refuse("material projection identity is forged or stale")
+        if self.material_representation_id != addressable_material_representation_id(material):
+            _refuse("material representation identity is forged or stale")
 
     def to_json_dict(self) -> dict[str, object]:
-        """Return the single JSON-safe projection representation."""
+        """Return the single JSON-safe representation."""
         return asdict(self)
 
     @classmethod
     def from_json_dict(
         cls, value: dict[str, object]
     ) -> OperatorIngressAddressableMaterial:
-        """Reconstruct the frozen material from its projection representation."""
+        """Reconstruct the frozen material from its representation."""
         if not isinstance(value, dict):
             _refuse("addressable material must be an object")
         material_value = value.get("exact_operator_material")
@@ -222,8 +222,8 @@ class OperatorIngressAddressableMaterial:
         )
         return cls(
             representation_kind=_exact_string(value.get("representation_kind"), "representation_kind"),
-            material_projection_id=_exact_string(
-                value.get("material_projection_id"), "material_projection_id"
+            material_representation_id=_exact_string(
+                value.get("material_representation_id"), "material_representation_id"
             ),
             ingress_event_ref=_exact_string(
                 value.get("ingress_event_ref"), "ingress_event_ref"
@@ -380,10 +380,10 @@ def form_operator_ingress_addressable_material(
         ),
         provenance=provenance,
     )
-    projection_id = addressable_material_projection_id(exact_material)
+    representation_id = addressable_material_representation_id(exact_material)
     return OperatorIngressAddressableMaterial(
         representation_kind="operator_ingress_addressable_material",
-        material_projection_id=projection_id,
+        material_representation_id=representation_id,
         ingress_event_ref=ingress_occurrence.id,
         raw_material_event_ref=raw.id,
         representation_examination_event_ref=examination.id,

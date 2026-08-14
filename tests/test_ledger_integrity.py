@@ -5,7 +5,7 @@ and its digest defeats all of this, and these tests say so rather than letting
 the arrangement be read as tamper-proof storage.
 
 `06.Standing:16` names append-only records permissively, beside projected
-material and context views. Nothing in active law requires append-only, so this
+material and context representations. Nothing in active law requires append-only, so this
 establishes a storage property Seed chose, not one the Book demanded.
 """
 

@@ -32,8 +32,6 @@ Repository Evidence supports distinct Selection forms. Representation selection 
 - read-only selection != no constitutional occurrence
 
 ## Representative repository anchors
-- `seed_runtime/constitutional_view_selection.py::SelectedConstitutionalViews`
-- `seed_runtime/constitutional_view_selection.py::select_constitutional_views`
 - `seed_runtime/examination_work_selection.py`
 
 ## Counterexamples or failure modes

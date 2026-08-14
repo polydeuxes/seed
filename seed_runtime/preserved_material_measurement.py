@@ -8,7 +8,7 @@ and `01.External:28` grants the finding and states its conditions:
     or adjacency within its measurement boundary. Those findings do not
     establish structural, grammatical, or semantic represented relation, or constitutional
     standing beyond the measurement assertion. A recurrence assertion must
-    disclose the representation or projection measured, the rule by which
+    disclose the representation or representation measured, the rule by which
     equivalence or sameness was determined, and the bounded scope within which
     occurrences were counted.
 

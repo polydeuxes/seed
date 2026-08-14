@@ -19,13 +19,13 @@ CLOSED_CHOICE_FIXTURE_SOURCES = (
         "role": "presentation-navigation",
         "rendered_label": "Show current Standing",
         "representation_result_boundary": (
-            "represent navigation to the current Standing View"
+            "represent navigation to the current Standing Standing representation"
         ),
         "represented_source": {
-            "identity": "source:operator-ingress-view-navigation",
-            "kind": "operator-ingress-view-navigation",
+            "identity": "source:operator-ingress-standing-navigation",
+            "kind": "operator-ingress-standing-navigation",
             "source_role": "developer-supplied",
-            "represented_result": "navigate to the current Standing View",
+            "represented_result": "navigate to the current Standing Standing representation",
             "reference": (
                 "seed_runtime.operator_ingress_view.format_operator_ingress_view"
             ),

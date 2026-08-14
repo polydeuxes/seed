@@ -13,7 +13,7 @@ from seed_runtime.operator_presentation import (
 )
 from seed_runtime.operator_session_standing import (
     advance_operator_session_standing,
-    project_operator_session_standing,
+    read_operator_session_standing,
 )
 
 
@@ -58,7 +58,7 @@ def run_persistent_operator_console(
     # Standing is carried through the session rather than re-projected before
     # each interaction. Each responsible act returns the occurrences it
     # recorded, so the console advances over exactly those occurrences.
-    session_standing = project_operator_session_standing(
+    session_standing = read_operator_session_standing(
         ledger, workspace_id=workspace_id, session_id=session_id
     )
     presentation = form_operator_presentation(

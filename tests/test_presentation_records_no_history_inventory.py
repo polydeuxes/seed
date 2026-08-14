@@ -24,7 +24,7 @@ from io import StringIO
 import pytest
 
 from seed_runtime.events import EventLedger
-from seed_runtime.operator_session_standing import project_operator_session_standing
+from seed_runtime.operator_session_standing import read_operator_session_standing
 from seed_runtime.operator_console import run_persistent_operator_console
 
 FORMED = "operator.presentation.formed"
@@ -50,7 +50,7 @@ def _console(material):
 
 
 def _standing(ledger):
-    return project_operator_session_standing(ledger, workspace_id="w", session_id="s")
+    return read_operator_session_standing(ledger, workspace_id="w", session_id="s")
 
 
 @pytest.fixture(scope="module")
@@ -166,7 +166,7 @@ def test_the_console_still_presents_every_interaction(session):
 
 
 def test_standing_still_records_the_boundary_it_consumed_through(session):
-    """Removed from the Presentation, and the boundary remains on the projection."""
+    """Removed from the Presentation, and the boundary remains on the read."""
     ledger, _ = session
     standing = _standing(ledger)
     assert standing["as_of_event_id"] is not None

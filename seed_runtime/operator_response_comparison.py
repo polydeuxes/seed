@@ -84,8 +84,8 @@ def run_operator_response_comparison_and_identification(
     scope = f"workspace:{workspace_id};session:{session_id}"
 
     # The recorded formation payload is the sole source of C's alternatives,
-    # coordinate bindings, and scope.  The supplied projection identifies
-    # which C to retrieve; it must not redefine C, so a projection that
+    # coordinate bindings, and scope.  The supplied representation identifies
+    # which C to retrieve; it must not redefine C, so a representation that
     # disagrees with the recorded payload is structurally refused.
     formed_event = ledger.get(formed_event_id)
     _require(formed_event is not None, "formation event not recorded in this ledger")
@@ -114,7 +114,7 @@ def run_operator_response_comparison_and_identification(
         supplied = presentation.get(key)
         _require(
             supplied is None or supplied == formed_event.payload[key],
-            f"supplied projection disagrees with recorded {key}",
+            f"supplied representation disagrees with recorded {key}",
         )
 
     emitted_event = ledger.get(emitted_event_id)

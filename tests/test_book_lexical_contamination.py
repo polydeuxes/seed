@@ -112,6 +112,8 @@ BANNED: tuple[tuple[str, str], ...] = (
     (r"\bclaims?\b|claim[-_]", "claim"),
     (r"\bfacts?\b|fact[-_]", "fact"),
     (r"\bartifacts?\b|artifact[-_]", "artifact"),
+    (r"\bprojections?\b|projection[-_]", "projection"),
+    (r"\bviews?\b|view[-_]", "view"),
 )
 
 # The discriminator, corrected.

@@ -25,7 +25,7 @@ import pytest
 from seed_runtime.events import EventLedger, SQLiteEventLedger
 from seed_runtime.operator_session_standing import (
     advance_operator_session_standing,
-    project_operator_session_standing,
+    read_operator_session_standing,
 )
 from seed_runtime.operator_console import run_persistent_operator_console
 
@@ -55,7 +55,7 @@ def _console(material, ledger=None):
 def _replay(events):
     ledger = EventLedger()
     ledger.extend(events)
-    return project_operator_session_standing(ledger, workspace_id="w", session_id="s")
+    return read_operator_session_standing(ledger, workspace_id="w", session_id="s")
 
 
 def _ingress_event(index, *, unknowns):
@@ -122,7 +122,7 @@ def test_replay_still_works_and_agrees_with_a_single_advance():
         ledger, _ = _console(material)
         events = ledger.list("w")
         assert _advance(events) == _replay(events)
-        assert project_operator_session_standing(
+        assert read_operator_session_standing(
             ledger, workspace_id="w", session_id="s"
         ) == _replay(events)
 
@@ -146,17 +146,17 @@ def test_a_persisted_ledger_advances_identically(tmp_path):
 
 
 def test_the_console_never_replays_the_session(monkeypatch):
-    """One projection from nothing recorded, for C0. No replay after that."""
+    """One read from nothing recorded, for C0. No replay after that."""
     calls = []
     from seed_runtime import operator_console
 
-    original = operator_console.project_operator_session_standing
+    original = operator_console.read_operator_session_standing
 
     def record(ledger, **kwargs):
         calls.append(len(ledger.list(kwargs["workspace_id"])))
         return original(ledger, **kwargs)
 
-    monkeypatch.setattr(operator_console, "project_operator_session_standing", record)
+    monkeypatch.setattr(operator_console, "read_operator_session_standing", record)
     _console("alpha\nbeta\ngamma\ndelta\nexit\n")
     assert calls == [0]
 
@@ -250,7 +250,7 @@ def test_the_console_keeps_no_earlier_standing():
     """The only holder hands its Standing forward and retains nothing."""
     ledger, output = _console("alpha\nbeta\ngamma\nexit\n")
     assert output.count("Bounded Presentation") == 4
-    assert project_operator_session_standing(
+    assert read_operator_session_standing(
         ledger, workspace_id="w", session_id="s"
     ) == _replay(ledger.list("w"))
 

@@ -19,7 +19,7 @@ from seed_runtime.event import Event, _decode_screened_event_payload
 # What a ledger can say about a stored occurrence's integrity.
 #
 # `06.Standing:16` names append-only records permissively, among projected
-# material and context views. Nothing in active law requires append-only, and
+# material and context representations. Nothing in active law requires append-only, and
 # nothing here asserts history cannot change: a `DROP TRIGGER` followed by a
 # rewrite of both row and digest defeats this. The established Assertion is narrower
 # — mutation is refused by default, and undetected corruption becomes
@@ -312,7 +312,7 @@ class EventLedger:
     ) -> list[Event]:
         """Return one session's events in append order.
 
-        A session projection reads a session. Reading the whole workspace and
+        A session representation reads a session. Reading the whole workspace and
         discarding the rest costs the whole workspace, which for a durable
         ledger grows without bound while the answer does not.
         """

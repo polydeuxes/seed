@@ -17,8 +17,8 @@ Navigation only. Entries do not grant constitutional identity or Standing.
 | source relations and normalization | Evidence and Provenance | [Source-relative Assertions and Standing](05-evidence-and-knowledge/testimony-and-assertion-standing.md) |
 | Evidence and provenance | Evidence and Provenance | [Evidence and provenance](05-evidence-and-knowledge/evidence-provenance-and-explanation.md) |
 | recording and preserved Assertions | Evidence and Provenance | [Recording and preserved Assertions](05-evidence-and-knowledge/recording-and-knowledge-extraction.md) |
-| Event and current Standing | Standing and Locality | [Events and Standing](06-standing-and-projection/events-and-standing.md) |
-| Responsibility residue | Standing and Locality | [Responsibility discrepancy and residue](06-standing-and-projection/ownership-discrepancy-and-residue.md) |
+| Event and current Standing | Standing and Locality | [Events and Standing](06-standing-and-locality/events-and-standing.md) |
+| Responsibility residue | Standing and Locality | [Responsibility discrepancy and residue](06-standing-and-locality/ownership-discrepancy-and-residue.md) |
 | Authority | Authority, Emission, and Stopping | [Authority Scope](08-authority-communication-and-stopping/authority-scope.md) |
 | representation and emission | Authority, Emission, and Stopping | [Representation, emission, and locality](08-authority-communication-and-stopping/representation-emission-and-locality.md) |
 | stopping | Authority, Emission, and Stopping | [Stopping and completion](08-authority-communication-and-stopping/stopping-and-completion.md) |

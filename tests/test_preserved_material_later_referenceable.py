@@ -5,13 +5,13 @@ standing for later lawful reconstruction (`05.Source.A`).  **This module does
 not establish a Remembering Responsibility, Act, Standing, occurrence, or
 kind.**  In active law that word is capitalised only at sentence starts and is
 lowercase mid-sentence -- "sensing is not remembering, remembering is not
-current projection" -- and the section heading is lowercase.  The capital is
+current read" -- and the section heading is lowercase.  The capital is
 orthographic.
 
 What this module demonstrates is narrow and structural:
 
     earlier events remain preserved and unchanged
-    a later session projection can reference them
+    a later session read can reference them
     a later presentation formation carries those references
 
 That is the substrate later input support would require. It is **not** input support,
@@ -22,8 +22,8 @@ and carrying an event id as Evidence establishes none of them.
 Two further limits.  Only presentation formations were inspected; the other
 operator event kinds are also later occurrences and are not shown to reference
 the whole past.  And `#2350` left open whether
-`project_operator_session_standing` is a lawful constitutional projection
-occurrence -- executing it proves the substrate exists, not that the projection
+`read_operator_session_standing` is a lawful constitutional read
+occurrence -- executing it proves the substrate exists, not that the read
 is lawful.
 
 This module also does not test that Seed's exact Act conditions change over time.  No
@@ -44,7 +44,7 @@ import pytest
 
 from seed_runtime.events import EventLedger
 from seed_runtime.operator_session_standing import (
-    project_operator_session_standing,
+    read_operator_session_standing,
 )
 from seed_runtime.operator_console import run_persistent_operator_console
 
@@ -78,8 +78,8 @@ def test_later_formations_retain_references_to_earlier_preserved_material(
     """Each formation's as-of boundary reaches further back than the last.
 
     Reference, not participation of each referenced event.  The formation
-    has as input the projection; what it carries forward is the exact occurrence
-    that projection was taken through.  `#2372` established that the boundary
+    has as input the read; what it carries forward is the exact occurrence
+    that read was taken through.  `#2372` established that the boundary
     fixes the input prefix exactly, so an enumeration of that prefix adds
     no distinction to it.
     """
@@ -90,7 +90,7 @@ def test_later_formations_retain_references_to_earlier_preserved_material(
     boundaries = [
         e.payload["session_standing_as_of_event_id"] for e in formations
     ]
-    # The first formation's projection was empty.  Recording that absence is
+    # The first formation's read was empty.  Recording that absence is
     # itself preserved source coordinates, not an absent occurrence.
     assert boundaries[0] is None
     # Every later boundary reaches strictly further into the session.
@@ -103,21 +103,21 @@ def test_later_formations_retain_references_to_earlier_preserved_material(
 def test_later_reference_does_not_alter_earlier_events(ledger):
     """Referencing preserved material leaves that material byte-identical."""
     before = _payload_snapshot(ledger.list())
-    project_operator_session_standing(ledger, workspace_id="w", session_id="s")
+    read_operator_session_standing(ledger, workspace_id="w", session_id="s")
     after = _payload_snapshot(
         e for e in ledger.list() if e.id in before
     )
     assert after == before
 
 
-def test_projection_appends_nothing(ledger):
-    """Projection reads; it does not record.
+def test_representation_appends_nothing(ledger):
+    """Read reads; it does not record.
 
     `06.Events:20` holds that event recording is not required for every
-    constitutional occurrence.  This projection reads without appending.
+    constitutional occurrence.  This read reads without appending.
     """
     count_before = len(ledger.list())
-    project_operator_session_standing(ledger, workspace_id="w", session_id="s")
+    read_operator_session_standing(ledger, workspace_id="w", session_id="s")
     assert len(ledger.list()) == count_before
 
 

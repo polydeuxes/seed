@@ -15,13 +15,13 @@ This Seed carries only Standing it can warrant through its Evidence, Authority, 
 ## Addressable boundaries for availability and reachability
 
 ### 01.Standing.A — Reachability without promotion
-A result, preserved record, rendering, index entry, or otherwise reachable material may become locally visible to a bounded exact Act, observer, diagnostic, projection, or later inquiry without becoming accepted, admitted, supported, projected as truth, written to the event ledger, or authorized for mutation. Reachability can create a lawful possibility for a later act, but acceptance, input support, admission, projection, recording, and implementation action remain separate family-local boundaries.
+A result, preserved record, rendering, index entry, or otherwise reachable material may become locally visible to a bounded exact Act, observer, diagnostic, rendering, or later inquiry without becoming accepted, admitted, supported, represented as truth, written to the event ledger, or authorized for mutation. Reachability can create a lawful possibility for a later act, but acceptance, input support, admission, representation, recording, and implementation action remain separate family-local boundaries.
 
 ### 01.Standing.B — Constitutional kind labels are not ontology closure
 A kind label, representation form, characterization category, dataclass name, concordance entry, inventory row, or recurring report type may preserve a bounded Standing distinction for the subject and exact Act it names. It does not close Seed's constitutional ontology, make similarly named material equivalent, establish mandatory grammar, or supply Authority for the exact Act without preserved Evidence, provenance, Scope, Unknowns, and the applicable occurrence boundary.
 
 ### 01.Standing.C — Constructed behavior does not confer standing
-Compiled behavior, direct instantiation, stable serialization, and compatibility Evidence may witness what an observer, projection, adapter, or other mechanism does within a bounded implementation seam. They do not establish the Standing suggested by a name, output vocabulary, or observed behavior. Such Standing still requires its own subject, responsible occurrence, Evidence, Scope, Authority, and limits.
+Compiled behavior, direct instantiation, stable serialization, and compatibility Evidence may witness what an observer, rendering boundary, adapter, or other mechanism does within a bounded implementation seam. They do not establish the Standing suggested by a name, output vocabulary, or observed behavior. Such Standing still requires its own subject, responsible occurrence, Evidence, Scope, Authority, and limits.
 
 ### 01.Standing.D — Multiplicity does not establish a collective
 Co-presence or multiplicity does not establish membership, collective Standing, relation, topology, ordering, Selection, priority, focus, a shared Act or result boundary, or higher-order identity. Each stronger Assertion requires its own bounded subject and established support relation.

@@ -19,7 +19,6 @@ Exact candidate-identity resolution is not Selection. A resolver may compare att
 - Selection standing != Authorization standing
 
 ## Representative repository anchors
-- `seed_runtime/constitutional_view_selection.py`
 
 ## Counterexamples or failure modes
 - Treating candidate identity as a Seed-owned Selection occurrence.

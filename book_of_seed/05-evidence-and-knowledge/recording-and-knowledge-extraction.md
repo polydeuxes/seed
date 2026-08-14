@@ -82,5 +82,5 @@ Recording may preserve measurement or observation Assertions and already establi
 
 ## Related chapters
 - [Source-relative Assertions and Standing](testimony-and-assertion-standing.md)
-- [Events and Standing](../06-standing-and-projection/events-and-standing.md)
+- [Events and Standing](../06-standing-and-locality/events-and-standing.md)
 - [Acts and occurrences](../02-acts-and-constraints/acts-and-occurrences.md)

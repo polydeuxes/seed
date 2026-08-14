@@ -25,7 +25,7 @@ from seed_runtime.events import EventLedger, SQLiteEventLedger
 from seed_runtime.operator_console import run_persistent_operator_console
 from seed_runtime import process_entry
 from seed_runtime.operator_session_standing import (
-    project_operator_session_standing,
+    read_operator_session_standing,
 )
 from seed_runtime.preserved_material_measurement import (
     preserved_ingress_occurrences,
@@ -139,10 +139,10 @@ def test_a_reopened_console_does_not_continue_the_prior_standing(two_lifetimes):
     because two invocations never shared history to continue.
     """
     first, second = _sessions(two_lifetimes)
-    prior = project_operator_session_standing(
+    prior = read_operator_session_standing(
         two_lifetimes, workspace_id="local", session_id=first
     )
-    later = project_operator_session_standing(
+    later = read_operator_session_standing(
         two_lifetimes, workspace_id="local", session_id=second
     )
 
@@ -154,14 +154,14 @@ def test_a_reopened_console_does_not_continue_the_prior_standing(two_lifetimes):
 def test_the_earlier_lifetime_remains_projectable(two_lifetimes):
     """Bounding the read must not lose what it stopped reading."""
     first = _sessions(two_lifetimes)[0]
-    standing = project_operator_session_standing(
+    standing = read_operator_session_standing(
         two_lifetimes, workspace_id="local", session_id=first
     )
     assert len(standing["presentations"]) == 3
 
 
 # --------------------------------------------------------------------------
-# A session projection reads a session.
+# A session read reads a session.
 # --------------------------------------------------------------------------
 
 
@@ -177,10 +177,10 @@ def test_a_session_read_returns_only_that_session(two_lifetimes):
 
 
 def test_a_fresh_session_reads_none_of_the_history(two_lifetimes):
-    """The console's startup projection, which is the growing read."""
+    """The console's startup read, which is the growing read."""
     assert two_lifetimes.list("local")
     assert two_lifetimes.list_session("local", "never-recorded") == []
-    standing = project_operator_session_standing(
+    standing = read_operator_session_standing(
         two_lifetimes, workspace_id="local", session_id="never-recorded"
     )
     assert standing["presentations"] == {}

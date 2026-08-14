@@ -6,7 +6,7 @@ from seed_runtime.operator_presentation import (
     form_operator_presentation,
     render_operator_presentation,
 )
-from seed_runtime.operator_session_standing import project_operator_session_standing
+from seed_runtime.operator_session_standing import read_operator_session_standing
 from tests.closed_choice_fixture import CLOSED_CHOICE_FIXTURE_SOURCES
 from seed_runtime.operator_console import run_persistent_operator_console
 
@@ -50,7 +50,7 @@ def _fixture_presentation(ledger, *, workspace="w", session="s"):
 
 
 def _standing(ledger, *, workspace="w", session="s"):
-    return project_operator_session_standing(
+    return read_operator_session_standing(
         ledger, workspace_id=workspace, session_id=session
     )
 
@@ -125,7 +125,7 @@ def test_no_compare_or_identification_follows_console_ingress():
     for ingress in ingresses:
         assert "produced_after_presentation_ref" not in ingress.payload
 
-    # Standing projection remains valid and records the occurrences.
+    # Standing read remains valid and records the occurrences.
     standing = _standing(ledger)
     assert len(standing["preserved_ingress_occurrences"]) == 3
     assert standing["comparisons"] == {}
@@ -341,7 +341,7 @@ def test_presentations_from_other_workspaces_or_sessions_cannot_enter():
     assert len(own["presentations"]) == 1
 
 
-def test_presentation_projection_is_deterministic_under_unrelated_events():
+def test_presentation_representation_is_deterministic_under_unrelated_events():
     ledger = EventLedger()
     _form_and_emit(ledger)
     before = _standing(ledger)

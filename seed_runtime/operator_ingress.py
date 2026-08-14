@@ -1,4 +1,4 @@
-"""One-attempt bounded operator-ingress representation handling and projection."""
+"""One-attempt bounded operator-ingress representation handling and attempt_standing."""
 
 from __future__ import annotations
 
@@ -51,12 +51,12 @@ def _record(ledger, kind, workspace, session, attempt, dimensions, **extra):
     )
 
 
-def project_operator_ingress_events(attempts, event, *, ledger=None) -> None:
-    """Dispatch one operator-ingress event into the dedicated current view.
+def update_operator_ingress_standing(attempts, event, *, ledger=None) -> None:
+    """Dispatch one operator-ingress event into the dedicated current standing.
 
-    ``attempts`` is the per-attempt projection mapping and is the whole of what
+    ``attempts`` is the per-attempt attempt_standing mapping and is the whole of what
     this read has as input. It reads no entity, normalized Assertion, alias, relationship, or
-    result condition, so nothing here requires a whole-workspace projection to exist.
+    result condition, so nothing here requires a whole-workspace attempt_standing to exist.
     """
     if not event.kind.startswith("operator.ingress."):
         return
@@ -72,7 +72,7 @@ def project_operator_ingress_events(attempts, event, *, ledger=None) -> None:
     if event.kind not in supported_kinds:
         raise ValueError(f"unsupported operator-ingress event: {event.kind}")
     attempt = event.payload["attempt_ref"]
-    view = attempts.setdefault(
+    standing = attempts.setdefault(
         attempt,
         {
             "event_ids": [],
@@ -91,10 +91,10 @@ def project_operator_ingress_events(attempts, event, *, ledger=None) -> None:
             "representation_examinations": {},
         },
     )
-    view["event_ids"].append(event.id)
+    standing["event_ids"].append(event.id)
     # Occurrences are evidence in their own right.  Keep each complete
     # eight-dimensional description rather than replacing it with the tail event.
-    view["dimensional_standing"][event.id] = {
+    standing["dimensional_standing"][event.id] = {
         "event_kind": event.kind,
         "subject_ref": event.payload["dimensions"]["identity"],
         "dimensions": event.payload["dimensions"],
@@ -103,7 +103,7 @@ def project_operator_ingress_events(attempts, event, *, ledger=None) -> None:
         ),
     }
     if event.kind == "operator.ingress.representation_examined":
-        view["representation_examinations"][event.payload["material_role"]] = {
+        standing["representation_examinations"][event.payload["material_role"]] = {
             "examination_event_id": event.id,
             "capture_event_id": event.payload["capture_event_id"],
             "stream_encoding_metadata": event.payload["stream_encoding_metadata"],
@@ -113,13 +113,13 @@ def project_operator_ingress_events(attempts, event, *, ledger=None) -> None:
             "decoder_succeeded": event.payload["decoder_succeeded"],
             "decoder_failure": event.payload["decoder_failure"],
         }
-        view["last_event_kind"] = event.kind
+        standing["last_event_kind"] = event.kind
         return
     subject = subject_by_kind[event.kind]
     dimensions = dict(event.payload["dimensions"])
     if subject == "preserved_ingress":
         dimensions["standing"] = "preserved"
-    view["current_standing"][subject] = {
+    standing["current_standing"][subject] = {
         "subject_ref": dimensions["identity"],
         "dimensions": dimensions,
         "evidence_event_id": event.id,
@@ -137,17 +137,17 @@ def project_operator_ingress_events(attempts, event, *, ledger=None) -> None:
         )
 
         if ledger is not None:
-            view["addressable_operator_material"] = (
+            standing["addressable_operator_material"] = (
                 form_operator_ingress_addressable_material(
                     ingress_occurrence=event, ledger=ledger
                 ).to_json_dict()
             )
-    view["last_event_kind"] = event.kind
+    standing["last_event_kind"] = event.kind
     for key in ("known_loss", "unknowns", "conflicts"):
-        view[key] = sorted(set((*view[key], *event.payload.get(key, ()))))
+        standing[key] = sorted(set((*standing[key], *event.payload.get(key, ()))))
     for key in ("closed", "response_kind"):
         if key in event.payload:
-            view[key] = event.payload[key]
+            standing[key] = event.payload[key]
 
 
 def _capture_representation(
@@ -226,7 +226,7 @@ def _capture_representation(
     return capture, examination, captured, examination_event
 
 
-def _project_attempt(*, events, ledger, attempt):
+def _attempt_standing(*, events, ledger, attempt):
     """Project one attempt from exactly the occurrences it recorded.
 
     The whole-workspace replay this replaces rebuilt every entity, normalized Assertion,
@@ -234,7 +234,7 @@ def _project_attempt(*, events, ledger, attempt):
     it did so once per attempt, so occurrence *j* was replayed by every later
     attempt. The work here is constant in the number of earlier attempts.
 
-    Refusals the returned projection depends on are unchanged: the addressable
+    Refusals the returned attempt_standing depends on are unchanged: the addressable
     material is still formed through `form_operator_ingress_addressable_material`,
     which consults the ledger for this attempt's exact provenance occurrences and refuses a
     foreign, incomplete, or unrecorded occurrence. What is no longer performed is
@@ -244,7 +244,7 @@ def _project_attempt(*, events, ledger, attempt):
 
     attempts: dict[str, dict] = {}
     for event in events:
-        project_operator_ingress_events(attempts, event, ledger=ledger)
+        update_operator_ingress_standing(attempts, event, ledger=ledger)
     return attempts[attempt]
 
 
@@ -260,7 +260,7 @@ def run_operator_ingress_attempt(
     """Capture, examine, and project one bounded non-EOF ingress attempt.
 
     ``session_standing`` is already-projected Standing from this session's
-    earlier recorded events.  It is carried on the returned projection for
+    earlier recorded events.  It is carried on the returned attempt_standing for
     the Presentation to expose; it is not recorded, interpreted, or used to
     alter this attempt's own occurrence handling.
 
@@ -354,7 +354,7 @@ def run_operator_ingress_attempt(
             response_kind=ingress_examination.outcome,
             provenance_occurrence_refs=[ingress_examination_event.id],
         )
-        projection = _project_attempt(
+        attempt_standing = _attempt_standing(
             events=(
                 ingress_capture,
                 ingress_examination_event,
@@ -370,8 +370,8 @@ def run_operator_ingress_attempt(
         )
         output_stream.flush()
         if session_standing is not None:
-            projection["session_standing"] = session_standing
-        return projection
+            attempt_standing["session_standing"] = session_standing
+        return attempt_standing
     raw_ingress = ingress_examination.represented_text
     ingress_kind = "empty" if raw_ingress in {"\n", "\r\n"} else "text"
     ingress_content = raw_ingress.removesuffix("\n").removesuffix("\r")
@@ -410,11 +410,11 @@ def run_operator_ingress_attempt(
             ingress_examination_event.id,
         ],
     )
-    projection = _project_attempt(
+    attempt_standing = _attempt_standing(
         events=(ingress_capture, ingress_examination_event, ingress_event),
         ledger=ledger,
         attempt=attempt,
     )
     if session_standing is not None:
-        projection["session_standing"] = session_standing
-    return projection
+        attempt_standing["session_standing"] = session_standing
+    return attempt_standing

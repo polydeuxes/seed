@@ -44,7 +44,7 @@ bounded Seed question
 operator response as further attributed material
 ```
 
-This ownership is constitutional even where the current realizable dialogue loop is incomplete. Missing realization does not transfer inquiry origination or question formation to the operator. Public `ask --question-family` behavior may remain a bounded compatibility or diagnostic dispatch surface, but operator invocation of that surface does not inject an internal question, own Seed's view composition, establish constitutional applicability, or canonize the implementation's family inventory.
+This ownership is constitutional even where the current realizable dialogue loop is incomplete. Missing realization does not transfer inquiry origination or question formation to the operator. Public `ask --question-family` behavior may remain a bounded compatibility or diagnostic dispatch surface, but operator invocation of that surface does not inject an internal question, own Seed's Presentation formation, establish constitutional applicability, or canonize the implementation's family inventory.
 
 Preserved Unknowns include the complete realizable default dialogue loop, the future compatibility treatment of public ask surfaces, and which internal question-forming responsibilities realize the constitutional act in every district. Those realization Unknowns do not weaken the ownership boundary.
 
@@ -55,7 +55,7 @@ Preserved Unknowns include the complete realizable default dialogue loop, the fu
 - implementation question family != constitutional question taxonomy
 - uncertainty statement != inquiry origination
 - answer request != authority to investigate without bounds
-- question != View
+- question != Presentation
 - Seed-owned act != currently complete realization
 
 ## Representative repository anchors

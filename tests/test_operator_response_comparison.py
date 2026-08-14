@@ -13,13 +13,13 @@ from seed_runtime.operator_presentation import (
 from seed_runtime.operator_response_comparison import (
     run_operator_response_comparison_and_identification,
 )
-from seed_runtime.operator_session_standing import project_operator_session_standing
+from seed_runtime.operator_session_standing import read_operator_session_standing
 from tests.closed_choice_fixture import CLOSED_CHOICE_FIXTURE_SOURCES
 from seed_runtime.operator_console import run_persistent_operator_console
 
 
 def _standing(ledger, *, workspace="w", session="s"):
-    return project_operator_session_standing(
+    return read_operator_session_standing(
         ledger, workspace_id=workspace, session_id=session
     )
 
@@ -38,14 +38,14 @@ def _emit_presentation(ledger, *, workspace="w", session="s"):
 
 
 def _capture_after(ledger, presentation, text, *, workspace="w", session="s"):
-    projection = run_operator_ingress_attempt(
+    attempt_standing = run_operator_ingress_attempt(
         ledger=ledger,
         workspace_id=workspace,
         session_id=session,
         captured_ingress=capture_stdin_material(StringIO(text)),
         output_stream=StringIO(),
     )
-    return projection["current_standing"]["preserved_ingress"]["evidence_event_id"]
+    return attempt_standing["current_standing"]["preserved_ingress"]["evidence_event_id"]
 
 
 def _compare(ledger, presentation, ingress_event_id, *, workspace="w", session="s"):
@@ -266,8 +266,8 @@ def test_recorded_broken_binding_does_not_identify_an_alternative():
     assert finding["identification"]["basis"] == "binding-absent"
 
 
-def test_mutated_projection_is_structurally_refused():
-    # The recorded formation payload is authoritative; a supplied projection
+def test_mutated_representation_is_structurally_refused():
+    # The recorded formation payload is authoritative; a supplied attempt_standing
     # that disagrees with it is refused rather than compared.
     ledger = EventLedger()
     presentation = _emit_presentation(ledger)

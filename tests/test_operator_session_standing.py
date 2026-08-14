@@ -5,7 +5,7 @@ from seed_runtime.events import EventLedger
 from seed_runtime.operator_ingress import run_operator_ingress_attempt
 from seed_runtime.operator_ingress_representation import capture_stdin_material
 from seed_runtime.operator_console import run_persistent_operator_console
-from seed_runtime.operator_session_standing import project_operator_session_standing
+from seed_runtime.operator_session_standing import read_operator_session_standing
 
 
 def _attempt(ledger, text, *, workspace="w", session="s", session_standing=None):
@@ -20,7 +20,7 @@ def _attempt(ledger, text, *, workspace="w", session="s", session_standing=None)
 
 
 def _standing(ledger, *, workspace="w", session="s"):
-    return project_operator_session_standing(
+    return read_operator_session_standing(
         ledger, workspace_id=workspace, session_id=session
     )
 
@@ -68,7 +68,7 @@ def test_next_attempt_consumes_standing_from_earlier_same_session_events():
     )
 
 
-def test_projection_is_deterministic_regardless_of_unrelated_ledger_events():
+def test_representation_is_deterministic_regardless_of_unrelated_ledger_events():
     ledger = EventLedger()
     _attempt(ledger, "session material\n")
     before = _standing(ledger)
@@ -105,7 +105,7 @@ def test_one_attempt_behavior_unchanged_without_earlier_session_history():
     assert "session_standing" not in baseline
 
     # The console passes Standing containing C0 to the first interaction,
-    # and its interaction output is a bounded Presentation, not the View.
+    # and its interaction output is a bounded Presentation, not the Representation.
     input_stream = StringIO("solo material\nexit\n")
     output_stream = StringIO()
     console_ledger = EventLedger()
@@ -154,7 +154,7 @@ def test_console_supplies_prior_session_standing_to_later_interactions():
     assert positions[first_presentation["emitted_event_id"]] < later_boundary
 
 
-def test_projection_does_not_mutate_ledger_or_synthesize_events():
+def test_representation_does_not_mutate_ledger_or_synthesize_events():
     ledger = EventLedger()
     _attempt(ledger, "material\n")
     events_before = deepcopy(ledger.list("w"))
