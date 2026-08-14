@@ -774,7 +774,7 @@ def _record_adjacent_pair_observation_result(
         ADJACENT_PAIR_OBSERVATION_ACT_EVIDENCE_KIND,
         workspace_id,
         {
-            "target_act_id": act_id,
+            "downstream_act_id": act_id,
             "act_occurrence_id": act_occurrence_id,
             "act": "exact adjacent-pair observation Measurement",
             "responsibility": ADJACENT_PAIR_OBSERVATION_RESPONSIBILITY,
@@ -834,7 +834,7 @@ def _record_adjacent_pair_observation_result(
                 "scope_locality": f"workspace:{workspace_id};session:{session_id}",
                 "occurrence_preservation": "one exact adjacent-pair observation Measurement occurrence recorded",
             },
-            "target_act_id": act_id,
+            "downstream_act_id": act_id,
             "act_occurrence_id": act_occurrence_id,
             "responsible_act_evidence_id": act_evidence.id,
             "participation": participation,
@@ -1058,12 +1058,12 @@ def get_recorded_adjacent_pair_observations(
             "the adjacent-pair observation result carries incomplete edge Evidence"
         )
     act_occurrence_id = carrier.payload.get("act_occurrence_id")
-    target_act_id = carrier.payload.get("target_act_id")
+    downstream_act_id = carrier.payload.get("downstream_act_id")
     commitment = yield_commitment(ADJACENT_PAIR_OBSERVATION_CONVENTION, result_payload)
     if (
         not isinstance(act_occurrence_id, str)
-        or not isinstance(target_act_id, str)
-        or act_evidence.payload.get("target_act_id") != target_act_id
+        or not isinstance(downstream_act_id, str)
+        or act_evidence.payload.get("downstream_act_id") != downstream_act_id
         or act_evidence.payload.get("act_occurrence_id") != act_occurrence_id
         or yield_evidence.payload.get("dimensions", {}).get("act_occurrence_id")
         != act_occurrence_id
@@ -1251,7 +1251,7 @@ def record_adjacent_pair_observation_compare(
         ADJACENT_PAIR_OBSERVATION_COMPARE_ACT_EVIDENCE_KIND,
         workspace_id,
         {
-            "target_act_id": act_id,
+            "downstream_act_id": act_id,
             "act_occurrence_id": act_occurrence_id,
             "act": "Compare exact adjacent-pair observation results",
             "responsibility": ADJACENT_PAIR_OBSERVATION_COMPARE_RESPONSIBILITY,
@@ -1294,7 +1294,7 @@ def record_adjacent_pair_observation_compare(
         workspace_id,
         {
             **result_payload,
-            "target_act_id": act_id,
+            "downstream_act_id": act_id,
             "act_occurrence_id": act_occurrence_id,
             "responsibility": ADJACENT_PAIR_OBSERVATION_COMPARE_RESPONSIBILITY,
             "responsible_boundary": "this Seed",

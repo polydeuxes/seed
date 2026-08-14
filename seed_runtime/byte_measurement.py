@@ -49,7 +49,7 @@ BYTE_RESULT_COORDINATES = frozenset(
     {
         "dimensions",
         "yielding_act",
-        "target_act_id",
+        "downstream_act_id",
         "act_occurrence_id",
         "responsibility",
         "responsible_boundary",
@@ -64,7 +64,7 @@ BYTE_MEASUREMENT_RESPONSIBLE_ACT_EVIDENCE_KIND = (
     "operator.measurement.byte_responsible_act_evidenced"
 )
 BYTE_PAIR_RESULT_COORDINATES = BYTE_RESULT_COORDINATES | {
-    "target_act_id",
+    "downstream_act_id",
     "act_occurrence_id",
     "responsibility",
     "responsible_boundary",
@@ -92,12 +92,12 @@ BYTE_PAIR_APPLICABILITY_RESULT_COORDINATES = frozenset(
         "responsibility_basis",
         "applicability_act_id",
         "applicability_act_occurrence_id",
-        "target_act_id",
+        "downstream_act_id",
         "input_assertion_ref",
         "input_movement_event_id",
         "input_role",
         "applicability",
-        "target_act_outcome",
+        "downstream_act_outcome",
     }
 )
 BYTE_PAIR_APPLICABILITY_ACT_EVIDENCE_KIND = (
@@ -211,7 +211,7 @@ class MeasuredBytePairInputs:
     source_assertion_ref: dict[str, str]
     source_movement_event_id: str | None
     input_applicability: dict[str, Any]
-    target_act_id: str
+    downstream_act_id: str
     act_occurrence_id: str
     counts: tuple[MeasuredBytePairCount, ...]
 
@@ -316,7 +316,7 @@ def _seed_native_measurement_assignment(
 def _pair_input_applicability(
     source: RecordedByteAssertion,
     *,
-    target_act_id: str,
+    downstream_act_id: str,
     applicability_act_id: str,
     applicability_act_occurrence_id: str,
     act_workspace_id: str,
@@ -330,8 +330,8 @@ def _pair_input_applicability(
         "input_assertion_ref": source.reference,
         "input_movement_event_id": source.locality_movement_event_id,
         "input_role": BYTE_PAIR_INPUT_ROLE,
-        "target_act_id": target_act_id,
-        "target_act": "declared adjacent-byte-pair Measurement",
+        "downstream_act_id": downstream_act_id,
+        "downstream_act": "declared adjacent-byte-pair Measurement",
         "responsibility": BYTE_PAIR_INPUT_APPLICABILITY_RESPONSIBILITY,
         "responsible_boundary": SEED_NATIVE_MEASUREMENT_RESPONSIBLE_BOUNDARY,
         "assigned_by_responsibility": BYTE_PAIR_MEASUREMENT_RESPONSIBILITY,
@@ -422,15 +422,15 @@ def _pair_input_applicability(
         "input_assertion_ref": source.reference,
         "input_movement_event_id": source.locality_movement_event_id,
         "input_role": BYTE_PAIR_INPUT_ROLE,
-        "target_act_id": target_act_id,
-        "target_act_occurrence_id": None,
+        "downstream_act_id": downstream_act_id,
+        "downstream_act_occurrence_id": None,
         "responsibility": BYTE_PAIR_INPUT_APPLICABILITY_RESPONSIBILITY,
         "responsible_boundary": SEED_NATIVE_MEASUREMENT_RESPONSIBLE_BOUNDARY,
         "assigned_by_responsibility": BYTE_PAIR_MEASUREMENT_RESPONSIBILITY,
         "responsibility_basis": BYTE_PAIR_RESPONSIBILITY_BASIS,
         "applicability_act_id": applicability_act_id,
         "applicability_act_occurrence_id": applicability_act_occurrence_id,
-        "target_act": "declared adjacent-byte-pair Measurement",
+        "downstream_act": "declared adjacent-byte-pair Measurement",
         "result_boundary": BYTE_PAIR_RESULT_BOUNDARY,
         "act_context": {
             "workspace_id": act_workspace_id,
@@ -638,32 +638,32 @@ def _prepare_pair_source(
     source = _move_byte_assertion_to_locality(
         ledger,
         source=source,
-        target_workspace_id=act_workspace_id,
-        target_locality=measurement_session_id,
+        destination_workspace_id=act_workspace_id,
+        destination_locality=measurement_session_id,
     )
     payload = source.payload
     scope = payload["assertion_scope"]
     content = payload["dimensions"]["content"]
-    target_act_id = new_id("adjacent_byte_pair_measurement_act")
-    return source, scope, content, target_act_id
+    downstream_act_id = new_id("adjacent_byte_pair_measurement_act")
+    return source, scope, content, downstream_act_id
 
 
 def _move_byte_assertion_to_locality(
     ledger: EventLedger,
     *,
     source: RecordedByteAssertion,
-    target_workspace_id: str,
-    target_locality: str,
+    destination_workspace_id: str,
+    destination_locality: str,
 ) -> RecordedByteAssertion:
     """Preserve one same-workspace Assertion movement without copying the Assertion."""
 
     source_event = ledger.get(source.recorded_occurrence_id)
-    if source_event is None or source_event.workspace_id != target_workspace_id:
+    if source_event is None or source_event.workspace_id != destination_workspace_id:
         raise ByteMeasurementError(
             "Assertion locality movement does not authorize a workspace crossing"
         )
     source_locality = source_event.session_id
-    if source_locality == target_locality:
+    if source_locality == destination_locality:
         return source
     if source_locality is None:
         raise ByteMeasurementError("Assertion locality movement requires source locality")
@@ -672,10 +672,10 @@ def _move_byte_assertion_to_locality(
     payload = source.payload
     assignment_evidence = {
         "responsible_boundary": SEED_NATIVE_MEASUREMENT_RESPONSIBLE_BOUNDARY,
-        "workspace_id": target_workspace_id,
+        "workspace_id": destination_workspace_id,
         "source_assertion_ref": source.reference,
         "source_locality": source_locality,
-        "destination_locality": target_locality,
+        "destination_locality": destination_locality,
         "determination": (
             "the exact preserved Assertion moved between localities of this "
             "same workspace"
@@ -683,7 +683,7 @@ def _move_byte_assertion_to_locality(
     }
     act_evidence = ledger.append(
         ASSERTION_LOCALITY_MOVEMENT_ACT_EVIDENCE_KIND,
-        target_workspace_id,
+        destination_workspace_id,
         {
             "responsibility": ASSERTION_LOCALITY_MOVEMENT_RESPONSIBILITY,
             "responsible_boundary": SEED_NATIVE_MEASUREMENT_RESPONSIBLE_BOUNDARY,
@@ -692,16 +692,16 @@ def _move_byte_assertion_to_locality(
             "movement_act_occurrence_id": movement_occurrence_id,
             "source_assertion_ref": source.reference,
             "source_locality": source_locality,
-            "destination_locality": target_locality,
+            "destination_locality": destination_locality,
             "authority": (
                 "evidences this exact same-workspace Assertion locality movement"
             ),
         },
-        session_id=target_locality,
+        session_id=destination_locality,
     )
     movement = ledger.append(
         ASSERTION_LOCALITY_MOVEMENT_KIND,
-        target_workspace_id,
+        destination_workspace_id,
         {
             "movement_act_id": movement_act_id,
             "movement_act_occurrence_id": movement_occurrence_id,
@@ -712,7 +712,7 @@ def _move_byte_assertion_to_locality(
             "source_assertion_ref": source.reference,
             "assertion_id": source.assertion_id,
             "source_locality": source_locality,
-            "target_locality": target_locality,
+            "destination_locality": destination_locality,
             "assertion_commitment": _movement_commitment(payload),
             "surviving_coordinates": [
                 "Evidence",
@@ -727,7 +727,7 @@ def _move_byte_assertion_to_locality(
                 "establishes no changed identity, Standing, or cross-workspace use"
             ),
         },
-        session_id=target_locality,
+        session_id=destination_locality,
     )
     return RecordedByteAssertion(
         assertion_id=source.assertion_id,
@@ -814,7 +814,7 @@ def _validate_moved_byte_assertion(
         "source_assertion_ref": source.reference,
         "assertion_id": source.assertion_id,
         "source_locality": source_event.session_id,
-        "target_locality": movement.session_id,
+        "destination_locality": movement.session_id,
         "assertion_commitment": _movement_commitment(source.payload),
         "surviving_coordinates": [
             "Evidence",
@@ -851,7 +851,7 @@ def _measure_adjacent_byte_pair_counts_through(
     source_assertion_ref: dict[str, str],
     source_movement_event_id: str | None,
     input_applicability: dict[str, Any],
-    target_act_id: str,
+    downstream_act_id: str,
     act_occurrence_id: str,
 ) -> MeasuredBytePairInputs:
     missing = [
@@ -930,7 +930,7 @@ def _measure_adjacent_byte_pair_counts_through(
         source_assertion_ref=source_assertion_ref,
         source_movement_event_id=source_movement_event_id,
         input_applicability=input_applicability,
-        target_act_id=target_act_id,
+        downstream_act_id=downstream_act_id,
         act_occurrence_id=act_occurrence_id,
         counts=counts,
     )
@@ -1067,7 +1067,7 @@ def record_byte_count_layer(
         raise ByteMeasurementError(
             "byte Measurement recording requires an exact session"
         )
-    target_act_id = new_id("byte_measurement_act")
+    downstream_act_id = new_id("byte_measurement_act")
     act_occurrence_id = new_id("byte_measurement_occurrence")
     measured = measure_byte_counts(
         ledger, workspace_id=workspace_id, source_session_ids=source_session_ids
@@ -1084,7 +1084,7 @@ def record_byte_count_layer(
                 "authority": MEASUREMENT_AUTHORITY,
         },
         "yielding_act": "declared Measurement",
-        "target_act_id": target_act_id,
+        "downstream_act_id": downstream_act_id,
         "act_occurrence_id": act_occurrence_id,
         "responsibility": BYTE_MEASUREMENT_RESPONSIBILITY,
         "responsible_boundary": SEED_NATIVE_MEASUREMENT_RESPONSIBLE_BOUNDARY,
@@ -1102,7 +1102,7 @@ def record_byte_count_layer(
         BYTE_MEASUREMENT_RESPONSIBLE_ACT_EVIDENCE_KIND,
         workspace_id,
         {
-            "target_act_id": target_act_id,
+            "downstream_act_id": downstream_act_id,
             "act_occurrence_id": act_occurrence_id,
             "act": "declared exact-byte Measurement",
             "responsibility": BYTE_MEASUREMENT_RESPONSIBILITY,
@@ -1175,11 +1175,11 @@ def assertions_of_recorded_byte_measurement(
         or payload.get("responsibility") != BYTE_MEASUREMENT_RESPONSIBILITY
         or payload.get("responsible_boundary")
         != SEED_NATIVE_MEASUREMENT_RESPONSIBLE_BOUNDARY
-        or not isinstance(payload.get("target_act_id"), str)
-        or not payload["target_act_id"]
+        or not isinstance(payload.get("downstream_act_id"), str)
+        or not payload["downstream_act_id"]
         or not isinstance(payload.get("act_occurrence_id"), str)
         or not payload["act_occurrence_id"]
-        or payload["target_act_id"] == payload["act_occurrence_id"]
+        or payload["downstream_act_id"] == payload["act_occurrence_id"]
         or payload.get("dimensions")
         != {
             "identity": "byte-count-measurement-occurrence",
@@ -1231,7 +1231,7 @@ def assertions_of_recorded_byte_measurement(
     act_evidence_id = payload.get("responsible_act_evidence_id")
     act_evidence = ledger.get(act_evidence_id) if isinstance(act_evidence_id, str) else None
     expected_act_evidence = {
-        "target_act_id": payload["target_act_id"],
+        "downstream_act_id": payload["downstream_act_id"],
         "act_occurrence_id": payload["act_occurrence_id"],
         "act": "declared exact-byte Measurement",
         "responsibility": BYTE_MEASUREMENT_RESPONSIBILITY,
@@ -1401,7 +1401,7 @@ def _record_pair_responsible_act_evidence(
         BYTE_PAIR_RESPONSIBLE_ACT_EVIDENCE_KIND,
         measured.workspace_id,
         {
-            "target_act_id": measured.target_act_id,
+            "downstream_act_id": measured.downstream_act_id,
             "act_occurrence_id": measured.act_occurrence_id,
             "act": "declared adjacent-byte-pair Measurement",
             "responsibility": BYTE_PAIR_MEASUREMENT_RESPONSIBILITY,
@@ -1437,13 +1437,13 @@ def _record_pair_input_applicability(
     workspace_id: str,
     recording_session_id: str,
 ):
-    """Preserve Applicability whether or not the target Measurement occurs."""
+    """Preserve Applicability whether or not the downstream Measurement occurs."""
 
     standing = applicability_assertion["dimensions"]["standing"]
     result_payload = {
         "dimensions": {
             "identity": applicability_assertion["dimensions"]["identity"],
-            "content": "exact source-Assertion to target-Act Applicability",
+            "content": "exact source-Assertion to downstream-Act Applicability",
             "standing": standing,
             "source_provenance": applicability_assertion["dimensions"]["source_provenance"],
             "authority": BYTE_PAIR_APPLICABILITY_AUTHORITY,
@@ -1457,12 +1457,12 @@ def _record_pair_input_applicability(
         "applicability_act_occurrence_id": applicability_assertion[
             "applicability_act_occurrence_id"
         ],
-        "target_act_id": applicability_assertion["target_act_id"],
+        "downstream_act_id": applicability_assertion["downstream_act_id"],
         "input_assertion_ref": source.reference,
         "input_movement_event_id": source.locality_movement_event_id,
         "input_role": BYTE_PAIR_INPUT_ROLE,
         "applicability": applicability_assertion,
-        "target_act_outcome": "not established by this Applicability Assertion",
+        "downstream_act_outcome": "not established by this Applicability Assertion",
     }
     applicability_act_evidence = ledger.append(
         BYTE_PAIR_APPLICABILITY_ACT_EVIDENCE_KIND,
@@ -1479,7 +1479,7 @@ def _record_pair_input_applicability(
             "input_assertion_ref": source.reference,
             "input_movement_event_id": source.locality_movement_event_id,
             "input_role": BYTE_PAIR_INPUT_ROLE,
-            "target_act_id": applicability_assertion["target_act_id"],
+            "downstream_act_id": applicability_assertion["downstream_act_id"],
             "result_commitment": yield_commitment(
                 BYTE_PAIR_APPLICABILITY_CONVENTION, result_payload
             ),
@@ -1575,7 +1575,7 @@ def get_recorded_pair_input_applicability(
         "input_assertion_ref": payload["input_assertion_ref"],
         "input_movement_event_id": payload["input_movement_event_id"],
         "input_role": payload["input_role"],
-        "target_act_id": payload["target_act_id"],
+        "downstream_act_id": payload["downstream_act_id"],
         "result_commitment": yield_commitment(
             BYTE_PAIR_APPLICABILITY_CONVENTION, yielded
         ),
@@ -1619,7 +1619,7 @@ def get_recorded_pair_input_applicability(
         standing not in {"applicable", "inapplicable", "conflicting", "Unknown"}
         or dimensions.get("identity") != expected_identity
         or applicability_assertion.get("result") != "input_applicability"
-        or applicability_assertion.get("target_act_occurrence_id") is not None
+        or applicability_assertion.get("downstream_act_occurrence_id") is not None
         or applicability_assertion.get("responsibility")
         != BYTE_PAIR_INPUT_APPLICABILITY_RESPONSIBILITY
         or applicability_assertion.get("responsible_boundary")
@@ -1632,10 +1632,10 @@ def get_recorded_pair_input_applicability(
         != payload.get("applicability_act_occurrence_id")
         or payload.get("applicability_act_id")
         == payload.get("applicability_act_occurrence_id")
-        or applicability_assertion.get("target_act") != "declared adjacent-byte-pair Measurement"
+        or applicability_assertion.get("downstream_act") != "declared adjacent-byte-pair Measurement"
         or applicability_assertion.get("result_boundary") != BYTE_PAIR_RESULT_BOUNDARY
         or payload.get("dimensions", {}).get("standing") != standing
-        or payload.get("target_act_id") != applicability_assertion.get("target_act_id")
+        or payload.get("downstream_act_id") != applicability_assertion.get("downstream_act_id")
         or payload.get("input_assertion_ref") != applicability_assertion.get("input_assertion_ref")
         or payload.get("input_role") != BYTE_PAIR_INPUT_ROLE
         or applicability_assertion.get("input_role") != BYTE_PAIR_INPUT_ROLE
@@ -1646,7 +1646,7 @@ def get_recorded_pair_input_applicability(
         or payload.get("assigned_by_responsibility")
         != BYTE_PAIR_MEASUREMENT_RESPONSIBILITY
         or payload.get("responsibility_basis") != BYTE_PAIR_RESPONSIBILITY_BASIS
-        or payload.get("target_act_outcome")
+        or payload.get("downstream_act_outcome")
         != "not established by this Applicability Assertion"
     ):
         raise ByteMeasurementError(f"{event_id} carries incoherent Applicability")
@@ -1666,7 +1666,7 @@ def record_adjacent_byte_pair_count_layer(
         raise ByteMeasurementError(
             "adjacent-byte-pair Measurement recording requires an exact session"
         )
-    source, scope, content, target_act_id = _prepare_pair_source(
+    source, scope, content, downstream_act_id = _prepare_pair_source(
         ledger,
         source_measurement_event_id=source_measurement_event_id,
         act_workspace_id=workspace_id,
@@ -1678,7 +1678,7 @@ def record_adjacent_byte_pair_count_layer(
     )
     applicability = _pair_input_applicability(
         source,
-        target_act_id=target_act_id,
+        downstream_act_id=downstream_act_id,
         applicability_act_id=applicability_act_id,
         applicability_act_occurrence_id=applicability_act_occurrence_id,
         act_workspace_id=workspace_id,
@@ -1702,7 +1702,7 @@ def record_adjacent_byte_pair_count_layer(
         source_assertion_ref=source.reference,
         source_movement_event_id=source.locality_movement_event_id,
         input_applicability=applicability,
-        target_act_id=target_act_id,
+        downstream_act_id=downstream_act_id,
         act_occurrence_id=act_occurrence_id,
     )
     result_payload = {
@@ -1716,7 +1716,7 @@ def record_adjacent_byte_pair_count_layer(
             "authority": PAIR_MEASUREMENT_AUTHORITY,
         },
         "yielding_act": "declared Measurement",
-        "target_act_id": measured.target_act_id,
+        "downstream_act_id": measured.downstream_act_id,
         "act_occurrence_id": measured.act_occurrence_id,
         "responsibility": BYTE_PAIR_MEASUREMENT_RESPONSIBILITY,
         "responsible_boundary": SEED_NATIVE_MEASUREMENT_RESPONSIBLE_BOUNDARY,
@@ -1773,7 +1773,7 @@ def _validate_recorded_pair_input_applicability(
     *,
     source: RecordedByteAssertion,
     event,
-    target_act_id: str,
+    downstream_act_id: str,
 ) -> None:
     """Validate historical Applicability without determining it again."""
 
@@ -1783,8 +1783,8 @@ def _validate_recorded_pair_input_applicability(
         "input_assertion_ref": source.reference,
         "input_movement_event_id": source.locality_movement_event_id,
         "input_role": BYTE_PAIR_INPUT_ROLE,
-        "target_act_id": target_act_id,
-        "target_act": "declared adjacent-byte-pair Measurement",
+        "downstream_act_id": downstream_act_id,
+        "downstream_act": "declared adjacent-byte-pair Measurement",
         "responsibility": BYTE_PAIR_INPUT_APPLICABILITY_RESPONSIBILITY,
         "responsible_boundary": SEED_NATIVE_MEASUREMENT_RESPONSIBLE_BOUNDARY,
         "assigned_by_responsibility": BYTE_PAIR_MEASUREMENT_RESPONSIBILITY,
@@ -1820,8 +1820,8 @@ def _validate_recorded_pair_input_applicability(
         "input_assertion_ref": source.reference,
         "input_movement_event_id": source.locality_movement_event_id,
         "input_role": BYTE_PAIR_INPUT_ROLE,
-        "target_act_id": target_act_id,
-        "target_act_occurrence_id": None,
+        "downstream_act_id": downstream_act_id,
+        "downstream_act_occurrence_id": None,
         "responsibility": BYTE_PAIR_INPUT_APPLICABILITY_RESPONSIBILITY,
         "responsible_boundary": SEED_NATIVE_MEASUREMENT_RESPONSIBLE_BOUNDARY,
         "assigned_by_responsibility": BYTE_PAIR_MEASUREMENT_RESPONSIBILITY,
@@ -1830,7 +1830,7 @@ def _validate_recorded_pair_input_applicability(
         "applicability_act_occurrence_id": applicability_assertion.get(
             "applicability_act_occurrence_id"
         ),
-        "target_act": "declared adjacent-byte-pair Measurement",
+        "downstream_act": "declared adjacent-byte-pair Measurement",
         "result_boundary": BYTE_PAIR_RESULT_BOUNDARY,
         "act_context": act_context,
         "scope_locality": scope,
@@ -1909,11 +1909,11 @@ def assertions_of_recorded_adjacent_byte_pair_measurement(
         payload.get("occurrence_preservation") != BYTE_PAIR_OCCURRENCE_PRESERVATION
         or payload.get("yielding_act") != "declared Measurement"
         or payload.get("responsibility") != BYTE_PAIR_MEASUREMENT_RESPONSIBILITY
-        or not isinstance(payload.get("target_act_id"), str)
-        or not payload["target_act_id"]
+        or not isinstance(payload.get("downstream_act_id"), str)
+        or not payload["downstream_act_id"]
         or not isinstance(payload.get("act_occurrence_id"), str)
         or not payload["act_occurrence_id"]
-        or payload["target_act_id"] == payload["act_occurrence_id"]
+        or payload["downstream_act_id"] == payload["act_occurrence_id"]
         or payload.get("dimensions") != expected_dimensions
         or payload.get("measurement_rule") != BYTE_PAIR_MEASUREMENT_RULE
     ):
@@ -1966,7 +1966,7 @@ def assertions_of_recorded_adjacent_byte_pair_measurement(
     if not isinstance(applicability_identity, str) or not applicability_identity:
         raise ByteMeasurementError(f"{event_id} carries no exact input Applicability")
     expected_act_evidence = {
-        "target_act_id": payload["target_act_id"],
+        "downstream_act_id": payload["downstream_act_id"],
         "act_occurrence_id": payload["act_occurrence_id"],
         "act": "declared adjacent-byte-pair Measurement",
         "responsibility": BYTE_PAIR_MEASUREMENT_RESPONSIBILITY,
@@ -2072,7 +2072,7 @@ def assertions_of_recorded_adjacent_byte_pair_measurement(
         payload.get("input_applicability"),
         source=source,
         event=event,
-        target_act_id=payload["target_act_id"],
+        downstream_act_id=payload["downstream_act_id"],
     )
     applicability_event_id = payload.get("input_applicability_event_id")
     recorded_applicability = (

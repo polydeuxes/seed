@@ -580,9 +580,9 @@ def _applicability_witness(bundle: dict) -> dict[str, str]:
     )
     act_edge = (
         act_evidence is not None
-        and carrier.payload.get("target_act_id")
-        == applicability.get("target_act_id")
-        == act_evidence.payload.get("target_act_id")
+        and carrier.payload.get("downstream_act_id")
+        == applicability.get("downstream_act_id")
+        == act_evidence.payload.get("downstream_act_id")
     )
     occurrence_edge = (
         act_evidence is not None
@@ -599,7 +599,7 @@ def _applicability_witness(bundle: dict) -> dict[str, str]:
     return {
         "input_identity": EXACT if input_edge else MISSING,
         "exact_Act": EXACT if act_edge else MISSING,
-        "subject": EXACT if content.get("target_act") else MISSING,
+        "subject": EXACT if content.get("downstream_act") else MISSING,
         "result_boundary": EXACT if applicability.get("result_boundary") else MISSING,
         "Scope": EXACT if applicability.get("scope_locality") else MISSING,
         "locality": EXACT if applicability.get("act_context") else MISSING,
@@ -1467,8 +1467,8 @@ def _act_occurrence_witness(bundle: dict) -> dict[str, str]:
     act_evidence = bundle["act_evidence"]
     joined = (
         act_evidence is not None
-        and carrier.payload["target_act_id"]
-        == act_evidence.payload["target_act_id"]
+        and carrier.payload["downstream_act_id"]
+        == act_evidence.payload["downstream_act_id"]
         and carrier.payload["act_occurrence_id"]
         == act_evidence.payload["act_occurrence_id"]
         and carrier.payload["responsibility"]
@@ -1531,7 +1531,7 @@ def _movement_witness(bundle: dict) -> dict[str, str]:
             EXACT if movement.payload["source_locality"] == source_event.session_id else MISSING
         ),
         "destination_locality": (
-            EXACT if movement.payload["target_locality"] == movement.session_id else MISSING
+            EXACT if movement.payload["destination_locality"] == movement.session_id else MISSING
         ),
         "movement_Act": (
             EXACT if movement_act_edge else MISSING
@@ -1607,7 +1607,7 @@ def _participation_requirements(bundle: dict, *, role: str) -> dict[str, bool]:
     )
     applicable_to_act = (
         applicability["dimensions"]["standing"] == "applicable"
-        and applicability["target_act_id"] == pair.payload["target_act_id"]
+        and applicability["downstream_act_id"] == pair.payload["downstream_act_id"]
         and applicability["dimensions"]["identity"]
         == act_evidence.payload["input_applicability_identity"]
     )
@@ -2353,7 +2353,7 @@ def test_input_is_an_open_act_local_role_before_participation():
         ],
     }
     assert applicability["input_role"] == BYTE_PAIR_INPUT_ROLE
-    assert applicability["target_act_occurrence_id"] is None
+    assert applicability["downstream_act_occurrence_id"] is None
 
 
 def test_participation_requires_exact_subject_role_and_act_occurrence():
@@ -2383,7 +2383,7 @@ def test_unjoined_endpoints_do_not_witness_an_input_to_act_relation():
     witness = _applicability_witness(bundle)
 
     assert bundle["applicability"]["input_assertion_ref"]
-    assert bundle["applicability"]["target_act_id"]
+    assert bundle["applicability"]["downstream_act_id"]
     assert bundle["applicability"]["applicability_act_occurrence_id"]
     assert grammar["relation_audit"] == {
         "endpoint_presence_establishes_relation": False,
@@ -2429,7 +2429,7 @@ def test_movement_endpoints_do_not_replace_movement_occurrence_evidence():
     bundle = _recorded_applicability()
     movement = bundle["movement"]
     assert movement.payload["source_assertion_ref"]
-    assert movement.payload["target_locality"]
+    assert movement.payload["destination_locality"]
     bundle["movement_act_evidence"] = None
     witness = _movement_witness(bundle)
 
@@ -2458,7 +2458,7 @@ def test_exact_act_clause_is_checked_against_live_byte_measurement():
 
     assert set(witness) == set(clause["responsibility"]["coordinates"])
     assert set(witness.values()) == {EXACT}
-    assert bundle["carrier"].payload["target_act_id"] != bundle["carrier"].payload[
+    assert bundle["carrier"].payload["downstream_act_id"] != bundle["carrier"].payload[
         "act_occurrence_id"
     ]
     assert _occurrence_result_witness(bundle) == EXACT
@@ -2467,7 +2467,7 @@ def test_exact_act_clause_is_checked_against_live_byte_measurement():
 def test_act_and_occurrence_ids_do_not_establish_their_relation():
     bundle = _byte_measurement_road()
     carrier = bundle["carrier"]
-    assert carrier.payload["target_act_id"]
+    assert carrier.payload["downstream_act_id"]
     assert carrier.payload["act_occurrence_id"]
     bundle["act_evidence"] = None
     witness = _act_occurrence_witness(bundle)

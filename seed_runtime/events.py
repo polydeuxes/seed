@@ -414,7 +414,7 @@ class SQLiteEventLedger(EventLedger):
     # the console to a durable ledger, at which point the second `seed --db`
     # invocation aborted on `duplicate representation reference`. Nothing was
     # wrong with them before: no console had ever written durable history.
-    # The prefixes `_observed_suffixes` may reserve, as a set for membership.
+    # The prefixes `_observed_numbers` may reserve, as a set for membership.
     # Every entry is minted by current runtime code and may be carried by a
     # durable occurrence. Retired vocabulary does not remain merely because an
     # older ledger may contain a similarly shaped string.
@@ -475,7 +475,7 @@ class SQLiteEventLedger(EventLedger):
         #
         # `#2414` measured the reconstruction: every payload of every event
         # deserialized and walked on every open, to reconstruct the highest issued
-        # suffix per prefix. That is a whole-history read for an answer of a few
+        # number per prefix. That is a whole-history read for an answer of a few
         # integers, and it grows without bound — 36.9s at 100,000 events,
         # extrapolating to about 356s at a million.
         #
@@ -485,7 +485,7 @@ class SQLiteEventLedger(EventLedger):
         self._connection.execute("""
             CREATE TABLE IF NOT EXISTS id_reservations (
                 prefix TEXT PRIMARY KEY,
-                max_suffix INTEGER NOT NULL
+                max_number INTEGER NOT NULL
             )
             """)
         # A store either was born with integrity or is not this store. There is
@@ -539,13 +539,13 @@ class SQLiteEventLedger(EventLedger):
             """)
         self._ensure_prefix_commitments()
         self._connection.commit()
-        max_event_suffix = self._max_event_id_suffix()
-        self._next_event_number = max_event_suffix + 1
-        reserve_id_prefix("evt", max_event_suffix)
-        for prefix, max_suffix in self._connection.execute(
-            "SELECT prefix, max_suffix FROM id_reservations"
+        max_event_number = self._max_event_id_number()
+        self._next_event_number = max_event_number + 1
+        reserve_id_prefix("evt", max_event_number)
+        for prefix, max_number in self._connection.execute(
+            "SELECT prefix, max_number FROM id_reservations"
         ):
-            reserve_id_prefix(prefix, max_suffix)
+            reserve_id_prefix(prefix, max_number)
 
     def append(
         self,
@@ -590,7 +590,7 @@ class SQLiteEventLedger(EventLedger):
             for event in stored_events:
                 event_rowid = self._insert_without_commit(event)
                 self._insert_prefix_commitment(event, event_rowid)
-                self._persist_reservations(self._observed_suffixes(event))
+                self._persist_reservations(self._observed_numbers(event))
         for event in stored_events:
             self._advance_event_counter(event.id)
         return stored_events
@@ -801,7 +801,7 @@ class SQLiteEventLedger(EventLedger):
         with self._connection:
             event_rowid = self._insert_without_commit(event)
             self._insert_prefix_commitment(event, event_rowid)
-            self._persist_reservations(self._observed_suffixes(event))
+            self._persist_reservations(self._observed_numbers(event))
         self._advance_event_counter(event.id)
 
     def _ensure_prefix_commitments(self) -> None:
@@ -964,23 +964,23 @@ class SQLiteEventLedger(EventLedger):
         return event_id
 
     def _advance_event_counter(self, event_id: str) -> None:
-        suffix = _numeric_suffix(event_id, "evt")
-        if suffix is None:
+        number = _numeric_number(event_id, "evt")
+        if number is None:
             return
-        self._next_event_number = max(self._next_event_number, suffix + 1)
-        reserve_id_prefix("evt", suffix)
+        self._next_event_number = max(self._next_event_number, number + 1)
+        reserve_id_prefix("evt", number)
 
-    def _max_event_id_suffix(self) -> int:
+    def _max_event_id_number(self) -> int:
         row = self._connection.execute("""
-            SELECT MAX(CAST(SUBSTR(id, 5) AS INTEGER)) AS max_suffix
+            SELECT MAX(CAST(SUBSTR(id, 5) AS INTEGER)) AS max_number
             FROM events
             WHERE id LIKE 'evt_%'
               AND SUBSTR(id, 5) GLOB '[0-9]*'
               AND SUBSTR(id, 5) NOT GLOB '*[^0-9]*'
             """).fetchone()
-        return int(row["max_suffix"] or 0)
+        return int(row["max_number"] or 0)
 
-    def _observed_suffixes(self, event: Event) -> dict[str, int]:
+    def _observed_numbers(self, event: Event) -> dict[str, int]:
         """Every reservable identifier this one occurrence carries.
 
         A reservable identifier is a known prefix, an underscore, and digits.
@@ -1004,19 +1004,19 @@ class SQLiteEventLedger(EventLedger):
             prefix, separator, digits = value.rpartition("_")
             if not separator or prefix not in reservable or not digits.isdigit():
                 continue
-            suffix = int(digits)
-            if suffix > found.get(prefix, 0):
-                found[prefix] = suffix
+            number = int(digits)
+            if number > found.get(prefix, 0):
+                found[prefix] = number
         return found
 
     def _persist_reservations(self, observed: dict[str, int]) -> None:
-        for prefix, max_suffix in observed.items():
+        for prefix, max_number in observed.items():
             self._connection.execute(
-                "INSERT INTO id_reservations (prefix, max_suffix) VALUES (?, ?) "
-                "ON CONFLICT(prefix) DO UPDATE SET max_suffix = MAX(max_suffix, ?)",
-                (prefix, max_suffix, max_suffix),
+                "INSERT INTO id_reservations (prefix, max_number) VALUES (?, ?) "
+                "ON CONFLICT(prefix) DO UPDATE SET max_number = MAX(max_number, ?)",
+                (prefix, max_number, max_number),
             )
-            reserve_id_prefix(prefix, max_suffix)
+            reserve_id_prefix(prefix, max_number)
 
 def _walk_values(value: Any) -> Iterable[Any]:
     if isinstance(value, dict):
@@ -1030,11 +1030,11 @@ def _walk_values(value: Any) -> Iterable[Any]:
         yield value
 
 
-def _numeric_suffix(value: str, prefix: str) -> int | None:
+def _numeric_number(value: str, prefix: str) -> int | None:
     marker = f"{prefix}_"
     if not value.startswith(marker):
         return None
-    suffix = value[len(marker) :]
-    if not suffix.isdigit():
+    number = value[len(marker) :]
+    if not number.isdigit():
         return None
-    return int(suffix)
+    return int(number)

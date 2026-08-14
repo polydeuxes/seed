@@ -169,7 +169,7 @@ class MeasurementFinding:
     # coordinate for it. `#2486` measured why: copying the inputs into
     # every finding of a body cost 97% of the stored finding.
     input_event_ids: tuple[str, ...]
-    target_act_id: str = field(
+    downstream_act_id: str = field(
         default_factory=lambda: new_id("preserved_material_measurement_act"),
         compare=False,
     )
@@ -261,7 +261,7 @@ class RecurrenceFinding:
     # How many times it occurred in total across them. This is the recurrence.
     total_count: int
     input_event_ids: tuple[str, ...]
-    target_act_id: str = field(
+    downstream_act_id: str = field(
         default_factory=lambda: new_id("preserved_recurrence_measurement_act"),
         compare=False,
     )
@@ -983,7 +983,7 @@ def _measurement_finding_payload(
         carried["input_support"] = basis
         carried.pop("input_event_ids", None)
     return {
-        "target_act_id": finding.target_act_id,
+        "downstream_act_id": finding.downstream_act_id,
         "act_occurrence_id": finding.act_occurrence_id,
         "dimensions": {
             "identity": f"measurement:{finding.declared.representation_measured}",

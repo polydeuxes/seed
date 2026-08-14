@@ -210,7 +210,7 @@ def record_external_expression_relation(
         EXTERNAL_EXPRESSION_RELATION_ACT_EVIDENCE_KIND,
         workspace_id,
         {
-            "target_act_id": act_id,
+            "downstream_act_id": act_id,
             "act_occurrence_id": act_occurrence_id,
             "responsibility": EXTERNAL_EXPRESSION_RELATION_RESPONSIBILITY,
             "responsible_boundary": "this Seed",
@@ -255,7 +255,7 @@ def record_external_expression_relation(
         workspace_id,
         {
             **result,
-            "target_act_id": act_id,
+            "downstream_act_id": act_id,
             "act_occurrence_id": act_occurrence_id,
             "responsibility": EXTERNAL_EXPRESSION_RELATION_RESPONSIBILITY,
             "responsible_boundary": "this Seed",
@@ -343,8 +343,8 @@ def get_recorded_external_expression_relation(
         or carriage_evidence.kind
         != EXTERNAL_EXPRESSION_RELATION_CARRIAGE_EVIDENCE_KIND
         or ledger.integrity_of(carriage_evidence.id) == CORRUPTED
-        or act_evidence.payload.get("target_act_id")
-        != carrier.payload.get("target_act_id")
+        or act_evidence.payload.get("downstream_act_id")
+        != carrier.payload.get("downstream_act_id")
         or act_evidence.payload.get("act_occurrence_id") != act_occurrence_id
         or act_evidence.payload.get("responsibility")
         != EXTERNAL_EXPRESSION_RELATION_RESPONSIBILITY

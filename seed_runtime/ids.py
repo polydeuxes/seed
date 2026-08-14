@@ -16,9 +16,9 @@ def new_id(prefix: str) -> str:
         return f"{prefix}_{next_value:06d}"
 
 
-def reserve_id_prefix(prefix: str, max_numeric_suffix: int) -> None:
-    """Ensure future IDs for ``prefix`` are greater than an observed suffix."""
-    if max_numeric_suffix < 0:
-        raise ValueError("max_numeric_suffix must be non-negative")
+def reserve_id_prefix(prefix: str, max_numeric_number: int) -> None:
+    """Ensure future IDs for ``prefix`` are greater than an observed number."""
+    if max_numeric_number < 0:
+        raise ValueError("max_numeric_number must be non-negative")
     with _lock:
-        _next_values[prefix] = max(_next_values.get(prefix, 1), max_numeric_suffix + 1)
+        _next_values[prefix] = max(_next_values.get(prefix, 1), max_numeric_number + 1)

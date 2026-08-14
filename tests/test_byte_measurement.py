@@ -398,7 +398,7 @@ def test_pair_count_and_recurrence_are_separate_results():
     assert applicability["dimensions"]["standing"] == "applicable"
     assert applicability["input_assertion_ref"] == event.payload["source_assertion_ref"]
     assert applicability["result_boundary"]
-    assert applicability["target_act"] == "declared adjacent-byte-pair Measurement"
+    assert applicability["downstream_act"] == "declared adjacent-byte-pair Measurement"
     assert applicability["act_context"] == {
         "workspace_id": "w",
         "measurement_session_id": "measurement",
@@ -441,7 +441,7 @@ def test_recorded_pair_results_replay_the_complete_bounded_source_read():
     assert movement.payload["source_assertion_ref"]["recorded_occurrence_id"] == source.id
     assert movement.payload["assertion_id"] == count.support_assertion_refs[0]["assertion_id"]
     assert movement.payload["source_locality"] == "byte-measurement"
-    assert movement.payload["target_locality"] == "measurement"
+    assert movement.payload["destination_locality"] == "measurement"
     assert movement.payload["movement_act_id"] != movement.payload[
         "movement_act_occurrence_id"
     ]
@@ -548,7 +548,7 @@ def test_zero_observed_pairs_is_a_lawful_addressable_result():
     assert assertions_of_recorded_adjacent_byte_pair_measurement(ledger, event.id) == ()
 
 
-def test_applicability_identity_is_bound_to_one_exact_target_act():
+def test_applicability_identity_is_bound_to_one_exact_downstream_act():
     ledger = _ledger("ta\n")
     source_event = _byte_source(ledger)
     source = next(
@@ -558,7 +558,7 @@ def test_applicability_identity_is_bound_to_one_exact_target_act():
     )
     first = _pair_input_applicability(
         source,
-        target_act_id="pair-act-1",
+        downstream_act_id="pair-act-1",
         applicability_act_id="applicability-act-1",
         applicability_act_occurrence_id="applicability-occurrence-1",
         act_workspace_id="w",
@@ -566,7 +566,7 @@ def test_applicability_identity_is_bound_to_one_exact_target_act():
     )
     second = _pair_input_applicability(
         source,
-        target_act_id="pair-act-2",
+        downstream_act_id="pair-act-2",
         applicability_act_id="applicability-act-2",
         applicability_act_occurrence_id="applicability-occurrence-2",
         act_workspace_id="w",
@@ -576,8 +576,8 @@ def test_applicability_identity_is_bound_to_one_exact_target_act():
     assert first["dimensions"]["identity"] != second["dimensions"]["identity"]
     assert first["responsibility"]
     assert first["responsibility"] != first["assigned_by_responsibility"]
-    assert first["target_act_id"] == "pair-act-1"
-    assert first["target_act_occurrence_id"] is None
+    assert first["downstream_act_id"] == "pair-act-1"
+    assert first["downstream_act_occurrence_id"] is None
 
 
 def test_pair_applicability_has_real_non_applicable_and_unknown_outcomes():
@@ -590,7 +590,7 @@ def test_pair_applicability_has_real_non_applicable_and_unknown_outcomes():
     )
     inapplicable = _pair_input_applicability(
         source,
-        target_act_id="pair-act-other-workspace",
+        downstream_act_id="pair-act-other-workspace",
         applicability_act_id="applicability-act-inapplicable",
         applicability_act_occurrence_id="applicability-occurrence-inapplicable",
         act_workspace_id="other",
@@ -608,7 +608,7 @@ def test_pair_applicability_has_real_non_applicable_and_unknown_outcomes():
     )
     unknown = _pair_input_applicability(
         unknown_source,
-        target_act_id="pair-act-unknown-authority",
+        downstream_act_id="pair-act-unknown-authority",
         applicability_act_id="applicability-act-unknown",
         applicability_act_occurrence_id="applicability-occurrence-unknown",
         act_workspace_id="w",
@@ -626,7 +626,7 @@ def test_pair_applicability_has_real_non_applicable_and_unknown_outcomes():
     )
     conflicting = _pair_input_applicability(
         conflicting_source,
-        target_act_id="pair-act-conflicting-standing",
+        downstream_act_id="pair-act-conflicting-standing",
         applicability_act_id="applicability-act-conflicting",
         applicability_act_occurrence_id="applicability-occurrence-conflicting",
         act_workspace_id="w",
@@ -640,7 +640,7 @@ def test_pair_applicability_has_real_non_applicable_and_unknown_outcomes():
     assert conflicting["conflicts"] == [conflicting["determination_basis"]]
     assert conflicting["input_standing"] == "reported"
     assert conflicting["input_assertion_ref"] == source.reference
-    assert conflicting["target_act_occurrence_id"] is None
+    assert conflicting["downstream_act_occurrence_id"] is None
 
 
 def test_cross_workspace_pair_use_is_refused_before_locality_movement():
@@ -749,11 +749,11 @@ def test_pair_act_identity_is_not_its_occurrence_identity():
         recording_session_id="measurement",
     )
 
-    assert result.payload["target_act_id"] != result.payload["act_occurrence_id"]
-    assert result.payload["input_applicability"]["target_act_id"] == (
-        result.payload["target_act_id"]
+    assert result.payload["downstream_act_id"] != result.payload["act_occurrence_id"]
+    assert result.payload["input_applicability"]["downstream_act_id"] == (
+        result.payload["downstream_act_id"]
     )
-    assert result.payload["input_applicability"]["target_act_occurrence_id"] is None
+    assert result.payload["input_applicability"]["downstream_act_occurrence_id"] is None
 
 
 def test_pair_validation_refuses_more_carrying_occurrences_than_total_pairs():

@@ -470,7 +470,7 @@ def test_reservations_are_read_from_the_table_not_from_history(path):
 
     con = _raw(path)
     try:
-        kept = dict(con.execute("SELECT prefix, max_suffix FROM id_reservations"))
+        kept = dict(con.execute("SELECT prefix, max_number FROM id_reservations"))
     finally:
         con.close()
     assert kept["operator_material"] == 42
@@ -503,7 +503,7 @@ def test_a_reservation_only_ever_rises(path):
         led.close()
     con = _raw(path)
     try:
-        kept = dict(con.execute("SELECT prefix, max_suffix FROM id_reservations"))
+        kept = dict(con.execute("SELECT prefix, max_number FROM id_reservations"))
     finally:
         con.close()
     assert kept["operator_material"] == 42
@@ -518,7 +518,7 @@ def test_the_counter_table_is_not_an_occurrence(path):
         led.close()
     con = _raw(path)
     try:
-        con.execute("UPDATE id_reservations SET max_suffix = 99 WHERE prefix = 'operator_material'")
+        con.execute("UPDATE id_reservations SET max_number = 99 WHERE prefix = 'operator_material'")
         con.commit()
     finally:
         con.close()
@@ -556,7 +556,7 @@ def test_a_batch_commits_its_reservations_with_its_occurrences(path):
 
     con = _raw(path)
     try:
-        kept = dict(con.execute("SELECT prefix, max_suffix FROM id_reservations"))
+        kept = dict(con.execute("SELECT prefix, max_number FROM id_reservations"))
         stored = con.execute("SELECT COUNT(*) FROM events").fetchone()[0]
     finally:
         con.close()
@@ -591,11 +591,11 @@ def test_reservable_suffix_observation_matches_a_per_prefix_scan():
     A reservable identifier is a prefix, an underscore, and digits, so the
     digits begin just after the value's last underscore. This holds the split
     to that equivalence over generated payloads rather than over examples,
-    because several movement prefixes overlap and a suffix of
+    because several movement prefixes overlap and a number of
     zero is deliberately not reserved.
     """
 
-    from seed_runtime.events import _numeric_suffix, _walk_values
+    from seed_runtime.events import _numeric_number, _walk_values
 
     prefixes = tuple(SQLiteEventLedger._RESERVABLE_PREFIXES)
 
@@ -608,9 +608,9 @@ def test_reservable_suffix_observation_matches_a_per_prefix_scan():
             if not isinstance(value, str):
                 continue
             for prefix in prefixes:
-                suffix = _numeric_suffix(value, prefix)
-                if suffix is not None and suffix > found.get(prefix, 0):
-                    found[prefix] = suffix
+                number = _numeric_number(value, prefix)
+                if number is not None and number > found.get(prefix, 0):
+                    found[prefix] = number
         return found
 
     tokens = list(prefixes) + ["evt", "x", "", "retired_fact", "need"]
@@ -648,18 +648,18 @@ def test_reservable_suffix_observation_matches_a_per_prefix_scan():
             payload=payload,
             session_id=rng.choice([None, identifier(), f"session_{rng.randint(0, 9999)}"]),
         )
-        assert ledger._observed_suffixes(event) == per_prefix_scan(event)
+        assert ledger._observed_numbers(event) == per_prefix_scan(event)
 
 
 def test_a_reserved_suffix_of_zero_is_not_reserved():
-    """`suffix > found.get(prefix, 0)` deliberately declines zero, and the
+    """`number > found.get(prefix, 0)` deliberately declines zero, and the
     split must decline it too rather than reserve prefix zero."""
 
     ledger = SQLiteEventLedger.__new__(SQLiteEventLedger)
     event = Event(id="evt_1", kind="k", workspace_id="w", payload={"a": "operator_material_0"})
-    assert ledger._observed_suffixes(event) == {}
+    assert ledger._observed_numbers(event) == {}
     event = Event(id="evt_2", kind="k", workspace_id="w", payload={"a": "operator_material_1"})
-    assert ledger._observed_suffixes(event) == {"operator_material": 1}
+    assert ledger._observed_numbers(event) == {"operator_material": 1}
 
 
 def test_an_overlapping_prefix_reserves_the_longer_match():
@@ -668,7 +668,7 @@ def test_an_overlapping_prefix_reserves_the_longer_match():
         id="evt_1", kind="k", workspace_id="w",
         payload={"a": "assertion_locality_movement_act_7", "b": "assertion_locality_movement_4"},
     )
-    assert ledger._observed_suffixes(event) == {
+    assert ledger._observed_numbers(event) == {
         "assertion_locality_movement_act": 7,
         "assertion_locality_movement": 4,
     }

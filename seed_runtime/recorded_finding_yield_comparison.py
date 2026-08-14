@@ -63,7 +63,7 @@ UNSUPPORTED_COORDINATE = "unsupported coordinate"
 
 COMPARISON_RESULT_COORDINATES = frozenset(
     {
-        "target_act_id",
+        "downstream_act_id",
         "act_occurrence_id",
         "dimensions",
         "constitutional_subject",
@@ -394,10 +394,10 @@ def compare_recorded_finding_yield(ledger: EventLedger, event_id: str) -> Event:
         "scope only; no certification, completion, responsible-boundary map, score, or "
         "correction authority"
     )
-    target_act_id = new_id("finding_yield_comparison_act")
+    downstream_act_id = new_id("finding_yield_comparison_act")
     act_occurrence_id = new_id("finding_yield_comparison_act_occurrence")
     result_payload = {
-        "target_act_id": target_act_id,
+        "downstream_act_id": downstream_act_id,
         "act_occurrence_id": act_occurrence_id,
         "dimensions": {
                 "identity": f"finding-yield-comparison:{event_id}",

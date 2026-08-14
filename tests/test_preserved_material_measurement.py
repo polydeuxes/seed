@@ -863,7 +863,7 @@ def test_batch_and_single_survive_the_recording_boundary_identically(
     def _without_its_own_evidence(event):
         payload = dict(event.payload)
         payload.pop("yield_evidence_id", None)
-        payload.pop("target_act_id", None)
+        payload.pop("downstream_act_id", None)
         payload.pop("act_occurrence_id", None)
         return payload
 
@@ -1437,7 +1437,7 @@ def _rebuilt(finding, **changed):
         "occurrences_carrying": finding.occurrences_carrying,
         "total_count": finding.total_count,
         "input_event_ids": finding.input_event_ids,
-        "target_act_id": finding.target_act_id,
+        "downstream_act_id": finding.downstream_act_id,
         "act_occurrence_id": finding.act_occurrence_id,
         "support_basis": finding.support_basis,
         "yield_evidence_id": finding.yield_evidence_id,
