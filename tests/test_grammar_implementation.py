@@ -9,6 +9,7 @@ from seed_runtime.byte_measurement import (
 )
 from seed_runtime.events import EventLedger
 from seed_runtime.operator_console import run_persistent_operator_console
+from seed_runtime.production_evidence import production_commitment
 
 
 GRAMMAR = Path(__file__).resolve().parents[1] / "book_of_seed/grammar.json"
@@ -22,6 +23,22 @@ CONTRADICTION = "contradiction"
 
 def _clause(clause_id: str) -> dict:
     return json.loads(GRAMMAR.read_text(encoding="utf-8"))["clauses"][clause_id]
+
+
+def _witness_grammar() -> dict:
+    return json.loads(GRAMMAR.read_text(encoding="utf-8"))["implementation_witness"]
+
+
+def _digest_only_witness(digest: str) -> dict[str, str]:
+    assert isinstance(digest, str) and len(digest) == 64
+    return {
+        "digest": EXACT,
+        "content_reconstruction": MISSING,
+        "occurrence": MISSING,
+        "provenance": MISSING,
+        "Standing": MISSING,
+        "Evidence": MISSING,
+    }
 
 
 def _source_assertion():
@@ -47,12 +64,12 @@ def _source_assertion():
     return assertion
 
 
-def _assertion_projection(assertion) -> dict[str, str]:
+def _assertion_witness(assertion) -> dict[str, str]:
     payload = assertion.payload
     dimensions = payload["dimensions"]
     return {
         # Runtime identity commits to result, subject, Scope, and content.  The
-        # grammar currently names asserted content alone.  Projection exposes
+        # grammar currently names asserted content alone.  The audit exposes
         # the disagreement; it does not choose which side should change.
         "identity": CONTRADICTION,
         # support_basis is not silently promoted into Evidence.
@@ -67,7 +84,7 @@ def _assertion_projection(assertion) -> dict[str, str]:
     }
 
 
-def _applicability_projection(applicability: dict) -> dict[str, str]:
+def _applicability_witness(applicability: dict) -> dict[str, str]:
     content = applicability["dimensions"]["content"]
     treatment = applicability["coordinate_treatment"]
     return {
@@ -115,12 +132,57 @@ def _applicability_projection(applicability: dict) -> dict[str, str]:
     }
 
 
-def test_assertion_clause_projects_onto_a_live_byte_assertion():
-    clause = _clause("01.Standing.D.1")
-    projection = _assertion_projection(_source_assertion())
+def test_implementation_witness_discriminates_content_carriage_and_digest():
+    grammar = _witness_grammar()
+    ledger = EventLedger()
+    content = {"a": 1, "b": 2}
 
-    assert set(projection) == {"identity", *clause["responsibility"]["coordinates"]}
-    assert projection == {
+    first = ledger.append("test.carriage", "w", dict(content), session_id="s")
+    second = ledger.append("test.carriage", "w", dict(content), session_id="s")
+    assert first.payload == second.payload
+    assert first.id != second.id
+    assert production_commitment("test", first.payload) == production_commitment(
+        "test", second.payload
+    )
+
+    first_json = '{"a":1,"b":2}'
+    second_json = '{\n  "b": 2,\n  "a": 1\n}'
+    assert first_json != second_json
+    assert json.loads(first_json) == json.loads(second_json)
+    assert production_commitment(
+        "test", json.loads(first_json)
+    ) == production_commitment("test", json.loads(second_json))
+
+    changed_content = {"a": 1, "b": 3}
+    assert production_commitment("test", content) != production_commitment(
+        "test", changed_content
+    )
+
+    assert grammar["discriminators"] == ["content", "carriage", "digest"]
+    assert grammar["non_equivalence"] == [
+        ["content", "carriage"],
+        ["content", "digest"],
+        ["carriage", "digest"],
+    ]
+
+
+def test_a_digest_alone_witnesses_no_content_carriage_or_standing():
+    grammar = _witness_grammar()
+    digest = production_commitment("test", {"a": 1})
+    witness = _digest_only_witness(digest)
+
+    assert witness == {
+        "digest": EXACT,
+        **{name: MISSING for name in grammar["digest_does_not_establish"]},
+    }
+
+
+def test_assertion_clause_is_checked_against_a_live_byte_assertion():
+    clause = _clause("01.Standing.D.1")
+    witness = _assertion_witness(_source_assertion())
+
+    assert set(witness) == {"identity", *clause["responsibility"]["coordinates"]}
+    assert witness == {
         "identity": CONTRADICTION,
         "Evidence": MISSING,
         "provenance": EXACT,
@@ -133,7 +195,7 @@ def test_assertion_clause_projects_onto_a_live_byte_assertion():
     }
 
 
-def test_applicability_clause_projects_onto_a_live_pair_determination():
+def test_applicability_clause_is_checked_against_a_live_pair_determination():
     clause = _clause("01.Standing.E.1")
     source = _source_assertion()
     applicability = _pair_input_applicability(
@@ -144,10 +206,10 @@ def test_applicability_clause_projects_onto_a_live_pair_determination():
         act_workspace_id="w",
         measurement_session_id="measurement",
     )
-    projection = _applicability_projection(applicability)
+    witness = _applicability_witness(applicability)
 
-    assert set(projection) == set(clause["coordinates"])
-    assert projection == {
+    assert set(witness) == set(clause["coordinates"])
+    assert witness == {
         "input_identity": EXACT,
         "exact_Act": EXACT,
         "subject": EXACT,

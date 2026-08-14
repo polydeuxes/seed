@@ -1,6 +1,25 @@
 {
-  "version": 1,
+  "version": 2,
   "spine": "Responsibility",
+  "implementation_witness": {
+    "discriminators": ["content", "carriage", "digest"],
+    "relations": {
+      "carriage_carries": "content",
+      "digest_commits_to": "declared_canonical_representation"
+    },
+    "non_equivalence": [
+      ["content", "carriage"],
+      ["content", "digest"],
+      ["carriage", "digest"]
+    ],
+    "digest_does_not_establish": [
+      "content_reconstruction",
+      "occurrence",
+      "provenance",
+      "Standing",
+      "Evidence"
+    ]
+  },
   "clauses": {
     "01.Standing.D.1": {
       "subject": "Assertion",

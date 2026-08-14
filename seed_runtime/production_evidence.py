@@ -26,7 +26,7 @@ _PRODUCTION_COMMITMENT_DOMAIN = b"seed.production-evidence.v1\0"
 
 
 def _commit_part(digest: "hashlib._Hash", value: str) -> None:
-    """Commit one exact representation without borrowing another domain."""
+    """Commit one declared string representation in this mechanical domain."""
 
     if not isinstance(value, str):
         raise TypeError(
@@ -39,7 +39,11 @@ def _commit_part(digest: "hashlib._Hash", value: str) -> None:
 
 
 def production_commitment(convention: str, content: dict[str, Any]) -> str:
-    """Commit to every coordinate under the production-evidence domain."""
+    """Commit to canonical JSON of declared coordinates in this domain.
+
+    The digest does not identify literal carriage bytes. Distinct JSON texts
+    that decode to the same coordinate values receive the same commitment.
+    """
 
     digest = hashlib.sha256(_PRODUCTION_COMMITMENT_DOMAIN)
     _commit_part(digest, convention)
