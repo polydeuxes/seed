@@ -217,7 +217,7 @@ def test_a_self_consistent_truncated_source_claim_is_refused():
         assertions_of_recorded_byte_measurement(ledger, event.id)
 
 
-def test_recording_occurrence_attribution_is_recovered_exactly():
+def test_recording_occurrence_evidence_is_recovered_exactly():
     ledger = _ledger("a\n")
     event = record_byte_count_layer(
         ledger,
@@ -226,7 +226,7 @@ def test_recording_occurrence_attribution_is_recovered_exactly():
         recording_session_id="measurement",
     )
     event.payload["occurrence_preservation"] = "something else"
-    with pytest.raises(ByteMeasurementError, match="recording-occurrence attribution"):
+    with pytest.raises(ByteMeasurementError, match="recording-occurrence Evidence"):
         assertions_of_recorded_byte_measurement(ledger, event.id)
 
 

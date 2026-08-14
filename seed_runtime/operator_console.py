@@ -86,7 +86,7 @@ def run_persistent_operator_console(
         if captured_ingress.eof:
             return
         if process_boundary_escape and _is_console_exit(
-            captured_ingress.exact_bytes, captured_ingress.encoding_attribution
+            captured_ingress.exact_bytes, captured_ingress.stream_encoding_metadata
         ):
             return
         # No Presentation is attached to this capture. Selecting one by

@@ -135,11 +135,18 @@ adds an object, occurrence, or Standing by name.
 
 ## Testimony
 
-`Testimony` is ordinary shorthand for an Assertion attributed to an exact
-source occurrence. Seed grammar preserves the source, asserted content,
-provenance, Evidence, Scope, Authority limits, locality, conflicts, Unknowns,
-and surviving limits. Attribution establishes that the source asserted the
-content; it does not establish stronger Seed Standing.
+`Testimony` is ordinary shorthand for asserted content carried with source
+coordinates. Seed grammar preserves the source identity or role, material
+origin, source occurrence where evidenced, provenance, Evidence, Scope,
+Authority limits, locality, conflicts, Unknowns, and surviving limits. Those
+coordinates do not establish that the named source asserted the content.
+
+## Attribution
+
+`Attribution` is ordinary shorthand for a claimed or warranted relation between
+an Assertion and source coordinates. A source label or mechanically observed
+material origin does not establish that relation. The relation is another
+Assertion with its own Evidence, Warrant, occurrence, and Standing.
 
 ## Artifact
 

@@ -36,5 +36,5 @@ Recorded or visible material is not applicable merely because it is preserved or
 
 ## Related chapters
 - [Questions and inquiry](questions-and-inquiry.md)
-- [Attributed Assertions and Standing](../05-evidence-and-knowledge/testimony-and-assertion-standing.md)
+- [Source-relative Assertions and Standing](../05-evidence-and-knowledge/testimony-and-assertion-standing.md)
 - [Result boundaries and movement](../03-goals-and-advancement/demands-and-opened-movement.md)

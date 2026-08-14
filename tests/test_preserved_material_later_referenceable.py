@@ -1,7 +1,7 @@
 """Earlier preserved material remains referenceable by later occurrences.
 
-The Book uses "remembering" for preservation of sufficient attribution or
-standing for later lawful recovery (`05.Attribution:109`).  **This module does
+The Book uses "remembering" for preservation of source coordinates or
+standing for later lawful recovery (`05.Source.A`).  **This module does
 not establish a Remembering Responsibility, Act, Standing, occurrence, or
 kind.**  In active law that word is capitalised only at sentence starts and is
 lowercase mid-sentence -- "sensing is not remembering, remembering is not
@@ -91,7 +91,7 @@ def test_later_formations_retain_references_to_earlier_preserved_material(
         e.payload["session_standing_as_of_event_id"] for e in formations
     ]
     # The first formation's projection was empty.  Recording that absence is
-    # itself preserved attribution, not an absent occurrence.
+    # itself preserved source coordinates, not an absent occurrence.
     assert boundaries[0] is None
     # Every later boundary reaches strictly further into the session.
     for earlier, later in zip(boundaries[1:], boundaries[2:]):

@@ -33,7 +33,7 @@ from the previous round's evidence rather than from the caller. Every measuremen
 records that finding as its premise, so what it stood on travels with it.
 
 **Comparing measurements is not performed here.** Two pairs sharing an
-alternative is an Assertion about two preserved findings. `05.Attribution.B` reserves
+alternative is an Assertion about two preserved findings. `01.Standing.E` reserves
 consuming preserved findings to a bounded comparison, and none is performed.
 
 Nothing here establishes represented relation, grammatical kind, relation, or truth. A pair
@@ -1102,7 +1102,7 @@ def group_by_highest_count_occupant(
     """Which pairs returned the same occupant for the same question.
 
     This reports agreement between preserved counts. It performs no comparison
-    in the sense `05.Attribution.B` governs, establishes no relation between the
+    in the sense `01.Standing.E` governs, establishes no relation between the
     pairs, and does not make them a kind.
     """
 

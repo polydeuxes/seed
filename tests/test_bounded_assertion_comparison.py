@@ -1,6 +1,6 @@
-"""The smallest bounded attribution comparison, and what it refuses to conclude.
+"""The smallest bounded Assertion comparison, and what it refuses to conclude.
 
-`05.Attribution.B` permits it. `#2416` recovered its owner as local to each
+`01.Standing.E` permits it. `#2416` recovered its owner as local to each
 instantiated comparison and never universal, so these tests pin that the
 comparison is an occurrence and not a service: nothing survives a call, and
 there is no object to hold.

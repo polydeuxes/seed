@@ -8,7 +8,7 @@ The Evidence and provenance on which exact Assertion Standing relies.
 
 Evidence preserves its source and collection boundary. Provenance preserves the recoverable source and occurrence references through which material arrived or was produced. Neither is truth, Applicability, Authority, causation, independent corroboration, or Standing by identity.
 
-Evidence may participate only when the exact Act can distinguish its identity from mere material existence and preserve the applicable source attribution, kind, context, subject, supported Assertion, Authority boundary, temporal boundary, and provenance. Missing coordinates remain Unknown or uninstantiated; nearby fields do not fill them.
+Evidence may participate only when the exact Act can distinguish its identity from mere material existence and preserve the applicable source identity or role, material origin, source occurrence where evidenced, kind, context, subject, supported Assertion, Authority, temporal boundary, and provenance. Missing coordinates remain Unknown or uninstantiated; nearby fields do not fill them.
 
 An ordered provenance path is one representation of source and occurrence continuity. Reference resolution and internal coherence do not establish that every referenced occurrence happened as described, that one occurrence caused another, or that the material independently supports an Assertion.
 
@@ -35,5 +35,5 @@ Explanation is a representation exposing Evidence, provenance, conflicts, and re
 
 ## Related chapters
 
-- [Attributed Assertions and Standing](testimony-and-assertion-standing.md)
+- [Source-relative Assertions and Standing](testimony-and-assertion-standing.md)
 - [Recording and knowledge extraction](recording-and-knowledge-extraction.md)

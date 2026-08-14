@@ -211,7 +211,7 @@ def render_operator_presentation(presentation: dict[str, Any]) -> str:
         lines.append(
             f"Recovered source {relation['source_identity']} expresses: "
             f"\"{relation['proposition']}\" "
-            f"({relation['source_attribution']}). Operator intent and "
+            f"({relation['source_role']}). Operator intent and "
             "selection remain Unknown; Operator Authority for this "
             "proposition remains unresolved."
         )
@@ -261,7 +261,7 @@ def emit_operator_presentation(
                 ),
                 occurrence="emission occurrence durably recorded",
             ),
-            # Attribution only. The exact emitted material is deliberately not
+            # Source role only. The exact emitted material is deliberately not
             # preserved here yet: it becomes safe to preserve once a measurement
             # can decline Seed-origin material, which is what this coordinate
             # makes possible and what a later act must actually do.

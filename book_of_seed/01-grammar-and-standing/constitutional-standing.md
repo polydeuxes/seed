@@ -41,11 +41,11 @@ Where an applicable Assertion concerning a subject participates in a Compare, th
 This permits no threshold. `01.Standing.D.1` already bounds an Act to the Standing its Evidence and Authority warrant. Poor Standing established by a single Assertion is Standing; absence of prior Standing does not prevent establishment, and no count of prior Assertions is required before Standing concerning a subject may exist.
 
 ### 01.Standing.E — Relations have bounded standing
-A relation is its own bounded Assertion subject. Its Standing preserves each applicable coordinate, or explicit Unknown or unresolved Standing, including participants and roles, the relation Assertion, Evidence, Scope, exact Act, Authority, occurrence, conflicts, and limits. Evidence that does not warrant the relation does not warrant its negation or an opposing strengthened relation. A bounded finding may instead preserve absence of applicable relation Evidence within its exact boundary. Candidate relation, relation attributed material, and established relation Standing remain distinct.
+A relation is its own bounded Assertion subject. Its Standing preserves each applicable coordinate, or explicit Unknown or unresolved Standing, including participants and roles, the relation Assertion, Evidence, Scope, exact Act, Authority, occurrence, conflicts, and limits. Evidence that does not warrant the relation does not warrant its negation or an opposing strengthened relation. A bounded finding may instead preserve absence of applicable relation Evidence within its exact boundary. Candidate relation, source-labelled relation material, and established relation Standing remain distinct.
 
-One bounded relation form asserts that X identifies or represents Y. It preserves each applicable coordinate, including participants and roles, the relation Assertion, source and attribution, occurrence, Evidence, Scope, exact Act and result boundary, provenance, Authority, known loss, conflicts, limits, and Unknown or unresolved Standing.
+One bounded relation form asserts that X identifies or represents Y. It preserves each applicable coordinate, including participants and roles, the relation Assertion, source identity, material origin, source occurrence where evidenced, Evidence, Scope, exact Act and result boundary, provenance, Authority, known loss, conflicts, limits, and Unknown or unresolved Standing.
 
-Material may carry the Assertion that X identifies or represents Y without warranting that relation. A responsible occurrence warrants only the relation supported by its Authority, Evidence, Scope, provenance, conflicts, loss, and preserved **Unknowns**. Attribution identifies who supplied the Assertion; it does not establish the represented relation.
+Material may carry the Assertion that X identifies or represents Y without warranting that relation. A responsible occurrence warrants only the relation supported by its Authority, Evidence, Scope, provenance, conflicts, loss, and preserved **Unknowns**. A source label identifies a claimed source role; it establishes neither a source occurrence nor the represented relation.
 
 A warranted relation may receive an Act-local Applicability determination. Where the exact Act requires Admission, the relation must be admitted before participation. Applicable is not admitted, and admitted is not consumed or relied upon. Reliance remains local to the exact Responsibility and Act.
 
@@ -104,8 +104,8 @@ Acts, constraints, and relations are structurally distinct from dimensions. They
 - Evidence that does not warrant a relation Assertion != its negation or an opposing strengthened relation
 - represented-relation Assertion carried != relation warranted
 - represented relation != proposition truth
-- represented relation != attribution
-- attribution != relation Warrant
+- represented relation != source label
+- source label != source-relation Warrant
 - relation warranted != Act-local Applicability
 - applicable != admitted
 - admitted != consumed or relied upon

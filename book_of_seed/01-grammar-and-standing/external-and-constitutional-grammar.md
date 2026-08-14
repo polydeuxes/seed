@@ -14,13 +14,13 @@ An exact Responsibility may use external material only through its own Applicabi
 
 Developer-supplied connective text is attributed material. It may assert a narrow relation within an exact presentation, but equivalent text under another subject, source, Scope, occurrence, or Warrant does not identify the same relation. Unsupported coordinates remain Unknown or uninstantiated.
 
-### 01.External.A — Addressability preserves attribution
+### 01.External.A — Addressability preserves source coordinates
 
-Source-attributed formation preserves source, external context, Scope, uncertainty, Authority limits, provenance, known loss, conflicts, and Unknowns. Addressability establishes none of Evidence, Applicability, Admission, comparison, interpretation, reliance, truth, or adopted law.
+Formation preserves the supplied source identity or role, material origin, source occurrence where evidenced, external context, Scope, uncertainty, Authority limits, provenance, known loss, conflicts, and Unknowns. Addressability establishes none of the claimed source relation, Evidence, Applicability, Admission, Compare result, reliance, truth, or adopted law.
 
 ### 01.External.B — Cross-boundary participation preserves limits
 
-An exact Act may consume external material only within its attributed Scope and surviving limits. Summarizing, indexing, citing, comparing, rendering, or attaching does not erase those coordinates or relocate Authority.
+An exact Act may consume external material only within its carried Scope and surviving limits. Summarizing, indexing, citing, comparing, rendering, or attaching does not erase those coordinates or relocate Authority.
 
 ### 01.External.C — Fidelity is bounded comparison
 
@@ -42,18 +42,18 @@ A candidate preserves every applicable source role, formation occurrence, Scope,
 
 ### 01.External.F — External material may assert a relation
 
-External material may assert that X represents or identifies Y. Formation preserves source, attribution, Scope, provenance, Authority limits, known loss, conflicts, and Unknowns. Carriage, labels, reference resolution, shape, or repetition do not warrant the relation. Seed-native relation Standing requires a separate responsible occurrence.
+External material may assert that X represents or identifies Y. Formation preserves source identity or role, material origin, source occurrence where evidenced, Scope, provenance, Authority limits, known loss, conflicts, and Unknowns. Carriage, labels, reference resolution, shape, or repetition do not warrant either the source relation or represented relation. Each requires a responsible occurrence.
 
 ## Important distinctions
 
 - external material != Seed representation
 - addressable != applicable
 - material != Evidence
-- attributed relation != warranted relation
+- carried relation Assertion != warranted relation
 - equal content != equal identity or Standing
 - Measurement != language or significance
 
 ## Related chapters
 
 - [Constitutional Standing](constitutional-standing.md)
-- [Attributed Assertions and Standing](../05-evidence-and-knowledge/testimony-and-assertion-standing.md)
+- [Source-relative Assertions and Standing](../05-evidence-and-knowledge/testimony-and-assertion-standing.md)

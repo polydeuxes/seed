@@ -1,7 +1,7 @@
 """A support basis, and why it is not a support enumeration.
 
-`05.Attribution.B` requires a consumed input's support basis to be preserved, and
-`05.Attribution.B` bounds it: what a producing act consumed, with no enumeration
+`01.Standing.E` requires a consumed input's support basis to be preserved, and
+`01.Standing.E` bounds it: what a producing act consumed, with no enumeration
 required and **no structure established**. Until now this runtime preserved it as
 a list — every finding carried the complete ordered identity of every occurrence
 it consumed.

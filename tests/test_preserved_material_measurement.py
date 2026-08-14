@@ -7,7 +7,7 @@ through operator ingress. `#2368` read a file directly, and a measurement over
 material Seed never received says nothing about Seed.
 
 **What becomes of the result.** Findings are appended to the ledger, so a later
-responsible act may consume them. `05.Attribution.B` permits a bounded comparison
+responsible act may consume them. `01.Standing.E` permits a bounded comparison
 to consume preserved findings while preserving each input's support basis,
 confidence, and standing. A finding that vanishes with the process cannot be
 consumed by anything.

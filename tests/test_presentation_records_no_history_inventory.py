@@ -10,8 +10,8 @@ that no clause requires it, and that its durable growth converged on x4 per
 doubling -- an extrapolated 29 billion identifiers for one corpus file.
 
 `05.Evidence:19` refuses a copied causation identifier the standing of verified
-provenance, and `05.Attribution.A` states copied provenance references do not turn
-attribution into established Standing. A longer list was never stronger Evidence than
+provenance, and `05.Source.A` states copied provenance references do not turn
+source labels into established Standing. A longer list was never stronger Evidence than
 a shorter one.
 
 These tests pin the removal and the boundary that remains.

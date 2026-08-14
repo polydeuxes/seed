@@ -81,6 +81,6 @@ Recording may preserve produced measurement or observation Assertions and alread
 - Attaching diagnostic-only output directly to hosts or services.
 
 ## Related chapters
-- [Attributed Assertions and Standing](testimony-and-assertion-standing.md)
+- [Source-relative Assertions and Standing](testimony-and-assertion-standing.md)
 - [Events and Standing](../06-standing-and-projection/events-and-standing.md)
 - [Acts and act artifacts](../02-acts-and-constraints/acts-and-act-artifacts.md)

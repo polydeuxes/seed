@@ -11,7 +11,7 @@ RESPONSE_COMPARISON_KIND = "operator.exchange.comparison_occurred"
 IDENTIFICATION_KIND = "operator.exchange.identification_occurred"
 
 # Unknowns the Book positively establishes at this exact position: the
-# external attribution is only that the operator produced material after emission.
+# external material occurrence is only that the operator produced material after emission.
 _MATCH_UNKNOWNS = (
     "operator intent Unknown",
     "operator selection occurrence Unknown",
@@ -86,7 +86,7 @@ def run_operator_response_comparison_and_identification(
     # The recorded formation payload is the sole source of C's alternatives,
     # coordinate bindings, and scope.  The supplied projection identifies
     # which C to retrieve; it must not redefine C, so a projection that
-    # disagrees with the recorded attribution is structurally refused.
+    # disagrees with the recorded payload is structurally refused.
     formed_event = ledger.get(formed_event_id)
     _require(formed_event is not None, "formation event not recorded in this ledger")
     _require(

@@ -3,7 +3,7 @@
 A third boundary, distinct from the two that exist:
 
 ```text
-  operator -> Seed    operator-origin    attribution and instruction
+  operator -> Seed    operator-origin    source role and instruction
   Seed -> system      Seed-origin        the emission occurrence
   system -> Seed      system-origin      here
 ```
@@ -25,8 +25,8 @@ established here.
 
 **It is not Seed observing itself.** Seed's own emission is an act Seed
 performed and an occurrence already recorded directly; discovering it through an
-observer would manufacture a second attribution path about something Seed knows
-first-hand. `#2490` recorded the reason attribution comes first: Seed's account
+observer would manufacture a second source path about something Seed knows
+first-hand. `#2490` recorded the reason source identity comes first: Seed's account
 of a fire must never become material asserting a fire, and separating
 system-origin from Seed-origin is what keeps that separate.
 
@@ -92,7 +92,7 @@ class DeclaredInvocation:
     otherwise would grant Seed Authority or mechanism Evidence it does not hold.
 
     It is *declared*, not established. Nothing here observed an act, so the
-    coordinate carries an attribution a caller supplied and the occurrence says
+    coordinate carries a source role a caller supplied and the occurrence says
     so in its own warrant.
     """
 

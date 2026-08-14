@@ -289,7 +289,7 @@ def advance_operator_session_standing(
                 if payload[field] != expected:
                     raise ValueError(
                         "comparison does not agree with the result derived "
-                        f"from recorded attribution on {field}"
+                        f"from recorded payload on {field}"
                     )
             comparisons[payload["comparison_ref"]] = {
                 "comparison_ref": payload["comparison_ref"],
@@ -406,7 +406,7 @@ def advance_operator_session_standing(
         if event.kind == _SOURCE_RECOVERED_KIND:
             payload = event.payload
             # A recovery is admitted into Standing only where the recorded
-            # formation attribution and the recorded identification agree with
+            # formation payload and the recorded identification agree with
             # every coordinate it carries.
             presentation = presentations.get(payload["presentation_ref"])
             if presentation is None:
@@ -429,17 +429,17 @@ def advance_operator_session_standing(
                     "recorded presentation"
                 )
             recorded_source = recorded_alternative["represented_source"]
-            for key in ("identity", "kind", "attribution", "reference"):
+            for key in ("identity", "kind", "source_role", "reference"):
                 if payload["source"][key] != recorded_source[key]:
                     raise ValueError(
                         "source recovery does not agree with recorded "
-                        f"formation attribution on source {key}"
+                        f"formation payload on source {key}"
                     )
             for key in ("role", "response_coordinate"):
                 if payload["alternative"][key] != recorded_alternative[key]:
                     raise ValueError(
                         "source recovery does not agree with recorded "
-                        f"formation attribution on alternative {key}"
+                        f"formation payload on alternative {key}"
                     )
             if (
                 payload["presentation_formed_event_id"]
@@ -530,7 +530,7 @@ def advance_operator_session_standing(
             if payload["representation"] != recorded_alternative["representation"]:
                 raise ValueError(
                     "source recovery does not agree with recorded formation "
-                    "attribution on the representation boundary"
+                    "source coordinates on the representation boundary"
                 )
             if payload["recovery_ref"] in source_recoveries:
                 raise ValueError(
@@ -554,7 +554,7 @@ def advance_operator_session_standing(
                 "alternative": payload["alternative"],
                 "source": payload["source"],
                 # The complete representation boundary, reconstructed from
-                # the recorded formation attribution it was validated against.
+                # the recorded formation payload it was validated against.
                 "representation": recorded_alternative["representation"],
             }
             source_recoveries[payload["recovery_ref"]] = recovery
@@ -624,13 +624,13 @@ def advance_operator_session_standing(
                     recovery["source"]["reference"],
                     "source_reference",
                 ),
-                # The proposition and its attribution must equal the recorded
-                # formation attribution exactly; a forged M is refused here.
+                # The proposition and its source role must equal the recorded
+                # formation payload exactly; a forged M is refused here.
                 (payload["proposition"], recorded_source["represented_result"], "proposition"),
                 (
-                    payload["source_attribution"],
-                    recorded_source["attribution"],
-                    "source_attribution",
+                    payload.get("source_role", payload.get("source_attribution")),
+                    recorded_source["source_role"],
+                    "source_role",
                 ),
                 (
                     payload["representation_result_boundary"],
@@ -650,7 +650,7 @@ def advance_operator_session_standing(
                         f"source recovery on {coordinate}"
                     )
             # The structural Authority coordinates are reconstructed from
-            # recorded attribution, and the carried separation must equal the
+            # recorded payload, and the carried separation must equal the
             # reconstruction -- a forged standing, support, Evidence, or
             # Scope is refused rather than exposed to a later Act.
             reconstructed_separation = {
@@ -704,11 +704,11 @@ def advance_operator_session_standing(
                     if carried.get(field) != value:
                         raise ValueError(
                             "represented relation does not agree with recorded "
-                            f"attribution on {name}.{field}"
+                            f"source coordinates on {name}.{field}"
                         )
                 authority_separation[name] = {
                     **reconstructed,
-                    "attribution": carried.get("attribution"),
+                    "source_role": carried.get("source_role"),
                 }
             # The relation's remaining Standing coordinates are production occurrence
             # invariants at this boundary; a forged loss, Unknown, or
@@ -729,7 +729,7 @@ def advance_operator_session_standing(
                 if payload[field] != value:
                     raise ValueError(
                         "represented relation does not agree with recorded "
-                        f"attribution on {field}"
+                        f"source coordinates on {field}"
                     )
             if payload["relation_ref"] in represented_relations:
                 raise ValueError(
@@ -748,7 +748,9 @@ def advance_operator_session_standing(
                 "alternative_id": payload["alternative_id"],
                 "source_identity": payload["source_identity"],
                 "proposition": payload["proposition"],
-                "source_attribution": payload["source_attribution"],
+                "source_role": payload.get(
+                    "source_role", payload.get("source_attribution")
+                ),
                 "source_reference": payload["source_reference"],
                 "representation_result_boundary": payload[
                     "representation_result_boundary"

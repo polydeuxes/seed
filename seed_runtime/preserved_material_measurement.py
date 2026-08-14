@@ -27,9 +27,9 @@ claims are recorded distinctly. This module used to describe only the first
 while doing both.
 
 **What this produces is recorded.** Each finding is appended to the ledger, so a
-later responsible act may consume it. `05.Attribution.B` permits exactly that: a
+later responsible act may consume it. `01.Standing.E` permits exactly that: a
 bounded comparison may consume preserved findings "only while preserving each
-input's attribution, provenance, support basis, subject, scope, authority,
+input source coordinates, provenance, support basis, subject, scope, authority,
 confidence or uncertainty, Unknowns, standing, and forbidden inferences".
 
 **A finding may stand on an earlier finding.** `premise_event_id` records which,

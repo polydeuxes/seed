@@ -1,6 +1,6 @@
 """One bounded comparison of preserved findings, owned by its own occurrence.
 
-`05.Attribution.B` permits a bounded comparison to consume multiple independently
+`01.Standing.E` permits a bounded comparison to consume multiple independently
 preserved attributed Assertions or findings while preserving each input's coordinates as
 that input carries them. `compare_occurrence_implementation_form_recovery_001`
 records the owner: **the bounded comparison boundary that consumes them, local
@@ -19,7 +19,7 @@ artifact Seed does not hold.
 **What it produces is distinctions, and a relation only where one is
 established.** Two measurements over different bounded exchanges are not in
 disagreement because their results differ — each is exact within its own scope.
-`05.Attribution.B:29` holds: agreement is not truth, and comparison establishes no
+`01.Standing.E:29` holds: agreement is not truth, and comparison establishes no
 warrant, reliance, or corroboration.
 """
 
@@ -37,12 +37,12 @@ from seed_runtime.preserved_material_measurement import (
 
 COMPARISON_RECORDED_KIND = "operator.measurement.comparison_recorded"
 
-# `05.Attribution.B`'s coordinates, and where a recorded measurement finding
+# Coordinates preserved from each recorded measurement finding
 # carries each. A coordinate absent from an input is named as absent and never
 # supplied: the clause forbids erasing or strengthening what an input carries
 # and does not supply what an input lacks.
 INPUT_COORDINATES: dict[str, tuple[str, ...]] = {
-    "attribution": ("dimensions", "responsibility"),
+    "responsibility": ("dimensions", "responsibility"),
     "provenance": ("dimensions", "source_provenance"),
     "subject": ("dimensions", "identity"),
     "scope": ("dimensions", "scope_locality"),
@@ -53,8 +53,7 @@ INPUT_COORDINATES: dict[str, tuple[str, ...]] = {
     "forbidden_inferences": ("boundary_notes",),
 }
 
-# The family `05.Attribution.B` names. It is not an enum: the clause says the list
-# does not require exactly one relation and defines no universal schema.
+# This is not an enum; more than one relation may remain warranted.
 UNKNOWN_RELATION = "Unknown"
 
 BOUNDARY_NOTES: tuple[str, ...] = (
@@ -178,7 +177,7 @@ def compare_preserved_findings(
 
     ids = tuple(event_ids)
     if len(ids) != 2:
-        # Two, exactly. `05.Attribution.B` says "multiple", and an earlier form of
+        # Two, exactly. `01.Standing.E` says "multiple", and an earlier form of
         # this function accepted any number and intersected them all — n-ary
         # comparison implemented while its own report called it unbuilt. What
         # more than two inputs jointly establish is not recovered, and a set

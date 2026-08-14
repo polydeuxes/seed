@@ -21,7 +21,7 @@ this extent occurred, and at that occurrence **this process held it**.
 **That says nothing about anything else holding it.** Bytes read from a file are
 process-locally held and externally located at the same moment, so recording the
 first establishes nothing about the second. No locator recorded is not no
-external source — the same rule that made a filename attribution rather than
+external source — the same rule that made a filename source label rather than
 truth. This module does not know whether another source exists and does not
 claim to.
 

@@ -9,7 +9,7 @@ Which selections establish only bounded Selection standing, and what separate Wa
 ## Bounded resolution
 Selection narrows a bounded candidate set through a responsible Selection Act and preserves its basis. Selection does not grant Authority or Authorization. Representation selection chooses representations for one exact Act and result boundary. General Selection may choose an established subject where the responsible boundary validates the required Evidence. Selection Standing establishes no later Act or movement by identity.
 
-Exact candidate-identity resolution is not Selection. A resolver may compare attributed attributed material with a bounded candidate set and establish that exactly one candidate identity matches. That matching does not establish a Selection occurrence, responsible boundary, basis, addressed Act, Applicability, or later movement.
+Exact candidate-identity resolution is not Selection. A resolver may compare attributed material with a bounded candidate set and establish that exactly one candidate identity matches. That matching does not establish a Selection occurrence, responsible boundary, basis, addressed Act, Applicability, or later movement.
 
 ## Important distinctions
 - candidate identity resolved != candidate selected

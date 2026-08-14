@@ -6,7 +6,10 @@ from seed_runtime.operator_presentation import (
     form_operator_presentation,
     render_operator_presentation,
 )
-from seed_runtime.operator_session_standing import project_operator_session_standing
+from seed_runtime.operator_session_standing import (
+    advance_operator_session_standing,
+    project_operator_session_standing,
+)
 from tests.closed_choice_fixture import CLOSED_CHOICE_FIXTURE_SOURCES
 from seed_runtime.operator_console import run_persistent_operator_console
 
@@ -73,7 +76,7 @@ def test_console_forms_c0_before_first_ingress_and_preserves_provenance_only():
 
     # A current Presentation existing does not make the newest ingress and the
     # most recently emitted Presentation participants in one Compare.  The
-    # occurrence and its produced-after attribution are preserved; no Compare or
+    # occurrence and its produced-after occurrence relation are preserved; no Compare or
     # Identification follows.
     kinds = [event.kind for event in ledger.list("w")]
     assert kinds == [
@@ -118,7 +121,7 @@ def test_no_compare_or_identification_follows_console_ingress():
     assert "operator.presentation.represented_relation_established" not in kinds
     assert not any(kind.startswith("operator.interaction.") for kind in kinds)
 
-    # Every ingress still carries its exact produced-after attribution.
+    # Every ingress still carries its exact produced-after occurrence relation.
     presentations = [e for e in ledger.list("w") if e.kind == "operator.presentation.formed"]
     ingresses = [e for e in ledger.list("w") if e.kind == "operator.ingress.ingress_occurred"]
     assert len(ingresses) == 3
@@ -131,6 +134,23 @@ def test_no_compare_or_identification_follows_console_ingress():
     assert standing["comparisons"] == {}
     assert standing["identifications"] == {}
     assert standing["latest_exchange_finding"] is None
+
+
+def test_session_replay_reads_the_historical_encoding_field():
+    ledger, _ = _run_console("hello\n")
+    historical = []
+    for event in ledger.list("w"):
+        if event.kind != "operator.ingress.representation_examined":
+            historical.append(event)
+            continue
+        payload = dict(event.payload)
+        payload["encoding_testimony"] = payload.pop("stream_encoding_metadata")
+        historical.append(event.model_copy(update={"payload": payload}))
+
+    standing = advance_operator_session_standing(
+        historical, workspace_id="w", session_id="s"
+    )
+    assert standing["event_count"] == len(historical)
 
 
 def test_c0_presents_standing_with_no_developer_semantics():
@@ -296,7 +316,7 @@ def test_alternatives_carry_complete_coordinates_and_provenance_evidence():
         assert source["identity"].startswith("source:")
         assert source["identity"] != source["represented_result"]
         assert source["kind"]
-        assert source["attribution"] == "developer-supplied"
+        assert source["source_role"] == "developer-supplied"
         assert source["represented_result"]
         assert source["reference"]
         representation = alternative["representation"]
@@ -323,7 +343,7 @@ def test_no_new_represented_relation_candidate_is_synthesized():
     presentation = list(_standing(ledger)["presentations"].values())[-1]
     assert len(presentation["alternatives"]) == 3
     assert all(
-        alternative["represented_source"]["attribution"] == "developer-supplied"
+        alternative["represented_source"]["source_role"] == "developer-supplied"
         for alternative in presentation["alternatives"]
     )
     assert " means " not in render_operator_presentation(presentation)
