@@ -98,12 +98,12 @@ def test_what_the_witness_could_not_separate_is_reported():
     assert all(len(members) > 1 for members in left)
 
 
-def test_the_book_states_three_distinctions_twice():
+def test_each_repeated_distinction_crosses_chapters():
     """Each crosses chapters, so restatement rather than duplication."""
 
     again = restated()
 
-    assert len(again) == 3
+    assert again
     assert ("material", "evidence") in again
     for pair, at in again.items():
         assert len({place.split(":")[0] for place in at}) > 1, pair

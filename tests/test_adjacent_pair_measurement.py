@@ -28,7 +28,7 @@ from seed_runtime.adjacent_pair_measurement import (
     record_adjacent_pair_observations,
     get_recorded_adjacent_pair_observations,
     ADJACENT_PAIR_OBSERVATION_ACT_EVIDENCE_KIND,
-    ADJACENT_PAIR_OBSERVATION_CARRIAGE_EVIDENCE_KIND,
+    ADJACENT_PAIR_OBSERVATION_LOCALITY_EVIDENCE_KIND,
     ADJACENT_PAIR_OBSERVATION_CONVENTION,
     ADJACENT_PAIR_OBSERVATION_RECORDED_KIND,
 )
@@ -434,14 +434,14 @@ def test_adjacent_pair_observation_measurement_records_exact_coordinates_and_rec
     assert len(recovered) == 2
     act_evidence = ledger.get(recorded.payload["responsible_act_evidence_id"])
     yield_evidence = ledger.get(recorded.payload["yield_evidence_id"])
-    carriage_evidence = ledger.get(recorded.payload["carriage_evidence_id"])
+    locality_evidence = ledger.get(recorded.payload["locality_evidence_id"])
     assert act_evidence.kind == ADJACENT_PAIR_OBSERVATION_ACT_EVIDENCE_KIND
-    assert carriage_evidence.kind == ADJACENT_PAIR_OBSERVATION_CARRIAGE_EVIDENCE_KIND
+    assert locality_evidence.kind == ADJACENT_PAIR_OBSERVATION_LOCALITY_EVIDENCE_KIND
     assert (
         recorded.payload["act_occurrence_id"]
         == act_evidence.payload["act_occurrence_id"]
         == yield_evidence.payload["dimensions"]["act_occurrence_id"]
-        == carriage_evidence.payload["act_occurrence_id"]
+        == locality_evidence.payload["act_occurrence_id"]
     )
     assert act_evidence.payload["input_applicability"] == [
         {
@@ -628,21 +628,21 @@ def test_adjacent_pair_observation_recovery_refuses_self_consistent_counterfeit_
         yield_payload,
         locality_id="adjacent-observation",
     )
-    carriage_payload = json.loads(
-        json.dumps(ledger.get(recorded.payload["carriage_evidence_id"]).payload)
+    locality_payload = json.loads(
+        json.dumps(ledger.get(recorded.payload["locality_evidence_id"]).payload)
     )
-    carriage_payload["carried_content"] = altered_result
-    carriage_evidence = ledger.append(
-        ADJACENT_PAIR_OBSERVATION_CARRIAGE_EVIDENCE_KIND,
+    locality_payload["carried_content"] = altered_result
+    locality_evidence = ledger.append(
+        ADJACENT_PAIR_OBSERVATION_LOCALITY_EVIDENCE_KIND,
         "w",
-        carriage_payload,
+        locality_payload,
         locality_id="adjacent-observation",
     )
     carrier_payload = json.loads(json.dumps(recorded.payload))
     carrier_payload.update(altered_result)
     carrier_payload["responsible_act_evidence_id"] = act_evidence.id
     carrier_payload["yield_evidence_id"] = yield_evidence.id
-    carrier_payload["carriage_evidence_id"] = carriage_evidence.id
+    carrier_payload["locality_evidence_id"] = locality_evidence.id
     carrier = ledger.append(
         ADJACENT_PAIR_OBSERVATION_RECORDED_KIND,
         "w",
@@ -664,7 +664,7 @@ def test_a_pair_must_be_two_exact_representations():
             AdjacentPair(*bad)
 
 
-def test_emitted_representation_adjacency_requires_exact_carriage():
+def test_emitted_representation_adjacency_requires_exact_locality():
     ledger = EventLedger()
     representation = record_operator_representation(
         ledger,
@@ -693,7 +693,7 @@ def test_emitted_representation_adjacency_requires_exact_carriage():
     )
     assert all(
         item.evidence["adjacency_evidence_event_id"]
-        == emission.payload["carriage_evidence_id"]
+        == emission.payload["locality_evidence_id"]
         for item in observations
     )
     recorded_observations = record_emitted_representation_adjacency(
@@ -704,21 +704,21 @@ def test_emitted_representation_adjacency_requires_exact_carriage():
         ledger, recorded_observations.id
     ) == observations
     assert recorded_observations.payload["adjacency_evidence_event_id"] == (
-        emission.payload["carriage_evidence_id"]
+        emission.payload["locality_evidence_id"]
     )
     assert [
         item["subject_ref"] for item in recorded_observations.payload["participation"]
-    ] == [emission.payload["carriage_evidence_id"], emission.id]
+    ] == [emission.payload["locality_evidence_id"], emission.id]
 
     copied = emission.model_copy(deep=True)
-    copied.payload["carriage_evidence_id"] = None
+    copied.payload["locality_evidence_id"] = None
     copied = ledger.append(
         copied.kind,
         copied.workspace_id,
         copied.payload,
         locality_id=copied.locality_id,
     )
-    with pytest.raises(PreservedMaterialMeasurementError, match="Carriage Evidence"):
+    with pytest.raises(PreservedMaterialMeasurementError, match="Locality Evidence"):
         observe_emitted_representation_adjacency(
             ledger, emission_event_id=copied.id
         )
@@ -758,8 +758,8 @@ def test_emitted_representation_adjacency_requires_exact_carriage():
         item["subject_ref"] for item in recorded_compare.payload["participation"]
     ] == [recorded_observations.id, repeated_observations.id]
     wrong_occurrence = emission.model_copy(deep=True)
-    wrong_occurrence.payload["carriage_evidence_id"] = repeated_emission.payload[
-        "carriage_evidence_id"
+    wrong_occurrence.payload["locality_evidence_id"] = repeated_emission.payload[
+        "locality_evidence_id"
     ]
     wrong_occurrence = ledger.append(
         wrong_occurrence.kind,
@@ -767,7 +767,7 @@ def test_emitted_representation_adjacency_requires_exact_carriage():
         wrong_occurrence.payload,
         locality_id=wrong_occurrence.locality_id,
     )
-    with pytest.raises(PreservedMaterialMeasurementError, match="Carriage Evidence"):
+    with pytest.raises(PreservedMaterialMeasurementError, match="Locality Evidence"):
         observe_emitted_representation_adjacency(
             ledger, emission_event_id=wrong_occurrence.id
         )
@@ -806,7 +806,7 @@ def test_emission_adjacency_compare_requires_distinct_real_occurrences():
         )
 
 
-def test_emission_adjacency_refuses_corrupted_carriage_evidence(tmp_path):
+def test_emission_adjacency_refuses_corrupted_locality_evidence(tmp_path):
     ledger = SQLiteEventLedger(tmp_path / "emission-adjacency.sqlite")
     representation = record_operator_representation(
         ledger,
@@ -823,15 +823,15 @@ def test_emission_adjacency_refuses_corrupted_carriage_evidence(tmp_path):
         output_stream=StringIO(),
     )
     emission = ledger.get(emitted["emitted_event_id"])
-    carriage_id = emission.payload["carriage_evidence_id"]
+    locality_id = emission.payload["locality_evidence_id"]
     ledger._connection.execute("DROP TRIGGER events_refuse_update")
     ledger._connection.execute(
         "UPDATE events SET content_hash = ? WHERE id = ?",
-        ("corrupted", carriage_id),
+        ("corrupted", locality_id),
     )
     ledger._connection.commit()
 
-    with pytest.raises(PreservedMaterialMeasurementError, match="Carriage Evidence"):
+    with pytest.raises(PreservedMaterialMeasurementError, match="Locality Evidence"):
         observe_emitted_representation_adjacency(
             ledger,
             emission_event_id=emission.id,

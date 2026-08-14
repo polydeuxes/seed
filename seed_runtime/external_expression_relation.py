@@ -32,8 +32,8 @@ EXTERNAL_EXPRESSION_RELATION_RECORDED_KIND = (
 EXTERNAL_EXPRESSION_RELATION_ACT_EVIDENCE_KIND = (
     "operator.external_expression.relation_act_evidenced"
 )
-EXTERNAL_EXPRESSION_RELATION_CARRIAGE_EVIDENCE_KIND = (
-    "operator.external_expression.relation_carriage_evidenced"
+EXTERNAL_EXPRESSION_RELATION_LOCALITY_EVIDENCE_KIND = (
+    "operator.external_expression.relation_locality_evidenced"
 )
 EXTERNAL_EXPRESSION_RELATION_CONVENTION = "external_expression_relation_v1"
 EXTERNAL_EXPRESSION_RELATION_RESPONSIBILITY = (
@@ -240,8 +240,8 @@ def record_external_expression_relation(
         live_boundary="external_expression_relation",
         responsible_boundary="this Seed",
     )
-    carriage_evidence = ledger.append(
-        EXTERNAL_EXPRESSION_RELATION_CARRIAGE_EVIDENCE_KIND,
+    locality_evidence = ledger.append(
+        EXTERNAL_EXPRESSION_RELATION_LOCALITY_EVIDENCE_KIND,
         workspace_id,
         {
             "act_occurrence_id": act_occurrence_id,
@@ -261,7 +261,7 @@ def record_external_expression_relation(
             "responsible_boundary": "this Seed",
             "responsible_act_evidence_id": act_evidence.id,
             "yield_evidence_id": yield_evidence.id,
-            "carriage_evidence_id": carriage_evidence.id,
+            "locality_evidence_id": locality_evidence.id,
             "authority": "unestablished",
             "evidence_scope": (
                 "preserves this source-carried relation Assertion only; does not "
@@ -322,13 +322,13 @@ def get_recorded_external_expression_relation(
     evidence_ids = (
         carrier.payload.get("responsible_act_evidence_id"),
         carrier.payload.get("yield_evidence_id"),
-        carrier.payload.get("carriage_evidence_id"),
+        carrier.payload.get("locality_evidence_id"),
     )
     if not all(isinstance(value, str) and value for value in evidence_ids):
         raise ExternalExpressionRelationError(
             "the carried relation names incomplete edge Evidence"
         )
-    act_evidence, yield_evidence, carriage_evidence = (
+    act_evidence, yield_evidence, locality_evidence = (
         ledger.get(value) for value in evidence_ids
     )
     act_occurrence_id = carrier.payload.get("act_occurrence_id")
@@ -340,10 +340,10 @@ def get_recorded_external_expression_relation(
         or yield_evidence is None
         or yield_evidence.kind != "operator.yield.evidence_recorded"
         or ledger.integrity_of(yield_evidence.id) == CORRUPTED
-        or carriage_evidence is None
-        or carriage_evidence.kind
-        != EXTERNAL_EXPRESSION_RELATION_CARRIAGE_EVIDENCE_KIND
-        or ledger.integrity_of(carriage_evidence.id) == CORRUPTED
+        or locality_evidence is None
+        or locality_evidence.kind
+        != EXTERNAL_EXPRESSION_RELATION_LOCALITY_EVIDENCE_KIND
+        or ledger.integrity_of(locality_evidence.id) == CORRUPTED
         or act_evidence.payload.get("downstream_act_id")
         != carrier.payload.get("downstream_act_id")
         or act_evidence.payload.get("act_occurrence_id") != act_occurrence_id
@@ -352,13 +352,13 @@ def get_recorded_external_expression_relation(
         or act_evidence.payload.get("responsible_boundary") != "this Seed"
         or yield_evidence.payload.get("dimensions", {}).get("act_occurrence_id")
         != act_occurrence_id
-        or carriage_evidence.payload.get("act_occurrence_id") != act_occurrence_id
-        or carriage_evidence.payload.get("standing") != "carried"
+        or locality_evidence.payload.get("act_occurrence_id") != act_occurrence_id
+        or locality_evidence.payload.get("standing") != "carried"
         or act_evidence.payload.get("result_commitment") != commitment
         or yield_evidence.payload.get("yield_commitment") != commitment
         or yield_evidence.payload.get("yield_convention")
         != EXTERNAL_EXPRESSION_RELATION_CONVENTION
-        or carriage_evidence.payload.get("carried_content") != result
+        or locality_evidence.payload.get("carried_content") != result
         or act_evidence.payload.get("input_applicability")
         != [
             {

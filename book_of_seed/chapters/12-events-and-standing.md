@@ -16,19 +16,15 @@ Replay, Selection, aggregation, ranking, suppression, caching, and read-model co
 
 Recorded material and previously established Standing may support current Standing only through the responsible Act in which they participate. Current Standing is repository-governed and inspectable; it is not a durable object, objective reality, complete memory, truth beyond its bounds, mandatory agreement, or verification of every preserved Assertion.
 
-### 06.Standing.B — Occurrence locality
+### 06.Standing.B — Locality
 
-Occurrences within one workspace may carry locality. Same workspace does not mean same locality, and same locality does not mean same occurrence.
+Locality is the exact evidenced relation that two exact bounded subjects are local to one another. The subjects do not establish that relation by identity, co-presence, chronology, addressability, or a shared label. A locality relation preserves both subjects, its exact Evidence, occurrence, limits, and Unknowns.
 
-Cross-workspace participation requires a separately established responsible occurrence preserving both workspaces and every applicable source coordinate and limit. Addressability alone does not establish that crossing.
+One subject may bear several separately evidenced locality relations. Equal subjects under another occurrence do not identify the same relation. A locality relation does not enclose its subjects, create a hierarchy, grant Authority, establish Participation, or carry Standing for either subject.
 
-Within one workspace, a Seed may make one exact preserved Assertion available in another locality through a responsible movement occurrence. Movement preserves the original Assertion reference and identity together with source and destination locality, Scope, Evidence, Authority, Standing, Unknowns, and surviving limits. It establishes availability only: it does not copy or strengthen the Assertion, revise its Standing, establish Applicability, or require another Act.
+A responsible movement occurrence may preserve an Assertion while establishing a new locality relation between that Assertion and an exact bounded subject. Movement preserves the original Assertion reference and identity, its earlier locality relations, Scope, Evidence, Standing, Unknowns, and surviving limits. It establishes only the new locality relation: it does not copy or strengthen the Assertion, revise its Standing, establish Applicability, or require another Act.
 
-Where a Seed performs that movement over an exact Assertion already preserved in its workspace and both localities belong to that workspace, that Seed bears the movement Responsibility. The assignment must remain recoverable from the Assertion reference, workspace, localities, movement Act, and movement occurrence.
-
-Chronology alone does not establish locality, membership, causation, or response. An Act preserves the applicable locality of each participating input separately from the locality of anything it establishes.
-
-Locality is a boundary coordinate, not a constitutional subject. No Responsibility is assigned to locality, and locality carries no Standing of its own. `session_id` is one implementation witness, not the constitutional definition.
+Chronology alone does not establish locality, causation, or response. An Act occurrence preserves the exact locality relation of each participating subject separately from any locality relation resulting from that occurrence.
 
 ## Important distinctions
 
@@ -36,7 +32,7 @@ Locality is a boundary coordinate, not a constitutional subject. No Responsibili
 - recording != Standing occurrence
 - replayed material != current Standing
 - current Standing != objective reality
-- workspace != locality
+- locality subjects != locality relation
 - locality != occurrence
 - movement != copying or revision
 - availability != Applicability

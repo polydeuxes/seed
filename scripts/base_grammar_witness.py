@@ -7,7 +7,7 @@ intact_evidence, and nothing else is listed. What differs is where each runs
 from and to.
 
 ```text
-  carriage       content         -> occurrence
+  locality       content         -> occurrence
   participation  subject         -> Act_occurrence
   yield          Act_occurrence  -> result
 ```
@@ -19,8 +19,8 @@ three are linked, and nine ordered edge pairs of which one composes:
   participation ends at Act_occurrence, where yield begins
 ```
 
-**Carriage joins nothing.** It ends at `occurrence`, and no edge begins there.
-The Book's prose says Carriage is "the exact evidenced relation from content to
+**Locality joins nothing.** It ends at `occurrence`, and no edge begins there.
+The Book's prose says Locality is "the exact evidenced relation from content to
 the occurrence that carries it", and separately holds `act occurrence` apart
 from `recording occurrence`, so an Act occurrence reads as one kind of
 occurrence. `grammar.json` states no relation between the two names, so to
@@ -28,7 +28,7 @@ anything reading it the graph is disconnected.
 
 **The edges do not separate under composition.** Climbing them by whether one
 ends where another begins yields one class: composition says nothing that
-tells carriage from yield. The endpoints climb to five classes in four rungs.
+tells locality from yield. The endpoints climb to five classes in four rungs.
 So the structure such as it is lives in the endpoints, not the edges.
 """
 

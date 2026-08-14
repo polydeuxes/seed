@@ -25,9 +25,10 @@ _NO_MATCH_UNKNOWNS = (
 
 
 def _dimensions(
-    *, identity, content, standing, source, responsibility, authority, scope, occurrence
+    *, identity, content, standing, source, responsibility, authority, scope, occurrence,
+    evidence_scope=None,
 ):
-    return {
+    dimensions = {
         "identity": identity,
         "content": content,
         "standing": standing,
@@ -37,6 +38,9 @@ def _dimensions(
         "scope_locality": scope,
         "occurrence_preservation": occurrence,
     }
+    if evidence_scope is not None:
+        dimensions["evidence_scope"] = evidence_scope
+    return dimensions
 
 
 def _require(condition: bool, failure: str) -> None:
@@ -225,7 +229,8 @@ def run_operator_response_comparison_and_identification(
                 standing=comparison_outcome,
                 source=response_ingress_event_id,
                 responsibility="bounded-response-comparison",
-                authority=(
+                authority="unestablished",
+                evidence_scope=(
                     "bounded by this exchange: captured material against this "
                     "representation's exact response coordinates; result bounded "
                     "to match or no coordinate match; establishes no intent, "
@@ -302,7 +307,8 @@ def run_operator_response_comparison_and_identification(
                 standing=identification_outcome,
                 source=comparison_event.id,
                 responsibility="bounded-alternative-identification",
-                authority=(
+                authority="unestablished",
+                evidence_scope=(
                     "identifies a represented alternative within this exact "
                     "representation only; establishes no source reconstruction, "
                     "represented relation, intent, selection, authorization, result relation, or "

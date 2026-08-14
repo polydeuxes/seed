@@ -108,17 +108,16 @@ def test_ingress_asserts_only_occurrence_and_records_represented_relation_unknow
 
 def test_capture_asserts_only_occurrence_evidence(events):
     for event in (e for e in events if e.kind == CAPTURED):
-        assert (
-            event.payload["dimensions"]["authority"]
-            == "occurrence evidence only"
-        )
+        assert event.payload["dimensions"]["authority"] == "unestablished"
+        assert event.payload["dimensions"]["evidence_scope"] == "occurrence Evidence only"
 
 
 def test_decoder_outcome_asserts_only_decoder_outcome(events):
     for event in (e for e in events if e.kind == DECODER_OUTCOME_RECORDED):
+        assert event.payload["dimensions"]["authority"] == "unestablished"
         assert (
-            event.payload["dimensions"]["authority"]
-            == "decoder outcome evidence only"
+            event.payload["dimensions"]["evidence_scope"]
+            == "decoder outcome Evidence only"
         )
 
 

@@ -55,9 +55,7 @@ and
 another
 answer
 answers
-antecedent
 any
-anything
 api
 applicability
 applicable
@@ -136,8 +134,6 @@ candidates
 cannot
 canonical
 capture
-carriage
-carriages
 carried
 carries
 carry
@@ -246,7 +242,6 @@ counting
 counts
 create
 cross
-crossing
 crossings
 current
 currentness
@@ -264,7 +259,6 @@ dedicated
 default
 deferral
 deferred
-definition
 depends
 describe
 described
@@ -324,6 +318,8 @@ eliminate
 elimination
 emission
 emissions
+enclosure
+enclose
 emit
 emitted
 enactment
@@ -447,7 +443,6 @@ history
 horizon
 hosts
 how
-id
 identifier
 identifies
 identify
@@ -871,6 +866,7 @@ schema
 scope
 scoped
 seam
+second
 seed
 selected
 selecting
@@ -916,7 +912,6 @@ stops
 stream
 strengthen
 strengthened
-strengthening
 stronger
 structural
 structurally
@@ -1042,8 +1037,6 @@ without
 witness
 witnesses
 wording
-workspace
-workspaces
 would
 write
 written

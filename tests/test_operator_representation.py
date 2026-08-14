@@ -18,15 +18,15 @@ _INGRESS_KINDS = (
     "operator.material.occurred",
 )
 _EMISSION_EDGE_EVIDENCE_KINDS = (
-    "operator.representation.emission_attempt_carriage_evidenced",
+    "operator.representation.emission_attempt_locality_evidenced",
     "operator.representation.emission_act_evidenced",
-    "operator.representation.emission_carriage_evidenced",
+    "operator.representation.emission_locality_evidenced",
     "operator.yield.evidence_recorded",
 )
 _REPRESENTATION_EDGE_EVIDENCE_KINDS = (
     "operator.representation.act_evidenced",
     "operator.yield.evidence_recorded",
-    "operator.representation.carriage_evidenced",
+    "operator.representation.locality_evidenced",
 )
 
 
@@ -445,7 +445,7 @@ def test_first_interaction_attaches_no_representation_to_the_capture():
     assert kinds == {
         *_INGRESS_KINDS,
         "operator.representation.act_evidenced",
-        "operator.representation.carriage_evidenced",
+        "operator.representation.locality_evidenced",
         "operator.representation.recorded",
         "operator.representation.emission_attempted",
         *_EMISSION_EDGE_EVIDENCE_KINDS,
@@ -482,8 +482,8 @@ def test_representation_act_is_recorded_before_emission_and_they_stay_distinct()
         representation_event.payload["responsible_act_evidence_id"]
     )
     yield_evidence = ledger.get(representation_event.payload["yield_evidence_id"])
-    carriage_evidence = ledger.get(
-        representation_event.payload["carriage_evidence_id"]
+    locality_evidence = ledger.get(
+        representation_event.payload["locality_evidence_id"]
     )
     assert representation["representation_act_id"] == act_evidence.payload[
         "representation_act_id"
@@ -494,10 +494,10 @@ def test_representation_act_is_recorded_before_emission_and_they_stay_distinct()
     assert representation["act_occurrence_id"] == yield_evidence.payload[
         "dimensions"
     ]["act_occurrence_id"]
-    assert representation["act_occurrence_id"] == carriage_evidence.payload[
+    assert representation["act_occurrence_id"] == locality_evidence.payload[
         "act_occurrence_id"
     ]
-    assert carriage_evidence.payload["carried_content"]["representation_ref"] == (
+    assert locality_evidence.payload["carried_content"]["representation_ref"] == (
         representation["representation_id"]
     )
     assert "input_role" not in representation_event.payload
@@ -536,12 +536,12 @@ def test_emission_preserves_the_exact_text_written_to_its_boundary():
         representation["emission_attempt_event_id"],
     ]
     attempt = ledger.get(representation["emission_attempt_event_id"])
-    attempt_carriage_evidence = ledger.get(
-        representation["emission_attempt_carriage_evidence_id"]
+    attempt_locality_evidence = ledger.get(
+        representation["emission_attempt_locality_evidence_id"]
     )
     assert attempt.payload["attempted_representation"] == output.getvalue()
-    assert attempt_carriage_evidence.payload["carried_content"] == output.getvalue()
-    assert attempt_carriage_evidence.payload["attempt_event_id"] == attempt.id
+    assert attempt_locality_evidence.payload["carried_content"] == output.getvalue()
+    assert attempt_locality_evidence.payload["attempt_event_id"] == attempt.id
     assert attempt.payload["dimensions"]["standing"].endswith("outcome Unknown")
     assert attempt.id != emission.payload["act_occurrence_id"]
     assert emission.payload["input_role"] == "exact bounded Representation"
@@ -552,7 +552,7 @@ def test_emission_preserves_the_exact_text_written_to_its_boundary():
         "accepted_length": len(output.getvalue()),
     }
     act_evidence = ledger.get(emission.payload["responsible_act_evidence_id"])
-    carriage_evidence = ledger.get(emission.payload["carriage_evidence_id"])
+    locality_evidence = ledger.get(emission.payload["locality_evidence_id"])
     yield_evidence = ledger.get(emission.payload["yield_evidence_id"])
     assert act_evidence.payload["representation_ref"] == representation[
         "representation_id"
@@ -560,11 +560,11 @@ def test_emission_preserves_the_exact_text_written_to_its_boundary():
     assert act_evidence.payload["act_occurrence_id"] == emission.payload[
         "act_occurrence_id"
     ]
-    assert carriage_evidence.payload["carried_content"] == output.getvalue()
-    assert carriage_evidence.payload["act_occurrence_id"] == emission.payload[
+    assert locality_evidence.payload["carried_content"] == output.getvalue()
+    assert locality_evidence.payload["act_occurrence_id"] == emission.payload[
         "act_occurrence_id"
     ]
-    assert carriage_evidence.payload["act_occurrence_id"] != attempt.id
+    assert locality_evidence.payload["act_occurrence_id"] != attempt.id
     assert yield_evidence.payload["dimensions"]["act_occurrence_id"] == emission.payload[
         "act_occurrence_id"
     ]
@@ -596,7 +596,7 @@ def test_partial_output_write_preserves_attempt_and_failed_occurrences():
         *_REPRESENTATION_EDGE_EVIDENCE_KINDS,
         "operator.representation.recorded",
         "operator.representation.emission_attempted",
-        "operator.representation.emission_attempt_carriage_evidenced",
+        "operator.representation.emission_attempt_locality_evidenced",
         "operator.representation.emission_outcome_recorded",
     ]
     failure = ledger.get(representation["emission_outcome_event_id"])
@@ -700,10 +700,10 @@ def test_process_death_after_attempt_leaves_output_outcome_unknown():
         *_REPRESENTATION_EDGE_EVIDENCE_KINDS,
         "operator.representation.recorded",
         "operator.representation.emission_attempted",
-        "operator.representation.emission_attempt_carriage_evidenced",
+        "operator.representation.emission_attempt_locality_evidenced",
     ]
     recovered = list(_standing(ledger)["representations"].values())[-1]
     assert recovered["emission_attempt_event_id"] is not None
-    assert recovered["emission_attempt_carriage_evidence_id"] is not None
+    assert recovered["emission_attempt_locality_evidence_id"] is not None
     assert recovered["emission_outcome_event_id"] is None
     assert recovered["emitted_event_id"] is None

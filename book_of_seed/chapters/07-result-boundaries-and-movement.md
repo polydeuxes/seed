@@ -6,7 +6,7 @@ The exact coordinates by which current Standing may be compared with a bounded r
 
 ## Bounded resolution
 
-Operator material or already-established Standing may identify an exact result condition within a workspace, Scope, and locality. The result condition is not a new constitutional subject by identity. It remains material or an Assertion carrying its own source, Evidence, Authority, Scope, locality, limits, conflicts, and Unknowns.
+Operator material or already-established Standing may identify an exact result condition under a Scope and exact locality relation. The result condition is not a new constitutional subject by identity. It remains material or an Assertion carrying its own source, Evidence, Authority, Scope, locality, limits, conflicts, and Unknowns.
 
 A responsible Compare may accept as input current Standing and that exact result condition. Its result is a bounded distinction Assertion preserving the compared subjects, rule, Evidence, Authority, Scope, locality, occurrence, conflicts, limits, and Unknowns. Difference, incompatibility, absence, and Unknown remain distinct results.
 

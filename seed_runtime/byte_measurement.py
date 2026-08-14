@@ -697,6 +697,11 @@ def _move_byte_assertion_to_locality(
             "source_assertion_ref": source.reference,
             "source_locality": source_locality,
             "destination_locality": destination_locality,
+            "locality_relation": {
+                "first_subject": source.reference,
+                "second_subject": destination_locality,
+                "relation_occurrence_id": movement_occurrence_id,
+            },
             "authority": "unestablished",
             "evidence_scope": (
                 "evidences this exact same-workspace Assertion locality movement"
@@ -718,6 +723,11 @@ def _move_byte_assertion_to_locality(
             "assertion_id": source.assertion_id,
             "source_locality": source_locality,
             "destination_locality": destination_locality,
+            "locality_relation": {
+                "first_subject": source.reference,
+                "second_subject": destination_locality,
+                "relation_occurrence_id": movement_occurrence_id,
+            },
             "assertion_commitment": _movement_commitment(payload),
             "surviving_coordinates": [
                 "Evidence",
@@ -795,6 +805,13 @@ def _validate_moved_byte_assertion(
         "source_assertion_ref": source.reference,
         "source_locality": source_event.locality_id,
         "destination_locality": movement.locality_id,
+        "locality_relation": {
+            "first_subject": source.reference,
+            "second_subject": movement.locality_id,
+            "relation_occurrence_id": movement.payload.get(
+                "movement_act_occurrence_id"
+            ),
+        },
         "authority": "unestablished",
         "evidence_scope": (
             "evidences this exact same-workspace Assertion locality movement"
@@ -822,6 +839,7 @@ def _validate_moved_byte_assertion(
         "assertion_id": source.assertion_id,
         "source_locality": source_event.locality_id,
         "destination_locality": movement.locality_id,
+        "locality_relation": expected_evidence["locality_relation"],
         "assertion_commitment": _movement_commitment(source.payload),
         "surviving_coordinates": [
             "Evidence",

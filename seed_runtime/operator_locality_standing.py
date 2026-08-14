@@ -14,13 +14,13 @@ from seed_runtime.event import Event
 from seed_runtime.operator_representation import (
     REPRESENTATION_RECORDED_KIND as _REPRESENTATION_RECORDED_KIND,
     REPRESENTATION_ACT_EVIDENCE_KIND as _REPRESENTATION_ACT_EVIDENCE_KIND,
-    REPRESENTATION_CARRIAGE_EVIDENCE_KIND as _REPRESENTATION_CARRIAGE_EVIDENCE_KIND,
+    REPRESENTATION_LOCALITY_EVIDENCE_KIND as _REPRESENTATION_LOCALITY_EVIDENCE_KIND,
     REPRESENTATION_EMISSION_ATTEMPTED_KIND as _REPRESENTATION_EMISSION_ATTEMPTED_KIND,
     REPRESENTATION_EMITTED_KIND as _REPRESENTATION_EMITTED_KIND,
     REPRESENTATION_EMISSION_OUTCOME_KIND as _REPRESENTATION_EMISSION_OUTCOME_KIND,
     REPRESENTATION_EMISSION_ACT_EVIDENCE_KIND as _REPRESENTATION_EMISSION_ACT_EVIDENCE_KIND,
-    REPRESENTATION_EMISSION_CARRIAGE_EVIDENCE_KIND as _REPRESENTATION_EMISSION_CARRIAGE_EVIDENCE_KIND,
-    REPRESENTATION_EMISSION_ATTEMPT_CARRIAGE_EVIDENCE_KIND as _REPRESENTATION_EMISSION_ATTEMPT_CARRIAGE_EVIDENCE_KIND,
+    REPRESENTATION_EMISSION_LOCALITY_EVIDENCE_KIND as _REPRESENTATION_EMISSION_LOCALITY_EVIDENCE_KIND,
+    REPRESENTATION_EMISSION_ATTEMPT_LOCALITY_EVIDENCE_KIND as _REPRESENTATION_EMISSION_ATTEMPT_LOCALITY_EVIDENCE_KIND,
 )
 
 _SUBJECT_BY_KIND = {
@@ -37,13 +37,13 @@ _SUPPORTED_KINDS = {
     "operator.material.decoder_outcome_recorded",
     _REPRESENTATION_RECORDED_KIND,
     _REPRESENTATION_ACT_EVIDENCE_KIND,
-    _REPRESENTATION_CARRIAGE_EVIDENCE_KIND,
+    _REPRESENTATION_LOCALITY_EVIDENCE_KIND,
     _REPRESENTATION_EMISSION_ATTEMPTED_KIND,
     _REPRESENTATION_EMITTED_KIND,
     _REPRESENTATION_EMISSION_OUTCOME_KIND,
     _REPRESENTATION_EMISSION_ACT_EVIDENCE_KIND,
-    _REPRESENTATION_EMISSION_CARRIAGE_EVIDENCE_KIND,
-    _REPRESENTATION_EMISSION_ATTEMPT_CARRIAGE_EVIDENCE_KIND,
+    _REPRESENTATION_EMISSION_LOCALITY_EVIDENCE_KIND,
+    _REPRESENTATION_EMISSION_ATTEMPT_LOCALITY_EVIDENCE_KIND,
     _COMPARISON_KIND,
     _IDENTIFICATION_KIND,
     _SOURCE_VALIDATED_KIND,
@@ -192,7 +192,7 @@ def advance_operator_locality_standing(
                 _record_distinct(collected, value)
         if event.kind in {
             _REPRESENTATION_ACT_EVIDENCE_KIND,
-            _REPRESENTATION_CARRIAGE_EVIDENCE_KIND,
+            _REPRESENTATION_LOCALITY_EVIDENCE_KIND,
         }:
             continue
         if event.kind == _REPRESENTATION_RECORDED_KIND:
@@ -206,7 +206,7 @@ def advance_operator_locality_standing(
                 "representation_id": payload["representation_ref"],
                 "representation_event_id": event.id,
                 "emission_attempt_event_id": None,
-                "emission_attempt_carriage_evidence_id": None,
+                "emission_attempt_locality_evidence_id": None,
                 "emission_outcome_event_id": None,
                 "emitted_event_id": None,
                 "representation_result": payload["representation_result"],
@@ -225,7 +225,7 @@ def advance_operator_locality_standing(
             continue
         if event.kind in {
             _REPRESENTATION_EMISSION_ACT_EVIDENCE_KIND,
-            _REPRESENTATION_EMISSION_CARRIAGE_EVIDENCE_KIND,
+            _REPRESENTATION_EMISSION_LOCALITY_EVIDENCE_KIND,
         }:
             # These Events preserve exact edge Evidence. They do not add or
             # revise session Standing by identity.
@@ -239,21 +239,21 @@ def advance_operator_locality_standing(
                 )
             representations[representation_ref]["emission_attempt_event_id"] = event.id
             continue
-        if event.kind == _REPRESENTATION_EMISSION_ATTEMPT_CARRIAGE_EVIDENCE_KIND:
+        if event.kind == _REPRESENTATION_EMISSION_ATTEMPT_LOCALITY_EVIDENCE_KIND:
             representation_ref = event.payload["representation_ref"]
             if representation_ref not in representations:
                 raise ValueError(
-                    "emission-attempt Carriage Evidence without recorded Representation: "
+                    "emission-attempt Locality Evidence without recorded Representation: "
                     f"{representation_ref}"
                 )
             if event.payload["attempt_event_id"] != representations[
                 representation_ref
             ]["emission_attempt_event_id"]:
                 raise ValueError(
-                    "emission-attempt Carriage Evidence names another attempt"
+                    "emission-attempt Locality Evidence names another attempt"
                 )
             representations[representation_ref][
-                "emission_attempt_carriage_evidence_id"
+                "emission_attempt_locality_evidence_id"
             ] = event.id
             continue
         if event.kind == _REPRESENTATION_EMITTED_KIND:

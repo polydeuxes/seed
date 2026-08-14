@@ -56,7 +56,7 @@ UNKNOWNS = (
     "next-Act Applicability Unknown",
 )
 AUTHORITY_LIMITS = (
-    "addressability and carriage establish no other relation, Standing, Act, or occurrence",
+    "addressability and locality establish no other relation, Standing, Act, or occurrence",
 )
 
 

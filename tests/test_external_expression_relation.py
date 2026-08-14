@@ -114,7 +114,7 @@ def test_absent_expression_relation_preserves_unknown():
 
 def test_equal_expression_does_not_collapse_different_source_relations():
     ledger = EventLedger()
-    for name in ("yield", "carriage"):
+    for name in ("yield", "locality"):
         source = _source(
             ledger,
             "Producer",

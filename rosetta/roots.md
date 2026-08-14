@@ -18,16 +18,17 @@ Responsibility
     └── Standing
 ```
 
-Three structural relations recur across live implementation roads:
+Structural relations recur across live implementation roads:
 
 ```text
-content ── Carriage → occurrence
+content ── Locality → occurrence
 subject ── Participation(role) → Act occurrence
 Act occurrence ── Yield → result
+first subject ── Locality → second subject
 ```
 
 The endpoints do not supply a relation by co-presence. Each relation requires
-its exact Evidence. These three structural relations are not every relation
+its exact Evidence. These structural relations are not every relation
 about which Seed may carry an Assertion or Standing.
 
 ## Live implementation references
@@ -52,7 +53,7 @@ Assertion recovery and locality movement
 Applicability
     seed_runtime.byte_measurement::get_recorded_pair_input_applicability
 
-Emission Carriage / Participation / Yield
+Emission Locality / Participation / Yield
     seed_runtime.operator_representation::emit_operator_representation
 
 Machine-grammar Fidelity
@@ -107,7 +108,7 @@ coordinate rather than restoring the compressed noun.
 
 `digest` and `commitment` name implementation mechanisms. Recomputing a digest
 can show that declared representations match; it does not supply Content,
-Carriage, occurrence, Provenance, Evidence, or Standing.
+Locality, occurrence, Provenance, Evidence, or Standing.
 
 ## Use
 

@@ -55,7 +55,7 @@ def _commit_part(digest: "hashlib._Hash", value: str) -> None:
 def yield_commitment(convention: str, content: dict[str, Any]) -> str:
     """Commit to canonical JSON of declared coordinates in this domain.
 
-    The digest does not identify literal carriage bytes. Distinct JSON texts
+    The digest does not identify literal locality bytes. Distinct JSON texts
     that decode to the same coordinate values receive the same commitment.
     """
 

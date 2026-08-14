@@ -1,8 +1,8 @@
-# Carriage and Source Coordinates
+# Locality and Source Coordinates
 
 ## Constitutional subject
 
-The carriage of exact content and the boundary between supplied material and Seed Standing.
+The locality of exact content and the boundary between supplied material and Seed Standing.
 
 ## Bounded resolution
 
@@ -13,10 +13,6 @@ A supplied representation may become Seed-addressable without becoming Evidence,
 An exact Responsibility may use supplied material only through its own Applicability and other required boundaries. Every applicable source coordinate and limit travels with the material. Dropping a limit is erasure; an unsupported coordinate remains unsupported; treating supplied material as repository truth is mutation; assigning Authority from source identity is relocation.
 
 Developer-supplied connective text is material carrying source coordinates. It may assert a narrow relation within an exact representation, but equivalent text under another subject, source, Scope, occurrence, or support-relation Standing does not identify the same relation. Unsupported coordinates remain Unknown or uninstantiated.
-
-### 01.Carriage.A — Exact content is carried by an exact occurrence
-
-**Carriage** is the exact evidenced relation from content to the occurrence that carries it. Carriage != content, occurrence, representation, digest, provenance, Evidence, or Standing. Content and occurrence co-presence does not supply Carriage. The same content may be carried by distinct occurrences; each Carriage remains bound to its exact occurrence. Equivalent representation or matching digest does not supply Carriage.
 
 ### 01.Source.A — Addressability preserves source coordinates
 
@@ -34,7 +30,7 @@ Fidelity is bounded comparison of this Seed's live implementation witness with i
 
 A declared Measurement occurrence may carry bounded exact equality, count, recurrence, prefix occurrence, declared-predicate result, or adjacency findings. Its result carries nothing beyond the exact rule and boundary. Recurrence preserves the representation measured, sameness rule, and Scope.
 
-Where a Seed performs a Seed-native declared Measurement over exact material already preserved in its workspace, that Seed bears the Measurement Responsibility. The assignment does not identify the occurrence, make recording the Measurement occurrence, or transfer the resulting Assertion's Standing-coordinate Responsibility.
+Where a Seed performs a Seed-native declared Measurement over exact material related to that Seed by exact Locality Evidence, that Seed bears the Measurement Responsibility. The assignment does not identify the occurrence, make recording the Measurement occurrence, or transfer the resulting Assertion's Standing-coordinate Responsibility.
 
 ### 01.Source.D.1 — Counts preserve occurrence identity
 
@@ -46,7 +42,7 @@ A candidate preserves every applicable source role, representation Act occurrenc
 
 ### 01.Source.F — Supplied material may assert a relation
 
-Supplied material may assert that X represents or identifies Y. The responsible representation Act occurrence preserves source identity or role, material origin, source occurrence where evidenced, Scope, provenance, Authority limits, known loss, conflicts, and Unknowns. Carriage, labels, reference resolution, shape, or repetition do not support either the source relation or represented relation. Each requires a responsible occurrence.
+Supplied material may assert that X represents or identifies Y. The responsible representation Act occurrence preserves source identity or role, material origin, source occurrence where evidenced, Scope, provenance, Authority limits, known loss, conflicts, and Unknowns. Locality, labels, reference resolution, shape, or repetition do not support either the source relation or represented relation. Each requires a responsible occurrence.
 
 ## Important distinctions
 

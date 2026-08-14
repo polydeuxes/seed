@@ -27,7 +27,7 @@ def test_machine_readable_grammar_uses_responsibility_spine():
     assert grammar["spine"] == "Responsibility"
     assert grammar["implementation_witness"]["discriminators"] == [
         "content",
-        "carriage",
+        "locality",
         "digest",
     ]
     assert grammar["clauses"]
@@ -43,9 +43,9 @@ def test_machine_readable_grammar_uses_responsibility_spine():
 def test_missing_structural_edge_clause_is_detected():
     grammar = json.loads(GRAMMAR.read_text(encoding="utf-8"))
     active_book = _active_book()
-    carriage_clause = grammar["structural_edges"]["carriage"]["book_clause"]
+    locality_clause = grammar["structural_edges"]["locality"]["book_clause"]
     broken_book = active_book.replace(
-        f"### {carriage_clause} ", "### 01.Missing.A ", 1
+        f"### {locality_clause} ", "### 01.Missing.A ", 1
     )
 
     try:
@@ -53,4 +53,4 @@ def test_missing_structural_edge_clause_is_detected():
     except AssertionError:
         pass
     else:
-        raise AssertionError("missing Carriage clause escaped the grammar audit")
+        raise AssertionError("missing Locality clause escaped the grammar audit")

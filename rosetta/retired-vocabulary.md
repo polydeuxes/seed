@@ -5,11 +5,11 @@ Translation testimony only. These entries carry no constitutional Authority.
 The compact mappings live in [Responsibility spine](roots.md). This file keeps
 only distinctions that are easy to lose during translation.
 
-## Content, Carriage, and digest
+## Content, Locality, and digest
 
 ```text
-same content != same Carriage
-same digest != same Carriage
+same content != same Locality
+same digest != same Locality
 matching digest != occurrence
 matching digest != Provenance
 matching digest != Standing
@@ -34,7 +34,7 @@ Standing. `Testimony` and `Attribution` do not bridge that distinction.
 direction through exact relations. They add no participant or stage.
 
 ```text
-content ── Carriage ───────→ occurrence
+content ── Locality ───────→ occurrence
 subject ── Participation ──→ Act occurrence
 Act occurrence ── Yield ───→ result
 ```

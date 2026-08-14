@@ -11,12 +11,6 @@
     "does_not_establish": "global_certification"
   },
   "structural_edges": {
-    "carriage": {
-      "book_clause": "01.Carriage.A",
-      "from": "content",
-      "to": "occurrence",
-      "requires": ["exact_relation", "occurrence_witness", "intact_evidence"]
-    },
     "participation": {
       "book_clause": "01.Standing.E.1",
       "from": "subject",
@@ -29,6 +23,13 @@
       "from": "Act_occurrence",
       "to": "result",
       "requires": ["exact_relation", "occurrence_witness", "intact_evidence"]
+    },
+    "locality": {
+      "book_clause": "06.Standing.B",
+      "from": "first_subject",
+      "to": "second_subject",
+      "subject_taxonomy_closed": false,
+      "requires": ["exact_relation", "occurrence_witness", "intact_evidence"]
     }
   },
   "input_role": {
@@ -37,7 +38,7 @@
     "preserves_subject_identity": true,
     "distinct_from": [
       "subject",
-      "carriage",
+      "locality",
       "Applicability",
       "Admission",
       "participation",
@@ -45,17 +46,17 @@
     ]
   },
   "implementation_witness": {
-    "discriminators": ["content", "carriage", "digest"],
+    "discriminators": ["content", "locality", "digest"],
     "relations": {
-      "carriage_carries": "content",
+      "locality_relation": ["first_subject", "second_subject"],
       "digest_commits_to": "declared_canonical_representation"
     },
     "relation_audit": {
       "endpoint_presence_establishes_relation": false,
       "families": {
-        "carriage": ["exact_relation", "occurrence_witness", "intact_evidence"],
         "candidate_participation": ["exact_relation", "occurrence_witness"],
         "participation": ["exact_relation", "occurrence_witness", "intact_evidence"],
+        "locality": ["exact_relation", "occurrence_witness", "intact_evidence"],
         "yield": ["exact_relation", "occurrence_witness", "intact_evidence"],
         "representation_mechanically_matches_digest": [
           "mechanical_recomputation"
@@ -74,9 +75,9 @@
       "unrelated_change": "exact"
     },
     "non_equivalence": [
-      ["content", "carriage"],
+      ["content", "locality"],
       ["content", "digest"],
-      ["carriage", "digest"]
+      ["locality", "digest"]
     ],
     "digest_does_not_establish": [
       "content_reconstruction",
@@ -206,49 +207,47 @@
       ]
     },
     "06.Standing.B": {
-      "subject": "Assertion_locality_movement",
+      "subject": "Locality_relation",
       "identity": [
-        "source_Assertion_reference",
-        "source_locality",
-        "destination_locality",
-        "movement_Act"
+        "first_subject",
+        "second_subject",
+        "relation_occurrence"
+      ],
+      "requires": [
+        "exact_relation",
+        "occurrence_witness",
+        "intact_evidence"
       ],
       "responsibility": {
-        "boundary": "this_Seed_when_same_workspace_antecedent_is_exact",
+        "kind": "relation_preservation",
         "coordinates": [
-          "workspace",
-          "source_Assertion_reference",
-          "source_locality",
-          "destination_locality",
-          "movement_Act",
-          "movement_occurrence",
-          "movement_Evidence",
-          "movement_Authority"
+          "first_subject",
+          "second_subject",
+          "relation_occurrence",
+          "Evidence",
+          "limits",
+          "Unknowns"
         ]
       },
       "preserves": [
-        "Assertion_identity",
-        "original_occurrence",
-        "Standing",
-        "Assertion_Evidence",
-        "Assertion_Authority",
-        "Scope",
+        "first_subject_identity",
+        "second_subject_identity",
+        "Evidence",
         "Unknowns",
         "limits"
       ],
-      "result": "availability_at_destination_locality",
       "does_not_establish": [
-        "Assertion_copy",
-        "Assertion_strengthening",
-        "Standing_revision",
+        "enclosure",
+        "hierarchy",
+        "Authority",
+        "Participation",
         "Applicability",
-        "workspace_crossing",
-        "another_Act"
+        "subject_Standing"
       ],
       "distinct_from": [
-        ["workspace", "locality"],
+        ["locality_subjects", "Locality_relation"],
         ["locality", "occurrence"],
-        ["movement_Act", "movement_occurrence"]
+        ["Locality_relation", "Participation"]
       ]
     }
   }

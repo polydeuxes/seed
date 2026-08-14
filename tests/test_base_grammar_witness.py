@@ -1,6 +1,6 @@
-"""What separates the three structural edges, and what does not.
+"""What separates the declared structural edges, and what does not.
 
-`grammar.json` declares three. Their stated requirements are identical, so
+Their stated requirements are identical, so
 anything reading only those cannot tell them apart. What differs is where each
 runs from and to, and that is sparse.
 """
@@ -22,12 +22,12 @@ from base_grammar_witness import (  # noqa: E402
 )
 
 
-def test_the_three_edges_state_identical_requirements():
+def test_the_edges_state_identical_requirements():
     """So requirements cannot be what tells one from another."""
 
     declared = edges()
 
-    assert len(declared) == 3
+    assert set(declared) == {"locality", "participation", "yield", "locality"}
     assert shared_requirements(declared)
     assert {tuple(spec["requires"]) for spec in declared.values()} == {
         ("exact_relation", "occurrence_witness", "intact_evidence")
@@ -51,23 +51,15 @@ def test_exactly_one_pair_of_edges_composes():
     assert declared["participation"]["to"] == declared["yield"]["from"] == "Act_occurrence"
 
 
-def test_carriage_reaches_a_place_no_edge_leaves():
-    """It ends at `occurrence`; every edge begins somewhere else.
-
-    The Book's prose reads an Act occurrence as one kind of occurrence, and
-    holds `act occurrence` apart from `recording occurrence`. `grammar.json`
-    states no relation between the two names, so nothing reading it can join
-    what the prose joins.
-    """
+def test_locality_keeps_its_subject_kinds_open():
+    """Content-to-Event locality does not close every Locality endpoint."""
 
     declared = edges()
 
-    assert declared["carriage"]["to"] == "occurrence"
-    assert not [
-        name for name, spec in declared.items() if spec["from"] == "occurrence"
-    ]
+    assert declared["locality"]["from"] == "first_subject"
+    assert declared["locality"]["to"] == "second_subject"
+    assert declared["locality"]["subject_taxonomy_closed"] is False
     assert "Act_occurrence" in endpoints(declared)
-    assert "occurrence" != "Act_occurrence"
 
 
 def test_composition_separates_none_of_the_edges():

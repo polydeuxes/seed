@@ -91,26 +91,26 @@ def _digest_only_witness(digest: str) -> dict[str, str]:
     }
 
 
-def _content_carriage_witness(
-    content: dict, *, carriage, occurrence_id: str
+def _content_locality_witness(
+    content: dict, *, locality, occurrence_id: str
 ) -> str:
-    if carriage is None:
+    if locality is None:
         return MISSING
     return (
         EXACT
-        if carriage.id == occurrence_id and carriage.payload == content
+        if locality.id == occurrence_id and locality.payload == content
         else MISSING
     )
 
 
-def _assertion_carriage_witness(bundle: dict, *, occurrence_id: str) -> str:
-    requirements = _assertion_carriage_requirements(
+def _assertion_locality_witness(bundle: dict, *, occurrence_id: str) -> str:
+    requirements = _assertion_locality_requirements(
         bundle, occurrence_id=occurrence_id
     )
     return EXACT if all(requirements.values()) else MISSING
 
 
-def _assertion_carriage_requirements(
+def _assertion_locality_requirements(
     bundle: dict, *, occurrence_id: str
 ) -> dict[str, bool]:
     assertion = bundle["source_assertion"]
@@ -148,19 +148,19 @@ def _recorded_digest_witness(
     *,
     convention: str,
     digest: str,
-    digest_carriage,
+    digest_locality,
     digest_occurrence_id: str,
 ) -> str:
-    if digest_carriage is None:
+    if digest_locality is None:
         return MISSING
     mechanically_matches = (
         yield_commitment(convention, representation) == digest
     )
-    exact_carriage = (
-        digest_carriage.id == digest_occurrence_id
-        and digest_carriage.payload.get("yield_commitment") == digest
+    exact_locality = (
+        digest_locality.id == digest_occurrence_id
+        and digest_locality.payload.get("yield_commitment") == digest
     )
-    return EXACT if mechanically_matches and exact_carriage else MISSING
+    return EXACT if mechanically_matches and exact_locality else MISSING
 
 
 def _source_assertion():
@@ -261,13 +261,13 @@ def _emission_road() -> dict:
         "ledger": ledger,
         "carrier": carrier,
         "attempt": ledger.get(representation["emission_attempt_event_id"]),
-        "attempt_carriage_evidence": ledger.get(
-            representation["emission_attempt_carriage_evidence_id"]
+        "attempt_locality_evidence": ledger.get(
+            representation["emission_attempt_locality_evidence_id"]
         ),
         "act_evidence": ledger.get(
             carrier.payload["responsible_act_evidence_id"]
         ),
-        "carriage_evidence": ledger.get(carrier.payload["carriage_evidence_id"]),
+        "locality_evidence": ledger.get(carrier.payload["locality_evidence_id"]),
         "content_evidence": ledger.get(carrier.payload["yield_evidence_id"]),
     }
 
@@ -287,14 +287,14 @@ def _repeated_emission_attempt_road() -> tuple[dict, dict]:
     )
     first_attempt = ledger.get(representation["emission_attempt_event_id"])
     first_evidence = ledger.get(
-        representation["emission_attempt_carriage_evidence_id"]
+        representation["emission_attempt_locality_evidence_id"]
     )
     first_carrier = ledger.get(representation["emitted_event_id"])
     first_act_evidence = ledger.get(
         first_carrier.payload["responsible_act_evidence_id"]
     )
-    first_carriage_evidence = ledger.get(
-        first_carrier.payload["carriage_evidence_id"]
+    first_locality_evidence = ledger.get(
+        first_carrier.payload["locality_evidence_id"]
     )
     first_yield_evidence = ledger.get(first_carrier.payload["yield_evidence_id"])
     emit_operator_representation(
@@ -304,33 +304,33 @@ def _repeated_emission_attempt_road() -> tuple[dict, dict]:
     )
     second_attempt = ledger.get(representation["emission_attempt_event_id"])
     second_evidence = ledger.get(
-        representation["emission_attempt_carriage_evidence_id"]
+        representation["emission_attempt_locality_evidence_id"]
     )
     second_carrier = ledger.get(representation["emitted_event_id"])
     second_act_evidence = ledger.get(
         second_carrier.payload["responsible_act_evidence_id"]
     )
-    second_carriage_evidence = ledger.get(
-        second_carrier.payload["carriage_evidence_id"]
+    second_locality_evidence = ledger.get(
+        second_carrier.payload["locality_evidence_id"]
     )
     second_yield_evidence = ledger.get(second_carrier.payload["yield_evidence_id"])
     return (
         {
             "ledger": ledger,
             "attempt": first_attempt,
-            "attempt_carriage_evidence": first_evidence,
+            "attempt_locality_evidence": first_evidence,
             "carrier": first_carrier,
             "act_evidence": first_act_evidence,
-            "carriage_evidence": first_carriage_evidence,
+            "locality_evidence": first_locality_evidence,
             "content_evidence": first_yield_evidence,
         },
         {
             "ledger": ledger,
             "attempt": second_attempt,
-            "attempt_carriage_evidence": second_evidence,
+            "attempt_locality_evidence": second_evidence,
             "carrier": second_carrier,
             "act_evidence": second_act_evidence,
-            "carriage_evidence": second_carriage_evidence,
+            "locality_evidence": second_locality_evidence,
             "content_evidence": second_yield_evidence,
         },
     )
@@ -349,7 +349,7 @@ def _representation_road() -> dict:
         "ledger": ledger,
         "carrier": carrier,
         "act_evidence": ledger.get(carrier.payload["responsible_act_evidence_id"]),
-        "carriage_evidence": ledger.get(carrier.payload["carriage_evidence_id"]),
+        "locality_evidence": ledger.get(carrier.payload["locality_evidence_id"]),
         "content_evidence": ledger.get(carrier.payload["yield_evidence_id"]),
     }
 
@@ -371,8 +371,8 @@ def _repeated_representation_road() -> tuple[dict, dict]:
             "act_evidence": ledger.get(
                 carrier.payload["responsible_act_evidence_id"]
             ),
-            "carriage_evidence": ledger.get(
-                carrier.payload["carriage_evidence_id"]
+            "locality_evidence": ledger.get(
+                carrier.payload["locality_evidence_id"]
             ),
             "content_evidence": ledger.get(carrier.payload["yield_evidence_id"]),
         }
@@ -382,7 +382,7 @@ def _repeated_representation_road() -> tuple[dict, dict]:
 
 def _yield_bundle(ledger, carrier) -> dict:
     act_evidence_id = carrier.payload.get("responsible_act_evidence_id")
-    carriage_evidence_id = carrier.payload.get("carriage_evidence_id")
+    locality_evidence_id = carrier.payload.get("locality_evidence_id")
     return {
         "ledger": ledger,
         "carrier": carrier,
@@ -390,9 +390,9 @@ def _yield_bundle(ledger, carrier) -> dict:
             ledger.get(act_evidence_id) if isinstance(act_evidence_id, str) else None
         ),
         "content_evidence": ledger.get(carrier.payload["yield_evidence_id"]),
-        "carriage_evidence": (
-            ledger.get(carriage_evidence_id)
-            if isinstance(carriage_evidence_id, str)
+        "locality_evidence": (
+            ledger.get(locality_evidence_id)
+            if isinstance(locality_evidence_id, str)
             else None
         ),
     }
@@ -559,7 +559,7 @@ def _assertion_witness(bundle: dict) -> dict[str, str]:
             EXACT if dimensions.get("identity") == expected_identity else CONTRADICTION
         ),
         # Evidence remains on the occurrence/result edge. It is recovered
-        # through the exact carriage, not copied from support_basis.
+        # through the exact locality, not copied from support_basis.
         "Evidence": EXACT if evidence_edge else MISSING,
         "provenance": EXACT if dimensions.get("source_provenance") else MISSING,
         "Scope": EXACT if payload.get("assertion_scope") else MISSING,
@@ -734,14 +734,14 @@ def _occurrence_result_requirements(bundle: dict) -> dict[str, bool]:
     }
 
 
-def _emission_carriage_witness(bundle: dict) -> str:
-    requirements = _emission_carriage_requirements(bundle)
+def _emission_locality_witness(bundle: dict) -> str:
+    requirements = _emission_locality_requirements(bundle)
     return EXACT if all(requirements.values()) else MISSING
 
 
-def _emission_carriage_requirements(bundle: dict) -> dict[str, bool]:
+def _emission_locality_requirements(bundle: dict) -> dict[str, bool]:
     carrier = bundle["carrier"]
-    evidence = bundle["carriage_evidence"]
+    evidence = bundle["locality_evidence"]
     if evidence is None:
         return {
             "exact_relation": False,
@@ -756,7 +756,7 @@ def _emission_carriage_requirements(bundle: dict) -> dict[str, bool]:
         carrier.payload.get("act_occurrence_id")
         == evidence.payload.get("act_occurrence_id")
     )
-    evidence_is_carried = carrier.payload.get("carriage_evidence_id") == evidence.id
+    evidence_is_carried = carrier.payload.get("locality_evidence_id") == evidence.id
     return {
         "exact_relation": exact_relation and evidence_is_carried,
         "occurrence_witness": exact_occurrence,
@@ -766,14 +766,14 @@ def _emission_carriage_requirements(bundle: dict) -> dict[str, bool]:
     }
 
 
-def _emission_attempt_carriage_witness(bundle: dict) -> str:
-    requirements = _emission_attempt_carriage_requirements(bundle)
+def _emission_attempt_locality_witness(bundle: dict) -> str:
+    requirements = _emission_attempt_locality_requirements(bundle)
     return EXACT if all(requirements.values()) else MISSING
 
 
-def _emission_attempt_carriage_requirements(bundle: dict) -> dict[str, bool]:
+def _emission_attempt_locality_requirements(bundle: dict) -> dict[str, bool]:
     attempt = bundle["attempt"]
-    evidence = bundle["attempt_carriage_evidence"]
+    evidence = bundle["attempt_locality_evidence"]
     if evidence is None:
         return {
             "exact_relation": False,
@@ -835,14 +835,14 @@ def _emission_participation_requirements(bundle: dict) -> dict[str, bool]:
     }
 
 
-def _representation_carriage_witness(bundle: dict) -> str:
-    requirements = _representation_carriage_requirements(bundle)
+def _representation_locality_witness(bundle: dict) -> str:
+    requirements = _representation_locality_requirements(bundle)
     return EXACT if all(requirements.values()) else MISSING
 
 
-def _representation_carriage_requirements(bundle: dict) -> dict[str, bool]:
+def _representation_locality_requirements(bundle: dict) -> dict[str, bool]:
     carrier = bundle["carrier"]
-    evidence = bundle["carriage_evidence"]
+    evidence = bundle["locality_evidence"]
     if evidence is None:
         return {
             "exact_relation": False,
@@ -857,7 +857,7 @@ def _representation_carriage_requirements(bundle: dict) -> dict[str, bool]:
         carrier.payload.get("act_occurrence_id")
         == evidence.payload.get("act_occurrence_id")
     )
-    evidence_is_carried = carrier.payload.get("carriage_evidence_id") == evidence.id
+    evidence_is_carried = carrier.payload.get("locality_evidence_id") == evidence.id
     return {
         "exact_relation": exact_content and evidence_is_carried,
         "occurrence_witness": exact_occurrence,
@@ -868,23 +868,23 @@ def _representation_carriage_requirements(bundle: dict) -> dict[str, bool]:
 
 
 def _structural_edge_fidelity_cases() -> dict[str, dict[str, str]]:
-    carriage = _byte_measurement_road()
-    alternate_carriage = _byte_measurement_road()
-    corrupted_carriage = _byte_measurement_road()
-    corrupted_carriage["ledger"].mark_corrupted(corrupted_carriage["carrier"].id)
-    missing_carriage = dict(carriage)
-    missing_carrier = carriage["carrier"].model_copy(deep=True)
+    locality = _byte_measurement_road()
+    alternate_locality = _byte_measurement_road()
+    corrupted_locality = _byte_measurement_road()
+    corrupted_locality["ledger"].mark_corrupted(corrupted_locality["carrier"].id)
+    missing_locality = dict(locality)
+    missing_carrier = locality["carrier"].model_copy(deep=True)
     missing_carrier.payload["assertions"] = [
         item
         for item in missing_carrier.payload["assertions"]
         if item["dimensions"]["identity"]
-        != carriage["source_assertion"].assertion_id
+        != locality["source_assertion"].assertion_id
     ]
-    missing_carriage["carrier"] = missing_carrier
-    unrelated_carriage = dict(carriage)
-    unrelated_carrier = carriage["carrier"].model_copy(deep=True)
+    missing_locality["carrier"] = missing_carrier
+    unrelated_locality = dict(locality)
+    unrelated_carrier = locality["carrier"].model_copy(deep=True)
     unrelated_carrier.payload["yield_evidence_id"] = "other-yield-evidence"
-    unrelated_carriage["carrier"] = unrelated_carrier
+    unrelated_locality["carrier"] = unrelated_carrier
 
     participation = _recorded_applicability()
     alternate_participation = _recorded_applicability()
@@ -942,31 +942,31 @@ def _structural_edge_fidelity_cases() -> dict[str, dict[str, str]]:
     unrelated_yield = dict(yielded)
     unrelated_yield_carrier = yielded["carrier"].model_copy(deep=True)
     unrelated_yield_carrier.payload["occurrence_preservation"] = (
-        "changed neighboring carriage coordinate"
+        "changed neighboring locality coordinate"
     )
     unrelated_yield["carrier"] = unrelated_yield_carrier
 
     return {
-        "carriage": {
-            "exact": _assertion_carriage_witness(
-                carriage,
-                occurrence_id=carriage["carrier"].id,
+        "locality": {
+            "exact": _assertion_locality_witness(
+                locality,
+                occurrence_id=locality["carrier"].id,
             ),
-            "edge_missing": _assertion_carriage_witness(
-                missing_carriage,
-                occurrence_id=carriage["carrier"].id,
+            "edge_missing": _assertion_locality_witness(
+                missing_locality,
+                occurrence_id=locality["carrier"].id,
             ),
-            "wrong_occurrence": _assertion_carriage_witness(
-                carriage,
-                occurrence_id=alternate_carriage["carrier"].id,
+            "wrong_occurrence": _assertion_locality_witness(
+                locality,
+                occurrence_id=alternate_locality["carrier"].id,
             ),
-            "corrupted_evidence": _assertion_carriage_witness(
-                corrupted_carriage,
-                occurrence_id=corrupted_carriage["carrier"].id,
+            "corrupted_evidence": _assertion_locality_witness(
+                corrupted_locality,
+                occurrence_id=corrupted_locality["carrier"].id,
             ),
-            "unrelated_change": _assertion_carriage_witness(
-                unrelated_carriage,
-                occurrence_id=carriage["carrier"].id,
+            "unrelated_change": _assertion_locality_witness(
+                unrelated_locality,
+                occurrence_id=locality["carrier"].id,
             ),
         },
         "participation": {
@@ -999,24 +999,24 @@ def _structural_edge_fidelity_cases() -> dict[str, dict[str, str]]:
 def _successful_emission_requirement_bundles() -> dict[str, dict[str, dict]]:
     emission, alternate = _repeated_emission_attempt_road()
 
-    missing_carriage = dict(emission)
-    missing_carriage_evidence = emission["carriage_evidence"].model_copy(deep=True)
-    missing_carriage_evidence.payload["carried_content"] = "different content"
-    missing_carriage["carriage_evidence"] = missing_carriage_evidence
-    wrong_carriage = dict(emission)
-    wrong_carriage_carrier = emission["carrier"].model_copy(deep=True)
-    wrong_carriage_carrier.payload["carriage_evidence_id"] = alternate[
-        "carriage_evidence"
+    missing_locality = dict(emission)
+    missing_locality_evidence = emission["locality_evidence"].model_copy(deep=True)
+    missing_locality_evidence.payload["carried_content"] = "different content"
+    missing_locality["locality_evidence"] = missing_locality_evidence
+    wrong_locality = dict(emission)
+    wrong_locality_carrier = emission["carrier"].model_copy(deep=True)
+    wrong_locality_carrier.payload["locality_evidence_id"] = alternate[
+        "locality_evidence"
     ].id
-    wrong_carriage["carrier"] = wrong_carriage_carrier
-    wrong_carriage["carriage_evidence"] = alternate["carriage_evidence"]
-    unrelated_carriage = dict(emission)
-    unrelated_carriage_carrier = emission["carrier"].model_copy(deep=True)
-    unrelated_carriage_carrier.payload["yield_evidence_id"] = "other-yield-evidence"
-    unrelated_carriage["carrier"] = unrelated_carriage_carrier
-    corrupted_carriage = _emission_road()
-    corrupted_carriage["ledger"].mark_corrupted(
-        corrupted_carriage["carriage_evidence"].id
+    wrong_locality["carrier"] = wrong_locality_carrier
+    wrong_locality["locality_evidence"] = alternate["locality_evidence"]
+    unrelated_locality = dict(emission)
+    unrelated_locality_carrier = emission["carrier"].model_copy(deep=True)
+    unrelated_locality_carrier.payload["yield_evidence_id"] = "other-yield-evidence"
+    unrelated_locality["carrier"] = unrelated_locality_carrier
+    corrupted_locality = _emission_road()
+    corrupted_locality["ledger"].mark_corrupted(
+        corrupted_locality["locality_evidence"].id
     )
 
     missing_participation = dict(emission)
@@ -1032,8 +1032,8 @@ def _successful_emission_requirement_bundles() -> dict[str, dict[str, dict]]:
     wrong_participation["act_evidence"] = alternate["act_evidence"]
     unrelated_participation = dict(emission)
     unrelated_participation_carrier = emission["carrier"].model_copy(deep=True)
-    unrelated_participation_carrier.payload["carriage_evidence_id"] = (
-        "other-carriage-evidence"
+    unrelated_participation_carrier.payload["locality_evidence_id"] = (
+        "other-locality-evidence"
     )
     unrelated_participation["carrier"] = unrelated_participation_carrier
     corrupted_participation = _emission_road()
@@ -1065,12 +1065,12 @@ def _successful_emission_requirement_bundles() -> dict[str, dict[str, dict]]:
         corrupted_yield["content_evidence"].id
     )
     return {
-        "carriage": {
+        "locality": {
             "exact": emission,
-            "edge_missing": missing_carriage,
-            "wrong_occurrence": wrong_carriage,
-            "corrupted_evidence": corrupted_carriage,
-            "unrelated_change": unrelated_carriage,
+            "edge_missing": missing_locality,
+            "wrong_occurrence": wrong_locality,
+            "corrupted_evidence": corrupted_locality,
+            "unrelated_change": unrelated_locality,
         },
         "participation": {
             "exact": emission,
@@ -1092,7 +1092,7 @@ def _successful_emission_requirement_bundles() -> dict[str, dict[str, dict]]:
 def _emission_structural_edge_fidelity_cases() -> dict[str, dict[str, str]]:
     bundles = _successful_emission_requirement_bundles()
     witnesses = {
-        "carriage": _emission_carriage_witness,
+        "locality": _emission_locality_witness,
         "participation": _emission_participation_witness,
         "yield": _occurrence_result_witness,
     }
@@ -1245,11 +1245,11 @@ def _remaining_yield_requirement_bundles() -> dict[str, dict[str, dict]]:
     return boundaries
 
 
-def _carriage_requirement_bundles(
+def _locality_requirement_bundles(
     exact: dict, alternate: dict, corrupted: dict
 ) -> dict[str, dict]:
     missing = dict(exact)
-    missing_evidence = exact["carriage_evidence"].model_copy(deep=True)
+    missing_evidence = exact["locality_evidence"].model_copy(deep=True)
     carried_content = missing_evidence.payload["carried_content"]
     if isinstance(carried_content, dict):
         missing_evidence.payload["carried_content"] = {
@@ -1258,16 +1258,16 @@ def _carriage_requirement_bundles(
         }
     else:
         missing_evidence.payload["carried_content"] = "different-carried-content"
-    missing["carriage_evidence"] = missing_evidence
+    missing["locality_evidence"] = missing_evidence
 
     wrong_occurrence = dict(exact)
-    wrong_evidence = exact["carriage_evidence"].model_copy(deep=True)
+    wrong_evidence = exact["locality_evidence"].model_copy(deep=True)
     wrong_evidence.payload["act_occurrence_id"] = alternate["carrier"].payload[
         "act_occurrence_id"
     ]
-    wrong_occurrence["carriage_evidence"] = wrong_evidence
+    wrong_occurrence["locality_evidence"] = wrong_evidence
 
-    corrupted["ledger"].mark_corrupted(corrupted["carriage_evidence"].id)
+    corrupted["ledger"].mark_corrupted(corrupted["locality_evidence"].id)
     unrelated = dict(exact)
     unrelated["carrier"] = exact["carrier"].model_copy(
         deep=True, update={"id": alternate["carrier"].id}
@@ -1281,7 +1281,7 @@ def _carriage_requirement_bundles(
     }
 
 
-def _remaining_carriage_requirement_bundles() -> dict[str, dict[str, dict]]:
+def _remaining_locality_requirement_bundles() -> dict[str, dict[str, dict]]:
     roads = {
         "adjacent_pair_observation": _adjacent_observation_yield_road,
         "adjacent_pair_observation_compare": (
@@ -1290,7 +1290,7 @@ def _remaining_carriage_requirement_bundles() -> dict[str, dict[str, dict]]:
         "external_expression_relation": _external_expression_yield_road,
     }
     return {
-        boundary: _carriage_requirement_bundles(road(), road(), road())
+        boundary: _locality_requirement_bundles(road(), road(), road())
         for boundary, road in roads.items()
     }
 
@@ -1299,34 +1299,34 @@ def _additional_live_structural_edge_fidelity_cases() -> dict[
     tuple[str, str], dict[str, str]
 ]:
     representation, alternate_representation = _repeated_representation_road()
-    missing_representation_carriage = dict(representation)
-    missing_representation_carriage_evidence = representation[
-        "carriage_evidence"
+    missing_representation_locality = dict(representation)
+    missing_representation_locality_evidence = representation[
+        "locality_evidence"
     ].model_copy(deep=True)
-    missing_representation_carriage_evidence.payload["carried_content"][
+    missing_representation_locality_evidence.payload["carried_content"][
         "representation_result"
     ] = "different result"
-    missing_representation_carriage[
-        "carriage_evidence"
-    ] = missing_representation_carriage_evidence
-    wrong_representation_carriage = dict(representation)
-    wrong_representation_carriage_evidence = representation[
-        "carriage_evidence"
+    missing_representation_locality[
+        "locality_evidence"
+    ] = missing_representation_locality_evidence
+    wrong_representation_locality = dict(representation)
+    wrong_representation_locality_evidence = representation[
+        "locality_evidence"
     ].model_copy(deep=True)
-    wrong_representation_carriage_evidence.payload["act_occurrence_id"] = (
+    wrong_representation_locality_evidence.payload["act_occurrence_id"] = (
         alternate_representation["carrier"].payload["act_occurrence_id"]
     )
-    wrong_representation_carriage[
-        "carriage_evidence"
-    ] = wrong_representation_carriage_evidence
-    corrupted_representation_carriage = _representation_road()
-    corrupted_representation_carriage["ledger"].mark_corrupted(
-        corrupted_representation_carriage["carriage_evidence"].id
+    wrong_representation_locality[
+        "locality_evidence"
+    ] = wrong_representation_locality_evidence
+    corrupted_representation_locality = _representation_road()
+    corrupted_representation_locality["ledger"].mark_corrupted(
+        corrupted_representation_locality["locality_evidence"].id
     )
-    unrelated_representation_carriage = dict(representation)
+    unrelated_representation_locality = dict(representation)
     unrelated_representation_carrier = representation["carrier"].model_copy(deep=True)
     unrelated_representation_carrier.payload["yield_evidence_id"] = "other-yield"
-    unrelated_representation_carriage["carrier"] = unrelated_representation_carrier
+    unrelated_representation_locality["carrier"] = unrelated_representation_carrier
 
     missing_representation_yield = dict(representation)
     missing_representation_yield_carrier = representation["carrier"].model_copy(
@@ -1364,28 +1364,28 @@ def _additional_live_structural_edge_fidelity_cases() -> dict[
     unrelated_representation_yield_carrier = representation["carrier"].model_copy(
         deep=True
     )
-    unrelated_representation_yield_carrier.payload["carriage_evidence_id"] = (
-        "other-carriage"
+    unrelated_representation_yield_carrier.payload["locality_evidence_id"] = (
+        "other-locality"
     )
     unrelated_representation_yield["carrier"] = unrelated_representation_yield_carrier
 
     attempt, alternate_attempt = _repeated_emission_attempt_road()
     missing_attempt = dict(attempt)
-    changed_relation_payload = dict(attempt["attempt_carriage_evidence"].payload)
+    changed_relation_payload = dict(attempt["attempt_locality_evidence"].payload)
     changed_relation_payload["carried_content"] = "different carried content"
-    missing_attempt["attempt_carriage_evidence"] = attempt["ledger"].append(
-        attempt["attempt_carriage_evidence"].kind,
+    missing_attempt["attempt_locality_evidence"] = attempt["ledger"].append(
+        attempt["attempt_locality_evidence"].kind,
         "w",
         changed_relation_payload,
         locality_id="repeated-emission-attempt",
     )
     wrong_attempt = dict(attempt)
-    wrong_attempt["attempt_carriage_evidence"] = alternate_attempt[
-        "attempt_carriage_evidence"
+    wrong_attempt["attempt_locality_evidence"] = alternate_attempt[
+        "attempt_locality_evidence"
     ]
     corrupted_attempt, _ = _repeated_emission_attempt_road()
     corrupted_attempt["ledger"].mark_corrupted(
-        corrupted_attempt["attempt_carriage_evidence"].id
+        corrupted_attempt["attempt_locality_evidence"].id
     )
     unrelated_attempt = dict(attempt)
     unrelated_attempt_event = attempt["attempt"].model_copy(deep=True)
@@ -1393,19 +1393,19 @@ def _additional_live_structural_edge_fidelity_cases() -> dict[
     unrelated_attempt["attempt"] = unrelated_attempt_event
 
     return {
-        ("carriage", "representation_result"): {
-            "exact": _representation_carriage_witness(representation),
-            "edge_missing": _representation_carriage_witness(
-                missing_representation_carriage
+        ("locality", "representation_result"): {
+            "exact": _representation_locality_witness(representation),
+            "edge_missing": _representation_locality_witness(
+                missing_representation_locality
             ),
-            "wrong_occurrence": _representation_carriage_witness(
-                wrong_representation_carriage
+            "wrong_occurrence": _representation_locality_witness(
+                wrong_representation_locality
             ),
-            "corrupted_evidence": _representation_carriage_witness(
-                corrupted_representation_carriage
+            "corrupted_evidence": _representation_locality_witness(
+                corrupted_representation_locality
             ),
-            "unrelated_change": _representation_carriage_witness(
-                unrelated_representation_carriage
+            "unrelated_change": _representation_locality_witness(
+                unrelated_representation_locality
             ),
         },
         ("yield", "representation_result"): {
@@ -1423,14 +1423,14 @@ def _additional_live_structural_edge_fidelity_cases() -> dict[
                 unrelated_representation_yield
             ),
         },
-        ("carriage", "emission_attempt"): {
-            "exact": _emission_attempt_carriage_witness(attempt),
-            "edge_missing": _emission_attempt_carriage_witness(missing_attempt),
-            "wrong_occurrence": _emission_attempt_carriage_witness(wrong_attempt),
-            "corrupted_evidence": _emission_attempt_carriage_witness(
+        ("locality", "emission_attempt"): {
+            "exact": _emission_attempt_locality_witness(attempt),
+            "edge_missing": _emission_attempt_locality_witness(missing_attempt),
+            "wrong_occurrence": _emission_attempt_locality_witness(wrong_attempt),
+            "corrupted_evidence": _emission_attempt_locality_witness(
                 corrupted_attempt
             ),
-            "unrelated_change": _emission_attempt_carriage_witness(
+            "unrelated_change": _emission_attempt_locality_witness(
                 unrelated_attempt
             ),
         },
@@ -1440,8 +1440,13 @@ def _additional_live_structural_edge_fidelity_cases() -> dict[
 def _live_structural_edge_fidelity_cases() -> dict[
     tuple[str, str], dict[str, str]
 ]:
+    primary_boundaries = {
+        "locality": "byte_measurement",
+        "participation": "byte_pair_measurement",
+        "yield": "byte_measurement",
+    }
     registered = {
-        (edge, "byte_measurement"): cases
+        (edge, primary_boundaries[edge]): cases
         for edge, cases in _structural_edge_fidelity_cases().items()
     }
     registered.update(
@@ -1451,6 +1456,7 @@ def _live_structural_edge_fidelity_cases() -> dict[
         }
     )
     registered.update(_additional_live_structural_edge_fidelity_cases())
+    registered[("locality", "assertion_movement")] = _locality_fidelity_cases()
     registered.update(
         {
             ("yield", boundary): {
@@ -1471,14 +1477,23 @@ def _live_structural_edge_fidelity_cases() -> dict[
     )
     registered.update(
         {
-            ("carriage", boundary): {
-                case: _representation_carriage_witness(bundle)
+            ("locality", boundary): {
+                case: _representation_locality_witness(bundle)
                 for case, bundle in cases.items()
             }
-            for boundary, cases in _remaining_carriage_requirement_bundles().items()
+            for boundary, cases in _remaining_locality_requirement_bundles().items()
         }
     )
     return registered
+
+
+def test_primary_edge_observations_preserve_their_live_boundaries():
+    registered = _live_structural_edge_fidelity_cases()
+
+    assert ("locality", "byte_measurement") in registered
+    assert ("participation", "byte_pair_measurement") in registered
+    assert ("yield", "byte_measurement") in registered
+    assert ("locality", "assertion_movement") in registered
 
 
 def _structural_edge_implementation_specs() -> dict[str, dict]:
@@ -1488,9 +1503,10 @@ def _structural_edge_implementation_specs() -> dict[str, dict]:
         "intact_evidence": "corrupted_evidence",
     }
     return {
-        "carriage": {
-            "from": "content",
-            "to": "occurrence",
+        "locality": {
+            "from": "first_subject",
+            "to": "second_subject",
+            "subject_taxonomy_closed": False,
             "requires": requirements,
         },
         "participation": {
@@ -1568,75 +1584,79 @@ def _act_occurrence_witness(bundle: dict) -> dict[str, str]:
     }
 
 
-def _movement_witness(bundle: dict) -> dict[str, str]:
+def _locality_requirements(bundle: dict) -> dict[str, bool]:
     ledger = bundle["ledger"]
     movement = bundle["movement"]
     act_evidence = bundle["movement_act_evidence"]
-    moved = _validate_moved_byte_assertion(ledger, movement.id)
-    source = moved.reference if moved is not None else None
-    source_event = ledger.get(source["recorded_occurrence_id"]) if source else None
-    occurrence_edge = (
-        act_evidence is not None
-        and movement.payload["movement_act_occurrence_id"]
-        == act_evidence.payload["movement_act_occurrence_id"]
-    )
-    movement_act_edge = (
-        act_evidence is not None
-        and movement.payload["movement_act_id"]
-        == act_evidence.payload["movement_act_id"]
+    relation = movement.payload.get("locality_relation")
+    evidence_relation = (
+        act_evidence.payload.get("locality_relation")
+        if act_evidence is not None
+        else None
     )
     return {
-        "workspace": (
-            EXACT if movement.workspace_id == source_event.workspace_id else MISSING
+        "exact_relation": bool(
+            isinstance(relation, dict)
+            and isinstance(evidence_relation, dict)
+            and relation.get("first_subject")
+            == evidence_relation.get("first_subject")
+            == movement.payload.get("source_assertion_ref")
+            and relation.get("second_subject")
+            == evidence_relation.get("second_subject")
+            == movement.payload.get("destination_locality")
         ),
-        "source_Assertion_reference": (
-            EXACT if movement.payload["source_assertion_ref"] == source else MISSING
+        "occurrence_witness": bool(
+            isinstance(relation, dict)
+            and isinstance(evidence_relation, dict)
+            and relation.get("relation_occurrence_id")
+            == evidence_relation.get("relation_occurrence_id")
+            == movement.payload.get("movement_act_occurrence_id")
         ),
-        "source_locality": (
-            EXACT if movement.payload["source_locality"] == source_event.locality_id else MISSING
+        "intact_evidence": bool(
+            act_evidence is not None
+            and movement.payload.get("movement_act_evidence_event_id")
+            == act_evidence.id
+            and ledger.integrity_of(act_evidence.id) != CORRUPTED
         ),
-        "destination_locality": (
-            EXACT if movement.payload["destination_locality"] == movement.locality_id else MISSING
-        ),
-        "movement_Act": (
-            EXACT if movement_act_edge else MISSING
-        ),
-        "movement_occurrence": EXACT if occurrence_edge else MISSING,
-        "movement_Evidence": (
-            EXACT
-            if act_evidence is not None
-            and movement.payload["movement_act_evidence_event_id"] == act_evidence.id
-            else MISSING
-        ),
-        "movement_Authority": (
-            EXACT if movement.payload.get("authority") else MISSING
-        ),
-        "Assertion_identity": (
-            EXACT if movement.payload["assertion_id"] == moved.assertion_id else MISSING
-        ),
-        "original_occurrence": (
-            EXACT
-            if moved.recorded_occurrence_id == source["recorded_occurrence_id"]
-            else MISSING
-        ),
-        "Assertion_Evidence": (
-            EXACT
-            if "Evidence" in movement.payload["surviving_coordinates"]
-            else MISSING
-        ),
-        "Assertion_Authority": (
-            EXACT
-            if "Authority" in movement.payload["surviving_coordinates"]
-            else MISSING
-        ),
-        **{
-            coordinate: (
-                EXACT
-                if coordinate in movement.payload["surviving_coordinates"]
-                else MISSING
-            )
-            for coordinate in ("Standing", "Scope", "Unknowns", "limits")
-        },
+    }
+
+
+def _locality_witness(bundle: dict) -> str:
+    return EXACT if all(_locality_requirements(bundle).values()) else MISSING
+
+
+def _locality_fidelity_cases() -> dict[str, str]:
+    exact = _recorded_applicability()
+
+    edge_missing = _recorded_applicability()
+    edge_missing["movement"].payload["locality_relation"]["second_subject"] = (
+        "another bounded subject"
+    )
+
+    wrong_occurrence = _recorded_applicability()
+    source_occurrence = wrong_occurrence["ledger"].get(
+        wrong_occurrence["movement"].payload["source_assertion_ref"][
+            "recorded_occurrence_id"
+        ]
+    )
+    wrong_occurrence["movement_act_evidence"].payload["locality_relation"][
+        "relation_occurrence_id"
+    ] = source_occurrence.id
+
+    corrupted_evidence = _recorded_applicability()
+    corrupted_evidence["ledger"].mark_corrupted(
+        corrupted_evidence["movement_act_evidence"].id
+    )
+
+    unrelated_change = _recorded_applicability()
+    unrelated_change["movement"].payload["movement_scope"] = "another description"
+
+    return {
+        "exact": _locality_witness(exact),
+        "edge_missing": _locality_witness(edge_missing),
+        "wrong_occurrence": _locality_witness(wrong_occurrence),
+        "corrupted_evidence": _locality_witness(corrupted_evidence),
+        "unrelated_change": _locality_witness(unrelated_change),
     }
 
 
@@ -1685,13 +1705,13 @@ def _participation_requirements(bundle: dict, *, role: str) -> dict[str, bool]:
     }
 
 
-def test_implementation_witness_discriminates_content_carriage_and_digest():
+def test_implementation_witness_discriminates_content_locality_and_digest():
     grammar = _witness_grammar()
     ledger = EventLedger()
     content = {"a": 1, "b": 2}
 
-    first = ledger.append("test.carriage", "w", dict(content), locality_id="s")
-    second = ledger.append("test.carriage", "w", dict(content), locality_id="s")
+    first = ledger.append("test.locality", "w", dict(content), locality_id="s")
+    second = ledger.append("test.locality", "w", dict(content), locality_id="s")
     assert first.payload == second.payload
     assert first.id != second.id
     assert yield_commitment("test", first.payload) == yield_commitment(
@@ -1711,11 +1731,11 @@ def test_implementation_witness_discriminates_content_carriage_and_digest():
         "test", changed_content
     )
 
-    assert grammar["discriminators"] == ["content", "carriage", "digest"]
+    assert grammar["discriminators"] == ["content", "locality", "digest"]
     assert grammar["non_equivalence"] == [
-        ["content", "carriage"],
+        ["content", "locality"],
         ["content", "digest"],
-        ["carriage", "digest"],
+        ["locality", "digest"],
     ]
 
 
@@ -1750,13 +1770,14 @@ def test_every_structural_edge_has_live_fidelity_cases():
             assert cases[edge][adversary] == MISSING
 
 
-def test_emission_instantiates_every_structural_edge_at_its_boundary():
+def test_emission_instantiates_each_edge_it_carries_at_its_boundary():
     grammar = json.loads(GRAMMAR.read_text(encoding="utf-8"))
     cases = _emission_structural_edge_fidelity_cases()
     expected = grammar["implementation_witness"]["fidelity_cases"]
 
+    assert set(cases) == {"locality", "participation", "yield"}
     assert set(cases) == set(grammar["structural_edges"])
-    assert cases == {edge: expected for edge in grammar["structural_edges"]}
+    assert cases == {edge: expected for edge in cases}
 
 
 def test_every_registered_live_edge_instantiation_obeys_the_full_fidelity_matrix():
@@ -1769,8 +1790,8 @@ def test_every_registered_live_edge_instantiation_obeys_the_full_fidelity_matrix
         grammar["structural_edges"]
     )
     assert all(cases == expected for cases in registered.values())
-    assert ("carriage", "representation_result") in registered
-    assert ("carriage", "emission_attempt") in registered
+    assert ("locality", "representation_result") in registered
+    assert ("locality", "emission_attempt") in registered
     assert {
         boundary for edge, boundary in registered if edge == "yield"
     } == set(YIELD_LIVE_BOUNDARIES)
@@ -1839,7 +1860,7 @@ def test_remaining_yield_adversaries_change_one_requirement_each():
     } == {boundary: expected for boundary in boundaries}
 
 
-def test_remaining_carriage_adversaries_change_one_requirement_each():
+def test_remaining_locality_adversaries_change_one_requirement_each():
     expected = {
         "exact": (True, True, True),
         "edge_missing": (False, True, True),
@@ -1847,28 +1868,28 @@ def test_remaining_carriage_adversaries_change_one_requirement_each():
         "corrupted_evidence": (True, True, False),
         "unrelated_change": (True, True, True),
     }
-    boundaries = _remaining_carriage_requirement_bundles()
+    boundaries = _remaining_locality_requirement_bundles()
     assert {
         boundary: {
-            case: tuple(_representation_carriage_requirements(bundle).values())
+            case: tuple(_representation_locality_requirements(bundle).values())
             for case, bundle in cases.items()
         }
         for boundary, cases in boundaries.items()
     } == {boundary: expected for boundary in boundaries}
 
 
-def test_emission_attempt_carriage_adversaries_change_one_requirement_each():
+def test_emission_attempt_locality_adversaries_change_one_requirement_each():
     exact, alternate = _repeated_emission_attempt_road()
     wrong_occurrence = dict(exact)
-    wrong_occurrence["attempt_carriage_evidence"] = alternate[
-        "attempt_carriage_evidence"
+    wrong_occurrence["attempt_locality_evidence"] = alternate[
+        "attempt_locality_evidence"
     ]
 
     missing_relation = dict(exact)
-    changed = dict(exact["attempt_carriage_evidence"].payload)
+    changed = dict(exact["attempt_locality_evidence"].payload)
     changed["carried_content"] = "different carried content"
-    missing_relation["attempt_carriage_evidence"] = exact["ledger"].append(
-        exact["attempt_carriage_evidence"].kind,
+    missing_relation["attempt_locality_evidence"] = exact["ledger"].append(
+        exact["attempt_locality_evidence"].kind,
         "w",
         changed,
         locality_id="repeated-emission-attempt",
@@ -1876,7 +1897,7 @@ def test_emission_attempt_carriage_adversaries_change_one_requirement_each():
 
     corrupted, _ = _repeated_emission_attempt_road()
     corrupted["ledger"].mark_corrupted(
-        corrupted["attempt_carriage_evidence"].id
+        corrupted["attempt_locality_evidence"].id
     )
 
     unrelated = dict(exact)
@@ -1884,27 +1905,27 @@ def test_emission_attempt_carriage_adversaries_change_one_requirement_each():
     unrelated_attempt.payload["yield_evidence_id"] = "unrelated-yield"
     unrelated["attempt"] = unrelated_attempt
 
-    assert _emission_attempt_carriage_requirements(exact) == {
+    assert _emission_attempt_locality_requirements(exact) == {
         "exact_relation": True,
         "occurrence_witness": True,
         "intact_evidence": True,
     }
-    assert _emission_attempt_carriage_requirements(missing_relation) == {
+    assert _emission_attempt_locality_requirements(missing_relation) == {
         "exact_relation": False,
         "occurrence_witness": True,
         "intact_evidence": True,
     }
-    assert _emission_attempt_carriage_requirements(wrong_occurrence) == {
+    assert _emission_attempt_locality_requirements(wrong_occurrence) == {
         "exact_relation": True,
         "occurrence_witness": False,
         "intact_evidence": True,
     }
-    assert _emission_attempt_carriage_requirements(corrupted) == {
+    assert _emission_attempt_locality_requirements(corrupted) == {
         "exact_relation": True,
         "occurrence_witness": True,
         "intact_evidence": False,
     }
-    assert _emission_attempt_carriage_requirements(unrelated) == {
+    assert _emission_attempt_locality_requirements(unrelated) == {
         "exact_relation": True,
         "occurrence_witness": True,
         "intact_evidence": True,
@@ -1914,7 +1935,7 @@ def test_emission_attempt_carriage_adversaries_change_one_requirement_each():
 def test_successful_emission_adversaries_change_one_requirement_each():
     bundles = _successful_emission_requirement_bundles()
     requirement_witnesses = {
-        "carriage": _emission_carriage_requirements,
+        "locality": _emission_locality_requirements,
         "participation": _emission_participation_requirements,
         "yield": _occurrence_result_requirements,
     }
@@ -1958,26 +1979,26 @@ def test_successful_emission_adversaries_change_one_requirement_each():
 def test_representation_result_adversaries_change_one_requirement_each():
     exact, alternate = _repeated_representation_road()
 
-    missing_carriage = dict(exact)
-    missing_carriage_evidence = exact["carriage_evidence"].model_copy(deep=True)
-    missing_carriage_evidence.payload["carried_content"][
+    missing_locality = dict(exact)
+    missing_locality_evidence = exact["locality_evidence"].model_copy(deep=True)
+    missing_locality_evidence.payload["carried_content"][
         "representation_result"
     ] = "different result"
-    missing_carriage["carriage_evidence"] = missing_carriage_evidence
-    wrong_carriage = dict(exact)
-    wrong_carriage_evidence = exact["carriage_evidence"].model_copy(deep=True)
-    wrong_carriage_evidence.payload["act_occurrence_id"] = alternate[
+    missing_locality["locality_evidence"] = missing_locality_evidence
+    wrong_locality = dict(exact)
+    wrong_locality_evidence = exact["locality_evidence"].model_copy(deep=True)
+    wrong_locality_evidence.payload["act_occurrence_id"] = alternate[
         "carrier"
     ].payload["act_occurrence_id"]
-    wrong_carriage["carriage_evidence"] = wrong_carriage_evidence
-    corrupted_carriage = _representation_road()
-    corrupted_carriage["ledger"].mark_corrupted(
-        corrupted_carriage["carriage_evidence"].id
+    wrong_locality["locality_evidence"] = wrong_locality_evidence
+    corrupted_locality = _representation_road()
+    corrupted_locality["ledger"].mark_corrupted(
+        corrupted_locality["locality_evidence"].id
     )
-    unrelated_carriage = dict(exact)
+    unrelated_locality = dict(exact)
     unrelated_carrier = exact["carrier"].model_copy(deep=True)
     unrelated_carrier.payload["yield_evidence_id"] = "different-yield-evidence"
-    unrelated_carriage["carrier"] = unrelated_carrier
+    unrelated_locality["carrier"] = unrelated_carrier
 
     missing_yield = dict(exact)
     missing_yield_carrier = exact["carrier"].model_copy(deep=True)
@@ -1999,7 +2020,7 @@ def test_representation_result_adversaries_change_one_requirement_each():
     )
     unrelated_yield = dict(exact)
     unrelated_yield_carrier = exact["carrier"].model_copy(deep=True)
-    unrelated_yield_carrier.payload["carriage_evidence_id"] = "different-carriage"
+    unrelated_yield_carrier.payload["locality_evidence_id"] = "different-locality"
     unrelated_yield["carrier"] = unrelated_yield_carrier
 
     expected = {
@@ -2010,12 +2031,12 @@ def test_representation_result_adversaries_change_one_requirement_each():
         "unrelated_change": (True, True, True),
     }
     bundles = {
-        "carriage": {
+        "locality": {
             "exact": exact,
-            "edge_missing": missing_carriage,
-            "wrong_occurrence": wrong_carriage,
-            "corrupted_evidence": corrupted_carriage,
-            "unrelated_change": unrelated_carriage,
+            "edge_missing": missing_locality,
+            "wrong_occurrence": wrong_locality,
+            "corrupted_evidence": corrupted_locality,
+            "unrelated_change": unrelated_locality,
         },
         "yield": {
             "exact": exact,
@@ -2026,7 +2047,7 @@ def test_representation_result_adversaries_change_one_requirement_each():
         },
     }
     witnesses = {
-        "carriage": _representation_carriage_requirements,
+        "locality": _representation_locality_requirements,
         "yield": _occurrence_result_requirements,
     }
 
@@ -2040,18 +2061,18 @@ def test_representation_result_adversaries_change_one_requirement_each():
 
 
 def test_byte_measurement_adversaries_change_one_requirement_each():
-    carriage = _byte_measurement_road()
-    alternate_carriage = _byte_measurement_road()
-    missing_carriage = dict(carriage)
-    missing_carrier = carriage["carrier"].model_copy(deep=True)
+    locality = _byte_measurement_road()
+    alternate_locality = _byte_measurement_road()
+    missing_locality = dict(locality)
+    missing_carrier = locality["carrier"].model_copy(deep=True)
     missing_carrier.payload["assertions"] = []
-    missing_carriage["carrier"] = missing_carrier
-    corrupted_carriage = _byte_measurement_road()
-    corrupted_carriage["ledger"].mark_corrupted(corrupted_carriage["carrier"].id)
-    unrelated_carriage = dict(carriage)
-    unrelated_carrier = carriage["carrier"].model_copy(deep=True)
+    missing_locality["carrier"] = missing_carrier
+    corrupted_locality = _byte_measurement_road()
+    corrupted_locality["ledger"].mark_corrupted(corrupted_locality["carrier"].id)
+    unrelated_locality = dict(locality)
+    unrelated_carrier = locality["carrier"].model_copy(deep=True)
     unrelated_carrier.payload["yield_evidence_id"] = "different-yield-evidence"
-    unrelated_carriage["carrier"] = unrelated_carrier
+    unrelated_locality["carrier"] = unrelated_carrier
 
     participation = _recorded_applicability()
     alternate_participation = _recorded_applicability()
@@ -2111,22 +2132,22 @@ def test_byte_measurement_adversaries_change_one_requirement_each():
         "unrelated_change": (True, True, True),
     }
     actual = {
-        "carriage": {
-            "exact": _assertion_carriage_requirements(
-                carriage, occurrence_id=carriage["carrier"].id
+        "locality": {
+            "exact": _assertion_locality_requirements(
+                locality, occurrence_id=locality["carrier"].id
             ),
-            "edge_missing": _assertion_carriage_requirements(
-                missing_carriage, occurrence_id=carriage["carrier"].id
+            "edge_missing": _assertion_locality_requirements(
+                missing_locality, occurrence_id=locality["carrier"].id
             ),
-            "wrong_occurrence": _assertion_carriage_requirements(
-                carriage, occurrence_id=alternate_carriage["carrier"].id
+            "wrong_occurrence": _assertion_locality_requirements(
+                locality, occurrence_id=alternate_locality["carrier"].id
             ),
-            "corrupted_evidence": _assertion_carriage_requirements(
-                corrupted_carriage,
-                occurrence_id=corrupted_carriage["carrier"].id,
+            "corrupted_evidence": _assertion_locality_requirements(
+                corrupted_locality,
+                occurrence_id=corrupted_locality["carrier"].id,
             ),
-            "unrelated_change": _assertion_carriage_requirements(
-                unrelated_carriage, occurrence_id=carriage["carrier"].id
+            "unrelated_change": _assertion_locality_requirements(
+                unrelated_locality, occurrence_id=locality["carrier"].id
             ),
         },
         "participation": {
@@ -2157,25 +2178,25 @@ def test_byte_measurement_adversaries_change_one_requirement_each():
     } == {edge: expected for edge in actual}
 
 
-def test_attempt_and_success_have_distinct_carriages_for_the_same_text():
+def test_attempt_and_success_have_distinct_locality_relations_for_the_same_text():
     emission = _emission_road()
     alternate = _emission_road()
     wrong_attempt = dict(emission)
-    wrong_attempt["attempt_carriage_evidence"] = alternate[
-        "attempt_carriage_evidence"
+    wrong_attempt["attempt_locality_evidence"] = alternate[
+        "attempt_locality_evidence"
     ]
     success_evidence_in_attempt_slot = dict(emission)
-    success_evidence_in_attempt_slot["attempt_carriage_evidence"] = emission[
-        "carriage_evidence"
+    success_evidence_in_attempt_slot["attempt_locality_evidence"] = emission[
+        "locality_evidence"
     ]
 
     assert emission["attempt"].payload["attempted_representation"] == emission[
         "carrier"
     ].payload["emitted_representation"]
-    assert _emission_attempt_carriage_witness(emission) == EXACT
-    assert _emission_attempt_carriage_witness(wrong_attempt) == MISSING
+    assert _emission_attempt_locality_witness(emission) == EXACT
+    assert _emission_attempt_locality_witness(wrong_attempt) == MISSING
     assert (
-        _emission_attempt_carriage_witness(success_evidence_in_attempt_slot)
+        _emission_attempt_locality_witness(success_evidence_in_attempt_slot)
         == MISSING
     )
 
@@ -2187,14 +2208,14 @@ def test_representation_act_has_an_exact_yield_edge_without_asserting_participat
     missing["content_evidence"] = None
     wrong_occurrence = dict(representation)
     wrong_occurrence["content_evidence"] = alternate["content_evidence"]
-    missing_carriage = dict(representation)
-    missing_carriage["carriage_evidence"] = None
-    wrong_carriage = dict(representation)
-    wrong_carriage["carriage_evidence"] = alternate["carriage_evidence"]
+    missing_locality = dict(representation)
+    missing_locality["locality_evidence"] = None
+    wrong_locality = dict(representation)
+    wrong_locality["locality_evidence"] = alternate["locality_evidence"]
 
-    assert _representation_carriage_witness(representation) == EXACT
-    assert _representation_carriage_witness(missing_carriage) == MISSING
-    assert _representation_carriage_witness(wrong_carriage) == MISSING
+    assert _representation_locality_witness(representation) == EXACT
+    assert _representation_locality_witness(missing_locality) == MISSING
+    assert _representation_locality_witness(wrong_locality) == MISSING
     assert _occurrence_result_witness(representation) == EXACT
     assert _occurrence_result_witness(missing) == MISSING
     assert _occurrence_result_witness(wrong_occurrence) == MISSING
@@ -2215,28 +2236,28 @@ def test_changed_structural_edge_anatomy_is_detected():
         raise AssertionError("reversed Yield anatomy escaped implementation Fidelity")
 
 
-def test_content_and_carriage_endpoints_do_not_establish_carriage_relation():
+def test_content_and_locality_endpoints_do_not_establish_locality_relation():
     ledger = EventLedger()
     content = {"subject": "x", "standing": "Unknown"}
-    carriage = ledger.append("test.carriage", "w", dict(content), locality_id="s")
+    locality = ledger.append("test.locality", "w", dict(content), locality_id="s")
 
     assert (
-        _content_carriage_witness(
-            content, carriage=carriage, occurrence_id=carriage.id
+        _content_locality_witness(
+            content, locality=locality, occurrence_id=locality.id
         )
         == EXACT
     )
-    second_carriage = ledger.append(
-        "test.carriage", "w", dict(content), locality_id="s"
+    second_locality = ledger.append(
+        "test.locality", "w", dict(content), locality_id="s"
     )
     assert content
-    assert second_carriage.payload == carriage.payload
-    assert second_carriage.id != carriage.id
+    assert second_locality.payload == locality.payload
+    assert second_locality.id != locality.id
     assert (
-        _content_carriage_witness(
+        _content_locality_witness(
             content,
-            carriage=second_carriage,
-            occurrence_id=carriage.id,
+            locality=second_locality,
+            occurrence_id=locality.id,
         )
         == MISSING
     )
@@ -2285,25 +2306,25 @@ def test_digest_recomputation_is_not_a_recorded_digest_occurrence():
             represented,
             convention=convention,
             digest=digest,
-            digest_carriage=evidence,
+            digest_locality=evidence,
             digest_occurrence_id=evidence.id,
         )
         == EXACT
     )
-    other_carriage = bundle["act_evidence"]
+    other_locality = bundle["act_evidence"]
     assert (
         _recorded_digest_witness(
             represented,
             convention=convention,
             digest=digest,
-            digest_carriage=other_carriage,
+            digest_locality=other_locality,
             digest_occurrence_id=evidence.id,
         )
         == MISSING
     )
 
 
-def test_a_digest_alone_witnesses_no_content_carriage_or_standing():
+def test_a_digest_alone_witnesses_no_content_locality_or_standing():
     grammar = _witness_grammar()
     digest = yield_commitment("test", {"a": 1})
     witness = _digest_only_witness(digest)
@@ -2332,7 +2353,7 @@ def test_assertion_clause_is_checked_against_a_live_byte_assertion():
     }
 
 
-def test_asserted_content_identity_includes_scope_but_not_carriage():
+def test_asserted_content_identity_includes_scope_but_not_locality():
     ledger = EventLedger()
     for locality_id in ("source-one", "source-two"):
         run_persistent_operator_console(
@@ -2428,7 +2449,7 @@ def test_input_is_an_open_act_local_role_before_participation():
         "preserves_subject_identity": True,
         "distinct_from": [
             "subject",
-            "carriage",
+            "locality",
             "Applicability",
             "Admission",
             "participation",
@@ -2471,9 +2492,10 @@ def test_unjoined_endpoints_do_not_witness_an_input_to_act_relation():
     assert grammar["relation_audit"] == {
         "endpoint_presence_establishes_relation": False,
         "families": {
-            "carriage": ["exact_relation", "occurrence_witness", "intact_evidence"],
+            "locality": ["exact_relation", "occurrence_witness", "intact_evidence"],
             "candidate_participation": ["exact_relation", "occurrence_witness"],
-            "participation": ["exact_relation", "occurrence_witness", "intact_evidence"],
+                "participation": ["exact_relation", "occurrence_witness", "intact_evidence"],
+                "locality": ["exact_relation", "occurrence_witness", "intact_evidence"],
             "yield": ["exact_relation", "occurrence_witness", "intact_evidence"],
             "representation_mechanically_matches_digest": [
                 "mechanical_recomputation"
@@ -2489,38 +2511,81 @@ def test_unjoined_endpoints_do_not_witness_an_input_to_act_relation():
     assert witness["occurrence_identity"] == MISSING
 
 
-def test_locality_movement_clause_is_checked_against_the_live_pair_road():
+def test_locality_relation_clause_is_checked_against_the_live_pair_road():
     clause = _clause("06.Standing.B")
     bundle = _recorded_applicability()
-    witness = _movement_witness(bundle)
-    expected_coordinates = {
-        *clause["responsibility"]["coordinates"],
-        *clause["preserves"],
+    relation = bundle["movement"].payload["locality_relation"]
+
+    assert clause["identity"] == [
+        "first_subject",
+        "second_subject",
+        "relation_occurrence",
+    ]
+    assert clause["requires"] == list(_locality_requirements(bundle))
+    assert relation["first_subject"] == bundle["movement"].payload[
+        "source_assertion_ref"
+    ]
+    assert relation["second_subject"] == bundle["movement"].payload[
+        "destination_locality"
+    ]
+    assert _locality_witness(bundle) == EXACT
+
+
+def test_locality_fans_out_orthogonal_adversaries_for_each_live_road():
+    exact = _recorded_applicability()
+
+    edge_missing = _recorded_applicability()
+    edge_missing["movement"].payload["locality_relation"]["second_subject"] = (
+        "another bounded subject"
+    )
+
+    wrong_occurrence = _recorded_applicability()
+    source_occurrence = wrong_occurrence["ledger"].get(
+        wrong_occurrence["movement"].payload["source_assertion_ref"][
+            "recorded_occurrence_id"
+        ]
+    )
+    wrong_occurrence["movement_act_evidence"].payload["locality_relation"][
+        "relation_occurrence_id"
+    ] = source_occurrence.id
+
+    corrupted_evidence = _recorded_applicability()
+    corrupted_evidence["ledger"].mark_corrupted(
+        corrupted_evidence["movement_act_evidence"].id
+    )
+
+    unrelated_change = _recorded_applicability()
+    unrelated_change["movement"].payload["movement_scope"] = "another description"
+
+    cases = {
+        "exact": exact,
+        "edge_missing": edge_missing,
+        "wrong_occurrence": wrong_occurrence,
+        "corrupted_evidence": corrupted_evidence,
+        "unrelated_change": unrelated_change,
     }
-
-    assert set(witness) == expected_coordinates
-    assert set(witness.values()) == {EXACT}
-    movement = bundle["movement"]
-    assert "dimensions" not in movement.payload
-    assert movement.workspace_id == bundle["ledger"].get(
-        movement.payload["source_assertion_ref"]["recorded_occurrence_id"]
-    ).workspace_id
-    assert clause["result"] == "availability_at_destination_locality"
-
-
-def test_movement_endpoints_do_not_replace_movement_occurrence_evidence():
-    bundle = _recorded_applicability()
-    movement = bundle["movement"]
-    assert movement.payload["source_assertion_ref"]
-    assert movement.payload["destination_locality"]
-    bundle["movement_act_evidence"] = None
-    witness = _movement_witness(bundle)
-
-    assert witness["source_Assertion_reference"] == EXACT
-    assert witness["destination_locality"] == EXACT
-    assert witness["movement_Act"] == MISSING
-    assert witness["movement_occurrence"] == MISSING
-    assert witness["movement_Evidence"] == MISSING
+    assert {name: _locality_witness(case) for name, case in cases.items()} == {
+        "exact": EXACT,
+        "edge_missing": MISSING,
+        "wrong_occurrence": MISSING,
+        "corrupted_evidence": MISSING,
+        "unrelated_change": EXACT,
+    }
+    assert _locality_requirements(edge_missing) == {
+        "exact_relation": False,
+        "occurrence_witness": True,
+        "intact_evidence": True,
+    }
+    assert _locality_requirements(wrong_occurrence) == {
+        "exact_relation": True,
+        "occurrence_witness": False,
+        "intact_evidence": True,
+    }
+    assert _locality_requirements(corrupted_evidence) == {
+        "exact_relation": True,
+        "occurrence_witness": True,
+        "intact_evidence": False,
+    }
 
 
 def test_occurrence_and_result_endpoints_do_not_establish_their_relation():
@@ -2662,6 +2727,29 @@ def test_runtime_authority_does_not_carry_evidence_scope_prose():
     assert contaminated == {}
 
 
+def test_each_dimensions_call_separates_authority_from_its_evidence_scope():
+    """Every road through the shared dimensions bottleneck is observed."""
+
+    observed = []
+    for path in sorted(RUNTIME.glob("*.py")):
+        tree = ast.parse(path.read_text(encoding="utf-8"))
+        for node in ast.walk(tree):
+            if not (
+                isinstance(node, ast.Call)
+                and isinstance(node.func, ast.Name)
+                and node.func.id == "_dimensions"
+            ):
+                continue
+            keywords = {item.arg: item.value for item in node.keywords}
+            observed.append((path.name, node.lineno))
+            authority = keywords.get("authority")
+            assert isinstance(authority, ast.Constant), (path, node.lineno)
+            assert authority.value == "unestablished", (path, node.lineno)
+            assert "evidence_scope" in keywords, (path, node.lineno)
+
+    assert observed
+
+
 def test_runtime_does_not_reuse_fidelity_as_a_result_kind():
     retired = re.compile(r"\bfidelity\w*\b|fidelity[-_]", re.IGNORECASE)
     runtime_root = GRAMMAR.parents[1] / "seed_runtime"
@@ -2730,25 +2818,28 @@ def test_runtime_has_no_examination_species():
     assert {path: hits for path, hits in contaminated.items() if hits} == {}
 
 
-CARRIAGE_BOUNDARY_BY_KIND = {
-    "operator.external_expression.relation_carriage_evidenced": (
+LOCALITY_BOUNDARY_BY_KIND = {
+    "operator.external_expression.relation_locality_evidenced": (
         "external_expression_relation"
     ),
-    "operator.measurement.adjacent_pair_observation_carriage_evidenced": (
+    "operator.measurement.adjacent_pair_observation_locality_evidenced": (
         "adjacent_pair_observation"
     ),
-    "operator.measurement.adjacent_pair_observation_compare_carriage_evidenced": (
+    "operator.measurement.adjacent_pair_observation_compare_locality_evidenced": (
         "adjacent_pair_observation_compare"
     ),
-    "operator.representation.carriage_evidenced": "representation_result",
-    "operator.representation.emission_attempt_carriage_evidenced": (
+    "operator.representation.locality_evidenced": "representation_result",
+    "operator.representation.emission_attempt_locality_evidenced": (
         "emission_attempt"
     ),
-    "operator.representation.emission_carriage_evidenced": (
+    "operator.representation.emission_locality_evidenced": (
         "successful_emission"
     ),
 }
-CARRIAGE_BOUNDARIES_EVIDENCED_BY_OCCURRENCE = {"byte_measurement"}
+LOCALITY_BOUNDARIES_EVIDENCED_BY_OCCURRENCE = {
+    "byte_measurement",
+    "assertion_movement",
+}
 
 
 def _declared_kind_constants(family: str) -> dict[str, list[str]]:
@@ -2778,31 +2869,31 @@ def _declared_kind_constants(family: str) -> dict[str, list[str]]:
     return found
 
 
-def test_every_carriage_evidence_kind_is_declared_once_and_registered():
+def test_every_locality_evidence_kind_is_declared_once_and_registered():
     """The Yield discovery pattern, applied to the second structural edge."""
 
-    discovered = _declared_kind_constants("CARRIAGE_EVIDENCE_KIND")
+    discovered = _declared_kind_constants("LOCALITY_EVIDENCE_KIND")
 
     duplicated = {
         kind: modules for kind, modules in discovered.items() if len(modules) > 1
     }
     assert not duplicated, (
-        "\nOne carriage kind, declared by more than one module. The writer and "
+        "\nOne locality kind, declared by more than one module. The writer and "
         "the reader then hold separate contracts that drift silently:\n"
         + "\n".join(f"  {kind} -- {', '.join(m)}" for kind, m in duplicated.items())
     )
 
-    assert set(discovered) == set(CARRIAGE_BOUNDARY_BY_KIND), (
-        "\nLive carriage boundaries and the registry disagree.\n"
-        f"  only live:     {sorted(set(discovered) - set(CARRIAGE_BOUNDARY_BY_KIND))}\n"
-        f"  only registry: {sorted(set(CARRIAGE_BOUNDARY_BY_KIND) - set(discovered))}"
+    assert set(discovered) == set(LOCALITY_BOUNDARY_BY_KIND), (
+        "\nLive locality boundaries and the registry disagree.\n"
+        f"  only live:     {sorted(set(discovered) - set(LOCALITY_BOUNDARY_BY_KIND))}\n"
+        f"  only registry: {sorted(set(LOCALITY_BOUNDARY_BY_KIND) - set(discovered))}"
     )
     registered = _live_structural_edge_fidelity_cases()
     assert {
-        boundary for edge, boundary in registered if edge == "carriage"
+        boundary for edge, boundary in registered if edge == "locality"
     } == (
-        set(CARRIAGE_BOUNDARY_BY_KIND.values())
-        | CARRIAGE_BOUNDARIES_EVIDENCED_BY_OCCURRENCE
+        set(LOCALITY_BOUNDARY_BY_KIND.values())
+        | LOCALITY_BOUNDARIES_EVIDENCED_BY_OCCURRENCE
     )
 
 
@@ -2835,15 +2926,19 @@ def test_no_new_site_compounds_scope_with_locality():
 # or a dedicated one. grammar.json requires exact_relation, occurrence_witness,
 # and intact_evidence, and names no species for them.
 STRUCTURAL_EDGE_EVIDENCE = {
-    "_assertion_carriage_requirements": ("carriage", "the carrier occurrence itself"),
-    "_emission_carriage_requirements": ("carriage", "a carriage-evidence occurrence"),
-    "_emission_attempt_carriage_requirements": (
-        "carriage",
-        "an emission-attempt carriage-evidence occurrence",
+    "_locality_requirements": (
+        "locality",
+        "the responsible movement Evidence occurrence",
     ),
-    "_representation_carriage_requirements": (
-        "carriage",
-        "a representation carriage-evidence occurrence",
+    "_assertion_locality_requirements": ("locality", "the carrier occurrence itself"),
+    "_emission_locality_requirements": ("locality", "a locality-evidence occurrence"),
+    "_emission_attempt_locality_requirements": (
+        "locality",
+        "an emission-attempt locality-evidence occurrence",
+    ),
+    "_representation_locality_requirements": (
+        "locality",
+        "a representation locality-evidence occurrence",
     ),
     "_emission_participation_requirements": (
         "participation",
@@ -2885,7 +2980,7 @@ def test_every_live_edge_witness_names_its_edge_and_its_evidence():
         assert evidence, witness
 
 
-def test_all_three_structural_edges_have_a_live_witness():
+def test_each_structural_edge_has_a_live_witness():
     """Each structural edge grammar.json declares has a live witness."""
 
     edges = json.loads(GRAMMAR.read_text(encoding="utf-8"))["structural_edges"]

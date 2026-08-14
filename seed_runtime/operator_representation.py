@@ -20,8 +20,8 @@ REPRESENTATION_EMISSION_ATTEMPTED_KIND = "operator.representation.emission_attem
 REPRESENTATION_EMITTED_KIND = "operator.representation.emitted"
 REPRESENTATION_EMISSION_OUTCOME_KIND = "operator.representation.emission_outcome_recorded"
 REPRESENTATION_ACT_EVIDENCE_KIND = "operator.representation.act_evidenced"
-REPRESENTATION_CARRIAGE_EVIDENCE_KIND = (
-    "operator.representation.carriage_evidenced"
+REPRESENTATION_LOCALITY_EVIDENCE_KIND = (
+    "operator.representation.locality_evidenced"
 )
 REPRESENTATION_CONVENTION = "operator_representation_v1"
 REPRESENTATION_RESPONSIBILITY = (
@@ -30,11 +30,11 @@ REPRESENTATION_RESPONSIBILITY = (
 REPRESENTATION_EMISSION_ACT_EVIDENCE_KIND = (
     "operator.representation.emission_act_evidenced"
 )
-REPRESENTATION_EMISSION_CARRIAGE_EVIDENCE_KIND = (
-    "operator.representation.emission_carriage_evidenced"
+REPRESENTATION_EMISSION_LOCALITY_EVIDENCE_KIND = (
+    "operator.representation.emission_locality_evidenced"
 )
-REPRESENTATION_EMISSION_ATTEMPT_CARRIAGE_EVIDENCE_KIND = (
-    "operator.representation.emission_attempt_carriage_evidenced"
+REPRESENTATION_EMISSION_ATTEMPT_LOCALITY_EVIDENCE_KIND = (
+    "operator.representation.emission_attempt_locality_evidenced"
 )
 REPRESENTATION_EMISSION_CONVENTION = "operator_representation_emission_v1"
 REPRESENTATION_EMISSION_INPUT_ROLE = "exact bounded Representation"
@@ -43,9 +43,10 @@ REPRESENTATION_EMISSION_RESPONSIBILITY = (
 )
 
 def _dimensions(
-    *, identity, content, standing, source, responsibility, authority, scope, occurrence
+    *, identity, content, standing, source, responsibility, authority, scope, occurrence,
+    evidence_scope=None,
 ):
-    return {
+    dimensions = {
         "identity": identity,
         "content": content,
         "standing": standing,
@@ -55,6 +56,9 @@ def _dimensions(
         "scope_locality": scope,
         "occurrence_preservation": occurrence,
     }
+    if evidence_scope is not None:
+        dimensions["evidence_scope"] = evidence_scope
+    return dimensions
 
 
 def record_operator_representation(
@@ -194,8 +198,8 @@ def record_operator_representation(
         live_boundary="representation_result",
         responsible_boundary="this Seed",
     )
-    carriage_evidence = ledger.append(
-        REPRESENTATION_CARRIAGE_EVIDENCE_KIND,
+    locality_evidence = ledger.append(
+        REPRESENTATION_LOCALITY_EVIDENCE_KIND,
         workspace_id,
         {
             "act_occurrence_id": act_occurrence_id,
@@ -204,7 +208,7 @@ def record_operator_representation(
             "standing": "carried",
             "authority": "unestablished",
             "evidence_scope": (
-                "Evidence only for this exact Representation-to-occurrence Carriage"
+                "Evidence only for this exact Representation-to-occurrence Locality"
             ),
         },
         locality_id=locality_id,
@@ -221,7 +225,8 @@ def record_operator_representation(
                 standing="recorded",
                 source=locality_standing["as_of_event_id"],
                 responsibility=REPRESENTATION_RESPONSIBILITY,
-                authority=(
+                authority="unestablished",
+                evidence_scope=(
                     "representation Act occurrence only; establishes no Selection, "
                     "input support, or response treatment"
                 ),
@@ -230,7 +235,7 @@ def record_operator_representation(
             ),
             "responsible_act_evidence_id": responsible_act_evidence.id,
             "yield_evidence_id": yield_evidence.id,
-            "carriage_evidence_id": carriage_evidence.id,
+            "locality_evidence_id": locality_evidence.id,
             "mutates_cluster": False,
         },
         locality_id=locality_id,
@@ -246,7 +251,7 @@ def record_operator_representation(
         "coordinate_bindings": coordinate_bindings,
         "representation_event_id": representation_event.id,
         "emission_attempt_event_id": None,
-        "emission_attempt_carriage_evidence_id": None,
+        "emission_attempt_locality_evidence_id": None,
         "emission_outcome_event_id": None,
         "emitted_event_id": None,
         "locality_standing_as_of_event_id": locality_standing["as_of_event_id"],
@@ -347,7 +352,8 @@ def emit_operator_representation(
                 standing="attempt recorded; output-boundary outcome Unknown",
                 source=representation["representation_event_id"],
                 responsibility=REPRESENTATION_EMISSION_RESPONSIBILITY,
-                authority=(
+                authority="unestablished",
+                evidence_scope=(
                     "attempt occurrence only; establishes no output-boundary "
                     "acceptance or downstream effect"
                 ),
@@ -371,8 +377,8 @@ def emit_operator_representation(
         locality_id=representation["locality_id"],
     )
     representation["emission_attempt_event_id"] = attempt_event.id
-    attempt_carriage_evidence = ledger.append(
-        REPRESENTATION_EMISSION_ATTEMPT_CARRIAGE_EVIDENCE_KIND,
+    attempt_locality_evidence = ledger.append(
+        REPRESENTATION_EMISSION_ATTEMPT_LOCALITY_EVIDENCE_KIND,
         representation["workspace_id"],
         {
             "representation_ref": representation["representation_id"],
@@ -382,13 +388,13 @@ def emit_operator_representation(
             "standing": "carried",
             "authority": "unestablished",
             "evidence_scope": (
-                "Evidence only for the exact text-to-emission-attempt Carriage"
+                "Evidence only for the exact text-to-emission-attempt Locality"
             ),
         },
         locality_id=representation["locality_id"],
     )
-    representation["emission_attempt_carriage_evidence_id"] = (
-        attempt_carriage_evidence.id
+    representation["emission_attempt_locality_evidence_id"] = (
+        attempt_locality_evidence.id
     )
 
     # The attempt is durable before the output boundary sees anything. A
@@ -468,8 +474,8 @@ def emit_operator_representation(
         },
         locality_id=representation["locality_id"],
     )
-    carriage_evidence = ledger.append(
-        REPRESENTATION_EMISSION_CARRIAGE_EVIDENCE_KIND,
+    locality_evidence = ledger.append(
+        REPRESENTATION_EMISSION_LOCALITY_EVIDENCE_KIND,
         representation["workspace_id"],
         {
             "act_occurrence_id": act_occurrence_id,
@@ -478,7 +484,7 @@ def emit_operator_representation(
             "standing": "carried",
             "authority": "unestablished",
             "evidence_scope": (
-                "Evidence only for the exact text-to-emission-occurrence Carriage"
+                "Evidence only for the exact text-to-emission-occurrence Locality"
             ),
         },
         locality_id=representation["locality_id"],
@@ -509,7 +515,8 @@ def emit_operator_representation(
                 standing="emitted",
                 source=representation["representation_event_id"],
                 responsibility=REPRESENTATION_EMISSION_RESPONSIBILITY,
-                authority=(
+                authority="unestablished",
+                evidence_scope=(
                     "emission occurrence only; effects beyond the output "
                     "boundary require separate Evidence"
                 ),
@@ -523,7 +530,7 @@ def emit_operator_representation(
             "stream_encoding_metadata": stream_encoding_metadata,
             "write_length": written,
             "responsible_act_evidence_id": responsible_act_evidence.id,
-            "carriage_evidence_id": carriage_evidence.id,
+            "locality_evidence_id": locality_evidence.id,
             "yield_evidence_id": yield_evidence.id,
             "known_loss": [],
             "unknowns": [],
@@ -599,7 +606,8 @@ def _record_emission_failure_outcome(
                 standing=outcome,
                 source=attempt_event_id,
                 responsibility=REPRESENTATION_EMISSION_RESPONSIBILITY,
-                authority=(
+                authority="unestablished",
+                evidence_scope=(
                     "failure occurrence only; establishes no downstream effect "
                     "and no acceptance beyond the reported write result"
                 ),
