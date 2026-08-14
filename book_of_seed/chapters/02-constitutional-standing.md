@@ -11,6 +11,10 @@ A preserved representation or record may carry an Assertion made by another Resp
 
 This Seed carries only Standing it can warrant through its Evidence, Authority, Scope, and preserved limits. This is a constitutional bound, not a Responsibility assignment shared across exact Responsibilities; each exact Responsibility assignment retains its own responsible boundary, Act, Evidence, Authority, Scope, and limits.
 
+Here, the verb is a bounded compression, not a constitutional coordinate. It compresses the exact subject, responsible boundary, Responsibility, Act, occurrence, Evidence, Authority, Scope, provenance, support relations, conflicts, Unknowns, surviving limits, and Standing. The word supplies none of those coordinates by identity.
+
+Fully expressed: This Seed carries Standing concerning an exact subject only where an exact responsible occurrence, under current Standing concerning its Responsibility assignment, establishes that Standing from exact Evidence, applicable Authority, Scope, provenance, established support relations, conflicts, Unknowns, and surviving limits.
+
 Seed may read a Responsibility only through current Standing concerning the exact Assertion that its responsible boundary bears that Responsibility. The assignment Assertion retains its own Evidence, Authority, Scope, limits, occurrence, and Standing. Responsibility != Standing; Standing concerning an assignment does not create, perform, or become the Responsibility.
 
 
