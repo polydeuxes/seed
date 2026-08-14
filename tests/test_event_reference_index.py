@@ -95,7 +95,7 @@ def test_references_to_answers_what_the_payload_column_cannot(tmp_path):
     ingress = [
         event
         for event in ledger.list_locality("w", "s1")
-        if event.kind.endswith("raw_material_captured")
+        if event.kind.endswith("raw_captured")
     ]
     assert ingress
 

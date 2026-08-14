@@ -29,7 +29,7 @@ from seed_runtime.operator_console import run_persistent_operator_console
 
 RECORDED = "operator.representation.recorded"
 FAMILIES = (
-    "operator.ingress.",
+    "operator.material.",
     "operator.representation.",
     "operator.exchange.",
     "operator.interaction.",

@@ -158,9 +158,9 @@ def test_no_act_condition_change_is_claimed_here(ledger):
         "operator.representation.emission_carriage_evidenced",
         "operator.yield.evidence_recorded",
         "operator.representation.emitted",
-        "operator.ingress.raw_material_captured",
-        "operator.ingress.decoder_outcome_recorded",
-        "operator.ingress.ingress_occurred",
+        "operator.material.raw_captured",
+        "operator.material.decoder_outcome_recorded",
+        "operator.material.arrived",
     }
 
 

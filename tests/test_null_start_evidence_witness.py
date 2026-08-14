@@ -4,7 +4,7 @@ This module is a microscope, not a Assertion.  It runs the live operator console
 from an empty ledger over fixed operator material and reports exactly what Seed
 preserved.  Its assertions are deliberately confined to *what is present in the
 record*.  Nothing here asserts represented relation, relation, structure, or intent, because
-none of that is established by ingress -- ``operator.ingress.ingress_occurred``
+none of that is established by ingress -- ``operator.material.arrived``
 records ``authority="occurrence-only; represented relation Unknown"``.
 
 `render_null_start_evidence` yields the human-readable dump for inspection.
@@ -38,9 +38,9 @@ E1 = "hello"
 E2 = "learn proficient english language"
 E3 = "# Nouns\n\nA noun is a word.\n\n# Verbs\n\nA verb is a word."
 
-CAPTURED = "operator.ingress.raw_material_captured"
-DECODER_OUTCOME_RECORDED = "operator.ingress.decoder_outcome_recorded"
-OCCURRED = "operator.ingress.ingress_occurred"
+CAPTURED = "operator.material.raw_captured"
+DECODER_OUTCOME_RECORDED = "operator.material.decoder_outcome_recorded"
+OCCURRED = "operator.material.arrived"
 
 
 def run_null_start() -> list:
@@ -156,7 +156,7 @@ def test_null_start_does_not_activate_the_dormant_result_chain(events):
 
 def test_render_yields_inspectable_evidence():
     rendered = render_null_start_evidence()
-    assert "operator.ingress.ingress_occurred" in rendered
+    assert "operator.material.arrived" in rendered
     assert "exact_bytes_hex" in rendered
 
 

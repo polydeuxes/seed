@@ -62,7 +62,7 @@ from seed_runtime.support_basis import (
 )
 
 MEASUREMENT_RECORDED_KIND = "operator.measurement.finding_recorded"
-INGRESS_OCCURRED_KIND = "operator.ingress.ingress_occurred"
+INGRESS_OCCURRED_KIND = "operator.material.arrived"
 RECURRENCE_RESULT_KIND = "recurrence Measurement finding"
 
 MEASUREMENT_CONVENTION = "preserved_material_declared_measurement_v1"

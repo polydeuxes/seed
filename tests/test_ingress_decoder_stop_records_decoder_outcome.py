@@ -35,8 +35,8 @@ from seed_runtime.events import EventLedger
 from seed_runtime.operator_ingress import run_operator_ingress_attempt
 from seed_runtime.operator_ingress_representation import capture_stdin_material
 
-STOP = "operator.ingress.stopping_occurred"
-DECODER_OUTCOME_RECORDED = "operator.ingress.decoder_outcome_recorded"
+STOP = "operator.material.stopping_occurred"
+DECODER_OUTCOME_RECORDED = "operator.material.decoder_outcome_recorded"
 
 
 class UnknownCodecStream(BytesIO):

@@ -309,7 +309,7 @@ def form_operator_ingress_addressable_material(
 ) -> OperatorIngressAddressableMaterial:
     """Form exact material from one verified, decoded initial-ingress occurrence."""
     payload = ingress_occurrence.payload
-    if ingress_occurrence.kind != "operator.ingress.ingress_occurred":
+    if ingress_occurrence.kind != "operator.material.arrived":
         _refuse("a decoded ingress occurrence is required")
     if payload.get("ingress_kind") not in {"text", "empty"}:
         _refuse("ingress framing must be text or empty")
@@ -337,13 +337,13 @@ def form_operator_ingress_addressable_material(
     decoder_outcome = ledger.get(decoder_outcome_ref)
     common = (ingress_occurrence.workspace_id, ingress_occurrence.locality_id, attempt)
     if raw is None or (
-        raw.kind != "operator.ingress.raw_material_captured"
+        raw.kind != "operator.material.raw_captured"
         or raw.payload.get("material_role") != "initial_ingress"
         or (raw.workspace_id, raw.locality_id, raw.payload.get("attempt_ref")) != common
     ):
         _refuse("initial raw-material provenance is missing or foreign")
     if decoder_outcome is None or (
-        decoder_outcome.kind != "operator.ingress.decoder_outcome_recorded"
+        decoder_outcome.kind != "operator.material.decoder_outcome_recorded"
         or decoder_outcome.payload.get("material_role") != "initial_ingress"
         or decoder_outcome.payload.get("capture_event_id") != raw.id
         or decoder_outcome.payload.get("decoder_succeeded") is not True

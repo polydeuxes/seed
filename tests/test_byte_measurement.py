@@ -237,14 +237,14 @@ def test_recording_occurrence_evidence_is_validated_exactly():
 def test_raw_material_appended_after_the_boundary_cannot_enter_the_read():
     ledger = EventLedger()
     ingress = ledger.append(
-        "operator.ingress.ingress_occurred",
+        "operator.material.arrived",
         "w",
         {"raw_material_event_id": "not-yet-present"},
         locality_id="source",
     )
     boundary = ledger.capture_boundary()
     raw = ledger.append(
-        "operator.ingress.raw_material_captured",
+        "operator.material.raw_captured",
         "w",
         {"exact_bytes_hex": "61", "byte_count": 1},
         locality_id="source",
@@ -270,7 +270,7 @@ def test_raw_material_must_match_its_exact_byte_coordinates():
     ledger = _ledger("a\n")
     ingress = next(
         ledger.iter_locality_kind(
-            "w", "source", "operator.ingress.ingress_occurred"
+            "w", "source", "operator.material.arrived"
         )
     )
     raw = ledger.get(ingress.payload["raw_material_event_id"])
@@ -285,11 +285,11 @@ def test_one_raw_occurrence_cannot_be_counted_through_two_ingress_references():
     ledger = _ledger("a\n")
     ingress = next(
         ledger.iter_locality_kind(
-            "w", "source", "operator.ingress.ingress_occurred"
+            "w", "source", "operator.material.arrived"
         )
     )
     ledger.append(
-        "operator.ingress.ingress_occurred",
+        "operator.material.arrived",
         "w",
         {"raw_material_event_id": ingress.payload["raw_material_event_id"]},
         locality_id="source",

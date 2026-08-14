@@ -58,16 +58,16 @@ def update_operator_ingress_standing(attempts, event, *, ledger=None) -> None:
     this read has as input. It reads no entity, normalized Assertion, alias, relationship, or
     result condition, so nothing here requires a whole-workspace attempt_standing to exist.
     """
-    if not event.kind.startswith("operator.ingress."):
+    if not event.kind.startswith("operator.material."):
         return
     subject_by_kind = {
-        "operator.ingress.raw_material_captured": "raw_initial_material",
-        "operator.ingress.ingress_occurred": "preserved_ingress",
-        "operator.ingress.stopping_occurred": "interaction_closure",
+        "operator.material.raw_captured": "raw_initial_material",
+        "operator.material.arrived": "preserved_ingress",
+        "operator.material.stopping_occurred": "interaction_closure",
     }
     supported_kinds = {
         *subject_by_kind,
-        "operator.ingress.decoder_outcome_recorded",
+        "operator.material.decoder_outcome_recorded",
     }
     if event.kind not in supported_kinds:
         raise ValueError(f"unsupported operator-ingress event: {event.kind}")
@@ -102,7 +102,7 @@ def update_operator_ingress_standing(attempts, event, *, ledger=None) -> None:
             event.payload.get("provenance_occurrence_refs", ())
         ),
     }
-    if event.kind == "operator.ingress.decoder_outcome_recorded":
+    if event.kind == "operator.material.decoder_outcome_recorded":
         standing["decoder_outcomes"][event.payload["material_role"]] = {
             "decoder_outcome_event_id": event.id,
             "capture_event_id": event.payload["capture_event_id"],
@@ -124,7 +124,7 @@ def update_operator_ingress_standing(attempts, event, *, ledger=None) -> None:
         "dimensions": dimensions,
         "evidence_event_id": event.id,
     }
-    if event.kind == "operator.ingress.ingress_occurred" and all(
+    if event.kind == "operator.material.arrived" and all(
         key in event.payload
         for key in (
             "decoded_text",
@@ -164,7 +164,7 @@ def _capture_representation(
     capture_ref = new_id("operator_material")
     captured = _record(
         ledger,
-        "operator.ingress.raw_material_captured",
+        "operator.material.raw_captured",
         workspace,
         session,
         attempt,
@@ -192,7 +192,7 @@ def _capture_representation(
     decoder_outcome = decode_captured_material(capture)
     decoder_outcome_event = _record(
         ledger,
-        "operator.ingress.decoder_outcome_recorded",
+        "operator.material.decoder_outcome_recorded",
         workspace,
         session,
         attempt,
@@ -300,7 +300,7 @@ def run_operator_ingress_attempt(
         # is unchanged: what the console can render is not what Seed preserves.
         unrepresented_event = _record(
             ledger,
-            "operator.ingress.ingress_occurred",
+            "operator.material.arrived",
             workspace_id,
             locality_id,
             attempt,
@@ -336,7 +336,7 @@ def run_operator_ingress_attempt(
         )
         stop_event = _record(
             ledger,
-            "operator.ingress.stopping_occurred",
+            "operator.material.stopping_occurred",
             workspace_id,
             locality_id,
             attempt,
@@ -377,7 +377,7 @@ def run_operator_ingress_attempt(
     ingress_content = raw_ingress.removesuffix("\n").removesuffix("\r")
     ingress_event = _record(
         ledger,
-        "operator.ingress.ingress_occurred",
+        "operator.material.arrived",
         workspace_id,
         locality_id,
         attempt,

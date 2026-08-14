@@ -364,9 +364,9 @@ def test_no_synthetic_developer_source_evidence_event_is_created():
 
     kinds = {event.kind for event in ledger.list("w")}
     assert kinds == {
-        "operator.ingress.raw_material_captured",
-        "operator.ingress.decoder_outcome_recorded",
-        "operator.ingress.ingress_occurred",
+        "operator.material.raw_captured",
+        "operator.material.decoder_outcome_recorded",
+        "operator.material.arrived",
         "operator.representation.recorded",
         "operator.representation.act_evidenced",
         "operator.representation.carriage_evidenced",
@@ -467,7 +467,7 @@ def test_exit_boundary_is_explicit_and_unambiguous():
         "representation-navigation"
     )
     kinds = {event.kind for event in exchange_ledger.list("w")}
-    assert "operator.ingress.stopping_occurred" not in kinds
+    assert "operator.material.stopping_occurred" not in kinds
 
 
 def test_projector_refuses_identification_paired_with_wrong_comparison():

@@ -24,9 +24,9 @@ from seed_runtime.operator_representation import (
 )
 
 _SUBJECT_BY_KIND = {
-    "operator.ingress.raw_material_captured": "raw_initial_material",
-    "operator.ingress.ingress_occurred": "preserved_ingress",
-    "operator.ingress.stopping_occurred": "interaction_closure",
+    "operator.material.raw_captured": "raw_initial_material",
+    "operator.material.arrived": "preserved_ingress",
+    "operator.material.stopping_occurred": "interaction_closure",
 }
 _COMPARISON_KIND = "operator.exchange.comparison_occurred"
 _IDENTIFICATION_KIND = "operator.exchange.identification_occurred"
@@ -34,7 +34,7 @@ _SOURCE_VALIDATED_KIND = "operator.representation.source_validated"
 _REPRESENTED_RELATION_KIND = "operator.representation.represented_relation_established"
 _SUPPORTED_KINDS = {
     *_SUBJECT_BY_KIND,
-    "operator.ingress.decoder_outcome_recorded",
+    "operator.material.decoder_outcome_recorded",
     _REPRESENTATION_RECORDED_KIND,
     _REPRESENTATION_ACT_EVIDENCE_KIND,
     _REPRESENTATION_CARRIAGE_EVIDENCE_KIND,
@@ -116,7 +116,7 @@ def advance_operator_locality_standing(
     time and reinstate the quadratic this replaced. The console holds one
     Standing, hands it forward, and keeps no earlier one.
 
-    Accepts as input only ``operator.ingress.*`` and ``operator.representation.*``
+    Accepts as input only ``operator.material.*`` and ``operator.representation.*``
     events stamped with this exact workspace and session, in append order.  The result is fully recomputable
     from the ledger and is not itself recorded: it exposes only standings,
     limits, and Unknowns the session's events already carry.  An empty
@@ -173,7 +173,7 @@ def advance_operator_locality_standing(
         if event.locality_id != locality_id:
             continue
         if not (
-            event.kind.startswith("operator.ingress.")
+            event.kind.startswith("operator.material.")
             or event.kind.startswith("operator.representation.")
             or event.kind.startswith("operator.exchange.")
             or event.kind.startswith("operator.interaction.")
@@ -856,7 +856,7 @@ def advance_operator_locality_standing(
             {"event_ids": [], "preserved_ingress": None, "interaction_closure": None},
         )
         attempt["event_ids"].append(event.id)
-        if event.kind == "operator.ingress.ingress_occurred":
+        if event.kind == "operator.material.arrived":
             occurrence = {
                 "attempt_ref": attempt_ref,
                 "subject_ref": event.payload["dimensions"]["identity"],
@@ -868,7 +868,7 @@ def advance_operator_locality_standing(
             }
             attempt["preserved_ingress"] = occurrence
             preserved_ingress_occurrences.append(occurrence)
-        elif event.kind == "operator.ingress.stopping_occurred":
+        elif event.kind == "operator.material.stopping_occurred":
             closure = {
                 "attempt_ref": attempt_ref,
                 "response_kind": event.payload.get("response_kind"),
