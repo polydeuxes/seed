@@ -9,13 +9,18 @@
     },
     "relation_audit": {
       "endpoint_presence_establishes_relation": false,
-      "requires": ["exact_relation", "occurrence_witness"],
-      "families": [
-        "content_to_carriage",
-        "input_to_Act",
-        "Act_occurrence_to_result",
-        "representation_to_digest"
-      ]
+      "families": {
+        "content_to_carriage": ["exact_relation", "occurrence_witness"],
+        "input_to_Act": ["exact_relation", "occurrence_witness"],
+        "Act_occurrence_to_result": ["exact_relation", "occurrence_witness"],
+        "representation_mechanically_matches_digest": [
+          "mechanical_recomputation"
+        ],
+        "representation_digest_carried_by_occurrence": [
+          "exact_relation",
+          "occurrence_witness"
+        ]
+      }
     },
     "non_equivalence": [
       ["content", "carriage"],

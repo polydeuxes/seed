@@ -43,10 +43,16 @@ def _digest_only_witness(digest: str) -> dict[str, str]:
     }
 
 
-def _content_carriage_witness(content: dict, carriage) -> str:
+def _content_carriage_witness(
+    content: dict, *, carriage, carriage_occurrence_id: str
+) -> str:
     if carriage is None:
         return MISSING
-    return EXACT if carriage.payload == content else MISSING
+    return (
+        EXACT
+        if carriage.id == carriage_occurrence_id and carriage.payload == content
+        else MISSING
+    )
 
 
 def _representation_digest_witness(
@@ -57,6 +63,26 @@ def _representation_digest_witness(
         if production_commitment(convention, representation) == digest
         else MISSING
     )
+
+
+def _recorded_digest_witness(
+    representation: dict,
+    *,
+    convention: str,
+    digest: str,
+    digest_carriage,
+    digest_carriage_occurrence_id: str,
+) -> str:
+    if digest_carriage is None:
+        return MISSING
+    mechanically_matches = (
+        production_commitment(convention, representation) == digest
+    )
+    exact_carriage = (
+        digest_carriage.id == digest_carriage_occurrence_id
+        and digest_carriage.payload.get("production_commitment") == digest
+    )
+    return EXACT if mechanically_matches and exact_carriage else MISSING
 
 
 def _source_assertion():
@@ -283,13 +309,26 @@ def test_content_and_carriage_endpoints_do_not_establish_carriage_relation():
     content = {"subject": "x", "standing": "Unknown"}
     carriage = ledger.append("test.carriage", "w", dict(content), session_id="s")
 
-    assert _content_carriage_witness(content, carriage) == EXACT
-    unrelated_carriage = ledger.append(
-        "test.carriage", "w", {"subject": "y", "standing": "Unknown"}, session_id="s"
+    assert (
+        _content_carriage_witness(
+            content, carriage=carriage, carriage_occurrence_id=carriage.id
+        )
+        == EXACT
+    )
+    second_carriage = ledger.append(
+        "test.carriage", "w", dict(content), session_id="s"
     )
     assert content
-    assert unrelated_carriage.id
-    assert _content_carriage_witness(content, unrelated_carriage) == MISSING
+    assert second_carriage.payload == carriage.payload
+    assert second_carriage.id != carriage.id
+    assert (
+        _content_carriage_witness(
+            content,
+            carriage=second_carriage,
+            carriage_occurrence_id=carriage.id,
+        )
+        == MISSING
+    )
 
 
 def test_representation_and_digest_endpoints_do_not_establish_commitment_relation():
@@ -308,6 +347,46 @@ def test_representation_and_digest_endpoints_do_not_establish_commitment_relatio
     assert (
         _representation_digest_witness(
             changed_representation, convention="test", digest=digest
+        )
+        == MISSING
+    )
+
+
+def test_digest_recomputation_is_not_a_recorded_digest_occurrence():
+    bundle = _byte_measurement_road()
+    evidence = bundle["content_evidence"]
+    carrier = bundle["carrier"]
+    represented = {
+        coordinate: carrier.payload[coordinate]
+        for coordinate in evidence.payload["production_coordinates"]
+    }
+    digest = evidence.payload["production_commitment"]
+    convention = evidence.payload["production_convention"]
+
+    assert (
+        _representation_digest_witness(
+            represented, convention=convention, digest=digest
+        )
+        == EXACT
+    )
+    assert (
+        _recorded_digest_witness(
+            represented,
+            convention=convention,
+            digest=digest,
+            digest_carriage=evidence,
+            digest_carriage_occurrence_id=evidence.id,
+        )
+        == EXACT
+    )
+    other_carriage = bundle["act_evidence"]
+    assert (
+        _recorded_digest_witness(
+            represented,
+            convention=convention,
+            digest=digest,
+            digest_carriage=other_carriage,
+            digest_carriage_occurrence_id=evidence.id,
         )
         == MISSING
     )
@@ -438,13 +517,21 @@ def test_unjoined_endpoints_do_not_witness_an_input_to_act_relation():
     assert bundle["applicability"]["applicability_act_occurrence_id"]
     assert grammar["relation_audit"] == {
         "endpoint_presence_establishes_relation": False,
-        "requires": ["exact_relation", "occurrence_witness"],
-        "families": [
-            "content_to_carriage",
-            "input_to_Act",
-            "Act_occurrence_to_result",
-            "representation_to_digest",
-        ],
+        "families": {
+            "content_to_carriage": ["exact_relation", "occurrence_witness"],
+            "input_to_Act": ["exact_relation", "occurrence_witness"],
+            "Act_occurrence_to_result": [
+                "exact_relation",
+                "occurrence_witness",
+            ],
+            "representation_mechanically_matches_digest": [
+                "mechanical_recomputation"
+            ],
+            "representation_digest_carried_by_occurrence": [
+                "exact_relation",
+                "occurrence_witness",
+            ],
+        },
     }
     assert witness["input_identity"] == MISSING
     assert witness["exact_Act"] == MISSING
