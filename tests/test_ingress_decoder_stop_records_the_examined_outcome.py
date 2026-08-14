@@ -156,7 +156,7 @@ def test_no_stop_claims_a_requirement_was_measured(rejected, unavailable):
         assert set(stop) - {"dimensions"} == {
             "attempt_ref",
             "closed",
-            "lineage",
+            "provenance_occurrence_refs",
             "mutates_cluster",
             "response_kind",
         }

@@ -10,7 +10,7 @@ that no clause requires it, and that its durable growth converged on x4 per
 doubling -- an extrapolated 29 billion identifiers for one corpus file.
 
 `05.Evidence:19` refuses a copied causation identifier the standing of verified
-provenance, and `05.Testimony:18` states copied lineage fields do not turn
+provenance, and `05.Testimony:18` states copied provenance references do not turn
 testimony into established fact. A longer list was never stronger evidence than
 a shorter one.
 

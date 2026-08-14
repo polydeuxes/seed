@@ -288,7 +288,7 @@ def record_transient_material(
                     "whether any other source holds this material remains Unknown",
                 ],
                 "mutates_cluster": False,
-                "lineage": [],
+                "provenance_occurrence_refs": [],
             },
         )
     ])[0]

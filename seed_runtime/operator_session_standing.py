@@ -232,7 +232,7 @@ def advance_operator_session_standing(
             ):
                 raise ValueError(
                     "comparison does not carry the recorded presentation "
-                    "occurrence lineage"
+                    "occurrence provenance"
                 )
             response_attempt = attempts.get(payload["response_attempt_ref"])
             preserved_response = (
@@ -449,7 +449,7 @@ def advance_operator_session_standing(
             ):
                 raise ValueError(
                     "source recovery does not carry the recorded "
-                    "presentation occurrence lineage"
+                    "presentation occurrence provenance"
                 )
             supporting_identification = next(
                 (

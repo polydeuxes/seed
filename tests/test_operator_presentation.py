@@ -68,7 +68,7 @@ def _form_and_emit(ledger, *, workspace="w", session="s"):
     )
 
 
-def test_console_forms_c0_before_first_ingress_and_preserves_lineage_only():
+def test_console_forms_c0_before_first_ingress_and_preserves_provenance_only():
     ledger, _ = _run_console("hello\n")
 
     # A current Presentation existing does not make the newest ingress and the
@@ -104,7 +104,7 @@ def test_console_forms_c0_before_first_ingress_and_preserves_lineage_only():
 
 
 def test_no_compare_or_identification_follows_console_ingress():
-    # The required proving: C emitted, E preserved, produced-after lineage
+    # The required proving: C emitted, E preserved, production provenance
     # retained, and no Compare or Identification occurrence.  Recency does not
     # make C and E participants in one act; 01.Standing.E.1 requires the act
     # owner to determine input-to-act Applicability, and no recovered
@@ -210,7 +210,7 @@ def test_formation_dimensions_record_only_coordinates_that_exist():
     )
     assert dimensions["occurrence_preservation"] == (
         "3 alternatives, roles, response-coordinate bindings, and "
-        "represented-source lineage durably recorded"
+        "represented provenance occurrences durably recorded"
     )
     assert "closed-choice" not in str(dimensions).lower()
     assert "closed choice" not in str(dimensions).lower()
@@ -263,7 +263,7 @@ def test_c0_and_c1_are_formed_and_emitted_in_order():
     assert output.count("Bounded Presentation") == 2
 
 
-def test_alternatives_carry_complete_coordinates_and_evidence_lineage():
+def test_alternatives_carry_complete_coordinates_and_provenance_evidence():
     ledger = EventLedger()
     _fixture_presentation(ledger)
 

@@ -75,6 +75,15 @@ separately established change in Responsibility or Authority. Movement does
 not imply that one participant gave material to another. The exact movement,
 Responsibility assignment, or Authority transition must be named instead.
 
+## Lineage
+
+`Lineage` is ordinary shorthand for a recoverable representation of where
+material came through. In Seed grammar it belongs beneath Provenance and may be
+represented by ordered source, occurrence, production, or preservation
+references. The representation helps an exact Act validate claimed provenance;
+it establishes no separate subject, Responsibility, Act, Standing, causation,
+production occurrence, or Applicability.
+
 ---
 
 ## Presentation

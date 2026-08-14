@@ -73,7 +73,7 @@ Identifies where the exact consumed material came from. Source does not establis
 
 #### Provenance
 
-Identifies the lineage and attributed production or preservation history required by the exact use. Source and provenance remain distinct.
+Identifies the attributed source, production, preservation, and occurrence history required by the exact use. Source and provenance remain distinct.
 
 ### Conditional warrant branches
 

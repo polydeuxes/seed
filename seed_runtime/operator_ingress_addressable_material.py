@@ -326,9 +326,9 @@ def form_operator_ingress_addressable_material(
     if not all(
         isinstance(ref, str) and ref for ref in (attempt, raw_ref, examination_ref)
     ):
-        _refuse("complete attempt and representation lineage is required")
-    if payload.get("lineage") != [raw_ref, examination_ref]:
-        _refuse("lineage must preserve capture followed by examination")
+        _refuse("complete attempt and provenance occurrences are required")
+    if payload.get("provenance_occurrence_refs") != [raw_ref, examination_ref]:
+        _refuse("provenance occurrences must preserve capture followed by examination")
     dimensions = payload.get("dimensions")
     if not isinstance(dimensions, dict) or dimensions.get("authority_warrant") != (
         "occurrence-only; meaning Unknown"
@@ -345,7 +345,7 @@ def form_operator_ingress_addressable_material(
         or raw.payload.get("material_role") != "initial_ingress"
         or (raw.workspace_id, raw.session_id, raw.payload.get("attempt_ref")) != common
     ):
-        _refuse("initial raw-material lineage is missing or foreign")
+        _refuse("initial raw-material provenance is missing or foreign")
     if examination is None or (
         examination.kind != "operator.ingress.representation_examined"
         or examination.payload.get("material_role") != "initial_ingress"

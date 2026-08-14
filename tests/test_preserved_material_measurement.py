@@ -205,7 +205,7 @@ def test_a_finding_standing_on_another_preserves_which(session, occurrences):
         ),
     )
     assert second.payload["premise_event_id"] == first.id
-    assert first.id in second.payload["lineage"]
+    assert first.id in second.payload["provenance_occurrence_refs"]
     assert premise_chain(session, second.id) == [first.id]
 
 
@@ -1649,7 +1649,7 @@ def test_the_witness_claims_no_responsibility(
         {"dimensions": {"identity": "something else"}},
         {"mutates_cluster": True},
         {"unknowns": ["one nobody established"]},
-        {"lineage": ["evt_invented"]},
+        {"provenance_occurrence_refs": ["evt_invented"]},
         {"total_count": 999},
     ],
 )

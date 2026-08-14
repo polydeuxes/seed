@@ -193,7 +193,7 @@ def run_operator_response_comparison_and_identification(
         else "no-coordinate-match"
     )
     comparison_ref = new_id("operator_response_comparison")
-    exchange_lineage = [
+    exchange_provenance_refs = [
         formed_event_id,
         emitted_event_id,
         response_capture_event_id,
@@ -239,7 +239,7 @@ def run_operator_response_comparison_and_identification(
                 _MATCH_UNKNOWNS if matched_coordinate else _NO_MATCH_UNKNOWNS
             ),
             "conflicts": [],
-            "lineage": exchange_lineage,
+            "provenance_occurrence_refs": exchange_provenance_refs,
             "mutates_cluster": False,
         },
         session_id=session_id,
@@ -314,7 +314,7 @@ def run_operator_response_comparison_and_identification(
             "known_loss": [],
             "unknowns": [],
             "conflicts": [],
-            "lineage": [comparison_event.id, formed_event_id],
+            "provenance_occurrence_refs": [comparison_event.id, formed_event_id],
             "mutates_cluster": False,
         },
         session_id=session_id,

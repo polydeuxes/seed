@@ -176,7 +176,7 @@ def record_self_survey(
             "a coordinate observed with one value is not thereby a defect, "
             "a degree of freedom, or an instruction to vary it"
         ),
-        "lineage": [],
+        "provenance_occurrence_refs": [],
     }
     return ledger.append(
         SELF_SURVEY_RECORDED_KIND, workspace_id, payload, session_id=session_id

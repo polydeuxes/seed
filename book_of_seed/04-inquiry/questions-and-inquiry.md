@@ -65,7 +65,7 @@ Preserved Unknowns include the complete realizable default dialogue loop, the fu
 - Promoting every open string in condition to a constitutional question.
 - Treating operator prose as an already-formed internal question.
 - Treating an implementation family inventory as Seed's constitutional ontology.
-- Losing lineage when reformulating a question.
+- Losing provenance when reformulating a question.
 
 ## Related chapters
 - [Inquiry frontiers](inquiry-frontiers.md)

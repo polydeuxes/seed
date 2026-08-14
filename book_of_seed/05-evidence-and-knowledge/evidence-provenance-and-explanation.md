@@ -1,7 +1,7 @@
 # Evidence, Provenance, and Explanation
 
 ## Constitutional subject
-The support and lineage required to justify claims and explain current beliefs without confusing explanation with establishment.
+The Evidence and provenance required to justify claims and explain current Standing without confusing explanation with establishment.
 
 ## Core question
 What evidence and provenance are warranted to explain why Seed holds a claim at a given time?
@@ -16,7 +16,7 @@ Evidence identifies source and collection context; fact support and explanations
 Evidence-shaped material has standing for an exact declared exact Act only when the exact Act can distinguish the named evidence identity from the material's existence and can represent the source attribution, evidence kind, source or collection context, bounded subject, supported claim, applicable authority boundary, preservation horizon, confidence or uncertainty label where used, and provenance relation required by that act. The produced standing is applicable represented support for that act. The forbidden inference is factual truth, independent corroboration, current lawful condition, act occurrence authorization, or universal evidence admission merely because an identifier, row, confidence value, or citation is present.
 
 ### 05.Evidence.B — Provenance representation and applicability
-A provenance reference may contribute represented lineage only when referenced provenance material exists and its source or lineage is applicable to the exact assertion or support material within the declared exact Act. Representation, applicability, internal coherence, independent verification, verified causation, and production occurrence are separate standings. An exact Act may rely on represented lineage where that is the bounded requirement, but must not treat a string, foreign key, copied causation identifier, or internally coherent lineage as verified provenance, proof of production occurrence, established fact, or independent support.
+A provenance reference may contribute only when the referenced material exists and is applicable to the exact assertion or support material within the declared Act. Representation, Applicability, internal coherence, independent verification, verified causation, and production occurrence remain distinct. An Act may rely on an ordered provenance path where that is its bounded requirement, but a string, foreign key, copied causation identifier, or internally coherent path does not establish verified provenance, production occurrence, Fact Standing, or independent support.
 
 
 ### 05.Evidence.C — Bounded negative findings and preserved Unknowns
@@ -33,7 +33,7 @@ Correlation, association, co-occurrence, sequence, proximity, adjacency, pattern
 Attribution, association, attachment, ownership candidate, source-reported blame, account relation, device relation, address relation, role relation, deployment relation, or event association may preserve provenance or inquiry pressure only within its claim form. It does not establish responsibility, accountability, fault, blame, intent, negligence, liability, legal responsibility, moral responsibility, implementation ownership, or implementation pressure without separately preserved evidence, authority, temporal provenance, support path, confidence limits, Unknowns, and lawful stop.
 
 ### 05.Evidence.F — Observability classification is not provenance
-A surface may make a claim, artifact, boundary, output, or relation directly observable; implementation evidence may make a relation reconstructable; constitutional evidence may make a pattern constitutionally inferable; and missing support may remain Unknown. These standings support only their bounded claim forms. They do not establish provenance, full lineage, runtime trace, act occurrence log, production occurrence, semantic explanation, or upstream constitutional movement without applicable preserved lineage, authority, evidence, confidence limits, Unknowns, and lawful stop.
+A surface may make a claim, artifact, boundary, output, or relation directly observable; implementation Evidence may make a relation reconstructable; constitutional Evidence may make a pattern constitutionally inferable; and missing support may remain Unknown. These standings support only their bounded claim forms. They do not establish provenance, a complete occurrence path, runtime trace, Act-occurrence log, production occurrence, semantic explanation, or upstream constitutional movement without applicable preserved provenance, Authority, Evidence, limits, Unknowns, and lawful stopping.
 
 ### 05.Evidence.G — Resolution and visibility are not semantic support
 Reference resolution, linkage, graph adjacency, membership, visibility, and representation labels may establish only the bounded representational relation their responsible rule warrants. They do not by themselves establish semantic support, applicability, admission, assertion adoption, truth, or reliance. Any stronger use requires claim-appropriate evidence, provenance, scope, authority, conflicts, limits, and a responsible exact Act boundary.

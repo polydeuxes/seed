@@ -101,16 +101,16 @@ def test_compare_requires_an_emitted_presentation_with_recorded_reference():
     # That route is unrecovered, so this machinery stays dormant.
 
 
-def test_comparison_lineage_records_the_subjects_it_consumed():
+def test_comparison_provenance_records_the_subjects_it_consumed():
     ledger = EventLedger()
     presentation, ingress_event_id, finding = _exchange(ledger, "1\n")
 
-    # The ingress names no Presentation; the comparison's own lineage is what
+    # The ingress names no Presentation; the comparison's provenance is what
     # records which subjects it consumed.
     ingress = ledger.get(ingress_event_id)
     assert not any(k.startswith("produced_after") for k in ingress.payload)
     comparison_event = ledger.get(finding["comparison"]["event_id"])
-    assert comparison_event.payload["lineage"] == [
+    assert comparison_event.payload["provenance_occurrence_refs"] == [
         presentation["formed_event_id"],
         presentation["emitted_event_id"],
         ingress.payload["raw_material_event_id"],
@@ -351,7 +351,7 @@ def test_formation_event_evidences_bindings_despite_empty_upstream_lists():
         presentation["formed_event_id"]
     )
     assert presentation["formed_event_id"] in (
-        identification_event.payload["lineage"]
+        identification_event.payload["provenance_occurrence_refs"]
     )
     formed_event = ledger.get(presentation["formed_event_id"])
     for alternative in formed_event.payload["alternatives"]:

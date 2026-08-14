@@ -90,6 +90,7 @@ BANNED: tuple[tuple[str, str], ...] = (
     (r"\bconsumers?\b|consumer[-_]", "consumer"),
     (r"\buptake\b|uptake[-_]", "uptake"),
     (r"\bhandoffs?\b|handoff[-_]", "handoff"),
+    (r"\blineage\b|lineage[-_]", "lineage"),
 )
 
 # The discriminator, corrected.

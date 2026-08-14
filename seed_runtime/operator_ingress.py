@@ -98,7 +98,9 @@ def project_operator_ingress_events(attempts, event, *, ledger=None) -> None:
         "event_kind": event.kind,
         "subject_ref": event.payload["dimensions"]["identity"],
         "dimensions": event.payload["dimensions"],
-        "lineage": list(event.payload.get("lineage", ())),
+        "provenance_occurrence_refs": list(
+            event.payload.get("provenance_occurrence_refs", ())
+        ),
     }
     if event.kind == "operator.ingress.representation_examined":
         view["representation_examinations"][event.payload["material_role"]] = {
@@ -156,7 +158,7 @@ def _capture_representation(
     attempt,
     material_role,
     captured_material: CapturedOperatorMaterial,
-    lineage=(),
+    provenance_occurrence_refs=(),
 ):
     capture = captured_material
     capture_ref = new_id("operator_material")
@@ -185,7 +187,7 @@ def _capture_representation(
         capture_boundary=capture.capture_boundary,
         byte_material_origin=capture.byte_material_origin,
         known_loss=list(capture.known_loss),
-        lineage=list(lineage),
+        provenance_occurrence_refs=list(provenance_occurrence_refs),
     )
     examination = examine_text_representation(capture)
     examination_event = _record(
@@ -219,7 +221,7 @@ def _capture_representation(
         decoder_failure=examination.failure,
         known_loss=list(capture.known_loss),
         unknowns=["true source-relative encoding Unknown"],
-        lineage=[captured.id],
+        provenance_occurrence_refs=[captured.id],
     )
     return capture, examination, captured, examination_event
 
@@ -234,7 +236,7 @@ def _project_attempt(*, events, ledger, attempt):
 
     Refusals the returned projection depends on are unchanged: the addressable
     material is still formed through `form_operator_ingress_addressable_material`,
-    which consults the ledger for this attempt's exact lineage and refuses a
+    which consults the ledger for this attempt's exact provenance occurrences and refuses a
     foreign, incomplete, or unrecorded occurrence. What is no longer performed is
     the replay of unrelated historical events, which no clause makes this
     responsibility's to perform.
@@ -327,7 +329,10 @@ def run_operator_ingress_attempt(
                 "what these bytes represent remains Unknown",
                 "whether any decoder represents them remains Unknown",
             ],
-            lineage=[ingress_capture.id, ingress_examination_event.id],
+            provenance_occurrence_refs=[
+                ingress_capture.id,
+                ingress_examination_event.id,
+            ],
         )
         stop_event = _record(
             ledger,
@@ -347,7 +352,7 @@ def run_operator_ingress_attempt(
             ),
             closed=True,
             response_kind=ingress_examination.outcome,
-            lineage=[ingress_examination_event.id],
+            provenance_occurrence_refs=[ingress_examination_event.id],
         )
         projection = _project_attempt(
             events=(
@@ -384,7 +389,9 @@ def run_operator_ingress_attempt(
             responsibility="operator-ingress",
             authority="occurrence-only; meaning Unknown",
             scope=f"workspace:{workspace_id};session:{session_id}",
-            occurrence="strictly decoded text preserves capture/examination lineage",
+            occurrence=(
+                "strictly decoded text preserves capture/examination provenance"
+            ),
         ),
         material_origin=OPERATOR_ORIGIN,
         text_representation={
@@ -398,7 +405,7 @@ def run_operator_ingress_attempt(
         raw_material_event_id=ingress_capture.id,
         representation_examination_event_id=ingress_examination_event.id,
         known_loss=list(captured_ingress.known_loss),
-        lineage=[
+        provenance_occurrence_refs=[
             ingress_capture.id,
             ingress_examination_event.id,
         ],

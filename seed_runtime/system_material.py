@@ -189,7 +189,7 @@ def declare_invocation(
                     "what the invocation names remains Unknown",
                 ],
                 "mutates_cluster": False,
-                "lineage": [],
+                "provenance_occurrence_refs": [],
             },
         )
     ])[0]
@@ -249,7 +249,7 @@ def preserve_system_material(
                     "what produced it remains Unknown",
                 ],
                 "mutates_cluster": False,
-                "lineage": [],
+                "provenance_occurrence_refs": [],
             },
         )
     ])[0]

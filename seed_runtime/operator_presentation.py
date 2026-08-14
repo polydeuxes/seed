@@ -99,7 +99,7 @@ def form_operator_presentation(
         )
         occurrence = (
             f"{len(alternatives)} alternatives, roles, response-coordinate "
-            "bindings, and represented-source lineage durably recorded"
+            "bindings, and represented provenance occurrences durably recorded"
         )
         purpose += " with attributed bounded alternatives"
         known_loss.append(
@@ -269,7 +269,7 @@ def emit_operator_presentation(
             "known_loss": [],
             "unknowns": [],
             "conflicts": [],
-            "lineage": [presentation["formed_event_id"]],
+            "provenance_occurrence_refs": [presentation["formed_event_id"]],
             "mutates_cluster": False,
         },
         session_id=presentation["session_id"],

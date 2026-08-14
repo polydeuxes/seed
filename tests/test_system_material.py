@@ -91,7 +91,7 @@ def test_system_material_requires_no_invocation():
     assert unprompted.payload["material_origin"] == SYSTEM_ORIGIN
     for absent in ("declared_invocation", "invocation_event_id", "seed_invoked"):
         assert absent not in unprompted.payload
-    assert unprompted.payload["lineage"] == []
+    assert unprompted.payload["provenance_occurrence_refs"] == []
 
     # And a declaration beside it relates to it only if something establishes so.
     declaration = _declare(ledger)

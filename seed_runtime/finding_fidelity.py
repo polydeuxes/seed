@@ -437,7 +437,7 @@ def compare_recorded_finding(ledger: EventLedger, event_id: str) -> Event:
         "unknowns": unknowns,
         "lawful_stopping_point": (
                 "produce this Fidelity finding concerning this exact represented "
-                "relation and stop; do not traverse lineage or determine "
+                "relation and stop; do not traverse provenance references or determine "
                 "downstream applicability, admission, reliance, or "
                 "revision"
         ),
