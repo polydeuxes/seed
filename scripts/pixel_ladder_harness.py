@@ -21,6 +21,16 @@ coordinate recoverable on its own before any two are crossed.
 
 Extent is not varied here. One pixel is the whole specimen, so a difference
 between two of them is a value and cannot be an extent.
+
+Three independent coordinates are not the space they span. Ladder C renders
+256 specimens per channel, 768 in all; the crossed space is 256 x 256 x 256,
+16,777,216 combinations. Recovering each coordinate alone is what makes the
+crossed space addressable without rendering it.
+
+**A specimen does not carry its own framing.** Three bytes are three bytes.
+That the first is one channel, that the three together are one pixel, and that
+a channel is a whole byte, are all coordinates this harness knows and no
+specimen states. See `framing_ladder_harness.py`.
 """
 
 from __future__ import annotations
