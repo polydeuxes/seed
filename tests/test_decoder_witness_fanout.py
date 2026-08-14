@@ -13,6 +13,8 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts"))
 
 from decoder_witness_harness import (  # noqa: E402
+    MIXED,
+    NONE,
     class_adjacency,
     classes,
     decoding_witnesses,
@@ -37,8 +39,8 @@ def test_adjacency_names_a_pair_class_recovery_could_not():
     """A class refused as a first byte still admits followers.
 
     Class recovery reports 0x80-0xff as refused, which is about first bytes.
-    Adjacency finds that one of those follows a length-two first byte, which
-    the earlier measurement had no way to state.
+    Adjacency finds that class's members do not agree about following a
+    length-two first byte, which the earlier measurement had no way to state.
     """
 
     recovered = classes("utf-8", 4)
@@ -47,8 +49,8 @@ def test_adjacency_names_a_pair_class_recovery_could_not():
     refused = next(key for key in recovered if key[0] is None)
     pair_leader = next(key for key in recovered if key[0] == 2)
 
-    assert adjacency[(pair_leader, refused)] is True
-    assert adjacency[(refused, refused)] is False
+    assert adjacency[(pair_leader, refused)] == MIXED
+    assert adjacency[(refused, refused)] == NONE
 
 
 def test_every_witness_on_this_machine_answers_both_ladders():
