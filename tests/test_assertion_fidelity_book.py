@@ -3,7 +3,7 @@ from pathlib import Path
 
 BOOK = (
     Path(__file__).resolve().parents[1]
-    / "book_of_seed/01-grammar-and-standing/constitutional-kinds-and-artifact-standing.md"
+    / "book_of_seed/01-grammar-and-standing/constitutional-standing.md"
 )
 
 

@@ -2,7 +2,7 @@ from pathlib import Path
 
 
 ROOT = Path(__file__).resolve().parents[1]
-BOOK = ROOT / "book_of_seed/01-grammar-and-standing/constitutional-kinds-and-artifact-standing.md"
+BOOK = ROOT / "book_of_seed/01-grammar-and-standing/constitutional-standing.md"
 
 
 def _clause() -> str:
