@@ -67,16 +67,23 @@ and what should survive it is the distinction it records, not its mechanism.
 from __future__ import annotations
 
 from dataclasses import dataclass
+from pathlib import Path
 from typing import Any
 
 from seed_runtime.event import Event
 from seed_runtime.events import EventLedger
 from seed_runtime.ids import new_id
+from seed_runtime.process_boundary import ProcessBoundaryError, run_process_boundary
 
 SYSTEM_ORIGIN = "system"
 
 SYSTEM_INVOCATION_DECLARED_KIND = "system.invocation.declared"
 SYSTEM_MATERIAL_OCCURRED_KIND = "system.material.occurred"
+SYSTEM_INVOCATION_ARGUMENTS_RELATED_KIND = "system.invocation.arguments_related"
+SYSTEM_INVOCATION_ATTEMPTED_KIND = "system.invocation.attempted"
+SYSTEM_INVOCATION_OCCURRED_KIND = "system.invocation.occurred"
+SYSTEM_INVOCATION_FAILED_KIND = "system.invocation.failed"
+SYSTEM_INVOCATION_MATERIAL_RELATED_KIND = "system.invocation.material_related"
 
 
 class SystemMaterialError(ValueError):
@@ -114,6 +121,19 @@ class DeclaredInvocation:
             "declared_performer": self.declared_performer,
             "on_behalf_of": self.on_behalf_of,
         }
+
+
+@dataclass(frozen=True)
+class SystemInvocationRun:
+    """Exact records preserved around one no-shell system invocation."""
+
+    arguments_relation: Event
+    attempt: Event
+    occurrence: Event
+    stdout_material: Event
+    stderr_material: Event
+    stdout_relation: Event
+    stderr_relation: Event
 
 
 def _text_representation(exact_bytes: bytes) -> dict[str, Any]:
@@ -255,6 +275,199 @@ def preserve_system_material(
             },
         )
     ])[0]
+
+
+def _exact_arguments(argv: tuple[str, ...]) -> tuple[str, ...]:
+    if not argv or not all(type(part) is str and part for part in argv):
+        raise SystemMaterialError("a system invocation requires exact non-empty arguments")
+    return argv
+
+
+def invoke_system(
+    ledger: EventLedger,
+    *,
+    workspace_id: str,
+    locality_id: str,
+    command_representation: str,
+    argv: tuple[str, ...],
+    cwd: str | Path,
+    timeout_seconds: float = 60.0,
+    max_output_bytes: int = 1_000_000,
+) -> SystemInvocationRun:
+    """Run one explicitly related representation and argv without a shell.
+
+    ``command_representation`` is never parsed. The caller supplies the exact
+    argv relation separately, so ``/ls`` does not silently become ``ls``. The
+    attempt is flushed before the process boundary. Returned stream material
+    and its relation to the exact process occurrence are recorded separately.
+    """
+
+    _require_exchange(locality_id)
+    if type(command_representation) is not str or not command_representation:
+        raise SystemMaterialError("a system invocation requires an exact representation")
+    if type(argv) is not tuple:
+        raise SystemMaterialError("a system invocation requires an exact argv tuple")
+    exact_argv = _exact_arguments(argv)
+    if isinstance(timeout_seconds, bool) or not isinstance(
+        timeout_seconds, (int, float)
+    ) or timeout_seconds <= 0:
+        raise SystemMaterialError("a system invocation timeout must be positive")
+    if type(max_output_bytes) is not int or max_output_bytes < 0:
+        raise SystemMaterialError(
+            "a system invocation output boundary must be non-negative"
+        )
+    try:
+        exact_cwd = Path(cwd).resolve(strict=True)
+    except (OSError, RuntimeError) as exc:
+        raise SystemMaterialError("a system invocation requires an exact directory") from exc
+    root_stat = exact_cwd.stat()
+    if not exact_cwd.is_dir():
+        raise SystemMaterialError("a system invocation directory must be a directory")
+
+    invocation_id = new_id("system_invocation")
+    arguments_relation = ledger.append(
+        SYSTEM_INVOCATION_ARGUMENTS_RELATED_KIND,
+        workspace_id,
+        {
+            "invocation_id": invocation_id,
+            "command_representation": command_representation,
+            "argv": list(exact_argv),
+            "standing": "supplied",
+            "evidence_scope": (
+                "the caller supplied this exact representation-to-argv relation; "
+                "no parsing or wider command-language relation is established"
+            ),
+        },
+        locality_id=locality_id,
+    )
+    attempt = ledger.append(
+        SYSTEM_INVOCATION_ATTEMPTED_KIND,
+        workspace_id,
+        {
+            "invocation_id": invocation_id,
+            "arguments_relation_event_id": arguments_relation.id,
+            "command_representation": command_representation,
+            "argv": list(exact_argv),
+            "cwd": str(exact_cwd),
+            "cwd_device": root_stat.st_dev,
+            "cwd_inode": root_stat.st_ino,
+            "timeout_seconds": float(timeout_seconds),
+            "max_output_bytes": max_output_bytes,
+            "standing": "attempt recorded; process outcome Unknown",
+            "unknowns": [
+                "whether a process occurrence follows remains Unknown",
+                "stdout, stderr, and return code remain Unknown",
+            ],
+        },
+        locality_id=locality_id,
+    )
+    ledger.flush()
+
+    try:
+        result = run_process_boundary(
+            exact_cwd,
+            exact_argv,
+            timeout_seconds=timeout_seconds,
+            max_output_bytes=max_output_bytes,
+        )
+    except (OSError, ProcessBoundaryError) as exc:
+        ledger.append(
+            SYSTEM_INVOCATION_FAILED_KIND,
+            workspace_id,
+            {
+                "invocation_id": invocation_id,
+                "attempt_event_id": attempt.id,
+                "arguments_relation_event_id": arguments_relation.id,
+                "process_occurrence_id": None,
+                "standing": "process occurrence not established",
+                "failure_type": type(exc).__name__,
+                "failure_representation": str(exc),
+                "unknowns": [
+                    "whether effects occurred beyond this process boundary remains Unknown"
+                ],
+            },
+            locality_id=locality_id,
+        )
+        raise SystemMaterialError("the declared system invocation did not start") from exc
+
+    process_occurrence_id = new_id("system_invocation_occurrence")
+    occurrence = ledger.append(
+        SYSTEM_INVOCATION_OCCURRED_KIND,
+        workspace_id,
+        {
+            "invocation_id": invocation_id,
+            "process_occurrence_id": process_occurrence_id,
+            "attempt_event_id": attempt.id,
+            "arguments_relation_event_id": arguments_relation.id,
+            "command_representation": command_representation,
+            "argv": list(result.argv),
+            "cwd": result.cwd,
+            "returncode": result.returncode,
+            "timed_out": result.timed_out,
+            "stdout_total_bytes": result.stdout_total_bytes,
+            "stderr_total_bytes": result.stderr_total_bytes,
+            "stdout_complete": result.stdout_complete,
+            "stderr_complete": result.stderr_complete,
+            "standing": "occurred",
+            "unknowns": (
+                ["return code remains Unknown because the exact timeout elapsed"]
+                if result.timed_out
+                else []
+            ),
+        },
+        locality_id=locality_id,
+    )
+    stdout_material = preserve_system_material(
+        ledger,
+        workspace_id=workspace_id,
+        locality_id=locality_id,
+        exact_bytes=result.stdout,
+        observed_boundary=f"process occurrence {process_occurrence_id}, stdout",
+    )
+    stderr_material = preserve_system_material(
+        ledger,
+        workspace_id=workspace_id,
+        locality_id=locality_id,
+        exact_bytes=result.stderr,
+        observed_boundary=f"process occurrence {process_occurrence_id}, stderr",
+    )
+
+    def relate(stream_name: str, material: Event, total_bytes: int, complete: bool) -> Event:
+        return ledger.append(
+            SYSTEM_INVOCATION_MATERIAL_RELATED_KIND,
+            workspace_id,
+            {
+                "invocation_id": invocation_id,
+                "process_occurrence_id": process_occurrence_id,
+                "process_event_id": occurrence.id,
+                "material_occurrence_id": material.id,
+                "stream_role": stream_name,
+                "preserved_byte_count": material.payload["byte_count"],
+                "total_byte_count": total_bytes,
+                "complete": complete,
+                "standing": "related",
+                "evidence_scope": (
+                    "this exact process-occurrence-to-stream-material relation only"
+                ),
+            },
+            locality_id=locality_id,
+        )
+
+    stdout_relation = relate(
+        "stdout", stdout_material, result.stdout_total_bytes, result.stdout_complete
+    )
+    stderr_relation = relate(
+        "stderr", stderr_material, result.stderr_total_bytes, result.stderr_complete
+    )
+    return SystemInvocationRun(
+        arguments_relation=arguments_relation,
+        attempt=attempt,
+        occurrence=occurrence,
+        stdout_material=stdout_material,
+        stderr_material=stderr_material,
+        stdout_relation=stdout_relation,
+        stderr_relation=stderr_relation,
+    )
 
 
 def _require_exchange(locality_id: str) -> None:

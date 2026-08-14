@@ -39,6 +39,13 @@ from seed_runtime.operator_representation import (
     REPRESENTATION_EMITTED_KIND,
     REPRESENTATION_EMISSION_LOCALITY_EVIDENCE_KIND,
 )
+from seed_runtime.system_material import (
+    SYSTEM_INVOCATION_MATERIAL_RELATED_KIND,
+    SYSTEM_INVOCATION_OCCURRED_KIND,
+    SYSTEM_MATERIAL_OCCURRED_KIND,
+    SystemMaterialError,
+    system_material_bytes,
+)
 
 EQUIVALENCE_RULE = "byte-for-byte equality; no normalization"
 
@@ -85,6 +92,10 @@ PAIR_FINDING_PARTICIPATION_ROLE = "recovered ordered-pair finding"
 SOURCE_OCCURRENCE_PARTICIPATION_ROLE = "exact preserved source occurrence"
 EMISSION_LOCALITY_PARTICIPATION_ROLE = "exact emission Locality Evidence"
 EMISSION_OCCURRENCE_PARTICIPATION_ROLE = "exact emission occurrence"
+SYSTEM_MATERIAL_RELATION_PARTICIPATION_ROLE = (
+    "exact process-occurrence-to-system-material relation"
+)
+SYSTEM_MATERIAL_OCCURRENCE_PARTICIPATION_ROLE = "exact system-material occurrence"
 OBSERVATION_COMPARE_INPUT_ROLE = "exact recorded adjacent-pair observations"
 ADJACENT_PAIR_OBSERVATION_COMPARE_RESPONSIBILITY = (
     "compare exact recorded adjacent-pair observations without identifying "
@@ -227,7 +238,11 @@ class AdjacentPairObservation:
             or not finding_id
             or evidence_ids != [finding_id, source_id]
             or evidence.get("source_kind")
-            not in {INGRESS_OCCURRED_KIND, REPRESENTATION_EMITTED_KIND}
+            not in {
+                INGRESS_OCCURRED_KIND,
+                REPRESENTATION_EMITTED_KIND,
+                SYSTEM_MATERIAL_OCCURRED_KIND,
+            }
             or not isinstance(evidence.get("workspace_id"), str)
             or not isinstance(evidence.get("locality_id"), str)
             or not isinstance(text, str)
@@ -368,6 +383,14 @@ def _observe_adjacent_pair_observations(
             text = source.payload.get("decoded_text")
         elif source.kind == REPRESENTATION_EMITTED_KIND:
             text = source.payload.get("emitted_representation")
+        elif source.kind == SYSTEM_MATERIAL_OCCURRED_KIND:
+            exact_bytes = system_material_bytes(source)
+            try:
+                text = exact_bytes.decode("utf-8", errors="strict")
+            except UnicodeDecodeError as exc:
+                raise PreservedMaterialMeasurementError(
+                    f"{source.id} carries no exact UTF-8 representation"
+                ) from exc
         else:
             raise PreservedMaterialMeasurementError(
                 f"the source occurrence does not carry an observable representation: {source.kind}"
@@ -490,6 +513,105 @@ def observe_emitted_representation_adjacency(
         (emission,),
         pairs,
         adjacency_evidence_event_id=locality.id,
+    )
+
+
+def observe_system_material_adjacency(
+    ledger: EventLedger,
+    *,
+    material_event_id: str,
+    relation_event_id: str,
+) -> tuple[AdjacentPairObservation, ...]:
+    """Observe text positions joined to one exact process occurrence."""
+
+    material = ledger.get(material_event_id)
+    relation = ledger.get(relation_event_id)
+    process = (
+        ledger.get(relation.payload.get("process_event_id"))
+        if relation is not None
+        and isinstance(relation.payload.get("process_event_id"), str)
+        else None
+    )
+    if (
+        material is None
+        or material.kind != SYSTEM_MATERIAL_OCCURRED_KIND
+        or ledger.integrity_of(material.id) == CORRUPTED
+        or relation is None
+        or relation.kind != SYSTEM_INVOCATION_MATERIAL_RELATED_KIND
+        or ledger.integrity_of(relation.id) == CORRUPTED
+        or process is None
+        or process.kind != SYSTEM_INVOCATION_OCCURRED_KIND
+        or ledger.integrity_of(process.id) == CORRUPTED
+        or not (
+            relation.workspace_id == material.workspace_id == process.workspace_id
+        )
+        or relation.locality_id != material.locality_id
+        or process.locality_id != material.locality_id
+        or relation.payload.get("material_occurrence_id") != material.id
+        or relation.payload.get("process_occurrence_id")
+        != process.payload.get("process_occurrence_id")
+        or relation.payload.get("preserved_byte_count")
+        != material.payload.get("byte_count")
+        or relation.payload.get("standing") != "related"
+    ):
+        raise PreservedMaterialMeasurementError(
+            "system-material adjacency requires one exact intact process relation"
+        )
+    exact_bytes = system_material_bytes(material)
+    try:
+        text = exact_bytes.decode("utf-8", errors="strict")
+    except UnicodeDecodeError as exc:
+        raise PreservedMaterialMeasurementError(
+            "system-material adjacency requires exact UTF-8 material"
+        ) from exc
+    positions = _positions(text)
+    pairs = tuple(
+        dict.fromkeys(
+            AdjacentPair(positions[index], positions[index + 1])
+            for index in range(len(positions) - 1)
+        )
+    )
+    return _observe_adjacent_pair_observations(
+        (material,),
+        pairs,
+        adjacency_evidence_event_id=relation.id,
+    )
+
+
+def record_system_material_adjacency(
+    ledger: EventLedger,
+    *,
+    material_event_id: str,
+    relation_event_id: str,
+) -> Event:
+    """Record exact adjacent positions from related process stream material."""
+
+    material = ledger.get(material_event_id)
+    observations = observe_system_material_adjacency(
+        ledger,
+        material_event_id=material_event_id,
+        relation_event_id=relation_event_id,
+    )
+    assert material is not None and material.locality_id is not None
+    return _record_adjacent_pair_observation_result(
+        ledger,
+        workspace_id=material.workspace_id,
+        locality_id=material.locality_id,
+        adjacency_evidence_event_id=relation_event_id,
+        source_ids=(material.id,),
+        observations=observations,
+        applicable_inputs=[
+            {
+                "input_ref": relation_event_id,
+                "role": SYSTEM_MATERIAL_RELATION_PARTICIPATION_ROLE,
+                "standing": "applicable",
+            },
+            {
+                "input_ref": material.id,
+                "role": SYSTEM_MATERIAL_OCCURRENCE_PARTICIPATION_ROLE,
+                "standing": "applicable",
+            },
+        ],
     )
 
 
@@ -1161,6 +1283,70 @@ def get_recorded_adjacent_pair_observations(
             {
                 "input_ref": source.id,
                 "role": EMISSION_OCCURRENCE_PARTICIPATION_ROLE,
+                "standing": "applicable",
+            },
+        ]
+    elif (
+        anchor is not None
+        and anchor.kind == SYSTEM_INVOCATION_MATERIAL_RELATED_KIND
+        and ledger.integrity_of(anchor.id) != CORRUPTED
+        and len(source_ids) == 1
+    ):
+        source = ledger.get(source_ids[0])
+        process_event_id = anchor.payload.get("process_event_id")
+        process = (
+            ledger.get(process_event_id)
+            if isinstance(process_event_id, str)
+            else None
+        )
+        if source is not None and source.kind == SYSTEM_MATERIAL_OCCURRED_KIND:
+            try:
+                text = system_material_bytes(source).decode("utf-8", errors="strict")
+            except (SystemMaterialError, UnicodeDecodeError):
+                text = None
+        else:
+            text = None
+        if (
+            source is None
+            or source.kind != SYSTEM_MATERIAL_OCCURRED_KIND
+            or ledger.integrity_of(source.id) == CORRUPTED
+            or process is None
+            or process.kind != SYSTEM_INVOCATION_OCCURRED_KIND
+            or ledger.integrity_of(process.id) == CORRUPTED
+            or not (
+                source.workspace_id
+                == anchor.workspace_id
+                == process.workspace_id
+                == carrier.workspace_id
+            )
+            or not (
+                source.locality_id
+                == anchor.locality_id
+                == process.locality_id
+                == carrier.locality_id
+            )
+            or anchor.payload.get("material_occurrence_id") != source.id
+            or anchor.payload.get("process_occurrence_id")
+            != process.payload.get("process_occurrence_id")
+            or anchor.payload.get("preserved_byte_count")
+            != source.payload.get("byte_count")
+            or anchor.payload.get("standing") != "related"
+            or not isinstance(text, str)
+        ):
+            raise PreservedMaterialMeasurementError(
+                "the system-material relation Evidence does not reconstruct"
+            )
+        sources[source.id] = source
+        source_texts[source.id] = text
+        expected_inputs = [
+            {
+                "input_ref": anchor.id,
+                "role": SYSTEM_MATERIAL_RELATION_PARTICIPATION_ROLE,
+                "standing": "applicable",
+            },
+            {
+                "input_ref": source.id,
+                "role": SYSTEM_MATERIAL_OCCURRENCE_PARTICIPATION_ROLE,
                 "standing": "applicable",
             },
         ]

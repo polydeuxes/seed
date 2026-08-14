@@ -16,11 +16,11 @@ from dataclasses import dataclass
 import difflib
 import os
 from pathlib import Path, PurePosixPath
-import subprocess
 import tempfile
 from typing import Iterable, Sequence
 
 from seed_runtime.material_availability import MaterialIdentity
+from seed_runtime.process_boundary import ProcessBoundaryError, run_process_boundary
 
 
 class SourceChangeError(ValueError):
@@ -332,35 +332,23 @@ def run_source_check(
     complete stream.
     """
 
-    command = tuple(argv)
-    if not command or not all(isinstance(part, str) and part for part in command):
-        raise SourceChangeError("a source check requires exact non-empty arguments")
-    if timeout_seconds <= 0:
-        raise SourceChangeError("a source check timeout must be positive")
-    if type(max_output_bytes) is not int or max_output_bytes < 0:
-        raise SourceChangeError("a source check output boundary must be non-negative")
-    with tempfile.TemporaryFile() as stdout_stream, tempfile.TemporaryFile() as stderr_stream:
-        completed = subprocess.run(
-            command,
-            cwd=Path(root).resolve(strict=True),
-            stdin=subprocess.DEVNULL,
-            stdout=stdout_stream,
-            stderr=stderr_stream,
-            shell=False,
-            timeout=timeout_seconds,
-            check=False,
+    try:
+        result = run_process_boundary(
+            root,
+            argv,
+            timeout_seconds=timeout_seconds,
+            max_output_bytes=max_output_bytes,
         )
-        stdout_total = stdout_stream.tell()
-        stderr_total = stderr_stream.tell()
-        stdout_stream.seek(0)
-        stderr_stream.seek(0)
-        stdout = stdout_stream.read(max_output_bytes)
-        stderr = stderr_stream.read(max_output_bytes)
+    except ProcessBoundaryError as exc:
+        raise SourceChangeError(str(exc)) from exc
+    if result.timed_out:
+        raise SourceChangeError("source check exceeded its exact timeout")
+    assert result.returncode is not None
     return SourceCheckResult(
-        argv=command,
-        returncode=completed.returncode,
-        stdout=stdout,
-        stderr=stderr,
-        stdout_total_bytes=stdout_total,
-        stderr_total_bytes=stderr_total,
+        argv=result.argv,
+        returncode=result.returncode,
+        stdout=result.stdout,
+        stderr=result.stderr,
+        stdout_total_bytes=result.stdout_total_bytes,
+        stderr_total_bytes=result.stderr_total_bytes,
     )

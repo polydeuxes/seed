@@ -12,9 +12,17 @@ of arriving inside a capture path.
 
 from __future__ import annotations
 
+import shutil
+import sys
+
 import pytest
 
-from seed_runtime.events import EventLedger, SQLiteEventLedger
+from seed_runtime.adjacent_pair_measurement import (
+    get_recorded_adjacent_pair_observations,
+    observe_system_material_adjacency,
+    record_system_material_adjacency,
+)
+from seed_runtime.events import CORRUPTED, EventLedger, SQLiteEventLedger
 from seed_runtime.event import Event
 from seed_runtime.system_material import (
     SYSTEM_MATERIAL_OCCURRED_KIND,
@@ -22,6 +30,7 @@ from seed_runtime.system_material import (
     DeclaredInvocation,
     SystemMaterialError,
     declare_invocation,
+    invoke_system,
     preserve_system_material,
     system_material_bytes,
 )
@@ -52,6 +61,15 @@ def _declare(ledger, **changes):
     fields = dict(workspace_id="w", locality_id="sys_000001", declared=_declared())
     fields.update(changes)
     return declare_invocation(ledger, **fields)
+
+
+class _IntegrityLedger(EventLedger):
+    def __init__(self):
+        super().__init__()
+        self.corrupted: set[str] = set()
+
+    def integrity_of(self, event_id: str) -> str:
+        return CORRUPTED if event_id in self.corrupted else super().integrity_of(event_id)
 
 
 def test_a_declaration_records_a_declaration_not_an_act():
@@ -261,3 +279,177 @@ def test_subject_identities_stay_distinct_across_a_durable_reopen(tmp_path):
     finally:
         ledger.close()
     assert reconstructed == [b"material 0", b"material 1", b"material 2"]
+
+
+def test_slash_ls_is_explicitly_related_to_argv_and_its_stdout_is_observed(tmp_path):
+    ls_path = shutil.which("ls")
+    assert ls_path is not None
+    (tmp_path / "alpha.txt").write_text("a", encoding="utf-8")
+    (tmp_path / "beta.txt").write_text("b", encoding="utf-8")
+    ledger = EventLedger()
+
+    run = invoke_system(
+        ledger,
+        workspace_id="w",
+        locality_id="shell-001",
+        command_representation="/ls",
+        argv=(ls_path, "-1"),
+        cwd=tmp_path,
+    )
+
+    assert run.arguments_relation.payload["command_representation"] == "/ls"
+    assert run.arguments_relation.payload["argv"] == [ls_path, "-1"]
+    assert run.occurrence.payload["returncode"] == 0
+    assert run.occurrence.payload["timed_out"] is False
+    assert system_material_bytes(run.stdout_material) == b"alpha.txt\nbeta.txt\n"
+    assert run.stdout_relation.payload["process_occurrence_id"] == (
+        run.occurrence.payload["process_occurrence_id"]
+    )
+    assert run.stdout_relation.payload["material_occurrence_id"] == (
+        run.stdout_material.id
+    )
+
+    positions = observe_system_material_adjacency(
+        ledger,
+        material_event_id=run.stdout_material.id,
+        relation_event_id=run.stdout_relation.id,
+    )
+    assert len(positions) == 1
+    assert positions[0].pair_occurrence.pair.left == "alpha.txt"
+    assert positions[0].pair_occurrence.pair.right == "beta.txt"
+
+    recorded = record_system_material_adjacency(
+        ledger,
+        material_event_id=run.stdout_material.id,
+        relation_event_id=run.stdout_relation.id,
+    )
+    recovered = get_recorded_adjacent_pair_observations(ledger, recorded.id)
+    assert recovered is not None
+    assert [item.identity for item in recovered] == [item.identity for item in positions]
+
+    event_ids = [event.id for event in ledger.list("w")]
+    assert event_ids.index(run.attempt.id) < event_ids.index(run.occurrence.id)
+
+
+def test_equal_stdout_from_another_process_cannot_replace_the_exact_relation(tmp_path):
+    ls_path = shutil.which("ls")
+    assert ls_path is not None
+    (tmp_path / "alpha.txt").write_text("a", encoding="utf-8")
+    (tmp_path / "beta.txt").write_text("b", encoding="utf-8")
+    ledger = EventLedger()
+    fields = dict(
+        ledger=ledger,
+        workspace_id="w",
+        locality_id="shell-001",
+        command_representation="/ls",
+        argv=(ls_path, "-1"),
+        cwd=tmp_path,
+    )
+    first = invoke_system(**fields)
+    second = invoke_system(**fields)
+
+    assert system_material_bytes(first.stdout_material) == system_material_bytes(
+        second.stdout_material
+    )
+    with pytest.raises(SystemMaterialError):
+        # The lower-level observer reports the exact preservation error type.
+        system_material_bytes(first.stdout_relation)
+    with pytest.raises(ValueError, match="exact intact process relation"):
+        observe_system_material_adjacency(
+            ledger,
+            material_event_id=first.stdout_material.id,
+            relation_event_id=second.stdout_relation.id,
+        )
+
+
+def test_spawn_failure_leaves_the_durable_attempt(monkeypatch, tmp_path):
+    ledger = EventLedger()
+
+    def refused(*_args, **_kwargs):
+        assert any(event.kind == "system.invocation.attempted" for event in ledger.list())
+        raise FileNotFoundError("absent program")
+
+    monkeypatch.setattr("seed_runtime.system_material.run_process_boundary", refused)
+    with pytest.raises(SystemMaterialError, match="did not start"):
+        invoke_system(
+            ledger,
+            workspace_id="w",
+            locality_id="shell-001",
+            command_representation="/ls",
+            argv=("/absent/ls",),
+            cwd=tmp_path,
+        )
+
+    kinds = [event.kind for event in ledger.list("w")]
+    assert "system.invocation.attempted" in kinds
+    assert "system.invocation.failed" in kinds
+    assert "system.invocation.occurred" not in kinds
+    assert "system.material.occurred" not in kinds
+
+
+def test_invalid_process_bounds_do_not_mint_an_attempt(tmp_path):
+    ledger = EventLedger()
+    fields = dict(
+        ledger=ledger,
+        workspace_id="w",
+        locality_id="shell-001",
+        command_representation="/ls",
+        argv=("/bin/ls",),
+        cwd=tmp_path,
+    )
+
+    for changes in (
+        {"timeout_seconds": 0},
+        {"timeout_seconds": True},
+        {"max_output_bytes": -1},
+        {"max_output_bytes": True},
+    ):
+        with pytest.raises(SystemMaterialError):
+            invoke_system(**fields, **changes)
+    assert ledger.list() == []
+
+
+def test_timeout_preserves_the_occurrence_and_exact_material_seen_before_it(tmp_path):
+    ledger = EventLedger()
+    run = invoke_system(
+        ledger,
+        workspace_id="w",
+        locality_id="shell-001",
+        command_representation="/slow",
+        argv=(
+            sys.executable,
+            "-c",
+            "import time; print('before timeout', flush=True); time.sleep(5)",
+        ),
+        cwd=tmp_path,
+        timeout_seconds=0.1,
+    )
+
+    assert run.occurrence.payload["timed_out"] is True
+    assert run.occurrence.payload["returncode"] is None
+    assert system_material_bytes(run.stdout_material) == b"before timeout\n"
+    assert run.stdout_relation.payload["complete"] is True
+
+
+def test_corrupted_process_relation_cannot_admit_identical_material(tmp_path):
+    ls_path = shutil.which("ls")
+    assert ls_path is not None
+    (tmp_path / "alpha.txt").write_text("a", encoding="utf-8")
+    (tmp_path / "beta.txt").write_text("b", encoding="utf-8")
+    ledger = _IntegrityLedger()
+    run = invoke_system(
+        ledger,
+        workspace_id="w",
+        locality_id="shell-001",
+        command_representation="/ls",
+        argv=(ls_path, "-1"),
+        cwd=tmp_path,
+    )
+    ledger.corrupted.add(run.stdout_relation.id)
+
+    with pytest.raises(ValueError, match="exact intact process relation"):
+        observe_system_material_adjacency(
+            ledger,
+            material_event_id=run.stdout_material.id,
+            relation_event_id=run.stdout_relation.id,
+        )
