@@ -31,9 +31,6 @@ Repository Evidence supports distinct Selection forms. Representation selection 
 - unique candidate != selected candidate
 - read-only selection != no constitutional occurrence
 
-## Representative repository anchors
-- `seed_runtime/examination_work_selection.py`
-
 ## Counterexamples or failure modes
 - Taking the first displayed candidate as selected.
 - Treating exact candidate-identity resolution as proof of a Selection Act assigned to Seed.

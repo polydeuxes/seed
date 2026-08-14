@@ -181,6 +181,15 @@ BANNED: tuple[tuple[str, str], ...] = (
 COMPILED = tuple((re.compile(pattern, re.IGNORECASE), label) for pattern, label in BANNED)
 
 
+def scan_active_line(line: str) -> str:
+    """Expose active language while ignoring only Markdown destinations."""
+
+    scanned = re.sub(r"\]\([^)]*\)", "]()", line)
+    # Identifiers are language too. Snake-case and kebab-case may not hide
+    # vocabulary that active prose is forbidden to carry.
+    return re.sub(r"[_-]+", " ", scanned)
+
+
 def book_proper_files() -> list[Path]:
     """Active law only.  Reports and rosetta/ are out of scope by design."""
     files = sorted((BOOK / "chapters").glob("*.md"))
@@ -199,7 +208,7 @@ def find_violations() -> list[tuple[str, int, str, str]]:
         for number, line in enumerate(path.read_text().split("\n"), start=1):
             # Stable historical file addresses may retain retired words.  The
             # visible label is active law; a Markdown destination is not.
-            scanned = re.sub(r"\]\([^)]*\)", "]()", line)
+            scanned = scan_active_line(line)
             scanned = scanned.replace(
                 "This Seed carries only Standing it can warrant through its "
                 "Evidence, Authority, Scope, and preserved limits.",
@@ -239,6 +248,19 @@ def test_book_proper_scope_excludes_reports_and_rosetta():
 def test_book_proper_carries_no_banned_vocabulary():
     found = find_violations()
     assert not found, "\n" + render_violations(found)
+
+
+def test_identifier_separators_cannot_hide_retired_vocabulary():
+    examples = {
+        "requires_later_consumption": "consum*",
+        "exact-reyield-edge": "reyield*",
+        "production_evidence_id": "produc*",
+    }
+
+    for identifier, expected_label in examples.items():
+        scanned = scan_active_line(identifier)
+        labels = {label for pattern, label in COMPILED if pattern.search(scanned)}
+        assert expected_label in labels
 
 
 if __name__ == "__main__":  # pragma: no cover - inventory entry point
