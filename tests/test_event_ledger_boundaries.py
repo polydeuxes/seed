@@ -1,4 +1,4 @@
-"""Ledger-owned boundaries recover exact append prefixes without exposing positions."""
+"""Ledger-owned boundaries reconstruct exact append prefixes without exposing positions."""
 
 from __future__ import annotations
 
@@ -236,7 +236,7 @@ def _identity_read_matches_occurrence_read(ledger):
     """An identity read returns exactly the identities the occurrence read does.
 
     Both ledgers are held to it, and at every boundary, because a caller that
-    compares recovered identities against carried ones must not be able to reach
+    compares reconstructed identities against carried ones must not be able to reach
     a different bounded population by reading less.
     """
 

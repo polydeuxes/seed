@@ -70,16 +70,16 @@ def test_recording_preserves_set_count_and_only_evidenced_recurrence():
 
     assert recorded == len(events)
     assert all(event.kind == COORDINATE_ASSERTION_COUNT_RECORDED_KIND for event in events)
-    recovered = [
+    reconstructed = [
         assertions_of_recorded_coordinate_assertion_count(event) for event in events
     ]
-    assert any([item.result for item in group] == ["exact_production_set", "count"] for group in recovered)
+    assert any([item.result for item in group] == ["exact_production_set", "count"] for group in reconstructed)
     assert any(
         [item.result for item in group]
         == ["exact_production_set", "count", "recurrence"]
-        for group in recovered
+        for group in reconstructed
     )
-    for group in recovered:
+    for group in reconstructed:
         by_result = {item.result: item for item in group}
         production_set = by_result["exact_production_set"]
         count = by_result["count"]
@@ -97,7 +97,7 @@ def test_recording_preserves_set_count_and_only_evidenced_recurrence():
             }
 
 
-def test_recorded_results_are_occurrence_bound_and_ledger_recoverable():
+def test_recorded_results_are_occurrence_bound_and_ledger_addressable():
     ledger = _coordinate_population()
     record_coordinate_assertion_count_layer(
         ledger,
@@ -106,7 +106,7 @@ def test_recorded_results_are_occurrence_bound_and_ledger_recoverable():
         recording_session_id="coordinate-counts",
     )
     event = ledger.list_session("w", "coordinate-counts")[0]
-    recovered = assertions_of_recorded_coordinate_assertion_count(event)
+    reconstructed = assertions_of_recorded_coordinate_assertion_count(event)
 
     assert all(
         get_recorded_coordinate_assertion_count(
@@ -115,11 +115,11 @@ def test_recorded_results_are_occurrence_bound_and_ledger_recoverable():
             assertion_id=item.assertion_id,
         )
         == item
-        for item in recovered
+        for item in reconstructed
     )
 
 
-def test_recovery_refuses_a_self_consistent_invented_production_set():
+def test_validation_refuses_a_self_consistent_invented_production_set():
     ledger = _coordinate_population()
     record_coordinate_assertion_count_layer(
         ledger,
@@ -165,7 +165,7 @@ def test_recovery_refuses_a_self_consistent_invented_production_set():
         )
 
 
-def test_recovery_refuses_self_consistent_content_not_carried_by_source():
+def test_validation_refuses_self_consistent_content_not_carried_by_source():
     ledger = _coordinate_population()
     record_coordinate_assertion_count_layer(
         ledger,
@@ -226,7 +226,7 @@ def test_measurement_refuses_an_empty_coordinate_population_eagerly():
     ledger = EventLedger()
     ledger.append("unrelated", "w", {}, session_id="coordinate-results")
 
-    with pytest.raises(CoordinateAssertionMeasurementError, match="no recovered"):
+    with pytest.raises(CoordinateAssertionMeasurementError, match="no reconstructed"):
         measure_coordinate_assertion_counts(
             ledger,
             workspace_id="w",

@@ -116,7 +116,7 @@ def test_each_boundary_reaches_strictly_further_than_the_last(session):
 
 
 def test_the_boundary_still_determines_the_consumed_prefix(session):
-    """What the removed list enumerated is recoverable from what remains."""
+    """What the removed list enumerated is reconstructible from what remains."""
     ledger, _ = session
     events = ledger.list("w")
 

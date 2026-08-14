@@ -65,7 +65,7 @@ def _recurrence_population():
     return ledger
 
 
-def test_measurement_emits_exactly_the_recovery_owned_immediate_surface():
+def test_measurement_emits_exactly_the_validation_owned_immediate_surface():
     ledger = _recurrence_population()
 
     findings = list(
@@ -127,16 +127,16 @@ def test_recording_preserves_one_source_and_three_distinct_results_per_occurrenc
         recording_session_id="coordinate-results",
     )
     event = ledger.list_session("w", "coordinate-results")[0]
-    recovered = assertions_of_recorded_recurrence_subject_coordinates(event)
+    reconstructed = assertions_of_recorded_recurrence_subject_coordinates(event)
 
-    assert len(recovered) == 3
-    assert {item.coordinate for item in recovered} == set(
+    assert len(reconstructed) == 3
+    assert {item.coordinate for item in reconstructed} == set(
         RECURRENCE_SUBJECT_COORDINATES
     )
     assert all(
         item.payload["support_basis"]
         == {"assertion_refs": [event.payload["source_assertion_ref"]]}
-        for item in recovered
+        for item in reconstructed
     )
     assert all(
         get_recorded_recurrence_subject_coordinate_assertion(
@@ -145,11 +145,11 @@ def test_recording_preserves_one_source_and_three_distinct_results_per_occurrenc
             assertion_id=item.assertion_id,
         )
         == item
-        for item in recovered
+        for item in reconstructed
     )
 
 
-def test_recovery_refuses_a_coordinate_value_that_disagrees_with_its_source():
+def test_validation_refuses_a_coordinate_value_that_disagrees_with_its_source():
     ledger = _recurrence_population()
     record_recurrence_subject_coordinate_layer(
         ledger,
@@ -174,7 +174,7 @@ def test_recovery_refuses_a_coordinate_value_that_disagrees_with_its_source():
         )
 
 
-def test_recovery_refuses_a_self_consistent_scope_not_carried_by_its_source():
+def test_validation_refuses_a_self_consistent_scope_not_carried_by_its_source():
     ledger = _recurrence_population()
     record_recurrence_subject_coordinate_layer(
         ledger,
@@ -215,13 +215,13 @@ def test_measurement_refuses_a_population_with_no_recurrence_assertions():
         recording_session_id="counts",
     )
 
-    with pytest.raises(RecurrenceSubjectMeasurementError, match="no recovered"):
+    with pytest.raises(RecurrenceSubjectMeasurementError, match="no reconstructed"):
         measure_recurrence_subject_coordinates(
             ledger, workspace_id="w", source_session_ids=("counts",)
         )
 
 
-def test_structural_recovery_refuses_nested_coordinate_promotion():
+def test_structural_validation_refuses_nested_coordinate_promotion():
     ledger = _recurrence_population()
     record_recurrence_subject_coordinate_layer(
         ledger,

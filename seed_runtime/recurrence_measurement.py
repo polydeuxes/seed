@@ -1,12 +1,12 @@
 """Declared measurement whose subject is Seed's own recorded occurrences.
 
-**No new Act.** `#2351` recovered declared measurement and said no new act,
+**No new Act.** `#2351` reconstructed declared measurement and said no new act,
 noun, or grammar is required; recurrence and count are already its findings.
 This measures a different subject — recorded comparison and measurement
 occurrences instead of preserved material — and produces an exact count of the
 bounded exchanges a distinction was measured in. Recurrence is one reading of
-that count, warranted only where the count exceeds one.
-A distinct record shape is warranted (`#2399`: a downstream shape must not
+that count, established only where the count exceeds one.
+A distinct record shape is established (`#2399`: a downstream shape must not
 decide an upstream subject); a distinct Responsibility is not.
 
 `#2429` called this a "cohort measurement" and wrote
@@ -112,7 +112,7 @@ class MeasuredCountFinding:
     a declared measurement. `#2430` named this shape `RecurrenceFinding` and
     rendered a count of one as "recurs in 1 bounded exchanges", which asserts
     recurrence where nothing recurred. The count is the finding; recurrence is
-    warranted only where the count establishes it.
+    established only where the count establishes it.
     """
 
     distinction: MeasuredDistinction
@@ -195,7 +195,7 @@ class MeasuredAssertion:
             "support_basis": {
                 "event_ids": list(self.support_event_ids),
                 # These dependencies are local to the same producing
-                # occurrence. Recovery binds each to that occurrence's id
+                # occurrence. Reconstruction binds each to that occurrence's id
                 # before exposing it to a downstream Act.
                 "local_assertion_ids": list(self.support_assertion_ids),
             },
@@ -243,7 +243,7 @@ class RecordedMeasuredAssertion:
 
 
 def assertions_of_recorded_measurement(event: Event) -> tuple[RecordedMeasuredAssertion, ...]:
-    """Recover every Assertion from one exact producing occurrence."""
+    """Reconstruct every Assertion from one exact producing occurrence."""
 
     if event.kind != EXCHANGE_COUNT_RECORDED_KIND:
         raise RecurrenceMeasurementError(
@@ -254,7 +254,7 @@ def assertions_of_recorded_measurement(event: Event) -> tuple[RecordedMeasuredAs
         raise RecurrenceMeasurementError(
             f"{event.id} does not preserve its distinct Assertions"
         )
-    recovered = []
+    reconstructed = []
     seen = set()
     for assertion in stated:
         if not isinstance(assertion, dict):
@@ -314,7 +314,7 @@ def assertions_of_recorded_measurement(event: Event) -> tuple[RecordedMeasuredAs
                 f"{event.id} carries duplicate Assertion identity {identity}"
             )
         seen.add(identity)
-        recovered.append(
+        reconstructed.append(
             RecordedMeasuredAssertion(
                 assertion_id=identity,
                 producing_event_id=event.id,
@@ -323,16 +323,16 @@ def assertions_of_recorded_measurement(event: Event) -> tuple[RecordedMeasuredAs
                 payload=assertion,
             )
         )
-    identities = {assertion.assertion_id for assertion in recovered}
+    identities = {assertion.assertion_id for assertion in reconstructed}
     by_result = {}
-    for assertion in recovered:
+    for assertion in reconstructed:
         if assertion.result in by_result:
             raise RecurrenceMeasurementError(
                 f"{event.id} carries duplicate Assertion result {assertion.result}"
             )
         by_result[assertion.result] = assertion
     bound = []
-    for assertion in recovered:
+    for assertion in reconstructed:
         support = assertion.payload.get("support_basis")
         local_ids = support.get("local_assertion_ids") if isinstance(support, dict) else None
         if not isinstance(local_ids, list) or not all(
@@ -481,7 +481,7 @@ def measure_exchange_counts(
     # session boundary does. Each declared exchange is read through that exact
     # boundary, so the existence check costs one bounded read per declared
     # exchange rather than a pass over the workspace.
-    # Pass one retains only compact indexes recovered from Measurement. Compare
+    # Pass one retains only compact indexes reconstructed from Measurement. Compare
     # names its inputs by measurement occurrence id, so those indexes must exist
     # before any comparison can be folded. The existence probe remains separate:
     # declaration chooses among established sessions, and a non-measurement
@@ -536,7 +536,7 @@ def measure_exchange_counts(
                 continue
             inputs = event.payload.get("inputs", [])
             # An input's exchange is the recorded session of the occurrence it
-            # names, recovered from pass one's compact measurement index.
+            # names, reconstructed from pass one's compact measurement index.
             exchanges = [session_of.get(i.get("event_id")) for i in inputs]
             if any(x is None or x not in declared_exchanges for x in exchanges):
                 continue

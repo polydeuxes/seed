@@ -1,6 +1,6 @@
 """A recorded finding supplies the next representation, and every pair gets the same battery.
 
-`#2391` recovered ordered pairs whose adjacency reproduces across independently
+`#2391` validated ordered pairs whose adjacency reproduces across independently
 bounded scopes, without a reader naming a representation, occupant, or
 delimiter. It left one unresolved boundary: the candidates were enumerated in a scratch run, so
 the loop was demonstrated rather than preserved.
@@ -9,7 +9,7 @@ This closes that. :func:`adjacent_pairs_from_finding` reads pairs out of a recor
 measurement finding, which is why a finding must record the representation it measured
 after — a finding that does not is refused as a source of pairs. Every
 measurement then carries that finding as its premise, so the chain is
-recoverable from the ledger rather than from a transcript.
+reconstructible from the ledger rather than from a transcript.
 
 The battery is four generic adjacency questions applied to every pair without
 exception. A question whose answer is absent is still asked and still recorded;
@@ -28,7 +28,7 @@ from itertools import product
 import pytest
 
 from seed_runtime.events import EventLedger, InvalidLedgerBoundary
-from seed_runtime.support_basis import SupportBasis, SupportRecovery
+from seed_runtime.support_basis import SupportBasis, SupportValidator
 from seed_runtime.event import Event
 from seed_runtime.adjacent_pair_measurement import (
     AdjacentPairMeasurementIndex,
@@ -556,7 +556,7 @@ def test_each_pair_result_is_one_addressable_assertion(
             producing_event_id=event.id,
             assertion_id=assertion.assertion_id,
         ) == assertion
-        recovered_ingress = list(
+        input_events = list(
             session.iter_session_kind(
                 "w",
                 "s",
@@ -566,8 +566,8 @@ def test_each_pair_result_is_one_addressable_assertion(
         )
         basis = SupportBasis.from_json_dict(event.payload["input_support"])
         assert basis.support_count == event.payload["input_count"]
-        assert [item.id for item in recovered_ingress] == list(
-            SupportRecovery(session).recover(basis)
+        assert [item.id for item in input_events] == list(
+            SupportValidator(session).validate(basis)
         )
 
 
@@ -630,7 +630,7 @@ def test_result_assertion_identity_includes_exact_scope(
     assert recorded_identity("scope one") != recorded_identity("scope two")
 
 
-def test_result_recovery_refuses_identity_that_does_not_match_content(
+def test_result_validation_refuses_identity_that_does_not_match_content(
     session, occurrences, recorded_finding
 ):
     pair = AdjacentPair("it", "is")
@@ -656,7 +656,7 @@ def test_result_recovery_refuses_identity_that_does_not_match_content(
         assertion_of_recorded_adjacent_pair_result(event)
 
 
-def test_ledger_recovery_refuses_a_boundary_not_owned_by_the_ledger(
+def test_ledger_validation_refuses_a_boundary_not_owned_by_the_ledger(
     session, occurrences, recorded_finding
 ):
     event = record_pair_measurements(
@@ -687,7 +687,7 @@ def test_ledger_recovery_refuses_a_boundary_not_owned_by_the_ledger(
         )
 
 
-def test_ledger_recovery_refuses_an_incomplete_claimed_ingress_read(
+def test_ledger_validation_refuses_an_incomplete_claimed_ingress_read(
     session, occurrences, recorded_finding
 ):
     event = record_pair_measurements(
@@ -730,7 +730,7 @@ def test_ledger_recovery_refuses_an_incomplete_claimed_ingress_read(
         )
 
     tampered(selection_rule="a selection nobody established")
-    with pytest.raises(PreservedMaterialMeasurementError, match="recoverable support basis"):
+    with pytest.raises(PreservedMaterialMeasurementError, match="reconstructible support basis"):
         get_recorded_adjacent_pair_result_assertion(
             session, producing_event_id=event.id, assertion_id=assertion.assertion_id
         )
@@ -749,7 +749,7 @@ def test_ledger_recovery_refuses_an_incomplete_claimed_ingress_read(
     ) == assertion
 
 
-def test_recovery_refuses_a_claimed_form_with_other_position_coordinates(
+def test_validation_refuses_a_claimed_form_with_other_position_coordinates(
     session, occurrences, recorded_finding
 ):
     event = record_pair_measurements(

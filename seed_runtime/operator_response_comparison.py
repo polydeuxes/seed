@@ -67,11 +67,11 @@ def run_operator_response_comparison_and_identification(
     proposed inputs may participate in this exact Act.  What is missing is not
     necessarily a prior relation between them but the input Applicability
     01.Standing.E.1 assigns to this Act's own Responsibility; that route is
-    unrecovered, which is why this occurrence is not presently reachable.
+    unestablished, which is why this occurrence is not presently reachable.
 
     A match establishes correspondence within C only.  It establishes no
     operator intent, understanding, selection, authorization, source
-    recovery, represented relation, or treatment.  No coordinate match establishes none
+    reconstruction, represented relation, or treatment.  No coordinate match establishes none
     of: that the material was not a response, candidate nonparticipation,
     or negative operator intent.
     """
@@ -155,7 +155,7 @@ def run_operator_response_comparison_and_identification(
     # 01.Standing.E.1 the Responsibility performing this exact Act owes an
     # Applicability determination for each proposed input; a caller supplying
     # two references is not that determination, and no such route is
-    # recovered.  This occurrence is therefore not presently reachable.
+    # reconstructed.  This occurrence is therefore not presently reachable.
 
     response_attempt_ref = ingress_event.payload["attempt_ref"]
     response_capture_event_id = ingress_event.payload["raw_material_event_id"]
@@ -304,7 +304,7 @@ def run_operator_response_comparison_and_identification(
                 responsibility="bounded-alternative-identification",
                 authority=(
                     "identifies a presented alternative within this exact "
-                    "presentation only; establishes no source recovery, "
+                    "presentation only; establishes no source reconstruction, "
                     "represented relation, intent, selection, authorization, result relation, or "
                     "treatment occurrence"
                 ),

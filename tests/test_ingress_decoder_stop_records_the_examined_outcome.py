@@ -16,13 +16,13 @@ this path measures a quantity or names a requirement.
 The evidentiary one: the examination distinguishes `decoder_unavailable` from
 `bytes_rejected`, and the fixed string collapsed both into one label. The
 distinction survived upstream in the examination record, so the collapse was
-recoverable, but the Stop asserted a summary the examination had not made.
+reconstructible, but the Stop asserted a summary the examination had not made.
 
 Both are fixed by recording the examined outcome itself. This module pins
 that, and pins that the two failure outcomes stay apart.
 
-It does not establish that a decoder failure warrants a Stop. `#2365` recorded
-that as unrecovered and it stays unrecovered here.
+It does not establish that a decoder failure supports a Stop. `#2365` recorded
+that as unestablished and it stays unestablished here.
 """
 
 from __future__ import annotations

@@ -2,14 +2,14 @@
 
 `01.Standing.E` permits a bounded comparison to have as input multiple independently
 preserved attributed Assertions or findings while preserving each input's coordinates as
-that input carries them. `compare_occurrence_implementation_form_recovery_001`
+that input carries them. `historical comparison report`
 records the owner: **the bounded comparison boundary in which they participate, local
 to the instantiated comparison and not named universally.**
 
 So this is a call, not a service. Each invocation is one comparison occurrence
 that owns itself. There is no comparator object, no registry, and no persistent
 boundary waiting to be filled — an owner that outlived its occurrence would be
-the universal owner the recovery says does not exist.
+the universal owner the reconstruction says does not exist.
 
 **What it has as input is what Seed recorded.** The inputs are recorded measurement
 findings. The pair findings used in the corpus experiments are computed in
@@ -20,7 +20,7 @@ artifact Seed does not hold.
 established.** Two measurements over different bounded exchanges are not in
 disagreement because their results differ — each is exact within its own scope.
 `01.Standing.E:29` holds: agreement is not truth, and comparison establishes no
-warrant, input support, or corroboration.
+support, input support, or corroboration.
 """
 
 from __future__ import annotations
@@ -54,7 +54,7 @@ INPUT_COORDINATES: dict[str, tuple[str, ...]] = {
     "forbidden_inferences": ("boundary_notes",),
 }
 
-# This is not an enum; more than one relation may remain warranted.
+# This is not an enum; more than one relation may remain established.
 UNKNOWN_RELATION = "Unknown"
 
 BOUNDARY_NOTES: tuple[str, ...] = (
@@ -63,7 +63,7 @@ BOUNDARY_NOTES: tuple[str, ...] = (
     "within its own scope",
     "a representation occurring in both findings establishes no relation between "
     "the bodies that carried it",
-    "this comparison establishes no truth, warrant, input support, source independence, "
+    "this comparison establishes no truth, support, input support, source independence, "
     "or corroboration",
 )
 
@@ -181,8 +181,8 @@ def compare_preserved_findings(
         # Two, exactly. `01.Standing.E` says "multiple", and an earlier form of
         # this function accepted any number and intersected them all — n-ary
         # comparison implemented while its own report called it unbuilt. What
-        # more than two inputs jointly establish is not recovered, and a set
-        # intersection over n findings is not that recovery.
+        # more than two inputs jointly establish is not reconstructed, and a set
+        # intersection over n findings is not that reconstruction.
         raise BoundedComparisonError(
             "a bounded comparison has as input exactly two preserved findings; "
             f"{len(ids)} supplied. Comparing more than two is unbuilt"

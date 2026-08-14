@@ -1,6 +1,6 @@
 """The smallest bounded Assertion comparison, and what it refuses to conclude.
 
-`01.Standing.E` permits it. `#2416` recovered its owner as local to each
+`01.Standing.E` permits it. `#2416` reconstructed its owner as local to each
 instantiated comparison and never universal, so these tests pin that the
 comparison is an occurrence and not a service: nothing survives a call, and
 there is no object to hold.
@@ -76,8 +76,8 @@ def test_more_than_two_inputs_are_refused(ledger):
 
     An earlier form accepted any number and intersected them all, so a
     three-body comparison existed and nothing said what it established. What
-    more than two inputs jointly establish is not recovered, and a set
-    intersection is not that recovery.
+    more than two inputs jointly establish is not reconstructed, and a set
+    intersection is not that reconstruction.
     """
     a, b, c = (_finding(ledger, s) for s in ("s1", "s2", "s1"))
     with pytest.raises(BoundedComparisonError, match="more than two is unbuilt"):
@@ -253,7 +253,7 @@ def test_the_record_refuses_the_inferences_the_clause_forbids(ledger):
     notes = " ".join(event.payload["boundary_notes"])
     assert "is not a relation between what they measured" in notes
     assert "establishes no relation between" in notes
-    assert "no truth, warrant, input support, source independence, or corroboration" in notes
+    assert "no truth, support, input support, source independence, or corroboration" in notes
     assert "whether the compared bodies stand in any relation remains Unknown" in (
         event.payload["unknowns"])
 

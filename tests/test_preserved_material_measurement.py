@@ -36,7 +36,7 @@ from seed_runtime.events import EventLedger
 from seed_runtime.preserved_material_measurement import (
     MATERIAL_AS_SUPPLIED,
     _produced_content,
-    RESPONSIBILITY_UNRECOVERED,
+    RESPONSIBILITY_UNESTABLISHED,
     MATERIAL_READ_FROM_LEDGER,
     MEASUREMENT_RECORDED_KIND,
     RecurrenceFinding,
@@ -53,7 +53,7 @@ from seed_runtime.production_evidence import PRODUCTION_EVIDENCE_KIND
 from seed_runtime.operator_console import run_persistent_operator_console
 from seed_runtime.support_basis import (
     SupportBasisError,
-    SupportRecovery,
+    SupportValidator,
     declare_complete_population,
 )
 
@@ -179,10 +179,10 @@ def test_a_recorded_finding_is_consumable_by_a_later_act(session, occurrences):
     event = record_measurement_finding(
         session, workspace_id="w", session_id="s", finding=finding
     )
-    recovered = session.get(event.id)
-    assert recovered is not None
-    assert recovered.kind == MEASUREMENT_RECORDED_KIND
-    assert recovered.payload["occupancies"]
+    reconstructed = session.get(event.id)
+    assert reconstructed is not None
+    assert reconstructed.kind == MEASUREMENT_RECORDED_KIND
+    assert reconstructed.payload["occupancies"]
 
 
 def test_a_finding_standing_on_another_preserves_which(session, occurrences):
@@ -939,7 +939,7 @@ def test_a_declared_basis_replaces_the_enumeration(recurrence_occurrences):
         declared=declared,
         counts_in=_counts_in(declared),
         support_basis=_basis_for(occurrences, ledger),
-        support_recovery=SupportRecovery(ledger),
+        support_validator=SupportValidator(ledger),
     )
     for finding in findings:
         carried = finding.to_json_dict()
@@ -977,7 +977,7 @@ def test_findings_with_and_without_a_basis_agree_on_everything_else(
         declared=declared,
         counts_in=_counts_in(declared),
         support_basis=_basis_for(occurrences, ledger),
-        support_recovery=SupportRecovery(ledger),
+        support_validator=SupportValidator(ledger),
     )
     for a, b in zip(plain, based):
         left, right = a.to_json_dict(), b.to_json_dict()
@@ -1047,7 +1047,7 @@ def test_a_basis_is_refused_without_the_means_to_establish_its_selection(
 ):
     ledger, occurrences = recurrence_occurrences
     declared = _declared_for("the")
-    with pytest.raises(PreservedMaterialMeasurementError, match="requires a SupportRecovery"):
+    with pytest.raises(PreservedMaterialMeasurementError, match="requires a SupportValidator"):
         measure_recurrences(
             occurrences,
             declared=declared,
@@ -1071,13 +1071,13 @@ def test_a_basis_claiming_completeness_over_a_subset_is_refused(
         identities=[e.id for e in subset],
     )
     declared = _declared_for("the")
-    with pytest.raises(SupportBasisError, match="recovered support"):
+    with pytest.raises(SupportBasisError, match="validated support"):
         measure_recurrences(
             subset,
             declared=declared,
             counts_in=_counts_in(declared),
             support_basis=basis,
-            support_recovery=SupportRecovery(ledger),
+            support_validator=SupportValidator(ledger),
         )
 
 
@@ -1108,7 +1108,7 @@ def test_a_finding_measures_what_the_ledger_carries_not_what_was_handed_in(
         declared=declared,
         counts_in=_counts_in(declared),
         support_basis=_basis_for(occurrences, ledger),
-        support_recovery=SupportRecovery(ledger),
+        support_validator=SupportValidator(ledger),
     )
     # The ledger carries no "zebra". The handed-in objects carried nine.
     assert findings[0].total_count == 0
@@ -1139,7 +1139,7 @@ def test_an_identity_the_ledger_does_not_preserve_is_refused(
             declared=declared,
             counts_in=_counts_in(declared),
             support_basis=basis,
-            support_recovery=SupportRecovery(ledger),
+            support_validator=SupportValidator(ledger),
         )
 
 
@@ -1377,7 +1377,7 @@ def test_the_basis_path_reports_the_ledger_it_read_from(recurrence_occurrences):
         declared=declared,
         counts_in=_counts_in(declared),
         support_basis=_basis_for(occurrences, ledger),
-        support_recovery=SupportRecovery(ledger),
+        support_validator=SupportValidator(ledger),
     )[0]
     assert finding.material_provenance == MATERIAL_READ_FROM_LEDGER
 
@@ -1407,16 +1407,16 @@ def test_responsibility_does_not_follow_the_provenance(recurrence_occurrences):
         produce_in=(ledger, "w", "r"),
     ),
     )
-    # Provenance differs; Responsibility does not follow it. `#2439` recovered
+    # Provenance differs; Responsibility does not follow it. `#2439` reconstructed
     # production occurrence, Act and Standing for declared measurement and left the
-    # Responsibility unrecovered, and that stays true either way.
+    # Responsibility unestablished, and that stays true either way.
     assert unbound.payload["dimensions"]["source_provenance"] != bound.payload[
         "dimensions"
     ]["source_provenance"]
     assert (
         unbound.payload["dimensions"]["responsibility"]
         == bound.payload["dimensions"]["responsibility"]
-        == RESPONSIBILITY_UNRECOVERED
+        == RESPONSIBILITY_UNESTABLISHED
     )
 
 
@@ -1555,7 +1555,7 @@ def test_recording_cannot_restate_the_measurements_own_dimensions(
     recurrence_occurrences,
 ):
     """`extra` was filtered against the finding's keys only, so `dimensions`
-    -- carrying the provenance `#2516` recovered -- was reachable."""
+    -- carrying the provenance `#2516` reconstructed -- was reachable."""
 
     ledger, occurrences = recurrence_occurrences
     finding = _produced(ledger, occurrences)
@@ -1637,7 +1637,7 @@ def test_the_witness_claims_no_responsibility(
     witness = [
         e for e in ledger.list("w") if e.kind == PRODUCTION_EVIDENCE_KIND
     ][-1]
-    assert witness.payload["dimensions"]["responsibility"] == RESPONSIBILITY_UNRECOVERED
+    assert witness.payload["dimensions"]["responsibility"] == RESPONSIBILITY_UNESTABLISHED
     assert "not that occurrence by identity" in (
         witness.payload["dimensions"]["occurrence_preservation"]
     )

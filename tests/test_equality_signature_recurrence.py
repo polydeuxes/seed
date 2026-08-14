@@ -104,19 +104,19 @@ def test_recording_fans_out_set_count_and_conditional_recurrence():
         source_session_ids=("signatures",),
         recording_session_id="counts",
     ) == 2
-    recovered = [
+    reconstructed = [
         assertions_of_recorded_equality_signature_count(event)
         for event in ledger.list_session("w", "counts")
     ]
 
-    assert sorted(len(items) for items in recovered) == [2, 3]
+    assert sorted(len(items) for items in reconstructed) == [2, 3]
     by_count = {
         next(
             item.payload["dimensions"]["content"]["production_count"]
             for item in items
             if item.result == "count"
         ): {item.result for item in items}
-        for items in recovered
+        for items in reconstructed
     }
     assert by_count == {
         1: {"exact_production_set", "count"},
@@ -124,7 +124,7 @@ def test_recording_fans_out_set_count_and_conditional_recurrence():
     }
 
 
-def test_ledger_recovery_proves_the_complete_bounded_signature_set():
+def test_ledger_validation_proves_the_complete_bounded_signature_set():
     ledger = _signatures()
     record_equality_signature_count_layer(
         ledger,
@@ -142,7 +142,7 @@ def test_ledger_recovery_proves_the_complete_bounded_signature_set():
             ) == assertion
 
 
-def test_recovery_refuses_a_self_consistent_truncated_production_set():
+def test_validation_refuses_a_self_consistent_truncated_production_set():
     ledger = _signatures()
     record_equality_signature_count_layer(
         ledger,

@@ -245,7 +245,7 @@ def test_formation_does_not_filter_different_result_content(comparable):
     assert (left.reference, right.reference) in formed
 
 
-def test_formation_recovers_each_session_boundary_once(comparable):
+def test_formation_validates_each_session_boundary_once(comparable):
     ledger, _, _ = comparable
     original = ledger.iter_session_kind
     ingress_reads = []
@@ -419,12 +419,12 @@ def test_recorded_compare_results_are_occurrence_addressable(comparable):
             ledger, (left.reference, right.reference)
         ),
     )
-    recovered = assertions_of_recorded_positional_result_comparison(event)
+    reconstructed = assertions_of_recorded_positional_result_comparison(event)
 
-    assert {item.coordinate for item in recovered} == set(
+    assert {item.coordinate for item in reconstructed} == set(
         POSITIONAL_RESULT_COORDINATES
     )
-    for item in recovered:
+    for item in reconstructed:
         assert item.reference == {
             "producing_event_id": event.id,
             "assertion_id": item.assertion_id,
@@ -443,13 +443,13 @@ def test_recorded_compare_results_are_occurrence_addressable(comparable):
 @pytest.mark.parametrize(
     ("field", "replacement"),
     (
-        ("standing", "warranted"),
+        ("standing", "established"),
         ("source_provenance", "another provenance"),
         ("responsibility", "revise an input Assertion"),
         ("authority", "establishes relation"),
     ),
 )
-def test_recovery_refuses_changed_result_assertion_dimensions(
+def test_validation_refuses_changed_result_assertion_dimensions(
     comparable, field, replacement
 ):
     ledger, left, right = comparable
@@ -475,7 +475,7 @@ def test_recovery_refuses_changed_result_assertion_dimensions(
         ("forbidden_inferences", []),
     ),
 )
-def test_recovery_refuses_changed_result_assertion_fidelity_shell(
+def test_validation_refuses_changed_result_assertion_fidelity_shell(
     comparable, field, replacement
 ):
     ledger, left, right = comparable
@@ -542,7 +542,7 @@ def test_recording_recomputes_compare_from_occurrence_bound_inputs(comparable):
         )
 
 
-def test_recovery_refuses_a_self_consistent_invented_compare_result(comparable):
+def test_validation_refuses_a_self_consistent_invented_compare_result(comparable):
     ledger, left, right = comparable
     event = record_positional_result_comparison(
         ledger,
@@ -571,7 +571,7 @@ def test_recovery_refuses_a_self_consistent_invented_compare_result(comparable):
         assertions_of_recorded_positional_result_comparison(event)
 
 
-def test_ledger_recovery_refuses_self_consistent_results_for_other_inputs(comparable):
+def test_ledger_validation_refuses_self_consistent_results_for_other_inputs(comparable):
     ledger, left, right = comparable
     event = record_positional_result_comparison(
         ledger,
@@ -581,7 +581,7 @@ def test_ledger_recovery_refuses_self_consistent_results_for_other_inputs(compar
             ledger, (left.reference, right.reference)
         ),
     )
-    recovered = assertions_of_recorded_positional_result_comparison(event)
+    reconstructed = assertions_of_recorded_positional_result_comparison(event)
     event.payload["compared_subject"] = {
         **event.payload["compared_subject"],
         "measurement_form": "preceding",
@@ -605,7 +605,7 @@ def test_ledger_recovery_refuses_self_consistent_results_for_other_inputs(compar
         get_recorded_positional_result_distinction(
             ledger,
             producing_event_id=event.id,
-            assertion_id=recovered[0].assertion_id,
+            assertion_id=reconstructed[0].assertion_id,
         )
 
 
@@ -617,7 +617,7 @@ def test_ledger_recovery_refuses_self_consistent_results_for_other_inputs(compar
         ("responsibility", "revise the compared Assertions"),
     ),
 )
-def test_ledger_recovery_refuses_changed_outer_compare_law(
+def test_ledger_validation_refuses_changed_outer_compare_law(
     comparable, field, replacement
 ):
     ledger, left, right = comparable
@@ -629,14 +629,14 @@ def test_ledger_recovery_refuses_changed_outer_compare_law(
             ledger, (left.reference, right.reference)
         ),
     )
-    recovered = assertions_of_recorded_positional_result_comparison(event)
+    reconstructed = assertions_of_recorded_positional_result_comparison(event)
     event.payload[field] = replacement
 
     with pytest.raises(AssertionComparisonError, match="replayed Act"):
         get_recorded_positional_result_distinction(
             ledger,
             producing_event_id=event.id,
-            assertion_id=recovered[0].assertion_id,
+            assertion_id=reconstructed[0].assertion_id,
         )
 
 

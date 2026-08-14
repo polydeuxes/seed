@@ -18,11 +18,7 @@ def test_applicability_binds_input_to_one_exact_act():
         "default": "exact_Act_Responsibility",
         "override": "explicitly_assigned_responsible_occurrence",
     }
-    assert set(clause["must_precede"]) == {
-        "participation",
-        "participation",
-        "input support",
-    }
+    assert clause["must_precede"] == ["participation"]
     assert {"input_identity", "exact_Act", "Scope", "locality", "Authority"} <= set(
         clause["coordinates"]
     )
@@ -45,7 +41,7 @@ def test_applicability_has_four_standings_and_preserves_exclusion():
     }
 
 
-def test_composite_occurrence_keeps_results_distinct_and_recoverable():
+def test_composite_occurrence_keeps_results_distinct_and_addressable():
     clause = _clause()
 
     assert set(clause["same_occurrence_may_establish"]) == {
@@ -53,7 +49,7 @@ def test_composite_occurrence_keeps_results_distinct_and_recoverable():
         "Act_occurrence_or_nonoccurrence",
         "output_Standing",
     }
-    assert clause["independently_recoverable"] is True
+    assert clause["independently_addressable"] is True
     assert ["Applicability", "Act_occurrence"] in clause["distinct_from"]
     assert ["Act_occurrence", "output_Standing"] in clause["distinct_from"]
     assert ["output_Standing", "downstream_Applicability"] in clause["distinct_from"]

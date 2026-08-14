@@ -1,7 +1,7 @@
 """Recurrence across bounded exchanges, measured over Seed's own occurrences.
 
 `#2429` built this and called it a "cohort measurement", writing a Responsibility
-into every record that nothing established. `#2351` recovered declared
+into every record that nothing established. `#2351` reconstructed declared
 measurement and said no new act, noun, or grammar is required; recurrence and
 count are already its findings. What changed here is the subject, not the Act.
 
@@ -226,7 +226,7 @@ def test_recorded_assertions_are_addressable_through_their_occurrence(compared):
     )
 
 
-def test_recovery_refuses_assertion_identity_that_does_not_match_content(compared):
+def test_validation_refuses_assertion_identity_that_does_not_match_content(compared):
     event = record_measured_count(
         compared,
         workspace_id="w",
@@ -242,7 +242,7 @@ def test_recovery_refuses_assertion_identity_that_does_not_match_content(compare
         assertions_of_recorded_measurement(event)
 
 
-def test_recovery_refuses_non_assertion_and_unresolved_local_support(compared):
+def test_validation_refuses_non_assertion_and_unresolved_local_support(compared):
     event = record_measured_count(
         compared,
         workspace_id="w",
@@ -536,7 +536,7 @@ def test_recorded_comparison_assertion_identity_is_recomputed(compared):
         assertions_of_recorded_assertion_comparison(event)
 
 
-def test_recovery_refuses_a_self_consistent_invented_compare_result(compared):
+def test_validation_refuses_a_self_consistent_invented_compare_result(compared):
     finding = _by_right(compared)["word"]
     first = record_measured_count(
         compared, workspace_id="w", session_id="s1", finding=finding
@@ -571,7 +571,7 @@ def test_recovery_refuses_a_self_consistent_invented_compare_result(compared):
         assertions_of_recorded_assertion_comparison(event)
 
 
-def test_recovery_requires_the_exact_compare_coordinate_set(compared):
+def test_validation_requires_the_exact_compare_coordinate_set(compared):
     finding = _by_right(compared)["word"]
     first = record_measured_count(
         compared, workspace_id="w", session_id="s1", finding=finding
@@ -665,7 +665,7 @@ def test_recorded_assertion_stream_obeys_sessions_and_boundary(compared):
         compared, workspace_id="w", session_id="s2", finding=finding
     )
 
-    recovered = list(
+    reconstructed = list(
         iter_recorded_measured_assertions(
             compared,
             workspace_id="w",
@@ -673,8 +673,8 @@ def test_recorded_assertion_stream_obeys_sessions_and_boundary(compared):
             through=boundary,
         )
     )
-    assert len(recovered) == 5
-    assert {assertion.producing_event_id for assertion in recovered} == {first.id}
+    assert len(reconstructed) == 5
+    assert {assertion.producing_event_id for assertion in reconstructed} == {first.id}
 
 
 def test_exact_sets_keep_completeness_separate_from_support(compared):
@@ -954,7 +954,7 @@ def test_measuring_the_coordinate_without_the_distinction_is_its_own_result(comp
 
 
 def test_only_relevant_evidence_places_an_exchange_in_the_second_result(compared):
-    """`#2431`'s unrelated-presence warrant belongs to the third result.
+    """`#2431`'s unrelated-presence support belongs to the third result.
 
     Exact-coordinate Measurement and Compare/input Evidence establish
     ``measured_without_distinction``. A later measurement of another coordinate
@@ -1033,20 +1033,20 @@ def test_an_exchange_that_never_measured_the_coordinate_is_distinguished(compare
 
 
 def test_the_third_result_preserves_its_complete_read_not_an_id_inventory(compared):
-    """The ledger boundary recovers the complete negative-classification read."""
+    """The ledger boundary reconstructs the complete negative-classification read."""
     unrelated = _add_s5(compared)
     declared = DECLARED + ("s5",)
     finding = _by_right(compared, declared)["word"]
 
     assert "s5" in finding.coordinate_not_measured
     assert unrelated.id not in finding.input_event_ids
-    recovered = compared.iter_session_kind(
+    reconstructed = compared.iter_session_kind(
         "w",
         "s5",
         MEASUREMENT_RECORDED_KIND,
         through=finding.input_ledger_boundary,
     )
-    assert unrelated.id in {event.id for event in recovered}
+    assert unrelated.id in {event.id for event in reconstructed}
 
 
 def test_an_undeclared_exchange_enters_nothing(compared):
@@ -1289,7 +1289,7 @@ def test_every_probe_and_pass_reads_one_prefix_despite_a_concurrent_append(compa
 
 
 # --------------------------------------------------------------------------
-# The production occurrence remains exactly recoverable.
+# The production occurrence remains exactly reconstructible.
 # --------------------------------------------------------------------------
 
 
@@ -1331,7 +1331,7 @@ def test_a_durable_producing_occurrence_is_identifiable_and_verifies(tmp_path):
 
     reopened = SQLiteEventLedger(path)
     try:
-        recovered = list(
+        reconstructed = list(
             iter_recorded_measured_assertions(
                 reopened,
                 workspace_id="w",
@@ -1339,15 +1339,15 @@ def test_a_durable_producing_occurrence_is_identifiable_and_verifies(tmp_path):
                 through=boundary,
             )
         )
-        assert recovered
-        assert {assertion.producing_event_id for assertion in recovered} == {
+        assert reconstructed
+        assert {assertion.producing_event_id for assertion in reconstructed} == {
             event.id
         }
         assert get_recorded_measured_assertion(
             reopened,
             producing_event_id=event.id,
-            assertion_id=recovered[0].assertion_id,
-        ) == recovered[0]
+            assertion_id=reconstructed[0].assertion_id,
+        ) == reconstructed[0]
     finally:
         reopened.close()
 

@@ -34,7 +34,7 @@ exactly, and the formation bounds only what the account may be read to mean.
 References are backward-only and non-overlapping with the bytes currently being
 formed. Every reference therefore terminates in material that is already fully
 reconstructable from earlier parts; no external source lookup or brute-force
-recovery is involved.
+reconstruction is involved.
 """
 
 from __future__ import annotations
@@ -49,7 +49,7 @@ ENCODING_VERSION = "exact-material-backreference-v1"
 
 
 class ExactMaterialPointerError(ValueError):
-    """An exact-material pointer representation cannot be formed or recovered."""
+    """An exact-material pointer representation cannot be formed or reconstructed."""
 
 
 @dataclass(frozen=True)
@@ -149,10 +149,10 @@ class ExactMaterialPointers:
             raise ExactMaterialPointerError(
                 "an account must declare the formation that produced it"
             )
-        recovered = reconstruct_exact_bytes(self, verify=False)
-        if len(recovered) != self.byte_count:
+        reconstructed = reconstruct_exact_bytes(self, verify=False)
+        if len(reconstructed) != self.byte_count:
             raise ExactMaterialPointerError("reconstructed material does not match byte_count")
-        if hashlib.sha256(recovered).hexdigest() != self.sha256:
+        if hashlib.sha256(reconstructed).hexdigest() != self.sha256:
             raise ExactMaterialPointerError("reconstructed material does not match sha256")
 
     def to_json_dict(self) -> dict[str, Any]:
@@ -228,20 +228,20 @@ def reconstruct_exact_bytes(
 
     if not isinstance(encoded, ExactMaterialPointers):
         raise ExactMaterialPointerError("encoded material must be ExactMaterialPointers")
-    recovered = bytearray()
+    reconstructed = bytearray()
     for part in encoded.parts:
         if isinstance(part, LiteralPart):
-            recovered.extend(part.exact_bytes)
+            reconstructed.extend(part.exact_bytes)
             continue
         end = part.start + part.length
         # A reference may point to bytes produced by an earlier reference, but
         # its complete source span must already exist before this part begins.
-        if end > len(recovered):
+        if end > len(reconstructed):
             raise ExactMaterialPointerError(
                 "a reference must resolve wholly inside already reconstructed material"
             )
-        recovered.extend(recovered[part.start:end])
-    result = bytes(recovered)
+        reconstructed.extend(reconstructed[part.start:end])
+    result = bytes(reconstructed)
     if verify:
         if len(result) != encoded.byte_count:
             raise ExactMaterialPointerError("reconstructed material does not match byte_count")

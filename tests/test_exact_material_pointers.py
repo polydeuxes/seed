@@ -60,10 +60,10 @@ def test_arbitrary_bytes_round_trip_without_text_interpretation():
     material = bytes(range(256)) + bytes(range(256))
 
     encoded = form_exact_material_pointers(material)
-    recovered = ExactMaterialPointers.from_json_dict(encoded.to_json_dict())
+    reconstructed = ExactMaterialPointers.from_json_dict(encoded.to_json_dict())
 
-    assert reconstruct_exact_bytes(recovered) == material
-    assert any(isinstance(part, ReferencePart) for part in recovered.parts)
+    assert reconstruct_exact_bytes(reconstructed) == material
+    assert any(isinstance(part, ReferencePart) for part in reconstructed.parts)
 
 
 def test_empty_material_is_exactly_representable():
@@ -198,7 +198,7 @@ def test_a_formation_establishes_what_its_coordinates_can_be():
         ExactMaterialFormation(minimum_reference_length=4, candidate_limit=0)
 
 
-def test_an_account_without_a_recoverable_formation_is_refused():
+def test_an_account_without_a_addressable_formation_is_refused():
     encoded = form_exact_material_pointers(b"the cat jumped the cat jumped")
     carried = encoded.to_json_dict()
     assert ExactMaterialPointers.from_json_dict(carried) == encoded
@@ -292,7 +292,7 @@ def test_an_account_is_verified_against_its_own_reconstruction():
         _account(parts=(LiteralPart(b"ab"), ReferencePart(start=0, length=4)), byte_count=6)
 
 
-def test_a_serialized_account_is_refused_when_it_cannot_be_recovered():
+def test_a_serialized_account_is_refused_when_it_cannot_be_validated():
     carried = form_exact_material_pointers(b"the cat jumped the cat jumped").to_json_dict()
     for value in (None, "x", 7, [], ()):
         with pytest.raises(ExactMaterialPointerError, match="must be an object"):

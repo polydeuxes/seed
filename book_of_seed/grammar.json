@@ -43,7 +43,7 @@
         "default": "exact_Act_Responsibility",
         "override": "explicitly_assigned_responsible_occurrence"
       },
-      "must_precede": ["participation", "participation", "input support"],
+      "must_precede": ["participation"],
       "coordinates": [
         "input_identity",
         "exact_Act",
@@ -75,7 +75,7 @@
         "Act_occurrence_or_nonoccurrence",
         "output_Standing"
       ],
-      "independently_recoverable": true,
+      "independently_addressable": true,
       "distinct_from": [
         ["Applicability", "Admission"],
         ["Applicability", "Act_occurrence"],

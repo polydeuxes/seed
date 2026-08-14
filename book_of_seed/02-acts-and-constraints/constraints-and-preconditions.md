@@ -7,7 +7,7 @@ Conditions that govern whether and how an exact act may proceed.
 Which constraints govern an act, and at which boundary must each be satisfied?
 
 ## Bounded resolution
-A constraint concerns the proposed act or relevant context and establishes or preserves a prohibition, requirement, condition, narrowing, or deferral applicable to that act. Its assertion is warranted by applicable authority, bound identity, and current evidence. Constraints may govern several different acts and may be checked at several boundaries; they are not thereby sequential movement stages. A constraint result may participate in another Act without the governed act occurring.
+A constraint concerns the proposed act or relevant context and establishes or preserves a prohibition, requirement, condition, narrowing, or deferral applicable to that act. Its assertion is established by applicable authority, bound identity, and current evidence. Constraints may govern several different acts and may be checked at several boundaries; they are not thereby sequential movement stages. A constraint result may participate in another Act without the governed act occurring.
 
 
 ## Addressable access and Act conditions
@@ -34,7 +34,7 @@ An access condition, visible route, available representation, mechanism candidat
 
 ## Constrained movement constraint correction 001
 
-A constraint is not the governed movement, a constraint result is not occurrence of the governed movement, and a constraint is not a sequential pipeline stage. A constraint may govern whether movement may occur, which movement remains admissible, how far movement may proceed, under which scope movement remains lawful, which standing may be supported, or when movement must stop. Passing one constraint does not establish complete authority, complete movement warrant, selection, emission, arrival, responsibility transition, realization, or input support beyond the result's scope.
+A constraint is not the governed movement, a constraint result is not occurrence of the governed movement, and a constraint is not a sequential pipeline stage. A constraint may govern whether movement may occur, which movement remains admissible, how far movement may proceed, under which scope movement remains lawful, which standing may be supported, or when movement must stop. Passing one constraint does not establish complete Authority or Evidence for movement, selection, emission, arrival, responsibility transition, realization, or input support beyond the result's scope.
 
 At a constraint boundary, a constraint establishes or preserves the exact applicable prohibition, requirement, condition, narrowing, redirection, deferral, or unchanged constraint standing. A responsible exact Act may accept as input an applicable constraint result when determining whether a later movement remains prohibited, narrowed, redirected, deferred, or unchanged within that exact Act's exact act. The constraint result does not perform the governed movement, the exact Act, or a Stopping occurrence, and it does not mutate cluster truth.
 

@@ -25,7 +25,7 @@ from seed_runtime.preserved_material_measurement import (
     MEASUREMENT_CONVENTION,
     MEASUREMENT_RECORDED_KIND,
     RECURRENCE_RESULT_KIND,
-    RESPONSIBILITY_UNRECOVERED,
+    RESPONSIBILITY_UNESTABLISHED,
     DeclaredMeasurement,
     measure_recurrence,
     record_measurement_finding,
@@ -114,34 +114,34 @@ def test_result_shape_without_the_production_relation_has_no_witness(recorded):
     assert result.payload["production_evidence_id"] is not None
 
 
-def test_a_produced_fidelity_finding_is_occurrence_bound_and_recoverable(recorded):
+def test_a_produced_fidelity_finding_is_occurrence_bound_and_addressable(recorded):
     ledger, event = recorded
     result = compare_recorded_finding(ledger, event.id)
-    recovered = get_recorded_fidelity_finding(ledger, result.id)
-    assert recovered.recorded_occurrence_id == result.id
-    assert recovered.production_evidence_id == result.payload[
+    reconstructed = get_recorded_fidelity_finding(ledger, result.id)
+    assert reconstructed.recorded_occurrence_id == result.id
+    assert reconstructed.production_evidence_id == result.payload[
         "production_evidence_id"
     ]
-    assert recovered.source_finding_event_id == event.id
-    assert recovered.standing == FAITHFUL_WITHIN_SCOPE
-    assert recovered.reference == {"recorded_occurrence_id": result.id}
+    assert reconstructed.source_finding_event_id == event.id
+    assert reconstructed.standing == FAITHFUL_WITHIN_SCOPE
+    assert reconstructed.reference == {"recorded_occurrence_id": result.id}
 
 
-def test_recovery_exposes_no_mutable_result_payload(recorded):
+def test_validation_exposes_no_mutable_result_payload(recorded):
     ledger, event = recorded
     result = compare_recorded_finding(ledger, event.id)
-    recovered = get_recorded_fidelity_finding(ledger, result.id)
-    assert not hasattr(recovered, "payload")
-    assert recovered.standing == result.payload["dimensions"]["standing"]
+    reconstructed = get_recorded_fidelity_finding(ledger, result.id)
+    assert not hasattr(reconstructed, "payload")
+    assert reconstructed.standing == result.payload["dimensions"]["standing"]
 
 
-def test_recovery_does_not_revalidate_the_historical_input(recorded):
+def test_validation_does_not_revalidate_the_historical_input(recorded):
     ledger, event = recorded
     result = compare_recorded_finding(ledger, event.id)
-    # Recovery of F stands on F's intact recording occurrence and production
+    # Reconstruction of F stands on F's intact recording occurrence and production
     # Evidence. Its source identity travels, but current source availability is
     # a later Act's responsibility. The in-memory ledger has no deletion
-    # API, so this exact copy demonstrates that recovery does not require the
+    # API, so this exact copy demonstrates that reconstruction does not require the
     # source to retain its old kind or shape.
     ledger._by_id[event.id] = Event(
         id=event.id,
@@ -150,11 +150,11 @@ def test_recovery_does_not_revalidate_the_historical_input(recorded):
         payload={},
         session_id=event.session_id,
     )
-    recovered = get_recorded_fidelity_finding(ledger, result.id)
-    assert recovered.source_finding_event_id == event.id
+    reconstructed = get_recorded_fidelity_finding(ledger, result.id)
+    assert reconstructed.source_finding_event_id == event.id
 
 
-def test_a_fidelity_shaped_event_without_production_evidence_is_not_recovered(
+def test_a_fidelity_shaped_event_without_production_evidence_is_not_validated(
     recorded,
 ):
     ledger, event = recorded
@@ -176,21 +176,21 @@ def test_a_changed_fidelity_result_cannot_borrow_the_production_evidence(recorde
         get_recorded_fidelity_finding(ledger, occurrence.id)
 
 
-def test_fidelity_recovery_survives_durable_reopen(tmp_path):
-    path = tmp_path / "fidelity-recovery.sqlite"
+def test_fidelity_validation_survives_durable_reopen(tmp_path):
+    path = tmp_path / "fidelity-reconstruction.sqlite"
     ledger, event = _recorded_in(SQLiteEventLedger(path))
     result = compare_recorded_finding(ledger, event.id)
     result_id = result.id
     ledger.close()
 
     reopened = SQLiteEventLedger(path)
-    recovered = get_recorded_fidelity_finding(reopened, result_id)
-    assert recovered.recorded_occurrence_id == result_id
-    assert recovered.standing == FAITHFUL_WITHIN_SCOPE
+    reconstructed = get_recorded_fidelity_finding(reopened, result_id)
+    assert reconstructed.recorded_occurrence_id == result_id
+    assert reconstructed.standing == FAITHFUL_WITHIN_SCOPE
     reopened.close()
 
 
-def test_fidelity_recovery_refuses_an_invented_production_coordinate(recorded):
+def test_fidelity_validation_refuses_an_invented_production_coordinate(recorded):
     ledger, event = recorded
     result = compare_recorded_finding(ledger, event.id)
     evidence = ledger.get(result.payload["production_evidence_id"])
@@ -214,7 +214,7 @@ def test_fidelity_recovery_refuses_an_invented_production_coordinate(recorded):
         get_recorded_fidelity_finding(ledger, forged_result.id)
 
 
-def test_corrupted_fidelity_occurrence_cannot_be_recovered(tmp_path):
+def test_corrupted_fidelity_occurrence_cannot_be_validated(tmp_path):
     ledger, event = _recorded_in(SQLiteEventLedger(tmp_path / "corrupt-result.sqlite"))
     result = compare_recorded_finding(ledger, event.id)
     ledger._connection.execute("DROP TRIGGER events_refuse_update")
@@ -286,7 +286,7 @@ def test_it_claims_no_owner_and_no_correction_authority(recorded):
     ledger, event = recorded
     result = compare_recorded_finding(ledger, event.id)
     dims = result.payload["dimensions"]
-    assert dims["responsibility"] == RESPONSIBILITY_UNRECOVERED
+    assert dims["responsibility"] == RESPONSIBILITY_UNESTABLISHED
     assert "correction authority" in dims["authority"]
     assert result.payload["revises"] == []
 

@@ -6,7 +6,7 @@ The relation among preserved Events, Assertion-bearing material, and bounded cur
 
 ## Bounded resolution
 
-An Event preserves what its responsible recording occurrence records. Recording an attributed Assertion does not establish its content beyond the Standing warranted by the responsible establishment occurrence.
+An Event preserves what its responsible recording occurrence records. Recording an attributed Assertion does not establish its content beyond the Standing established by the responsible establishment occurrence.
 
 Replay, Selection, aggregation, ranking, suppression, caching, and read-model construction may expose preserved material under exact rules and boundaries. They do not create upstream Evidence, occurrence time, Applicability, or current Standing by identity. A responsible Act may use exposed material only through its exact Evidence, established support relations, Authority, Scope, locality, freshness, conflict, expiry, Unknowns, and surviving limits.
 
@@ -20,7 +20,7 @@ Recorded material and previously established Standing may support current Standi
 
 Occurrences within one workspace may carry locality. Same workspace does not mean same locality, and same locality does not mean same occurrence.
 
-Cross-workspace participation requires a separately warranted responsible occurrence preserving both workspaces and every applicable source coordinate and limit. Addressability alone does not establish that crossing.
+Cross-workspace participation requires a separately established responsible occurrence preserving both workspaces and every applicable source coordinate and limit. Addressability alone does not establish that crossing.
 
 Within one workspace, a Seed may make one exact preserved Assertion available in another locality through a responsible movement occurrence. Movement preserves the original Assertion reference and identity together with source and destination locality, Scope, Evidence, Authority, Standing, Unknowns, and surviving limits. It establishes availability only: it does not copy or strengthen the Assertion, revise its Standing, establish Applicability, or require another Act.
 

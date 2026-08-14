@@ -109,7 +109,7 @@ def measure_recurrence_subject_coordinates(
     workspace_id: str,
     source_session_ids: Iterable[str],
 ) -> Iterator[MeasuredRecurrenceSubjectCoordinates]:
-    """Measure exactly one recovery-owned coordinate layer and nothing beneath it."""
+    """Measure exactly one reconstruction-owned coordinate layer and nothing beneath it."""
 
     sessions = tuple(dict.fromkeys(source_session_ids))
     if not sessions or any(not isinstance(value, str) or not value for value in sessions):
@@ -128,18 +128,18 @@ def measure_recurrence_subject_coordinates(
             + ", ".join(missing)
         )
     try:
-        recovered = iter_recorded_comparison_result_count_assertions(
+        reconstructed = iter_recorded_comparison_result_count_assertions(
             ledger,
             workspace_id=workspace_id,
             session_ids=sessions,
             through=boundary,
         )
         first = next(
-            assertion for assertion in recovered if assertion.result == "recurrence"
+            assertion for assertion in reconstructed if assertion.result == "recurrence"
         )
     except StopIteration as exc:
         raise RecurrenceSubjectMeasurementError(
-            "no recovered recurrence Assertions to measure"
+            "no reconstructed recurrence Assertions to measure"
         ) from exc
     except ComparisonResultMeasurementError as exc:
         raise RecurrenceSubjectMeasurementError(str(exc)) from exc
@@ -160,7 +160,7 @@ def measure_recurrence_subject_coordinates(
     def stream() -> Iterator[MeasuredRecurrenceSubjectCoordinates]:
         yield measured(first)
         try:
-            for assertion in recovered:
+            for assertion in reconstructed:
                 if assertion.result == "recurrence":
                     yield measured(assertion)
         except ComparisonResultMeasurementError as exc:
@@ -238,7 +238,7 @@ def _measurement_event(
                 "authority": MEASUREMENT_AUTHORITY,
             },
             "producing_act": "declared Measurement",
-            "measurement_subject": "one recovered recurrence Assertion subject",
+            "measurement_subject": "one reconstructed recurrence Assertion subject",
             "source_assertion_ref": finding.source.reference,
             "assertions": list(assertions),
         },
@@ -285,7 +285,7 @@ def record_recurrence_subject_coordinate_layer(
 def assertions_of_recorded_recurrence_subject_coordinates(
     event: Event,
 ) -> tuple[RecordedRecurrenceSubjectCoordinateAssertion, ...]:
-    """Structurally recover the exact three-result output contract."""
+    """Structurally reconstruct the exact three-result output contract."""
 
     assertions = event.payload.get("assertions")
     source_ref = event.payload.get("source_assertion_ref")
@@ -301,7 +301,7 @@ def assertions_of_recorded_recurrence_subject_coordinates(
         }
         or event.payload.get("producing_act") != "declared Measurement"
         or event.payload.get("measurement_subject")
-        != "one recovered recurrence Assertion subject"
+        != "one reconstructed recurrence Assertion subject"
         or not isinstance(source_ref, dict)
         or set(source_ref) != {"producing_event_id", "assertion_id"}
         or not isinstance(assertions, list)
@@ -310,7 +310,7 @@ def assertions_of_recorded_recurrence_subject_coordinates(
         raise RecurrenceSubjectMeasurementError(
             f"{event.id} does not carry the established coordinate Measurement"
         )
-    recovered = []
+    reconstructed = []
     seen = set()
     for assertion in assertions:
         dimensions = assertion.get("dimensions")
@@ -359,7 +359,7 @@ def assertions_of_recorded_recurrence_subject_coordinates(
                 f"{event.id} carries a noncanonical coordinate Assertion"
             )
         seen.add(coordinate)
-        recovered.append(
+        reconstructed.append(
             RecordedRecurrenceSubjectCoordinateAssertion(
                 assertion_id=identity,
                 producing_event_id=event.id,
@@ -371,7 +371,7 @@ def assertions_of_recorded_recurrence_subject_coordinates(
         raise RecurrenceSubjectMeasurementError(
             f"{event.id} does not carry the complete immediate coordinate surface"
         )
-    return tuple(recovered)
+    return tuple(reconstructed)
 
 
 def get_recorded_recurrence_subject_coordinate_assertion(
@@ -380,7 +380,7 @@ def get_recorded_recurrence_subject_coordinate_assertion(
     producing_event_id: str,
     assertion_id: str,
 ) -> RecordedRecurrenceSubjectCoordinateAssertion | None:
-    """Resolve one coordinate result after recovering its exact source Assertion."""
+    """Resolve one coordinate result after reconstructing its exact source Assertion."""
 
     event = ledger.get(producing_event_id)
     if event is None:
@@ -389,7 +389,7 @@ def get_recorded_recurrence_subject_coordinate_assertion(
         raise RecurrenceSubjectMeasurementError(
             "a corrupted Measurement occurrence cannot expose coordinate Assertions"
         )
-    recovered = assertions_of_recorded_recurrence_subject_coordinates(event)
+    reconstructed = assertions_of_recorded_recurrence_subject_coordinates(event)
     source_ref = event.payload["source_assertion_ref"]
     source = get_recorded_comparison_result_count_assertion(
         ledger,
@@ -398,7 +398,7 @@ def get_recorded_recurrence_subject_coordinate_assertion(
     )
     if source is None or source.result != "recurrence":
         raise RecurrenceSubjectMeasurementError(
-            "coordinate Measurement does not have as input a recovered recurrence Assertion"
+            "coordinate Measurement does not have as input a reconstructed recurrence Assertion"
         )
     source_scope = source.payload["assertion_scope"]
     expected_scope = {
@@ -411,7 +411,7 @@ def get_recorded_recurrence_subject_coordinate_assertion(
             (source.payload["assertion_subject"][name] for name in RECURRENCE_SUBJECT_COORDINATES),
         )
     )
-    for item in recovered:
+    for item in reconstructed:
         if (
             item.payload["assertion_scope"] != expected_scope
             or item.payload["dimensions"]["content"]["exact_value"]
@@ -432,12 +432,12 @@ def iter_recorded_recurrence_subject_coordinate_assertions(
     session_ids: Iterable[str],
     through: EventLedgerBoundary,
 ) -> Iterator[RecordedRecurrenceSubjectCoordinateAssertion]:
-    """Recover one bounded coordinate-Assertion population efficiently."""
+    """Reconstruct one bounded coordinate-Assertion population efficiently."""
 
     sessions = tuple(dict.fromkeys(session_ids))
     if not sessions:
         raise RecurrenceSubjectMeasurementError(
-            "coordinate-Assertion recovery requires exact declared sessions"
+            "coordinate-Assertion reconstruction requires exact declared sessions"
         )
     source_sessions = set()
     source_refs = set()
@@ -460,7 +460,7 @@ def iter_recorded_recurrence_subject_coordinate_assertions(
                 or not source_event.session_id
             ):
                 raise RecurrenceSubjectMeasurementError(
-                    "coordinate Measurement source is not recoverable in this workspace"
+                    "coordinate Measurement source is not reconstructible in this workspace"
                 )
             source_sessions.add(source_event.session_id)
             source_refs.add(
@@ -470,7 +470,7 @@ def iter_recorded_recurrence_subject_coordinate_assertions(
     if not source_refs:
         return
 
-    recovered_sources = {}
+    validated_sources = {}
     try:
         for source in iter_recorded_comparison_result_count_assertions(
             ledger,
@@ -480,12 +480,12 @@ def iter_recorded_recurrence_subject_coordinate_assertions(
         ):
             key = (source.producing_event_id, source.assertion_id)
             if key in source_refs and source.result == "recurrence":
-                recovered_sources[key] = source
+                validated_sources[key] = source
     except ComparisonResultMeasurementError as exc:
         raise RecurrenceSubjectMeasurementError(str(exc)) from exc
-    if set(recovered_sources) != source_refs:
+    if set(validated_sources) != source_refs:
         raise RecurrenceSubjectMeasurementError(
-            "coordinate Measurement population contains an unrecovered recurrence source"
+            "coordinate Measurement population contains an unestablished recurrence source"
         )
 
     for session_id in sessions:
@@ -499,9 +499,9 @@ def iter_recorded_recurrence_subject_coordinate_assertions(
                 raise RecurrenceSubjectMeasurementError(
                     "a corrupted Measurement occurrence cannot expose coordinate Assertions"
                 )
-            recovered = assertions_of_recorded_recurrence_subject_coordinates(event)
+            reconstructed = assertions_of_recorded_recurrence_subject_coordinates(event)
             source_ref = event.payload["source_assertion_ref"]
-            source = recovered_sources[
+            source = validated_sources[
                 (source_ref["producing_event_id"], source_ref["assertion_id"])
             ]
             source_scope = source.payload["assertion_scope"]
@@ -510,7 +510,7 @@ def iter_recorded_recurrence_subject_coordinate_assertions(
                 "source_session_ids": list(source_scope["source_session_ids"]),
             }
             expected_values = source.payload["assertion_subject"]
-            for item in recovered:
+            for item in reconstructed:
                 if (
                     item.payload["assertion_scope"] != expected_scope
                     or item.payload["dimensions"]["content"]["exact_value"]

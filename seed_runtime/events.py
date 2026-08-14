@@ -21,7 +21,7 @@ from seed_runtime.event import Event, _decode_screened_event_payload
 # `06.Standing:16` names append-only records permissively, among projected
 # material and context views. Nothing in active law requires append-only, and
 # nothing here claims history cannot change: a `DROP TRIGGER` followed by a
-# rewrite of both row and digest defeats this. The warranted claim is narrower
+# rewrite of both row and digest defeats this. The established claim is narrower
 # — mutation is refused by default, and undetected corruption becomes
 # detectable.
 VERIFIED = "verified"
@@ -66,7 +66,7 @@ _DIGESTED_FIELDS = (
 # The digest is computed over the canonical JSON string, never over the stored
 # bytes, so how a payload was written down cannot change what it commits to.
 # `#2492` was the same lesson at the other end: two base64 encodings of one
-# byte string had to recover one account.
+# byte string had to reconstruct one account.
 #
 # Level 1 rather than 6 or 9. `#2494` measured 4.9x against 5.3x at less than
 # half the compression cost, and decompression is flat across levels at roughly
@@ -88,7 +88,7 @@ def _stored_payload(serialized: str) -> str | bytes:
     return compressed if len(compressed) < len(encoded) else serialized
 
 
-class UnrecoverablePayload(LedgerIntegrityError):
+class InvalidStoredPayload(LedgerIntegrityError):
     """A stored payload cannot be returned to the string it was digested from."""
 
 
@@ -97,7 +97,7 @@ def _serialized_payload(stored: str | bytes) -> str:
 
     A store written before compression holds text, and reads unchanged.
 
-    **Failure to recover the stored representation is corruption, not a
+    **Failure to reconstruct the stored representation is corruption, not a
     compressor error.** Damaged compressed bytes raise `zlib.error`, and bytes
     that decompress but are not UTF-8 raise `UnicodeDecodeError`; both mean the
     stored row no longer carries what it was digested from, which is the
@@ -109,18 +109,18 @@ def _serialized_payload(stored: str | bytes) -> str:
         try:
             return zlib.decompress(stored).decode("utf-8")
         except (zlib.error, UnicodeDecodeError) as exc:
-            raise UnrecoverablePayload(
-                f"a stored payload could not be recovered: {exc}"
+            raise InvalidStoredPayload(
+                f"a stored payload could not be reconstructed: {exc}"
             ) from exc
     if not isinstance(stored, str):
-        raise UnrecoverablePayload(
+        raise InvalidStoredPayload(
             f"a stored payload is {type(stored).__name__}, not a representation"
         )
     return stored
 
 
 def _digest_of_stored_row(row: "sqlite3.Row") -> str | None:
-    """The digest of a stored row, or nothing when it cannot be recovered.
+    """The digest of a stored row, or nothing when it cannot be reconstructed.
 
     A row whose payload will not decompress cannot reproduce any digest, and
     that is exactly what `integrity_of` reports rather than raising through its
@@ -129,7 +129,7 @@ def _digest_of_stored_row(row: "sqlite3.Row") -> str | None:
 
     try:
         return _content_digest(_digested_row(row))
-    except UnrecoverablePayload:
+    except InvalidStoredPayload:
         return None
 
 
@@ -459,7 +459,7 @@ class SQLiteEventLedger(EventLedger):
         # Minted identifier counters, kept durably instead of reconstructed.
         #
         # `#2414` measured the reconstruction: every payload of every event
-        # deserialized and walked on every open, to recover the highest issued
+        # deserialized and walked on every open, to reconstruct the highest issued
         # suffix per prefix. That is a whole-history read for an answer of a few
         # integers, and it grows without bound — 36.9s at 100,000 events,
         # extrapolating to about 356s at a million.
@@ -569,7 +569,7 @@ class SQLiteEventLedger(EventLedger):
         # `append` does that; this path did not. A failure between the two
         # commits left durable occurrences carrying identifiers whose counters
         # were stale on reopen, which is the collision `#2428` exists to
-        # prevent. `evt` is partly shielded because open recovers the maximum
+        # prevent. `evt` is partly shielded because open reconstructs the maximum
         # event id separately; the payload and session prefixes are not.
         with self._connection:
             for event in stored_events:
@@ -921,14 +921,14 @@ class SQLiteEventLedger(EventLedger):
         try:
             payload = _decode_screened_event_payload(_serialized_payload(row["payload"]))
         except json.JSONDecodeError as exc:
-            # Recovered as text and not as an occurrence. The same condition as
+            # Reconstructed as text and not as an occurrence. The same condition as
             # a payload that will not decompress: the stored row no longer
             # carries what it was digested from, so it is refused as an
             # integrity failure rather than as the parser's error. This was
             # already reachable before compression, for a text payload damaged
             # in place.
-            raise UnrecoverablePayload(
-                f"a stored payload is not a recoverable occurrence: {exc}"
+            raise InvalidStoredPayload(
+                f"a stored payload is not a reconstructible occurrence: {exc}"
             ) from exc
         return Event(
             id=row["id"],

@@ -117,7 +117,7 @@ def _rehydrate_coordinate_assertion(
     event = ledger.get(reference["producing_event_id"])
     if event is None:
         raise CoordinateAssertionMeasurementError(
-            "a measured coordinate Assertion is no longer recoverable"
+            "a measured coordinate Assertion is no longer reconstructible"
         )
     if ledger.integrity_of(event.id) == CORRUPTED:
         raise CoordinateAssertionMeasurementError(
@@ -168,7 +168,7 @@ def measure_coordinate_assertion_counts(
         raise CoordinateAssertionMeasurementError(str(exc)) from exc
     if not grouped:
         raise CoordinateAssertionMeasurementError(
-            "no recovered recurrence-subject coordinate Assertions to measure"
+            "no reconstructed recurrence-subject coordinate Assertions to measure"
         )
     def stream() -> Iterator[MeasuredCoordinateAssertionCount]:
         for source_assertion_id, refs in grouped.items():
@@ -346,7 +346,7 @@ def record_coordinate_assertion_count_layer(
 def assertions_of_recorded_coordinate_assertion_count(
     event: Event,
 ) -> tuple[RecordedCoordinateAssertionCount, ...]:
-    """Recover the exact set/count/conditional-recurrence output contract."""
+    """Reconstruct the exact set/count/conditional-recurrence output contract."""
 
     stated = event.payload.get("assertions")
     dimensions = event.payload.get("dimensions")
@@ -535,8 +535,8 @@ def get_recorded_coordinate_assertion_count(
         raise CoordinateAssertionMeasurementError(
             "a corrupted Measurement occurrence cannot expose result Assertions"
         )
-    recovered = assertions_of_recorded_coordinate_assertion_count(event)
-    production_set = next(item for item in recovered if item.result == "exact_production_set")
+    reconstructed = assertions_of_recorded_coordinate_assertion_count(event)
+    production_set = next(item for item in reconstructed if item.result == "exact_production_set")
     payload = production_set.payload
     completeness_scope = payload["completeness_scope"]
     boundary = EventLedgerBoundary(payload["completeness_boundary"]["commitment"])
@@ -567,7 +567,7 @@ def get_recorded_coordinate_assertion_count(
         raise CoordinateAssertionMeasurementError(
             "the carried production set does not equal the complete bounded read"
         )
-    for item in recovered:
+    for item in reconstructed:
         if item.assertion_id == assertion_id:
             return item
     return None

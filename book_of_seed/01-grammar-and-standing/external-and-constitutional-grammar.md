@@ -42,14 +42,14 @@ A candidate preserves every applicable source role, formation occurrence, Scope,
 
 ### 01.External.F — External material may assert a relation
 
-External material may assert that X represents or identifies Y. Formation preserves source identity or role, material origin, source occurrence where evidenced, Scope, provenance, Authority limits, known loss, conflicts, and Unknowns. Carriage, labels, reference resolution, shape, or repetition do not warrant either the source relation or represented relation. Each requires a responsible occurrence.
+External material may assert that X represents or identifies Y. Formation preserves source identity or role, material origin, source occurrence where evidenced, Scope, provenance, Authority limits, known loss, conflicts, and Unknowns. Carriage, labels, reference resolution, shape, or repetition do not support either the source relation or represented relation. Each requires a responsible occurrence.
 
 ## Important distinctions
 
 - external material != Seed representation
 - addressable != applicable
 - material != Evidence
-- carried relation Assertion != warranted relation
+- carried relation Assertion != established relation
 - equal content != equal identity or Standing
 - Measurement != language or significance
 

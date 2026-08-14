@@ -57,7 +57,7 @@ from seed_runtime.production_evidence import (
 )
 from seed_runtime.support_basis import (
     SupportBasis,
-    SupportRecovery,
+    SupportValidator,
     support_commitment,
 )
 
@@ -80,11 +80,11 @@ MATERIAL_AS_SUPPLIED = (
 
 # `#2431` identified "declared-measurement-over-preserved-material" as inherited
 # contamination: it wrote the Act into the Responsibility slot for a declared
-# measurement whose production Responsibility had never been recovered. `#2439`
-# then recovered the partial shape and kept it partial -- production occurrence "this Seed",
+# measurement whose production Responsibility had never been validated. `#2439`
+# then validated the partial shape and kept it partial -- production occurrence "this Seed",
 # Act a declared measurement, Standing measured, and a Responsibility that stays
-# unrecovered. That is ordinary rather than contradictory.
-RESPONSIBILITY_UNRECOVERED = "unrecovered"
+# unestablished. That is ordinary rather than contradictory.
+RESPONSIBILITY_UNESTABLISHED = "unestablished"
 
 # What recording composes around a finding's own content. A caller adding to a
 # recorded finding may not replace any of it.
@@ -163,7 +163,7 @@ class MeasurementFinding:
     positions_measured: int
     occupancies: tuple[Occupancy, ...]
     # The identities this measurement input_ids, available while the act runs.
-    # On the result-Assertion path a recoverable support basis is formed from
+    # On the result-Assertion path a reconstructible support basis is formed from
     # this population instead of preserving the enumeration in every result;
     # the basis belongs to that path, and this dataclass does not own a second
     # coordinate for it. `#2486` measured why: copying the population into
@@ -266,15 +266,15 @@ class RecurrenceFinding:
     support_basis: SupportBasis | None = None
     # Which preserved production evidence concerns this result. Named for the
     # evidence rather than for a production occurrence: it holds an occurrence reference,
-    # and the production occurrence stays unrecovered. `produced_by` said otherwise by
-    # ordinary reading while the payload beside it said unrecovered. The
+    # and the production occurrence stays unestablished. `produced_by` said otherwise by
+    # ordinary reading while the payload beside it said unestablished. The
     # production branches in the Book HEAD
     # holds that a separately constructed representation with identical fields
     # does not carry the witnessed return's standing "unless that standing is
     # separately represented or preserved". Content equality cannot supply it:
-    # an identical reconstruction has identical content by definition, which is
+    # an identical validation has identical content by definition, which is
     # exactly the case the relation must distinguish. So the relation travels
-    # with the result rather than being recovered later by matching bytes.
+    # with the result rather than being validated later by matching bytes.
     #
     # A later representation carrying this same reference is another
     # representation of the same produced result, which is lawful. One carrying
@@ -534,7 +534,7 @@ def _recorded_production_commitment(
 
     The production evidence names the exact top-level coordinates the act
     produced. Recording may lawfully add other coordinates, so neither an
-    exclusion list nor every key left in the recorded payload recovers this
+    exclusion list nor every key left in the recorded payload reconstructs this
     boundary. `material_provenance` is the one produced coordinate represented
     inside the recorder-owned dimensions object.
     """
@@ -586,7 +586,7 @@ def _record_production(
     ```
 
     The second and third are the production-occurrence crossing and stay
-    unrecovered; the payload records them as such rather than filling them. The
+    unestablished; the payload records them as such rather than filling them. The
     fourth is true of every kind in this ledger.
 
     This occurrence is preserved evidence concerning a production. It is not
@@ -602,7 +602,7 @@ def _record_production(
         produced_result_kind=RECURRENCE_RESULT_KIND,
         result_identity=finding.declared.representation_measured,
         produced_content=_produced_content(finding),
-        responsibility=RESPONSIBILITY_UNRECOVERED,
+        responsibility=RESPONSIBILITY_UNESTABLISHED,
     )
 
 
@@ -658,7 +658,7 @@ def measure_recurrences(
     preserved_in: EventLedger | None = None,
     produce_in: "tuple[EventLedger, str, str] | None" = None,
     support_basis: SupportBasis | None = None,
-    support_recovery: SupportRecovery | None = None,
+    support_validator: SupportValidator | None = None,
 ) -> tuple[RecurrenceFinding, ...]:
     """Measure many representations across one pass of the material.
 
@@ -726,16 +726,16 @@ def measure_recurrences(
     walked, material_provenance = _as_preserved(
         _distinct_population(occurrences), preserved_in
     )
-    if support_basis is not None and support_recovery is not None:
+    if support_basis is not None and support_validator is not None:
         # A finding claiming support from preserved occurrences must have
         # measured the material those occurrences carry. An `Event` can be
         # constructed directly with any id and any payload, so a caller could
-        # hand this act an object bearing a recovered identity and different
-        # text: the identities would commit correctly, the basis would recover,
+        # hand this act an object bearing a validated identity and different
+        # text: the identities would commit correctly, the basis would reconstruct,
         # and the finding would preserve a basis for material it never saw.
         #
         # So where a basis is declared, the material is read from the ledger
-        # the basis is recovered against. The supplied objects still determine
+        # the basis is validated against. The supplied objects still determine
         # which occurrences participate and in what order; they do not supply
         # what was measured.
         # This read establishes the same provenance `_as_preserved` does, so
@@ -746,11 +746,11 @@ def measure_recurrences(
         material_provenance = MATERIAL_READ_FROM_LEDGER
         preserved = []
         for event in walked:
-            recorded = support_recovery.ledger.get(event.id)
+            recorded = support_validator.ledger.get(event.id)
             if recorded is None:
                 raise PreservedMaterialMeasurementError(
                     f"{event.id} is not preserved in the ledger this support "
-                    "basis is recovered against"
+                    "basis is validated against"
                 )
             preserved.append(recorded)
         walked = preserved
@@ -801,7 +801,7 @@ def measure_recurrences(
         # nothing about scope, so a basis declaring one locality could be
         # accepted for a population drawn from several: the ids match, and the
         # preserved basis then asserts a scope the act never input_ids within.
-        # The producing act refuses that now; a later recovery failure is a
+        # The producing act refuses that now; a later validation failure is a
         # different responsibility and arrives too late to prevent it.
         declared_locality = (
             f"workspace:{support_basis.workspace_id};"
@@ -830,15 +830,15 @@ def measure_recurrences(
         # EventLedger does, so a basis is accepted only where the act is given
         # the means to check it. Implementation inconvenience does not move the
         # obligation to a later reader: once the enumeration is replaced, a
-        # recovery discovering the lie arrives after the false basis is
+        # validation discovering the lie arrives after the false basis is
         # preserved.
-        if support_recovery is None:
+        if support_validator is None:
             raise PreservedMaterialMeasurementError(
                 "a support basis declares a selection through a boundary, and "
-                "accepting one requires a SupportRecovery to establish that "
+                "accepting one requires a SupportValidator to establish that "
                 "the population is that selection"
             )
-        # `recover` performs the basis's own selection through the boundary and
+        # `reconstruct` performs the basis's own selection through the boundary and
         # refuses unless the result reproduces the committed digest. Together
         # with the commitment check above -- which ties the population walked to
         # that same digest -- the population is the selection declared.
@@ -847,7 +847,7 @@ def measure_recurrences(
         # cannot fail while both checks hold, and mutation testing found no test
         # that could reach it. A guard nothing can reach reads as a proof and is
         # not one.
-        support_recovery.recover(support_basis)
+        support_validator.validate(support_basis)
     findings = tuple(
         RecurrenceFinding(
             declared=declaration,
@@ -962,7 +962,7 @@ def _measurement_finding_payload(
     carried = finding.to_json_dict()
     basis = (extra or {}).get("support_basis", {}).get("basis") if extra else None
     if basis is not None:
-        # A result Assertion carries a recoverable support basis, so the
+        # A result Assertion carries a reconstructible support basis, so the
         # enumeration it replaces is not written beside it. `#2486` measured
         # the enumeration at 97% of a 4,000-line finding.
         carried["input_support"] = basis
@@ -984,8 +984,8 @@ def _measurement_finding_payload(
             # `#2439` had just separated and mints the sibling of a string
             # `#2431` had already called contamination. Where the material came
             # from and under whose Responsibility the production is owned are
-            # different questions, and only the first has been recovered.
-            "responsibility": RESPONSIBILITY_UNRECOVERED,
+            # different questions, and only the first has been validated.
+            "responsibility": RESPONSIBILITY_UNESTABLISHED,
             "authority": (
                 "measurement evidence only; establishes no represented relation, relation, "
                 "or standing beyond the measurement assertion"
@@ -1140,7 +1140,7 @@ def premise_chain(ledger: EventLedger, event_id: str) -> list[str]:
     """Every finding this one stood on, nearest premise first.
 
     Not the runtime's `SupportBasis` representation. This is the chain of
-    recorded premise findings one finding stood on, recovered nearest premise
+    recorded premise findings one finding stood on, validated nearest premise
     first. It preserves that dependency relation and claims nothing about the
     producing act's support basis; the prose called it that before the two
     were distinguished and kept calling it that after.

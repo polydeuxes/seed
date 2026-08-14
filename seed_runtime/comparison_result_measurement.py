@@ -117,13 +117,13 @@ class _CompactResultGroup:
 def _rehydrate_validated_reference(
     ledger: EventLedger, reference: tuple[str, str]
 ) -> RecordedPositionalResultDistinction:
-    """Recover a result already fully validated in this frozen invocation."""
+    """Reconstruct a result already fully validated in this frozen invocation."""
 
     producing_event_id, assertion_id = reference
     event = ledger.get(producing_event_id)
     if event is None:
         raise AssertionComparisonError(
-            "a measured comparison result is no longer recoverable"
+            "a measured comparison result is no longer reconstructible"
         )
     if ledger.integrity_of(producing_event_id) == CORRUPTED:
         raise AssertionComparisonError(
@@ -466,7 +466,7 @@ def record_comparison_result_count_layer(
 def assertions_of_recorded_comparison_result_count(
     event: Event,
 ) -> tuple[RecordedComparisonResultCountAssertion, ...]:
-    """Structurally recover the exact production set and its derived count."""
+    """Structurally reconstruct the exact production set and its derived count."""
 
     if event.kind != COMPARISON_RESULT_COUNT_RECORDED_KIND:
         raise ComparisonResultMeasurementError(
@@ -660,8 +660,8 @@ def get_recorded_comparison_result_count_assertion(
         raise ComparisonResultMeasurementError(
             "a corrupted Measurement occurrence cannot expose result Assertions"
         )
-    recovered = assertions_of_recorded_comparison_result_count(event)
-    production_set = next(item for item in recovered if item.result == "exact_production_set")
+    reconstructed = assertions_of_recorded_comparison_result_count(event)
+    production_set = next(item for item in reconstructed if item.result == "exact_production_set")
     payload = production_set.payload
     boundary = EventLedgerBoundary(
         payload["completeness_boundary"]["commitment"]
@@ -687,7 +687,7 @@ def get_recorded_comparison_result_count_assertion(
         raise ComparisonResultMeasurementError(
             "the carried production set does not equal the complete bounded read"
         )
-    for item in recovered:
+    for item in reconstructed:
         if item.assertion_id == assertion_id:
             return item
     return None
@@ -700,7 +700,7 @@ def iter_recorded_comparison_result_count_assertions(
     session_ids: Iterable[str],
     through: EventLedgerBoundary,
 ) -> Iterator[RecordedComparisonResultCountAssertion]:
-    """Recover a bounded count-Assertion population with shared verification.
+    """Reconstruct a bounded count-Assertion population with shared verification.
 
     Every producing occurrence is checked structurally.  Its production set is
     then checked against the complete positional-result comparison population
@@ -712,7 +712,7 @@ def iter_recorded_comparison_result_count_assertions(
     sessions = tuple(dict.fromkeys(session_ids))
     if not sessions:
         raise ComparisonResultMeasurementError(
-            "count-Assertion recovery requires exact declared sessions"
+            "count-Assertion reconstruction requires exact declared sessions"
         )
     expected_by_extent: dict[
         tuple[tuple[str, ...], str], dict[str, list[dict[str, str]]]
@@ -728,9 +728,9 @@ def iter_recorded_comparison_result_count_assertions(
                 raise ComparisonResultMeasurementError(
                     "a corrupted Measurement occurrence cannot expose result Assertions"
                 )
-            recovered = assertions_of_recorded_comparison_result_count(event)
+            reconstructed = assertions_of_recorded_comparison_result_count(event)
             production_set = next(
-                item for item in recovered if item.result == "exact_production_set"
+                item for item in reconstructed if item.result == "exact_production_set"
             )
             payload = production_set.payload
             scope = payload["assertion_scope"]
@@ -770,4 +770,4 @@ def iter_recorded_comparison_result_count_assertions(
                 raise ComparisonResultMeasurementError(
                     "the carried production set does not equal the complete bounded read"
                 )
-            yield from recovered
+            yield from reconstructed

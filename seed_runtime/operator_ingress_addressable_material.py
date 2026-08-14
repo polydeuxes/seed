@@ -58,7 +58,7 @@ UNKNOWNS = (
 AUTHORITY_LIMITS = (
     "addressability and exact-material carriage only",
     "decoder success establishes representation availability, not interpretation or competency",
-    "no interpretation candidate, warrant, selection, applicability, admission, result relation, required-result Standing, movement, authorization, or execution",
+    "no interpretation candidate, support, selection, applicability, admission, result relation, required-result Standing, movement, authorization, or execution",
 )
 
 
@@ -180,7 +180,7 @@ class OperatorIngressAddressableMaterial:
     def from_json_dict(
         cls, value: dict[str, object]
     ) -> OperatorIngressAddressableMaterial:
-        """Recover the frozen artifact from its projection representation."""
+        """Reconstruct the frozen artifact from its projection representation."""
         if not isinstance(value, dict):
             _refuse("addressable material must be an object")
         material_value = value.get("exact_operator_material")

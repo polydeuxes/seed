@@ -33,7 +33,7 @@ def _run_console(text, *, workspace="w", session="s"):
 def _fixture_presentation(ledger, *, workspace="w", session="s"):
     """Form one closed-choice Presentation from the explicit fixture.
 
-    The console no longer supplies alternatives; a caller with warrant does.
+    The console no longer supplies alternatives; a caller with support does.
     These tests exercise the closed-choice shape itself, so they construct it.
     """
     presentation = form_operator_presentation(
@@ -88,7 +88,7 @@ def test_console_forms_c0_before_first_ingress_and_preserves_provenance_only():
     c0_formed, c0_emitted = ledger.list("w")[:2]
     assert c0_formed.payload["session_standing_as_of_event_id"] is None
     assert c0_formed.payload["prior_exchange_finding"] is None
-    assert c0_formed.payload["recovered_represented_relation"] is None
+    assert c0_formed.payload["represented_relation"] is None
     assert c0_formed.payload["unknowns"] == []
     # The console attaches no Presentation to the capture: several emissions
     # may precede it and nothing determines which, if any, it relates to.
@@ -107,14 +107,14 @@ def test_no_compare_or_identification_follows_console_ingress():
     # The required proving: C emitted, E preserved, production provenance
     # retained, and no Compare or Identification occurrence.  Recency does not
     # make C and E participants in one act; 01.Standing.E.1 requires the act
-    # owner to determine input-to-act Applicability, and no recovered
+    # owner to determine input-to-act Applicability, and no reconstructed
     # Responsibility presently proposes those subjects.
     ledger, _ = _run_console("hello\nsecond\nthird\n")
 
     kinds = [event.kind for event in ledger.list("w")]
     assert "operator.exchange.comparison_occurred" not in kinds
     assert "operator.exchange.identification_occurred" not in kinds
-    assert "operator.presentation.source_recovered" not in kinds
+    assert "operator.presentation.source_validated" not in kinds
     assert "operator.presentation.represented_relation_established" not in kinds
     assert not any(kind.startswith("operator.interaction.") for kind in kinds)
 
@@ -146,7 +146,7 @@ def test_c0_presents_standing_with_no_developer_semantics():
     payload = ledger.get(c0["formed_event_id"]).payload
     assert payload["session_standing_as_of_event_id"] is None
     assert payload["prior_exchange_finding"] is None
-    assert payload["recovered_represented_relation"] is None
+    assert payload["represented_relation"] is None
     assert payload["unknowns"] == []
     assert payload["conflicts"] == []
 
@@ -227,10 +227,10 @@ def test_console_presents_standing_only_across_an_ingress():
         "operator.presentation.formed",
         "operator.presentation.emitted",
     ]
-    # No automatic exchange, recovery, relation, or result-establishment occurrence.
+    # No automatic exchange, reconstruction, relation, or result-establishment occurrence.
     assert not any(k.startswith("operator.exchange.") for k in kinds)
     assert not any(k.startswith("operator.interaction.") for k in kinds)
-    assert "operator.presentation.source_recovered" not in kinds
+    assert "operator.presentation.source_validated" not in kinds
     assert "operator.presentation.represented_relation_established" not in kinds
 
     c0, _, _, _, ingress, c1, _ = ledger.list("w")
@@ -353,16 +353,16 @@ def test_presentation_projection_is_deterministic_under_unrelated_events():
     assert after == before
 
 
-def test_next_console_iteration_recovers_c1_and_forms_c2():
-    # Direct recovery: after C1 is recorded, the read side returns its
+def test_next_console_iteration_validates_c1_and_forms_c2():
+    # Direct reconstruction: after C1 is recorded, the read side returns its
     # complete alternatives and bindings.
     ledger = EventLedger()
     c1 = _form_and_emit(ledger)
-    recovered = list(_standing(ledger)["presentations"].values())[-1]
-    assert recovered["presentation_id"] == c1["presentation_id"]
-    assert recovered["alternatives"] == c1["alternatives"]
-    assert recovered["coordinate_bindings"] == c1["coordinate_bindings"]
-    assert recovered["emitted_event_id"] == c1["emitted_event_id"]
+    reconstructed = list(_standing(ledger)["presentations"].values())[-1]
+    assert reconstructed["presentation_id"] == c1["presentation_id"]
+    assert reconstructed["alternatives"] == c1["alternatives"]
+    assert reconstructed["coordinate_bindings"] == c1["coordinate_bindings"]
+    assert reconstructed["emitted_event_id"] == c1["emitted_event_id"]
 
     # Through the console: the second iteration has as input Standing containing
     # C1 and forms C2.
@@ -423,7 +423,7 @@ def test_formation_is_recorded_before_emission_and_they_stay_distinct():
         alternative_sources=CLOSED_CHOICE_FIXTURE_SOURCES,
     )
     assert presentation["emitted_event_id"] is None
-    # Formation is recovered; its emission coordinate stays unrecorded until
+    # Formation is reconstructed; its emission coordinate stays unrecorded until
     # an emission occurrence supplies it.
     recorded = list(_standing(ledger)["presentations"].values())[-1]
     assert recorded["formed_event_id"] == presentation["formed_event_id"]
@@ -432,5 +432,5 @@ def test_formation_is_recorded_before_emission_and_they_stay_distinct():
     emit_operator_presentation(
         ledger, presentation=presentation, output_stream=StringIO()
     )
-    recovered = list(_standing(ledger)["presentations"].values())[-1]
-    assert recovered["presentation_id"] == presentation["presentation_id"]
+    reconstructed = list(_standing(ledger)["presentations"].values())[-1]
+    assert reconstructed["presentation_id"] == presentation["presentation_id"]

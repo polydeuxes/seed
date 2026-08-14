@@ -18,7 +18,7 @@ _PRESENTATION_FORMED_KIND = "operator.presentation.formed"
 _PRESENTATION_EMITTED_KIND = "operator.presentation.emitted"
 _COMPARISON_KIND = "operator.exchange.comparison_occurred"
 _IDENTIFICATION_KIND = "operator.exchange.identification_occurred"
-_SOURCE_RECOVERED_KIND = "operator.presentation.source_recovered"
+_SOURCE_VALIDATED_KIND = "operator.presentation.source_validated"
 _REPRESENTED_RELATION_KIND = "operator.presentation.represented_relation_established"
 _SUPPORTED_KINDS = {
     *_SUBJECT_BY_KIND,
@@ -27,7 +27,7 @@ _SUPPORTED_KINDS = {
     _PRESENTATION_EMITTED_KIND,
     _COMPARISON_KIND,
     _IDENTIFICATION_KIND,
-    _SOURCE_RECOVERED_KIND,
+    _SOURCE_VALIDATED_KIND,
     _REPRESENTED_RELATION_KIND,
 }
 
@@ -113,9 +113,9 @@ def advance_operator_session_standing(
     comparisons: dict[str, dict[str, Any]] = {}
     identifications: dict[str, dict[str, Any]] = {}
     latest_exchange_finding: dict[str, Any] | None = None
-    source_recoveries: dict[str, dict[str, Any]] = {}
+    source_validations: dict[str, dict[str, Any]] = {}
     represented_relations: dict[str, dict[str, Any]] = {}
-    latest_source_recovery: dict[str, Any] | None = None
+    latest_source_validation: dict[str, Any] | None = None
     latest_represented_relation: dict[str, Any] | None = None
     # Kept sorted and distinct in place rather than as a set sorted on return.
     # A set would have to be rebuilt from the prior list and re-sorted on every
@@ -140,9 +140,9 @@ def advance_operator_session_standing(
         comparisons = prior["comparisons"]
         identifications = prior["identifications"]
         latest_exchange_finding = prior["latest_exchange_finding"]
-        source_recoveries = prior["source_recoveries"]
+        source_validations = prior["source_validations"]
         represented_relations = prior["represented_relations"]
-        latest_source_recovery = prior["latest_source_recovery"]
+        latest_source_validation = prior["latest_source_validation"]
         latest_represented_relation = prior["latest_represented_relation"]
         known_loss = prior["known_loss"]
         unknowns = prior["unknowns"]
@@ -251,7 +251,7 @@ def advance_operator_session_standing(
                 )
             # The ingress records no Presentation reference, so no check
             # here establishes that this Presentation and this ingress
-            # belong to one act.  That relation is unrecovered.
+            # belong to one act.  That relation is unestablished.
             expected_representation = preserved_response["content"]
             expected_coordinate_set = sorted(
                 alternative["response_coordinate"]
@@ -404,15 +404,15 @@ def advance_operator_session_standing(
                 "identification": identification,
             }
             continue
-        if event.kind == _SOURCE_RECOVERED_KIND:
+        if event.kind == _SOURCE_VALIDATED_KIND:
             payload = event.payload
-            # A recovery is admitted into Standing only where the recorded
+            # A reconstruction is admitted into Standing only where the recorded
             # formation payload and the recorded identification agree with
             # every coordinate it carries.
             presentation = presentations.get(payload["presentation_ref"])
             if presentation is None:
                 raise ValueError(
-                    "source recovery names an unrecorded presentation: "
+                    "source reconstruction names an unrecorded presentation: "
                     f"{payload['presentation_ref']}"
                 )
             recorded_alternative = next(
@@ -426,20 +426,20 @@ def advance_operator_session_standing(
             )
             if recorded_alternative is None:
                 raise ValueError(
-                    "source recovery names an alternative outside its "
+                    "source reconstruction names an alternative outside its "
                     "recorded presentation"
                 )
             recorded_source = recorded_alternative["represented_source"]
             for key in ("identity", "kind", "source_role", "reference"):
                 if payload["source"][key] != recorded_source[key]:
                     raise ValueError(
-                        "source recovery does not agree with recorded "
+                        "source reconstruction does not agree with recorded "
                         f"formation payload on source {key}"
                     )
             for key in ("role", "response_coordinate"):
                 if payload["alternative"][key] != recorded_alternative[key]:
                     raise ValueError(
-                        "source recovery does not agree with recorded "
+                        "source reconstruction does not agree with recorded "
                         f"formation payload on alternative {key}"
                     )
             if (
@@ -449,7 +449,7 @@ def advance_operator_session_standing(
                 != presentation["emitted_event_id"]
             ):
                 raise ValueError(
-                    "source recovery does not carry the recorded "
+                    "source reconstruction does not carry the recorded "
                     "presentation occurrence provenance"
                 )
             supporting_identification = next(
@@ -478,7 +478,7 @@ def advance_operator_session_standing(
                 != payload["response_attempt_ref"]
             ):
                 raise ValueError(
-                    "source recovery does not agree with its recorded "
+                    "source reconstruction does not agree with its recorded "
                     "identification"
                 )
             # Re-prove Compare -> Identification -> A from the recorded
@@ -489,7 +489,7 @@ def advance_operator_session_standing(
             )
             if supporting_comparison is None:
                 raise ValueError(
-                    "source recovery's identification has no recorded "
+                    "source reconstruction's identification has no recorded "
                     "comparison"
                 )
             matched = supporting_comparison["matched_coordinate"]
@@ -501,7 +501,7 @@ def advance_operator_session_standing(
                 != payload["alternative"]["alternative_id"]
             ):
                 raise ValueError(
-                    "source recovery is not supported by a recorded match "
+                    "source reconstruction is not supported by a recorded match "
                     "bound to the identified alternative"
                 )
             if (
@@ -511,7 +511,7 @@ def advance_operator_session_standing(
                 != supporting_comparison["response_capture_event_id"]
             ):
                 raise ValueError(
-                    "source recovery does not carry its comparison's "
+                    "source reconstruction does not carry its comparison's "
                     "recorded response evidence"
                 )
             response_attempt = attempts.get(payload["response_attempt_ref"])
@@ -525,20 +525,20 @@ def advance_operator_session_standing(
                 != payload["response_capture_event_id"]
             ):
                 raise ValueError(
-                    "source recovery's response evidence does not agree "
+                    "source reconstruction's response evidence does not agree "
                     "with the recorded ingress occurrence"
                 )
             if payload["representation"] != recorded_alternative["representation"]:
                 raise ValueError(
-                    "source recovery does not agree with recorded formation "
+                    "source reconstruction does not agree with recorded formation "
                     "source coordinates on the representation boundary"
                 )
-            if payload["recovery_ref"] in source_recoveries:
+            if payload["validation_ref"] in source_validations:
                 raise ValueError(
-                    f"duplicate recovery reference: {payload['recovery_ref']}"
+                    f"duplicate reconstruction reference: {payload['validation_ref']}"
                 )
-            recovery = {
-                "recovery_ref": payload["recovery_ref"],
+            reconstruction = {
+                "validation_ref": payload["validation_ref"],
                 "event_id": event.id,
                 "presentation_ref": payload["presentation_ref"],
                 "presentation_formed_event_id": payload[
@@ -558,17 +558,17 @@ def advance_operator_session_standing(
                 # the recorded formation payload it was validated against.
                 "representation": recorded_alternative["representation"],
             }
-            source_recoveries[payload["recovery_ref"]] = recovery
-            latest_source_recovery = recovery
+            source_validations[payload["validation_ref"]] = reconstruction
+            latest_source_validation = reconstruction
             continue
         if event.kind == _REPRESENTED_RELATION_KIND:
             payload = event.payload
-            recovery_event_id = payload["source_recovery_event_id"]
-            recovery = source_recoveries.get(payload["recovery_ref"])
-            if recovery is None:
+            validation_event_id = payload["source_validation_event_id"]
+            reconstruction = source_validations.get(payload["validation_ref"])
+            if reconstruction is None:
                 raise ValueError(
-                    "represented relation without recorded source recovery: "
-                    f"{payload['recovery_ref']}"
+                    "represented relation without recorded source reconstruction: "
+                    f"{payload['validation_ref']}"
                 )
             # The joined pair must agree on every shared coordinate; a
             # mismatched pair is structurally refused rather than composed.
@@ -594,35 +594,35 @@ def advance_operator_session_standing(
             recorded_source = recorded_alternative["represented_source"]
             recorded_representation = recorded_alternative["representation"]
             agreements = (
-                (recovery_event_id, recovery["event_id"], "source_recovery_event_id"),
+                (validation_event_id, reconstruction["event_id"], "source_validation_event_id"),
                 (
                     payload["presentation_ref"],
-                    recovery["presentation_ref"],
+                    reconstruction["presentation_ref"],
                     "presentation_ref",
                 ),
                 (
                     payload["presentation_formed_event_id"],
-                    recovery["presentation_formed_event_id"],
+                    reconstruction["presentation_formed_event_id"],
                     "presentation_formed_event_id",
                 ),
                 (
                     payload["identification_event_id"],
-                    recovery["identification_event_id"],
+                    reconstruction["identification_event_id"],
                     "identification_event_id",
                 ),
                 (
                     payload["alternative_id"],
-                    recovery["alternative"]["alternative_id"],
+                    reconstruction["alternative"]["alternative_id"],
                     "alternative_id",
                 ),
                 (
                     payload["source_identity"],
-                    recovery["source"]["identity"],
+                    reconstruction["source"]["identity"],
                     "source_identity",
                 ),
                 (
                     payload["source_reference"],
-                    recovery["source"]["reference"],
+                    reconstruction["source"]["reference"],
                     "source_reference",
                 ),
                 # The proposition and its source role must equal the recorded
@@ -648,7 +648,7 @@ def advance_operator_session_standing(
                 if supplied != recorded:
                     raise ValueError(
                         "represented relation does not agree with its recorded "
-                        f"source recovery on {coordinate}"
+                        f"source reconstruction on {coordinate}"
                     )
             # The structural Authority coordinates are reconstructed from
             # recorded payload, and the carried separation must equal the
@@ -658,30 +658,30 @@ def advance_operator_session_standing(
                 "source_authority": {
                     "standing": "bounded",
                     "supports": ["source-supplied-with-attributed-relation"],
-                    "evidence_event_ids": [recovery["presentation_formed_event_id"]],
+                    "evidence_event_ids": [reconstruction["presentation_formed_event_id"]],
                     "scope": {
-                        "source_identity": recovery["source"]["identity"],
+                        "source_identity": reconstruction["source"]["identity"],
                         "proposition": recorded_source["represented_result"],
                     },
                 },
                 "response_comparison_authority": {
                     "standing": "bounded",
                     "supports": ["response-matched-coordinate-within-presentation"],
-                    "evidence_event_ids": [recovery["comparison_event_id"]],
+                    "evidence_event_ids": [reconstruction["comparison_event_id"]],
                     "scope": {
-                        "presentation_ref": recovery["presentation_ref"],
-                        "response_attempt_ref": recovery["response_attempt_ref"],
+                        "presentation_ref": reconstruction["presentation_ref"],
+                        "response_attempt_ref": reconstruction["response_attempt_ref"],
                     },
                 },
                 "relation_warrant": {
                     "standing": "established",
                     "supports": ["source-expresses-proposition"],
                     "evidence_event_ids": [
-                        recovery["presentation_formed_event_id"],
-                        recovery["event_id"],
+                        reconstruction["presentation_formed_event_id"],
+                        reconstruction["event_id"],
                     ],
                     "scope": {
-                        "source_identity": recovery["source"]["identity"],
+                        "source_identity": reconstruction["source"]["identity"],
                         "proposition": recorded_source["represented_result"],
                     },
                 },
@@ -739,8 +739,8 @@ def advance_operator_session_standing(
             relation = {
                 "relation_ref": payload["relation_ref"],
                 "event_id": event.id,
-                "source_recovery_event_id": recovery_event_id,
-                "recovery_ref": payload["recovery_ref"],
+                "source_validation_event_id": validation_event_id,
+                "validation_ref": payload["validation_ref"],
                 "presentation_ref": payload["presentation_ref"],
                 "presentation_formed_event_id": payload[
                     "presentation_formed_event_id"
@@ -803,7 +803,7 @@ def advance_operator_session_standing(
         "interaction_closures": interaction_closures,
         "presentations": presentations,
         # No "current" Presentation is projected.  Emission order is
-        # recoverable from `presentations`, which preserves formation and
+        # reconstructible from `presentations`, which preserves formation and
         # emission occurrences in append order; naming one of them current
         # would assert present relevance that no occurrence establishes.
         # Exactly the relation standings recorded by session events.  No
@@ -812,9 +812,9 @@ def advance_operator_session_standing(
         "comparisons": comparisons,
         "identifications": identifications,
         "latest_exchange_finding": latest_exchange_finding,
-        "source_recoveries": source_recoveries,
+        "source_validations": source_validations,
         "represented_relations": represented_relations,
-        "latest_source_recovery": latest_source_recovery,
+        "latest_source_validation": latest_source_validation,
         "latest_represented_relation": latest_represented_relation,
         "recorded_relation_standings": [],
         "known_loss": known_loss,

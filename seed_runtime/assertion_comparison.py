@@ -19,7 +19,7 @@ from typing import Any, Iterable
 from seed_runtime.events import CORRUPTED, EventLedger
 from seed_runtime.event import Event
 from seed_runtime.ids import new_id
-from seed_runtime.support_basis import SupportRecovery
+from seed_runtime.support_basis import SupportValidator
 from seed_runtime.adjacent_pair_measurement import (
     INGRESS_OCCURRED_KIND,
     RecordedAdjacentPairResultAssertion,
@@ -287,7 +287,7 @@ def compare_assertion_productions(
             "Assertion production Compare requires one canonical Assertion identity"
         )
 
-    recovered: list[RecordedMeasuredAssertion] = []
+    reconstructed: list[RecordedMeasuredAssertion] = []
     inputs = []
     for reference in refs:
         assertion = get_recorded_measured_assertion(
@@ -304,7 +304,7 @@ def compare_assertion_productions(
             raise AssertionComparisonError(
                 "a corrupted producing occurrence cannot participate in Compare"
             )
-        recovered.append(assertion)
+        reconstructed.append(assertion)
         inputs.append(
             AssertionProductionInput(
                 assertion_id=assertion.assertion_id,
@@ -315,7 +315,7 @@ def compare_assertion_productions(
 
     distinctions = []
     for coordinate, path in COORDINATES.items():
-        read = tuple(_read(assertion.payload, path) for assertion in recovered)
+        read = tuple(_read(assertion.payload, path) for assertion in reconstructed)
         present = (read[0][0], read[1][0])
         values = (read[0][1], read[1][1])
         distinctions.append(
@@ -358,7 +358,7 @@ def compare_positional_result_assertions(
             "one positional result production cannot be compared with itself"
         )
 
-    recovered: list[RecordedAdjacentPairResultAssertion] = []
+    reconstructed: list[RecordedAdjacentPairResultAssertion] = []
     integrities = []
     for reference in refs:
         assertion = get_recorded_adjacent_pair_result_assertion(
@@ -372,34 +372,34 @@ def compare_positional_result_assertions(
                 "producing occurrence"
             )
         integrity = ledger.integrity_of(assertion.producing_event_id)
-        recovered.append(assertion)
+        reconstructed.append(assertion)
         integrities.append(integrity)
 
-    return _compare_recovered_positional_result_assertions(
-        recovered, integrities=integrities
+    return _compare_validated_positional_result_assertions(
+        reconstructed, integrities=integrities
     )
 
 
-def _compare_recovered_positional_result_assertions(
+def _compare_validated_positional_result_assertions(
     assertions: Iterable[RecordedAdjacentPairResultAssertion],
     *,
     integrities: Iterable[str],
 ) -> PositionalResultComparison:
-    """Compare Assertions already recovered inside one bounded occurrence."""
+    """Compare Assertions already reconstructed inside one bounded occurrence."""
 
-    recovered = tuple(assertions)
+    reconstructed = tuple(assertions)
     integrity_values = tuple(integrities)
-    if len(recovered) != 2 or len(integrity_values) != 2:
-        raise AssertionComparisonError("a recovered positional Compare requires two inputs")
+    if len(reconstructed) != 2 or len(integrity_values) != 2:
+        raise AssertionComparisonError("a reconstructed positional Compare requires two inputs")
     inputs = tuple(
         PositionalResultInput(
             assertion_id=assertion.assertion_id,
             producing_event_id=assertion.producing_event_id,
             integrity=integrity,
         )
-        for assertion, integrity in zip(recovered, integrity_values)
+        for assertion, integrity in zip(reconstructed, integrity_values)
     )
-    subjects = tuple(assertion.payload["assertion_subject"] for assertion in recovered)
+    subjects = tuple(assertion.payload["assertion_subject"] for assertion in reconstructed)
     if not _exactly_same(subjects[0], subjects[1]):
         raise AssertionComparisonError(
             "positional result Compare requires one exact carried Assertion subject"
@@ -407,7 +407,7 @@ def _compare_recovered_positional_result_assertions(
 
     distinctions = []
     for coordinate, path in POSITIONAL_RESULT_COORDINATES.items():
-        read = tuple(_read(assertion.payload, path) for assertion in recovered)
+        read = tuple(_read(assertion.payload, path) for assertion in reconstructed)
         present = (read[0][0], read[1][0])
         values = (read[0][1], read[1][1])
         distinctions.append(
@@ -588,7 +588,7 @@ def _positional_result_comparison_payload(
 def assertions_of_recorded_positional_result_comparison(
     event: Event,
 ) -> tuple[RecordedPositionalResultDistinction, ...]:
-    """Recover and verify every output of one recorded positional Compare."""
+    """Reconstruct and verify every output of one recorded positional Compare."""
 
     if event.kind != POSITIONAL_RESULT_COMPARISON_RECORDED_KIND:
         raise AssertionComparisonError(
@@ -617,7 +617,7 @@ def assertions_of_recorded_positional_result_comparison(
             f"{event.id} does not carry one bounded positional-result Compare"
         )
 
-    recovered = []
+    reconstructed = []
     seen_identities = set()
     seen_coordinates = set()
     for assertion in stated:
@@ -700,7 +700,7 @@ def assertions_of_recorded_positional_result_comparison(
             )
         seen_identities.add(identity)
         seen_coordinates.add(coordinate)
-        recovered.append(
+        reconstructed.append(
             RecordedPositionalResultDistinction(
                 assertion_id=identity,
                 producing_event_id=event.id,
@@ -712,7 +712,7 @@ def assertions_of_recorded_positional_result_comparison(
         raise AssertionComparisonError(
             f"{event.id} does not carry every positional Compare coordinate"
         )
-    return tuple(recovered)
+    return tuple(reconstructed)
 
 
 def get_recorded_positional_result_distinction(
@@ -723,21 +723,21 @@ def get_recorded_positional_result_distinction(
     event = ledger.get(producing_event_id)
     if event is None:
         return None
-    recovered = _recover_recorded_positional_result_comparison(ledger, event)
-    for result in recovered:
+    reconstructed = _validate_recorded_positional_result_comparison(ledger, event)
+    for result in reconstructed:
         if result.assertion_id == assertion_id:
             return result
     return None
 
 
-def _recover_recorded_positional_result_comparison(
+def _validate_recorded_positional_result_comparison(
     ledger: EventLedger,
     event: Event,
 ) -> tuple[RecordedPositionalResultDistinction, ...]:
-    """Recover one Compare from an Event returned by this ledger.
+    """Reconstruct one Compare from an Event returned by this ledger.
 
     This private helper's caller must obtain ``event`` from ``ledger`` in the
-    current bounded read.  Public recovery remains occurrence-id based so an
+    current bounded read.  Public reconstruction remains occurrence-id based so an
     arbitrary Event carrying the same id cannot borrow the ledger row's
     integrity standing.
     """
@@ -746,15 +746,15 @@ def _recover_recorded_positional_result_comparison(
         raise AssertionComparisonError(
             "a corrupted Compare occurrence cannot expose result Assertions"
         )
-    recovered = assertions_of_recorded_positional_result_comparison(event)
+    reconstructed = assertions_of_recorded_positional_result_comparison(event)
     comparison = compare_positional_result_assertions(ledger, event.payload["inputs"])
-    _require_recorded_positional_comparison_matches(event, recovered, comparison)
-    return recovered
+    _require_recorded_positional_comparison_matches(event, reconstructed, comparison)
+    return reconstructed
 
 
 def _require_recorded_positional_comparison_matches(
     event: Event,
-    recovered: tuple[RecordedPositionalResultDistinction, ...],
+    reconstructed: tuple[RecordedPositionalResultDistinction, ...],
     comparison: PositionalResultComparison,
 ) -> None:
     """Require the carried occurrence and outputs to equal the replayed Act."""
@@ -777,7 +777,7 @@ def _require_recorded_positional_comparison_matches(
         }
         for distinction in comparison.distinctions
     }
-    for result in recovered:
+    for result in reconstructed:
         if result.payload["dimensions"]["content"] != expected[result.coordinate]:
             raise AssertionComparisonError(
                 "a recorded positional Compare result does not match its inputs"
@@ -798,8 +798,8 @@ def iter_recorded_positional_result_distinctions(
     validated reference, then rehydrate and structurally verify the Assertion.
     """
 
-    validated_inputs: set[tuple[str, str]] = set()
-    recovery = SupportRecovery(ledger)
+    validated_refs: set[tuple[str, str]] = set()
+    validation = SupportValidator(ledger)
     for session_id in tuple(dict.fromkeys(session_ids)):
         for event in ledger.iter_session_kind(
             workspace_id,
@@ -807,10 +807,10 @@ def iter_recorded_positional_result_distinctions(
             POSITIONAL_RESULT_COMPARISON_RECORDED_KIND,
             through=through,
         ):
-            recovered_results = assertions_of_recorded_positional_result_comparison(
+            validated_results = assertions_of_recorded_positional_result_comparison(
                 event
             )
-            recovered_inputs = []
+            input_assertions = []
             integrities = []
             for reference in event.payload["inputs"]:
                 ref = (
@@ -820,7 +820,7 @@ def iter_recorded_positional_result_distinctions(
                 producing_event = ledger.get(ref[0])
                 if producing_event is None:
                     raise AssertionComparisonError(
-                        "a positional result input is no longer recoverable"
+                        "a positional result input is no longer reconstructible"
                     )
                 integrity = ledger.integrity_of(ref[0])
                 if integrity == CORRUPTED:
@@ -832,20 +832,20 @@ def iter_recorded_positional_result_distinctions(
                     raise AssertionComparisonError(
                         "a positional result input reference changed"
                     )
-                if ref not in validated_inputs:
+                if ref not in validated_refs:
                     _validate_result_assertion_ingress(
-                        ledger, producing_event, assertion, recovery=recovery
+                        ledger, producing_event, assertion, validation=validation
                     )
-                    validated_inputs.add(ref)
-                recovered_inputs.append(assertion)
+                    validated_refs.add(ref)
+                input_assertions.append(assertion)
                 integrities.append(integrity)
-            comparison = _compare_recovered_positional_result_assertions(
-                recovered_inputs, integrities=integrities
+            comparison = _compare_validated_positional_result_assertions(
+                input_assertions, integrities=integrities
             )
             _require_recorded_positional_comparison_matches(
-                event, recovered_results, comparison
+                event, validated_results, comparison
             )
-            yield from recovered_results
+            yield from validated_results
 
 
 def record_positional_result_comparison_layer(
@@ -893,21 +893,21 @@ def record_positional_result_comparison_layer(
     pending = []
     recorded = 0
     for references in by_subject.values():
-        recovered = []
+        reconstructed = []
         for reference in references:
             event = ledger.get(reference["producing_event_id"])
             if event is None:
                 raise AssertionComparisonError(
-                    "a validated positional result production is no longer recoverable"
+                    "a validated positional result production is no longer reconstructible"
                 )
             assertion = assertion_of_recorded_adjacent_pair_result(event)
             if assertion.assertion_id != reference["assertion_id"]:
                 raise AssertionComparisonError(
                     "a validated positional result reference changed during the layer"
                 )
-            recovered.append(assertion)
-        for left, right in combinations(recovered, 2):
-            comparison = _compare_recovered_positional_result_assertions(
+            reconstructed.append(assertion)
+        for left, right in combinations(reconstructed, 2):
+            comparison = _compare_validated_positional_result_assertions(
                 (left, right),
                 integrities=(
                     ledger.integrity_of(left.producing_event_id),
@@ -1046,7 +1046,7 @@ def record_assertion_production_comparison(
 def assertions_of_recorded_assertion_comparison(
     event: Event,
 ) -> tuple[RecordedAssertionProductionDistinction, ...]:
-    """Recover and verify every addressable result of one recorded Compare."""
+    """Reconstruct and verify every addressable result of one recorded Compare."""
 
     if event.kind != ASSERTION_PRODUCTION_COMPARISON_RECORDED_KIND:
         raise AssertionComparisonError(
@@ -1079,7 +1079,7 @@ def assertions_of_recorded_assertion_comparison(
         raise AssertionComparisonError(
             f"{event.id} does not carry every distinct Compare result"
         )
-    recovered = []
+    reconstructed = []
     seen = set()
     seen_coordinates = set()
     for assertion in stated:
@@ -1150,7 +1150,7 @@ def assertions_of_recorded_assertion_comparison(
                 f"{event.id} carries a comparison Assertion with invalid identity"
             )
         seen.add(identity)
-        recovered.append(
+        reconstructed.append(
             RecordedAssertionProductionDistinction(
                 assertion_id=identity,
                 producing_event_id=event.id,
@@ -1162,4 +1162,4 @@ def assertions_of_recorded_assertion_comparison(
         raise AssertionComparisonError(
             f"{event.id} does not carry the exact Compare coordinate set"
         )
-    return tuple(recovered)
+    return tuple(reconstructed)

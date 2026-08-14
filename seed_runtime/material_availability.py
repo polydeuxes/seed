@@ -33,7 +33,7 @@ and extent areabout 1 KB regardless of size.
 **Nothing here writes anything anywhere.** Holding bytes in memory is retention
 without an outward act. Writing them to disk is Seed changing the world outside
 itself, which is an Authority question this module deliberately does not touch —
-no temp files, no spooling, no memory mapping, no restart recovery. When the
+no temp files, no spooling, no memory mapping, no restart reconstruction. When the
 process ends the bytes are gone, and that is honest rather than a defect.
 """
 
@@ -51,7 +51,7 @@ MATERIAL_OCCURRED_KIND = "material.transient.occurred"
 
 
 class MaterialAvailabilityError(ValueError):
-    """Exact material could not be identified, held, or recovered as stated."""
+    """Exact material could not be identified, held, or reconstructed as stated."""
 
 
 def material_digest(exact_bytes: bytes) -> str:
@@ -86,7 +86,7 @@ class MaterialIdentity:
     """What material was, without being the material.
 
     Carrying this instead of the body is what keeps an occurrence a constant
-    size. It identifies; it does not reconstruct. Nothing recovers material from
+    size. It identifies; it does not reconstruct. Nothing reconstructs material from
     a digest, and a reader holding one has learned what to ask for rather than
     what it says.
     """
@@ -132,7 +132,7 @@ class ProcessLocalMaterial:
     """Exact material this process holds, for as long as it holds it.
 
     Deliberately not durable. There is no spooling, no temporary file, no
-    memory mapping and no restart recovery, because every one of those would be
+    memory mapping and no restart reconstruction, because every one of those would be
     Seed preserving material outside itself — an outward Act requiring Authority
     this module does not have and does not ask for.
 
@@ -156,7 +156,7 @@ class ProcessLocalMaterial:
 
         Keying on the digest alone made the three answers disagree: an identity
         with the right digest and the wrong extent reported available, refused
-        to recover, and — worst — released the material that was genuinely
+        to reconstruct, and — worst — released the material that was genuinely
         held. One identity, one answer.
         """
 
@@ -168,12 +168,12 @@ class ProcessLocalMaterial:
     def is_available(self, identity: MaterialIdentity) -> bool:
         return self._held_under(identity) is not None
 
-    def recover(self, identity: MaterialIdentity) -> bytes:
+    def reconstruct(self, identity: MaterialIdentity) -> bytes:
         """The exact material, or a refusal naming what is unavailable.
 
         The material is not re-digested. It is held *under* its digest, so
         anything found under one reproduces it by construction, and a check that
-        cannot fail is not free here: re-digesting was 98% of a 5 MB recovery
+        cannot fail is not free here: re-digesting was 98% of a 5 MB reconstruction
         and 100% of a 50 MB one, at 130 ms each.
 
         The extent is still checked, because an identity is supplied by a caller

@@ -10,8 +10,8 @@ Historical reports under ``book_of_seed/`` are records and are left to rot
 unchanged.  ``rosetta/`` is specifically permitted to carry retired and
 external vocabulary; that is why it exists.
 
-Each banned pattern names vocabulary that a recovery removed from
-constitutional grammar, or that a recovery found smuggles a claim.  A word
+Each banned pattern names vocabulary that a reconstruction removed from
+constitutional grammar, or that a reconstruction found smuggles a claim.  A word
 being banned here does not make it forbidden English -- it makes it
 non-constitutional, and its explanation belongs in ``rosetta/``.
 """
@@ -55,7 +55,7 @@ BANNED: tuple[tuple[str, str], ...] = (
     (r"\benablement\w*\b", "enablement*"),
     (r"\blenses?\b", "lens"),
     (r"\broads?\b", "road"),
-    (r"\bconstitutive warrant\b", "constitutive warrant"),
+    (r"\bconstitutive support\b", "constitutive support"),
     (r"\bstanding effect\b", "standing effect"),
     (r"\b(?:almost|near|nearly)\s+certain\w*\b", "almost/near/nearly certain*"),
     # The retired State abstraction.  The ordinary verb forms `states` and
@@ -102,10 +102,11 @@ BANNED: tuple[tuple[str, str], ...] = (
     (r"\bconstructors?\b|constructor[-_]", "constructor"),
     (r"\bproduction authority\b", "production authority"),
     (r"\bproduc\w*\b|produc[-_]", "produc*"),
-    # Capital-W is the retired constitutional species.  Lowercase warrant is
-    # still an ordinary verb in sentences such as "the Evidence warrants X".
-    (r"\bWarrant\b|warrant[-_]", "Warrant"),
-    (r"\brecovery\b|recovery[-_]", "recovery"),
+    # `warrant` survives only in Seed's single Standing declaration. Elsewhere
+    # the exact Evidence, Authority, Scope, support relation, occurrence, or
+    # Standing must be named instead.
+    (r"\bwarrant\w*\b|warrant[-_]", "warrant*"),
+    (r"\bvalidatey\b|reconstruction[-_]", "reconstruction"),
     (r"\bconsum\w*\b|consum[-_]", "consum*"),
     (r"\breli\w*\b|reli[-_]", "reli*"),
 )
@@ -119,7 +120,7 @@ BANNED: tuple[tuple[str, str], ...] = (
 # The test is:
 #
 #     name the Responsibility no other established coordinate already carries,
-#     then recover its owner, the act that produces it, and the standing that
+#     then reconstruct its owner, the act that produces it, and the standing that
 #     production establishes
 #
 #     unique Responsibility can be named  ->  admitted vocabulary, however
@@ -176,10 +177,7 @@ BANNED: tuple[tuple[str, str], ...] = (
 #                 compatibility label.  That physical field does not earn
 #                 admission to active law.
 
-COMPILED = tuple(
-    (re.compile(pattern, 0 if label == "Warrant" else re.IGNORECASE), label)
-    for pattern, label in BANNED
-)
+COMPILED = tuple((re.compile(pattern, re.IGNORECASE), label) for pattern, label in BANNED)
 
 
 def book_proper_files() -> list[Path]:
@@ -201,6 +199,11 @@ def find_violations() -> list[tuple[str, int, str, str]]:
             # Stable historical file addresses may retain retired words.  The
             # visible label is active law; a Markdown destination is not.
             scanned = re.sub(r"\]\([^)]*\)", "]()", line)
+            scanned = scanned.replace(
+                "This Seed carries only Standing it can warrant through its "
+                "Evidence, Authority, Scope, and preserved limits.",
+                "",
+            )
             for pattern, label in COMPILED:
                 if pattern.search(scanned):
                     found.append((rel, number, label, line.strip()))

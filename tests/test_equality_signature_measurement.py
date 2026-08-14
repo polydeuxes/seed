@@ -94,7 +94,7 @@ def test_empty_population_refuses_before_an_iterator_is_returned():
 
     with pytest.raises(
         EqualitySignatureMeasurementError,
-        match="no recovered positional-result Comparisons",
+        match="no reconstructed positional-result Comparisons",
     ):
         measure_equality_signatures(
             ledger, workspace_id="w", source_session_ids=("comparisons",)
@@ -116,21 +116,21 @@ def test_same_signature_has_one_identity_across_distinct_compares():
         recording_session_id="signatures",
     ) == 2
     events = ledger.list_session("w", "signatures")
-    recovered = [assertion_of_recorded_equality_signature(event) for event in events]
+    reconstructed = [assertion_of_recorded_equality_signature(event) for event in events]
 
-    assert len({item.assertion_id for item in recovered}) == 1
-    assert {item.payload["source_compare_event_id"] for item in recovered} == {
+    assert len({item.assertion_id for item in reconstructed}) == 1
+    assert {item.payload["source_compare_event_id"] for item in reconstructed} == {
         first.id,
         second.id,
     }
     assert all(
         len(item.payload["support_basis"]["assertion_refs"])
         == len(POSITIONAL_RESULT_COORDINATES)
-        for item in recovered
+        for item in reconstructed
     )
 
 
-def test_ledger_recovery_replays_the_complete_source_surface():
+def test_ledger_validation_replays_the_complete_source_surface():
     ledger = EventLedger()
     _comparison(ledger)
     record_equality_signature_layer(
@@ -149,7 +149,7 @@ def test_ledger_recovery_replays_the_complete_source_surface():
     ) == assertion
 
 
-def test_recovery_refuses_an_incomplete_signature():
+def test_validation_refuses_an_incomplete_signature():
     ledger = EventLedger()
     _comparison(ledger)
     record_equality_signature_layer(
@@ -167,7 +167,7 @@ def test_recovery_refuses_an_incomplete_signature():
         assertion_of_recorded_equality_signature(event)
 
 
-def test_ledger_recovery_refuses_a_self_consistent_false_signature():
+def test_ledger_validation_refuses_a_self_consistent_false_signature():
     ledger = EventLedger()
     _comparison(ledger)
     record_equality_signature_layer(

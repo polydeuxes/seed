@@ -6,7 +6,7 @@ required and **no structure established**. Until now this runtime preserved it a
 a list — every finding carried the complete ordered identity of every occurrence
 it input.
 
-**The four parts below are chosen, not recovered.** An earlier version of this
+**The four parts below are chosen, not validated.** An earlier version of this
 paragraph read as though the clause supplied them. It does not; it names a
 coordinate that must survive and says nothing about its shape. Each part is
 argued for here on its own merits, and each is open to a better answer.
@@ -38,13 +38,13 @@ Representation of it.**
 **The selection rule is not metadata.** It is part of the basis's identity. Today
 every act has as input the complete population, so scope and boundary alone would
 reconstruct it — but an act that input three occurrences out of four thousand
-would be reconstructed as having input all four thousand, and the reference
+would be validated as having input all four thousand, and the reference
 would be silently false rather than merely lossy. The rule is what keeps a
 subset-Act with participating inputs representable, and an unrecognised rule is refused rather
 than assumed to mean the whole population.
 
-**The commitment is what makes recovery checkable without the enumeration.**
-The check it replaces also recovered the population from the ledger and compared
+**The commitment is what makes validation checkable without the enumeration.**
+The check it replaces also validated the population from the ledger and compared
 it against the carried list, so this is not a stronger guarantee — it preserves
 substantially the same exactness in a form that is compact and reusable. What
 the commitment adds is that a later change to the selection code cannot silently
@@ -63,7 +63,7 @@ from seed_runtime.events import EventLedger, EventLedgerBoundary
 _COMMITMENT_DOMAIN = b"seed.support-basis.v1\0"
 
 # Every selection a support basis may declare. A rule outside this set is
-# refused: a basis whose selection cannot be performed is not recoverable, and
+# refused: a basis whose selection cannot be performed is not reconstructible, and
 # guessing that it meant the whole population is the failure this set exists to
 # prevent.
 COMPLETE_INGRESS_POPULATION = "every preserved occurrence of the scope's kind through the boundary"
@@ -71,7 +71,7 @@ SUPPORT_SELECTION_RULES: frozenset[str] = frozenset({COMPLETE_INGRESS_POPULATION
 
 
 class SupportBasisError(ValueError):
-    """A support basis could not be declared, recovered, or verified."""
+    """A support basis could not be declared, validated, or verified."""
 
 
 def _commit_part(digest: "hashlib._Hash", value: str) -> None:
@@ -117,7 +117,7 @@ def support_commitment(selection_rule: str, identities: Iterable[str]) -> str:
 
 @dataclass(frozen=True)
 class SupportBasis:
-    """Where a finding's support lives, and what it must recover to."""
+    """Where a finding's support lives, and what it must reconstruct to."""
 
     workspace_id: str
     session_id: str
@@ -211,19 +211,19 @@ def declare_complete_population(
     )
 
 
-class SupportRecovery:
-    """Recovers a declared support basis, once per distinct basis.
+class SupportValidator:
+    """Reconstructs a declared support basis, once per distinct basis.
 
     **Reuse here is not a skipped verification, and a cache hit does not read
-    the ledger.** Every distinct uncached basis is recovered from the ledger,
+    the ledger.** Every distinct uncached basis is validated from the ledger,
     has the basis's own selection performed, and is refused unless the result
     reproduces the committed digest. A later reference to that exact verified
-    basis may then reuse the recovered population — which is lawful because the
+    basis may then reuse the validated population — which is lawful because the
     cache is keyed by the commitment, so a second basis reaches it only by
     committing to exactly the same identities under exactly the same rule, and
     because a hit still rechecks the declared count.
 
-    `#2486` measured the reuse this exists for: recovering one count layer
+    `#2486` measured the reuse this exists for: reconstructing one count layer
     performed 205,328 ingress reads over **16** distinct populations.
 
     An instance is bounded to one act. It holds identities, not occurrences.
@@ -231,13 +231,13 @@ class SupportRecovery:
 
     def __init__(self, ledger: EventLedger) -> None:
         self._ledger = ledger
-        self._recovered: dict[tuple[str, str, str, str, str], tuple[str, ...]] = {}
+        self._validated: dict[tuple[str, str, str, str, str], tuple[str, ...]] = {}
         self.reads = 0
         self.reuses = 0
 
     @property
     def ledger(self) -> EventLedger:
-        """The ledger this recovery reads.
+        """The ledger this validation reads.
 
         Exposed so an act that verifies a basis against the ledger can also
         read the occurrences that basis selects, rather than measuring objects
@@ -246,7 +246,7 @@ class SupportRecovery:
 
         return self._ledger
 
-    def recover(self, basis: SupportBasis) -> tuple[str, ...]:
+    def validate(self, basis: SupportBasis) -> tuple[str, ...]:
         key = (
             basis.workspace_id,
             basis.session_id,
@@ -254,28 +254,28 @@ class SupportRecovery:
             basis.boundary_commitment,
             basis.commitment,
         )
-        cached = self._recovered.get(key)
+        cached = self._validated.get(key)
         if cached is not None:
             # The count is rechecked here rather than keyed on. A commitment
             # identifies the actual support, so a basis carrying a count that
             # contradicts it is refused — not admitted as a second population.
-            # Without this the count check ran only on the first recovery of a
+            # Without this the count check ran only on the first validation of a
             # population, so whether a forged count was caught depended on what
-            # this act happened to have recovered earlier.
+            # this act happened to have validated earlier.
             if len(cached) != basis.support_count:
                 raise SupportBasisError(
-                    "the recovered support does not match its declared count"
+                    "the validated support does not match its declared count"
                 )
             self.reuses += 1
             return cached
         # No rule check here. A basis refuses any selection outside
         # `SUPPORT_SELECTION_RULES` at construction, and that set has one
         # member, so a basis reaching this point can only carry the complete
-        # population — recovery performs every rule a basis can hold.
+        # population — validation performs every rule a basis can hold.
         #
         # Where a second rule is added, two responsibilities separate here that
         # are currently one: a basis knowing a rule is *recognised*, and a
-        # recovery being able to *perform* it. This is where that split goes,
+        # validation being able to *perform* it. This is where that split goes,
         # and it is not made now because a refusal that cannot fire asserts a
         # distinction the code does not have.
         self.reads += 1
@@ -287,14 +287,14 @@ class SupportRecovery:
                 through=EventLedgerBoundary(basis.boundary_commitment),
             )
         )
-        recovered = support_commitment(basis.selection_rule, identities)
-        if recovered != basis.commitment:
+        validated = support_commitment(basis.selection_rule, identities)
+        if validated != basis.commitment:
             raise SupportBasisError(
-                "the recovered support does not reproduce its committed digest"
+                "the validated support does not reproduce its committed digest"
             )
         if len(identities) != basis.support_count:
             raise SupportBasisError(
-                "the recovered support does not match its declared count"
+                "the validated support does not match its declared count"
             )
-        self._recovered[key] = identities
+        self._validated[key] = identities
         return identities

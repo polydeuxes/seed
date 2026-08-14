@@ -1,7 +1,7 @@
 """Earlier preserved material remains referenceable by later occurrences.
 
 The Book uses "remembering" for preservation of source coordinates or
-standing for later lawful recovery (`05.Source.A`).  **This module does
+standing for later lawful reconstruction (`05.Source.A`).  **This module does
 not establish a Remembering Responsibility, Act, Standing, occurrence, or
 kind.**  In active law that word is capitalised only at sentence starts and is
 lowercase mid-sentence -- "sensing is not remembering, remembering is not

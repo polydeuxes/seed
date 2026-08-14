@@ -40,9 +40,9 @@ Repository Evidence supports distinct Selection forms. Representation selection 
 - Taking the first displayed candidate as selected.
 - Treating exact candidate-identity resolution as proof of a Seed-owned selection act.
 - Reusing a selection artifact against a different candidate set.
-- Reusing a representation-selection artifact as if it warranted authorization or movement for another Act.
+- Reusing a representation-selection artifact as if it established authorization or movement for another Act.
 - Treating omitted non-selected alternatives as invalidating a selector whose intended Act does not require them.
-- Treating preserved non-selected alternatives as completing the responsible occurrence warrant when identity, basis, or exact Act validation is still missing.
+- Treating preserved non-selected alternatives as completing the responsible occurrence Evidence when identity, basis, or exact Act validation is still missing.
 
 ## Related chapters
 - [Selection and authorization](../03-goals-and-advancement/selection-and-authorization.md)

@@ -98,7 +98,7 @@ def test_compare_requires_an_emitted_presentation_with_recorded_reference():
     # pairing applicable: 01.Standing.E.1 requires the Responsibility
     # performing the exact Act to determine Applicability for each proposed
     # input, and a caller supplying two references is not that determination.
-    # That route is unrecovered, so this machinery stays dormant.
+    # That route is unestablished, so this machinery stays dormant.
 
 
 def test_comparison_provenance_records_the_subjects_it_consumed():
@@ -227,7 +227,7 @@ def _record_malformed_presentation(ledger, mutate_bindings, *, workspace="w", se
         "emitted_event_id": None,
         "alternatives": template_payload["alternatives"],
         "prior_exchange_finding": None,
-        "recovered_represented_relation": None,
+        "represented_relation": None,
     }
     emit_operator_presentation(
         ledger, presentation=malformed_presentation, output_stream=StringIO()
@@ -322,7 +322,7 @@ def test_no_match_establishes_no_negative_standing():
     assert "selected" not in flattened
 
 
-def test_identification_does_not_recover_represented_source():
+def test_identification_does_not_establish_represented_source():
     ledger = EventLedger()
     _, _, finding = _exchange(ledger, "1\n")
 
@@ -389,7 +389,7 @@ def test_cross_session_and_cross_workspace_material_cannot_participate():
         _compare(ledger, foreign_workspace, own_ingress, workspace="w2")
 
 
-def test_session_projector_recovers_findings_deterministically():
+def test_session_projector_validates_findings_deterministically():
     ledger = EventLedger()
     _, _, finding = _exchange(ledger, "1\n")
 

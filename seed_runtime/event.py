@@ -126,7 +126,7 @@ class Event(SeedModel):
             reject_secret_fields(payload, "event.payload")
             # Refused here rather than at the store, so both ledgers refuse the
             # same payload identically and neither serializes first. A payload
-            # recovered from durable JSON is already preservable by
+            # reconstructed from durable JSON is already preservable by
             # construction, which is what the screened form marks.
             _require_preservable_payload(payload)
         super().__init__(**data)

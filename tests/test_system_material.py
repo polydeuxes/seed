@@ -63,9 +63,9 @@ def test_a_declaration_records_a_declaration_not_a_performance():
         "declared_performer": "operator system-material harness",
         "on_behalf_of": "this Seed",
     }
-    warrant = declaration.payload["dimensions"]["authority"]
-    assert "establishes no performance of it" in warrant
-    assert "no Evidence or Authority for this Seed to invoke" in warrant
+    support = declaration.payload["dimensions"]["authority"]
+    assert "establishes no performance of it" in support
+    assert "no Evidence or Authority for this Seed to invoke" in support
     # No coordinate asserts that Seed did not invoke. Not established that it
     # did is not established that it did not, and a caller may name Seed as the
     # declared performer.
@@ -168,7 +168,7 @@ def test_preservation_refuses_what_it_cannot_preserve_exactly():
             _declare(ledger, session_id=value)
 
 
-def test_exact_bytes_are_recovered_or_refused_never_guessed():
+def test_exact_bytes_are_validated_or_refused_never_guessed():
     ledger = EventLedger()
     _preserve(ledger, returned=b"a.txt\n")
 
@@ -249,14 +249,14 @@ def test_subject_identities_stay_distinct_across_a_durable_reopen(tmp_path):
     assert len(set(material_subjects)) == 3, material_subjects
     assert len(set(invocation_subjects)) == 3, invocation_subjects
 
-    # And the exact material is still recoverable per subject after reopening.
+    # And the exact material is still reconstructible per subject after reopening.
     ledger = SQLiteEventLedger(database)
     try:
-        recovered = [
+        reconstructed = [
             system_material_bytes(event)
             for event in ledger.list("w")
             if event.kind == SYSTEM_MATERIAL_OCCURRED_KIND
         ]
     finally:
         ledger.close()
-    assert recovered == [b"material 0", b"material 1", b"material 2"]
+    assert reconstructed == [b"material 0", b"material 1", b"material 2"]

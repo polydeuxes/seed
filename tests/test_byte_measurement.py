@@ -14,7 +14,7 @@ from seed_runtime.byte_measurement import (
     BYTE_RESULT_COORDINATES,
     BYTE_MEASUREMENT_RULE,
     ByteMeasurementError,
-    RESPONSIBILITY_UNRECOVERED,
+    RESPONSIBILITY_UNESTABLISHED,
     SEED_NATIVE_MEASUREMENT_RESPONSIBLE_BOUNDARY,
     _measure_byte_counts_through,
     _identity,
@@ -140,16 +140,16 @@ def test_recorded_results_replay_the_complete_bounded_source_read():
         source_session_ids=("source",),
         recording_session_id="measurement",
     )
-    recovered = assertions_of_recorded_byte_measurement(ledger, event.id)
-    assert recovered
-    assert all(item.recorded_occurrence_id == event.id for item in recovered)
+    reconstructed = assertions_of_recorded_byte_measurement(ledger, event.id)
+    assert reconstructed
+    assert all(item.recorded_occurrence_id == event.id for item in reconstructed)
     evidence = ledger.get(event.payload["production_evidence_id"])
     assert evidence.kind == PRODUCTION_EVIDENCE_KIND
     assert "occurrence_preservation" not in evidence.payload["production_coordinates"]
 
     count = next(
         item
-        for item in recovered
+        for item in reconstructed
         if item.byte_hex == "e7" and item.result == "count"
     )
     assert count.payload["dimensions"]["content"] == {
@@ -180,7 +180,7 @@ def test_recorded_results_replay_the_complete_bounded_source_read():
     detached_refs[0]["assertion_id"] = "invented"
     assert count.support_assertion_refs[0]["assertion_id"] != "invented"
 
-    # Recovery preserves exact durable JSON kinds. It does not protect the
+    # Reconstruction preserves exact durable JSON kinds. It does not protect the
     # result by transmuting lists to tuples or dicts to proxy objects.
     represented = Event(
         id="re-presented",
@@ -217,7 +217,7 @@ def test_a_self_consistent_truncated_source_claim_is_refused():
         assertions_of_recorded_byte_measurement(ledger, event.id)
 
 
-def test_recording_occurrence_evidence_is_recovered_exactly():
+def test_recording_occurrence_evidence_is_validated_exactly():
     ledger = _ledger("a\n")
     event = record_byte_count_layer(
         ledger,
@@ -414,17 +414,17 @@ def test_recorded_pair_results_replay_the_complete_bounded_source_read():
         recording_session_id="measurement",
     )
 
-    recovered = assertions_of_recorded_adjacent_byte_pair_measurement(
+    reconstructed = assertions_of_recorded_adjacent_byte_pair_measurement(
         ledger, event.id
     )
-    assert recovered
-    assert all(item.recorded_occurrence_id == event.id for item in recovered)
-    assert {item.pair_hex for item in recovered if item.pair_hex} == {
+    assert reconstructed
+    assert all(item.recorded_occurrence_id == event.id for item in reconstructed)
+    assert {item.pair_hex for item in reconstructed if item.pair_hex} == {
         "7461",
         "6174",
         "610a",
     }
-    count = next(item for item in recovered if item.pair_hex == "7461" and item.result == "count")
+    count = next(item for item in reconstructed if item.pair_hex == "7461" and item.result == "count")
     detached = count.payload
     detached["dimensions"]["standing"] = "invented"
     assert count.payload["dimensions"]["standing"] == "measured"
@@ -455,7 +455,7 @@ def test_recorded_pair_results_replay_the_complete_bounded_source_read():
     assert "dimensions" not in movement.payload
 
 
-def test_pair_recovery_refuses_a_self_consistent_truncated_result_population():
+def test_pair_validation_refuses_a_self_consistent_truncated_result_population():
     ledger = _ledger("tatatata\n")
     source = _byte_source(ledger)
     event = record_adjacent_byte_pair_count_layer(
@@ -479,7 +479,7 @@ def test_pair_recovery_refuses_a_self_consistent_truncated_result_population():
         assertions_of_recorded_adjacent_byte_pair_measurement(ledger, event.id)
 
 
-def test_pair_recovery_does_not_perform_the_pair_measurement_again(monkeypatch):
+def test_pair_validation_does_not_perform_the_pair_measurement_again(monkeypatch):
     ledger = _ledger("tatatata\n")
     source = _byte_source(ledger)
     event = record_adjacent_byte_pair_count_layer(
@@ -490,7 +490,7 @@ def test_pair_recovery_does_not_perform_the_pair_measurement_again(monkeypatch):
     )
 
     def forbidden(*args, **kwargs):
-        raise AssertionError("recovery performed the pair Measurement again")
+        raise AssertionError("reconstruction performed the pair Measurement again")
 
     monkeypatch.setattr(
         "seed_runtime.byte_measurement._measure_adjacent_byte_pair_counts_through",
@@ -502,7 +502,7 @@ def test_pair_recovery_does_not_perform_the_pair_measurement_again(monkeypatch):
     assert assertions_of_recorded_adjacent_byte_pair_measurement(ledger, event.id)
 
 
-def test_pair_recovery_refuses_invented_input_applicability():
+def test_pair_validation_refuses_invented_input_applicability():
     ledger = _ledger("tatatata\n")
     source = _byte_source(ledger)
     event = record_adjacent_byte_pair_count_layer(
@@ -526,7 +526,7 @@ def test_pair_recovery_refuses_invented_input_applicability():
         assertions_of_recorded_adjacent_byte_pair_measurement(ledger, event.id)
 
 
-def test_zero_observed_pairs_is_a_lawful_recoverable_result():
+def test_zero_observed_pairs_is_a_lawful_addressable_result():
     ledger = _ledger("\n")
     source = _byte_source(ledger)
     event = record_adjacent_byte_pair_count_layer(
@@ -748,7 +748,7 @@ def test_pair_act_identity_is_not_its_occurrence_identity():
     assert result.payload["input_applicability"]["target_act_occurrence_id"] is None
 
 
-def test_pair_recovery_refuses_more_carrying_occurrences_than_total_pairs():
+def test_pair_validation_refuses_more_carrying_occurrences_than_total_pairs():
     ledger = _ledger("ta\n")
     source = _byte_source(ledger)
     event = record_adjacent_byte_pair_count_layer(

@@ -2,7 +2,7 @@
 
 A Presentation is a bounded representation of current session Standing. It
 may additionally represent presented alternatives where a caller supplies
-them with warrant.
+them with support.
 """
 
 from __future__ import annotations
@@ -44,7 +44,7 @@ def form_operator_presentation(
 
     The Presentation is bounded by the supplied projected session Standing.
     No alternatives are supplied by default; ``alternative_sources`` must be
-    supplied by a caller with warrant for the eligibility and participation
+    supplied by a caller with support for the eligibility and participation
     relations those alternatives carry.  Formation neither invents sources
     nor strengthens their standing, and no alternative's represented relation is derived
     from ingress material.  This module records what a Presentation carries;
@@ -108,9 +108,9 @@ def form_operator_presentation(
     # The latest recorded exchange finding, exposed exactly as recorded;
     # formation neither strengthens nor reinterprets it.
     prior_exchange_finding = session_standing.get("latest_exchange_finding")
-    # The recovered source relation is exposed only when it belongs to the
+    # The reconstructed source relation is exposed only when it belongs to the
     # exact latest finding's identification.
-    recovered_represented_relation = None
+    represented_relation = None
     latest_relation = session_standing.get("latest_represented_relation")
     if (
         prior_exchange_finding is not None
@@ -118,7 +118,7 @@ def form_operator_presentation(
         and latest_relation["identification_event_id"]
         == prior_exchange_finding["identification"]["event_id"]
     ):
-        recovered_represented_relation = latest_relation
+        represented_relation = latest_relation
     formed_event = ledger.append(
         PRESENTATION_FORMED_KIND,
         workspace_id,
@@ -133,7 +133,7 @@ def form_operator_presentation(
                 responsibility="bounded-presentation-formation",
                 authority=(
                     "formation occurrence only; establishes no selection, "
-                    "warrant, selection, or response treatment"
+                    "support, selection, or response treatment"
                 ),
                 scope=scope,
                 occurrence=occurrence,
@@ -143,7 +143,7 @@ def form_operator_presentation(
             "coordinate_bindings": coordinate_bindings,
             "session_standing_as_of_event_id": session_standing["as_of_event_id"],
             "prior_exchange_finding": prior_exchange_finding,
-            "recovered_represented_relation": recovered_represented_relation,
+            "represented_relation": represented_relation,
             "known_loss": known_loss,
             "unknowns": [],
             "conflicts": [],
@@ -162,7 +162,7 @@ def form_operator_presentation(
         "emitted_event_id": None,
         "session_standing_as_of_event_id": session_standing["as_of_event_id"],
         "prior_exchange_finding": prior_exchange_finding,
-        "recovered_represented_relation": recovered_represented_relation,
+        "represented_relation": represented_relation,
         "known_loss": known_loss,
         "unknowns": [],
         "conflicts": [],
@@ -206,10 +206,10 @@ def render_operator_presentation(presentation: dict[str, Any]) -> str:
                 f"{comparison['presentation_ref']}; response represented relation and "
                 "requested treatment remain Unknown."
             )
-    relation = presentation.get("recovered_represented_relation")
+    relation = presentation.get("represented_relation")
     if relation is not None:
         lines.append(
-            f"Recovered source {relation['source_identity']} expresses: "
+            f"Reconstructed source {relation['source_identity']} expresses: "
             f"\"{relation['proposition']}\" "
             f"({relation['source_role']}). Operator intent and "
             "selection remain Unknown; Operator Authority for this "

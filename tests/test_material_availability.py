@@ -45,12 +45,12 @@ def _record(ledger, holder, identity, **changes):
     return record_transient_material(ledger, **fields)
 
 
-def test_transient_bytes_are_recoverable_while_the_holder_holds_them():
+def test_transient_bytes_are_addressable_while_the_holder_holds_them():
     holder = ProcessLocalMaterial()
     identity = holder.hold(MATERIAL)
 
     assert holder.is_available(identity) is True
-    assert holder.recover(identity) == MATERIAL
+    assert holder.reconstruct(identity) == MATERIAL
     assert identity.byte_count == len(MATERIAL)
     assert holder.held_count == 1
 
@@ -82,15 +82,15 @@ def test_the_occurrence_identifies_what_was_held():
     identity = holder.hold(MATERIAL)
     event = _record(ledger, holder, identity)
 
-    recovered = identity_of_occurrence(event)
-    assert recovered == identity
-    assert recovered.digest == material_digest(MATERIAL)
-    assert recovered.byte_count == len(MATERIAL)
+    reconstructed = identity_of_occurrence(event)
+    assert reconstructed == identity
+    assert reconstructed.digest == material_digest(MATERIAL)
+    assert reconstructed.byte_count == len(MATERIAL)
     # The identity is enough to ask a holder for the material.
-    assert holder.recover(recovered) == MATERIAL
+    assert holder.reconstruct(reconstructed) == MATERIAL
 
 
-def test_releasing_makes_recovery_unavailable_and_leaves_the_occurrence():
+def test_releasing_makes_validation_unavailable_and_leaves_the_occurrence():
     ledger = EventLedger()
     holder = ProcessLocalMaterial()
     identity = holder.hold(MATERIAL)
@@ -99,7 +99,7 @@ def test_releasing_makes_recovery_unavailable_and_leaves_the_occurrence():
     holder.release(identity)
     assert holder.is_available(identity) is False
     with pytest.raises(MaterialAvailabilityError, match="not available in this process"):
-        holder.recover(identity)
+        holder.reconstruct(identity)
 
     # The occurrence is untouched. That the material occurred is permanent.
     assert identity_of_occurrence(event) == identity
@@ -118,7 +118,7 @@ def test_a_fresh_holder_is_a_process_that_never_held_it():
     second = ProcessLocalMaterial()
     assert second.is_available(identity) is False
     with pytest.raises(MaterialAvailabilityError):
-        second.recover(identity)
+        second.reconstruct(identity)
     assert identity_of_occurrence(event) == identity
 
 
@@ -151,7 +151,7 @@ def test_an_occurrence_carries_no_availability_coordinate():
 def test_nothing_is_written_anywhere(tmp_path):
     """Holding is retention without an outward act.
 
-    Spooling, a temporary file, memory mapping or restart recovery would each be
+    Spooling, a temporary file, memory mapping or restart reconstruction would each be
     Seed preserving material outside itself, which is the Authority question
     `#2496` deliberately does not touch.
     """
@@ -165,7 +165,7 @@ def test_nothing_is_written_anywhere(tmp_path):
     identity = holder.hold(b"y" * 2_000_000)
     ledger = EventLedger()
     _record(ledger, holder, identity)
-    assert holder.recover(identity) == b"y" * 2_000_000
+    assert holder.reconstruct(identity) == b"y" * 2_000_000
     holder.release_all()
 
     assert set(os.listdir(tmp_path)) == before
@@ -178,21 +178,21 @@ def test_a_holder_answers_only_the_identity_it_was_asked_for():
     first = holder.hold(b"first material")
     second = holder.hold(b"second material")
 
-    assert holder.recover(first) == b"first material"
-    assert holder.recover(second) == b"second material"
+    assert holder.reconstruct(first) == b"first material"
+    assert holder.reconstruct(second) == b"second material"
     assert first.digest != second.digest
 
     # An identity is digest and extent together, and all three answers agree
     # about it. Keying on the digest alone made an identity with the wrong
-    # extent report available, refuse to recover, and release the material that
+    # extent report available, refuse to reconstruct, and release the material that
     # was genuinely held.
     mismatched = MaterialIdentity(digest=first.digest, byte_count=first.byte_count + 1)
     assert holder.is_available(mismatched) is False
     with pytest.raises(MaterialAvailabilityError, match="not available"):
-        holder.recover(mismatched)
+        holder.reconstruct(mismatched)
     holder.release(mismatched)
     assert holder.is_available(first) is True
-    assert holder.recover(first) == b"first material"
+    assert holder.reconstruct(first) == b"first material"
 
 
 def test_identical_material_is_one_identity():
@@ -201,7 +201,7 @@ def test_identical_material_is_one_identity():
     b = holder.hold(b"the same exact bytes")
     assert a == b
     assert holder.held_count == 1
-    assert holder.recover(a) == b"the same exact bytes"
+    assert holder.reconstruct(a) == b"the same exact bytes"
 
 
 def test_empty_material_occurred():
@@ -212,7 +212,7 @@ def test_empty_material_occurred():
 
     assert identity.byte_count == 0
     assert holder.is_available(identity) is True
-    assert holder.recover(identity) == b""
+    assert holder.reconstruct(identity) == b""
     assert identity_of_occurrence(event) == identity
 
 
@@ -281,9 +281,9 @@ def test_it_works_the_same_against_a_durable_ledger(tmp_path):
     ledger = SQLiteEventLedger(path)
     fresh = ProcessLocalMaterial()
     try:
-        recovered = identity_of_occurrence(ledger.get(event_id))
-        assert recovered == identity
-        assert fresh.is_available(recovered) is False
+        reconstructed = identity_of_occurrence(ledger.get(event_id))
+        assert reconstructed == identity
+        assert fresh.is_available(reconstructed) is False
         # The occurrence survived exactly; the material did not, and nothing
         # pretends otherwise.
         assert ledger.integrity_of(event_id) == "verified"

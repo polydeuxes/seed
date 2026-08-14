@@ -160,7 +160,7 @@ def measure_equality_signature_counts(
         raise EqualitySignatureRecurrenceError(str(exc)) from exc
     if not grouped:
         raise EqualitySignatureRecurrenceError(
-            "no recovered equality-signature Assertions to measure"
+            "no reconstructed equality-signature Assertions to measure"
         )
     findings = []
     for assertion_id, (exemplar, refs) in grouped.items():
@@ -330,7 +330,7 @@ def record_equality_signature_count_layer(
 def assertions_of_recorded_equality_signature_count(
     event: Event,
 ) -> tuple[RecordedEqualitySignatureCountAssertion, ...]:
-    """Recover the exact set/count/conditional-recurrence output contract."""
+    """Reconstruct the exact set/count/conditional-recurrence output contract."""
 
     stated = event.payload.get("assertions")
     dimensions = event.payload.get("dimensions")
@@ -519,8 +519,8 @@ def get_recorded_equality_signature_count(
         raise EqualitySignatureRecurrenceError(
             "a corrupted Measurement occurrence cannot expose result Assertions"
         )
-    recovered = assertions_of_recorded_equality_signature_count(event)
-    production_set = next(item for item in recovered if item.result == "exact_production_set")
+    reconstructed = assertions_of_recorded_equality_signature_count(event)
+    production_set = next(item for item in reconstructed if item.result == "exact_production_set")
     payload = production_set.payload
     completeness_scope = payload["completeness_scope"]
     boundary = EventLedgerBoundary(payload["completeness_boundary"]["commitment"])
@@ -552,7 +552,7 @@ def get_recorded_equality_signature_count(
         raise EqualitySignatureRecurrenceError(
             "the carried production set does not equal the complete bounded read"
         )
-    for item in recovered:
+    for item in reconstructed:
         if item.assertion_id == assertion_id:
             return item
     return None

@@ -41,7 +41,7 @@ from seed_runtime.preserved_material_measurement import (
     MEASUREMENT_RECORDED_KIND,
     PreservedMaterialMeasurementError,
     RECURRENCE_RESULT_KIND,
-    RESPONSIBILITY_UNRECOVERED,
+    RESPONSIBILITY_UNESTABLISHED,
 )
 from seed_runtime.production_evidence import (
     PRODUCTION_EVIDENCE_KIND,
@@ -92,9 +92,9 @@ class FindingFidelityError(ValueError):
 
 @dataclass(frozen=True)
 class RecordedFidelityFinding:
-    """One exact Fidelity result recovered from its recording occurrence.
+    """One exact Fidelity result reconstructed from its recording occurrence.
 
-    Constructing this representation does not establish that recovery occurred.
+    Constructing this representation does not establish that reconstruction occurred.
     A later Act must resolve its recorded-occurrence reference through the
     ledger rather than trust the dataclass by shape.
     """
@@ -106,7 +106,7 @@ class RecordedFidelityFinding:
 
     @property
     def reference(self) -> dict[str, str]:
-        """Address this durable recording occurrence for later re-recovery.
+        """Address this durable recording occurrence for later re-reconstruction.
 
         This is not a reference to the producing Act occurrence or to the
         production-Evidence occurrence. Those identities remain distinct.
@@ -118,9 +118,9 @@ class RecordedFidelityFinding:
 def get_recorded_fidelity_finding(
     ledger: EventLedger, event_id: str
 ) -> RecordedFidelityFinding | None:
-    """Recover one occurrence-bound Fidelity result without using it.
+    """Reconstruct one occurrence-bound Fidelity result without using it.
 
-    Recovery establishes that the occurrence carries the exact result its
+    Reconstruction establishes that the occurrence carries the exact result its
     production Evidence commits to. It does not decide this finding's
     Applicability to any later Act, traverse its source finding, or revise
     anything.
@@ -194,7 +194,7 @@ def get_recorded_fidelity_finding(
         or not isinstance(dimensions, dict)
         or dimensions.get("identity") != f"fidelity:{source_id}"
         or dimensions.get("producing_act") != "bounded fidelity comparison"
-        or dimensions.get("responsibility") != RESPONSIBILITY_UNRECOVERED
+        or dimensions.get("responsibility") != RESPONSIBILITY_UNESTABLISHED
         or dimensions.get("scope_workspace") != event.workspace_id
         or dimensions.get("scope_locality")
         != (f"session:{event.session_id}" if event.session_id is not None else None)
@@ -299,7 +299,7 @@ def compare_recorded_finding(ledger: EventLedger, event_id: str) -> Event:
                 unresolved = True
                 unknowns.append(
                     "the named production evidence belongs to a different "
-                    "workspace, and no warranted cross-workspace movement is "
+                    "workspace, and no established cross-workspace movement is "
                     "available to this comparison"
                 )
             elif evidence.kind != PRODUCTION_EVIDENCE_KIND:
@@ -397,7 +397,7 @@ def compare_recorded_finding(ledger: EventLedger, event_id: str) -> Event:
                 ),
                 "standing": standing,
                 "producing_act": "bounded fidelity comparison",
-                "responsibility": RESPONSIBILITY_UNRECOVERED,
+                "responsibility": RESPONSIBILITY_UNESTABLISHED,
                 "authority": authority_boundary,
                 "scope_workspace": recorded.workspace_id,
                 "scope_locality": (
@@ -460,7 +460,7 @@ def compare_recorded_finding(ledger: EventLedger, event_id: str) -> Event:
         produced_result_kind=FIDELITY_RESULT_KIND,
         result_identity=f"fidelity:{event_id}",
         produced_content=result_payload,
-        responsibility=RESPONSIBILITY_UNRECOVERED,
+        responsibility=RESPONSIBILITY_UNESTABLISHED,
     )
     return ledger.append(
         FIDELITY_FINDING_KIND,

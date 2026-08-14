@@ -14,7 +14,7 @@ Policy wording may describe Authority granted for an exact responsible boundary,
 ## Addressable boundaries for bounded input support witnesses
 
 ### 08.Authority.A — Bounded input support without standing expansion
-A downstream Act may stand on warranted content only for its exact role, addressed subject, result boundary, source or provenance, Evidence, Authority, Scope, confidence or uncertainty, and Unknown boundaries. Input support does not strengthen Standing, expand Authority, prove truth or ownership, authorize implementation, or erase negative Authority.
+A downstream Act may stand on established content only for its exact role, addressed subject, result boundary, source or provenance, Evidence, Authority, Scope, confidence or uncertainty, and Unknown boundaries. Input support does not strengthen Standing, expand Authority, prove truth or ownership, authorize implementation, or erase negative Authority.
 
 
 ### 08.Authority.B — Admission is bounded participation, not ratification

@@ -40,7 +40,7 @@ and it is mechanical.
 
 Nothing here establishes represented relation, relation, kind, or truth. Each recorded
 finding carries the finding it was formed from as its premise, so a chain of
-any depth remains a chain of counts whose support basis is recoverable.
+any depth remains a chain of counts whose support basis is reconstructible.
 """
 
 from __future__ import annotations

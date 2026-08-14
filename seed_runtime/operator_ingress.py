@@ -292,7 +292,7 @@ def run_operator_ingress_attempt(
         #
         # Until now no ingress occurrence was recorded at all when the decoder
         # refused the bytes, so material Seed had captured exactly, and could
-        # recover exactly, was absent from its own history because one later
+        # reconstruct exactly, was absent from its own history because one later
         # examination of it failed. Capture and examination were already
         # recorded either way; only the occurrence was gated.
         #

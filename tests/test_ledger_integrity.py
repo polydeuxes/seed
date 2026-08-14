@@ -451,7 +451,7 @@ def test_a_nullable_digest_schema_is_refused_even_when_fully_digested(path):
 
 
 # --------------------------------------------------------------------------
-# Identifier counters are kept, not reconstructed.
+# Identifier counters are kept, not validated.
 # --------------------------------------------------------------------------
 
 
@@ -459,7 +459,7 @@ def test_reservations_are_read_from_the_table_not_from_history(path):
     """`#2414`'s whole-history read, replaced by a durable counter.
 
     The open cost was linear in stored events — 36.9s at 100,000 — because
-    every payload was deserialized and walked to recover a few integers.
+    every payload was deserialized and walked to reconstruct a few integers.
     """
     led = SQLiteEventLedger(path)
     try:
@@ -675,18 +675,18 @@ def test_an_overlapping_prefix_reserves_the_longer_match():
 
 
 def test_a_cache_hit_still_refuses_a_contradictory_support_count():
-    """A forged count must be refused whichever recovery reaches it first.
+    """A forged count must be refused whichever validation reaches it first.
 
-    `SupportRecovery` keys on the commitment, not the count, so a second basis
+    `SupportValidator` keys on the commitment, not the count, so a second basis
     committing to the same population reaches a cached result. Curator found
     that the count check then never ran, which made catching a forged count
-    depend on what the act happened to have recovered earlier.
+    depend on what the act happened to have validated earlier.
     """
 
     from seed_runtime.support_basis import (
         SupportBasis,
         SupportBasisError,
-        SupportRecovery,
+        SupportValidator,
         declare_complete_population,
     )
 
@@ -711,22 +711,22 @@ def test_a_cache_hit_still_refuses_a_contradictory_support_count():
         support_count=honest.support_count - 1,
     )
 
-    # Refused on a cold recovery.
+    # Refused on a cold validation.
     with pytest.raises(SupportBasisError, match="declared count"):
-        SupportRecovery(ledger).recover(forged)
+        SupportValidator(ledger).validate(forged)
 
     # And refused after the same population has been cached, which is the path
     # that previously returned it.
-    recovery = SupportRecovery(ledger)
-    assert recovery.recover(honest) == identities
-    assert recovery.reads == 1
+    validation = SupportValidator(ledger)
+    assert validation.validate(honest) == identities
+    assert validation.reads == 1
     with pytest.raises(SupportBasisError, match="declared count"):
-        recovery.recover(forged)
-    assert recovery.reuses == 0
+        validation.validate(forged)
+    assert validation.reuses == 0
 
     # An honest second reference still reuses rather than re-reading.
-    assert recovery.recover(honest) == identities
-    assert (recovery.reads, recovery.reuses) == (1, 1)
+    assert validation.validate(honest) == identities
+    assert (validation.reads, validation.reuses) == (1, 1)
 
 
 def test_every_support_basis_refusal_can_be_reached():
@@ -871,7 +871,7 @@ def test_a_digest_does_not_move_when_a_payload_is_compressed(tmp_path):
         }
         digest = _content_digest(row)
         stored = _stored_payload(serialized)
-        # Whatever the store holds, it recovers the canonical string exactly,
+        # Whatever the store holds, it reconstructs the canonical string exactly,
         # and digesting that reproduces the same commitment.
         assert _serialized_payload(stored) == serialized
         assert _content_digest(dict(row, payload=_serialized_payload(stored))) == digest
@@ -948,7 +948,7 @@ def test_damaged_compressed_storage_is_corruption_not_a_compressor_error(tmp_pat
     """
 
     import zlib
-    from seed_runtime.events import UnrecoverablePayload
+    from seed_runtime.events import InvalidStoredPayload
 
     payload = {"dimensions": {"content": "q" * 5000}}
     intact = zlib.compress(json.dumps(payload).encode("utf-8"), 1)
@@ -983,14 +983,14 @@ def test_damaged_compressed_storage_is_corruption_not_a_compressor_error(tmp_pat
             assert ledger.integrity_of(event.id) == CORRUPTED, label
             # And a read refuses as a ledger integrity failure rather than
             # exposing the compressor.
-            with pytest.raises(UnrecoverablePayload):
+            with pytest.raises(InvalidStoredPayload):
                 ledger.get(event.id)
         finally:
             ledger.close()
 
 
 def test_a_compressed_payload_altered_to_other_valid_content_is_corrupted(tmp_path):
-    """The digest still settles it when the storage recovers cleanly."""
+    """The digest still settles it when the storage reconstructs cleanly."""
 
     import zlib
 
@@ -1018,7 +1018,7 @@ def test_a_compressed_payload_altered_to_other_valid_content_is_corrupted(tmp_pa
 
 
 def test_a_stored_payload_that_is_not_an_occurrence_is_refused(tmp_path):
-    """Recovering as text is not recovering as an occurrence.
+    """Reconstructing as text is not reconstructing as an occurrence.
 
     A payload that decompresses cleanly but is not JSON raised
     `JSONDecodeError` through `get()`, and so did a text payload damaged in
@@ -1028,7 +1028,7 @@ def test_a_stored_payload_that_is_not_an_occurrence_is_refused(tmp_path):
     """
 
     import zlib
-    from seed_runtime.events import UnrecoverablePayload
+    from seed_runtime.events import InvalidStoredPayload
 
     payload = {"dimensions": {"content": "y" * 5000}}
     damage = {
@@ -1055,7 +1055,7 @@ def test_a_stored_payload_that_is_not_an_occurrence_is_refused(tmp_path):
         ledger = SQLiteEventLedger(path)
         try:
             assert ledger.integrity_of(event.id) == CORRUPTED, label
-            with pytest.raises(UnrecoverablePayload):
+            with pytest.raises(InvalidStoredPayload):
                 ledger.get(event.id)
         finally:
             ledger.close()

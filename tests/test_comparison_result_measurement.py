@@ -143,7 +143,7 @@ def test_measurement_replays_the_recorded_compare_before_counting():
     b = _record_following(ledger, "s2", "it is there\n", pair)
     event = _record_compare(ledger, session_id="comparisons", left=a, right=b)
     event.payload["assertions"][0] = deepcopy(event.payload["assertions"][0])
-    event.payload["assertions"][0]["dimensions"]["standing"] = "warranted"
+    event.payload["assertions"][0]["dimensions"]["standing"] = "established"
 
     with pytest.raises(ValueError):
         list(
@@ -271,8 +271,8 @@ def test_recording_preserves_exact_set_and_derived_count_separately():
         "local_assertion_ids": [count["dimensions"]["identity"]]
     }
     assert "completeness_boundary" not in recurrence
-    recovered = assertions_of_recorded_comparison_result_count(event)
-    assert [item.result for item in recovered] == [
+    reconstructed = assertions_of_recorded_comparison_result_count(event)
+    assert [item.result for item in reconstructed] == [
         "exact_production_set",
         "count",
         "recurrence",
@@ -332,7 +332,7 @@ def test_recording_layer_writes_one_event_per_exact_result():
     assert all(len(event.payload["assertions"]) == 2 for event in events)
 
 
-def test_recorded_assertions_are_occurrence_bound_and_ledger_recoverable():
+def test_recorded_assertions_are_occurrence_bound_and_ledger_addressable():
     ledger = EventLedger()
     pair = AdjacentPair("it", "is")
     a = _record_following(ledger, "s1", "it is here\n", pair)
@@ -349,10 +349,10 @@ def test_recorded_assertions_are_occurrence_bound_and_ledger_recoverable():
         ledger, workspace_id="w", session_id="counts", finding=finding
     )
 
-    recovered = assertions_of_recorded_comparison_result_count(event)
+    reconstructed = assertions_of_recorded_comparison_result_count(event)
 
-    assert [item.result for item in recovered] == ["exact_production_set", "count"]
-    assert all(item.producing_event_id == event.id for item in recovered)
+    assert [item.result for item in reconstructed] == ["exact_production_set", "count"]
+    assert all(item.producing_event_id == event.id for item in reconstructed)
     assert all(
         get_recorded_comparison_result_count_assertion(
             ledger,
@@ -360,11 +360,11 @@ def test_recorded_assertions_are_occurrence_bound_and_ledger_recoverable():
             assertion_id=item.assertion_id,
         )
         == item
-        for item in recovered
+        for item in reconstructed
     )
 
 
-def test_recovery_refuses_changed_local_dependency():
+def test_validation_refuses_changed_local_dependency():
     ledger = EventLedger()
     pair = AdjacentPair("it", "is")
     a = _record_following(ledger, "s1", "it is here\n", pair)
@@ -388,7 +388,7 @@ def test_recovery_refuses_changed_local_dependency():
         assertions_of_recorded_comparison_result_count(event)
 
 
-def test_ledger_recovery_refuses_an_incomplete_production_set():
+def test_ledger_validation_refuses_an_incomplete_production_set():
     ledger = EventLedger()
     pair = AdjacentPair("it", "is")
     a = _record_following(ledger, "s1", "it is here\n", pair)

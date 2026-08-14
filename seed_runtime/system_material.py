@@ -43,7 +43,7 @@ harness that ran a subprocess can attest to running it; it cannot attest on
 behalf of a party it merely names.
 
 So no record here says Seed invoked anything. When Seed may invoke on its own
-authority, that is a separate recovery, and only the production occurrence of the invoking
+authority, that is a separate reconstruction, and only the production occurrence of the invoking
 Act changes — the eye does not.
 
 ## The exchange is declared, not derived from an invocation
@@ -93,7 +93,7 @@ class DeclaredInvocation:
 
     It is *declared*, not established. Nothing here observed an act, so the
     coordinate carries a source role a caller supplied and the occurrence says
-    so in its own warrant.
+    so in its own support.
     """
 
     invocation: str
@@ -150,7 +150,7 @@ def declare_invocation(
 ) -> Event:
     """Record that an invocation was declared, and by whom it is attributed.
 
-    Not that it was performed. Nothing here observed an act, and the warrant
+    Not that it was performed. Nothing here observed an act, and the support
     says so rather than the payload asserting a performance the function cannot
     establish.
     """
@@ -182,7 +182,7 @@ def declare_invocation(
                 # No `seed_invoked` coordinate. That it is not established that
                 # Seed invoked is not the same as its being established that
                 # Seed did not, and a caller may declare Seed as the performer.
-                # The warrant and the Unknowns carry exactly what is known.
+                # The support and the Unknowns carry exactly what is known.
                 "unknowns": [
                     "whether the declared performer performed this remains Unknown",
                     "whether this Seed invoked anything remains Unknown",
@@ -271,9 +271,9 @@ def system_material_bytes(event: Event) -> bytes:
     if type(encoded) is not str:
         raise SystemMaterialError("system material carries no exact bytes")
     try:
-        recovered = bytes.fromhex(encoded)
+        reconstructed = bytes.fromhex(encoded)
     except ValueError as exc:
         raise SystemMaterialError("system material is not exact bytes") from exc
-    if len(recovered) != event.payload.get("byte_count"):
+    if len(reconstructed) != event.payload.get("byte_count"):
         raise SystemMaterialError("system material does not match its byte count")
-    return recovered
+    return reconstructed

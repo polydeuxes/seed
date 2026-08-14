@@ -38,7 +38,7 @@ BYTE_PAIR_MEASUREMENT_RECORDED_KIND = (
 )
 BYTE_PAIR_MEASUREMENT_RESULT_KIND = "exact adjacent-byte-pair count Measurement results"
 BYTE_PAIR_MEASUREMENT_CONVENTION = "exact_adjacent_captured_byte_pair_count_v1"
-RESPONSIBILITY_UNRECOVERED = "unrecovered"
+RESPONSIBILITY_UNESTABLISHED = "unestablished"
 BYTE_OCCURRENCE_PRESERVATION = (
     "byte Measurement results durably recorded after production"
 )
@@ -139,7 +139,7 @@ BYTE_PAIR_RESULT_BOUNDARY = (
 SEED_NATIVE_MEASUREMENT_RESPONSIBLE_BOUNDARY = "this Seed"
 BYTE_MEASUREMENT_RESPONSIBILITY = (
     "perform the bounded exact-byte Measurement and produce only the findings "
-    "warranted by its exact source population, rule, Scope, Authority, and limits"
+    "established by its exact source population, rule, Scope, Authority, and limits"
 )
 BYTE_PAIR_MEASUREMENT_RESPONSIBILITY = (
     "produce exact adjacent-byte-pair findings from an "
@@ -226,7 +226,7 @@ class RecordedByteAssertion:
 
     @property
     def payload(self) -> dict[str, Any]:
-        """Return one detached copy of the exact recovered JSON representation."""
+        """Return one detached copy of the exact reconstructed JSON representation."""
 
         return json.loads(self._payload_json)
 
@@ -603,7 +603,7 @@ def _prepare_pair_source(
     act_workspace_id: str,
     measurement_session_id: str,
 ) -> tuple[RecordedByteAssertion, dict[str, Any], dict[str, Any], str]:
-    """Recover one source before its act-local Applicability determination."""
+    """Reconstruct one source before its act-local Applicability determination."""
 
     if (
         not isinstance(act_workspace_id, str)
@@ -614,13 +614,13 @@ def _prepare_pair_source(
         raise ByteMeasurementError(
             "adjacent-byte-pair Measurement requires an exact Act workspace and session"
         )
-    recovered = assertions_of_recorded_byte_measurement(
+    reconstructed = assertions_of_recorded_byte_measurement(
         ledger, source_measurement_event_id
     )
-    if recovered is None:
+    if reconstructed is None:
         raise ByteMeasurementError("adjacent-byte-pair Measurement requires a source")
     source = next(
-        (item for item in recovered if item.result == "exact_source_material_set"),
+        (item for item in reconstructed if item.result == "exact_source_material_set"),
         None,
     )
     if source is None:
@@ -732,7 +732,7 @@ def _move_byte_assertion_to_locality(
     )
 
 
-def _recover_moved_byte_assertion(
+def _validate_moved_byte_assertion(
     ledger: EventLedger, movement_event_id: str
 ) -> RecordedByteAssertion | None:
     movement = ledger.get(movement_event_id)
@@ -755,7 +755,7 @@ def _recover_moved_byte_assertion(
         None,
     )
     if source is None:
-        raise ByteMeasurementError("Assertion movement source cannot be recovered")
+        raise ByteMeasurementError("Assertion movement source cannot be reconstructed")
     source_event = ledger.get(source.recorded_occurrence_id)
     if source_event is None:
         raise ByteMeasurementError("Assertion movement source occurrence is unavailable")
@@ -1139,7 +1139,7 @@ def record_byte_count_layer(
 def assertions_of_recorded_byte_measurement(
     ledger: EventLedger, event_id: str
 ) -> tuple[RecordedByteAssertion, ...] | None:
-    """Recover the exact byte results after replaying their bounded source read."""
+    """Reconstruct the exact byte results after replaying their bounded source read."""
 
     event = ledger.get(event_id)
     if event is None:
@@ -1278,10 +1278,10 @@ def assertions_of_recorded_byte_measurement(
         raise ByteMeasurementError(
             f"{event_id} does not carry the results of its complete bounded source read"
         )
-    recovered = []
+    reconstructed = []
     for assertion in expected:
         local_ids = assertion["support_basis"]["local_assertion_ids"]
-        recovered.append(
+        reconstructed.append(
             RecordedByteAssertion(
                 assertion_id=assertion["dimensions"]["identity"],
                 recorded_occurrence_id=event.id,
@@ -1299,7 +1299,7 @@ def assertions_of_recorded_byte_measurement(
                 ),
             )
         )
-    return tuple(recovered)
+    return tuple(reconstructed)
 
 
 def _pair_assertions(measured: MeasuredBytePairPopulation) -> list[dict[str, Any]]:
@@ -1495,7 +1495,7 @@ def _record_pair_input_applicability(
 def get_recorded_pair_input_applicability(
     ledger: EventLedger, event_id: str
 ) -> dict[str, Any] | None:
-    """Recover one historical input Applicability result without redetermining it."""
+    """Reconstruct one historical input Applicability result without redetermining it."""
 
     event = ledger.get(event_id)
     if event is None:
@@ -1503,7 +1503,7 @@ def get_recorded_pair_input_applicability(
     if event.kind != BYTE_PAIR_APPLICABILITY_RECORDED_KIND:
         raise ByteMeasurementError(f"{event_id} is not pair-input Applicability")
     if ledger.integrity_of(event.id) == CORRUPTED:
-        raise ByteMeasurementError("corrupted Applicability cannot be recovered")
+        raise ByteMeasurementError("corrupted Applicability cannot be reconstructed")
     payload = event.payload
     evidence_id = payload.get("production_evidence_id")
     evidence = ledger.get(evidence_id) if isinstance(evidence_id, str) else None
@@ -1686,7 +1686,7 @@ def record_adjacent_byte_pair_count_layer(
                 "adjacent-byte-pair count and conditional recurrence Assertions produced"
             ),
             "standing": "measured",
-            "source_provenance": "the exact recovered source-material-set Assertion",
+            "source_provenance": "the exact reconstructed source-material-set Assertion",
             "authority": PAIR_MEASUREMENT_AUTHORITY,
         },
         "producing_act": "declared Measurement",
@@ -1840,7 +1840,7 @@ def _validate_recorded_pair_input_applicability(
 def assertions_of_recorded_adjacent_byte_pair_measurement(
     ledger: EventLedger, event_id: str
 ) -> tuple[RecordedBytePairAssertion, ...] | None:
-    """Recover the produced pair result without performing Measurement again."""
+    """Reconstruct the produced pair result without performing Measurement again."""
 
     event = ledger.get(event_id)
     if event is None:
@@ -1867,7 +1867,7 @@ def assertions_of_recorded_adjacent_byte_pair_measurement(
             "adjacent-byte-pair count and conditional recurrence Assertions produced"
         ),
         "standing": "measured",
-        "source_provenance": "the exact recovered source-material-set Assertion",
+        "source_provenance": "the exact reconstructed source-material-set Assertion",
         "authority": PAIR_MEASUREMENT_AUTHORITY,
     }
     if (
@@ -1995,7 +1995,7 @@ def assertions_of_recorded_adjacent_byte_pair_measurement(
             None,
         )
     elif isinstance(movement_event_id, str) and movement_event_id:
-        source = _recover_moved_byte_assertion(ledger, movement_event_id)
+        source = _validate_moved_byte_assertion(ledger, movement_event_id)
     else:
         source = None
     if source is not None and source.assertion_id != source_ref["assertion_id"]:
@@ -2143,7 +2143,7 @@ def assertions_of_recorded_adjacent_byte_pair_measurement(
             }
         ):
             raise ByteMeasurementError(f"{event_id} carries unlawful recurrence support")
-    recovered_results = []
+    validated_results = []
     for assertion in assertions:
         support = assertion["support_basis"]
         support_refs = list(support["assertion_refs"])
@@ -2154,7 +2154,7 @@ def assertions_of_recorded_adjacent_byte_pair_measurement(
             }
             for local_id in support["local_assertion_ids"]
         )
-        recovered_results.append(RecordedBytePairAssertion(
+        validated_results.append(RecordedBytePairAssertion(
             assertion_id=assertion["dimensions"]["identity"],
             recorded_occurrence_id=event.id,
             pair_hex=assertion["assertion_subject"].get("pair_hex"),
@@ -2162,16 +2162,16 @@ def assertions_of_recorded_adjacent_byte_pair_measurement(
             _payload_json=_canonical(assertion),
             _support_assertion_refs_json=_canonical(support_refs),
         ))
-    return tuple(recovered_results)
+    return tuple(validated_results)
 
 
 def input_applicability_of_recorded_adjacent_byte_pair_measurement(
     ledger: EventLedger, event_id: str
 ) -> dict[str, Any] | None:
-    """Recover the independent input-to-Act Applicability claim."""
+    """Reconstruct the independent input-to-Act Applicability claim."""
 
-    recovered = assertions_of_recorded_adjacent_byte_pair_measurement(ledger, event_id)
-    if recovered is None:
+    reconstructed = assertions_of_recorded_adjacent_byte_pair_measurement(ledger, event_id)
+    if reconstructed is None:
         return None
     event = ledger.get(event_id)
     return json.loads(_canonical(event.payload["input_applicability"]))

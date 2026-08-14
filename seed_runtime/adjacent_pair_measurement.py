@@ -1,13 +1,13 @@
-"""Measure a recovered adjacent pair by the same battery of bounded questions.
+"""Measure a validated adjacent pair by the same battery of bounded questions.
 
 An **adjacent pair** is two representations, one recorded as occupying the
 position after the other. Nothing more. An earlier draft of this module called
 it a *joint*, a word borrowed from conversation about what such pairs might
 turn out to be; that word is not used here, because a working name adopted in
-discussion is not a recovered distinction and this module should not lend it
+discussion is not a validated distinction and this module should not lend it
 one.
 
-`#2391` recovered thirteen such pairs from preserved material without a reader
+`#2391` validated thirteen such pairs from preserved material without a reader
 naming any representation, occupant, or delimiter.
 
 This module takes such a pair and asks the same generic questions of it that
@@ -54,7 +54,7 @@ from seed_runtime.event import Event
 from seed_runtime.support_basis import (
     SupportBasis,
     SupportBasisError,
-    SupportRecovery,
+    SupportValidator,
     declare_complete_population,
 )
 from seed_runtime.preserved_material_measurement import (
@@ -352,7 +352,7 @@ def _adjacent_pair_result_assertion_fields(
 def assertion_of_recorded_adjacent_pair_result(
     event: Event,
 ) -> RecordedAdjacentPairResultAssertion:
-    """Recover one canonical result Assertion, or refuse what it carries."""
+    """Reconstruct one canonical result Assertion, or refuse what it carries."""
 
     if event.kind != MEASUREMENT_RECORDED_KIND:
         raise PreservedMaterialMeasurementError(
@@ -463,16 +463,16 @@ def _validate_result_assertion_ingress(
     event: Event,
     assertion: RecordedAdjacentPairResultAssertion,
     *,
-    recovery: SupportRecovery | None = None,
+    validation: SupportValidator | None = None,
 ) -> None:
-    """Recover the carried support basis and require it to reproduce.
+    """Reconstruct the carried support basis and require it to reproduce.
 
     The occurrence no longer carries every supporting identity, so this no
     longer compares two lists. It performs the basis's own declared selection
     against the ledger and refuses unless the result reproduces the committed
     digest.
 
-    The check this replaces also recovered the population from the ledger, so
+    The check this replaces also validated the population from the ledger, so
     the guarantee is substantially the same one in a compact and reusable form.
     It is not stronger for using a commitment.
     """
@@ -481,7 +481,7 @@ def _validate_result_assertion_ingress(
         basis = SupportBasis.from_json_dict(event.payload.get("input_support"))
     except SupportBasisError as exc:
         raise PreservedMaterialMeasurementError(
-            f"{event.id} does not carry a recoverable support basis: {exc}"
+            f"{event.id} does not carry a reconstructible support basis: {exc}"
         ) from exc
     if (
         basis.workspace_id != event.workspace_id
@@ -497,10 +497,10 @@ def _validate_result_assertion_ingress(
             f"{event.id} carries a support count its basis does not support"
         )
     try:
-        (recovery or SupportRecovery(ledger)).recover(basis)
+        (validation or SupportValidator(ledger)).validate(basis)
     except SupportBasisError as exc:
         raise PreservedMaterialMeasurementError(
-            f"the carried support basis does not recover: {exc}"
+            f"the carried support basis does not reconstruct: {exc}"
         ) from exc
 
 
@@ -513,11 +513,11 @@ def iter_recorded_adjacent_pair_result_assertions(
 ) -> Iterator[RecordedAdjacentPairResultAssertion]:
     """Stream exact result Assertions through one caller-captured boundary.
 
-    Complete ingress recovery is cached only for equal session/boundary pairs.
+    Complete ingress validation is cached only for equal session/boundary pairs.
     The cache contains compact Event identities, not material or result Events.
     """
 
-    recovery = SupportRecovery(ledger)
+    validation = SupportValidator(ledger)
     for session_id in tuple(dict.fromkeys(session_ids)):
         for event in ledger.iter_session_kind(
             workspace_id,
@@ -535,7 +535,7 @@ def iter_recorded_adjacent_pair_result_assertions(
                 )
             assertion = assertion_of_recorded_adjacent_pair_result(event)
             _validate_result_assertion_ingress(
-                ledger, event, assertion, recovery=recovery
+                ledger, event, assertion, validation=validation
             )
             yield assertion
 
