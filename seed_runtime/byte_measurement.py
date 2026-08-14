@@ -440,6 +440,10 @@ def _pair_input_applicability(
         "conflicts": [basis] if standing == "conflicting" else [],
         "determination_basis": basis,
         "coordinate_treatment": {
+            "support_relation_standing": {
+                "carried": False,
+                "treatment": "not established by Applicability",
+            },
             "known_loss": {"carried": False, "treatment": "not represented by input"},
             "currentness": {
                 "carried": False,
@@ -1812,6 +1816,10 @@ def _validate_recorded_pair_input_applicability(
             "exact bounded source population matches this Act and result boundary"
         ),
         "coordinate_treatment": {
+            "support_relation_standing": {
+                "carried": False,
+                "treatment": "not established by Applicability",
+            },
             "known_loss": {"carried": False, "treatment": "not represented by input"},
             "currentness": {
                 "carried": False,

@@ -402,6 +402,10 @@ def test_pair_count_and_recurrence_are_separate_results():
     assert applicability["input_unknowns"]
     assert applicability["input_limits"]
     assert applicability["conflicts"] == []
+    assert applicability["coordinate_treatment"]["support_relation_standing"] == {
+        "carried": False,
+        "treatment": "not established by Applicability",
+    }
 
 
 def test_recorded_pair_results_replay_the_complete_bounded_source_read():

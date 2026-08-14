@@ -216,7 +216,9 @@ def _applicability_witness(bundle: dict) -> dict[str, str]:
         "Scope": EXACT if applicability.get("scope_locality") else MISSING,
         "locality": EXACT if applicability.get("act_context") else MISSING,
         "Authority": EXACT if applicability["dimensions"].get("authority") else MISSING,
-        "participants_and_roles": MISSING,
+        # The relation endpoints already identify the exact input role and the
+        # exact addressed-Act role; no extra participant noun is invented.
+        "participants_and_roles": EXACT if input_edge and act_edge else MISSING,
         "provenance": (
             EXACT
             if applicability["dimensions"].get("source_provenance")
@@ -225,9 +227,12 @@ def _applicability_witness(bundle: dict) -> dict[str, str]:
         "Standing": (
             EXACT if carried_result else MISSING
         ),
-        # Applicability explicitly establishes no input-to-result support
-        # relation, but the runtime carries no coordinate saying so.
-        "support_relation_Standing": MISSING,
+        "support_relation_Standing": (
+            INAPPLICABLE
+            if treatment.get("support_relation_standing", {}).get("treatment")
+            == "not established by Applicability"
+            else MISSING
+        ),
         "currentness": (
             INAPPLICABLE
             if treatment.get("currentness", {}).get("treatment")
@@ -493,10 +498,10 @@ def test_applicability_clause_is_checked_against_a_live_pair_determination():
         "Scope": EXACT,
         "locality": EXACT,
         "Authority": EXACT,
-        "participants_and_roles": MISSING,
+        "participants_and_roles": EXACT,
         "provenance": EXACT,
         "Standing": EXACT,
-        "support_relation_Standing": MISSING,
+        "support_relation_Standing": INAPPLICABLE,
         "currentness": INAPPLICABLE,
         "occurrence_identity": EXACT,
         "known_loss": UNKNOWN,
