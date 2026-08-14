@@ -136,7 +136,7 @@ def test_assertion_fidelity_responsibility_is_distinct_from_its_production(compa
 
 
 def test_a_measured_assertion_does_not_invent_its_next_question(compared):
-    """Local fidelity Responsibility does not require automatic continuation."""
+    """Local fidelity Responsibility does not establish continuation by identity."""
     event = record_measured_count(
         compared, workspace_id="w", session_id="s1",
         finding=_by_right(compared)["word"])

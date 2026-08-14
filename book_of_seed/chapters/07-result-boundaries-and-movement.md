@@ -29,7 +29,7 @@ Neither a result condition nor a bounded distinction requires another Act. Selec
 
 - Treating operator wording about a desired result as established Seed Standing.
 - Treating one failed or unreachable mechanism as proof that no exact Act can occur.
-- Treating a difference from a reference condition as automatic movement.
+- Treating a difference from a reference condition as movement established by identity.
 - Treating satisfaction within one Scope as universal completion.
 
 ## Related chapters

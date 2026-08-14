@@ -395,6 +395,12 @@ def _record_emission_failure_outcome(
         if emitted_event_id is not None
         else "write_failed"
     )
+    unknowns = ["effects beyond the output boundary remain Unknown"]
+    if phase == "text_stream_write" and reported_write_length is None:
+        unknowns.insert(
+            0,
+            "output-boundary acceptance remains Unknown because write reported no length",
+        )
     return ledger.append(
         REPRESENTATION_EMISSION_OUTCOME_KIND,
         representation["workspace_id"],
@@ -427,7 +433,7 @@ def _record_emission_failure_outcome(
             "output_boundary": "text_stream_write",
             "stream_encoding_metadata": stream_encoding_metadata,
             "known_loss": [],
-            "unknowns": ["effects beyond the output boundary remain Unknown"],
+            "unknowns": unknowns,
             "conflicts": [],
             "provenance_occurrence_refs": [
                 representation["representation_event_id"],

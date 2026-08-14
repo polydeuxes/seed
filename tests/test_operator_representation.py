@@ -511,6 +511,37 @@ def test_partial_output_write_preserves_attempt_and_failed_occurrences():
     assert representation["emitted_event_id"] is None
 
 
+def test_write_exception_preserves_unknown_boundary_acceptance():
+    class WriteFailure(StringIO):
+        def write(self, value):
+            super().write(value[:1])
+            raise OSError("write failed after an unreported boundary change")
+
+    ledger = EventLedger()
+    representation = form_operator_representation(
+        ledger,
+        workspace_id="w",
+        session_id="s",
+        session_standing=_standing(ledger),
+    )
+    output = WriteFailure()
+
+    with pytest.raises(OSError, match="unreported boundary change"):
+        emit_operator_representation(
+            ledger, representation=representation, output_stream=output
+        )
+
+    assert output.getvalue()
+    failure = ledger.get(representation["emission_outcome_event_id"])
+    assert failure.payload["reported_write_length"] is None
+    assert failure.payload["outcome"] == "write_failed"
+    assert (
+        "output-boundary acceptance remains Unknown because write reported no length"
+        in failure.payload["unknowns"]
+    )
+    assert representation["emitted_event_id"] is None
+
+
 def test_flush_failure_does_not_erase_the_completed_text_stream_write():
     class FlushFailure(StringIO):
         def flush(self):

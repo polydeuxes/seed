@@ -99,7 +99,7 @@ Acts, constraints, and relations are structurally distinct from dimensions. They
 - constructed behavior != constitutional standing
 - multiplicity != collective standing
 - Assertion responsible boundary != responsible occurrence or result-establishing Act
-- Assertion Standing persists != automatic continuation or constitutional Stop
+- Assertion Standing persists != continuation or constitutional Stop established by identity
 - new or conflicting material available != Assertion revised by identity
 - Evidence that does not support a relation Assertion != its negation or an opposing strengthened relation
 - represented-relation Assertion carried != relation established
