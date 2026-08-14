@@ -7,6 +7,9 @@ The distinction between exact Acts, their occurrences, and representations conce
 What establishes that an Act occurred rather than that an Act-shaped representation exists?
 
 ## Bounded resolution
+
+### 02.Acts.A — Exact Act and occurrence
+
 Validation of an Act-shaped result does not establish the Act occurrence. A downstream boundary may adopt, narrow, compare, or preserve material carrying source coordinates without proving the upstream Act occurred unless its own Assertion requires that proof. Exact applicable inputs may participate in an Act occurrence, which may establish or preserve an exact result. The occurrence-to-result relation requires Evidence. Public code, direct instantiation, equal shape, and read-only behavior establish neither that occurrence nor its relation to the result.
 
 A Responsibility bounds what Standing may be established, preserved, or revised concerning its bounded subject; it is not the Standing, the responsible occurrence, Applicability, an exact Act, or an Act occurrence. A Responsibility governs an exact Act. An Act occurrence is one occurrence at which that Act is performed under the Responsibility. Establishing Standing concerning a new subject is not revision of Standing concerning an existing subject, and neither is preservation of existing Standing. Each is lawful only as established by the occurrence's Evidence, Authority, Scope, and preserved limits. Standing, available material, Responsibility, and exact Act identity do not by identity establish that an Act was proposed or occurred.

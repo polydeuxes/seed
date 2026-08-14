@@ -301,6 +301,47 @@ def _occurrence_result_witness(bundle: dict) -> str:
     return EXACT if same_occurrence and same_result and evidence_is_carried else MISSING
 
 
+def _act_occurrence_witness(bundle: dict) -> dict[str, str]:
+    carrier = bundle["carrier"]
+    act_evidence = bundle["act_evidence"]
+    joined = (
+        act_evidence is not None
+        and carrier.payload["target_act_id"]
+        == act_evidence.payload["target_act_id"]
+        and carrier.payload["act_occurrence_id"]
+        == act_evidence.payload["act_occurrence_id"]
+        and carrier.payload["responsibility"]
+        == act_evidence.payload["responsibility"]
+        and carrier.payload["responsible_boundary"]
+        == act_evidence.payload["responsible_boundary"]
+    )
+    assignment = carrier.payload["responsibility_assignment_evidence"]
+    return {
+        "Responsibility": EXACT if joined else MISSING,
+        "responsible_boundary": EXACT if joined else MISSING,
+        "exact_Act": EXACT if joined else MISSING,
+        "Act_occurrence": EXACT if joined else MISSING,
+        "occurrence_Evidence": (
+            EXACT
+            if joined
+            and carrier.payload["responsible_act_evidence_id"] == act_evidence.id
+            else MISSING
+        ),
+        "Authority": (
+            EXACT if joined and act_evidence.payload.get("authority") else MISSING
+        ),
+        "Scope": (
+            EXACT
+            if assignment.get("workspace_id") == carrier.workspace_id
+            and assignment.get("completeness_boundary")
+            else MISSING
+        ),
+        "limits": (
+            EXACT if carrier.payload["dimensions"].get("authority") else MISSING
+        ),
+    }
+
+
 def _movement_witness(bundle: dict) -> dict[str, str]:
     ledger = bundle["ledger"]
     movement = bundle["movement"]
@@ -684,3 +725,29 @@ def test_occurrence_and_result_endpoints_do_not_establish_their_relation():
     assert carrier.payload["assertions"]
     bundle["content_evidence"] = None
     assert _occurrence_result_witness(bundle) == MISSING
+
+
+def test_exact_act_clause_is_checked_against_live_byte_measurement():
+    clause = _clause("02.Acts.A")
+    bundle = _byte_measurement_road()
+    witness = _act_occurrence_witness(bundle)
+
+    assert set(witness) == set(clause["responsibility"]["coordinates"])
+    assert set(witness.values()) == {EXACT}
+    assert bundle["carrier"].payload["target_act_id"] != bundle["carrier"].payload[
+        "act_occurrence_id"
+    ]
+    assert _occurrence_result_witness(bundle) == EXACT
+
+
+def test_act_and_occurrence_ids_do_not_establish_their_relation():
+    bundle = _byte_measurement_road()
+    carrier = bundle["carrier"]
+    assert carrier.payload["target_act_id"]
+    assert carrier.payload["act_occurrence_id"]
+    bundle["act_evidence"] = None
+    witness = _act_occurrence_witness(bundle)
+
+    assert witness["exact_Act"] == MISSING
+    assert witness["Act_occurrence"] == MISSING
+    assert witness["occurrence_Evidence"] == MISSING

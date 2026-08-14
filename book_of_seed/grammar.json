@@ -122,6 +122,39 @@
         "establishes_new_Act": false
       }
     },
+    "02.Acts.A": {
+      "subject": "exact_Act_occurrence",
+      "identity": ["exact_Act", "Act_occurrence"],
+      "responsibility": {
+        "coordinates": [
+          "Responsibility",
+          "responsible_boundary",
+          "exact_Act",
+          "Act_occurrence",
+          "occurrence_Evidence",
+          "Authority",
+          "Scope",
+          "limits"
+        ]
+      },
+      "occurrence_to_result": {
+        "requires": "Evidence",
+        "result_existence_establishes_relation": false
+      },
+      "does_not_establish_occurrence": [
+        "Act_shaped_representation",
+        "public_code",
+        "direct_instantiation",
+        "equal_shape",
+        "read_only_behavior"
+      ],
+      "distinct_from": [
+        ["Responsibility", "exact_Act"],
+        ["exact_Act", "Act_occurrence"],
+        ["Act_occurrence", "result"],
+        ["occurrence_to_result", "Assertion_truth"]
+      ]
+    },
     "06.Standing.B": {
       "subject": "Assertion_locality_movement",
       "identity": [
