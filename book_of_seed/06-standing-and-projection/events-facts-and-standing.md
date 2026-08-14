@@ -22,6 +22,8 @@ Workspace is a boundary of standing, not merely another locality label. Addressa
 
 Within one workspace, a Seed may make one exact preserved Assertion available in another locality through a responsible movement occurrence. The movement preserves the source Assertion occurrence, Assertion identity, source and destination locality, Scope, Evidence, Authority, Standing, Unknowns, and surviving limits. It establishes only availability of that same Assertion in the destination locality: it does not copy or strengthen the Assertion, revise its Standing, establish applicability, demand another Act, or authorize a workspace crossing. The Assertion's identity remains unchanged while its locality occurrences remain distinct.
 
+Where a Seed performs that movement over an exact Assertion already preserved in its workspace and both localities belong to that workspace, that Seed bears the movement Responsibility. The assignment must remain recoverable from the exact Assertion reference, workspace, source and destination locality, movement Act, and movement occurrence; module identity or addressability alone does not establish it.
+
 Chronology alone does not establish locality. Occurrences carrying one locality need not be contiguous in any recorded order, and position within a preserved sequence establishes neither membership nor exclusion.
 
 Where a responsible act consumes material distinguished by locality, it preserves the applicable locality of what it consumed. Where that act records material under a distinct locality, the consumed and produced locality coordinates remain distinct, so that material the act produced is not later consumed as material it was given.

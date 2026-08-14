@@ -52,6 +52,7 @@ BYTE_RESULT_COORDINATES = frozenset(
         "act_occurrence_id",
         "responsibility",
         "responsible_boundary",
+        "responsibility_assignment_evidence",
         "measurement_rule",
         "source_session_ids",
         "completeness_boundary",
@@ -290,6 +291,23 @@ def _identity(
     return "byte-measurement:" + hashlib.sha256(
         _canonical(carried).encode("utf-8")
     ).hexdigest()
+
+
+def _seed_native_measurement_assignment(
+    measured: MeasuredBytePopulation | MeasuredBytePairPopulation,
+) -> dict[str, Any]:
+    """Expose why this exact preserved-material Measurement belongs here."""
+
+    return {
+        "responsible_boundary": SEED_NATIVE_MEASUREMENT_RESPONSIBLE_BOUNDARY,
+        "workspace_id": measured.workspace_id,
+        "source_occurrence_refs": [dict(item) for item in measured.source_material],
+        "completeness_boundary": measured.completeness_boundary.commitment,
+        "determination": (
+            "exact ingress and raw-material occurrences were read through the "
+            "captured boundary in this workspace"
+        ),
+    }
 
 
 def _pair_input_applicability(
@@ -643,12 +661,24 @@ def _move_byte_assertion_to_locality(
     movement_act_id = new_id("assertion_locality_movement_act")
     movement_occurrence_id = new_id("assertion_locality_movement_occurrence")
     payload = source.payload
+    assignment_evidence = {
+        "responsible_boundary": SEED_NATIVE_MEASUREMENT_RESPONSIBLE_BOUNDARY,
+        "workspace_id": target_workspace_id,
+        "source_assertion_ref": source.reference,
+        "source_locality": source_locality,
+        "destination_locality": target_locality,
+        "determination": (
+            "the exact preserved Assertion moved between localities of this "
+            "same workspace"
+        ),
+    }
     act_evidence = ledger.append(
         ASSERTION_LOCALITY_MOVEMENT_ACT_EVIDENCE_KIND,
         target_workspace_id,
         {
             "responsibility": ASSERTION_LOCALITY_MOVEMENT_RESPONSIBILITY,
             "responsible_boundary": SEED_NATIVE_MEASUREMENT_RESPONSIBLE_BOUNDARY,
+            "responsibility_assignment_evidence": assignment_evidence,
             "movement_act_id": movement_act_id,
             "movement_act_occurrence_id": movement_occurrence_id,
             "source_assertion_ref": source.reference,
@@ -669,6 +699,7 @@ def _move_byte_assertion_to_locality(
             "movement_act_evidence_event_id": act_evidence.id,
             "responsibility": ASSERTION_LOCALITY_MOVEMENT_RESPONSIBILITY,
             "responsible_boundary": SEED_NATIVE_MEASUREMENT_RESPONSIBLE_BOUNDARY,
+            "responsibility_assignment_evidence": assignment_evidence,
             "source_assertion_ref": source.reference,
             "assertion_id": source.assertion_id,
             "source_locality": source_locality,
@@ -731,6 +762,17 @@ def _recover_moved_byte_assertion(
     expected_evidence = {
         "responsibility": ASSERTION_LOCALITY_MOVEMENT_RESPONSIBILITY,
         "responsible_boundary": SEED_NATIVE_MEASUREMENT_RESPONSIBLE_BOUNDARY,
+        "responsibility_assignment_evidence": {
+            "responsible_boundary": SEED_NATIVE_MEASUREMENT_RESPONSIBLE_BOUNDARY,
+            "workspace_id": movement.workspace_id,
+            "source_assertion_ref": source.reference,
+            "source_locality": source_event.session_id,
+            "destination_locality": movement.session_id,
+            "determination": (
+                "the exact preserved Assertion moved between localities of this "
+                "same workspace"
+            ),
+        },
         "movement_act_id": movement.payload.get("movement_act_id"),
         "movement_act_occurrence_id": movement.payload.get(
             "movement_act_occurrence_id"
@@ -757,6 +799,9 @@ def _recover_moved_byte_assertion(
         "movement_act_evidence_event_id": act_evidence.id,
         "responsibility": ASSERTION_LOCALITY_MOVEMENT_RESPONSIBILITY,
         "responsible_boundary": SEED_NATIVE_MEASUREMENT_RESPONSIBLE_BOUNDARY,
+        "responsibility_assignment_evidence": expected_evidence[
+            "responsibility_assignment_evidence"
+        ],
         "source_assertion_ref": source.reference,
         "assertion_id": source.assertion_id,
         "source_locality": source_event.session_id,
@@ -1032,6 +1077,9 @@ def record_byte_count_layer(
         "act_occurrence_id": act_occurrence_id,
         "responsibility": BYTE_MEASUREMENT_RESPONSIBILITY,
         "responsible_boundary": SEED_NATIVE_MEASUREMENT_RESPONSIBLE_BOUNDARY,
+        "responsibility_assignment_evidence": _seed_native_measurement_assignment(
+            measured
+        ),
         "measurement_rule": BYTE_MEASUREMENT_RULE,
         "source_session_ids": list(measured.source_session_ids),
         "completeness_boundary": {
@@ -1048,6 +1096,9 @@ def record_byte_count_layer(
             "act": "declared exact-byte Measurement",
             "responsibility": BYTE_MEASUREMENT_RESPONSIBILITY,
             "responsible_boundary": SEED_NATIVE_MEASUREMENT_RESPONSIBLE_BOUNDARY,
+            "responsibility_assignment_evidence": result_payload[
+                "responsibility_assignment_evidence"
+            ],
             "result_commitment": production_commitment(
                 BYTE_MEASUREMENT_CONVENTION, result_payload
             ),
@@ -1069,6 +1120,7 @@ def record_byte_count_layer(
         result_identity="byte-count-measurement-occurrence",
         produced_content=result_payload,
         responsibility=BYTE_MEASUREMENT_RESPONSIBILITY,
+        responsible_boundary=SEED_NATIVE_MEASUREMENT_RESPONSIBLE_BOUNDARY,
     )
     return ledger.append(
         BYTE_MEASUREMENT_RECORDED_KIND,
@@ -1148,6 +1200,8 @@ def assertions_of_recorded_byte_measurement(
         != sorted(BYTE_RESULT_COORDINATES)
         or evidence.payload.get("dimensions", {}).get("responsibility")
         != BYTE_MEASUREMENT_RESPONSIBILITY
+        or evidence.payload.get("dimensions", {}).get("responsible_boundary")
+        != SEED_NATIVE_MEASUREMENT_RESPONSIBLE_BOUNDARY
     ):
         raise ByteMeasurementError(
             f"{event_id} names no exact byte Measurement production Evidence"
@@ -1167,6 +1221,9 @@ def assertions_of_recorded_byte_measurement(
         "act": "declared exact-byte Measurement",
         "responsibility": BYTE_MEASUREMENT_RESPONSIBILITY,
         "responsible_boundary": SEED_NATIVE_MEASUREMENT_RESPONSIBLE_BOUNDARY,
+        "responsibility_assignment_evidence": payload[
+            "responsibility_assignment_evidence"
+        ],
         "result_commitment": production_commitment(
             BYTE_MEASUREMENT_CONVENTION, produced
         ),
@@ -1209,6 +1266,12 @@ def assertions_of_recorded_byte_measurement(
         sessions=tuple(sessions_value),
         boundary=boundary,
     )
+    if payload.get("responsibility_assignment_evidence") != (
+        _seed_native_measurement_assignment(measured)
+    ):
+        raise ByteMeasurementError(
+            f"{event_id} does not establish its Seed-native Measurement boundary"
+        )
     expected = _assertions(measured)
     if payload.get("assertions") != expected:
         raise ByteMeasurementError(
@@ -1327,6 +1390,9 @@ def _record_pair_responsible_act_evidence(
             "act": "declared adjacent-byte-pair Measurement",
             "responsibility": BYTE_PAIR_MEASUREMENT_RESPONSIBILITY,
             "responsible_boundary": SEED_NATIVE_MEASUREMENT_RESPONSIBLE_BOUNDARY,
+            "responsibility_assignment_evidence": _seed_native_measurement_assignment(
+                measured
+            ),
             "purpose": BYTE_PAIR_PURPOSE,
             "input_applicability_identity": measured.input_applicability["dimensions"][
                 "identity"
@@ -1411,6 +1477,7 @@ def _record_pair_input_applicability(
         result_identity=claim["dimensions"]["identity"],
         produced_content=result_payload,
         responsibility=BYTE_PAIR_INPUT_APPLICABILITY_RESPONSIBILITY,
+        responsible_boundary=SEED_NATIVE_MEASUREMENT_RESPONSIBLE_BOUNDARY,
     )
     return ledger.append(
         BYTE_PAIR_APPLICABILITY_RECORDED_KIND,
@@ -1460,6 +1527,10 @@ def get_recorded_pair_input_applicability(
         or evidence.payload.get("produced_result_kind")
         != BYTE_PAIR_APPLICABILITY_RESULT_KIND
         or evidence.payload.get("production_coordinates") != sorted(produced)
+        or evidence.payload.get("dimensions", {}).get("responsibility")
+        != BYTE_PAIR_INPUT_APPLICABILITY_RESPONSIBILITY
+        or evidence.payload.get("dimensions", {}).get("responsible_boundary")
+        != SEED_NATIVE_MEASUREMENT_RESPONSIBLE_BOUNDARY
         or evidence.payload.get("production_commitment")
         != production_commitment(BYTE_PAIR_APPLICABILITY_CONVENTION, produced)
     ):
@@ -1622,6 +1693,9 @@ def record_adjacent_byte_pair_count_layer(
         "act_occurrence_id": measured.act_occurrence_id,
         "responsibility": BYTE_PAIR_MEASUREMENT_RESPONSIBILITY,
         "responsible_boundary": SEED_NATIVE_MEASUREMENT_RESPONSIBLE_BOUNDARY,
+        "responsibility_assignment_evidence": _seed_native_measurement_assignment(
+            measured
+        ),
         "measurement_rule": BYTE_PAIR_MEASUREMENT_RULE,
         "source_assertion_ref": measured.source_assertion_ref,
         "source_movement_event_id": measured.source_movement_event_id,
@@ -1649,6 +1723,7 @@ def record_adjacent_byte_pair_count_layer(
         result_identity="adjacent-byte-pair-count-measurement-occurrence",
         produced_content=result_payload,
         responsibility=BYTE_PAIR_MEASUREMENT_RESPONSIBILITY,
+        responsible_boundary=SEED_NATIVE_MEASUREMENT_RESPONSIBLE_BOUNDARY,
     )
     return ledger.append(
         BYTE_PAIR_MEASUREMENT_RECORDED_KIND,
@@ -1824,6 +1899,8 @@ def assertions_of_recorded_adjacent_byte_pair_measurement(
         != sorted(BYTE_PAIR_RESULT_COORDINATES)
         or evidence.payload.get("dimensions", {}).get("responsibility")
         != BYTE_PAIR_MEASUREMENT_RESPONSIBILITY
+        or evidence.payload.get("dimensions", {}).get("responsible_boundary")
+        != SEED_NATIVE_MEASUREMENT_RESPONSIBLE_BOUNDARY
     ):
         raise ByteMeasurementError(
             f"{event_id} names no exact adjacent-byte-pair production Evidence"
@@ -1856,6 +1933,9 @@ def assertions_of_recorded_adjacent_byte_pair_measurement(
         "act": "declared adjacent-byte-pair Measurement",
         "responsibility": BYTE_PAIR_MEASUREMENT_RESPONSIBILITY,
         "responsible_boundary": SEED_NATIVE_MEASUREMENT_RESPONSIBLE_BOUNDARY,
+        "responsibility_assignment_evidence": payload[
+            "responsibility_assignment_evidence"
+        ],
         "purpose": BYTE_PAIR_PURPOSE,
         "input_applicability_identity": applicability_identity,
         "result_commitment": production_commitment(
@@ -1926,10 +2006,24 @@ def assertions_of_recorded_adjacent_byte_pair_measurement(
     source_payload = source.payload
     source_scope = source_payload["assertion_scope"]
     source_content = source_payload["dimensions"]["content"]
+    expected_assignment_evidence = {
+        "responsible_boundary": SEED_NATIVE_MEASUREMENT_RESPONSIBLE_BOUNDARY,
+        "workspace_id": source_scope["workspace_id"],
+        "source_occurrence_refs": source_content["source_material"],
+        "completeness_boundary": source_content["completeness_boundary"][
+            "commitment"
+        ],
+        "determination": (
+            "exact ingress and raw-material occurrences were read through the "
+            "captured boundary in this workspace"
+        ),
+    }
     if (
         event.workspace_id != source_scope["workspace_id"]
         or sessions_value != source_scope["source_session_ids"]
         or boundary_value != source_content["completeness_boundary"]
+        or payload.get("responsibility_assignment_evidence")
+        != expected_assignment_evidence
     ):
         raise ByteMeasurementError(
             f"{event_id} does not carry its exact consumed source boundary"

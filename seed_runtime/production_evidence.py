@@ -60,6 +60,7 @@ def _record_production_evidence(
     result_identity: str,
     produced_content: dict[str, Any],
     responsibility: str,
+    responsible_boundary: str = "unrecovered",
 ) -> Event:
     """Preserve Evidence from inside an act for its already-fixed result."""
 
@@ -80,6 +81,7 @@ def _record_production_evidence(
                     "result was fixed; the result carries the relation to this"
                 ),
                 "responsibility": responsibility,
+                "responsible_boundary": responsible_boundary,
                 "authority_warrant": (
                     "establishes production of this exact result at this "
                     "producing boundary; establishes no responsibility, "

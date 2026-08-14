@@ -606,10 +606,33 @@ def test_pair_applicability_has_real_non_applicable_and_unknown_outcomes():
         act_workspace_id="w",
         measurement_session_id="measurement",
     )
+    conflicting_payload = source.payload
+    conflicting_payload["dimensions"]["standing"] = "reported"
+    conflicting_source = type(source)(
+        assertion_id=source.assertion_id,
+        recorded_occurrence_id=source.recorded_occurrence_id,
+        byte_hex=source.byte_hex,
+        result=source.result,
+        _payload_json=json.dumps(conflicting_payload),
+        _support_assertion_refs_json="[]",
+    )
+    conflicting = _pair_input_applicability(
+        conflicting_source,
+        target_act_id="pair-act-conflicting-standing",
+        applicability_act_id="applicability-act-conflicting",
+        applicability_act_occurrence_id="applicability-occurrence-conflicting",
+        act_workspace_id="w",
+        measurement_session_id="measurement",
+    )
 
     assert inapplicable["dimensions"]["standing"] == "inapplicable"
     assert unknown["dimensions"]["standing"] == "Unknown"
     assert unknown["unknowns"][-1] == unknown["determination_basis"]
+    assert conflicting["dimensions"]["standing"] == "conflicting"
+    assert conflicting["conflicts"] == [conflicting["determination_basis"]]
+    assert conflicting["input_standing"] == "reported"
+    assert conflicting["input_assertion_ref"] == source.reference
+    assert conflicting["target_act_occurrence_id"] is None
 
 
 def test_cross_workspace_pair_use_is_refused_before_locality_movement():
@@ -657,6 +680,55 @@ def test_seed_native_measurement_and_result_assertions_keep_distinct_responsibil
     )
     for assertion in result.payload["assertions"]:
         assert assertion["dimensions"]["responsibility"] != result.payload["responsibility"]
+
+
+def test_seed_native_responsibility_is_earned_from_preserved_occurrences():
+    ledger = _ledger("ta\n")
+    source = _byte_source(ledger)
+    assignment = source.payload["responsibility_assignment_evidence"]
+    source_set = next(
+        assertion
+        for assertion in source.payload["assertions"]
+        if assertion["result"] == "exact_source_material_set"
+    )
+
+    assert assignment["responsible_boundary"] == "this Seed"
+    assert assignment["workspace_id"] == source.workspace_id
+    assert assignment["source_occurrence_refs"] == source_set["dimensions"][
+        "content"
+    ]["source_material"]
+    assert assignment["completeness_boundary"] == source.payload[
+        "completeness_boundary"
+    ]["commitment"]
+    production_evidence = ledger.get(source.payload["production_evidence_id"])
+    assert production_evidence.payload["dimensions"]["responsible_boundary"] == (
+        "this Seed"
+    )
+
+
+def test_locality_movement_assignment_is_earned_from_the_exact_source():
+    ledger = _ledger("ta\n")
+    source = _byte_source(ledger)
+    pair = record_adjacent_byte_pair_count_layer(
+        ledger,
+        source_measurement_event_id=source.id,
+        workspace_id="w",
+        recording_session_id="measurement",
+    )
+    movement = ledger.get(pair.payload["source_movement_event_id"])
+    assignment = movement.payload["responsibility_assignment_evidence"]
+
+    assert assignment == {
+        "responsible_boundary": "this Seed",
+        "workspace_id": "w",
+        "source_assertion_ref": movement.payload["source_assertion_ref"],
+        "source_locality": "byte-measurement",
+        "destination_locality": "measurement",
+        "determination": (
+            "the exact preserved Assertion moved between localities of this "
+            "same workspace"
+        ),
+    }
 
 
 def test_pair_act_identity_is_not_its_occurrence_identity():
