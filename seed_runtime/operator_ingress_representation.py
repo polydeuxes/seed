@@ -137,12 +137,26 @@ def capture_stdin_material(input_stream: TextIO | BinaryIO) -> CapturedOperatorM
             # about the earlier framing/decoding rather than calling recreated bytes
             # original transport material.
             adapter_encoding = encoding_metadata or "utf-8"
-            material = value.encode(adapter_encoding, errors="strict")
             boundary = "text-stream adapter after prior decoding"
             byte_material_origin = "text_reencoding_after_prior_decoding"
             loss = (
                 "original transport bytes and prior decoder behavior are unavailable",
             )
+            try:
+                material = value.encode(adapter_encoding, errors="strict")
+            except UnicodeEncodeError:
+                # The stream's declared encoding cannot represent what the
+                # stream already decoded, so it is not the encoding the
+                # material arrived in. Re-encoding it is a reconstruction
+                # either way; this one keeps the material and records that the
+                # declared encoding was not the one used.
+                material = value.encode("utf-8", errors="strict")
+                byte_material_origin = "text_reencoding_outside_declared_encoding"
+                loss = loss + (
+                    "the stream's declared encoding "
+                    f"{adapter_encoding!r} cannot represent this material; "
+                    "these bytes are its UTF-8 representation",
+                )
     delimiter = (
         "0d0a"
         if material.endswith(b"\r\n")
