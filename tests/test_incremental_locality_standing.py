@@ -273,7 +273,7 @@ def test_c0_still_forms_from_empty_standing():
 def test_the_session_records_the_same_occurrences_it_always_did():
     ledger, output = _console("alpha\nbeta\nexit\n")
     kinds = [event.kind for event in ledger.list("w")]
-    assert kinds.count("operator.material.arrived") == 2
+    assert kinds.count("operator.material.occurred") == 2
     assert kinds.count("operator.representation.recorded") == 3
     assert kinds.count("operator.representation.emitted") == 3
     assert output.count("Bounded Representation") == 3

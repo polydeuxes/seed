@@ -160,7 +160,7 @@ def test_no_act_condition_change_is_claimed_here(ledger):
         "operator.representation.emitted",
         "operator.material.raw_captured",
         "operator.material.decoder_outcome_recorded",
-        "operator.material.arrived",
+        "operator.material.occurred",
     }
 
 

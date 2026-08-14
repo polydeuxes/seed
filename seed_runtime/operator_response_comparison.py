@@ -140,7 +140,7 @@ def run_operator_response_comparison_and_identification(
     ingress_event = ledger.get(response_ingress_event_id)
     _require(ingress_event is not None, "response ingress event not recorded")
     _require(
-        ingress_event.kind == "operator.material.arrived",
+        ingress_event.kind == "operator.material.occurred",
         "response evidence is not an ingress occurrence",
     )
     _require(

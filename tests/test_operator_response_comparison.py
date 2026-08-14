@@ -366,7 +366,7 @@ def test_no_synthetic_developer_source_evidence_event_is_created():
     assert kinds == {
         "operator.material.raw_captured",
         "operator.material.decoder_outcome_recorded",
-        "operator.material.arrived",
+        "operator.material.occurred",
         "operator.representation.recorded",
         "operator.representation.act_evidenced",
         "operator.representation.carriage_evidenced",

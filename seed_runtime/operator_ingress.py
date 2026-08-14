@@ -62,7 +62,7 @@ def update_operator_ingress_standing(attempts, event, *, ledger=None) -> None:
         return
     subject_by_kind = {
         "operator.material.raw_captured": "raw_initial_material",
-        "operator.material.arrived": "preserved_ingress",
+        "operator.material.occurred": "preserved_ingress",
         "operator.material.stopping_occurred": "interaction_closure",
     }
     supported_kinds = {
@@ -124,7 +124,7 @@ def update_operator_ingress_standing(attempts, event, *, ledger=None) -> None:
         "dimensions": dimensions,
         "evidence_event_id": event.id,
     }
-    if event.kind == "operator.material.arrived" and all(
+    if event.kind == "operator.material.occurred" and all(
         key in event.payload
         for key in (
             "decoded_text",
@@ -300,7 +300,7 @@ def run_operator_ingress_attempt(
         # is unchanged: what the console can render is not what Seed preserves.
         unrepresented_event = _record(
             ledger,
-            "operator.material.arrived",
+            "operator.material.occurred",
             workspace_id,
             locality_id,
             attempt,
@@ -377,7 +377,7 @@ def run_operator_ingress_attempt(
     ingress_content = raw_ingress.removesuffix("\n").removesuffix("\r")
     ingress_event = _record(
         ledger,
-        "operator.material.arrived",
+        "operator.material.occurred",
         workspace_id,
         locality_id,
         attempt,

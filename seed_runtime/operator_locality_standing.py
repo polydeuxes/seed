@@ -25,7 +25,7 @@ from seed_runtime.operator_representation import (
 
 _SUBJECT_BY_KIND = {
     "operator.material.raw_captured": "raw_initial_material",
-    "operator.material.arrived": "preserved_ingress",
+    "operator.material.occurred": "preserved_ingress",
     "operator.material.stopping_occurred": "interaction_closure",
 }
 _COMPARISON_KIND = "operator.exchange.comparison_occurred"
@@ -856,7 +856,7 @@ def advance_operator_locality_standing(
             {"event_ids": [], "preserved_ingress": None, "interaction_closure": None},
         )
         attempt["event_ids"].append(event.id)
-        if event.kind == "operator.material.arrived":
+        if event.kind == "operator.material.occurred":
             occurrence = {
                 "attempt_ref": attempt_ref,
                 "subject_ref": event.payload["dimensions"]["identity"],

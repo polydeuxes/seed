@@ -309,7 +309,7 @@ def form_operator_ingress_addressable_material(
 ) -> OperatorIngressAddressableMaterial:
     """Form exact material from one verified, decoded initial-ingress occurrence."""
     payload = ingress_occurrence.payload
-    if ingress_occurrence.kind != "operator.material.arrived":
+    if ingress_occurrence.kind != "operator.material.occurred":
         _refuse("a decoded ingress occurrence is required")
     if payload.get("ingress_kind") not in {"text", "empty"}:
         _refuse("ingress framing must be text or empty")

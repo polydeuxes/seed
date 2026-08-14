@@ -29,7 +29,7 @@ from seed_runtime.yield_evidence import (
 
 
 RAW_MATERIAL_CAPTURED_KIND = "operator.material.raw_captured"
-INGRESS_OCCURRED_KIND = "operator.material.arrived"
+INGRESS_OCCURRED_KIND = "operator.material.occurred"
 BYTE_MEASUREMENT_RECORDED_KIND = "operator.measurement.byte_counts_recorded"
 BYTE_MEASUREMENT_RESULT_KIND = "exact byte-count Measurement results"
 BYTE_MEASUREMENT_CONVENTION = "exact_captured_byte_count_measurement"

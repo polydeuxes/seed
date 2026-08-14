@@ -15,7 +15,7 @@ from seed_runtime.operator_console import run_persistent_operator_console
 _INGRESS_KINDS = (
     "operator.material.raw_captured",
     "operator.material.decoder_outcome_recorded",
-    "operator.material.arrived",
+    "operator.material.occurred",
 )
 _EMISSION_EDGE_EVIDENCE_KINDS = (
     "operator.representation.emission_attempt_carriage_evidenced",
@@ -123,7 +123,7 @@ def test_console_forms_c0_before_first_ingress_and_preserves_provenance_only():
     ingress = next(
         event
         for event in ledger.list("w")
-        if event.kind == "operator.material.arrived"
+        if event.kind == "operator.material.occurred"
     )
     assert "yielded_after_representation_ref" not in ingress.payload
     assert "yielded_after_representation_event_id" not in ingress.payload
@@ -148,7 +148,7 @@ def test_no_compare_or_identification_follows_console_ingress():
 
     # Every ingress still carries its exact yielded-after occurrence relation.
     representations = [e for e in ledger.list("w") if e.kind == "operator.representation.recorded"]
-    ingresses = [e for e in ledger.list("w") if e.kind == "operator.material.arrived"]
+    ingresses = [e for e in ledger.list("w") if e.kind == "operator.material.occurred"]
     assert len(ingresses) == 3
     for ingress in ingresses:
         assert "yielded_after_representation_ref" not in ingress.payload
@@ -273,7 +273,7 @@ def test_console_presents_standing_only_across_an_ingress():
     ]
     c0, c1 = representations
     ingress = next(
-        event for event in events if event.kind == "operator.material.arrived"
+        event for event in events if event.kind == "operator.material.occurred"
     )
     # C1 is formed from Standing that now contains the preserved ingress.
     # C1's Standing was taken through the last event recorded before it,
@@ -296,7 +296,7 @@ def test_c0_and_c1_are_recorded_and_emitted_in_order():
     ingress_index = next(
         index
         for index, event in enumerate(events)
-        if event.kind == "operator.material.arrived"
+        if event.kind == "operator.material.occurred"
     )
     recorded = [
         i for i, event in enumerate(events)
@@ -454,7 +454,7 @@ def test_first_interaction_attaches_no_representation_to_the_capture():
     ingress = next(
         event
         for event in ledger.list("w")
-        if event.kind == "operator.material.arrived"
+        if event.kind == "operator.material.occurred"
     )
     first_representation = next(iter(_standing(ledger)["representations"].values()))
     assert "yielded_after_representation_ref" not in ingress.payload
