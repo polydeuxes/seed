@@ -602,32 +602,12 @@ def test_implementation_witness_discriminates_content_carriage_and_digest():
 def test_every_structural_edge_has_live_fidelity_cases():
     grammar = json.loads(GRAMMAR.read_text(encoding="utf-8"))
     cases = _structural_edge_fidelity_cases()
+    expected = grammar["implementation_witness"]["fidelity_cases"]
 
     assert set(cases) == set(grammar["structural_edges"])
-    assert all(
-        set(edge_cases)
-        == {"exact", "edge_missing", "wrong_occurrence", "unrelated_change"}
-        for edge_cases in cases.values()
-    )
-    assert {
-        edge: {
-            "exact": edge_cases["exact"],
-            "unrelated_change": edge_cases["unrelated_change"],
-        }
-        for edge, edge_cases in cases.items()
-    } == {
-        edge: {"exact": EXACT, "unrelated_change": EXACT}
-        for edge in grammar["structural_edges"]
-    }
-    assert {
-        edge: {
-            "edge_missing": edge_cases["edge_missing"],
-            "wrong_occurrence": edge_cases["wrong_occurrence"],
-        }
-        for edge, edge_cases in cases.items()
-    } == {
-        edge: {"edge_missing": MISSING, "wrong_occurrence": MISSING}
-        for edge in grammar["structural_edges"]
+    assert all(set(edge_cases) == set(expected) for edge_cases in cases.values())
+    assert cases == {
+        edge: expected for edge in grammar["structural_edges"]
     }
 
 

@@ -54,6 +54,12 @@
         ]
       }
     },
+    "fidelity_cases": {
+      "exact": "exact",
+      "edge_missing": "missing",
+      "wrong_occurrence": "missing",
+      "unrelated_change": "exact"
+    },
     "non_equivalence": [
       ["content", "carriage"],
       ["content", "digest"],
