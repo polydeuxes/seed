@@ -20,10 +20,8 @@ When recorded material is admitted only to a diagnostic Act, that Act preserves 
 
 
 ### 05.Recording.C — Preservation and discard of implementation measurements
-Seed need not preserve every implementation measurement. A measurement is preserved when discarding it would erase material Evidence or established Standing not otherwise retained. Recording may preserve an Assertion carrying source coordinates or already established Standing; record existence does not establish that Standing. A material deviation preserves its measurement and Compare coordinates.
+Seed need not preserve every implementation measurement. A measurement is preserved when discarding it would erase material Evidence or established Standing not otherwise retained. Recording may preserve an Assertion carrying source coordinates or already established Standing. Record existence does not establish that Standing, establish the upstream Assertion, or perform Compare.
 
-### 05.Recording.D — Recording implementation Assertions and Standing
-Recording may preserve measurement or observation Assertions and already established baseline, deviation, or transition Standing. It does not establish the upstream Assertion, perform Compare, establish ordinary behavior or transition, or create Authority for prediction merely by storing a representation.
 
 
 
@@ -38,23 +36,9 @@ Recording may preserve measurement or observation Assertions and already establi
 - implementation measurement != act occurrence
 - implementation measurement != act occurrence record
 - implementation measurement != act result
-- act-instance measurement != ambient runtime observation
-- runtime/resource observation != implementation baseline
-- act measurement != implementation baseline
-- baseline Standing != baseline recording
-- retained measurement series != implementation baseline
-- recorded summary != established ordinary behavior
-- implementation baseline != predicted future duration
 - comparison != recording
 - comparison occurrence != recorded comparison
-- difference from one sample != material deviation
-- material deviation recognition != deviation recording
-- deviation != act failure
-- deviation != exact Act condition loss
-- one unusual sample != changed ordinary behavior
-- baseline-transition Standing != transition recording
 - non-rebuildable != preservation-required
-- act-status Assertion cadence != act-timing Assertion
 - act occurrence status != implementation measurement
 - operator capture != Seed preservation
 - operator omission != authority for Seed to forget
