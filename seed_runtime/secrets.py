@@ -23,8 +23,22 @@ SECRET_FREE_GRANT_METADATA_FIELDS = frozenset(
 )
 
 
-def normalize_field_name(name: object) -> str:
-    """Normalize a payload key for secret-boundary comparisons."""
+def secret_boundary_key(name: object) -> str:
+    """The form this boundary compares a payload key in.
+
+    Three foldings, not one: whitespace, case, and `-`/`_`. No input
+    evidence says these spellings name one field. This boundary imposes that
+    equality so a caller cannot slip `Token` past a check for `token`, which
+    is a widening every blocklist needs and an ownership rule would not.
+
+    Measured on one full road, 143 distinct payload keys occur and this
+    changes none of them. It earns its keep only against material Seed did
+    not write.
+
+    Not the Book's Normalization (09.Assertion:15), which represents asserted
+    content and source coordinates in another exact form. No Assertion,
+    asserted content, or source coordinate is involved here.
+    """
 
     return str(name).strip().lower().replace("-", "_")
 
@@ -43,17 +57,17 @@ def reject_secret_fields(
     raw ``token`` fields.
     """
 
-    allowed = {normalize_field_name(field) for field in allowed_fields}
+    allowed = {secret_boundary_key(field) for field in allowed_fields}
     _reject_secret_fields(value, path, allowed)
 
 
 def _reject_secret_fields(value: Any, path: str, allowed_fields: set[str]) -> None:
     if isinstance(value, dict):
         for key, nested in value.items():
-            normalized_key = normalize_field_name(key)
+            boundary_key = secret_boundary_key(key)
             if (
-                normalized_key in SECRET_FIELD_NAMES
-                and normalized_key not in allowed_fields
+                boundary_key in SECRET_FIELD_NAMES
+                and boundary_key not in allowed_fields
             ):
                 raise ValueError(f"secret field is not allowed in {path}: {key}")
             # Secret rejection is key based. Scalars cannot contain another

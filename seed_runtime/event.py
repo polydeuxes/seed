@@ -11,7 +11,7 @@ from typing import Any
 from seed_runtime.base import SeedModel
 from seed_runtime.secrets import (
     SECRET_FIELD_NAMES,
-    normalize_field_name,
+    secret_boundary_key,
     reject_secret_fields,
 )
 
@@ -40,7 +40,7 @@ class _ScreenedEventPayload(dict[str, Any]):
 
 def _screen_durable_event_object(value: dict[str, Any]) -> dict[str, Any]:
     for key in value:
-        if normalize_field_name(key) in SECRET_FIELD_NAMES:
+        if secret_boundary_key(key) in SECRET_FIELD_NAMES:
             raise ValueError(
                 f"secret field is not allowed in durable event payload: {key}"
             )
