@@ -9,7 +9,13 @@
     },
     "relation_audit": {
       "endpoint_presence_establishes_relation": false,
-      "requires": ["exact_relation", "occurrence_witness"]
+      "requires": ["exact_relation", "occurrence_witness"],
+      "families": [
+        "content_to_carriage",
+        "input_to_Act",
+        "Act_occurrence_to_result",
+        "representation_to_digest"
+      ]
     },
     "non_equivalence": [
       ["content", "carriage"],

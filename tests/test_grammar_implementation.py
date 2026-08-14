@@ -43,6 +43,11 @@ def _digest_only_witness(digest: str) -> dict[str, str]:
 
 
 def _source_assertion():
+    road = _byte_measurement_road()
+    return road["source_assertion"]
+
+
+def _byte_measurement_road() -> dict:
     ledger = EventLedger()
     run_persistent_operator_console(
         ledger=ledger,
@@ -62,7 +67,13 @@ def _source_assertion():
         for item in assertions_of_recorded_byte_measurement(ledger, measurement.id)
         if item.result == "exact_source_material_set"
     )
-    return assertion
+    return {
+        "ledger": ledger,
+        "carrier": measurement,
+        "source_assertion": assertion,
+        "act_evidence": ledger.get(measurement.payload["responsible_act_evidence_id"]),
+        "content_evidence": ledger.get(measurement.payload["production_evidence_id"]),
+    }
 
 
 def _recorded_applicability() -> dict:
@@ -192,6 +203,25 @@ def _applicability_witness(bundle: dict) -> dict[str, str]:
     }
 
 
+def _occurrence_result_witness(bundle: dict) -> str:
+    carrier = bundle["carrier"]
+    act_evidence = bundle["act_evidence"]
+    content_evidence = bundle["content_evidence"]
+    if act_evidence is None or content_evidence is None:
+        return MISSING
+    same_occurrence = carrier.payload.get("act_occurrence_id") == (
+        act_evidence.payload.get("act_occurrence_id")
+    )
+    same_result = act_evidence.payload.get("result_commitment") == (
+        content_evidence.payload.get("production_commitment")
+    )
+    evidence_is_carried = (
+        carrier.payload.get("responsible_act_evidence_id") == act_evidence.id
+        and carrier.payload.get("production_evidence_id") == content_evidence.id
+    )
+    return EXACT if same_occurrence and same_result and evidence_is_carried else MISSING
+
+
 def test_implementation_witness_discriminates_content_carriage_and_digest():
     grammar = _witness_grammar()
     ledger = EventLedger()
@@ -293,7 +323,24 @@ def test_unjoined_endpoints_do_not_witness_an_input_to_act_relation():
     assert grammar["relation_audit"] == {
         "endpoint_presence_establishes_relation": False,
         "requires": ["exact_relation", "occurrence_witness"],
+        "families": [
+            "content_to_carriage",
+            "input_to_Act",
+            "Act_occurrence_to_result",
+            "representation_to_digest",
+        ],
     }
     assert witness["input_identity"] == MISSING
     assert witness["exact_Act"] == MISSING
     assert witness["occurrence_identity"] == MISSING
+
+
+def test_occurrence_and_result_endpoints_do_not_establish_their_relation():
+    bundle = _byte_measurement_road()
+    assert _occurrence_result_witness(bundle) == EXACT
+
+    carrier = bundle["carrier"]
+    assert carrier.payload["act_occurrence_id"]
+    assert carrier.payload["assertions"]
+    bundle["content_evidence"] = None
+    assert _occurrence_result_witness(bundle) == MISSING
