@@ -18,7 +18,7 @@ def test_project_script_uses_the_live_process_entry():
     assert 'seed = "scripts.seed_local:main"' not in pyproject
 
 
-def test_importing_the_live_entry_does_not_wake_the_compatibility_district():
+def test_importing_the_live_entry_does_not_wake_dormant_modules():
     result = subprocess.run(
         [
             sys.executable,

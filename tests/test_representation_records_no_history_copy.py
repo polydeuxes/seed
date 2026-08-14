@@ -115,7 +115,7 @@ def test_each_boundary_reaches_strictly_further_than_the_last(session):
     assert len(set(later)) == len(later)
 
 
-def test_the_boundary_still_determines_the_consumed_prefix(session):
+def test_the_boundary_still_determines_the_participating_prefix(session):
     """What the removed list enumerated is reconstructible from what remains."""
     ledger, _ = session
     events = ledger.list("w")
@@ -165,7 +165,7 @@ def test_the_console_still_presents_every_interaction(session):
     assert output.count("Bounded Representation") == 5
 
 
-def test_standing_still_records_the_boundary_it_consumed_through(session):
+def test_standing_still_records_its_participation_boundary(session):
     """Removed from the Representation, and the boundary remains on the read."""
     ledger, _ = session
     standing = _standing(ledger)

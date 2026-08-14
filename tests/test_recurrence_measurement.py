@@ -483,7 +483,7 @@ def test_assertion_yield_compare_records_each_literal_result_separately(compared
     )
 
 
-def test_recording_comparison_results_does_not_establish_reliance_or_revision(compared):
+def test_recording_comparison_results_does_not_establish_support_or_revision(compared):
     finding = _by_right(compared)["word"]
     first = record_measured_count(
         compared, workspace_id="w", session_id="s1", finding=finding
@@ -871,7 +871,7 @@ def test_measurements_declaring_different_scopes_do_not_group(compared):
 # --------------------------------------------------------------------------
 
 
-def test_the_consumed_measurements_travel_not_only_the_comparisons(compared):
+def test_participating_measurements_travel_not_only_the_comparisons(compared):
     """`#2429` recorded only comparisons, while using measurements to establish
     two of the three result sets."""
     finding = _by_right(compared)["word"]
@@ -1032,7 +1032,7 @@ def test_an_exchange_that_never_measured_the_coordinate_is_distinguished(compare
     assert "s5" not in finding.measured_in
 
 
-def test_the_third_result_preserves_its_complete_read_not_an_id_inventory(compared):
+def test_the_third_result_preserves_its_complete_read_not_copied_ids(compared):
     """The ledger boundary reconstructs the complete negative-classification read."""
     unrelated = _add_s5(compared)
     declared = DECLARED + ("s5",)

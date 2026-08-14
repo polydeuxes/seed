@@ -1,4 +1,4 @@
-"""One-layer Measurement over the owned recurrence-subject surface."""
+"""One-layer Measurement over the bounded recurrence-subject surface."""
 
 from copy import deepcopy
 
@@ -65,7 +65,7 @@ def _recurrence_inputs():
     return ledger
 
 
-def test_measurement_emits_exactly_the_validation_owned_immediate_surface():
+def test_measurement_emits_exactly_the_validation_bounded_immediate_surface():
     ledger = _recurrence_inputs()
 
     findings = list(

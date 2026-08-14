@@ -98,14 +98,14 @@ def test_decoded_representation_is_preserved_for_every_ingress(events):
         assert isinstance(event.payload.get("decoded_text"), str)
 
 
-def test_ingress_claims_only_occurrence_and_records_represented_relation_unknown(events):
+def test_ingress_asserts_only_occurrence_and_records_represented_relation_unknown(events):
     """Ingress states its own limit in its own record."""
     for event in (e for e in events if e.kind == OCCURRED):
         authority = event.payload["dimensions"]["authority"]
         assert authority == "occurrence-only; represented relation Unknown"
 
 
-def test_capture_claims_only_occurrence_evidence(events):
+def test_capture_asserts_only_occurrence_evidence(events):
     for event in (e for e in events if e.kind == CAPTURED):
         assert (
             event.payload["dimensions"]["authority"]
@@ -113,7 +113,7 @@ def test_capture_claims_only_occurrence_evidence(events):
         )
 
 
-def test_examination_claims_only_decoder_outcome(events):
+def test_examination_asserts_only_decoder_outcome(events):
     for event in (e for e in events if e.kind == EXAMINED):
         assert (
             event.payload["dimensions"]["authority"]

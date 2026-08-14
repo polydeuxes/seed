@@ -127,7 +127,7 @@ def test_nothing_but_a_preserved_ingress_occurrence_may_be_measured(session):
         measure_occupancy([foreign], declared=_declared(), occupant_of=_first_word)
 
 
-def test_a_finding_names_every_occurrence_it_consumed(occurrences):
+def test_a_finding_names_every_occurrence_that_participated(occurrences):
     finding = measure_occupancy(
         occurrences, declared=_declared(), occupant_of=_first_word
     )
@@ -172,7 +172,7 @@ def test_the_disclosures_are_carried_on_the_recorded_finding(session, occurrence
 # --------------------------------------------------------------------------
 
 
-def test_a_recorded_finding_is_consumable_by_a_later_act(session, occurrences):
+def test_a_recorded_finding_may_participate_in_a_later_act(session, occurrences):
     finding = measure_occupancy(
         occurrences, declared=_declared(), occupant_of=_first_word
     )
@@ -619,7 +619,7 @@ def test_one_pass_yields_the_same_findings_as_one_at_a_time(recurrence_occurrenc
     assert [f.to_json_dict() for f in batched] == [f.to_json_dict() for f in singly]
 
 
-def test_every_finding_carries_the_same_consumed_inputs(recurrence_occurrences):
+def test_every_finding_carries_the_same_participating_inputs(recurrence_occurrences):
     _, occurrences = recurrence_occurrences
     declared = _declared_for("the", "zebra")
     findings = measure_recurrences(
@@ -762,7 +762,7 @@ def test_a_declared_representation_absent_from_the_result_counted_zero(
     assert [f.to_json_dict() for f in sparse] == [f.to_json_dict() for f in explicit]
 
 
-def test_a_finding_preserves_the_localities_it_consumed(recurrence_occurrences):
+def test_a_finding_preserves_its_participating_localities(recurrence_occurrences):
     """`06.Standing.B`: input locality is preserved and stays distinct from
     the locality recorded into."""
 
@@ -877,7 +877,7 @@ def test_material_declaring_text_it_does_not_carry_is_refused(recurrence_occurre
 
     _, _ = recurrence_occurrences
     lying = Event(
-        id="evt_claims_text",
+        id="evt_asserts_text",
         kind=INGRESS_OCCURRED_KIND,
         workspace_id="w",
         session_id="r",
@@ -1058,7 +1058,7 @@ def test_a_basis_is_refused_without_the_means_to_establish_its_selection(
         )
 
 
-def test_a_basis_claiming_completeness_over_a_subset_is_refused(
+def test_a_basis_asserting_completeness_over_a_subset_is_refused(
     recurrence_occurrences,
 ):
     """The checks on ids, count, locality and kind all pass on a subset."""
@@ -1150,7 +1150,7 @@ def test_the_positional_path_also_refuses_incoherent_material(recurrence_occurre
 
     _, _ = recurrence_occurrences
     lying = Event(
-        id="evt_positional_claims_text",
+        id="evt_positional_asserts_text",
         kind=INGRESS_OCCURRED_KIND,
         workspace_id="w",
         session_id="r",
@@ -1265,7 +1265,7 @@ def test_carrying_a_basis_no_longer_exempts_a_finding_from_the_recorder():
 
     ledger = EventLedger()
     forged = Event(
-        id="evt_absent_but_claimed",
+        id="evt_absent_but_asserted",
         kind=INGRESS_OCCURRED_KIND,
         workspace_id="w",
         session_id="r",
@@ -1636,7 +1636,7 @@ def test_no_public_operation_attaches_yield_to_an_arbitrary_finding():
     assert not [n for n in public if "yield" in n or "yield" in n]
 
 
-def test_the_witness_claims_no_responsibility(
+def test_the_witness_asserts_no_responsibility(
     recurrence_occurrences,
 ):
     ledger, occurrences = recurrence_occurrences
@@ -1656,11 +1656,11 @@ def test_the_witness_claims_no_responsibility(
         {"dimensions": {"identity": "something else"}},
         {"mutates_cluster": True},
         {"unknowns": ["one nobody established"]},
-        {"provenance_occurrence_refs": ["evt_invented"]},
+        {"provenance_occurrence_refs": ["evt_unsupported"]},
         {"total_count": 999},
     ],
 )
-def test_recording_may_not_replace_any_coordinate_the_payload_owns(
+def test_recording_may_not_replace_any_coordinate_the_payload_carries(
     recurrence_occurrences, addition
 ):
     """`extra` checked only the finding's keys, so the payload's own were

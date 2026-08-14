@@ -161,7 +161,7 @@ def test_the_console_never_replays_the_session(monkeypatch):
     assert calls == [0]
 
 
-def test_each_advance_consumes_only_what_an_act_just_recorded(monkeypatch):
+def test_each_advance_reads_only_what_an_act_just_recorded(monkeypatch):
     """Guards against a ledger scan reappearing on the continuation path."""
     from seed_runtime import operator_console
 
@@ -183,7 +183,7 @@ def test_each_advance_consumes_only_what_an_act_just_recorded(monkeypatch):
 # --------------------------------------------------------------------------
 
 
-def test_the_advance_consumes_its_prior():
+def test_the_advance_reads_its_prior():
     """Stated so it cannot be softened into a copy without a deliberate change.
 
     Copying per advance would cost the session length every time, which is the
@@ -198,7 +198,7 @@ def test_the_advance_consumes_its_prior():
     assert len(prior["preserved_ingress_occurrences"]) >= before
 
 
-def test_every_growable_accumulator_is_consumed_not_copied():
+def test_every_growable_accumulator_participates_without_copying():
     """The prior-transfer rule has to hold for all of them, not most of them.
 
     `known_loss`, `unknowns` and `conflicts` were rebuilt from the prior on

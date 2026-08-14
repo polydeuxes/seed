@@ -271,5 +271,27 @@ def test_identifier_separators_cannot_hide_retired_vocabulary():
         assert expected_label in labels
 
 
+def test_active_test_witnesses_carry_no_retired_narrative():
+    retired = re.compile(
+        r"\b(?:consum\w*|reli(?:ance|ances|ant|ed|es|ing|y)|automatic\w*|"
+        r"owners?|ownership\w*|claims?|meanings?|districts?|"
+        r"invent(?:s|ed|ing|ion|ions)?)\b",
+        re.IGNORECASE,
+    )
+    contaminated = {
+        path.relative_to(ROOT).as_posix(): [
+            (line_number, line.rstrip())
+            for line_number, line in enumerate(
+                path.read_text(encoding="utf-8").splitlines(), start=1
+            )
+            if retired.search(scan_active_line(line))
+        ]
+        for path in sorted((ROOT / "tests").glob("test_*.py"))
+        if path.name != Path(__file__).name
+    }
+
+    assert {path: hits for path, hits in contaminated.items() if hits} == {}
+
+
 if __name__ == "__main__":  # pragma: no cover - command-line entry point
     print(render_violations(find_violations()))

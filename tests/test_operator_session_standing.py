@@ -51,7 +51,7 @@ def test_events_from_different_sessions_cannot_influence_one_another():
     }
 
 
-def test_next_attempt_consumes_standing_from_earlier_same_session_events():
+def test_next_attempt_reads_standing_from_earlier_same_session_events():
     ledger = EventLedger()
     first = _attempt(ledger, "earlier material\n")
 

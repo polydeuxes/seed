@@ -72,7 +72,7 @@ def ledger() -> EventLedger:
     return led
 
 
-def test_later_formations_retain_references_to_earlier_preserved_material(
+def test_later_representations_retain_references_to_earlier_preserved_material(
     ledger,
 ):
     """Each representation Act's as-of boundary reaches further back than the last.

@@ -52,7 +52,7 @@ def _signatures():
     return ledger
 
 
-def test_identity_groups_supply_exact_counts_without_pair_formation():
+def test_identity_groups_supply_exact_counts_without_pair_measurement():
     ledger = _signatures()
 
     findings = list(

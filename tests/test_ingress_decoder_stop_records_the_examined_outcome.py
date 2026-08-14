@@ -142,7 +142,7 @@ def test_the_retired_wording_appears_nowhere_on_this_path(rejected, unavailable)
         assert "suffi" not in str([e.payload for e in events]).lower()
 
 
-def test_no_stop_claims_a_requirement_was_measured(rejected, unavailable):
+def test_no_stop_asserts_a_requirement_was_measured(rejected, unavailable):
     """The Stop names a decoder outcome. It names no quantity and no threshold.
 
     This is what the retired wording asserted and could not support: nothing

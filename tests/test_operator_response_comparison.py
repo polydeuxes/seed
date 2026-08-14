@@ -101,7 +101,7 @@ def test_compare_requires_an_emitted_representation_with_recorded_reference():
     # That route is unestablished, so this machinery stays dormant.
 
 
-def test_comparison_provenance_records_the_subjects_it_consumed():
+def test_comparison_provenance_records_the_subjects_that_participated():
     ledger = EventLedger()
     representation, ingress_event_id, finding = _exchange(ledger, "1\n")
 
@@ -407,7 +407,7 @@ def test_session_projector_validates_findings_deterministically():
     assert _standing(ledger) == before
 
 
-def test_later_representation_consumes_findings_without_stronger_standing():
+def test_later_representation_reads_findings_without_stronger_standing():
     ledger = EventLedger()
     _exchange(ledger, "1\n")
 

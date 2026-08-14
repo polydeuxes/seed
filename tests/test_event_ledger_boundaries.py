@@ -1,4 +1,4 @@
-"""Ledger-owned boundaries reconstruct exact append prefixes without exposing positions."""
+"""Ledger-bound occurrences reconstruct exact append prefixes without exposing positions."""
 
 from __future__ import annotations
 

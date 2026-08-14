@@ -656,7 +656,7 @@ def test_result_validation_refuses_identity_that_does_not_match_content(
         assertion_of_recorded_adjacent_pair_result(event)
 
 
-def test_ledger_validation_refuses_a_boundary_not_owned_by_the_ledger(
+def test_ledger_validation_refuses_a_boundary_not_carried_by_the_ledger(
     session, occurrences, recorded_finding
 ):
     event = record_pair_measurements(

@@ -171,7 +171,7 @@ def test_compare_refuses_one_yield_twice(comparable):
         )
 
 
-def test_compare_does_not_assertion_relation_recurrence_or_meaning(comparable):
+def test_compare_does_not_assert_relation_recurrence_or_representation(comparable):
     ledger, left, right = comparable
     comparison = compare_positional_result_assertions(
         ledger, (left.reference, right.reference)
@@ -640,7 +640,7 @@ def test_ledger_validation_refuses_changed_outer_compare_law(
         )
 
 
-def test_recorded_compare_does_not_perform_automatic_reliance(comparable):
+def test_recorded_compare_does_not_establish_input_to_result_support(comparable):
     ledger, left, right = comparable
     event = record_positional_result_comparison(
         ledger,

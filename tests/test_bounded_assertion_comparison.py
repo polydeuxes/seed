@@ -90,7 +90,7 @@ def test_an_input_compared_with_itself_is_refused(ledger):
         compare_preserved_findings(ledger, [one.id, one.id])
 
 
-def test_only_recorded_measurement_findings_may_be_consumed(ledger):
+def test_only_recorded_measurement_findings_may_participate(ledger):
     one = _finding(ledger, "s1")
     ingress = preserved_ingress_occurrences(ledger, workspace_id="w", session_id="s1")[0]
     with pytest.raises(BoundedComparisonError, match="not a recorded measurement"):

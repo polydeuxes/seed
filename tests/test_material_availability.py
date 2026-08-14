@@ -325,7 +325,7 @@ def test_recording_requires_the_holder_that_holds_it():
     assert event.payload["held_at_occurrence"] == "process-local"
 
 
-def test_the_occurrence_claims_nothing_about_any_other_source(tmp_path):
+def test_the_occurrence_asserts_nothing_about_any_other_source(tmp_path):
     """Process-locally held and externally located are simultaneous.
 
     Bytes read from a file are both at once, so recording that this process held

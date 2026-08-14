@@ -285,7 +285,7 @@ def test_the_comparison_revises_nothing(recorded):
     assert ledger.get(forged.id).kind == MEASUREMENT_RECORDED_KIND
 
 
-def test_it_claims_no_responsibility_assignment_and_no_correction_authority(recorded):
+def test_it_asserts_no_responsibility_assignment_and_no_correction_authority(recorded):
     ledger, event = recorded
     result = compare_recorded_finding(ledger, event.id)
     dims = result.payload["dimensions"]

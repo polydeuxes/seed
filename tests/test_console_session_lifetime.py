@@ -1,4 +1,4 @@
-"""A console lifetime is one bounded exchange, and owns its own session id.
+"""A console lifetime is one bounded exchange carrying its exact session id.
 
 `--session` defaulted to the constant `local`, so every console lifetime
 addressed the one named session. That could not bite while the ledger was
@@ -205,7 +205,7 @@ def test_the_in_memory_ledger_scopes_the_same_way():
 # --------------------------------------------------------------------------
 
 
-def test_a_caller_supplying_a_session_id_still_owns_it():
+def test_a_caller_supplied_session_id_remains_exact():
     ledger = EventLedger()
     run_persistent_operator_console(
         ledger=ledger,
