@@ -57,7 +57,7 @@ Responsibility, Authority, occurrence, Yield Evidence, or Standing.
 Provenance. The representation of that order is not Provenance, causation,
 Applicability, or Standing by identity.
 
-## Orientation shorthand
+## Arrangement shorthand
 
 `Purpose`, `Meaning`, `Capability`, `Gap`, `Goal`, and `Demand` summarize
 arrangements of exact Acts, relations, Scope, locality, Authority, Evidence,

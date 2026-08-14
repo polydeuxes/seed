@@ -3,7 +3,7 @@
 Translation testimony only. The [Book of Seed](../book_of_seed/README.md) is
 the authority; this file has none.
 
-Rosetta follows the same orientation as the Book and runtime:
+Rosetta follows the same ordering as the Book and runtime:
 
 ```text
 Responsibility

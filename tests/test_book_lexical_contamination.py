@@ -76,8 +76,8 @@ BANNED: tuple[tuple[str, str], ...] = (
     # Learning establishment "may be understood as" constrained movement, which
     # is a reading aid rather than an establishment.  No clause names a
     # Learning responsible boundary, boundary, occurrence, responsibility, or act.
-    # Active law itself denies "a universal Learning object" and denies
-    # authorizing "general language learning".
+    # Active law previously denied one Learning object spanning exact bounds
+    # and denied authorizing general language learning.
     (r"\blearn\w*\b", "learn*"),
     # `actor` entered with the retired generalized runtime as a closed list of
     # user/model/system/tool/builder/approver labels.  It names no Responsibility
@@ -124,6 +124,7 @@ BANNED: tuple[tuple[str, str], ...] = (
     (r"\bdistricts?\b", "district"),
     (r"\bknowledge\w*\b|knowledge[-_]", "knowledge*"),
     (r"\borientat\w*\b|orientat[-_]", "orientat*"),
+    (r"\buniversal\w*\b|universal[-_]", "universal*"),
     (r"\bexternal\w*\b|external[-_]", "external*"),
     (r"\bexecutions?\b|execution[-_]", "execution"),
     (

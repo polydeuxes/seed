@@ -14,7 +14,7 @@ Replay, Selection, aggregation, ranking, suppression, caching, and read-model co
 
 ### 06.Standing.A — Current Standing is bounded
 
-Recorded material and previously established Standing may support current Standing only through the responsible Act in which they participate. Current Standing is repository-governed and inspectable; it is not a durable object, objective reality, complete memory, universal truth, mandatory agreement, or verification of every preserved Assertion.
+Recorded material and previously established Standing may support current Standing only through the responsible Act in which they participate. Current Standing is repository-governed and inspectable; it is not a durable object, objective reality, complete memory, truth beyond its bounds, mandatory agreement, or verification of every preserved Assertion.
 
 ### 06.Standing.B — Occurrence locality
 

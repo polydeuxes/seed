@@ -16,7 +16,7 @@ A recording boundary may create an addressable representation of Events carrying
 A recording boundary may establish that a retrievable record exists and preserves an Assertion carrying source coordinates within its declared horizon. A later exact Act may consider that Assertion through Applicability. Record existence does not establish the represented source occurrence, current condition, truth, renewed occurrence, or arrival at another Act.
 
 ### 05.Recording.B — Diagnostic-run-scoped recording
-When recorded material is admitted only to a diagnostic Act, that Act preserves the scoped subject of the recording unless a separate responsible occurrence supplies additional Standing. The result is bounded availability, not mutation of cluster truth or universal condition.
+When recorded material is admitted only to a diagnostic Act, that Act preserves the scoped subject of the recording unless a separate responsible occurrence supplies additional Standing. The result is bounded availability, not mutation of cluster truth or a condition beyond the diagnostic Scope.
 
 
 ### 05.Recording.C — Preservation and discard of implementation measurements

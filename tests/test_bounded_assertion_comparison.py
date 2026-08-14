@@ -1,7 +1,7 @@
 """The smallest bounded Assertion comparison, and what it refuses to conclude.
 
 `01.Standing.E` permits it. `#2416` reconstructed its responsible boundary as local to each
-instantiated comparison and never universal, so these tests pin that the
+instantiated comparison and never extends beyond its exact bounds, so these tests pin that the
 comparison is an occurrence and not a service: nothing survives a call, and
 there is no object to hold.
 
@@ -109,7 +109,7 @@ def test_the_recorded_responsible_boundary_is_local_to_the_occurrence(ledger):
         ledger, workspace_id="w", session_id="s1",
         finding=compare_preserved_findings(ledger, [a.id, b.id]))
     assert "local to the instantiated comparison" in event.payload["responsible_boundary"]
-    assert "not named universally" in event.payload["responsible_boundary"]
+    assert "not named beyond this comparison" in event.payload["responsible_boundary"]
 
 
 # --------------------------------------------------------------------------

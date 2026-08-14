@@ -95,6 +95,6 @@ to four current terms and to no single one of them.
 - [Responsibility spine](roots.md)
 - [Retired vocabulary](retired-vocabulary.md)
 
-The Book's Responsibility spine supplies the orientation. Rosetta words hang
+The Book's Responsibility spine supplies the ordering. Rosetta words hang
 from the exact coordinates they translate, or record a word that named nothing
 so its removal stays legible.

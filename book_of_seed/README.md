@@ -223,7 +223,7 @@ Stopping
 != relation by identity
 ```
 
-The Responsibility hierarchy is the Book's representation and traversal structure. It does not create a new constitutional kind, change Responsibility assignments, require one universal populated shape, or replace the exact grammar of the chapters.
+The Responsibility hierarchy is the Book's representation and traversal structure. It does not create a new constitutional kind, change Responsibility assignments, require one populated shape across exact Responsibilities, or replace the exact grammar of the chapters.
 
 ```text
 structural branch present != branch value established

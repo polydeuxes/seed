@@ -6,7 +6,7 @@ the named coordinates exist in the supplied machine grammar, records the
 Assertion with its source occurrence, and can later compare the preserved
 coordinates with a current grammar representation.
 
-The result is evidence-relative. It is not a universal relation or
+The result is evidence-relative. It is not a relation beyond its source or
 constitutional grammar by identity.
 """
 
@@ -263,7 +263,7 @@ def record_external_expression_relation(
             "carriage_evidence_id": carriage_evidence.id,
             "authority": (
                 "preserves this source-carried relation Assertion only; does not "
-                "make it universal grammar or establish another source's use"
+                "make it grammar beyond this source or establish another source's use"
             ),
         },
         session_id=session_id,

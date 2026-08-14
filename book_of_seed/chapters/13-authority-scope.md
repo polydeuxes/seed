@@ -18,7 +18,7 @@ A downstream Act may stand on established content only for its exact role, addre
 
 
 ### 08.Authority.B — Admission is bounded participation, not ratification
-An established support relation, Applicability, or Admission finding may let a subject participate in an exact Act only within its Evidence, responsible boundary, result boundary, Authority, negative Authority, confidence, and Unknown limits. It does not become truth, universal Authority, mutation Authority, Book ratification, or reusable approval.
+An established support relation, Applicability, or Admission finding may let a subject participate in an exact Act only within its Evidence, responsible boundary, result boundary, Authority, negative Authority, confidence, and Unknown limits. It does not become truth, Authority beyond those bounds, mutation Authority, Book ratification, or reusable approval.
 
 
 ### 08.Authority.C — Analytical competence is not adjudicative authority

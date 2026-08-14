@@ -4,12 +4,12 @@
 preserved source-relative Assertions or findings while preserving each input's coordinates as
 that input carries them. `historical comparison report`
 records the responsible boundary: **the bounded comparison boundary in which they participate, local
-to the instantiated comparison and not named universally.**
+to the instantiated comparison and not named beyond this comparison.**
 
 So this is a call, not a service. Each invocation is one comparison occurrence
 with its own responsible boundary. There is no comparator object, no registry, and no persistent
 boundary waiting to be filled — a responsible boundary that outlived its occurrence would be
-the universal boundary the reconstruction says does not exist.
+the shared boundary the reconstruction says does not exist.
 
 **What it has as input is what Seed recorded.** The inputs are recorded measurement
 findings. The pair findings used in the corpus experiments are computed in
@@ -300,7 +300,7 @@ def record_comparison_finding(
         },
         "responsible_boundary": (
             "this comparison occurrence; the responsible boundary is local to the instantiated "
-            "comparison and is not named universally"
+            "comparison and is not named beyond this comparison"
         ),
         "mutates_cluster": False,
         "unknowns": [
