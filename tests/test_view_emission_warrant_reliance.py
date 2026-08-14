@@ -30,7 +30,7 @@ def test_projection_chapter_distinguishes_current_implementation_from_true_fact_
 
 
 def test_amendment_records_required_reliance_answers_and_surface_table():
-    text = _read("book_of_seed/view_emission_warrant_and_reliance_amendment_001.md")
+    text = _read("docs/reports/book_of_seed/view_emission_warrant_and_reliance_amendment_001.md")
 
     assert "not independent constitutional authority" in text
     assert "Was PR 1890 correct to canonize `FactView`" in text
