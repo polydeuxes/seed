@@ -9,28 +9,27 @@ from typing import Any, Iterable
 from seed_runtime.events import EventLedger
 from seed_runtime.event import Event
 
+# The writer of these occurrences declares their kinds. A reader holding its
+# own copy of a kind string is a second contract that can drift from the first
+# without either side failing: the writer keeps writing, the reader stops
+# seeing, and nothing reports the divergence.
+from seed_runtime.operator_representation import (
+    REPRESENTATION_RECORDED_KIND as _REPRESENTATION_RECORDED_KIND,
+    REPRESENTATION_ACT_EVIDENCE_KIND as _REPRESENTATION_ACT_EVIDENCE_KIND,
+    REPRESENTATION_CARRIAGE_EVIDENCE_KIND as _REPRESENTATION_CARRIAGE_EVIDENCE_KIND,
+    REPRESENTATION_EMISSION_ATTEMPTED_KIND as _REPRESENTATION_EMISSION_ATTEMPTED_KIND,
+    REPRESENTATION_EMITTED_KIND as _REPRESENTATION_EMITTED_KIND,
+    REPRESENTATION_EMISSION_OUTCOME_KIND as _REPRESENTATION_EMISSION_OUTCOME_KIND,
+    REPRESENTATION_EMISSION_ACT_EVIDENCE_KIND as _REPRESENTATION_EMISSION_ACT_EVIDENCE_KIND,
+    REPRESENTATION_EMISSION_CARRIAGE_EVIDENCE_KIND as _REPRESENTATION_EMISSION_CARRIAGE_EVIDENCE_KIND,
+    REPRESENTATION_EMISSION_ATTEMPT_CARRIAGE_EVIDENCE_KIND as _REPRESENTATION_EMISSION_ATTEMPT_CARRIAGE_EVIDENCE_KIND,
+)
+
 _SUBJECT_BY_KIND = {
     "operator.ingress.raw_material_captured": "raw_initial_material",
     "operator.ingress.ingress_occurred": "preserved_ingress",
     "operator.ingress.stopping_occurred": "interaction_closure",
 }
-_REPRESENTATION_RECORDED_KIND = "operator.representation.recorded"
-_REPRESENTATION_ACT_EVIDENCE_KIND = "operator.representation.act_evidenced"
-_REPRESENTATION_CARRIAGE_EVIDENCE_KIND = (
-    "operator.representation.carriage_evidenced"
-)
-_REPRESENTATION_EMISSION_ATTEMPTED_KIND = "operator.representation.emission_attempted"
-_REPRESENTATION_EMITTED_KIND = "operator.representation.emitted"
-_REPRESENTATION_EMISSION_OUTCOME_KIND = "operator.representation.emission_outcome_recorded"
-_REPRESENTATION_EMISSION_ACT_EVIDENCE_KIND = (
-    "operator.representation.emission_act_evidenced"
-)
-_REPRESENTATION_EMISSION_CARRIAGE_EVIDENCE_KIND = (
-    "operator.representation.emission_carriage_evidenced"
-)
-_REPRESENTATION_EMISSION_ATTEMPT_CARRIAGE_EVIDENCE_KIND = (
-    "operator.representation.emission_attempt_carriage_evidenced"
-)
 _COMPARISON_KIND = "operator.exchange.comparison_occurred"
 _IDENTIFICATION_KIND = "operator.exchange.identification_occurred"
 _SOURCE_VALIDATED_KIND = "operator.representation.source_validated"

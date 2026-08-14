@@ -2630,3 +2630,87 @@ def test_runtime_has_no_examination_species():
     }
 
     assert {path: hits for path, hits in contaminated.items() if hits} == {}
+
+
+CARRIAGE_LIVE_BOUNDARIES = (
+    "operator.external_expression.relation_carriage_evidenced",
+    "operator.measurement.adjacent_pair_observation_carriage_evidenced",
+    "operator.measurement.adjacent_pair_observation_compare_carriage_evidenced",
+    "operator.representation.carriage_evidenced",
+    "operator.representation.emission_attempt_carriage_evidenced",
+    "operator.representation.emission_carriage_evidenced",
+)
+
+
+def _declared_kind_constants(family: str) -> dict[str, list[str]]:
+    """Every module-level kind constant naming this edge, found by reading code.
+
+    Independent mechanical discovery, as with Yield: the registry above is not
+    asked what exists, the runtime is. A boundary that stops declaring itself,
+    or a new one that never registers, both surface here.
+    """
+
+    found: dict[str, list[str]] = {}
+    for path in sorted(RUNTIME.glob("*.py")):
+        tree = ast.parse(path.read_text(encoding="utf-8"), filename=str(path))
+        for node in tree.body:
+            if not isinstance(node, ast.Assign):
+                continue
+            if not isinstance(node.value, ast.Constant):
+                continue
+            if not isinstance(node.value.value, str):
+                continue
+            for target in node.targets:
+                if not isinstance(target, ast.Name):
+                    continue
+                if family not in target.id:
+                    continue
+                found.setdefault(node.value.value, []).append(path.name)
+    return found
+
+
+def test_every_carriage_evidence_kind_is_declared_once_and_registered():
+    """The Yield discovery pattern, applied to the second structural edge."""
+
+    discovered = _declared_kind_constants("CARRIAGE_EVIDENCE_KIND")
+
+    duplicated = {
+        kind: modules for kind, modules in discovered.items() if len(modules) > 1
+    }
+    assert not duplicated, (
+        "\nOne carriage kind, declared by more than one module. The writer and "
+        "the reader then hold separate contracts that drift silently:\n"
+        + "\n".join(f"  {kind} -- {', '.join(m)}" for kind, m in duplicated.items())
+    )
+
+    assert set(discovered) == set(CARRIAGE_LIVE_BOUNDARIES), (
+        "\nLive carriage boundaries and the registry disagree.\n"
+        f"  only live:     {sorted(set(discovered) - set(CARRIAGE_LIVE_BOUNDARIES))}\n"
+        f"  only registry: {sorted(set(CARRIAGE_LIVE_BOUNDARIES) - set(discovered))}"
+    )
+
+
+def test_participation_declares_a_structural_edge_it_records_no_evidence_for():
+    """The refusal, recorded rather than resolved.
+
+    `grammar.json` declares three structural edges and gives all three the
+    same requirements -- exact_relation, occurrence_witness, intact_evidence.
+    Yield and Carriage each record evidence occurrences that can be discovered
+    and held to that. Participation records none: its only runtime appearance
+    is a payload field on another edge's act evidence.
+
+    So the Yield pattern cannot reach it. That is evidence about the grammar,
+    not a gap in the audit, and this test states which of the two it is. It
+    fails as soon as a participation evidence boundary exists, which is the
+    point at which the registry above should gain a third family.
+    """
+
+    grammar = json.loads(GRAMMAR.read_text(encoding="utf-8"))
+    edges = grammar["structural_edges"]
+    assert set(edges) == {"carriage", "participation", "yield"}
+    for name in edges:
+        assert "intact_evidence" in edges[name]["requires"], name
+
+    assert _declared_kind_constants("YIELD_EVIDENCE_KIND") or YIELD_LIVE_BOUNDARIES
+    assert _declared_kind_constants("CARRIAGE_EVIDENCE_KIND")
+    assert _declared_kind_constants("PARTICIPATION_EVIDENCE_KIND") == {}
