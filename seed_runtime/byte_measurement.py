@@ -151,7 +151,7 @@ BYTE_PAIR_INPUT_APPLICABILITY_RESPONSIBILITY = (
     "in one exact adjacent-byte-pair Measurement Act"
 )
 BYTE_PAIR_RESPONSIBILITY_BASIS = (
-    "see 01.External.E, 01.Standing.E.1, and 02.Acts"
+    "see 01.Source.E, 01.Standing.E.1, and 02.Acts"
 )
 BYTE_PAIR_APPLICABILITY_AUTHORITY = (
     "determine Applicability of this exact proposed input to this exact target "

@@ -983,7 +983,7 @@ def test_only_relevant_evidence_places_an_exchange_in_the_second_result(compared
 
 
 def test_a_count_of_one_is_a_finding_and_is_not_recurrence(compared):
-    """`01.External:28` lists count and recurrence as separate findings.
+    """`01.Source:28` lists count and recurrence as separate findings.
 
     `#2430` called this shape RecurrenceFinding and rendered a count of one as
     "recurs in 1 bounded exchanges", asserting recurrence where nothing
@@ -1082,7 +1082,7 @@ def test_the_three_results_partition_the_bounded_exchanges(compared):
 def test_the_counting_scope_states_the_declaration(compared):
     """`#2429` said "supplied to this Seed"; `#2430` said what it input.
 
-    Neither was the bounded scope `01.External:28` requires disclosed, because
+    Neither was the bounded scope `01.Source:28` requires disclosed, because
     both described a set the act discovered rather than one it was given.
     """
     event = record_measured_count(

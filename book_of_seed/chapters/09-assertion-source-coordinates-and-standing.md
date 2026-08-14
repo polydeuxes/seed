@@ -6,7 +6,7 @@ The source coordinates carried by an Assertion and the separate Standing of any 
 
 ## Bounded resolution
 
-External or recorded material may carry asserted content together with a source identity, material origin, provenance, and source occurrence where mechanically evidenced. Those coordinates do not establish that the named source supplied or asserted the content.
+Supplied or recorded material may carry asserted content together with a source identity, material origin, provenance, and source occurrence where mechanically evidenced. Those coordinates do not establish that the named source supplied or asserted the content.
 
 The relation “source S supplied or asserted Assertion A” is itself an Assertion. It requires its own Evidence, Authority, Scope, occurrence, conflicts, Unknowns, limits, and Standing. A source label, nearby occurrence, copied provenance reference, or repeated material does not establish that relation.
 
@@ -25,7 +25,7 @@ Temporal coordinates distinguish what time an Assertion describes, when Evidence
 ## Important distinctions
 
 - source label != source relation
-- material origin != external result occurrence
+- material origin != source result occurrence
 - source occurrence absent != source occurrence invented
 - source relation Standing != asserted-content Standing
 - recording != establishment
@@ -34,5 +34,5 @@ Temporal coordinates distinguish what time an Assertion describes, when Evidence
 
 ## Related chapters
 
-- [Evidence and provenance](evidence-provenance-and-explanation.md)
-- [Recording and preserved Assertions](recording-and-knowledge-extraction.md)
+- [Evidence and provenance](10-evidence-provenance-and-explanation.md)
+- [Recording and preserved Assertions](11-recording-and-preserved-assertions.md)

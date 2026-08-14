@@ -28,9 +28,9 @@ An access condition, visible route, available representation, mechanism candidat
 - Treating a local precondition finding as proof that the governed act occurred.
 
 ## Related chapters
-- [Acts and occurrences](acts-and-occurrences.md)
-- [Selection and authorization](selection-and-authorization.md)
-- [Stopping and completion](stopping-and-completion.md)
+- [Acts and occurrences](03-acts-and-occurrences.md)
+- [Selection and authorization](08-selection-and-authorization.md)
+- [Stopping and completion](16-stopping-and-completion.md)
 
 ## Constrained movement constraint correction 001
 

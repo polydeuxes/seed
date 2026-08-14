@@ -292,7 +292,7 @@ def test_it_claims_no_owner_and_no_correction_authority(recorded):
 
 
 def test_it_preserves_what_the_clause_requires(recorded):
-    """`01.External.D` names what a fidelity comparison must preserve."""
+    """`01.Source.D` names what a fidelity comparison must preserve."""
 
     ledger, event = recorded
     result = compare_recorded_finding(ledger, event.id)

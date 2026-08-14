@@ -27,7 +27,7 @@ Compiled behavior, direct instantiation, stable serialization, and compatibility
 Co-presence or multiplicity does not establish membership, collective Standing, relation, topology, ordering, Selection, priority, focus, a shared Act or result boundary, or higher-order identity. Each stronger Assertion requires its own bounded subject and established support relation.
 
 ### 01.Standing.D.1 — An Assertion owns fidelity of its Standing
-A bounded **Assertion** is the exact asserted content as its own subject under its carried Evidence, provenance, Scope, Authority, conflicts, limits, **Unknowns**, and current Standing. An Assertion owns the Responsibility for fidelity of its Standing to those applicable coordinates. Assertion ownership is local to that bounded Assertion; it does not create a universal assertion manager, knowledge owner, or conflict resolver.
+A bounded **Assertion** is the exact asserted content as its own subject under its carried Evidence, provenance, Scope, Authority, conflicts, limits, **Unknowns**, and current Standing. An Assertion owns the Responsibility for fidelity of its Standing to those applicable coordinates. That Responsibility remains local to the bounded Assertion.
 
 The Assertion does not thereby perform or own the Act that established it, establish itself, or become that Act occurrence. A responsible Act may establish an Assertion and only the bounded Standing established by its Evidence and Authority. The Assertion's fidelity Responsibility begins with the result; it does not relocate the Act's Responsibility or occurrence-result Evidence into the result. Act occurrence != Assertion owner, result-establishing Act != Assertion Responsibility, and recorded occurrence != result-establishing occurrence.
 
@@ -76,7 +76,7 @@ Seed commonly orients exact constitutional subjects and relations through approx
 7. scope / locality
 8. occurrence / preservation
 
-These families are broad constitutional questions, not mandatory fields or one universal representation schema. Dimension != field, value, constitutional kind, subject-family registry, or implementation key. The paired labels are bounded compressions of neighboring concerns, not declarations that every pair is one indivisible scalar: standing is recurrent and cross-cutting; occurrence and preservation are related but independently variable; source and provenance are neighboring but not equivalent; and authority and support are neighboring but not equivalent. Approximately eight macro-dimensional families != exactly eight constitutional fields; this orientation is neither mathematically final nor closed.
+These families are broad constitutional questions, not mandatory fields or one universal representation schema. Dimension != field, value, constitutional kind, subject-family registry, or implementation key. The paired labels are bounded compressions of neighboring concerns, not declarations that every pair is one indivisible scalar: standing is recurrent and cross-cutting; occurrence and preservation are related but independently variable; source and provenance are neighboring but not equivalent; and authority and support are neighboring but not equivalent. Approximately eight macro-dimensional families != exactly eight constitutional fields; this grouping is neither mathematically final nor closed.
 
 Macro-dimensional families unfold into local coordinates under the exact subject, question, Act, Responsibility, result boundary, Scope, and Evidence boundary. The Book establishes no fixed coordinate count, registry, universal completeness requirement, or mandatory serialization schema. A coordinate may be applicable, inapplicable, known, **Unknown**, conflicting, or unresolved within that boundary.
 
@@ -118,5 +118,5 @@ Acts, constraints, and relations are structurally distinct from dimensions. They
 - Inferring standing solely from a public export.
 
 ## Related chapters
-- [Authority Scope](authority-scope.md)
-- [Recording and knowledge extraction](recording-and-knowledge-extraction.md)
+- [Authority Scope](14-authority-scope.md)
+- [Recording and preserved Assertions](11-recording-and-preserved-assertions.md)

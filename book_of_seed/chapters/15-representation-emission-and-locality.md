@@ -8,7 +8,7 @@ Operator input is material carrying source coordinates at its ingress locality. 
 
 A representation preserves its subject, content, source, provenance, Standing, Evidence, Authority, Scope, locality, conflicts, Unknowns, and limits where established. Missing coordinates remain absent or Unknown; presentation vocabulary does not instantiate them.
 
-Representation formation and emission are distinct occurrences. Emission establishes only that the exact representation was emitted from its locality toward its addressed boundary. Arrival, interpretation, Applicability, an input-to-result support relation, responsibility transition, Authority transition, and external effect require their own Evidence.
+Representation formation and emission are distinct occurrences. Emission establishes only that the exact representation was emitted from its locality toward its addressed boundary. Arrival, interpretation, Applicability, an input-to-result support relation, Responsibility transition, Authority transition, and effects beyond the boundary require their own Evidence.
 
 Current-facing material has present Applicability only under its exact formation rule, as-of boundary, freshness, conflict treatment, and Unknowns.
 
@@ -33,6 +33,6 @@ Authority does not move merely because material moves.
 - operator material != Seed truth
 
 ## Related chapters
-- [Constitutional standing](constitutional-standing.md)
-- [Authority scope](authority-scope.md)
-- [Events and Standing](events-and-standing.md)
+- [Constitutional standing](02-constitutional-standing.md)
+- [Authority scope](14-authority-scope.md)
+- [Events and Standing](12-events-and-standing.md)

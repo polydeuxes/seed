@@ -33,7 +33,7 @@ every occurrence of both kinds that produced the result travels as Evidence —
 representation, rule and position, then described the result as "under the
 declared rule and scope" while `counting_scope` was not among them. Two
 measurements declaring different scopes are not the same measurement, and
-`01.External:28` requires the measured representation, the sameness rule and
+`01.Source:28` requires the measured representation, the sameness rule and
 the bounded scope to travel with a recurrence assertion.
 """
 
@@ -108,7 +108,7 @@ class MeasuredDistinction:
 class MeasuredCountFinding:
     """One exact count over recorded occurrences. A record shape, not a kind.
 
-    `01.External:28` lists **count** and **recurrence** as separate findings of
+    `01.Source:28` lists **count** and **recurrence** as separate findings of
     a declared measurement. `#2430` named this shape `RecurrenceFinding` and
     rendered a count of one as "recurs in 1 bounded exchanges", which asserts
     recurrence where nothing recurred. The count is the finding; recurrence is
@@ -458,7 +458,7 @@ def measure_exchange_counts(
     every measurement in the workspace instead, so an exchange entered the
     denominator by having measured anything at all — a measurement of
     ``"nothing"`` set the denominator of a finding about ``"a"``. That is
-    workspace visibility choosing Applicability. `01.External:28` requires a
+    workspace visibility choosing Applicability. `01.Source:28` requires a
     recurrence assertion to disclose the bounded scope within which occurrences
     were counted, and a swept scope is not a declared one.
 

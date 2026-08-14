@@ -10,7 +10,7 @@ It is not a roadmap, API reference, generated topology, complete inventory, or s
 - `[UNRESOLVED]` marks a question for which the current repository does not safely support a constitutional resolution.
 - Representative anchors are illustrative. Seed must inspect the repository for current responsible occurrences, exact Acts, fields, topology, discrepancies, and residue.
 
-The first pass deliberately favors concise distinctions over comprehensive prose. The [concordance](concordance.md) is a navigation aid, not an ontology. Cross-cutting questions without a stable chapter home live in [unresolved.md](unresolved.md).
+The [concordance](concordance.md) is a navigation aid, not an ontology.
 
 [`grammar.json`](grammar.json) carries machine-readable clause coordinates used
 by tests. Tests validate that grammar rather than freezing explanatory prose.
@@ -241,19 +241,19 @@ Change the Book when constitutional grammar, a durable distinction, or the statu
 
 ## Chapters
 
-- [External and constitutional grammar](chapters/external-and-constitutional-grammar.md)
-- [Constitutional Standing](chapters/constitutional-standing.md)
-- [Acts and occurrences](chapters/acts-and-occurrences.md)
-- [Constraints and preconditions](chapters/constraints-and-preconditions.md)
-- [Selection and Selection Acts](chapters/selection-and-selection-acts.md)
-- [Movement coordinates](chapters/orientation-and-movement.md)
-- [Result boundaries and movement](chapters/result-boundaries-and-movement.md)
-- [Selection and Authorization](chapters/selection-and-authorization.md)
-- [Assertion source coordinates and Standing](chapters/assertion-source-coordinates-and-standing.md)
-- [Evidence and provenance](chapters/evidence-provenance-and-explanation.md)
-- [Recording and preserved Assertions](chapters/recording-and-knowledge-extraction.md)
-- [Events and Standing](chapters/events-and-standing.md)
-- [Responsibility discrepancy and residue](chapters/ownership-discrepancy-and-residue.md)
-- [Authority Scope](chapters/authority-scope.md)
-- [Representation, emission, and locality](chapters/representation-emission-and-locality.md)
-- [Stopping and completion](chapters/stopping-and-completion.md)
+- [Source coordinates and grammar](chapters/01-source-coordinates-and-grammar.md)
+- [Constitutional Standing](chapters/02-constitutional-standing.md)
+- [Acts and occurrences](chapters/03-acts-and-occurrences.md)
+- [Constraints and preconditions](chapters/04-constraints-and-preconditions.md)
+- [Selection and Selection Acts](chapters/05-selection-and-selection-acts.md)
+- [Movement coordinates](chapters/06-movement-coordinates.md)
+- [Result boundaries and movement](chapters/07-result-boundaries-and-movement.md)
+- [Selection and Authorization](chapters/08-selection-and-authorization.md)
+- [Assertion source coordinates and Standing](chapters/09-assertion-source-coordinates-and-standing.md)
+- [Evidence and provenance](chapters/10-evidence-provenance-and-explanation.md)
+- [Recording and preserved Assertions](chapters/11-recording-and-preserved-assertions.md)
+- [Events and Standing](chapters/12-events-and-standing.md)
+- [Responsibility discrepancy and residue](chapters/13-ownership-discrepancy-and-residue.md)
+- [Authority Scope](chapters/14-authority-scope.md)
+- [Representation, emission, and locality](chapters/15-representation-emission-and-locality.md)
+- [Stopping and completion](chapters/16-stopping-and-completion.md)

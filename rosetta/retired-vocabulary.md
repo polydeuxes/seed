@@ -1,4 +1,4 @@
-# Retired and external vocabulary
+# Retired and ordinary vocabulary
 
 Translation testimony. **No entry here carries constitutional Authority**, and
 no mapping establishes equivalence — see [README](README.md).
@@ -243,7 +243,7 @@ formation a Selection topology by borrowing the nearest established set-word,
 which is the move the word itself kept making.
 
 In a measurement it is ordinary English for the occurrences walked, which
-`01.External:28` already reaches through *the bounded scope within which
+`01.Source:28` already reaches through *the bounded scope within which
 occurrences were counted*. Where an actual Selection is separately supported,
 `bounded candidate set` may apply to that Selection — not to this.
 
@@ -295,11 +295,11 @@ a statement about what was examined and not a forecast.
 
 ```text
 status          never adopted
-closest grammar bounded scope (01.External:28)
+closest grammar bounded scope (01.Source:28)
 ```
 
 `examined` is absent from active law; `occurrences_examined` is the runtime's
-name for the size of the scope a measurement counted within. `01.External:28`
+name for the size of the scope a measurement counted within. `01.Source:28`
 requires a recurrence assertion to disclose *the bounded scope within which
 occurrences were counted*; this field is that disclosure's measured size.
 

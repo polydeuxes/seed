@@ -1,7 +1,7 @@
 # Recording and Preserved Assertions
 
 ## Constitutional subject
-The boundary between preserving events or diagnostic output and deriving knowledge from recorded material.
+The boundary between preserving Events or diagnostic output and later participation of recorded Assertions.
 
 ## Core question
 Which bounded responsibility may take up recorded material, and what standing, if any, may it establish?
@@ -13,7 +13,7 @@ A recording boundary may create an addressable representation of Events carrying
 ## Addressable boundaries for recorded-change witnesses
 
 ### 05.Recording.A — Recorded assertion standing
-A recording boundary may establish that a retrievable record exists and preserves an Assertion carrying source coordinates within its declared horizon. A later exact Act may consider that Assertion through Applicability. Record existence does not establish the represented external occurrence, current condition, truth, renewed occurrence, or arrival at another Act.
+A recording boundary may establish that a retrievable record exists and preserves an Assertion carrying source coordinates within its declared horizon. A later exact Act may consider that Assertion through Applicability. Record existence does not establish the represented source occurrence, current condition, truth, renewed occurrence, or arrival at another Act.
 
 ### 05.Recording.B — Diagnostic-run-scoped recording
 When recorded material is admitted only to a diagnostic Act, that Act preserves the scoped subject of the recording unless a separate establishment boundary supplies additional Standing. The result is bounded availability, not mutation of cluster truth or universal condition.
@@ -28,7 +28,7 @@ Recording may preserve measurement or observation Assertions and already establi
 
 
 ## Important distinctions
-- diagnostic rendering != knowledge eligible to participate in an exact Act
+- diagnostic rendering != Assertion applicable to an exact Act
 - diagnostic rendering != measurement ownership
 - diagnostic rendering != Measurement
 - diagnostic rendering != measurement preservation
@@ -58,18 +58,18 @@ Recording may preserve measurement or observation Assertions and already establi
 - act occurrence status != implementation measurement
 - operator capture != Seed preservation
 - operator omission != authority for Seed to forget
-- Seed preservation != obligation to expose every sample externally
+- Seed preservation != obligation to expose every sample beyond its boundary
 - act occurrence != recording occurrence
 - record exists != recorded assertion true automatically
 - record exists != recorded standing lawfully established
 - preservation decision != standing-establishment decision
 - extraction occurrence != original act occurrence
-- recording != knowledge extraction
+- recording != later participation
 - event ledger write != cluster mutation
 - retrievable record != established Assertion Standing
 - preservation != renewed occurrence
 - retrieval or availability != arrival or input support
-- successful extraction != knowledge establishment
+- successful reading != Standing establishment
 - process-local record != cross-restart persistent record
 
 ## Representative repository anchors
@@ -81,6 +81,6 @@ Recording may preserve measurement or observation Assertions and already establi
 - Attaching diagnostic-only output directly to hosts or services.
 
 ## Related chapters
-- [Assertion Source Coordinates and Standing](assertion-source-coordinates-and-standing.md)
-- [Events and Standing](events-and-standing.md)
-- [Acts and occurrences](acts-and-occurrences.md)
+- [Assertion Source Coordinates and Standing](09-assertion-source-coordinates-and-standing.md)
+- [Events and Standing](12-events-and-standing.md)
+- [Acts and occurrences](03-acts-and-occurrences.md)

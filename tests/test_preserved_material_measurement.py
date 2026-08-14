@@ -12,7 +12,7 @@ to have as input preserved findings while preserving each input's support basis,
 confidence, and standing. A finding that vanishes with the process cannot be
 input by anything.
 
-`01.External:28` requires three disclosures of any recurrence assertion. They
+`01.Source:28` requires three disclosures of any recurrence assertion. They
 are required fields here, and an absent one is refused rather than defaulted.
 
 Nothing here establishes represented relation. `01.Standing.D` refuses relation standing to
@@ -144,7 +144,7 @@ def test_an_absent_position_is_absent_not_unknown(occurrences):
 
 
 # --------------------------------------------------------------------------
-# 01.External:28's three disclosures are required.
+# 01.Source:28's three disclosures are required.
 # --------------------------------------------------------------------------
 
 
@@ -387,14 +387,14 @@ def test_an_occurrence_predating_the_coordinate_stays_measurable():
 # --------------------------------------------------------------------------
 # Recurrence: what is measured is the representation, not a position.
 #
-# `01.External:28` grants recurrence by name. Until this existed the only
+# `01.Source:28` grants recurrence by name. Until this existed the only
 # measurement primitive was positional, which is why every finding Seed had
 # ever recorded was about a slot defined relative to a representation rather
 # than about a representation.
 #
 # None of this establishes that the representation is a constitutional
 # subject. The recorded identity is still `measurement:<representation>`, a
-# subject reference, and `01.External:28` bounds the result to the
+# subject reference, and `01.Source:28` bounds the result to the
 # measurement assertion. These tests assert what was measured and what was
 # disclosed, and nothing about subject identity or Standing.
 # --------------------------------------------------------------------------
@@ -479,7 +479,7 @@ def test_a_representation_that_never_occurs_produces_a_measurement_finding(
     assert finding.occurrences_carrying == 0
     # The scope is still stated: a bounded measurement assertion under the
     # declared rule and scope, not a failure to measure. It establishes no
-    # Standing concerning zebra; `01.External:28` bounds it to the assertion.
+    # Standing concerning zebra; `01.Source:28` bounds it to the assertion.
     assert finding.occurrences_examined == 3
     event = record_measurement_finding(
         ledger, workspace_id="w", session_id="r", finding=finding
@@ -545,7 +545,7 @@ def test_a_recurrence_finding_records_through_the_existing_path(
     assert event.kind == MEASUREMENT_RECORDED_KIND
     assert event.payload["dimensions"]["identity"] == "measurement:the"
     assert event.payload["dimensions"]["standing"] == "measured"
-    # The three disclosures `01.External:28` requires all survive recording.
+    # The three disclosures `01.Source:28` requires all survive recording.
     assert event.payload["representation_measured"] == "the"
     assert event.payload["equivalence_rule"].startswith("exact equality")
     assert event.payload["counting_scope"].startswith("preserved operator-ingress")
@@ -891,7 +891,7 @@ def test_material_declaring_text_it_does_not_carry_is_refused(recurrence_occurre
 
 
 def test_one_occurrence_twice_in_a_population_is_refused(recurrence_occurrences):
-    """`01.External.E.1`: each counted occurrence is distinguished by identity."""
+    """`01.Source.E.1`: each counted occurrence is distinguished by identity."""
 
     _, occurrences = recurrence_occurrences
     doubled = list(occurrences) + [occurrences[0]]

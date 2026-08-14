@@ -1,7 +1,7 @@
 """Declared measurement over preserved operator-ingress occurrences.
 
-`01.External.E` is titled *Measurement and recurrence do not establish represented relation*,
-and `01.External:28` grants the finding and states its conditions:
+`01.Source.E` is titled *Measurement and recurrence do not establish represented relation*,
+and `01.Source:28` grants the finding and states its conditions:
 
     A declared measurement may produce bounded findings of exact equality,
     count, recurrence, prefix occurrence, the result of a declared predicate,
@@ -109,7 +109,7 @@ class PreservedMaterialMeasurementError(ValueError):
 
 @dataclass(frozen=True)
 class DeclaredMeasurement:
-    """The three disclosures `01.External:28` requires, plus the premise.
+    """The three disclosures `01.Source:28` requires, plus the premise.
 
     `representation_measured`, `equivalence_rule`, and `counting_scope` are the
     clause's own words. They are required because the clause requires them, and
@@ -180,7 +180,7 @@ class MeasurementFinding:
     def highest_count_occupancy(self) -> Occupancy | None:
         """The occupancy with the highest count, or nothing if none was measured.
 
-        A count, not a rank of importance. `01.External:28` bounds a finding to
+        A count, not a rank of importance. `01.Source:28` bounds a finding to
         the measurement assertion, so the most frequent occupant of a position
         is the most frequent occupant of a position and carries no standing
         that a less frequent one lacks.
@@ -217,13 +217,13 @@ class MeasurementFinding:
 class RecurrenceFinding:
     """How often one representation occurred, and across how much material.
 
-    `01.External:28` grants recurrence by name and states its disclosures. This
+    `01.Source:28` grants recurrence by name and states its disclosures. This
     is the grant taken directly: what is measured is the representation itself,
     rather than a position defined relative to it.
 
     That is an Assertion about what was measured, not about constitutional subject
     identity. The recorded identity remains `measurement:<representation>`, and
-    `01.External:28` bounds the result to the measurement assertion. Nothing
+    `01.Source:28` bounds the result to the measurement assertion. Nothing
     here establishes that the representation is the subject of anything, or
     that Standing concerning it exists.
 
@@ -398,7 +398,7 @@ def _locality_of(event: Event) -> str | None:
 def _distinct_population(occurrences: Iterable[Event]) -> list[Event]:
     """The occurrences to measure, refusing a repeated occurrence identity.
 
-    The rule is not `01.External:28`, which requires the bounded scope to be
+    The rule is not `01.Source:28`, which requires the bounded scope to be
     disclosed and says nothing about identity-distinctness. It comes from what
     ``occurrences_examined`` asserts: a number of occurrences. One preserved
     occurrence referenced twice is one occurrence, so counting it twice reports
@@ -409,7 +409,7 @@ def _distinct_population(occurrences: Iterable[Event]) -> list[Event]:
     caller meant one, and refusing rather than pretending is the same choice
     this module makes about material it cannot measure.
 
-    `01.External.E.1` establishes the rule: each counted occurrence is
+    `01.Source.E.1` establishes the rule: each counted occurrence is
     distinguished by exact occurrence identity, and repeated reference to one
     preserved occurrence does not establish another. That clause was added
     because this refusal had nothing behind it.
@@ -711,7 +711,7 @@ def measure_recurrences(
         # One pass has as input one population, so every finding it produces
         # receives that population. A declaration disclosing a different
         # counting scope would have its scope assertion preserved beside a
-        # population the act did not draw from it. `01.External:28` requires
+        # population the act did not draw from it. `01.Source:28` requires
         # the disclosed scope to be the scope within which occurrences were
         # counted, so the disagreement is refused rather than reconciled.
         raise PreservedMaterialMeasurementError(

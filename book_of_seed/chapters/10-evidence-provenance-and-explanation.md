@@ -35,5 +35,5 @@ Explanation is a representation exposing Evidence, provenance, conflicts, and re
 
 ## Related chapters
 
-- [Assertion Source Coordinates and Standing](assertion-source-coordinates-and-standing.md)
-- [Recording and knowledge extraction](recording-and-knowledge-extraction.md)
+- [Assertion Source Coordinates and Standing](09-assertion-source-coordinates-and-standing.md)
+- [Recording and preserved Assertions](11-recording-and-preserved-assertions.md)

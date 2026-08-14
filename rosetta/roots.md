@@ -295,15 +295,15 @@ Not one thing, and this is the honest part of the entry.
 material arrives and is preserved with recorded material origin naming
     its origin — operator, this Seed, or system
         ↓
-external material may become addressable as material carrying source coordinates
-    without becoming constitutional grammar          (01.External.B)
+supplied material may become addressable as material carrying source coordinates
+    without becoming constitutional grammar          (01.Source.B)
         ↓
 a declared measurement may produce bounded findings — equality, count,
     recurrence, prefix occurrence, a declared predicate, adjacency —
     disclosing what was measured, the rule of sameness, and the bounded
-    scope                                            (01.External:28)
+    scope                                            (01.Source:28)
         ↓
-none of that establishes meaning                     (01.External.E)
+none of that establishes meaning                     (01.Source.E)
 ```
 
 Four separate boundaries, no single act joining them. A person saying

@@ -12,7 +12,7 @@ Validation of an Act-shaped result does not establish the Act occurrence. A down
 A Responsibility bounds what Standing may be established, preserved, or revised concerning its bounded subject; it is not the Standing, the responsible occurrence, Applicability, an exact Act, or an Act occurrence. A Responsibility governs an exact Act. An Act occurrence is one occurrence at which that Act is performed under the Responsibility. Establishing Standing concerning a new subject is not revision of Standing concerning an existing subject, and neither is preservation of existing Standing. Each is lawful only as established by the occurrence's Evidence, Authority, Scope, and preserved limits. Standing, available material, Responsibility, and exact Act identity do not by identity establish that an Act was proposed or occurred.
 
 ## Important distinctions
-- boundary invocation != assertion-bearing branch != result construction != external effect
+- boundary invocation != assertion-bearing branch != result construction != effect beyond the boundary
 - successful return != every asserted effect occurred
 - failed act != no occurrence automatically
 - Act != representation describing an Act
@@ -32,6 +32,6 @@ A Responsibility bounds what Standing may be established, preserved, or revised 
 - Treating direct construction of a selection result as evidence that exact focus evidence was validated.
 
 ## Related chapters
-- [Constraints and preconditions](constraints-and-preconditions.md)
-- [Assertion Source Coordinates and Standing](assertion-source-coordinates-and-standing.md)
-- [Recording and knowledge extraction](recording-and-knowledge-extraction.md)
+- [Constraints and preconditions](04-constraints-and-preconditions.md)
+- [Assertion Source Coordinates and Standing](09-assertion-source-coordinates-and-standing.md)
+- [Recording and preserved Assertions](11-recording-and-preserved-assertions.md)

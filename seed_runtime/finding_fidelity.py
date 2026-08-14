@@ -1,6 +1,6 @@
 """A bounded comparison of a recorded finding and its production evidence.
 
-`01.External.D` grants this and states its conditions: a Fidelity finding is
+`01.Source.D` grants this and states its conditions: a Fidelity finding is
 produced only by a bounded comparison bringing constitutional grammar, a
 bounded expectation, and an implementation witness under a declared seam or
 scope. Within that scope it may find the witness faithful, an unfaithful

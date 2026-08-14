@@ -63,7 +63,7 @@ done here.
 
 ## Constitutional authority
 
-`01.External` governs the boundary this directory sits on: external vocabulary
+`01.Source` governs the boundary this directory sits on: ordinary vocabulary
 may retain source coordinates and be compared **without thereby becoming
 constitutional grammar**. That chapter is the authority *for* a Rosetta. It is
 not itself a Rosetta, and this directory is not a chapter.

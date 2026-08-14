@@ -25,7 +25,7 @@ after_same_left     what else occupies the right position, after the
 **The battery is fixed and applied symmetrically.** No question is asked of one
 pair and withheld from another, and none of the four is motivated by what a
 reader believes the representations are. They are adjacency and occupancy
-measurements, which `01.External:28` permits a declared measurement to produce.
+measurements, which `01.Source:28` permits a declared measurement to produce.
 
 **The pairs are not supplied.** :func:`adjacent_pairs_from_finding` reads them out of a
 recorded measurement finding, so what this round measures relative to comes
