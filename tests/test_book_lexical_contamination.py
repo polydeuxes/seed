@@ -312,9 +312,8 @@ def test_book_and_rosetta_do_not_share_one_lexicon():
     assert ROSETTA_LEXICON != LEXICON
     assert not LEXICON.is_symlink()
     assert not ROSETTA_LEXICON.is_symlink()
-    assert (
-        "# parent: ../book_of_seed/admitted-lexicon.txt"
-        in ROSETTA_LEXICON.read_text(encoding="utf-8").splitlines()
+    assert ROSETTA_LEXICON.read_text(encoding="utf-8") == (
+        "../book_of_seed/admitted-lexicon.txt\n"
     )
 
 
@@ -360,9 +359,7 @@ def test_book_proper_admits_only_lexicon_words():
     )
     assert not unadmitted, (
         "\nActive law carries vocabulary the lexicon does not admit.\n"
-        "Book vocabulary is not admitted by book_of_seed/admitted-lexicon.txt. "
-        "Remove it or request curation; automated agents must not amend the lexicon:\n"
-        + report
+        "Unadmitted:\n" + report
     )
 
 

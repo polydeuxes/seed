@@ -1,5 +1,1 @@
-# Rosetta admitted lexicon.
-# parent: ../book_of_seed/admitted-lexicon.txt
-#
-# The parent governs Book proper. This separate file is only for words admitted
-# to Rosetta beyond that parent. No Rosetta-only words are admitted yet.
+../book_of_seed/admitted-lexicon.txt

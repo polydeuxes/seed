@@ -94,8 +94,7 @@ to four current terms and to no single one of them.
 
 - [Responsibility spine](roots.md)
 - [Retired vocabulary](retired-vocabulary.md)
-- [Rosetta lexicon additions](admitted-lexicon.txt), subordinate to the
-  [Book lexicon](../book_of_seed/admitted-lexicon.txt) without sharing its file
+- [Rosetta lexicon](admitted-lexicon.txt)
 
 The Book's Responsibility spine supplies the ordering. Rosetta words hang
 from the exact coordinates they translate, or record a word that named nothing
