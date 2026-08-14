@@ -184,6 +184,89 @@ class AdjacentPairContextObservation:
     exact_order: tuple[int, ...]
     evidence: dict[str, object]
 
+    def __post_init__(self) -> None:
+        source_id = self.source_occurrence_id
+        if not isinstance(source_id, str) or not source_id:
+            raise PreservedMaterialMeasurementError(
+                "an adjacent context requires one exact source occurrence"
+            )
+        if self.pair_occurrence.left.source_occurrence_id != source_id:
+            raise PreservedMaterialMeasurementError(
+                "the pair occurrence is outside the observed source occurrence"
+            )
+        expected_order = []
+        if self.left_occurrence is not None:
+            if (
+                self.left_occurrence.source_occurrence_id != source_id
+                or self.left_occurrence.position
+                != self.pair_occurrence.left.position - 1
+            ):
+                raise PreservedMaterialMeasurementError(
+                    "the left occurrence is not exactly adjacent to the pair"
+                )
+            expected_order.append(self.left_occurrence.position)
+        expected_order.extend(
+            (
+                self.pair_occurrence.left.position,
+                self.pair_occurrence.right.position,
+            )
+        )
+        if self.right_occurrence is not None:
+            if (
+                self.right_occurrence.source_occurrence_id != source_id
+                or self.right_occurrence.position
+                != self.pair_occurrence.right.position + 1
+            ):
+                raise PreservedMaterialMeasurementError(
+                    "the right occurrence is not exactly adjacent to the pair"
+                )
+            expected_order.append(self.right_occurrence.position)
+        if self.exact_order != tuple(expected_order):
+            raise PreservedMaterialMeasurementError(
+                "the carried order does not match the exact observed positions"
+            )
+        evidence = self.evidence
+        finding_id = evidence.get("pair_finding_event_id")
+        evidence_ids = evidence.get("evidence_occurrence_ids")
+        text = evidence.get("exact_decoded_text")
+        if (
+            evidence.get("source_occurrence_id") != source_id
+            or not isinstance(finding_id, str)
+            or not finding_id
+            or evidence_ids != [finding_id, source_id]
+            or evidence.get("source_kind") != INGRESS_OCCURRED_KIND
+            or not isinstance(evidence.get("workspace_id"), str)
+            or not isinstance(evidence.get("session_id"), str)
+            or not isinstance(text, str)
+        ):
+            raise PreservedMaterialMeasurementError(
+                "the adjacent context does not preserve its exact Evidence"
+            )
+        positions = _positions(text)
+        carried = (
+            *((self.left_occurrence,) if self.left_occurrence is not None else ()),
+            self.pair_occurrence.left,
+            self.pair_occurrence.right,
+            *((self.right_occurrence,) if self.right_occurrence is not None else ()),
+        )
+        if any(
+            occurrence.position >= len(positions)
+            or positions[occurrence.position] != occurrence.representation
+            for occurrence in carried
+        ):
+            raise PreservedMaterialMeasurementError(
+                "the observed occurrences do not match the carried source Evidence"
+            )
+
+    @property
+    def identity(self) -> tuple[str, str, int, int]:
+        return (
+            self.evidence["pair_finding_event_id"],
+            self.source_occurrence_id,
+            self.pair_occurrence.left.position,
+            self.pair_occurrence.right.position,
+        )
+
     @property
     def candidate(self) -> dict[str, object] | None:
         """Return one occurrence-bound candidate only when both sides exist."""
@@ -192,6 +275,7 @@ class AdjacentPairContextObservation:
             return None
         return {
             "identity": {
+                "pair_finding_event_id": self.evidence["pair_finding_event_id"],
                 "source_occurrence_id": self.source_occurrence_id,
                 "positions": list(self.exact_order),
             },
@@ -806,6 +890,8 @@ def observe_adjacent_pair_contexts_from_finding(
             or recorded.kind != INGRESS_OCCURRED_KIND
             or recorded.workspace_id != finding.workspace_id
             or recorded.session_id != finding.session_id
+            or recorded.workspace_id != event.workspace_id
+            or recorded.session_id != event.session_id
             or recorded.payload != event.payload
         ):
             raise PreservedMaterialMeasurementError(
@@ -829,6 +915,15 @@ def compare_adjacent_pair_contexts(
     """
 
     bounded = tuple(observations)
+    if not all(isinstance(item, AdjacentPairContextObservation) for item in bounded):
+        raise PreservedMaterialMeasurementError(
+            "adjacent-context Compare requires exact bounded observations"
+        )
+    identities = [observation.identity for observation in bounded]
+    if len(set(identities)) != len(identities):
+        raise PreservedMaterialMeasurementError(
+            "the same exact adjacent-context observation was supplied more than once"
+        )
     candidates = tuple(
         candidate
         for observation in bounded
@@ -854,6 +949,7 @@ def compare_adjacent_pair_contexts(
         "distinct_occurrence_bound_candidates": len(
             {
                 (
+                    candidate["identity"]["pair_finding_event_id"],
                     candidate["identity"]["source_occurrence_id"],
                     tuple(candidate["identity"]["positions"]),
                 )
@@ -862,10 +958,10 @@ def compare_adjacent_pair_contexts(
         ),
         "distinct_representation_triples": len(representation_groups),
         "counterexamples": {
-            "same_representations_different_occurrence": sum(
+            "representation_triple_groups_with_multiple_occurrences": sum(
                 len(group) > 1 for group in representation_groups.values()
             ),
-            "same_ordered_pair_different_endpoint_representations": sum(
+            "ordered_pair_groups_with_multiple_endpoint_representations": sum(
                 len(
                     {
                         (
@@ -878,7 +974,7 @@ def compare_adjacent_pair_contexts(
                 > 1
                 for group in edge_groups.values()
             ),
-            "same_endpoint_representations_different_ordered_pairs": sum(
+            "endpoint_groups_with_multiple_ordered_pairs": sum(
                 len(
                     {
                         tuple(candidate["candidate_edge"]["ordered_pair"])

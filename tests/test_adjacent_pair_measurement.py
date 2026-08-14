@@ -22,6 +22,7 @@ Nothing here establishes represented relation, grammatical kind, relation, or tr
 from __future__ import annotations
 
 import json
+from dataclasses import replace
 from io import StringIO
 from itertools import product
 
@@ -246,6 +247,7 @@ def test_every_exact_pair_occurrence_preserves_its_adjacent_context_and_evidence
             observation.pair_occurrence.left.position + 1
         )
         assert observation.candidate["identity"] == {
+            "pair_finding_event_id": pair_finding.id,
             "source_occurrence_id": source.id,
             "positions": list(observation.exact_order),
         }
@@ -291,6 +293,60 @@ def test_context_observation_refuses_a_different_or_rewritten_source_occurrence(
             finding_event_id=finding.id,
             occurrences=(rewritten, material[1]),
         )
+
+    relocated = material[0].model_copy(
+        deep=True,
+        update={"workspace_id": "another-workspace"},
+    )
+    with pytest.raises(
+        PreservedMaterialMeasurementError,
+        match="source-occurrence Evidence does not reconstruct",
+    ):
+        observe_adjacent_pair_contexts_from_finding(
+            ledger,
+            finding_event_id=finding.id,
+            occurrences=(relocated, material[1]),
+        )
+
+
+def test_direct_context_construction_cannot_rewrite_order_adjacency_or_evidence():
+    _, observations = _context_road(("L a b R",), ("a",))
+    observation = observations[0]
+
+    mutations = (
+        lambda item: replace(item, exact_order=(0, 2, 1, 3)),
+        lambda item: replace(
+            item,
+            left_occurrence=replace(item.left_occurrence, position=7),
+        ),
+        lambda item: replace(
+            item,
+            evidence={**item.evidence, "source_occurrence_id": "another"},
+        ),
+        lambda item: replace(
+            item,
+            evidence={**item.evidence, "exact_decoded_text": "L a changed R"},
+        ),
+    )
+    for mutate in mutations:
+        with pytest.raises(PreservedMaterialMeasurementError):
+            mutate(observation)
+
+
+def test_compare_refuses_duplicate_or_non_observation_inputs():
+    _, observations = _context_road(("L a b R",), ("a",))
+    observation = observations[0]
+
+    with pytest.raises(
+        PreservedMaterialMeasurementError,
+        match="same exact adjacent-context observation",
+    ):
+        compare_adjacent_pair_contexts((observation, observation))
+    with pytest.raises(
+        PreservedMaterialMeasurementError,
+        match="exact bounded observations",
+    ):
+        compare_adjacent_pair_contexts((observation, {"looks": "similar"}))
 
 
 def test_boundary_absence_is_preserved_without_filling_candidate_nodes():
@@ -351,9 +407,9 @@ def test_compare_reports_only_adjacency_coordinates_that_survive_counterexamples
         "distinct_occurrence_bound_candidates": 4,
         "distinct_representation_triples": 3,
         "counterexamples": {
-            "same_representations_different_occurrence": 1,
-            "same_ordered_pair_different_endpoint_representations": 1,
-            "same_endpoint_representations_different_ordered_pairs": 1,
+            "representation_triple_groups_with_multiple_occurrences": 1,
+            "ordered_pair_groups_with_multiple_endpoint_representations": 1,
+            "endpoint_groups_with_multiple_ordered_pairs": 1,
         },
         "distinct_adjacency_coordinates": [
             {
