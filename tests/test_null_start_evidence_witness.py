@@ -3,9 +3,9 @@
 This module is a microscope, not a claim.  It runs the live operator console
 from an empty ledger over fixed operator material and reports exactly what Seed
 preserved.  Its assertions are deliberately confined to *what is present in the
-record*.  Nothing here asserts meaning, relation, structure, or intent, because
+record*.  Nothing here asserts represented relation, relation, structure, or intent, because
 none of that is established by ingress -- ``operator.ingress.ingress_occurred``
-records ``authority="occurrence-only; meaning Unknown"``.
+records ``authority="occurrence-only; represented relation Unknown"``.
 
 `render_null_start_evidence` produces the human-readable dump for inspection.
 Run it directly to look through the microscope:
@@ -98,11 +98,11 @@ def test_decoded_representation_is_preserved_for_every_ingress(events):
         assert isinstance(event.payload.get("decoded_text"), str)
 
 
-def test_ingress_claims_only_occurrence_and_records_meaning_unknown(events):
+def test_ingress_claims_only_occurrence_and_records_represented_relation_unknown(events):
     """Ingress states its own limit in its own record."""
     for event in (e for e in events if e.kind == OCCURRED):
         authority = event.payload["dimensions"]["authority_warrant"]
-        assert authority == "occurrence-only; meaning Unknown"
+        assert authority == "occurrence-only; represented relation Unknown"
 
 
 def test_capture_claims_only_occurrence_evidence(events):

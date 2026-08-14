@@ -18,7 +18,7 @@ _PRESENTATION_EMITTED_KIND = "operator.presentation.emitted"
 _COMPARISON_KIND = "operator.exchange.comparison_occurred"
 _IDENTIFICATION_KIND = "operator.exchange.identification_occurred"
 _SOURCE_RECOVERED_KIND = "operator.presentation.source_recovered"
-_MEANING_RELATION_KIND = "operator.presentation.meaning_relation_established"
+_REPRESENTED_RELATION_KIND = "operator.presentation.represented_relation_established"
 _SUPPORTED_KINDS = {
     *_SUBJECT_BY_KIND,
     "operator.ingress.representation_examined",
@@ -27,7 +27,7 @@ _SUPPORTED_KINDS = {
     _COMPARISON_KIND,
     _IDENTIFICATION_KIND,
     _SOURCE_RECOVERED_KIND,
-    _MEANING_RELATION_KIND,
+    _REPRESENTED_RELATION_KIND,
 }
 
 
@@ -101,7 +101,7 @@ def advance_operator_session_standing(
     from the ledger and is not itself recorded: it exposes only standings,
     limits, and Unknowns the session's events already carry.  An empty
     coordinate is absence of record, not negative standing and not Unknown.
-    Meaning candidates are never produced here; each preserved ingress keeps
+    Represented relation candidates are never produced here; each preserved ingress keeps
     the authority its own event recorded.
     """
     scope = f"workspace:{workspace_id};session:{session_id}"
@@ -113,9 +113,9 @@ def advance_operator_session_standing(
     identifications: dict[str, dict[str, Any]] = {}
     latest_exchange_finding: dict[str, Any] | None = None
     source_recoveries: dict[str, dict[str, Any]] = {}
-    meaning_relations: dict[str, dict[str, Any]] = {}
+    represented_relations: dict[str, dict[str, Any]] = {}
     latest_source_recovery: dict[str, Any] | None = None
-    latest_meaning_relation: dict[str, Any] | None = None
+    latest_represented_relation: dict[str, Any] | None = None
     # Kept sorted and distinct in place rather than as a set sorted on return.
     # A set would have to be rebuilt from the prior list and re-sorted on every
     # advance, which costs the accumulated size each time.  These coordinates
@@ -140,9 +140,9 @@ def advance_operator_session_standing(
         identifications = prior["identifications"]
         latest_exchange_finding = prior["latest_exchange_finding"]
         source_recoveries = prior["source_recoveries"]
-        meaning_relations = prior["meaning_relations"]
+        represented_relations = prior["represented_relations"]
         latest_source_recovery = prior["latest_source_recovery"]
-        latest_meaning_relation = prior["latest_meaning_relation"]
+        latest_represented_relation = prior["latest_represented_relation"]
         known_loss = prior["known_loss"]
         unknowns = prior["unknowns"]
         conflicts = prior["conflicts"]
@@ -273,7 +273,7 @@ def advance_operator_session_standing(
                 ]
                 if expected_match is not None
                 else [
-                    "response meaning Unknown",
+                    "response represented relation Unknown",
                     "operator intent Unknown",
                     "operator selection occurrence Unknown",
                     "requested treatment Unknown",
@@ -560,13 +560,13 @@ def advance_operator_session_standing(
             source_recoveries[payload["recovery_ref"]] = recovery
             latest_source_recovery = recovery
             continue
-        if event.kind == _MEANING_RELATION_KIND:
+        if event.kind == _REPRESENTED_RELATION_KIND:
             payload = event.payload
             recovery_event_id = payload["source_recovery_event_id"]
             recovery = source_recoveries.get(payload["recovery_ref"])
             if recovery is None:
                 raise ValueError(
-                    "meaning relation without recorded source recovery: "
+                    "represented relation without recorded source recovery: "
                     f"{payload['recovery_ref']}"
                 )
             # The joined pair must agree on every shared coordinate; a
@@ -574,7 +574,7 @@ def advance_operator_session_standing(
             presentation = presentations.get(payload["presentation_ref"])
             if presentation is None:
                 raise ValueError(
-                    "meaning relation names an unrecorded presentation: "
+                    "represented relation names an unrecorded presentation: "
                     f"{payload['presentation_ref']}"
                 )
             recorded_alternative = next(
@@ -587,7 +587,7 @@ def advance_operator_session_standing(
             )
             if recorded_alternative is None:
                 raise ValueError(
-                    "meaning relation names an alternative outside its "
+                    "represented relation names an alternative outside its "
                     "recorded presentation"
                 )
             recorded_source = recorded_alternative["represented_source"]
@@ -626,7 +626,7 @@ def advance_operator_session_standing(
                 ),
                 # The proposition and its attribution must equal the recorded
                 # formation testimony exactly; a forged M is refused here.
-                (payload["proposition"], recorded_source["meaning"], "proposition"),
+                (payload["proposition"], recorded_source["represented_result"], "proposition"),
                 (
                     payload["source_attribution"],
                     recorded_source["attribution"],
@@ -646,7 +646,7 @@ def advance_operator_session_standing(
             for supplied, recorded, coordinate in agreements:
                 if supplied != recorded:
                     raise ValueError(
-                        "meaning relation does not agree with its recorded "
+                        "represented relation does not agree with its recorded "
                         f"source recovery on {coordinate}"
                     )
             # The structural Authority coordinates are reconstructed from
@@ -656,11 +656,11 @@ def advance_operator_session_standing(
             reconstructed_separation = {
                 "source_authority": {
                     "standing": "bounded",
-                    "supports": ["source-supplied-with-attributed-meaning"],
+                    "supports": ["source-supplied-with-attributed-relation"],
                     "evidence_event_ids": [recovery["presentation_formed_event_id"]],
                     "scope": {
                         "source_identity": recovery["source"]["identity"],
-                        "proposition": recorded_source["meaning"],
+                        "proposition": recorded_source["represented_result"],
                     },
                 },
                 "response_comparison_authority": {
@@ -672,7 +672,7 @@ def advance_operator_session_standing(
                         "response_attempt_ref": recovery["response_attempt_ref"],
                     },
                 },
-                "meaning_warrant": {
+                "relation_warrant": {
                     "standing": "established",
                     "supports": ["source-expresses-proposition"],
                     "evidence_event_ids": [
@@ -681,20 +681,20 @@ def advance_operator_session_standing(
                     ],
                     "scope": {
                         "source_identity": recovery["source"]["identity"],
-                        "proposition": recorded_source["meaning"],
+                        "proposition": recorded_source["represented_result"],
                     },
                 },
                 "operator_authority": {
                     "standing": "unresolved",
                     "supports": [],
                     "evidence_event_ids": [],
-                    "scope": {"proposition": recorded_source["meaning"]},
+                    "scope": {"proposition": recorded_source["represented_result"]},
                 },
             }
             carried_separation = payload["authority_separation"]
             if set(carried_separation) != set(reconstructed_separation):
                 raise ValueError(
-                    "meaning relation does not carry the four Authority "
+                    "represented relation does not carry the four Authority "
                     "coordinates"
                 )
             authority_separation = {}
@@ -703,7 +703,7 @@ def advance_operator_session_standing(
                 for field, value in reconstructed.items():
                     if carried.get(field) != value:
                         raise ValueError(
-                            "meaning relation does not agree with recorded "
+                            "represented relation does not agree with recorded "
                             f"testimony on {name}.{field}"
                         )
                 authority_separation[name] = {
@@ -715,7 +715,7 @@ def advance_operator_session_standing(
             # conflict inventory is refused rather than exposed.
             reconstructed_relation_standing = {
                 "warrant_basis": (
-                    "attributed developer-supplied meaning testimony "
+                    "attributed developer-supplied relation testimony "
                     "preserved by the recorded formation occurrence"
                 ),
                 "known_loss": [],
@@ -728,10 +728,10 @@ def advance_operator_session_standing(
             for field, value in reconstructed_relation_standing.items():
                 if payload[field] != value:
                     raise ValueError(
-                        "meaning relation does not agree with recorded "
+                        "represented relation does not agree with recorded "
                         f"testimony on {field}"
                     )
-            if payload["relation_ref"] in meaning_relations:
+            if payload["relation_ref"] in represented_relations:
                 raise ValueError(
                     f"duplicate relation reference: {payload['relation_ref']}"
                 )
@@ -760,8 +760,8 @@ def advance_operator_session_standing(
                 "unknowns": reconstructed_relation_standing["unknowns"],
                 "conflicts": reconstructed_relation_standing["conflicts"],
             }
-            meaning_relations[payload["relation_ref"]] = relation
-            latest_meaning_relation = relation
+            represented_relations[payload["relation_ref"]] = relation
+            latest_represented_relation = relation
             continue
         attempt_ref = event.payload["attempt_ref"]
         attempt = attempts.setdefault(
@@ -810,9 +810,9 @@ def advance_operator_session_standing(
         "identifications": identifications,
         "latest_exchange_finding": latest_exchange_finding,
         "source_recoveries": source_recoveries,
-        "meaning_relations": meaning_relations,
+        "represented_relations": represented_relations,
         "latest_source_recovery": latest_source_recovery,
-        "latest_meaning_relation": latest_meaning_relation,
+        "latest_represented_relation": latest_represented_relation,
         "recorded_relation_standings": [],
         "known_loss": known_loss,
         "unknowns": unknowns,

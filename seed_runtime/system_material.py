@@ -232,7 +232,7 @@ def preserve_system_material(
                     "standing": "occurred",
                     "source_provenance": observed_boundary,
                     "responsibility": "system-material-occurrence",
-                    "authority_warrant": "occurrence-only; meaning Unknown",
+                    "authority_warrant": "occurrence-only; represented relation Unknown",
                     "scope_locality": f"workspace:{workspace_id};session:{session_id}",
                     "occurrence_preservation": "exact material durably recorded",
                 },

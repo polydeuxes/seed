@@ -88,7 +88,7 @@ def test_console_forms_c0_before_first_ingress_and_preserves_provenance_only():
     c0_formed, c0_emitted = ledger.list("w")[:2]
     assert c0_formed.payload["session_standing_as_of_event_id"] is None
     assert c0_formed.payload["prior_exchange_finding"] is None
-    assert c0_formed.payload["recovered_meaning_relation"] is None
+    assert c0_formed.payload["recovered_represented_relation"] is None
     assert c0_formed.payload["unknowns"] == []
     # The console attaches no Presentation to the capture: several emissions
     # may precede it and nothing determines which, if any, it relates to.
@@ -115,7 +115,7 @@ def test_no_compare_or_identification_follows_console_ingress():
     assert "operator.exchange.comparison_occurred" not in kinds
     assert "operator.exchange.identification_occurred" not in kinds
     assert "operator.presentation.source_recovered" not in kinds
-    assert "operator.presentation.meaning_relation_established" not in kinds
+    assert "operator.presentation.represented_relation_established" not in kinds
     assert not any(kind.startswith("operator.interaction.") for kind in kinds)
 
     # Every ingress still carries its exact produced-after testimony.
@@ -146,11 +146,11 @@ def test_c0_presents_standing_with_no_developer_semantics():
     payload = ledger.get(c0["formed_event_id"]).payload
     assert payload["session_standing_as_of_event_id"] is None
     assert payload["prior_exchange_finding"] is None
-    assert payload["recovered_meaning_relation"] is None
+    assert payload["recovered_represented_relation"] is None
     assert payload["unknowns"] == []
     assert payload["conflicts"] == []
 
-    # No developer-supplied alternatives, sources, meanings, or treatment.
+    # No developer-supplied alternatives, sources, represented relations, or treatment.
     assert payload["alternatives"] == []
     assert payload["coordinate_bindings"] == {}
     flattened = str(payload)
@@ -231,7 +231,7 @@ def test_console_presents_standing_only_across_an_ingress():
     assert not any(k.startswith("operator.exchange.") for k in kinds)
     assert not any(k.startswith("operator.interaction.") for k in kinds)
     assert "operator.presentation.source_recovered" not in kinds
-    assert "operator.presentation.meaning_relation_established" not in kinds
+    assert "operator.presentation.represented_relation_established" not in kinds
 
     c0, _, _, _, ingress, c1, _ = ledger.list("w")
     # C1 is formed from Standing that now contains the preserved ingress.
@@ -276,7 +276,7 @@ def test_alternatives_carry_complete_coordinates_and_provenance_evidence():
     # recorded absence of prior session events, not a fabricated Unknown.
     assert "provenance" in presentation
     assert presentation["known_loss"] == [
-        "rendered label compresses represented candidate meaning"
+        "rendered label compresses represented candidate relation"
     ]
     # No response occurrence exists at formation; that is absence, not
     # Unknown, so the formed Presentation carries no Unknowns.
@@ -294,10 +294,10 @@ def test_alternatives_carry_complete_coordinates_and_provenance_evidence():
         assert alternative["rendered_label"]
         source = alternative["represented_source"]
         assert source["identity"].startswith("source:")
-        assert source["identity"] != source["meaning"]
+        assert source["identity"] != source["represented_result"]
         assert source["kind"]
         assert source["attribution"] == "developer-supplied"
-        assert source["meaning"]
+        assert source["represented_result"]
         assert source["reference"]
         representation = alternative["representation"]
         assert representation["formation_result"]
@@ -316,7 +316,7 @@ def test_alternatives_carry_complete_coordinates_and_provenance_evidence():
     assert len(formation_results) == 3
 
 
-def test_no_new_meaning_candidate_is_synthesized():
+def test_no_new_represented_relation_candidate_is_synthesized():
     ledger = EventLedger()
     _fixture_presentation(ledger)
 

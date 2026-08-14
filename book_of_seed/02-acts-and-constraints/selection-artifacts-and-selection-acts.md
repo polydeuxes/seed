@@ -1,4 +1,4 @@
-# Selection Artifacts and Acts of Selection
+# Selection and Selection Acts
 
 ## Constitutional subject
 The boundary between a selection record and the bounded act that chooses from a candidate set.

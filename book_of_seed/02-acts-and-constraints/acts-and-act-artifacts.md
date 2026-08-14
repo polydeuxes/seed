@@ -1,4 +1,4 @@
-# Acts and Act Artifacts
+# Acts and Occurrences
 
 ## Constitutional subject
 The classification of acts and the artifacts that report, propose, or preserve them.

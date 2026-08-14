@@ -15,7 +15,7 @@ consumed by anything.
 `01.External:28` requires three disclosures of any recurrence assertion. They
 are required fields here, and an absent one is refused rather than defaulted.
 
-Nothing here establishes meaning. `01.Standing.D` refuses relation standing to
+Nothing here establishes represented relation. `01.Standing.D` refuses relation standing to
 co-presence, and a finding reports co-presence.
 """
 
@@ -116,7 +116,7 @@ def test_the_material_measured_is_the_session_s_own_occurrences(occurrences):
     assert len(occurrences) == 5
     assert all(
         event.payload["dimensions"]["authority_warrant"]
-        == "occurrence-only; meaning Unknown"
+        == "occurrence-only; represented relation Unknown"
         for event in occurrences
     )
 
@@ -267,7 +267,7 @@ def test_the_recorded_authority_states_the_clause_s_own_limit(session, occurrenc
     )
     authority = event.payload["dimensions"]["authority_warrant"]
     assert "measurement evidence only" in authority
-    assert "no meaning, relation" in authority
+    assert "no represented relation, relation" in authority
     assert event.payload["unknowns"] == [
         "what any measured representation means remains Unknown"
     ]
@@ -283,7 +283,7 @@ def test_the_finding_disclaims_what_a_dominant_occupant_is_not(session, occurren
         ),
     )
     notes = " ".join(event.payload["boundary_notes"])
-    assert "is not the meaning of that position" in notes
+    assert "is not the represented relation of that position" in notes
     assert "establishes no relation" in notes
     assert "not stronger than a finding without one" in notes
 

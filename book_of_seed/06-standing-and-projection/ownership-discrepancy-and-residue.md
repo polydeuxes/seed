@@ -1,4 +1,4 @@
-# Ownership, Discrepancy, and Residue
+# Responsibility Discrepancy and Residue
 
 ## Constitutional subject
 The characterization of current responsibility, competing ownership claims, invalid paths, naming conflicts, and historical residue.

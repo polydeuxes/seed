@@ -64,7 +64,7 @@ BANNED: tuple[tuple[str, str], ...] = (
     (r"\bStateProjector\b", "StateProjector"),
     # Words active law contains but never defines, which arrive carrying an
     # ordinary-language bundle no clause supplies.  `translation` drags source
-    # language, target language, semantic equivalence, meaning preservation,
+    # language, target language, semantic equivalence, represented relation preservation,
     # and a translator; no clause states what a translation is, names a
     # translation occurrence, or names a translation boundary.  See
     # `relation_proposal_join_investigation_001.md` section 9.
@@ -92,6 +92,7 @@ BANNED: tuple[tuple[str, str], ...] = (
     (r"\bhandoffs?\b|handoff[-_]", "handoff"),
     (r"\blineage\b|lineage[-_]", "lineage"),
     (r"\bpurposes?\b|purpose[-_]", "purpose"),
+    (r"\bmeanings?\b|meaning[-_]", "meaning"),
 )
 
 # The discriminator, corrected.

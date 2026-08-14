@@ -11,7 +11,7 @@ CLOSED_CHOICE_FIXTURE_SOURCES = (
             "identity": "source:operator-ingress-navigation",
             "kind": "operator-ingress-navigation",
             "attribution": "developer-supplied",
-            "meaning": "navigate to preserved operator ingress",
+            "represented_result": "navigate to preserved operator ingress",
             "reference": "seed_runtime.operator_ingress_view",
         },
     },
@@ -25,7 +25,7 @@ CLOSED_CHOICE_FIXTURE_SOURCES = (
             "identity": "source:operator-ingress-view-navigation",
             "kind": "operator-ingress-view-navigation",
             "attribution": "developer-supplied",
-            "meaning": "navigate to the current Standing View",
+            "represented_result": "navigate to the current Standing View",
             "reference": (
                 "seed_runtime.operator_ingress_view.format_operator_ingress_view"
             ),
@@ -39,7 +39,7 @@ CLOSED_CHOICE_FIXTURE_SOURCES = (
             "identity": "source:operator-exchange-navigation",
             "kind": "operator-exchange-navigation",
             "attribution": "developer-supplied",
-            "meaning": "navigate to the recorded operator exchange",
+            "represented_result": "navigate to the recorded operator exchange",
             "reference": "seed_runtime.operator_response_comparison",
         },
     },

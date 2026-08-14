@@ -310,7 +310,7 @@ def run_operator_ingress_attempt(
                 standing="occurred",
                 source=ingress_examination_event.id,
                 responsibility="operator-ingress",
-                authority="occurrence-only; meaning Unknown",
+                authority="occurrence-only; represented relation Unknown",
                 scope=f"workspace:{workspace_id};session:{session_id}",
                 occurrence="exact material preserved; no text representation available",
             ),
@@ -387,7 +387,7 @@ def run_operator_ingress_attempt(
             standing="occurred",
             source=ingress_examination_event.id,
             responsibility="operator-ingress",
-            authority="occurrence-only; meaning Unknown",
+            authority="occurrence-only; represented relation Unknown",
             scope=f"workspace:{workspace_id};session:{session_id}",
             occurrence=(
                 "strictly decoded text preserves capture/examination provenance"

@@ -280,9 +280,9 @@ Change the Book when constitutional grammar, a durable distinction, or the statu
 
 1. [Grammar and Standing](01-grammar-and-standing/)
 2. [Acts and Constraints](02-acts-and-constraints/)
-3. [Goals and Advancement](03-goals-and-advancement/)
+3. [Movement and Selection](03-goals-and-advancement/)
 4. [Inquiry](04-inquiry/)
-5. [Evidence and Knowledge](05-evidence-and-knowledge/)
-6. [Standing and Projection](06-standing-and-projection/)
+5. [Evidence and Provenance](05-evidence-and-knowledge/)
+6. [Standing and Locality](06-standing-and-projection/)
 7. **Intentionally absent** — see [Book VII Implementation Topic Collection Excision 001](book_vii_operational_topic_collection_excision_001.md).
-8. [Authority, Communication, and Stopping](08-authority-communication-and-stopping/)
+8. [Authority, Emission, and Stopping](08-authority-communication-and-stopping/)

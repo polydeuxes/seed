@@ -1,7 +1,7 @@
-# Book III: Goals and Advancement
+# Book III: Movement and Selection
 
-This Book concerns lawful goal standing and the bounded distinctions between orientation, Demand, selection, authorization, and movement.
+This Book concerns movement, Selection, Authorization, and the exact result boundaries under which they occur.
 
-- [Orientation and movement](orientation-and-movement.md)
-- [Demands and opened movement](demands-and-opened-movement.md)
-- [Selection and authorization](selection-and-authorization.md)
+- [Movement coordinates](orientation-and-movement.md)
+- [Result boundaries and movement](demands-and-opened-movement.md)
+- [Selection and Authorization](selection-and-authorization.md)

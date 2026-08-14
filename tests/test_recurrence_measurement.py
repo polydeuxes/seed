@@ -1132,7 +1132,7 @@ def test_the_vocabulary_is_gone(compared):
 def test_a_payload_string_cannot_manufacture_an_exchange(compared):
     """`#2432` established existence from `dimensions.scope_locality`.
 
-    That coordinate's meaning is itself left Unknown by the same report, and a
+    That coordinate's represented relation is itself left Unknown by the same report, and a
     record can say anything in it. The recorded session boundary is the witness.
     """
     compared.append(

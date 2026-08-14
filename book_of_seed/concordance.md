@@ -1,53 +1,25 @@
 # Concordance
 
-This is a lightweight navigation index. Aliases record repository or presentation vocabulary; they do not grant constitutional equivalence or standing.
+Navigation only. Entries do not grant constitutional identity or Standing.
 
-| Concept | Book | Chapter | Known aliases | Closely related concepts |
-|---|---|---|---|---|
-| external grammar | Grammar and Standing | [External and constitutional grammar](01-grammar-and-standing/external-and-constitutional-grammar.md) | candidate external grammar, recovered representation grammar | constitutional grammar, testimony |
-| constitutional kind | Grammar and Standing | [Constitutional standing](01-grammar-and-standing/constitutional-standing.md) | kind, constitutional subject | Standing, establishment |
-| dimensional characterization | Grammar and Standing | [Constitutional standing](01-grammar-and-standing/constitutional-standing.md) | macro dimensions, local coordinates | constitutional subject, Standing, locality, Responsibility, Unknown |
-| constructor | Grammar and Standing | [Constructors and production authority](01-grammar-and-standing/constructors-and-production-authority.md) | builder, factory | production authority, establishment |
-| production authority | Grammar and Standing | [Constructors and production authority](01-grammar-and-standing/constructors-and-production-authority.md) | lawful constructor, ingress | standing, authority scope |
-| act | Acts and Constraints | [Acts and act artifacts](02-acts-and-constraints/acts-and-act-artifacts.md) | input act, act | proposal, act occurrence, result |
-| constraint | Acts and Constraints | [Constraints and preconditions](02-acts-and-constraints/constraints-and-preconditions.md) | precondition | authority |
-| selection artifact | Acts and Constraints | [Selection artifacts and acts of selection](02-acts-and-constraints/selection-artifacts-and-selection-acts.md) | selection record, binding | candidate set, selection act |
-| representation selection | Acts and Constraints | [Selection artifacts and acts of selection](02-acts-and-constraints/selection-artifacts-and-selection-acts.md) | view selection, read-model selection | View, composition, selection artifact |
-| selection standing | Acts and Constraints | [Selection artifacts and acts of selection](02-acts-and-constraints/selection-artifacts-and-selection-acts.md) | bounded selection standing | representation standing, authorization standing |
-| orientation | Goals and Advancement | [Orientation and movement](03-goals-and-advancement/orientation-and-movement.md) | current movement position, source navigation | movement, View |
-| goal-advancement Demand | Goals and Advancement | [Demands and opened movement](03-goals-and-advancement/demands-and-opened-movement.md) | former advancement-need vocabulary, former `NeedFamily` implementation vocabulary | bounded horizon, movement |
-| authorization | Goals and Advancement | [Selection and authorization](03-goals-and-advancement/selection-and-authorization.md) | approval | selection, authority scope |
-| constitutional question | Inquiry | [Questions and inquiry](04-inquiry/questions-and-inquiry.md) | bounded question, question surface | uncertainty, inquiry |
-| inquiry frontier | Inquiry | [Inquiry frontiers](04-inquiry/inquiry-frontiers.md) | bounded frontier, inquiry artifacts | boundary testimony, applicability |
-| testimony | Evidence and Knowledge | [Testimony and established fact](05-evidence-and-knowledge/testimony-and-established-fact.md) | observation, finding, claim expression, source claim | claim, fact, evidence |
-| normalization | Evidence and Knowledge | [Testimony and Assertion Standing](05-evidence-and-knowledge/testimony-and-assertion-standing.md) | canonical representation of asserted content | Assertion, Evidence, Standing |
-| temporal standing | Evidence and Knowledge | [Testimony and established fact](05-evidence-and-knowledge/testimony-and-established-fact.md) | temporal applicability, support time, currentness | observed_at, expiry, projection, exact Act participation |
-| evidence | Evidence and Knowledge | [Evidence, provenance, and explanation](05-evidence-and-knowledge/evidence-provenance-and-explanation.md) | support, provenance | fact, explanation |
-| knowledge extraction | Evidence and Knowledge | [Recording and knowledge extraction](05-evidence-and-knowledge/recording-and-knowledge-extraction.md) | fact extraction, promotion | recording, reconciliation |
-| View emission | Authority, Communication, and Stopping | [Representation, emission, and locality](08-authority-communication-and-stopping/representation-emission-and-locality.md) | egress view, operator-facing view | warrant, reliance, emission |
-| ownership discrepancy | Standing and Projection | [Ownership, discrepancy, and residue](06-standing-and-projection/ownership-discrepancy-and-residue.md) | responsibility mismatch, historical residue | authority, canonical path |
-| capability proposition | Evidence and Knowledge | [Testimony and established fact](05-evidence-and-knowledge/testimony-and-established-fact.md) | candidate capability, bounded transformation support | claim standing, evidence, Demand |
-| mechanism-fit finding | Evidence and Knowledge | [Testimony and established fact](05-evidence-and-knowledge/testimony-and-established-fact.md) | bounded comparison standing, historical implementation realization warrant wording | capability proposition, reachability, selection, authority |
-| warrant | Evidence and Knowledge | [Evidence, provenance, and explanation](05-evidence-and-knowledge/evidence-provenance-and-explanation.md) | bounded support, mechanism-fitness warrant | claim standing, evidence, authority |
-| Seed-owned act occurrence | Acts and Constraints | [Acts and act artifacts](02-acts-and-constraints/acts-and-act-artifacts.md) | authorized act occurrence | result, recording, testimony |
-| implementation measurement | Evidence and Knowledge | [Testimony and established fact](05-evidence-and-knowledge/testimony-and-established-fact.md) | act-instance testimony, timing sample, elapsed duration | measurement production, testimony, preservation |
-| implementation baseline | Evidence and Knowledge | [Testimony and established fact](05-evidence-and-knowledge/testimony-and-established-fact.md) | established ordinary implementation behavior | baseline establishment, implementation measurement, temporal standing, preservation |
-| runtime/resource observation | Evidence and Knowledge | [Testimony and established fact](05-evidence-and-knowledge/testimony-and-established-fact.md) | process memory, thread count, process runtime duration, database size, ledger size | testimony, observation, implementation measurement attribution |
-| material deviation | Evidence and Knowledge | [Testimony and established fact](05-evidence-and-knowledge/testimony-and-established-fact.md) | recognized material difference, regression claim | deviation recognition, baseline, comparison authority, uncertainty, preservation |
-| baseline transition | Evidence and Knowledge | [Testimony and established fact](05-evidence-and-knowledge/testimony-and-established-fact.md) | established changed ordinary behavior, changed regime | transition establishment, implementation baseline, temporal standing, evidence support, preservation |
-| authority scope | Authority, Communication, and Stopping | [Authority scope](08-authority-communication-and-stopping/authority-scope.md) | operator authority, approval scope | establishment, authorization |
-| policy | Authority, Communication, and Stopping | [Authority scope](08-authority-communication-and-stopping/authority-scope.md) | bounded representation of delegated Authority | Authority, result boundary, Scope |
-| representation and emission boundaries | Authority, Communication, and Stopping | [Representation, emission, and locality](08-authority-communication-and-stopping/representation-emission-and-locality.md) | presentation, communication | authority, responsibility transition, arrival, participation, explanation |
-| stopping | Authority, Communication, and Stopping | [Stopping and completion](08-authority-communication-and-stopping/stopping-and-completion.md) | exhaustion, bounded completion | constraint, advancement |
-
-## Sensing, gap, capability, and retained-understanding revision
-
-- **Sensing**: bounded testimony production through declared acquisition and interpretation; not provider material, environment truth, recording, current standing, remembering, or retained-understanding revision.
-- **Remembering**: preservation of testimony or standing from which later lawful recovery remains available; not current projection and not retained-understanding revision by retained history alone.
-- **Gap**: exact scoped difference from a declared reference condition. Demand != Gap, and Gap != Demand by identity or Authorization.
-- **Demand**: bounded required-result standing under an exact responsibility and scope. Demand != Capability, and Demand established != movement opened.
-- **“Capability demand”**: noncanonical shorthand for Demand content concerning a required transformation, effect, relation, competency, or outcome. It is not an independent constitutional kind, Capability, mechanism, selected mechanism, Authorization, or act occurrence.
-- **Capability proposition**: ordinary subject matter for claim standing concerning whether a transformation can be realized under declared conditions; not mechanism, reachability, authority, reliance warrant, or selection.
-- **Retained-understanding revision establishment**: provenance-bearing revision of retained understanding because prior evidence, comparison, probe, measurement, or interaction warranted revised standing; not model training, changed stored data, retained history, or changed movement by identity.
-- **Adaptive reliance**: later warranted consumption of revised standing; not retained-understanding revision establishment and does not establish a later act occurrence by identity.
-- **Causal standing**: distinct establishment that a movement caused an outcome; not proven by sequence, gap reduction, or capability revision alone.
+| Coordinate | Book | Chapter |
+|---|---|---|
+| external attribution | Grammar and Standing | [External and constitutional grammar](01-grammar-and-standing/external-and-constitutional-grammar.md) |
+| Assertion Standing | Grammar and Standing | [Constitutional Standing](01-grammar-and-standing/constitutional-standing.md) |
+| constructor and production Authority | Grammar and Standing | [Constructors and production Authority](01-grammar-and-standing/constructors-and-production-authority.md) |
+| Act and occurrence | Acts and Constraints | [Acts and occurrences](02-acts-and-constraints/acts-and-act-artifacts.md) |
+| Constraint | Acts and Constraints | [Constraints and preconditions](02-acts-and-constraints/constraints-and-preconditions.md) |
+| Selection | Acts and Constraints | [Selection and Selection Acts](02-acts-and-constraints/selection-artifacts-and-selection-acts.md) |
+| movement | Movement and Selection | [Movement coordinates](03-goals-and-advancement/orientation-and-movement.md) |
+| result boundary | Movement and Selection | [Result boundaries and movement](03-goals-and-advancement/demands-and-opened-movement.md) |
+| Authorization | Movement and Selection | [Selection and Authorization](03-goals-and-advancement/selection-and-authorization.md) |
+| Question | Inquiry | [Questions and inquiry](04-inquiry/questions-and-inquiry.md) |
+| frontier | Inquiry | [Inquiry frontiers](04-inquiry/inquiry-frontiers.md) |
+| testimony and normalization | Evidence and Provenance | [Testimony and Assertion Standing](05-evidence-and-knowledge/testimony-and-assertion-standing.md) |
+| Evidence and provenance | Evidence and Provenance | [Evidence and provenance](05-evidence-and-knowledge/evidence-provenance-and-explanation.md) |
+| recording and recovery | Evidence and Provenance | [Recording and Assertion recovery](05-evidence-and-knowledge/recording-and-knowledge-extraction.md) |
+| Event and current Standing | Standing and Locality | [Events and Standing](06-standing-and-projection/events-and-standing.md) |
+| Responsibility residue | Standing and Locality | [Responsibility discrepancy and residue](06-standing-and-projection/ownership-discrepancy-and-residue.md) |
+| Authority | Authority, Emission, and Stopping | [Authority Scope](08-authority-communication-and-stopping/authority-scope.md) |
+| representation and emission | Authority, Emission, and Stopping | [Representation, emission, and locality](08-authority-communication-and-stopping/representation-emission-and-locality.md) |
+| stopping | Authority, Emission, and Stopping | [Stopping and completion](08-authority-communication-and-stopping/stopping-and-completion.md) |

@@ -3,7 +3,7 @@
 The consumed recurrence Assertion contract owns exactly three immediate
 coordinates.  This Measurement preserves each complete value opaquely; it does
 not traverse nested dictionaries or lists, form cross-subject pairs, or infer
-relation, similarity, profile, or meaning.
+relation, similarity, profile, or represented relation.
 """
 
 from __future__ import annotations
@@ -38,14 +38,14 @@ MEASURED_ASSERTION_RESPONSIBILITY = (
 )
 MEASUREMENT_AUTHORITY = (
     "literal Measurement Evidence only; establishes no nested coordinate, "
-    "relation, similarity, profile, meaning, or Standing movement"
+    "relation, similarity, profile, represented relation, or Standing movement"
 )
 MEASUREMENT_UNKNOWNS = (
     "why the recurrence subject carries this exact coordinate value remains Unknown",
 )
 FORBIDDEN_INFERENCES = (
     "an immediate coordinate value is not a nested projection, relation, "
-    "similarity, profile, meaning, or Standing strength",
+    "similarity, profile, represented relation, or Standing strength",
 )
 
 

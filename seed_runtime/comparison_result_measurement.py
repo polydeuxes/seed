@@ -3,7 +3,7 @@
 The subject is Seed's own recorded Compare output.  For every exact positional
 subject and comparison coordinate, this Measurement counts every exact carried
 result.  It does not reduce results to same/different, rank them, or infer
-similarity, relation, or meaning.  Where an exact production count exceeds one,
+similarity, relation, or represented relation.  Where an exact production count exceeds one,
 recurrence is a distinct result of the same declared Measurement.
 """
 
@@ -39,21 +39,21 @@ MEASURED_ASSERTION_RESPONSIBILITY = (
 )
 MEASUREMENT_AUTHORITY = (
     "literal Measurement Evidence only; establishes no profile, "
-    "similarity, relation, meaning, or Standing movement"
+    "similarity, relation, represented relation, or Standing movement"
 )
 MEASUREMENT_UNKNOWNS = (
     "why this exact comparison result has this count remains Unknown",
 )
 PRODUCTION_SET_FORBIDDEN_INFERENCES = (
-    "an exact production count is not recurrence, similarity, relation, meaning, "
+    "an exact production count is not recurrence, similarity, relation, represented relation, "
     "profile membership, or Standing strength",
 )
 COUNT_FORBIDDEN_INFERENCES = (
     "count greater than one does not by itself establish recurrence, similarity, "
-    "relation, meaning, profile membership, or Standing strength",
+    "relation, represented relation, profile membership, or Standing strength",
 )
 RECURRENCE_FORBIDDEN_INFERENCES = (
-    "recurrence is repetition, not similarity, relation, meaning, independent "
+    "recurrence is repetition, not similarity, relation, represented relation, independent "
     "corroboration, profile membership, or Standing strength",
 )
 

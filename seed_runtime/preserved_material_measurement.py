@@ -1,12 +1,12 @@
 """Declared measurement over preserved operator-ingress occurrences.
 
-`01.External.E` is titled *Measurement and recurrence do not establish meaning*,
+`01.External.E` is titled *Measurement and recurrence do not establish represented relation*,
 and `01.External:28` grants the finding and states its conditions:
 
     A declared measurement may produce bounded findings of exact equality,
     count, recurrence, prefix occurrence, the result of a declared predicate,
     or adjacency within its measurement boundary. Those findings do not
-    establish structural, grammatical, or semantic meaning, or constitutional
+    establish structural, grammatical, or semantic represented relation, or constitutional
     standing beyond the measurement assertion. A recurrence assertion must
     disclose the representation or projection measured, the rule by which
     equivalence or sameness was determined, and the bounded scope within which
@@ -15,7 +15,7 @@ and `01.External:28` grants the finding and states its conditions:
 Those three disclosures are required fields here, not commentary.
 
 **What this is for is Seed's own preserved material.** Occurrences recorded
-through operator ingress carry ``authority="occurrence-only; meaning Unknown"``,
+through operator ingress carry ``authority="occurrence-only; represented relation Unknown"``,
 and reading a file directly and measuring it produces a result that vanishes
 with the process and that no later act can consume; `#2368` did that and it was
 withdrawn.
@@ -37,7 +37,7 @@ so what a finding depended on travels with it. `#2387` measured why this
 matters: the same measurement yields 3.0% with no premise and 88.1% standing on
 one that bounds a position.
 
-Nothing here establishes meaning, relation, truth, or any standing beyond the
+Nothing here establishes represented relation, relation, truth, or any standing beyond the
 measurement assertion. `01.Standing.D` refuses relation standing to co-presence,
 and co-presence is what a finding reports.
 """
@@ -95,11 +95,11 @@ _RECORDING_OWNED = frozenset(
 BOUNDARY_NOTES: tuple[str, ...] = (
     "A finding reports a count within its stated scope and nothing further.",
     "Recurrence establishes that a representation occurs more than once only.",
-    "A highest-count occupant of a position is not the meaning of that position.",
+    "A highest-count occupant of a position is not the represented relation of that position.",
     "Co-presence of representations establishes no relation (01.Standing.D).",
     "A finding standing on a premise is not stronger than a finding without one.",
     "The premise is preserved so the finding cannot be read independently of it.",
-    "This produces no meaning, relation, truth, applicability, or admission.",
+    "This produces no represented relation, relation, truth, applicability, or admission.",
 )
 
 
@@ -986,7 +986,7 @@ def _measurement_finding_payload(
             # different questions, and only the first has been recovered.
             "responsibility": RESPONSIBILITY_UNRECOVERED,
             "authority_warrant": (
-                "measurement evidence only; establishes no meaning, relation, "
+                "measurement evidence only; establishes no represented relation, relation, "
                 "or standing beyond the measurement assertion"
             ),
             "scope_locality": f"workspace:{workspace_id};session:{session_id}",
@@ -1124,7 +1124,7 @@ def record_measurement_finding(
     """Preserve a finding so a later responsible act may consume it.
 
     The recorded authority states the clause's own limit. A finding is
-    measurement evidence and is not relation, meaning, or established standing.
+    measurement evidence and is not relation, represented relation, or established standing.
     """
 
     return record_measurement_findings(

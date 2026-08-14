@@ -3,7 +3,7 @@
 Canonical signature identity supplies the grouping boundary.  This declared
 Measurement produces an exact production set, its count, and recurrence only
 where the count exceeds one.  It forms no pairs and establishes no
-Equivalence, similarity, relation, profile, meaning, or significance.
+Equivalence, similarity, relation, profile, represented relation, or significance.
 """
 
 from __future__ import annotations
@@ -33,22 +33,22 @@ MEASURED_ASSERTION_RESPONSIBILITY = (
 )
 MEASUREMENT_AUTHORITY = (
     "literal Measurement Evidence only; establishes no Equivalence, similarity, "
-    "relation, profile, meaning, significance, or Standing movement"
+    "relation, profile, represented relation, significance, or Standing movement"
 )
 MEASUREMENT_UNKNOWNS = (
     "why this exact equality signature recurs remains Unknown",
 )
 PRODUCTION_SET_FORBIDDEN_INFERENCES = (
     "an exact production set is not recurrence, Equivalence, similarity, relation, "
-    "profile, meaning, significance, or Standing strength",
+    "profile, represented relation, significance, or Standing strength",
 )
 COUNT_FORBIDDEN_INFERENCES = (
     "a production count does not itself produce recurrence, Equivalence, "
-    "similarity, relation, profile, meaning, significance, or Standing strength",
+    "similarity, relation, profile, represented relation, significance, or Standing strength",
 )
 RECURRENCE_FORBIDDEN_INFERENCES = (
     "recurrence of an exact equality signature is not Equivalence, similarity, "
-    "relation, profile, meaning, significance, or Standing strength",
+    "relation, profile, represented relation, significance, or Standing strength",
 )
 
 

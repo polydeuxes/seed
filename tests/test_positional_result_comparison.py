@@ -180,7 +180,7 @@ def test_compare_does_not_claim_relation_recurrence_or_meaning(comparable):
 
     assert "relation=" not in represented
     assert "recurrence=" not in represented
-    assert "meaning=" not in represented
+    assert "represented relation=" not in represented
     assert "similarity=" not in represented
 
 

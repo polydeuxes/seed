@@ -8,7 +8,7 @@ sessions through one captured ledger boundary.
 One byte value receives one count Assertion.  Recurrence is a separate
 Assertion and exists only where the total count exceeds one.  Byte equality
 establishes no character, word, language, position, adjacency, grammar,
-meaning, relation, or significance.
+represented relation, relation, or significance.
 """
 
 from __future__ import annotations
@@ -118,16 +118,16 @@ BYTE_PAIR_MEASUREMENT_RULE = (
 )
 MEASUREMENT_AUTHORITY = (
     "literal byte-count Measurement Evidence only; establishes no character, "
-    "word, language, position, adjacency, grammar, meaning, or relation; it "
+    "word, language, position, adjacency, grammar, represented relation, or relation; it "
     "establishes new bounded byte Standing and does not revise source Standing"
 )
 SOURCE_SET_AUTHORITY = (
     "exact bounded source-population Measurement Evidence only; establishes no "
-    "character, word, language, position, adjacency, grammar, meaning, or relation"
+    "character, word, language, position, adjacency, grammar, represented relation, or relation"
 )
 PAIR_MEASUREMENT_AUTHORITY = (
     "declared exact-source and literal ordered adjacent-byte-pair Measurement "
-    "Evidence only; establishes no character, word, language, grammar, meaning, "
+    "Evidence only; establishes no character, word, language, grammar, represented relation, "
     "relation beyond the exact measured adjacency and order or significance; "
     "it establishes new bounded pair Standing and does not revise source Standing"
 )
@@ -161,7 +161,7 @@ BYTE_PAIR_UNKNOWNS = (
 )
 BYTE_PAIR_FORBIDDEN_INFERENCES = (
     "an exact adjacent-byte-pair count or recurrence establishes no character, "
-    "word, language, grammar, meaning, relation beyond the exact measured "
+    "word, language, grammar, represented relation, relation beyond the exact measured "
     "adjacency and order, or significance",
 )
 MEASURED_ASSERTION_RESPONSIBILITY = (
@@ -452,7 +452,7 @@ def _pair_input_applicability(
         ],
         "forbidden_inferences": [
             "Applicability to this Measurement is not downstream applicability, "
-            "admission, meaning, or authority for another use"
+            "admission, represented relation, or authority for another use"
         ],
     }
 
@@ -976,7 +976,7 @@ def _assertions(measured: MeasuredBytePopulation) -> list[dict[str, Any]]:
             "unknowns": ["what the exact source bytes represent remains Unknown"],
             "forbidden_inferences": [
                 "an exact source-material set establishes no character, word, "
-                "language, position, adjacency, grammar, meaning, or relation"
+                "language, position, adjacency, grammar, represented relation, or relation"
             ],
         }
     ]
@@ -1012,7 +1012,7 @@ def _assertions(measured: MeasuredBytePopulation) -> list[dict[str, Any]]:
             "unknowns": ["what this byte participates in or represents remains Unknown"],
             "forbidden_inferences": [
                 "an exact byte count or recurrence establishes no character, word, "
-                "language, position, adjacency, grammar, meaning, or relation"
+                "language, position, adjacency, grammar, represented relation, or relation"
             ],
         }
 
@@ -1827,7 +1827,7 @@ def _validate_recorded_pair_input_applicability(
         ],
         "forbidden_inferences": [
             "Applicability to this Measurement is not downstream applicability, "
-            "admission, meaning, or authority for another use"
+            "admission, represented relation, or authority for another use"
         ],
     }
     if claim != expected:

@@ -48,7 +48,7 @@ class ExactOperatorMaterial:
 
 
 UNKNOWNS = (
-    "communicative meaning Unknown",
+    "communicative represented relation Unknown",
     "operator intent Unknown",
     "operator goal Unknown",
     "Seed-question applicability Unknown",
@@ -331,9 +331,9 @@ def form_operator_ingress_addressable_material(
         _refuse("provenance occurrences must preserve capture followed by examination")
     dimensions = payload.get("dimensions")
     if not isinstance(dimensions, dict) or dimensions.get("authority_warrant") != (
-        "occurrence-only; meaning Unknown"
+        "occurrence-only; represented relation Unknown"
     ):
-        _refuse("occurrence-only authority with meaning Unknown is required")
+        _refuse("occurrence-only authority with represented relation Unknown is required")
     recorded = ledger.get(ingress_occurrence.id)
     if recorded is None or recorded != ingress_occurrence:
         _refuse("the supplied ingress occurrence is not the recorded occurrence")

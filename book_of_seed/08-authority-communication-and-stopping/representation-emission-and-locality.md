@@ -4,7 +4,7 @@
 Bounded representation and movement between localities.
 
 ## Bounded resolution
-Operator input is attributed testimony at its ingress locality. It does not become Seed truth, meaning, Authority, or Standing by arrival.
+Operator input is attributed testimony at its ingress locality. It does not become Seed truth, a warranted represented relation, Authority, or Standing by arrival.
 
 A representation preserves its subject, content, source, provenance, Standing, Evidence, Authority, Scope, locality, conflicts, Unknowns, and limits where established. Missing coordinates remain absent or Unknown; presentation vocabulary does not instantiate them.
 

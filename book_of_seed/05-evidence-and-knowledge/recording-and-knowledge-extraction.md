@@ -1,4 +1,4 @@
-# Recording and Knowledge Extraction
+# Recording and Assertion Recovery
 
 ## Constitutional subject
 The boundary between preserving events or diagnostic output and deriving knowledge from recorded material.

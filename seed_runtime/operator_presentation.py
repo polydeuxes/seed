@@ -46,7 +46,7 @@ def form_operator_presentation(
     No alternatives are supplied by default; ``alternative_sources`` must be
     supplied by a caller with warrant for the eligibility and participation
     relations those alternatives carry.  Formation neither invents sources
-    nor strengthens their standing, and no alternative's meaning is derived
+    nor strengthens their standing, and no alternative's represented relation is derived
     from ingress material.  This module records what a Presentation carries;
     it does not classify the resulting combination as a shape.
 
@@ -80,7 +80,7 @@ def form_operator_presentation(
                     "evidence_event_ids": [],
                     "known_loss": [
                         "rendered label compresses represented candidate "
-                        "meaning"
+                        "represented relation"
                     ],
                     "unknowns": [],
                     "conflicts": [],
@@ -103,22 +103,22 @@ def form_operator_presentation(
         )
         formation_result += " with attributed bounded alternatives"
         known_loss.append(
-            "rendered label compresses represented candidate meaning"
+            "rendered label compresses represented candidate relation"
         )
     # The latest recorded exchange finding, exposed exactly as recorded;
     # formation neither strengthens nor reinterprets it.
     prior_exchange_finding = session_standing.get("latest_exchange_finding")
     # The recovered source relation is exposed only when it belongs to the
     # exact latest finding's identification.
-    recovered_meaning_relation = None
-    latest_relation = session_standing.get("latest_meaning_relation")
+    recovered_represented_relation = None
+    latest_relation = session_standing.get("latest_represented_relation")
     if (
         prior_exchange_finding is not None
         and latest_relation is not None
         and latest_relation["identification_event_id"]
         == prior_exchange_finding["identification"]["event_id"]
     ):
-        recovered_meaning_relation = latest_relation
+        recovered_represented_relation = latest_relation
     formed_event = ledger.append(
         PRESENTATION_FORMED_KIND,
         workspace_id,
@@ -143,7 +143,7 @@ def form_operator_presentation(
             "coordinate_bindings": coordinate_bindings,
             "session_standing_as_of_event_id": session_standing["as_of_event_id"],
             "prior_exchange_finding": prior_exchange_finding,
-            "recovered_meaning_relation": recovered_meaning_relation,
+            "recovered_represented_relation": recovered_represented_relation,
             "known_loss": known_loss,
             "unknowns": [],
             "conflicts": [],
@@ -162,7 +162,7 @@ def form_operator_presentation(
         "emitted_event_id": None,
         "session_standing_as_of_event_id": session_standing["as_of_event_id"],
         "prior_exchange_finding": prior_exchange_finding,
-        "recovered_meaning_relation": recovered_meaning_relation,
+        "recovered_represented_relation": recovered_represented_relation,
         "known_loss": known_loss,
         "unknowns": [],
         "conflicts": [],
@@ -173,7 +173,7 @@ def render_operator_presentation(presentation: dict[str, Any]) -> str:
     """Render the bounded Presentation for the console output stream.
 
     Rendering exposes tokens, labels, and roles.  A rendered label is not the
-    represented candidate's full meaning; that meaning stays preserved in the
+    represented candidate's full represented relation; that represented relation stays preserved in the
     recorded formation payload.
     """
     lines = [f"Bounded Presentation {presentation['presentation_id']}"]
@@ -203,10 +203,10 @@ def render_operator_presentation(presentation: dict[str, Any]) -> str:
         else:
             lines.append(
                 "Prior exchange: no coordinate match within "
-                f"{comparison['presentation_ref']}; response meaning and "
+                f"{comparison['presentation_ref']}; response represented relation and "
                 "requested treatment remain Unknown."
             )
-    relation = presentation.get("recovered_meaning_relation")
+    relation = presentation.get("recovered_represented_relation")
     if relation is not None:
         lines.append(
             f"Recovered source {relation['source_identity']} expresses: "

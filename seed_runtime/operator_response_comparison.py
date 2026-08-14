@@ -17,7 +17,7 @@ _MATCH_UNKNOWNS = (
     "operator selection occurrence Unknown",
 )
 _NO_MATCH_UNKNOWNS = (
-    "response meaning Unknown",
+    "response represented relation Unknown",
     "operator intent Unknown",
     "operator selection occurrence Unknown",
     "requested treatment Unknown",
@@ -71,7 +71,7 @@ def run_operator_response_comparison_and_identification(
 
     A match establishes correspondence within C only.  It establishes no
     operator intent, understanding, selection, authorization, source
-    recovery, meaning, or treatment.  No coordinate match establishes none
+    recovery, represented relation, or treatment.  No coordinate match establishes none
     of: that the material was not a response, candidate nonparticipation,
     or negative operator intent.
     """
@@ -305,7 +305,7 @@ def run_operator_response_comparison_and_identification(
                 authority=(
                     "identifies a presented alternative within this exact "
                     "presentation only; establishes no source recovery, "
-                    "meaning, intent, selection, authorization, goal, or "
+                    "represented relation, intent, selection, authorization, goal, or "
                     "treatment occurrence"
                 ),
                 scope=f"{scope};exchange:{presentation_ref}->{response_attempt_ref}",

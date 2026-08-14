@@ -227,7 +227,7 @@ def _record_malformed_presentation(ledger, mutate_bindings, *, workspace="w", se
         "emitted_event_id": None,
         "alternatives": template_payload["alternatives"],
         "prior_exchange_finding": None,
-        "recovered_meaning_relation": None,
+        "recovered_represented_relation": None,
     }
     emit_operator_presentation(
         ledger, presentation=malformed_presentation, output_stream=StringIO()
@@ -308,7 +308,7 @@ def test_no_match_establishes_no_negative_standing():
     comparison_event = ledger.get(finding["comparison"]["event_id"])
     payload = comparison_event.payload
     assert payload["unknowns"] == [
-        "response meaning Unknown",
+        "response represented relation Unknown",
         "operator intent Unknown",
         "operator selection occurrence Unknown",
         "requested treatment Unknown",
@@ -335,8 +335,8 @@ def test_identification_does_not_recover_represented_source():
     }
     identification_event = ledger.get(finding["identification"]["event_id"])
     flattened = str(identification_event.payload)
-    # No exact source identity or candidate meaning is carried; the word
-    # `meaning` may appear only inside the authority denial.
+    # No exact source identity or candidate relation is carried; the word
+    # `represented relation` may appear only inside the authority denial.
     assert "source:" not in flattened
     assert identified["rendered_label"] in flattened
     assert "establish richer shared grammar with the operator" not in flattened

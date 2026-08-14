@@ -38,7 +38,7 @@ second, giving pairs. A finding measured relative to two offers each occupancy
 as a single representation, giving new anchors. That is the whole recursion,
 and it is mechanical.
 
-Nothing here establishes meaning, relation, kind, or truth. Each recorded
+Nothing here establishes represented relation, relation, kind, or truth. Each recorded
 finding carries the finding it was formed from as its premise, so a chain of
 any depth remains a chain of counts whose support basis is recoverable.
 """

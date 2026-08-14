@@ -47,7 +47,7 @@ One bounded relation form asserts that X identifies or represents Y. It preserve
 
 Material may carry the Assertion that X identifies or represents Y without warranting that relation. A responsible occurrence warrants only the relation supported by its Authority, Evidence, Scope, provenance, conflicts, loss, and preserved **Unknowns**. Attribution identifies who supplied the Assertion; it does not establish the represented relation.
 
-A warranted meaning relation may accept an act-local applicability determination. Where the exact Act boundary requires admission, an applicable meaning relation must accept act-local admission before exact Act use. Applicable is not admitted, and admitted is not consumed or relied upon. A responsible exact Act may itself consume or rely on admitted material; the Book does not universally require a separate reliance occurrence. Exact reliance requirements remain local to the exact Responsibility and act, and remain **Unknown** where the exact Responsibility does not establish them.
+A warranted relation may receive an Act-local Applicability determination. Where the exact Act requires Admission, the relation must be admitted before participation. Applicable is not admitted, and admitted is not consumed or relied upon. Reliance remains local to the exact Responsibility and Act.
 
 ### 01.Standing.E.1 — The exact act owner ordinarily owns input applicability
 Unless the Book explicitly assigns otherwise, the Responsibility assigned to an exact Act ensures Applicability is determined for every input before participation. Applicability is determined for that Act's exact subject, content, result boundary, Scope, locality, Authority, participants and roles, and preserved limits. The determination preserves every applicable input and Act coordinate.
@@ -102,11 +102,11 @@ Acts, constraints, and relations are structurally distinct from dimensions. They
 - Assertion Standing persists != automatic continuation or constitutional Stop
 - new or conflicting material available != Assertion automatically revised
 - Evidence that does not warrant a relation Assertion != its negation or an opposing strengthened relation
-- meaning assertion carried != meaning relation warranted
-- meaning relation != proposition truth
-- meaning relation != attribution
-- attribution != meaning-relation warrant
-- meaning relation warranted != act-local applicability
+- represented-relation Assertion carried != relation warranted
+- represented relation != proposition truth
+- represented relation != attribution
+- attribution != relation Warrant
+- relation warranted != Act-local Applicability
 - applicable != admitted
 - admitted != consumed or relied upon
 

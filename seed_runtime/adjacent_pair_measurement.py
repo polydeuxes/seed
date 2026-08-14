@@ -36,7 +36,7 @@ records that finding as its premise, so what it stood on travels with it.
 alternative is an Assertion about two preserved findings. `05.Testimony:27` reserves
 consuming preserved findings to a bounded comparison, and none is performed.
 
-Nothing here establishes meaning, grammatical kind, relation, or truth. A pair
+Nothing here establishes represented relation, grammatical kind, relation, or truth. A pair
 is an ordered pair that recurs. That two pairs return the same occupant is a
 measured agreement between counts, and `01.Standing.D` refuses relation standing to
 co-presence.
@@ -307,7 +307,7 @@ def _adjacent_pair_result_assertion_fields(
             "source_provenance": "preserved operator-ingress occurrences",
             "responsibility": POSITIONAL_RESULT_FIDELITY_RESPONSIBILITY,
             "authority_warrant": (
-                "measurement evidence only; establishes no meaning, relation, "
+                "measurement evidence only; establishes no represented relation, relation, "
                 "kind, or standing beyond this measured Assertion"
             ),
             "scope_locality": "the exact assertion_scope carried here",
@@ -342,7 +342,7 @@ def _adjacent_pair_result_assertion_fields(
             "what any measured representation means remains Unknown",
         ],
         "forbidden_inferences": [
-            "literal recurrence is not meaning or relation",
+            "literal recurrence is not represented relation or relation",
             "matching result content across different Assertions does not make "
             "them one Assertion",
         ],

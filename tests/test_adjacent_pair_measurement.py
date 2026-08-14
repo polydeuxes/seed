@@ -16,7 +16,7 @@ exception. A question whose answer is absent is still asked and still recorded;
 dropping empty results would report only the questions that happened to
 succeed.
 
-Nothing here establishes meaning, grammatical kind, relation, or truth.
+Nothing here establishes represented relation, grammatical kind, relation, or truth.
 """
 
 from __future__ import annotations

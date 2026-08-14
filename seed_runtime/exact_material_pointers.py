@@ -8,7 +8,7 @@ It establishes only a reversible representation of exact bytes:
     ordered parts      -> the exact original bytes
 
 A reference establishes byte reuse only. It establishes no subject identity,
-meaning, relation, grammar, or standing beyond exact reconstruction.
+represented relation, relation, grammar, or standing beyond exact reconstruction.
 
 **What this carries is the recurrence its declared formation found, not the
 recurrence present in the material.** The formation bounds the search, and the

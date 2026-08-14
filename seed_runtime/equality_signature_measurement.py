@@ -4,7 +4,7 @@ One recorded positional-result Compare already carries one result Assertion for
 every coordinate in its established comparison surface.  This declared
 Measurement preserves the maximal same/different partition of that surface.
 It selects no subset and establishes no Equivalence, similarity, relation,
-meaning, or significance for either partition.
+represented relation, or significance for either partition.
 """
 
 from __future__ import annotations
@@ -38,7 +38,7 @@ MEASURED_ASSERTION_RESPONSIBILITY = (
 )
 MEASUREMENT_AUTHORITY = (
     "literal Measurement Evidence only; establishes no Equivalence, similarity, "
-    "relation, meaning, significance, or Standing movement"
+    "relation, represented relation, significance, or Standing movement"
 )
 MEASUREMENT_UNKNOWNS = (
     "whether any coordinate agreement or distinction matters to a later exact Act "
@@ -46,7 +46,7 @@ MEASUREMENT_UNKNOWNS = (
 )
 FORBIDDEN_INFERENCES = (
     "an exact equality signature is not Equivalence, similarity, relation, "
-    "meaning, significance, interchangeability, or Standing strength",
+    "represented relation, significance, interchangeability, or Standing strength",
 )
 
 

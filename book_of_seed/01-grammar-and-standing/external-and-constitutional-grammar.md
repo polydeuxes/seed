@@ -1,65 +1,59 @@
 # External and Constitutional Grammar
 
 ## Constitutional subject
-The boundary between grammar encountered in external material and grammar warranted for Seed's own constitutional reasoning.
 
-## Core question
-What evidence permits an external vocabulary or representation grammar to become constitutional grammar?
+The boundary between attributed external material and Seed Standing.
 
 ## Bounded resolution
-External grammar can be identified, compared, and attributed without thereby becoming Seed's constitutional grammar. Realization languages, including programming, database, serialization, persistence, cache, and hybrid implementation grammars, remain external grammar. A distinction carried by material in external grammar may be constitutionally recovered and warranted; the recovered distinction receives standing, while the source grammar remains attributed external grammar. What remains limited or Unknown must stay visible. `[UNRESOLVED]` The warrant required for recovering a distinction is not yet safely established.
 
-## Addressable boundaries for external-source source-attributed representation formation
+Provider vocabulary, representations, confidence labels, and connective text enter as attributed testimony. Seed preserves their source, external context, Scope, uncertainty, Authority limits, provenance or provenance Unknown, known loss, conflicts, and surviving limits.
 
-### 01.External.A — Source-attributed representation formation boundary
-Provider vocabulary, external representations, and source confidence labels enter Seed reasoning only as attributed source grammar. The source material remains attributed external material, and the source grammar remains attributed external grammar. A distinction carried by material in external grammar may be constitutionally recovered and warranted. The recovered distinction receives its own standing. A bounded source-attributed representation formation may form only an attributed, Seed-addressable source-attributed representation, term, assertion, claim proposal, or relation proposal. That source-attributed representation formation preserves its exact source boundary, source and provider or external context, scope, uncertainty, authority limits, provenance or provenance Unknown, known loss and conflicts where applicable, and other applicable limits. External material is not its source-attributed representation. A source-attributed representation is not Evidence. Evidence is not applicability, and addressability is not applicability. Source-attributed representation formation does not by identity establish stronger standing, Evidence, Fact, applicability, admission, comparison, interpretation, or a result of either act, meaning-relation warrant, reliance, authority, truth, or adopted law. Source-attributed representation formation must not convert provider language, imported representation structure, external confidence, or attachment convenience into native constitutional grammar, cluster truth, repository authority, or adopted law. Source-attributed represented material may later be proposed to or consumed by another exact responsibility only through that responsibility's independently established boundaries. Applicability is not admission, admission is not consumption, and consumption is not a comparison or interpretation finding. Unknown or unavailable provenance limits reliance on the exact external or source-attributed material. Missing or unavailable provenance does not establish a negative claim about the material, its source, its production occurrence, or the claim or relation it carries. In particular, it does not establish falsehood or invalidity, prove that the source did not exist, or prove that the production occurrence did not occur. An exact claim or relation having proposition or relation content equivalent to content carried by the material may be independently warranted through another responsible occurrence. Material carrying that content does not warrant the claim or relation. Equal proposition text does not confer equal standing, and equivalent relation content does not make occurrences identical. That independently warranted claim or relation retains its own responsible occurrence, evidence, provenance including preserved Unknowns, authority, scope, conflicts, loss, occurrence, standing, and exact Act boundary. Its warrant does not supply the material's missing provenance or strengthen the material's source standing. It also does not establish applicability, admission, exact Act authority, or reliance.
+An external representation may become Seed-addressable without becoming Evidence, applicable input, adopted law, truth, or native grammar. Equal content under another source or occurrence does not establish equal identity or Standing.
 
+An exact Responsibility may use external material only through its own Applicability and other required boundaries. Every applicable source coordinate and limit travels with the material. Dropping a limit is erasure; supplying an unsupported coordinate is invention; treating external material as repository truth is mutation; making its source the Authority owner is relocation.
 
-### 01.External.B — Addressability without becoming Constitutional Grammar
-An external representation may become constitutionally addressable as source-attributed material for comparison, quotation, attachment, or source-attributed representation formation assessment without becoming Constitutional Grammar. Addressability must keep attached the source role or preserved Unknown source role, provenance or provenance Unknown, source grammar boundary, referenced scope, uncertainty, confidence limits, and authority limits. Reference, attachment, availability, usefulness, lexical recurrence, provider confidence, or repository convenience must not be treated as native constitutional standing, adopted law, cluster truth, or repository authority. Narrowing or changed form is lawful only when the narrowed form states its boundary and does not erase provenance, invent missing source role or taxonomy, mutate external material into Seed truth, or relocate authority from Seed's constitutional warrant to the external source or carrier.
+Developer-supplied connective text is bounded testimony. It may assert a narrow relation within an exact presentation, but equivalent text under another subject, source, Scope, occurrence, or Warrant does not identify the same relation. Unsupported coordinates remain Unknown or uninstantiated.
 
-### 01.External.C — Cross-seam consumption preserves upstream limits
-A constitutional responsibility may consume addressable or source-attributed external material only within the addressed or source-attributed scope and only while preserving the limits that made the material lawful to use. The exact Act must carry forward source role or Unknown, provenance or provenance Unknown, source grammar boundary, source-attributed claim and scope when present, uncertainty, confidence limits, authority limits, negative authority, Unknowns, negative standing, constraint results, known loss, established Stops, and any tested-preservation boundary supplied by a Fidelity finding. Summarizing, indexing, citing, comparing, rendering, attaching, or projecting cross-seam material is lawful only when those limits travel with the consumed material. Dropping the limits is erasure; supplying unsupported source, owner, taxonomy, reliability, or authority is invention; treating external or source-attributed material as cluster truth or implementation condition without separate warrant is mutation; and making the source, provider, attachment, source-attributed representation formation artifact, or Fidelity finding the authority owner is relocation of authority.
+### 01.External.A — Addressability preserves attribution
 
-### 01.External.D — Fidelity production through bounded constitutional comparison
-A Fidelity finding is produced only by a bounded comparison that brings constitutional grammar, a bounded expectation, and an implementation witness under a declared seam or scope. The comparison must preserve the constitutional subject, bounded expectation, implementation witness, evidence and provenance, authority boundary, preserved invariants, observed erasure, invention, mutation, or relocation of authority, conflicts, Unknowns, and lawful stopping point. Within that scope it may produce qualitative standing that the witness is faithful within scope, an unfaithful boundary crossing, crossing or mixed, or Unknown. It must not become global certification, completion declaration, implementation owner map, score, registry, runtime engine, public diagnostic, correction authority, or proof of external effect. A Fidelity-shaped artifact does not prove that this bounded comparison responsibility occurred; production standing depends on the comparison boundary and its preserved inputs. This production boundary is distinct from the cross-seam exact Responsibility to preserve limits supplied by an already-produced Fidelity finding.
+Source-attributed formation preserves source, external context, Scope, uncertainty, Authority limits, provenance, known loss, conflicts, and Unknowns. Addressability establishes none of Evidence, Applicability, Admission, comparison, interpretation, reliance, truth, or adopted law.
 
-### 01.External.E — Measurement and recurrence do not establish meaning
-A declared Measurement may produce bounded findings of exact equality, count, recurrence, prefix occurrence, declared-predicate result, or adjacency. It establishes nothing beyond its exact rule and boundary. A recurrence Assertion discloses the representation measured, sameness rule, and Scope. A later Act's result boundary, Authority, and limits govern reliance and acceptable representational loss; they are not coordinates of the count by identity.
+### 01.External.B — Cross-boundary participation preserves limits
 
-Where a Seed performs a Seed-native declared measurement over exact material already preserved within its workspace, that Seed bears the Responsibility for that measurement Act. The exact measured subject, rule, scope, Authority, applicable inputs, limits, and possible finding Standing remain local to the measurement; this assignment does not identify its responsible occurrence, make recording the measurement occurrence, or transfer the resulting Assertion's fidelity Responsibility back into the measurement. An external, implementation, provider-owned, or otherwise differently bounded measurement retains its independently established Responsibility or unresolved owner.
+An exact Act may consume external material only within its attributed Scope and surviving limits. Summarizing, indexing, citing, comparing, rendering, or attaching does not erase those coordinates or relocate Authority.
 
-### 01.External.E.1 — Occurrence counts preserve occurrence identity
-Where a declared measurement counts preserved occurrences, each counted occurrence is distinguished by exact occurrence identity. Repeated reference to one preserved occurrence does not establish another occurrence and does not increase that occurrence count. A separately warranted count of references is a different declared measurement.
+### 01.External.C — Fidelity is bounded comparison
 
-This concerns identity, not content. Two occurrences preserving identical material remain two occurrences.
+A Fidelity finding compares an exact constitutional subject and bounded expectation with an implementation witness. It preserves its Evidence, provenance, Authority, Scope, conflicts, Unknowns, and observed erasure, invention, mutation, or Authority relocation. It establishes no global certification, correction Authority, or external effect.
 
-### 01.External.F — Candidate production remains attributed
-A candidate must preserve each applicable responsible occurrence, source-role, formation-occurrence, scope, authority, and provenance dimension where known. Where a dimension is unresolved, its Unknown or unresolved standing must remain explicit. A Seed-produced candidate, operator-supplied candidate testimony, and external-source candidate or rule testimony may therefore have different production standing without closing the possible source roles into an exhaustive taxonomy. Consuming, comparing, transporting, or re-presenting candidate material does not relocate its production or establish a missing formation occurrence. An Unknown responsible occurrence is not an invented responsible occurrence; an Unknown formation occurrence does not mean that no candidate exists; and Unknown provenance must not be silently supplied.
+### 01.External.D — Measurement establishes only its declared result
 
-### 01.External.G — External material may propose a relation
-External material may assert that X represents or identifies Y. Source-attributed formation preserves the source, attribution, Scope, provenance, Authority limits, known loss, conflicts, and **Unknowns**; carriage, adjacency, labels, reference resolution, representation shape, or repetition do not warrant the relation. Any Seed-native Warrant requires a separate responsible relation-standing occurrence under [Constitutional standing](constitutional-standing.md).
+A declared Measurement may produce bounded exact equality, count, recurrence, prefix occurrence, declared-predicate result, or adjacency findings. It establishes nothing beyond its exact rule and boundary. Recurrence preserves the representation measured, sameness rule, and Scope.
+
+Where a Seed performs a Seed-native declared Measurement over exact material already preserved in its workspace, that Seed bears the Measurement Responsibility. The assignment does not identify the occurrence, make recording the Measurement occurrence, or transfer the resulting Assertion's fidelity Responsibility.
+
+### 01.External.D.1 — Counts preserve occurrence identity
+
+Each counted occurrence is distinguished by exact occurrence identity. Repeated reference to one occurrence does not create or increment another occurrence. Counting references is a different declared Measurement.
+
+### 01.External.E — Candidates remain attributed
+
+A candidate preserves every applicable source role, formation occurrence, Scope, Authority, provenance, and Unknown. Carrying or comparing candidate material does not establish missing production coordinates.
+
+### 01.External.F — External material may assert a relation
+
+External material may assert that X represents or identifies Y. Formation preserves source, attribution, Scope, provenance, Authority limits, known loss, conflicts, and Unknowns. Carriage, labels, reference resolution, shape, or repetition do not warrant the relation. Seed-native relation Standing requires a separate responsible occurrence.
 
 ## Important distinctions
-- source-attributed representation for use != Seed-native grammar
-- external grammar != constitutional grammar
-- Fidelity production != Fidelity consumption
-- Fidelity-shaped representation != lawfully produced Fidelity finding
-- lexical recurrence != constitutional authority
-- attributed representation != adopted law
-- attachment != adoption
-- provider confidence != repository authority
-- measurement != a warranted representation or identification relation
-- candidate carriage or consumption != candidate production
-- carried relation assertion != warranted relation
 
-## Representative repository anchors
-- `seed_runtime/candidate_external_grammar.py::CandidateExternalGrammarSet`
-
-## Counterexamples or failure modes
-- Treating a provider's field names as Seed-native kinds.
-- Promoting frequently used audit vocabulary without reachability or authority evidence.
+- external material != Seed representation
+- addressable != applicable
+- material != Evidence
+- attributed relation != warranted relation
+- equal content != equal identity or Standing
+- Measurement != language or significance
 
 ## Related chapters
-- [Constitutional standing](constitutional-standing.md)
+
+- [Constitutional Standing](constitutional-standing.md)
 - [Testimony and Assertion Standing](../05-evidence-and-knowledge/testimony-and-assertion-standing.md)

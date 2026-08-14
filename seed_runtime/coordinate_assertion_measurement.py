@@ -33,21 +33,21 @@ MEASURED_ASSERTION_RESPONSIBILITY = (
 )
 MEASUREMENT_AUTHORITY = (
     "literal Measurement Evidence only; establishes no relation, similarity, "
-    "profile, meaning, or Standing movement"
+    "profile, represented relation, or Standing movement"
 )
 MEASUREMENT_UNKNOWNS = (
     "why this exact coordinate Assertion has this production count remains Unknown",
 )
 PRODUCTION_SET_FORBIDDEN_INFERENCES = (
     "an exact production set is not recurrence, relation, similarity, profile, "
-    "meaning, or Standing strength",
+    "represented relation, or Standing strength",
 )
 COUNT_FORBIDDEN_INFERENCES = (
     "count greater than one does not itself produce recurrence, relation, "
-    "similarity, profile, meaning, or Standing movement",
+    "similarity, profile, represented relation, or Standing movement",
 )
 RECURRENCE_FORBIDDEN_INFERENCES = (
-    "recurrence is repetition, not relation, similarity, profile, meaning, "
+    "recurrence is repetition, not relation, similarity, profile, represented relation, "
     "independent corroboration, or Standing strength",
 )
 

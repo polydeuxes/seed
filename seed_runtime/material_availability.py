@@ -265,7 +265,7 @@ def record_transient_material(
                     "source_provenance": observed_boundary,
                     "responsibility": "transient-material-occurrence",
                     "authority_warrant": (
-                        "occurrence-only; meaning Unknown. Records that material "
+                        "occurrence-only; represented relation Unknown. Records that material "
                         "occurred, never that it is available now"
                     ),
                     "scope_locality": f"workspace:{workspace_id};session:{session_id}",

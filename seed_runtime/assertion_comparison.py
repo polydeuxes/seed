@@ -3,7 +3,7 @@
 Canonical Assertion identity establishes the shared subject.  Distinct
 producing Event identities establish that there are two production
 occurrences.  Compare reports literal sameness and difference across carried
-fidelity coordinates; it establishes no conflict, preference, truth, meaning,
+fidelity coordinates; it establishes no conflict, preference, truth, represented relation,
 or reason to revise either Assertion.
 """
 
@@ -115,7 +115,7 @@ POSITIONAL_RESULT_COMPARISON_PROVENANCE = (
 )
 POSITIONAL_RESULT_COMPARISON_AUTHORITY = (
     "literal comparison evidence only; establishes no relation, similarity, "
-    "recurrence, conflict, meaning, preference, revision, or strengthening"
+    "recurrence, conflict, represented relation, preference, revision, or strengthening"
 )
 POSITIONAL_RESULT_COMPARISON_UNKNOWNS = (
     "whether this literal result is Applicable to any later Act remains Unknown",
@@ -338,7 +338,7 @@ def compare_positional_result_assertions(
     """Compare two exact result Assertions sharing one literal subject.
 
     Subject equality supplies comparability only. It establishes no relation,
-    similarity, recurrence, conflict, preference, meaning, or reason for either
+    similarity, recurrence, conflict, preference, represented relation, or reason for either
     Assertion's Standing to move.
     """
 
@@ -985,7 +985,7 @@ def record_assertion_production_comparison(
                     "responsibility": COMPARISON_ASSERTION_FIDELITY_RESPONSIBILITY,
                     "authority_warrant": (
                         "literal comparison evidence only; establishes no conflict, "
-                        "meaning, preference, revision, or strengthening"
+                        "represented relation, preference, revision, or strengthening"
                     ),
                     "scope_locality": "the exact assertion_scope carried here",
                     "occurrence_preservation": (

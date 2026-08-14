@@ -1,4 +1,4 @@
-# Demands and Opened Movement
+# Result Boundaries and Movement
 
 ## Constitutional subject
 
@@ -46,7 +46,7 @@ Named Gap distinctions remain useful when bounded by evidence, responsibility, r
 
 ## Bounded common-grammar counterexample
 
-A possible Demand may arise before an interpreted operator goal exists. For example, a responsible exact Act may repeatedly fail or stop while attempting act-local interpretation of the same preserved operator ingress because the common-grammar standing required by that exact Act for that exact interpretation act is not established. The exact operator material remains uninterpreted. Recurrence supplies measurement evidence only: it is not meaning, Demand, selection, authority, or act occurrence, and it does not select English or a retained-understanding revision mechanism.
+A possible Demand may arise before an interpreted operator goal exists. For example, a responsible exact Act may repeatedly fail or stop while attempting Act-local interpretation of the same preserved operator ingress because its required common-grammar Standing is not established. The exact operator material remains uninterpreted. Recurrence supplies Measurement Evidence only: it establishes no represented relation, Demand, Selection, Authority, or Act occurrence, and it does not select English.
 
 That evidence may become applicable to a separately responsible establishment of whether a bounded Demand exists. Demand establishment requires its own responsible occurrence and must preserve the required result, responsibility, scope, source evidence, materiality, applicability, material Unknowns, and conflicts. Recurrence alone does not establish a Demand.
 

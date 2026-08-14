@@ -23,7 +23,7 @@ a coordinate may be constant because the forms happen to agree, because the
 material permits nothing else, or because a degree of freedom exists and has
 never been used, and this survey cannot tell those apart.
 
-Nothing here establishes meaning, relation, or standing. It is a count over
+Nothing here establishes represented relation, relation, or standing. It is a count over
 preserved occurrences whose subject happens to be Seed's own acts.
 """
 
@@ -139,7 +139,7 @@ def record_self_survey(
             "source_provenance": "this session's recorded measurement occurrences",
             "responsibility": "declared-survey-over-recorded-measurements",
             "authority_warrant": (
-                "measurement evidence only; establishes no meaning, relation, "
+                "measurement evidence only; establishes no represented relation, relation, "
                 "or standing beyond the survey assertion"
             ),
             "scope_locality": f"workspace:{workspace_id};session:{session_id}",
