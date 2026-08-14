@@ -2791,7 +2791,7 @@ def test_all_three_structural_edges_have_a_live_witness():
 
     An earlier revision of this file concluded Participation recorded no
     Evidence. It records no dedicated Participation Evidence species, which is
-    a different and much weaker claim: two live boundaries rest on responsible
+    a different and much weaker statement: two live boundaries rest on responsible
     Act evidence occurrences, whose integrity is checked exactly as the other
     edges' is.
     """
