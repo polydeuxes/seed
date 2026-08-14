@@ -36,9 +36,36 @@ import argparse
 import subprocess
 from pathlib import Path
 
+# Construction descriptions, not Seed grammar. A specimen carries pixel values
+# and extents; `ground`, `box` and `ink` are how this harness built them.
 GROUND = "red"
 BOX = "black"
 INK = "white"
+
+# Below objects: one frame, one value, nothing else moving. Written as PNG
+# rather than H.264, because the encoder perturbs exact pixel equality and
+# these exist for exact comparison.
+VALUES = ("0x000000", "0x808080", "0xffffff")
+
+
+def value_ladder(out_dir: Path, size: str, values: tuple[str, ...]) -> list[Path]:
+    """Pixel value varies. Extent, encoding and every other coordinate do not."""
+
+    written = []
+    for value in values:
+        out = out_dir / f"V-{value}.png"
+        result = subprocess.run(
+            ["ffmpeg", "-v", "error", "-y",
+             "-f", "lavfi", "-i", f"color=c={value}:s={size}:d=1",
+             "-frames:v", "1", str(out)],
+            capture_output=True,
+        )
+        if result.returncode != 0:
+            raise SystemExit(
+                f"{value} failed: " + result.stderr.decode("utf-8", "replace")[-400:]
+            )
+        written.append(out)
+    return written
 def _draw_box(frame: str, box: str) -> str:
     """A box of this exact area, centred, whatever the frame around it is."""
 
@@ -95,6 +122,8 @@ def main() -> int:
     args = parser.parse_args()
 
     args.out_dir.mkdir(parents=True, exist_ok=True)
+    for out in value_ladder(args.out_dir, args.sizes.split(",")[0], VALUES):
+        print(f"{out.name:26} {out.stat().st_size:7} bytes")
     seen: set[str] = set()
     for frame in args.sizes.split(","):
         for box in args.boxes.split(","):
