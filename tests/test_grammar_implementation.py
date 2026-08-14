@@ -3,6 +3,7 @@ from io import StringIO
 from pathlib import Path
 
 from seed_runtime.byte_measurement import (
+    _identity,
     assertions_of_recorded_byte_measurement,
     get_recorded_pair_input_applicability,
     record_adjacent_byte_pair_count_layer,
@@ -128,11 +129,16 @@ def _recorded_applicability() -> dict:
 def _assertion_witness(assertion) -> dict[str, str]:
     payload = assertion.payload
     dimensions = payload["dimensions"]
+    expected_identity = _identity(
+        result=payload["result"],
+        subject=payload["assertion_subject"],
+        scope=payload["assertion_scope"],
+        content=dimensions["content"],
+    )
     return {
-        # Runtime identity commits to result, subject, Scope, and content.  The
-        # grammar currently names asserted content alone.  The audit exposes
-        # the disagreement; it does not choose which side should change.
-        "identity": CONTRADICTION,
+        "identity": (
+            EXACT if dimensions.get("identity") == expected_identity else CONTRADICTION
+        ),
         # support_basis is not silently promoted into Evidence.
         "Evidence": MISSING,
         "provenance": EXACT if dimensions.get("source_provenance") else MISSING,
@@ -324,7 +330,7 @@ def test_assertion_clause_is_checked_against_a_live_byte_assertion():
 
     assert set(witness) == {"identity", *clause["responsibility"]["coordinates"]}
     assert witness == {
-        "identity": CONTRADICTION,
+        "identity": EXACT,
         "Evidence": MISSING,
         "provenance": EXACT,
         "Scope": EXACT,
@@ -334,6 +340,65 @@ def test_assertion_clause_is_checked_against_a_live_byte_assertion():
         "Unknowns": EXACT,
         "Standing": EXACT,
     }
+
+
+def test_asserted_content_identity_includes_scope_but_not_carriage():
+    ledger = EventLedger()
+    for session_id in ("source-one", "source-two"):
+        run_persistent_operator_console(
+            ledger=ledger,
+            workspace_id="w",
+            session_id=session_id,
+            input_stream=StringIO("t\nexit\n"),
+            output_stream=StringIO(),
+        )
+
+    first = record_byte_count_layer(
+        ledger,
+        workspace_id="w",
+        source_session_ids=("source-one",),
+        recording_session_id="measurement-one",
+    )
+    repeated = record_byte_count_layer(
+        ledger,
+        workspace_id="w",
+        source_session_ids=("source-one",),
+        recording_session_id="measurement-two",
+    )
+    other_scope = record_byte_count_layer(
+        ledger,
+        workspace_id="w",
+        source_session_ids=("source-two",),
+        recording_session_id="measurement-three",
+    )
+
+    def count_assertion(event):
+        return next(
+            assertion
+            for assertion in event.payload["assertions"]
+            if assertion["result"] == "count"
+            and assertion["assertion_subject"].get("byte_hex") == "74"
+        )
+
+    first_assertion = count_assertion(first)
+    repeated_assertion = count_assertion(repeated)
+    other_scope_assertion = count_assertion(other_scope)
+    assert first_assertion["dimensions"]["content"] == repeated_assertion[
+        "dimensions"
+    ]["content"]
+    assert first_assertion["dimensions"]["identity"] == repeated_assertion[
+        "dimensions"
+    ]["identity"]
+    assert first.id != repeated.id
+    assert first_assertion["dimensions"]["content"] == other_scope_assertion[
+        "dimensions"
+    ]["content"]
+    assert first_assertion["assertion_scope"] != other_scope_assertion[
+        "assertion_scope"
+    ]
+    assert first_assertion["dimensions"]["identity"] != other_scope_assertion[
+        "dimensions"
+    ]["identity"]
 
 
 def test_applicability_clause_is_checked_against_a_live_pair_determination():

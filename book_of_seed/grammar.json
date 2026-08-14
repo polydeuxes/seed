@@ -33,7 +33,7 @@
   "clauses": {
     "01.Standing.D.1": {
       "subject": "Assertion",
-      "identity": ["asserted_content"],
+      "identity": ["result", "subject", "Scope", "content"],
       "responsibility": {
         "kind": "fidelity",
         "addressed": "Standing",
