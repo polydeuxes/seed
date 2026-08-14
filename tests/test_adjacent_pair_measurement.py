@@ -46,9 +46,12 @@ from seed_runtime.adjacent_pair_measurement import (
     record_adjacent_pair_measurement_layer,
     group_by_highest_count_occupant,
     occupant_agreement_across_scopes,
+    observe_adjacent_pair_contexts_from_finding,
+    compare_adjacent_pair_contexts,
 )
 from seed_runtime.preserved_material_measurement import (
     INGRESS_OCCURRED_KIND,
+    MEASUREMENT_RECORDED_KIND,
     DeclaredMeasurement,
     Occupancy,
     PreservedMaterialMeasurementError,
@@ -171,6 +174,195 @@ def test_every_pair_receives_every_question(occurrences, recorded_finding):
             premise_event_id=recorded_finding.id,
         )
         assert set(findings) == expected
+
+
+# --------------------------------------------------------------------------
+# Exact pair occurrences are extended one position on each side.
+# --------------------------------------------------------------------------
+
+
+def _context_road(lines: tuple[str, ...], measured_lefts: tuple[str, ...]):
+    ledger = EventLedger()
+    for line in lines:
+        ledger.append(
+            INGRESS_OCCURRED_KIND,
+            "w",
+            {"decoded_text": line},
+            session_id="context",
+        )
+    material = preserved_ingress_occurrences(
+        ledger, workspace_id="w", session_id="context"
+    )
+    observations = []
+    for measured_left in measured_lefts:
+        finding = record_measurement_finding(
+            ledger,
+            workspace_id="w",
+            session_id="context",
+            finding=measure_after(
+                material,
+                measured_left,
+                counting_scope="exact bounded context fixture",
+            ),
+        )
+        observations.extend(
+            observe_adjacent_pair_contexts_from_finding(
+                ledger,
+                finding_event_id=finding.id,
+                occurrences=material,
+            )
+        )
+    return ledger, tuple(observations)
+
+
+def test_every_exact_pair_occurrence_preserves_its_adjacent_context_and_evidence():
+    ledger, observations = _context_road(
+        ("L a b R a b Z",),
+        ("a",),
+    )
+
+    assert len(observations) == 2
+    assert [observation.exact_order for observation in observations] == [
+        (0, 1, 2, 3),
+        (3, 4, 5, 6),
+    ]
+    for observation in observations:
+        source = ledger.get(observation.source_occurrence_id)
+        pair_finding = ledger.get(observation.evidence["pair_finding_event_id"])
+        assert pair_finding.kind == MEASUREMENT_RECORDED_KIND
+        assert observation.evidence == {
+            "source_occurrence_id": source.id,
+            "pair_finding_event_id": pair_finding.id,
+            "evidence_occurrence_ids": [
+                pair_finding.id,
+                source.id,
+            ],
+            "source_kind": INGRESS_OCCURRED_KIND,
+            "workspace_id": "w",
+            "session_id": "context",
+            "exact_decoded_text": source.payload["decoded_text"],
+        }
+        assert observation.pair_occurrence.right.position == (
+            observation.pair_occurrence.left.position + 1
+        )
+        assert observation.candidate["identity"] == {
+            "source_occurrence_id": source.id,
+            "positions": list(observation.exact_order),
+        }
+
+
+def test_context_observation_refuses_a_different_or_rewritten_source_occurrence():
+    ledger = EventLedger()
+    for line in ("L a b R", "X a b Y"):
+        ledger.append(
+            INGRESS_OCCURRED_KIND,
+            "w",
+            {"decoded_text": line},
+            session_id="context",
+        )
+    material = preserved_ingress_occurrences(
+        ledger, workspace_id="w", session_id="context"
+    )
+    finding = record_measurement_finding(
+        ledger,
+        workspace_id="w",
+        session_id="context",
+        finding=measure_after(material, "a", counting_scope="exact fixture"),
+    )
+
+    with pytest.raises(
+        PreservedMaterialMeasurementError,
+        match="differ from the finding's exact Evidence",
+    ):
+        observe_adjacent_pair_contexts_from_finding(
+            ledger,
+            finding_event_id=finding.id,
+            occurrences=reversed(material),
+        )
+
+    rewritten = material[0].model_copy(deep=True)
+    rewritten.payload["decoded_text"] = "L a b changed"
+    with pytest.raises(
+        PreservedMaterialMeasurementError,
+        match="source-occurrence Evidence does not reconstruct",
+    ):
+        observe_adjacent_pair_contexts_from_finding(
+            ledger,
+            finding_event_id=finding.id,
+            occurrences=(rewritten, material[1]),
+        )
+
+
+def test_boundary_absence_is_preserved_without_filling_candidate_nodes():
+    _, observations = _context_road(
+        ("a b R", "L a b", "a b"),
+        ("a",),
+    )
+
+    assert [
+        (
+            observation.left_occurrence is not None,
+            observation.right_occurrence is not None,
+            observation.candidate is not None,
+        )
+        for observation in observations
+    ] == [
+        (False, True, False),
+        (True, False, False),
+        (False, False, False),
+    ]
+
+
+def test_identical_words_do_not_identify_candidate_relations():
+    _, observations = _context_road(
+        ("L a b R", "L a b R"),
+        ("a",),
+    )
+
+    first, second = (observation.candidate for observation in observations)
+    assert first["left_node"]["representation"] == second["left_node"][
+        "representation"
+    ]
+    assert first["candidate_edge"]["ordered_pair"] == second["candidate_edge"][
+        "ordered_pair"
+    ]
+    assert first["right_node"]["representation"] == second["right_node"][
+        "representation"
+    ]
+    assert first["identity"] != second["identity"]
+
+
+def test_compare_reports_only_adjacency_coordinates_that_survive_counterexamples():
+    _, observations = _context_road(
+        (
+            "L a b R",
+            "L a b R",
+            "X a b Y",
+            "L c d R",
+        ),
+        ("a", "c"),
+    )
+
+    compared = compare_adjacent_pair_contexts(observations)
+    assert compared == {
+        "observation_count": 4,
+        "candidate_count": 4,
+        "boundary_observation_count": 0,
+        "distinct_occurrence_bound_candidates": 4,
+        "distinct_representation_triples": 3,
+        "counterexamples": {
+            "same_representations_different_occurrence": 1,
+            "same_ordered_pair_different_endpoint_representations": 1,
+            "same_endpoint_representations_different_ordered_pairs": 1,
+        },
+        "distinct_adjacency_coordinates": [
+            {
+                "left_present": True,
+                "right_present": True,
+                "ordered_displacements": [1, 1, 1],
+            }
+        ],
+    }
 
 
 def test_batched_pair_measurement_is_exactly_the_existing_battery(

@@ -1,11 +1,7 @@
 """Measure a validated adjacent pair by the same battery of bounded questions.
 
 An **adjacent pair** is two representations, one recorded as occupying the
-position after the other. Nothing more. An earlier draft of this module called
-it a *joint*, a word borrowed from conversation about what such pairs might
-turn out to be; that word is not used here, because a working name adopted in
-discussion is not a validated distinction and this module should not lend it
-one.
+position after the other. Nothing more.
 
 `#2391` validated thirteen such pairs from preserved material without a reader
 naming any representation, occupant, or delimiter.
@@ -123,6 +119,99 @@ class AdjacentPair:
 
     def __str__(self) -> str:  # pragma: no cover - rendering only
         return f"{self.left!r} -> {self.right!r}"
+
+
+@dataclass(frozen=True)
+class PositionedRepresentationOccurrence:
+    """One exact representation position inside one preserved occurrence."""
+
+    source_occurrence_id: str
+    position: int
+    representation: str
+
+    @property
+    def identity(self) -> tuple[str, int]:
+        return (self.source_occurrence_id, self.position)
+
+
+@dataclass(frozen=True)
+class ExactAdjacentPairOccurrence:
+    """One exact occurrence of an already-recovered ordered adjacent pair."""
+
+    pair: AdjacentPair
+    left: PositionedRepresentationOccurrence
+    right: PositionedRepresentationOccurrence
+
+    def __post_init__(self) -> None:
+        if self.left.source_occurrence_id != self.right.source_occurrence_id:
+            raise PreservedMaterialMeasurementError(
+                "an adjacent pair occurrence cannot cross source occurrences"
+            )
+        if self.right.position != self.left.position + 1:
+            raise PreservedMaterialMeasurementError(
+                "an adjacent pair occurrence requires exact displacement-one order"
+            )
+        if (
+            self.left.representation != self.pair.left
+            or self.right.representation != self.pair.right
+        ):
+            raise PreservedMaterialMeasurementError(
+                "an adjacent pair occurrence must carry its exact ordered pair"
+            )
+
+    @property
+    def identity(self) -> tuple[str, int, int]:
+        return (
+            self.left.source_occurrence_id,
+            self.left.position,
+            self.right.position,
+        )
+
+
+@dataclass(frozen=True)
+class AdjacentPairContextObservation:
+    """One bounded position on each side of one exact pair occurrence.
+
+    The representations are carried observations. They are not classified as
+    relation words, and equal representations do not identify equal candidate
+    relations.
+    """
+
+    left_occurrence: PositionedRepresentationOccurrence | None
+    pair_occurrence: ExactAdjacentPairOccurrence
+    right_occurrence: PositionedRepresentationOccurrence | None
+    source_occurrence_id: str
+    exact_order: tuple[int, ...]
+    evidence: dict[str, object]
+
+    @property
+    def candidate(self) -> dict[str, object] | None:
+        """Return one occurrence-bound candidate only when both sides exist."""
+
+        if self.left_occurrence is None or self.right_occurrence is None:
+            return None
+        return {
+            "identity": {
+                "source_occurrence_id": self.source_occurrence_id,
+                "positions": list(self.exact_order),
+            },
+            "left_node": {
+                "occurrence": list(self.left_occurrence.identity),
+                "representation": self.left_occurrence.representation,
+            },
+            "candidate_edge": {
+                "occurrence": list(self.pair_occurrence.identity),
+                "ordered_pair": [
+                    self.pair_occurrence.pair.left,
+                    self.pair_occurrence.pair.right,
+                ],
+            },
+            "right_node": {
+                "occurrence": list(self.right_occurrence.identity),
+                "representation": self.right_occurrence.representation,
+            },
+            "evidence": dict(self.evidence),
+        }
 
 
 @dataclass(frozen=True)
@@ -592,6 +681,238 @@ def _positions(text: str) -> Sequence[str]:
     """
 
     return text.split()
+
+
+def _observe_adjacent_pair_contexts(
+    occurrences: Iterable[Event],
+    pairs: Iterable[AdjacentPair],
+    *,
+    pair_finding_event_id: str,
+) -> tuple[AdjacentPairContextObservation, ...]:
+    """Extend every exact pair occurrence one position in each direction.
+
+    Pair values select what is observed; they do not identify the resulting
+    candidates. Every observation is identified by its preserved source
+    occurrence and exact positions. Boundary absence is retained as absence,
+    rather than dropping the pair occurrence or filling a node.
+    """
+
+    bounded_pairs = tuple(dict.fromkeys(pairs))
+    observations: list[AdjacentPairContextObservation] = []
+    for source in occurrences:
+        if source.kind != INGRESS_OCCURRED_KIND:
+            raise PreservedMaterialMeasurementError(
+                f"only preserved ingress occurrences may be observed: {source.kind}"
+            )
+        text = source.payload.get("decoded_text")
+        if not isinstance(text, str):
+            raise PreservedMaterialMeasurementError(
+                f"{source.id} carries no exact decoded representation"
+            )
+        positions = _positions(text)
+        for pair in bounded_pairs:
+            for at in range(len(positions) - 1):
+                if positions[at] != pair.left or positions[at + 1] != pair.right:
+                    continue
+                pair_left = PositionedRepresentationOccurrence(
+                    source.id, at, positions[at]
+                )
+                pair_right = PositionedRepresentationOccurrence(
+                    source.id, at + 1, positions[at + 1]
+                )
+                left = (
+                    PositionedRepresentationOccurrence(
+                        source.id, at - 1, positions[at - 1]
+                    )
+                    if at > 0
+                    else None
+                )
+                right = (
+                    PositionedRepresentationOccurrence(
+                        source.id, at + 2, positions[at + 2]
+                    )
+                    if at + 2 < len(positions)
+                    else None
+                )
+                exact_order = tuple(
+                    position
+                    for position in (
+                        left.position if left is not None else None,
+                        pair_left.position,
+                        pair_right.position,
+                        right.position if right is not None else None,
+                    )
+                    if position is not None
+                )
+                observations.append(
+                    AdjacentPairContextObservation(
+                        left_occurrence=left,
+                        pair_occurrence=ExactAdjacentPairOccurrence(
+                            pair=pair,
+                            left=pair_left,
+                            right=pair_right,
+                        ),
+                        right_occurrence=right,
+                        source_occurrence_id=source.id,
+                        exact_order=exact_order,
+                        evidence={
+                            "source_occurrence_id": source.id,
+                            "pair_finding_event_id": pair_finding_event_id,
+                            "evidence_occurrence_ids": [
+                                pair_finding_event_id,
+                                source.id,
+                            ],
+                            "source_kind": source.kind,
+                            "workspace_id": source.workspace_id,
+                            "session_id": source.session_id,
+                            "exact_decoded_text": text,
+                        },
+                    )
+                )
+    return tuple(observations)
+
+
+def observe_adjacent_pair_contexts_from_finding(
+    ledger: EventLedger,
+    *,
+    finding_event_id: str,
+    occurrences: Iterable[Event],
+) -> tuple[AdjacentPairContextObservation, ...]:
+    """Observe only adjacent pairs recovered from one recorded finding."""
+
+    finding = ledger.get(finding_event_id)
+    if finding is None or ledger.integrity_of(finding_event_id) == CORRUPTED:
+        raise PreservedMaterialMeasurementError(
+            "adjacent pairs require one intact recorded finding"
+        )
+    if not _is_established_after_measurement(finding):
+        raise PreservedMaterialMeasurementError(
+            "adjacent contexts require an exact recorded displacement-one finding"
+        )
+    material = tuple(occurrences)
+    recorded_ids = finding.payload.get("input_event_ids")
+    if (
+        not isinstance(recorded_ids, list)
+        or not all(isinstance(value, str) and value for value in recorded_ids)
+        or tuple(event.id for event in material) != tuple(recorded_ids)
+    ):
+        raise PreservedMaterialMeasurementError(
+            "the supplied source occurrences differ from the finding's exact Evidence"
+        )
+    for event in material:
+        recorded = ledger.get(event.id)
+        if (
+            recorded is None
+            or recorded.kind != INGRESS_OCCURRED_KIND
+            or recorded.workspace_id != finding.workspace_id
+            or recorded.session_id != finding.session_id
+            or recorded.payload != event.payload
+        ):
+            raise PreservedMaterialMeasurementError(
+                "the finding's source-occurrence Evidence does not reconstruct"
+            )
+    pairs = _adjacent_pairs_from_event(finding)
+    return _observe_adjacent_pair_contexts(
+        material,
+        pairs,
+        pair_finding_event_id=finding_event_id,
+    )
+
+
+def compare_adjacent_pair_contexts(
+    observations: Iterable[AdjacentPairContextObservation],
+) -> dict[str, object]:
+    """Report only distinctions that survive exact occurrence counterexamples.
+
+    Representation equality is counted for comparison but never used as
+    candidate identity. The result reports only measured differences.
+    """
+
+    bounded = tuple(observations)
+    candidates = tuple(
+        candidate
+        for observation in bounded
+        if (candidate := observation.candidate) is not None
+    )
+    representation_groups: dict[
+        tuple[str, tuple[str, str], str], list[dict[str, object]]
+    ] = {}
+    edge_groups: dict[tuple[str, str], list[dict[str, object]]] = {}
+    endpoint_groups: dict[tuple[str, str], list[dict[str, object]]] = {}
+    for candidate in candidates:
+        left = candidate["left_node"]["representation"]
+        edge = tuple(candidate["candidate_edge"]["ordered_pair"])
+        right = candidate["right_node"]["representation"]
+        representation_groups.setdefault((left, edge, right), []).append(candidate)
+        edge_groups.setdefault(edge, []).append(candidate)
+        endpoint_groups.setdefault((left, right), []).append(candidate)
+
+    return {
+        "observation_count": len(bounded),
+        "candidate_count": len(candidates),
+        "boundary_observation_count": len(bounded) - len(candidates),
+        "distinct_occurrence_bound_candidates": len(
+            {
+                (
+                    candidate["identity"]["source_occurrence_id"],
+                    tuple(candidate["identity"]["positions"]),
+                )
+                for candidate in candidates
+            }
+        ),
+        "distinct_representation_triples": len(representation_groups),
+        "counterexamples": {
+            "same_representations_different_occurrence": sum(
+                len(group) > 1 for group in representation_groups.values()
+            ),
+            "same_ordered_pair_different_endpoint_representations": sum(
+                len(
+                    {
+                        (
+                            candidate["left_node"]["representation"],
+                            candidate["right_node"]["representation"],
+                        )
+                        for candidate in group
+                    }
+                )
+                > 1
+                for group in edge_groups.values()
+            ),
+            "same_endpoint_representations_different_ordered_pairs": sum(
+                len(
+                    {
+                        tuple(candidate["candidate_edge"]["ordered_pair"])
+                        for candidate in group
+                    }
+                )
+                > 1
+                for group in endpoint_groups.values()
+            ),
+        },
+        "distinct_adjacency_coordinates": [
+            {
+                "left_present": left_present,
+                "right_present": right_present,
+                "ordered_displacements": list(displacements),
+            }
+            for left_present, right_present, displacements in sorted(
+                {
+                    (
+                        observation.left_occurrence is not None,
+                        observation.right_occurrence is not None,
+                        tuple(
+                            later - earlier
+                            for earlier, later in zip(
+                                observation.exact_order,
+                                observation.exact_order[1:],
+                            )
+                        ),
+                    )
+                    for observation in bounded
+                }
+            )
+        ],
+    }
 
 
 def _position_measurements(pair: AdjacentPair) -> dict[str, Callable[[str], str | None]]:
