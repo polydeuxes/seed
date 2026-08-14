@@ -264,7 +264,7 @@ def record_transient_material(
                     "standing": "occurred",
                     "source_provenance": observed_boundary,
                     "responsibility": "transient-material-occurrence",
-                    "authority_warrant": (
+                    "authority": (
                         "occurrence-only; represented relation Unknown. Records that material "
                         "occurred, never that it is available now"
                     ),

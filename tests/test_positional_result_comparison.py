@@ -123,7 +123,7 @@ def test_compare_preserves_exact_occurrence_bound_inputs(comparable):
     (
         ("source_provenance", "source_provenance"),
         ("responsibility", "responsibility"),
-        ("authority_warrant", "authority_warrant"),
+        ("authority", "authority"),
     ),
 )
 def test_compare_does_not_erase_established_fidelity_coordinates(
@@ -446,7 +446,7 @@ def test_recorded_compare_results_are_occurrence_addressable(comparable):
         ("standing", "warranted"),
         ("source_provenance", "another provenance"),
         ("responsibility", "revise an input Assertion"),
-        ("authority_warrant", "establishes relation"),
+        ("authority", "establishes relation"),
     ),
 )
 def test_recovery_refuses_changed_result_assertion_dimensions(
@@ -511,7 +511,7 @@ def test_recorded_result_assertion_shell_is_exactly_bounded(comparable):
         == POSITIONAL_RESULT_COMPARISON_PROVENANCE
     )
     assert (
-        assertion["dimensions"]["authority_warrant"]
+        assertion["dimensions"]["authority"]
         == POSITIONAL_RESULT_COMPARISON_AUTHORITY
     )
     assert assertion["unknowns"] == list(POSITIONAL_RESULT_COMPARISON_UNKNOWNS)

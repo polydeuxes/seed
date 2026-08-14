@@ -306,7 +306,7 @@ def _adjacent_pair_result_assertion_fields(
             "standing": "measured",
             "source_provenance": "preserved operator-ingress occurrences",
             "responsibility": POSITIONAL_RESULT_FIDELITY_RESPONSIBILITY,
-            "authority_warrant": (
+            "authority": (
                 "measurement evidence only; establishes no represented relation, relation, "
                 "kind, or standing beyond this measured Assertion"
             ),

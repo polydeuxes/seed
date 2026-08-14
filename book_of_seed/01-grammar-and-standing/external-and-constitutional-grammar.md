@@ -12,7 +12,7 @@ An external representation may become Seed-addressable without becoming Evidence
 
 An exact Responsibility may use external material only through its own Applicability and other required boundaries. Every applicable source coordinate and limit travels with the material. Dropping a limit is erasure; supplying an unsupported coordinate is invention; treating external material as repository truth is mutation; making its source the Authority owner is relocation.
 
-Developer-supplied connective text is attributed material. It may assert a narrow relation within an exact presentation, but equivalent text under another subject, source, Scope, occurrence, or Warrant does not identify the same relation. Unsupported coordinates remain Unknown or uninstantiated.
+Developer-supplied connective text is attributed material. It may assert a narrow relation within an exact presentation, but equivalent text under another subject, source, Scope, occurrence, or support-relation Standing does not identify the same relation. Unsupported coordinates remain Unknown or uninstantiated.
 
 ### 01.External.A — Addressability preserves source coordinates
 

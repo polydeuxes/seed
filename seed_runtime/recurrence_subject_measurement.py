@@ -8,6 +8,7 @@ relation, similarity, profile, or represented relation.
 
 from __future__ import annotations
 
+
 from dataclasses import dataclass
 import hashlib
 import json
@@ -194,7 +195,7 @@ def _coordinate_assertions(
                         "the exact recurrence Assertion production carried in support_basis"
                     ),
                     "responsibility": MEASURED_ASSERTION_RESPONSIBILITY,
-                    "authority_warrant": MEASUREMENT_AUTHORITY,
+                    "authority": MEASUREMENT_AUTHORITY,
                 },
                 "subject_kind": "assertion",
                 "responsibility_owner": "this recorded assertion",
@@ -234,7 +235,7 @@ def _measurement_event(
                 "content": "three distinct immediate coordinate Assertions recorded",
                 "standing": "recorded",
                 "source_provenance": "one occurrence-bound recurrence Assertion",
-                "authority_warrant": MEASUREMENT_AUTHORITY,
+                "authority": MEASUREMENT_AUTHORITY,
             },
             "producing_act": "declared Measurement",
             "measurement_subject": "one recovered recurrence Assertion subject",
@@ -296,7 +297,7 @@ def assertions_of_recorded_recurrence_subject_coordinates(
             "content": "three distinct immediate coordinate Assertions recorded",
             "standing": "recorded",
             "source_provenance": "one occurrence-bound recurrence Assertion",
-            "authority_warrant": MEASUREMENT_AUTHORITY,
+            "authority": MEASUREMENT_AUTHORITY,
         }
         or event.payload.get("producing_act") != "declared Measurement"
         or event.payload.get("measurement_subject")
@@ -343,7 +344,7 @@ def assertions_of_recorded_recurrence_subject_coordinates(
             or dimensions.get("source_provenance")
             != "the exact recurrence Assertion production carried in support_basis"
             or dimensions.get("responsibility") != MEASURED_ASSERTION_RESPONSIBILITY
-            or dimensions.get("authority_warrant") != MEASUREMENT_AUTHORITY
+            or dimensions.get("authority") != MEASUREMENT_AUTHORITY
         ):
             raise RecurrenceSubjectMeasurementError(
                 f"{event.id} carries an incoherent coordinate Assertion"

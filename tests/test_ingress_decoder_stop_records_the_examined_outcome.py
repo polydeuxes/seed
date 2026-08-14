@@ -151,7 +151,7 @@ def test_no_stop_claims_a_requirement_was_measured(rejected, unavailable):
     """
     for events, _ in (rejected, unavailable):
         stop = only(events, STOP)
-        assert stop["dimensions"]["authority_warrant"] == "closes only this interaction"
+        assert stop["dimensions"]["authority"] == "closes only this interaction"
         assert stop["dimensions"]["responsibility"] == "competent-local-stopping"
         assert set(stop) - {"dimensions"} == {
             "attempt_ref",

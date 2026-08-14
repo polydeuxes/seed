@@ -7,6 +7,7 @@ recurrence result where that count exceeds one.
 
 from __future__ import annotations
 
+
 from dataclasses import dataclass
 import hashlib
 import json
@@ -215,7 +216,7 @@ def _finding_assertions(
                 "standing": "measured",
                 "source_provenance": provenance,
                 "responsibility": MEASURED_ASSERTION_RESPONSIBILITY,
-                "authority_warrant": MEASUREMENT_AUTHORITY,
+                "authority": MEASUREMENT_AUTHORITY,
             },
             "subject_kind": "assertion",
             "responsibility_owner": "this recorded assertion",
@@ -294,7 +295,7 @@ def _measurement_event(
                 "source_provenance": (
                     "recorded recurrence-subject coordinate Assertion productions"
                 ),
-                "authority_warrant": MEASUREMENT_AUTHORITY,
+                "authority": MEASUREMENT_AUTHORITY,
             },
             "producing_act": "declared Measurement",
             "measurement_subject": (
@@ -361,7 +362,7 @@ def assertions_of_recorded_coordinate_assertion_count(
             "source_provenance": (
                 "recorded recurrence-subject coordinate Assertion productions"
             ),
-            "authority_warrant": MEASUREMENT_AUTHORITY,
+            "authority": MEASUREMENT_AUTHORITY,
         }
         or event.payload.get("producing_act") != "declared Measurement"
         or event.payload.get("measurement_subject")
@@ -437,7 +438,7 @@ def assertions_of_recorded_coordinate_assertion_count(
             or dimensions.get("standing") != "measured"
             or dimensions.get("source_provenance") != provenance
             or dimensions.get("responsibility") != MEASURED_ASSERTION_RESPONSIBILITY
-            or dimensions.get("authority_warrant") != MEASUREMENT_AUTHORITY
+            or dimensions.get("authority") != MEASUREMENT_AUTHORITY
             or item.get("support_basis") != support
             or item.get("unknowns") != list(MEASUREMENT_UNKNOWNS)
             or item.get("forbidden_inferences") != list(forbidden)

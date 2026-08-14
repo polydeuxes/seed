@@ -8,7 +8,7 @@ The source coordinates carried by an Assertion and the separate Standing of any 
 
 External or recorded material may carry asserted content together with a source identity, material origin, provenance, and source occurrence where mechanically evidenced. Those coordinates do not establish that the named source supplied or asserted the content.
 
-The relation “source S supplied or asserted Assertion A” is itself an Assertion. It requires its own Evidence, Warrant, Authority, Scope, occurrence, conflicts, Unknowns, limits, and Standing. A source label, nearby occurrence, copied provenance reference, or repeated material does not establish that relation.
+The relation “source S supplied or asserted Assertion A” is itself an Assertion. It requires its own Evidence, Authority, Scope, occurrence, conflicts, Unknowns, limits, and Standing. A source label, nearby occurrence, copied provenance reference, or repeated material does not establish that relation.
 
 Standing concerning A remains separate from Standing concerning its source relation. Establishing either one does not establish the other.
 

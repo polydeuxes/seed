@@ -13,6 +13,7 @@ represented relation, relation, or significance.
 
 from __future__ import annotations
 
+
 from dataclasses import dataclass
 import hashlib
 import json
@@ -31,7 +32,7 @@ RAW_MATERIAL_CAPTURED_KIND = "operator.ingress.raw_material_captured"
 INGRESS_OCCURRED_KIND = "operator.ingress.ingress_occurred"
 BYTE_MEASUREMENT_RECORDED_KIND = "operator.measurement.byte_counts_recorded"
 BYTE_MEASUREMENT_RESULT_KIND = "exact byte-count Measurement results"
-BYTE_MEASUREMENT_CONVENTION = "exact_captured_byte_count_measurement_v2"
+BYTE_MEASUREMENT_CONVENTION = "exact_captured_byte_count_measurement"
 BYTE_PAIR_MEASUREMENT_RECORDED_KIND = (
     "operator.measurement.adjacent_byte_pair_counts_recorded"
 )
@@ -357,7 +358,7 @@ def _pair_input_applicability(
         applicability_scope = scope
         source_provenance = payload["dimensions"]["source_provenance"]
         input_standing = payload["dimensions"]["standing"]
-        input_authority = payload["dimensions"]["authority_warrant"]
+        input_authority = payload["dimensions"]["authority"]
         input_unknowns = payload["unknowns"]
         input_limits = payload["forbidden_inferences"]
         negative_authority = {
@@ -365,13 +366,13 @@ def _pair_input_applicability(
             "value": input_limits,
             "treatment": "preserved as limits on this exact use",
         }
-    elif payload["dimensions"]["authority_warrant"] != SOURCE_SET_AUTHORITY:
+    elif payload["dimensions"]["authority"] != SOURCE_SET_AUTHORITY:
         standing = "Unknown"
         basis = "the input carries no recognized Authority for this exact source-population use"
         applicability_scope = scope
         source_provenance = payload["dimensions"]["source_provenance"]
         input_standing = payload["dimensions"]["standing"]
-        input_authority = payload["dimensions"]["authority_warrant"]
+        input_authority = payload["dimensions"]["authority"]
         input_unknowns = payload["unknowns"]
         input_limits = payload["forbidden_inferences"]
         negative_authority = {
@@ -385,7 +386,7 @@ def _pair_input_applicability(
         applicability_scope = scope
         source_provenance = payload["dimensions"]["source_provenance"]
         input_standing = payload["dimensions"]["standing"]
-        input_authority = payload["dimensions"]["authority_warrant"]
+        input_authority = payload["dimensions"]["authority"]
         input_unknowns = payload["unknowns"]
         input_limits = payload["forbidden_inferences"]
         negative_authority = {
@@ -412,7 +413,7 @@ def _pair_input_applicability(
             "content": content,
             "standing": standing,
             "source_provenance": source_provenance,
-            "authority_warrant": BYTE_PAIR_APPLICABILITY_AUTHORITY,
+            "authority": BYTE_PAIR_APPLICABILITY_AUTHORITY,
         },
         "result": "input_applicability",
         "input_assertion_ref": source.reference,
@@ -684,7 +685,7 @@ def _move_byte_assertion_to_locality(
             "source_assertion_ref": source.reference,
             "source_locality": source_locality,
             "destination_locality": target_locality,
-            "authority_warrant": (
+            "authority": (
                 "evidences this exact same-workspace Assertion locality movement"
             ),
         },
@@ -713,7 +714,7 @@ def _move_byte_assertion_to_locality(
                 "limits",
                 "Standing",
             ],
-            "authority_warrant": (
+            "authority": (
                 "same-workspace locality movement of this exact Assertion only; "
                 "establishes no changed identity, Standing, or cross-workspace use"
             ),
@@ -780,7 +781,7 @@ def _recover_moved_byte_assertion(
         "source_assertion_ref": source.reference,
         "source_locality": source_event.session_id,
         "destination_locality": movement.session_id,
-        "authority_warrant": (
+        "authority": (
             "evidences this exact same-workspace Assertion locality movement"
         ),
     }
@@ -815,7 +816,7 @@ def _recover_moved_byte_assertion(
             "limits",
             "Standing",
         ],
-        "authority_warrant": (
+        "authority": (
             "same-workspace locality movement of this exact Assertion only; "
             "establishes no changed identity, Standing, or cross-workspace use"
         ),
@@ -955,7 +956,7 @@ def _assertions(measured: MeasuredBytePopulation) -> list[dict[str, Any]]:
                     "complete declared ingress read through one boundary"
                 ),
                 "responsibility": MEASURED_ASSERTION_RESPONSIBILITY,
-                "authority_warrant": SOURCE_SET_AUTHORITY,
+                "authority": SOURCE_SET_AUTHORITY,
             },
             "subject_kind": "assertion",
             "responsibility_owner": "this recorded assertion",
@@ -998,7 +999,7 @@ def _assertions(measured: MeasuredBytePopulation) -> list[dict[str, Any]]:
                 "standing": "measured",
                 "source_provenance": provenance,
                 "responsibility": MEASURED_ASSERTION_RESPONSIBILITY,
-                "authority_warrant": MEASUREMENT_AUTHORITY,
+                "authority": MEASUREMENT_AUTHORITY,
             },
             "subject_kind": "assertion",
             "responsibility_owner": "this recorded assertion",
@@ -1070,7 +1071,7 @@ def record_byte_count_layer(
                 ),
                 "standing": "measured",
                 "source_provenance": "complete declared ingress read through one boundary",
-                "authority_warrant": MEASUREMENT_AUTHORITY,
+                "authority": MEASUREMENT_AUTHORITY,
         },
         "producing_act": "declared Measurement",
         "target_act_id": target_act_id,
@@ -1103,7 +1104,7 @@ def record_byte_count_layer(
                 BYTE_MEASUREMENT_CONVENTION, result_payload
             ),
             "standing": "occurred",
-            "authority_warrant": (
+            "authority": (
                 "Evidence concerning this exact bounded responsible Measurement "
                 "occurrence only; establishes no responsibility"
             ),
@@ -1178,7 +1179,7 @@ def assertions_of_recorded_byte_measurement(
             "source_provenance": (
                 "complete declared ingress read through one boundary"
             ),
-            "authority_warrant": MEASUREMENT_AUTHORITY,
+            "authority": MEASUREMENT_AUTHORITY,
         }
     ):
         raise ByteMeasurementError(
@@ -1228,7 +1229,7 @@ def assertions_of_recorded_byte_measurement(
             BYTE_MEASUREMENT_CONVENTION, produced
         ),
         "standing": "occurred",
-        "authority_warrant": (
+        "authority": (
             "Evidence concerning this exact bounded responsible Measurement "
             "occurrence only; establishes no responsibility"
         ),
@@ -1329,7 +1330,7 @@ def _pair_assertions(measured: MeasuredBytePairPopulation) -> list[dict[str, Any
                 "standing": "measured",
                 "source_provenance": provenance,
                 "responsibility": MEASURED_ASSERTION_RESPONSIBILITY,
-                "authority_warrant": PAIR_MEASUREMENT_AUTHORITY,
+                "authority": PAIR_MEASUREMENT_AUTHORITY,
             },
             "subject_kind": "assertion",
             "responsibility_owner": "this recorded assertion",
@@ -1401,7 +1402,7 @@ def _record_pair_responsible_act_evidence(
                 BYTE_PAIR_MEASUREMENT_CONVENTION, produced_content
             ),
             "standing": "occurred",
-            "authority_warrant": (
+            "authority": (
                 "Evidence concerning this exact bounded responsible Measurement "
                 "occurrence only; establishes no responsibility or authority "
                 "for another Act"
@@ -1428,7 +1429,7 @@ def _record_pair_input_applicability(
             "content": "exact source-Assertion to target-Act Applicability",
             "standing": standing,
             "source_provenance": claim["dimensions"]["source_provenance"],
-            "authority_warrant": BYTE_PAIR_APPLICABILITY_AUTHORITY,
+            "authority": BYTE_PAIR_APPLICABILITY_AUTHORITY,
         },
         "producing_act": "input Applicability determination",
         "responsibility": BYTE_PAIR_INPUT_APPLICABILITY_RESPONSIBILITY,
@@ -1686,7 +1687,7 @@ def record_adjacent_byte_pair_count_layer(
             ),
             "standing": "measured",
             "source_provenance": "the exact recovered source-material-set Assertion",
-            "authority_warrant": PAIR_MEASUREMENT_AUTHORITY,
+            "authority": PAIR_MEASUREMENT_AUTHORITY,
         },
         "producing_act": "declared Measurement",
         "target_act_id": measured.target_act_id,
@@ -1783,7 +1784,7 @@ def _validate_recorded_pair_input_applicability(
             "content": content,
             "standing": "applicable",
             "source_provenance": source_payload["dimensions"]["source_provenance"],
-            "authority_warrant": BYTE_PAIR_APPLICABILITY_AUTHORITY,
+            "authority": BYTE_PAIR_APPLICABILITY_AUTHORITY,
         },
         "result": "input_applicability",
         "input_assertion_ref": source.reference,
@@ -1803,7 +1804,7 @@ def _validate_recorded_pair_input_applicability(
         "act_context": act_context,
         "scope_locality": scope,
         "input_standing": source_payload["dimensions"]["standing"],
-        "input_authority": source_payload["dimensions"]["authority_warrant"],
+        "input_authority": source_payload["dimensions"]["authority"],
         "input_unknowns": source_payload["unknowns"],
         "input_limits": source_payload["forbidden_inferences"],
         "conflicts": [],
@@ -1867,7 +1868,7 @@ def assertions_of_recorded_adjacent_byte_pair_measurement(
         ),
         "standing": "measured",
         "source_provenance": "the exact recovered source-material-set Assertion",
-        "authority_warrant": PAIR_MEASUREMENT_AUTHORITY,
+        "authority": PAIR_MEASUREMENT_AUTHORITY,
     }
     if (
         payload.get("occurrence_preservation") != BYTE_PAIR_OCCURRENCE_PRESERVATION
@@ -1942,7 +1943,7 @@ def assertions_of_recorded_adjacent_byte_pair_measurement(
             BYTE_PAIR_MEASUREMENT_CONVENTION, produced
         ),
         "standing": "occurred",
-        "authority_warrant": (
+        "authority": (
             "Evidence concerning this exact bounded responsible Measurement "
             "occurrence only; establishes no responsibility or authority "
             "for another Act"
@@ -2090,11 +2091,11 @@ def assertions_of_recorded_adjacent_byte_pair_measurement(
                 "standing",
                 "source_provenance",
                 "responsibility",
-                "authority_warrant",
+                "authority",
             }
             or dimensions.get("standing") != "measured"
             or dimensions.get("responsibility") != MEASURED_ASSERTION_RESPONSIBILITY
-            or dimensions.get("authority_warrant") != PAIR_MEASUREMENT_AUTHORITY
+            or dimensions.get("authority") != PAIR_MEASUREMENT_AUTHORITY
             or assertion.get("unknowns") != list(BYTE_PAIR_UNKNOWNS)
             or assertion.get("forbidden_inferences")
             != list(BYTE_PAIR_FORBIDDEN_INFERENCES)

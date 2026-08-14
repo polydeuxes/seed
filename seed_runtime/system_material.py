@@ -171,7 +171,7 @@ def declare_invocation(
                         f"attributed to {declared.declared_performer} by the declaring caller"
                     ),
                     "responsibility": "declared-system-invocation",
-                    "authority_warrant": (
+                    "authority": (
                         "records that an invocation was declared; establishes no "
                         "performance of it, and no Evidence or Authority for this Seed to invoke"
                     ),
@@ -232,7 +232,7 @@ def preserve_system_material(
                     "standing": "occurred",
                     "source_provenance": observed_boundary,
                     "responsibility": "system-material-occurrence",
-                    "authority_warrant": "occurrence-only; represented relation Unknown",
+                    "authority": "occurrence-only; represented relation Unknown",
                     "scope_locality": f"workspace:{workspace_id};session:{session_id}",
                     "occurrence_preservation": "exact material durably recorded",
                 },

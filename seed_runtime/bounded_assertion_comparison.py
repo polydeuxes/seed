@@ -25,6 +25,7 @@ warrant, reliance, or corroboration.
 
 from __future__ import annotations
 
+
 from dataclasses import dataclass
 from typing import Any, Iterable
 
@@ -46,7 +47,7 @@ INPUT_COORDINATES: dict[str, tuple[str, ...]] = {
     "provenance": ("dimensions", "source_provenance"),
     "subject": ("dimensions", "identity"),
     "scope": ("dimensions", "scope_locality"),
-    "authority": ("dimensions", "authority_warrant"),
+    "authority": ("dimensions", "authority"),
     "confidence_or_uncertainty": (),
     "unknowns": ("unknowns",),
     "standing": ("dimensions", "standing"),
@@ -290,7 +291,7 @@ def record_comparison_finding(
             "standing": "compared",
             "source_provenance": "recorded measurement findings",
             "responsibility": "bounded-comparison-boundary",
-            "authority_warrant": (
+            "authority": (
                 "comparison evidence only; the bounded relation holds inside this "
                 "comparison boundary and establishes nothing beyond it"
             ),

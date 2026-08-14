@@ -178,7 +178,7 @@ class MeasuredAssertion:
                     "occurrences"
                 ),
                 "responsibility": MEASURED_ASSERTION_FIDELITY_RESPONSIBILITY,
-                "authority_warrant": (
+                "authority": (
                     "measurement evidence only; establishes no relation between "
                     "the exchanges, no source independence, and no corroboration"
                 ),
@@ -774,7 +774,7 @@ def record_measured_count(
                 "recorded comparison occurrences and recorded measurement "
                 "occurrences"
             ),
-            "authority_warrant": (
+            "authority": (
                 "measurement evidence only; establishes no relation between the "
                 "exchanges, no source independence, and no corroboration"
             ),

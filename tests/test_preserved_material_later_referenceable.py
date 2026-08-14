@@ -126,7 +126,7 @@ def test_each_formation_is_appended_after_every_event_it_references(ledger):
 
     This says nothing about findings or Standing.  A presentation formation is
     not a finding, and its own recorded authority is "formation occurrence
-    only; establishes no selection, Warrant, result relation, or response treatment".
+    only; establishes no Selection, support relation, result relation, or response treatment".
     """
     events = ledger.list()
     formations = [e for e in events if e.kind == FORMED]

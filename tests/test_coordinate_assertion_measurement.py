@@ -58,7 +58,7 @@ def test_measurement_groups_only_by_canonical_coordinate_assertion_identity():
     )
 
 
-def test_recording_preserves_set_count_and_only_warranted_recurrence():
+def test_recording_preserves_set_count_and_only_evidenced_recurrence():
     ledger = _coordinate_population()
     recorded = record_coordinate_assertion_count_layer(
         ledger,

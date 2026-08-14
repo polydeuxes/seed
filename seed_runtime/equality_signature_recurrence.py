@@ -8,6 +8,7 @@ Equivalence, similarity, relation, profile, represented relation, or significanc
 
 from __future__ import annotations
 
+
 from dataclasses import dataclass
 import hashlib
 import json
@@ -207,7 +208,7 @@ def _assertions(finding: MeasuredEqualitySignatureCount) -> list[dict[str, Any]]
                 "standing": "measured",
                 "source_provenance": provenance,
                 "responsibility": MEASURED_ASSERTION_RESPONSIBILITY,
-                "authority_warrant": MEASUREMENT_AUTHORITY,
+                "authority": MEASUREMENT_AUTHORITY,
             },
             "subject_kind": "assertion",
             "responsibility_owner": "this recorded assertion",
@@ -282,7 +283,7 @@ def _event(
                 "content": f"{len(assertions)} distinct measured Assertions recorded",
                 "standing": "recorded",
                 "source_provenance": "recorded exact equality-signature Assertions",
-                "authority_warrant": MEASUREMENT_AUTHORITY,
+                "authority": MEASUREMENT_AUTHORITY,
             },
             "producing_act": "declared Measurement",
             "measurement_subject": "recorded exact equality-signature Assertions",
@@ -343,7 +344,7 @@ def assertions_of_recorded_equality_signature_count(
             "content": f"{len(stated)} distinct measured Assertions recorded",
             "standing": "recorded",
             "source_provenance": "recorded exact equality-signature Assertions",
-            "authority_warrant": MEASUREMENT_AUTHORITY,
+            "authority": MEASUREMENT_AUTHORITY,
         }
         or event.payload.get("producing_act") != "declared Measurement"
         or event.payload.get("measurement_subject")
@@ -421,7 +422,7 @@ def assertions_of_recorded_equality_signature_count(
             or item_dimensions.get("standing") != "measured"
             or item_dimensions.get("source_provenance") != provenance
             or item_dimensions.get("responsibility") != MEASURED_ASSERTION_RESPONSIBILITY
-            or item_dimensions.get("authority_warrant") != MEASUREMENT_AUTHORITY
+            or item_dimensions.get("authority") != MEASUREMENT_AUTHORITY
             or item.get("support_basis") != support
             or item.get("unknowns") != list(MEASUREMENT_UNKNOWNS)
             or item.get("forbidden_inferences") != list(forbidden)

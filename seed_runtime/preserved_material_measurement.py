@@ -986,7 +986,7 @@ def _measurement_finding_payload(
             # from and under whose Responsibility the production is owned are
             # different questions, and only the first has been recovered.
             "responsibility": RESPONSIBILITY_UNRECOVERED,
-            "authority_warrant": (
+            "authority": (
                 "measurement evidence only; establishes no represented relation, relation, "
                 "or standing beyond the measurement assertion"
             ),

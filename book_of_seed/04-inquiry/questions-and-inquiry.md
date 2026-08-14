@@ -18,7 +18,7 @@ A bounded question may establish identity, provenance, Scope, required Evidence,
 An operator ask, prompt phrase, uncertainty statement, reformulation, or presentation label is attributed material. Seed may form a bounded question only while preserving its identity, source, Scope, required Evidence, Authority limit, uncertainty, and lawful stop. Formation does not make the operator wording Seed Standing, retire neighboring questions, establish an answer, or authorize inquiry beyond that boundary.
 
 ### 04.Question.C — Question relations are local and non-collapsing
-A relation among an uncertainty, result condition, question, finding, answer, completion, emission, or later occurrence exists only where the exact source Standing, addressed subject, Evidence or Warrant, Authority, locality, and limits are preserved. Co-presence in one report, graph, implementation surface, or sequence establishes no ordering or missing relation.
+A relation among an uncertainty, result condition, question, finding, answer, completion, emission, or later occurrence exists only where the exact source Standing, addressed subject, Evidence, support-relation Standing, Authority, locality, and limits are preserved. Co-presence in one report, graph, implementation surface, or sequence establishes no ordering or missing relation.
 
 External grammar cannot inject an internal question. An implementation taxonomy, inventory, family label, dispatch map, or emitted surface may witness implementation behavior; it does not become a constitutional question taxonomy or establish Applicability by existence.
 

@@ -7,7 +7,7 @@ The difference between representing a constitutional subject and possessing the 
 Which kinds are constitutionally recognized, and what establishes an artifact's standing as one of them?
 
 ## Bounded resolution
-A preserved representation or record may carry an Assertion made by another Responsibility. Its shape may preserve identity, provenance, result, uncertainty, and boundaries; it does not supply Warrant. Standing depends on the exact responsible Act and establishment occurrence with their validated inputs. A dedicated dataclass or concordance entry does not establish a constitutional kind.
+A preserved representation or record may carry an Assertion made by another Responsibility. Its shape may preserve identity, provenance, result, uncertainty, and boundaries; it does not establish that its Evidence, Authority, Scope, provenance, and limits support the Assertion. That relation requires its own Assertion and Standing.
 
 Standing must not exceed what its Evidence, Authority, Scope, and preserved limits warrant. This is a constitutional bound, not a universal Responsibility owner; each exact Responsibility remains independently established and bounded.
 
@@ -24,7 +24,7 @@ A kind label, artifact form, characterization category, dataclass name, concorda
 Compiled behavior, direct instantiation, stable serialization, and compatibility Evidence may witness what an observer, projection, adapter, or other mechanism does within a bounded implementation seam. They do not establish the Standing suggested by a name, output vocabulary, or observed behavior. Such Standing still requires its own subject, responsible occurrence, Evidence, Scope, Authority, and limits.
 
 ### 01.Standing.D — Multiplicity does not establish a collective
-Co-presence or multiplicity does not establish membership, collective Standing, relation, topology, ordering, Selection, priority, focus, a shared Act or result boundary, or higher-order identity. Each stronger Assertion requires its own bounded subject and Warrant.
+Co-presence or multiplicity does not establish membership, collective Standing, relation, topology, ordering, Selection, priority, focus, a shared Act or result boundary, or higher-order identity. Each stronger Assertion requires its own bounded subject and established support relation.
 
 ### 01.Standing.D.1 — An Assertion owns fidelity of its Standing
 A bounded **Assertion** is the exact asserted content as its own subject under its carried Evidence, provenance, Scope, Authority, conflicts, limits, **Unknowns**, and current Standing. An Assertion owns the Responsibility for fidelity of its Standing to those applicable coordinates. Assertion ownership is local to that bounded Assertion; it does not create a universal assertion manager, knowledge owner, or conflict resolver.
@@ -54,7 +54,7 @@ Unless the Book explicitly assigns otherwise, the Responsibility assigned to an 
 
 Responsibility for ensuring applicability is established does not require the act owner to duplicate every applicability determination personally. The owner may determine applicability within the same bounded occurrence, or may validate and consume applicability standing established by an explicitly assigned responsible occurrence for that exact downstream act. The latter standing must concern the exact input-to-act relation and coordinates, rather than generic usefulness, compatibility, availability, or possible relevance. An explicit Book assignment therefore overrides the ordinary owner; delegation does not create a universal applicability service. Applicability for one act is not applicability for another, and upstream applicability is not downstream admission. A later Act owns its own applicability, and admission remains required only where the exact act-local act requires it.
 
-An applicability determination may establish only **applicable**, **inapplicable**, **conflicting**, or **Unknown** for the exact input-to-Act relation and preserved coordinates. It does not establish admission, participation, truth, Warrant for the input's Assertion or relation, authorization, Act occurrence, downstream Standing, or movement. Warrant establishes only the bounded Assertion or relation its responsible occurrence supports; Applicability establishes only whether the exact input may participate in the exact Act. An excluded input may not participate in that Act, and no result may assert reliance on it. The exact Applicability result remains recoverable.
+An Applicability determination may establish only **applicable**, **inapplicable**, **conflicting**, or **Unknown** for the exact input-to-Act relation and preserved coordinates. It does not establish Admission, participation, truth, a support relation for the input's Assertion, Authorization, Act occurrence, downstream Standing, or movement. An excluded input may not participate in that Act, and no result may assert reliance on it.
 
 Exclusion of one proposed input does not by itself establish whether the exact act occurs. That determination remains with the responsibility assigned to perform the exact act, under the conditions, relations, evidence, authority, scope, and other boundaries assigned to that responsibility for the exact occurrence. One rejected candidate is not all candidates rejected; candidate exclusion establishes neither Authorization, act prohibition, nor a lawful Stop; act occurrence without an excluded input does not mean that input was applicable; and an act result is not a result supported by an excluded input. A lawful Stop requires its own competent act, authority, evidence, and attributed material; absence of act occurrence is not by itself a lawful Stop, and an implementation return or quiescence is not by itself a lawful Stop.
 
@@ -105,7 +105,7 @@ Acts, constraints, and relations are structurally distinct from dimensions. They
 - represented-relation Assertion carried != relation warranted
 - represented relation != proposition truth
 - represented relation != source label
-- source label != source-relation Warrant
+- source label != established source relation
 - relation warranted != Act-local Applicability
 - applicable != admitted
 - admitted != consumed or relied upon

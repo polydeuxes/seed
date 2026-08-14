@@ -162,6 +162,14 @@ Act, but public reachability, direct instantiation, constructability, or the
 returned shape establishes none of Responsibility, Authority, Act occurrence,
 production occurrence, production Evidence, or Standing.
 
+## Warrant
+
+`Warrant` is ordinary shorthand for why Seed is entitled to carry particular
+Standing. Seed grammar represents the exact relation Assertion connecting
+Evidence, Authority, Scope, provenance, and limits to the supported Assertion,
+together with that relation's responsible Act, occurrence, and Standing. The
+shorthand adds no subject or coordinate.
+
 ## Projection and View
 
 `Projection` and `View` are ordinary lenses over bounded formation toward

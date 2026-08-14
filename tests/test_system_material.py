@@ -63,7 +63,7 @@ def test_a_declaration_records_a_declaration_not_a_performance():
         "declared_performer": "operator system-material harness",
         "on_behalf_of": "this Seed",
     }
-    warrant = declaration.payload["dimensions"]["authority_warrant"]
+    warrant = declaration.payload["dimensions"]["authority"]
     assert "establishes no performance of it" in warrant
     assert "no Evidence or Authority for this Seed to invoke" in warrant
     # No coordinate asserts that Seed did not invoke. Not established that it

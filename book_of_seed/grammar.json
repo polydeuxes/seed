@@ -55,7 +55,7 @@
         "participants_and_roles",
         "provenance",
         "Standing",
-        "Warrant",
+        "support_relation_Standing",
         "currentness",
         "occurrence_identity",
         "known_loss",

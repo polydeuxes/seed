@@ -138,7 +138,7 @@ def record_self_survey(
             "standing": "surveyed",
             "source_provenance": "this session's recorded measurement occurrences",
             "responsibility": "declared-survey-over-recorded-measurements",
-            "authority_warrant": (
+            "authority": (
                 "measurement evidence only; establishes no represented relation, relation, "
                 "or standing beyond the survey assertion"
             ),

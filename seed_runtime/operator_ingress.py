@@ -31,7 +31,7 @@ def _dimensions(
         "standing": standing,
         "source_provenance": source,
         "responsibility": responsibility,
-        "authority_warrant": authority,
+        "authority": authority,
         "scope_locality": scope,
         "occurrence_preservation": occurrence,
     }
@@ -106,10 +106,7 @@ def project_operator_ingress_events(attempts, event, *, ledger=None) -> None:
         view["representation_examinations"][event.payload["material_role"]] = {
             "examination_event_id": event.id,
             "capture_event_id": event.payload["capture_event_id"],
-            "stream_encoding_metadata": event.payload.get(
-                "stream_encoding_metadata",
-                event.payload.get("encoding_attribution", event.payload.get("encoding_testimony")),
-            ),
+            "stream_encoding_metadata": event.payload["stream_encoding_metadata"],
             "decoder_mechanism": event.payload["decoder_mechanism"],
             "decoder_mechanism_selection": event.payload["decoder_mechanism_selection"],
             "decoder_outcome": event.payload["decoder_outcome"],

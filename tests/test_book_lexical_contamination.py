@@ -102,6 +102,9 @@ BANNED: tuple[tuple[str, str], ...] = (
     (r"\bconstructors?\b|constructor[-_]", "constructor"),
     (r"\bproduction authority\b", "production authority"),
     (r"\bproduc\w*\b|produc[-_]", "produc*"),
+    # Capital-W is the retired constitutional species.  Lowercase warrant is
+    # still an ordinary verb in sentences such as "the Evidence warrants X".
+    (r"\bWarrant\b|warrant[-_]", "Warrant"),
 )
 
 # The discriminator, corrected.
@@ -170,7 +173,10 @@ BANNED: tuple[tuple[str, str], ...] = (
 #                 compatibility label.  That physical field does not earn
 #                 admission to active law.
 
-COMPILED = tuple((re.compile(p, re.IGNORECASE), label) for p, label in BANNED)
+COMPILED = tuple(
+    (re.compile(pattern, 0 if label == "Warrant" else re.IGNORECASE), label)
+    for pattern, label in BANNED
+)
 
 
 def book_proper_files() -> list[Path]:

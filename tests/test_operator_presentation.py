@@ -6,10 +6,7 @@ from seed_runtime.operator_presentation import (
     form_operator_presentation,
     render_operator_presentation,
 )
-from seed_runtime.operator_session_standing import (
-    advance_operator_session_standing,
-    project_operator_session_standing,
-)
+from seed_runtime.operator_session_standing import project_operator_session_standing
 from tests.closed_choice_fixture import CLOSED_CHOICE_FIXTURE_SOURCES
 from seed_runtime.operator_console import run_persistent_operator_console
 
@@ -134,23 +131,6 @@ def test_no_compare_or_identification_follows_console_ingress():
     assert standing["comparisons"] == {}
     assert standing["identifications"] == {}
     assert standing["latest_exchange_finding"] is None
-
-
-def test_session_replay_reads_the_historical_encoding_field():
-    ledger, _ = _run_console("hello\n")
-    historical = []
-    for event in ledger.list("w"):
-        if event.kind != "operator.ingress.representation_examined":
-            historical.append(event)
-            continue
-        payload = dict(event.payload)
-        payload["encoding_testimony"] = payload.pop("stream_encoding_metadata")
-        historical.append(event.model_copy(update={"payload": payload}))
-
-    standing = advance_operator_session_standing(
-        historical, workspace_id="w", session_id="s"
-    )
-    assert standing["event_count"] == len(historical)
 
 
 def test_c0_presents_standing_with_no_developer_semantics():

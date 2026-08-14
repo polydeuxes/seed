@@ -246,7 +246,7 @@ def test_the_survey_is_recorded_in_the_shape_of_what_it_measured(exhausted):
         surveyed_occurrences(exhausted, workspace_id="w", session_id="s")
     )
 
-    authority = event.payload["dimensions"]["authority_warrant"]
+    authority = event.payload["dimensions"]["authority"]
     assert "measurement evidence only" in authority
     assert event.payload["coordinates_observed_with_one_value"] == ["displacement"]
     assert event.payload["coordinates_observed_with_several"] == [

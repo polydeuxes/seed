@@ -398,7 +398,7 @@ def compare_recorded_finding(ledger: EventLedger, event_id: str) -> Event:
                 "standing": standing,
                 "producing_act": "bounded fidelity comparison",
                 "responsibility": RESPONSIBILITY_UNRECOVERED,
-                "authority_warrant": authority_boundary,
+                "authority": authority_boundary,
                 "scope_workspace": recorded.workspace_id,
                 "scope_locality": (
                     f"session:{recorded.session_id}"

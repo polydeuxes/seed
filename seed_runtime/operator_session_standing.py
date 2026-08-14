@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+
 from bisect import bisect_left
 from typing import Any, Iterable
 
@@ -628,7 +629,7 @@ def advance_operator_session_standing(
                 # formation payload exactly; a forged M is refused here.
                 (payload["proposition"], recorded_source["represented_result"], "proposition"),
                 (
-                    payload.get("source_role", payload.get("source_attribution")),
+                    payload["source_role"],
                     recorded_source["source_role"],
                     "source_role",
                 ),
@@ -714,7 +715,7 @@ def advance_operator_session_standing(
             # invariants at this boundary; a forged loss, Unknown, or
             # conflict inventory is refused rather than exposed.
             reconstructed_relation_standing = {
-                "warrant_basis": (
+                "support_relation_standing": (
                     "attributed developer-supplied relation Assertion "
                     "preserved by the recorded formation occurrence"
                 ),
@@ -748,15 +749,15 @@ def advance_operator_session_standing(
                 "alternative_id": payload["alternative_id"],
                 "source_identity": payload["source_identity"],
                 "proposition": payload["proposition"],
-                "source_role": payload.get(
-                    "source_role", payload.get("source_attribution")
-                ),
+                "source_role": payload["source_role"],
                 "source_reference": payload["source_reference"],
                 "representation_result_boundary": payload[
                     "representation_result_boundary"
                 ],
                 "representation_scope": payload["representation_scope"],
-                "warrant_basis": reconstructed_relation_standing["warrant_basis"],
+                "support_relation_standing": reconstructed_relation_standing[
+                    "support_relation_standing"
+                ],
                 "authority_separation": authority_separation,
                 "known_loss": reconstructed_relation_standing["known_loss"],
                 "unknowns": reconstructed_relation_standing["unknowns"],
@@ -776,7 +777,7 @@ def advance_operator_session_standing(
                 "attempt_ref": attempt_ref,
                 "subject_ref": event.payload["dimensions"]["identity"],
                 "standing": "preserved",
-                "authority_warrant": event.payload["dimensions"]["authority_warrant"],
+                "authority": event.payload["dimensions"]["authority"],
                 "evidence_event_id": event.id,
                 "raw_material_event_id": event.payload["raw_material_event_id"],
                 "content": event.payload["dimensions"]["content"],

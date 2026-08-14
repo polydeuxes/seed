@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+
 from dataclasses import asdict, dataclass
 import hashlib
 import json
@@ -330,7 +331,7 @@ def form_operator_ingress_addressable_material(
     if payload.get("provenance_occurrence_refs") != [raw_ref, examination_ref]:
         _refuse("provenance occurrences must preserve capture followed by examination")
     dimensions = payload.get("dimensions")
-    if not isinstance(dimensions, dict) or dimensions.get("authority_warrant") != (
+    if not isinstance(dimensions, dict) or dimensions.get("authority") != (
         "occurrence-only; represented relation Unknown"
     ):
         _refuse("occurrence-only authority with represented relation Unknown is required")

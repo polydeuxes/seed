@@ -302,7 +302,7 @@ def test_a_deep_chain_is_still_a_chain_of_counts(session, occurrences, seeded):
     depths = {len(premise_chain(session, event.id)) for event in findings}
     assert max(depths) >= 3
     for event in findings:
-        authority = event.payload["dimensions"]["authority_warrant"]
+        authority = event.payload["dimensions"]["authority"]
         assert "measurement evidence only" in authority
         assert event.payload["unknowns"] == [
             "what any measured representation means remains Unknown"

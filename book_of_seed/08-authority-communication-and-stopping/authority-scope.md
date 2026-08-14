@@ -18,7 +18,7 @@ A downstream Act may rely on warranted content only for its exact role, addresse
 
 
 ### 08.Authority.B — Admission is bounded participation, not ratification
-A Warrant, Applicability, reliance, or Admission finding may let a supported subject participate in an exact Act only within its Evidence, responsible boundary, result boundary, Authority, negative Authority, confidence, and Unknown limits. It does not become truth, universal Authority, mutation Authority, Book ratification, or reusable approval.
+An established support relation, Applicability, reliance, or Admission finding may let a subject participate in an exact Act only within its Evidence, responsible boundary, result boundary, Authority, negative Authority, confidence, and Unknown limits. It does not become truth, universal Authority, mutation Authority, Book ratification, or reusable approval.
 
 
 ### 08.Authority.C — Analytical competence is not adjudicative authority

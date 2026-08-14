@@ -9,6 +9,7 @@ recurrence is a distinct result of the same declared Measurement.
 
 from __future__ import annotations
 
+
 from dataclasses import dataclass
 import hashlib
 import json
@@ -296,7 +297,7 @@ def assertions_from_comparison_result_count(
                 "recorded positional-result comparison Assertion productions"
             ),
             "responsibility": MEASURED_ASSERTION_RESPONSIBILITY,
-            "authority_warrant": MEASUREMENT_AUTHORITY,
+            "authority": MEASUREMENT_AUTHORITY,
         },
         "subject_kind": "assertion",
         "responsibility_owner": "this recorded assertion",
@@ -329,7 +330,7 @@ def assertions_from_comparison_result_count(
             "standing": "measured",
             "source_provenance": "the exact production-set Assertion carried here",
             "responsibility": MEASURED_ASSERTION_RESPONSIBILITY,
-            "authority_warrant": MEASUREMENT_AUTHORITY,
+            "authority": MEASUREMENT_AUTHORITY,
         },
         "subject_kind": "assertion",
         "responsibility_owner": "this recorded assertion",
@@ -357,7 +358,7 @@ def assertions_from_comparison_result_count(
                     "standing": "measured",
                     "source_provenance": "the exact count Assertion carried here",
                     "responsibility": MEASURED_ASSERTION_RESPONSIBILITY,
-                    "authority_warrant": MEASUREMENT_AUTHORITY,
+                    "authority": MEASUREMENT_AUTHORITY,
                 },
                 "subject_kind": "assertion",
                 "responsibility_owner": "this recorded assertion",
@@ -396,7 +397,7 @@ def _comparison_result_count_event(
                 "source_provenance": (
                     "recorded positional-result comparison Assertions"
                 ),
-                "authority_warrant": MEASUREMENT_AUTHORITY,
+                "authority": MEASUREMENT_AUTHORITY,
             },
             "producing_act": "declared Measurement",
             "measurement_subject": "recorded positional-result comparison Assertions",
@@ -483,7 +484,7 @@ def assertions_of_recorded_comparison_result_count(
             "content": f"{len(stated)} distinct measured Assertions recorded",
             "standing": "recorded",
             "source_provenance": "recorded positional-result comparison Assertions",
-            "authority_warrant": MEASUREMENT_AUTHORITY,
+            "authority": MEASUREMENT_AUTHORITY,
         }
         or event.payload.get("producing_act") != "declared Measurement"
         or event.payload.get("measurement_subject")
@@ -560,7 +561,7 @@ def assertions_of_recorded_comparison_result_count(
             or item_dimensions.get("source_provenance") != provenance
             or item_dimensions.get("responsibility")
             != MEASURED_ASSERTION_RESPONSIBILITY
-            or item_dimensions.get("authority_warrant") != MEASUREMENT_AUTHORITY
+            or item_dimensions.get("authority") != MEASUREMENT_AUTHORITY
             or item.get("unknowns") != list(MEASUREMENT_UNKNOWNS)
             or item.get("forbidden_inferences") != list(forbidden)
         ):

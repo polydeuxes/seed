@@ -13,7 +13,7 @@ A constraint consumes the proposed act or relevant context and establishes or pr
 ## Addressable access and Act conditions
 
 ### 02.Constraints.A — Access and an Act condition do not authorize use
-An access condition, visible route, available representation, mechanism candidate, catalog entry, or read-only surface preserves only its exact evidenced condition. It does not by itself establish Authorization for the Act, mutation, reliance beyond its Warrant, event-ledger admission, or cluster change. Lawful use requires the exact Act's Authority, Constraints, Evidence, Responsibility, and occurrence boundary.
+An access condition, visible route, available representation, mechanism candidate, catalog entry, or read-only surface preserves only its exact evidenced condition. It does not by itself establish Authorization for the Act, mutation, reliance beyond an established support relation, event-ledger admission, or cluster change. Lawful use requires the exact Act's Authority, Constraints, Evidence, Responsibility, and occurrence boundary.
 
 ## Important distinctions
 - act != constraint on an act

@@ -9,6 +9,7 @@ or reason to revise either Assertion.
 
 from __future__ import annotations
 
+
 from dataclasses import dataclass
 import hashlib
 from itertools import combinations
@@ -166,7 +167,7 @@ COORDINATES: dict[str, tuple[str, ...]] = {
     "standing": ("dimensions", "standing"),
     "source_provenance": ("dimensions", "source_provenance"),
     "responsibility": ("dimensions", "responsibility"),
-    "authority_warrant": ("dimensions", "authority_warrant"),
+    "authority": ("dimensions", "authority"),
     "scope": ("assertion_scope",),
     "support_basis": ("support_basis",),
     "completeness_boundary": ("completeness_boundary",),
@@ -181,7 +182,7 @@ POSITIONAL_RESULT_COORDINATES: dict[str, tuple[str, ...]] = {
     "standing": ("dimensions", "standing"),
     "source_provenance": ("dimensions", "source_provenance"),
     "responsibility": ("dimensions", "responsibility"),
-    "authority_warrant": ("dimensions", "authority_warrant"),
+    "authority": ("dimensions", "authority"),
     "scope": ("assertion_scope",),
     "support_basis": ("support_basis",),
     "completeness_boundary": ("completeness_boundary",),
@@ -540,7 +541,7 @@ def _positional_result_comparison_payload(
                     "standing": "compared",
                     "source_provenance": POSITIONAL_RESULT_COMPARISON_PROVENANCE,
                     "responsibility": COMPARISON_ASSERTION_FIDELITY_RESPONSIBILITY,
-                    "authority_warrant": POSITIONAL_RESULT_COMPARISON_AUTHORITY,
+                    "authority": POSITIONAL_RESULT_COMPARISON_AUTHORITY,
                     "scope_locality": "the exact assertion_scope carried here",
                     "occurrence_preservation": (
                         "distinct Compare result preserved by its producing occurrence"
@@ -571,7 +572,7 @@ def _positional_result_comparison_payload(
                 "content": f"{len(assertions)} distinct comparison Assertions recorded",
                 "standing": "recorded",
                 "source_provenance": "two occurrence-bound positional result Assertions",
-                "authority_warrant": "literal Compare results only",
+                "authority": "literal Compare results only",
                 "scope_locality": f"workspace:{workspace_id};session:{session_id}",
                 "occurrence_preservation": "comparison occurrence durably recorded",
             },
@@ -637,7 +638,7 @@ def assertions_of_recorded_positional_result_comparison(
             != POSITIONAL_RESULT_COMPARISON_PROVENANCE
             or dimensions.get("responsibility")
             != COMPARISON_ASSERTION_FIDELITY_RESPONSIBILITY
-            or dimensions.get("authority_warrant")
+            or dimensions.get("authority")
             != POSITIONAL_RESULT_COMPARISON_AUTHORITY
             or dimensions.get("scope_locality")
             != "the exact assertion_scope carried here"
@@ -983,7 +984,7 @@ def record_assertion_production_comparison(
                         "support_basis"
                     ),
                     "responsibility": COMPARISON_ASSERTION_FIDELITY_RESPONSIBILITY,
-                    "authority_warrant": (
+                    "authority": (
                         "literal comparison evidence only; establishes no conflict, "
                         "represented relation, preference, revision, or strengthening"
                     ),
@@ -1028,7 +1029,7 @@ def record_assertion_production_comparison(
                 "content": f"{len(assertions)} distinct comparison Assertions recorded",
                 "standing": "recorded",
                 "source_provenance": "two occurrence-bound Assertion productions",
-                "authority_warrant": "literal Compare results only",
+                "authority": "literal Compare results only",
                 "scope_locality": f"workspace:{workspace_id};session:{session_id}",
                 "occurrence_preservation": "comparison occurrence durably recorded",
             },

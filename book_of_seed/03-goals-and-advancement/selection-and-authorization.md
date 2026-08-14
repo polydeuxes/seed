@@ -4,7 +4,7 @@
 The boundary between selecting a candidate for an exact Act and separately establishing Authorization for an Act or movement.
 
 ## Core question
-Which selections establish only bounded Selection standing, and what separate Warrant can establish Authorization?
+Which selections establish only bounded Selection Standing, and what separate Authority occurrence can establish Authorization?
 
 ## Bounded resolution
 Selection narrows a bounded candidate set through a responsible Selection Act and preserves its basis. Selection does not grant Authority or Authorization. Representation selection chooses representations for one exact Act and result boundary. General Selection may choose an established subject where the responsible boundary validates the required Evidence. Selection Standing establishes no later Act or movement by identity.

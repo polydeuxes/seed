@@ -33,7 +33,7 @@ def _dimensions(
         "standing": standing,
         "source_provenance": source,
         "responsibility": responsibility,
-        "authority_warrant": authority,
+        "authority": authority,
         "scope_locality": scope,
         "occurrence_preservation": occurrence,
     }

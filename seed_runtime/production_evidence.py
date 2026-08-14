@@ -82,7 +82,7 @@ def _record_production_evidence(
                 ),
                 "responsibility": responsibility,
                 "responsible_boundary": responsible_boundary,
-                "authority_warrant": (
+                "authority": (
                     "establishes production of this exact result at this "
                     "producing boundary; establishes no responsibility, "
                     "authorization, or successful return from "

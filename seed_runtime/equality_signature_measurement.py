@@ -9,6 +9,7 @@ represented relation, or significance for either partition.
 
 from __future__ import annotations
 
+
 from dataclasses import dataclass
 import hashlib
 from itertools import chain
@@ -217,7 +218,7 @@ def _assertion(finding: MeasuredEqualitySignature, *, workspace_id: str) -> dict
                 "the complete coordinate-result Assertion surface of one recorded Compare"
             ),
             "responsibility": MEASURED_ASSERTION_RESPONSIBILITY,
-            "authority_warrant": MEASUREMENT_AUTHORITY,
+            "authority": MEASUREMENT_AUTHORITY,
         },
         "subject_kind": "assertion",
         "responsibility_owner": "this recorded assertion",
@@ -246,7 +247,7 @@ def _event(
                 "content": "one exact equality-signature Assertion recorded",
                 "standing": "recorded",
                 "source_provenance": "one recorded positional-result Compare",
-                "authority_warrant": MEASUREMENT_AUTHORITY,
+                "authority": MEASUREMENT_AUTHORITY,
             },
             "producing_act": "declared Measurement",
             "measurement_subject": "complete positional-result Compare coordinate surface",
@@ -309,7 +310,7 @@ def assertion_of_recorded_equality_signature(
             "content": "one exact equality-signature Assertion recorded",
             "standing": "recorded",
             "source_provenance": "one recorded positional-result Compare",
-            "authority_warrant": MEASUREMENT_AUTHORITY,
+            "authority": MEASUREMENT_AUTHORITY,
         }
         or event.payload.get("producing_act") != "declared Measurement"
         or event.payload.get("measurement_subject")
@@ -336,7 +337,7 @@ def assertion_of_recorded_equality_signature(
         or dimensions.get("source_provenance")
         != "the complete coordinate-result Assertion surface of one recorded Compare"
         or dimensions.get("responsibility") != MEASURED_ASSERTION_RESPONSIBILITY
-        or dimensions.get("authority_warrant") != MEASUREMENT_AUTHORITY
+        or dimensions.get("authority") != MEASUREMENT_AUTHORITY
         or not isinstance(content, dict)
         or set(content) != {"same_coordinates", "different_coordinates"}
         or not isinstance(scope, dict)

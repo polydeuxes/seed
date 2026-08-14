@@ -162,7 +162,7 @@ def test_recorded_results_replay_the_complete_bounded_source_read():
         "source_session_ids": ["source"],
     }
     assert count.payload["dimensions"]["source_provenance"]
-    assert count.payload["dimensions"]["authority_warrant"]
+    assert count.payload["dimensions"]["authority"]
     assert count.payload["unknowns"]
     assert count.payload["forbidden_inferences"]
     assert count.support_assertion_refs == (
@@ -589,7 +589,7 @@ def test_pair_applicability_has_real_non_applicable_and_unknown_outcomes():
         measurement_session_id="measurement",
     )
     carried = source.payload
-    carried["dimensions"]["authority_warrant"] = "unrecognized"
+    carried["dimensions"]["authority"] = "unrecognized"
     unknown_source = type(source)(
         assertion_id=source.assertion_id,
         recorded_occurrence_id=source.recorded_occurrence_id,

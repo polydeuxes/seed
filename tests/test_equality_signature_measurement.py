@@ -222,7 +222,7 @@ def test_signature_does_not_claim_equivalence_or_select_a_subset():
     assert assertion["assertion_subject"]["declared_coordinate_surface"] == list(
         POSITIONAL_RESULT_COORDINATES
     )
-    assert "no Equivalence" in assertion["dimensions"]["authority_warrant"]
+    assert "no Equivalence" in assertion["dimensions"]["authority"]
     assert "not Equivalence" in assertion["forbidden_inferences"][0]
     assert "selected_coordinates" not in str(event.payload)
 

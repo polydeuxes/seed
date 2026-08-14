@@ -61,7 +61,7 @@ The Authority coordinate may be positively established, conflicting, responsibly
 
 #### Evidence
 
-Identifies the evidence supporting the exact responsibility, act, occurrence, result, standing, or relation claimed. Evidence does not establish Authority, Warrant, occurrence, or standing by identity.
+Identifies the Evidence supporting the exact Responsibility, Act, occurrence, result, Standing, or relation claimed. Evidence does not establish Authority, a support relation, occurrence, or Standing by identity.
 
 #### Scope and locality
 
@@ -79,36 +79,11 @@ Identifies where the exact consumed material came from. Source does not establis
 
 Identifies the attributed source, preservation, and occurrence history required by the exact use. Source and provenance remain distinct.
 
-### Conditional warrant branches
+### Conditional support-relation branches
 
-These branches are required where the Responsibility relies upon or establishes a substantive Assertion, relation, Act, result, Standing, or reliance claim.
+Where a Responsibility relies upon or establishes a substantive Assertion, the exact relation “these Evidence, Authority, Scope, provenance, and limits support this Assertion” is another Assertion. Its participants, responsible Act, occurrence, Evidence, Authority, Scope, conflicts, limits, Unknowns, and Standing remain independently recoverable. Nearby coordinates, reference presence, or adjacency do not establish that relation.
 
-#### Warranted subject
-
-Identifies the exact assertion, relation, act, result, standing, or reliance claim that the Warrant supports. A nearby Warrant belonging to another subject or responsibility does not automatically occupy this coordinate.
-
-#### Warrant-establishing boundary
-
-Identifies the responsible boundary that establishes the exact Warrant. It may differ from the responsibility that later consumes the Warrant.
-
-#### Warrant-establishing occurrence
-
-Identifies the exact occurrence that establishes the Warrant. This occurrence must not be inferred from artifact carriage, reference presence, or adjacency.
-
-#### Warrant
-
-Identifies the bounded support established for the exact warranted subject.
-
-```text
-Warrant
-!= Evidence
-!= Provenance
-!= Authority
-```
-
-#### Warrant exact Act and reliance boundary
-
-Where the exact Warrant has an established exact Act, this branch identifies that Act and the exact subject/result relation for which the Warrant may be relied upon. Establishing Warrant does not create the Act, that reliance relation, or later reliance by identity.
+Support-relation Standing does not establish the supported Assertion's Standing, Applicability, Admission, or later reliance. Each requires its own responsible occurrence.
 
 ### Act-occurrence and non-occurrence branches
 
@@ -125,7 +100,7 @@ act
 
 #### Absence-of-act-occurrence finding
 
-Identifies the separately responsible occurrence and result that establish that the proposed exact Act did not occur. The finding is not the absent Act's occurrence. It may itself be a lawful result under its own Responsibility, Evidence, Authority, Scope, and Warrant.
+Identifies the separately responsible occurrence and result that establish that the proposed exact Act did not occur. The finding is not the absent Act's occurrence. It may itself be a lawful result under its own Responsibility, Evidence, Authority, Scope, and established support relations.
 
 ```text
 absence-of-act-occurrence finding
@@ -213,7 +188,7 @@ These branches are exposed only where the exact responsibility instantiates them
 
 #### Preservation record
 
-Identifies any separately retained representation or record preserving an Act, Standing establishment, Warrant, result, or other occurrence. A preservation record does not prove the preserved occurrence by identity.
+Identifies any separately retained representation or record preserving an Act, Standing establishment, support relation, result, or other occurrence. A preservation record does not prove the preserved occurrence by identity.
 
 #### Separate Authorization standing
 

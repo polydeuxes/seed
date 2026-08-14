@@ -265,7 +265,7 @@ def test_recording_preserves_exact_set_and_derived_count_separately():
         "recurrence_established": True
     }
     assert "no recurrence" not in recurrence["dimensions"][
-        "authority_warrant"
+        "authority"
     ].lower()
     assert recurrence["support_basis"] == {
         "local_assertion_ids": [count["dimensions"]["identity"]]
