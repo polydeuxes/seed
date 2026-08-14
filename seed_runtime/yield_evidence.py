@@ -22,6 +22,20 @@ from seed_runtime.event import Event
 from seed_runtime.events import EventLedger
 
 YIELD_EVIDENCE_KIND = "operator.yield.evidence_recorded"
+YIELD_LIVE_BOUNDARIES = frozenset(
+    {
+        "adjacent_pair_observation",
+        "adjacent_pair_observation_compare",
+        "byte_measurement",
+        "byte_pair_applicability",
+        "byte_pair_measurement",
+        "external_expression_relation",
+        "preserved_material_measurement",
+        "recorded_finding_yield_compare",
+        "representation_result",
+        "successful_emission",
+    }
+)
 _YIELD_COMMITMENT_DOMAIN = b"seed.yield-evidence.v1\0"
 
 
@@ -65,12 +79,15 @@ def _record_yield_evidence(
     result_identity: str,
     yielded_content: dict[str, Any],
     responsibility: str,
+    live_boundary: str,
     responsible_boundary: str = "unestablished",
 ) -> Event:
     """Preserve Evidence from inside an act for its already-fixed result."""
 
     if not isinstance(act_occurrence_id, str) or not act_occurrence_id:
         raise ValueError("Yield Evidence requires one exact Act occurrence identity")
+    if live_boundary not in YIELD_LIVE_BOUNDARIES:
+        raise ValueError("Yield Evidence requires one declared live boundary")
 
     return ledger.append(
         YIELD_EVIDENCE_KIND,
@@ -110,6 +127,7 @@ def _record_yield_evidence(
             ),
             "yield_coordinates": sorted(yielded_content),
             "yielded_result_kind": yielded_result_kind,
+            "live_boundary": live_boundary,
         },
         session_id=session_id,
     )

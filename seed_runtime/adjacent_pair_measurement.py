@@ -800,6 +800,7 @@ def _record_adjacent_pair_observation_result(
         result_identity=f"adjacent-pair-observation-result:{act_occurrence_id}",
         yielded_content=result_payload,
         responsibility=ADJACENT_PAIR_OBSERVATION_RESPONSIBILITY,
+        live_boundary="adjacent_pair_observation",
         responsible_boundary="this Seed",
     )
     carriage_evidence = ledger.append(
@@ -1275,6 +1276,7 @@ def record_adjacent_pair_observation_compare(
         result_identity=f"adjacent-pair-observation-compare:{act_occurrence_id}",
         yielded_content=result_payload,
         responsibility=ADJACENT_PAIR_OBSERVATION_COMPARE_RESPONSIBILITY,
+        live_boundary="adjacent_pair_observation_compare",
         responsible_boundary="this Seed",
     )
     carriage_evidence = ledger.append(

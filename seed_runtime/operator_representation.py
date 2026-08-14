@@ -190,6 +190,7 @@ def record_operator_representation(
         result_identity=representation_id,
         yielded_content=result_payload,
         responsibility=REPRESENTATION_RESPONSIBILITY,
+        live_boundary="representation_result",
         responsible_boundary="this Seed",
     )
     carriage_evidence = ledger.append(
@@ -482,6 +483,7 @@ def emit_operator_representation(
         result_identity=f"emission-boundary-result:{act_occurrence_id}",
         yielded_content=yielded_content,
         responsibility=REPRESENTATION_EMISSION_RESPONSIBILITY,
+        live_boundary="successful_emission",
         responsible_boundary="this Seed",
     )
     emitted_event = ledger.append(

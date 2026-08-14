@@ -617,6 +617,7 @@ def _record_yield(
         result_identity=finding.declared.representation_measured,
         yielded_content=_yielded_content(finding),
         responsibility=RESPONSIBILITY_UNESTABLISHED,
+        live_boundary="preserved_material_measurement",
     )
 
 

@@ -1132,6 +1132,7 @@ def record_byte_count_layer(
         result_identity="byte-count-measurement-occurrence",
         yielded_content=result_payload,
         responsibility=BYTE_MEASUREMENT_RESPONSIBILITY,
+        live_boundary="byte_measurement",
         responsible_boundary=SEED_NATIVE_MEASUREMENT_RESPONSIBLE_BOUNDARY,
     )
     return ledger.append(
@@ -1497,6 +1498,7 @@ def _record_pair_input_applicability(
         result_identity=applicability_assertion["dimensions"]["identity"],
         yielded_content=result_payload,
         responsibility=BYTE_PAIR_INPUT_APPLICABILITY_RESPONSIBILITY,
+        live_boundary="byte_pair_applicability",
         responsible_boundary=SEED_NATIVE_MEASUREMENT_RESPONSIBLE_BOUNDARY,
     )
     return ledger.append(
@@ -1750,6 +1752,7 @@ def record_adjacent_byte_pair_count_layer(
         result_identity="adjacent-byte-pair-count-measurement-occurrence",
         yielded_content=result_payload,
         responsibility=BYTE_PAIR_MEASUREMENT_RESPONSIBILITY,
+        live_boundary="byte_pair_measurement",
         responsible_boundary=SEED_NATIVE_MEASUREMENT_RESPONSIBLE_BOUNDARY,
     )
     return ledger.append(

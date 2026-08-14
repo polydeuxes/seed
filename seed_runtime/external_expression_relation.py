@@ -237,6 +237,7 @@ def record_external_expression_relation(
         result_identity=assertion_id,
         yielded_content=result,
         responsibility=EXTERNAL_EXPRESSION_RELATION_RESPONSIBILITY,
+        live_boundary="external_expression_relation",
         responsible_boundary="this Seed",
     )
     carriage_evidence = ledger.append(

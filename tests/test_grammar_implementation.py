@@ -1,3 +1,4 @@
+import ast
 import json
 import re
 from io import StringIO
@@ -19,10 +20,11 @@ from seed_runtime.operator_representation import (
     emit_operator_representation,
     record_operator_representation,
 )
-from seed_runtime.yield_evidence import yield_commitment
+from seed_runtime.yield_evidence import YIELD_LIVE_BOUNDARIES, yield_commitment
 
 
 GRAMMAR = Path(__file__).resolve().parents[1] / "book_of_seed/grammar.json"
+RUNTIME = Path(__file__).resolve().parents[1] / "seed_runtime"
 
 EXACT = "exact"
 INAPPLICABLE = "inapplicable"
@@ -1352,6 +1354,31 @@ def test_every_registered_live_edge_instantiation_obeys_the_full_fidelity_matrix
     assert all(cases == expected for cases in registered.values())
     assert ("carriage", "representation_result") in registered
     assert ("carriage", "emission_attempt") in registered
+
+
+def test_every_yield_evidence_site_declares_its_live_boundary():
+    declared: list[str] = []
+    for path in sorted(RUNTIME.glob("*.py")):
+        tree = ast.parse(path.read_text(encoding="utf-8"), filename=str(path))
+        for node in ast.walk(tree):
+            if not isinstance(node, ast.Call):
+                continue
+            if not isinstance(node.func, ast.Name):
+                continue
+            if node.func.id != "_record_yield_evidence":
+                continue
+            boundary = next(
+                (keyword.value for keyword in node.keywords if keyword.arg == "live_boundary"),
+                None,
+            )
+            assert isinstance(boundary, ast.Constant), (
+                f"{path.name}:{node.lineno} must declare one literal live_boundary"
+            )
+            assert isinstance(boundary.value, str) and boundary.value
+            declared.append(boundary.value)
+
+    assert len(declared) == len(set(declared))
+    assert set(declared) == set(YIELD_LIVE_BOUNDARIES)
 
 
 def test_emission_attempt_carriage_adversaries_change_one_requirement_each():

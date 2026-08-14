@@ -472,6 +472,7 @@ def compare_recorded_finding_yield(ledger: EventLedger, event_id: str) -> Event:
         result_identity=f"finding-yield-comparison:{event_id}",
         yielded_content=result_payload,
         responsibility=RESPONSIBILITY_UNESTABLISHED,
+        live_boundary="recorded_finding_yield_compare",
     )
     return ledger.append(
         FINDING_YIELD_COMPARISON_KIND,
