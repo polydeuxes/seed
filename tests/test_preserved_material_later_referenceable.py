@@ -153,7 +153,7 @@ def test_no_act_condition_change_is_claimed_here(ledger):
         "operator.representation.emission_attempted",
         "operator.representation.emitted",
         "operator.ingress.raw_material_captured",
-        "operator.ingress.representation_examined",
+        "operator.ingress.decoder_outcome_recorded",
         "operator.ingress.ingress_occurred",
     }
 

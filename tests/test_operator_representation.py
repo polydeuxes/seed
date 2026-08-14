@@ -14,7 +14,7 @@ from seed_runtime.operator_console import run_persistent_operator_console
 
 _INGRESS_KINDS = (
     "operator.ingress.raw_material_captured",
-    "operator.ingress.representation_examined",
+    "operator.ingress.decoder_outcome_recorded",
     "operator.ingress.ingress_occurred",
 )
 

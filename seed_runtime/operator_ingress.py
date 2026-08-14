@@ -8,7 +8,7 @@ from seed_runtime.events import EventLedger
 from seed_runtime.ids import new_id
 from seed_runtime.operator_ingress_representation import (
     CapturedOperatorMaterial,
-    examine_text_representation,
+    decode_captured_material,
 )
 
 
@@ -67,7 +67,7 @@ def update_operator_ingress_standing(attempts, event, *, ledger=None) -> None:
     }
     supported_kinds = {
         *subject_by_kind,
-        "operator.ingress.representation_examined",
+        "operator.ingress.decoder_outcome_recorded",
     }
     if event.kind not in supported_kinds:
         raise ValueError(f"unsupported operator-ingress event: {event.kind}")
@@ -88,7 +88,7 @@ def update_operator_ingress_standing(attempts, event, *, ledger=None) -> None:
             "known_loss": [],
             "unknowns": [],
             "conflicts": [],
-            "representation_examinations": {},
+            "decoder_outcomes": {},
         },
     )
     standing["event_ids"].append(event.id)
@@ -102,9 +102,9 @@ def update_operator_ingress_standing(attempts, event, *, ledger=None) -> None:
             event.payload.get("provenance_occurrence_refs", ())
         ),
     }
-    if event.kind == "operator.ingress.representation_examined":
-        standing["representation_examinations"][event.payload["material_role"]] = {
-            "examination_event_id": event.id,
+    if event.kind == "operator.ingress.decoder_outcome_recorded":
+        standing["decoder_outcomes"][event.payload["material_role"]] = {
+            "decoder_outcome_event_id": event.id,
             "capture_event_id": event.payload["capture_event_id"],
             "stream_encoding_metadata": event.payload["stream_encoding_metadata"],
             "decoder_mechanism": event.payload["decoder_mechanism"],
@@ -129,7 +129,7 @@ def update_operator_ingress_standing(attempts, event, *, ledger=None) -> None:
         for key in (
             "decoded_text",
             "raw_material_event_id",
-            "representation_examination_event_id",
+            "decoder_outcome_event_id",
         )
     ):
         from seed_runtime.operator_ingress_addressable_material import (
@@ -189,45 +189,45 @@ def _capture_representation(
         known_loss=list(capture.known_loss),
         provenance_occurrence_refs=list(provenance_occurrence_refs),
     )
-    examination = examine_text_representation(capture)
-    examination_event = _record(
+    decoder_outcome = decode_captured_material(capture)
+    decoder_outcome_event = _record(
         ledger,
-        "operator.ingress.representation_examined",
+        "operator.ingress.decoder_outcome_recorded",
         workspace,
         session,
         attempt,
         _dimensions(
-            identity=f"representation-examination:{captured.id}",
-            content="strict decoder examination",
+            identity=f"decoder-outcome:{captured.id}",
+            content="strict decoder outcome",
             # Preserve the particular decoder occurrence here as well as in the
-            # examination payload.  A shared ``not-decodable`` standing would
+            # decoder-outcome payload. A shared ``not-decodable`` standing would
             # collapse an unavailable mechanism and bytes rejected by an
             # available mechanism back into the Boolean boundary this record is
             # intended to repair.
-            standing=examination.outcome,
+            standing=decoder_outcome.outcome,
             source=captured.id,
             responsibility="bounded-representation-evidence-yield",
             authority="decoder outcome evidence only",
             scope=f"captured-occurrence:{capture_ref}",
-            occurrence="decoder examination durably recorded",
+            occurrence="decoder outcome durably recorded",
         ),
         material_role=material_role,
         capture_event_id=captured.id,
         stream_encoding_metadata=capture.stream_encoding_metadata,
-        decoder_mechanism=examination.mechanism,
-        decoder_mechanism_selection=examination.mechanism_selection,
-        decoder_outcome=examination.outcome,
-        decoder_succeeded=examination.succeeded,
-        decoder_failure=examination.failure,
+        decoder_mechanism=decoder_outcome.mechanism,
+        decoder_mechanism_selection=decoder_outcome.mechanism_selection,
+        decoder_outcome=decoder_outcome.outcome,
+        decoder_succeeded=decoder_outcome.succeeded,
+        decoder_failure=decoder_outcome.failure,
         known_loss=list(capture.known_loss),
         unknowns=["true source-relative encoding Unknown"],
         provenance_occurrence_refs=[captured.id],
     )
-    return capture, examination, captured, examination_event
+    return capture, decoder_outcome, captured, decoder_outcome_event
 
 
 def _attempt_standing(*, events, ledger, attempt):
-    """Project one attempt from exactly the occurrences it recorded.
+    """Read one attempt from exactly the occurrences it recorded.
 
     The whole-workspace replay this replaces rebuilt every entity, normalized Assertion,
     alias, relationship, and index in order to return one bounded attempt, and
@@ -276,9 +276,9 @@ def run_operator_ingress_attempt(
     attempt = new_id("operator_ingress_attempt")
     (
         captured_ingress,
-        ingress_examination,
+        ingress_decoder_outcome,
         ingress_capture,
-        ingress_examination_event,
+        ingress_decoder_outcome_event,
     ) = _capture_representation(
         ledger=ledger,
         workspace=workspace_id,
@@ -287,13 +287,13 @@ def run_operator_ingress_attempt(
         captured_material=captured_ingress,
         material_role="initial_ingress",
     )
-    if not ingress_examination.succeeded:
+    if not ingress_decoder_outcome.succeeded:
         # The material occurred. Its text representation did not.
         #
         # Until now no ingress occurrence was recorded at all when the decoder
         # refused the bytes, so material Seed had captured exactly, and could
         # reconstruct exactly, was absent from its own history because one later
-        # examination of it failed. Capture and examination were already
+        # decoder outcome for it failed. Capture and decoder outcome were already
         # recorded either way; only the occurrence was gated.
         #
         # The interaction still closes here. That is a separate consequence and
@@ -308,7 +308,7 @@ def run_operator_ingress_attempt(
                 identity=attempt,
                 content=f"exact material, {len(captured_ingress.exact_bytes)} bytes",
                 standing="occurred",
-                source=ingress_examination_event.id,
+                source=ingress_decoder_outcome_event.id,
                 responsibility="operator-ingress",
                 authority="occurrence-only; represented relation Unknown",
                 scope=f"workspace:{workspace_id};session:{session_id}",
@@ -317,13 +317,13 @@ def run_operator_ingress_attempt(
             material_origin=OPERATOR_ORIGIN,
             text_representation={
                 "available": False,
-                "decoder_outcome": ingress_examination.outcome,
-                "decoder_mechanism": ingress_examination.mechanism,
+                "decoder_outcome": ingress_decoder_outcome.outcome,
+                "decoder_mechanism": ingress_decoder_outcome.mechanism,
             },
             ingress_kind="unrepresented",
             byte_count=len(captured_ingress.exact_bytes),
             raw_material_event_id=ingress_capture.id,
-            representation_examination_event_id=ingress_examination_event.id,
+            decoder_outcome_event_id=ingress_decoder_outcome_event.id,
             known_loss=list(captured_ingress.known_loss),
             unknowns=[
                 "what these bytes represent remains Unknown",
@@ -331,7 +331,7 @@ def run_operator_ingress_attempt(
             ],
             provenance_occurrence_refs=[
                 ingress_capture.id,
-                ingress_examination_event.id,
+                ingress_decoder_outcome_event.id,
             ],
         )
         stop_event = _record(
@@ -341,23 +341,23 @@ def run_operator_ingress_attempt(
             session_id,
             attempt,
             _dimensions(
-                identity=f"stop:{ingress_examination_event.id}",
-                content=ingress_examination.outcome,
+                identity=f"stop:{ingress_decoder_outcome_event.id}",
+                content=ingress_decoder_outcome.outcome,
                 standing="closed",
-                source=ingress_examination_event.id,
+                source=ingress_decoder_outcome_event.id,
                 responsibility="competent-local-stopping",
                 authority="closes only this interaction",
                 scope=f"attempt:{attempt}",
                 occurrence="separate stopping act recorded",
             ),
             closed=True,
-            response_kind=ingress_examination.outcome,
-            provenance_occurrence_refs=[ingress_examination_event.id],
+            response_kind=ingress_decoder_outcome.outcome,
+            provenance_occurrence_refs=[ingress_decoder_outcome_event.id],
         )
         attempt_standing = _attempt_standing(
             events=(
                 ingress_capture,
-                ingress_examination_event,
+                ingress_decoder_outcome_event,
                 unrepresented_event,
                 stop_event,
             ),
@@ -365,14 +365,14 @@ def run_operator_ingress_attempt(
             attempt=attempt,
         )
         output_stream.write(
-            f"Decoder outcome {ingress_examination.outcome}: captured material did not "
-            f"decode under {ingress_examination.mechanism}.\n"
+            f"Decoder outcome {ingress_decoder_outcome.outcome}: captured material did not "
+            f"decode under {ingress_decoder_outcome.mechanism}.\n"
         )
         output_stream.flush()
         if session_standing is not None:
             attempt_standing["session_standing"] = session_standing
         return attempt_standing
-    raw_ingress = ingress_examination.represented_text
+    raw_ingress = ingress_decoder_outcome.represented_text
     ingress_kind = "empty" if raw_ingress in {"\n", "\r\n"} else "text"
     ingress_content = raw_ingress.removesuffix("\n").removesuffix("\r")
     ingress_event = _record(
@@ -385,33 +385,33 @@ def run_operator_ingress_attempt(
             identity=attempt,
             content=ingress_content,
             standing="occurred",
-            source=ingress_examination_event.id,
+            source=ingress_decoder_outcome_event.id,
             responsibility="operator-ingress",
             authority="occurrence-only; represented relation Unknown",
             scope=f"workspace:{workspace_id};session:{session_id}",
             occurrence=(
-                "strictly decoded text preserves capture/examination provenance"
+                "strictly decoded text preserves capture and decoder-outcome provenance"
             ),
         ),
         material_origin=OPERATOR_ORIGIN,
         text_representation={
             "available": True,
-            "decoder_outcome": ingress_examination.outcome,
-            "decoder_mechanism": ingress_examination.mechanism,
+            "decoder_outcome": ingress_decoder_outcome.outcome,
+            "decoder_mechanism": ingress_decoder_outcome.mechanism,
         },
         raw_input=raw_ingress,
         ingress_kind=ingress_kind,
-        decoded_text=ingress_examination.represented_text,
+        decoded_text=ingress_decoder_outcome.represented_text,
         raw_material_event_id=ingress_capture.id,
-        representation_examination_event_id=ingress_examination_event.id,
+        decoder_outcome_event_id=ingress_decoder_outcome_event.id,
         known_loss=list(captured_ingress.known_loss),
         provenance_occurrence_refs=[
             ingress_capture.id,
-            ingress_examination_event.id,
+            ingress_decoder_outcome_event.id,
         ],
     )
     attempt_standing = _attempt_standing(
-        events=(ingress_capture, ingress_examination_event, ingress_event),
+        events=(ingress_capture, ingress_decoder_outcome_event, ingress_event),
         ledger=ledger,
         attempt=attempt,
     )

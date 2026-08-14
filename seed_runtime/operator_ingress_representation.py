@@ -65,7 +65,7 @@ class CapturedOperatorMaterial:
 
 
 @dataclass(frozen=True)
-class RepresentationExamination:
+class DecoderOutcome:
     """One bounded decoder invocation and its evidence, not an encoding verdict."""
 
     mechanism: str
@@ -88,7 +88,7 @@ class RepresentationExamination:
             or not self.mechanism_selection
         ):
             raise OperatorIngressRepresentationError(
-                "malformed representation examination"
+                "malformed decoder outcome"
             )
         if self.outcome == "decoded":
             coherent = type(self.represented_text) is str and self.failure is None
@@ -102,7 +102,7 @@ class RepresentationExamination:
             coherent = False
         if not coherent:
             raise OperatorIngressRepresentationError(
-                "malformed representation examination"
+                "malformed decoder outcome"
             )
 
     @property
@@ -168,13 +168,13 @@ def _stream_encoding_metadata(input_stream: TextIO | BinaryIO) -> str | None:
     return value or None
 
 
-def examine_text_representation(
+def decode_captured_material(
     capture: CapturedOperatorMaterial,
-) -> RepresentationExamination:
+) -> DecoderOutcome:
     """Strictly invoke the selected decoder when material exists."""
     if capture.eof:
         raise OperatorIngressRepresentationError(
-            "cannot examine EOF as operator-ingress material"
+            "cannot decode EOF as operator-ingress material"
         )
     mechanism = capture.stream_encoding_metadata or "utf-8"
     selection = (
@@ -185,7 +185,7 @@ def examine_text_representation(
     try:
         represented = capture.exact_bytes.decode(mechanism, errors="strict")
     except LookupError as exc:
-        return RepresentationExamination(
+        return DecoderOutcome(
             mechanism,
             selection,
             "decoder_unavailable",
@@ -193,11 +193,11 @@ def examine_text_representation(
             f"{type(exc).__name__}: {exc}",
         )
     except UnicodeDecodeError as exc:
-        return RepresentationExamination(
+        return DecoderOutcome(
             mechanism,
             selection,
             "bytes_rejected",
             None,
             f"{type(exc).__name__}: {exc}",
         )
-    return RepresentationExamination(mechanism, selection, "decoded", represented, None)
+    return DecoderOutcome(mechanism, selection, "decoded", represented, None)

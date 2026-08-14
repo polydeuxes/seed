@@ -56,7 +56,7 @@ invocation would have made unprompted material unrecordable.
 
 Unlike the console, this boundary is not line-framed, so exact material arrives
 entire. A zip or an ELF crossing here is not cut at its first `0x0A`. The text
-representation is a later examination exactly as in `#2490`, and its absence
+representation is a later decoder outcome exactly as in `#2490`, and its absence
 does not make the material absent.
 
 **Provisional.** This is a harness for separating the authority lines while the

@@ -1,4 +1,4 @@
-"""The decoder Stop now carries the outcome the examination actually recorded.
+"""The decoder Stop carries the exact recorded decoder outcome.
 
 The Stop taken when initial ingress fails to decode used to record a fixed
 string in three places:
@@ -13,12 +13,12 @@ The lexical one: `suffi*` is banned vocabulary in Book proper, and the word
 carries a judgment about a quantity being short of a requirement. Nothing on
 this path measures a quantity or names a requirement.
 
-The evidentiary one: the examination distinguishes `decoder_unavailable` from
+The evidentiary one: the decoder outcome distinguishes `decoder_unavailable` from
 `bytes_rejected`, and the fixed string collapsed both into one label. The
-distinction survived upstream in the examination record, so the collapse was
-reconstructible, but the Stop asserted a summary the examination had not made.
+distinction survived upstream in the decoder-outcome record, so the collapse was
+reconstructible, but the Stop asserted a summary the decoder outcome had not made.
 
-Both are fixed by recording the examined outcome itself. This module pins
+Both are fixed by recording the decoder outcome itself. This module pins
 that, and pins that the two failure outcomes stay apart.
 
 It does not establish that a decoder failure supports a Stop. `#2365` recorded
@@ -36,7 +36,7 @@ from seed_runtime.operator_ingress import run_operator_ingress_attempt
 from seed_runtime.operator_ingress_representation import capture_stdin_material
 
 STOP = "operator.ingress.stopping_occurred"
-EXAMINED = "operator.ingress.representation_examined"
+DECODER_OUTCOME_RECORDED = "operator.ingress.decoder_outcome_recorded"
 
 
 class UnknownCodecStream(BytesIO):
@@ -80,25 +80,25 @@ def only(events: list, kind: str) -> dict:
 
 
 def test_both_decoder_failures_are_reachable(rejected, unavailable):
-    assert only(rejected[0], EXAMINED)["decoder_outcome"] == "bytes_rejected"
-    assert only(unavailable[0], EXAMINED)["decoder_outcome"] == "decoder_unavailable"
+    assert only(rejected[0], DECODER_OUTCOME_RECORDED)["decoder_outcome"] == "bytes_rejected"
+    assert only(unavailable[0], DECODER_OUTCOME_RECORDED)["decoder_outcome"] == "decoder_unavailable"
 
 
-def test_each_stop_records_its_own_examination_outcome(rejected, unavailable):
+def test_each_stop_records_its_own_decoder_outcome(rejected, unavailable):
     for events, expected in ((rejected[0], "bytes_rejected"), (unavailable[0], "decoder_unavailable")):
         stop = only(events, STOP)
         assert stop["dimensions"]["content"] == expected
         assert stop["response_kind"] == expected
 
 
-def test_the_stop_restates_the_examination_rather_than_summarising_it(
+def test_the_stop_restates_the_decoder_outcome_rather_than_summarising_it(
     rejected, unavailable
 ):
-    """The Stop's content is copied from the examination, not decided again."""
+    """The Stop's content is copied from the decoder outcome, not decided again."""
     for events in (rejected[0], unavailable[0]):
         stop = only(events, STOP)
-        assert stop["dimensions"]["content"] == only(events, EXAMINED)["decoder_outcome"]
-        assert only(events, EXAMINED)["decoder_succeeded"] is False
+        assert stop["dimensions"]["content"] == only(events, DECODER_OUTCOME_RECORDED)["decoder_outcome"]
+        assert only(events, DECODER_OUTCOME_RECORDED)["decoder_succeeded"] is False
 
 
 def test_the_two_stops_are_distinguishable_from_each_other(rejected, unavailable):
@@ -124,11 +124,11 @@ def test_the_message_names_the_outcome_and_the_mechanism(rejected, unavailable):
     )
 
 
-def test_the_message_names_the_mechanism_the_examination_selected(
+def test_the_message_names_the_mechanism_the_decoder_outcome_selected(
     rejected, unavailable
 ):
     for events, output in (rejected, unavailable):
-        assert only(events, EXAMINED)["decoder_mechanism"] in output
+        assert only(events, DECODER_OUTCOME_RECORDED)["decoder_mechanism"] in output
 
 
 # --------------------------------------------------------------------------

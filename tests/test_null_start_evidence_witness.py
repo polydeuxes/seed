@@ -39,7 +39,7 @@ E2 = "learn proficient english language"
 E3 = "# Nouns\n\nA noun is a word.\n\n# Verbs\n\nA verb is a word."
 
 CAPTURED = "operator.ingress.raw_material_captured"
-EXAMINED = "operator.ingress.representation_examined"
+DECODER_OUTCOME_RECORDED = "operator.ingress.decoder_outcome_recorded"
 OCCURRED = "operator.ingress.ingress_occurred"
 
 
@@ -77,10 +77,10 @@ def test_null_start_accumulates_occurrence_evidence(events):
     """From nothing, the console preserves a record for every operator line."""
     assert events, "a null start preserved no events at all"
     captured = [e for e in events if e.kind == CAPTURED]
-    examined = [e for e in events if e.kind == EXAMINED]
+    decoder_outcomes = [e for e in events if e.kind == DECODER_OUTCOME_RECORDED]
     occurred = [e for e in events if e.kind == OCCURRED]
-    # One capture, one examination, one ingress occurrence per delivered line.
-    assert len(captured) == len(examined) == len(occurred)
+    # One capture, one decoder outcome, one ingress occurrence per delivered line.
+    assert len(captured) == len(decoder_outcomes) == len(occurred)
     assert len(captured) > 0
 
 
@@ -113,8 +113,8 @@ def test_capture_asserts_only_occurrence_evidence(events):
         )
 
 
-def test_examination_asserts_only_decoder_outcome(events):
-    for event in (e for e in events if e.kind == EXAMINED):
+def test_decoder_outcome_asserts_only_decoder_outcome(events):
+    for event in (e for e in events if e.kind == DECODER_OUTCOME_RECORDED):
         assert (
             event.payload["dimensions"]["authority"]
             == "decoder outcome evidence only"
@@ -127,7 +127,7 @@ def test_console_ingress_is_line_bounded_not_document_bounded(events):
     This is a finding about the current ingress boundary, recorded here because it
     is not obvious and it bounds what any later measurement may range over.  A
     multi-line corpus does not enter as a single preserved material; each line
-    is its own capture, examination, and ingress occurrence.
+    is its own capture, decoder outcome, and ingress occurrence.
     """
     decoded = [
         e.payload["decoded_text"] for e in events if e.kind == OCCURRED

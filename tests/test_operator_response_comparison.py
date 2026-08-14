@@ -365,7 +365,7 @@ def test_no_synthetic_developer_source_evidence_event_is_created():
     kinds = {event.kind for event in ledger.list("w")}
     assert kinds == {
         "operator.ingress.raw_material_captured",
-        "operator.ingress.representation_examined",
+        "operator.ingress.decoder_outcome_recorded",
         "operator.ingress.ingress_occurred",
         "operator.representation.recorded",
         "operator.representation.emission_attempted",

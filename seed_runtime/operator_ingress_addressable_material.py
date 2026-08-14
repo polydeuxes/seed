@@ -83,7 +83,7 @@ class OperatorIngressAddressableMaterial:
     material_representation_id: str
     ingress_event_ref: str
     raw_material_event_ref: str
-    representation_examination_event_ref: str
+    decoder_outcome_event_ref: str
     exact_operator_material: ExactOperatorMaterial
     source_role: str
     provenance: tuple[str, ...]
@@ -106,7 +106,7 @@ class OperatorIngressAddressableMaterial:
             "material_representation_id",
             "ingress_event_ref",
             "raw_material_event_ref",
-            "representation_examination_event_ref",
+            "decoder_outcome_event_ref",
             "source_role",
         ):
             _exact_string(getattr(self, name), name)
@@ -131,11 +131,11 @@ class OperatorIngressAddressableMaterial:
             _refuse("addressable material must be read-only and non-mutating")
         if self.provenance != (
             self.raw_material_event_ref,
-            self.representation_examination_event_ref,
+            self.decoder_outcome_event_ref,
             self.ingress_event_ref,
         ):
             _refuse(
-                "addressable provenance must preserve exact raw, examination, ingress order"
+                "addressable provenance must preserve exact raw, decoder-outcome, ingress order"
             )
         material = self.exact_operator_material
         _intrinsic_string(material.material_ref, "exact material material_ref")
@@ -229,9 +229,9 @@ class OperatorIngressAddressableMaterial:
             raw_material_event_ref=_exact_string(
                 value.get("raw_material_event_ref"), "raw_material_event_ref"
             ),
-            representation_examination_event_ref=_exact_string(
-                value.get("representation_examination_event_ref"),
-                "representation_examination_event_ref",
+            decoder_outcome_event_ref=_exact_string(
+                value.get("decoder_outcome_event_ref"),
+                "decoder_outcome_event_ref",
             ),
             exact_operator_material=material,
             source_role=_exact_string(value.get("source_role"), "source_role"),
@@ -321,13 +321,13 @@ def form_operator_ingress_addressable_material(
         _refuse("exact decoded_text is required")
     attempt = payload.get("attempt_ref")
     raw_ref = payload.get("raw_material_event_id")
-    examination_ref = payload.get("representation_examination_event_id")
+    decoder_outcome_ref = payload.get("decoder_outcome_event_id")
     if not all(
-        isinstance(ref, str) and ref for ref in (attempt, raw_ref, examination_ref)
+        isinstance(ref, str) and ref for ref in (attempt, raw_ref, decoder_outcome_ref)
     ):
         _refuse("complete attempt and provenance occurrences are required")
-    if payload.get("provenance_occurrence_refs") != [raw_ref, examination_ref]:
-        _refuse("provenance occurrences must preserve capture followed by examination")
+    if payload.get("provenance_occurrence_refs") != [raw_ref, decoder_outcome_ref]:
+        _refuse("provenance occurrences must preserve capture followed by decoder outcome")
     dimensions = payload.get("dimensions")
     if not isinstance(dimensions, dict) or dimensions.get("authority") != (
         "occurrence-only; represented relation Unknown"
@@ -337,7 +337,7 @@ def form_operator_ingress_addressable_material(
     if recorded is None or recorded != ingress_occurrence:
         _refuse("the supplied ingress occurrence is not the recorded occurrence")
     raw = ledger.get(raw_ref)
-    examination = ledger.get(examination_ref)
+    decoder_outcome = ledger.get(decoder_outcome_ref)
     common = (ingress_occurrence.workspace_id, ingress_occurrence.session_id, attempt)
     if raw is None or (
         raw.kind != "operator.ingress.raw_material_captured"
@@ -345,22 +345,22 @@ def form_operator_ingress_addressable_material(
         or (raw.workspace_id, raw.session_id, raw.payload.get("attempt_ref")) != common
     ):
         _refuse("initial raw-material provenance is missing or foreign")
-    if examination is None or (
-        examination.kind != "operator.ingress.representation_examined"
-        or examination.payload.get("material_role") != "initial_ingress"
-        or examination.payload.get("capture_event_id") != raw.id
-        or examination.payload.get("decoder_succeeded") is not True
-        or examination.payload.get("decoder_outcome") != "decoded"
+    if decoder_outcome is None or (
+        decoder_outcome.kind != "operator.ingress.decoder_outcome_recorded"
+        or decoder_outcome.payload.get("material_role") != "initial_ingress"
+        or decoder_outcome.payload.get("capture_event_id") != raw.id
+        or decoder_outcome.payload.get("decoder_succeeded") is not True
+        or decoder_outcome.payload.get("decoder_outcome") != "decoded"
         or (
-            examination.workspace_id,
-            examination.session_id,
-            examination.payload.get("attempt_ref"),
+            decoder_outcome.workspace_id,
+            decoder_outcome.session_id,
+            decoder_outcome.payload.get("attempt_ref"),
         )
         != common
     ):
-        _refuse("successful initial representation examination is missing or foreign")
+        _refuse("successful initial decoder outcome is missing or foreign")
 
-    provenance = (raw.id, examination.id, ingress_occurrence.id)
+    provenance = (raw.id, decoder_outcome.id, ingress_occurrence.id)
     span_ref = operator_material_full_span_id(
         ingress_event_ref=ingress_occurrence.id, exact_text=exact_text
     )
@@ -384,7 +384,7 @@ def form_operator_ingress_addressable_material(
         material_representation_id=representation_id,
         ingress_event_ref=ingress_occurrence.id,
         raw_material_event_ref=raw.id,
-        representation_examination_event_ref=examination.id,
+        decoder_outcome_event_ref=decoder_outcome.id,
         exact_operator_material=exact_material,
         source_role="operator-origin material at the preserved ingress boundary",
         provenance=provenance,

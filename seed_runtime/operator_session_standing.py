@@ -24,7 +24,7 @@ _SOURCE_VALIDATED_KIND = "operator.representation.source_validated"
 _REPRESENTED_RELATION_KIND = "operator.representation.represented_relation_established"
 _SUPPORTED_KINDS = {
     *_SUBJECT_BY_KIND,
-    "operator.ingress.representation_examined",
+    "operator.ingress.decoder_outcome_recorded",
     _REPRESENTATION_RECORDED_KIND,
     _REPRESENTATION_EMISSION_ATTEMPTED_KIND,
     _REPRESENTATION_EMITTED_KIND,
