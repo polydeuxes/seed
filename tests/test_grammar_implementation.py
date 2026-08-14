@@ -65,6 +65,22 @@ def _content_carriage_witness(
     )
 
 
+def _assertion_carriage_witness(bundle: dict, *, carriage_occurrence_id: str) -> str:
+    assertion = bundle["source_assertion"]
+    carrier = bundle["carrier"]
+    carried = [
+        item
+        for item in carrier.payload.get("assertions", [])
+        if item.get("dimensions", {}).get("identity") == assertion.assertion_id
+    ]
+    exact_relation = carried == [assertion.payload]
+    exact_occurrence = (
+        carrier.id == carriage_occurrence_id
+        == assertion.recorded_occurrence_id
+    )
+    return EXACT if exact_relation and exact_occurrence else MISSING
+
+
 def _representation_digest_witness(
     representation: dict, *, convention: str, digest: str
 ) -> str:
@@ -315,14 +331,20 @@ def _occurrence_result_witness(bundle: dict) -> str:
 
 
 def _structural_edge_fidelity_cases() -> dict[str, dict[str, str]]:
-    carriage_ledger = EventLedger()
-    content = {"subject": "edge-fixture", "standing": "Unknown"}
-    carriage = carriage_ledger.append(
-        "test.carriage", "w", dict(content), session_id="s"
-    )
-    wrong_carriage = carriage_ledger.append(
-        "test.carriage", "w", dict(content), session_id="s"
-    )
+    carriage = _byte_measurement_road()
+    missing_carriage = dict(carriage)
+    missing_carrier = carriage["carrier"].model_copy(deep=True)
+    missing_carrier.payload["assertions"] = [
+        item
+        for item in missing_carrier.payload["assertions"]
+        if item["dimensions"]["identity"]
+        != carriage["source_assertion"].assertion_id
+    ]
+    missing_carriage["carrier"] = missing_carrier
+    unrelated_carriage = dict(carriage)
+    unrelated_carrier = carriage["carrier"].model_copy(deep=True)
+    unrelated_carrier.payload["unrelated_test_coordinate"] = "ignored"
+    unrelated_carriage["carrier"] = unrelated_carrier
 
     participation = _recorded_applicability()
     missing_participation = dict(participation)
@@ -334,6 +356,10 @@ def _structural_edge_fidelity_cases() -> dict[str, dict[str, str]]:
         "another_pair_measurement_occurrence"
     )
     wrong_participation["pair_act_evidence"] = wrong_participation_evidence
+    unrelated_participation = dict(participation)
+    unrelated_participation_evidence = participation_evidence.model_copy(deep=True)
+    unrelated_participation_evidence.payload["unrelated_test_coordinate"] = "ignored"
+    unrelated_participation["pair_act_evidence"] = unrelated_participation_evidence
 
     yielded = _byte_measurement_road()
     missing_yield = dict(yielded)
@@ -345,23 +371,28 @@ def _structural_edge_fidelity_cases() -> dict[str, dict[str, str]]:
         "another_byte_measurement_occurrence"
     )
     wrong_yield["content_evidence"] = wrong_yield_evidence
+    unrelated_yield = dict(yielded)
+    unrelated_yield_evidence = yield_evidence.model_copy(deep=True)
+    unrelated_yield_evidence.payload["unrelated_test_coordinate"] = "ignored"
+    unrelated_yield["content_evidence"] = unrelated_yield_evidence
 
     return {
         "carriage": {
-            "exact": _content_carriage_witness(
-                content,
-                carriage=carriage,
-                carriage_occurrence_id=carriage.id,
+            "exact": _assertion_carriage_witness(
+                carriage,
+                carriage_occurrence_id=carriage["carrier"].id,
             ),
-            "edge_missing": _content_carriage_witness(
-                content,
-                carriage=None,
-                carriage_occurrence_id=carriage.id,
+            "edge_missing": _assertion_carriage_witness(
+                missing_carriage,
+                carriage_occurrence_id=carriage["carrier"].id,
             ),
-            "wrong_occurrence": _content_carriage_witness(
-                content,
-                carriage=wrong_carriage,
-                carriage_occurrence_id=carriage.id,
+            "wrong_occurrence": _assertion_carriage_witness(
+                carriage,
+                carriage_occurrence_id="another_byte_measurement_carriage",
+            ),
+            "unrelated_change": _assertion_carriage_witness(
+                unrelated_carriage,
+                carriage_occurrence_id=carriage["carrier"].id,
             ),
         },
         "participation": {
@@ -374,11 +405,15 @@ def _structural_edge_fidelity_cases() -> dict[str, dict[str, str]]:
             "wrong_occurrence": _participation_witness(
                 wrong_participation, role=BYTE_PAIR_INPUT_ROLE
             ),
+            "unrelated_change": _participation_witness(
+                unrelated_participation, role=BYTE_PAIR_INPUT_ROLE
+            ),
         },
         "yield": {
             "exact": _occurrence_result_witness(yielded),
             "edge_missing": _occurrence_result_witness(missing_yield),
             "wrong_occurrence": _occurrence_result_witness(wrong_yield),
+            "unrelated_change": _occurrence_result_witness(unrelated_yield),
         },
     }
 
@@ -570,12 +605,20 @@ def test_every_structural_edge_has_live_fidelity_cases():
 
     assert set(cases) == set(grammar["structural_edges"])
     assert all(
-        set(edge_cases) == {"exact", "edge_missing", "wrong_occurrence"}
+        set(edge_cases)
+        == {"exact", "edge_missing", "wrong_occurrence", "unrelated_change"}
         for edge_cases in cases.values()
     )
     assert {
-        edge: edge_cases["exact"] for edge, edge_cases in cases.items()
-    } == {edge: EXACT for edge in grammar["structural_edges"]}
+        edge: {
+            "exact": edge_cases["exact"],
+            "unrelated_change": edge_cases["unrelated_change"],
+        }
+        for edge, edge_cases in cases.items()
+    } == {
+        edge: {"exact": EXACT, "unrelated_change": EXACT}
+        for edge in grammar["structural_edges"]
+    }
     assert {
         edge: {
             "edge_missing": edge_cases["edge_missing"],
