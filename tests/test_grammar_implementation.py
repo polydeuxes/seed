@@ -238,7 +238,7 @@ def _emission_road() -> dict:
 
 
 def _representation_road() -> dict:
-    ledger = EventLedger()
+    ledger = _IntegrityAdversaryLedger()
     representation = record_operator_representation(
         ledger,
         workspace_id="w",
@@ -441,6 +441,8 @@ def _emission_attempt_carriage_witness(bundle: dict) -> str:
     evidence = bundle["attempt_carriage_evidence"]
     if evidence is None:
         return MISSING
+    if bundle["ledger"].integrity_of(evidence.id) == CORRUPTED:
+        return MISSING
     exact_relation = (
         attempt.payload.get("attempted_representation")
         == evidence.payload.get("carried_content")
@@ -489,6 +491,8 @@ def _representation_carriage_witness(bundle: dict) -> str:
     carrier = bundle["carrier"]
     evidence = bundle["carriage_evidence"]
     if evidence is None:
+        return MISSING
+    if bundle["ledger"].integrity_of(evidence.id) == CORRUPTED:
         return MISSING
     content = evidence.payload.get("carried_content")
     exact_content = isinstance(content, dict) and all(
@@ -689,6 +693,125 @@ def _emission_structural_edge_fidelity_cases() -> dict[str, dict[str, str]]:
             "unrelated_change": _occurrence_result_witness(unrelated_yield),
         },
     }
+
+
+def _additional_live_structural_edge_fidelity_cases() -> dict[
+    tuple[str, str], dict[str, str]
+]:
+    representation = _representation_road()
+    alternate_representation = _representation_road()
+
+    missing_representation_carriage = dict(representation)
+    missing_representation_carriage["carriage_evidence"] = None
+    wrong_representation_carriage = dict(representation)
+    wrong_representation_carriage["carriage_evidence"] = alternate_representation[
+        "carriage_evidence"
+    ]
+    corrupted_representation_carriage = _representation_road()
+    corrupted_representation_carriage["ledger"].mark_corrupted(
+        corrupted_representation_carriage["carriage_evidence"].id
+    )
+    unrelated_representation_carriage = dict(representation)
+    unrelated_representation_carrier = representation["carrier"].model_copy(deep=True)
+    unrelated_representation_carrier.payload["yield_evidence_id"] = "other-yield"
+    unrelated_representation_carriage["carrier"] = unrelated_representation_carrier
+
+    missing_representation_yield = dict(representation)
+    missing_representation_yield["content_evidence"] = None
+    wrong_representation_yield = dict(representation)
+    wrong_representation_yield["content_evidence"] = alternate_representation[
+        "content_evidence"
+    ]
+    corrupted_representation_yield = _representation_road()
+    corrupted_representation_yield["ledger"].mark_corrupted(
+        corrupted_representation_yield["content_evidence"].id
+    )
+    unrelated_representation_yield = dict(representation)
+    unrelated_representation_yield_carrier = representation["carrier"].model_copy(
+        deep=True
+    )
+    unrelated_representation_yield_carrier.payload["carriage_evidence_id"] = (
+        "other-carriage"
+    )
+    unrelated_representation_yield["carrier"] = unrelated_representation_yield_carrier
+
+    attempt = _emission_road()
+    alternate_attempt = _emission_road()
+    missing_attempt = dict(attempt)
+    missing_attempt["attempt_carriage_evidence"] = None
+    wrong_attempt = dict(attempt)
+    wrong_attempt["attempt_carriage_evidence"] = alternate_attempt[
+        "attempt_carriage_evidence"
+    ]
+    corrupted_attempt = _emission_road()
+    corrupted_attempt["ledger"].mark_corrupted(
+        corrupted_attempt["attempt_carriage_evidence"].id
+    )
+    unrelated_attempt = dict(attempt)
+    unrelated_attempt_event = attempt["attempt"].model_copy(deep=True)
+    unrelated_attempt_event.payload["yield_evidence_id"] = "unrelated-yield"
+    unrelated_attempt["attempt"] = unrelated_attempt_event
+
+    return {
+        ("carriage", "representation_result"): {
+            "exact": _representation_carriage_witness(representation),
+            "edge_missing": _representation_carriage_witness(
+                missing_representation_carriage
+            ),
+            "wrong_occurrence": _representation_carriage_witness(
+                wrong_representation_carriage
+            ),
+            "corrupted_evidence": _representation_carriage_witness(
+                corrupted_representation_carriage
+            ),
+            "unrelated_change": _representation_carriage_witness(
+                unrelated_representation_carriage
+            ),
+        },
+        ("yield", "representation_result"): {
+            "exact": _occurrence_result_witness(representation),
+            "edge_missing": _occurrence_result_witness(
+                missing_representation_yield
+            ),
+            "wrong_occurrence": _occurrence_result_witness(
+                wrong_representation_yield
+            ),
+            "corrupted_evidence": _occurrence_result_witness(
+                corrupted_representation_yield
+            ),
+            "unrelated_change": _occurrence_result_witness(
+                unrelated_representation_yield
+            ),
+        },
+        ("carriage", "emission_attempt"): {
+            "exact": _emission_attempt_carriage_witness(attempt),
+            "edge_missing": _emission_attempt_carriage_witness(missing_attempt),
+            "wrong_occurrence": _emission_attempt_carriage_witness(wrong_attempt),
+            "corrupted_evidence": _emission_attempt_carriage_witness(
+                corrupted_attempt
+            ),
+            "unrelated_change": _emission_attempt_carriage_witness(
+                unrelated_attempt
+            ),
+        },
+    }
+
+
+def _live_structural_edge_fidelity_cases() -> dict[
+    tuple[str, str], dict[str, str]
+]:
+    registered = {
+        (edge, "byte_measurement"): cases
+        for edge, cases in _structural_edge_fidelity_cases().items()
+    }
+    registered.update(
+        {
+            (edge, "successful_emission"): cases
+            for edge, cases in _emission_structural_edge_fidelity_cases().items()
+        }
+    )
+    registered.update(_additional_live_structural_edge_fidelity_cases())
+    return registered
 
 
 def _structural_edge_implementation_specs() -> dict[str, dict]:
@@ -958,6 +1081,20 @@ def test_emission_instantiates_every_structural_edge_at_its_boundary():
 
     assert set(cases) == set(grammar["structural_edges"])
     assert cases == {edge: expected for edge in grammar["structural_edges"]}
+
+
+def test_every_registered_live_edge_instantiation_obeys_the_full_fidelity_matrix():
+    grammar = json.loads(GRAMMAR.read_text(encoding="utf-8"))
+    expected = grammar["implementation_witness"]["fidelity_cases"]
+    registered = _live_structural_edge_fidelity_cases()
+
+    assert registered
+    assert {edge for edge, _boundary in registered} == set(
+        grammar["structural_edges"]
+    )
+    assert all(cases == expected for cases in registered.values())
+    assert ("carriage", "representation_result") in registered
+    assert ("carriage", "emission_attempt") in registered
 
 
 def test_attempt_and_success_have_distinct_carriages_for_the_same_text():
