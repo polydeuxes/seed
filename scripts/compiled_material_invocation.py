@@ -124,8 +124,24 @@ class MaterialAddedCompareOccurrence:
         )
 
     @property
+    def implementation_function_identity(self) -> str:
+        return self.source_invocation.implementation_function_identity
+
+    @property
+    def added_position_act_occurrence_identity(self) -> tuple[str, int]:
+        return self.addition_occurrence.act_occurrence_identity
+
+    @property
+    def source_coordinates(self) -> tuple[int, bytes, bytes]:
+        return self.source_invocation.coordinates
+
+    @property
+    def result_coordinates(self) -> tuple[int, bytes, bytes]:
+        return self.result_invocation.coordinates
+
+    @property
     def distinction(self) -> bool:
-        return self.source_invocation.coordinates != self.result_invocation.coordinates
+        return self.source_coordinates != self.result_coordinates
 
 
 @dataclass(frozen=True, slots=True)

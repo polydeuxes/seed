@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from pathlib import Path
 import sys
+from types import SimpleNamespace
 
 import pytest
 
@@ -13,13 +14,23 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "scripts"))
 
 from compiled_format_invocation import (  # noqa: E402
+    COMPILED_IMPLEMENTATION_FUNCTIONS,
+    CompiledImplementationFunction,
+    added_position_admission_occurrence,
+    added_position_invocations,
     added_position_occurrences,
+    compare_added_position_invocations,
+    compiled_reference_invocations,
 )
 from compiled_material_invocation import (  # noqa: E402
+    MATERIAL_IMPLEMENTATION_FUNCTIONS,
     MaterialAddedCompareOccurrence,
+    MaterialImplementationFunction,
     compare_added_material_invocations,
     ingest_result_reference,
+    reference_occurrences_across,
 )
+from material_admission import compare_admission_results  # noqa: E402
 from piper_invocation import (  # noqa: E402
     piper_implementation_function,
     piper_invocations,
@@ -29,6 +40,27 @@ from piper_invocation import (  # noqa: E402
 PIPER = ROOT / ".venv" / "bin" / "piper"
 MODEL = Path.home() / ".local" / "share" / "piper-voices" / "en_US-lessac-medium.onnx"
 PIPER_AVAILABLE = PIPER.is_file() and MODEL.is_file()
+
+
+def _codec_functions() -> tuple[CompiledImplementationFunction, ...]:
+    return tuple(
+        CompiledImplementationFunction(
+            identity=f"compiled-{position + len(COMPILED_IMPLEMENTATION_FUNCTIONS)}",
+            invocation=lambda material, name=name: material.decode(name),
+        )
+        for position, name in enumerate(("ascii", "utf-8", "big5hkscs"))
+    )
+
+
+def _material_functions() -> tuple[MaterialImplementationFunction, ...]:
+    first = len(COMPILED_IMPLEMENTATION_FUNCTIONS) + len(_codec_functions())
+    return tuple(
+        MaterialImplementationFunction(
+            identity=f"compiled-{first + position}",
+            invocation=function.invocation,
+        )
+        for position, function in enumerate(MATERIAL_IMPLEMENTATION_FUNCTIONS)
+    )
 
 
 @pytest.fixture(scope="module")
@@ -59,10 +91,20 @@ def piper_material():
         (added_reference,),
         boundary_identity="piper-material-addition",
     )
+    earlier_function_count = sum(
+        map(
+            len,
+            (
+                COMPILED_IMPLEMENTATION_FUNCTIONS,
+                _codec_functions(),
+                _material_functions(),
+            ),
+        )
+    )
     implementation = piper_implementation_function(
         executable=PIPER,
         model=MODEL,
-        identity="compiled-0",
+        identity=f"compiled-{earlier_function_count}",
     )
     source_invocations = piper_invocations(
         (source_reference,),
@@ -141,6 +183,162 @@ def test_piper_comparison_keeps_each_addition_and_both_invocations(piper_materia
         for comparison in comparisons
     )
     assert any(comparison.distinction for comparison in comparisons)
+
+
+def test_piper_comparisons_enter_the_same_addition_admission(piper_material):
+    additions = piper_material[3]
+    comparisons = piper_material[7]
+
+    admission = added_position_admission_occurrence(
+        additions,
+        comparisons,
+        boundary_identity="piper-addition-admission",
+    )
+
+    assert admission.source_material == additions
+    assert admission.comparison_occurrences == comparisons
+    assert {
+        occurrence.act_occurrence_identity
+        for same_coordinates in admission.admitted_material
+        for occurrence in same_coordinates
+    } == {occurrence.act_occurrence_identity for occurrence in additions}
+    assert admission.result_reference.admission_occurrence is admission
+
+
+def test_addition_admission_refuses_a_lookalike_compare(piper_material):
+    additions = piper_material[3]
+    comparisons = piper_material[7]
+    exact = comparisons[0][0]
+    lookalike = SimpleNamespace(
+        implementation_function_identity=exact.implementation_function_identity,
+        added_position_act_occurrence_identity=(
+            exact.added_position_act_occurrence_identity
+        ),
+        occurrence_identity=exact.occurrence_identity,
+        source_coordinates=exact.source_coordinates,
+        result_coordinates=exact.result_coordinates,
+    )
+
+    with pytest.raises(TypeError, match="exact addition Compare occurrences"):
+        added_position_admission_occurrence(
+            additions,
+            ((lookalike, *comparisons[0][1:]),),
+            boundary_identity="lookalike-piper-admission",
+        )
+
+
+def test_small_boundary_refuses_a_lookalike_material_reference():
+    lookalike = SimpleNamespace(exact_material=b"Seed")
+
+    with pytest.raises(TypeError, match="exact references"):
+        compiled_reference_invocations(
+            (lookalike,),
+            boundary_identity="lookalike-small-boundary",
+        )
+
+
+def test_one_small_boundary_compares_all_implementation_functions(piper_material):
+    source_reference = piper_material[1]
+    additions = piper_material[3]
+    piper_comparisons = piper_material[7]
+    compiled_functions = COMPILED_IMPLEMENTATION_FUNCTIONS + _codec_functions()
+    material_functions = _material_functions()
+
+    compiled_sources = compiled_reference_invocations(
+        (source_reference,),
+        boundary_identity="small-boundary-compiled-source",
+        implementation_functions=compiled_functions,
+    )
+    compiled_results = added_position_invocations(
+        additions,
+        boundary_identity="small-boundary-compiled-result",
+        implementation_functions=compiled_functions,
+    )
+    compiled_comparisons = compare_added_position_invocations(
+        compiled_sources,
+        compiled_results,
+        boundary_identity="small-boundary-compiled-compare",
+    )
+    material_sources = reference_occurrences_across(
+        (source_reference,),
+        boundary_identity="small-boundary-material-source",
+        implementation_functions=material_functions,
+    )
+    material_results = reference_occurrences_across(
+        tuple(addition.result_reference for addition in additions),
+        boundary_identity="small-boundary-material-result",
+        implementation_functions=material_functions,
+    )
+    material_comparisons = compare_added_material_invocations(
+        additions,
+        material_sources,
+        material_results,
+        boundary_identity="small-boundary-material-compare",
+    )
+    comparison_rows = (
+        *compiled_comparisons,
+        *material_comparisons,
+        *piper_comparisons,
+    )
+    admission_occurrences = tuple(
+        added_position_admission_occurrence(
+            additions,
+            (row,),
+            boundary_identity="small-boundary-admission",
+            occurrence_position=position,
+        )
+        for position, row in enumerate(comparison_rows)
+    )
+    complete = added_position_admission_occurrence(
+        additions,
+        comparison_rows,
+        boundary_identity="small-boundary-admission",
+        occurrence_position=len(comparison_rows),
+    )
+    admissions = (*admission_occurrences, complete)
+    comparisons = tuple(
+        compare_admission_results(
+            first.result_reference,
+            second.result_reference,
+            boundary_identity="small-boundary-admission-compare",
+            occurrence_position=position,
+        )
+        for position, (first, second) in enumerate(
+            (first, second)
+            for first in admissions
+            for second in admissions
+            if first is not second
+        )
+    )
+
+    expected_function_count = len(compiled_functions) + len(material_functions) + 1
+    assert len(comparison_rows) == expected_function_count
+    assert all(len(row) == len(additions) for row in comparison_rows)
+    assert len({row[0].implementation_function_identity for row in comparison_rows}) == (
+        len(comparison_rows)
+    )
+    assert len({admission.act_occurrence_identity for admission in admissions}) == len(
+        admissions
+    )
+    assert {
+        occurrence.act_occurrence_identity
+        for same_coordinates in complete.admitted_material
+        for occurrence in same_coordinates
+    } == {occurrence.act_occurrence_identity for occurrence in additions}
+    assert len({admission.admitted_material for admission in admissions}) > 1
+    from_complete = tuple(
+        comparison
+        for comparison in comparisons
+        if comparison.first_reference == complete.result_reference
+    )
+    toward_complete = tuple(
+        comparison
+        for comparison in comparisons
+        if comparison.second_reference == complete.result_reference
+    )
+    assert len(from_complete) == len(toward_complete) == len(comparison_rows)
+    assert all(comparison.result for comparison in from_complete)
+    assert any(not comparison.result for comparison in toward_complete)
 
 
 def test_each_piper_result_can_enter_a_fresh_locality_as_exact_material(

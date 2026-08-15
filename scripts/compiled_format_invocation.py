@@ -8,7 +8,7 @@ import io
 import json
 import plistlib
 import tomllib
-from typing import Callable, Protocol, runtime_checkable
+from typing import Callable, Hashable, Protocol, runtime_checkable
 import xml.etree.ElementTree
 
 from material_admission import (
@@ -73,6 +73,19 @@ class ExactMaterialResultReference:
             raise TypeError("exact material result requires its Act occurrence and result identity")
 
 
+def _is_exact_material_coordinates(material: object) -> bool:
+    from compiled_material_invocation import IngestResultReference
+
+    return isinstance(
+        material,
+        (
+            ExactMaterialReference,
+            ExactMaterialResultReference,
+            IngestResultReference,
+        ),
+    )
+
+
 @dataclass(frozen=True, slots=True)
 class CompiledInvocationResultReference:
     invocation_occurrence: "CompiledInvocationOccurrence"
@@ -108,9 +121,9 @@ class AddedPositionOccurrence:
             raise TypeError("one exact boundary identity is required")
         if type(self.occurrence_position) is not int or self.occurrence_position < 0:
             raise TypeError("one exact Act occurrence position is required")
-        if not isinstance(self.source_reference, ExactMaterialCoordinates):
+        if not _is_exact_material_coordinates(self.source_reference):
             raise TypeError("source material requires its exact reference")
-        if not isinstance(self.added_reference, ExactMaterialCoordinates):
+        if not _is_exact_material_coordinates(self.added_reference):
             raise TypeError("added material requires its exact reference")
         if len(self.added_reference.exact_material) != 1:
             raise ValueError("added material must be exactly one byte")
@@ -241,7 +254,7 @@ class CompiledInvocationOccurrence:
         if type(self.returned) is not bool:
             raise TypeError("returned coordinate must be exact")
         if self.source_coordinate is not None:
-            if isinstance(self.source_coordinate, ExactMaterialCoordinates):
+            if _is_exact_material_coordinates(self.source_coordinate):
                 source_material = self.source_coordinate.exact_material
             elif isinstance(
                 self.source_coordinate,
@@ -275,7 +288,7 @@ class CompiledInvocationOccurrence:
 
     @property
     def source_material(self) -> bytes | None:
-        if isinstance(self.source_coordinate, ExactMaterialCoordinates):
+        if _is_exact_material_coordinates(self.source_coordinate):
             return self.source_coordinate.exact_material
         if isinstance(self.source_coordinate, AddedPositionOccurrence):
             return self.source_coordinate.source_material
@@ -322,6 +335,14 @@ class AddedPositionCompareOccurrence:
     @property
     def distinction(self) -> bool:
         return self.source_returned != self.result_returned
+
+    @property
+    def source_coordinates(self) -> bool:
+        return self.source_returned
+
+    @property
+    def result_coordinates(self) -> bool:
+        return self.result_returned
 
 
 @dataclass(frozen=True, slots=True)
@@ -376,7 +397,7 @@ class RemovedPositionCompareOccurrence:
 class AddedPositionAdmissionOccurrence:
     admission_occurrence: AdmissionOccurrence
     addition_occurrences: tuple[AddedPositionOccurrence, ...]
-    comparison_occurrences: tuple[tuple[AddedPositionCompareOccurrence, ...], ...]
+    comparison_occurrences: tuple[tuple[object, ...], ...]
 
     def __post_init__(self) -> None:
         if not isinstance(self.admission_occurrence, AdmissionOccurrence):
@@ -471,10 +492,10 @@ class CompiledAdmissionOccurrence:
 
 def _added_position_comparisons_by_occurrence(
     occurrences: tuple[AddedPositionOccurrence, ...],
-    comparisons: tuple[tuple[AddedPositionCompareOccurrence, ...], ...],
+    comparisons: tuple[tuple[object, ...], ...],
 ) -> tuple[
     dict[tuple[str, int], AddedPositionOccurrence],
-    dict[tuple[str, int], tuple[AddedPositionCompareOccurrence, ...]],
+    dict[tuple[str, int], tuple[object, ...]],
 ]:
     if type(occurrences) is not tuple or not occurrences:
         raise TypeError("Admission requires exact addition Act occurrences")
@@ -492,7 +513,7 @@ def _added_position_comparisons_by_occurrence(
 
     expected_identities = frozenset(occurrence_by_identity)
     comparisons_by_occurrence: dict[
-        tuple[str, int], list[AddedPositionCompareOccurrence]
+        tuple[str, int], list[object]
     ] = {
         identity: [] for identity in occurrence_by_identity
     }
@@ -507,7 +528,12 @@ def _added_position_comparisons_by_occurrence(
 
         comparison_by_identity = {}
         for comparison in row:
-            if not isinstance(comparison, AddedPositionCompareOccurrence):
+            from compiled_material_invocation import MaterialAddedCompareOccurrence
+
+            if not isinstance(
+                comparison,
+                (AddedPositionCompareOccurrence, MaterialAddedCompareOccurrence),
+            ):
                 raise TypeError("Admission requires exact addition Compare occurrences")
             if (
                 comparison.implementation_function_identity
@@ -517,10 +543,11 @@ def _added_position_comparisons_by_occurrence(
             identity = comparison.added_position_act_occurrence_identity
             if identity in comparison_by_identity:
                 raise ValueError("addition Act occurrence entered one Compare tuple twice")
-            if type(comparison.source_returned) is not bool or type(
-                comparison.result_returned
-            ) is not bool:
-                raise TypeError("Compare returned coordinates must be exact booleans")
+            try:
+                hash(comparison.source_coordinates)
+                hash(comparison.result_coordinates)
+            except TypeError as error:
+                raise TypeError("Compare coordinates must be exact") from error
             comparison_by_identity[identity] = comparison
 
         if frozenset(comparison_by_identity) != expected_identities:
@@ -537,21 +564,21 @@ def _added_position_comparisons_by_occurrence(
 
 def admit_added_position_occurrences(
     occurrences: tuple[AddedPositionOccurrence, ...],
-    comparisons: tuple[tuple[AddedPositionCompareOccurrence, ...], ...],
+    comparisons: tuple[tuple[object, ...], ...],
 ) -> tuple[tuple[AddedPositionOccurrence, ...], ...]:
     occurrence_by_identity, comparisons_by_occurrence = (
         _added_position_comparisons_by_occurrence(occurrences, comparisons)
     )
 
     same_coordinates: dict[
-        tuple[tuple[str, bool, bool], ...], list[AddedPositionOccurrence]
+        tuple[tuple[str, Hashable, Hashable], ...], list[AddedPositionOccurrence]
     ] = {}
     for identity, occurrence in occurrence_by_identity.items():
         coordinates = tuple(
             (
                 comparison.implementation_function_identity,
-                comparison.source_returned,
-                comparison.result_returned,
+                comparison.source_coordinates,
+                comparison.result_coordinates,
             )
             for comparison in comparisons_by_occurrence[identity]
         )
@@ -561,7 +588,7 @@ def admit_added_position_occurrences(
 
 def added_position_admission_occurrence(
     occurrences: tuple[AddedPositionOccurrence, ...],
-    comparisons: tuple[tuple[AddedPositionCompareOccurrence, ...], ...],
+    comparisons: tuple[tuple[object, ...], ...],
     *,
     boundary_identity: str,
     occurrence_position: int = 0,
@@ -741,8 +768,7 @@ def compiled_reference_invocations(
     ] = COMPILED_IMPLEMENTATION_FUNCTIONS,
 ) -> tuple[tuple[CompiledInvocationOccurrence, ...], ...]:
     if type(references) is not tuple or not all(
-        isinstance(reference, ExactMaterialCoordinates)
-        for reference in references
+        _is_exact_material_coordinates(reference) for reference in references
     ):
         raise TypeError("implementation function inputs must carry exact references")
     if type(boundary_identity) is not str or not boundary_identity:
@@ -871,12 +897,12 @@ def added_position_occurrences(
     boundary_identity: str,
 ) -> tuple[AddedPositionOccurrence, ...]:
     if type(source_material) is not tuple or not all(
-        isinstance(material, ExactMaterialCoordinates)
+        _is_exact_material_coordinates(material)
         for material in source_material
     ):
         raise TypeError("source material must carry exact references")
     if type(added_material) is not tuple or not all(
-        isinstance(material, ExactMaterialCoordinates)
+        _is_exact_material_coordinates(material)
         and type(material.exact_material) is bytes
         and len(material.exact_material) == 1
         for material in added_material
@@ -1068,10 +1094,7 @@ def compare_added_position_invocations(
         source_by_reference = {}
         for source_invocation in source_row:
             reference = source_invocation.source_coordinate
-            if not isinstance(
-                reference,
-                (ExactMaterialReference, ExactMaterialResultReference),
-            ):
+            if not _is_exact_material_coordinates(reference):
                 raise ValueError("source invocation requires its exact material reference")
             if reference in source_by_reference:
                 raise ValueError("source material reference entered Compare twice")
