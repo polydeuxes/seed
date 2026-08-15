@@ -17,7 +17,10 @@ from seed_runtime.operator_checkpoint import (
     open_operator_checkpoint,
     request_operator_checkpoint,
 )
-from seed_runtime.operator_material_command import request_operator_material
+from seed_runtime.operator_material_command import (
+    OperatorMaterialRequest,
+    request_operator_material,
+)
 from seed_runtime.operator_representation import (
     emit_operator_representation,
     record_operator_representation,
@@ -93,7 +96,7 @@ def run_persistent_operator_console(
                 handlers=handlers,
             )
             request = command_run.implementation_result
-            if isinstance(request, OperatorCheckpointRequest):
+            if isinstance(request, (OperatorCheckpointRequest, OperatorMaterialRequest)):
                 checkpoint = open_operator_checkpoint(ledger, command_run.addressed)
                 locality_identity = checkpoint.locality_identity
                 locality_standing = read_operator_locality_standing(
