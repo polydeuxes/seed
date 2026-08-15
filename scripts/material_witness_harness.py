@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass
 import subprocess
 
@@ -86,7 +87,19 @@ def occurrences_across(
         raise TypeError("witness inputs must be one exact tuple of bytes")
     if type(witnesses) is not tuple or not witnesses:
         raise TypeError("material witnesses must be one nonempty tuple")
-    return tuple(
-        tuple(witness_occurrence(material, witness) for material in exact_materials)
+    if not exact_materials:
+        return tuple(() for _ in witnesses)
+    calls = tuple(
+        (material, witness)
         for witness in witnesses
+        for material in exact_materials
+    )
+    with ThreadPoolExecutor(max_workers=min(16, len(calls))) as workers:
+        occurrences = tuple(
+            workers.map(lambda call: witness_occurrence(*call), calls)
+        )
+    width = len(exact_materials)
+    return tuple(
+        occurrences[offset : offset + width]
+        for offset in range(0, len(occurrences), width)
     )
