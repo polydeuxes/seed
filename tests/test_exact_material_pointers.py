@@ -193,7 +193,7 @@ def test_a_representation_act_establishes_what_its_coordinates_can_be():
         ExactMaterialReferenceLimits(reference_count_limit=4, candidate_limit=0)
 
 
-def test_an_account_without_a_addressable_representation_act_is_refused():
+def test_an_account_without_an_exact_representation_act_is_refused():
     encoded = represent_exact_material_pointers(b"the cat jumped the cat jumped")
     carried = encoded.to_json_dict()
     assert ExactMaterialPointers.from_json_dict(carried) == encoded

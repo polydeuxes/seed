@@ -286,7 +286,7 @@ def advance_operator_locality_standing(
         "ingest_occurrences": ingest_occurrences,
         "representations": representations,
         # No "current" Representation is projected.  Emission order is
-        # addressable from `representations`, which preserves representation Act and
+        # preserved in `representations`, which retains representation Act and
         # emission occurrences in append order; naming one of them current
         # would assert present relevance that no occurrence establishes.
         # Exactly the relation standings recorded by Locality events.  No

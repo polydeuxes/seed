@@ -6,7 +6,7 @@ The Evidence and provenance supporting exact Assertion Standing.
 
 ## Bounded resolution
 
-Evidence preserves its source and collection boundary. Provenance preserves the addressable source and occurrence references through which material was preserved or represented. Neither is truth, Applicability, Authority, causation, corroboration, or Standing by identity.
+Evidence preserves its source and collection boundary. Provenance preserves the exact source and occurrence references through which material was preserved or represented. Neither is truth, Applicability, Authority, causation, corroboration, or Standing by identity.
 
 Evidence may participate only when the exact Act can distinguish its identity from mere material existence and preserve the applicable source identity or role, source occurrence where evidenced, kind, subject, supported Assertion, Authority, Scope, temporal boundary, and provenance. Missing coordinates remain Unknown or uninstantiated; nearby fields do not fill them.
 

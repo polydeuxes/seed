@@ -9,7 +9,7 @@ file, and it enters through the material path like any other body.
 The supplied speech is not a read of the writing. A voice, a speaking rate, and a
 sample rate are choices this script made, and none of them is carried by the
 text they were applied to. Two renderings of one sentence are two materials
-whose only addressable relation is that a caller declared the same source text
+whose only declared relation is that a caller supplied the same source text
 for both.
 
 Usage:

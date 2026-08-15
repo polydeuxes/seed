@@ -17,7 +17,7 @@ here is exactly its channel bytes.
 
 Ladder P is the floor: three bytes, differing in all three. Ladder C moves one
 channel and holds the other two, once per channel, so each channel is a
-coordinate addressable on its own before any two are crossed.
+coordinate with its own exact position before any two are crossed.
 
 The pixel dimensions do not vary here. One pixel is the whole specimen, so a
 difference between two specimens is a value, not a pixel dimension.
@@ -25,7 +25,7 @@ difference between two specimens is a value, not a pixel dimension.
 Three distinct coordinates are not the space they span. Ladder C represents
 256 specimens per channel, 768 in all; the crossed space is 256 x 256 x 256,
 16,777,216 combinations. Read each coordinate alone is what makes the
-crossed space addressable without enumerating every specimen.
+crossed space represented without enumerating every specimen.
 
 **A specimen does not carry its own framing.** Three bytes are three bytes.
 That the first is one channel, that the three together are one pixel, and that

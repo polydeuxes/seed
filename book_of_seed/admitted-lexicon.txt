@@ -23,8 +23,6 @@ active
 acts
 added
 additional
-addressability
-addressable
 addressed
 adjacency
 adjudication
@@ -501,9 +499,6 @@ novelty
 object
 objective
 obligation
-observed
-observer
-observing
 occupied
 occupy
 occur

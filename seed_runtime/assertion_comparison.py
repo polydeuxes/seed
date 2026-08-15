@@ -86,7 +86,7 @@ COMPARISON_ASSERTION_STANDING_COORDINATE_RESPONSIBILITY = (
 
 @dataclass(frozen=True)
 class RecordedAssertionYieldDistinction:
-    """One addressable coordinate result inside its yielding Compare occurrence."""
+    """One exact coordinate result inside its yielding Compare occurrence."""
 
     assertion_identity: str
     recorded_occurrence_reference: str
@@ -426,7 +426,7 @@ def record_assertion_yield_comparison(
 def assertions_of_recorded_assertion_comparison(
     event: Event,
 ) -> tuple[RecordedAssertionYieldDistinction, ...]:
-    """Read and verify every addressable result of one recorded Compare."""
+    """Read and verify every exact result of one recorded Compare."""
 
     if event.kind != ASSERTION_YIELD_COMPARISON_RECORDED_KIND:
         raise AssertionComparisonError(

@@ -3051,9 +3051,9 @@ def test_runtime_authority_does_not_carry_evidence_scope_prose():
 
 
 def test_each_dimensions_call_separates_authority_from_its_evidence_scope():
-    """Every witness through the shared dimensions bottleneck is observed."""
+    """Every call through the shared dimensions bottleneck is checked."""
 
-    observed = []
+    dimensions_calls = []
     for path in sorted(RUNTIME.glob("*.py")):
         tree = ast.parse(path.read_text(encoding="utf-8"))
         for node in ast.walk(tree):
@@ -3064,13 +3064,13 @@ def test_each_dimensions_call_separates_authority_from_its_evidence_scope():
             ):
                 continue
             keywords = {item.arg: item.value for item in node.keywords}
-            observed.append((path.name, node.lineno))
+            dimensions_calls.append((path.name, node.lineno))
             authority = keywords.get("authority")
             assert isinstance(authority, ast.Constant), (path, node.lineno)
             assert authority.value == "unestablished", (path, node.lineno)
             assert "evidence_scope" in keywords, (path, node.lineno)
 
-    assert observed
+    assert dimensions_calls
 
 
 LOCALITY_BOUNDARY_BY_KIND = {

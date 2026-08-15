@@ -100,7 +100,7 @@ def test_result_shape_without_the_yield_relation_has_no_witness(recorded):
     assert result.material["yield_evidence_identity"] is not None
 
 
-def test_a_comparison_finding_with_yield_is_occurrence_bound_and_addressable(recorded):
+def test_a_comparison_finding_with_yield_retains_its_exact_occurrence(recorded):
     ledger, event = recorded
     result = compare_recorded_finding_yield(ledger, event.identity)
     read = get_recorded_finding_yield_comparison(ledger, result.identity)

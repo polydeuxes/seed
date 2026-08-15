@@ -433,7 +433,7 @@ class SQLiteEventLedger(EventLedger):
     # the console to a durable ledger, at which point the second `seed --db`
     # invocation aborted on `duplicate representation reference`. Nothing was
     # wrong with them before: no console had ever written durable history.
-    # The prefixes `_observed_numbers` may reserve, as a set for membership.
+    # The prefixes `_reservable_identity_numbers` may reserve, as a set for membership.
     # Every entry is minted by current runtime code and may be carried by a
     # durable occurrence.
     _RESERVABLE_PREFIXES = frozenset({
@@ -633,7 +633,7 @@ class SQLiteEventLedger(EventLedger):
             for event in stored_events:
                 event_rowid = self._insert_without_commit(event)
                 self._insert_prefix_identity(event, event_rowid)
-                self._persist_reservations(self._observed_numbers(event))
+                self._persist_reservations(self._reservable_identity_numbers(event))
         for event in stored_events:
             self._advance_event_counter(event.identity)
         return stored_events
@@ -825,7 +825,7 @@ class SQLiteEventLedger(EventLedger):
     def _write_without_commit(self, event: Event) -> None:
         event_rowid = self._insert_without_commit(event)
         self._insert_prefix_identity(event, event_rowid)
-        self._persist_reservations(self._observed_numbers(event))
+        self._persist_reservations(self._reservable_identity_numbers(event))
 
     @contextmanager
     def batched(self) -> Iterator[None]:
@@ -1058,7 +1058,7 @@ class SQLiteEventLedger(EventLedger):
             # already reachable before compression, for a text material damaged
             # in place.
             raise InvalidStoredMaterial(
-                f"a stored material is not a addressable occurrence: {exc}"
+                f"a stored material is not an exact occurrence: {exc}"
             ) from exc
         return Event(
             identity=row["identity"],
@@ -1092,7 +1092,7 @@ class SQLiteEventLedger(EventLedger):
             """).fetchone()
         return int(row["max_number"] or 0)
 
-    def _observed_numbers(self, event: Event) -> dict[str, int]:
+    def _reservable_identity_numbers(self, event: Event) -> dict[str, int]:
         """Every reservable identity this one occurrence carries.
 
         A reservable identity is a known prefix, an underscore, and digits.
@@ -1121,8 +1121,8 @@ class SQLiteEventLedger(EventLedger):
                 found[prefix] = number
         return found
 
-    def _persist_reservations(self, observed: dict[str, int]) -> None:
-        for prefix, max_number in observed.items():
+    def _persist_reservations(self, reservations: dict[str, int]) -> None:
+        for prefix, max_number in reservations.items():
             self._connection.execute(
                 "INSERT INTO identity_reservations (prefix, max_number) VALUES (?, ?) "
                 "ON CONFLICT(prefix) DO UPDATE SET max_number = MAX(max_number, ?)",

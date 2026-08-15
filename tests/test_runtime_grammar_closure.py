@@ -34,6 +34,42 @@ def _runtime_trees():
         yield path, ast.parse(path.read_text(encoding="utf-8"), filename=str(path))
 
 
+def _runtime_imports(tree: ast.Module) -> set[str]:
+    imported = set()
+    for node in ast.walk(tree):
+        if isinstance(node, ast.ImportFrom) and node.module:
+            if node.module == "seed_runtime":
+                imported.update(name.name.split(".", 1)[0] for name in node.names)
+            elif node.module.startswith("seed_runtime."):
+                imported.add(node.module.split(".", 2)[1])
+        elif isinstance(node, ast.Import):
+            for name in node.names:
+                if name.name.startswith("seed_runtime."):
+                    imported.add(name.name.split(".", 2)[1])
+    return imported
+
+
+def test_each_runtime_module_participates_in_live_process_imports():
+    imports = {
+        path.stem: _runtime_imports(tree)
+        for path, tree in _runtime_trees()
+    }
+    participating = {"process_entry"}
+    pending = ["process_entry"]
+    while pending:
+        module = pending.pop()
+        for imported in imports.get(module, ()):
+            if imported in imports and imported not in participating:
+                participating.add(imported)
+                pending.append(imported)
+
+    active_modules = set(imports) - {"__init__"}
+    assert active_modules == participating, (
+        "\nRuntime modules outside the live process import graph:\n  "
+        + "\n  ".join(sorted(active_modules - participating))
+    )
+
+
 def _module_strings(tree: ast.Module) -> dict[str, str]:
     declared = {}
     for node in tree.body:

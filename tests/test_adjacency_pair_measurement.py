@@ -280,7 +280,7 @@ def test_system_bytes_do_not_become_represented_material():
         EventLedger(),
         locality_identity="adjacent-measurement",
         exact_bytes=b"L a b R",
-        observed_boundary="system boundary",
+        source_boundary="system boundary",
     )
 
     with pytest.raises(

@@ -11,7 +11,7 @@ Operator material and explicit approvals may contribute authority only after exa
 
 Policy wording may describe Authority granted for an exact responsible boundary, Act or movement, addressed subject, result boundary, Scope, temporal Standing, negative Authority, and Unknowns. The wording does not create, enlarge, transfer, or renew that Authority.
 
-## Addressable boundaries for bounded input support witnesses
+## Boundaries for bounded input support witnesses
 
 ### 08.Authority.A — Bounded input support without standing expansion
 A downstream Act may stand on established content only for its exact role, addressed subject, result boundary, source or provenance, Evidence, Authority, Scope, confidence or uncertainty, and Unknown boundaries. Input support does not strengthen Standing, expand Authority, prove truth, revise a Responsibility assignment, authorize implementation, or erase negative Authority.

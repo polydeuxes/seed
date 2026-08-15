@@ -5,8 +5,6 @@ from pathlib import Path
 import subprocess
 import sys
 
-import pytest
-
 from seed_runtime import process_entry
 from seed_runtime.events import SQLiteEventLedger
 
@@ -26,7 +24,6 @@ def test_importing_the_live_entry_does_not_wake_dormant_modules():
             (
                 "import sys; import seed_runtime.process_entry; "
                 "assert 'scripts.seed_local' not in sys.modules; "
-                "assert 'seed_runtime.observations' not in sys.modules; "
                 "assert 'seed_runtime.state' not in sys.modules; "
                 "assert 'seed_runtime.diagnostic_inventory' not in sys.modules; "
                 "assert 'seed_runtime.diagnostic_shape_audit' not in sys.modules"
@@ -83,21 +80,10 @@ def test_reopened_live_process_allocates_a_new_locality(tmp_path):
     assert len(Localities) == 2
 
 
-@pytest.mark.parametrize(
-    "flag",
-    [
-        "--diagnostic-inventory",
-        "--diagnostic-shape-audit",
-        "--json",
-        "--status",
-        "--mismatches",
-    ],
-)
-def test_historical_operational_flag_is_not_on_the_live_entry(flag):
-    with pytest.raises(SystemExit, match="2"):
-        process_entry.main([flag])
+def test_live_entry_has_only_help_and_database_flags():
+    parser = process_entry.build_parser()
 
-
-def test_historical_ingestion_flag_is_not_on_the_live_entry():
-    with pytest.raises(SystemExit, match="2"):
-        process_entry.main(["--observe", "host", "status", "healthy"])
+    assert [tuple(action.option_strings) for action in parser._actions] == [
+        ("-h", "--help"),
+        ("--db",),
+    ]

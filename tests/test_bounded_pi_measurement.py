@@ -1,4 +1,4 @@
-"""A finite decimal representation attributed to pi, observed only as bytes."""
+"""A finite decimal representation attributed to pi, measured only as bytes."""
 
 from copy import deepcopy
 from tests.binary_input import binary_input
@@ -26,7 +26,7 @@ def _supply(ledger: EventLedger, locality: str, material: str) -> None:
     )
 
 
-def _observe(ledger: EventLedger, source: str, result: str):
+def _measure(ledger: EventLedger, source: str, result: str):
     byte_event = record_byte_count_layer(
         ledger,
         source_locality_identities=(source,),
@@ -49,10 +49,10 @@ def _pair_counts(event):
     }
 
 
-def test_seed_observes_one_bounded_decimal_representation_not_all_of_pi():
+def test_seed_measures_one_bounded_decimal_representation_not_all_of_pi():
     ledger = EventLedger()
     _supply(ledger, "short-source", SHORT)
-    byte_event, pair_event = _observe(ledger, "short-source", "short")
+    byte_event, pair_event = _measure(ledger, "short-source", "short")
 
     byte_assertions = assertions_of_recorded_byte_measurement(ledger, byte_event.identity)
     pair_counts = _pair_counts(pair_event)
@@ -69,12 +69,12 @@ def test_seed_observes_one_bounded_decimal_representation_not_all_of_pi():
 def test_a_longer_prefix_is_new_material_and_does_not_rewrite_the_shorter_one():
     ledger = EventLedger()
     _supply(ledger, "short-source", SHORT)
-    short_bytes, short_pairs = _observe(ledger, "short-source", "short")
+    short_bytes, short_pairs = _measure(ledger, "short-source", "short")
     short_material = deepcopy(short_bytes).material
     short_pair_counts = _pair_counts(short_pairs)
 
     _supply(ledger, "long-source", LONG)
-    long_bytes, long_pairs = _observe(ledger, "long-source", "long")
+    long_bytes, long_pairs = _measure(ledger, "long-source", "long")
 
     short_source = assertions_of_recorded_byte_measurement(ledger, short_bytes.identity)[0]
     long_source = assertions_of_recorded_byte_measurement(ledger, long_bytes.identity)[0]

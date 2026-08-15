@@ -68,7 +68,7 @@ MEASURED_ASSERTION_STANDING_COORDINATE_RESPONSIBILITY = (
 
 # The declared identity a recurrence assertion is made under. Two occurrences
 # that differ on any of these did not measure the same thing, and counting them
-# together reports a recurrence nothing observed.
+# together reports a recurrence absent from the measured occurrences.
 DECLARED_IDENTITY: tuple[str, ...] = (
     "representation_measured",
     "relative_representation",
@@ -236,7 +236,7 @@ class MeasuredAssertion:
 
 @dataclass(frozen=True)
 class RecordedMeasuredAssertion:
-    """One addressable Assertion preserved inside its yielding occurrence."""
+    """One exact Assertion preserved inside its yielding occurrence."""
 
     assertion_identity: str
     recorded_occurrence_reference: str
@@ -466,8 +466,8 @@ def measure_locality_counts(
     # occurrence can establish a Locality without supplying a measured coordinate.
     measured_coordinate: dict[tuple, set[str]] = {}
     coordinate_evidence: dict[tuple, dict[str, set[str]]] = {}
-    observed: dict[MeasuredDistinction, set[str]] = {}
-    observed_evidence: dict[MeasuredDistinction, set[str]] = {}
+    localities_by_distinction: dict[MeasuredDistinction, set[str]] = {}
+    evidence_by_distinction: dict[MeasuredDistinction, set[str]] = {}
     unestablished: list[str] = []
     measurement_seen = False
 
@@ -496,8 +496,8 @@ def measure_locality_counts(
                     representation=representation,
                     declared=declared,
                 )
-                observed.setdefault(key, set()).add(locality)
-                observed_evidence.setdefault(key, set()).add(event.identity)
+                localities_by_distinction.setdefault(key, set()).add(locality)
+                evidence_by_distinction.setdefault(key, set()).add(event.identity)
 
     if unestablished:
         raise RecurrenceMeasurementError(
@@ -514,14 +514,14 @@ def measure_locality_counts(
     findings = []
     declared_set = set(declared_localities)
     for key in sorted(
-        observed,
+        localities_by_distinction,
         key=lambda k: (
-            -len(observed[k]),
+            -len(localities_by_distinction[k]),
             k.relative_representation,
             k.representation,
         ),
     ):
-        where = observed[key]
+        where = localities_by_distinction[key]
         measured = measured_coordinate.get(key.declared, set())
         not_measured = declared_set - measured
         measured_without = measured - where
@@ -532,7 +532,7 @@ def measure_locality_counts(
                 locality, set()
             )
         }
-        measured_in_evidence = set(observed_evidence[key])
+        measured_in_evidence = set(evidence_by_distinction[key])
         evidence = measured_in_evidence | measured_without_evidence
         # The third result stands on the complete Measurement-kind read for
         # each declared locality through the preserved ledger boundary. Copying

@@ -10,7 +10,7 @@ An Event preserves what its responsible recording occurrence records. Recording 
 
 A bounded read may expose preserved material under its exact rule and boundaries. The read does not create upstream Evidence, occurrence time, Applicability, or current Standing by identity. A responsible Act may use exposed material through its exact Evidence, established support relations, Authority, Scope, locality, conflict, expiry, Unknowns, and surviving limits.
 
-## Addressable boundaries
+## Locality boundaries
 
 ### 06.Standing.A — Current Standing is bounded
 
@@ -18,7 +18,7 @@ Recorded material and previously established Standing may support current Standi
 
 ### 06.Standing.B — Locality
 
-Locality is the exact evidenced relation that two exact bounded subjects are local to one another. The subjects do not establish that relation by identity, co-presence, chronology, addressability, or a shared label. A locality relation preserves both subjects, its exact Evidence, occurrence, limits, and Unknowns.
+Locality is the exact evidenced relation that two exact bounded subjects are local to one another. The subjects do not establish that relation by identity, co-presence, chronology, or a shared label. A locality relation preserves both subjects, its exact Evidence, occurrence, limits, and Unknowns.
 
 One subject may bear several separately evidenced locality relations. Equal subjects under another occurrence do not identify the same relation. A locality relation does not enclose its subjects, create a hierarchy, grant Authority, establish Participation, or carry Standing for either subject.
 

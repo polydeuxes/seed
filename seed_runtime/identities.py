@@ -17,7 +17,7 @@ def new_identity(prefix: str) -> str:
 
 
 def reserve_identity_prefix(prefix: str, max_numeric_number: int) -> None:
-    """Ensure future identities for ``prefix`` are greater than an observed number."""
+    """Ensure future identities for ``prefix`` exceed a carried number."""
     if max_numeric_number < 0:
         raise ValueError("max_numeric_number must be non-negative")
     with _lock:

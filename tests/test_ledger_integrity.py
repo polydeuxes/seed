@@ -617,7 +617,7 @@ def test_a_batch_leaves_no_occurrence_without_its_reservation(path):
         led.close()
 
 
-def test_reservable_suffix_observation_matches_a_per_prefix_scan():
+def test_reservable_identity_numbers_match_a_per_prefix_scan():
     """One split must find exactly what testing every prefix in turn found.
 
     A reservable identity is a prefix, an underscore, and digits, so the
@@ -682,7 +682,7 @@ def test_reservable_suffix_observation_matches_a_per_prefix_scan():
             material=material,
             locality_identity=one([None, identity(), f"locality_{rng.randint(0, 9999)}"]),
         )
-        assert ledger._observed_numbers(event) == per_prefix_scan(event)
+        assert ledger._reservable_identity_numbers(event) == per_prefix_scan(event)
 
 
 def test_a_reserved_suffix_of_zero_is_not_reserved():
@@ -691,9 +691,9 @@ def test_a_reserved_suffix_of_zero_is_not_reserved():
 
     ledger = SQLiteEventLedger.__new__(SQLiteEventLedger)
     event = Event(identity="evt_1", kind="k", material={"a": "operator_material_0"})
-    assert ledger._observed_numbers(event) == {}
+    assert ledger._reservable_identity_numbers(event) == {}
     event = Event(identity="evt_2", kind="k", material={"a": "operator_material_1"})
-    assert ledger._observed_numbers(event) == {"operator_material": 1}
+    assert ledger._reservable_identity_numbers(event) == {"operator_material": 1}
 
 
 def test_an_overlapping_prefix_reserves_the_longer_match():
@@ -701,7 +701,7 @@ def test_an_overlapping_prefix_reserves_the_longer_match():
     event = Event(
         identity="evt_1", kind="k", material={"a": "assertion_locality_movement_act_7", "b": "assertion_locality_movement_4"},
     )
-    assert ledger._observed_numbers(event) == {
+    assert ledger._reservable_identity_numbers(event) == {
         "assertion_locality_movement_act": 7,
         "assertion_locality_movement": 4,
     }

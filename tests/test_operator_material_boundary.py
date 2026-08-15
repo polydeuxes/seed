@@ -1,4 +1,4 @@
-"""The live operator boundary accepts only directly observed byte streams."""
+"""The live operator boundary accepts only exact byte streams."""
 
 from __future__ import annotations
 
@@ -23,7 +23,7 @@ def test_binary_boundary_preserves_every_byte_without_text_conversion():
     assert material.delimiter_hex == "0a"
 
 
-def test_stream_encoding_metadata_does_not_change_observed_bytes():
+def test_stream_encoding_metadata_does_not_change_exact_bytes():
     material = operator_boundary_material(_DeclaredBytes(b"\xff\n"))
 
     assert material.exact_bytes == b"\xff\n"

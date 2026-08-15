@@ -140,7 +140,7 @@ class DeclaredMeasurement:
     # Where the position measured sits relative to what it was measured
     # relative to.  Recorded so a measurement can be compared with another
     # that measured elsewhere, and so a coordinate that never varies is
-    # observable rather than implicit in the code that indexed it.
+    # recorded rather than implicit in the code that indexed it.
     measured_position: dict[str, Any] | None = None
 
     def __post_init__(self) -> None:
@@ -168,7 +168,7 @@ class MeasurementFinding:
     position_count: int
     representation_counts: tuple[RepresentationCount, ...]
     # The identities this measurement input_identities, available while the act runs.
-    # On the result-Assertion path a addressable support support is supplied from
+    # On the result-Assertion path one exact input support Assertion is supplied from
     # these inputs instead of preserving the enumeration in every result;
     # the support belongs to that path, and this dataclass does not own a second
     # coordinate for it. `#2486` measured why: copying the inputs into

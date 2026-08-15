@@ -16,7 +16,7 @@ from seed_runtime.material_availability import (
 MATERIAL = b"the cat jumped the fence\n" * 40
 
 
-def test_exact_bytes_are_addressable_while_held():
+def test_exact_bytes_remain_exact_while_held():
     holder = ProcessLocalMaterial()
     identity = holder.hold(MATERIAL)
 

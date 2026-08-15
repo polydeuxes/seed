@@ -116,7 +116,7 @@ def test_each_boundary_reaches_strictly_further_than_the_last(locality):
 
 
 def test_the_boundary_still_determines_the_participating_prefix(locality):
-    """What the removed list enumerated is addressable from what remains."""
+    """What the removed list enumerated retains exact occurrence identities."""
     ledger, _ = locality
     events = ledger.list()
 

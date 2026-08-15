@@ -89,7 +89,7 @@ def test_ingest_occurrence_and_yield_identity_remain_distinct():
     )
 
     assert (
-        "Each Ingest occurrence has one distinct result identity that remains addressable."
+        "Each Ingest occurrence has one distinct result identity."
         in chapter
     )
     assert (

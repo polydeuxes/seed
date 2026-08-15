@@ -161,7 +161,6 @@
         "output_Standing"
       ],
       "distinct_identity": true,
-      "addressable": true,
       "distinct_from": [
         ["Applicability", "Admission"],
         ["Applicability", "Act_occurrence"],

@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
-"""Form material in which a byte grouping is addressable rather than declared.
+"""Form material in which a byte grouping recurs rather than being declared.
 
 The other ladders vary a coordinate within a framing. This one varies material
-so that the framing itself becomes addressable, because a specimen does not
+so that the framing itself recurs, because a specimen does not
 carry one.
 
 Raw bytes are raw bytes. That two of them are one sample, that the second
@@ -11,7 +11,7 @@ coordinates the harness knows. A `.pcm` suffix and a `--period 800` argument
 are the harness talking about its material, not the material.
 
 **What the material carries instead.** Partition the bytes by offset under a
-candidate stride. Each offset has an exact set of byte values observed at it,
+candidate stride. Each offset has an exact set of byte values measured at it,
 and those sets are measurable without classifying them:
 
 ```text

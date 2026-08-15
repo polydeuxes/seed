@@ -23,7 +23,7 @@ def _preserve(ledger, material=b"a.txt\nb.txt\n", **differences):
     fields = {
         "locality_identity": "locality_000001",
         "exact_bytes": material,
-        "observed_boundary": "source boundary",
+        "source_boundary": "source boundary",
     }
     fields.update(differences)
     return preserve_system_material(ledger, **fields)
@@ -142,7 +142,7 @@ def test_operator_and_system_material_use_one_ingest_act_with_distinct_source_ro
         ledger,
         locality_identity="shared",
         exact_bytes=exact,
-        observed_boundary="system byte boundary",
+        source_boundary="system byte boundary",
     )
 
     assert operator_ingest is not None
@@ -154,7 +154,7 @@ def test_operator_and_system_material_use_one_ingest_act_with_distinct_source_ro
     assert operator_ingest.material["source_role"] == "operator"
     assert system_ingest.material["source_role"] == "system"
     assert operator_ingest.material["dimensions"]["source_provenance"] == (
-        "binary-stream.readline (bytes observed directly)"
+        "binary-stream.readline (exact bytes)"
     )
     assert system_ingest.material["dimensions"]["source_provenance"] == (
         "system byte boundary"
@@ -169,7 +169,7 @@ def test_equal_operator_and_system_bytes_keep_distinct_occurrences_results_and_e
         ledger,
         locality_identity="shared",
         exact_bytes=exact,
-        observed_boundary="system byte boundary",
+        source_boundary="system byte boundary",
     )
 
     assert operator_ingest is not None
@@ -204,7 +204,7 @@ def test_same_locality_preserves_both_ingest_subjects_without_relation_standing(
         ledger,
         locality_identity="shared",
         exact_bytes=b"system material",
-        observed_boundary="system byte boundary",
+        source_boundary="system byte boundary",
     )
 
     assert operator_ingest is not None
@@ -234,7 +234,7 @@ def test_operator_and_system_ingest_evidence_do_not_cross_reference():
         ledger,
         locality_identity="shared",
         exact_bytes=b"system material",
-        observed_boundary="system byte boundary",
+        source_boundary="system byte boundary",
     )
 
     assert operator_ingest is not None
@@ -366,7 +366,7 @@ def test_system_material_refuses_non_bytes(material):
 @pytest.mark.parametrize("boundary", ["", "  ", None, 1, []])
 def test_system_material_requires_exact_boundary(boundary):
     with pytest.raises(MaterialIngestError, match="boundary"):
-        _preserve(EventLedger(), observed_boundary=boundary)
+        _preserve(EventLedger(), source_boundary=boundary)
 
 
 @pytest.mark.parametrize("locality", ["", "  ", None, 1, []])
@@ -402,7 +402,7 @@ def test_system_material_identity_is_reserved_across_reopen(tmp_path):
                 ledger,
                 locality_identity=f"locality_{index}",
                 exact_bytes=f"material {index}".encode(),
-                observed_boundary="source boundary",
+                source_boundary="source boundary",
             )
             identities.append(material.material["dimensions"]["identity"])
         finally:

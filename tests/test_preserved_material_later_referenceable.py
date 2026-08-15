@@ -145,12 +145,12 @@ def test_no_act_condition_change_is_claimed_here(ledger):
     measurement or finding act is added later, this assertion should fail and
     be replaced by a real Act-condition-revision test.
     """
-    observed_event_kinds = {
+    event_kinds = {
         e.kind
         for e in ledger.list()
         if e.kind.startswith(("material.", "operator."))
     }
-    assert observed_event_kinds == {
+    assert event_kinds == {
         "material.ingest.act_evidenced",
         "material.ingest.occurred",
         "operator.representation.recorded",

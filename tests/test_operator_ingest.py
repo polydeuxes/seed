@@ -35,15 +35,16 @@ def test_arbitrary_bytes_are_preserved_without_a_gate_or_stop():
     assert ingests[0].material["provenance_occurrence_references"] == []
 
 
-def test_addressable_material_is_the_exact_byte_sequence():
+def test_current_standing_names_the_exact_ingest_occurrence():
     material = b"\x00\xff\r\n"
-    _, standing = _run(material)
-    addressable = standing["addressable_material"]
+    ledger, standing = _run(material)
+    current = standing["current_standing"]["ingest_occurrence"]
+    occurrence = ledger.get(current["evidence_event_identity"])
 
-    exact = addressable["exact_material"]
-    assert exact["material"] == material
-    assert exact["source_span"]["end"] == len(material)
-    assert addressable["provenance"] == (addressable["ingest_event_reference"],)
+    assert occurrence is not None
+    assert current["subject_reference"] == occurrence.material["result_identity"]
+    assert ingested_material_bytes(occurrence) == material
+    assert occurrence.material["provenance_occurrence_references"] == []
 
 
 def test_empty_line_is_material_but_eof_is_not_an_attempt():

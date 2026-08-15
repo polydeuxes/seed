@@ -12,7 +12,7 @@ class OperatorMaterialBoundaryError(ValueError):
 
 @dataclass(frozen=True)
 class OperatorBoundaryMaterial:
-    """Material observed at the smallest stdin boundary available to the caller."""
+    """Exact material at the smallest stdin boundary available to the caller."""
 
     exact_bytes: bytes
     eof: bool
@@ -67,13 +67,13 @@ def operator_boundary_material(input_stream: TextIO | BinaryIO) -> OperatorBound
         material = binary.readline()
         boundary = "stdin.buffer.readline"
         loss = (
-            "transport bytes before the stdin byte-stream boundary are not observable",
+            "transport bytes before the stdin byte-stream boundary are not available",
         )
     else:
         material = input_stream.readline()
-        boundary = "binary-stream.readline (bytes observed directly)"
+        boundary = "binary-stream.readline (exact bytes)"
         loss = (
-            "transport bytes before the supplied binary-stream boundary are not observable",
+            "transport bytes before the supplied binary-stream boundary are not available",
         )
     if type(material) is not bytes:
         raise OperatorMaterialBoundaryError("operator material requires a binary stream")

@@ -20,7 +20,7 @@ A recorded Assertion, diagnostic finding, or Evidence record may participate onl
 
 ## Temporal Standing
 
-Temporal coordinates distinguish what time an Assertion describes, when Evidence was observed, when an occurrence happened, when material was recorded, and when a later Act considered it. One timestamp does not establish the others.
+Temporal coordinates distinguish what time an Assertion describes, the Evidence occurrence time, when another occurrence happened, when material was recorded, and when a later Act considered it. One timestamp does not establish the others.
 
 ## Important distinctions
 

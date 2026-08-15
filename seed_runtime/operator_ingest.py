@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-from seed_runtime.addressable_material import address_ingested_material
 from seed_runtime.events import EventLedger
 from seed_runtime.material_ingest import (
     MATERIAL_INGEST_OCCURRED_KIND,
@@ -11,7 +10,7 @@ from seed_runtime.material_ingest import (
 from seed_runtime.operator_material_boundary import OperatorBoundaryMaterial
 
 
-def update_operator_ingest_standing(attempts, event, *, ledger=None) -> None:
+def update_operator_ingest_standing(attempts, event) -> None:
     if (
         event.kind != MATERIAL_INGEST_OCCURRED_KIND
         or event.material.get("source_role") != "operator"
@@ -46,11 +45,6 @@ def update_operator_ingest_standing(attempts, event, *, ledger=None) -> None:
         "dimensions": dimensions,
         "evidence_event_identity": event.identity,
     }
-    if ledger is not None:
-        standing["addressable_material"] = address_ingested_material(
-            ingest_occurrence=event,
-            ledger=ledger,
-        ).to_dict()
     standing["last_event_kind"] = event.kind
     for key in ("known_loss", "unknowns", "conflicts"):
         standing[key] = sorted(
@@ -58,9 +52,9 @@ def update_operator_ingest_standing(attempts, event, *, ledger=None) -> None:
         )
 
 
-def _ingest_standing(*, event, ledger):
+def _ingest_standing(*, event):
     attempts: dict[str, dict] = {}
-    update_operator_ingest_standing(attempts, event, ledger=ledger)
+    update_operator_ingest_standing(attempts, event)
     occurrence_identity = event.material["dimensions"]["identity"]
     return attempts[occurrence_identity]
 
@@ -84,7 +78,7 @@ def run_operator_ingest(
         represented_material=supplied_material_representation,
         known_loss=boundary_material.known_loss,
     )
-    standing = _ingest_standing(event=event, ledger=ledger)
+    standing = _ingest_standing(event=event)
     if locality_standing is not None:
         standing["locality_standing"] = locality_standing
     return standing

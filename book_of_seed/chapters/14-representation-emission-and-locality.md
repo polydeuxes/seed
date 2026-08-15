@@ -6,7 +6,7 @@ Bounded representation and movement between localities.
 ## Bounded resolution
 One exact Ingest Act preserves material supplied at one source boundary. Its occurrence yields the exact material and carries its source role, source boundary, Locality, known loss, and Unknowns. Operator material and material supplied at another source boundary use the same Ingest Act. Different source coordinates do not revise the Act.
 
-Each Ingest occurrence has one distinct result identity that remains addressable. Two Ingest occurrences that yield equal material remain distinct occurrences; each has a distinct result identity and distinct Yield Evidence. Equal material content does not identify either occurrence, result, or Yield relation. A downstream Act may use the material through the exact result identity and Yield Evidence of the Ingest occurrence that yields it.
+Each Ingest occurrence has one distinct result identity. Two Ingest occurrences that yield equal material remain distinct occurrences; each has a distinct result identity and distinct Yield Evidence. Equal material content does not identify either occurrence, result, or Yield relation. A downstream Act may use the material through the exact result identity and Yield Evidence of the Ingest occurrence that yields it.
 
 An Ingest occurrence does not establish what the material represents, a source relation, Seed truth, Authority, or later Standing.
 

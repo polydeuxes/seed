@@ -170,7 +170,7 @@ def test_one_occurrence_preserves_every_distinct_result(compared):
     }
 
 
-def test_recorded_assertions_are_addressable_through_their_occurrence(compared):
+def test_recorded_assertions_retain_their_exact_occurrence_references(compared):
     event = record_measured_count(
         compared,
         locality_identity="s1",
@@ -1357,7 +1357,7 @@ def test_every_probe_and_pass_reads_one_prefix_despite_a_concurrent_append(compa
 
 
 # --------------------------------------------------------------------------
-# The occurrence-to-result edge remains exactly addressable.
+# The occurrence-to-result edge retains its exact identities.
 # --------------------------------------------------------------------------
 
 

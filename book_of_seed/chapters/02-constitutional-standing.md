@@ -14,10 +14,10 @@ This Seed carries only Standing it can warrant through its Evidence, Authority, 
 Seed may read a Responsibility only through current Standing whose subject is the exact Assertion that its responsible boundary bears that Responsibility. The assignment Assertion retains its own Evidence, Authority, Scope, limits, occurrence, and Standing. Responsibility != Standing; Standing whose subject is an assignment does not create, perform, or become the Responsibility.
 
 
-## Addressable boundaries for availability
+## Preserved material
 
-### 01.Standing.A — Addressable material without promotion
-A result, preserved record, representation, index entry, or other material may become addressable within a locality to a bounded exact Act, observer, diagnostic, emission, or later inquiry without becoming accepted, admitted, supported, represented as truth, written to the event ledger, or authorized for mutation. Material addressable within that locality does not establish acceptance, input support, admission, representation, recording, or implementation action; each remains a separate family-local boundary.
+### 01.Standing.A — Preserved material is not promotion
+A result, preserved record, representation, index entry, or other material may have an exact identity and Locality without becoming accepted, admitted, supported, represented as truth, written to the event ledger, or authorized for mutation. Exact identity, preservation, and Locality do not establish acceptance, input support, admission, representation, recording, or implementation action; each remains a separate family-local boundary.
 
 ### 01.Standing.B — Constitutional kind labels are not ontology closure
 A kind label, Representation, characterization category, implementation name, concordance entry, or recurring report type may preserve a bounded Standing distinction for the subject and exact Act it names. It does not bound Seed's constitutional ontology, make similarly named material equivalent, establish mandatory grammar, or supply Authority for the exact Act without preserved Evidence, provenance, Scope, Unknowns, and the applicable occurrence boundary.
@@ -36,7 +36,7 @@ The Assertion does not thereby perform the Act occurrence that supplied it, supp
 An Assertion having current Standing does not require another Act merely because it exists. New, different, or conflicting material does not revise its Standing by identity; different exact asserted content identifies a different Assertion rather than revising this Assertion's identity. An **Unknown** does not create a required result to eliminate it. Further movement requires an applicable responsible occurrence with its own Act, Evidence, Scope, Authority, and limits. In the absence of such an occurrence, preserving the Assertion and its current Standing is lawful persistence, not an inferred constitutional Stop.
 
 ### 01.Standing.D.2 — A later Assertion meets current Standing, not every preserved Assertion
-Where an Assertion and established Standing have the same subject, the Assertion's applicability is considered with respect to that current Standing. Preservation of earlier Assertions with the same subject does not make each of them a separate applicability boundary, and does not require the later Assertion to be compared against each of them because they remain addressable. Applicability establishes only that the Assertion may bear on that Standing; it establishes no agreement, relation, truth, corroboration, or revision.
+Where an Assertion and established Standing have the same subject, the Assertion's applicability is considered with respect to that current Standing. Preservation of earlier Assertions with the same subject does not make each of them a separate applicability boundary, and does not require the later Assertion to be compared against each of them because each exact identity and reference remains preserved. Applicability establishes only that the Assertion may bear on that Standing; it establishes no agreement, relation, truth, corroboration, or revision.
 
 Where an applicable Assertion with a bounded subject participates in a Compare, the Compare result may have its own subject, including the comparison, the coordinate distinction, or the result shape. That result subject does not replace, supersede, or discharge the subject for which applicability was determined. Where a responsible occurrence establishes movement in Standing for that subject, only that movement is carried; coordinates without newly established Standing remain as previously established or **Unknown**, and the subject remains the subject it was. A subject that ceases to be carried has not been superseded by the result; it has been abandoned, and nothing further can be established about it. This clause does not establish what carries current Standing into a Compare, and does not establish that a Compare result is itself a finding that may participate in another Act; those crossings remain unestablished here.
 
@@ -66,7 +66,7 @@ Exclusion of one proposed input does not by itself establish whether the exact a
 
 An alternative input does not participate by availability, similarity, equal content, or exclusion of another input. Before participation, the Responsibility assigned to the Act determines or validates Applicability for that exact input-to-Act relation and every coordinate the Act requires. Whether one input may occupy another's exact role remains **Unknown** unless a responsible occurrence establishes that relation for the exact Act, result boundary, and Scope.
 
-One bounded responsible occurrence may determine Applicability for inputs, exclude **inapplicable**, **conflicting**, or **Unknown** inputs, perform the exact Act or carry an absence-of-Act-occurrence finding within its assigned boundaries, and carry bounded output Standing where its Evidence and Authority support it. Each Assertion has a distinct identity and exact coordinates and remains addressable. Same occurrence is not same Assertion; Applicability success is not Act occurrence; Act occurrence does not supply output Standing by identity; and output Standing is not downstream Applicability or Admission.
+One bounded responsible occurrence may determine Applicability for inputs, exclude **inapplicable**, **conflicting**, or **Unknown** inputs, perform the exact Act or carry an absence-of-Act-occurrence finding within its assigned boundaries, and carry bounded output Standing where its Evidence and Authority support it. Each Assertion has a distinct identity and exact coordinates. Same occurrence is not same Assertion; Applicability success is not Act occurrence; Act occurrence does not supply output Standing by identity; and output Standing is not downstream Applicability or Admission.
 
 An exact Act occurrence may carry only the bounded Standing of its result when its Evidence and Authority support that exact Assertion. Result existence does not supply Standing by identity. Lawfully supported Standing persists without later participation, but persistence supplies neither another Act, Responsibility, result boundary, nor occurrence. Applicability supplies neither a result, another Assertion, nor implementation Authority.
 
@@ -91,7 +91,7 @@ Acts and relations are structurally distinct from dimensions. They may operate o
 **Unknown** Standing is not a fixed taxonomy. A coordinate, relation, distinction, or Standing may remain **Unknown** when its required Evidence, Authority, provenance, occurrence, Applicability, or other local relation is not established or available. It remains bounded to its exact subject, distinction, Act, result boundary, Scope, Evidence, Authority, and responsible occurrence. Inapplicable != **Unknown**.
 
 ## Important distinctions
-- occurrence Evidence may be local to an Act or observing boundary and absent from the result
+- occurrence Evidence may be local to an exact Act occurrence and absent from the result
 - represented provenance != verified result occurrence
 - representation != constitutional standing
 - representation shape != constitutional kind

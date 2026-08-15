@@ -520,7 +520,7 @@ def test_pair_validation_refuses_unsupported_input_applicability():
         assertions_of_recorded_adjacent_byte_pair_measurement(ledger, event.identity)
 
 
-def test_zero_observed_pairs_is_a_lawful_addressable_result():
+def test_zero_measured_pairs_is_a_lawful_exact_result():
     ledger = _ledger("\n")
     source = _byte_source(ledger)
     event = record_adjacent_byte_pair_count_layer(
