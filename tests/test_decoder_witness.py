@@ -12,25 +12,25 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts"))
 
-from decoder_witness_harness import accepts, admissible_followers, material_locality  # noqa: E402
+from decoder_witness_harness import accepts, admissible_followers, first_admission  # noqa: E402
 
 
 def _spans(codec: str) -> dict[tuple[int, int], tuple[object, int]]:
     return {
         (material[0], material[-1]): (key[0], len(material))
-        for key, material in material_locality(codec).items()
+        for key, material in first_admission(codec).items()
     }
 
 
-def test_one_witness_places_every_byte_exactly_once():
-    grouped = material_locality("utf-8")
-    covered = sorted(byte for material in grouped.values() for byte in material)
+def test_one_implementation_function_places_every_byte_exactly_once():
+    same_result = first_admission("utf-8")
+    covered = sorted(byte for material in same_result.values() for byte in material)
 
     assert covered == list(range(256))
-    assert len(grouped) == 5
+    assert len(same_result) == 5
 
 
-def test_the_boundaries_the_witness_refused_at():
+def test_the_boundaries_the_implementation_function_refused_at():
     assert _spans("utf-8") == {
         (0x00, 0x7F): (1, 128),
         (0xC2, 0xDF): (2, 30),
@@ -47,15 +47,15 @@ def test_the_only_admissible_followers_are_one_contiguous_range():
     assert len(followers) == 64
 
 
-def test_a_second_witness_places_the_same_bytes_differently():
+def test_a_second_implementation_function_places_the_same_bytes_differently():
     """Two decoders, one material, different refusals.
 
     They agree exactly on the bytes each accepts alone, and differ on
     everything after. Neither agreement nor difference is explained here.
     """
 
-    utf8 = material_locality("utf-8")
-    ascii_ = material_locality("ascii", max_byte_count=2)
+    utf8 = first_admission("utf-8")
+    ascii_ = first_admission("ascii", max_byte_count=2)
 
     assert len(ascii_) == 2
     accepted_alone = {
@@ -66,16 +66,16 @@ def test_a_second_witness_places_the_same_bytes_differently():
     }
 
 
-def test_the_witness_refuses_more_than_a_leading_bit_rule_predicts():
+def test_the_implementation_function_refuses_more_than_a_leading_bit_rule_predicts():
     """The surplus is recorded, not explained.
 
     A read by leading bits alone would admit 0xc0, 0xc1 and 0xf5-0xff as
-    first bytes. This witness refuses them, so its refusals carry something
+    first bytes. This implementation function refuses them, so its refusals carry something
     beyond that read. What that something is is not established here.
     """
 
     refused = next(
-        material for key, material in material_locality("utf-8").items() if key[0] is None
+        material for key, material in first_admission("utf-8").items() if key[0] is None
     )
 
     for byte in (0xC0, 0xC1, *range(0xF5, 0x100)):

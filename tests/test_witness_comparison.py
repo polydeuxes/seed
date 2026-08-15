@@ -1,10 +1,4 @@
-"""What comparing witnesses establishes, and what it shows they do not do.
-
-Each decoding witness yields a material Locality over the same 256 bytes, so their results compare
-without translation. The refinement relation between two of those results is
-itself a relation the same climb rides, and its material is the earlier
-climb's outputs.
-"""
+"""Compare Admission results from distinct implementation functions."""
 
 from __future__ import annotations
 
@@ -13,26 +7,26 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts"))
 
-import refinement_climb as rc  # noqa: E402
+import material_admission  # noqa: E402
 from witness_comparison_harness import (  # noqa: E402
-    final_material_locality,
-    order,
-    material_localities,
-    refines,
+    admissions,
+    compare_admissions,
+    final_admission,
+    preserves,
 )
 
 
-def test_a_material_locality_refines_itself_and_the_one_holding_everything():
-    fine = final_material_locality("utf-8")
+def test_an_admission_preserves_itself_and_the_one_without_distinctions():
+    fine = final_admission("utf-8")
     everything = frozenset({frozenset(range(256))})
 
-    assert refines(fine, fine)
-    assert refines(fine, everything)
-    assert not refines(everything, fine)
+    assert preserves(fine, fine)
+    assert preserves(fine, everything)
+    assert not preserves(everything, fine)
 
 
-def test_many_witnesses_reach_the_same_resting_material_locality():
-    found = material_localities()
+def test_many_witnesses_reach_the_same_resting_admission():
+    found = admissions()
     sizes = sorted((len(names) for names in found.values()), reverse=True)
 
     assert sum(sizes) > 100
@@ -41,35 +35,31 @@ def test_many_witnesses_reach_the_same_resting_material_locality():
 
 
 def test_the_witnesses_do_not_converge():
-    """Most pairs are incomparable: they cut the material differently.
+    """Most Admission pairs preserve neither direction."""
 
-    Not one finer than another. If witnesses were approaching some finest
-    material Locality, comparable pairs would dominate; they are 7%.
-    """
+    counted = compare_admissions(admissions())
 
-    counted = order(material_localities())
-
-    assert counted["comparable"] * 4 < counted["pairs"]
-    assert counted["finest"] > 20
-    assert counted["coarsest"] == 1
+    assert counted["preservation_pairs"] * 4 < counted["pair_count"]
+    assert counted["not_preserved_by_another"] > 20
+    assert counted["preserves_no_other"] == 1
 
 
-def test_the_relation_over_results_is_itself_climbable():
-    """Third level: material is the second level's outputs."""
-
-    found = material_localities()
+def test_the_relation_over_results_is_itself_admitted():
+    found = admissions()
     keys = sorted(found, key=len)
 
-    localities = rc.climb(rc.by(len, keys), refines)
+    found_admissions = material_admission.admit(
+        material_admission.admission_by(len, keys), preserves
+    )
 
-    assert len(localities) > 1
-    assert rc.heights(localities)[-1] == len(keys)
-    assert rc.unseparated(localities) == []
+    assert len(found_admissions) > 1
+    assert material_admission.admission_counts(found_admissions)[-1] == len(keys)
+    assert material_admission.not_distinguished(found_admissions) == []
 
 
-def test_the_coarsest_is_the_one_that_separates_nothing():
-    found = material_localities()
-    coarsest = [key for key in found if len(key) == 1]
+def test_one_admission_preserves_no_other():
+    found = admissions()
+    without_distinctions = [key for key in found if len(key) == 1]
 
-    assert len(coarsest) == 1
-    assert all(refines(other, coarsest[0]) for other in found)
+    assert len(without_distinctions) == 1
+    assert all(preserves(other, without_distinctions[0]) for other in found)

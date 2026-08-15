@@ -2,13 +2,13 @@
 """Interrogate Python's compiled parser without adopting its grammar.
 
 The parser is a witness.  It receives exact source bytes and either accepts
-them with one exact provider-produced result representation or refuses them
-with one exact provider-produced diagnostic representation.  Both outputs are
+them with one exact implementation-function-produced result representation or refuses them
+with one exact implementation-function-produced diagnostic representation.  Both outputs are
 material attributed to that witness.  Names occurring inside them carry no
-Seed Standing merely because the provider emitted them.
+Seed Standing merely because the implementation function emitted them.
 
 This harness deliberately does not inspect returned nodes or assert source
-or translate provider labels into claims such as what the source defines.  It
+or translate implementation-function labels into claims such as what the source defines.  It
 preserves only:
 
     exact input bytes

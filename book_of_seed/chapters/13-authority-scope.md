@@ -7,7 +7,7 @@ The binding, Scope, and non-transferability of authority across Seed's boundarie
 What grants authority for a bounded result or act, and how is that authority prevented from expanding in transit?
 
 ## Bounded resolution
-Operator material and explicit approvals may contribute authority only after exact Authority and Scope binding. Internal representations, records, provider emissions, or transport material cannot create or enlarge that authority.
+Operator material and explicit approvals may contribute authority only after exact Authority and Scope binding. Internal representations, records, emissions, or transport material cannot create or enlarge that authority.
 
 Policy wording may describe Authority granted for an exact responsible boundary, Act or movement, addressed subject, result boundary, Scope, temporal Standing, negative Authority, and Unknowns. The wording does not create, enlarge, transfer, or renew that Authority.
 

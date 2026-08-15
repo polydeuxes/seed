@@ -582,7 +582,6 @@ proposition
 prove
 proven
 provenance
-provider
 proving
 public
 publicly

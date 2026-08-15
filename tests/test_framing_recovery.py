@@ -1,6 +1,6 @@
 """What positional support measures, and what it does not select.
 
-A specimen is bytes. Beginning a material Locality at each offset under a candidate stride is
+A specimen is bytes. Reading from each offset under a candidate stride is
 exact, and so are the resulting value sets. Which stride, if any, frames the
 material is a further distinction these do not establish.
 """
@@ -82,9 +82,9 @@ def test_no_module_level_name_states_a_read_framing():
 def test_a_stride_does_not_say_where_a_group_begins():
     """The same material read from byte one gives the same material tuples in reversed places.
 
-    A material Locality starts somewhere, and starting at byte zero is this harness's
-    determination. Positional recurrence at some stride is compatible with either
-    phase, so it does not establish a boundary.
+    Starting at byte zero is this harness's supplied coordinate. Positional
+    recurrence at some stride is compatible with either phase, so it does not
+    establish a boundary.
     """
 
     raw = block(100)
@@ -107,7 +107,7 @@ def test_the_reversal_is_exact_rather_than_approximate():
     assert [len(v) for v in at_one.values()] == [2, 201]
 
 
-def test_phase_defaults_to_a_choice_and_not_a_finding():
+def test_phase_defaults_to_a_supplied_coordinate_and_not_a_finding():
     """Read from byte zero is what the default does, and only that."""
 
     raw = block(100)
@@ -118,10 +118,9 @@ def test_phase_defaults_to_a_choice_and_not_a_finding():
 def test_the_materials_own_byte_count_is_not_an_internal_boundary():
     """An occurrence begins at its first byte. Nothing inside it does.
 
-    A material Locality read from byte zero starts where the material starts, which
-    says something about the Locality. Promoting it to "a unit also begins
-    here" would take the occurrence's exact byte count as evidence about the
-    occurrence's contents.
+    A read from byte zero starts where the material starts. Promoting it to
+    "a unit also begins here" would take the occurrence's exact byte count as
+    evidence about the occurrence's contents.
     """
 
     raw = block(100)
@@ -129,7 +128,7 @@ def test_the_materials_own_byte_count_is_not_an_internal_boundary():
     # The byte count is exact and available.
     assert len(raw) == 1600
 
-    # And it is compatible with either Locality phase, which is what makes it
+    # And it is compatible with either supplied phase, which is what makes it
     # no evidence for one: the material tuples trade places rather than one disagreeing.
     at_zero = position_support(raw, 2, phase=0)
     at_one = position_support(raw, 2, phase=1)

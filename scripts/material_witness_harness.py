@@ -8,15 +8,15 @@ import subprocess
 
 
 @dataclass(frozen=True)
-class MaterialWitness:
+class MaterialImplementationFunction:
     identity: str
-    arguments: tuple[str, ...]
+    invocation: tuple[str, ...]
 
 
 @dataclass(frozen=True)
-class WitnessOccurrence:
+class InvocationOccurrence:
     exact_material: bytes
-    witness_identity: str
+    implementation_function_identity: str
     returncode: int
     stdout_bytes: bytes
     stderr_bytes: bytes
@@ -26,51 +26,46 @@ class WitnessOccurrence:
         return (self.returncode, self.stdout_bytes, self.stderr_bytes)
 
 
-ASPELL_US = MaterialWitness(
+ASPELL_US = MaterialImplementationFunction(
     identity="aspell-en-US",
-    arguments=("aspell", "--lang=en_US", "pipe"),
+    invocation=("aspell", "--lang=en_US", "pipe"),
 )
-ASPELL_GB = MaterialWitness(
+ASPELL_GB = MaterialImplementationFunction(
     identity="aspell-en-GB",
-    arguments=("aspell", "--lang=en_GB", "pipe"),
+    invocation=("aspell", "--lang=en_GB", "pipe"),
 )
-ENCHANT_US = MaterialWitness(
+ENCHANT_US = MaterialImplementationFunction(
     identity="enchant-en-US",
-    arguments=("enchant-2", "-a", "-d", "en_US"),
+    invocation=("enchant-2", "-a", "-d", "en_US"),
 )
-ENCHANT_GB = MaterialWitness(
+ENCHANT_GB = MaterialImplementationFunction(
     identity="enchant-en-GB",
-    arguments=("enchant-2", "-a", "-d", "en_GB"),
+    invocation=("enchant-2", "-a", "-d", "en_GB"),
 )
-EXTERNAL_MATERIAL_WITNESSES = (
+MATERIAL_IMPLEMENTATION_FUNCTIONS = (
     ASPELL_US,
     ASPELL_GB,
     ENCHANT_US,
     ENCHANT_GB,
 )
-MATERIAL_WITNESSES = (
-    *EXTERNAL_MATERIAL_WITNESSES,
-)
-
-
-def witness_occurrence(
-    exact_material: bytes, witness: MaterialWitness
-) -> WitnessOccurrence:
+def invocation_occurrence(
+    exact_material: bytes, implementation_function: MaterialImplementationFunction
+) -> InvocationOccurrence:
     if type(exact_material) is not bytes:
-        raise TypeError("witness material must be exact bytes")
-    if not isinstance(witness, MaterialWitness):
-        raise TypeError("one material witness is required")
+        raise TypeError("implementation function material must be exact bytes")
+    if not isinstance(implementation_function, MaterialImplementationFunction):
+        raise TypeError("one material implementation function is required")
     completed = subprocess.run(
-        witness.arguments,
+        implementation_function.invocation,
         input=exact_material,
         stdout=subprocess.PIPE,
         stderr=subprocess.PIPE,
         check=False,
         timeout=30,
     )
-    return WitnessOccurrence(
+    return InvocationOccurrence(
         exact_material=exact_material,
-        witness_identity=witness.identity,
+        implementation_function_identity=implementation_function.identity,
         returncode=completed.returncode,
         stdout_bytes=completed.stdout,
         stderr_bytes=completed.stderr,
@@ -79,24 +74,24 @@ def witness_occurrence(
 
 def occurrences_across(
     exact_materials: tuple[bytes, ...],
-    witnesses: tuple[MaterialWitness, ...] = MATERIAL_WITNESSES,
-) -> tuple[tuple[WitnessOccurrence, ...], ...]:
+    implementation_functions: tuple[MaterialImplementationFunction, ...] = MATERIAL_IMPLEMENTATION_FUNCTIONS,
+) -> tuple[tuple[InvocationOccurrence, ...], ...]:
     if type(exact_materials) is not tuple or not all(
         type(material) is bytes for material in exact_materials
     ):
-        raise TypeError("witness inputs must be one exact tuple of bytes")
-    if type(witnesses) is not tuple or not witnesses:
-        raise TypeError("material witnesses must be one nonempty tuple")
+        raise TypeError("implementation function inputs must be one exact tuple of bytes")
+    if type(implementation_functions) is not tuple or not implementation_functions:
+        raise TypeError("material implementation functions must be one nonempty tuple")
     if not exact_materials:
-        return tuple(() for _ in witnesses)
+        return tuple(() for _ in implementation_functions)
     calls = tuple(
-        (material, witness)
-        for witness in witnesses
+        (material, implementation_function)
+        for implementation_function in implementation_functions
         for material in exact_materials
     )
     with ThreadPoolExecutor(max_workers=min(16, len(calls))) as workers:
         occurrences = tuple(
-            workers.map(lambda call: witness_occurrence(*call), calls)
+            workers.map(lambda call: invocation_occurrence(*call), calls)
         )
     width = len(exact_materials)
     return tuple(

@@ -37,9 +37,8 @@ Usage:
 from __future__ import annotations
 
 import argparse
-import collections
 
-from decoder_witness_harness import decoding_witnesses
+from decoder_witness_harness import decoding_implementation_functions
 
 NOT_DECODABLE = None
 SAME = "same"
@@ -79,21 +78,21 @@ def disagreements(codec: str, limit: int = 256) -> list[tuple[int, str, str]]:
     return found
 
 
-def survey() -> list[tuple[str, collections.Counter]]:
+def survey() -> list[tuple[str, dict[str, int]]]:
     """Every witness and its results for single bytes and some pairs."""
 
     rows = []
-    for name in decoding_witnesses():
-        results: collections.Counter = collections.Counter()
+    for name in decoding_implementation_functions():
+        results: dict[str, int] = {}
         for value in range(256):
             result = round_trip(name, (value,))
             if result is not NOT_DECODABLE:
-                results[result] += 1
+                results[result] = results.get(result, 0) + 1
         for high in range(0xC0, 0x100, 8):
             for low in range(0x80, 0x100, 8):
                 result = round_trip(name, (high, low))
                 if result is not NOT_DECODABLE:
-                    results[result] += 1
+                    results[result] = results.get(result, 0) + 1
         rows.append((name, results))
     return rows
 

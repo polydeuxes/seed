@@ -1,28 +1,13 @@
 #!/usr/bin/env python3
-"""Read the Book's own distinction statements as a witness about its terms.
-
-Every chapter carries lines of the representation `X != Y`. Asked about two terms, this
-returns whether the Book holds them apart. That is testimony about the Book,
-not about whatever the terms name.
-
-The same refinement the codec witnesses ride applies here without revision: the
-material is terms rather than bytes, and the witness is a corpus rather than
-a decoder.
-
-Usage:
-
-    book_grammar_witness.py
-    book_grammar_witness.py --chapters
-"""
+"""Interrogate exact Book distinction statements."""
 
 from __future__ import annotations
 
 import argparse
-import collections
 import re
 from pathlib import Path
 
-import refinement_climb
+import material_admission
 
 CHAPTERS = Path(__file__).resolve().parents[1] / "book_of_seed" / "chapters"
 STATEMENT = re.compile(r"\s*-\s*(.+?)\s*!=\s*(.+?)\s*$")
@@ -40,8 +25,8 @@ def statements() -> list[tuple[str, int, str, str]]:
                     (
                         path.name[:2],
                         number,
-                        match.group(1).lower().strip(),
-                        match.group(2).lower().strip(),
+                        match[1].lower().strip(),
+                        match[2].lower().strip(),
                     )
                 )
     return found
@@ -50,14 +35,14 @@ def statements() -> list[tuple[str, int, str, str]]:
 def held_apart() -> dict[str, set[str]]:
     """For each term, the terms the Book states it is not."""
 
-    apart: dict[str, set[str]] = collections.defaultdict(set)
+    apart: dict[str, set[str]] = {}
     for _, _, first, second in statements():
-        apart[first].add(second)
-        apart[second].add(first)
-    return dict(apart)
+        apart.setdefault(first, set()).add(second)
+        apart.setdefault(second, set()).add(first)
+    return apart
 
 
-def witness(apart: dict[str, set[str]]):
+def implementation_function(apart: dict[str, set[str]]):
     """Whether the Book holds these two terms apart."""
 
     def result(first: str, second: str) -> bool:
@@ -69,9 +54,9 @@ def witness(apart: dict[str, set[str]]):
 def restated() -> dict[tuple[str, str], list[str]]:
     """Distinctions the Book states more than once, and where."""
 
-    seen: dict[tuple[str, str], list[str]] = collections.defaultdict(list)
+    seen: dict[tuple[str, str], list[str]] = {}
     for chapter, number, first, second in statements():
-        seen[(first, second)].append(f"{chapter}:{number}")
+        seen.setdefault((first, second), []).append(f"{chapter}:{number}")
     return {pair: at for pair, at in seen.items() if len(at) > 1}
 
 
@@ -85,7 +70,9 @@ def main() -> int:
     print(f"  {len(said)} statements, {len(apart)} terms")
 
     if args.chapters:
-        counts = collections.Counter(chapter for chapter, _, _, _ in said)
+        counts: dict[str, int] = {}
+        for chapter, _, _, _ in said:
+            counts[chapter] = counts.get(chapter, 0) + 1
         for chapter, many in sorted(counts.items()):
             print(f"    {chapter}  {many}")
         return 0
@@ -102,10 +89,10 @@ def main() -> int:
     for pair, at in restated().items():
         print(f"    {pair[0][:34]} != {pair[1][:28]}   at {', '.join(at)}")
 
-    first = refinement_climb.by(lambda term: len(apart[term]), apart)
-    localities = refinement_climb.climb(first, witness(apart))
-    print(f"\n  climb: {refinement_climb.heights(localities)}")
-    left = refinement_climb.unseparated(localities)
+    first = material_admission.admission_by(lambda term: len(apart[term]), apart)
+    admissions = material_admission.admit(first, implementation_function(apart))
+    print(f"\n  Admission counts: {material_admission.admission_counts(admissions)}")
+    left = material_admission.not_distinguished(admissions)
     print(f"  {sum(len(c) for c in left)} terms in {len(left)} material tuples it never separated")
     return 0
 

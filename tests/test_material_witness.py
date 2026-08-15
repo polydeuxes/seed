@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-from collections import defaultdict
 from pathlib import Path
 import shutil
 import sys
@@ -21,23 +20,26 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "scripts"))
 
 from compiled_format_witness import (  # noqa: E402
-    COMPILED_WITNESSES,
-    CompiledWitness,
+    COMPILED_IMPLEMENTATION_FUNCTIONS,
+    CompiledImplementationFunction,
+    candidate_material_at_added_positions,
     interrogate,
     interrogate_across,
+    interrogate_added_positions,
+    preserves_original_order,
 )
 from material_witness_harness import (  # noqa: E402
-    MATERIAL_WITNESSES,
+    MATERIAL_IMPLEMENTATION_FUNCTIONS,
     occurrences_across,
-    witness_occurrence,
+    invocation_occurrence,
 )
-from witness_comparison_harness import refines  # noqa: E402
+from witness_comparison_harness import preserves  # noqa: E402
 
 
-def _witnesses_available():
+def _implementation_functions_available():
     return all(
-        shutil.which(witness.arguments[0]) is not None
-        for witness in MATERIAL_WITNESSES
+        shutil.which(implementation_function.invocation[0]) is not None
+        for implementation_function in MATERIAL_IMPLEMENTATION_FUNCTIONS
     )
 
 
@@ -97,7 +99,7 @@ def measured_book_pairs():
 
 
 @pytest.fixture(scope="module")
-def book_pair_witness_occurrences(measured_book_pairs):
+def book_pair_invocation_occurrences(measured_book_pairs):
     return occurrences_across(measured_book_pairs[3])
 
 
@@ -112,7 +114,7 @@ def book_byte_format_comparisons(measured_book_pairs):
     pairs = tuple(bytes((first, second)) for first in material for second in material)
     pair_occurrences = interrogate_across(pairs)
     found = []
-    for witness, pair_row in zip(COMPILED_WITNESSES, pair_occurrences):
+    for implementation_function, pair_row in zip(COMPILED_IMPLEMENTATION_FUNCTIONS, pair_occurrences):
         pair_returned = {
             tuple(occurrence.exact_material): occurrence.returned
             for occurrence in pair_row
@@ -131,7 +133,7 @@ def book_byte_format_comparisons(measured_book_pairs):
             for position, first in enumerate(material)
             for second in material[position + 1 :]
         }
-        found.append((witness.identity, pair_returned, comparisons))
+        found.append((implementation_function.identity, pair_returned, comparisons))
     return tuple(found)
 
 
@@ -146,31 +148,27 @@ def book_three_byte_format_occurrences(
         for pair, returned in pair_returned.items()
         if returned
     )
-    candidates = tuple(
-        sorted(
-            {
-                bytes((*pair[:position], item, *pair[position:]))
-                for pair in returned_pairs
-                for position in range(len(pair) + 1)
-                for item in material
-            }
-        )
+    candidates = candidate_material_at_added_positions(
+        tuple(sorted(returned_pairs)),
+        material,
     )
-    return returned_pairs, candidates, interrogate_across(candidates)
+    return returned_pairs, candidates, interrogate_added_positions(candidates)
 
 
-def _material_locality(occurrences, coordinate=lambda occurrence: occurrence.coordinates):
-    grouped = defaultdict(set)
+def _admission(occurrences, coordinate=lambda occurrence: occurrence.coordinates):
+    same_result = {}
     for occurrence in occurrences:
-        grouped[coordinate(occurrence)].add(occurrence.exact_material)
-    return frozenset(frozenset(material) for material in grouped.values())
+        same_result.setdefault(coordinate(occurrence), set()).add(
+            occurrence.exact_material
+        )
+    return frozenset(frozenset(material) for material in same_result.values())
 
 
-def _material_locality_shape(locality):
+def _admission_counts(admission):
     return (
-        len(locality),
-        sum(len(material) == 1 for material in locality),
-        max(map(len, locality)),
+        len(admission),
+        sum(len(material) == 1 for material in admission),
+        max(map(len, admission)),
     )
 
 
@@ -181,23 +179,24 @@ def _one_byte_apart(first: bytes, second: bytes) -> bool:
 
 
 def _return_boundaries(occurrences):
-    grouped = defaultdict(list)
+    same_result = {}
     for occurrence in occurrences:
         material = occurrence.exact_material
         for position in range(len(material)):
-            grouped[
-                (len(material), position, material[:position], material[position + 1 :])
-            ].append(occurrence)
+            same_result.setdefault(
+                (len(material), position, material[:position], material[position + 1 :]),
+                [],
+            ).append(occurrence)
     return tuple(
         (first.exact_material, second.exact_material)
-        for group in grouped.values()
-        for position, first in enumerate(group)
-        for second in group[position + 1 :]
+        for material_at_coordinate in same_result.values()
+        for position, first in enumerate(material_at_coordinate)
+        for second in material_at_coordinate[position + 1 :]
         if first.returned != second.returned
     )
 
 
-WITNESSES_AVAILABLE = _witnesses_available()
+IMPLEMENTATION_FUNCTIONS_AVAILABLE = _implementation_functions_available()
 
 
 def test_every_current_book_material_has_its_own_ingest(measured_book_pairs):
@@ -241,84 +240,90 @@ def test_byte_material_comes_from_the_complete_recorded_measurement(measured_boo
     assert len(material) == len(set(material))
 
 
-@pytest.mark.skipif(not WITNESSES_AVAILABLE, reason="one material witness is absent")
-def test_every_measured_pair_reaches_every_witness(book_pair_witness_occurrences, measured_book_pairs):
+@pytest.mark.skipif(
+    not IMPLEMENTATION_FUNCTIONS_AVAILABLE,
+    reason="one material implementation function is absent",
+)
+def test_every_measured_pair_reaches_every_implementation_function(book_pair_invocation_occurrences, measured_book_pairs):
     pairs = measured_book_pairs[3]
 
-    assert len(book_pair_witness_occurrences) == len(MATERIAL_WITNESSES)
+    assert len(book_pair_invocation_occurrences) == len(MATERIAL_IMPLEMENTATION_FUNCTIONS)
     assert tuple(
-        row[0].witness_identity for row in book_pair_witness_occurrences
-    ) == tuple(witness.identity for witness in MATERIAL_WITNESSES)
+        row[0].implementation_function_identity for row in book_pair_invocation_occurrences
+    ) == tuple(implementation_function.identity for implementation_function in MATERIAL_IMPLEMENTATION_FUNCTIONS)
     assert all(
         tuple(occurrence.exact_material for occurrence in row) == pairs
-        for row in book_pair_witness_occurrences
+        for row in book_pair_invocation_occurrences
     )
     assert all(
         len({occurrence.exact_material for occurrence in row}) == len(pairs)
-        for row in book_pair_witness_occurrences
+        for row in book_pair_invocation_occurrences
     )
 
 
-@pytest.mark.skipif(not WITNESSES_AVAILABLE, reason="one material witness is absent")
-def test_distinct_witnesses_expose_their_material_localities(book_pair_witness_occurrences):
-    localities = tuple(
-        _material_locality(occurrences) for occurrences in book_pair_witness_occurrences
+@pytest.mark.skipif(
+    not IMPLEMENTATION_FUNCTIONS_AVAILABLE,
+    reason="one material implementation function is absent",
+)
+def test_distinct_implementation_functions_expose_their_admissions(book_pair_invocation_occurrences):
+    admissions = tuple(
+        _admission(occurrences) for occurrences in book_pair_invocation_occurrences
     )
-    refinement = {
-        (first, second): refines(localities[first], localities[second])
-        for first in range(len(localities))
-        for second in range(len(localities))
+    comparisons = {
+        (first, second): preserves(admissions[first], admissions[second])
+        for first in range(len(admissions))
+        for second in range(len(admissions))
     }
 
-    assert len(set(localities)) > 1
-    shapes = tuple(_material_locality_shape(locality) for locality in localities)
-    assert all(largest > 1 for _, _, largest in shapes)
-    assert all(singletons < blocks for blocks, singletons, _ in shapes)
+    assert len(set(admissions)) > 1
+    counts = tuple(_admission_counts(admission) for admission in admissions)
+    assert all(largest > 1 for _, _, largest in counts)
+    assert all(single < admitted for admitted, single, _ in counts)
     assert all(
-        refines(locality, frozenset({frozenset().union(*locality)}))
-        for locality in localities
+        preserves(admission, frozenset({frozenset().union(*admission)}))
+        for admission in admissions
     )
     assert any(
-        refinement[first, second] != refinement[second, first]
-        for first in range(len(localities))
-        for second in range(first + 1, len(localities))
+        comparisons[first, second] != comparisons[second, first]
+        for first in range(len(admissions))
+        for second in range(first + 1, len(admissions))
     )
     assert any(
-        not refinement[first, second] and not refinement[second, first]
-        for first in range(len(localities))
-        for second in range(first + 1, len(localities))
+        not comparisons[first, second] and not comparisons[second, first]
+        for first in range(len(admissions))
+        for second in range(first + 1, len(admissions))
     )
 
 
-def test_every_measured_pair_reaches_every_compiled_format_witness(
+def test_every_measured_pair_reaches_every_compiled_format_implementation_function(
     book_pair_format_occurrences, measured_book_pairs
 ):
     pairs = measured_book_pairs[3]
 
-    assert len(book_pair_format_occurrences) == len(COMPILED_WITNESSES)
+    assert len(book_pair_format_occurrences) == len(COMPILED_IMPLEMENTATION_FUNCTIONS)
     assert all(
         tuple(occurrence.exact_material for occurrence in row) == pairs
         for row in book_pair_format_occurrences
     )
 
 
-def test_compiled_format_witnesses_divide_the_same_material_differently(
+def test_compiled_format_implementation_functions_admit_the_same_material_differently(
     book_pair_format_occurrences,
 ):
-    return_localities = tuple(
-        _material_locality(occurrences, lambda occurrence: occurrence.returned)
+    return_admissions = tuple(
+        _admission(occurrences, lambda occurrence: occurrence.returned)
         for occurrences in book_pair_format_occurrences
     )
 
-    assert len(set(return_localities)) > 1
-    assert sum(len(locality) > 1 for locality in return_localities) > 1
+    assert len(set(return_admissions)) > 1
+    assert sum(len(admission) > 1 for admission in return_admissions) > 1
     assert all(
-        any(len(material) > 1 for material in locality)
-        for locality in return_localities
+        any(len(material) > 1 for material in admission)
+        for admission in return_admissions
     )
 
 
-def test_one_byte_differences_expose_compiled_format_boundaries(
+def test_one_byte_differences_expose_compiled_invocation_boundaries(
     book_pair_format_occurrences,
 ):
     boundaries = tuple(
@@ -329,10 +334,10 @@ def test_one_byte_differences_expose_compiled_format_boundaries(
     assert any(boundaries)
     assert all(
         _one_byte_apart(first, second)
-        for witness_boundaries in boundaries
-        for first, second in witness_boundaries
+        for invocation_boundaries in boundaries
+        for first, second in invocation_boundaries
     )
-    assert len({frozenset(witness_boundaries) for witness_boundaries in boundaries}) > 1
+    assert len({frozenset(invocation_boundaries) for invocation_boundaries in boundaries}) > 1
 
 
 def test_every_ordered_pair_is_compared_for_each_compiled_witness(
@@ -372,7 +377,7 @@ def test_compiled_witnesses_establish_different_pairwise_distinctions(
     assert any(distinction for distinction in distinctions)
 
 
-def test_three_byte_candidates_come_from_measured_bytes_and_witness_returns(
+def test_three_byte_candidates_come_from_measured_bytes_and_invocation_returns(
     book_three_byte_format_occurrences, measured_book_pairs
 ):
     returned_pairs, candidates, _ = book_three_byte_format_occurrences
@@ -380,53 +385,123 @@ def test_three_byte_candidates_come_from_measured_bytes_and_witness_returns(
 
     assert returned_pairs
     assert candidates
-    assert len(candidates) == len(set(candidates))
-    assert all(len(candidate) == 3 for candidate in candidates)
     assert all(
-        any(
-            candidate[:position] + candidate[position + 1 :] in returned_pairs
-            and candidate[position] in material
-            for position in range(len(candidate))
+        candidate["source_material"] in returned_pairs
+        and candidate["added_material"] in {
+            bytes((item,)) for item in material
+        }
+        and len(candidate["candidate_material"]) == 3
+        and preserves_original_order(
+            source_material=candidate["source_material"],
+            candidate_material=candidate["candidate_material"],
+            added_position=candidate["position"],
+        )
+        for candidate in candidates
+    )
+    assert len(
+        {
+            (
+                candidate["source_material"],
+                candidate["position"],
+                candidate["added_material"],
+            )
+            for candidate in candidates
+        }
+    ) == len(candidates)
+
+
+def test_added_position_refuses_a_different_source_order():
+    assert preserves_original_order(
+        source_material=b"ab",
+        candidate_material=b"axb",
+        added_position=1,
+    )
+    assert not preserves_original_order(
+        source_material=b"ab",
+        candidate_material=b"bxa",
+        added_position=1,
+    )
+    assert not preserves_original_order(
+        source_material=b"ab",
+        candidate_material=b"axb",
+        added_position=0,
+    )
+
+
+def test_equal_candidate_material_keeps_each_exact_added_position():
+    candidates = candidate_material_at_added_positions((b"aa",), (ord("a"),))
+
+    assert tuple(
+        candidate["candidate_material"] for candidate in candidates
+    ) == (b"aaa", b"aaa", b"aaa")
+    assert tuple(candidate["position"] for candidate in candidates) == (0, 1, 2)
+    assert all(
+        preserves_original_order(
+            source_material=candidate["source_material"],
+            candidate_material=candidate["candidate_material"],
+            added_position=candidate["position"],
         )
         for candidate in candidates
     )
 
 
-def test_every_three_byte_candidate_reaches_every_compiled_witness(
+def test_a_different_source_order_is_refused_before_the_implementation_function():
+    supplied = []
+    candidate = {
+        "source_material": b"ab",
+        "position": 1,
+        "added_material": b"x",
+        "candidate_material": b"bxa",
+    }
+    implementation_function = CompiledImplementationFunction(
+        identity="fixture",
+        invocation=lambda material: supplied.append(material),
+    )
+
+    with pytest.raises(ValueError, match="exact source order"):
+        interrogate_added_positions((candidate,), (implementation_function,))
+
+    assert supplied == []
+
+
+def test_every_three_byte_candidate_reaches_every_compiled_implementation_function(
     book_three_byte_format_occurrences,
 ):
     _, candidates, occurrences = book_three_byte_format_occurrences
+    exact_material = tuple(
+        candidate["candidate_material"] for candidate in candidates
+    )
 
-    assert len(occurrences) == len(COMPILED_WITNESSES)
+    assert len(occurrences) == len(COMPILED_IMPLEMENTATION_FUNCTIONS)
     assert all(
-        tuple(occurrence.exact_material for occurrence in row) == candidates
+        tuple(occurrence.exact_material for occurrence in row) == exact_material
         for row in occurrences
     )
 
 
-def test_three_byte_candidates_expose_different_compiled_witness_boundaries(
+def test_three_byte_candidates_expose_different_compiled_invocation_boundaries(
     book_three_byte_format_occurrences,
 ):
     _, _, occurrences = book_three_byte_format_occurrences
-    localities = tuple(
-        _material_locality(row, lambda occurrence: occurrence.returned)
+    admissions = tuple(
+        _admission(row, lambda occurrence: occurrence.returned)
         for row in occurrences
     )
     boundaries = tuple(_return_boundaries(row) for row in occurrences)
 
-    assert len(set(localities)) > 1
+    assert len(set(admissions)) > 1
     assert any(boundaries)
     assert len({frozenset(found) for found in boundaries}) > 1
 
 
-def test_compiled_witness_receives_the_exact_material():
+def test_compiled_implementation_function_receives_the_exact_material():
     supplied = []
 
-    def competency(material):
+    def invocation(material):
         supplied.append(material)
 
     occurrence = interrogate(
-        b"\xff\x00", CompiledWitness(identity="fixture", competency=competency)
+        b"\xff\x00", CompiledImplementationFunction(identity="fixture", invocation=invocation)
     )
 
     assert supplied == [b"\xff\x00"]
@@ -434,24 +509,24 @@ def test_compiled_witness_receives_the_exact_material():
     assert occurrence.returned is True
 
 
-def test_compiled_witness_refusal_and_input_boundary_are_distinct():
+def test_compiled_implementation_function_refusal_and_input_boundary_are_distinct():
     supplied = []
 
-    def competency(material):
+    def invocation(material):
         supplied.append(material)
         raise ValueError
 
-    witness = CompiledWitness(identity="fixture", competency=competency)
+    implementation_function = CompiledImplementationFunction(identity="fixture", invocation=invocation)
 
-    occurrence = interrogate(b"\x00", witness)
+    occurrence = interrogate(b"\x00", implementation_function)
     with pytest.raises(TypeError, match="exact bytes"):
-        interrogate("material", witness)
+        interrogate("material", implementation_function)
 
     assert supplied == [b"\x00"]
     assert occurrence.returned is False
 
 
-def test_a_non_byte_material_is_refused_before_a_witness_occurs(monkeypatch):
+def test_a_non_byte_material_is_refused_before_an_implementation_function_occurs(monkeypatch):
     occurrences = []
     monkeypatch.setattr(
         "material_witness_harness.subprocess.run",
@@ -459,17 +534,17 @@ def test_a_non_byte_material_is_refused_before_a_witness_occurs(monkeypatch):
     )
 
     with pytest.raises(TypeError, match="exact bytes"):
-        witness_occurrence("material", MATERIAL_WITNESSES[0])
+        invocation_occurrence("material", MATERIAL_IMPLEMENTATION_FUNCTIONS[0])
 
     assert occurrences == []
 
 
-def test_exact_bytes_reach_the_witness_without_prior_decoding(monkeypatch):
+def test_exact_bytes_reach_the_implementation_function_without_prior_decoding(monkeypatch):
     supplied = []
 
     class Completed:
         returncode = 0
-        stdout = b"provider material"
+        stdout = b"implementation function material"
         stderr = b""
 
     def compiled_occurrence(*args, **kwargs):
@@ -480,8 +555,8 @@ def test_exact_bytes_reach_the_witness_without_prior_decoding(monkeypatch):
         "material_witness_harness.subprocess.run", compiled_occurrence
     )
 
-    found = witness_occurrence(b"\xff\x00", MATERIAL_WITNESSES[0])
+    found = invocation_occurrence(b"\xff\x00", MATERIAL_IMPLEMENTATION_FUNCTIONS[0])
 
     assert supplied == [b"\xff\x00"]
     assert found.exact_material == b"\xff\x00"
-    assert found.stdout_bytes == b"provider material"
+    assert found.stdout_bytes == b"implementation function material"

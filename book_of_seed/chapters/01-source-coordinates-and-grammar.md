@@ -6,8 +6,6 @@ The locality of exact content and the boundary between supplied material and See
 
 ## Bounded resolution
 
-Provider vocabulary, representations, confidence labels, and connective text enter as material carrying source coordinates. Seed preserves their source, Scope, uncertainty, Authority limits, provenance or provenance Unknown, known loss, conflicts, and surviving limits.
-
 A supplied representation may enter as material with exact source coordinates without becoming Evidence, applicable input, adopted law, truth, or native grammar. Equal content under another source or occurrence does not establish equal identity or Standing.
 
 An exact Responsibility may use supplied material only through its own Applicability and other required boundaries. Every applicable source coordinate and limit travels with the material. Dropping a limit is erasure; an unsupported coordinate remains unsupported; treating supplied material as repository truth is mutation; assigning Authority from source identity is relocation.

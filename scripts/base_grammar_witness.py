@@ -6,7 +6,7 @@ import itertools
 import json
 from pathlib import Path
 
-import refinement_climb as rc
+import material_admission
 
 GRAMMAR = Path(__file__).resolve().parents[1] / "book_of_seed" / "grammar.json"
 
@@ -63,18 +63,24 @@ def main() -> int:
     ]
     print(f"  relations without a following relation: {dangling}")
 
-    by_composition = rc.climb(
-        rc.one_material_locality(sorted(declared)),
+    by_composition = material_admission.admit(
+        material_admission.one_admission(sorted(declared)),
         lambda a, b: declared[a]["to"] == declared[b]["from"],
     )
-    by_link = rc.climb(
-        rc.one_material_locality(ends),
+    by_link = material_admission.admit(
+        material_admission.one_admission(ends),
         lambda x, y: any(
             spec["from"] == x and spec["to"] == y for spec in declared.values()
         ),
     )
-    print(f"\n  relations climbed under composition: {rc.heights(by_composition)}")
-    print(f"  endpoints climbed under linkage:  {rc.heights(by_link)}")
+    print(
+        "\n  relation Admission counts under composition: "
+        f"{material_admission.admission_counts(by_composition)}"
+    )
+    print(
+        "  endpoint Admission counts under linkage: "
+        f"{material_admission.admission_counts(by_link)}"
+    )
     return 0
 
 

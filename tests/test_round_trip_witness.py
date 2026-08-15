@@ -64,7 +64,7 @@ def test_a_witness_may_never_write_back_what_it_read():
 
     results = dict(survey())["utf_8_sig"]
 
-    assert results[SAME] == 0
+    assert results.get(SAME, 0) == 0
     assert results[DIFFERENT] > 0
     assert round_trip("utf_8_sig", (0x41,)) == DIFFERENT
 

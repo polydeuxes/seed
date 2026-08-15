@@ -16,7 +16,7 @@ from seed_runtime.events import (
 from seed_runtime.event import Event
 
 
-def test_event_has_its_exact_occurrence_coordinates_and_no_provider_base():
+def test_event_has_its_exact_occurrence_coordinates_and_no_inherited_base():
     assert Event.__bases__ == (object,)
     assert set(Event.__slots__) == {
         "identity",

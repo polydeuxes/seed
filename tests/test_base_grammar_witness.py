@@ -12,7 +12,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts"))
 
-import refinement_climb as rc  # noqa: E402
+import material_admission  # noqa: E402
 from base_grammar_witness import (  # noqa: E402
     compositions,
     relations,
@@ -27,7 +27,7 @@ def test_the_relations_state_identical_requirements():
 
     declared = relations()
 
-    assert set(declared) == {"locality", "participation", "yield", "locality"}
+    assert set(declared) == {"locality", "participation", "yield"}
     assert shared_requirements(declared)
     assert {tuple(spec["requires"]) for spec in declared.values()} == {
         ("exact_relation", "occurrence_witness", "intact_evidence")
@@ -63,13 +63,13 @@ def test_locality_keeps_its_subject_kinds_open():
 
 def test_composition_separates_every_relation():
     declared = relations()
-    localities = rc.climb(
-        rc.one_material_locality(sorted(declared)),
+    admissions = material_admission.admit(
+        material_admission.one_admission(sorted(declared)),
         lambda a, b: declared[a]["to"] == declared[b]["from"],
     )
 
-    assert rc.heights(localities) == [1, 3]
-    assert rc.unseparated(localities) == []
+    assert material_admission.admission_counts(admissions) == [1, 3]
+    assert material_admission.not_distinguished(admissions) == []
 
 
 def test_linkage_separates_every_endpoint():
@@ -77,12 +77,12 @@ def test_linkage_separates_every_endpoint():
 
     declared = relations()
     ends = endpoints(declared)
-    localities = rc.climb(
-        rc.one_material_locality(ends),
+    admissions = material_admission.admit(
+        material_admission.one_admission(ends),
         lambda x, y: any(
             spec["from"] == x and spec["to"] == y for spec in declared.values()
         ),
     )
 
-    assert rc.heights(localities)[-1] == len(ends)
-    assert rc.unseparated(localities) == []
+    assert material_admission.admission_counts(admissions)[-1] == len(ends)
+    assert material_admission.not_distinguished(admissions) == []

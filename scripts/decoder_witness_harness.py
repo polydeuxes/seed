@@ -1,51 +1,14 @@
 #!/usr/bin/env python3
-"""Interrogate a decoder and record what it refuses.
-
-A decoder is a witness. Asked whether it accepts an exact byte sequence it
-returns a result, and the result is attributed testimony about that decoder, not a fact
-about the bytes. What it accepts and refuses is measurable without read it
-and without adopting its vocabulary.
-
-**Nothing is copied.** This runs a decoder and records results. No
-implementation is read, transcribed, or derived from, so no implementation's
-licence is engaged by what this produces. The witness here is Python's own
-codec, and any other decoder returns results for the same probes.
-
-**Its words are not taken with its results.** A decoder's source and
-documentation carry `code point`, `continuation byte`, `leader`, `overlong`,
-`scalar`. Those name why its author believes the boundaries fall where they
-do. This records where they fall.
-
-What one interrogation yields, for the codec ordinarily called UTF-8:
-
-```text
-  0x00-0x7f   128   accepted alone
-  0xc2-0xdf    30   refused alone; accepted before one byte of 0x80-0xbf
-  0xe0-0xef    16   refused alone and in pairs; accepted at three bytes
-  0xf0-0xf4     5   accepted at four bytes
-  remaining    77   refused as a first byte at every byte count tried
-```
-
-Five exact material tuples, each sharing one equal result and together summing
-to 256. `0xc0`, `0xc1` and `0xf5`-`0xff` share the refused result though a bit-pattern read would
-admit them, so the witness refuses more than a leading-bit rule predicts, and
-that surplus is itself recorded rather than explained.
-
-Usage:
-
-    decoder_witness_harness.py --codec utf-8
-    decoder_witness_harness.py --codec ascii --max-byte-count 2
-"""
+"""Interrogate decoder implementation functions with exact bytes."""
 
 from __future__ import annotations
 
 import argparse
 import codecs
-import collections
 import warnings
 from functools import lru_cache
 
-import refinement_climb
+import material_admission
 
 # See `accepts`: a warning is not a refusal.
 warnings.filterwarnings("ignore", category=DeprecationWarning, module=__name__)
@@ -55,11 +18,11 @@ CONTINUATION_PROBE = tuple(range(0x80, 0xC0))
 
 
 def accepts(codec: str, sequence: tuple[int, ...]) -> bool:
-    """Whether the witness accepts these exact bytes. Its result, not a fact.
+    """Whether the implementation function returns for these exact bytes.
 
-    Some witnesses emit warnings while returning -- `unicode_escape` reports
+    Some implementation functions emit warnings while returning -- `unicode_escape` reports
     invalid escape sequences for most of the 256 single bytes. A warning is not
-    a refusal and does not revision what the witness returned, so it is filtered
+    a refusal and does not revise what the implementation function returned, so it is filtered
     at import rather than read as a result. Filtering per call costs 14x,
     measured, and this runs millions of times.
     """
@@ -116,16 +79,16 @@ def _tails(count: int) -> list[tuple[int, ...]]:
 
 
 @lru_cache(maxsize=16)
-def material_locality(codec: str, max_byte_count: int = 4) -> dict[object, list[int]]:
-    """Bytes grouped by the results the witness gave them."""
+def first_admission(codec: str, max_byte_count: int = 4) -> dict[object, list[int]]:
+    """Material admitted by equal implementation-function results."""
 
-    grouped: dict[object, list[int]] = collections.defaultdict(list)
+    same_result: dict[object, list[int]] = {}
     for first in range(256):
         byte_count = shortest_accepted_byte_count(codec, first, max_byte_count)
         followers = admissible_followers(codec, first) if byte_count == 2 else []
         key = (byte_count, (followers[0], followers[-1]) if followers else None)
-        grouped[key].append(first)
-    return dict(grouped)
+        same_result.setdefault(key, []).append(first)
+    return same_result
 
 
 ALL = "all"
@@ -134,12 +97,12 @@ MIXED = "mixed"
 
 
 def measure_material_pairs(
-    codec: str, read: dict[object, list[int]]
+    codec: str, admission: dict[object, list[int]]
 ) -> dict[tuple[object, object], str]:
     """Whether every, no, or some exact material pair is accepted.
 
-    The material Locality is supplied, not recomputed. This measurement stands on the
-    earlier one and cannot run without it: given another material Locality it reports
+    The Admission is supplied, not recomputed. This Measurement stands on the
+    earlier one and cannot run without it: given another Admission it reports
     ordered pairs among those, and given none it reports nothing.
 
     Every material pair is probed, not one representative each. A representative
@@ -148,13 +111,13 @@ def measure_material_pairs(
     reporting for both would have stated `all` where the truth is `mixed`.
 
     `mixed` is not a failure. It is this measurement finding the earlier
-    material Locality insufficient for its own purpose, which is what
-    :func:`refine` then acts on.
+    Admission insufficient for its own purpose, which is what
+    :func:`admit_pairs` then acts on.
     """
 
     results_by_pair: dict[tuple[object, object], str] = {}
-    for first_key, firsts in read.items():
-        for second_key, seconds in read.items():
+    for first_key, firsts in admission.items():
+        for second_key, seconds in admission.items():
             results = {
                 accepts(codec, (first, second))
                 for first in firsts
@@ -166,10 +129,12 @@ def measure_material_pairs(
     return results_by_pair
 
 
-def refine(codec: str, read: dict[object, list[int]]) -> dict[object, list[int]]:
+def admit_pairs(
+    codec: str, admission: dict[object, list[int]]
+) -> dict[object, list[int]]:
     material = [
         byte
-        for bytes_at_one_coordinate in read.values()
+        for bytes_at_one_coordinate in admission.values()
         for byte in bytes_at_one_coordinate
     ]
     observed = {
@@ -177,41 +142,41 @@ def refine(codec: str, read: dict[object, list[int]]) -> dict[object, list[int]]
         for first in material
         for second in material
     }
-    refined: dict[object, list[int]] = {}
-    for key, bytes_at_one_coordinate in read.items():
-        grouped: dict[object, list[int]] = collections.defaultdict(list)
+    admitted: dict[object, list[int]] = {}
+    for key, bytes_at_one_coordinate in admission.items():
+        same_result: dict[object, list[int]] = {}
         for byte in bytes_at_one_coordinate:
             signature = (
                 tuple(observed[byte, other] for other in material),
                 tuple(observed[other, byte] for other in material),
             )
-            grouped[signature].append(byte)
-        for index, split in enumerate(grouped.values()):
-            refined[(key, index) if len(grouped) > 1 else key] = split
-    return refined
+            same_result.setdefault(signature, []).append(byte)
+        for index, found in enumerate(same_result.values()):
+            admitted[(key, index) if len(same_result) > 1 else key] = found
+    return admitted
 
 
-def climb(codec: str) -> list[dict[object, list[int]]]:
-    """Each material Locality through the one that stops moving.
+def admit(codec: str) -> list[dict[object, list[int]]]:
+    """Each Admission established by the implementation function.
 
-    The mechanism is `refinement_climb`, which knows nothing of codecs. What
-    this supplies is the first material Locality and the witness.
+    `material_admission` knows nothing of codecs. This supplies the first
+    Admission and the implementation function.
     """
 
-    localities = refinement_climb.climb(
+    admissions = material_admission.admit(
         [
             tuple(bytes_at_one_coordinate)
-            for bytes_at_one_coordinate in material_locality(codec, 4).values()
+            for bytes_at_one_coordinate in first_admission(codec, 4).values()
         ],
         lambda first, second: accepts(codec, (first, second)),
     )
     return [
-        {index: list(material) for index, material in enumerate(locality)}
-        for locality in localities
+        {index: list(material) for index, material in enumerate(admission)}
+        for admission in admissions
     ]
 
 
-def decoding_witnesses() -> list[str]:
+def decoding_implementation_functions() -> list[str]:
     """Every codec on this machine that returns when handed bytes."""
 
     import encodings
@@ -229,21 +194,16 @@ def decoding_witnesses() -> list[str]:
 
 
 def survey() -> list[tuple[str, int, int, int]]:
-    """Each witness: its first material Locality count, its last, and total.
-
-    Grouping witnesses by counts is not grouping them by shape. Two witnesses
-    with the same number of distinct results and admissible pairs may relate them
-    differently, and nothing here compares those relations.
-    """
+    """Admission counts for each decoder implementation function."""
 
     rows = []
-    for name in decoding_witnesses():
+    for name in decoding_implementation_functions():
         try:
-            localities = climb(name)
+            admissions = admit(name)
         except Exception:
             continue
         rows.append(
-            (name, len(localities[0]), len(localities[-1]), len(localities))
+            (name, len(admissions[0]), len(admissions[-1]), len(admissions))
         )
     return rows
 
@@ -257,24 +217,26 @@ def main() -> int:
 
     if args.survey:
         rows = survey()
-        heights = collections.Counter(many for _, _, _, many in rows)
-        print(f"  {len(rows)} witnesses climbed")
-        print(f"  {'count':>6}{'witnesses':>11}   example, first Locality to last")
-        for locality_count, many in sorted(heights.items()):
+        admission_counts: dict[int, int] = {}
+        for _, _, _, many in rows:
+            admission_counts[many] = admission_counts.get(many, 0) + 1
+        print(f"  {len(rows)} implementation functions")
+        print(f"  {'count':>6}{'functions':>11}   example, first Admission to last")
+        for admission_count, many in sorted(admission_counts.items()):
             name, first, last, _ = next(
-                row for row in rows if row[3] == locality_count
+                row for row in rows if row[3] == admission_count
             )
             print(
-                f"  {locality_count:>6}{many:>11}   {name:<18} {first} -> {last}"
+                f"  {admission_count:>6}{many:>11}   {name:<18} {first} -> {last}"
             )
         return 0
 
-    grouped = material_locality(args.codec, args.max_byte_count)
-    print(f"  witness: the codec named {args.codec!r}")
+    admitted = first_admission(args.codec, args.max_byte_count)
+    print(f"  implementation function: the codec named {args.codec!r}")
     print(f"  {'bytes':14}{'count':>7}{'shortest accepted':>19}   followers")
     total = 0
     for (byte_count, followers), material in sorted(
-        grouped.items(), key=lambda item: (item[0][0] is None, item[0][0])
+        admitted.items(), key=lambda item: (item[0][0] is None, item[0][0])
     ):
         total += len(material)
         span = (
@@ -284,7 +246,7 @@ def main() -> int:
         )
         shown = f"{followers[0]:#04x}-{followers[1]:#04x}" if followers else "-"
         print(f"  {span:14}{len(material):>7}{str(byte_count):>19}   {shown}")
-    print(f"  {'':14}{total:>7}   distinct results: {len(grouped)}")
+    print(f"  {'':14}{total:>7}   distinct results: {len(admitted)}")
     return 0
 
 
