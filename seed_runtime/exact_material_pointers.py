@@ -45,9 +45,6 @@ import hashlib
 from typing import Any
 
 
-ENCODING_VERSION = "exact-material-backreference"
-
-
 class ExactMaterialPointerError(ValueError):
     """An exact-material pointer representation cannot be supplied or read."""
 
@@ -128,11 +125,8 @@ class ExactMaterialPointers:
     sha256: str
     parts: tuple[ExactMaterialPart, ...]
     pointer_rule: ExactMaterialPointerRule
-    version: str = ENCODING_VERSION
 
     def __post_init__(self) -> None:
-        if self.version != ENCODING_VERSION:
-            raise ExactMaterialPointerError(f"unsupported exact-material encoding: {self.version!r}")
         if type(self.byte_count) is not int or self.byte_count < 0:
             raise ExactMaterialPointerError("byte_count must be a non-negative integer")
         if type(self.sha256) is not str or len(self.sha256) != 64:
@@ -170,7 +164,6 @@ class ExactMaterialPointers:
                     {"kind": "reference", "start": part.start, "byte_count": part.byte_count}
                 )
         return {
-            "version": self.version,
             "byte_count": self.byte_count,
             "sha256": self.sha256,
             "pointer_rule": self.pointer_rule.to_json_dict(),
@@ -215,7 +208,6 @@ class ExactMaterialPointers:
             else:
                 raise ExactMaterialPointerError(f"unknown exact-material part kind: {kind!r}")
         return cls(
-            version=value.get("version"),
             byte_count=value.get("byte_count"),
             sha256=value.get("sha256"),
             pointer_rule=ExactMaterialPointerRule.from_json_dict(value.get("pointer_rule")),

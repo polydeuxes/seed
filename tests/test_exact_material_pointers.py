@@ -7,7 +7,6 @@ import pytest
 
 from seed_runtime.exact_material_pointers import (
     ExactMaterialPointerRule,
-    ENCODING_VERSION,
     ExactMaterialPointerError,
     ExactMaterialPointers,
     LiteralPart,
@@ -84,7 +83,6 @@ def test_serialized_literal_is_exact_bytes_not_decoded_text():
 
     carried = encoded.to_json_dict()
 
-    assert carried["version"] == ENCODING_VERSION
     assert base64.b64decode(carried["parts"][0]["bytes_b64"]) == b"\x00\xffA"
     assert ExactMaterialPointers.from_json_dict(carried) == encoded
 
@@ -260,8 +258,6 @@ def test_a_reference_part_requires_exact_positions():
 
 
 def test_an_account_establishes_each_coordinate_it_carries():
-    with pytest.raises(ExactMaterialPointerError, match="unsupported exact-material encoding"):
-        _account(version="exact-material-backreference-v0")
     for value in ("2", None, True, False, 2.0, [], -1):
         with pytest.raises(ExactMaterialPointerError, match="byte_count"):
             _account(byte_count=value)
