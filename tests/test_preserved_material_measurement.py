@@ -21,6 +21,7 @@ co-presence, and a finding reports co-presence.
 
 from __future__ import annotations
 
+import inspect
 import re
 from tests.binary_input import binary_input
 from io import BytesIO, StringIO
@@ -57,6 +58,14 @@ from seed_runtime.input_support import (
     InputSupportValidator,
     declare_input_support,
 )
+
+
+def test_recording_parameters_are_exact():
+    assert tuple(inspect.signature(record_measurement_finding).parameters) == (
+        "ledger",
+        "locality_identity",
+        "finding",
+    )
 
 
 @pytest.mark.parametrize(
@@ -1425,48 +1434,6 @@ def test_changing_input_identities_cannot_reuse_the_yield_witness(
         )
 
 
-def test_recording_cannot_overwrite_what_the_measurement_established(
-    recurrence_occurrences,
-):
-    """`extra` may add recording coordinates; it may not replace Yield-edge ones."""
-
-    ledger, occurrences = recurrence_occurrences
-    finding = _with_yield_evidence(ledger, occurrences)
-    # Refused rather than quietly dropped: a caller asked to record one thing
-    # and silently recording another is its own defect.
-    with pytest.raises(PreservedMaterialMeasurementError, match="may not replace"):
-        record_measurement_finding(
-            ledger,
-            locality_identity="r",
-            finding=finding,
-            extra={"recurrence_count": 999},
-        )
-    event = record_measurement_finding(
-        ledger,
-        locality_identity="r",
-        finding=finding,
-        extra={"a_recording_coordinate": "kept"},
-    )
-    assert event.material["a_recording_coordinate"] == "kept"
-
-
-def test_recording_cannot_restate_the_measurements_own_dimensions(
-    recurrence_occurrences,
-):
-    """`extra` was filtered against the finding's keys only, so `dimensions`
-    -- carrying the provenance `#2516` read -- was reachable."""
-
-    ledger, occurrences = recurrence_occurrences
-    finding = _with_yield_evidence(ledger, occurrences)
-    with pytest.raises(PreservedMaterialMeasurementError, match="may not replace"):
-        record_measurement_finding(
-            ledger,
-            locality_identity="r",
-            finding=finding,
-            extra={"dimensions": {"source_provenance": "whatever I want"}},
-        )
-
-
 def test_yield_and_recording_may_be_in_different_localities(
     recurrence_occurrences,
 ):
@@ -1527,40 +1494,3 @@ def test_the_witness_asserts_no_responsibility(
     assert "not the edge or Act occurrence by identity" in (
         witness.material["dimensions"]["occurrence_preservation"]
     )
-
-
-@pytest.mark.parametrize(
-    "addition",
-    [
-        {"dimensions": {"identity": "something else"}},
-        {"unknowns": ["one nobody established"]},
-        {"provenance_occurrence_references": ["evt_unsupported"]},
-        {"recurrence_count": 999},
-    ],
-)
-def test_recording_may_not_replace_any_coordinate_the_material_carries(
-    recurrence_occurrences, addition
-):
-    """`extra` checked only the finding's keys, so the material's own were
-    reachable -- a supplied `dimensions` replaced the whole object and erased
-    the measurement's provenance by omission."""
-
-    ledger, occurrences = recurrence_occurrences
-    finding = _with_yield_evidence(ledger, occurrences)
-    with pytest.raises(PreservedMaterialMeasurementError, match="may not replace"):
-        record_measurement_finding(
-            ledger, locality_identity="r", finding=finding, extra=addition
-        )
-
-
-def test_recording_may_still_add_its_own_coordinate(recurrence_occurrences):
-    ledger, occurrences = recurrence_occurrences
-    finding = _with_yield_evidence(ledger, occurrences)
-    event = record_measurement_finding(
-        ledger,
-        locality_identity="r",
-        finding=finding,
-        extra={"a_recording_coordinate": "kept"},
-    )
-    assert event.material["a_recording_coordinate"] == "kept"
-    assert event.material["dimensions"]["source_provenance"]

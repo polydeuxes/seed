@@ -79,12 +79,6 @@ MATERIAL_AS_SUPPLIED = (
 # unestablished. That is ordinary rather than contradictory.
 RESPONSIBILITY_UNESTABLISHED = "unestablished"
 
-# What recording composes around a finding's own content. A caller adding to a
-# recorded finding may not replace any of it.
-_RESERVED_RECORDING_COORDINATES = frozenset(
-    {"dimensions", "unknowns", "provenance_occurrence_references"}
-)
-
 LIMITS: tuple[str, ...] = (
     "A finding reports a count within its stated scope and nothing further.",
     "Recurrence establishes that a representation occurs more than once only.",
@@ -458,25 +452,6 @@ def _as_preserved(
     return preserved, MATERIAL_READ_FROM_LEDGER
 
 
-def _additive_only(
-    finding, carried: dict[str, Any], extra: dict[str, Any] | None
-) -> dict[str, Any]:
-    """Refuse additions that replace a carried recording coordinate."""
-
-    if not extra:
-        return {}
-    reserved = set(carried)
-    if isinstance(finding, RecurrenceFinding):
-        reserved |= _RESERVED_RECORDING_COORDINATES
-    collisions = sorted(set(extra) & reserved)
-    if collisions:
-        raise PreservedMaterialMeasurementError(
-            "recording may add coordinates and may not replace ones already "
-            f"recorded: {', '.join(collisions)}"
-        )
-    return dict(extra)
-
-
 def _result_content(finding) -> dict[str, Any]:
     """Everything the measuring act established about its own result.
 
@@ -831,7 +806,6 @@ def _measurement_finding_material(
     *,
     locality_identity: str,
     finding: MeasurementFinding | RecurrenceFinding,
-    extra: dict[str, Any] | None,
 ) -> dict[str, Any]:
     carried = finding.to_json_dict()
     return {
@@ -861,7 +835,6 @@ def _measurement_finding_material(
         },
         "unknowns": ["what any measured representation means remains Unknown"],
         **carried,
-        **_additive_only(finding, carried, extra),
     }
 
 
@@ -869,7 +842,7 @@ def record_measurement_findings(
     ledger: EventLedger,
     *,
     locality_identity: str,
-    findings: Iterable[tuple[MeasurementFinding | RecurrenceFinding, dict[str, Any] | None]],
+    findings: Iterable[MeasurementFinding | RecurrenceFinding],
 ) -> list[Event]:
     """Preserve a bounded group of findings in one ledger transaction."""
 
@@ -884,7 +857,7 @@ def record_measurement_findings(
     # finding would restore the cost `#2486` removed.
     input_identities = {
         event_identity
-        for finding, _ in supplied
+        for finding in supplied
         for event_identity in finding.input_occurrences
     }
     for event_identity in input_identities:
@@ -897,7 +870,7 @@ def record_measurement_findings(
     # A recurrence finding is recordable where its Act preserved exact Yield
     # Evidence. Required on this path only: every positional caller records
     # without a yield witness, and adopting it there is its own migration.
-    for finding, _ in supplied:
+    for finding in supplied:
         if not isinstance(finding, RecurrenceFinding):
             continue
         if finding.yield_evidence_identity is None:
@@ -935,11 +908,10 @@ def record_measurement_findings(
             material=_measurement_finding_material(
                 locality_identity=locality_identity,
                 finding=finding,
-                extra=extra,
             ),
             locality_identity=locality_identity,
         )
-        for finding, extra in supplied
+        for finding in supplied
     ]
     return ledger.append_many(events)
 
@@ -949,7 +921,6 @@ def record_measurement_finding(
     *,
     locality_identity: str,
     finding: MeasurementFinding | RecurrenceFinding,
-    extra: dict[str, Any] | None = None,
 ) -> Event:
     """Preserve a finding so a later responsible act may have it participate.
 
@@ -960,5 +931,5 @@ def record_measurement_finding(
     return record_measurement_findings(
         ledger,
         locality_identity=locality_identity,
-        findings=((finding, extra),),
+        findings=(finding,),
     )[0]

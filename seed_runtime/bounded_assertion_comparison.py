@@ -131,18 +131,6 @@ class ComparisonFinding:
     representations_in_one_only: dict[str, tuple[str, ...]]
     bounded_relation: str
 
-    def to_json_dict(self) -> dict[str, Any]:
-        return {
-            "inputs": [i.to_json_dict() for i in self.inputs],
-            "distinctions": [d.to_json_dict() for d in self.distinctions],
-            "shared_representations": list(self.shared_representations),
-            "representations_in_one_only": {
-                k: list(v) for k, v in self.representations_in_one_only.items()
-            },
-            "bounded_relation": self.bounded_relation,
-        }
-
-
 def _read(material: dict[str, Any], path: tuple[str, ...]) -> Any:
     value: Any = material
     for key in path:
@@ -357,7 +345,14 @@ def record_comparison_finding(
             "whether the compared bodies stand in any relation remains Unknown",
         ],
         "limits": list(LIMITS),
-        **finding.to_json_dict(),
+        "inputs": [item.to_json_dict() for item in finding.inputs],
+        "distinctions": [item.to_json_dict() for item in finding.distinctions],
+        "shared_representations": list(finding.shared_representations),
+        "representations_in_one_only": {
+            key: list(value)
+            for key, value in finding.representations_in_one_only.items()
+        },
+        "bounded_relation": finding.bounded_relation,
     }
     act_evidence = ledger.append(
         COMPARISON_ACT_EVIDENCE_KIND,

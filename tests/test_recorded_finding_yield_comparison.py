@@ -358,34 +358,6 @@ def test_a_finding_naming_something_that_is_not_yield_evidence(recorded):
     )
 
 
-def test_lawful_recording_additions_do_not_change_the_result(recorded):
-    ledger, event = recorded
-    # Build another lawful recording through the public recorder, because its
-    # additive coordinate belongs to recording rather than Measurement.
-    occurrences = [
-        ledger.get(event.material["inputs"][0]["occurrence_identity"])
-    ]
-    finding = measure_recurrence(
-        occurrences,
-        declared=DeclaredMeasurement(
-            representation_measured="the",
-            equivalence_rule="exact equality between whitespace-separated tokens",
-            counting_scope="this locality",
-        ),
-        occurrences_of=lambda text: text.split().count("the"),
-        yield_in=(ledger, "w", "r"),
-    )
-    added = record_measurement_finding(
-        ledger,
-        locality_identity="r",
-        finding=finding,
-        extra={"a_recording_coordinate": "kept"},
-    )
-    assert compare_recorded_finding_yield(ledger, added.identity).material["dimensions"][
-        "standing"
-    ] == AGREES_WITH_YIELD_EVIDENCE
-
-
 def test_missing_yield_result_is_erasure(recorded):
     ledger, event = recorded
     evidence = ledger.append(
