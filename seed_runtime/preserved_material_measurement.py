@@ -114,14 +114,8 @@ class DeclaredMeasurement:
     # one.  A finding can only supply an representation to a later measurement if it
     # records the representation it used, so this is what makes a finding
     # representation-supplying rather than merely informative.
-    measured_after: str | None = None
-    # The positional Measurement distinction, and the exact representations it
-    # was performed relative to. Without these a finding says what it found but
-    # not what distinction yielded it, so a later distinction would require a
-    # reader to restate the first. These
-    # are exact strings taken from preserved material; neither names a kind.
+    relative_representation: str | None = None
     distinction: str | None = None
-    relative_to: tuple[str, ...] = ()
     # Where the position measured sits relative to what it was measured
     # relative to.  Recorded so a measurement can be compared with another
     # that measured elsewhere, and so a coordinate that never varies is
@@ -190,9 +184,8 @@ class MeasurementFinding:
             "representation_measured": self.declared.representation_measured,
             "equivalence_rule": self.declared.equivalence_rule,
             "counting_scope": self.declared.counting_scope,
-            "measured_left_representation": self.declared.measured_after,
+            "relative_representation": self.declared.relative_representation,
             "measurement_distinction": self.declared.distinction,
-            "measured_relative_to": list(self.declared.relative_to),
             "measured_position": self.declared.measured_position,
             "positions_measured": self.positions_measured,
             "occupancies": [

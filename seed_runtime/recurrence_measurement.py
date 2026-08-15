@@ -71,7 +71,7 @@ MEASURED_ASSERTION_STANDING_COORDINATE_RESPONSIBILITY = (
 # together reports a recurrence nothing observed.
 DECLARED_IDENTITY: tuple[str, ...] = (
     "representation_measured",
-    "measured_left_representation",
+    "relative_representation",
     "equivalence_rule",
     "counting_scope",
     "measured_position",
@@ -111,8 +111,8 @@ class MeasuredDistinction:
         }
 
     @property
-    def left(self) -> str:
-        return dict(self.declared).get("measured_left_representation", "")
+    def relative_representation(self) -> str:
+        return dict(self.declared).get("relative_representation", "")
 
 
 @dataclass(frozen=True)
@@ -513,7 +513,11 @@ def measure_locality_counts(
     declared_set = set(declared_localities)
     for key in sorted(
         observed,
-        key=lambda k: (-len(observed[k]), k.left, k.right_representation),
+        key=lambda k: (
+            -len(observed[k]),
+            k.relative_representation,
+            k.right_representation,
+        ),
     ):
         where = observed[key]
         measured = measured_coordinate.get(key.declared, set())
@@ -564,7 +568,7 @@ def measured_count_representation(finding: MeasuredCountFinding) -> str:
     verb = "recurs in" if finding.recurrence_established else "was measured in"
     localities = "locality" if finding.locality_count == 1 else "localities"
     return (
-        f"({declared['measured_left_representation']!r}, "
+        f"({declared['relative_representation']!r}, "
         f"{finding.distinction.right_representation!r}) {verb} "
         f"{finding.locality_count} bounded {localities} of "
         f"{len(finding.bounded_localities)} declared, at "

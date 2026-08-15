@@ -231,7 +231,7 @@ def compare_preserved_findings(
     distinctions: list[Distinction] = []
     for coordinate, field in (
         ("representation_measured", "representation_measured"),
-        ("measured_left_representation", "measured_left_representation"),
+        ("relative_representation", "relative_representation"),
         ("equivalence_rule", "equivalence_rule"),
         ("counting_scope", "counting_scope"),
         ("measured_position", "measured_position"),
@@ -254,7 +254,7 @@ def compare_preserved_findings(
     }
 
     same = {d.coordinate: d.same for d in distinctions}
-    if not (same["representation_measured"] and same["measured_left_representation"]):
+    if not (same["representation_measured"] and same["relative_representation"]):
         relation = UNKNOWN_RELATION
     elif not (same["equivalence_rule"] and same["measured_position"]):
         relation = UNKNOWN_RELATION

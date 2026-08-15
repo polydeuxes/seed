@@ -224,14 +224,14 @@ def test_the_left_representation_is_compared_as_a_coordinate(ledger):
     b = _finding(ledger, "s2", representation="a")
     by_name = {d.coordinate: d for d in
                compare_preserved_findings(ledger, [a.identity, b.identity]).distinctions}
-    assert by_name["measured_left_representation"].same
-    assert by_name["measured_left_representation"].compared_material == ("a", "a")
+    assert by_name["relative_representation"].same
+    assert by_name["relative_representation"].compared_material == ("a", "a")
 
     c = _finding(ledger, "s2", representation="is")
     by_name = {d.coordinate: d for d in
                compare_preserved_findings(ledger, [a.identity, c.identity]).distinctions}
-    assert not by_name["measured_left_representation"].same
-    assert by_name["measured_left_representation"].compared_material == ("a", "is")
+    assert not by_name["relative_representation"].same
+    assert by_name["relative_representation"].compared_material == ("a", "is")
 
 
 def test_a_different_left_representation_yields_Unknown(ledger):
@@ -240,7 +240,7 @@ def test_a_different_left_representation_yields_Unknown(ledger):
     finding = compare_preserved_findings(ledger, [a.identity, b.identity])
     assert finding.bounded_relation == "Unknown"
     assert not [d for d in finding.distinctions
-                if d.coordinate == "measured_left_representation" and d.same]
+                if d.coordinate == "relative_representation" and d.same]
 
 
 def test_the_distinctions_are_literal(ledger):

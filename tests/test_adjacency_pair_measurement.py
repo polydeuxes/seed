@@ -106,7 +106,7 @@ def recorded_finding(locality, occurrences):
 
 def test_a_finding_records_the_representation_it_measured_after(recorded_finding):
     """Without this a finding cannot supply an representation to anything."""
-    assert recorded_finding.material["measured_left_representation"] == LEFT
+    assert recorded_finding.material["relative_representation"] == LEFT
 
 
 def test_pairs_are_read_from_the_record_not_supplied(locality, recorded_finding):
@@ -861,7 +861,7 @@ def test_comparability_restricts_representations_without_judging_them(occurrence
 
 def test_measuring_after_a_representation_records_which(occurrences):
     finding = measure_after(occurrences, "it", counting_scope="this locality")
-    assert finding.declared.measured_after == "it"
+    assert finding.declared.relative_representation == "it"
     assert finding.highest_count_occupancy.representation == "is"
 
 

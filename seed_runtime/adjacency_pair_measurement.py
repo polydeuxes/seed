@@ -302,7 +302,7 @@ def _adjacency_pairs_from_event(event: Event | None) -> list[AdjacencyPair]:
         raise PreservedMaterialMeasurementError(
             "pairs must be read from a recorded measurement finding"
         )
-    left = event.material.get("measured_left_representation")
+    left = event.material.get("relative_representation")
     if not isinstance(left, str) or not left:
         raise PreservedMaterialMeasurementError(
             "the recorded finding does not name the representation it measured after"
@@ -316,14 +316,13 @@ def _adjacency_pairs_from_event(event: Event | None) -> list[AdjacencyPair]:
 def _is_established_after_measurement(event: Event) -> bool:
     """Whether a record carries the exact established displacement-1 distinction."""
 
-    left = event.material.get("measured_left_representation")
+    relative = event.material.get("relative_representation")
     return (
         event.kind == MEASUREMENT_RECORDED_KIND
         and event.material.get("equivalence_rule") == EQUIVALENCE_RULE
         and event.material.get("measurement_distinction") == "after"
-        and isinstance(left, str)
-        and bool(left)
-        and event.material.get("measured_relative_to") == [left]
+        and isinstance(relative, str)
+        and bool(relative)
         and event.material.get("measured_position") == MEASURED_POSITIONS["after"]
     )
 
@@ -1476,9 +1475,8 @@ def measure_at_displacement(
             ),
             equivalence_rule=EQUIVALENCE_RULE,
             counting_scope=counting_scope,
-            measured_after=representation,
+            relative_representation=representation,
             distinction=direction,
-            relative_to=(representation,),
             measured_position={
                 "anchored_on": "the representation",
                 "direction": direction,

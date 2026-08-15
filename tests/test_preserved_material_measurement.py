@@ -361,7 +361,6 @@ def test_what_is_measured_is_the_representation_not_a_position(recurrence_occurr
     assert carried["measurement_distinction"] == "recurrence"
     # No positional coordinate is asserted, because none was measured.
     assert "measured_position" not in carried
-    assert "measured_relative_to" not in carried
 
 
 def test_input_carrying_and_recurrence_counts_remain_distinct(
