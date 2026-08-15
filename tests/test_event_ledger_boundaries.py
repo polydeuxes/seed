@@ -16,6 +16,20 @@ from seed_runtime.events import (
 from seed_runtime.event import Event
 
 
+def test_event_has_its_exact_occurrence_coordinates_and_no_provider_base():
+    assert Event.__bases__ == (object,)
+    assert set(Event.__slots__) == {
+        "identity",
+        "kind",
+        "timestamp",
+        "material",
+        "exact_material",
+        "locality_identity",
+        "_fixed",
+        "__weakref__",
+    }
+
+
 def _exercise_scoped_reads(ledger):
     first = ledger.append("wanted", {"n": 1}, locality_identity="s")
     ledger.append("other", {"n": 2}, locality_identity="s")

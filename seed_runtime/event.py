@@ -2,12 +2,12 @@
 
 from __future__ import annotations
 
+from copy import deepcopy
 from datetime import datetime, timezone
 import json
 import math
 from typing import Any
 
-from pydantic import BaseModel, ConfigDict, Field
 from seed_runtime.secrets import (
     SECRET_FIELD_NAMES,
     secret_boundary_key,
@@ -112,14 +112,41 @@ def _decode_screened_event_material(raw_material: str) -> Any:
     return material
 
 
-class Event(BaseModel):
-    model_config = ConfigDict(frozen=True)
+class Event:
+    __slots__ = (
+        "identity",
+        "kind",
+        "timestamp",
+        "material",
+        "exact_material",
+        "locality_identity",
+        "_fixed",
+        "__weakref__",
+    )
 
-    def __init__(self, **data: Any) -> None:
-        material = data.get("material", {})
-        exact_material = data.get("exact_material")
+    def __init__(
+        self,
+        *,
+        identity: str,
+        kind: str,
+        timestamp: datetime | None = None,
+        material: dict[str, Any] | None = None,
+        exact_material: bytes | None = None,
+        locality_identity: str | None = None,
+    ) -> None:
+        material = {} if material is None else material
+        if type(identity) is not str or not identity:
+            raise ValueError("event identity must be a non-empty string")
+        if type(kind) is not str or not kind:
+            raise ValueError("event kind must be a non-empty string")
+        if timestamp is not None and type(timestamp) is not datetime:
+            raise ValueError("event timestamp must be a datetime or absent")
+        if type(material) is not dict and not isinstance(material, _ScreenedEventMaterial):
+            raise ValueError("event material must be an exact dictionary")
         if exact_material is not None and type(exact_material) is not bytes:
             raise ValueError("event exact material must be exact bytes or absent")
+        if locality_identity is not None and type(locality_identity) is not str:
+            raise ValueError("event locality identity must be a string or absent")
         if not isinstance(material, _ScreenedEventMaterial):
             reject_secret_fields(material, "event.material")
             # Refused here rather than at the store, so both ledgers refuse the
@@ -127,11 +154,55 @@ class Event(BaseModel):
             # read from durable JSON is already preservable by
             # input, which is what the screened representation identifies.
             _require_preservable_material(material)
-        super().__init__(**data)
+        object.__setattr__(self, "identity", identity)
+        object.__setattr__(self, "kind", kind)
+        object.__setattr__(self, "timestamp", utc_now() if timestamp is None else timestamp)
+        object.__setattr__(
+            self,
+            "material",
+            dict(material) if isinstance(material, _ScreenedEventMaterial) else material,
+        )
+        object.__setattr__(self, "exact_material", exact_material)
+        object.__setattr__(self, "locality_identity", locality_identity)
+        object.__setattr__(self, "_fixed", True)
 
-    identity: str
-    kind: str
-    timestamp: datetime = Field(default_factory=utc_now)
-    material: dict[str, Any] = Field(default_factory=dict)
-    exact_material: bytes | None = None
-    locality_identity: str | None = None
+    def __setattr__(self, name: str, value: Any) -> None:
+        if getattr(self, "_fixed", False):
+            raise AttributeError("Event coordinates are fixed")
+        object.__setattr__(self, name, value)
+
+    def __deepcopy__(self, memo: dict[int, Any]) -> Event:
+        repeated = Event(
+            identity=self.identity,
+            kind=self.kind,
+            timestamp=self.timestamp,
+            material=deepcopy(self.material, memo),
+            exact_material=self.exact_material,
+            locality_identity=self.locality_identity,
+        )
+        memo[id(self)] = repeated
+        return repeated
+
+    def __eq__(self, other: object) -> bool:
+        if not isinstance(other, Event):
+            return NotImplemented
+        return all(
+            getattr(self, coordinate) == getattr(other, coordinate)
+            for coordinate in (
+                "identity",
+                "kind",
+                "timestamp",
+                "material",
+                "exact_material",
+                "locality_identity",
+            )
+        )
+
+    def __repr__(self) -> str:
+        return (
+            "Event("
+            f"identity={self.identity!r}, kind={self.kind!r}, "
+            f"timestamp={self.timestamp!r}, material={self.material!r}, "
+            f"exact_material={self.exact_material!r}, "
+            f"locality_identity={self.locality_identity!r})"
+        )

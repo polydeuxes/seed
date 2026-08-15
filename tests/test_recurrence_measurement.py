@@ -12,6 +12,7 @@ travels with it, and the counting scope says exactly what was input.
 
 from __future__ import annotations
 
+from copy import deepcopy
 from dataclasses import replace
 from tests.binary_input import binary_input
 from io import StringIO
@@ -212,11 +213,13 @@ def test_recorded_assertions_are_addressable_through_their_occurrence(compared):
 
 
 def test_validation_refuses_assertion_identity_that_does_not_match_content(compared):
-    event = record_measured_count(
-        compared,
-        locality_identity="s1",
-        finding=_by_representation(compared)["word"],
-    ).model_copy(deep=True)
+    event = deepcopy(
+        record_measured_count(
+            compared,
+            locality_identity="s1",
+            finding=_by_representation(compared)["word"],
+        )
+    )
     assertion = _assertions_by_result(event)["count"]
     assertion["dimensions"]["content"]["locality_count"] += 1
 
@@ -227,20 +230,24 @@ def test_validation_refuses_assertion_identity_that_does_not_match_content(compa
 
 
 def test_validation_refuses_non_assertion_and_unresolved_local_support(compared):
-    event = record_measured_count(
-        compared,
-        locality_identity="s1",
-        finding=_by_representation(compared)["word"],
-    ).model_copy(deep=True)
+    event = deepcopy(
+        record_measured_count(
+            compared,
+            locality_identity="s1",
+            finding=_by_representation(compared)["word"],
+        )
+    )
     _assertions_by_result(event)["count"]["subject_kind"] = "not-an-assertion"
     with pytest.raises(RecurrenceMeasurementError, match="not identified"):
         assertions_of_recorded_measurement(event)
 
-    event = record_measured_count(
-        compared,
-        locality_identity="s1",
-        finding=_by_representation(compared)["word"],
-    ).model_copy(deep=True)
+    event = deepcopy(
+        record_measured_count(
+            compared,
+            locality_identity="s1",
+            finding=_by_representation(compared)["word"],
+        )
+    )
     _assertions_by_result(event)["count"]["input_support"][
         "local_assertion_identities"
     ] = ["absent-assertion"]
@@ -309,7 +316,7 @@ def test_assertion_compare_distinguishes_absence_from_carried_none(compared):
     first = record_measured_count(
         compared, locality_identity="s1", finding=finding
     )
-    altered_material = first.model_copy(deep=True).material
+    altered_material = deepcopy(first).material
     altered_count = next(
         assertion
         for assertion in altered_material["assertions"]
@@ -352,7 +359,7 @@ def test_assertion_compare_exposes_changed_support_without_strengthening_it(comp
     first = record_measured_count(
         compared, locality_identity="s1", finding=finding
     )
-    altered_material = first.model_copy(deep=True).material
+    altered_material = deepcopy(first).material
     altered_measured_in = next(
         assertion
         for assertion in altered_material["assertions"]
@@ -545,13 +552,15 @@ def test_locality_and_applicability_do_not_substitute_for_participation(compared
         )
         for event in (first, second)
     ]
-    recorded = record_assertion_yield_comparison(
-        compared,
-        locality_identity="s1",
-        comparison=compare_assertion_yields(
-            compared, tuple(item.reference for item in inputs)
-        ),
-    ).model_copy(deep=True)
+    recorded = deepcopy(
+        record_assertion_yield_comparison(
+            compared,
+            locality_identity="s1",
+            comparison=compare_assertion_yields(
+                compared, tuple(item.reference for item in inputs)
+            ),
+        )
+    )
     assert all(
         set(item)
         == {
@@ -613,9 +622,11 @@ def test_recorded_comparison_assertion_identity_is_recomputed(compared):
     comparison = compare_assertion_yields(
         compared, (left.reference, right.reference)
     )
-    event = record_assertion_yield_comparison(
-        compared, locality_identity="s1", comparison=comparison
-    ).model_copy(deep=True)
+    event = deepcopy(
+        record_assertion_yield_comparison(
+            compared, locality_identity="s1", comparison=comparison
+        )
+    )
     event.material["assertions"][0]["dimensions"]["identity"] = "asserted-not-canonical"
 
     with pytest.raises(AssertionComparisonError, match="invalid identity"):
@@ -635,9 +646,11 @@ def test_validation_refuses_a_self_consistent_forged_compare_result(compared):
     comparison = compare_assertion_yields(
         compared, (left.reference, right.reference)
     )
-    event = record_assertion_yield_comparison(
-        compared, locality_identity="s1", comparison=comparison
-    ).model_copy(deep=True)
+    event = deepcopy(
+        record_assertion_yield_comparison(
+            compared, locality_identity="s1", comparison=comparison
+        )
+    )
     assertion = event.material["assertions"][0]
     content = assertion["dimensions"]["content"]
     assert content["present"] == [True, True]
@@ -669,9 +682,11 @@ def test_validation_requires_the_exact_compare_coordinate_set(compared):
     comparison = compare_assertion_yields(
         compared, (left.reference, right.reference)
     )
-    event = record_assertion_yield_comparison(
-        compared, locality_identity="s1", comparison=comparison
-    ).model_copy(deep=True)
+    event = deepcopy(
+        record_assertion_yield_comparison(
+            compared, locality_identity="s1", comparison=comparison
+        )
+    )
     event.material["assertions"].pop()
 
     with pytest.raises(AssertionComparisonError, match="every distinct"):
@@ -1270,7 +1285,7 @@ def test_measurement_events_are_folded_without_being_retained(compared):
             live_counts.append(
                 sum(reference() is not None for reference in references)
             )
-            generated = stored.model_copy(deep=True)
+            generated = deepcopy(stored)
             references.append(weakref.ref(generated))
             yield generated
             del generated
@@ -1298,7 +1313,7 @@ def test_every_probe_and_pass_reads_one_prefix_despite_a_concurrent_append(compa
         for event in compared.list()
         if event.kind == "operator.measurement.comparison_recorded"
     )
-    material = comparison.model_copy(deep=True).material
+    material = deepcopy(comparison).material
     material["shared_representations"] = [
         *material.get("shared_representations", []),
         "after-boundary",

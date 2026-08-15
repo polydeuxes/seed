@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from copy import deepcopy
 import json
 from dataclasses import replace
 from tests.binary_input import binary_input
@@ -247,7 +248,7 @@ def test_adjacency_pair_measurement_refuses_a_different_or_rewritten_source_occu
             occurrences=reversed(material),
         )
 
-    rewritten = material[0].model_copy(deep=True)
+    rewritten = deepcopy(material[0])
     rewritten.material["represented_material"] = "L a b different"
     with pytest.raises(
         PreservedMaterialMeasurementError,
@@ -259,10 +260,8 @@ def test_adjacency_pair_measurement_refuses_a_different_or_rewritten_source_occu
             occurrences=(rewritten, material[1]),
         )
 
-    relocated = material[0].model_copy(
-        deep=True,
-        update={"locality_identity": "other"},
-    )
+    relocated = deepcopy(material[0])
+    object.__setattr__(relocated, "locality_identity", "other")
     with pytest.raises(
         PreservedMaterialMeasurementError,
         match="source-occurrence Evidence does not read",
@@ -517,7 +516,7 @@ def test_adjacency_pair_measurement_read_refuses_changed_result_or_input_evidenc
         finding_event_identity=finding_identity,
     )
 
-    different = recorded.model_copy(deep=True)
+    different = deepcopy(recorded)
     different.material["measurements"][0]["exact_order"] = [0, 1, 3, 2]
     different = ledger.append(
         different.kind,
@@ -562,7 +561,7 @@ def test_adjacency_pair_measurement_endpoints_do_not_establish_participation():
         finding_event_identity=measurements[0].evidence["adjacency_evidence_event_identity"],
     )
 
-    missing = recorded.model_copy(deep=True)
+    missing = deepcopy(recorded)
     missing.material.pop("participation")
     missing = ledger.append(
         missing.kind,
@@ -572,7 +571,7 @@ def test_adjacency_pair_measurement_endpoints_do_not_establish_participation():
     with pytest.raises(PreservedMaterialMeasurementError, match="Participation"):
         get_recorded_adjacency_pair_measurements(ledger, missing.identity)
 
-    wrong = recorded.model_copy(deep=True)
+    wrong = deepcopy(recorded)
     wrong.material["participation"][0]["act_occurrence_identity"] = "other-occurrence"
     wrong = ledger.append(
         wrong.kind,
@@ -703,7 +702,7 @@ def test_emitted_representation_adjacency_requires_exact_locality():
         item["subject_reference"] for item in recorded_measurements.material["participation"]
     ] == [emission.material["locality_evidence_identity"], emission.identity]
 
-    copied = emission.model_copy(deep=True)
+    copied = deepcopy(emission)
     copied.material["locality_evidence_identity"] = None
     copied = ledger.append(
         copied.kind,
@@ -748,7 +747,7 @@ def test_emitted_representation_adjacency_requires_exact_locality():
     assert [
         item["subject_reference"] for item in recorded_compare.material["participation"]
     ] == [recorded_measurements.identity, repeated_measurements.identity]
-    wrong_occurrence = emission.model_copy(deep=True)
+    wrong_occurrence = deepcopy(emission)
     wrong_occurrence.material["locality_evidence_identity"] = repeated_emission.material[
         "locality_evidence_identity"
     ]

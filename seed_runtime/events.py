@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from collections import defaultdict
 from contextlib import contextmanager
+from copy import deepcopy
 from itertools import chain
 from dataclasses import dataclass
 from datetime import datetime
@@ -281,7 +282,7 @@ class EventLedger:
         own ledger event. Implementations may batch the underlying persistence
         transaction for storage efficiency.
         """
-        stored_events = [event.model_copy(deep=True) for event in events]
+        stored_events = [deepcopy(event) for event in events]
         self._validate_batch(stored_events)
         for event in stored_events:
             self._store(event)
@@ -618,7 +619,7 @@ class SQLiteEventLedger(EventLedger):
         events: Iterable[Event],
     ) -> list[Event]:
         """Persist pre-built events in order using a single SQLite transaction."""
-        stored_events = [event.model_copy(deep=True) for event in events]
+        stored_events = [deepcopy(event) for event in events]
         self._validate_sqlite_batch(stored_events)
         # One transaction, occurrences and their identity reservations
         # together. `#2428` stated that a reservation is written in the same

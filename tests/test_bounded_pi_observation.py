@@ -1,5 +1,6 @@
 """A finite decimal representation attributed to pi, observed only as bytes."""
 
+from copy import deepcopy
 from tests.binary_input import binary_input
 from io import StringIO
 
@@ -69,7 +70,7 @@ def test_a_longer_prefix_is_new_material_and_does_not_rewrite_the_shorter_one():
     ledger = EventLedger()
     _supply(ledger, "short-source", SHORT)
     short_bytes, short_pairs = _observe(ledger, "short-source", "short")
-    short_material = short_bytes.model_copy(deep=True).material
+    short_material = deepcopy(short_bytes).material
     short_pair_counts = _pair_counts(short_pairs)
 
     _supply(ledger, "long-source", LONG)
