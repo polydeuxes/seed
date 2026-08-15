@@ -148,6 +148,99 @@ def _named_dicts(scope):
     return found
 
 
+def _named_values(scope):
+    found = {}
+    for node in _scope_nodes(scope):
+        if not isinstance(node, (ast.Assign, ast.AnnAssign)):
+            continue
+        names = node.targets if isinstance(node, ast.Assign) else [node.target]
+        for name in names:
+            if isinstance(name, ast.Name):
+                found.setdefault(name.id, []).append((node.lineno, node.value))
+    return found
+
+
+def _resolved_named_value(name: str, *, line: int, named):
+    candidates = [item for item in named.get(name, ()) if item[0] < line]
+    return max(candidates, default=(None, None))[1]
+
+
+def _authored_strings(value, *, line: int, named, resolving=()):
+    if isinstance(value, ast.Constant):
+        if isinstance(value.value, str):
+            yield value.lineno, value.value
+        return
+    if isinstance(value, ast.Name):
+        if value.id in resolving:
+            return
+        resolved = _resolved_named_value(value.id, line=line, named=named)
+        if resolved is not None:
+            yield from _authored_strings(
+                resolved,
+                line=line,
+                named=named,
+                resolving=(*resolving, value.id),
+            )
+        return
+    if isinstance(value, ast.Dict):
+        for nested in value.values:
+            yield from _authored_strings(nested, line=line, named=named, resolving=resolving)
+        return
+    if isinstance(value, (ast.List, ast.Tuple, ast.Set)):
+        for nested in value.elts:
+            yield from _authored_strings(nested, line=line, named=named, resolving=resolving)
+        return
+    if isinstance(value, ast.JoinedStr):
+        for nested in value.values:
+            if isinstance(nested, ast.Constant) and isinstance(nested.value, str):
+                yield nested.lineno, nested.value
+        return
+    if isinstance(value, (ast.BinOp, ast.IfExp)):
+        for nested in ast.iter_child_nodes(value):
+            yield from _authored_strings(nested, line=line, named=named, resolving=resolving)
+        return
+    if (
+        isinstance(value, ast.Call)
+        and isinstance(value.func, ast.Name)
+        and value.func.id in {"dict", "list", "set", "tuple"}
+    ):
+        for nested in value.args:
+            yield from _authored_strings(nested, line=line, named=named, resolving=resolving)
+        for keyword in value.keywords:
+            yield from _authored_strings(
+                keyword.value, line=line, named=named, resolving=resolving
+            )
+
+
+def _authored_event_material_strings(path: Path, tree: ast.Module):
+    module_named = _named_values(tree)
+    for scope in _scopes(tree):
+        named = {name: list(values) for name, values in module_named.items()}
+        if scope is not tree:
+            for name, values in _named_values(scope).items():
+                named.setdefault(name, []).extend(values)
+        named_dicts = _named_dicts(scope)
+        for call in (
+            node for node in _scope_nodes(scope) if isinstance(node, ast.Call)
+        ):
+            material = None
+            if isinstance(call.func, ast.Attribute) and call.func.attr == "append":
+                if len(call.args) >= 2:
+                    material = call.args[1]
+            elif isinstance(call.func, ast.Name) and call.func.id == "Event":
+                keywords = {item.arg: item.value for item in call.keywords}
+                material = keywords.get("material")
+            resolved = _resolved_material_dict(
+                material, line=call.lineno, named=named_dicts
+            )
+            if resolved is None:
+                continue
+            for line, authored in _authored_strings(
+                resolved, line=call.lineno, named=named
+            ):
+                yield path.name, line, authored
+
+
 def _named_dict_additions(scope):
     found = {}
     for node in _scope_nodes(scope):
@@ -260,6 +353,42 @@ def test_runtime_record_vocabulary_has_constitutional_admission():
         f"{path}:{line} [{word}] {value}"
         for path, line, word, value in violations
     )
+
+
+def _unadmitted_authored_event_material(path: Path, tree: ast.Module):
+    admitted = admitted_lexicon()
+    violations = set()
+    for source, line, value in _authored_event_material_strings(path, tree):
+        for word in re.findall(r"[A-Za-z]+", scan_active_line(value).lower()):
+            if word not in admitted:
+                violations.add((source, line, word, value))
+    return sorted(violations)
+
+
+def test_seed_authored_event_material_values_have_lexical_admission():
+    violations = []
+    for path, tree in _runtime_trees():
+        violations.extend(_unadmitted_authored_event_material(path, tree))
+    assert violations == [], "\n" + "\n".join(
+        f"{path}:{line} [{word}] {value}"
+        for path, line, word, value in violations
+    )
+
+
+def test_authored_value_admission_catches_an_unadmitted_word_without_naming_it():
+    tree = ast.parse(
+        'ledger.append(SOME_KIND, {"standing": "invented"})'
+    )
+    assert _unadmitted_authored_event_material(Path("fixture.py"), tree) == [
+        ("fixture.py", 1, "invented", "invented")
+    ]
+
+
+def test_opaque_supplied_material_is_not_seed_authored_language():
+    tree = ast.parse(
+        'ledger.append(SOME_KIND, {"standing": operator_material})'
+    )
+    assert _unadmitted_authored_event_material(Path("fixture.py"), tree) == []
 
 
 def test_runtime_coordinates_do_not_substitute_one_reference_for_several_coordinates():
