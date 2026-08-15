@@ -231,7 +231,7 @@ class RecurrenceFinding:
     identity. The recorded identity remains `measurement:<representation>`, and
     `01.Source:28` bounds the result to the measurement assertion. Nothing
     here establishes that the representation is the subject of anything, or
-    that Standing concerning it exists.
+    that Standing with it as subject exists.
 
     Three counts, because one is not readable without the others. A
     representation occurring three times says nothing until the material it
@@ -276,7 +276,7 @@ class RecurrenceFinding:
     # InputSupport to carry the support instead. This path was written without
     # it and measured 96.8% on 500 findings over 2,000 occurrences.
     input_support: InputSupport | None = None
-    # Which preserved Evidence concerns this result's exact Yield edge. The
+    # Which preserved Evidence is for this result's exact Yield edge. The
     # Evidence reference is neither the edge nor its Act occurrence by identity.
     # holds that a separately supplied representation with identical fields
     # does not carry the witnessed return's standing "unless that standing is
@@ -286,8 +286,8 @@ class RecurrenceFinding:
     # with the result rather than being validated later by matching bytes.
     #
     # A later representation carrying this same reference is another
-    # representation of the same yielded result, which is lawful. One carrying
-    # none is a representation of nothing yielded.
+    # representation of the same result under exact Yield Evidence. One carrying
+    # none has no such Yield relation.
     yield_evidence_identity: str | None = None
     limits: tuple[str, ...] = field(default=LIMITS)
 
@@ -482,8 +482,8 @@ def _result_content(finding) -> dict[str, Any]:
 
     Not `to_json_dict()`. That representation deliberately omits
     `material_provenance`, which is stated once by the recorder, so a
-    commitment taken over it cannot tell a result yielded over ledger-read
-    material from one yielded over supplied material -- the coordinate
+    commitment taken over it cannot tell a result from ledger-read material
+    from one from supplied material -- the coordinate
     `#2516` exists to keep. Every carried coordinate is included here,
     `limits` among them.
     """
@@ -493,7 +493,7 @@ def _result_content(finding) -> dict[str, Any]:
         finding, "material_provenance", MATERIAL_AS_SUPPLIED
     )
     # The reference to the yield evidence is not part of the content that
-    # evidence commits to; it is how a result says which evidence concerns it.
+    # evidence commits to; it is how a result names its Evidence.
     content.pop("yield_evidence_identity", None)
     return content
 
@@ -503,10 +503,10 @@ def _recorded_yield_result(
 ) -> dict[str, Any]:
     """Read the exact Yield coordinates from one recorded finding.
 
-    The yield evidence names the exact top-level coordinates the act
-    yielded. Recording may lawfully add other coordinates, so neither an
+    The Yield Evidence names the exact top-level result coordinates. Recording
+    may lawfully add other coordinates, so neither an
     exclusion list nor every key left in the recorded material reads this
-    boundary. `material_provenance` is the one yielded coordinate represented
+    boundary. `material_provenance` is the one result coordinate represented
     inside the recorder-established dimensions object.
     """
 
@@ -520,13 +520,13 @@ def _recorded_yield_result(
                 or "source_provenance" not in dimensions
             ):
                 raise PreservedMaterialMeasurementError(
-                    "the recorded finding does not preserve its yielded "
+                    "the recorded finding does not preserve its result "
                     "material provenance"
                 )
             content[key] = dimensions["source_provenance"]
         elif key not in material:
             raise PreservedMaterialMeasurementError(
-                f"the recorded finding does not preserve yielded coordinate {key}"
+                f"the recorded finding does not preserve result coordinate {key}"
             )
         else:
             content[key] = material[key]
@@ -534,10 +534,10 @@ def _recorded_yield_result(
 
 
 def _record_yield(ledger: EventLedger, *, locality_identity: str, finding) -> Event:
-    """Preserve, from inside the yielding act, that it yielded this result.
+    """Preserve exact Yield Evidence at the responsible Act boundary.
 
     The distinction is not that this is private. Privacy is mechanics. It is
-    that Standing concerning the occurrence-to-result edge is preserved at the
+    that Standing for the occurrence-to-result edge is preserved at the
     exact Act boundary, and
     the result carries the relation to it — so a separately supplied
     representation with identical fields carries no such relation, which is the
@@ -549,7 +549,7 @@ def _record_yield(ledger: EventLedger, *, locality_identity: str, finding) -> Ev
     What this establishes, and what it does not:
 
     ```text
-      established   this measuring act yielded this exact result
+      established   exact Yield from this measuring Act occurrence to this result
       not           who is authorized to perform it
       not           which responsible boundary bears the Measurement Responsibility
       not           that nothing else appended this kind directly
@@ -558,7 +558,7 @@ def _record_yield(ledger: EventLedger, *, locality_identity: str, finding) -> Ev
     The three negative coordinates stay unestablished; the material records them
     as such rather than filling them.
 
-    This occurrence is preserved Evidence concerning a Yield edge. It is not
+    This occurrence is preserved Evidence for a Yield edge. It is not
     that edge or its Act occurrence by identity.
     """
 
@@ -745,14 +745,14 @@ def measure_recurrences(
     if yield_in is not None:
         # Every result is fixed before any evidence is preserved. Preserving
         # one at a time would let evidence for the first survive a failure
-        # while measuring the rest, and that evidence would concern a result
-        # this act had not finished yielding.
+        # while measuring the rest, and that evidence would be for a result
+        # this Act had not fixed every result.
         #
         # The evidence is still appended one at a time, so a later append
         # failing leaves earlier evidence preserved while this call returns
-        # nothing. That evidence is not wrong: those results were yielded at
-        # this boundary, and the Assertion it carries says yielded rather than
-        # returned for exactly this reason. Making the appends atomic would
+        # nothing. That evidence is not wrong: those results have exact Yield
+        # Evidence at this boundary; it does not assert a successful return.
+        # Making the appends atomic would
         # let it Assertion the stronger thing, and is not done here.
         witnessed = []
         for finding in findings:
@@ -894,8 +894,8 @@ def record_measurement_findings(
                 f"{event_identity} is recorded as a input_identities preserved occurrence "
                 "and this ledger preserves no such ingest occurrence"
             )
-    # A recurrence finding is recordable where the act that yielded it
-    # preserved evidence of doing so. Required on this path only: every positional caller records
+    # A recurrence finding is recordable where its Act preserved exact Yield
+    # Evidence. Required on this path only: every positional caller records
     # without a yield witness, and adopting it there is its own migration.
     for finding, _ in supplied:
         if not isinstance(finding, RecurrenceFinding):
@@ -921,11 +921,11 @@ def record_measurement_findings(
             != finding.act_occurrence_identity
         ):
             raise PreservedMaterialMeasurementError(
-                "yield Evidence concerns a different Measurement occurrence"
+                "yield Evidence carries a different Measurement occurrence"
             )
         if evidence.material.get("result") != _result_content(finding):
             raise PreservedMaterialMeasurementError(
-                "the yield evidence this result names concerns a "
+                "the yield evidence this result names carries a "
                 "different result"
             )
     events = [

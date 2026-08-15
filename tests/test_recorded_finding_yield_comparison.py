@@ -63,7 +63,7 @@ def recorded():
     return _recorded_in(EventLedger())
 
 
-def test_a_finding_that_names_the_evidence_concerning_it_is_agreeing(recorded):
+def test_a_finding_that_names_its_exact_yield_evidence_is_agreeing(recorded):
     ledger, event = recorded
     result = compare_recorded_finding_yield(ledger, event.identity)
     assert result.kind == FINDING_YIELD_COMPARISON_KIND
@@ -71,7 +71,7 @@ def test_a_finding_that_names_the_evidence_concerning_it_is_agreeing(recorded):
     assert result.material["crossings"] == []
 
 
-def test_the_comparison_finding_carries_evidence_that_the_act_yielded_it(recorded):
+def test_the_comparison_finding_carries_exact_yield_evidence(recorded):
     ledger, event = recorded
     result = compare_recorded_finding_yield(ledger, event.identity)
     evidence = ledger.get(result.material["yield_evidence_identity"])
@@ -100,7 +100,7 @@ def test_result_shape_without_the_yield_relation_has_no_witness(recorded):
     assert result.material["yield_evidence_identity"] is not None
 
 
-def test_a_yielded_comparison_finding_is_occurrence_bound_and_addressable(recorded):
+def test_a_comparison_finding_with_yield_is_occurrence_bound_and_addressable(recorded):
     ledger, event = recorded
     result = compare_recorded_finding_yield(ledger, event.identity)
     read = get_recorded_finding_yield_comparison(ledger, result.identity)
@@ -244,7 +244,7 @@ def test_a_content_mismatch_does_not_assert_which_crossing_caused_it(
         {
             "kind": COMPARISON_UNKNOWN,
             "material": (
-                "the named yield evidence does not concern this exact "
+                "the named yield evidence does not carry this exact "
                 "recorded content"
             ),
         }
@@ -405,7 +405,7 @@ def test_missing_yield_result_is_erasure(recorded):
     assert result.material["crossings"][0]["kind"] == ERASURE
 
 
-def test_missing_recorded_yielded_coordinate_is_erasure(recorded):
+def test_missing_recorded_result_coordinate_is_erasure(recorded):
     ledger, event = recorded
     altered = dict(event.material)
     altered["dimensions"] = dict(altered["dimensions"])
@@ -424,7 +424,7 @@ def test_absent_locality_remains_absent(recorded):
     assert result.material["dimensions"]["scope_locality"] is None
 
 
-def test_recording_coordinates_is_not_part_of_the_yielded_comparison_result(recorded):
+def test_recording_coordinates_is_not_part_of_the_comparison_result(recorded):
     ledger, event = recorded
     result = compare_recorded_finding_yield(ledger, event.identity)
     evidence = ledger.get(result.material["yield_evidence_identity"])

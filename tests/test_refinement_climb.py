@@ -1,7 +1,7 @@
 """One refinement mechanism, ridden by witnesses that share nothing else.
 
 The subjects may be bytes or terms; the witness may be a decoder or a corpus.
-What the climb requires is a first classification that carries something and a
+What the climb requires is a first partition that carries something and a
 witness that answers about pairs.
 """
 
@@ -18,7 +18,7 @@ from book_grammar_witness import witness as book_witness  # noqa: E402
 from decoder_witness_harness import accepts, classes  # noqa: E402
 
 
-def test_whether_a_first_classification_must_carry_something_is_the_witness():
+def test_whether_a_first_partition_must_carry_something_is_the_witness():
     """What one class costs is how fast the witness separates from it.
 
     An ordering witness halves against its representative and climbs quickly.

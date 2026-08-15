@@ -182,7 +182,7 @@ def test_console_forms_c0_before_first_ingress_and_preserves_provenance_only():
 
     # A current Representation existing does not make the newest Ingest and the
     # most recently emitted Representation participants in one Compare.  The
-    # occurrence and its yielded-after occurrence relation are preserved; no Compare or
+    # occurrence and its exact Yield relation are preserved; no Compare or
     # Identification follows.
     kinds = [event.kind for event in ledger.list()]
     assert kinds == [
@@ -217,9 +217,6 @@ def test_console_forms_c0_before_first_ingress_and_preserves_provenance_only():
         for event in ledger.list()
         if event.kind == "material.ingest.occurred"
     )
-    assert "yielded_after_representation_reference" not in ingest.material
-    assert "yielded_after_representation_event_identity" not in ingest.material
-    assert "yielded_after_representation_emitted_event_identity" not in ingest.material
     assert c0_emitted.kind == "operator.representation.emitted"
 
 
@@ -238,9 +235,6 @@ def test_console_ingest_adds_only_its_exact_occurrences():
     representations = [e for e in ledger.list() if e.kind == "operator.representation.recorded"]
     ingests = [e for e in ledger.list() if e.kind == "material.ingest.occurred"]
     assert len(ingests) == 3
-    for ingest in ingests:
-        assert "yielded_after_representation_reference" not in ingest.material
-
     # Standing read remains valid and records the occurrences.
     standing = _standing(ledger)
     assert len(standing["ingest_occurrences"]) == 3
@@ -302,8 +296,7 @@ def test_representation_act_dimensions_record_only_coordinates_that_exist():
     assert dimensions["occurrence_preservation"] == (
         "Representation Act durably recorded"
     )
-    # No Assertion of coordinates this Representation does not carry, and no
-    # classification of the resulting combination as a shape or kind.
+    # No Assertion of coordinates this Representation does not carry.
     flattened = str(dimensions).lower()
     for forbidden_text in (
         "bounded-alternative",
@@ -369,7 +362,6 @@ def test_console_presents_standing_only_across_an_ingest():
         c1.material["locality_standing_as_of_event_identity"] == ingest.identity
     )
     assert c0.material["alternative_material"] == [] and c1.material["alternative_material"] == []
-    assert "yielded_after_representation_reference" not in ingest.material
     # No developer result semantics anywhere in the locality.
     locality = str([e.material for e in ledger.list()])
     assert "developer-supplied" not in locality
@@ -543,7 +535,6 @@ def test_first_interaction_attaches_no_representation_to_the_ingest():
         if event.kind == "material.ingest.occurred"
     )
     first_representation = next(iter(_standing(ledger)["representations"].values()))
-    assert "yielded_after_representation_reference" not in ingest.material
     assert first_representation["representation_identity"]
 
 

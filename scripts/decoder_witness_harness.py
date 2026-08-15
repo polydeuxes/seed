@@ -148,7 +148,7 @@ def class_adjacency(
     reporting for its class would have stated `all` where the truth is `mixed`.
 
     `mixed` is not a failure. It is this measurement finding the earlier
-    classification insufficient for its own purpose, which is what
+    partition insufficient for its own purpose, which is what
     :func:`refine` then acts on.
     """
 
@@ -173,7 +173,7 @@ def refine(codec: str, read: dict[object, list[int]]) -> dict[object, list[int]]
     adjacency measurement found mixed decomposes into the members that share
     an outcome vector.
 
-    The earlier classification is not corrected by this. It was lawful for the
+    The earlier partition is not corrected by this. It was lawful for the
     act that established it; this is a later act finding it insufficient for a
     different purpose and establishing a finer one.
     """
@@ -194,10 +194,10 @@ def refine(codec: str, read: dict[object, list[int]]) -> dict[object, list[int]]
 
 
 def climb(codec: str, limit: int = 16) -> list[dict[object, list[int]]]:
-    """Every rung, from the first classification to the one that stops moving.
+    """Every rung, from the first partition to the one that stops moving.
 
     The mechanism is `refinement_climb`, which knows nothing of codecs. What
-    this supplies is the first classification and the witness.
+    this supplies is the first partition and the witness.
     """
 
     rungs = refinement_climb.climb(

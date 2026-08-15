@@ -1,7 +1,7 @@
 # Acts and Occurrences
 
 ## Constitutional subject
-The distinction between exact Acts, their occurrences, and representations concerning them.
+The distinction between exact Acts, their occurrences, and their representations.
 
 ## Core distinction
 What establishes that an Act occurred rather than that an Act-shaped representation exists?
@@ -14,27 +14,23 @@ Validation of an Act-shaped result does not establish the Act occurrence. A down
 
 **Yield** is only the exact evidenced relation from an Act occurrence to its result. Yield preserves the exact Act occurrence identity and result identity. Equal result content in distinct Act occurrences does not identify one result or Yield relation. Yield != Act, Act occurrence, result, result Standing, novelty, locality, or persistence. Act occurrence and result co-presence does not establish Yield.
 
-A Responsibility bounds what Standing may be established, preserved, or revised concerning its bounded subject; it is not the Standing, the responsible occurrence, Applicability, an exact Act, or an Act occurrence. Seed may read that Responsibility only through current Standing concerning its exact assignment. A Responsibility governs an exact Act. An Act occurrence is one occurrence at which that Act is performed under the Responsibility. Establishing Standing concerning a new subject is not revision of Standing concerning an existing subject, and neither is preservation of existing Standing. Each is lawful only as established by the occurrence's Evidence, Authority, Scope, and preserved limits. Standing, available material, Responsibility, and exact Act identity do not by identity establish that an Act was proposed or occurred.
+A Responsibility bounds what Standing may be established, preserved, or revised for its bounded subject; it is not the Standing, the responsible occurrence, Applicability, an exact Act, or an Act occurrence. Seed may read that Responsibility only through current Standing whose subject is its exact assignment. A Responsibility governs an exact Act. An Act occurrence is one occurrence at which that Act is performed under the Responsibility. Establishing Standing for a new subject is not revision of Standing for an existing subject, and neither is preservation of existing Standing. Each is lawful only as established by the occurrence's Evidence, Authority, Scope, and preserved limits. Standing, available material, Responsibility, and exact Act identity do not by identity establish that an Act was proposed or occurred.
 
 ## Important distinctions
 - boundary invocation != assertion-bearing branch != supplied result != effect beyond the boundary
 - successful return != every asserted effect occurred
 - failed Act != absence of Act occurrence
 - Act != representation describing an Act
-- classification of material != occurrence of the classified Act
 - proposal != occurrence
-- intent classification != enactment
 - read-only/non-mutating != no constitutional occurrence
 - representation != Act that established it
-- exact Act != Assertion concerning that Act
+- exact Act != Assertion whose subject is that Act
 - coherence validated != upstream assertion re-proven
-- Standing concerning a new downstream subject != revision of upstream-subject Standing
+- Standing for a new downstream subject != revision of upstream-subject Standing
 - Act occurrence-to-result relation != Assertion truth
 - equal result content != same result identity or Yield relation
 
 ## Counterexamples or failure modes
-- Treating a representation concerning a proposed, requested, or contemplated Act as Evidence that the Act occurred.
-- Treating classified operator material as the requested Act itself.
 - Treating a directly supplied result as Evidence that exact focus Evidence was validated.
 
 ## Related chapters

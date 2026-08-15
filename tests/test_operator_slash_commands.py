@@ -115,7 +115,7 @@ def test_repeated_checkpoints_preserve_one_exact_checkpoint_chain():
     }
 
 
-def test_unregistered_slash_name_is_not_silently_reclassified_as_data():
+def test_unregistered_slash_name_is_not_silently_treated_as_data():
     ledger = _run(b"/unregistered\nafter\n")
 
     assert _raw_bytes(ledger) == [b"after\n"]

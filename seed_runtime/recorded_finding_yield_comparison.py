@@ -1,6 +1,6 @@
 """A bounded Compare of a recorded finding and its Yield Evidence.
 
-This Compare concerns one recorded finding and the Yield Evidence it names.
+This Compare has one recorded finding and its named Yield Evidence as participants.
 Within that boundary it may find agreement, a coordinate difference, or
 Unknown. It does not certify this Seed, declare completion, map responsible
 boundaries, score results, expose a public diagnostic, or grant correction
@@ -8,12 +8,12 @@ Authority.
 
 **What this compares.** One recorded recurrence Measurement finding and the
 Yield Evidence that finding names. `#2517` established that represented
-relation for recurrence only: a measuring act preserves evidence of what it
-yielded, and the result carries the reference. Positional Measurement has not
+relation for recurrence only: a measuring act preserves exact Yield Evidence,
+and the result carries the reference. Positional Measurement has not
 adopted that yield witness and is outside this comparator's scope. The
 evidence is not the yielding occurrence by identity. The expectation is exact
-and local — *the recorded result is the result its yield evidence
-concerns* — and the witness is the recorded event itself.
+and local — *the recorded result is the result named by its Yield Evidence* —
+and the witness is the recorded event itself.
 
 **What it does not do.** It establishes no movement. `06.Standing.B` establishes that
 making an Assertion available at another locality does not revise its Standing,
@@ -86,7 +86,7 @@ COMPARISON_RECORDING_COORDINATES = frozenset(
     }
 )
 COMPARISON_OCCURRENCE_PRESERVATION = (
-    "recorded finding Yield comparison durably recorded after its exact result was yielded"
+    "recorded finding Yield comparison durably recorded with exact result Yield Evidence"
 )
 
 
@@ -162,10 +162,10 @@ def get_recorded_finding_yield_comparison(
             "the named yield Evidence does not describe the exact "
             "Compare result contract"
         )
-    yielded = {name: material[name] for name in COMPARISON_RESULT_COORDINATES}
-    if evidence.material.get("result") != yielded:
+    exact_result = {name: material[name] for name in COMPARISON_RESULT_COORDINATES}
+    if evidence.material.get("result") != exact_result:
         raise RecordedFindingYieldComparisonError(
-            "the named Yield Evidence concerns a different Compare result"
+            "the named Yield Evidence carries a different Compare result"
         )
     act_evidence_identity = material.get("responsible_act_evidence_identity")
     if not isinstance(act_evidence_identity, str) or not act_evidence_identity:
@@ -316,7 +316,7 @@ def compare_recorded_finding_yield(ledger: EventLedger, event_identity: str) -> 
                 crossings.append(
                     _crossing(
                         UNSUPPORTED_COORDINATE,
-                        "the named yield evidence concerns a different "
+                        "the named yield evidence carries a different "
                         "kind of result",
                     )
                 )
@@ -368,8 +368,8 @@ def compare_recorded_finding_yield(ledger: EventLedger, event_identity: str) -> 
                             crossings.append(
                                 _crossing(
                                     COMPARISON_UNKNOWN,
-                                    "the named yield evidence does not "
-                                    "concern this exact recorded content",
+                                    "the named yield evidence does not carry "
+                                    "this exact recorded content",
                                 )
                             )
     if unresolved:
@@ -411,7 +411,7 @@ def compare_recorded_finding_yield(ledger: EventLedger, event_identity: str) -> 
             ),
         "compared_relation": (
                 "the recorded finding names preserved yield evidence, and "
-                "that evidence concerns this exact recorded content"
+                "that evidence carries this exact recorded content"
             ),
         "recorded_finding_reference": event_identity,
         "yield_evidence": named,
@@ -432,8 +432,6 @@ def compare_recorded_finding_yield(ledger: EventLedger, event_identity: str) -> 
                 "not movement.",
                 "This establishes no Responsibility or responsible boundary.",
                 "Agreement within these coordinates says nothing beyond them.",
-                "A crossing represented here is not a crossing concerning "
-                "whatever this finding stood on.",
         ],
     }
     responsible_act_evidence = ledger.append(
@@ -446,7 +444,7 @@ def compare_recorded_finding_yield(ledger: EventLedger, event_identity: str) -> 
             "responsible_boundary": "this Seed",
             "authority": authority_boundary,
             "evidence_scope": (
-                "Evidence concerning this exact finding Yield Compare occurrence only"
+                "Evidence for this exact finding Yield Compare occurrence only"
             ),
         },
         locality_identity=recorded.locality_identity,

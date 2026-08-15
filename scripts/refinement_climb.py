@@ -1,26 +1,26 @@
 #!/usr/bin/env python3
-"""Refine a classification until a rung establishes nothing the one below did.
+"""Refine a partition until a rung establishes nothing the one below did.
 
 The mechanism is not about bytes or codecs. Given subjects, a witness that
-answers about pairs of them, and a first classification, each rung asks its
+answers about pairs of them, and a first partition, each rung asks its
 witness how the members of a class behaved and splits the class where they
 behaved apart. A class whose members behaved alike survives untouched.
 
 ```text
   classesₙ
     ↓ read by the next measurement
-  members disagree?   no  -> the classification survives
+  members disagree?   no  -> the partition survives
                       yes -> it decomposes
     ↓
   classesₙ₊₁
 ```
 
-**A classification is lawful for the act that established it, and no longer.**
+**A partition is lawful for the act that established it, and no longer.**
 `0x80` and `0xff` are one class under a measurement of first bytes and two
 under a measurement of pairs. Neither measurement is wrong; the second found
 the first insufficient for its own purpose.
 
-**Whether the first classification must carry something is the witness's
+**Whether the first partition must carry something is the witness's
 affair.** A witness that answers differently for a subject depending on which
 side of a representative it falls will separate from one class containing
 everything. A witness that answers `False` for almost every pair will not: from
@@ -42,13 +42,13 @@ Witness = Callable[[Subject, Subject], Hashable]
 
 
 def one_class(subjects: Iterable[Subject]) -> Partition:
-    """Every subject together: the classification that establishes nothing."""
+    """Every subject together: the partition that establishes nothing."""
 
     return [tuple(subjects)]
 
 
 def by(key: Callable[[Subject], Hashable], subjects: Iterable[Subject]) -> Partition:
-    """A first classification carrying whatever the key measured."""
+    """A first partition carrying whatever the key measured."""
 
     grouped: dict[Hashable, list[Subject]] = {}
     for subject in subjects:
@@ -88,7 +88,7 @@ def refine(partition: Partition, witness: Witness) -> Partition:
 
 
 def climb(first: Partition, witness: Witness, limit: int = 32) -> list[Partition]:
-    """Every rung, from the classification supplied to the one that stops moving."""
+    """Every rung, from the partition supplied to the one that stops moving."""
 
     rungs = [first]
     for _ in range(limit):

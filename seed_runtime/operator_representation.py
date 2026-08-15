@@ -156,7 +156,7 @@ def record_operator_representation(
             "responsible_boundary": "this Seed",
             "authority": "unestablished",
             "evidence_scope": (
-                "Evidence concerning this exact Representation Act occurrence only"
+                "Evidence for this exact Representation Act occurrence only"
             ),
         },
         locality_identity=locality_identity,
@@ -273,10 +273,10 @@ def read_operator_representation(
     )
     if not all(requirements.values()):
         raise ValueError("the recorded Representation Yield is not exact")
-    yielded = ledger.get(yield_evidence_identity).material.get("result")
+    exact_result = ledger.get(yield_evidence_identity).material.get("result")
     if (
-        type(yielded) is not dict
-        or locality_evidence.material.get("carried_content") != yielded
+        type(exact_result) is not dict
+        or locality_evidence.material.get("carried_content") != exact_result
         or locality_evidence.material.get("act_occurrence_identity")
         != material.get("act_occurrence_identity")
         or act_evidence.material.get("act_occurrence_identity")
@@ -450,7 +450,7 @@ def emit_operator_representation(
             "input_role": REPRESENTATION_EMISSION_INPUT_ROLE,
             "authority": "unestablished",
             "evidence_scope": (
-                "Evidence concerning this exact emission Act occurrence and "
+                "Evidence for this exact emission Act occurrence and "
                 "the Representation participating in its exact input role only"
             ),
         },

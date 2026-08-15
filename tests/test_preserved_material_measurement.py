@@ -414,7 +414,7 @@ def test_a_representation_that_never_occurs_yields_a_measurement_finding(
     assert finding.occurrences_carrying == 0
     # The scope is still stated: a bounded measurement assertion under the
     # declared rule and scope, not a failure to measure. It establishes no
-    # Standing concerning zebra; `01.Source:28` bounds it to the assertion.
+    # Standing with zebra as its subject; `01.Source:28` bounds it to the Assertion.
     assert finding.input_count == 3
     event = record_measurement_finding(
         ledger, locality_identity="r", finding=finding
@@ -1306,7 +1306,7 @@ def _rebuilt(finding, **different):
     return RecurrenceFinding(**fields)
 
 
-def _yielded(ledger, occurrences, target="the", **kw):
+def _with_yield_evidence(ledger, occurrences, target="the", **kw):
     return measure_recurrence(
         occurrences,
         declared=_recurrence_declared(target),
@@ -1318,23 +1318,23 @@ def _yielded(ledger, occurrences, target="the", **kw):
 
 def test_a_result_records(recurrence_occurrences):
     ledger, occurrences = recurrence_occurrences
-    finding = _yielded(ledger, occurrences)
+    finding = _with_yield_evidence(ledger, occurrences)
     event = record_measurement_finding(
         ledger, locality_identity="r", finding=finding
     )
     assert event.kind == MEASUREMENT_RECORDED_KIND
 
 
-def test_an_identical_finding_nobody_yielded_cannot_reuse_the_witness(
+def test_an_identical_finding_without_yield_cannot_reuse_the_witness(
     recurrence_occurrences,
 ):
     """The exact direct-instantiation counterexample: identical fields."""
 
     ledger, occurrences = recurrence_occurrences
-    yielded = _yielded(ledger, occurrences)
-    supplied = _rebuilt(yielded, yield_evidence_identity=None)
+    exact_result = _with_yield_evidence(ledger, occurrences)
+    supplied = _rebuilt(exact_result, yield_evidence_identity=None)
     # Every measured coordinate is identical. Only the relation is absent.
-    assert _result_content(supplied) == _result_content(yielded)
+    assert _result_content(supplied) == _result_content(exact_result)
     with pytest.raises(PreservedMaterialMeasurementError, match="names no yield"):
         record_measurement_finding(
             ledger, locality_identity="r", finding=supplied
@@ -1347,8 +1347,8 @@ def test_another_representation_of_the_same_result_is_lawful(
     """Carrying the same evidence is being the same result, not forging one."""
 
     ledger, occurrences = recurrence_occurrences
-    yielded = _yielded(ledger, occurrences)
-    same = _rebuilt(yielded)
+    exact_result = _with_yield_evidence(ledger, occurrences)
+    same = _rebuilt(exact_result)
     event = record_measurement_finding(
         ledger, locality_identity="r", finding=same
     )
@@ -1357,8 +1357,10 @@ def test_another_representation_of_the_same_result_is_lawful(
 
 def test_evidence_for_one_result_does_not_carry_another(recurrence_occurrences):
     ledger, occurrences = recurrence_occurrences
-    yielded = _yielded(ledger, occurrences)
-    borrowed = _rebuilt(yielded, recurrence_count=yielded.recurrence_count + 1)
+    exact_result = _with_yield_evidence(ledger, occurrences)
+    borrowed = _rebuilt(
+        exact_result, recurrence_count=exact_result.recurrence_count + 1
+    )
     with pytest.raises(PreservedMaterialMeasurementError, match="different result"):
         record_measurement_finding(
             ledger, locality_identity="r", finding=borrowed
@@ -1396,12 +1398,12 @@ def test_results_of_one_act_occurrence_cannot_locality_yield_evidence(
         {"limits": ("a limit nobody measured",)},
     ],
 )
-def test_changing_any_yielded_coordinate_cannot_reuse_the_witness(
+def test_changing_any_result_coordinate_cannot_reuse_the_yield_witness(
     recurrence_occurrences, different
 ):
     ledger, occurrences = recurrence_occurrences
-    yielded = _yielded(ledger, occurrences)
-    altered = _rebuilt(yielded, **different)
+    exact_result = _with_yield_evidence(ledger, occurrences)
+    altered = _rebuilt(exact_result, **different)
     with pytest.raises(PreservedMaterialMeasurementError, match="different result"):
         record_measurement_finding(
             ledger, locality_identity="r", finding=altered
@@ -1412,10 +1414,10 @@ def test_changing_input_identities_cannot_reuse_the_yield_witness(
     recurrence_occurrences,
 ):
     ledger, occurrences = recurrence_occurrences
-    yielded = _yielded(ledger, occurrences)
+    exact_result = _with_yield_evidence(ledger, occurrences)
     altered = _rebuilt(
-        yielded,
-        input_occurrences=yielded.input_occurrences[:-1],
+        exact_result,
+        input_occurrences=exact_result.input_occurrences[:-1],
     )
     with pytest.raises(PreservedMaterialMeasurementError, match="different result"):
         record_measurement_finding(
@@ -1429,7 +1431,7 @@ def test_recording_cannot_overwrite_what_the_measurement_established(
     """`extra` may add recording coordinates; it may not replace Yield-edge ones."""
 
     ledger, occurrences = recurrence_occurrences
-    finding = _yielded(ledger, occurrences)
+    finding = _with_yield_evidence(ledger, occurrences)
     # Refused rather than quietly dropped: a caller asked to record one thing
     # and silently recording another is its own defect.
     with pytest.raises(PreservedMaterialMeasurementError, match="may not replace"):
@@ -1455,7 +1457,7 @@ def test_recording_cannot_restate_the_measurements_own_dimensions(
     -- carrying the provenance `#2516` read -- was reachable."""
 
     ledger, occurrences = recurrence_occurrences
-    finding = _yielded(ledger, occurrences)
+    finding = _with_yield_evidence(ledger, occurrences)
     with pytest.raises(PreservedMaterialMeasurementError, match="may not replace"):
         record_measurement_finding(
             ledger,
@@ -1485,7 +1487,7 @@ def test_recurrence_recorder_requires_its_exact_yield_result(
     recurrence_occurrences,
 ):
     ledger, occurrences = recurrence_occurrences
-    finding = _yielded(ledger, occurrences)
+    finding = _with_yield_evidence(ledger, occurrences)
     evidence = ledger.get(finding.yield_evidence_identity)
     assert evidence.material["dimensions"]["act_occurrence_identity"] == (
         finding.act_occurrence_identity
@@ -1517,7 +1519,7 @@ def test_the_witness_asserts_no_responsibility(
     recurrence_occurrences,
 ):
     ledger, occurrences = recurrence_occurrences
-    _yielded(ledger, occurrences)
+    _with_yield_evidence(ledger, occurrences)
     witness = [
         e for e in ledger.list() if e.kind == YIELD_EVIDENCE_KIND
     ][-1]
@@ -1544,7 +1546,7 @@ def test_recording_may_not_replace_any_coordinate_the_material_carries(
     the measurement's provenance by omission."""
 
     ledger, occurrences = recurrence_occurrences
-    finding = _yielded(ledger, occurrences)
+    finding = _with_yield_evidence(ledger, occurrences)
     with pytest.raises(PreservedMaterialMeasurementError, match="may not replace"):
         record_measurement_finding(
             ledger, locality_identity="r", finding=finding, extra=addition
@@ -1553,7 +1555,7 @@ def test_recording_may_not_replace_any_coordinate_the_material_carries(
 
 def test_recording_may_still_add_its_own_coordinate(recurrence_occurrences):
     ledger, occurrences = recurrence_occurrences
-    finding = _yielded(ledger, occurrences)
+    finding = _with_yield_evidence(ledger, occurrences)
     event = record_measurement_finding(
         ledger,
         locality_identity="r",

@@ -1,12 +1,12 @@
-"""Private physiology for Evidence concerning one exact yielded result.
+"""Evidence for one exact Yield relation.
 
 This does not establish Responsibility. It preserves, from inside
 an act after that act has fixed its result, Evidence committing to the exact
-coordinates yielded. The resulting Event is Evidence concerning the exact
+result coordinates. The resulting Event is Evidence for the exact
 occurrence-to-result edge; it is neither that edge nor either endpoint by identity.
 
 The helper is private implementation plumbing, not the guarantee. The result's
-carried relation to this Evidence distinguishes a yielded result from an
+carried relation to this Evidence distinguishes a result with exact Yield from an
 identical caller-supplied representation. Exposing a public entry point that
 accepts arbitrary result content would instead create a second recorder able to
 manufacture that relation.
@@ -56,7 +56,7 @@ def read_yield_edge_requirements(
 
     The caller supplies exact occurrence identities under pressure.  Seed
     resolves the stored occurrences itself; it does not accept read
-    event materials and does not re-encode the yielded result.  A missing
+    event materials and does not re-encode the exact result.  A missing
     result-evidence occurrence makes every requirement absent.  Changing an
     unrelated event coordinate does not.
     """
@@ -202,7 +202,7 @@ def _record_yield_evidence(
     if live_boundary not in YIELD_LIVE_BOUNDARIES:
         raise ValueError("Yield Evidence requires one declared live boundary")
     if type(result_content) is not dict:
-        raise TypeError("Yield Evidence requires one exact yielded result")
+        raise TypeError("Yield Evidence requires one exact result")
     if result_exact_material is not None and type(result_exact_material) is not bytes:
         raise TypeError("Yield Evidence exact material must be exact bytes or absent")
     declared_recorded_result_coordinates = (
@@ -214,12 +214,12 @@ def _record_yield_evidence(
         declared_recorded_result_coordinates
     ) != set(result_content):
         raise ValueError(
-            "Yield Evidence requires one carried coordinate for every yielded coordinate"
+            "Yield Evidence requires one carried coordinate for every result coordinate"
         )
     preserved_recorded_result_coordinates = {}
     for coordinate, carried_at in declared_recorded_result_coordinates.items():
         if type(coordinate) is not str or not coordinate:
-            raise TypeError("a yielded coordinate must be one exact representation")
+            raise TypeError("a result coordinate must be one exact representation")
         if type(carried_at) is not tuple or not carried_at or not all(
             type(part) is str and part for part in carried_at
         ):
@@ -236,8 +236,8 @@ def _record_yield_evidence(
                     f"yield-evidence:{act_occurrence_identity}:{result_identity}"
                 ),
                 "content": (
-                    f"evidence that {exact_act} yielded this exact "
-                    f"{result_kind} at its exact Act boundary"
+                    f"Evidence for the exact Yield from the {exact_act} occurrence "
+                    f"to this exact {result_kind} result at its Act boundary"
                 ),
                 "exact_act": exact_act,
                 "act_occurrence_identity": act_occurrence_identity,
@@ -255,7 +255,7 @@ def _record_yield_evidence(
                     "an enclosing call"
                 ),
                 "occurrence_preservation": (
-                    "Evidence concerning the exact occurrence-to-result edge, "
+                    "Evidence for the exact occurrence-to-result edge, "
                     "durably recorded; not the edge or Act occurrence by identity"
                 ),
             },

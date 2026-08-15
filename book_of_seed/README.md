@@ -6,7 +6,7 @@ It is not a roadmap, implementation reference, generated topology, or substitute
 
 ## Resolution
 
-- A **Chapter** concerns one bounded concept, Responsibility, distinction, or relation.
+- A **Chapter** has one bounded subject: a concept, Responsibility, distinction, or relation.
 - `[UNRESOLVED]` identifies a distinction for which the current repository does not safely support a constitutional resolution.
 - Seed must inspect the repository for current responsible occurrences, exact Acts, fields, topology, discrepancies, and residue.
 
@@ -18,7 +18,7 @@ grammar. Neither representation is the Book by identity.
 
 ## Standing
 
-Standing is the Book's root. Seed may read an exact Responsibility assignment only through current Standing concerning the Assertion that the exact responsible boundary bears that Responsibility. Standing does not create, perform, or become the Responsibility by identity.
+Standing is the Book's root. Seed may read an exact Responsibility assignment only through current Standing whose subject is the Assertion that the exact responsible boundary bears that Responsibility. Standing does not create, perform, or become the Responsibility by identity.
 
 ```text
 Standing
@@ -29,11 +29,11 @@ Standing
 → Standing
 ```
 
-The later Standing concerns the exact result or relation of the occurrence under Yield Evidence. It does not revise the Standing that admitted the Responsibility assignment unless a separate responsible occurrence establishes that revision.
+The later Standing has the exact result or relation of the occurrence under Yield Evidence as its subject. It does not revise the Standing that admitted the Responsibility assignment unless a separate responsible occurrence establishes that revision.
 
 ## Responsibility
 
-1. Responsibility is the first branch read from current Standing concerning its exact assignment.
+1. Responsibility is the first branch read from current Standing whose subject is its exact assignment.
 2. The headings beneath it expose coordinates and relations; they do not revise Responsibility assignments.
 3. Every instantiated responsibility must expose the branches required by that responsibility.
 4. A branch remains uninstantiated until a responsible occurrence supplies its coordinate.
@@ -48,7 +48,7 @@ Identifies who bears and answers for the exact responsibility. It is distinct fr
 
 #### Subject or material addressed
 
-Identifies what the Responsibility concerns, evaluates, represents, preserves, or stops. Responsible-boundary identity does not supply subject identity.
+Identifies the Responsibility's bounded subject. Responsible-boundary identity does not supply subject identity.
 
 #### Exact responsible act
 
@@ -210,7 +210,7 @@ Identifies any act-local applicability or admission standing required before mat
 
 #### Lawful Stopping
 
-Where a stopping occurrence carries a lawful Stop result, preserve separately the responsible boundary, stopping Act, stopping occurrence, and bounded Stop result. Identity among those coordinates must not be inferred. It is not reclassified as a relation merely because it connects a reason-bearing responsibility to the exact Act addressed by the Stop. Absence of movement, unresolved material, negative Standing, or a preventing Assertion does not supply a Stop by identity.
+Where a stopping occurrence carries a lawful Stop result, preserve separately the responsible boundary, stopping Act, stopping occurrence, and bounded Stop result. Identity among those coordinates must not be inferred. It is not a relation merely because it connects a reason-bearing responsibility to the exact Act addressed by the Stop. Absence of movement, unresolved material, negative Standing, or a preventing Assertion does not supply a Stop by identity.
 
 ```text
 absence of movement

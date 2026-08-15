@@ -31,7 +31,7 @@ def test_a_partition_refines_itself_and_the_one_holding_everything():
     assert not refines(everything, fine)
 
 
-def test_many_witnesses_reach_the_same_resting_classification():
+def test_many_witnesses_reach_the_same_resting_partition():
     found = partitions()
     sizes = sorted((len(names) for names in found.values()), reverse=True)
 
@@ -44,7 +44,7 @@ def test_the_witnesses_do_not_converge():
     """Most pairs are incomparable: they cut the material differently.
 
     Not one finer than another. If witnesses were approaching some finest
-    classification, comparable pairs would dominate; they are 7%.
+    partition, comparable pairs would dominate; they are 7%.
     """
 
     counted = order(partitions())

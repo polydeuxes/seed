@@ -482,7 +482,7 @@ def test_assertion_yield_compare_records_each_literal_result_separately(compared
     )
 
 
-def test_yielded_assertions_enter_compare_through_exact_input_relations(compared):
+def test_assertions_with_yield_enter_compare_through_exact_input_relations(compared):
     finding = _by_representation(compared)["word"]
     first = record_measured_count(
         compared, locality_identity="s1", finding=finding
@@ -1118,7 +1118,7 @@ def test_an_locality_that_never_measured_the_coordinate_is_distinguished(compare
 
 
 def test_the_third_result_preserves_its_complete_read_not_copied_identities(compared):
-    """The ledger boundary reads the complete negative-classification read."""
+    """The ledger boundary reads the complete negative result."""
     unrelated = _add_s5(compared)
     declared = DECLARED + ("s5",)
     finding = _by_representation(compared, declared)["word"]

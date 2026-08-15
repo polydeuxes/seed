@@ -113,10 +113,10 @@ def test_an_unrecorded_locality_reads_empty(durable_ledger):
 @pytest.mark.parametrize("ledger_name", ("memory_ledger", "durable_ledger"))
 def test_one_kind_is_streamed_from_only_one_locality(request, ledger_name):
     ledger = request.getfixturevalue(ledger_name)
-    yielded = ledger.iter_locality_kind("s1", INGEST_OCCURRED_KIND)
+    occurrences = ledger.iter_locality_kind("s1", INGEST_OCCURRED_KIND)
 
-    assert iter(yielded) is yielded
-    events = list(yielded)
+    assert iter(occurrences) is occurrences
+    events = list(occurrences)
     assert events
     assert {event.locality_identity for event in events} == {"s1"}
     assert {event.kind for event in events} == {INGEST_OCCURRED_KIND}

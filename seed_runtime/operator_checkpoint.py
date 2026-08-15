@@ -46,7 +46,7 @@ def open_operator_checkpoint(
     """Begin one fresh locality at the exact Representation addressed by the command.
 
     Argument bytes remain part of the addressed command occurrence. They are
-    not classified as a goal, desire, relation, Authority, or Standing here.
+    establish no goal, desire, relation, Authority, or Standing here.
     The checkpoint occurrence already carries the locality in which it
     occurred, so this relation stores no additional hierarchy field.
     """

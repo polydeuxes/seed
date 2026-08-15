@@ -1,7 +1,7 @@
 """A parallel edge-indexed store, for measuring against the ledger.
 
 This establishes nothing. It records no Assertion, owns no Responsibility, and
-is not a road any Act may consume.
+is not a witness any Act may consume.
 
 It writes the same occurrences with their material references lifted into an
 indexed edge table, so both traversal directions can be timed on one material.

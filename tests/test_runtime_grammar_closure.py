@@ -1,7 +1,7 @@
 """Reverse Fidelity sirens from live implementation back to machine grammar.
 
 These tests are deliberately bounded by what the runtime declares. They do
-not ask a hand-maintained list which implementation roads should be inspected.
+not ask a hand-maintained list which implementation witnesses should be inspected.
 Red means the implementation contains constitutional material the machine
 grammar and its deterministic witnesses do not yet account for.
 """
@@ -557,7 +557,7 @@ def test_every_recorded_yield_result_names_its_occurrence_and_exact_evidence():
     )
 
 
-def test_every_act_evidence_occurrence_carries_the_exact_act_physiology():
+def test_every_act_evidence_occurrence_names_responsibility_boundary_act_occurrence_authority_and_evidence_scope():
     required = {
         "responsibility",
         "responsible_boundary",

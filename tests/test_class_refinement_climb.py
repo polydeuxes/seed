@@ -1,4 +1,4 @@
-"""A classification is lawful for the act that established it, and no longer.
+"""A partition is lawful for the act that established it, and no longer.
 
 Each rung's classes are the material the next rung's measurement reads. Where
 that measurement finds a class's members behaving apart, the class decomposes.

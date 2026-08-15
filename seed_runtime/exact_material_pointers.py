@@ -189,7 +189,7 @@ def read_exact_bytes(
             read.extend(part.exact_bytes)
             continue
         end = part.source_position + part.count
-        # A reference may point to bytes yielded by an earlier reference, but
+        # A reference may point to bytes appended by an earlier reference, but
         # its complete source span must already exist before this part begins.
         if end > len(read):
             raise ExactMaterialPointerError(

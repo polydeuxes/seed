@@ -169,8 +169,8 @@ class ExactAdjacencyPairOccurrence:
 class AdjacencyPairMeasurement:
     """One bounded position on each side of one exact pair occurrence.
 
-    The representations are carried measurements. They are not classified as
-    relation words, and equal representations do not identify equal relations.
+    The representations are carried measurements. They establish no represented
+    relation, and equal representations do not identify equal relations.
     """
 
     left_occurrence: PositionedRepresentationOccurrence | None
@@ -813,8 +813,8 @@ def _record_adjacency_pair_measurement_result(
                 "responsible_boundary": "this Seed",
                 "authority": "unestablished",
                 "evidence_scope": (
-                    "measurement Evidence only; establishes no classification, "
-                    "represented relation, or Standing beyond this result"
+                    "measurement Evidence only; establishes no represented relation "
+                    "or Standing beyond this result"
                 ),
                 "scope_locality": f"locality:{locality_identity}",
                 "occurrence_preservation": "one exact adjacency-pair measurement Measurement occurrence recorded",
@@ -1048,7 +1048,7 @@ def get_recorded_adjacency_pair_measurements(
         or locality_evidence.material.get("carried_content") != result_material
     ):
         raise PreservedMaterialMeasurementError(
-            "the adjacency-pair measurement edge Evidence concerns different coordinates"
+            "the adjacency-pair measurement edge Evidence carries different coordinates"
         )
     anchor = ledger.get(adjacency_evidence_identity)
     sources: dict[str, Event] = {}
@@ -1148,7 +1148,7 @@ def get_recorded_adjacency_pair_measurements(
         or event.material.get("participation") != expected_participation
     ):
         raise PreservedMaterialMeasurementError(
-            "the adjacency-pair measurement Act Evidence concerns different inputs or Participation coordinates"
+            "the adjacency-pair measurement Act Evidence carries different inputs or Participation coordinates"
         )
     measurements = tuple(
         _adjacency_pair_measurement_from_material(value)
@@ -1223,7 +1223,7 @@ def record_adjacency_pair_measurement_compare(
             "responsible_boundary": "this Seed",
             "authority": "unestablished",
             "evidence_scope": (
-                "Evidence concerning this exact Compare occurrence and its exact "
+                "Evidence for this exact Compare occurrence and its exact "
                 "participants"
             ),
             "participation": participation,
@@ -1337,7 +1337,7 @@ def get_recorded_adjacency_pair_measurement_compare(
         or act_evidence.material.get("authority") != "unestablished"
         or act_evidence.material.get("evidence_scope")
         != (
-            "Evidence concerning this exact Compare occurrence and its exact "
+            "Evidence for this exact Compare occurrence and its exact "
             "participants"
         )
         or locality_evidence.material.get("carried_content") != result_material
@@ -1345,7 +1345,7 @@ def get_recorded_adjacency_pair_measurement_compare(
         or event.material.get("participation") != expected_participation
     ):
         raise PreservedMaterialMeasurementError(
-            "the recorded measurement Compare edge Evidence concerns different coordinates"
+            "the recorded measurement Compare edge Evidence carries different coordinates"
         )
     for input_identity in input_identities:
         event = ledger.get(input_identity)

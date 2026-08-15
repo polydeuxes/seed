@@ -46,8 +46,8 @@ def _require_preservable_material(value: Any, path: str = "material") -> None:
     JSON has no tuple and no non-string key, so a durable store silently
     returned `[1, 2]` for a tuple and `{"1": ...}` for an integer key while the
     in-memory ledger returned what the caller passed. The two share an API and
-    are used interchangeably, so one append yielded two different occurrences
-    depending on which ledger held it, with nothing recorded to say so.
+    are used interchangeably, so the two ledgers returned different occurrences
+    from one append, with nothing recorded to say so.
 
     Refused rather than coerced, and rather than declared as known loss: the
     loss is avoidable, since a caller wanting a sequence can pass a list and one

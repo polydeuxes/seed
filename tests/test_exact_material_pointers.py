@@ -36,7 +36,7 @@ def test_a_reference_may_reuse_bytes_that_an_earlier_reference_read():
         material=(
             LiteralPart(b"abcd"),
             ReferencePart(source_position=0, count=4),
-            # These bytes were themselves yielded by the preceding reference.
+            # These bytes were themselves appended by the preceding reference.
             ReferencePart(source_position=4, count=4),
         ),
     )
@@ -149,7 +149,7 @@ def test_encoder_parameters_are_exactly_bounded():
             represent_exact_material_pointers(b"abc", candidate_limit=bad)
 
 
-def test_the_account_declares_the_representation_act_that_yielded_it():
+def test_the_account_declares_the_representation_act_and_exact_yield():
     material = (b"the cat jumped the fence. the cat slept. "
                 b"a fence is not a cat. the cat jumped the fence.")
 

@@ -142,7 +142,7 @@ def run_persistent_operator_console(
                 locality_identity=locality_identity,
             )
             if attempt_record["current_standing"]["ingest_occurrence"] is not None:
-                # The yielded Representation is preserved independently. No Compare
+                # The Representation result and Yield Evidence are preserved independently. No Compare
                 # or Identification is inferred merely from temporal proximity.
                 representation = record_operator_representation(
                     ledger,

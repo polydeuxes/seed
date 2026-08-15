@@ -139,11 +139,11 @@ def _assertion_locality_requirements(
 
 
 def _source_assertion():
-    road = _byte_measurement_road()
-    return road["source_assertion"]
+    witness = _byte_measurement_witness()
+    return witness["source_assertion"]
 
 
-def _byte_measurement_road() -> dict:
+def _byte_measurement_witness() -> dict:
     ledger = _IntegrityAdversaryLedger()
     run_persistent_operator_console(
         ledger=ledger,
@@ -172,7 +172,7 @@ def _byte_measurement_road() -> dict:
 
 def _recorded_applicability() -> dict:
     # RecordedByteAssertion deliberately carries no ledger handle. Recreate the
-    # live road so every relation can be checked through its own occurrences.
+    # live witness so every relation can be checked through its own occurrences.
     ledger = _IntegrityAdversaryLedger()
     run_persistent_operator_console(
         ledger=ledger,
@@ -216,7 +216,7 @@ def _recorded_applicability() -> dict:
     }
 
 
-def _assertion_locality_movement_yield_road() -> dict:
+def _assertion_locality_movement_yield_witness() -> dict:
     source = _recorded_applicability()
     return {
         "ledger": source["ledger"],
@@ -228,7 +228,7 @@ def _assertion_locality_movement_yield_road() -> dict:
     }
 
 
-def _emission_road() -> dict:
+def _emission_witness() -> dict:
     ledger = _IntegrityAdversaryLedger()
     representation = record_operator_representation(
         ledger,
@@ -256,7 +256,7 @@ def _emission_road() -> dict:
     }
 
 
-def _failed_emission_yield_road() -> dict:
+def _failed_emission_yield_witness() -> dict:
     class PartialOutput(StringIO):
         def write(self, value):
             super().write(value[:-1])
@@ -280,7 +280,7 @@ def _failed_emission_yield_road() -> dict:
     return _yield_bundle(ledger, event)
 
 
-def _repeated_emission_attempt_road() -> tuple[dict, dict]:
+def _repeated_emission_attempt_witness() -> tuple[dict, dict]:
     ledger = _IntegrityAdversaryLedger()
     representation = record_operator_representation(
         ledger,
@@ -343,7 +343,7 @@ def _repeated_emission_attempt_road() -> tuple[dict, dict]:
     )
 
 
-def _representation_road() -> dict:
+def _representation_witness() -> dict:
     ledger = _IntegrityAdversaryLedger()
     representation = record_operator_representation(
         ledger,
@@ -360,7 +360,7 @@ def _representation_road() -> dict:
     }
 
 
-def _repeated_representation_road() -> tuple[dict, dict]:
+def _repeated_representation_witness() -> tuple[dict, dict]:
     ledger = _IntegrityAdversaryLedger()
 
     def record() -> dict:
@@ -385,7 +385,7 @@ def _repeated_representation_road() -> tuple[dict, dict]:
     return record(), record()
 
 
-def _assertion_compare_input_locality_roads() -> tuple[dict, dict]:
+def _assertion_compare_input_locality_witnesses() -> tuple[dict, dict]:
     ledger = _IntegrityAdversaryLedger()
     run_material_fixture_console(
         ledger=ledger,
@@ -450,11 +450,11 @@ def _assertion_compare_input_locality_roads() -> tuple[dict, dict]:
     return record(), record()
 
 
-def _assertion_yield_compare_road() -> dict:
-    return _assertion_compare_input_locality_roads()[0]
+def _assertion_yield_compare_witness() -> dict:
+    return _assertion_compare_input_locality_witnesses()[0]
 
 
-def _bounded_assertion_compare_yield_road() -> dict:
+def _bounded_assertion_compare_yield_witness() -> dict:
     ledger = _IntegrityAdversaryLedger()
     for locality_identity, material in (("first", "a b\n"), ("second", "a c\n")):
         run_material_fixture_console(
@@ -485,7 +485,7 @@ def _bounded_assertion_compare_yield_road() -> dict:
     return _yield_bundle(ledger, event)
 
 
-def _locality_count_yield_road() -> dict:
+def _locality_count_yield_witness() -> dict:
     ledger = _IntegrityAdversaryLedger()
     run_material_fixture_console(
         ledger=ledger,
@@ -512,8 +512,8 @@ def _locality_count_yield_road() -> dict:
     return _yield_bundle(ledger, event)
 
 
-def _bounded_compare_input_locality_roads() -> tuple[dict, dict]:
-    exact = _bounded_assertion_compare_yield_road()
+def _bounded_compare_input_locality_witnesses() -> tuple[dict, dict]:
+    exact = _bounded_assertion_compare_yield_witness()
     event = exact["event"]
     first = {
         **exact,
@@ -521,7 +521,7 @@ def _bounded_compare_input_locality_roads() -> tuple[dict, dict]:
             event.material["participation"][0]["locality_evidence_identity"]
         ),
     }
-    alternate = _bounded_assertion_compare_yield_road()
+    alternate = _bounded_assertion_compare_yield_witness()
     alternate_event = alternate["event"]
     second = {
         **alternate,
@@ -564,13 +564,13 @@ def _bounded_compare_input_locality_requirements(bundle: dict) -> dict[str, bool
 
 
 def _bounded_compare_input_locality_cases() -> dict[str, str]:
-    exact, alternate = _bounded_compare_input_locality_roads()
+    exact, alternate = _bounded_compare_input_locality_witnesses()
     missing = dict(exact)
     missing["locality_evidence"] = deepcopy(exact["locality_evidence"])
     missing["locality_evidence"].material["first_subject"] = "missing-input"
     wrong_occurrence = dict(exact)
     wrong_occurrence["locality_evidence"] = alternate["locality_evidence"]
-    corrupted, _ = _bounded_compare_input_locality_roads()
+    corrupted, _ = _bounded_compare_input_locality_witnesses()
     corrupted["ledger"].mark_corrupted(corrupted["locality_evidence"].identity)
     unrelated = dict(exact)
     unrelated["event"] = deepcopy(exact["event"])
@@ -623,7 +623,7 @@ def _assertion_compare_input_locality_requirements(bundle: dict) -> dict[str, bo
 
 
 def _assertion_compare_input_locality_cases() -> dict[str, str]:
-    exact, alternate = _assertion_compare_input_locality_roads()
+    exact, alternate = _assertion_compare_input_locality_witnesses()
     missing = dict(exact)
     missing_evidence = deepcopy(exact["locality_evidence"])
     missing_evidence.material["first_subject"] = {
@@ -637,7 +637,7 @@ def _assertion_compare_input_locality_cases() -> dict[str, str]:
         alternate["locality_evidence"].material["second_subject"]
     )
     wrong_occurrence["locality_evidence"] = wrong_evidence
-    corrupted, _ = _assertion_compare_input_locality_roads()
+    corrupted, _ = _assertion_compare_input_locality_witnesses()
     corrupted["ledger"].mark_corrupted(corrupted["locality_evidence"].identity)
     unrelated = dict(exact)
     unrelated_event = deepcopy(exact["event"])
@@ -662,7 +662,7 @@ def _assertion_compare_input_locality_cases() -> dict[str, str]:
     }
 
 
-def _checkpoint_locality_roads() -> tuple[dict, dict]:
+def _checkpoint_locality_witnesses() -> tuple[dict, dict]:
     ledger = _IntegrityAdversaryLedger()
 
     def record(locality_identity: str) -> dict:
@@ -695,7 +695,7 @@ def _checkpoint_locality_roads() -> tuple[dict, dict]:
             "checkpoint": checkpoint,
         }
 
-    return record("checkpoint-road-one"), record("checkpoint-road-two")
+    return record("checkpoint-witness-one"), record("checkpoint-witness-two")
 
 
 def _checkpoint_locality_requirements(bundle: dict) -> dict[str, bool]:
@@ -729,13 +729,13 @@ def _checkpoint_locality_requirements(bundle: dict) -> dict[str, bool]:
 
 
 def _checkpoint_locality_cases() -> dict[str, str]:
-    exact, alternate = _checkpoint_locality_roads()
+    exact, alternate = _checkpoint_locality_witnesses()
     missing = dict(exact)
     missing["event"] = deepcopy(exact["event"])
     missing["event"].material["second_subject"] = "missing-checkpoint"
     wrong_occurrence = dict(exact)
     wrong_occurrence["checkpoint"] = alternate["checkpoint"]
-    corrupted, _ = _checkpoint_locality_roads()
+    corrupted, _ = _checkpoint_locality_witnesses()
     corrupted["ledger"].mark_corrupted(corrupted["event"].identity)
     unrelated = dict(exact)
     unrelated["addressed"] = AddressedOperatorCommand(
@@ -781,7 +781,7 @@ def _yield_bundle(ledger, event) -> dict:
     }
 
 
-def _preserved_material_yield_road() -> dict:
+def _preserved_material_yield_witness() -> dict:
     ledger = _IntegrityAdversaryLedger()
     ledger.append(
         INGEST_OCCURRED_KIND,
@@ -813,7 +813,7 @@ def _preserved_material_yield_road() -> dict:
     return bundle
 
 
-def _material_ingest_yield_road() -> dict:
+def _material_ingest_yield_witness() -> dict:
     ledger = _IntegrityAdversaryLedger()
     event = ingest_material(
         ledger,
@@ -825,15 +825,15 @@ def _material_ingest_yield_road() -> dict:
     return _yield_bundle(ledger, event)
 
 
-def _recorded_finding_compare_yield_road() -> dict:
-    source = _preserved_material_yield_road()
+def _recorded_finding_compare_yield_witness() -> dict:
+    source = _preserved_material_yield_witness()
     event = compare_recorded_finding_yield(
         source["ledger"], source["event"].identity
     )
     return _yield_bundle(source["ledger"], event)
 
 
-def _adjacent_measurement_yield_road(*, compare: bool = False) -> dict:
+def _adjacent_measurement_yield_witness(*, compare: bool = False) -> dict:
     ledger = _IntegrityAdversaryLedger()
     for text in ("L a b R", "X a b Y"):
         ledger.append(
@@ -1215,9 +1215,9 @@ def _representation_locality_requirements(bundle: dict) -> dict[str, bool]:
 
 
 def _structural_edge_fidelity_cases() -> dict[str, dict[str, str]]:
-    locality = _byte_measurement_road()
-    alternate_locality = _byte_measurement_road()
-    corrupted_locality = _byte_measurement_road()
+    locality = _byte_measurement_witness()
+    alternate_locality = _byte_measurement_witness()
+    corrupted_locality = _byte_measurement_witness()
     corrupted_locality["ledger"].mark_corrupted(corrupted_locality["event"].identity)
     missing_locality = dict(locality)
     missing_event = deepcopy(locality["event"])
@@ -1260,21 +1260,21 @@ def _structural_edge_fidelity_cases() -> dict[str, dict[str, str]]:
     )
     unrelated_participation["pair_event"] = unrelated_participation_event
 
-    yielded = _byte_measurement_road()
-    alternate_yield = _byte_measurement_road()
-    corrupted_yield = _byte_measurement_road()
+    exact_yield = _byte_measurement_witness()
+    alternate_yield = _byte_measurement_witness()
+    corrupted_yield = _byte_measurement_witness()
     corrupted_yield["ledger"].mark_corrupted(
         corrupted_yield["content_evidence"].identity
     )
-    missing_yield = dict(yielded)
-    missing_yield_event = deepcopy(yielded["event"])
+    missing_yield = dict(exact_yield)
+    missing_yield_event = deepcopy(exact_yield["event"])
     missing_yield_event.material["yield_evidence_identity"] = (
         "missing-yield-evidence"
     )
     missing_yield["event"] = missing_yield_event
-    wrong_yield = dict(yielded)
-    wrong_yield_act_evidence = deepcopy(yielded["act_evidence"])
-    wrong_yield_content_evidence = deepcopy(yielded["content_evidence"])
+    wrong_yield = dict(exact_yield)
+    wrong_yield_act_evidence = deepcopy(exact_yield["act_evidence"])
+    wrong_yield_content_evidence = deepcopy(exact_yield["content_evidence"])
     alternate_yield_occurrence = alternate_yield["event"].material[
         "act_occurrence_identity"
     ]
@@ -1286,8 +1286,8 @@ def _structural_edge_fidelity_cases() -> dict[str, dict[str, str]]:
     )
     wrong_yield["act_evidence"] = wrong_yield_act_evidence
     wrong_yield["content_evidence"] = wrong_yield_content_evidence
-    unrelated_yield = dict(yielded)
-    unrelated_yield_event = deepcopy(yielded["event"])
+    unrelated_yield = dict(exact_yield)
+    unrelated_yield_event = deepcopy(exact_yield["event"])
     unrelated_yield_event.material["occurrence_preservation"] = (
         "different neighboring locality coordinate"
     )
@@ -1334,7 +1334,7 @@ def _structural_edge_fidelity_cases() -> dict[str, dict[str, str]]:
             ),
         },
         "yield": {
-            "exact": _occurrence_result_witness(yielded),
+            "exact": _occurrence_result_witness(exact_yield),
             "edge_missing": _occurrence_result_witness(missing_yield),
             "wrong_occurrence": _occurrence_result_witness(wrong_yield),
             "corrupted_evidence": _occurrence_result_witness(corrupted_yield),
@@ -1344,7 +1344,7 @@ def _structural_edge_fidelity_cases() -> dict[str, dict[str, str]]:
 
 
 def _successful_emission_requirement_bundles() -> dict[str, dict[str, dict]]:
-    emission, alternate = _repeated_emission_attempt_road()
+    emission, alternate = _repeated_emission_attempt_witness()
 
     missing_locality = dict(emission)
     missing_locality_evidence = deepcopy(emission["locality_evidence"])
@@ -1362,7 +1362,7 @@ def _successful_emission_requirement_bundles() -> dict[str, dict[str, dict]]:
     unrelated_locality_event = deepcopy(emission["event"])
     unrelated_locality_event.material["yield_evidence_identity"] = "other-yield-evidence"
     unrelated_locality["event"] = unrelated_locality_event
-    corrupted_locality = _emission_road()
+    corrupted_locality = _emission_witness()
     corrupted_locality["ledger"].mark_corrupted(
         corrupted_locality["locality_evidence"].identity
     )
@@ -1384,7 +1384,7 @@ def _successful_emission_requirement_bundles() -> dict[str, dict[str, dict]]:
         "other-locality-evidence"
     )
     unrelated_participation["event"] = unrelated_participation_event
-    corrupted_participation = _emission_road()
+    corrupted_participation = _emission_witness()
     corrupted_participation["ledger"].mark_corrupted(
         corrupted_participation["act_evidence"].identity
     )
@@ -1410,7 +1410,7 @@ def _successful_emission_requirement_bundles() -> dict[str, dict[str, dict]]:
     unrelated_yield_event = deepcopy(emission["event"])
     unrelated_yield_event.material["input_role"] = "other-role"
     unrelated_yield["event"] = unrelated_yield_event
-    corrupted_yield = _emission_road()
+    corrupted_yield = _emission_witness()
     corrupted_yield["ledger"].mark_corrupted(
         corrupted_yield["content_evidence"].identity
     )
@@ -1559,25 +1559,25 @@ def _byte_pair_yield_requirement_bundles() -> dict[str, dict[str, dict]]:
 
 
 def _remaining_yield_requirement_bundles() -> dict[str, dict[str, dict]]:
-    roads = {
-        "adjacency_pair_measurement": _adjacent_measurement_yield_road,
+    witnesses = {
+        "adjacency_pair_measurement": _adjacent_measurement_yield_witness,
         "adjacency_pair_measurement_compare": (
-            lambda: _adjacent_measurement_yield_road(compare=True)
+            lambda: _adjacent_measurement_yield_witness(compare=True)
         ),
-        "assertion_yield_compare": _assertion_yield_compare_road,
-        "assertion_locality_movement": _assertion_locality_movement_yield_road,
-        "bounded_assertion_compare": _bounded_assertion_compare_yield_road,
-        "locality_count_measurement": _locality_count_yield_road,
-        "failed_emission_outcome": _failed_emission_yield_road,
-        "material_ingest": _material_ingest_yield_road,
-        "preserved_material_measurement": _preserved_material_yield_road,
-        "recorded_finding_yield_compare": _recorded_finding_compare_yield_road,
+        "assertion_yield_compare": _assertion_yield_compare_witness,
+        "assertion_locality_movement": _assertion_locality_movement_yield_witness,
+        "bounded_assertion_compare": _bounded_assertion_compare_yield_witness,
+        "locality_count_measurement": _locality_count_yield_witness,
+        "failed_emission_outcome": _failed_emission_yield_witness,
+        "material_ingest": _material_ingest_yield_witness,
+        "preserved_material_measurement": _preserved_material_yield_witness,
+        "recorded_finding_yield_compare": _recorded_finding_compare_yield_witness,
     }
     boundaries = {}
-    for boundary, road in roads.items():
-        exact = road()
-        alternate = road()
-        corrupted = road()
+    for boundary, witness in witnesses.items():
+        exact = witness()
+        alternate = witness()
+        corrupted = witness()
         boundaries[boundary] = _yield_requirement_bundles(
             exact,
             alternate,
@@ -1625,22 +1625,22 @@ def _locality_requirement_bundles(
 
 
 def _remaining_locality_requirement_bundles() -> dict[str, dict[str, dict]]:
-    roads = {
-        "adjacency_pair_measurement": _adjacent_measurement_yield_road,
+    witnesses = {
+        "adjacency_pair_measurement": _adjacent_measurement_yield_witness,
         "adjacency_pair_measurement_compare": (
-            lambda: _adjacent_measurement_yield_road(compare=True)
+            lambda: _adjacent_measurement_yield_witness(compare=True)
         ),
     }
     return {
-        boundary: _locality_requirement_bundles(road(), road(), road())
-        for boundary, road in roads.items()
+        boundary: _locality_requirement_bundles(witness(), witness(), witness())
+        for boundary, witness in witnesses.items()
     }
 
 
 def _additional_live_structural_edge_fidelity_cases() -> dict[
     tuple[str, str], dict[str, str]
 ]:
-    representation, alternate_representation = _repeated_representation_road()
+    representation, alternate_representation = _repeated_representation_witness()
     missing_representation_locality = dict(representation)
     missing_representation_locality_evidence = deepcopy(representation[
         "locality_evidence"
@@ -1661,7 +1661,7 @@ def _additional_live_structural_edge_fidelity_cases() -> dict[
     wrong_representation_locality[
         "locality_evidence"
     ] = wrong_representation_locality_evidence
-    corrupted_representation_locality = _representation_road()
+    corrupted_representation_locality = _representation_witness()
     corrupted_representation_locality["ledger"].mark_corrupted(
         corrupted_representation_locality["locality_evidence"].identity
     )
@@ -1694,7 +1694,7 @@ def _additional_live_structural_edge_fidelity_cases() -> dict[
     wrong_representation_yield[
         "content_evidence"
     ] = wrong_representation_content_evidence
-    corrupted_representation_yield = _representation_road()
+    corrupted_representation_yield = _representation_witness()
     corrupted_representation_yield["ledger"].mark_corrupted(
         corrupted_representation_yield["content_evidence"].identity
     )
@@ -1705,7 +1705,7 @@ def _additional_live_structural_edge_fidelity_cases() -> dict[
     )
     unrelated_representation_yield["event"] = unrelated_representation_yield_event
 
-    attempt, alternate_attempt = _repeated_emission_attempt_road()
+    attempt, alternate_attempt = _repeated_emission_attempt_witness()
     missing_attempt = dict(attempt)
     changed_relation_material = dict(attempt["attempt_locality_evidence"].material)
     changed_relation_material["carried_content"] = "different carried content"
@@ -1718,7 +1718,7 @@ def _additional_live_structural_edge_fidelity_cases() -> dict[
     wrong_attempt["attempt_locality_evidence"] = alternate_attempt[
         "attempt_locality_evidence"
     ]
-    corrupted_attempt, _ = _repeated_emission_attempt_road()
+    corrupted_attempt, _ = _repeated_emission_attempt_witness()
     corrupted_attempt["ledger"].mark_corrupted(
         corrupted_attempt["attempt_locality_evidence"].identity
     )
@@ -2217,7 +2217,7 @@ def test_remaining_locality_adversaries_change_one_requirement_each():
 
 
 def test_emission_attempt_locality_adversaries_change_one_requirement_each():
-    exact, alternate = _repeated_emission_attempt_road()
+    exact, alternate = _repeated_emission_attempt_witness()
     wrong_occurrence = dict(exact)
     wrong_occurrence["attempt_locality_evidence"] = alternate[
         "attempt_locality_evidence"
@@ -2232,7 +2232,7 @@ def test_emission_attempt_locality_adversaries_change_one_requirement_each():
         locality_identity="repeated-emission-attempt",
     )
 
-    corrupted, _ = _repeated_emission_attempt_road()
+    corrupted, _ = _repeated_emission_attempt_witness()
     corrupted["ledger"].mark_corrupted(
         corrupted["attempt_locality_evidence"].identity
     )
@@ -2314,7 +2314,7 @@ def test_successful_emission_adversaries_change_one_requirement_each():
 
 
 def test_representation_result_adversaries_change_one_requirement_each():
-    exact, alternate = _repeated_representation_road()
+    exact, alternate = _repeated_representation_witness()
 
     missing_locality = dict(exact)
     missing_locality_evidence = deepcopy(exact["locality_evidence"])
@@ -2328,7 +2328,7 @@ def test_representation_result_adversaries_change_one_requirement_each():
         "event"
     ].material["act_occurrence_identity"]
     wrong_locality["locality_evidence"] = wrong_locality_evidence
-    corrupted_locality = _representation_road()
+    corrupted_locality = _representation_witness()
     corrupted_locality["ledger"].mark_corrupted(
         corrupted_locality["locality_evidence"].identity
     )
@@ -2351,7 +2351,7 @@ def test_representation_result_adversaries_change_one_requirement_each():
     )
     wrong_yield["act_evidence"] = wrong_act_evidence
     wrong_yield["content_evidence"] = wrong_content_evidence
-    corrupted_yield = _representation_road()
+    corrupted_yield = _representation_witness()
     corrupted_yield["ledger"].mark_corrupted(
         corrupted_yield["content_evidence"].identity
     )
@@ -2398,13 +2398,13 @@ def test_representation_result_adversaries_change_one_requirement_each():
 
 
 def test_byte_measurement_adversaries_change_one_requirement_each():
-    locality = _byte_measurement_road()
-    alternate_locality = _byte_measurement_road()
+    locality = _byte_measurement_witness()
+    alternate_locality = _byte_measurement_witness()
     missing_locality = dict(locality)
     missing_event = deepcopy(locality["event"])
     missing_event.material["assertions"] = []
     missing_locality["event"] = missing_event
-    corrupted_locality = _byte_measurement_road()
+    corrupted_locality = _byte_measurement_witness()
     corrupted_locality["ledger"].mark_corrupted(corrupted_locality["event"].identity)
     unrelated_locality = dict(locality)
     unrelated_event = deepcopy(locality["event"])
@@ -2436,17 +2436,17 @@ def test_byte_measurement_adversaries_change_one_requirement_each():
     unrelated_pair.material["yield_evidence_identity"] = "different-yield-evidence"
     unrelated_participation["pair_event"] = unrelated_pair
 
-    yielded = _byte_measurement_road()
-    alternate_yield = _byte_measurement_road()
-    missing_yield = dict(yielded)
-    missing_yield_event = deepcopy(yielded["event"])
+    exact_yield = _byte_measurement_witness()
+    alternate_yield = _byte_measurement_witness()
+    missing_yield = dict(exact_yield)
+    missing_yield_event = deepcopy(exact_yield["event"])
     missing_yield_event.material["yield_evidence_identity"] = (
         "missing-yield-evidence"
     )
     missing_yield["event"] = missing_yield_event
-    wrong_yield = dict(yielded)
-    wrong_act_evidence = deepcopy(yielded["act_evidence"])
-    wrong_content_evidence = deepcopy(yielded["content_evidence"])
+    wrong_yield = dict(exact_yield)
+    wrong_act_evidence = deepcopy(exact_yield["act_evidence"])
+    wrong_content_evidence = deepcopy(exact_yield["content_evidence"])
     alternate_occurrence = alternate_yield["event"].material["act_occurrence_identity"]
     wrong_act_evidence.material["act_occurrence_identity"] = alternate_occurrence
     wrong_content_evidence.material["dimensions"]["act_occurrence_identity"] = (
@@ -2454,12 +2454,12 @@ def test_byte_measurement_adversaries_change_one_requirement_each():
     )
     wrong_yield["act_evidence"] = wrong_act_evidence
     wrong_yield["content_evidence"] = wrong_content_evidence
-    corrupted_yield = _byte_measurement_road()
+    corrupted_yield = _byte_measurement_witness()
     corrupted_yield["ledger"].mark_corrupted(
         corrupted_yield["content_evidence"].identity
     )
-    unrelated_yield = dict(yielded)
-    unrelated_yield_event = deepcopy(yielded["event"])
+    unrelated_yield = dict(exact_yield)
+    unrelated_yield_event = deepcopy(exact_yield["event"])
     unrelated_yield_event.material["occurrence_preservation"] = "different"
     unrelated_yield["event"] = unrelated_yield_event
 
@@ -2502,7 +2502,7 @@ def test_byte_measurement_adversaries_change_one_requirement_each():
         "yield": {
             case: _occurrence_result_requirements(bundle)
             for case, bundle in {
-                "exact": yielded,
+                "exact": exact_yield,
                 "edge_missing": missing_yield,
                 "wrong_occurrence": wrong_yield,
                 "corrupted_evidence": corrupted_yield,
@@ -2518,8 +2518,8 @@ def test_byte_measurement_adversaries_change_one_requirement_each():
 
 
 def test_attempt_and_success_have_distinct_locality_relations_for_the_same_text():
-    emission = _emission_road()
-    alternate = _emission_road()
+    emission = _emission_witness()
+    alternate = _emission_witness()
     wrong_attempt = dict(emission)
     wrong_attempt["attempt_locality_evidence"] = alternate[
         "attempt_locality_evidence"
@@ -2541,7 +2541,7 @@ def test_attempt_and_success_have_distinct_locality_relations_for_the_same_text(
 
 
 def test_successful_emission_locality_binds_the_exact_representation():
-    exact = _emission_road()
+    exact = _emission_witness()
     different = dict(exact)
     evidence = deepcopy(exact["locality_evidence"])
     evidence.material["representation_reference"] = "another-representation"
@@ -2563,8 +2563,8 @@ def test_successful_emission_locality_binds_the_exact_representation():
 
 
 def test_representation_act_has_an_exact_yield_edge_without_asserting_participation():
-    representation = _representation_road()
-    alternate = _representation_road()
+    representation = _representation_witness()
+    alternate = _representation_witness()
     missing = dict(representation)
     missing["content_evidence"] = None
     wrong_occurrence = dict(representation)
@@ -2626,7 +2626,7 @@ def test_content_and_locality_endpoints_do_not_establish_locality_relation():
 
 def test_assertion_clause_is_checked_against_a_live_byte_assertion():
     clause = _clause("01.Standing.D.1")
-    witness = _assertion_witness(_byte_measurement_road())
+    witness = _assertion_witness(_byte_measurement_witness())
 
     assert set(witness) == {"identity", *clause["responsibility"]["coordinates"]}
     assert witness == {
@@ -2795,7 +2795,7 @@ def test_unjoined_endpoints_do_not_witness_an_input_to_act_relation():
     assert witness["occurrence_identity"] == MISSING
 
 
-def test_locality_relation_clause_is_checked_against_the_live_pair_road():
+def test_locality_relation_clause_is_checked_against_the_live_pair_witness():
     clause = _clause("06.Standing.B")
     bundle = _recorded_applicability()
     relation = bundle["movement"].material["locality_relation"]
@@ -2815,7 +2815,7 @@ def test_locality_relation_clause_is_checked_against_the_live_pair_road():
     assert _locality_witness(bundle) == EXACT
 
 
-def test_locality_fans_out_orthogonal_adversaries_for_each_live_road():
+def test_locality_fans_out_orthogonal_adversaries_for_each_live_witness():
     exact = _recorded_applicability()
 
     edge_missing = _recorded_applicability()
@@ -2873,7 +2873,7 @@ def test_locality_fans_out_orthogonal_adversaries_for_each_live_road():
 
 
 def test_occurrence_and_result_endpoints_do_not_establish_their_relation():
-    bundle = _byte_measurement_road()
+    bundle = _byte_measurement_witness()
     assert _occurrence_result_witness(bundle) == EXACT
 
     event = bundle["event"]
@@ -2884,7 +2884,7 @@ def test_occurrence_and_result_endpoints_do_not_establish_their_relation():
 
 
 def test_yield_edge_read_has_no_result_reencoding_surface():
-    bundle = _byte_measurement_road()
+    bundle = _byte_measurement_witness()
     import seed_runtime.yield_evidence as yield_module
 
     assert not hasattr(yield_module, "yield_commitment")
@@ -2897,8 +2897,8 @@ def test_yield_edge_read_has_no_result_reencoding_surface():
 
 def _live_yield_exact_bundles() -> dict[str, dict]:
     bundles = {
-        "byte_measurement": _byte_measurement_road(),
-        "representation_result": _representation_road(),
+        "byte_measurement": _byte_measurement_witness(),
+        "representation_result": _representation_witness(),
         "successful_emission": _successful_emission_requirement_bundles()[
             "yield"
         ]["exact"],
@@ -2939,7 +2939,7 @@ def _different_preservable_value(value):
         return different
     if value is None:
         return "different"
-    raise TypeError(f"unpreservable yielded coordinate: {type(value).__name__}")
+    raise TypeError(f"unpreservable result coordinate: {type(value).__name__}")
 
 
 def _change_one_carried_yield_coordinate(bundle: dict) -> dict:
@@ -2994,7 +2994,7 @@ def test_every_live_recorded_yield_result_is_bound_to_its_exact_evidence_result(
 
 def test_exact_act_clause_is_checked_against_live_byte_measurement():
     clause = _clause("02.Acts.A")
-    bundle = _byte_measurement_road()
+    bundle = _byte_measurement_witness()
     witness = _act_occurrence_witness(bundle)
 
     assert set(witness) == set(clause["responsibility"]["coordinates"])
@@ -3006,7 +3006,7 @@ def test_exact_act_clause_is_checked_against_live_byte_measurement():
 
 
 def test_act_and_occurrence_identities_do_not_establish_their_relation():
-    bundle = _byte_measurement_road()
+    bundle = _byte_measurement_witness()
     event = bundle["event"]
     assert event.material["downstream_act_identity"]
     assert event.material["act_occurrence_identity"]
@@ -3019,7 +3019,7 @@ def test_act_and_occurrence_identities_do_not_establish_their_relation():
 
 
 def test_responsibility_coordinates_do_not_establish_assignment_standing():
-    bundle = _byte_measurement_road()
+    bundle = _byte_measurement_witness()
     assignment = dict(
         bundle["event"].material["responsibility_assignment_evidence"]
     )
@@ -3051,7 +3051,7 @@ def test_runtime_authority_does_not_carry_evidence_scope_prose():
 
 
 def test_each_dimensions_call_separates_authority_from_its_evidence_scope():
-    """Every road through the shared dimensions bottleneck is observed."""
+    """Every witness through the shared dimensions bottleneck is observed."""
 
     observed = []
     for path in sorted(RUNTIME.glob("*.py")):
@@ -3263,8 +3263,8 @@ def test_every_live_edge_witness_returns_its_edge_required_coordinates():
     """The vector each witness reports is the one its edge declares."""
 
     edges = json.loads(GRAMMAR.read_text(encoding="utf-8"))["structural_edges"]
-    yielded = _occurrence_result_requirements(_byte_measurement_road())
-    assert set(yielded) == set(edges["yield"]["requires"])
+    result_requirements = _occurrence_result_requirements(_byte_measurement_witness())
+    assert set(result_requirements) == set(edges["yield"]["requires"])
 
     # The remaining witnesses are still developer-read through Python AST.
     # Yield is deliberately absent here: its required coordinates were read

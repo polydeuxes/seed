@@ -264,9 +264,9 @@ def _incomplete_store(path, rows=1):
 def test_a_schema_without_occurrence_material_identity_is_refused(path, rows):
     """Seed does not preserve a durable history nobody needs.
 
-    An earlier representation classified rows without this identity as UNVERIFIABLE and input
-    them, leaving a supported path on which a durable occurrence carried no
-    integrity. A later representation refused populated pre-material identity stores but migrated
+    An earlier representation input rows without this identity, leaving a
+    supported path on which a durable occurrence carried no integrity. A later
+    representation refused populated pre-material identity stores but migrated
     empty ones, which meant a new database was created by running a
     migration over the very shape being rejected.
     """

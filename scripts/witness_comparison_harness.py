@@ -29,7 +29,7 @@ What one machine's codecs yield:
 
 **Witnesses do not converge.** 93% of pairs are incomparable: neither cuts the
 material more finely than the other, they cut it differently. There is one
-trivial floor and thirty-eight maximal classifications above it, not a chain
+trivial floor and thirty-eight maximal partitions above it, not a chain
 toward some finest answer.
 """
 
@@ -56,7 +56,7 @@ def final_partition(codec: str) -> Partition:
 
 
 def partitions() -> dict[Partition, list[str]]:
-    """Each distinct resting classification, and the witnesses that reached it."""
+    """Each distinct resting partition, and the witnesses that reached it."""
 
     grouped: dict[Partition, list[str]] = collections.defaultdict(list)
     for name in decoding_witnesses():

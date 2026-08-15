@@ -7,8 +7,8 @@ Localities through one recorded ledger boundary.
 
 One byte value receives one count Assertion.  Recurrence is a separate
 Assertion and exists only where the total count exceeds one.  Byte equality
-establishes no character, word, position, adjacency, grammar,
-represented relation, relation, or significance.
+establishes no character, word, position, adjacency, grammar, or represented
+relation.
 """
 
 from __future__ import annotations
@@ -142,7 +142,7 @@ SOURCE_SET_EVIDENCE_SCOPE = (
 PAIR_MEASUREMENT_EVIDENCE_SCOPE = (
     "declared exact-source and literal ordered adjacent-byte-pair Measurement "
     "Evidence only; establishes no character, word, grammar, represented relation, "
-    "relation beyond the exact measured adjacency and order or significance; "
+    "relation beyond the exact measured adjacency and order; "
     "it establishes new bounded pair Standing and does not revise source Standing"
 )
 BYTE_PAIR_RESULT_BOUNDARY = (
@@ -174,7 +174,7 @@ BYTE_PAIR_UNKNOWNS = (
 BYTE_PAIR_LIMITS = (
     "an exact adjacent-byte-pair count or recurrence establishes no character, "
     "word, grammar, represented relation, relation beyond the exact measured "
-    "adjacency and order, or significance",
+    "adjacency and order",
 )
 MEASURED_ASSERTION_RESPONSIBILITY = (
     "preserve this measured Assertion's carried Standing coordinates"
@@ -1031,7 +1031,7 @@ def record_byte_count_layer(
                 "identity": "byte-count-measurement-occurrence",
                 "content": (
                     "exact source-material-set, byte count, and conditional "
-                    "recurrence Assertions yielded"
+                    "recurrence Assertions"
                 ),
                 "standing": "measured",
                 "source_provenance": "complete declared ingest read through one boundary",
@@ -1066,7 +1066,7 @@ def record_byte_count_layer(
             ],
             "authority": "unestablished",
             "evidence_scope": (
-                "Evidence concerning this exact bounded responsible Measurement "
+                "Evidence for this exact bounded responsible Measurement "
                 "occurrence only; establishes no responsibility"
             ),
         },
@@ -1133,7 +1133,7 @@ def assertions_of_recorded_byte_measurement(
             "identity": "byte-count-measurement-occurrence",
                 "content": (
                     "exact source-material-set, byte count, and conditional "
-                    "recurrence Assertions yielded"
+                    "recurrence Assertions"
                 ),
             "standing": "measured",
             "source_provenance": (
@@ -1180,7 +1180,7 @@ def assertions_of_recorded_byte_measurement(
         ],
         "authority": "unestablished",
         "evidence_scope": (
-            "Evidence concerning this exact bounded responsible Measurement "
+            "Evidence for this exact bounded responsible Measurement "
             "occurrence only; establishes no responsibility"
         ),
     }
@@ -1329,7 +1329,7 @@ def _record_pair_responsible_act_evidence(
     recording_locality_identity: str,
     result_content: dict[str, Any],
 ):
-    """Preserve Evidence concerning this exact bounded responsible Act."""
+    """Preserve Evidence for this exact bounded responsible Act."""
 
     return ledger.append(
         BYTE_PAIR_RESPONSIBLE_ACT_EVIDENCE_KIND,
@@ -1350,7 +1350,7 @@ def _record_pair_responsible_act_evidence(
             "input_role": BYTE_PAIR_INPUT_ROLE,
             "authority": "unestablished",
             "evidence_scope": (
-                "Evidence concerning this exact bounded responsible Measurement "
+                "Evidence for this exact bounded responsible Measurement "
                 "occurrence only; establishes no responsibility or authority "
                 "for another Act"
             ),
@@ -1409,7 +1409,7 @@ def _record_pair_input_applicability(
             "downstream_act_identity": applicability_assertion["downstream_act_identity"],
             "authority": BYTE_PAIR_APPLICABILITY_AUTHORITY,
             "evidence_scope": (
-                "Evidence concerning this exact input Applicability "
+                "Evidence for this exact input Applicability "
                 "determination occurrence"
             ),
         },
@@ -1460,7 +1460,7 @@ def get_recorded_pair_input_applicability(
         raise ByteMeasurementError(
             f"{event_identity} does not carry the exact Applicability result surface"
         )
-    yielded = {
+    result_coordinates = {
         key: material[key] for key in BYTE_PAIR_APPLICABILITY_RESULT_COORDINATES
     }
     if (
@@ -1470,7 +1470,7 @@ def get_recorded_pair_input_applicability(
         or ledger.integrity_of(evidence.identity) == CORRUPTED
         or evidence.material.get("result_kind")
         != BYTE_PAIR_APPLICABILITY_RESULT_KIND
-        or evidence.material.get("yield_coordinates") != sorted(yielded)
+        or evidence.material.get("yield_coordinates") != sorted(result_coordinates)
         or evidence.material.get("dimensions", {}).get("responsibility")
         != BYTE_PAIR_INPUT_APPLICABILITY_RESPONSIBILITY
         or evidence.material.get("dimensions", {}).get("responsible_boundary")
@@ -1498,7 +1498,7 @@ def get_recorded_pair_input_applicability(
         "downstream_act_identity": material["downstream_act_identity"],
         "authority": BYTE_PAIR_APPLICABILITY_AUTHORITY,
         "evidence_scope": (
-            "Evidence concerning this exact input Applicability "
+            "Evidence for this exact input Applicability "
             "determination occurrence"
         ),
     }
@@ -1622,7 +1622,7 @@ def record_adjacent_byte_pair_count_layer(
         "dimensions": {
             "identity": "adjacent-byte-pair-count-measurement-occurrence",
             "content": (
-                "adjacent-byte-pair count and conditional recurrence Assertions yielded"
+                "adjacent-byte-pair count and conditional recurrence Assertions"
             ),
             "standing": "measured",
             "source_provenance": "the recorded source-material-set Assertion",
@@ -1779,7 +1779,7 @@ def _validate_recorded_pair_input_applicability(
 def assertions_of_recorded_adjacent_byte_pair_measurement(
     ledger: EventLedger, event_identity: str
 ) -> tuple[RecordedBytePairAssertion, ...] | None:
-    """Read the yielded pair result without performing Measurement again."""
+    """Read the exact pair result without performing Measurement again."""
 
     event = ledger.get(event_identity)
     if event is None:
@@ -1803,7 +1803,7 @@ def assertions_of_recorded_adjacent_byte_pair_measurement(
     expected_dimensions = {
         "identity": "adjacent-byte-pair-count-measurement-occurrence",
         "content": (
-            "adjacent-byte-pair count and conditional recurrence Assertions yielded"
+            "adjacent-byte-pair count and conditional recurrence Assertions"
         ),
         "standing": "measured",
         "source_provenance": "the recorded source-material-set Assertion",
@@ -1875,7 +1875,7 @@ def assertions_of_recorded_adjacent_byte_pair_measurement(
         "input_role": material["input_role"],
         "authority": "unestablished",
         "evidence_scope": (
-            "Evidence concerning this exact bounded responsible Measurement "
+            "Evidence for this exact bounded responsible Measurement "
             "occurrence only; establishes no responsibility or authority "
             "for another Act"
         ),

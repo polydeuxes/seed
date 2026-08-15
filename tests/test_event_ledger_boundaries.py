@@ -321,8 +321,8 @@ def test_the_two_ledgers_preserve_the_same_material(tmp_path):
 
     They share an API and are used interchangeably, and a durable store silently
     returned `[1, 2]` for a tuple and `{"1": ...}` for an integer key while the
-    in-memory ledger returned what the caller passed. The same append yielded
-    two different occurrences depending on which ledger held it, with nothing
+    in-memory ledger returned what the caller passed. The two ledgers returned
+    different occurrences from one append, with nothing
     recorded to say so.
     """
 

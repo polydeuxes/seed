@@ -75,7 +75,7 @@ def ingest_material(
             "responsibility": MATERIAL_INGEST_RESPONSIBILITY,
             "responsible_boundary": "this Seed",
             "authority": "unestablished",
-            "evidence_scope": "Evidence concerning this exact Ingest occurrence only",
+            "evidence_scope": "Evidence for this exact Ingest occurrence only",
         },
         locality_identity=locality_identity,
     )

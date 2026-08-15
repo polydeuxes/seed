@@ -457,7 +457,7 @@ def measure_locality_counts(
             "a locality count Measurement requires one exact ledger boundary"
         )
     # Declaring the Scope chooses which established localities this measurement
-    # concerns. It does not establish them: a recorded occurrence within the
+    # reads. It does not establish them: a recorded occurrence within the
     # Locality boundary does. Each declared locality is read through that exact
     # boundary, so the existence check costs one bounded read per declared
     # locality.
@@ -615,8 +615,8 @@ def assertions_from_measured_count(
     """Every distinct result this recurrence Measurement already established.
 
     This is result fan-out, not inference from one Assertion to another.  The
-    three classifications retain their exact-set shape and therefore carry the
-    completeness boundary of the reads that yielded them.  Count stands on
+    three exact sets retain their shape and therefore carry the completeness
+    boundary of the reads that established them.  Count stands on
     the measured-in Assertion, and recurrence stands on count only where the
     count establishes recurrence.
     """
@@ -702,7 +702,7 @@ def record_measured_count(
     locality_identity: str,
     finding: MeasuredCountFinding,
 ) -> Event:
-    """Preserve the distinct Assertions one recurrence Measurement yielded.
+    """Preserve exact Yield from one recurrence Measurement to its Assertions.
 
     Yield Evidence binds the exact responsible Measurement occurrence to
     these exact results. Each result Assertion separately bears Responsibility for preserving its
@@ -754,7 +754,8 @@ def record_measured_count(
         "participation": participation,
         "exact_act": "declared measurement",
         "occurrence_result_evidence": (
-            "this exact recorded Measurement occurrence yielded the carried Assertions"
+            "exact Yield Evidence for this recorded Measurement occurrence "
+            "and the carried Assertions"
         ),
         "measurement_subject": (
             "recorded comparison occurrences and recorded measurement occurrences"

@@ -109,7 +109,7 @@ def advance_operator_locality_standing(
     from the ledger and is not itself recorded: it exposes only standings,
     limits, and Unknowns the Locality's events already carry.  An empty
     coordinate is absence of record, not negative standing and not Unknown.
-    Represented relation candidates are never yielded here; each preserved ingest keeps
+    No Yield is established for represented relation candidates here; each preserved ingest keeps
     the authority its own event recorded.
     """
     scope = f"locality:{locality_identity}"
