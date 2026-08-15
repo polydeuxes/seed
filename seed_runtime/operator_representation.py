@@ -134,7 +134,7 @@ def record_operator_representation(
             "label compresses represented candidate relation"
         )
     result_material = {
-        "representation_reference": representation_identity,
+        "result_identity": representation_identity,
         "representation_act_identity": representation_act_identity,
         "act_occurrence_identity": act_occurrence_identity,
         "representation_result": representation_result,
@@ -235,7 +235,7 @@ def record_operator_representation(
 def _emission_text(representation: dict[str, Any]) -> str:
     representation_identity = representation.get("representation_identity")
     if representation_identity is None:
-        representation_identity = representation["representation_reference"]
+        representation_identity = representation["result_identity"]
     lines = [f"Bounded Representation {representation_identity}"]
     if representation["alternative_material"]:
         lines.append("Respond with exactly one token:")
@@ -289,7 +289,7 @@ def read_operator_representation(
     ):
         raise ValueError("the recorded Representation coordinates are not exact")
     return {
-        "representation_identity": material["representation_reference"],
+        "representation_identity": material["result_identity"],
         "representation_act_identity": material["representation_act_identity"],
         "act_occurrence_identity": material["act_occurrence_identity"],
         "locality_identity": event.locality_identity,
@@ -427,7 +427,11 @@ def emit_operator_representation(
         "accepted_representation_kind": "text",
         "accepted_count": written,
     }
-    result_content = {"result": boundary_result}
+    result_identity = f"emission-boundary-result:{act_occurrence_identity}"
+    result_content = {
+        "result_identity": result_identity,
+        "result": boundary_result,
+    }
     result_material = {
         "emission_act_identity": emission_act_identity,
         "act_occurrence_identity": act_occurrence_identity,
@@ -480,7 +484,7 @@ def emit_operator_representation(
         act_occurrence_identity=act_occurrence_identity,
         responsible_act_evidence_identity=responsible_act_evidence.identity,
         result_kind="text-stream boundary result",
-        result_identity=f"emission-boundary-result:{act_occurrence_identity}",
+        result_identity=result_identity,
         result_content=result_content,
         responsibility=REPRESENTATION_EMISSION_RESPONSIBILITY,
         live_boundary="successful_emission",

@@ -524,6 +524,12 @@ def _declared_for(*targets):
     return {t: _recurrence_declared(t) for t in targets}
 
 
+def _finding_without_result_identity(finding):
+    material = finding.to_json_dict()
+    material.pop("result_identity")
+    return material
+
+
 def test_one_pass_yields_the_same_findings_as_one_at_a_time(recurrence_occurrences):
     _, occurrences = recurrence_occurrences
     targets = ("the", "cat", "a", "zebra")
@@ -537,7 +543,9 @@ def test_one_pass_yields_the_same_findings_as_one_at_a_time(recurrence_occurrenc
         )
         for t in targets
     ]
-    assert [f.to_json_dict() for f in batched] == [f.to_json_dict() for f in singly]
+    assert [_finding_without_result_identity(f) for f in batched] == [
+        _finding_without_result_identity(f) for f in singly
+    ]
 
 
 def test_every_finding_carries_the_same_participating_inputs(recurrence_occurrences):
@@ -700,7 +708,9 @@ def test_a_declared_representation_absent_from_the_result_counted_zero(
             "zebra": text.split().count("zebra"),
         },
     )
-    assert [f.to_json_dict() for f in sparse] == [f.to_json_dict() for f in explicit]
+    assert [_finding_without_result_identity(f) for f in sparse] == [
+        _finding_without_result_identity(f) for f in explicit
+    ]
 
 
 def test_a_finding_preserves_its_participating_localities(recurrence_occurrences):
@@ -790,9 +800,9 @@ def test_batch_and_single_survive_the_recording_boundary_identically(
         yield_in=(ledger, "r"),
     )
     ]
-    # Occurrence identity is the Event identity, which is outside the material. The
     def _without_its_own_evidence(event):
         material = dict(event.material)
+        material.pop("result_identity", None)
         material.pop("yield_evidence_identity", None)
         material.pop("responsible_act_evidence_identity", None)
         material.pop("downstream_act_identity", None)
@@ -897,6 +907,8 @@ def test_findings_with_and_without_input_support_agree_on_everything_else(
         left, right = a.to_json_dict(), b.to_json_dict()
         left.pop("inputs")
         right.pop("input_support")
+        left.pop("result_identity")
+        right.pop("result_identity")
         assert left == right
 
 
@@ -1307,7 +1319,11 @@ def _rebuilt(finding, **different):
         "input_occurrences": finding.input_occurrences,
         "downstream_act_identity": finding.downstream_act_identity,
         "act_occurrence_identity": finding.act_occurrence_identity,
+        "result_identity": finding.result_identity,
         "input_support": finding.input_support,
+        "responsible_act_evidence_identity": (
+            finding.responsible_act_evidence_identity
+        ),
         "yield_evidence_identity": finding.yield_evidence_identity,
     }
     fields.update(different)
@@ -1331,6 +1347,23 @@ def test_a_result_records(recurrence_occurrences):
         ledger, locality_identity="r", finding=finding
     )
     assert event.kind == MEASUREMENT_RECORDED_KIND
+
+
+def test_equal_measured_coordinates_do_not_identify_two_results(
+    recurrence_occurrences,
+):
+    ledger, occurrences = recurrence_occurrences
+    first = _with_yield_evidence(ledger, occurrences)
+    second = _with_yield_evidence(ledger, occurrences)
+    first_coordinates = _result_content(first)
+    second_coordinates = _result_content(second)
+    first_coordinates.pop("result_identity")
+    second_coordinates.pop("result_identity")
+
+    assert first_coordinates == second_coordinates
+    assert first.result_identity != second.result_identity
+    assert first.act_occurrence_identity != second.act_occurrence_identity
+    assert first.yield_evidence_identity != second.yield_evidence_identity
 
 
 def test_an_identical_finding_without_yield_cannot_reuse_the_witness(

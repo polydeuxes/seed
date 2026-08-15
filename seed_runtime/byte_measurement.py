@@ -49,6 +49,7 @@ BYTE_PAIR_OCCURRENCE_PRESERVATION = (
 )
 BYTE_RESULT_COORDINATES = frozenset(
     {
+        "result_identity",
         "dimensions",
         "exact_act",
         "downstream_act_identity",
@@ -85,6 +86,7 @@ BYTE_PAIR_APPLICABILITY_RECORDED_KIND = (
 BYTE_PAIR_APPLICABILITY_RESULT_KIND = "adjacent-byte-pair input Applicability result"
 BYTE_PAIR_APPLICABILITY_RESULT_COORDINATES = frozenset(
     {
+        "result_identity",
         "dimensions",
         "exact_act",
         "responsibility",
@@ -1027,10 +1029,12 @@ def record_byte_count_layer(
         )
     downstream_act_identity = new_identity("byte_measurement_act")
     act_occurrence_identity = new_identity("byte_measurement_occurrence")
+    result_identity = new_identity("byte_measurement_result")
     measured = measure_byte_counts(
         ledger, source_locality_identities=source_locality_identities
     )
     result_material = {
+        "result_identity": result_identity,
         "dimensions": {
                 "identity": "byte-count-measurement-occurrence",
                 "content": (
@@ -1083,7 +1087,7 @@ def record_byte_count_layer(
         act_occurrence_identity=act_occurrence_identity,
         responsible_act_evidence_identity=responsible_act_evidence.identity,
         result_kind=BYTE_MEASUREMENT_RESULT_KIND,
-        result_identity="byte-count-measurement-occurrence",
+        result_identity=result_identity,
         result_content=result_material,
         responsibility=BYTE_MEASUREMENT_RESPONSIBILITY,
         live_boundary="byte_measurement",
@@ -1374,7 +1378,9 @@ def _record_pair_input_applicability(
     """Preserve Applicability whether or not the downstream Measurement occurs."""
 
     standing = applicability_assertion["dimensions"]["standing"]
+    result_identity = new_identity("byte_pair_applicability_result")
     result_material = {
+        "result_identity": result_identity,
         "dimensions": {
             "identity": applicability_assertion["dimensions"]["identity"],
             "content": "exact source-Assertion to downstream-Act Applicability",
@@ -1427,7 +1433,7 @@ def _record_pair_input_applicability(
         act_occurrence_identity=applicability_assertion["applicability_act_occurrence_identity"],
         responsible_act_evidence_identity=applicability_act_evidence.identity,
         result_kind=BYTE_PAIR_APPLICABILITY_RESULT_KIND,
-        result_identity=applicability_assertion["dimensions"]["identity"],
+        result_identity=result_identity,
         result_content=result_material,
         responsibility=BYTE_PAIR_INPUT_APPLICABILITY_RESPONSIBILITY,
         live_boundary="byte_pair_applicability",
@@ -1625,7 +1631,9 @@ def record_adjacent_byte_pair_count_layer(
         downstream_act_identity=downstream_act_identity,
         act_occurrence_identity=act_occurrence_identity,
     )
+    result_identity = new_identity("adjacent_byte_pair_measurement_result")
     result_material = {
+        "result_identity": result_identity,
         "dimensions": {
             "identity": "adjacent-byte-pair-count-measurement-occurrence",
             "content": (
@@ -1669,7 +1677,7 @@ def record_adjacent_byte_pair_count_layer(
         act_occurrence_identity=measured.act_occurrence_identity,
         responsible_act_evidence_identity=responsible_act_evidence.identity,
         result_kind=BYTE_PAIR_MEASUREMENT_RESULT_KIND,
-        result_identity="adjacent-byte-pair-count-measurement-occurrence",
+        result_identity=result_identity,
         result_content=result_material,
         responsibility=BYTE_PAIR_MEASUREMENT_RESPONSIBILITY,
         live_boundary="byte_pair_measurement",

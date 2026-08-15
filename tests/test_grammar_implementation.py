@@ -1415,6 +1415,9 @@ def _successful_emission_requirement_bundles() -> dict[str, dict[str, dict]]:
     wrong_yield_event.material["yield_evidence_identity"] = alternate[
         "content_evidence"
     ].identity
+    wrong_yield_event.material["result_identity"] = alternate[
+        "event"
+    ].material["result_identity"]
     wrong_yield["event"] = wrong_yield_event
     wrong_yield["act_evidence"] = alternate["act_evidence"]
     wrong_yield["content_evidence"] = alternate["content_evidence"]
@@ -3026,6 +3029,40 @@ def test_every_live_recorded_yield_result_is_bound_to_its_exact_evidence_result(
             "intact_evidence": True,
         }, boundary
 
+        missing_result_identity = dict(exact)
+        missing_result_identity_event = deepcopy(exact["event"])
+        missing_result_identity_event.material.pop("result_identity")
+        missing_result_identity["event"] = missing_result_identity_event
+        assert _occurrence_result_requirements(missing_result_identity) == {
+            "exact_relation": False,
+            "occurrence_witness": True,
+            "intact_evidence": True,
+        }, boundary
+
+        wrong_result_identity = dict(exact)
+        wrong_result_identity_event = deepcopy(exact["event"])
+        wrong_result_identity_event.material["result_identity"] = (
+            "different result identity"
+        )
+        wrong_result_identity["event"] = wrong_result_identity_event
+        assert _occurrence_result_requirements(wrong_result_identity) == {
+            "exact_relation": False,
+            "occurrence_witness": True,
+            "intact_evidence": True,
+        }, boundary
+
+        wrong_evidence_result_identity = dict(exact)
+        wrong_result_evidence = deepcopy(exact["content_evidence"])
+        wrong_result_evidence.material["result_identity"] = (
+            "different result identity"
+        )
+        wrong_evidence_result_identity["content_evidence"] = wrong_result_evidence
+        assert _occurrence_result_requirements(wrong_evidence_result_identity) == {
+            "exact_relation": False,
+            "occurrence_witness": True,
+            "intact_evidence": True,
+        }, boundary
+
         wrong_yield_act_reference = dict(exact)
         wrong_yield_evidence = deepcopy(exact["content_evidence"])
         wrong_yield_evidence.material["responsible_act_evidence_identity"] = (
@@ -3086,6 +3123,53 @@ def test_every_live_recorded_yield_result_is_bound_to_its_exact_evidence_result(
             "occurrence_witness": True,
             "intact_evidence": False,
         }, boundary
+
+
+def test_unrelated_yield_occurrences_do_not_share_result_identity():
+    factories = {
+        "byte_measurement": _byte_measurement_witness,
+        "representation_result": _representation_witness,
+        "successful_emission": _emission_witness,
+        "adjacency_pair_measurement": _adjacent_measurement_yield_witness,
+        "adjacency_pair_measurement_compare": (
+            lambda: _adjacent_measurement_yield_witness(compare=True)
+        ),
+        "assertion_yield_compare": _assertion_yield_compare_witness,
+        "assertion_locality_movement": _assertion_locality_movement_yield_witness,
+        "bounded_assertion_compare": _bounded_assertion_compare_yield_witness,
+        "locality_count_measurement": _locality_count_yield_witness,
+        "failed_emission_outcome": _failed_emission_yield_witness,
+        "material_ingest": _material_ingest_yield_witness,
+        "preserved_material_measurement": _preserved_material_yield_witness,
+        "recorded_finding_yield_compare": _recorded_finding_compare_yield_witness,
+    }
+    pairs = {
+        boundary: (factory(), factory())
+        for boundary, factory in factories.items()
+    }
+    first_pair = _recorded_applicability()
+    second_pair = _recorded_applicability()
+    pairs["byte_pair_applicability"] = (first_pair, second_pair)
+    pairs["byte_pair_measurement"] = (
+        {"event": first_pair["pair_event"]},
+        {"event": second_pair["pair_event"]},
+    )
+
+    assert set(pairs) == set(YIELD_LIVE_BOUNDARIES)
+    for boundary, (first, second) in pairs.items():
+        occurrence_coordinate = (
+            "applicability_act_occurrence_identity"
+            if boundary == "byte_pair_applicability"
+            else "movement_act_occurrence_identity"
+            if boundary == "assertion_locality_movement"
+            else "act_occurrence_identity"
+        )
+        assert first["event"].material[occurrence_coordinate] != second[
+            "event"
+        ].material[occurrence_coordinate], boundary
+        assert first["event"].material["result_identity"] != second[
+            "event"
+        ].material["result_identity"], boundary
 
 
 def test_exact_act_clause_is_checked_against_live_byte_measurement():

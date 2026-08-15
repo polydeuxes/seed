@@ -592,6 +592,7 @@ def test_adjacency_pair_measurement_read_refuses_self_consistent_counterfeit_sou
     )
 
     altered_result = {
+        "result_identity": recorded.material["result_identity"],
         "adjacency_evidence_event_identity": recorded.material[
             "adjacency_evidence_event_identity"
         ],

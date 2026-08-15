@@ -573,7 +573,7 @@ def test_representation_act_is_recorded_before_emission_and_they_stay_distinct()
     assert representation["act_occurrence_identity"] == locality_evidence.material[
         "act_occurrence_identity"
     ]
-    assert locality_evidence.material["carried_content"]["representation_reference"] == (
+    assert locality_evidence.material["carried_content"]["result_identity"] == (
         representation["representation_identity"]
     )
     assert "input_role" not in representation_event.material

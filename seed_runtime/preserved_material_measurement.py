@@ -243,6 +243,10 @@ class RecurrenceFinding:
         default_factory=lambda: new_identity("preserved_recurrence_measurement_occurrence"),
         compare=False,
     )
+    result_identity: str = field(
+        default_factory=lambda: new_identity("preserved_recurrence_measurement_result"),
+        compare=False,
+    )
     # Where the measured material came from. Defaults to the weaker Assertion:
     # a finding that did not read from a ledger cannot say it measured
     # preserved material, and silence must not read as the stronger one.
@@ -306,6 +310,7 @@ def _finding_coordinates(
         }
     if finding.input_support is None:
         return {
+            "result_identity": finding.result_identity,
             "representation_measured": finding.declared.representation_measured,
             "equivalence_rule": finding.declared.equivalence_rule,
             "counting_scope": finding.declared.counting_scope,
@@ -325,6 +330,7 @@ def _finding_coordinates(
             ),
         }
     return {
+        "result_identity": finding.result_identity,
         "representation_measured": finding.declared.representation_measured,
         "equivalence_rule": finding.declared.equivalence_rule,
         "counting_scope": finding.declared.counting_scope,
@@ -591,7 +597,7 @@ def _record_yield(
         act_occurrence_identity=finding.act_occurrence_identity,
         responsible_act_evidence_identity=act_evidence.identity,
         result_kind=RECURRENCE_RESULT_KIND,
-        result_identity=finding.declared.representation_measured,
+        result_identity=finding.result_identity,
         result_content=_result_content(finding),
         responsibility=RESPONSIBILITY_UNESTABLISHED,
         live_boundary="preserved_material_measurement",

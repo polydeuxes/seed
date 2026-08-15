@@ -165,13 +165,13 @@ def advance_operator_locality_standing(
             continue
         if event.kind == _REPRESENTATION_RECORDED_KIND:
             material = event.material
-            if material["representation_reference"] in representations:
+            if material["result_identity"] in representations:
                 raise ValueError(
-                    "duplicate representation reference: "
-                    f"{material['representation_reference']}"
+                    "duplicate Representation identity: "
+                    f"{material['result_identity']}"
                 )
-            representations[material["representation_reference"]] = {
-                "representation_identity": material["representation_reference"],
+            representations[material["result_identity"]] = {
+                "representation_identity": material["result_identity"],
                 "representation_event_identity": event.identity,
                 "emission_attempt_event_identity": None,
                 "emission_attempt_locality_evidence_identity": None,

@@ -121,6 +121,7 @@ def read_yield_edge_requirements(
         recorded_result_event.exact_material == result_evidence.exact_material
     )
     result = result_evidence.material.get("result")
+    result_identity = result_evidence.material.get("result_identity")
     yield_coordinates = result_evidence.material.get("yield_coordinates")
     recorded_result_coordinates = result_evidence.material.get("recorded_result_coordinates")
     exact_carried_result = False
@@ -149,7 +150,15 @@ def read_yield_edge_requirements(
             break
         else:
             exact_carried_result = carried_result == result
-    evidence_is_carried = evidence_is_carried and exact_carried_result
+    evidence_is_carried = (
+        evidence_is_carried
+        and exact_carried_result
+        and isinstance(result_identity, str)
+        and result_identity
+        and type(result) is dict
+        and result.get("result_identity") == result_identity
+        and recorded_result_event.material.get("result_identity") == result_identity
+    )
     if responsible_act_evidence is not None:
         exact_act_evidence = (
             evidence_dimensions.get("exact_act")
@@ -231,6 +240,10 @@ def _record_yield_evidence(
         raise ValueError("Yield Evidence requires one declared live boundary")
     if type(result_content) is not dict:
         raise TypeError("Yield Evidence requires one exact result")
+    if not isinstance(result_identity, str) or not result_identity:
+        raise TypeError("Yield Evidence requires one exact result identity")
+    if result_content.get("result_identity") != result_identity:
+        raise ValueError("Yield Evidence result identity must be carried by its result")
     if result_exact_material is not None and type(result_exact_material) is not bytes:
         raise TypeError("Yield Evidence exact material must be exact bytes or absent")
     declared_recorded_result_coordinates = (
@@ -260,6 +273,7 @@ def _record_yield_evidence(
         YIELD_EVIDENCE_KIND,
         {
             "responsible_act_evidence_identity": responsible_act_evidence_identity,
+            "result_identity": result_identity,
             "dimensions": {
                 "identity": (
                     f"yield-evidence:{act_occurrence_identity}:{result_identity}"

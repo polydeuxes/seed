@@ -747,7 +747,9 @@ def _record_adjacency_pair_measurement_result(
 ) -> Event:
     act_identity = new_identity("adjacency_pair_measurement_measurement_act")
     act_occurrence_identity = new_identity("adjacency_pair_measurement_measurement_occurrence")
+    result_identity = f"adjacency-pair-measurement-result:{act_occurrence_identity}"
     result_material = {
+        "result_identity": result_identity,
         "adjacency_evidence_event_identity": adjacency_evidence_event_identity,
         "source_occurrence_identities": list(source_identities),
         "measurements": [
@@ -785,7 +787,7 @@ def _record_adjacency_pair_measurement_result(
         act_occurrence_identity=act_occurrence_identity,
         responsible_act_evidence_identity=act_evidence.identity,
         result_kind="exact adjacency-pair measurements",
-        result_identity=f"adjacency-pair-measurement-result:{act_occurrence_identity}",
+        result_identity=result_identity,
         result_content=result_material,
         responsibility=ADJACENCY_PAIR_MEASUREMENT_RESPONSIBILITY,
         live_boundary="adjacency_pair_measurement",
@@ -1007,6 +1009,7 @@ def get_recorded_adjacency_pair_measurements(
             "the adjacency-pair measurement result carries malformed result coordinates"
         )
     result_material = {
+        "result_identity": event.material.get("result_identity"),
         "adjacency_evidence_event_identity": adjacency_evidence_identity,
         "source_occurrence_identities": source_identities,
         "measurements": carried_measurements,
@@ -1202,7 +1205,9 @@ def record_adjacency_pair_measurement_compare(
     compared = compare_adjacency_pair_measurements(measurements)
     act_identity = new_identity("adjacency_pair_measurement_compare_act")
     act_occurrence_identity = new_identity("adjacency_pair_measurement_compare_occurrence")
+    result_identity = f"adjacency-pair-measurement-compare:{act_occurrence_identity}"
     result_material = {
+        "result_identity": result_identity,
         "measurement_event_identities": list(input_identities),
         "comparison": compared,
     }
@@ -1238,7 +1243,7 @@ def record_adjacency_pair_measurement_compare(
         act_occurrence_identity=act_occurrence_identity,
         responsible_act_evidence_identity=act_evidence.identity,
         result_kind="bounded adjacency-pair measurement comparison",
-        result_identity=f"adjacency-pair-measurement-compare:{act_occurrence_identity}",
+        result_identity=result_identity,
         result_content=result_material,
         responsibility=ADJACENCY_PAIR_MEASUREMENT_COMPARE_RESPONSIBILITY,
         live_boundary="adjacency_pair_measurement_compare",
@@ -1301,6 +1306,7 @@ def get_recorded_adjacency_pair_measurement_compare(
             "the recorded measurement Compare carries malformed coordinates"
         )
     result_material = {
+        "result_identity": event.material.get("result_identity"),
         "measurement_event_identities": input_identities,
         "comparison": compared,
     }

@@ -732,7 +732,7 @@ def test_every_act_evidence_occurrence_names_responsibility_boundary_act_occurre
 
 def test_recorded_representation_declares_each_exact_evidence_pointer():
     required = {
-        "representation_reference",
+        "result_identity",
         "representation_act_identity",
         "act_occurrence_identity",
         "responsible_act_evidence_identity",

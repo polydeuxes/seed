@@ -63,6 +63,7 @@ UNSUPPORTED_COORDINATE = "unsupported coordinate"
 
 COMPARISON_RESULT_COORDINATES = frozenset(
     {
+        "result_identity",
         "downstream_act_identity",
         "act_occurrence_identity",
         "dimensions",
@@ -386,7 +387,9 @@ def compare_recorded_finding_yield(ledger: EventLedger, event_identity: str) -> 
     )
     downstream_act_identity = new_identity("finding_yield_comparison_act")
     act_occurrence_identity = new_identity("finding_yield_comparison_act_occurrence")
+    result_identity = new_identity("finding_yield_comparison_result")
     result_material = {
+        "result_identity": result_identity,
         "downstream_act_identity": downstream_act_identity,
         "act_occurrence_identity": act_occurrence_identity,
         "dimensions": {
@@ -456,7 +459,7 @@ def compare_recorded_finding_yield(ledger: EventLedger, event_identity: str) -> 
         act_occurrence_identity=act_occurrence_identity,
         responsible_act_evidence_identity=responsible_act_evidence.identity,
         result_kind=FINDING_YIELD_COMPARISON_RESULT_KIND,
-        result_identity=f"finding-yield-comparison:{event_identity}",
+        result_identity=result_identity,
         result_content=result_material,
         responsibility=FINDING_YIELD_COMPARISON_RESPONSIBILITY,
         live_boundary="recorded_finding_yield_compare",
