@@ -16,7 +16,6 @@ class OperatorBoundaryMaterial:
 
     exact_bytes: bytes
     eof: bool
-    delimiter_hex: str | None
     material_boundary: str
     known_loss: tuple[str, ...]
 
@@ -24,7 +23,6 @@ class OperatorBoundaryMaterial:
         invalid_type = (
             type(self.exact_bytes) is not bytes
             or type(self.eof) is not bool
-            or (self.delimiter_hex is not None and type(self.delimiter_hex) is not str)
             or type(self.material_boundary) is not str
             or type(self.known_loss) is not tuple
         )
@@ -40,16 +38,7 @@ class OperatorBoundaryMaterial:
             raise OperatorMaterialBoundaryError(
                 "malformed operator boundary material"
             )
-        expected_delimiter = (
-            "0d0a"
-            if self.exact_bytes.endswith(b"\r\n")
-            else "0a" if self.exact_bytes.endswith(b"\n") else None
-        )
         if self.eof is not (self.exact_bytes == b""):
-            raise OperatorMaterialBoundaryError(
-                "malformed operator boundary material"
-            )
-        if self.delimiter_hex != expected_delimiter:
             raise OperatorMaterialBoundaryError(
                 "malformed operator boundary material"
             )
@@ -77,15 +66,9 @@ def operator_boundary_material(input_stream: TextIO | BinaryIO) -> OperatorBound
         )
     if type(material) is not bytes:
         raise OperatorMaterialBoundaryError("operator material requires a binary stream")
-    delimiter = (
-        "0d0a"
-        if material.endswith(b"\r\n")
-        else "0a" if material.endswith(b"\n") else None
-    )
     return OperatorBoundaryMaterial(
         exact_bytes=material,
         eof=material == b"",
-        delimiter_hex=delimiter,
         material_boundary=boundary,
         known_loss=loss,
     )
