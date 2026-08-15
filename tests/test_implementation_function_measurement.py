@@ -60,6 +60,22 @@ def test_uninvoked_compiled_identity_remains_unobserved():
     }
 
 
+def test_reference_pair_measurement_contains_each_surviving_function():
+    result = measured.measurement()
+
+    names = {identity.rsplit(":", 1)[-1] for identity in result["reference_pair"]}
+    assert names == {
+        "ReferencePairComparison",
+        "ReferencePairComparison.__init__",
+        "ReferencePairComparison.load",
+        "ReferencePairComparison.references_from",
+        "ReferencePairComparison.references_from.<locals>.<listcomp>",
+        "ReferencePairComparison.references_to",
+        "ReferencePairComparison.references_to.<locals>.<listcomp>",
+        "_references",
+    }
+
+
 def test_sql_occurrence_preserves_exact_statement_material():
     measured.begin()
     try:

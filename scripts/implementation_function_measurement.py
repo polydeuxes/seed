@@ -108,15 +108,15 @@ def measurement() -> dict[str, object]:
         }
         for identity in identities
     }
-    dag = {
+    reference_pair = {
         identity: coordinates
         for identity, coordinates in python.items()
-        if identity.startswith("seed_runtime/dag_ledger_comparison.py:")
+        if identity.startswith("scripts/reference_pair_comparison.py:")
     }
     return {
         "python": python,
         "sql": dict(sorted(_sql.items())),
-        "dag": dag,
+        "reference_pair": reference_pair,
     }
 
 
