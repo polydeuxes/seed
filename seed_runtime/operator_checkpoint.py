@@ -74,8 +74,6 @@ def open_operator_checkpoint(
         {
             "first_subject": command_identity,
             "second_subject": checkpoint.identity,
-            "addressed_identity": command_identity,
-            "representation_reference": checkpoint.identity,
             "authority": "unestablished",
             "evidence_scope": (
                 "this exact addressed-identity-to-Representation Locality relation only"

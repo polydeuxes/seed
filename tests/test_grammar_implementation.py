@@ -201,7 +201,7 @@ def _recorded_applicability() -> dict:
         "content_evidence": ledger.get(event.material["yield_evidence_identity"]),
         "movement": movement,
         "movement_act_evidence": ledger.get(
-            movement.material["movement_act_evidence_event_identity"]
+            movement.material["responsible_act_evidence_identity"]
         ),
         "movement_content_evidence": ledger.get(
             movement.material["yield_evidence_identity"]
@@ -710,12 +710,10 @@ def _checkpoint_locality_requirements(bundle: dict) -> dict[str, bool]:
         }
     exact_relation = (
         event.material.get("first_subject") == addressed.command_identity
-        and event.material.get("addressed_identity") == addressed.command_identity
         and event.material.get("second_subject") == checkpoint.identity
     )
     occurrence_witness = (
-        event.material.get("representation_reference") == checkpoint.identity
-        and addressed.addressed_at_representation_event_identity == checkpoint.identity
+        addressed.addressed_at_representation_event_identity == checkpoint.identity
         and checkpoint.kind == "operator.representation.recorded"
         and addressed.locality_identity == checkpoint.locality_identity
         and event.locality_identity != checkpoint.locality_identity
@@ -1966,7 +1964,7 @@ def _locality_requirements(bundle: dict) -> dict[str, bool]:
         ),
         "intact_evidence": bool(
             act_evidence is not None
-            and movement.material.get("movement_act_evidence_event_identity")
+            and movement.material.get("responsible_act_evidence_identity")
             == act_evidence.identity
             and ledger.integrity_of(act_evidence.identity) != CORRUPTED
         ),

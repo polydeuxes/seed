@@ -247,7 +247,6 @@ def test_console_ingest_adds_only_its_exact_occurrences():
     assert all(
         set(occurrence)
         == {
-            "ingest_reference",
             "subject_reference",
             "standing",
             "authority",

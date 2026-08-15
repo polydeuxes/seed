@@ -267,7 +267,6 @@ def advance_operator_locality_standing(
             continue
         ingest_reference = event.material["dimensions"]["identity"]
         occurrence = {
-            "ingest_reference": ingest_reference,
             "subject_reference": ingest_reference,
             "standing": "preserved",
             "authority": event.material["dimensions"]["authority"],

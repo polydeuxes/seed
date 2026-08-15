@@ -82,13 +82,12 @@ def test_checkpoint_alone_divides_locality_at_the_last_representation():
         event for event in ledger.list()
         if event.kind == ADDRESSED_REPRESENTATION_LOCALITY_EVIDENCE_KIND
     )
-    checkpoint = ledger.get(evidence.material["representation_reference"])
+    checkpoint = ledger.get(evidence.material["second_subject"])
 
     assert evidence.locality_identity != "root-locality"
     assert checkpoint.kind == "operator.representation.recorded"
     assert checkpoint.locality_identity == "root-locality"
     assert isinstance(evidence.material["first_subject"], str)
-    assert evidence.material["addressed_identity"] == evidence.material["first_subject"]
     assert evidence.material["second_subject"] == checkpoint.identity
     assert not any("emission" in key for key in evidence.material)
     assert _raw_bytes(ledger) == [b"before\n"]
@@ -107,8 +106,8 @@ def test_repeated_checkpoints_preserve_one_exact_checkpoint_chain():
     ]
 
     assert len(evidence) == 2
-    first_checkpoint = ledger.get(evidence[0].material["representation_reference"])
-    second_checkpoint = ledger.get(evidence[1].material["representation_reference"])
+    first_checkpoint = ledger.get(evidence[0].material["second_subject"])
+    second_checkpoint = ledger.get(evidence[1].material["second_subject"])
     assert first_checkpoint.locality_identity == "root-locality"
     assert second_checkpoint.locality_identity == evidence[0].locality_identity
     assert evidence[1].locality_identity not in {

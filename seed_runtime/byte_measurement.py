@@ -668,7 +668,6 @@ def _move_byte_assertion_to_locality(
         ASSERTION_LOCALITY_MOVEMENT_KIND,
         {
             **result_material,
-            "movement_act_evidence_event_identity": act_evidence.identity,
             "responsible_act_evidence_identity": act_evidence.identity,
             "yield_evidence_identity": yield_evidence.identity,
         },
@@ -712,7 +711,7 @@ def _validate_moved_byte_assertion(
     source_event = ledger.get(source.recorded_occurrence_identity)
     if source_event is None:
         raise ByteMeasurementError("Assertion movement source occurrence is unavailable")
-    act_evidence = ledger.get(movement.material.get("movement_act_evidence_event_identity"))
+    act_evidence = ledger.get(movement.material.get("responsible_act_evidence_identity"))
     expected_result = {
         "result_identity": movement.material.get("result_identity"),
         "movement_act_identity": movement.material.get("movement_act_identity"),
@@ -803,7 +802,6 @@ def _validate_moved_byte_assertion(
         raise ByteMeasurementError("Assertion movement Yield Evidence is not exact")
     expected = {
         **expected_result,
-        "movement_act_evidence_event_identity": act_evidence.identity,
         "responsible_act_evidence_identity": act_evidence.identity,
         "yield_evidence_identity": movement.material.get("yield_evidence_identity"),
     }

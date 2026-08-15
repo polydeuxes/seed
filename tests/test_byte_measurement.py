@@ -416,7 +416,7 @@ def test_recorded_pair_results_replay_the_complete_bounded_source_read():
     assert movement.material["movement_act_identity"] != movement.material[
         "movement_act_occurrence_identity"
     ]
-    act_evidence = ledger.get(movement.material["movement_act_evidence_event_identity"])
+    act_evidence = ledger.get(movement.material["responsible_act_evidence_identity"])
     assert act_evidence.material["movement_act_identity"] == movement.material[
         "movement_act_identity"
     ]
