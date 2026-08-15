@@ -37,7 +37,7 @@ from compiled_format_invocation import (  # noqa: E402
     removed_position_occurrences,
     preserves_original_order,
 )
-from material_witness_harness import (  # noqa: E402
+from compiled_material_invocation import (  # noqa: E402
     MATERIAL_IMPLEMENTATION_FUNCTIONS,
     occurrences_across,
     invocation_occurrence,
@@ -150,7 +150,9 @@ def measured_book_pairs():
 
 @pytest.fixture(scope="module")
 def book_pair_invocation_occurrences(measured_book_pairs):
-    return occurrences_across(measured_book_pairs[3])
+    return occurrences_across(
+        measured_book_pairs[3], boundary_identity="book-pair-material"
+    )
 
 
 @pytest.fixture(scope="module")
@@ -1410,12 +1412,16 @@ def test_compiled_implementation_function_refusal_and_input_boundary_are_distinc
 def test_a_non_byte_material_is_refused_before_an_implementation_function_occurs(monkeypatch):
     occurrences = []
     monkeypatch.setattr(
-        "material_witness_harness.subprocess.run",
+        "compiled_material_invocation.subprocess.run",
         lambda *args, **kwargs: occurrences.append((args, kwargs)),
     )
 
     with pytest.raises(TypeError, match="exact bytes"):
-        invocation_occurrence("material", MATERIAL_IMPLEMENTATION_FUNCTIONS[0])
+        invocation_occurrence(
+            "material",
+            MATERIAL_IMPLEMENTATION_FUNCTIONS[0],
+            boundary_identity="material",
+        )
 
     assert occurrences == []
 
@@ -1433,10 +1439,14 @@ def test_exact_bytes_reach_the_implementation_function_without_prior_decoding(mo
         return Completed()
 
     monkeypatch.setattr(
-        "material_witness_harness.subprocess.run", compiled_occurrence
+        "compiled_material_invocation.subprocess.run", compiled_occurrence
     )
 
-    found = invocation_occurrence(b"\xff\x00", MATERIAL_IMPLEMENTATION_FUNCTIONS[0])
+    found = invocation_occurrence(
+        b"\xff\x00",
+        MATERIAL_IMPLEMENTATION_FUNCTIONS[0],
+        boundary_identity="material",
+    )
 
     assert supplied == [b"\xff\x00"]
     assert found.exact_material == b"\xff\x00"
