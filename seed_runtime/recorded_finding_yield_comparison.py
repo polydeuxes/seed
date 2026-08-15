@@ -15,7 +15,7 @@ evidence is not the yielding occurrence by identity. The expectation is exact
 and local — *the recorded result is the result its yield evidence
 concerns* — and the witness is the recorded event itself.
 
-**What it does not do.** It revises nothing. `06.Standing.B` establishes that
+**What it does not do.** It establishes no movement. `06.Standing.B` establishes that
 making an Assertion available at another locality does not revise its Standing,
 establish Applicability, or require another Act. A coordinate difference here
 keeps whatever Standing it had; this comparison establishes only its own result.
@@ -77,12 +77,9 @@ COMPARISON_RESULT_COORDINATES = frozenset(
         "yield_evidence",
         "evidence_and_provenance",
         "authority_boundary",
-        "preserved_invariants",
         "crossings",
         "conflicts",
         "unknowns",
-        "lawful_stopping_point",
-        "revises",
         "limits",
     }
 )
@@ -432,26 +429,12 @@ def compare_recorded_finding_yield(ledger: EventLedger, event_identity: str) -> 
                 ),
         },
         "authority_boundary": authority_boundary,
-        "preserved_invariants": [
-                "the comparison is limited to one recorded finding and the "
-                "yield evidence it names",
-                "content equality alone does not supply a yield relation",
-                "the comparison does not revise its witness or traverse its "
-                "support and premise relations",
-        ],
         "crossings": crossings,
         "conflicts": conflicts,
         "unknowns": unknowns,
-        "lawful_stopping_point": (
-                "yield this Compare result concerning this exact represented "
-                "relation and stop; do not traverse provenance references or determine "
-                "downstream applicability, admission, input support, or "
-                "revision"
-        ),
-        "revises": [],
         "limits": [
-                "This revises nothing (06.Standing.B); availability is not "
-                "revision.",
+                "This establishes no movement (06.Standing.B); availability is "
+                "not movement.",
                 "This establishes no Responsibility or responsible boundary.",
                 "Agreement within these coordinates says nothing beyond them.",
                 "A crossing represented here is not a crossing concerning "

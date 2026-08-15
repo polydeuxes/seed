@@ -270,7 +270,6 @@ def test_it_preserves_exact_responsibility_and_no_correction_authority(recorded)
     dims = result.material["dimensions"]
     assert dims["responsibility"] == FINDING_YIELD_COMPARISON_RESPONSIBILITY
     assert "correction authority" in dims["authority"]
-    assert result.material["revises"] == []
 
 
 def test_it_preserves_what_the_clause_requires(recorded):
@@ -285,10 +284,8 @@ def test_it_preserves_what_the_clause_requires(recorded):
         "crossings",
         "evidence_and_provenance",
         "authority_boundary",
-        "preserved_invariants",
         "conflicts",
         "unknowns",
-        "lawful_stopping_point",
         "limits",
     ):
         assert coordinate in result.material
