@@ -641,8 +641,6 @@ def test_every_declared_event_occurrence_exposes_its_material_to_the_sirens():
 
 
 def test_every_relation_shaped_runtime_record_is_an_admitted_relation():
-    """Implementation-to-grammar closure for relation-shaped records."""
-
     admitted = set()
     for _path, tree in _runtime_trees():
         for name, value in _module_strings(tree).items():

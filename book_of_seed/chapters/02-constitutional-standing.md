@@ -19,8 +19,8 @@ Seed may read a Responsibility only through current Standing whose subject is th
 ### 01.Standing.A — Preserved material is not promotion
 A result, preserved record, representation, index entry, or other material may have an exact identity and Locality without becoming accepted, admitted, supported, represented as truth, written to the event ledger, or authorized for mutation. Exact identity, preservation, and Locality do not establish acceptance, input support, admission, representation, recording, or implementation action; each remains a separate family-local boundary.
 
-### 01.Standing.B — Constitutional kind labels are not ontology closure
-A kind label, Representation, characterization category, implementation name, concordance entry, or recurring report type may preserve a bounded Standing distinction for the subject and exact Act it names. It does not bound Seed's constitutional ontology, make similarly named material equivalent, establish mandatory grammar, or supply Authority for the exact Act without preserved Evidence, provenance, Scope, Unknowns, and the applicable occurrence boundary.
+### 01.Standing.B — Names do not establish Standing
+A kind label, Representation, characterization category, implementation name, concordance entry, or recurring report type may preserve a bounded distinction for the subject and exact Act it names. It does not establish Standing, make similarly named material equivalent, establish mandatory grammar, or supply Authority for the exact Act without preserved Evidence, provenance, Scope, Unknowns, and the applicable occurrence boundary.
 
 ### 01.Standing.C — Implementation behavior does not confer standing
 Compiled behavior, direct instantiation, and exact represented results may witness what occurs at a read boundary, emission boundary, or other bounded implementation seam. They do not establish the Standing suggested by a name, output vocabulary, or behavior. Such Standing still requires its own subject, responsible occurrence, Evidence, Scope, Authority, and limits.
