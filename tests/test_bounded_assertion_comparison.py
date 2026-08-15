@@ -125,7 +125,7 @@ def test_each_input_keeps_the_coordinates_it_carries(ledger):
         assert preserved.event_identity == supplied.identity
         assert preserved.carried["standing"] == "measured"
         assert preserved.carried["subject"] == supplied.material["dimensions"]["identity"]
-        assert preserved.carried["limits"] == supplied.material["boundary_notes"]
+        assert preserved.carried["limits"] == supplied.material["limits"]
 
 
 def test_an_absent_coordinate_is_named_and_not_supplied(ledger):
@@ -250,10 +250,10 @@ def test_the_record_refuses_the_inferences_the_clause_forbids(ledger):
     event = record_comparison_finding(
         ledger, locality_identity="s1",
         finding=compare_preserved_findings(ledger, [a.identity, b.identity]))
-    notes = " ".join(event.material["boundary_notes"])
-    assert "is not a relation between what they measured" in notes
-    assert "establishes no relation between" in notes
-    assert "no truth, support, input support, source independence, or corroboration" in notes
+    limit_material = " ".join(event.material["limits"])
+    assert "is not a relation between what they measured" in limit_material
+    assert "establishes no relation between" in limit_material
+    assert "no truth, support, input support, source independence, or corroboration" in limit_material
     assert "whether the compared bodies stand in any relation remains Unknown" in (
         event.material["unknowns"])
 

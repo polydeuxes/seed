@@ -569,7 +569,7 @@ def _bounded_compare_input_locality_cases() -> dict[str, str]:
     corrupted["ledger"].mark_corrupted(corrupted["locality_evidence"].identity)
     unrelated = dict(exact)
     unrelated["event"] = exact["event"].model_copy(deep=True)
-    unrelated["event"].material["boundary_notes"] = []
+    unrelated["event"].material["limits"] = []
 
     def witness(bundle: dict) -> str:
         requirements = _bounded_compare_input_locality_requirements(bundle)

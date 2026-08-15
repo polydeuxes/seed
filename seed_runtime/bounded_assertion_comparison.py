@@ -70,13 +70,13 @@ INPUT_COORDINATES: dict[str, tuple[str, ...]] = {
     "confidence_or_uncertainty": (),
     "unknowns": ("unknowns",),
     "standing": ("dimensions", "standing"),
-    "limits": ("boundary_notes",),
+    "limits": ("limits",),
 }
 
 # This is not an enum; more than one relation may remain established.
 UNKNOWN_RELATION = "Unknown"
 
-BOUNDARY_NOTES: tuple[str, ...] = (
+LIMITS: tuple[str, ...] = (
     "a distinction between two findings is not a relation between what they measured",
     "differing results across bounded localities is not disagreement; each is exact "
     "within its own scope",
@@ -367,7 +367,7 @@ def record_comparison_finding(
             "what any compared representation means remains Unknown",
             "whether the compared bodies stand in any relation remains Unknown",
         ],
-        "boundary_notes": list(BOUNDARY_NOTES),
+        "limits": list(LIMITS),
         "input_event_identities": input_event_identities,
         **finding.to_json_dict(),
     }

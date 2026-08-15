@@ -90,7 +90,7 @@ _RESERVED_RECORDING_COORDINATES = frozenset(
     {"dimensions", "unknowns", "provenance_occurrence_references"}
 )
 
-BOUNDARY_NOTES: tuple[str, ...] = (
+LIMITS: tuple[str, ...] = (
     "A finding reports a count within its stated scope and nothing further.",
     "Recurrence establishes that a representation occurs more than once only.",
     "A highest-count occupant of a position is not the represented relation of that position.",
@@ -179,7 +179,7 @@ class MeasurementFinding:
     # a finding that did not read from a ledger cannot say it measured
     # preserved material, and silence must not read as the stronger one.
     material_provenance: str = MATERIAL_AS_SUPPLIED
-    boundary_notes: tuple[str, ...] = field(default=BOUNDARY_NOTES)
+    limits: tuple[str, ...] = field(default=LIMITS)
 
     @property
     def highest_count_occupancy(self) -> Occupancy | None:
@@ -213,7 +213,7 @@ class MeasurementFinding:
             # the same silently replaced one with the other.
             "input_event_identities": list(self.input_event_identities),
             "input_count": len(self.input_event_identities),
-            "boundary_notes": list(self.boundary_notes),
+            "limits": list(self.limits),
         }
 
 
@@ -289,7 +289,7 @@ class RecurrenceFinding:
     # representation of the same yielded result, which is lawful. One carrying
     # none is a representation of nothing yielded.
     yield_evidence_identity: str | None = None
-    boundary_notes: tuple[str, ...] = field(default=BOUNDARY_NOTES)
+    limits: tuple[str, ...] = field(default=LIMITS)
 
     def to_json_dict(self) -> dict[str, Any]:
         carried: dict[str, Any] = {
@@ -304,7 +304,7 @@ class RecurrenceFinding:
             "total_count": self.total_count,
             "input_event_identities": list(self.input_event_identities),
             "input_count": len(self.input_event_identities),
-            "boundary_notes": list(self.boundary_notes),
+            "limits": list(self.limits),
             "yield_evidence_identity": self.yield_evidence_identity,
         }
         if self.input_support is not None:
@@ -483,7 +483,7 @@ def _result_content(finding) -> dict[str, Any]:
     commitment taken over it cannot tell a result yielded over ledger-read
     material from one yielded over supplied material -- the coordinate
     `#2516` exists to keep. Every carried coordinate is included here,
-    `boundary_notes` among them.
+    `limits` among them.
     """
 
     content = dict(finding.to_json_dict())

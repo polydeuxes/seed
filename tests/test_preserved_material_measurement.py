@@ -280,10 +280,10 @@ def test_the_finding_disclaims_what_a_dominant_occupant_is_not(locality, occurre
             occurrences, declared=_declared(), occupant_of=_after_delimiter
         ),
     )
-    notes = " ".join(event.material["boundary_notes"])
-    assert "is not the represented relation of that position" in notes
-    assert "establishes no relation" in notes
-    assert "not stronger than a finding without one" in notes
+    limit_material = " ".join(event.material["limits"])
+    assert "is not the represented relation of that position" in limit_material
+    assert "establishes no relation" in limit_material
+    assert "not stronger than a finding without one" in limit_material
 
 
 def test_recording_a_finding_does_not_disturb_the_measured_occurrences(
@@ -1449,7 +1449,7 @@ def test_results_of_one_act_occurrence_cannot_locality_yield_evidence(
         {"occurrences_examined": 999},
         {"material_provenance": MATERIAL_READ_FROM_LEDGER},
         {"input_localities": ("locality:elsewhere",)},
-        {"boundary_notes": ("a limit nobody measured",)},
+        {"limits": ("a limit nobody measured",)},
     ],
 )
 def test_changing_any_yielded_coordinate_cannot_reuse_the_witness(
