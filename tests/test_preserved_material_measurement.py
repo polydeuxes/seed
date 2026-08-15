@@ -113,10 +113,10 @@ def occurrences(locality):
 
 def test_the_material_measured_is_the_locality_s_own_occurrences(occurrences):
     assert len(occurrences) == 5
-    assert all(event.payload["dimensions"]["authority"] == "unestablished" for event in occurrences)
+    assert all(event.material["dimensions"]["authority"] == "unestablished" for event in occurrences)
     assert all(
         "represented relation Unknown"
-        in event.payload["dimensions"]["evidence_scope"]
+        in event.material["dimensions"]["evidence_scope"]
         for event in occurrences
     )
 
@@ -166,7 +166,7 @@ def test_the_disclosures_are_carried_on_the_recorded_finding(locality, occurrenc
         locality, locality_identity="s", finding=finding
     )
     for key in ("representation_measured", "equivalence_rule", "counting_scope"):
-        assert event.payload[key].strip()
+        assert event.material[key].strip()
 
 
 # --------------------------------------------------------------------------
@@ -184,7 +184,7 @@ def test_a_recorded_finding_may_participate_in_a_later_act(locality, occurrences
     read = locality.get(event.identity)
     assert read is not None
     assert read.kind == MEASUREMENT_RECORDED_KIND
-    assert read.payload["occupancies"]
+    assert read.material["occupancies"]
 
 
 def test_a_finding_standing_on_another_preserves_which(locality, occurrences):
@@ -204,8 +204,8 @@ def test_a_finding_standing_on_another_preserves_which(locality, occurrences):
             occupant_of=_after_delimiter,
         ),
     )
-    assert second.payload["premise_event_identity"] == first.identity
-    assert first.identity in second.payload["provenance_occurrence_references"]
+    assert second.material["premise_event_identity"] == first.identity
+    assert first.identity in second.material["provenance_occurrence_references"]
     assert premise_chain(locality, second.identity) == [first.identity]
 
 
@@ -229,7 +229,7 @@ def test_a_finding_without_a_premise_records_none(locality, occurrences):
             occurrences, declared=_declared(), occupant_of=_first_word
         ),
     )
-    assert event.payload["premise_event_identity"] is None
+    assert event.material["premise_event_identity"] is None
     assert premise_chain(locality, event.identity) == []
 
 
@@ -263,11 +263,11 @@ def test_the_recorded_authority_states_the_clause_s_own_limit(locality, occurren
             occurrences, declared=_declared(), occupant_of=_after_delimiter
         ),
     )
-    assert event.payload["dimensions"]["authority"] == "unestablished"
-    evidence_scope = event.payload["dimensions"]["evidence_scope"]
+    assert event.material["dimensions"]["authority"] == "unestablished"
+    evidence_scope = event.material["dimensions"]["evidence_scope"]
     assert "measurement evidence only" in evidence_scope
     assert "no represented relation, relation" in evidence_scope
-    assert event.payload["unknowns"] == [
+    assert event.material["unknowns"] == [
         "what any measured representation means remains Unknown"
     ]
 
@@ -280,7 +280,7 @@ def test_the_finding_disclaims_what_a_dominant_occupant_is_not(locality, occurre
             occurrences, declared=_declared(), occupant_of=_after_delimiter
         ),
     )
-    notes = " ".join(event.payload["boundary_notes"])
+    notes = " ".join(event.material["boundary_notes"])
     assert "is not the represented relation of that position" in notes
     assert "establishes no relation" in notes
     assert "not stronger than a finding without one" in notes
@@ -289,7 +289,7 @@ def test_the_finding_disclaims_what_a_dominant_occupant_is_not(locality, occurre
 def test_recording_a_finding_does_not_disturb_the_measured_occurrences(
     locality, occurrences
 ):
-    before = [(e.identity, e.payload["represented_material"]) for e in occurrences]
+    before = [(e.identity, e.material["represented_material"]) for e in occurrences]
     record_measurement_finding(
         locality,
         locality_identity="s",
@@ -298,7 +298,7 @@ def test_recording_a_finding_does_not_disturb_the_measured_occurrences(
         ),
     )
     after = ingest_occurrences(locality, locality_identity="s")
-    assert [(e.identity, e.payload["represented_material"]) for e in after] == before
+    assert [(e.identity, e.material["represented_material"]) for e in after] == before
 
 
 def test_raw_material_without_a_supplied_representation_is_refused():
@@ -316,8 +316,8 @@ def test_raw_material_without_a_supplied_representation_is_refused():
 
     # All three occurred at exact source occurrences.
     assert len(occurrences) == 3
-    assert all("represented_material" not in event.payload for event in occurrences)
-    assert occurrences[1].payload["byte_count"] == len(b"\xff\xfe\x00binary\n")
+    assert all("represented_material" not in event.material for event in occurrences)
+    assert occurrences[1].material["byte_count"] == len(b"\xff\xfe\x00binary\n")
 
     declared = DeclaredMeasurement(
         representation_measured="anything",
@@ -343,7 +343,7 @@ def test_an_occurrence_without_represented_material_is_refused():
         identity="evt_without_representation",
         kind=INGEST_OCCURRED_KIND,
         locality_identity="s",
-        payload={},
+        material={},
     )
     with pytest.raises(PreservedMaterialMeasurementError, match="no represented material"):
         measure_occupancy(
@@ -450,8 +450,8 @@ def test_a_representation_that_never_occurs_yields_a_measurement_finding(
     event = record_measurement_finding(
         ledger, locality_identity="r", finding=finding
     )
-    assert event.payload["dimensions"]["identity"] == "measurement:zebra"
-    assert event.payload["total_count"] == 0
+    assert event.material["dimensions"]["identity"] == "measurement:zebra"
+    assert event.material["total_count"] == 0
 
 
 def test_nothing_but_a_ingest_occurrence_occurrence_may_be_recurrence_measured(
@@ -475,7 +475,7 @@ def test_material_with_no_representation_is_refused(
         identity="evt_no_representation",
         kind=INGEST_OCCURRED_KIND,
         locality_identity="r",
-        payload={},
+        material={},
     )
     with pytest.raises(PreservedMaterialMeasurementError, match="no represented material"):
         measure_recurrence(
@@ -510,13 +510,13 @@ def test_a_recurrence_finding_records_through_the_existing_path(
         ledger, locality_identity="r", finding=finding
     )
     assert event.kind == MEASUREMENT_RECORDED_KIND
-    assert event.payload["dimensions"]["identity"] == "measurement:the"
-    assert event.payload["dimensions"]["standing"] == "measured"
+    assert event.material["dimensions"]["identity"] == "measurement:the"
+    assert event.material["dimensions"]["standing"] == "measured"
     # The three disclosures `01.Source:28` requires all survive recording.
-    assert event.payload["representation_measured"] == "the"
-    assert event.payload["equivalence_rule"].startswith("exact equality")
-    assert event.payload["counting_scope"].startswith("preserved operator-ingest")
-    assert event.payload["input_event_identities"] == [e.identity for e in occurrences]
+    assert event.material["representation_measured"] == "the"
+    assert event.material["equivalence_rule"].startswith("exact equality")
+    assert event.material["counting_scope"].startswith("preserved operator-ingest")
+    assert event.material["input_event_identities"] == [e.identity for e in occurrences]
 
 
 def test_a_recurrence_finding_may_stand_on_a_premise(recurrence_occurrences):
@@ -774,12 +774,12 @@ def test_a_finding_preserves_its_participating_localities(recurrence_occurrences
     event = record_measurement_finding(
         ledger, locality_identity="recording", finding=finding
     )
-    assert event.payload["input_localities"] == [
+    assert event.material["input_localities"] == [
         "locality:r",
         "locality:other",
     ]
     assert (
-        event.payload["dimensions"]["scope_locality"]
+        event.material["dimensions"]["scope_locality"]
         == "locality:recording"
     )
 
@@ -793,7 +793,7 @@ def test_an_occurrence_carrying_no_locality_records_the_absence(
     without_locality = Event(
         identity="evt_no_locality",
         kind=INGEST_OCCURRED_KIND,
-        payload={
+        material={
             "represented_material": "the cat",
         },
     )
@@ -834,15 +834,15 @@ def test_batch_and_single_survive_the_recording_boundary_identically(
         yield_in=(ledger, "r"),
     )
     ]
-    # Occurrence identity is the Event identity, which is outside the payload. The
-    # one payload coordinate that legitimately differs is `yield_evidence_identity`: these
+    # Occurrence identity is the Event identity, which is outside the material. The
+    # one material coordinate that legitimately differs is `yield_evidence_identity`: these
     # are two yields of the same content, and each names its own evidence.
     def _without_its_own_evidence(event):
-        payload = dict(event.payload)
-        payload.pop("yield_evidence_identity", None)
-        payload.pop("downstream_act_identity", None)
-        payload.pop("act_occurrence_identity", None)
-        return payload
+        material = dict(event.material)
+        material.pop("yield_evidence_identity", None)
+        material.pop("downstream_act_identity", None)
+        material.pop("act_occurrence_identity", None)
+        return material
 
     assert [_without_its_own_evidence(e) for e in singly] == [
         _without_its_own_evidence(e) for e in batched
@@ -1036,7 +1036,7 @@ def test_input_support_over_a_subset_is_refused(
 def test_a_finding_measures_what_the_ledger_carries_not_what_was_handed_in(
     recurrence_occurrences,
 ):
-    """An Event can be supplied with any identity and any payload."""
+    """An Event can be supplied with any identity and any material."""
 
     ledger, occurrences = recurrence_occurrences
     # Same identities the ledger preserves; different material.
@@ -1045,7 +1045,7 @@ def test_a_finding_measures_what_the_ledger_carries_not_what_was_handed_in(
             identity=e.identity,
             kind=e.kind,
             locality_identity="r",
-            payload={
+            material={
                 "represented_material": "zebra zebra zebra",
             },
         )
@@ -1071,7 +1071,7 @@ def test_an_identity_the_ledger_does_not_preserve_is_refused(
         identity="evt_not_in_ledger",
         kind=INGEST_OCCURRED_KIND,
         locality_identity="r",
-        payload={"represented_material": "the"},
+        material={"represented_material": "the"},
     )
     declared = _declared_for("the")
     support = declare_input_support(
@@ -1098,7 +1098,7 @@ def test_a_finding_over_unpreserved_material_cannot_be_recorded():
         identity="evt_never_preserved",
         kind=INGEST_OCCURRED_KIND,
         locality_identity="r",
-        payload={
+        material={
             "represented_material": "zebra zebra",
         },
     )
@@ -1121,7 +1121,7 @@ def test_the_positional_path_cannot_record_unpreserved_material_either():
         identity="evt_also_never_preserved",
         kind=INGEST_OCCURRED_KIND,
         locality_identity="r",
-        payload={"represented_material": "the cat"},
+        material={"represented_material": "the cat"},
     )
     finding = measure_occupancy(
         [forged], declared=_declared(), occupant_of=_first_word
@@ -1144,7 +1144,7 @@ def test_a_real_identity_carrying_forged_material_measures_the_ledger(
             identity=e.identity,
             kind=e.kind,
             locality_identity="r",
-            payload={
+            material={
                 "represented_material": "zebra zebra zebra",
             },
         )
@@ -1173,7 +1173,7 @@ def test_the_positional_path_can_bind_its_material_too(recurrence_occurrences):
             identity=occurrences[0].identity,
             kind=INGEST_OCCURRED_KIND,
             locality_identity="r",
-            payload={"represented_material": "zebra"},
+            material={"represented_material": "zebra"},
         )
     ]
     finding = measure_occupancy(
@@ -1190,7 +1190,7 @@ def test_carrying_a_basis_no_longer_exempts_a_finding_from_the_recorder():
         identity="evt_absent_but_asserted",
         kind=INGEST_OCCURRED_KIND,
         locality_identity="r",
-        payload={"represented_material": "the"},
+        material={"represented_material": "the"},
     )
     finding = measure_recurrence(
         [forged], declared=_recurrence_declared("the"), occurrences_of=_counts("the"),
@@ -1232,7 +1232,7 @@ def test_a_finding_carries_where_its_material_came_from(recurrence_occurrences):
     assert unbound.material_provenance == MATERIAL_AS_SUPPLIED
     assert bound.material_provenance == MATERIAL_READ_FROM_LEDGER
     # Stated once, where the recorder reads it. Carrying it in the finding
-    # payload as well would be two representations of one coordinate.
+    # material as well would be two representations of one coordinate.
     assert "material_provenance" not in unbound.to_json_dict()
 
 
@@ -1247,7 +1247,7 @@ def test_the_recorder_states_the_provenance_the_measurement_declared(
             identity=e.identity,
             kind=e.kind,
             locality_identity="r",
-            payload={
+            material={
                 "represented_material": "zebra zebra",
             },
         )
@@ -1267,8 +1267,8 @@ def test_the_recorder_states_the_provenance_the_measurement_declared(
     )
     # It records -- the identities exist and the Act occurred -- but it no
     # longer asserts the material was preserved.
-    assert event.payload["dimensions"]["source_provenance"] == MATERIAL_AS_SUPPLIED
-    assert "preserved" not in event.payload["dimensions"]["source_provenance"]
+    assert event.material["dimensions"]["source_provenance"] == MATERIAL_AS_SUPPLIED
+    assert "preserved" not in event.material["dimensions"]["source_provenance"]
 
     bound = measure_recurrence(
         occurrences,
@@ -1281,7 +1281,7 @@ def test_the_recorder_states_the_provenance_the_measurement_declared(
         ledger, locality_identity="r", finding=bound
     )
     assert (
-        recorded.payload["dimensions"]["source_provenance"]
+        recorded.material["dimensions"]["source_provenance"]
         == MATERIAL_READ_FROM_LEDGER
     )
 
@@ -1327,12 +1327,12 @@ def test_responsibility_does_not_follow_the_provenance(recurrence_occurrences):
     # Provenance differs; Responsibility does not follow it. `#2439` read
     # boundary participant, Act and Standing for declared measurement and left the
     # Responsibility unestablished, and that stays true either way.
-    assert unbound.payload["dimensions"]["source_provenance"] != bound.payload[
+    assert unbound.material["dimensions"]["source_provenance"] != bound.material[
         "dimensions"
     ]["source_provenance"]
     assert (
-        unbound.payload["dimensions"]["responsibility"]
-        == bound.payload["dimensions"]["responsibility"]
+        unbound.material["dimensions"]["responsibility"]
+        == bound.material["dimensions"]["responsibility"]
         == RESPONSIBILITY_UNESTABLISHED
     )
 
@@ -1486,7 +1486,7 @@ def test_recording_cannot_overwrite_what_the_measurement_established(
         finding=finding,
         extra={"a_recording_coordinate": "kept"},
     )
-    assert event.payload["a_recording_coordinate"] == "kept"
+    assert event.material["a_recording_coordinate"] == "kept"
 
 
 def test_recording_cannot_restate_the_measurements_own_dimensions(
@@ -1528,14 +1528,14 @@ def test_recurrence_recorder_requires_its_exact_yield_result(
     ledger, occurrences = recurrence_occurrences
     finding = _yielded(ledger, occurrences)
     evidence = ledger.get(finding.yield_evidence_identity)
-    assert evidence.payload["dimensions"]["act_occurrence_identity"] == (
+    assert evidence.material["dimensions"]["act_occurrence_identity"] == (
         finding.act_occurrence_identity
     )
-    altered_result = dict(evidence.payload["result"])
+    altered_result = dict(evidence.material["result"])
     altered_result["total_count"] += 1
     forged = ledger.append(
         YIELD_EVIDENCE_KIND,
-        {**evidence.payload, "result": altered_result},
+        {**evidence.material, "result": altered_result},
         locality_identity="r",
     )
     altered = _rebuilt(finding, yield_evidence_identity=forged.identity)
@@ -1562,9 +1562,9 @@ def test_the_witness_asserts_no_responsibility(
     witness = [
         e for e in ledger.list() if e.kind == YIELD_EVIDENCE_KIND
     ][-1]
-    assert witness.payload["dimensions"]["responsibility"] == RESPONSIBILITY_UNESTABLISHED
+    assert witness.material["dimensions"]["responsibility"] == RESPONSIBILITY_UNESTABLISHED
     assert "not the edge or Act occurrence by identity" in (
-        witness.payload["dimensions"]["occurrence_preservation"]
+        witness.material["dimensions"]["occurrence_preservation"]
     )
 
 
@@ -1577,10 +1577,10 @@ def test_the_witness_asserts_no_responsibility(
         {"total_count": 999},
     ],
 )
-def test_recording_may_not_replace_any_coordinate_the_payload_carries(
+def test_recording_may_not_replace_any_coordinate_the_material_carries(
     recurrence_occurrences, addition
 ):
-    """`extra` checked only the finding's keys, so the payload's own were
+    """`extra` checked only the finding's keys, so the material's own were
     reachable -- a supplied `dimensions` replaced the whole object and erased
     the measurement's provenance by omission."""
 
@@ -1601,5 +1601,5 @@ def test_recording_may_still_add_its_own_coordinate(recurrence_occurrences):
         finding=finding,
         extra={"a_recording_coordinate": "kept"},
     )
-    assert event.payload["a_recording_coordinate"] == "kept"
-    assert event.payload["dimensions"]["source_provenance"]
+    assert event.material["a_recording_coordinate"] == "kept"
+    assert event.material["dimensions"]["source_provenance"]

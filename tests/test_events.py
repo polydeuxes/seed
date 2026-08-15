@@ -22,7 +22,7 @@ def test_get_returns_appended_event_by_identity():
     assert ledger.get(event.identity) == event
 
 
-def test_event_ledger_rejects_secret_fields_in_payloads():
+def test_event_ledger_rejects_secret_fields_in_materials():
     ledger = EventLedger()
 
     for field in ("password", "passphrase", "token", "private_key"):
@@ -35,7 +35,7 @@ def test_event_ledger_rejects_secret_fields_in_payloads():
 
 
 @pytest.mark.parametrize(
-    "payload",
+    "material",
     (
         {"token": "not-accepted"},
         {"outer": {"token": "not-accepted"}},
@@ -43,39 +43,39 @@ def test_event_ledger_rejects_secret_fields_in_payloads():
         {"outer": [[{"token": "not-accepted"}]]},
     ),
 )
-def test_event_secret_rejection_reaches_every_nested_container(payload):
+def test_event_secret_rejection_reaches_every_nested_container(material):
     with pytest.raises(ValueError, match="secret field"):
-        EventLedger().append("k", payload)
+        EventLedger().append("k", material)
 
 
 def test_event_secret_rejection_accepts_large_scalar_lists():
-    payload = {"input_event_identities": [f"evt_{index}" for index in range(10_000)]}
+    material = {"input_event_identities": [f"evt_{index}" for index in range(10_000)]}
 
-    event = EventLedger().append("k", payload)
+    event = EventLedger().append("k", material)
 
-    assert event.payload == payload
+    assert event.material == material
 
 
 def test_durable_large_scalar_lists_do_not_repeat_secret_traversal(
     tmp_path, monkeypatch
 ):
     ledger = SQLiteEventLedger(str(tmp_path / "seed.db"))
-    payload = {"input_event_identities": [f"evt_{index}" for index in range(10_000)]}
-    event = ledger.append("k", payload)
+    material = {"input_event_identities": [f"evt_{index}" for index in range(10_000)]}
+    event = ledger.append("k", material)
 
     def unexpected_second_traversal(*args, **kwargs):
-        raise AssertionError("durable payload was screened during JSON decoding")
+        raise AssertionError("durable material was screened during JSON decoding")
 
     monkeypatch.setattr(
         "seed_runtime.event.reject_secret_fields", unexpected_second_traversal
     )
 
-    assert ledger.get(event.identity).payload == payload
+    assert ledger.get(event.identity).material == material
     ledger.close()
 
 
 # Prefixes minted for use inside one process and never written into a durable
-# payload. Reservation is about a *later* process reissuing an identity, so a
+# material. Reservation is about a *later* process reissuing an identity, so a
 # genuinely process-local one does not need it — but it has to be declared here
 # rather than assumed, because that is the judgement someone has to make.
 PROCESS_LOCAL_ID_PREFIXES: frozenset = frozenset()
@@ -85,7 +85,7 @@ def test_every_minted_prefix_is_reserved_or_declared_process_local():
     """The invariant, held at one boundary instead of one pocket at a time.
 
     What requires reservation is narrower than "every `new_identity` call": an
-    identity must be minted, written into a durable payload, and mintable again
+    identity must be minted, written into a durable material, and mintable again
     by a later process. `new_identity` promises process uniqueness and nothing more,
     so a genuinely process-local identity should not be dragged into durable
     ledger mechanics merely because it shares a helper.
@@ -124,6 +124,6 @@ def test_every_minted_prefix_is_reserved_or_declared_process_local():
     }
     assert not undeclared, (
         "these identity prefixes are minted but neither reserved nor declared "
-        "process-local, so if any reaches a durable payload it restarts at one "
+        "process-local, so if any reaches a durable material it restarts at one "
         f"in every process: {undeclared}"
     )

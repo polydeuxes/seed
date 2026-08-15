@@ -56,7 +56,7 @@ def read_yield_edge_requirements(
 
     The caller supplies exact occurrence identities under pressure.  Seed
     resolves the stored occurrences itself; it does not accept read
-    event payloads and does not re-encode the yielded result.  A missing
+    event materials and does not re-encode the yielded result.  A missing
     result-evidence occurrence makes every requirement absent.  Changing an
     unrelated event coordinate does not.
     """
@@ -100,16 +100,16 @@ def read_yield_edge_requirements(
     ):
         raise TypeError("the responsible-Act occurrence coordinate must be exact")
 
-    result_occurrence = recorded_result_event.payload.get(
+    result_occurrence = recorded_result_event.material.get(
         recorded_result_occurrence_coordinate
     )
-    evidence_dimensions = result_evidence.payload.get("dimensions", {})
+    evidence_dimensions = result_evidence.material.get("dimensions", {})
     same_occurrence = result_occurrence == evidence_dimensions.get(
         "act_occurrence_identity"
     )
     if responsible_act_evidence is not None:
         same_occurrence = same_occurrence and result_occurrence == (
-            responsible_act_evidence.payload.get(
+            responsible_act_evidence.material.get(
                 responsible_act_occurrence_coordinate
             )
         )
@@ -117,12 +117,12 @@ def read_yield_edge_requirements(
         same_occurrence = False
 
     evidence_is_carried = (
-        recorded_result_event.payload.get("yield_evidence_identity") == result_evidence.identity
+        recorded_result_event.material.get("yield_evidence_identity") == result_evidence.identity
         and result_evidence.kind == YIELD_EVIDENCE_KIND
     )
-    result = result_evidence.payload.get("result")
-    yield_coordinates = result_evidence.payload.get("yield_coordinates")
-    recorded_result_coordinates = result_evidence.payload.get("recorded_result_coordinates")
+    result = result_evidence.material.get("result")
+    yield_coordinates = result_evidence.material.get("yield_coordinates")
+    recorded_result_coordinates = result_evidence.material.get("recorded_result_coordinates")
     exact_carried_result = False
     if (
         type(result) is dict
@@ -138,7 +138,7 @@ def read_yield_edge_requirements(
                 type(part) is str and part for part in carried_at
             ):
                 break
-            value = recorded_result_event.payload
+            value = recorded_result_event.material
             for part in carried_at:
                 if type(value) is not dict or part not in value:
                     break
@@ -152,7 +152,7 @@ def read_yield_edge_requirements(
     evidence_is_carried = evidence_is_carried and exact_carried_result
     if responsible_act_evidence is not None:
         evidence_is_carried = evidence_is_carried and (
-            recorded_result_event.payload.get("responsible_act_evidence_identity")
+            recorded_result_event.material.get("responsible_act_evidence_identity")
             == responsible_act_evidence.identity
         )
     elif responsible_act_evidence_required:

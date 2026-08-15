@@ -3,7 +3,7 @@
 This establishes nothing. It records no Assertion, owns no Responsibility, and
 is not a road any Act may consume.
 
-It writes the same occurrences with their payload references lifted into an
+It writes the same occurrences with their material references lifted into an
 indexed edge table, so both traversal directions can be timed on one material.
 """
 
@@ -15,7 +15,7 @@ from typing import Any, Iterable
 
 
 class DagLedgerComparison:
-    """The same occurrences, with their references lifted out of the payload."""
+    """The same occurrences, with their references lifted out of the material."""
 
     def __init__(self, path: str = ":memory:") -> None:
         self._connection = sqlite3.connect(path)
@@ -25,7 +25,7 @@ class DagLedgerComparison:
                 identity TEXT PRIMARY KEY,
                 kind TEXT NOT NULL,
                 locality_identity TEXT,
-                payload TEXT NOT NULL
+                material TEXT NOT NULL
             );
             CREATE TABLE IF NOT EXISTS edges (
                 source_identity TEXT NOT NULL,
@@ -43,8 +43,8 @@ class DagLedgerComparison:
     def load(self, events: Iterable[Any]) -> int:
         """Write each occurrence once, and one edge per reference it carries.
 
-        A reference is a payload string that names another occurrence present
-        in the same material. Nothing infers a relation that the payload does
+        A reference is a material string that names another occurrence present
+        in the same material. Nothing infers a relation that the material does
         not already carry: the edge's relation is the field name that carried
         it, and an unresolvable string is not an edge.
         """
@@ -58,10 +58,10 @@ class DagLedgerComparison:
                     event.identity,
                     event.kind,
                     getattr(event, "locality_identity", None),
-                    json.dumps(event.payload, default=str),
+                    json.dumps(event.material, default=str),
                 ),
             )
-            references = dict.fromkeys(_references(event.payload, earlier_identities))
+            references = dict.fromkeys(_references(event.material, earlier_identities))
             for relation, destination, ordinal in references:
                 self._connection.execute(
                     "INSERT INTO edges VALUES (?, ?, ?, ?)",
@@ -97,26 +97,26 @@ class DagLedgerComparison:
         ]
 
     def byte_size(self) -> tuple[int, int]:
-        """Payload bytes and edge-table rows, so cost is stated rather than guessed."""
+        """Material bytes and edge-table rows, so cost is stated rather than guessed."""
 
-        payload_bytes = sum(
+        material_bytes = sum(
             len(row[0].encode("utf-8"))
-            for row in self._connection.execute("SELECT payload FROM nodes")
+            for row in self._connection.execute("SELECT material FROM nodes")
         )
         edges = self._connection.execute("SELECT COUNT(*) FROM edges").fetchone()[0]
-        return payload_bytes, edges
+        return material_bytes, edges
 
 
 def _references(
-    payload: Any, known_identities: set[str], relation: str = "", ordinal: int = 0
+    material: Any, known_identities: set[str], relation: str = "", ordinal: int = 0
 ) -> list[tuple[str, str, int]]:
     found: list[tuple[str, str, int]] = []
-    if isinstance(payload, dict):
-        for key, nested in payload.items():
+    if isinstance(material, dict):
+        for key, nested in material.items():
             found.extend(_references(nested, known_identities, key, 0))
-    elif isinstance(payload, list):
-        for position, nested in enumerate(payload):
+    elif isinstance(material, list):
+        for position, nested in enumerate(material):
             found.extend(_references(nested, known_identities, relation, position))
-    elif isinstance(payload, str) and payload in known_identities:
-        found.append((relation, payload, ordinal))
+    elif isinstance(material, str) and material in known_identities:
+        found.append((relation, material, ordinal))
     return found

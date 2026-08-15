@@ -52,9 +52,9 @@ from seed_runtime.operator_console import run_persistent_operator_console
 RECORDED = "operator.representation.recorded"
 
 
-def _payload_snapshot(events) -> dict[str, str]:
+def _material_snapshot(events) -> dict[str, str]:
     return {
-        event.identity: json.dumps(event.payload, sort_keys=True, default=str)
+        event.identity: json.dumps(event.material, sort_keys=True, default=str)
         for event in events
     }
 
@@ -88,7 +88,7 @@ def test_later_representations_retain_references_to_earlier_preserved_material(
     representation_events = [e for e in events if e.kind == RECORDED]
     assert len(representation_events) >= 3
     boundaries = [
-        e.payload["locality_standing_as_of_event_identity"] for e in representation_events
+        e.material["locality_standing_as_of_event_identity"] for e in representation_events
     ]
     # The first representation Act's read was empty.  Recording that absence is
     # itself preserved source coordinates, not an absent occurrence.
@@ -102,9 +102,9 @@ def test_later_representations_retain_references_to_earlier_preserved_material(
 
 def test_later_reference_does_not_alter_earlier_events(ledger):
     """Referencing preserved material leaves that material byte-identical."""
-    before = _payload_snapshot(ledger.list())
+    before = _material_snapshot(ledger.list())
     read_operator_locality_standing(ledger, locality_identity="s")
-    after = _payload_snapshot(
+    after = _material_snapshot(
         e for e in ledger.list() if e.identity in before
     )
     assert after == before
@@ -133,7 +133,7 @@ def test_each_representation_act_is_appended_after_every_event_it_references(led
     positions = {event.identity: index for index, event in enumerate(events)}
     # Each representation Act appears after the occurrence its boundary names.
     for representation_event in representation_events:
-        boundary = representation_event.payload["locality_standing_as_of_event_identity"]
+        boundary = representation_event.material["locality_standing_as_of_event_identity"]
         if boundary is not None:
             assert positions[boundary] < positions[representation_event.identity]
 
@@ -177,7 +177,7 @@ def represent_evidence_growth() -> str:
     for event in (e for e in led.list() if e.kind == RECORDED):
         lines.append(
             f"  {event.identity}  as_of="
-            f"{event.payload['locality_standing_as_of_event_identity']}"
+            f"{event.material['locality_standing_as_of_event_identity']}"
         )
     return "\n".join(lines)
 

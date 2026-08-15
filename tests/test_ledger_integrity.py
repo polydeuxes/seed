@@ -62,12 +62,12 @@ def test_an_update_is_refused(ledger, path):
     con = _raw(path)
     try:
         with pytest.raises(sqlite3.IntegrityError, match="do not revision"):
-            con.execute("UPDATE events SET payload = ? WHERE identity = ?",
+            con.execute("UPDATE events SET material = ? WHERE identity = ?",
                         ('{"a": 999}', event.identity))
             con.commit()
     finally:
         con.close()
-    assert ledger.get(event.identity).payload == {"a": 1}
+    assert ledger.get(event.identity).material == {"a": 1}
 
 
 def test_a_delete_is_refused(ledger, path):
@@ -110,7 +110,7 @@ def test_a_rewrite_that_drops_the_guard_is_detected(ledger, path):
     event = ledger.append("k", {"a": 1})
     con = _raw(path)
     con.execute("DROP TRIGGER events_refuse_update")
-    con.execute("UPDATE events SET payload = ? WHERE identity = ?", ('{"a": 999}', event.identity))
+    con.execute("UPDATE events SET material = ? WHERE identity = ?", ('{"a": 999}', event.identity))
     con.commit()
     con.close()
 
@@ -165,14 +165,14 @@ def test_rewriting_the_row_and_its_digest_together_is_not_detected(ledger, path)
     con = _raw(path)
     con.execute("DROP TRIGGER events_refuse_update")
     row = dict(con.execute("SELECT * FROM events WHERE identity = ?", (event.identity,)).fetchone())
-    row["payload"] = '{"a": 999}'
-    con.execute("UPDATE events SET payload = ?, content_hash = ? WHERE identity = ?",
-                (row["payload"], _content_digest(row), event.identity))
+    row["material"] = '{"a": 999}'
+    con.execute("UPDATE events SET material = ?, content_hash = ? WHERE identity = ?",
+                (row["material"], _content_digest(row), event.identity))
     con.commit()
     con.close()
 
     assert SQLiteEventLedger(path).integrity_of(event.identity) == VERIFIED
-    assert SQLiteEventLedger(path).get(event.identity).payload == {"a": 999}
+    assert SQLiteEventLedger(path).get(event.identity).material == {"a": 999}
 
 
 def test_verified_durable_rehydration_still_rejects_nested_secret_fields(path):
@@ -186,10 +186,10 @@ def test_verified_durable_rehydration_still_rejects_nested_secret_fields(path):
     con = _raw(path)
     con.execute("DROP TRIGGER events_refuse_update")
     row = dict(con.execute("SELECT * FROM events WHERE identity = ?", (event.identity,)).fetchone())
-    row["payload"] = '{"outer":[[{"token":"not-accepted"}]]}'
+    row["material"] = '{"outer":[[{"token":"not-accepted"}]]}'
     con.execute(
-        "UPDATE events SET payload = ?, content_hash = ? WHERE identity = ?",
-        (row["payload"], _content_digest(row), event.identity),
+        "UPDATE events SET material = ?, content_hash = ? WHERE identity = ?",
+        (row["material"], _content_digest(row), event.identity),
     )
     con.commit()
     con.close()
@@ -213,10 +213,10 @@ def test_screened_durable_rehydration_still_runs_event_validation(path):
     con = _raw(path)
     con.execute("DROP TRIGGER events_refuse_update")
     row = dict(con.execute("SELECT * FROM events WHERE identity = ?", (event.identity,)).fetchone())
-    row["payload"] = "[]"
+    row["material"] = "[]"
     con.execute(
-        "UPDATE events SET payload = ?, content_hash = ? WHERE identity = ?",
-        (row["payload"], _content_digest(row), event.identity),
+        "UPDATE events SET material = ?, content_hash = ? WHERE identity = ?",
+        (row["material"], _content_digest(row), event.identity),
     )
     con.commit()
     con.close()
@@ -224,7 +224,7 @@ def test_screened_durable_rehydration_still_runs_event_validation(path):
     reopened = SQLiteEventLedger(path)
     try:
         assert reopened.integrity_of(event.identity) == VERIFIED
-        with pytest.raises(ValueError, match="payload"):
+        with pytest.raises(ValueError, match="material"):
             reopened.get(event.identity)
     finally:
         reopened.close()
@@ -234,7 +234,7 @@ def _incomplete_store(path, rows=1):
     con = sqlite3.connect(path)
     con.execute(
         "CREATE TABLE events (identity TEXT PRIMARY KEY, kind TEXT NOT NULL, "
-        "timestamp TEXT NOT NULL, payload TEXT NOT NULL, locality_identity TEXT)"
+        "timestamp TEXT NOT NULL, material TEXT NOT NULL, locality_identity TEXT)"
     )
     for i in range(rows):
         con.execute(
@@ -265,7 +265,7 @@ def test_a_nullable_schema_holding_an_undigested_row_is_refused(path):
     con = sqlite3.connect(path)
     con.execute(
         "CREATE TABLE events (identity TEXT PRIMARY KEY, kind TEXT NOT NULL, "
-        "timestamp TEXT NOT NULL, payload TEXT NOT NULL, locality_identity TEXT, "
+        "timestamp TEXT NOT NULL, material TEXT NOT NULL, locality_identity TEXT, "
         "content_hash TEXT)"
     )
     con.execute(
@@ -349,7 +349,7 @@ def test_a_comparison_refuses_a_corrupted_input(path, monkeypatch):
 
     con = _raw(path)
     con.execute("DROP TRIGGER events_refuse_update")
-    con.execute("UPDATE events SET payload = ? WHERE identity = ?", ('{"tampered": true}', identities[0]))
+    con.execute("UPDATE events SET material = ? WHERE identity = ?", ('{"tampered": true}', identities[0]))
     con.commit()
     con.close()
 
@@ -425,11 +425,11 @@ def test_a_nullable_digest_schema_is_refused_even_when_fully_digested(path):
     con = sqlite3.connect(path)
     con.execute(
         "CREATE TABLE events (identity TEXT PRIMARY KEY, kind TEXT NOT NULL, "
-        "timestamp TEXT NOT NULL, payload TEXT NOT NULL, locality_identity TEXT, "
+        "timestamp TEXT NOT NULL, material TEXT NOT NULL, locality_identity TEXT, "
         "content_hash TEXT)"
     )
     row = {"identity": "evt_000001", "kind": "k",
-           "timestamp": "2026-01-01T00:00:00", "payload": "{}", "locality_identity": "s",
+           "timestamp": "2026-01-01T00:00:00", "material": "{}", "locality_identity": "s",
            }
     con.execute(
         "INSERT INTO events VALUES (?,?,?,?,?,?)",
@@ -458,7 +458,7 @@ def test_reservations_are_read_from_the_table_not_from_history(path):
     """`#2414`'s whole-history read, replaced by a durable counter.
 
     The open cost was linear in stored events — 36.9s at 100,000 — because
-    every payload was deserialized and walked to read a few integers.
+    every material was deserialized and walked to read a few integers.
     """
     led = SQLiteEventLedger(path)
     try:
@@ -543,7 +543,7 @@ def test_a_batch_commits_its_reservations_with_its_occurrences(path):
     led._connection.set_trace_callback(commits.append)
     try:
         led.append_many([
-            Event(identity=f"evt_10000{i}", kind="k", payload={"reference": f"operator_material_0000{40 + i}"}, locality_identity="locality_000009")
+            Event(identity=f"evt_10000{i}", kind="k", material={"reference": f"operator_material_0000{40 + i}"}, locality_identity="locality_000009")
             for i in range(3)
         ])
     finally:
@@ -570,7 +570,7 @@ def test_a_batch_leaves_no_occurrence_without_its_reservation(path):
 
     led = SQLiteEventLedger(path)
     led.append_many([
-        Event(identity="evt_100001", kind="k", payload={"reference": "operator_material_000077"}, locality_identity="s")
+        Event(identity="evt_100001", kind="k", material={"reference": "operator_material_000077"}, locality_identity="s")
     ])
     led.close()
 
@@ -587,7 +587,7 @@ def test_reservable_suffix_observation_matches_a_per_prefix_scan():
 
     A reservable identity is a prefix, an underscore, and digits, so the
     digits begin just after the value's last underscore. This holds the split
-    to that equivalence over generated payloads rather than over examples,
+    to that equivalence over generated materials rather than over examples,
     because several movement prefixes overlap and a number of
     zero is deliberately not reserved.
     """
@@ -598,7 +598,7 @@ def test_reservable_suffix_observation_matches_a_per_prefix_scan():
 
     def per_prefix_scan(event):
         found = {}
-        values = list(_walk_values(event.payload))
+        values = list(_walk_values(event.material))
         if event.locality_identity is not None:
             values.append(event.locality_identity)
         for value in values:
@@ -638,13 +638,13 @@ def test_reservable_suffix_observation_matches_a_per_prefix_scan():
 
     ledger = SQLiteEventLedger.__new__(SQLiteEventLedger)
     for index in range(1500):
-        payload = value()
-        if not isinstance(payload, dict):
-            payload = {"k": payload}
+        material = value()
+        if not isinstance(material, dict):
+            material = {"k": material}
         event = Event(
             identity=f"evt_{index}",
             kind="k",
-            payload=payload,
+            material=material,
             locality_identity=one([None, identity(), f"locality_{rng.randint(0, 9999)}"]),
         )
         assert ledger._observed_numbers(event) == per_prefix_scan(event)
@@ -655,16 +655,16 @@ def test_a_reserved_suffix_of_zero_is_not_reserved():
     split must decline it too rather than reserve prefix zero."""
 
     ledger = SQLiteEventLedger.__new__(SQLiteEventLedger)
-    event = Event(identity="evt_1", kind="k", payload={"a": "operator_material_0"})
+    event = Event(identity="evt_1", kind="k", material={"a": "operator_material_0"})
     assert ledger._observed_numbers(event) == {}
-    event = Event(identity="evt_2", kind="k", payload={"a": "operator_material_1"})
+    event = Event(identity="evt_2", kind="k", material={"a": "operator_material_1"})
     assert ledger._observed_numbers(event) == {"operator_material": 1}
 
 
 def test_an_overlapping_prefix_reserves_the_longer_match():
     ledger = SQLiteEventLedger.__new__(SQLiteEventLedger)
     event = Event(
-        identity="evt_1", kind="k", payload={"a": "assertion_locality_movement_act_7", "b": "assertion_locality_movement_4"},
+        identity="evt_1", kind="k", material={"a": "assertion_locality_movement_act_7", "b": "assertion_locality_movement_4"},
     )
     assert ledger._observed_numbers(event) == {
         "assertion_locality_movement_act": 7,
@@ -770,7 +770,7 @@ def test_every_input_support_refusal_can_be_reached():
             InputSupport.from_json_dict(partial)
 
 
-def test_a_digest_does_not_move_when_a_payload_is_compressed(tmp_path):
+def test_a_digest_does_not_move_when_a_material_is_compressed(tmp_path):
     """The digest commits to what an occurrence carries, not how it was stored.
 
     `#2494` put compression below the integrity boundary. If the digest were
@@ -780,42 +780,42 @@ def test_a_digest_does_not_move_when_a_payload_is_compressed(tmp_path):
     """
 
     import zlib
-    from seed_runtime.events import _content_digest, _stored_payload, _serialized_payload
+    from seed_runtime.events import _content_digest, _stored_material, _serialized_material
 
-    payload = {"dimensions": {"content": "x" * 4000}, "n": list(range(200))}
+    material = {"dimensions": {"content": "x" * 4000}, "n": list(range(200))}
     small = {"a": 1}
 
-    for value in (payload, small):
+    for value in (material, small):
         serialized = json.dumps(value)
         row = {
             "identity": "evt_1", "kind": "k",
-            "timestamp": "2026-01-01T00:00:00+00:00", "payload": serialized,
+            "timestamp": "2026-01-01T00:00:00+00:00", "material": serialized,
             "locality_identity": None,
         }
         digest = _content_digest(row)
-        stored = _stored_payload(serialized)
+        stored = _stored_material(serialized)
         # Whatever the store holds, it reads the canonical string exactly,
         # and digesting that reproduces the same commitment.
-        assert _serialized_payload(stored) == serialized
-        assert _content_digest(dict(row, payload=_serialized_payload(stored))) == digest
+        assert _serialized_material(stored) == serialized
+        assert _content_digest(dict(row, material=_serialized_material(stored))) == digest
 
-    # Large payloads compress and are stored as bytes; tiny ones do not and are
+    # Large materials compress and are stored as bytes; tiny ones do not and are
     # stored as text, because compressing them would cost bytes for nothing.
-    assert isinstance(_stored_payload(json.dumps(payload)), bytes)
-    assert isinstance(_stored_payload(json.dumps(small)), str)
+    assert isinstance(_stored_material(json.dumps(material)), bytes)
+    assert isinstance(_stored_material(json.dumps(small)), str)
 
 
 def test_compressed_and_uncompressed_stores_verify_alike(tmp_path):
     path = str(tmp_path / "ledger.db")
     ledger = SQLiteEventLedger(path)
-    payload = {"dimensions": {"content": "y" * 5000}, "n": list(range(300))}
+    material = {"dimensions": {"content": "y" * 5000}, "n": list(range(300))}
     try:
-        compressed = ledger.append("k", payload)
+        compressed = ledger.append("k", material)
         plain = ledger.append("k", {"a": 1})
         assert ledger.integrity_of(compressed.identity) == VERIFIED
         assert ledger.integrity_of(plain.identity) == VERIFIED
-        assert ledger.get(compressed.identity).payload == payload
-        assert ledger.get(plain.identity).payload == {"a": 1}
+        assert ledger.get(compressed.identity).material == material
+        assert ledger.get(plain.identity).material == {"a": 1}
     finally:
         ledger.close()
 
@@ -823,7 +823,7 @@ def test_compressed_and_uncompressed_stores_verify_alike(tmp_path):
     connection = sqlite3.connect(path)
     stored = {
         row[0]: row[1]
-        for row in connection.execute("SELECT identity, payload FROM events")
+        for row in connection.execute("SELECT identity, material FROM events")
     }
     connection.close()
     assert isinstance(stored[compressed.identity], bytes)
@@ -841,10 +841,10 @@ def test_damaged_compressed_storage_is_corruption_not_a_compressor_error(tmp_pat
     """
 
     import zlib
-    from seed_runtime.events import InvalidStoredPayload
+    from seed_runtime.events import InvalidStoredMaterial
 
-    payload = {"dimensions": {"content": "q" * 5000}}
-    intact = zlib.compress(json.dumps(payload).encode("utf-8"), 1)
+    material = {"dimensions": {"content": "q" * 5000}}
+    intact = zlib.compress(json.dumps(material).encode("utf-8"), 1)
 
     damage = {
         "truncated": intact[: len(intact) // 2],
@@ -858,14 +858,14 @@ def test_damaged_compressed_storage_is_corruption_not_a_compressor_error(tmp_pat
         path = str(tmp_path / f"{label.replace(' ', '_')}.db")
         ledger = SQLiteEventLedger(path)
         try:
-            event = ledger.append("k", payload)
+            event = ledger.append("k", material)
         finally:
             ledger.close()
 
         connection = sqlite3.connect(path)
         connection.execute("DROP TRIGGER events_refuse_update")
         connection.execute(
-            "UPDATE events SET payload = ? WHERE identity = ?", (stored, event.identity)
+            "UPDATE events SET material = ? WHERE identity = ?", (stored, event.identity)
         )
         connection.commit()
         connection.close()
@@ -876,13 +876,13 @@ def test_damaged_compressed_storage_is_corruption_not_a_compressor_error(tmp_pat
             assert ledger.integrity_of(event.identity) == CORRUPTED, label
             # And a read refuses as a ledger integrity failure rather than
             # exposing the compressor.
-            with pytest.raises(InvalidStoredPayload):
+            with pytest.raises(InvalidStoredMaterial):
                 ledger.get(event.identity)
         finally:
             ledger.close()
 
 
-def test_a_compressed_payload_altered_to_other_valid_content_is_corrupted(tmp_path):
+def test_a_compressed_material_altered_to_other_valid_content_is_corrupted(tmp_path):
     """The digest still settles it when the storage reads cleanly."""
 
     import zlib
@@ -897,7 +897,7 @@ def test_a_compressed_payload_altered_to_other_valid_content_is_corrupted(tmp_pa
     connection = sqlite3.connect(path)
     connection.execute("DROP TRIGGER events_refuse_update")
     connection.execute(
-        "UPDATE events SET payload = ? WHERE identity = ?",
+        "UPDATE events SET material = ? WHERE identity = ?",
         (zlib.compress(json.dumps({"dimensions": {"content": "other"}}).encode(), 1), event.identity),
     )
     connection.commit()
@@ -910,37 +910,37 @@ def test_a_compressed_payload_altered_to_other_valid_content_is_corrupted(tmp_pa
         ledger.close()
 
 
-def test_a_stored_payload_that_is_not_an_occurrence_is_refused(tmp_path):
+def test_a_stored_material_that_is_not_an_occurrence_is_refused(tmp_path):
     """Read as text is not read as an occurrence.
 
-    A payload that decompresses cleanly but is not JSON raised
-    `JSONDecodeError` through `get()`, and so did a text payload damaged in
+    A material that decompresses cleanly but is not JSON raised
+    `JSONDecodeError` through `get()`, and so did a text material damaged in
     place — reachable before compression existed. It is the same condition as
     one that will not decompress: the stored row no longer carries what it was
     digested from.
     """
 
     import zlib
-    from seed_runtime.events import InvalidStoredPayload
+    from seed_runtime.events import InvalidStoredMaterial
 
-    payload = {"dimensions": {"content": "y" * 5000}}
+    material = {"dimensions": {"content": "y" * 5000}}
     damage = {
         "compressed, not json": zlib.compress(b"not json at all", 1),
         "text, not json": "not json at all",
-        "text, truncated json": json.dumps(payload)[:40],
+        "text, truncated json": json.dumps(material)[:40],
     }
     for label, stored in damage.items():
         path = str(tmp_path / f"{label.replace(' ', '_').replace(',', '')}.db")
         ledger = SQLiteEventLedger(path)
         try:
-            event = ledger.append("k", payload)
+            event = ledger.append("k", material)
         finally:
             ledger.close()
 
         connection = sqlite3.connect(path)
         connection.execute("DROP TRIGGER events_refuse_update")
         connection.execute(
-            "UPDATE events SET payload = ? WHERE identity = ?", (stored, event.identity)
+            "UPDATE events SET material = ? WHERE identity = ?", (stored, event.identity)
         )
         connection.commit()
         connection.close()
@@ -948,7 +948,7 @@ def test_a_stored_payload_that_is_not_an_occurrence_is_refused(tmp_path):
         ledger = SQLiteEventLedger(path)
         try:
             assert ledger.integrity_of(event.identity) == CORRUPTED, label
-            with pytest.raises(InvalidStoredPayload):
+            with pytest.raises(InvalidStoredMaterial):
                 ledger.get(event.identity)
         finally:
             ledger.close()

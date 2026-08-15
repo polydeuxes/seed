@@ -26,29 +26,29 @@ def utc_now() -> datetime:
     return datetime.now(timezone.utc)
 
 
-_SCREENED_EVENT_PAYLOAD_TOKEN = object()
+_SCREENED_EVENT_MATERIAL_TOKEN = object()
 
 
-class _ScreenedEventPayload(dict[str, Any]):
+class _ScreenedEventMaterial(dict[str, Any]):
     """Runtime-local evidence that durable JSON keys were screened."""
 
-    def __init__(self, payload: dict[str, Any], token: object) -> None:
-        if token is not _SCREENED_EVENT_PAYLOAD_TOKEN:
-            raise TypeError("screened Event payloads come from the durable decoder")
-        super().__init__(payload)
+    def __init__(self, material: dict[str, Any], token: object) -> None:
+        if token is not _SCREENED_EVENT_MATERIAL_TOKEN:
+            raise TypeError("screened Event materials come from the durable decoder")
+        super().__init__(material)
 
 
 def _screen_durable_event_object(value: dict[str, Any]) -> dict[str, Any]:
     for key in value:
         if secret_boundary_key(key) in SECRET_FIELD_NAMES:
             raise ValueError(
-                f"secret field is not allowed in durable event payload: {key}"
+                f"secret field is not allowed in durable event material: {key}"
             )
     return value
 
 
-def _require_preservable_payload(value: Any, path: str = "payload") -> None:
-    """Refuse a payload a durable store could not return preserved.
+def _require_preservable_material(value: Any, path: str = "material") -> None:
+    """Refuse a material a durable store could not return preserved.
 
     JSON has no tuple and no non-string key, so a durable store silently
     returned `[1, 2]` for a tuple and `{"1": ...}` for an integer key while the
@@ -81,11 +81,11 @@ def _require_preservable_payload(value: Any, path: str = "payload") -> None:
                     f"{path} carries a {type(key).__name__} key {key!r}; a durable "
                     "store preserves only exact string keys"
                 )
-            _require_preservable_payload(nested, f"{path}[{key!r}]")
+            _require_preservable_material(nested, f"{path}[{key!r}]")
         return
     if type(value) is list:
         for index, nested in enumerate(value):
-            _require_preservable_payload(nested, f"{path}[{index}]")
+            _require_preservable_material(nested, f"{path}[{index}]")
         return
     if type(value) is tuple:
         raise ValueError(
@@ -110,29 +110,29 @@ def _require_preservable_payload(value: Any, path: str = "payload") -> None:
     )
 
 
-def _decode_screened_event_payload(raw_payload: str) -> Any:
+def _decode_screened_event_material(raw_material: str) -> Any:
     """Decode durable JSON while screening each dictionary as it is built."""
 
-    payload = json.loads(raw_payload, object_hook=_screen_durable_event_object)
-    if isinstance(payload, dict):
-        return _ScreenedEventPayload(payload, _SCREENED_EVENT_PAYLOAD_TOKEN)
-    return payload
+    material = json.loads(raw_material, object_hook=_screen_durable_event_object)
+    if isinstance(material, dict):
+        return _ScreenedEventMaterial(material, _SCREENED_EVENT_MATERIAL_TOKEN)
+    return material
 
 
 class Event(SeedModel):
     def __init__(self, **data: Any) -> None:
-        payload = data.get("payload", {})
-        if not isinstance(payload, _ScreenedEventPayload):
-            reject_secret_fields(payload, "event.payload")
+        material = data.get("material", {})
+        if not isinstance(material, _ScreenedEventMaterial):
+            reject_secret_fields(material, "event.material")
             # Refused here rather than at the store, so both ledgers refuse the
-            # same payload identically and neither serializes first. A payload
+            # same material identically and neither serializes first. A material
             # read from durable JSON is already preservable by
             # input, which is what the screened representation identifies.
-            _require_preservable_payload(payload)
+            _require_preservable_material(material)
         super().__init__(**data)
 
     identity: str
     kind: str
     timestamp: datetime = Field(default_factory=utc_now)
-    payload: dict[str, Any] = Field(default_factory=dict)
+    material: dict[str, Any] = Field(default_factory=dict)
     locality_identity: str | None = None

@@ -1,4 +1,4 @@
-"""Secret boundary helpers for Seed runtime payloads."""
+"""Secret boundary helpers for Seed runtime materials."""
 
 from __future__ import annotations
 
@@ -24,7 +24,7 @@ SECRET_FREE_GRANT_METADATA_FIELDS = frozenset(
 
 
 def secret_boundary_key(name: object) -> str:
-    """The representation this boundary compares a payload key in.
+    """The representation this boundary compares a material key in.
 
     Three foldings: whitespace, case, and `-`/`_`. No input evidence says
     these spellings name one field; this boundary imposes that equality so a
@@ -40,13 +40,13 @@ def secret_boundary_key(name: object) -> str:
 
 def reject_secret_fields(
     value: Any,
-    path: str = "payload",
+    path: str = "material",
     *,
     allowed_fields: Iterable[str] = (),
 ) -> None:
     """Reject dictionaries containing raw-secret field names.
 
-    The boundary is intentionally key based: Seed must not accept payload slots
+    The boundary is intentionally key based: Seed must not accept material slots
     named like raw secret carriers. References to separate secret systems should
     use explicit ``*_reference`` fields such as ``vault_token_reference`` instead of
     raw ``token`` fields.

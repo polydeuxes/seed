@@ -149,8 +149,8 @@ class ComparisonFinding:
         }
 
 
-def _read(payload: dict[str, Any], path: tuple[str, ...]) -> Any:
-    value: Any = payload
+def _read(material: dict[str, Any], path: tuple[str, ...]) -> Any:
+    value: Any = material
     for key in path:
         if not isinstance(value, dict) or key not in value:
             return None
@@ -162,13 +162,13 @@ def _preserve(ledger: EventLedger, event: Event) -> PreservedInput:
     carried: dict[str, Any] = {}
     absent: list[str] = []
     for coordinate, path in INPUT_COORDINATES.items():
-        value = _read(event.payload, path) if path else None
+        value = _read(event.material, path) if path else None
         if value is None:
             absent.append(coordinate)
         else:
             carried[coordinate] = value
     # Scope has a second half the finding carries separately.
-    counting_scope = event.payload.get("counting_scope")
+    counting_scope = event.material.get("counting_scope")
     if counting_scope is not None:
         carried["counting_scope"] = counting_scope
     return PreservedInput(
@@ -183,7 +183,7 @@ def _preserve(ledger: EventLedger, event: Event) -> PreservedInput:
 def _occupants(event: Event) -> set[str]:
     return {
         occupancy["representation"]
-        for occupancy in event.payload.get("occupancies", [])
+        for occupancy in event.material.get("occupancies", [])
     }
 
 
@@ -245,7 +245,7 @@ def compare_preserved_findings(
         ("measured_position", "measured_position"),
         ("measurement_distinction", "measurement_distinction"),
     ):
-        values = tuple(event.payload.get(field) for event in events)
+        values = tuple(event.material.get(field) for event in events)
         distinctions.append(
             Distinction(coordinate, len(set(map(repr, values))) == 1, values)
         )
@@ -353,7 +353,7 @@ def record_comparison_finding(
                 "applicability_event_identity": applicability.identity,
             }
         )
-    result_payload = {
+    result_material = {
         "result_identity": result_identity,
         "dimensions": {
             "identity": result_identity,
@@ -407,16 +407,16 @@ def record_comparison_finding(
         act_occurrence_identity=act_occurrence_identity,
         result_kind=COMPARISON_RESULT_KIND,
         result_identity=result_identity,
-        result_content=result_payload,
+        result_content=result_material,
         responsibility=COMPARISON_RESPONSIBILITY,
         live_boundary="bounded_assertion_compare",
         responsible_boundary="this Seed",
-        recorded_result_coordinates={key: (key,) for key in result_payload},
+        recorded_result_coordinates={key: (key,) for key in result_material},
     )
     return ledger.append(
         COMPARISON_RECORDED_KIND,
         {
-            **result_payload,
+            **result_material,
             "responsible_act_evidence_identity": act_evidence.identity,
             "yield_evidence_identity": yield_evidence.identity,
         },

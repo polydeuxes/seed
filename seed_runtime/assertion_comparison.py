@@ -91,7 +91,7 @@ class RecordedAssertionYieldDistinction:
     assertion_identity: str
     recorded_occurrence_reference: str
     coordinate: str
-    payload: dict[str, Any]
+    material: dict[str, Any]
 
     @property
     def reference(self) -> dict[str, str]:
@@ -118,8 +118,8 @@ COORDINATES: dict[str, tuple[str, ...]] = {
 
 
 
-def _read(payload: dict[str, Any], path: tuple[str, ...]) -> tuple[bool, Any]:
-    value: Any = payload
+def _read(material: dict[str, Any], path: tuple[str, ...]) -> tuple[bool, Any]:
+    value: Any = material
     for coordinate in path:
         if not isinstance(value, dict) or coordinate not in value:
             return False, None
@@ -221,7 +221,7 @@ def compare_assertion_yields(
     distinctions = []
     for coordinate, path in COORDINATES.items():
         coordinate_reads = tuple(
-            _read(assertion.payload, path) for assertion in assertions
+            _read(assertion.material, path) for assertion in assertions
         )
         present = (coordinate_reads[0][0], coordinate_reads[1][0])
         values = (coordinate_reads[0][1], coordinate_reads[1][1])
@@ -368,7 +368,7 @@ def record_assertion_yield_comparison(
                 ],
             }
         )
-    result_payload = {
+    result_material = {
         "result_identity": result_identity,
         "dimensions": {
             "identity": result_identity,
@@ -412,16 +412,16 @@ def record_assertion_yield_comparison(
         act_occurrence_identity=act_occurrence_identity,
         result_kind=ASSERTION_YIELD_COMPARISON_RESULT_KIND,
         result_identity=result_identity,
-        result_content=result_payload,
+        result_content=result_material,
         responsibility=comparison.responsibility,
         live_boundary="assertion_yield_compare",
         responsible_boundary=comparison.responsible_boundary,
-        recorded_result_coordinates={key: (key,) for key in result_payload},
+        recorded_result_coordinates={key: (key,) for key in result_material},
     )
     return ledger.append(
         ASSERTION_YIELD_COMPARISON_RECORDED_KIND,
         {
-            **result_payload,
+            **result_material,
             "responsible_act_evidence_identity": act_evidence.identity,
             "yield_evidence_identity": yield_evidence.identity,
         },
@@ -438,8 +438,8 @@ def assertions_of_recorded_assertion_comparison(
         raise AssertionComparisonError(
             f"{event.identity} is {event.kind}, not an Assertion yield Compare occurrence"
         )
-    stated = event.payload.get("assertions")
-    outer_inputs = event.payload.get("inputs")
+    stated = event.material.get("assertions")
+    outer_inputs = event.material.get("inputs")
     if not isinstance(stated, list):
         raise AssertionComparisonError(
             f"{event.identity} does not preserve its distinct comparison Assertions"
@@ -461,10 +461,10 @@ def assertions_of_recorded_assertion_comparison(
         raise AssertionComparisonError(
             f"{event.identity} does not carry two distinct yields of one Assertion"
         )
-    act_occurrence_identity = event.payload.get("act_occurrence_identity")
-    locality_identities = event.payload.get("input_locality_evidence_identities")
-    applicability_identities = event.payload.get("input_applicability_event_identities")
-    participation = event.payload.get("participation")
+    act_occurrence_identity = event.material.get("act_occurrence_identity")
+    locality_identities = event.material.get("input_locality_evidence_identities")
+    applicability_identities = event.material.get("input_applicability_event_identities")
+    participation = event.material.get("participation")
     if (
         not isinstance(act_occurrence_identity, str)
         or not act_occurrence_identity
@@ -570,7 +570,7 @@ def assertions_of_recorded_assertion_comparison(
                 assertion_identity=identity,
                 recorded_occurrence_reference=event.identity,
                 coordinate=content["coordinate"],
-                payload=assertion,
+                material=assertion,
             )
         )
     if seen_coordinates != set(COORDINATES):

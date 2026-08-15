@@ -430,7 +430,7 @@ def _as_preserved(
 ) -> "tuple[list[Event], str]":
     """The preserved occurrences these identities name, where a ledger says so.
 
-    An `Event` is directly formable with any identity and any payload, so an
+    An `Event` is directly formable with any identity and any material, so an
     object bearing a preserved identity may carry different material. Checking
     that an occurrence with that identity exists establishes the identity and
     not the material: `#2510` enforced this where a support support was declared,
@@ -503,16 +503,16 @@ def _recorded_yield_result(
 
     The yield evidence names the exact top-level coordinates the act
     yielded. Recording may lawfully add other coordinates, so neither an
-    exclusion list nor every key left in the recorded payload reads this
+    exclusion list nor every key left in the recorded material reads this
     boundary. `material_provenance` is the one yielded coordinate represented
     inside the recorder-established dimensions object.
     """
 
-    payload = recorded.payload
+    material = recorded.material
     content: dict[str, Any] = {}
     for key in yield_coordinates:
         if key == "material_provenance":
-            dimensions = payload.get("dimensions")
+            dimensions = material.get("dimensions")
             if (
                 not isinstance(dimensions, dict)
                 or "source_provenance" not in dimensions
@@ -522,12 +522,12 @@ def _recorded_yield_result(
                     "material provenance"
                 )
             content[key] = dimensions["source_provenance"]
-        elif key not in payload:
+        elif key not in material:
             raise PreservedMaterialMeasurementError(
                 f"the recorded finding does not preserve yielded coordinate {key}"
             )
         else:
-            content[key] = payload[key]
+            content[key] = material[key]
     return content
 
 
@@ -553,7 +553,7 @@ def _record_yield(ledger: EventLedger, *, locality_identity: str, finding) -> Ev
       not           that nothing else appended this kind directly
     ```
 
-    The three negative coordinates stay unestablished; the payload records them
+    The three negative coordinates stay unestablished; the material records them
     as such rather than filling them.
 
     This occurrence is preserved Evidence concerning a Yield edge. It is not
@@ -593,7 +593,7 @@ def _measurable_text(event: Event) -> str:
         raise PreservedMaterialMeasurementError(
             f"only preserved ingest occurrences may be measured: {event.kind}"
         )
-    represented = event.payload.get("represented_material")
+    represented = event.material.get("represented_material")
     if not isinstance(represented, str):
         raise PreservedMaterialMeasurementError(
             f"{event.identity} preserves no represented material"
@@ -828,7 +828,7 @@ def measure_occupancy(
     )
 
 
-def _measurement_finding_payload(
+def _measurement_finding_material(
     *,
     locality_identity: str,
     finding: MeasurementFinding | RecurrenceFinding,
@@ -941,19 +941,19 @@ def record_measurement_findings(
                 f"{finding.yield_evidence_identity} is named as this result's "
                 "evidence and is not preserved yield evidence"
             )
-        if evidence.payload.get("result_kind") != RECURRENCE_RESULT_KIND:
+        if evidence.material.get("result_kind") != RECURRENCE_RESULT_KIND:
             raise PreservedMaterialMeasurementError(
                 f"{finding.yield_evidence_identity} is yield evidence for "
                 "a different kind of result"
             )
         if (
-            evidence.payload.get("dimensions", {}).get("act_occurrence_identity")
+            evidence.material.get("dimensions", {}).get("act_occurrence_identity")
             != finding.act_occurrence_identity
         ):
             raise PreservedMaterialMeasurementError(
                 "yield Evidence concerns a different Measurement occurrence"
             )
-        if evidence.payload.get("result") != _result_content(finding):
+        if evidence.material.get("result") != _result_content(finding):
             raise PreservedMaterialMeasurementError(
                 "the yield evidence this result names concerns a "
                 "different result"
@@ -962,7 +962,7 @@ def record_measurement_findings(
         Event(
             identity=new_identity("evt"),
             kind=MEASUREMENT_RECORDED_KIND,
-            payload=_measurement_finding_payload(
+            material=_measurement_finding_material(
                 locality_identity=locality_identity,
                 finding=finding,
                 extra=extra,
@@ -1007,7 +1007,7 @@ def premise_chain(ledger: EventLedger, event_identity: str) -> list[str]:
     chain: list[str] = []
     current = ledger.get(event_identity)
     while current is not None:
-        premise_identity = current.payload.get("premise_event_identity")
+        premise_identity = current.material.get("premise_event_identity")
         if premise_identity is None:
             break
         chain.append(premise_identity)

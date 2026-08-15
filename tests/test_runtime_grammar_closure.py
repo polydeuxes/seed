@@ -49,7 +49,7 @@ def _module_strings(tree: ast.Module) -> dict[str, str]:
 
 def _runtime_event_kinds() -> dict[str, list[str]]:
     found: dict[str, list[str]] = {}
-    for path, line, name, value, _keys in _event_payloads():
+    for path, line, name, value, _keys in _event_materials():
         found.setdefault(value, []).append(f"{path.name}:{line}:{name}")
     return found
 
@@ -142,7 +142,7 @@ def _named_dict_additions(scope):
     return found
 
 
-def _resolved_payload_dict(value, *, line, named):
+def _resolved_material_dict(value, *, line, named):
     if isinstance(value, ast.Dict):
         return value
     if not isinstance(value, ast.Name):
@@ -163,7 +163,7 @@ def _resolved_dict_keys(
         if isinstance(key, ast.Constant) and isinstance(key.value, str):
             found.add(key.value)
         elif key is None:
-            spread = _resolved_payload_dict(nested, line=line, named=named)
+            spread = _resolved_material_dict(nested, line=line, named=named)
             if spread is not None:
                 found.update(
                     _resolved_dict_keys(
@@ -236,7 +236,7 @@ def test_runtime_record_vocabulary_has_constitutional_admission():
     )
 
 
-def _event_payloads():
+def _event_materials():
     for path, tree in _runtime_trees():
         constants = _module_strings(tree)
         for scope in _scopes(tree):
@@ -246,18 +246,18 @@ def _event_payloads():
                 node for node in _scope_nodes(scope) if isinstance(node, ast.Call)
             ):
                 kind = None
-                payload = None
+                material = None
                 if isinstance(call.func, ast.Attribute) and call.func.attr == "append":
                     if len(call.args) >= 2:
-                        kind, payload = call.args[0], call.args[1]
+                        kind, material = call.args[0], call.args[1]
                 elif isinstance(call.func, ast.Name) and call.func.id == "Event":
                     keywords = {item.arg: item.value for item in call.keywords}
-                    kind, payload = keywords.get("kind"), keywords.get("payload")
-                payload_expression = payload
-                payload = _resolved_payload_dict(
-                    payload_expression, line=call.lineno, named=named_dicts
+                    kind, material = keywords.get("kind"), keywords.get("material")
+                material_expression = material
+                material = _resolved_material_dict(
+                    material_expression, line=call.lineno, named=named_dicts
                 )
-                if payload is None:
+                if material is None:
                     continue
                 if isinstance(kind, ast.Name):
                     value = constants.get(kind.id)
@@ -274,20 +274,20 @@ def _event_payloads():
                         name,
                         value,
                         _resolved_dict_keys(
-                            payload,
+                            material,
                             line=call.lineno,
                             named=named_dicts,
                             additions=additions,
                             source_name=(
-                                payload_expression.id
-                                if isinstance(payload_expression, ast.Name)
+                                material_expression.id
+                                if isinstance(material_expression, ast.Name)
                                 else None
                             ),
                         ),
                     )
 
 
-def _unread_event_payloads():
+def _unread_event_materials():
     for path, tree in _runtime_trees():
         constants = _module_strings(tree)
         for scope in _scopes(tree):
@@ -301,7 +301,7 @@ def _unread_event_payloads():
                     and len(call.args) >= 2
                 ):
                     continue
-                kind, payload = call.args[0], call.args[1]
+                kind, material = call.args[0], call.args[1]
                 if isinstance(kind, ast.Name):
                     value = constants.get(kind.id)
                 elif isinstance(kind, ast.Constant) and isinstance(kind.value, str):
@@ -310,14 +310,14 @@ def _unread_event_payloads():
                     value = None
                 if value is None:
                     continue
-                if _resolved_payload_dict(
-                    payload, line=call.lineno, named=named_dicts
+                if _resolved_material_dict(
+                    material, line=call.lineno, named=named_dicts
                 ) is None:
                     yield path.name, call.lineno, value
 
 
-def test_every_declared_event_append_exposes_its_payload_to_the_sirens():
-    assert list(_unread_event_payloads()) == []
+def test_every_declared_event_append_exposes_its_material_to_the_sirens():
+    assert list(_unread_event_materials()) == []
 
 
 def test_every_edge_shaped_runtime_record_is_an_admitted_structural_edge():
@@ -337,7 +337,7 @@ def test_every_edge_shaped_runtime_record_is_an_admitted_structural_edge():
                 admitted.add(value)
 
     edge_shaped = set()
-    for _path, _line, name, value, keys in _event_payloads():
+    for _path, _line, name, value, keys in _event_materials():
         if name.endswith("RELATED_KIND") or {"first_subject", "second_subject"} <= keys:
             edge_shaped.add(value)
 
@@ -357,7 +357,7 @@ def test_every_recorded_yield_result_names_its_occurrence_and_exact_evidence():
         "yield_evidence_identity",
     }
     incomplete = []
-    for path, line, _name, value, keys in _event_payloads():
+    for path, line, _name, value, keys in _event_materials():
         if "yield_evidence_identity" not in keys:
             continue
         occurrence_identities = {
@@ -385,7 +385,7 @@ def test_every_act_evidence_occurrence_carries_the_exact_act_physiology():
         "evidence_scope",
     }
     incomplete = []
-    for path, line, name, value, keys in _event_payloads():
+    for path, line, name, value, keys in _event_materials():
         if not (name.endswith("ACT_EVIDENCE_KIND") or value.endswith("act_evidenced")):
             continue
         act_identities = {
@@ -422,7 +422,7 @@ def test_recorded_representation_declares_each_exact_evidence_pointer():
     }
     records = [
         (path.name, line, keys)
-        for path, line, _name, value, keys in _event_payloads()
+        for path, line, _name, value, keys in _event_materials()
         if value == "operator.representation.recorded"
     ]
     assert records
@@ -476,16 +476,16 @@ def test_every_event_standing_claim_has_a_declared_grammar_responsibility():
                     and len(call.args) >= 2
                 ):
                     continue
-                kind, payload = call.args[0], call.args[1]
+                kind, material = call.args[0], call.args[1]
                 value = constants.get(kind.id) if isinstance(kind, ast.Name) else None
                 if isinstance(kind, ast.Constant) and isinstance(kind.value, str):
                     value = kind.value
-                payload = _resolved_payload_dict(
-                    payload, line=call.lineno, named=named_dicts
+                material = _resolved_material_dict(
+                    material, line=call.lineno, named=named_dicts
                 )
-                if value is None or payload is None:
+                if value is None or material is None:
                     continue
-                standings = _standing_values(payload)
+                standings = _standing_values(material)
                 if standings and value not in accounted:
                     unaccounted.append((path.name, call.lineno, value, standings))
 

@@ -6,7 +6,7 @@ import json
 from tests.binary_input import binary_input
 from io import StringIO
 
-from seed_runtime.events import SQLiteEventLedger, _payload_references
+from seed_runtime.events import SQLiteEventLedger, _material_references
 from seed_runtime.operator_console import run_persistent_operator_console
 
 
@@ -21,8 +21,8 @@ def _road(tmp_path):
     return ledger
 
 
-def test_the_index_restates_only_references_the_payload_carries(tmp_path):
-    """Every indexed edge is readable back out of the payload it came from."""
+def test_the_index_restates_only_references_the_material_carries(tmp_path):
+    """Every indexed edge is readable back out of the material it came from."""
 
     ledger = _road(tmp_path)
     rows = [
@@ -34,20 +34,20 @@ def test_the_index_restates_only_references_the_payload_carries(tmp_path):
     assert rows
 
     for source_identity, relation, destination_identity in rows:
-        payload = ledger.get(source_identity).payload
-        carried = json.dumps(payload, default=str)
+        material = ledger.get(source_identity).material
+        carried = json.dumps(material, default=str)
         assert destination_identity in carried, (
             f"{source_identity} is indexed as referencing {destination_identity} under "
-            f"{relation}, and its payload does not carry that identity"
+            f"{relation}, and its material does not carry that identity"
         )
 
 
 def _rebuild(ledger) -> set[tuple[str, str, str]]:
-    """The index recomputed from the payloads, in the order they occurred.
+    """The index recomputed from the materials, in the order they occurred.
 
     Occurrence order is part of the rebuild, not a detail of it. An occurrence
     may only reference one that already existed, so a rebuild consulting every
-    identity present now would credit relations to payloads written before their
+    identity present now would credit relations to materials written before their
     destination occurred.
     """
 
@@ -56,7 +56,7 @@ def _rebuild(ledger) -> set[tuple[str, str, str]]:
     for row in ledger._connection.execute("SELECT identity FROM events ORDER BY rowid"):
         event = ledger.get(row[0])
         for relation, destination, _ in dict.fromkeys(
-            _payload_references(event.payload)
+            _material_references(event.material)
         ):
             if destination in existing:
                 rebuilt.add((event.identity, relation, destination))
@@ -73,11 +73,11 @@ def _stored(ledger) -> set[tuple[str, str, str]]:
     }
 
 
-def test_the_index_is_rebuildable_from_the_payloads_it_indexes(tmp_path):
+def test_the_index_is_rebuildable_from_the_materials_it_indexes(tmp_path):
     """Mechanics, not testimony: discarding it loses nothing.
 
-    The payload stays the authority. If the index could hold a relation the
-    payloads do not, it would be a second record able to disagree with the
+    The material stays the authority. If the index could hold a relation the
+    materials do not, it would be a second record able to disagree with the
     first, and dropping it would lose an Assertion.
     """
 
@@ -88,7 +88,7 @@ def test_the_index_is_rebuildable_from_the_payloads_it_indexes(tmp_path):
 def test_naming_an_identity_before_its_occurrence_is_not_a_reference(tmp_path):
     """Co-presence does not establish the relation.
 
-    A payload may hold a string that later becomes some occurrence's exact identity.
+    A material may hold a string that later becomes some occurrence's exact identity.
     `grammar.json` holds that endpoint presence does not establish a relation,
     and `02.Standing:55` that co-presence does not establish participation. An
     occurrence that could not have referenced its destination did not.
@@ -104,7 +104,7 @@ def test_naming_an_identity_before_its_occurrence_is_not_a_reference(tmp_path):
     assert taking.identity == "evt_000002"
     assert ledger.references_to(taking.identity) == []
     assert ledger.references_from(naming.identity) == []
-    assert "evt_000002" in json.dumps(ledger.get(naming.identity).payload)
+    assert "evt_000002" in json.dumps(ledger.get(naming.identity).material)
 
 
 def test_the_rebuild_agrees_with_the_index_across_that_case(tmp_path):
@@ -119,8 +119,8 @@ def test_the_rebuild_agrees_with_the_index_across_that_case(tmp_path):
     assert len(_stored(ledger)) == 1
 
 
-def test_one_reference_restated_in_one_payload_is_indexed_once(tmp_path):
-    """A relation held twice in one payload is one relation."""
+def test_one_reference_restated_in_one_material_is_indexed_once(tmp_path):
+    """A relation held twice in one material is one relation."""
 
     ledger = SQLiteEventLedger(str(tmp_path / "e.sqlite"))
     first = ledger.append("k", {"n": 1}, locality_identity="s1")
@@ -133,7 +133,7 @@ def test_one_reference_restated_in_one_payload_is_indexed_once(tmp_path):
     assert ledger.references_to(first.identity) == [("here", ledger.list_locality("s1")[1].identity)]
 
 
-def test_references_to_answers_what_the_payload_column_cannot(tmp_path):
+def test_references_to_answers_what_the_material_column_cannot(tmp_path):
     """The direction the index exists for."""
 
     ledger = _road(tmp_path)
@@ -147,7 +147,7 @@ def test_references_to_answers_what_the_payload_column_cannot(tmp_path):
     referrers = ledger.references_to(ingest[0].identity)
     assert referrers
     for relation, source in referrers:
-        assert ingest[0].identity in json.dumps(ledger.get(source).payload, default=str)
+        assert ingest[0].identity in json.dumps(ledger.get(source).material, default=str)
         assert relation
 
 

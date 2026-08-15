@@ -158,7 +158,7 @@ def advance_operator_locality_standing(
             ("unknowns", unknowns),
             ("conflicts", conflicts),
         ):
-            for value in event.payload.get(key, ()):
+            for value in event.material.get(key, ()):
                 _record_distinct(collected, value)
         if event.kind in {
             _REPRESENTATION_ACT_EVIDENCE_KIND,
@@ -166,31 +166,31 @@ def advance_operator_locality_standing(
         }:
             continue
         if event.kind == _REPRESENTATION_RECORDED_KIND:
-            payload = event.payload
-            if payload["representation_reference"] in representations:
+            material = event.material
+            if material["representation_reference"] in representations:
                 raise ValueError(
                     "duplicate representation reference: "
-                    f"{payload['representation_reference']}"
+                    f"{material['representation_reference']}"
                 )
-            representations[payload["representation_reference"]] = {
-                "representation_identity": payload["representation_reference"],
+            representations[material["representation_reference"]] = {
+                "representation_identity": material["representation_reference"],
                 "representation_event_identity": event.identity,
                 "emission_attempt_event_identity": None,
                 "emission_attempt_locality_evidence_identity": None,
                 "emission_outcome_event_identity": None,
                 "emitted_event_identity": None,
-                "representation_result": payload["representation_result"],
-                "emission_text": payload["emission_text"],
-                "alternative_material": payload["alternative_material"],
-                "coordinate_binding": payload["coordinate_binding"],
-                "locality_standing_as_of_event_identity": payload[
+                "representation_result": material["representation_result"],
+                "emission_text": material["emission_text"],
+                "alternative_material": material["alternative_material"],
+                "coordinate_binding": material["coordinate_binding"],
+                "locality_standing_as_of_event_identity": material[
                     "locality_standing_as_of_event_identity"
                 ],
-                "scope": payload["dimensions"]["scope_locality"],
-                "provenance": payload["dimensions"]["source_provenance"],
-                "known_loss": payload["known_loss"],
-                "unknowns": payload["unknowns"],
-                "conflicts": payload["conflicts"],
+                "scope": material["dimensions"]["scope_locality"],
+                "provenance": material["dimensions"]["source_provenance"],
+                "known_loss": material["known_loss"],
+                "unknowns": material["unknowns"],
+                "conflicts": material["conflicts"],
             }
             continue
         if event.kind in {
@@ -201,7 +201,7 @@ def advance_operator_locality_standing(
             # revise Locality Standing by identity.
             continue
         if event.kind == _REPRESENTATION_EMISSION_ATTEMPT_KIND:
-            representation_reference = event.payload["representation_reference"]
+            representation_reference = event.material["representation_reference"]
             if representation_reference not in representations:
                 raise ValueError(
                     "representation emission attempt without recorded representation event: "
@@ -210,13 +210,13 @@ def advance_operator_locality_standing(
             representations[representation_reference]["emission_attempt_event_identity"] = event.identity
             continue
         if event.kind == _REPRESENTATION_EMISSION_ATTEMPT_LOCALITY_EVIDENCE_KIND:
-            representation_reference = event.payload["representation_reference"]
+            representation_reference = event.material["representation_reference"]
             if representation_reference not in representations:
                 raise ValueError(
                     "emission-attempt Locality Evidence without recorded Representation: "
                     f"{representation_reference}"
                 )
-            if event.payload["attempt_event_identity"] != representations[
+            if event.material["attempt_event_identity"] != representations[
                 representation_reference
             ]["emission_attempt_event_identity"]:
                 raise ValueError(
@@ -227,14 +227,14 @@ def advance_operator_locality_standing(
             ] = event.identity
             continue
         if event.kind == _REPRESENTATION_EMITTED_KIND:
-            representation_reference = event.payload["representation_reference"]
+            representation_reference = event.material["representation_reference"]
             if representation_reference not in representations:
                 raise ValueError(
                     "representation emission without recorded representation event: "
                     f"{representation_reference}"
                 )
             if (
-                event.payload["representation_event_identity"]
+                event.material["representation_event_identity"]
                 != representations[representation_reference]["representation_event_identity"]
             ):
                 raise ValueError(
@@ -242,7 +242,7 @@ def advance_operator_locality_standing(
                     "representation Act occurrence"
                 )
             if (
-                event.payload["attempt_reference"]
+                event.material["attempt_reference"]
                 != representations[representation_reference]["emission_attempt_event_identity"]
             ):
                 raise ValueError(
@@ -252,14 +252,14 @@ def advance_operator_locality_standing(
             representations[representation_reference]["emission_outcome_event_identity"] = event.identity
             continue
         if event.kind == _REPRESENTATION_EMISSION_OUTCOME_KIND:
-            representation_reference = event.payload["representation_reference"]
+            representation_reference = event.material["representation_reference"]
             if representation_reference not in representations:
                 raise ValueError(
                     "representation emission outcome without recorded representation event: "
                     f"{representation_reference}"
                 )
             if (
-                event.payload["attempt_reference"]
+                event.material["attempt_reference"]
                 != representations[representation_reference]["emission_attempt_event_identity"]
             ):
                 raise ValueError(
@@ -267,7 +267,7 @@ def advance_operator_locality_standing(
                 )
             representations[representation_reference]["emission_outcome_event_identity"] = event.identity
             continue
-        ingest_reference = event.payload["dimensions"]["identity"]
+        ingest_reference = event.material["dimensions"]["identity"]
         ingest = ingests.setdefault(
             ingest_reference,
             {"event_identities": [], "ingest_occurrence": None},
@@ -277,13 +277,13 @@ def advance_operator_locality_standing(
             "ingest_reference": ingest_reference,
             "subject_reference": ingest_reference,
             "standing": "preserved",
-            "authority": event.payload["dimensions"]["authority"],
+            "authority": event.material["dimensions"]["authority"],
             "evidence_event_identity": event.identity,
-            "source_role": event.payload["source_role"],
-            "content": event.payload["dimensions"]["content"],
+            "source_role": event.material["source_role"],
+            "content": event.material["dimensions"]["content"],
         }
-        if isinstance(event.payload.get("represented_material"), str):
-            occurrence["represented_material"] = event.payload[
+        if isinstance(event.material.get("represented_material"), str):
+            occurrence["represented_material"] = event.material[
                 "represented_material"
             ]
         ingest["ingest_occurrence"] = occurrence

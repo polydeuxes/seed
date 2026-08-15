@@ -94,7 +94,7 @@ def ingest_material(
         responsible_boundary="this Seed",
         recorded_result_coordinates={key: (key,) for key in result},
     )
-    payload: dict[str, object] = {
+    material: dict[str, object] = {
         **result,
         "dimensions": {
             "identity": result_identity,
@@ -115,7 +115,7 @@ def ingest_material(
 
     return ledger.append(
         MATERIAL_INGEST_OCCURRED_KIND,
-        payload,
+        material,
         locality_identity=locality_identity,
     )
 
@@ -125,13 +125,13 @@ def ingested_material_bytes(event: Event) -> bytes:
         raise MaterialIngestError(
             f"only Ingest occurrences carry exact material: {event.kind}"
         )
-    encoded = event.payload.get("exact_bytes_hex")
+    encoded = event.material.get("exact_bytes_hex")
     if type(encoded) is not str:
         raise MaterialIngestError("Ingest occurrence carries no exact bytes")
     try:
         exact = bytes.fromhex(encoded)
     except ValueError as exc:
         raise MaterialIngestError("Ingest occurrence carries malformed bytes") from exc
-    if exact.hex() != encoded or len(exact) != event.payload.get("byte_count"):
+    if exact.hex() != encoded or len(exact) != event.material.get("byte_count"):
         raise MaterialIngestError("Ingest bytes and byte count differ")
     return exact

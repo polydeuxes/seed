@@ -101,7 +101,7 @@ def _by_right(ledger, declared=None):
 
 
 def _assertions_by_result(event):
-    return {assertion["result"]: assertion for assertion in event.payload["assertions"]}
+    return {assertion["result"]: assertion for assertion in event.material["assertions"]}
 
 
 # --------------------------------------------------------------------------
@@ -114,7 +114,7 @@ def test_assertion_standing_coordinate_responsibility_is_distinct_from_its_yield
     event = record_measured_count(
         compared, locality_identity="s1",
         finding=_by_right(compared)["word"])
-    assertions = event.payload["assertions"]
+    assertions = event.material["assertions"]
     assert assertions
     assert all(
         assertion["dimensions"]["responsibility"]
@@ -126,13 +126,13 @@ def test_assertion_standing_coordinate_responsibility_is_distinct_from_its_yield
         assertion["responsible_boundary"] == "this recorded assertion"
         for assertion in assertions
     )
-    assert event.payload["exact_act"] == "declared measurement"
+    assert event.material["exact_act"] == "declared measurement"
     assert all(
         assertion["dimensions"]["responsibility"]
-        != event.payload["exact_act"]
+        != event.material["exact_act"]
         for assertion in assertions
     )
-    assert "cohort" not in str(event.payload).lower()
+    assert "cohort" not in str(event.material).lower()
 
 
 
@@ -142,9 +142,9 @@ def test_the_record_shape_is_its_own(compared):
         finding=_by_right(compared)["word"])
     assert event.kind == LOCALITY_COUNT_RECORDED_KIND
     assert event.kind != MEASUREMENT_RECORDED_KIND
-    assert "occupancies" not in event.payload
-    assert "standing" not in event.payload["dimensions"]
-    assert "responsibility" not in event.payload["dimensions"]
+    assert "occupancies" not in event.material
+    assert "standing" not in event.material["dimensions"]
+    assert "responsibility" not in event.material["dimensions"]
 
 
 def test_one_occurrence_preserves_every_distinct_result(compared):
@@ -309,17 +309,17 @@ def test_assertion_compare_distinguishes_absence_from_carried_none(compared):
     first = record_measured_count(
         compared, locality_identity="s1", finding=finding
     )
-    altered_payload = first.model_copy(deep=True).payload
+    altered_material = first.model_copy(deep=True).material
     altered_count = next(
         assertion
-        for assertion in altered_payload["assertions"]
+        for assertion in altered_material["assertions"]
         if assertion["result"] == "count"
     )
     assert altered_count["completeness_boundary"] is None
     del altered_count["completeness_boundary"]
     second = compared.append(
         first.kind,
-        altered_payload,
+        altered_material,
         locality_identity=first.locality_identity,
     )
     first_count = next(
@@ -352,10 +352,10 @@ def test_assertion_compare_exposes_changed_support_without_strengthening_it(comp
     first = record_measured_count(
         compared, locality_identity="s1", finding=finding
     )
-    altered_payload = first.model_copy(deep=True).payload
+    altered_material = first.model_copy(deep=True).material
     altered_measured_in = next(
         assertion
-        for assertion in altered_payload["assertions"]
+        for assertion in altered_material["assertions"]
         if assertion["result"] == "measured_in"
     )
     altered_measured_in["input_support"]["event_identities"].append(
@@ -363,7 +363,7 @@ def test_assertion_compare_exposes_changed_support_without_strengthening_it(comp
     )
     second = compared.append(
         first.kind,
-        altered_payload,
+        altered_material,
         locality_identity=first.locality_identity,
     )
     first_assertion = next(
@@ -446,8 +446,8 @@ def test_assertion_yield_compare_records_each_literal_result_separately(compared
     assertions = assertions_of_recorded_assertion_comparison(event)
 
     assert event.kind == ASSERTION_YIELD_COMPARISON_RECORDED_KIND
-    assert event.payload["exact_act"] == "Compare"
-    assert event.payload["responsible_boundary"] == "this bounded comparison occurrence"
+    assert event.material["exact_act"] == "Compare"
+    assert event.material["responsible_boundary"] == "this bounded comparison occurrence"
     assert len(assertions) == len(comparison.distinctions) == 10
     assert {item.coordinate for item in assertions} == {
         item.coordinate for item in comparison.distinctions
@@ -455,7 +455,7 @@ def test_assertion_yield_compare_records_each_literal_result_separately(compared
     assert len({item.assertion_identity for item in assertions}) == 10
     assert all(item.recorded_occurrence_reference == event.identity for item in assertions)
     assert all(
-        item.payload["input_support"]["assertion_references"]
+        item.material["input_support"]["assertion_references"]
         == [first_count.reference, second_count.reference]
         for item in assertions
     )
@@ -484,27 +484,27 @@ def test_yielded_assertions_enter_compare_through_exact_input_relations(compared
         ),
     )
 
-    assert len(recorded.payload["input_locality_evidence_identities"]) == 2
-    assert len(recorded.payload["input_applicability_event_identities"]) == 2
+    assert len(recorded.material["input_locality_evidence_identities"]) == 2
+    assert len(recorded.material["input_applicability_event_identities"]) == 2
     for input_reference, locality_identity, applicability_identity, participation in zip(
-        recorded.payload["inputs"],
-        recorded.payload["input_locality_evidence_identities"],
-        recorded.payload["input_applicability_event_identities"],
-        recorded.payload["participation"],
+        recorded.material["inputs"],
+        recorded.material["input_locality_evidence_identities"],
+        recorded.material["input_applicability_event_identities"],
+        recorded.material["participation"],
     ):
         locality = compared.get(locality_identity)
         applicability = compared.get(applicability_identity)
-        assert locality.payload["first_subject"] == input_reference
-        assert locality.payload["second_subject"]["act_occurrence_identity"] == (
-            recorded.payload["act_occurrence_identity"]
+        assert locality.material["first_subject"] == input_reference
+        assert locality.material["second_subject"]["act_occurrence_identity"] == (
+            recorded.material["act_occurrence_identity"]
         )
-        assert applicability.payload["input_reference"] == input_reference
-        assert applicability.payload["locality_evidence_identity"] == locality.identity
-        assert applicability.payload["standing"] == "applicable"
+        assert applicability.material["input_reference"] == input_reference
+        assert applicability.material["locality_evidence_identity"] == locality.identity
+        assert applicability.material["standing"] == "applicable"
         assert participation == {
             "subject_reference": input_reference,
             "role": "compared Assertion",
-            "act_occurrence_identity": recorded.payload["act_occurrence_identity"],
+            "act_occurrence_identity": recorded.material["act_occurrence_identity"],
             "applicability_event_identity": applicability.identity,
         }
 
@@ -531,9 +531,9 @@ def test_locality_and_applicability_do_not_substitute_for_participation(compared
             compared, tuple(item.reference for item in inputs)
         ),
     ).model_copy(deep=True)
-    assert recorded.payload["input_locality_evidence_identities"]
-    assert recorded.payload["input_applicability_event_identities"]
-    recorded.payload["participation"] = []
+    assert recorded.material["input_locality_evidence_identities"]
+    assert recorded.material["input_applicability_event_identities"]
+    recorded.material["participation"] = []
 
     with pytest.raises(AssertionComparisonError, match="Participation"):
         assertions_of_recorded_assertion_comparison(recorded)
@@ -562,12 +562,12 @@ def test_recording_comparison_results_does_not_establish_support_or_revision(com
         compared, locality_identity="s1", comparison=comparison
     )
 
-    represented = str(event.payload)
+    represented = str(event.material)
     assert "recording does not establish Applicability" in represented
-    assert "applicability" not in event.payload
-    assert "admission" not in event.payload
-    assert "input support" not in event.payload
-    assert "revision" not in event.payload
+    assert "applicability" not in event.material
+    assert "admission" not in event.material
+    assert "input support" not in event.material
+    assert "revision" not in event.material
 
 
 def test_recorded_comparison_assertion_identity_is_recomputed(compared):
@@ -586,7 +586,7 @@ def test_recorded_comparison_assertion_identity_is_recomputed(compared):
     event = record_assertion_yield_comparison(
         compared, locality_identity="s1", comparison=comparison
     ).model_copy(deep=True)
-    event.payload["assertions"][0]["dimensions"]["identity"] = "asserted-not-canonical"
+    event.material["assertions"][0]["dimensions"]["identity"] = "asserted-not-canonical"
 
     with pytest.raises(AssertionComparisonError, match="invalid identity"):
         assertions_of_recorded_assertion_comparison(event)
@@ -608,7 +608,7 @@ def test_validation_refuses_a_self_consistent_forged_compare_result(compared):
     event = record_assertion_yield_comparison(
         compared, locality_identity="s1", comparison=comparison
     ).model_copy(deep=True)
-    assertion = event.payload["assertions"][0]
+    assertion = event.material["assertions"][0]
     content = assertion["dimensions"]["content"]
     assert content["present"] == [True, True]
     assert content["values"][0] == content["values"][1]
@@ -642,7 +642,7 @@ def test_validation_requires_the_exact_compare_coordinate_set(compared):
     event = record_assertion_yield_comparison(
         compared, locality_identity="s1", comparison=comparison
     ).model_copy(deep=True)
-    event.payload["assertions"].pop()
+    event.material["assertions"].pop()
 
     with pytest.raises(AssertionComparisonError, match="every distinct"):
         assertions_of_recorded_assertion_comparison(event)
@@ -942,7 +942,7 @@ def test_the_input_ledger_boundary_is_preserved_as_read_provenance(compared):
     recorded = record_measured_count(
         compared, locality_identity="s1", finding=finding
     )
-    assert "input_ledger_boundary" not in recorded.payload
+    assert "input_ledger_boundary" not in recorded.material
     assertions = _assertions_by_result(recorded)
     for result in (
         "measured_in",
@@ -971,7 +971,7 @@ def test_the_old_aggregate_result_is_not_recorded_beside_the_assertions(compared
         "input_ledger_boundary",
         "distinction",
     }
-    assert old_aggregate_fields.isdisjoint(event.payload)
+    assert old_aggregate_fields.isdisjoint(event.material)
 
 
 # --------------------------------------------------------------------------
@@ -1122,7 +1122,7 @@ def test_the_counting_scope_states_the_declaration(compared):
     event = record_measured_count(
         compared, locality_identity="s1",
         finding=_by_right(compared)["word"])
-    scope = event.payload["counting_scope"]
+    scope = event.material["counting_scope"]
     assert "declared to this measurement" in scope
     assert "no locality enters by having measured something else" in scope
     assert "supplied to this Seed" not in scope
@@ -1132,11 +1132,11 @@ def test_the_record_refuses_source_independence_and_corroboration(compared):
     event = record_measured_count(
         compared, locality_identity="s1",
         finding=_by_right(compared)["word"])
-    refused = " ".join(event.payload["limits"])
+    refused = " ".join(event.material["limits"])
     assert "independently preserved is not independent" in refused
     assert "repetition is not independent corroboration" in refused
     assert "establishes no relation between the" in refused
-    assert set(LIMITS) <= set(event.payload["limits"])
+    assert set(LIMITS) <= set(event.material["limits"])
 
 
 def test_the_rendering_states_the_literal_sentence(compared):
@@ -1153,7 +1153,7 @@ def test_the_vocabulary_is_gone(compared):
     event = record_measured_count(
         compared, locality_identity="s1",
         finding=_by_right(compared)["word"])
-    represented = str(event.payload).lower()
+    represented = str(event.material).lower()
     for word in ("cohort", "population", "survey", "exposed", "bodies"):
         assert word not in represented
 
@@ -1163,7 +1163,7 @@ def test_the_vocabulary_is_gone(compared):
 # --------------------------------------------------------------------------
 
 
-def test_a_payload_string_cannot_manufacture_an_locality(compared):
+def test_a_material_string_cannot_manufacture_an_locality(compared):
     """`#2432` established existence from `dimensions.scope_locality`.
 
     That coordinate's represented relation is itself left Unknown by the same report, and a
@@ -1268,9 +1268,9 @@ def test_every_probe_and_pass_reads_one_prefix_despite_a_concurrent_append(compa
         for event in compared.list()
         if event.kind == "operator.measurement.comparison_recorded"
     )
-    payload = comparison.model_copy(deep=True).payload
-    payload["shared_occupants"] = [
-        *payload.get("shared_occupants", []),
+    material = comparison.model_copy(deep=True).material
+    material["shared_occupants"] = [
+        *material.get("shared_occupants", []),
         "after-boundary",
     ]
 
@@ -1285,7 +1285,7 @@ def test_every_probe_and_pass_reads_one_prefix_despite_a_concurrent_append(compa
             appended = True
             compared.append(
                 comparison.kind,
-                payload,
+                material,
                 locality_identity=comparison.locality_identity,
             )
         yield from original_iterator(
@@ -1315,8 +1315,8 @@ def test_every_probe_and_pass_reads_one_prefix_despite_a_concurrent_append(compa
 def test_a_durable_yielding_occurrence_is_identifiable_and_verifies(tmp_path):
     """Historical yield Evidence remains occurrence-bound.
 
-    The yielding occurrence is the event carrying the payload, so its own identity
-    cannot appear inside that payload. What must hold is that the enclosing
+    The yielding occurrence is the event carrying the material, so its own identity
+    cannot appear inside that material. What must hold is that the enclosing
     occurrence is exactly identifiable and verifiable once appended.
     """
     from seed_runtime.events import VERIFIED, SQLiteEventLedger
@@ -1393,6 +1393,6 @@ def test_counting_recurrence_does_not_take_comparisons_as_input(compared):
 
     event = record_measured_count(
         compared, locality_identity="s1", finding=finding)
-    refused = " ".join(event.payload["limits"])
+    refused = " ".join(event.material["limits"])
     assert "not independent corroboration" in refused
     assert "establishes no relation between the" in refused

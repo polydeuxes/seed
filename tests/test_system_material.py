@@ -35,9 +35,9 @@ def test_system_material_preserves_exact_raw_bytes():
 
     assert occurred.kind == MATERIAL_INGEST_OCCURRED_KIND
     assert occurred.locality_identity == "locality_000001"
-    assert occurred.payload["byte_count"] == len(exact)
+    assert occurred.material["byte_count"] == len(exact)
     assert ingested_material_bytes(occurred) == exact
-    assert "represented_material" not in occurred.payload
+    assert "represented_material" not in occurred.material
 
 
 def test_operator_and_system_material_share_one_ingest_road():
@@ -58,12 +58,12 @@ def test_operator_and_system_material_share_one_ingest_road():
 
     assert operator_ingest is not None
     assert operator_ingest.kind == system_ingest.kind == MATERIAL_INGEST_OCCURRED_KIND
-    assert set(operator_ingest.payload) == set(system_ingest.payload)
+    assert set(operator_ingest.material) == set(system_ingest.material)
     assert ingested_material_bytes(operator_ingest) == ingested_material_bytes(
         system_ingest
     ) == exact
-    assert operator_ingest.payload["source_role"] == "operator"
-    assert system_ingest.payload["source_role"] == "system"
+    assert operator_ingest.material["source_role"] == "operator"
+    assert system_ingest.material["source_role"] == "system"
 
 
 def test_ingest_event_binds_exact_act_and_result_evidence():
@@ -73,8 +73,8 @@ def test_ingest_event_binds_exact_act_and_result_evidence():
     assert read_yield_edge_requirements(
         ledger,
         recorded_result_event_identity=ingest.identity,
-        result_evidence_event_identity=ingest.payload["yield_evidence_identity"],
-        responsible_act_evidence_event_identity=ingest.payload[
+        result_evidence_event_identity=ingest.material["yield_evidence_identity"],
+        responsible_act_evidence_event_identity=ingest.material[
             "responsible_act_evidence_identity"
         ],
     ) == {
@@ -90,14 +90,14 @@ def test_equal_material_has_distinct_ingest_occurrences_results_and_yields():
     second = _preserve(ledger, b"same exact material")
 
     assert ingested_material_bytes(first) == ingested_material_bytes(second)
-    assert first.payload["act_occurrence_identity"] != second.payload["act_occurrence_identity"]
-    assert first.payload["result_identity"] != second.payload["result_identity"]
-    assert first.payload["yield_evidence_identity"] != second.payload["yield_evidence_identity"]
+    assert first.material["act_occurrence_identity"] != second.material["act_occurrence_identity"]
+    assert first.material["result_identity"] != second.material["result_identity"]
+    assert first.material["yield_evidence_identity"] != second.material["yield_evidence_identity"]
     assert read_yield_edge_requirements(
         ledger,
         recorded_result_event_identity=first.identity,
-        result_evidence_event_identity=second.payload["yield_evidence_identity"],
-        responsible_act_evidence_event_identity=first.payload[
+        result_evidence_event_identity=second.material["yield_evidence_identity"],
+        responsible_act_evidence_event_identity=first.material[
             "responsible_act_evidence_identity"
         ],
     ) == {
@@ -110,15 +110,15 @@ def test_equal_material_has_distinct_ingest_occurrences_results_and_yields():
 def test_system_material_requires_only_material_boundary_and_locality():
     occurred = _preserve(EventLedger(), b"different\n")
 
-    assert occurred.payload["provenance_occurrence_references"] == []
-    assert occurred.payload["dimensions"]["scope_locality"] == "locality:locality_000001"
-    assert "invocation" not in str(occurred.payload)
+    assert occurred.material["provenance_occurrence_references"] == []
+    assert occurred.material["dimensions"]["scope_locality"] == "locality:locality_000001"
+    assert "invocation" not in str(occurred.material)
 
 
 def test_empty_system_material_is_exact_material():
     occurred = _preserve(EventLedger(), b"")
 
-    assert occurred.payload["byte_count"] == 0
+    assert occurred.material["byte_count"] == 0
     assert ingested_material_bytes(occurred) == b""
 
 
@@ -142,18 +142,18 @@ def test_system_material_requires_exact_locality(locality):
 
 def test_ingested_material_bytes_refuses_wrong_or_corrupt_occurrences():
     with pytest.raises(MaterialIngestError, match="only Ingest occurrences"):
-        ingested_material_bytes(Event(identity="evt_x", kind="something.else", payload={}))
-    for payload in ({}, {"exact_bytes_hex": None}, {"exact_bytes_hex": 7}):
+        ingested_material_bytes(Event(identity="evt_x", kind="something.else", material={}))
+    for material in ({}, {"exact_bytes_hex": None}, {"exact_bytes_hex": 7}):
         with pytest.raises(MaterialIngestError, match="carries no exact bytes"):
             ingested_material_bytes(
-                Event(identity="evt_x", kind=MATERIAL_INGEST_OCCURRED_KIND, payload=payload)
+                Event(identity="evt_x", kind=MATERIAL_INGEST_OCCURRED_KIND, material=material)
             )
     with pytest.raises(MaterialIngestError, match="malformed bytes"):
         ingested_material_bytes(
             Event(
                 identity="evt_x",
                 kind=MATERIAL_INGEST_OCCURRED_KIND,
-                payload={"exact_bytes_hex": "zz", "byte_count": 1},
+                material={"exact_bytes_hex": "zz", "byte_count": 1},
             )
         )
     with pytest.raises(MaterialIngestError, match="byte count differ"):
@@ -161,7 +161,7 @@ def test_ingested_material_bytes_refuses_wrong_or_corrupt_occurrences():
             Event(
                 identity="evt_x",
                 kind=MATERIAL_INGEST_OCCURRED_KIND,
-                payload={"exact_bytes_hex": "6100", "byte_count": 99},
+                material={"exact_bytes_hex": "6100", "byte_count": 99},
             )
         )
 
@@ -178,7 +178,7 @@ def test_system_material_identity_is_reserved_across_reopen(tmp_path):
                 exact_bytes=f"material {index}".encode(),
                 observed_boundary="source boundary",
             )
-            identities.append(material.payload["dimensions"]["identity"])
+            identities.append(material.material["dimensions"]["identity"])
         finally:
             ledger.close()
 

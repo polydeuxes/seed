@@ -5,13 +5,13 @@ from seed_runtime.events import EventLedger, SQLiteEventLedger
 def _events() -> list[Event]:
     return [
         Event(
-            identity="evt_batch_1", kind="batch.first", payload={"n": 1}
+            identity="evt_batch_1", kind="batch.first", material={"n": 1}
         ),
         Event(
-            identity="evt_batch_2", kind="batch.second", payload={"n": 2}
+            identity="evt_batch_2", kind="batch.second", material={"n": 2}
         ),
         Event(
-            identity="evt_batch_3", kind="batch.third", payload={"n": 3}
+            identity="evt_batch_3", kind="batch.third", material={"n": 3}
         ),
     ]
 
@@ -39,13 +39,13 @@ def test_sqlite_append_many_persists_same_events_as_repeated_append(tmp_path):
     try:
         batch.append_many(_events())
         for event in _events():
-            repeated.append(event.kind, event.payload)
+            repeated.append(event.kind, event.material)
 
         assert [
-            (event.kind, event.payload)
+            (event.kind, event.material)
             for event in batch.list_events()
         ] == [
-            (event.kind, event.payload)
+            (event.kind, event.material)
             for event in repeated.list_events()
         ]
     finally:

@@ -69,7 +69,7 @@ def test_the_occurrences_are_identical_in_memory(memory_ledger, locality_identit
     )
     assert bounded
     assert [e.identity for e in bounded] == [e.identity for e in whole]
-    assert [e.payload for e in bounded] == [e.payload for e in whole]
+    assert [e.material for e in bounded] == [e.material for e in whole]
 
 
 @pytest.mark.parametrize("locality_identity", sorted(BODIES))
@@ -82,7 +82,7 @@ def test_the_occurrences_are_identical_durably(durable_ledger, locality_identity
     )
     assert bounded
     assert [e.identity for e in bounded] == [e.identity for e in whole]
-    assert [e.payload for e in bounded] == [e.payload for e in whole]
+    assert [e.material for e in bounded] == [e.material for e in whole]
 
 
 def test_each_body_still_gets_only_its_own_material(durable_ledger):

@@ -109,8 +109,8 @@ def test_the_recorded_responsible_boundary_is_local_to_the_occurrence(ledger):
     event = record_comparison_finding(
         ledger, locality_identity="s1",
         finding=compare_preserved_findings(ledger, [a.identity, b.identity]))
-    assert "local to the instantiated comparison" in event.payload["responsible_boundary"]
-    assert "not named beyond this comparison" in event.payload["responsible_boundary"]
+    assert "local to the instantiated comparison" in event.material["responsible_boundary"]
+    assert "not named beyond this comparison" in event.material["responsible_boundary"]
 
 
 # --------------------------------------------------------------------------
@@ -124,8 +124,8 @@ def test_each_input_keeps_the_coordinates_it_carries(ledger):
     for supplied, preserved in zip((a, b), finding.inputs):
         assert preserved.event_identity == supplied.identity
         assert preserved.carried["standing"] == "measured"
-        assert preserved.carried["subject"] == supplied.payload["dimensions"]["identity"]
-        assert preserved.carried["limits"] == supplied.payload["boundary_notes"]
+        assert preserved.carried["subject"] == supplied.material["dimensions"]["identity"]
+        assert preserved.carried["limits"] == supplied.material["boundary_notes"]
 
 
 def test_an_absent_coordinate_is_named_and_not_supplied(ledger):
@@ -242,8 +242,8 @@ def test_the_comparison_is_recorded_as_its_own_kind(ledger):
         ledger, locality_identity="s1",
         finding=compare_preserved_findings(ledger, [a.identity, b.identity]))
     assert event.kind == COMPARISON_RECORDED_KIND
-    assert event.payload["input_event_identities"] == [a.identity, b.identity]
-    assert "standing" not in event.payload["dimensions"]
+    assert event.material["input_event_identities"] == [a.identity, b.identity]
+    assert "standing" not in event.material["dimensions"]
 
 
 def test_the_record_refuses_the_inferences_the_clause_forbids(ledger):
@@ -251,21 +251,21 @@ def test_the_record_refuses_the_inferences_the_clause_forbids(ledger):
     event = record_comparison_finding(
         ledger, locality_identity="s1",
         finding=compare_preserved_findings(ledger, [a.identity, b.identity]))
-    notes = " ".join(event.payload["boundary_notes"])
+    notes = " ".join(event.material["boundary_notes"])
     assert "is not a relation between what they measured" in notes
     assert "establishes no relation between" in notes
     assert "no truth, support, input support, source independence, or corroboration" in notes
     assert "whether the compared bodies stand in any relation remains Unknown" in (
-        event.payload["unknowns"])
+        event.material["unknowns"])
 
 
 def test_recording_a_comparison_does_not_disturb_its_inputs(ledger):
     a, b = _finding(ledger, "s1"), _finding(ledger, "s2")
-    before = (dict(a.payload), dict(b.payload))
+    before = (dict(a.material), dict(b.material))
     record_comparison_finding(
         ledger, locality_identity="s1",
         finding=compare_preserved_findings(ledger, [a.identity, b.identity]))
-    assert (ledger.get(a.identity).payload, ledger.get(b.identity).payload) == before
+    assert (ledger.get(a.identity).material, ledger.get(b.identity).material) == before
 
 
 def test_a_comparison_is_not_a_measurement(ledger):
@@ -276,4 +276,4 @@ def test_a_comparison_is_not_a_measurement(ledger):
         ledger, locality_identity="s1",
         finding=compare_preserved_findings(ledger, [a.identity, b.identity]))
     assert event.kind != MEASUREMENT_RECORDED_KIND
-    assert "occupancies" not in event.payload
+    assert "occupancies" not in event.material

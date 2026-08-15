@@ -54,7 +54,7 @@ def address_ingested_material(
     recorded = ledger.get(ingest_occurrence.identity)
     if recorded is None or recorded != ingest_occurrence:
         raise MaterialAddressError("the supplied Ingest occurrence is not recorded")
-    source_role = ingest_occurrence.payload.get("source_role")
+    source_role = ingest_occurrence.material.get("source_role")
     if type(source_role) is not str or not source_role:
         raise MaterialAddressError("the Ingest occurrence carries no source role")
     exact = ingested_material_bytes(ingest_occurrence)
@@ -75,8 +75,8 @@ def address_ingested_material(
         source_role=source_role,
         provenance=(ingest_occurrence.identity,),
         scope=(f"locality:{ingest_occurrence.locality_identity}",),
-        known_loss=tuple(ingest_occurrence.payload.get("known_loss", ())),
-        unknowns=tuple(ingest_occurrence.payload.get("unknowns", ())),
+        known_loss=tuple(ingest_occurrence.material.get("known_loss", ())),
+        unknowns=tuple(ingest_occurrence.material.get("unknowns", ())),
         authority_limits=(
             "addressability and Locality establish no represented relation, Standing, Authority, or later Act",
         ),

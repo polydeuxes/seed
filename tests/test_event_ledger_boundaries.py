@@ -65,8 +65,8 @@ def test_empty_boundary_excludes_later_occurrences():
 
 def test_equal_prefixes_share_a_boundary_and_later_divergence_does_not_break_it():
     events = [
-        Event(identity="e1", kind="first", payload={"n": 1}),
-        Event(identity="e2", kind="second", payload={"n": 2}),
+        Event(identity="e1", kind="first", material={"n": 1}),
+        Event(identity="e2", kind="second", material={"n": 2}),
     ]
     left = EventLedger()
     right = EventLedger()
@@ -82,8 +82,8 @@ def test_equal_prefixes_share_a_boundary_and_later_divergence_does_not_break_it(
 
 def test_independently_persisted_equal_prefixes_share_a_boundary(tmp_path):
     events = [
-        Event(identity="e1", kind="first", payload={"n": 1}),
-        Event(identity="e2", kind="second", payload={"n": 2}),
+        Event(identity="e1", kind="first", material={"n": 1}),
+        Event(identity="e2", kind="second", material={"n": 2}),
     ]
     left = SQLiteEventLedger(str(tmp_path / "left.db"))
     right = SQLiteEventLedger(str(tmp_path / "right.db"))
@@ -102,8 +102,8 @@ def test_independently_persisted_equal_prefixes_share_a_boundary(tmp_path):
 @pytest.mark.parametrize("durable", (False, True))
 def test_batched_and_repeated_appends_yield_the_same_boundary(tmp_path, durable):
     events = [
-        Event(identity="e1", kind="first", payload={"n": 1}),
-        Event(identity="e2", kind="second", payload={"n": 2}),
+        Event(identity="e1", kind="first", material={"n": 1}),
+        Event(identity="e2", kind="second", material={"n": 2}),
     ]
     if durable:
         batched = SQLiteEventLedger(str(tmp_path / "batched.db"))
@@ -209,17 +209,17 @@ def test_a_formed_unknown_boundary_is_refused():
         ledger.list(through=EventLedgerBoundary("0" * 64))
 
 
-def test_a_refused_payload_leaves_the_ledger_unchanged():
+def test_a_refused_material_leaves_the_ledger_unchanged():
     """Whatever is refused, nothing is left half-appended.
 
-    The refusal moved earlier than the serializer: `#2495` refuses a payload a
+    The refusal moved earlier than the serializer: `#2495` refuses a material a
     durable store could not return preserved, so an unsupported value is now
     declined by name rather than as a `TypeError` out of `json.dumps`. What this
     test is about is preserved — the boundary and the history stay exactly as
     they were.
     """
 
-    for payload in (
+    for material in (
         {"not_json": object()},
         {"tuple": (1, 2)},
         {"nested": {"deeper": {"key": {1: "x"}}}},
@@ -229,7 +229,7 @@ def test_a_refused_payload_leaves_the_ledger_unchanged():
         before = ledger.append_boundary()
 
         with pytest.raises(ValueError):
-            ledger.append("k", payload)
+            ledger.append("k", material)
 
         assert ledger.append_boundary() == before
         assert ledger.list() == []
@@ -284,7 +284,7 @@ def test_a_durable_identity_read_matches_its_occurrence_read(tmp_path):
         ledger.close()
 
 
-def test_the_two_ledgers_preserve_the_same_payload(tmp_path):
+def test_the_two_ledgers_preserve_the_same_material(tmp_path):
     """An append must mean the same thing in either ledger.
 
     They share an API and are used interchangeably, and a durable store silently
@@ -303,11 +303,11 @@ def test_the_two_ledgers_preserve_the_same_payload(tmp_path):
         }
         in_memory = memory.append("k", preservable)
         stored = durable.append("k", preservable)
-        assert memory.get(in_memory.identity).payload == preservable
-        assert durable.get(stored.identity).payload == preservable
+        assert memory.get(in_memory.identity).material == preservable
+        assert durable.get(stored.identity).material == preservable
 
         # And what neither can preserve is refused by both, identically.
-        for payload in (
+        for material in (
             {"tuple": (1, 2)},
             {"nested tuple": {"a": ("x",)}},
             {"int key": {1: "x"}},
@@ -316,12 +316,12 @@ def test_the_two_ledgers_preserve_the_same_payload(tmp_path):
             {"set": {1}},
         ):
             with pytest.raises(ValueError) as memory_refusal:
-                memory.append("k", payload)
+                memory.append("k", material)
             with pytest.raises(ValueError) as durable_refusal:
-                durable.append("k", payload)
+                durable.append("k", material)
             assert str(memory_refusal.value) == str(durable_refusal.value)
             # The path is reported, so a nested one is findable.
-            assert "payload[" in str(memory_refusal.value)
+            assert "material[" in str(memory_refusal.value)
     finally:
         durable.close()
 
@@ -333,7 +333,7 @@ def test_a_digest_requires_every_recorded_field():
 
     complete = {
         "identity": "e", "kind": "k",
-        "timestamp": "2026-01-01T00:00:00+00:00", "payload": "{}",
+        "timestamp": "2026-01-01T00:00:00+00:00", "material": "{}",
         "locality_identity": None,
     }
     assert _content_digest(complete)
@@ -344,7 +344,7 @@ def test_a_digest_requires_every_recorded_field():
             _content_digest(partial)
 
 
-def test_a_payload_carrying_a_non_json_number_is_refused(tmp_path):
+def test_a_material_carrying_a_non_json_number_is_refused(tmp_path):
     """`NaN` and the infinities are not JSON, whatever Python's encoder allows.
 
     `NaN` never equals itself and so cannot round-trip at all. The infinities do
@@ -362,7 +362,7 @@ def test_a_payload_carrying_a_non_json_number_is_refused(tmp_path):
                 memory.append("k", {"a": value})
             with pytest.raises(ValueError, match="not a JSON number"):
                 durable.append("k", {"a": value})
-            with pytest.raises(ValueError, match=r"payload\['a'\]\['b'\]\[0\]"):
+            with pytest.raises(ValueError, match=r"material\['a'\]\['b'\]\[0\]"):
                 memory.append("k", {"a": {"b": [value]}})
 
         # Ordinary numbers, including the awkward ones, still pass.
@@ -370,7 +370,7 @@ def test_a_payload_carrying_a_non_json_number_is_refused(tmp_path):
                   "int": 0, "negative": -5, "bool": True}
         in_memory = memory.append("k", finite)
         stored = durable.append("k", finite)
-        assert memory.get(in_memory.identity).payload == durable.get(stored.identity).payload
+        assert memory.get(in_memory.identity).material == durable.get(stored.identity).material
     finally:
         durable.close()
 
@@ -401,7 +401,7 @@ def test_a_python_subclass_does_not_survive_the_store_and_is_refused(tmp_path):
     memory = EventLedger()
     durable = SQLiteEventLedger(str(tmp_path / "subclasses.db"))
     try:
-        for payload in (
+        for material in (
             {"a": Colour.RED},
             {"a": Name("x")},
             {"a": Rows([1])},
@@ -410,17 +410,17 @@ def test_a_python_subclass_does_not_survive_the_store_and_is_refused(tmp_path):
             {Name("key"): 1},
         ):
             with pytest.raises(ValueError) as from_memory:
-                memory.append("k", payload)
+                memory.append("k", material)
             with pytest.raises(ValueError) as from_durable:
-                durable.append("k", payload)
+                durable.append("k", material)
             assert str(from_memory.value) == str(from_durable.value)
 
         # bool is an int subclass and must remain admissible.
         both = {"true": True, "false": False, "int": 1}
         in_memory = memory.append("k", both)
         stored = durable.append("k", both)
-        assert memory.get(in_memory.identity).payload == both
-        assert durable.get(stored.identity).payload == both
-        assert type(durable.get(stored.identity).payload["true"]) is bool
+        assert memory.get(in_memory.identity).material == both
+        assert durable.get(stored.identity).material == both
+        assert type(durable.get(stored.identity).material["true"]) is bool
     finally:
         durable.close()

@@ -43,7 +43,7 @@ def _pair_counts(event):
     return {
         bytes.fromhex(assertion["assertion_subject"]["pair_hex"]).decode("ascii"):
         assertion["dimensions"]["content"]["total_count"]
-        for assertion in event.payload["assertions"]
+        for assertion in event.material["assertions"]
         if assertion["result"] == "count"
     }
 
@@ -61,15 +61,15 @@ def test_seed_observes_one_bounded_decimal_representation_not_all_of_pi():
     assert pair_counts[".1"] == 1
     assert pair_counts["59"] == 1
     assert all(count == 1 for count in pair_counts.values())
-    assert "pi" not in str(byte_event.payload).lower()
-    assert "pi" not in str(pair_event.payload).lower()
+    assert "pi" not in str(byte_event.material).lower()
+    assert "pi" not in str(pair_event.material).lower()
 
 
 def test_a_longer_prefix_is_new_material_and_does_not_rewrite_the_shorter_one():
     ledger = EventLedger()
     _supply(ledger, "short-source", SHORT)
     short_bytes, short_pairs = _observe(ledger, "short-source", "short")
-    short_payload = short_bytes.model_copy(deep=True).payload
+    short_material = short_bytes.model_copy(deep=True).material
     short_pair_counts = _pair_counts(short_pairs)
 
     _supply(ledger, "long-source", LONG)
@@ -78,9 +78,9 @@ def test_a_longer_prefix_is_new_material_and_does_not_rewrite_the_shorter_one():
     short_source = assertions_of_recorded_byte_measurement(ledger, short_bytes.identity)[0]
     long_source = assertions_of_recorded_byte_measurement(ledger, long_bytes.identity)[0]
     assert short_source.assertion_identity != long_source.assertion_identity
-    assert short_bytes.payload == short_payload
+    assert short_bytes.material == short_material
     assert _pair_counts(short_pairs) == short_pair_counts
     assert _pair_counts(long_pairs)["10"] == 1
-    assert long_pairs.payload["completeness_boundary"] != short_pairs.payload[
+    assert long_pairs.material["completeness_boundary"] != short_pairs.material[
         "completeness_boundary"
     ]

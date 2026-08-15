@@ -27,9 +27,9 @@ def test_arbitrary_bytes_are_preserved_without_a_gate_or_stop():
     ingests = [event for event in events if event.kind == MATERIAL_INGEST_OCCURRED_KIND]
 
     assert len(ingests) == 1
-    assert bytes.fromhex(ingests[0].payload["exact_bytes_hex"]) == material
-    assert ingests[0].payload["source_role"] == "operator"
-    assert ingests[0].payload["provenance_occurrence_references"] == []
+    assert bytes.fromhex(ingests[0].material["exact_bytes_hex"]) == material
+    assert ingests[0].material["source_role"] == "operator"
+    assert ingests[0].material["provenance_occurrence_references"] == []
 
 
 def test_addressable_material_is_the_exact_byte_sequence():

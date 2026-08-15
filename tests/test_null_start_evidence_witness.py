@@ -37,7 +37,7 @@ def represent_null_start_evidence() -> str:
     lines = []
     for position, event in enumerate(run_null_start(), start=1):
         lines.append(f"[{position}] {event.kind}  {event.identity}")
-        for key, value in sorted(event.payload.items()):
+        for key, value in sorted(event.material.items()):
             lines.append(f"      {key} = {json.dumps(value, default=str)}")
     return "\n".join(lines) + "\n"
 
@@ -66,7 +66,7 @@ def test_one_ingest_occurs_for_each_delivered_line(ledger):
     ingests = _ingests(ledger)
 
     assert len(ingests) == 2 + len(E3.split("\n"))
-    assert all(event.payload["source_role"] == "operator" for event in ingests)
+    assert all(event.material["source_role"] == "operator" for event in ingests)
 
 
 def test_each_ingest_preserves_exact_bytes(ledger):
@@ -83,8 +83,8 @@ def test_each_ingest_binds_its_exact_act_and_result_evidence(ledger):
             read_yield_edge_requirements(
                 ledger,
                 recorded_result_event_identity=ingest.identity,
-                result_evidence_event_identity=ingest.payload["yield_evidence_identity"],
-                responsible_act_evidence_event_identity=ingest.payload[
+                result_evidence_event_identity=ingest.material["yield_evidence_identity"],
+                responsible_act_evidence_event_identity=ingest.material[
                     "responsible_act_evidence_identity"
                 ],
             ).values()
@@ -93,9 +93,9 @@ def test_each_ingest_binds_its_exact_act_and_result_evidence(ledger):
 
 def test_ingest_does_not_assert_a_represented_relation(ledger):
     for ingest in _ingests(ledger):
-        assert "represented_material" not in ingest.payload
-        assert ingest.payload["provenance_occurrence_references"] == []
-        assert "represented relation Unknown" in ingest.payload["dimensions"][
+        assert "represented_material" not in ingest.material
+        assert ingest.material["provenance_occurrence_references"] == []
+        assert "represented relation Unknown" in ingest.material["dimensions"][
             "evidence_scope"
         ]
 

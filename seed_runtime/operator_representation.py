@@ -137,7 +137,7 @@ def record_operator_representation(
         known_loss.append(
             "label compresses represented candidate relation"
         )
-    result_payload = {
+    result_material = {
         "representation_reference": representation_identity,
         "representation_act_identity": representation_act_identity,
         "act_occurrence_identity": act_occurrence_identity,
@@ -149,7 +149,7 @@ def record_operator_representation(
         "unknowns": [],
         "conflicts": [],
     }
-    result_payload["emission_text"] = _emission_text(result_payload)
+    result_material["emission_text"] = _emission_text(result_material)
     responsible_act_evidence = ledger.append(
         REPRESENTATION_ACT_EVIDENCE_KIND,
         {
@@ -172,7 +172,7 @@ def record_operator_representation(
         act_occurrence_identity=act_occurrence_identity,
         result_kind="bounded Representation",
         result_identity=representation_identity,
-        result_content=result_payload,
+        result_content=result_material,
         responsibility=REPRESENTATION_RESPONSIBILITY,
         live_boundary="representation_result",
         responsible_boundary="this Seed",
@@ -182,7 +182,7 @@ def record_operator_representation(
         {
             "act_occurrence_identity": act_occurrence_identity,
             "content_kind": "bounded Representation",
-            "carried_content": result_payload,
+            "carried_content": result_material,
             "authority": "unestablished",
             "evidence_scope": (
                 "Evidence only for this exact Representation-to-occurrence Locality"
@@ -194,7 +194,7 @@ def record_operator_representation(
         REPRESENTATION_RECORDED_KIND,
         {
             "attempt_reference": None,
-            **result_payload,
+            **result_material,
             "dimensions": _dimensions(
                 identity=act_occurrence_identity,
                 content=content,
@@ -228,7 +228,7 @@ def record_operator_representation(
         "emission_outcome_event_identity": None,
         "emitted_event_identity": None,
         "locality_standing_as_of_event_identity": locality_standing["as_of_event_identity"],
-        "emission_text": result_payload["emission_text"],
+        "emission_text": result_material["emission_text"],
         "known_loss": known_loss,
         "unknowns": [],
         "conflicts": [],
@@ -256,10 +256,10 @@ def read_operator_representation(
     event = ledger.get(representation_event_identity)
     if event is None or event.kind != REPRESENTATION_RECORDED_KIND:
         raise ValueError("the addressed occurrence is not a recorded Representation")
-    payload = event.payload
-    act_evidence = ledger.get(payload.get("responsible_act_evidence_identity"))
-    locality_evidence = ledger.get(payload.get("locality_evidence_identity"))
-    yield_evidence_identity = payload.get("yield_evidence_identity")
+    material = event.material
+    act_evidence = ledger.get(material.get("responsible_act_evidence_identity"))
+    locality_evidence = ledger.get(material.get("locality_evidence_identity"))
+    yield_evidence_identity = material.get("yield_evidence_identity")
     if (
         ledger.integrity_of(event.identity) == CORRUPTED
         or act_evidence is None
@@ -277,30 +277,30 @@ def read_operator_representation(
     )
     if not all(requirements.values()):
         raise ValueError("the recorded Representation Yield is not exact")
-    yielded = ledger.get(yield_evidence_identity).payload.get("result")
+    yielded = ledger.get(yield_evidence_identity).material.get("result")
     if (
         type(yielded) is not dict
-        or locality_evidence.payload.get("carried_content") != yielded
-        or locality_evidence.payload.get("act_occurrence_identity")
-        != payload.get("act_occurrence_identity")
-        or act_evidence.payload.get("act_occurrence_identity")
-        != payload.get("act_occurrence_identity")
-        or act_evidence.payload.get("representation_act_identity")
-        != payload.get("representation_act_identity")
+        or locality_evidence.material.get("carried_content") != yielded
+        or locality_evidence.material.get("act_occurrence_identity")
+        != material.get("act_occurrence_identity")
+        or act_evidence.material.get("act_occurrence_identity")
+        != material.get("act_occurrence_identity")
+        or act_evidence.material.get("representation_act_identity")
+        != material.get("representation_act_identity")
         or event.locality_identity != locality_evidence.locality_identity
         or event.locality_identity != act_evidence.locality_identity
     ):
         raise ValueError("the recorded Representation coordinates are not exact")
     return {
-        "representation_identity": payload["representation_reference"],
-        "representation_act_identity": payload["representation_act_identity"],
-        "act_occurrence_identity": payload["act_occurrence_identity"],
+        "representation_identity": material["representation_reference"],
+        "representation_act_identity": material["representation_act_identity"],
+        "act_occurrence_identity": material["act_occurrence_identity"],
         "locality_identity": event.locality_identity,
-        "representation_result": payload["representation_result"],
-        "alternative_material": payload["alternative_material"],
-        "coordinate_binding": payload["coordinate_binding"],
+        "representation_result": material["representation_result"],
+        "alternative_material": material["alternative_material"],
+        "coordinate_binding": material["coordinate_binding"],
         "representation_event_identity": event.identity,
-        "emission_text": payload["emission_text"],
+        "emission_text": material["emission_text"],
     }
 
 
@@ -437,7 +437,7 @@ def emit_operator_representation(
         "accepted_count": written,
     }
     result_content = {"result": boundary_result}
-    result_payload = {
+    result_material = {
         "emission_act_identity": emission_act_identity,
         "act_occurrence_identity": act_occurrence_identity,
         "representation_reference": representation["representation_identity"],
@@ -498,7 +498,7 @@ def emit_operator_representation(
         REPRESENTATION_EMITTED_KIND,
         {
             "attempt_reference": attempt_event.identity,
-            **result_payload,
+            **result_material,
             "dimensions": _dimensions(
                 identity=act_occurrence_identity,
                 content="exact Representation written to console output stream",
@@ -584,7 +584,7 @@ def _record_emission_failure_outcome(
         "operator_representation_emission_outcome_act_occurrence"
     )
     result_identity = new_identity("operator_representation_emission_outcome_result")
-    result_payload = {
+    result_material = {
             "result_identity": result_identity,
             "downstream_act_identity": act_identity,
             "act_occurrence_identity": act_occurrence_identity,
@@ -646,16 +646,16 @@ def _record_emission_failure_outcome(
         act_occurrence_identity=act_occurrence_identity,
         result_kind=REPRESENTATION_EMISSION_OUTCOME_RESULT_KIND,
         result_identity=result_identity,
-        result_content=result_payload,
+        result_content=result_material,
         responsibility=REPRESENTATION_EMISSION_OUTCOME_RESPONSIBILITY,
         live_boundary="failed_emission_outcome",
         responsible_boundary="this Seed",
-        recorded_result_coordinates={key: (key,) for key in result_payload},
+        recorded_result_coordinates={key: (key,) for key in result_material},
     )
     return ledger.append(
         REPRESENTATION_EMISSION_OUTCOME_KIND,
         {
-            **result_payload,
+            **result_material,
             "responsible_act_evidence_identity": act_evidence.identity,
             "yield_evidence_identity": yield_evidence.identity,
         },

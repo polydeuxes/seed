@@ -14,10 +14,10 @@ from seed_runtime.operator_material_boundary import OperatorBoundaryMaterial
 def update_operator_ingest_standing(attempts, event, *, ledger=None) -> None:
     if (
         event.kind != MATERIAL_INGEST_OCCURRED_KIND
-        or event.payload.get("source_role") != "operator"
+        or event.material.get("source_role") != "operator"
     ):
         return
-    dimensions = event.payload.get("dimensions")
+    dimensions = event.material.get("dimensions")
     if not isinstance(dimensions, dict):
         raise ValueError("operator Ingest occurrence carries no dimensions")
     occurrence_identity = dimensions.get("identity")
@@ -40,7 +40,7 @@ def update_operator_ingest_standing(attempts, event, *, ledger=None) -> None:
         "subject_reference": occurrence_identity,
         "dimensions": dimensions,
         "provenance_occurrence_references": list(
-            event.payload.get("provenance_occurrence_references", ())
+            event.material.get("provenance_occurrence_references", ())
         ),
     }
     standing["current_standing"]["ingest_occurrence"] = {
@@ -56,14 +56,14 @@ def update_operator_ingest_standing(attempts, event, *, ledger=None) -> None:
     standing["last_event_kind"] = event.kind
     for key in ("known_loss", "unknowns", "conflicts"):
         standing[key] = sorted(
-            set((*standing[key], *event.payload.get(key, ())))
+            set((*standing[key], *event.material.get(key, ())))
         )
 
 
 def _ingest_standing(*, event, ledger):
     attempts: dict[str, dict] = {}
     update_operator_ingest_standing(attempts, event, ledger=ledger)
-    occurrence_identity = event.payload["dimensions"]["identity"]
+    occurrence_identity = event.material["dimensions"]["identity"]
     return attempts[occurrence_identity]
 
 

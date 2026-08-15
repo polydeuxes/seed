@@ -270,7 +270,7 @@ def test_c0_still_forms_from_empty_standing():
         for event in ledger.list()
         if event.kind == "operator.representation.recorded"
     )
-    assert supplied.payload["locality_standing_as_of_event_identity"] is None
+    assert supplied.material["locality_standing_as_of_event_identity"] is None
 
 
 def test_the_locality_records_the_same_occurrences_it_always_did():

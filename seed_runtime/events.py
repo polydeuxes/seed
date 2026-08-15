@@ -15,7 +15,7 @@ import zlib
 from typing import Any, Iterable, Iterator
 
 from seed_runtime.identities import new_identity, reserve_identity_prefix
-from seed_runtime.event import Event, _decode_screened_event_payload
+from seed_runtime.event import Event, _decode_screened_event_material
 
 
 # What a ledger can say about a stored occurrence's integrity.
@@ -55,66 +55,66 @@ class LedgerIntegrityError(Exception):
     """A durable store cannot supply the integrity its occurrences require."""
 
 # Every persisted field, because an occurrence moved between Localities is as
-# altered as one whose payload different, and `locality_identity` is now the
+# altered as one whose material different, and `locality_identity` is now the
 # boundary keeping bounded localities apart.
 _OCCURRENCE_FIELDS = (
-    "identity", "kind", "timestamp", "payload", "locality_identity",
+    "identity", "kind", "timestamp", "material", "locality_identity",
 )
 
 
-# Payload storage, below the integrity boundary.
+# Material storage, below the integrity boundary.
 #
 # The digest is computed over the canonical JSON string, never over the stored
-# bytes, so how a payload was written down cannot revision what it commits to.
+# bytes, so how a material was written down cannot revision what it commits to.
 # `#2492` was the same lesson at the other end: two base64 encodings of one
 # byte string had to read one account.
 #
 # Level 1 rather than 6 or 9. `#2494` measured 4.9x against 5.3x at less than
 # half the compression cost, and decompression is flat across levels at roughly
-# 50 microseconds per payload — about one second across the 205,328 reads the
+# 50 microseconds per material — about one second across the 205,328 reads the
 # count layer performs.
-_PAYLOAD_COMPRESSION_LEVEL = 1
+_MATERIAL_COMPRESSION_LEVEL = 1
 
 
 _EVENT_IDENTITY = re.compile(r"^evt_\d+$")
 
 
-def _payload_references(
-    payload: Any, relation: str = "", ordinal: int = 0
+def _material_references(
+    material: Any, relation: str = "", ordinal: int = 0
 ) -> list[tuple[str, str, int]]:
-    """Every occurrence identity this payload holds, with the field that held it."""
+    """Every occurrence identity this material holds, with the field that held it."""
 
     found: list[tuple[str, str, int]] = []
-    if isinstance(payload, dict):
-        for key, nested in payload.items():
-            found.extend(_payload_references(nested, key, 0))
-    elif isinstance(payload, list):
-        for position, nested in enumerate(payload):
-            found.extend(_payload_references(nested, relation, position))
-    elif isinstance(payload, str) and _EVENT_IDENTITY.match(payload):
-        found.append((relation, payload, ordinal))
+    if isinstance(material, dict):
+        for key, nested in material.items():
+            found.extend(_material_references(nested, key, 0))
+    elif isinstance(material, list):
+        for position, nested in enumerate(material):
+            found.extend(_material_references(nested, relation, position))
+    elif isinstance(material, str) and _EVENT_IDENTITY.match(material):
+        found.append((relation, material, ordinal))
     return found
 
 
-def _stored_payload(serialized: str) -> str | bytes:
-    """The payload as stored: compressed when that is smaller, else as written.
+def _stored_material(serialized: str) -> str | bytes:
+    """The material as stored: compressed when that is smaller, else as written.
 
-    A payload that does not shrink is stored as text, because compressing it
+    A material that does not shrink is stored as text, because compressing it
     would cost bytes and reads for nothing. The two represents are told apart on read
     by their type, which SQLite preserves.
     """
 
     encoded = serialized.encode("utf-8")
-    compressed = zlib.compress(encoded, _PAYLOAD_COMPRESSION_LEVEL)
+    compressed = zlib.compress(encoded, _MATERIAL_COMPRESSION_LEVEL)
     return compressed if len(compressed) < len(encoded) else serialized
 
 
-class InvalidStoredPayload(LedgerIntegrityError):
-    """A stored payload cannot be returned to the string it was digested from."""
+class InvalidStoredMaterial(LedgerIntegrityError):
+    """A stored material cannot be returned to the string it was digested from."""
 
 
-def _serialized_payload(stored: str | bytes) -> str:
-    """The canonical JSON string a stored payload carries.
+def _serialized_material(stored: str | bytes) -> str:
+    """The canonical JSON string a stored material carries.
 
     A store written before compression holds text, and reads preserved.
 
@@ -130,12 +130,12 @@ def _serialized_payload(stored: str | bytes) -> str:
         try:
             return zlib.decompress(stored).decode("utf-8")
         except (zlib.error, UnicodeDecodeError) as exc:
-            raise InvalidStoredPayload(
-                f"a stored payload could not be read: {exc}"
+            raise InvalidStoredMaterial(
+                f"a stored material could not be read: {exc}"
             ) from exc
     if not isinstance(stored, str):
-        raise InvalidStoredPayload(
-            f"a stored payload is {type(stored).__name__}, not a representation"
+        raise InvalidStoredMaterial(
+            f"a stored material is {type(stored).__name__}, not a representation"
         )
     return stored
 
@@ -143,27 +143,27 @@ def _serialized_payload(stored: str | bytes) -> str:
 def _digest_of_stored_row(row: "sqlite3.Row") -> str | None:
     """The digest of a stored row, or nothing when it cannot be read.
 
-    A row whose payload will not decompress cannot reproduce any digest, and
+    A row whose material will not decompress cannot reproduce any digest, and
     that is exactly what `integrity_of` reports rather than raising through its
     caller.
     """
 
     try:
         return _content_digest(_digested_row(row))
-    except InvalidStoredPayload:
+    except InvalidStoredMaterial:
         return None
 
 
 def _digested_row(row: "sqlite3.Row") -> dict:
     """A stored row as the digest was taken over it.
 
-    The payload is returned to its canonical string, because the digest commits
+    The material is returned to its canonical string, because the digest commits
     to what the occurrence carries and not to how the store wrote it down. Left
     unconverted, every compressed occurrence would verify as CORRUPTED.
     """
 
     values = dict(row)
-    values["payload"] = _serialized_payload(values["payload"])
+    values["material"] = _serialized_material(values["material"])
     return values
 
 
@@ -194,7 +194,7 @@ def _canonical_occurrence_bytes(event: Event) -> bytes:
         "identity": event.identity,
         "kind": event.kind,
         "timestamp": event.timestamp.isoformat(),
-        "payload": event.payload,
+        "material": event.material,
         "locality_identity": event.locality_identity,
     }
     return json.dumps(
@@ -237,7 +237,7 @@ class EventLedger:
     def append(
         self,
         kind: str,
-        payload: dict[str, Any] | None = None,
+        material: dict[str, Any] | None = None,
         *,
         locality_identity: str | None = None,
     ) -> Event:
@@ -245,7 +245,7 @@ class EventLedger:
         event = Event(
             identity=new_identity("evt"),
             kind=kind,
-            payload=payload or {},
+            material=material or {},
             locality_identity=locality_identity,
         )
         self._store(event)
@@ -365,7 +365,7 @@ class EventLedger:
 
         The same bounded rows in the same order as `iter_locality_kind`, returning
         only their identities. It does not read or inspect occurrence
-        payloads. A caller requiring occurrence content must use the occurrence
+        materials. A caller requiring occurrence content must use the occurrence
         read; `integrity_of` remains the separate integrity boundary.
         """
         for event in self.iter_locality_kind(
@@ -380,7 +380,7 @@ class EventLedger:
     def _store(self, event: Event) -> None:
         if event.identity in self._by_identity:
             raise ValueError(f"event identity already exists: {event.identity}")
-        # Canonicalization may refuse a payload. Derive before making the
+        # Canonicalization may refuse a material. Derive before making the
         # occurrence visible anywhere so a failed append cannot leave event
         # history ahead of its append-prefix mechanics.
         identity = _next_prefix_identity(self._latest_prefix_identity, event)
@@ -473,17 +473,17 @@ class SQLiteEventLedger(EventLedger):
                 identity TEXT PRIMARY KEY,
                 kind TEXT NOT NULL,
                 timestamp TEXT NOT NULL,
-                payload TEXT NOT NULL,
+                material TEXT NOT NULL,
                 locality_identity TEXT,
                 content_hash TEXT NOT NULL
             )
             """)
-        # The references occurrences already carry, lifted out of the payload
+        # The references occurrences already carry, lifted out of the material
         # so they can be read in both directions.
         #
         # Not an occurrence. It records no Assertion and establishes no
-        # Standing: every row restates a reference the payload holds, the
-        # payload stays the authority, and rebuilding from the payloads gives
+        # Standing: every row restates a reference the material holds, the
+        # material stays the authority, and rebuilding from the materials gives
         # the same rows.
         self._connection.execute("""
             CREATE TABLE IF NOT EXISTS event_references (
@@ -503,7 +503,7 @@ class SQLiteEventLedger(EventLedger):
             """)
         # Minted identity counters, kept durably instead of read.
         #
-        # `#2414` measured the read: every payload of every event
+        # `#2414` measured the read: every material of every event
         # deserialized and walked on every open, to read the highest issued
         # number per prefix. That is a whole-history read for an answer of a few
         # integers, and it grows without bound — 36.9s at 100,000 events,
@@ -585,14 +585,14 @@ class SQLiteEventLedger(EventLedger):
     def append(
         self,
         kind: str,
-        payload: dict[str, Any] | None = None,
+        material: dict[str, Any] | None = None,
         *,
         locality_identity: str | None = None,
     ) -> Event:
         event = Event(
             identity=self._new_event_identity(),
             kind=kind,
-            payload=payload or {},
+            material=material or {},
             locality_identity=locality_identity,
         )
         self._insert(event)
@@ -612,7 +612,7 @@ class SQLiteEventLedger(EventLedger):
         # commits left durable occurrences carrying identities whose counters
         # were stale on reopen, which is the collision `#2428` exists to
         # prevent. `evt` is partly shielded because open reads the maximum
-        # event identity separately; the payload and Locality prefixes are not.
+        # event identity separately; the material and Locality prefixes are not.
         with self._connection:
             for event in stored_events:
                 event_rowid = self._insert_without_commit(event)
@@ -741,11 +741,11 @@ class SQLiteEventLedger(EventLedger):
 
         The same bounded rows and order, returning only identities.
 
-        **This does not read or inspect occurrence payloads**, and the
+        **This does not read or inspect occurrence materials**, and the
         difference is nameable rather than merely cheaper: the occurrence read
-        decodes each payload through `_decode_screened_event_payload`, which
-        refuses a durable payload carrying a secret field name. An identity read
-        performs no such screen, because it hands no payload to its caller. A
+        decodes each material through `_decode_screened_event_material`, which
+        refuses a durable material carrying a secret field name. An identity read
+        performs no such screen, because it hands no material to its caller. A
         caller requiring occurrence content must use the occurrence read, and
         `integrity_of` remains the separate integrity boundary.
 
@@ -937,7 +937,7 @@ class SQLiteEventLedger(EventLedger):
     def _insert_without_commit(self, event: Event) -> int:
         cursor = self._connection.execute(
             """
-            INSERT INTO events (identity, kind, timestamp, payload, locality_identity, content_hash)
+            INSERT INTO events (identity, kind, timestamp, material, locality_identity, content_hash)
             VALUES (?, ?, ?, ?, ?, ?)
             """,
             self._row_values(event),
@@ -946,14 +946,14 @@ class SQLiteEventLedger(EventLedger):
         return int(cursor.lastrowid)
 
     def _insert_references_without_commit(self, event: Event) -> None:
-        """Index the occurrence references this payload already carries.
+        """Index the occurrence references this material already carries.
 
-        An edge exists where the payload holds the exact identity of an occurrence
+        An edge exists where the material holds the exact identity of an occurrence
         already in this ledger. Its relation is the field name that held it.
         """
 
         # One reference held twice under one field is one relation.
-        references = list(dict.fromkeys(_payload_references(event.payload)))
+        references = list(dict.fromkeys(_material_references(event.material)))
         if not references:
             return
         known = {
@@ -977,8 +977,8 @@ class SQLiteEventLedger(EventLedger):
     def references_to(self, event_identity: str) -> list[tuple[str, str]]:
         """Which occurrences reference this one, and under what relation.
 
-        A `LIKE` over stored JSON reads every payload and grows with both the
-        occurrence count and the payload size. This reads an index.
+        A `LIKE` over stored JSON reads every material and grows with both the
+        occurrence count and the material size. This reads an index.
         """
 
         cursor = self._connection.cursor()
@@ -1012,15 +1012,15 @@ class SQLiteEventLedger(EventLedger):
             "identity": event.identity,
             "kind": event.kind,
             "timestamp": event.timestamp.isoformat(),
-            "payload": json.dumps(event.payload),
+            "material": json.dumps(event.material),
             "locality_identity": event.locality_identity,
         }
-        # The digest is taken from the canonical string, then the payload is
+        # The digest is taken from the canonical string, then the material is
         # replaced by its stored representation. Compression therefore cannot move a
         # digest, and an occurrence stored compressed digests identically to the
         # same occurrence stored as text.
         digest = _content_digest(row)
-        row["payload"] = _stored_payload(row["payload"])
+        row["material"] = _stored_material(row["material"])
         return tuple(row[f] for f in _OCCURRENCE_FIELDS) + (digest,)
 
     def _validate_sqlite_batch(self, events: list[Event]) -> None:
@@ -1032,22 +1032,22 @@ class SQLiteEventLedger(EventLedger):
 
     def _row_to_event(self, row: sqlite3.Row) -> Event:
         try:
-            payload = _decode_screened_event_payload(_serialized_payload(row["payload"]))
+            material = _decode_screened_event_material(_serialized_material(row["material"]))
         except json.JSONDecodeError as exc:
             # Read as text and not as an occurrence. The same condition as
-            # a payload that will not decompress: the stored row no longer
+            # a material that will not decompress: the stored row no longer
             # carries what it was digested from, so it is refused as an
             # integrity failure rather than as the parser's error. This was
-            # already reachable before compression, for a text payload damaged
+            # already reachable before compression, for a text material damaged
             # in place.
-            raise InvalidStoredPayload(
-                f"a stored payload is not a addressable occurrence: {exc}"
+            raise InvalidStoredMaterial(
+                f"a stored material is not a addressable occurrence: {exc}"
             ) from exc
         return Event(
             identity=row["identity"],
             kind=row["kind"],
             timestamp=datetime.fromisoformat(row["timestamp"]),
-            payload=payload,
+            material=material,
             locality_identity=row["locality_identity"],
         )
 
@@ -1082,14 +1082,14 @@ class SQLiteEventLedger(EventLedger):
         its **last** underscore, so one split locates the only candidate split
         point rather than testing the value against each prefix in turn.
 
-        `#2483` measured why that matters on a Compare payload: testing every
+        `#2483` measured why that matters on a Compare material: testing every
         walked value against every prefix cost 53.6 million calls over 3,984
-        appended occurrences, and the payloads grow with what the layer
+        appended occurrences, and the materials grow with what the layer
         compares.
         """
         found: dict[str, int] = {}
         reservable = self._RESERVABLE_PREFIXES
-        values = _walk_values(event.payload)
+        values = _walk_values(event.material)
         if event.locality_identity is not None:
             values = chain(values, (event.locality_identity,))
         for value in values:

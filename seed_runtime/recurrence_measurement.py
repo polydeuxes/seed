@@ -240,7 +240,7 @@ class RecordedMeasuredAssertion:
     recorded_occurrence_reference: str
     yielding_locality_identity: str | None
     result: str
-    payload: dict[str, Any]
+    material: dict[str, Any]
     support_assertion_references: tuple[dict[str, str], ...] = ()
 
     @property
@@ -258,7 +258,7 @@ def assertions_of_recorded_measurement(event: Event) -> tuple[RecordedMeasuredAs
         raise RecurrenceMeasurementError(
             f"{event.identity} is {event.kind}, not a recurrence Measurement occurrence"
         )
-    stated = event.payload.get("assertions")
+    stated = event.material.get("assertions")
     if not isinstance(stated, list):
         raise RecurrenceMeasurementError(
             f"{event.identity} does not preserve its distinct Assertions"
@@ -325,7 +325,7 @@ def assertions_of_recorded_measurement(event: Event) -> tuple[RecordedMeasuredAs
                 recorded_occurrence_reference=event.identity,
                 yielding_locality_identity=event.locality_identity,
                 result=result,
-                payload=assertion,
+                material=assertion,
             )
         )
     identities = {assertion.assertion_identity for assertion in read}
@@ -338,7 +338,7 @@ def assertions_of_recorded_measurement(event: Event) -> tuple[RecordedMeasuredAs
         by_result[assertion.result] = assertion
     bound = []
     for assertion in read:
-        support = assertion.payload.get("input_support")
+        support = assertion.material.get("input_support")
         local_identities = support.get("local_assertion_identities") if isinstance(support, dict) else None
         if not isinstance(local_identities, list) or not all(
             isinstance(value, str) for value in local_identities
@@ -373,7 +373,7 @@ def assertions_of_recorded_measurement(event: Event) -> tuple[RecordedMeasuredAs
                 recorded_occurrence_reference=assertion.recorded_occurrence_reference,
                 yielding_locality_identity=assertion.yielding_locality_identity,
                 result=assertion.result,
-                payload=assertion.payload,
+                material=assertion.material,
                 support_assertion_references=tuple(
                     {
                         "recorded_occurrence_reference": event.identity,
@@ -434,9 +434,9 @@ def occurrences_of_declared_localities(
 def _declared_of_measurement(event: Event) -> tuple[tuple[str, str], ...] | None:
     declared = []
     for name in DECLARED_IDENTITY:
-        if name not in event.payload:
+        if name not in event.material:
             return None
-        declared.append((name, str(event.payload[name])))
+        declared.append((name, str(event.material[name])))
     return tuple(declared)
 
 
@@ -500,7 +500,7 @@ def measure_locality_counts(
             coordinate_evidence.setdefault(declared, {}).setdefault(
                 locality, set()
             ).add(event.identity)
-            for occupancy in event.payload.get("occupancies", []):
+            for occupancy in event.material.get("occupancies", []):
                 right = occupancy.get("representation")
                 if not isinstance(right, str):
                     continue
@@ -738,7 +738,7 @@ def record_measured_count(
         }
         for event_identity in finding.input_event_identities
     ]
-    result_payload = {
+    result_material = {
         "result_identity": result_identity,
         "dimensions": {
             "identity": result_identity,
@@ -799,16 +799,16 @@ def record_measured_count(
         act_occurrence_identity=act_occurrence_identity,
         result_kind=LOCALITY_COUNT_RESULT_KIND,
         result_identity=result_identity,
-        result_content=result_payload,
+        result_content=result_material,
         responsibility=LOCALITY_COUNT_RESPONSIBILITY,
         live_boundary="locality_count_measurement",
         responsible_boundary="this Seed",
-        recorded_result_coordinates={key: (key,) for key in result_payload},
+        recorded_result_coordinates={key: (key,) for key in result_material},
     )
     return ledger.append(
         LOCALITY_COUNT_RECORDED_KIND,
         {
-            **result_payload,
+            **result_material,
             "responsible_act_evidence_identity": act_evidence.identity,
             "yield_evidence_identity": yield_evidence.identity,
         },
