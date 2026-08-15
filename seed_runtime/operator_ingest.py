@@ -26,7 +26,6 @@ def update_operator_ingest_standing(attempts, event, *, ledger=None) -> None:
     standing = attempts.setdefault(
         occurrence_identity,
         {
-            "event_identities": [],
             "dimensional_standing": {},
             "current_standing": {"ingest_occurrence": None},
             "known_loss": [],
@@ -34,7 +33,6 @@ def update_operator_ingest_standing(attempts, event, *, ledger=None) -> None:
             "conflicts": [],
         },
     )
-    standing["event_identities"].append(event.identity)
     standing["dimensional_standing"][event.identity] = {
         "event_kind": event.kind,
         "subject_reference": occurrence_identity,

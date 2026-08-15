@@ -134,7 +134,11 @@ def run_persistent_operator_console(
             locality_standing = _advance_over(
                 ledger,
                 locality_standing,
-                attempt_record["event_identities"],
+                (
+                    attempt_record["current_standing"]["ingest_occurrence"][
+                        "evidence_event_identity"
+                    ],
+                ),
                 locality_identity=locality_identity,
             )
             if attempt_record["current_standing"]["ingest_occurrence"] is not None:

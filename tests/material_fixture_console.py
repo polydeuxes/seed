@@ -63,7 +63,11 @@ def run_material_fixture_console(
             locality_standing = _advance_over(
                 ledger,
                 locality_standing,
-                attempt["event_identities"],
+                (
+                    attempt["current_standing"]["ingest_occurrence"][
+                        "evidence_event_identity"
+                    ],
+                ),
                 locality_identity=locality_identity,
             )
             representation = record_operator_representation(

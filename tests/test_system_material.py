@@ -47,7 +47,11 @@ def test_operator_and_system_material_share_one_ingest_road():
         locality_identity="shared",
         boundary_material=operator_boundary_material(BytesIO(exact)),
     )
-    operator_ingest = ledger.get(operator_standing["event_identities"][-1])
+    operator_ingest = ledger.get(
+        operator_standing["current_standing"]["ingest_occurrence"][
+            "evidence_event_identity"
+        ]
+    )
     system_ingest = preserve_system_material(
         ledger,
         locality_identity="shared",
