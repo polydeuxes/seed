@@ -99,7 +99,6 @@ class PreservedInput:
     carried: dict[str, Any]
     absent: tuple[str, ...]
     input_support: tuple[str, ...]
-    integrity: str
 
     def to_json_dict(self) -> dict[str, Any]:
         return {
@@ -107,7 +106,6 @@ class PreservedInput:
             "carried": dict(self.carried),
             "coordinates_absent": list(self.absent),
             "input_support": list(self.input_support),
-            "integrity": self.integrity,
         }
 
 
@@ -174,7 +172,6 @@ def _preserve(ledger: EventLedger, event: Event) -> PreservedInput:
         carried=carried,
         absent=tuple(absent),
         input_support=tuple(premise_chain(ledger, event.identity)),
-        integrity=ledger.integrity_of(event.identity),
     )
 
 

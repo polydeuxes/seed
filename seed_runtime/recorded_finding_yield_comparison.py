@@ -230,14 +230,13 @@ def get_recorded_finding_yield_comparison(
     )
 
 
-def _provenance(event: Event, integrity: str) -> dict[str, object]:
+def _provenance(event: Event) -> dict[str, object]:
     """The exact occurrence coordinates available to this comparison."""
 
     return {
         "event_identity": event.identity,
         "event_kind": event.kind,
         "locality_identity": event.locality_identity,
-        "integrity": integrity,
     }
 
 
@@ -425,10 +424,10 @@ def compare_recorded_finding_yield(ledger: EventLedger, event_identity: str) -> 
         "recorded_finding_reference": event_identity,
         "yield_evidence": named,
         "evidence_and_provenance": {
-                "recorded_finding": _provenance(recorded, recorded_integrity),
+                "recorded_finding": _provenance(recorded),
                 "yield_evidence": (
-                    _provenance(evidence, evidence_integrity)
-                    if evidence is not None and evidence_integrity is not None
+                    _provenance(evidence)
+                    if evidence is not None
                     else None
                 ),
         },
