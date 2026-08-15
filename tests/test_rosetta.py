@@ -6,7 +6,27 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 GRAMMAR = ROOT / "book_of_seed/grammar.json"
-ROSETTA_ROOTS = ROOT / "rosetta/roots.md"
+ROSETTA = ROOT / "rosetta"
+ROSETTA_ROOTS = ROSETTA / "roots.md"
+ROSETTA_LEXICON = ROSETTA / "admitted-lexicon.txt"
+
+
+def _rosetta_admission() -> set[str]:
+    return {
+        line.split("#", 1)[0].strip()
+        for line in ROSETTA_LEXICON.read_text(encoding="utf-8").splitlines()
+        if line.strip() and not line.lstrip().startswith("#")
+    }
+
+
+def _rosetta_words(material: str) -> set[str]:
+    without_links = re.sub(r"\]\([^)]*\)", "]()", material)
+    scanned = re.sub(r"[_-]+", " ", without_links).lower()
+    return set(re.findall(r"[A-Za-z]+", scanned))
+
+
+def _unadmitted_rosetta_words(material: str) -> set[str]:
+    return _rosetta_words(material) - _rosetta_admission()
 
 
 def _relation_line(name: str, coordinates: dict[str, object]) -> str:
@@ -86,3 +106,22 @@ def test_rosetta_missing_implementation_reference_is_detected():
         pass
     else:
         raise AssertionError("a missing Rosetta implementation reference escaped")
+
+
+def test_rosetta_prose_has_lexical_admission():
+    violations = {
+        path.relative_to(ROOT).as_posix(): _unadmitted_rosetta_words(
+            path.read_text(encoding="utf-8")
+        )
+        for path in sorted(ROSETTA.glob("*.md"))
+    }
+    violations = {path: words for path, words in violations.items() if words}
+
+    assert violations == {}, "\n" + "\n".join(
+        f"{path}: {', '.join(sorted(words))}"
+        for path, words in violations.items()
+    )
+
+
+def test_rosetta_admission_detects_an_unadmitted_word_without_naming_it():
+    assert _unadmitted_rosetta_words("unadmittedword") == {"unadmittedword"}
