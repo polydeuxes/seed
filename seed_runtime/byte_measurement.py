@@ -7,7 +7,7 @@ Localities through one recorded ledger boundary.
 
 One byte value receives one count Assertion.  Recurrence is a separate
 Assertion and exists only where the total count exceeds one.  Byte equality
-establishes no character, word, language, position, adjacency, grammar,
+establishes no character, word, position, adjacency, grammar,
 represented relation, relation, or significance.
 """
 
@@ -132,16 +132,16 @@ BYTE_PAIR_MEASUREMENT_RULE = (
 )
 MEASUREMENT_EVIDENCE_SCOPE = (
     "literal byte-count Measurement Evidence only; establishes no character, "
-    "word, language, position, adjacency, grammar, represented relation, or relation; it "
+    "word, position, adjacency, grammar, represented relation, or relation; it "
     "establishes new bounded byte Standing and does not revise source Standing"
 )
 SOURCE_SET_EVIDENCE_SCOPE = (
     "exact bounded source-material Measurement Evidence only; establishes no "
-    "character, word, language, position, adjacency, grammar, represented relation, or relation"
+    "character, word, position, adjacency, grammar, represented relation, or relation"
 )
 PAIR_MEASUREMENT_EVIDENCE_SCOPE = (
     "declared exact-source and literal ordered adjacent-byte-pair Measurement "
-    "Evidence only; establishes no character, word, language, grammar, represented relation, "
+    "Evidence only; establishes no character, word, grammar, represented relation, "
     "relation beyond the exact measured adjacency and order or significance; "
     "it establishes new bounded pair Standing and does not revise source Standing"
 )
@@ -173,7 +173,7 @@ BYTE_PAIR_UNKNOWNS = (
 )
 BYTE_PAIR_LIMITS = (
     "an exact adjacent-byte-pair count or recurrence establishes no character, "
-    "word, language, grammar, represented relation, relation beyond the exact measured "
+    "word, grammar, represented relation, relation beyond the exact measured "
     "adjacency and order, or significance",
 )
 MEASURED_ASSERTION_RESPONSIBILITY = (
@@ -937,7 +937,7 @@ def _assertions(measured: MeasuredByteInputs) -> list[dict[str, Any]]:
             "unknowns": ["what the exact source bytes represent remains Unknown"],
             "limits": [
                 "an exact source-material set establishes no character, word, "
-                "language, position, adjacency, grammar, represented relation, or relation"
+                "position, adjacency, grammar, represented relation, or relation"
             ],
         }
     ]
@@ -978,7 +978,7 @@ def _assertions(measured: MeasuredByteInputs) -> list[dict[str, Any]]:
             "unknowns": ["what this byte participates in or represents remains Unknown"],
             "limits": [
                 "an exact byte count or recurrence establishes no character, word, "
-                "language, position, adjacency, grammar, represented relation, or relation"
+                "position, adjacency, grammar, represented relation, or relation"
             ],
         }
 

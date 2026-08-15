@@ -51,7 +51,7 @@ Supplied material may assert that X represents or identifies Y. The responsible 
 - material != Evidence
 - carried relation Assertion != established relation
 - equal content != equal identity or Standing
-- Measurement != language or significance
+- Measurement != represented relation or significance
 
 ## Related chapters
 

@@ -21,7 +21,7 @@ A Responsibility bounds what Standing may be established, preserved, or revised 
 - successful return != every asserted effect occurred
 - failed Act != absence of Act occurrence
 - Act != representation describing an Act
-- classification of language != occurrence of the classified act
+- classification of material != occurrence of the classified Act
 - proposal != occurrence
 - intent classification != enactment
 - read-only/non-mutating != no constitutional occurrence
@@ -34,7 +34,7 @@ A Responsibility bounds what Standing may be established, preserved, or revised 
 
 ## Counterexamples or failure modes
 - Treating a representation concerning a proposed, requested, or contemplated Act as Evidence that the Act occurred.
-- Treating classified operator language as the requested act itself.
+- Treating classified operator material as the requested Act itself.
 - Treating a directly supplied result as Evidence that exact focus Evidence was validated.
 
 ## Related chapters
