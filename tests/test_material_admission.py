@@ -10,7 +10,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts"))
 import material_admission  # noqa: E402
 from book_grammar_witness import held_apart, restated, statements  # noqa: E402
 from book_grammar_witness import implementation_function as book_implementation_function  # noqa: E402
-from decoder_witness_harness import accepts, first_admission  # noqa: E402
+from decoder_measurement import accepts, first_admission  # noqa: E402
 
 
 def test_complete_pair_coverage_separates_in_one_admission():

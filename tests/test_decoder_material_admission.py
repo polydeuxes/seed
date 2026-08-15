@@ -7,7 +7,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts"))
 
-from decoder_witness_harness import (  # noqa: E402
+from decoder_measurement import (  # noqa: E402
     ALL,
     MIXED,
     NONE,
@@ -93,7 +93,7 @@ def test_each_admission_uses_the_one_before_it():
         assert _material(admit_pairs("utf-8", lower)) == _material(upper)
 
 
-def test_witnesses_establish_different_admission_counts():
+def test_decoder_functions_establish_different_admission_counts():
     counts = {name: len(admit(name)) for name in ("ascii", "utf-8", "big5hkscs")}
 
     assert counts["ascii"] == 1

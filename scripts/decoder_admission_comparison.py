@@ -7,7 +7,7 @@ import argparse
 from functools import lru_cache
 
 import material_admission
-from decoder_witness_harness import accepts, first_admission, decoding_implementation_functions
+from decoder_measurement import accepts, first_admission, decoding_implementation_functions
 
 Admission = frozenset
 

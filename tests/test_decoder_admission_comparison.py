@@ -8,7 +8,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts"))
 
 import material_admission  # noqa: E402
-from witness_comparison_harness import (  # noqa: E402
+from decoder_admission_comparison import (  # noqa: E402
     admissions,
     compare_admissions,
     final_admission,
@@ -25,7 +25,7 @@ def test_an_admission_preserves_itself_and_the_one_without_distinctions():
     assert not preserves(everything, fine)
 
 
-def test_many_witnesses_reach_the_same_resting_admission():
+def test_many_decoder_functions_reach_the_same_admission():
     found = admissions()
     sizes = sorted((len(names) for names in found.values()), reverse=True)
 
@@ -34,7 +34,7 @@ def test_many_witnesses_reach_the_same_resting_admission():
     assert sizes[0] >= 40
 
 
-def test_the_witnesses_do_not_converge():
+def test_the_decoder_functions_do_not_share_one_admission():
     """Most Admission pairs preserve neither direction."""
 
     counted = compare_admissions(admissions())

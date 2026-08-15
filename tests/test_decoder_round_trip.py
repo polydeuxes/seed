@@ -12,7 +12,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts"))
 
-from round_trip_witness_harness import (  # noqa: E402
+from decoder_round_trip import (  # noqa: E402
     DIFFERENT,
     NOT_DECODABLE,
     REFUSED,
@@ -23,14 +23,14 @@ from round_trip_witness_harness import (  # noqa: E402
 )
 
 
-def test_bytes_the_witness_refuses_are_not_asked_about():
+def test_bytes_the_decoder_refuses_are_not_asked_about():
     """Nothing is measured where nothing was read."""
 
     assert round_trip("ascii", (0xFF,)) is NOT_DECODABLE
     assert round_trip("utf-8", (0xC2,)) is NOT_DECODABLE
 
 
-def test_most_witnesses_write_back_what_they_read():
+def test_named_decoders_write_back_what_they_read():
     assert round_trip("ascii", (0x41,)) == SAME
     assert round_trip("utf-8", (0xC2, 0xA9)) == SAME
     assert round_trip("latin_1", (0xFF,)) == SAME
@@ -52,14 +52,14 @@ def test_several_byte_sequences_may_read_as_one_thing():
     assert 0xFD not in found
 
 
-def test_a_witness_may_read_what_it_will_not_write():
+def test_a_decoder_may_read_what_it_will_not_write():
     """idna reads 0x2e and writes nothing for what it read."""
 
     assert round_trip("idna", (0x2E,)) == REFUSED
     assert [value for value, _, written in disagreements("idna") if written == "nothing"] == [0x2E]
 
 
-def test_a_witness_may_never_write_back_what_it_read():
+def test_a_decoder_may_never_write_back_what_it_read():
     """utf_8_sig writes more than it was given, for every input it accepts."""
 
     results = dict(survey())["utf_8_sig"]

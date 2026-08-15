@@ -12,7 +12,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts"))
 
-from decoder_witness_harness import (  # noqa: E402
+from decoder_measurement import (  # noqa: E402
     MIXED,
     NONE,
     measure_material_pairs,

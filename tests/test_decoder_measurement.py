@@ -12,7 +12,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts"))
 
-from decoder_witness_harness import accepts, admissible_followers, first_admission  # noqa: E402
+from decoder_measurement import accepts, admissible_followers, first_admission  # noqa: E402
 
 
 def _spans(codec: str) -> dict[tuple[int, int], tuple[object, int]]:
