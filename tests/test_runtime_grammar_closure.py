@@ -88,25 +88,29 @@ def _literal_dict_keys(tree: ast.Module):
                 yield key.lineno, key.value
 
 
-def _identity_content_substitutions(path: Path, tree: ast.Module):
+def _coordinate_substitutions(path: Path, tree: ast.Module):
     found = []
     for node in ast.walk(tree):
         if not isinstance(node, ast.Dict):
             continue
-        coordinates = {
-            key.value: value
-            for key, value in zip(node.keys, node.values)
-            if isinstance(key, ast.Constant) and isinstance(key.value, str)
-        }
-        identity = coordinates.get("identity")
-        content = coordinates.get("content")
-        if (
-            identity is not None
-            and content is not None
-            and ast.dump(identity, include_attributes=False)
-            == ast.dump(content, include_attributes=False)
-        ):
-            found.append((path.name, node.lineno))
+        by_expression = {}
+        for key, value in zip(node.keys, node.values):
+            if not (
+                isinstance(key, ast.Constant)
+                and isinstance(key.value, str)
+                and not isinstance(
+                    value,
+                    (ast.Constant, ast.List, ast.Tuple, ast.Set, ast.Dict),
+                )
+            ):
+                continue
+            expression = ast.dump(value, include_attributes=False)
+            by_expression.setdefault(expression, []).append(key.value)
+        found.extend(
+            (path.name, node.lineno, tuple(coordinates))
+            for coordinates in by_expression.values()
+            if len(coordinates) > 1
+        )
     return found
 
 
@@ -258,19 +262,22 @@ def test_runtime_record_vocabulary_has_constitutional_admission():
     )
 
 
-def test_runtime_identity_and_content_are_distinct_coordinates():
+def test_runtime_coordinates_do_not_substitute_one_reference_for_several_coordinates():
     substitutions = []
     for path, tree in _runtime_trees():
-        substitutions.extend(_identity_content_substitutions(path, tree))
-    assert substitutions == []
+        substitutions.extend(_coordinate_substitutions(path, tree))
+    assert substitutions == [], "\n" + "\n".join(
+        f"{path}:{line} one reference supplies {list(coordinates)}"
+        for path, line, coordinates in substitutions
+    )
 
 
-def test_identity_content_substitution_siren_detects_one_shared_expression():
+def test_coordinate_substitution_siren_detects_one_shared_reference():
     tree = ast.parse(
         'dimensions = {"identity": result_identity, "content": result_identity}'
     )
-    assert _identity_content_substitutions(Path("fixture.py"), tree) == [
-        ("fixture.py", 1)
+    assert _coordinate_substitutions(Path("fixture.py"), tree) == [
+        ("fixture.py", 1, ("identity", "content"))
     ]
 
 
