@@ -49,10 +49,10 @@ def final_partition(codec: str) -> Partition:
 
     read = classes(codec, 4)
     rungs = rc.climb(
-        [tuple(members) for members in read.values()],
+        [tuple(subjects) for subjects in read.values()],
         lambda first, second: accepts(codec, (first, second)),
     )
-    return frozenset(frozenset(members) for members in rungs[-1])
+    return frozenset(frozenset(subjects) for subjects in rungs[-1])
 
 
 def partitions() -> dict[Partition, list[str]]:
@@ -116,7 +116,7 @@ def main() -> int:
     )
 
     keys = sorted(found, key=len)
-    rungs = rc.climb(rc.by(len, keys), refines, limit=64)
+    rungs = rc.climb(rc.by(len, keys), refines)
     print(f"\n  climbing those partitions under refinement: {len(rungs)} rungs")
     print(f"  heights {rc.heights(rungs)[:6]} ... {rc.heights(rungs)[-1]}")
     print(f"  left unseparated: {len(rc.unseparated(rungs))}")

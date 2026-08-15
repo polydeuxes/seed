@@ -433,7 +433,6 @@ class SQLiteEventLedger(EventLedger):
     # the console to a durable ledger, at which point the second `seed --db`
     # invocation aborted on `duplicate representation reference`. Nothing was
     # wrong with them before: no console had ever written durable history.
-    # The prefixes `_reservable_identity_numbers` may reserve, as a set for membership.
     # Every entry is minted by current runtime code and may be carried by a
     # durable occurrence.
     _RESERVABLE_PREFIXES = frozenset({

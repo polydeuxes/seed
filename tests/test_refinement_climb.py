@@ -18,50 +18,61 @@ from book_grammar_witness import witness as book_witness  # noqa: E402
 from decoder_witness_harness import accepts, classes  # noqa: E402
 
 
-def test_whether_a_first_partition_must_carry_something_is_the_witness():
-    """What one class costs is how fast the witness separates from it.
-
-    An ordering witness halves against its representative and climbs quickly.
-    The Book's witness answers `False` for almost every pair, so from one class
-    it peels a single term per rung.
-    """
-
+def test_complete_pair_coverage_separates_in_one_refinement():
     ordered = rc.climb(rc.one_class(range(16)), lambda a, b: a < b)
-    assert rc.heights(ordered)[0] == 1
-    assert rc.heights(ordered)[-1] > 1
+    assert rc.heights(ordered) == [1, 16]
 
     apart = held_apart()
-    flat = rc.climb(rc.one_class(apart), book_witness(apart), limit=40)
-    assert rc.heights(flat)[:4] == [1, 2, 3, 4]
+    flat = rc.climb(rc.one_class(apart), book_witness(apart))
+    assert rc.heights(flat)[0] == 1
+    assert rc.heights(flat)[-1] > 1
+    for firsts in flat[-1]:
+        for seconds in flat[-1]:
+            assert len(
+                {book_witness(apart)(a, b) for a in firsts for b in seconds}
+            ) == 1
+
+
+def test_a_nonrepresentative_pair_cannot_hide_inside_a_final_class():
+    subjects = ("a", "b", "c", "d")
+
+    def witness(first, second):
+        return (first, second) == ("b", "d")
+
+    rungs = rc.climb([("a", "b"), ("c", "d")], witness)
+
+    assert rc.heights(rungs) == [2, 4]
+    for firsts in rungs[-1]:
+        for seconds in rungs[-1]:
+            assert len({witness(a, b) for a in firsts for b in seconds}) == 1
 
 
 def test_the_same_engine_climbs_a_decoder_witness():
     read = classes("utf-8", 4)
-    first = [tuple(members) for members in read.values()]
+    first = [tuple(subjects) for subjects in read.values()]
 
     rungs = rc.climb(first, lambda a, b: accepts("utf-8", (a, b)))
 
     assert rc.heights(rungs) == [5, 6]
-    assert sorted(len(members) for members in rungs[-1]) == [5, 13, 16, 30, 64, 128]
+    assert sorted(len(subjects) for subjects in rungs[-1]) == [5, 13, 16, 30, 64, 128]
 
 
 def test_the_same_engine_climbs_a_corpus_witness():
     apart = held_apart()
     first = rc.by(lambda term: len(apart[term]), apart)
 
-    rungs = rc.climb(first, book_witness(apart), limit=400)
+    rungs = rc.climb(first, book_witness(apart))
 
-    assert len(rungs) > 100
-    assert rc.heights(rungs)[0] < rc.heights(rungs)[-1]
+    assert rc.heights(rungs)[0] == 5
+    assert rc.heights(rungs)[-1] > rc.heights(rungs)[0]
+    for firsts in rungs[-1]:
+        for seconds in rungs[-1]:
+            assert len(
+                {book_witness(apart)(a, b) for a in firsts for b in seconds}
+            ) == 1
 
 
-def test_the_two_witnesses_climb_differently():
-    """A codec splits many classes per rung; the Book splits about one.
-
-    Both reach a rung that separates nothing further. How long that takes is a
-    property of the witness, and these differ by more than an order.
-    """
-
+def test_the_two_witnesses_establish_different_final_partitions():
     read = classes("big5hkscs", 4)
     codec_rungs = rc.climb(
         [tuple(m) for m in read.values()],
@@ -69,12 +80,11 @@ def test_the_two_witnesses_climb_differently():
     )
     apart = held_apart()
     book_rungs = rc.climb(
-        rc.by(lambda term: len(apart[term]), apart), book_witness(apart), limit=400
+        rc.by(lambda term: len(apart[term]), apart), book_witness(apart)
     )
 
-    assert len(codec_rungs) < 12
-    assert len(book_rungs) > 100
-    assert len(book_rungs) > 8 * len(codec_rungs)
+    assert len(codec_rungs) == len(book_rungs) == 2
+    assert rc.heights(codec_rungs)[-1] != rc.heights(book_rungs)[-1]
 
 
 def test_every_rung_partitions_the_same_subjects():
@@ -84,18 +94,18 @@ def test_every_rung_partitions_the_same_subjects():
     )
 
     for rung in rungs:
-        assert sorted(b for members in rung for b in members) == list(range(256))
+        assert sorted(b for subjects in rung for b in subjects) == list(range(256))
 
 
 def test_what_the_witness_could_not_separate_is_reported():
     apart = held_apart()
     rungs = rc.climb(
-        rc.by(lambda term: len(apart[term]), apart), book_witness(apart), limit=400
+        rc.by(lambda term: len(apart[term]), apart), book_witness(apart)
     )
 
     left = rc.unseparated(rungs)
     assert left
-    assert all(len(members) > 1 for members in left)
+    assert all(len(subjects) > 1 for subjects in left)
 
 
 def test_each_repeated_distinction_crosses_chapters():

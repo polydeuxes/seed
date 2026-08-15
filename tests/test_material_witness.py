@@ -9,6 +9,7 @@ import pytest
 
 from seed_runtime.byte_measurement import (
     assertions_of_recorded_adjacent_byte_pair_measurement,
+    assertions_of_recorded_byte_measurement,
     record_adjacent_byte_pair_count_layer,
     record_byte_count_layer,
 )
@@ -75,6 +76,9 @@ def measured_book_pairs():
     assertions = assertions_of_recorded_adjacent_byte_pair_measurement(
         ledger, pair_measurement.identity
     )
+    byte_assertions = assertions_of_recorded_byte_measurement(
+        ledger, byte_measurement.identity
+    )
     pairs = tuple(
         sorted(
             bytes(assertion.representation)
@@ -82,7 +86,14 @@ def measured_book_pairs():
             if assertion.result == "count" and assertion.representation is not None
         )
     )
-    return paths, ingests, assertions, pairs
+    byte_values = tuple(
+        sorted(
+            assertion.representation
+            for assertion in byte_assertions or ()
+            if assertion.result == "count" and assertion.representation is not None
+        )
+    )
+    return paths, ingests, assertions, pairs, byte_assertions, byte_values
 
 
 @pytest.fixture(scope="module")
@@ -95,11 +106,40 @@ def book_pair_format_occurrences(measured_book_pairs):
     return interrogate_across(measured_book_pairs[3])
 
 
+@pytest.fixture(scope="module")
+def book_byte_format_comparisons(measured_book_pairs):
+    subjects = measured_book_pairs[5]
+    pairs = tuple(bytes((first, second)) for first in subjects for second in subjects)
+    pair_occurrences = interrogate_across(pairs)
+    found = []
+    for witness, pair_row in zip(COMPILED_WITNESSES, pair_occurrences):
+        pair_returned = {
+            tuple(occurrence.exact_material): occurrence.returned
+            for occurrence in pair_row
+        }
+        comparisons = {
+            (first, second): (
+                tuple(
+                    (pair_returned[first, other], pair_returned[second, other])
+                    for other in subjects
+                ),
+                tuple(
+                    (pair_returned[other, first], pair_returned[other, second])
+                    for other in subjects
+                ),
+            )
+            for position, first in enumerate(subjects)
+            for second in subjects[position + 1 :]
+        }
+        found.append((witness.identity, pair_returned, comparisons))
+    return tuple(found)
+
+
 def _partition(occurrences, coordinate=lambda occurrence: occurrence.coordinates):
     grouped = defaultdict(set)
     for occurrence in occurrences:
         grouped[coordinate(occurrence)].add(occurrence.exact_material)
-    return frozenset(frozenset(members) for members in grouped.values())
+    return frozenset(frozenset(subjects) for subjects in grouped.values())
 
 
 def _partition_shape(partition):
@@ -137,7 +177,7 @@ WITNESSES_AVAILABLE = _witnesses_available()
 
 
 def test_every_current_book_material_has_its_own_ingest(measured_book_pairs):
-    paths, ingests, _, _ = measured_book_pairs
+    paths, ingests, _, _, _, _ = measured_book_pairs
 
     assert len(paths) == len(ingests)
     assert len({ingest.identity for ingest in ingests}) == len(paths)
@@ -147,7 +187,7 @@ def test_every_current_book_material_has_its_own_ingest(measured_book_pairs):
 
 
 def test_pair_material_comes_from_the_complete_recorded_measurement(measured_book_pairs):
-    _, _, assertions, pairs = measured_book_pairs
+    _, _, assertions, pairs, _, _ = measured_book_pairs
     recorded = tuple(
         sorted(
             bytes(assertion.representation)
@@ -160,6 +200,21 @@ def test_pair_material_comes_from_the_complete_recorded_measurement(measured_boo
     assert pairs == recorded
     assert len(pairs) == len(set(pairs))
     assert all(len(pair) == 2 for pair in pairs)
+
+
+def test_byte_subjects_come_from_the_complete_recorded_measurement(measured_book_pairs):
+    _, _, _, _, assertions, subjects = measured_book_pairs
+    recorded = tuple(
+        sorted(
+            assertion.representation
+            for assertion in assertions or ()
+            if assertion.result == "count" and assertion.representation is not None
+        )
+    )
+
+    assert subjects
+    assert subjects == recorded
+    assert len(subjects) == len(set(subjects))
 
 
 @pytest.mark.skipif(not WITNESSES_AVAILABLE, reason="one material witness is absent")
@@ -254,6 +309,43 @@ def test_one_byte_differences_expose_compiled_format_boundaries(
         for first, second in witness_boundaries
     )
     assert len({frozenset(witness_boundaries) for witness_boundaries in boundaries}) > 1
+
+
+def test_every_ordered_pair_is_compared_for_each_compiled_witness(
+    book_byte_format_comparisons, measured_book_pairs
+):
+    subjects = measured_book_pairs[5]
+    expected_pairs = {(first, second) for first in subjects for second in subjects}
+    expected_comparisons = len(subjects) * (len(subjects) - 1) // 2
+
+    for _, pair_returned, comparisons in book_byte_format_comparisons:
+        assert set(pair_returned) == expected_pairs
+        assert len(comparisons) == expected_comparisons
+        assert all(
+            len(outgoing) == len(incoming) == len(subjects)
+            for outgoing, incoming in comparisons.values()
+        )
+
+
+def test_compiled_witnesses_establish_different_pairwise_distinctions(
+    book_byte_format_comparisons,
+):
+    distinctions = tuple(
+        frozenset(
+            pair
+            for pair, directions in comparisons.items()
+            if any(
+                first != second
+                for direction in directions
+                for first, second in direction
+            )
+        )
+        for _, _, comparisons in book_byte_format_comparisons
+    )
+
+    assert len(set(distinctions)) > 1
+    assert any(not distinction for distinction in distinctions)
+    assert any(distinction for distinction in distinctions)
 
 
 def test_compiled_witness_receives_the_exact_material():

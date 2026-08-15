@@ -17,14 +17,14 @@ from decoder_witness_harness import accepts, admissible_followers, classes  # no
 
 def _spans(codec: str) -> dict[tuple[int, int], tuple[object, int]]:
     return {
-        (members[0], members[-1]): (key[0], len(members))
-        for key, members in classes(codec).items()
+        (subjects[0], subjects[-1]): (key[0], len(subjects))
+        for key, subjects in classes(codec).items()
     }
 
 
 def test_one_witness_partitions_every_byte_exactly_once():
     grouped = classes("utf-8")
-    covered = sorted(byte for members in grouped.values() for byte in members)
+    covered = sorted(byte for subjects in grouped.values() for byte in subjects)
 
     assert covered == list(range(256))
     assert len(grouped) == 5
@@ -59,10 +59,10 @@ def test_a_second_witness_partitions_the_same_bytes_differently():
 
     assert len(ascii_) == 2
     accepted_alone = {
-        tuple(members) for key, members in utf8.items() if key[0] == 1
+        tuple(subjects) for key, subjects in utf8.items() if key[0] == 1
     }
     assert accepted_alone == {
-        tuple(members) for key, members in ascii_.items() if key[0] == 1
+        tuple(subjects) for key, subjects in ascii_.items() if key[0] == 1
     }
 
 
@@ -75,7 +75,7 @@ def test_the_witness_refuses_more_than_a_leading_bit_rule_predicts():
     """
 
     refused = next(
-        members for key, members in classes("utf-8").items() if key[0] is None
+        subjects for key, subjects in classes("utf-8").items() if key[0] is None
     )
 
     for byte in (0xC0, 0xC1, *range(0xF5, 0x100)):

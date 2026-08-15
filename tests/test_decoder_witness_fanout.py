@@ -39,7 +39,7 @@ def test_adjacency_names_a_pair_class_read_could_not():
     """A class refused as a first byte still admits followers.
 
     Class read reports 0x80-0xff as refused, which is about first bytes.
-    Adjacency finds that class's members do not agree about following a
+    Adjacency finds that the subjects do not agree about following a
     two-byte first byte, which the earlier measurement had no way to state.
     """
 
@@ -59,7 +59,7 @@ def test_every_witness_on_this_machine_answers_both_ladders():
 
     for name in names[:12]:
         read = classes(name, 4)
-        assert sum(len(members) for members in read.values()) == 256
+        assert sum(len(subjects) for subjects in read.values()) == 256
         assert len(class_adjacency(name, read)) == len(read) ** 2
 
 

@@ -136,15 +136,15 @@ MIXED = "mixed"
 def class_adjacency(
     codec: str, read: dict[object, list[int]]
 ) -> dict[tuple[object, object], str]:
-    """Whether every, no, or some member pair of two classes is accepted.
+    """Whether every, no, or some subject pair of two classes is accepted.
 
     The classes are supplied, not recomputed. This measurement stands on the
     earlier one and cannot run without it: given other classes it reports
     adjacency among those, and given none it reports nothing.
 
-    Every member pair is probed, not one representative each. A representative
+    Every subject pair is probed, not one representative each. A representative
     testifies only for itself: `0x80` and `0xff` are one class under the
-    earlier measurement and behave differently here, so a single member
+    earlier measurement and behave differently here, so a single subject
     reporting for its class would have stated `all` where the truth is `mixed`.
 
     `mixed` is not a failure. It is this measurement finding the earlier
@@ -167,25 +167,23 @@ def class_adjacency(
 
 
 def refine(codec: str, read: dict[object, list[int]]) -> dict[object, list[int]]:
-    """Split each class by how its members behaved, where they behaved apart.
-
-    A class whose members all behaved alike survives preserved. A class the
-    adjacency measurement found mixed decomposes into the members that share
-    an outcome vector.
-
-    The earlier partition is not corrected by this. It was lawful for the
-    act that established it; this is a later act finding it insufficient for a
-    different purpose and establishing a finer one.
-    """
-
-    representatives = [members[0] for members in read.values()]
+    subjects = [
+        byte
+        for bytes_at_one_coordinate in read.values()
+        for byte in bytes_at_one_coordinate
+    ]
+    observed = {
+        (first, second): accepts(codec, (first, second))
+        for first in subjects
+        for second in subjects
+    }
     refined: dict[object, list[int]] = {}
-    for key, members in read.items():
+    for key, bytes_at_one_coordinate in read.items():
         grouped: dict[object, list[int]] = collections.defaultdict(list)
-        for byte in members:
+        for byte in bytes_at_one_coordinate:
             signature = (
-                tuple(accepts(codec, (byte, other)) for other in representatives),
-                tuple(accepts(codec, (other, byte)) for other in representatives),
+                tuple(observed[byte, other] for other in subjects),
+                tuple(observed[other, byte] for other in subjects),
             )
             grouped[signature].append(byte)
         for index, split in enumerate(grouped.values()):
@@ -193,7 +191,7 @@ def refine(codec: str, read: dict[object, list[int]]) -> dict[object, list[int]]
     return refined
 
 
-def climb(codec: str, limit: int = 16) -> list[dict[object, list[int]]]:
+def climb(codec: str) -> list[dict[object, list[int]]]:
     """Every rung, from the first partition to the one that stops moving.
 
     The mechanism is `refinement_climb`, which knows nothing of codecs. What
@@ -201,12 +199,14 @@ def climb(codec: str, limit: int = 16) -> list[dict[object, list[int]]]:
     """
 
     rungs = refinement_climb.climb(
-        [tuple(members) for members in classes(codec, 4).values()],
+        [
+            tuple(bytes_at_one_coordinate)
+            for bytes_at_one_coordinate in classes(codec, 4).values()
+        ],
         lambda first, second: accepts(codec, (first, second)),
-        limit=limit,
     )
     return [
-        {index: list(members) for index, members in enumerate(rung)} for rung in rungs
+        {index: list(subjects) for index, subjects in enumerate(rung)} for rung in rungs
     ]
 
 
@@ -266,17 +266,17 @@ def main() -> int:
     print(f"  witness: the codec named {args.codec!r}")
     print(f"  {'bytes':14}{'count':>7}{'shortest accepted':>19}   followers")
     total = 0
-    for (byte_count, followers), members in sorted(
+    for (byte_count, followers), subjects in sorted(
         grouped.items(), key=lambda item: (item[0][0] is None, item[0][0])
     ):
-        total += len(members)
+        total += len(subjects)
         span = (
-            f"{members[0]:#04x}-{members[-1]:#04x}"
-            if len(members) > 1
-            else f"{members[0]:#04x}"
+            f"{subjects[0]:#04x}-{subjects[-1]:#04x}"
+            if len(subjects) > 1
+            else f"{subjects[0]:#04x}"
         )
         shown = f"{followers[0]:#04x}-{followers[1]:#04x}" if followers else "-"
-        print(f"  {span:14}{len(members):>7}{str(byte_count):>19}   {shown}")
+        print(f"  {span:14}{len(subjects):>7}{str(byte_count):>19}   {shown}")
     print(f"  {'':14}{total:>7}   classes: {len(grouped)}")
     return 0
 

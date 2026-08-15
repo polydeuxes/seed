@@ -60,7 +60,7 @@ def test_the_relation_over_results_is_itself_climbable():
     found = partitions()
     keys = sorted(found, key=len)
 
-    rungs = rc.climb(rc.by(len, keys), refines, limit=64)
+    rungs = rc.climb(rc.by(len, keys), refines)
 
     assert len(rungs) > 1
     assert rc.heights(rungs)[-1] == len(keys)

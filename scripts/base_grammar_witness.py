@@ -1,37 +1,4 @@
 #!/usr/bin/env python3
-"""The three structural edges at the Book's base, as a witness about themselves.
-
-`grammar.json` declares three edges. Asked what separates them, their stated
-requirements do not: all three require exact_relation, occurrence_witness and
-intact_evidence, and nothing else is listed. What differs is where each runs
-from and to.
-
-```text
-  locality       content         -> occurrence
-  participation  subject         -> Act_occurrence
-  yield          Act_occurrence  -> result
-```
-
-Five endpoints, three edges, so twenty-five ordered endpoint pairs of which
-three are linked, and nine ordered edge pairs of which one composes:
-
-```text
-  participation ends at Act_occurrence, where yield begins
-```
-
-**Locality joins nothing.** It ends at `occurrence`, and no edge begins there.
-The Book's prose says Locality is "the exact evidenced relation from content to
-the occurrence that carries it", and separately holds `act occurrence` apart
-from `recording occurrence`, so an Act occurrence reads as one kind of
-occurrence. `grammar.json` states no relation between the two names, so to
-anything read it the graph is disconnected.
-
-**The edges do not separate under composition.** Climbing them by whether one
-ends where another begins yields one class: composition says nothing that
-tells locality from yield. The endpoints climb to five classes in four rungs.
-So the structure such as it is lives in the endpoints, not the edges.
-"""
-
 from __future__ import annotations
 
 import argparse

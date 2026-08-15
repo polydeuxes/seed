@@ -61,16 +61,15 @@ def test_locality_keeps_its_subject_kinds_open():
     assert "Act_occurrence" in endpoints(declared)
 
 
-def test_composition_separates_none_of_the_edges():
-    """A witness that answers False for nearly every pair separates nothing."""
-
+def test_composition_separates_every_edge():
     declared = edges()
     rungs = rc.climb(
         rc.one_class(sorted(declared)),
         lambda a, b: declared[a]["to"] == declared[b]["from"],
     )
 
-    assert rc.heights(rungs) == [1]
+    assert rc.heights(rungs) == [1, 3]
+    assert rc.unseparated(rungs) == []
 
 
 def test_linkage_separates_every_endpoint():
