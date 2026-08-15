@@ -25,7 +25,7 @@ _EMISSION_EDGE_EVIDENCE_KINDS = (
     "operator.yield.evidence_recorded",
 )
 _FAILED_EMISSION_EVIDENCE_KINDS = (
-    "operator.representation.emission_outcome_act_evidenced",
+    "operator.representation.emission_failure_act_evidenced",
     "operator.yield.evidence_recorded",
 )
 _REPRESENTATION_EDGE_EVIDENCE_KINDS = (
@@ -617,7 +617,7 @@ def test_emission_preserves_the_exact_text_written_to_its_boundary():
     assert attempt_locality_evidence.material["attempt_event_identity"] == attempt.identity
     assert "standing" not in attempt.material["dimensions"]
     assert (
-        "output-boundary acceptance remains Unknown until an outcome is recorded"
+        "output-boundary acceptance remains Unknown until Evidence establishes it"
         in attempt.material["unknowns"]
     )
     assert attempt.identity != emission.material["act_occurrence_identity"]
@@ -645,7 +645,7 @@ def test_emission_preserves_the_exact_text_written_to_its_boundary():
     assert yield_evidence.material["dimensions"]["act_occurrence_identity"] == emission.material[
         "act_occurrence_identity"
     ]
-    assert representation["emission_outcome_event_identity"] == emission.identity
+    assert representation["emission_failure_event_identity"] is None
 
 
 def test_partial_output_write_preserves_attempt_and_failed_occurrences():
@@ -674,9 +674,9 @@ def test_partial_output_write_preserves_attempt_and_failed_occurrences():
         "operator.representation.emission_attempt_recorded",
         "operator.representation.emission_attempt_locality_evidenced",
         *_FAILED_EMISSION_EVIDENCE_KINDS,
-        "operator.representation.emission_outcome_recorded",
+        "operator.representation.emission_failure_recorded",
     ]
-    failure = ledger.get(representation["emission_outcome_event_identity"])
+    failure = ledger.get(representation["emission_failure_event_identity"])
     assert failure.material["boundary"] == "text_stream_write"
     assert failure.material["write_count"] == len(
         representation["emission_text"]
@@ -706,7 +706,7 @@ def test_write_exception_preserves_unknown_boundary_acceptance():
         )
 
     assert output.getvalue()
-    failure = ledger.get(representation["emission_outcome_event_identity"])
+    failure = ledger.get(representation["emission_failure_event_identity"])
     assert failure.material["boundary"] == "text_stream_write"
     assert failure.material["write_count"] is None
     assert failure.material["error"] == (
@@ -743,10 +743,10 @@ def test_flush_failure_does_not_erase_the_completed_text_stream_write():
         *_EMISSION_EDGE_EVIDENCE_KINDS,
         "operator.representation.emitted",
         *_FAILED_EMISSION_EVIDENCE_KINDS,
-        "operator.representation.emission_outcome_recorded",
+        "operator.representation.emission_failure_recorded",
     ]
     emitted = ledger.get(representation["emitted_event_identity"])
-    failure = ledger.get(representation["emission_outcome_event_identity"])
+    failure = ledger.get(representation["emission_failure_event_identity"])
     assert emitted.material["output_boundary"] == "text_stream_write"
     assert failure.material["boundary"] == "text_stream_flush"
     assert failure.material["write_count"] == len(representation["emission_text"])
@@ -754,7 +754,7 @@ def test_flush_failure_does_not_erase_the_completed_text_stream_write():
     assert failure.material["error"] == "OSError('flush failed')"
 
 
-def test_process_death_after_attempt_leaves_output_outcome_unknown():
+def test_process_death_after_attempt_leaves_boundary_acceptance_unknown():
     class SimulatedProcessDeath(BaseException):
         pass
 
@@ -783,5 +783,5 @@ def test_process_death_after_attempt_leaves_output_outcome_unknown():
     read = list(_standing(ledger)["representations"].values())[-1]
     assert read["emission_attempt_event_identity"] is not None
     assert read["emission_attempt_locality_evidence_identity"] is not None
-    assert read["emission_outcome_event_identity"] is None
+    assert read["emission_failure_event_identity"] is None
     assert read["emitted_event_identity"] is None

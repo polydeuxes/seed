@@ -99,7 +99,6 @@ BYTE_PAIR_APPLICABILITY_RESULT_COORDINATES = frozenset(
         "input_movement_event_identity",
         "input_role",
         "applicability",
-        "downstream_act_outcome",
     }
 )
 BYTE_PAIR_APPLICABILITY_ACT_EVIDENCE_KIND = (
@@ -1401,7 +1400,6 @@ def _record_pair_input_applicability(
         "input_movement_event_identity": source.locality_movement_event_identity,
         "input_role": BYTE_PAIR_INPUT_ROLE,
         "applicability": applicability_assertion,
-        "downstream_act_outcome": "not established by this Applicability Assertion",
     }
     applicability_act_evidence = ledger.append(
         BYTE_PAIR_APPLICABILITY_ACT_EVIDENCE_KIND,
@@ -1577,8 +1575,6 @@ def get_recorded_pair_input_applicability(
         != SEED_NATIVE_MEASUREMENT_RESPONSIBLE_BOUNDARY
         or material.get("assigned_by_responsibility")
         != BYTE_PAIR_MEASUREMENT_RESPONSIBILITY
-        or material.get("downstream_act_outcome")
-        != "not established by this Applicability Assertion"
     ):
         raise ByteMeasurementError(f"{event_identity} carries incoherent Applicability")
     return json.loads(_canonical(applicability_assertion))

@@ -32,7 +32,7 @@ YIELD_LIVE_BOUNDARIES = frozenset(
         "assertion_locality_movement",
         "bounded_assertion_compare",
         "locality_count_measurement",
-        "failed_emission_outcome",
+        "failed_emission",
         "byte_measurement",
         "byte_pair_applicability",
         "byte_pair_measurement",

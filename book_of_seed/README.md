@@ -44,7 +44,7 @@ The later Standing has the exact result or relation of the occurrence under Yiel
 
 #### Responsible boundary
 
-Identifies who bears and answers for the exact responsibility. It is distinct from the subject addressed, the responsible occurrence, the exact Act, and any separately assigned Standing boundary.
+Identifies the exact boundary bearing the responsibility. It is distinct from the subject addressed, the responsible occurrence, the exact Act, and any separately assigned Standing boundary.
 
 #### Subject or material addressed
 
@@ -67,7 +67,7 @@ Authority
 != Authority carried by an input
 ```
 
-The Authority coordinate may be positively established, conflicting, responsibly Unknown, or unresolved. Absence of a separate Authorization standing does not answer the Authority coordinate.
+The Authority coordinate may be positively established, conflicting, responsibly Unknown, or unresolved. Absence of a separate Authorization standing does not resolve the Authority coordinate.
 
 #### Evidence
 

@@ -18,7 +18,7 @@ from seed_runtime.operator_representation import (
     REPRESENTATION_LOCALITY_EVIDENCE_KIND as _REPRESENTATION_LOCALITY_EVIDENCE_KIND,
     REPRESENTATION_EMISSION_ATTEMPT_KIND as _REPRESENTATION_EMISSION_ATTEMPT_KIND,
     REPRESENTATION_EMITTED_KIND as _REPRESENTATION_EMITTED_KIND,
-    REPRESENTATION_EMISSION_OUTCOME_KIND as _REPRESENTATION_EMISSION_OUTCOME_KIND,
+    REPRESENTATION_EMISSION_FAILURE_KIND as _REPRESENTATION_EMISSION_FAILURE_KIND,
     REPRESENTATION_EMISSION_ACT_EVIDENCE_KIND as _REPRESENTATION_EMISSION_ACT_EVIDENCE_KIND,
     REPRESENTATION_EMISSION_LOCALITY_EVIDENCE_KIND as _REPRESENTATION_EMISSION_LOCALITY_EVIDENCE_KIND,
     REPRESENTATION_EMISSION_ATTEMPT_LOCALITY_EVIDENCE_KIND as _REPRESENTATION_EMISSION_ATTEMPT_LOCALITY_EVIDENCE_KIND,
@@ -34,7 +34,7 @@ _SUPPORTED_KINDS = {
     _REPRESENTATION_LOCALITY_EVIDENCE_KIND,
     _REPRESENTATION_EMISSION_ATTEMPT_KIND,
     _REPRESENTATION_EMITTED_KIND,
-    _REPRESENTATION_EMISSION_OUTCOME_KIND,
+    _REPRESENTATION_EMISSION_FAILURE_KIND,
     _REPRESENTATION_EMISSION_ACT_EVIDENCE_KIND,
     _REPRESENTATION_EMISSION_LOCALITY_EVIDENCE_KIND,
     _REPRESENTATION_EMISSION_ATTEMPT_LOCALITY_EVIDENCE_KIND,
@@ -175,7 +175,7 @@ def advance_operator_locality_standing(
                 "representation_event_identity": event.identity,
                 "emission_attempt_event_identity": None,
                 "emission_attempt_locality_evidence_identity": None,
-                "emission_outcome_event_identity": None,
+                "emission_failure_event_identity": None,
                 "emitted_event_identity": None,
                 "representation_result": material["representation_result"],
                 "emission_text": material["emission_text"],
@@ -247,13 +247,12 @@ def advance_operator_locality_standing(
                     "representation emission does not name its recorded attempt"
                 )
             representations[representation_reference]["emitted_event_identity"] = event.identity
-            representations[representation_reference]["emission_outcome_event_identity"] = event.identity
             continue
-        if event.kind == _REPRESENTATION_EMISSION_OUTCOME_KIND:
+        if event.kind == _REPRESENTATION_EMISSION_FAILURE_KIND:
             representation_reference = event.material["representation_reference"]
             if representation_reference not in representations:
                 raise ValueError(
-                    "representation emission outcome without recorded representation event: "
+                    "representation emission failure without recorded representation event: "
                     f"{representation_reference}"
                 )
             if (
@@ -261,9 +260,9 @@ def advance_operator_locality_standing(
                 != representations[representation_reference]["emission_attempt_event_identity"]
             ):
                 raise ValueError(
-                    "representation emission outcome does not name its recorded attempt"
+                    "representation emission failure does not name its recorded attempt"
                 )
-            representations[representation_reference]["emission_outcome_event_identity"] = event.identity
+            representations[representation_reference]["emission_failure_event_identity"] = event.identity
             continue
         ingest_reference = event.material["dimensions"]["identity"]
         occurrence = {

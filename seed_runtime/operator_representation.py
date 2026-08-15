@@ -15,9 +15,9 @@ REPRESENTATION_RECORDED_KIND = "operator.representation.recorded"
 
 REPRESENTATION_EMISSION_ATTEMPT_KIND = "operator.representation.emission_attempt_recorded"
 REPRESENTATION_EMITTED_KIND = "operator.representation.emitted"
-REPRESENTATION_EMISSION_OUTCOME_KIND = "operator.representation.emission_outcome_recorded"
-REPRESENTATION_EMISSION_OUTCOME_ACT_EVIDENCE_KIND = (
-    "operator.representation.emission_outcome_act_evidenced"
+REPRESENTATION_EMISSION_FAILURE_KIND = "operator.representation.emission_failure_recorded"
+REPRESENTATION_EMISSION_FAILURE_ACT_EVIDENCE_KIND = (
+    "operator.representation.emission_failure_act_evidenced"
 )
 REPRESENTATION_ACT_EVIDENCE_KIND = "operator.representation.act_evidenced"
 REPRESENTATION_LOCALITY_EVIDENCE_KIND = (
@@ -39,8 +39,8 @@ REPRESENTATION_EMISSION_INPUT_ROLE = "exact bounded Representation"
 REPRESENTATION_EMISSION_RESPONSIBILITY = (
     "write one exact Representation to its declared text-stream boundary"
 )
-REPRESENTATION_EMISSION_OUTCOME_RESULT_KIND = "Representation emission boundary result"
-REPRESENTATION_EMISSION_OUTCOME_RESPONSIBILITY = (
+REPRESENTATION_EMISSION_FAILURE_RESULT_KIND = "Representation emission boundary failure result"
+REPRESENTATION_EMISSION_FAILURE_RESPONSIBILITY = (
     "preserve one exact failed Representation emission boundary call"
 )
 EVENT_KIND_RESPONSIBILITIES = {
@@ -52,8 +52,8 @@ EVENT_KIND_RESPONSIBILITIES = {
     REPRESENTATION_EMISSION_ACT_EVIDENCE_KIND: "02.Acts.A",
     REPRESENTATION_EMISSION_LOCALITY_EVIDENCE_KIND: "06.Standing.B",
     REPRESENTATION_EMISSION_ATTEMPT_LOCALITY_EVIDENCE_KIND: "06.Standing.B",
-    REPRESENTATION_EMISSION_OUTCOME_KIND: "02.Acts.A",
-    REPRESENTATION_EMISSION_OUTCOME_ACT_EVIDENCE_KIND: "02.Acts.A",
+    REPRESENTATION_EMISSION_FAILURE_KIND: "02.Acts.A",
+    REPRESENTATION_EMISSION_FAILURE_ACT_EVIDENCE_KIND: "02.Acts.A",
 }
 
 def _dimensions(
@@ -222,7 +222,7 @@ def record_operator_representation(
         "representation_event_identity": representation_event.identity,
         "emission_attempt_event_identity": None,
         "emission_attempt_locality_evidence_identity": None,
-        "emission_outcome_event_identity": None,
+        "emission_failure_event_identity": None,
         "emitted_event_identity": None,
         "locality_standing_as_of_event_identity": locality_standing["as_of_event_identity"],
         "emission_text": result_material["emission_text"],
@@ -352,7 +352,7 @@ def emit_operator_representation(
             "output_boundary": "text_stream_write",
             "known_loss": [],
             "unknowns": [
-                "output-boundary acceptance remains Unknown until an outcome is recorded",
+                "output-boundary acceptance remains Unknown until Evidence establishes it",
                 "effects beyond the output boundary remain Unknown",
             ],
             "conflicts": [],
@@ -388,7 +388,7 @@ def emit_operator_representation(
     try:
         written = output_stream.write(emitted_representation)
     except Exception as error:
-        failed_event = _record_emission_failure_outcome(
+        failed_event = _record_emission_failure(
             ledger,
             representation=representation,
             attempt_event_identity=attempt_event.identity,
@@ -397,11 +397,11 @@ def emit_operator_representation(
             written=None,
             error=error,
         )
-        representation["emission_outcome_event_identity"] = failed_event.identity
+        representation["emission_failure_event_identity"] = failed_event.identity
         raise
 
     if type(written) is not int or written != len(emitted_representation):
-        failed_event = _record_emission_failure_outcome(
+        failed_event = _record_emission_failure(
             ledger,
             representation=representation,
             attempt_event_identity=attempt_event.identity,
@@ -410,7 +410,7 @@ def emit_operator_representation(
             written=written,
             error=None,
         )
-        representation["emission_outcome_event_identity"] = failed_event.identity
+        representation["emission_failure_event_identity"] = failed_event.identity
         raise ValueError("output boundary did not accept the exact representation")
 
     act_occurrence_identity = new_identity("operator_representation_emission_occurrence")
@@ -525,12 +525,11 @@ def emit_operator_representation(
         },
         locality_identity=representation["locality_identity"],
     )
-    representation["emission_outcome_event_identity"] = emitted_event.identity
     representation["emitted_event_identity"] = emitted_event.identity
     try:
         output_stream.flush()
     except Exception as error:
-        failed_event = _record_emission_failure_outcome(
+        failed_event = _record_emission_failure(
             ledger,
             representation=representation,
             attempt_event_identity=attempt_event.identity,
@@ -540,12 +539,12 @@ def emit_operator_representation(
             error=error,
             emitted_event_identity=emitted_event.identity,
         )
-        representation["emission_outcome_event_identity"] = failed_event.identity
+        representation["emission_failure_event_identity"] = failed_event.identity
         raise
     return representation
 
 
-def _record_emission_failure_outcome(
+def _record_emission_failure(
     ledger: EventLedger,
     *,
     representation: dict[str, Any],
@@ -567,11 +566,11 @@ def _record_emission_failure_outcome(
             0,
             "output-boundary acceptance remains Unknown because write reported no count",
         )
-    act_identity = new_identity("operator_representation_emission_outcome_act")
+    act_identity = new_identity("operator_representation_emission_failure_act")
     act_occurrence_identity = new_identity(
-        "operator_representation_emission_outcome_act_occurrence"
+        "operator_representation_emission_failure_act_occurrence"
     )
-    result_identity = new_identity("operator_representation_emission_outcome_result")
+    result_identity = new_identity("operator_representation_emission_failure_result")
     result_material = {
             "result_identity": result_identity,
             "downstream_act_identity": act_identity,
@@ -581,7 +580,7 @@ def _record_emission_failure_outcome(
             "representation_event_identity": representation["representation_event_identity"],
             "emitted_event_identity": emitted_event_identity,
             "dimensions": _dimensions(
-                identity=f"emission-outcome:{attempt_event_identity}:{boundary}",
+                identity=f"emission-failure:{attempt_event_identity}:{boundary}",
                 content=f"{boundary} did not complete the emission call",
                 source=attempt_event_identity,
                 responsibility=REPRESENTATION_EMISSION_RESPONSIBILITY,
@@ -606,12 +605,12 @@ def _record_emission_failure_outcome(
             ],
         }
     act_evidence = ledger.append(
-        REPRESENTATION_EMISSION_OUTCOME_ACT_EVIDENCE_KIND,
+        REPRESENTATION_EMISSION_FAILURE_ACT_EVIDENCE_KIND,
         {
             "downstream_act_identity": act_identity,
             "act_occurrence_identity": act_occurrence_identity,
             "act": "failed Representation emission boundary call",
-            "responsibility": REPRESENTATION_EMISSION_OUTCOME_RESPONSIBILITY,
+            "responsibility": REPRESENTATION_EMISSION_FAILURE_RESPONSIBILITY,
             "responsible_boundary": "this Seed",
             "authority": "unestablished",
             "evidence_scope": (
@@ -626,16 +625,16 @@ def _record_emission_failure_outcome(
         exact_act="failed Representation emission boundary call",
         act_occurrence_identity=act_occurrence_identity,
         responsible_act_evidence_identity=act_evidence.identity,
-        result_kind=REPRESENTATION_EMISSION_OUTCOME_RESULT_KIND,
+        result_kind=REPRESENTATION_EMISSION_FAILURE_RESULT_KIND,
         result_identity=result_identity,
         result_content=result_material,
-        responsibility=REPRESENTATION_EMISSION_OUTCOME_RESPONSIBILITY,
-        live_boundary="failed_emission_outcome",
+        responsibility=REPRESENTATION_EMISSION_FAILURE_RESPONSIBILITY,
+        live_boundary="failed_emission",
         responsible_boundary="this Seed",
         recorded_result_coordinates={key: (key,) for key in result_material},
     )
     return ledger.append(
-        REPRESENTATION_EMISSION_OUTCOME_KIND,
+        REPRESENTATION_EMISSION_FAILURE_KIND,
         {
             **result_material,
             "responsible_act_evidence_identity": act_evidence.identity,

@@ -476,9 +476,9 @@ class SQLiteEventLedger(EventLedger):
         "locality_count_measurement_act",
         "locality_count_measurement_act_occurrence",
         "locality_count_measurement_result",
-        "operator_representation_emission_outcome_act",
-        "operator_representation_emission_outcome_act_occurrence",
-        "operator_representation_emission_outcome_result",
+        "operator_representation_emission_failure_act",
+        "operator_representation_emission_failure_act_occurrence",
+        "operator_representation_emission_failure_result",
     })
 
     def __init__(self, database_path: str) -> None:

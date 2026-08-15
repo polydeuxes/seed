@@ -46,8 +46,6 @@ analytical
 analyze
 and
 another
-answer
-answers
 any
 applicability
 applicable
@@ -527,7 +525,6 @@ original
 other
 others
 otherwise
-outcome
 output
 outside
 over
@@ -831,7 +828,6 @@ where
 whether
 which
 while
-who
 whose
 widen
 with

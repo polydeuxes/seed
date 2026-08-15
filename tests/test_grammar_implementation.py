@@ -276,7 +276,7 @@ def _failed_emission_yield_witness() -> dict:
         )
     except ValueError:
         pass
-    event = ledger.get(representation["emission_outcome_event_identity"])
+    event = ledger.get(representation["emission_failure_event_identity"])
     return _yield_bundle(ledger, event)
 
 
@@ -1583,7 +1583,7 @@ def _remaining_yield_requirement_bundles() -> dict[str, dict[str, dict]]:
         "assertion_locality_movement": _assertion_locality_movement_yield_witness,
         "bounded_assertion_compare": _bounded_assertion_compare_yield_witness,
         "locality_count_measurement": _locality_count_yield_witness,
-        "failed_emission_outcome": _failed_emission_yield_witness,
+        "failed_emission": _failed_emission_yield_witness,
         "material_ingest": _material_ingest_yield_witness,
         "preserved_material_measurement": _preserved_material_yield_witness,
         "recorded_finding_yield_compare": _recorded_finding_compare_yield_witness,
@@ -3138,7 +3138,7 @@ def test_unrelated_yield_occurrences_do_not_share_result_identity():
         "assertion_locality_movement": _assertion_locality_movement_yield_witness,
         "bounded_assertion_compare": _bounded_assertion_compare_yield_witness,
         "locality_count_measurement": _locality_count_yield_witness,
-        "failed_emission_outcome": _failed_emission_yield_witness,
+        "failed_emission": _failed_emission_yield_witness,
         "material_ingest": _material_ingest_yield_witness,
         "preserved_material_measurement": _preserved_material_yield_witness,
         "recorded_finding_yield_compare": _recorded_finding_compare_yield_witness,
