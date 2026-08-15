@@ -132,8 +132,7 @@ def test_moving_an_occurrence_between_sessions_is_detected(ledger, path):
 @pytest.mark.parametrize(
     "column,value",
     [("identity", "evt_999999"), ("kind", "other"),
-     ("timestamp", "1999-01-01T00:00:00"),
-     ("causation_identity", "evt_x"), ("correlation_identity", "evt_y")],
+     ("timestamp", "1999-01-01T00:00:00")],
 )
 def test_every_persisted_field_is_covered(ledger, path, column, value):
     event = ledger.append("k", {"a": 1}, locality_identity="s")
@@ -235,12 +234,11 @@ def _incomplete_store(path, rows=1):
     con = sqlite3.connect(path)
     con.execute(
         "CREATE TABLE events (identity TEXT PRIMARY KEY, kind TEXT NOT NULL, "
-        "timestamp TEXT NOT NULL, payload TEXT NOT NULL, locality_identity TEXT, "
-        "causation_identity TEXT, correlation_identity TEXT)"
+        "timestamp TEXT NOT NULL, payload TEXT NOT NULL, locality_identity TEXT)"
     )
     for i in range(rows):
         con.execute(
-            "INSERT INTO events VALUES (?,'k','2026-01-01T00:00:00','{}','s',NULL,NULL)",
+            "INSERT INTO events VALUES (?,'k','2026-01-01T00:00:00','{}','s')",
             (f"evt_{i:06d}",),
         )
     con.commit()
@@ -267,12 +265,12 @@ def test_a_nullable_schema_holding_an_undigested_row_is_refused(path):
     con = sqlite3.connect(path)
     con.execute(
         "CREATE TABLE events (identity TEXT PRIMARY KEY, kind TEXT NOT NULL, "
-        "timestamp TEXT NOT NULL, payload TEXT NOT NULL, locality_identity TEXT, causation_identity TEXT, "
-        "correlation_identity TEXT, content_hash TEXT)"
+        "timestamp TEXT NOT NULL, payload TEXT NOT NULL, locality_identity TEXT, "
+        "content_hash TEXT)"
     )
     con.execute(
         "INSERT INTO events VALUES ('evt_000001','k','2026-01-01T00:00:00',"
-        "'{}','s',NULL,NULL,NULL)"
+        "'{}','s',NULL)"
     )
     con.commit()
     con.close()
@@ -427,14 +425,14 @@ def test_a_nullable_digest_schema_is_refused_even_when_fully_digested(path):
     con = sqlite3.connect(path)
     con.execute(
         "CREATE TABLE events (identity TEXT PRIMARY KEY, kind TEXT NOT NULL, "
-        "timestamp TEXT NOT NULL, payload TEXT NOT NULL, locality_identity TEXT, causation_identity TEXT, "
-        "correlation_identity TEXT, content_hash TEXT)"
+        "timestamp TEXT NOT NULL, payload TEXT NOT NULL, locality_identity TEXT, "
+        "content_hash TEXT)"
     )
     row = {"identity": "evt_000001", "kind": "k",
            "timestamp": "2026-01-01T00:00:00", "payload": "{}", "locality_identity": "s",
-           "causation_identity": None, "correlation_identity": None}
+           }
     con.execute(
-        "INSERT INTO events VALUES (?,?,?,?,?,?,?,?)",
+        "INSERT INTO events VALUES (?,?,?,?,?,?)",
         tuple(row.values()) + (_content_digest(row),),
     )
     con.commit()
@@ -792,7 +790,7 @@ def test_a_digest_does_not_move_when_a_payload_is_compressed(tmp_path):
         row = {
             "identity": "evt_1", "kind": "k",
             "timestamp": "2026-01-01T00:00:00+00:00", "payload": serialized,
-            "locality_identity": None, "causation_identity": None, "correlation_identity": None,
+            "locality_identity": None,
         }
         digest = _content_digest(row)
         stored = _stored_payload(serialized)

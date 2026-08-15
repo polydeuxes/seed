@@ -196,9 +196,9 @@ def test_a_writer_without_prefix_maintenance_is_refused(tmp_path):
     connection = sqlite3.connect(path)
     with pytest.raises(sqlite3.OperationalError, match="seed_prefix_writer"):
         connection.execute(
-            "INSERT INTO events VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+            "INSERT INTO events VALUES (?, ?, ?, ?, ?, ?)",
             ("foreign", "k", "2026-01-01T00:00:00+00:00", "{}",
-             None, None, None, "not-relevant"),
+             None, "not-relevant"),
         )
     connection.close()
 
@@ -334,7 +334,7 @@ def test_a_digest_requires_every_recorded_field():
     complete = {
         "identity": "e", "kind": "k",
         "timestamp": "2026-01-01T00:00:00+00:00", "payload": "{}",
-        "locality_identity": None, "causation_identity": None, "correlation_identity": None,
+        "locality_identity": None,
     }
     assert _content_digest(complete)
 

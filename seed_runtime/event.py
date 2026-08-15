@@ -136,5 +136,3 @@ class Event(SeedModel):
     timestamp: datetime = Field(default_factory=utc_now)
     payload: dict[str, Any] = Field(default_factory=dict)
     locality_identity: str | None = None
-    causation_identity: str | None = None
-    correlation_identity: str | None = None

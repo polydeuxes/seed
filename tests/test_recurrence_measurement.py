@@ -1287,8 +1287,6 @@ def test_every_probe_and_pass_reads_one_prefix_despite_a_concurrent_append(compa
                 comparison.kind,
                 payload,
                 locality_identity=comparison.locality_identity,
-                causation_identity=comparison.causation_identity,
-                correlation_identity=comparison.correlation_identity,
             )
         yield from original_iterator(
             locality_identity, kind, through=through

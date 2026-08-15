@@ -59,8 +59,6 @@ class LedgerIntegrityError(Exception):
 # boundary keeping bounded localities apart.
 _OCCURRENCE_FIELDS = (
     "identity", "kind", "timestamp", "payload", "locality_identity",
-    "causation_identity",
-    "correlation_identity",
 )
 
 
@@ -198,8 +196,6 @@ def _canonical_occurrence_bytes(event: Event) -> bytes:
         "timestamp": event.timestamp.isoformat(),
         "payload": event.payload,
         "locality_identity": event.locality_identity,
-        "causation_identity": event.causation_identity,
-        "correlation_identity": event.correlation_identity,
     }
     return json.dumps(
         represented, sort_keys=True, separators=(",", ":")
@@ -244,8 +240,6 @@ class EventLedger:
         payload: dict[str, Any] | None = None,
         *,
         locality_identity: str | None = None,
-        causation_identity: str | None = None,
-        correlation_identity: str | None = None,
     ) -> Event:
         """Record an event and return the stored event."""
         event = Event(
@@ -253,8 +247,6 @@ class EventLedger:
             kind=kind,
             payload=payload or {},
             locality_identity=locality_identity,
-            causation_identity=causation_identity,
-            correlation_identity=correlation_identity,
         )
         self._store(event)
         return event
@@ -483,8 +475,6 @@ class SQLiteEventLedger(EventLedger):
                 timestamp TEXT NOT NULL,
                 payload TEXT NOT NULL,
                 locality_identity TEXT,
-                causation_identity TEXT,
-                correlation_identity TEXT,
                 content_hash TEXT NOT NULL
             )
             """)
@@ -598,16 +588,12 @@ class SQLiteEventLedger(EventLedger):
         payload: dict[str, Any] | None = None,
         *,
         locality_identity: str | None = None,
-        causation_identity: str | None = None,
-        correlation_identity: str | None = None,
     ) -> Event:
         event = Event(
             identity=self._new_event_identity(),
             kind=kind,
             payload=payload or {},
             locality_identity=locality_identity,
-            causation_identity=causation_identity,
-            correlation_identity=correlation_identity,
         )
         self._insert(event)
         return event
@@ -951,8 +937,8 @@ class SQLiteEventLedger(EventLedger):
     def _insert_without_commit(self, event: Event) -> int:
         cursor = self._connection.execute(
             """
-            INSERT INTO events (identity, kind, timestamp, payload, locality_identity, causation_identity, correlation_identity, content_hash)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+            INSERT INTO events (identity, kind, timestamp, payload, locality_identity, content_hash)
+            VALUES (?, ?, ?, ?, ?, ?)
             """,
             self._row_values(event),
         )
@@ -1028,8 +1014,6 @@ class SQLiteEventLedger(EventLedger):
             "timestamp": event.timestamp.isoformat(),
             "payload": json.dumps(event.payload),
             "locality_identity": event.locality_identity,
-            "causation_identity": event.causation_identity,
-            "correlation_identity": event.correlation_identity,
         }
         # The digest is taken from the canonical string, then the payload is
         # replaced by its stored representation. Compression therefore cannot move a
@@ -1065,8 +1049,6 @@ class SQLiteEventLedger(EventLedger):
             timestamp=datetime.fromisoformat(row["timestamp"]),
             payload=payload,
             locality_identity=row["locality_identity"],
-            causation_identity=row["causation_identity"],
-            correlation_identity=row["correlation_identity"],
         )
 
     def _new_event_identity(self) -> str:
