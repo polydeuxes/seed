@@ -98,6 +98,54 @@ def test_checkpoint_alone_divides_locality_at_the_last_representation():
     ] == [b"after\n"]
 
 
+def test_checkpoint_carries_one_representation_reference_not_source_locality_occurrences():
+    ledger = _run(b"one\ntwo\n/checkpoint\nafter\n")
+    evidence = next(
+        event
+        for event in ledger.list()
+        if event.kind == ADDRESSED_REPRESENTATION_LOCALITY_EVIDENCE_KIND
+    )
+    source_occurrences = {
+        event.identity for event in ledger.list_locality("root-locality")
+    }
+    destination_occurrences = ledger.list_locality(evidence.locality_identity)
+
+    def referenced_identities(material):
+        if isinstance(material, dict):
+            return {
+                identity
+                for value in material.values()
+                for identity in referenced_identities(value)
+            }
+        if isinstance(material, list):
+            return {
+                identity
+                for value in material
+                for identity in referenced_identities(value)
+            }
+        return {material} if isinstance(material, str) else set()
+
+    source_references = {
+        identity
+        for event in destination_occurrences
+        for identity in referenced_identities(event.material)
+        if identity in source_occurrences
+    }
+
+    assert source_references == {evidence.material["second_subject"]}
+    first_destination_representation = next(
+        event
+        for event in destination_occurrences
+        if event.kind == "operator.representation.recorded"
+    )
+    assert (
+        first_destination_representation.material[
+            "locality_standing_as_of_event_identity"
+        ]
+        is None
+    )
+
+
 def test_repeated_checkpoints_preserve_one_exact_checkpoint_chain():
     ledger = _run(b"/checkpoint\n/checkpoint\n")
     evidence = [
