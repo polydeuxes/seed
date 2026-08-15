@@ -185,6 +185,47 @@ def test_admission_compare_preserves_both_results_and_its_exact_result():
     assert reverse.result is False
     assert forward.act_occurrence_identity != reverse.act_occurrence_identity
     assert forward.result_identity != reverse.result_identity
+    assert forward.result_reference.act_occurrence_identity == (
+        forward.act_occurrence_identity
+    )
+    assert forward.result_reference.result_identity == forward.result_identity
+    assert forward.result_reference.first_reference == fine.result_reference
+    assert forward.result_reference.second_reference == broad.result_reference
+    assert forward.result_reference.result is True
+
+
+def test_equal_compare_results_keep_distinct_result_references():
+    fine = material_admission.admission_occurrence(
+        (("a",), ("b",)),
+        boundary_identity="fine-admission",
+    )
+    broad = material_admission.admission_occurrence(
+        (("a", "b"),),
+        boundary_identity="broad-admission",
+    )
+    first = material_admission.compare_admission_results(
+        fine.result_reference,
+        broad.result_reference,
+        boundary_identity="first-compare",
+    )
+    second = material_admission.compare_admission_results(
+        fine.result_reference,
+        broad.result_reference,
+        boundary_identity="second-compare",
+    )
+
+    assert first.result_reference.result is second.result_reference.result is True
+    assert first.result_reference.act_occurrence_identity != (
+        second.result_reference.act_occurrence_identity
+    )
+    assert first.result_reference.result_identity != (
+        second.result_reference.result_identity
+    )
+
+
+def test_compare_result_reference_refuses_something_other_than_its_occurrence():
+    with pytest.raises(TypeError, match="exact Act occurrence"):
+        material_admission.AdmissionCompareResultReference(object())
 
 
 def test_admission_compare_refuses_different_material_occurrences():

@@ -92,6 +92,35 @@ class AdmissionOccurrence:
 
 
 @dataclass(frozen=True, slots=True)
+class AdmissionCompareResultReference:
+    compare_occurrence: "AdmissionCompareOccurrence"
+
+    def __post_init__(self) -> None:
+        if not isinstance(self.compare_occurrence, AdmissionCompareOccurrence):
+            raise TypeError("Compare result requires its exact Act occurrence")
+
+    @property
+    def act_occurrence_identity(self) -> tuple[str, int]:
+        return self.compare_occurrence.act_occurrence_identity
+
+    @property
+    def result_identity(self) -> tuple[str, int, str]:
+        return self.compare_occurrence.result_identity
+
+    @property
+    def first_reference(self) -> AdmissionResultReference:
+        return self.compare_occurrence.first_reference
+
+    @property
+    def second_reference(self) -> AdmissionResultReference:
+        return self.compare_occurrence.second_reference
+
+    @property
+    def result(self) -> bool:
+        return self.compare_occurrence.result
+
+
+@dataclass(frozen=True, slots=True)
 class AdmissionCompareOccurrence:
     boundary_identity: str
     occurrence_position: int
@@ -132,6 +161,10 @@ class AdmissionCompareOccurrence:
     @property
     def result_identity(self) -> tuple[str, int, str]:
         return (self.boundary_identity, self.occurrence_position, "result")
+
+    @property
+    def result_reference(self) -> AdmissionCompareResultReference:
+        return AdmissionCompareResultReference(compare_occurrence=self)
 
 
 def one_admission(material: Iterable[Material]) -> Admission:
