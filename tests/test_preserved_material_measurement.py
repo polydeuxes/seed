@@ -46,7 +46,6 @@ from seed_runtime.preserved_material_measurement import (
     measure_occupancy,
     measure_recurrence,
     measure_recurrences,
-    premise_chain,
     ingest_occurrences,
     record_measurement_finding,
 )
@@ -188,63 +187,12 @@ def test_a_recorded_finding_may_participate_in_a_later_act(locality, occurrences
     assert read.material["occupancies"]
 
 
-def test_a_finding_standing_on_another_preserves_which(locality, occurrences):
-    first = record_measurement_finding(
-        locality,
-        locality_identity="s",
-        finding=measure_occupancy(
-            occurrences, declared=_declared(), occupant_of=_first_word
-        ),
-    )
-    second = record_measurement_finding(
-        locality,
-        locality_identity="s",
-        finding=measure_occupancy(
-            occurrences,
-            declared=_declared(premise_event_identity=first.identity),
-            occupant_of=_after_delimiter,
-        ),
-    )
-    assert second.material["premise_event_identity"] == first.identity
-    assert first.identity in second.material["provenance_occurrence_references"]
-    assert premise_chain(locality, second.identity) == [first.identity]
-
-
-def test_a_premise_must_itself_be_a_recorded_finding(locality, occurrences):
-    finding = measure_occupancy(
-        occurrences,
-        declared=_declared(premise_event_identity="evt_absent"),
-        occupant_of=_first_word,
-    )
-    with pytest.raises(PreservedMaterialMeasurementError):
-        record_measurement_finding(
-            locality, locality_identity="s", finding=finding
-        )
-
-
-def test_a_finding_without_a_premise_records_none(locality, occurrences):
-    event = record_measurement_finding(
-        locality,
-        locality_identity="s",
-        finding=measure_occupancy(
-            occurrences, declared=_declared(), occupant_of=_first_word
-        ),
-    )
-    assert event.material["premise_event_identity"] is None
-    assert premise_chain(locality, event.identity) == []
-
-
 # --------------------------------------------------------------------------
 # The ladder, and what it does not become.
 # --------------------------------------------------------------------------
 
 
-def test_a_premise_that_bounds_a_position_sharpens_the_next_finding(occurrences):
-    """`#2387`'s measured result, at this module's scale.
-
-    This is not a Assertion that premises always sharpen. It records that the
-    same material measured at two representations yields different concentrations.
-    """
+def test_distinct_measurements_yield_distinct_bounded_counts(occurrences):
     unbounded = measure_occupancy(
         occurrences, declared=_declared(), occupant_of=_first_word
     )
@@ -284,7 +232,6 @@ def test_the_finding_disclaims_what_a_dominant_occupant_is_not(locality, occurre
     limit_material = " ".join(event.material["limits"])
     assert "is not the represented relation of that position" in limit_material
     assert "establishes no relation" in limit_material
-    assert "not stronger than a finding without one" in limit_material
 
 
 def test_recording_a_finding_does_not_disturb_the_measured_occurrences(
@@ -396,12 +343,11 @@ def _counts(target):
     return lambda text: text.split().count(target)
 
 
-def _recurrence_declared(target, premise_event_identity=None):
+def _recurrence_declared(target):
     return DeclaredMeasurement(
         representation_measured=target,
         equivalence_rule="exact equality between whitespace-separated tokens",
         counting_scope="preserved operator-ingest occurrences of this locality",
-        premise_event_identity=premise_event_identity,
     )
 
 
@@ -517,31 +463,6 @@ def test_a_recurrence_finding_records_through_the_existing_path(
     assert event.material["equivalence_rule"].startswith("exact equality")
     assert event.material["counting_scope"].startswith("preserved operator-ingest")
     assert event.material["input_event_identities"] == [e.identity for e in occurrences]
-
-
-def test_a_recurrence_finding_may_stand_on_a_premise(recurrence_occurrences):
-    ledger, occurrences = recurrence_occurrences
-    first = record_measurement_finding(
-        ledger,
-        locality_identity="r",
-        finding=measure_recurrence(
-            occurrences,
-            declared=_recurrence_declared("the"),
-            occurrences_of=_counts("the"),
-        yield_in=(ledger, "r"),
-    ),
-    )
-    second = record_measurement_finding(
-        ledger,
-        locality_identity="r",
-        finding=measure_recurrence(
-            occurrences,
-            declared=_recurrence_declared("cat", premise_event_identity=first.identity),
-            occurrences_of=_counts("cat"),
-        yield_in=(ledger, "r"),
-    ),
-    )
-    assert premise_chain(ledger, second.identity) == [first.identity]
 
 
 # --------------------------------------------------------------------------

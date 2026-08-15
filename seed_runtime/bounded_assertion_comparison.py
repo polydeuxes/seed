@@ -34,7 +34,6 @@ from seed_runtime.event import Event
 from seed_runtime.identities import new_identity
 from seed_runtime.preserved_material_measurement import (
     MEASUREMENT_RECORDED_KIND,
-    premise_chain,
 )
 from seed_runtime.yield_evidence import _record_yield_evidence
 
@@ -71,6 +70,7 @@ INPUT_COORDINATES: dict[str, tuple[str, ...]] = {
     "unknowns": ("unknowns",),
     "standing": ("dimensions", "standing"),
     "limits": ("limits",),
+    "input_support": ("input_support",),
 }
 
 # This is not an enum; more than one relation may remain established.
@@ -98,14 +98,12 @@ class PreservedInput:
     event_identity: str
     carried: dict[str, Any]
     absent: tuple[str, ...]
-    input_support: tuple[str, ...]
 
     def to_json_dict(self) -> dict[str, Any]:
         return {
             "event_identity": self.event_identity,
             "carried": dict(self.carried),
             "coordinates_absent": list(self.absent),
-            "input_support": list(self.input_support),
         }
 
 
@@ -154,7 +152,7 @@ def _read(material: dict[str, Any], path: tuple[str, ...]) -> Any:
     return value
 
 
-def _preserve(ledger: EventLedger, event: Event) -> PreservedInput:
+def _preserve(event: Event) -> PreservedInput:
     carried: dict[str, Any] = {}
     absent: list[str] = []
     for coordinate, path in INPUT_COORDINATES.items():
@@ -171,7 +169,6 @@ def _preserve(ledger: EventLedger, event: Event) -> PreservedInput:
         event_identity=event.identity,
         carried=carried,
         absent=tuple(absent),
-        input_support=tuple(premise_chain(ledger, event.identity)),
     )
 
 
@@ -229,7 +226,7 @@ def compare_preserved_findings(
             )
         events.append(event)
 
-    inputs = tuple(_preserve(ledger, event) for event in events)
+    inputs = tuple(_preserve(event) for event in events)
 
     distinctions: list[Distinction] = []
     for coordinate, field in (

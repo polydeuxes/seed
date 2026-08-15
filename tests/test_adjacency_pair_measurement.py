@@ -39,7 +39,6 @@ from seed_runtime.preserved_material_measurement import (
     Occupancy,
     PreservedMaterialMeasurementError,
     measure_occupancy,
-    premise_chain,
     ingest_occurrences,
     record_measurement_finding,
 )

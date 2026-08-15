@@ -33,11 +33,6 @@ bounded comparison may have as input preserved findings "only while preserving e
 input source coordinates, provenance, support support, subject, scope, authority,
 confidence or uncertainty, Unknowns, standing, and forbidden inferences".
 
-**A finding may stand on an earlier finding.** `premise_event_identity` records which,
-so what a finding depended on travels with it. `#2387` measured why this
-matters: the same measurement yields 3.0% with no premise and 88.1% standing on
-one that bounds a position.
-
 Nothing here establishes represented relation, relation, truth, or any standing beyond the
 measurement assertion. `01.Standing.D` refuses relation standing to co-presence,
 and co-presence is what a finding reports.
@@ -95,8 +90,6 @@ LIMITS: tuple[str, ...] = (
     "Recurrence establishes that a representation occurs more than once only.",
     "A highest-count occupant of a position is not the represented relation of that position.",
     "Co-presence of representations establishes no relation (01.Standing.D).",
-    "A finding standing on a premise is not stronger than a finding without one.",
-    "The premise is preserved so the finding cannot be read independently of it.",
     "This yields no represented relation, relation, truth, applicability, or admission.",
 )
 
@@ -107,7 +100,7 @@ class PreservedMaterialMeasurementError(ValueError):
 
 @dataclass(frozen=True)
 class DeclaredMeasurement:
-    """The three disclosures `01.Source:28` requires, plus the premise.
+    """The three disclosures `01.Source:28` requires.
 
     `representation_measured`, `equivalence_rule`, and `counting_scope` are the
     clause's own words. They are required because the clause requires them, and
@@ -117,7 +110,6 @@ class DeclaredMeasurement:
     representation_measured: str
     equivalence_rule: str
     counting_scope: str
-    premise_event_identity: str | None = None
     # The representation this measurement measured relative to, when it had
     # one.  A finding can only supply an representation to a later measurement if it
     # records the representation it used, so this is what makes a finding
@@ -198,7 +190,6 @@ class MeasurementFinding:
             "representation_measured": self.declared.representation_measured,
             "equivalence_rule": self.declared.equivalence_rule,
             "counting_scope": self.declared.counting_scope,
-            "premise_event_identity": self.declared.premise_event_identity,
             "measured_left_representation": self.declared.measured_after,
             "measurement_distinction": self.declared.distinction,
             "measured_relative_to": list(self.declared.relative_to),
@@ -298,7 +289,6 @@ class RecurrenceFinding:
             "representation_measured": self.declared.representation_measured,
             "equivalence_rule": self.declared.equivalence_rule,
             "counting_scope": self.declared.counting_scope,
-            "premise_event_identity": self.declared.premise_event_identity,
             "measurement_distinction": "recurrence",
             "input_localities": list(self.input_localities),
             "occurrences_carrying": self.occurrences_carrying,
@@ -858,11 +848,6 @@ def _measurement_finding_material(
         "unknowns": ["what any measured representation means remains Unknown"],
         **carried,
         **_additive_only(finding, carried, extra),
-        "provenance_occurrence_references": (
-            [finding.declared.premise_event_identity]
-            if finding.declared.premise_event_identity
-            else []
-        ),
     }
 
 
@@ -875,25 +860,6 @@ def record_measurement_findings(
     """Preserve a bounded group of findings in one ledger transaction."""
 
     supplied = list(findings)
-    premise_identities = {
-        finding.declared.premise_event_identity
-        for finding, _ in supplied
-        if finding.declared.premise_event_identity is not None
-    }
-    for premise_identity in premise_identities:
-        premise = ledger.get(premise_identity)
-        if premise is None or premise.kind != MEASUREMENT_RECORDED_KIND:
-            raise PreservedMaterialMeasurementError(
-                "a premise must be a recorded measurement finding"
-            )
-    # Every recorded finding states `source_provenance` as "preserved
-    # operator-ingest occurrences". Premises were established here and the
-    # occurrences that Assertion were made about never were, so a finding measured
-    # over directly supplied `Event` objects recorded that provenance about
-    # material this ledger does not hold. `#2510` enforced that at the input
-    # boundary only where a support support was declared; a measurement without
-    # one reached the recorder unchecked.
-    #
     # Carrying a support is not being verified against one: both
     # `RecurrenceFinding` and `InputSupport` are directly formable, and a
     # finding verified against one ledger may be handed to another. This
@@ -982,24 +948,3 @@ def record_measurement_finding(
         locality_identity=locality_identity,
         findings=((finding, extra),),
     )[0]
-
-
-def premise_chain(ledger: EventLedger, event_identity: str) -> list[str]:
-    """Every finding this one stood on, nearest premise first.
-
-    Not the runtime's `InputSupport` representation. This is the chain of
-    recorded premise findings one finding stood on, validated nearest premise
-    first. It preserves that dependency relation and asserts nothing about the
-    yielding act's support support; the prose called it that before the two
-    were distinguished and kept calling it that after.
-    """
-
-    chain: list[str] = []
-    current = ledger.get(event_identity)
-    while current is not None:
-        premise_identity = current.material.get("premise_event_identity")
-        if premise_identity is None:
-            break
-        chain.append(premise_identity)
-        current = ledger.get(premise_identity)
-    return chain

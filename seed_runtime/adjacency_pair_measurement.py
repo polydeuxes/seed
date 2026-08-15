@@ -1443,7 +1443,6 @@ def measure_at_displacement(
     displacement: int,
     direction: str = "after",
     counting_scope: str,
-    premise_event_identity: str | None = None,
 ) -> MeasurementFinding:
     """Count what occupies one stated displacement from one representation.
 
@@ -1477,7 +1476,6 @@ def measure_at_displacement(
             ),
             equivalence_rule=EQUIVALENCE_RULE,
             counting_scope=counting_scope,
-            premise_event_identity=premise_event_identity,
             measured_after=representation,
             distinction=direction,
             relative_to=(representation,),
@@ -1496,7 +1494,6 @@ def measure_after(
     representation: str,
     *,
     counting_scope: str,
-    premise_event_identity: str | None = None,
 ) -> MeasurementFinding:
     """Count what occupies the position immediately after a representation.
 
@@ -1511,5 +1508,4 @@ def measure_after(
         displacement=1,
         direction="after",
         counting_scope=counting_scope,
-        premise_event_identity=premise_event_identity,
     )

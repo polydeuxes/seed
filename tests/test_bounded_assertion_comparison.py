@@ -29,9 +29,12 @@ from seed_runtime.bounded_assertion_comparison import (
 from seed_runtime.events import EventLedger
 from seed_runtime.adjacency_pair_measurement import measure_after
 from seed_runtime.preserved_material_measurement import (
+    DeclaredMeasurement,
     ingest_occurrences,
+    measure_recurrences,
     record_measurement_finding,
 )
+from seed_runtime.input_support import InputSupportValidator, declare_input_support
 from tests.material_fixture_console import run_material_fixture_console
 
 BODIES = {
@@ -138,16 +141,37 @@ def test_an_absent_coordinate_is_named_and_not_supplied(ledger):
     assert "confidence_or_uncertainty" in INPUT_COORDINATES
 
 
-def test_the_input_support_travels_with_its_input(ledger):
-    seed = _finding(ledger, "s1")
+def test_exact_input_support_travels_with_its_input(ledger):
     occurrences = ingest_occurrences(ledger, locality_identity="s1")
-    standing_on = record_measurement_finding(
-        ledger, locality_identity="s1",
-        finding=measure_after(occurrences, "is", counting_scope=SCOPE, premise_event_identity=seed.identity))
+    support = declare_input_support(
+        locality_identity="s1",
+        occurrence_kind=occurrences[0].kind,
+        boundary=ledger.append_boundary(),
+        occurrence_references=[event.identity for event in occurrences],
+    )
+    supported = measure_recurrences(
+        occurrences,
+        declared={
+            "a": DeclaredMeasurement(
+                representation_measured="a",
+                equivalence_rule="exact equality",
+                counting_scope=SCOPE,
+            )
+        },
+        counts_in=lambda material: {"a": material.count("a")},
+        input_support=support,
+        support_validator=InputSupportValidator(ledger),
+        yield_in=(ledger, "s1"),
+    )[0]
+    recorded = record_measurement_finding(
+        ledger,
+        locality_identity="s1",
+        finding=supported,
+    )
     other = _finding(ledger, "s2")
-    finding = compare_preserved_findings(ledger, [standing_on.identity, other.identity])
-    assert finding.inputs[0].input_support == (seed.identity,)
-    assert finding.inputs[1].input_support == ()
+    finding = compare_preserved_findings(ledger, [recorded.identity, other.identity])
+    assert finding.inputs[0].carried["input_support"] == support.to_json_dict()
+    assert "input_support" in finding.inputs[1].absent
 
 
 # --------------------------------------------------------------------------
