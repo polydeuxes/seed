@@ -3,11 +3,135 @@
 
 from __future__ import annotations
 
+from dataclasses import dataclass
 from typing import Callable, Hashable, Iterable, Sequence
 
 Material = Hashable
 Admission = list[tuple[Material, ...]]
 ImplementationFunction = Callable[[Material, Material], Hashable]
+
+
+def _exact_admitted_material(
+    admitted_material: tuple[tuple[Material, ...], ...],
+) -> tuple[Material, ...]:
+    if (
+        type(admitted_material) is not tuple
+        or not admitted_material
+        or any(
+            type(material) is not tuple or not material
+            for material in admitted_material
+        )
+    ):
+        raise TypeError("Admission result requires exact admitted material tuples")
+    material = tuple(item for admitted in admitted_material for item in admitted)
+    if len(set(material)) != len(material):
+        raise ValueError("one material occurrence entered Admission more than once")
+    return material
+
+
+@dataclass(frozen=True, slots=True)
+class AdmissionResultReference:
+    admission_occurrence: "AdmissionOccurrence"
+
+    def __post_init__(self) -> None:
+        if not isinstance(self.admission_occurrence, AdmissionOccurrence):
+            raise TypeError("Admission result requires its exact Act occurrence")
+
+    @property
+    def act_occurrence_identity(self) -> tuple[str, int]:
+        return self.admission_occurrence.act_occurrence_identity
+
+    @property
+    def result_identity(self) -> tuple[str, int, str]:
+        return self.admission_occurrence.result_identity
+
+    @property
+    def source_material(self) -> tuple[Material, ...]:
+        return self.admission_occurrence.source_material
+
+    @property
+    def admitted_material(self) -> tuple[tuple[Material, ...], ...]:
+        return self.admission_occurrence.admitted_material
+
+
+@dataclass(frozen=True, slots=True)
+class AdmissionOccurrence:
+    boundary_identity: str
+    occurrence_position: int
+    source_material: tuple[Material, ...]
+    admitted_material: tuple[tuple[Material, ...], ...]
+
+    def __post_init__(self) -> None:
+        if type(self.boundary_identity) is not str or not self.boundary_identity:
+            raise TypeError("one exact boundary identity is required")
+        if type(self.occurrence_position) is not int or self.occurrence_position < 0:
+            raise TypeError("one exact Admission occurrence position is required")
+        admitted = _exact_admitted_material(self.admitted_material)
+        if (
+            type(self.source_material) is not tuple
+            or len(set(self.source_material)) != len(self.source_material)
+            or frozenset(admitted) != frozenset(self.source_material)
+        ):
+            raise ValueError("Admission result differs from its exact source material")
+
+    @property
+    def act_identity(self) -> tuple[str, str]:
+        return (self.boundary_identity, "Admission")
+
+    @property
+    def act_occurrence_identity(self) -> tuple[str, int]:
+        return (self.boundary_identity, self.occurrence_position)
+
+    @property
+    def result_identity(self) -> tuple[str, int, str]:
+        return (self.boundary_identity, self.occurrence_position, "result")
+
+    @property
+    def result_reference(self) -> AdmissionResultReference:
+        return AdmissionResultReference(admission_occurrence=self)
+
+
+@dataclass(frozen=True, slots=True)
+class AdmissionCompareOccurrence:
+    boundary_identity: str
+    occurrence_position: int
+    first_reference: AdmissionResultReference
+    second_reference: AdmissionResultReference
+    result: bool
+
+    def __post_init__(self) -> None:
+        if type(self.boundary_identity) is not str or not self.boundary_identity:
+            raise TypeError("one exact boundary identity is required")
+        if type(self.occurrence_position) is not int or self.occurrence_position < 0:
+            raise TypeError("one exact Compare occurrence position is required")
+        if not isinstance(
+            self.first_reference, AdmissionResultReference
+        ) or not isinstance(self.second_reference, AdmissionResultReference):
+            raise TypeError("Compare requires exact Admission result references")
+        if self.first_reference == self.second_reference:
+            raise ValueError("one Admission result cannot be compared with itself")
+        if (
+            self.first_reference.source_material
+            != self.second_reference.source_material
+        ):
+            raise ValueError("Compare requires the same exact material occurrences")
+        if type(self.result) is not bool or self.result != preserves(
+            self.first_reference.admitted_material,
+            self.second_reference.admitted_material,
+        ):
+            raise ValueError("Compare result differs from its exact Admission results")
+
+    @property
+    def act_identity(self) -> tuple[str, str]:
+        return (self.boundary_identity, "Compare")
+
+    @property
+    def act_occurrence_identity(self) -> tuple[str, int]:
+        return (self.boundary_identity, self.occurrence_position)
+
+    @property
+    def result_identity(self) -> tuple[str, int, str]:
+        return (self.boundary_identity, self.occurrence_position, "result")
 
 
 def one_admission(material: Iterable[Material]) -> Admission:
@@ -23,7 +147,9 @@ def admission_by(
     return [tuple(found) for found in same_result.values()]
 
 
-def _admit(first: Admission, implementation_function: ImplementationFunction) -> Admission:
+def _admit(
+    first: Admission, implementation_function: ImplementationFunction
+) -> Admission:
     material = tuple(other for found in first for other in found)
     outgoing: list[list[Hashable]] = [[] for _ in material]
     incoming: list[list[Hashable]] = [[] for _ in material]
@@ -81,3 +207,42 @@ def preserves(
         if possible is None and not second_coordinates:
             return False
     return True
+
+
+def admission_occurrence(
+    admission: Iterable[Iterable[Material]],
+    *,
+    boundary_identity: str,
+    occurrence_position: int = 0,
+    source_material: tuple[Material, ...] | None = None,
+) -> AdmissionOccurrence:
+    admitted_material = tuple(tuple(material) for material in admission)
+    return AdmissionOccurrence(
+        boundary_identity=boundary_identity,
+        occurrence_position=occurrence_position,
+        source_material=(
+            source_material
+            if source_material is not None
+            else _exact_admitted_material(admitted_material)
+        ),
+        admitted_material=admitted_material,
+    )
+
+
+def compare_admission_results(
+    first_reference: AdmissionResultReference,
+    second_reference: AdmissionResultReference,
+    *,
+    boundary_identity: str,
+    occurrence_position: int = 0,
+) -> AdmissionCompareOccurrence:
+    return AdmissionCompareOccurrence(
+        boundary_identity=boundary_identity,
+        occurrence_position=occurrence_position,
+        first_reference=first_reference,
+        second_reference=second_reference,
+        result=preserves(
+            first_reference.admitted_material,
+            second_reference.admitted_material,
+        ),
+    )

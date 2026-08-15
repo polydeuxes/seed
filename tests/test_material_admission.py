@@ -5,6 +5,8 @@ from __future__ import annotations
 import sys
 from pathlib import Path
 
+import pytest
+
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts"))
 
 import material_admission  # noqa: E402
@@ -135,3 +137,89 @@ def test_preserves_uses_no_pairwise_subset_call():
 
     assert material_admission.preserves(first, second)
     assert ExactMaterial.calls == 0
+
+
+def test_equal_admission_results_keep_distinct_act_occurrences():
+    first = material_admission.admission_occurrence(
+        (("a",), ("b",)),
+        boundary_identity="first-admission",
+    )
+    second = material_admission.admission_occurrence(
+        (("a",), ("b",)),
+        boundary_identity="second-admission",
+    )
+
+    assert first.act_occurrence_identity != second.act_occurrence_identity
+    assert first.result_identity != second.result_identity
+    assert first.result_reference.admitted_material == (
+        second.result_reference.admitted_material
+    )
+
+
+def test_admission_compare_preserves_both_results_and_its_exact_result():
+    fine = material_admission.admission_occurrence(
+        (("a",), ("b",)),
+        boundary_identity="fine-admission",
+    )
+    broad = material_admission.admission_occurrence(
+        (("a", "b"),),
+        boundary_identity="broad-admission",
+    )
+
+    forward = material_admission.compare_admission_results(
+        fine.result_reference,
+        broad.result_reference,
+        boundary_identity="forward-compare",
+    )
+    reverse = material_admission.compare_admission_results(
+        broad.result_reference,
+        fine.result_reference,
+        boundary_identity="reverse-compare",
+    )
+
+    assert forward.first_reference == fine.result_reference
+    assert forward.second_reference == broad.result_reference
+    assert forward.result is True
+    assert reverse.first_reference == broad.result_reference
+    assert reverse.second_reference == fine.result_reference
+    assert reverse.result is False
+    assert forward.act_occurrence_identity != reverse.act_occurrence_identity
+    assert forward.result_identity != reverse.result_identity
+
+
+def test_admission_compare_refuses_different_material_occurrences():
+    first = material_admission.admission_occurrence(
+        (("a",),),
+        boundary_identity="first-admission",
+    )
+    second = material_admission.admission_occurrence(
+        (("b",),),
+        boundary_identity="second-admission",
+    )
+
+    with pytest.raises(ValueError, match="same exact material occurrences"):
+        material_admission.compare_admission_results(
+            first.result_reference,
+            second.result_reference,
+            boundary_identity="compare",
+        )
+
+
+def test_admission_compare_refuses_a_changed_result():
+    fine = material_admission.admission_occurrence(
+        (("a",), ("b",)),
+        boundary_identity="fine-admission",
+    )
+    broad = material_admission.admission_occurrence(
+        (("a", "b"),),
+        boundary_identity="broad-admission",
+    )
+
+    with pytest.raises(ValueError, match="differs from its exact Admission results"):
+        material_admission.AdmissionCompareOccurrence(
+            boundary_identity="compare",
+            occurrence_position=0,
+            first_reference=fine.result_reference,
+            second_reference=broad.result_reference,
+            result=False,
+        )
