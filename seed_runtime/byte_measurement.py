@@ -942,7 +942,7 @@ def _assertions(measured: MeasuredByteInputs) -> list[dict[str, Any]]:
             "result": "exact_source_material_set",
             "assertion_subject": source_subject,
             "assertion_scope": scope,
-            "support_basis": {
+            "input_support": {
                 "event_ids": [
                     item["ingest_occurrence_id"]
                     for item in measured.source_material
@@ -983,7 +983,7 @@ def _assertions(measured: MeasuredByteInputs) -> list[dict[str, Any]]:
             "result": result,
             "assertion_subject": subject,
             "assertion_scope": scope,
-            "support_basis": {
+            "input_support": {
                 "event_ids": [],
                 "local_assertion_ids": local_support_ids,
             },
@@ -1241,7 +1241,7 @@ def assertions_of_recorded_byte_measurement(
         )
     read = []
     for assertion in expected:
-        local_ids = assertion["support_basis"]["local_assertion_ids"]
+        local_ids = assertion["input_support"]["local_assertion_ids"]
         read.append(
             RecordedByteAssertion(
                 assertion_id=assertion["dimensions"]["identity"],
@@ -1298,7 +1298,7 @@ def _pair_assertions(measured: MeasuredBytePairInputs) -> list[dict[str, Any]]:
             "result": result,
             "assertion_subject": subject,
             "assertion_scope": scope,
-            "support_basis": {
+            "input_support": {
                 "assertion_references": source_support_references,
                 "local_assertion_ids": local_support_ids,
             },
@@ -2008,7 +2008,7 @@ def assertions_of_recorded_adjacent_byte_pair_measurement(
         "result",
         "assertion_subject",
         "assertion_scope",
-        "support_basis",
+        "input_support",
         "conflicts",
         "unknowns",
         "limits",
@@ -2075,7 +2075,7 @@ def assertions_of_recorded_adjacent_byte_pair_measurement(
             or any(type(value) is not int or value <= 0 for value in count_content.values())
             or count_content["occurrences_carrying"] > count_content["occurrences_examined"]
             or count_content["occurrences_carrying"] > count_content["total_count"]
-            or count["support_basis"]
+            or count["input_support"]
             != {"assertion_references": [source_reference], "local_assertion_ids": []}
             or count["dimensions"]["source_provenance"]
             != "the exact source-material-set Assertion referenced here"
@@ -2088,7 +2088,7 @@ def assertions_of_recorded_adjacent_byte_pair_measurement(
             recurrence["dimensions"]["content"] != {"recurrence_established": True}
             or recurrence["dimensions"]["source_provenance"]
             != "the exact count Assertion carried here"
-            or recurrence["support_basis"]
+            or recurrence["input_support"]
             != {
                 "assertion_references": [],
                 "local_assertion_ids": [count["dimensions"]["identity"]],
@@ -2097,7 +2097,7 @@ def assertions_of_recorded_adjacent_byte_pair_measurement(
             raise ByteMeasurementError(f"{event_id} carries unlawful recurrence support")
     validated_results = []
     for assertion in assertions:
-        support = assertion["support_basis"]
+        support = assertion["input_support"]
         support_references = list(support["assertion_references"])
         support_references.extend(
             {

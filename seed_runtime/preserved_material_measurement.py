@@ -30,7 +30,7 @@ while doing both.
 **What this yields is recorded.** Each finding is appended to the ledger, so a
 later responsible act may have it participate. `01.Standing.E` permits exactly that: a
 bounded comparison may have as input preserved findings "only while preserving each
-input source coordinates, provenance, support basis, subject, scope, authority,
+input source coordinates, provenance, support support, subject, scope, authority,
 confidence or uncertainty, Unknowns, standing, and forbidden inferences".
 
 **A finding may stand on an earlier finding.** `premise_event_id` records which,
@@ -56,10 +56,9 @@ from seed_runtime.yield_evidence import (
     YIELD_EVIDENCE_KIND,
     _record_yield_evidence,
 )
-from seed_runtime.support_basis import (
-    SupportBasis,
-    SupportValidator,
-    support_commitment,
+from seed_runtime.input_support import (
+    InputSupport,
+    InputSupportValidator,
 )
 
 MEASUREMENT_RECORDED_KIND = "operator.measurement.finding_recorded"
@@ -162,9 +161,9 @@ class MeasurementFinding:
     positions_measured: int
     occupancies: tuple[Occupancy, ...]
     # The identities this measurement input_ids, available while the act runs.
-    # On the result-Assertion path a addressable support basis is supplied from
+    # On the result-Assertion path a addressable support support is supplied from
     # these inputs instead of preserving the enumeration in every result;
-    # the basis belongs to that path, and this dataclass does not own a second
+    # the support belongs to that path, and this dataclass does not own a second
     # coordinate for it. `#2486` measured why: copying the inputs into
     # every finding of a body cost 97% of the stored finding.
     input_event_ids: tuple[str, ...]
@@ -209,7 +208,7 @@ class MeasurementFinding:
                 {"representation": o.representation, "occurrence_count": o.occurrence_count}
                 for o in self.occupancies
             ],
-            # Not "support_basis": the result-Assertion coordinate surface carries
+            # Not "input_support": the result-Assertion coordinate surface carries
             # that key and its fields are merged over this dict, so naming both
             # the same silently replaced one with the other.
             "input_event_ids": list(self.input_event_ids),
@@ -270,13 +269,13 @@ class RecurrenceFinding:
     # a finding that did not read from a ledger cannot say it measured
     # preserved material, and silence must not read as the stronger one.
     material_provenance: str = MATERIAL_AS_SUPPLIED
-    # The basis of the inputs input_ids, where one was declared. Every
+    # The support of the inputs input_ids, where one was declared. Every
     # finding of one pass stands on the same inputs, so preserving the
     # enumeration in each copies that inputs once per representation.
     # `#2486` measured exactly this at 97% of a stored finding and built
-    # SupportBasis to carry the basis instead. This path was written without
+    # InputSupport to carry the support instead. This path was written without
     # it and measured 96.8% on 500 findings over 2,000 occurrences.
-    support_basis: SupportBasis | None = None
+    input_support: InputSupport | None = None
     # Which preserved Evidence concerns this result's exact Yield edge. The
     # Evidence reference is neither the edge nor its Act occurrence by identity.
     # holds that a separately supplied representation with identical fields
@@ -308,11 +307,11 @@ class RecurrenceFinding:
             "boundary_notes": list(self.boundary_notes),
             "yield_evidence_id": self.yield_evidence_id,
         }
-        if self.support_basis is not None:
-            # The basis replaces the enumeration rather than accompanying it.
-            # Carrying both preserves the cost the basis exists to avoid, and
+        if self.input_support is not None:
+            # The support replaces the enumeration rather than accompanying it.
+            # Carrying both preserves the cost the support exists to avoid, and
             # leaves two representations of one support free to disagree.
-            carried["input_support"] = self.support_basis.to_json_dict()
+            carried["input_support"] = self.input_support.to_json_dict()
             carried.pop("input_event_ids")
         return carried
 
@@ -434,7 +433,7 @@ def _as_preserved(
     An `Event` is directly formable with any id and any payload, so an
     object bearing a preserved identity may carry different material. Checking
     that an occurrence with that identity exists establishes the identity and
-    not the material: `#2510` enforced this where a support basis was declared,
+    not the material: `#2510` enforced this where a support support was declared,
     by read the occurrence rather than trusting the object, and every other
     path kept trusting the object.
 
@@ -609,8 +608,8 @@ def measure_recurrences(
     counts_in: "callable[[str], dict[str, int]]",
     preserved_in: EventLedger | None = None,
     yield_in: "tuple[EventLedger, str] | None" = None,
-    support_basis: SupportBasis | None = None,
-    support_validator: SupportValidator | None = None,
+    input_support: InputSupport | None = None,
+    support_validator: InputSupportValidator | None = None,
 ) -> tuple[RecurrenceFinding, ...]:
     """Measure many representations across one pass of the material.
 
@@ -678,7 +677,7 @@ def measure_recurrences(
     walked, material_provenance = _as_preserved(
         _distinct_inputs(occurrences), preserved_in
     )
-    if support_basis is not None and support_validator is not None:
+    if input_support is not None and support_validator is not None:
         material_provenance = MATERIAL_READ_FROM_LEDGER
         preserved = []
         for event in walked:
@@ -686,7 +685,7 @@ def measure_recurrences(
             if recorded is None:
                 raise PreservedMaterialMeasurementError(
                     f"{event.id} is not preserved in the ledger this support "
-                    "basis is validated against"
+                    "support is validated against"
                 )
             preserved.append(recorded)
         walked = preserved
@@ -715,72 +714,15 @@ def measure_recurrences(
                 total[representation] += count
     inputs = tuple(input_ids)
     input_localities = tuple(localities)
-    if support_basis is not None:
-        # A basis carried but never checked would let a finding preserve a
-        # commitment to a inputs the act did not walk. `support_commitment`
-        # is a pure function of the rule and the ordered identities, so the act
-        # can confirm the basis commits to what it actually input_ids.
-        if support_commitment(support_basis.selection_rule, inputs) != (
-            support_basis.commitment
-        ):
-            raise PreservedMaterialMeasurementError(
-                "the declared support basis does not commit to the inputs "
-                "this measurement input_ids"
-            )
-        if support_basis.support_count != len(inputs):
-            raise PreservedMaterialMeasurementError(
-                f"the declared support basis counts {support_basis.support_count} "
-                f"occurrences and this measurement input_ids {len(inputs)}"
-            )
-        # Committing to the identities is not describing the inputs. The
-        # commitment is a digest over the rule and the ordered ids and says
-        # nothing about scope, so a basis declaring one locality could be
-        # accepted for a inputs drawn from several: the ids match, and the
-        # preserved basis then asserts a scope the act never input_ids within.
-        # The yielding act refuses that now; a later validation failure is a
-        # different responsibility and occurs too late to prevent it.
-        declared_locality = f"locality:{support_basis.locality_id}"
-        if input_localities != (declared_locality,):
-            raise PreservedMaterialMeasurementError(
-                f"the declared support basis is scoped to {declared_locality} "
-                f"and this measurement input_ids {list(input_localities)}"
-            )
-        for event in walked:
-            if event.kind != support_basis.occurrence_kind:
-                raise PreservedMaterialMeasurementError(
-                    f"the declared support basis selects "
-                    f"{support_basis.occurrence_kind} and {event.id} is "
-                    f"{event.kind}"
-                )
-        # A basis declares a selection rule -- every preserved occurrence of
-        # this scope's kind through this boundary -- and the checks above prove
-        # only that the inputs are *within* that description. A
-        # caller supplying three of four occurrences through the same boundary
-        # would pass all of them, and the finding would then preserve a basis
-        # asserting completeness the act never established.
-        #
-        # Verifying that requires classifying the boundary, which only an
-        # EventLedger does, so a basis is accepted only where the act is given
-        # the means to check it. Implementation inconvenience does not move the
-        # obligation to a later reader: once the enumeration is replaced, a
-        # validation discovering the lie occurs after the false basis is
-        # preserved.
+    if input_support is not None:
         if support_validator is None:
             raise PreservedMaterialMeasurementError(
-                "a support basis declares a selection through a boundary, and "
-                "accepting one requires a SupportValidator to establish that "
-                "the inputs are that selection"
+                "input support requires its exact ledger boundary"
             )
-        # `read` performs the basis's own selection through the boundary and
-        # refuses unless the result reproduces the committed digest. Together
-        # with the commitment check above -- which ties the inputs walked to
-        # that same digest -- the inputs are the selection declared.
-        #
-        # A third comparison of the two results was written here and removed: it
-        # cannot fail while both checks hold, and mutation testing found no test
-        # that could reach it. A guard nothing can reach reads as a proof and is
-        # not one.
-        support_validator.validate(support_basis)
+        if support_validator.validate(input_support) != inputs:
+            raise PreservedMaterialMeasurementError(
+                "input support and Measurement inputs differ"
+            )
     # One invocation performs one bounded Measurement occurrence.  Its exact
     # results remain distinct, but result fan-out does not mint another Act or
     # occurrence for each representation measured during the same pass.
@@ -795,7 +737,7 @@ def measure_recurrences(
             occurrences_carrying=carrying[representation],
             total_count=total[representation],
             input_event_ids=inputs,
-            support_basis=support_basis,
+            input_support=input_support,
             downstream_act_id=downstream_act_id,
             act_occurrence_id=act_occurrence_id,
         )
@@ -893,13 +835,6 @@ def _measurement_finding_payload(
     extra: dict[str, Any] | None,
 ) -> dict[str, Any]:
     carried = finding.to_json_dict()
-    basis = (extra or {}).get("support_basis", {}).get("basis") if extra else None
-    if basis is not None:
-        # A result Assertion carries a addressable support basis, so the
-        # enumeration it replaces is not written beside it. `#2486` measured
-        # the enumeration at 97% of a 4,000-line finding.
-        carried["input_support"] = basis
-        carried.pop("input_event_ids", None)
     return {
         "downstream_act_id": finding.downstream_act_id,
         "act_occurrence_id": finding.act_occurrence_id,
@@ -965,12 +900,12 @@ def record_measurement_findings(
     # occurrences that Assertion were made about never were, so a finding measured
     # over directly supplied `Event` objects recorded that provenance about
     # material this ledger does not hold. `#2510` enforced that at the input
-    # boundary only where a support basis was declared; a measurement without
+    # boundary only where a support support was declared; a measurement without
     # one reached the recorder unchecked.
     #
-    # An earlier version exempted findings carrying a support basis, calling
-    # them verified. Carrying a basis is not being verified against one: both
-    # `RecurrenceFinding` and `SupportBasis` are directly formable, and a
+    # An earlier version exempted findings carrying a support support, calling
+    # them verified. Carrying a support is not being verified against one: both
+    # `RecurrenceFinding` and `InputSupport` are directly formable, and a
     # finding verified against one ledger may be handed to another. This
     # function has no witness for either, so it exempts nothing.
     #
@@ -1062,10 +997,10 @@ def record_measurement_finding(
 def premise_chain(ledger: EventLedger, event_id: str) -> list[str]:
     """Every finding this one stood on, nearest premise first.
 
-    Not the runtime's `SupportBasis` representation. This is the chain of
+    Not the runtime's `InputSupport` representation. This is the chain of
     recorded premise findings one finding stood on, validated nearest premise
     first. It preserves that dependency relation and asserts nothing about the
-    yielding act's support basis; the prose called it that before the two
+    yielding act's support support; the prose called it that before the two
     were distinguished and kept calling it that after.
     """
 

@@ -675,19 +675,13 @@ def test_an_overlapping_prefix_reserves_the_longer_match():
 
 
 def test_a_cache_hit_still_refuses_a_contradictory_support_count():
-    """A forged count must be refused whichever validation reaches it first.
+    """A forged count is refused before and after an exact support read."""
 
-    `SupportValidator` keys on the commitment, not the count, so a second basis
-    committing to the same inputs reaches a cached result. Curator found
-    that the count check then never ran, which made catching a forged count
-    depend on what the act happened to have validated earlier.
-    """
-
-    from seed_runtime.support_basis import (
-        SupportBasis,
-        SupportBasisError,
-        SupportValidator,
-        declare_complete_inputs,
+    from seed_runtime.input_support import (
+        InputSupport,
+        InputSupportError,
+        InputSupportValidator,
+        declare_input_support,
     )
 
     ledger = EventLedger()
@@ -697,29 +691,27 @@ def test_a_cache_hit_still_refuses_a_contradictory_support_count():
     ])
     boundary = ledger.append_boundary()
     identities = tuple(ledger.iter_locality_kind_ids("s", "ingest", through=boundary))
-    honest = declare_complete_inputs(
+    honest = declare_input_support(
         locality_id="s", occurrence_kind="ingest",
-        boundary=boundary, identities=identities,
+        boundary=boundary, occurrence_references=identities,
     )
-    forged = SupportBasis(
+    forged = InputSupport(
         locality_id=honest.locality_id,
         occurrence_kind=honest.occurrence_kind,
         boundary_identity=honest.boundary_identity,
-        selection_rule=honest.selection_rule,
-        commitment=honest.commitment,
         support_count=honest.support_count - 1,
     )
 
     # Refused on a cold validation.
-    with pytest.raises(SupportBasisError, match="declared count"):
-        SupportValidator(ledger).validate(forged)
+    with pytest.raises(InputSupportError, match="declared count"):
+        InputSupportValidator(ledger).validate(forged)
 
     # And refused after the same inputs has been cached, which is the path
     # that previously returned it.
-    validation = SupportValidator(ledger)
+    validation = InputSupportValidator(ledger)
     assert validation.validate(honest) == identities
     assert validation.reads == 1
-    with pytest.raises(SupportBasisError, match="declared count"):
+    with pytest.raises(InputSupportError, match="declared count"):
         validation.validate(forged)
     assert validation.reuses == 0
 
@@ -728,122 +720,56 @@ def test_a_cache_hit_still_refuses_a_contradictory_support_count():
     assert (validation.reads, validation.reuses) == (1, 1)
 
 
-def test_every_support_basis_refusal_can_be_reached():
-    """Each refusal a support basis declares must actually fire.
+def test_every_input_support_refusal_can_be_reached():
+    """Each input-support refusal has a witness."""
 
-    A refusal no test has triggered is a refusal nobody has verified, and this
-    module's refusals are what stand in for the enumeration it no longer
-    carries.
-    """
-
-    from seed_runtime.support_basis import (
-        COMPLETE_INGRESS_INPUTS,
-        SupportBasis,
-        SupportBasisError,
-        support_commitment,
+    from seed_runtime.input_support import (
+        InputSupport,
+        InputSupportError,
     )
 
-    def basis(**differences):
+    def support(**differences):
         fields = dict(
             locality_id="s", occurrence_kind="k",
-            boundary_identity="b", selection_rule=COMPLETE_INGRESS_INPUTS,
-            commitment=support_commitment(COMPLETE_INGRESS_INPUTS, ()),
+            boundary_identity="b",
             support_count=0,
         )
         fields.update(differences)
-        return SupportBasis(**fields)
+        return InputSupport(**fields)
 
-    basis()  # the honest one is formable
+    support()
 
-    with pytest.raises(SupportBasisError, match="recognised selection"):
-        basis(selection_rule="a selection nobody established")
+    for name in ("locality_id", "occurrence_kind", "boundary_identity"):
+        with pytest.raises(InputSupportError, match=f"requires {name}"):
+            support(**{name: ""})
+        with pytest.raises(InputSupportError, match=f"requires {name}"):
+            support(**{name: None})
 
-    # A selection rule is established as a representation before it is looked
-    # up, because frozenset membership hashes its argument. `[]` and `{}` leaked
-    # a raw TypeError; `set()` did not, only because CPython converts a set
-    # argument to a frozenset before testing membership. Both outcomes are held
-    # so neither depends on that quirk.
-    for value in ([], {}, set(), None, 1, True, b"x", ("a",)):
-        with pytest.raises(SupportBasisError, match="recognised selection"):
-            basis(selection_rule=value)
-        with pytest.raises(SupportBasisError):
-            SupportBasis.from_json_dict(dict(basis().to_json_dict(), selection_rule=value))
-
-    for name in ("locality_id", "occurrence_kind",
-                 "boundary_identity", "commitment"):
-        with pytest.raises(SupportBasisError, match=f"requires {name}"):
-            basis(**{name: ""})
-        with pytest.raises(SupportBasisError, match=f"requires {name}"):
-            basis(**{name: None})
-
-    with pytest.raises(SupportBasisError, match="negative count"):
-        basis(support_count=-1)
+    with pytest.raises(InputSupportError, match="negative count"):
+        support(support_count=-1)
 
     # A count coordinate must establish that it can be a count. Each of these
     # previously either leaked a raw TypeError from the comparison or was
     # accepted outright.
     for value in ("4", None, True, False, 4.0, [], {}, ()):
-        with pytest.raises(SupportBasisError, match="integer support count"):
-            basis(support_count=value)
+        with pytest.raises(InputSupportError, match="integer support count"):
+            support(support_count=value)
 
-    # `True` mattered most: it is an int and equals 1, so a basis carrying it
+    # `True` mattered most: it is an int and equals 1, so a support carrying it
     # would have agreed with a one-occurrence inputs.
     assert True == 1
 
-    with pytest.raises(SupportBasisError, match="not present"):
-        SupportBasis.from_json_dict(None)
-    with pytest.raises(SupportBasisError, match="not present"):
-        SupportBasis.from_json_dict("a string is not a basis")
+    with pytest.raises(InputSupportError, match="not present"):
+        InputSupport.from_json_dict(None)
+    with pytest.raises(InputSupportError, match="not present"):
+        InputSupport.from_json_dict("not input support")
 
-    complete = basis().to_json_dict()
-    assert SupportBasis.from_json_dict(complete) == basis()
-    for key in ("scope", "boundary", "selection_rule", "commitment", "support_count"):
+    complete = support().to_json_dict()
+    assert InputSupport.from_json_dict(complete) == support()
+    for key in ("scope", "boundary", "support_count"):
         partial = {k: v for k, v in complete.items() if k != key}
-        with pytest.raises(SupportBasisError, match="incomplete"):
-            SupportBasis.from_json_dict(partial)
-
-
-def test_a_commitment_distinguishes_order_and_rule_not_only_membership():
-    """Two selections returning the same identities in a different order, or
-    under a different rule, must not commit to the same digest."""
-
-    from seed_runtime.support_basis import (
-        COMPLETE_INGRESS_INPUTS, support_commitment,
-    )
-
-    ordered = support_commitment(COMPLETE_INGRESS_INPUTS, ("a", "b", "c"))
-    assert ordered != support_commitment(COMPLETE_INGRESS_INPUTS, ("a", "c", "b"))
-    assert ordered != support_commitment("another rule", ("a", "b", "c"))
-    assert ordered != support_commitment(COMPLETE_INGRESS_INPUTS, ("a", "b"))
-    assert support_commitment(COMPLETE_INGRESS_INPUTS, ("ab", "c")) != \
-           support_commitment(COMPLETE_INGRESS_INPUTS, ("a", "bc"))
-
-    # The parts must be unambiguous when a part contains whatever divides them.
-    # An earlier encoding separated parts with a NUL, which held only while no
-    # identity carried one — and nothing constrains an Event.id. Both of these
-    # yielded one digest for two different inputss.
-    assert support_commitment(COMPLETE_INGRESS_INPUTS, ("a", "b\0c")) != \
-           support_commitment(COMPLETE_INGRESS_INPUTS, ("a\0b", "c"))
-    assert support_commitment("a", ("b",)) != support_commitment("a\0b", ())
-
-    # And the same requirement under the count prefix that replaced it.
-    assert support_commitment("a", ("b",)) != support_commitment("ab", ())
-    assert support_commitment(COMPLETE_INGRESS_INPUTS, ("", "ab")) != \
-           support_commitment(COMPLETE_INGRESS_INPUTS, ("a", "b"))
-    assert support_commitment(COMPLETE_INGRESS_INPUTS, ("",)) != \
-           support_commitment(COMPLETE_INGRESS_INPUTS, ())
-    # Multi-byte identities are committed by encoded byte count, not character count.
-    assert support_commitment(COMPLETE_INGRESS_INPUTS, ("é",)) != \
-           support_commitment(COMPLETE_INGRESS_INPUTS, ("ab",))
-
-    # A part that is not a representation is refused rather than leaking from
-    # the encode. The rule is a part too, and is held to the same requirement.
-    from seed_runtime.support_basis import SupportBasisError as _E
-    for bad in (1, None, b"bytes", ["a"]):
-        with pytest.raises(_E, match="must be a representation"):
-            support_commitment(COMPLETE_INGRESS_INPUTS, (bad,))
-        with pytest.raises(_E, match="must be a representation"):
-            support_commitment(bad, ("a",))
+        with pytest.raises(InputSupportError, match="incomplete"):
+            InputSupport.from_json_dict(partial)
 
 
 def test_a_digest_does_not_move_when_a_payload_is_compressed(tmp_path):

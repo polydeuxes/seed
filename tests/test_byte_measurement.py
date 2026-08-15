@@ -351,10 +351,10 @@ def test_pair_count_and_recurrence_are_separate_results():
 
     assert [item["result"] for item in by_pair["7461"]] == ["count", "recurrence"]
     assert [item["result"] for item in by_pair["610a"]] == ["count"]
-    assert by_pair["7461"][1]["support_basis"]["local_assertion_ids"] == [
+    assert by_pair["7461"][1]["input_support"]["local_assertion_ids"] == [
         by_pair["7461"][0]["dimensions"]["identity"]
     ]
-    moved_reference = by_pair["7461"][0]["support_basis"]["assertion_references"][0]
+    moved_reference = by_pair["7461"][0]["input_support"]["assertion_references"][0]
     original = next(
         item
         for item in assertions_of_recorded_byte_measurement(ledger, source.id)

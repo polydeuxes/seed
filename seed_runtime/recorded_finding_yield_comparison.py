@@ -23,7 +23,7 @@ keeps whatever Standing it had; this comparison establishes only its own result.
 **It does not walk anything.** A Compare result concerning one recorded
 finding is available to whatever Act has it participate, and each later act determines its
 own applicability for its own inputs — `01.Standing.E.1`. Walking the support
-basis and premise edges and revising what is found there would be that
+support and premise edges and revising what is found there would be that
 determination made centrally, for exact Acts that never made it. The edges are
 recorded and a later responsible act may follow them; this act does not.
 """

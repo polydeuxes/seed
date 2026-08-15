@@ -753,7 +753,7 @@ class SQLiteEventLedger(EventLedger):
     ) -> Iterator[str]:
         """Read one column of the same bounded rows `iter_locality_kind` reads.
 
-        The same row selection, boundary and order, returning only identities.
+        The same bounded rows and order, returning only identities.
 
         **This does not read or inspect occurrence payloads**, and the
         difference is nameable rather than merely cheaper: the occurrence read

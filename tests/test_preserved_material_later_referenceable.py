@@ -126,7 +126,7 @@ def test_each_representation_act_is_appended_after_every_event_it_references(led
 
     This says nothing about findings or Standing.  A representation Act is
     not a finding, and its own recorded authority is "representation Act occurrence
-    only; establishes no Selection, support relation, result relation, or response treatment".
+    only; establishes no input support, result relation, or response treatment".
     """
     events = ledger.list()
     representation_events = [e for e in events if e.kind == RECORDED]

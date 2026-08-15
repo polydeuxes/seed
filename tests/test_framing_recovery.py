@@ -61,8 +61,8 @@ def test_support_sizes_differ_under_every_stride_so_inequality_selects_nothing()
 def test_a_stride_and_its_multiple_carry_the_same_distinction():
     """Stride 4 agrees with stride 2 because it is two of them.
 
-    Separating a primitive candidate from a composite one is what a selection
-    rule would have to do, and no rule here does it.
+    The Measurement establishes no distinction between a primitive candidate
+    and a composite candidate.
     """
 
     diversity = position_diversity(block(100), 4)

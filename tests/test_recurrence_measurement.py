@@ -241,7 +241,7 @@ def test_validation_refuses_non_assertion_and_unresolved_local_support(compared)
         locality_id="s1",
         finding=_by_right(compared)["word"],
     ).model_copy(deep=True)
-    _assertions_by_result(event)["count"]["support_basis"][
+    _assertions_by_result(event)["count"]["input_support"][
         "local_assertion_ids"
     ] = ["absent-assertion"]
     with pytest.raises(RecurrenceMeasurementError, match="unresolved local"):
@@ -358,7 +358,7 @@ def test_assertion_compare_exposes_changed_support_without_strengthening_it(comp
         for assertion in altered_payload["assertions"]
         if assertion["result"] == "measured_in"
     )
-    altered_measured_in["support_basis"]["event_ids"].append(
+    altered_measured_in["input_support"]["event_ids"].append(
         "additional-applicable-evidence"
     )
     second = compared.append(
@@ -383,11 +383,11 @@ def test_assertion_compare_exposes_changed_support_without_strengthening_it(comp
     distinctions = {
         distinction.coordinate: distinction for distinction in comparison.distinctions
     }
-    assert distinctions["support_basis"].same is False
+    assert distinctions["input_support"].same is False
     assert all(
         distinction.same
         for coordinate, distinction in distinctions.items()
-        if coordinate != "support_basis"
+        if coordinate != "input_support"
     )
 
 
@@ -455,7 +455,7 @@ def test_assertion_yield_compare_records_each_literal_result_separately(compared
     assert len({item.assertion_id for item in assertions}) == 10
     assert all(item.recorded_occurrence_reference == event.id for item in assertions)
     assert all(
-        item.payload["support_basis"]["assertion_references"]
+        item.payload["input_support"]["assertion_references"]
         == [first_count.reference, second_count.reference]
         for item in assertions
     )
@@ -617,7 +617,7 @@ def test_validation_refuses_a_self_consistent_forged_compare_result(compared):
         compared_assertion_id=assertion["assertion_subject"][
             "compared_assertion_id"
         ],
-        inputs=assertion["support_basis"]["assertion_references"],
+        inputs=assertion["input_support"]["assertion_references"],
         locality_id="s1",
         **content,
     )
@@ -749,8 +749,8 @@ def test_exact_sets_keep_completeness_separate_from_support(compared):
         assert encoded["completeness_scope"]["locality_ids"] == list(DECLARED)
         assert encoded["completeness_scope"]["requires_locality_existence"] is True
         assert finding.input_ledger_boundary.identity not in (
-            encoded["support_basis"]["event_ids"]
-            + encoded["support_basis"]["local_assertion_ids"]
+            encoded["input_support"]["event_ids"]
+            + encoded["input_support"]["local_assertion_ids"]
         )
 
     assert assertions["measured_in"].support_event_ids

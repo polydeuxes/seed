@@ -138,7 +138,7 @@ def test_an_absent_coordinate_is_named_and_not_supplied(ledger):
     assert "confidence_or_uncertainty" in INPUT_COORDINATES
 
 
-def test_the_support_basis_travels_with_its_input(ledger):
+def test_the_input_support_travels_with_its_input(ledger):
     seed = _finding(ledger, "s1")
     occurrences = ingest_occurrences(ledger, locality_id="s1")
     standing_on = record_measurement_finding(
@@ -146,8 +146,8 @@ def test_the_support_basis_travels_with_its_input(ledger):
         finding=measure_after(occurrences, "is", counting_scope=SCOPE, premise_event_id=seed.id))
     other = _finding(ledger, "s2")
     finding = compare_preserved_findings(ledger, [standing_on.id, other.id])
-    assert finding.inputs[0].support_basis == (seed.id,)
-    assert finding.inputs[1].support_basis == ()
+    assert finding.inputs[0].input_support == (seed.id,)
+    assert finding.inputs[1].input_support == ()
 
 
 # --------------------------------------------------------------------------

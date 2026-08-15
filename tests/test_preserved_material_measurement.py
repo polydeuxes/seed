@@ -8,7 +8,7 @@ material Seed never received says nothing about Seed.
 
 **What becomes of the result.** Findings are appended to the ledger, so a later
 responsible act may have them participate. `01.Standing.E` permits a bounded comparison
-to have as input preserved findings while preserving each input's support basis,
+to have as input preserved findings while preserving each input's support support,
 confidence, and standing. A finding that vanishes with the process cannot be
 input by anything.
 
@@ -51,10 +51,10 @@ from seed_runtime.preserved_material_measurement import (
 )
 from seed_runtime.yield_evidence import YIELD_EVIDENCE_KIND
 from tests.material_fixture_console import run_material_fixture_console
-from seed_runtime.support_basis import (
-    SupportBasisError,
-    SupportValidator,
-    declare_complete_inputs,
+from seed_runtime.input_support import (
+    InputSupportError,
+    InputSupportValidator,
+    declare_input_support,
 )
 
 MATERIAL = (
@@ -874,30 +874,30 @@ def test_the_positional_path_also_refuses_a_repeated_occurrence(occurrences):
         )
 
 # --------------------------------------------------------------------------
-# One pass has as input one input sequence, so one basis describes every finding.
-# `#2486` built SupportBasis for exactly this and the recurrence path was
+# One pass has as input one input sequence, so one support describes every finding.
+# `#2486` built InputSupport for exactly this and the recurrence path was
 # written without it.
 # --------------------------------------------------------------------------
 
 
-def _basis_for(occurrences, ledger):
-    return declare_complete_inputs(
+def _input_support_for(occurrences, ledger):
+    return declare_input_support(
         locality_id="r",
         occurrence_kind=INGEST_OCCURRED_KIND,
         boundary=ledger.append_boundary(),
-        identities=[e.id for e in occurrences],
+        occurrence_references=[e.id for e in occurrences],
     )
 
 
-def test_a_declared_basis_replaces_the_enumeration(recurrence_occurrences):
+def test_declared_input_support_replaces_the_enumeration(recurrence_occurrences):
     ledger, occurrences = recurrence_occurrences
     declared = _declared_for("the", "cat")
     findings = measure_recurrences(
         occurrences,
         declared=declared,
         counts_in=_counts_in(declared),
-        support_basis=_basis_for(occurrences, ledger),
-        support_validator=SupportValidator(ledger),
+        input_support=_input_support_for(occurrences, ledger),
+        support_validator=InputSupportValidator(ledger),
     )
     for finding in findings:
         carried = finding.to_json_dict()
@@ -907,22 +907,23 @@ def test_a_declared_basis_replaces_the_enumeration(recurrence_occurrences):
         assert finding.input_event_ids == tuple(e.id for e in occurrences)
 
 
-def test_a_basis_that_does_not_commit_to_the_inputs_is_refused(
+def test_input_support_and_measurement_input_order_must_be_exact(
     recurrence_occurrences,
 ):
     ledger, occurrences = recurrence_occurrences
     declared = _declared_for("the")
-    wrong = _basis_for(occurrences[:1], ledger)
-    with pytest.raises(PreservedMaterialMeasurementError, match="does not commit"):
+    support = _input_support_for(occurrences, ledger)
+    with pytest.raises(PreservedMaterialMeasurementError, match="inputs differ"):
         measure_recurrences(
-            occurrences,
+            reversed(occurrences),
             declared=declared,
             counts_in=_counts_in(declared),
-            support_basis=wrong,
+            input_support=support,
+            support_validator=InputSupportValidator(ledger),
         )
 
 
-def test_findings_with_and_without_a_basis_agree_on_everything_else(
+def test_findings_with_and_without_input_support_agree_on_everything_else(
     recurrence_occurrences,
 ):
     ledger, occurrences = recurrence_occurrences
@@ -934,8 +935,8 @@ def test_findings_with_and_without_a_basis_agree_on_everything_else(
         occurrences,
         declared=declared,
         counts_in=_counts_in(declared),
-        support_basis=_basis_for(occurrences, ledger),
-        support_validator=SupportValidator(ledger),
+        input_support=_input_support_for(occurrences, ledger),
+        support_validator=InputSupportValidator(ledger),
     )
     for a, b in zip(plain, based):
         left, right = a.to_json_dict(), b.to_json_dict()
@@ -944,11 +945,9 @@ def test_findings_with_and_without_a_basis_agree_on_everything_else(
         assert left == right
 
 
-def test_a_basis_scoped_to_one_locality_cannot_describe_several(
+def test_input_support_for_one_locality_cannot_describe_several(
     recurrence_occurrences,
 ):
-    """Committing to the identities is not describing the inputs."""
-
     ledger, occurrences = recurrence_occurrences
     elsewhere = ledger.append(
         INGEST_OCCURRED_KIND,
@@ -958,78 +957,79 @@ def test_a_basis_scoped_to_one_locality_cannot_describe_several(
         locality_id="other",
     )
     inputs = list(occurrences) + [elsewhere]
-    # The basis commits to exactly these identities and declares one locality.
-    basis = declare_complete_inputs(
+    support = declare_input_support(
         locality_id="r",
         occurrence_kind=INGEST_OCCURRED_KIND,
         boundary=ledger.append_boundary(),
-        identities=[e.id for e in inputs],
+        occurrence_references=[e.id for e in inputs],
     )
     declared = _declared_for("the")
-    with pytest.raises(PreservedMaterialMeasurementError, match="scoped to"):
+    with pytest.raises(InputSupportError, match="declared count"):
         measure_recurrences(
             inputs,
             declared=declared,
             counts_in=_counts_in(declared),
-            support_basis=basis,
+            input_support=support,
+            support_validator=InputSupportValidator(ledger),
         )
 
 
-def test_a_basis_selecting_another_occurrence_kind_is_refused(
+def test_input_support_for_another_occurrence_kind_is_refused(
     recurrence_occurrences,
 ):
     ledger, occurrences = recurrence_occurrences
-    basis = declare_complete_inputs(
+    support = declare_input_support(
         locality_id="r",
         occurrence_kind="some.other.kind",
         boundary=ledger.append_boundary(),
-        identities=[e.id for e in occurrences],
+        occurrence_references=[e.id for e in occurrences],
     )
     declared = _declared_for("the")
-    with pytest.raises(PreservedMaterialMeasurementError, match="selects some.other.kind"):
+    with pytest.raises(InputSupportError, match="declared count"):
         measure_recurrences(
             occurrences,
             declared=declared,
             counts_in=_counts_in(declared),
-            support_basis=basis,
+            input_support=support,
+            support_validator=InputSupportValidator(ledger),
         )
 
 
-def test_a_basis_is_refused_without_the_means_to_establish_its_selection(
+def test_input_support_requires_its_ledger_boundary(
     recurrence_occurrences,
 ):
     ledger, occurrences = recurrence_occurrences
     declared = _declared_for("the")
-    with pytest.raises(PreservedMaterialMeasurementError, match="requires a SupportValidator"):
+    with pytest.raises(PreservedMaterialMeasurementError, match="exact ledger boundary"):
         measure_recurrences(
             occurrences,
             declared=declared,
             counts_in=_counts_in(declared),
-            support_basis=_basis_for(occurrences, ledger),
+            input_support=_input_support_for(occurrences, ledger),
         )
 
 
-def test_a_basis_asserting_completeness_over_a_subset_is_refused(
+def test_input_support_over_a_subset_is_refused(
     recurrence_occurrences,
 ):
     """The checks on ids, count, locality and kind all pass on a subset."""
 
     ledger, occurrences = recurrence_occurrences
     subset = list(occurrences)[:-1]
-    basis = declare_complete_inputs(
+    support = declare_input_support(
         locality_id="r",
         occurrence_kind=INGEST_OCCURRED_KIND,
         boundary=ledger.append_boundary(),
-        identities=[e.id for e in subset],
+        occurrence_references=[e.id for e in subset],
     )
     declared = _declared_for("the")
-    with pytest.raises(SupportBasisError, match="validated support"):
+    with pytest.raises(InputSupportError, match="validated support"):
         measure_recurrences(
             subset,
             declared=declared,
             counts_in=_counts_in(declared),
-            support_basis=basis,
-            support_validator=SupportValidator(ledger),
+            input_support=support,
+            support_validator=InputSupportValidator(ledger),
         )
 
 
@@ -1056,8 +1056,8 @@ def test_a_finding_measures_what_the_ledger_carries_not_what_was_handed_in(
         forged,
         declared=declared,
         counts_in=_counts_in(declared),
-        support_basis=_basis_for(occurrences, ledger),
-        support_validator=SupportValidator(ledger),
+        input_support=_input_support_for(occurrences, ledger),
+        support_validator=InputSupportValidator(ledger),
     )
     # The ledger carries no "zebra". The handed-in objects carried nine.
     assert findings[0].total_count == 0
@@ -1074,19 +1074,19 @@ def test_an_identity_the_ledger_does_not_preserve_is_refused(
         payload={"represented_material": "the"},
     )
     declared = _declared_for("the")
-    basis = declare_complete_inputs(
+    support = declare_input_support(
         locality_id="r",
         occurrence_kind=INGEST_OCCURRED_KIND,
         boundary=ledger.append_boundary(),
-        identities=[absent.id],
+        occurrence_references=[absent.id],
     )
     with pytest.raises(PreservedMaterialMeasurementError, match="not preserved in the ledger"):
         measure_recurrences(
             [absent],
             declared=declared,
             counts_in=_counts_in(declared),
-            support_basis=basis,
-            support_validator=SupportValidator(ledger),
+            input_support=support,
+            support_validator=InputSupportValidator(ledger),
         )
 
 
@@ -1135,7 +1135,7 @@ def test_the_positional_path_cannot_record_unpreserved_material_either():
 def test_a_real_identity_carrying_forged_material_measures_the_ledger(
     recurrence_occurrences,
 ):
-    """`#2510` enforced this for the basis path only; every other path trusted
+    """`#2510` enforced this for the support path only; every other path trusted
     the object it was handed."""
 
     ledger, occurrences = recurrence_occurrences
@@ -1183,7 +1183,7 @@ def test_the_positional_path_can_bind_its_material_too(recurrence_occurrences):
 
 
 def test_carrying_a_basis_no_longer_exempts_a_finding_from_the_recorder():
-    """Carrying a basis is not being verified against one."""
+    """Carrying a support is not being verified against one."""
 
     ledger = EventLedger()
     forged = Event(
@@ -1196,7 +1196,7 @@ def test_carrying_a_basis_no_longer_exempts_a_finding_from_the_recorder():
         [forged], declared=_recurrence_declared("the"), occurrences_of=_counts("the"),
         yield_in=(ledger, "r"),
     )
-    # A SupportBasis is a directly formable dataclass; attaching one is
+    # A InputSupport is a directly formable dataclass; attaching one is
     # not evidence that any act verified it.
     attached = RecurrenceFinding(
         declared=finding.declared,
@@ -1205,11 +1205,11 @@ def test_carrying_a_basis_no_longer_exempts_a_finding_from_the_recorder():
         occurrences_carrying=finding.occurrences_carrying,
         total_count=finding.total_count,
         input_event_ids=finding.input_event_ids,
-        support_basis=declare_complete_inputs(
+        input_support=declare_input_support(
             locality_id="r",
             occurrence_kind=INGEST_OCCURRED_KIND,
             boundary=ledger.append_boundary(),
-            identities=[forged.id],
+            occurrence_references=[forged.id],
         ),
     )
     with pytest.raises(PreservedMaterialMeasurementError, match="preserves no such ingest"):
@@ -1295,8 +1295,8 @@ def test_the_basis_path_reports_the_ledger_it_read_from(recurrence_occurrences):
         occurrences,
         declared=declared,
         counts_in=_counts_in(declared),
-        support_basis=_basis_for(occurrences, ledger),
-        support_validator=SupportValidator(ledger),
+        input_support=_input_support_for(occurrences, ledger),
+        support_validator=InputSupportValidator(ledger),
     )[0]
     assert finding.material_provenance == MATERIAL_READ_FROM_LEDGER
 
@@ -1354,7 +1354,7 @@ def _rebuilt(finding, **different):
         "input_event_ids": finding.input_event_ids,
         "downstream_act_id": finding.downstream_act_id,
         "act_occurrence_id": finding.act_occurrence_id,
-        "support_basis": finding.support_basis,
+        "input_support": finding.input_support,
         "yield_evidence_id": finding.yield_evidence_id,
     }
     fields.update(different)

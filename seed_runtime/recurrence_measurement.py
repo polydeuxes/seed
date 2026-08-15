@@ -202,7 +202,7 @@ class MeasuredAssertion:
             "result": self.result,
             "assertion_subject": dict(self.subject),
             "assertion_scope": dict(self.scope),
-            "support_basis": {
+            "input_support": {
                 "event_ids": list(self.support_event_ids),
                 # These dependencies are local to the same yielding
                 # occurrence. Each remains bound to that occurrence's identity
@@ -338,7 +338,7 @@ def assertions_of_recorded_measurement(event: Event) -> tuple[RecordedMeasuredAs
         by_result[assertion.result] = assertion
     bound = []
     for assertion in read:
-        support = assertion.payload.get("support_basis")
+        support = assertion.payload.get("input_support")
         local_ids = support.get("local_assertion_ids") if isinstance(support, dict) else None
         if not isinstance(local_ids, list) or not all(
             isinstance(value, str) for value in local_ids

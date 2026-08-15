@@ -909,7 +909,7 @@ def _assertion_witness(bundle: dict) -> dict[str, str]:
             EXACT if dimensions.get("identity") == expected_identity else CONTRADICTION
         ),
         # Evidence remains on the occurrence/result edge. It is read
-        # through the exact locality, not copied from support_basis.
+        # through the exact locality, not copied from input_support.
         "Evidence": EXACT if evidence_edge else MISSING,
         "provenance": EXACT if dimensions.get("source_provenance") else MISSING,
         "Scope": EXACT if payload.get("assertion_scope") else MISSING,

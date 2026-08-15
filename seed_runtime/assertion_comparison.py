@@ -18,7 +18,7 @@ from typing import Any, Iterable
 from seed_runtime.events import CORRUPTED, EventLedger
 from seed_runtime.event import Event
 from seed_runtime.ids import new_id
-from seed_runtime.support_basis import SupportValidator
+from seed_runtime.input_support import InputSupportValidator
 from seed_runtime.yield_evidence import _record_yield_evidence
 from seed_runtime.recurrence_measurement import (
     RecordedMeasuredAssertion,
@@ -109,7 +109,7 @@ COORDINATES: dict[str, tuple[str, ...]] = {
     "responsibility": ("dimensions", "responsibility"),
     "authority": ("dimensions", "authority"),
     "scope": ("assertion_scope",),
-    "support_basis": ("support_basis",),
+    "input_support": ("input_support",),
     "completeness_boundary": ("completeness_boundary",),
     "completeness_scope": ("completeness_scope",),
     "unknowns": ("unknowns",),
@@ -329,7 +329,7 @@ def record_assertion_yield_comparison(
                     "standing": "compared",
                     "source_provenance": (
                         "the two exact occurrence-bound yields carried in "
-                        "support_basis"
+                        "input_support"
                     ),
                     "responsibility": COMPARISON_ASSERTION_STANDING_COORDINATE_RESPONSIBILITY,
                     "authority": "unestablished",
@@ -353,7 +353,7 @@ def record_assertion_yield_comparison(
                     "locality_id": locality_id,
                     "compared_yields": list(input_references),
                 },
-                "support_basis": {"assertion_references": list(input_references)},
+                "input_support": {"assertion_references": list(input_references)},
                 "unknowns": [
                     "whether a literal difference is Applicable to either input "
                     "Assertion remains Unknown",
@@ -506,7 +506,7 @@ def assertions_of_recorded_assertion_comparison(
         identity = dimensions.get("identity") if isinstance(dimensions, dict) else None
         subject = assertion.get("assertion_subject") if isinstance(assertion, dict) else None
         scope = assertion.get("assertion_scope") if isinstance(assertion, dict) else None
-        support = assertion.get("support_basis") if isinstance(assertion, dict) else None
+        support = assertion.get("input_support") if isinstance(assertion, dict) else None
         input_references = support.get("assertion_references") if isinstance(support, dict) else None
         if (
             assertion.get("subject_kind") != "assertion"

@@ -202,8 +202,8 @@ def record_operator_representation(
                 responsibility=REPRESENTATION_RESPONSIBILITY,
                 authority="unestablished",
                 evidence_scope=(
-                    "representation Act occurrence only; establishes no Selection, "
-                    "input support, or response treatment"
+                    "representation Act occurrence only; establishes no input "
+                    "support or response treatment"
                 ),
                 scope=scope,
                 occurrence=occurrence,
