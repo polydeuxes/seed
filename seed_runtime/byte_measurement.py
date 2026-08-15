@@ -188,9 +188,8 @@ class ByteMeasurementError(ValueError):
 @dataclass(frozen=True)
 class MeasuredByteCount:
     byte_hex: str
-    occurrences_examined: int
     occurrences_carrying: int
-    total_count: int
+    count: int
 
 
 @dataclass(frozen=True)
@@ -204,9 +203,8 @@ class MeasuredByteInputs:
 @dataclass(frozen=True)
 class MeasuredBytePairCount:
     pair_hex: str
-    occurrences_examined: int
     occurrences_carrying: int
-    total_count: int
+    count: int
 
 
 @dataclass(frozen=True)
@@ -493,7 +491,6 @@ def _measure_byte_counts_through(
     seen_material: set[str] = set()
     carrying = [0] * 256
     totals = [0] * 256
-    examined = 0
     for locality in localities:
         for ingest in ledger.iter_locality_kind(
             locality, INGEST_OCCURRED_KIND, through=boundary
@@ -509,7 +506,6 @@ def _measure_byte_counts_through(
                 )
             seen_material.add(ingest.identity)
             source_material.append({"ingest_occurrence_identity": ingest.identity})
-            examined += 1
             seen = set(exact)
             for value in seen:
                 carrying[value] += 1
@@ -522,9 +518,8 @@ def _measure_byte_counts_through(
     counts = tuple(
         MeasuredByteCount(
             byte_hex=f"{value:02x}",
-            occurrences_examined=examined,
             occurrences_carrying=carrying[value],
-            total_count=totals[value],
+            count=totals[value],
         )
         for value in range(256)
         if totals[value] > 0
@@ -851,7 +846,6 @@ def _measure_adjacent_byte_pair_counts_through(
     seen_material: set[str] = set()
     totals: dict[bytes, int] = {}
     carrying: dict[bytes, int] = {}
-    examined = 0
     for locality in localities:
         for ingest in ledger.iter_locality_kind(
             locality, INGEST_OCCURRED_KIND, through=boundary
@@ -867,7 +861,6 @@ def _measure_adjacent_byte_pair_counts_through(
                 )
             seen_material.add(ingest.identity)
             source_material.append({"ingest_occurrence_identity": ingest.identity})
-            examined += 1
             seen: set[bytes] = set()
             for index in range(len(exact) - 1):
                 pair = exact[index : index + 2]
@@ -882,9 +875,8 @@ def _measure_adjacent_byte_pair_counts_through(
     counts = tuple(
         MeasuredBytePairCount(
             pair_hex=pair.hex(),
-            occurrences_examined=examined,
             occurrences_carrying=carrying[pair],
-            total_count=totals[pair],
+            count=totals[pair],
         )
         for pair in sorted(totals)
     )
@@ -991,9 +983,9 @@ def _assertions(measured: MeasuredByteInputs) -> list[dict[str, Any]]:
 
     for item in measured.counts:
         count_content = {
-            "occurrences_examined": item.occurrences_examined,
+            "input_count": len(measured.source_material),
             "occurrences_carrying": item.occurrences_carrying,
-            "total_count": item.total_count,
+            "count": item.count,
         }
         count = assertion(
             result="count",
@@ -1003,7 +995,7 @@ def _assertions(measured: MeasuredByteInputs) -> list[dict[str, Any]]:
             local_support_identities=[source_identity],
         )
         results.append(count)
-        if item.total_count > 1:
+        if item.count > 1:
             results.append(
                 assertion(
                     result="recurrence",
@@ -1306,16 +1298,16 @@ def _pair_assertions(measured: MeasuredBytePairInputs) -> list[dict[str, Any]]:
             result="count",
             item=item,
             content={
-                "occurrences_examined": item.occurrences_examined,
+                "input_count": len(measured.source_material),
                 "occurrences_carrying": item.occurrences_carrying,
-                "total_count": item.total_count,
+                "count": item.count,
             },
             provenance="the exact source-material-set Assertion referenced here",
             local_support_identities=[],
             source_support_references=[measured.source_assertion_reference],
         )
         results.append(count)
-        if item.total_count > 1:
+        if item.count > 1:
             results.append(
                 assertion(
                     result="recurrence",
@@ -2058,10 +2050,10 @@ def assertions_of_recorded_adjacent_byte_pair_measurement(
         if (
             not isinstance(count_content, dict)
             or set(count_content)
-            != {"occurrences_examined", "occurrences_carrying", "total_count"}
+            != {"input_count", "occurrences_carrying", "count"}
             or any(type(value) is not int or value <= 0 for value in count_content.values())
-            or count_content["occurrences_carrying"] > count_content["occurrences_examined"]
-            or count_content["occurrences_carrying"] > count_content["total_count"]
+            or count_content["occurrences_carrying"] > count_content["input_count"]
+            or count_content["occurrences_carrying"] > count_content["count"]
             or count["input_support"]
             != {"assertion_references": [source_reference], "local_assertion_identities": []}
             or count["dimensions"]["source_provenance"]
@@ -2069,7 +2061,7 @@ def assertions_of_recorded_adjacent_byte_pair_measurement(
         ):
             raise ByteMeasurementError(f"{event_identity} carries an unlawful pair count")
         recurrence = group.get("recurrence")
-        if (recurrence is not None) != (count_content["total_count"] > 1):
+        if (recurrence is not None) != (count_content["count"] > 1):
             raise ByteMeasurementError(f"{event_identity} carries the wrong recurrence boundary")
         if recurrence is not None and (
             recurrence["dimensions"]["content"] != {"recurrence_established": True}

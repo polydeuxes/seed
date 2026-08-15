@@ -42,7 +42,7 @@ def _observe(ledger: EventLedger, source: str, result: str):
 def _pair_counts(event):
     return {
         bytes.fromhex(assertion["assertion_subject"]["pair_hex"]).decode("ascii"):
-        assertion["dimensions"]["content"]["total_count"]
+        assertion["dimensions"]["content"]["count"]
         for assertion in event.material["assertions"]
         if assertion["result"] == "count"
     }

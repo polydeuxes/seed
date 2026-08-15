@@ -63,13 +63,13 @@ def test_exact_bytes_supply_the_measured_subjects_without_whitespace():
 
     # UTF-8 猫 = e7 8c ab and 狗 = e7 8b 97.  No character boundary is used or
     # asserted; these are the exact bytes Seed recorded.
-    assert counts["e7"].total_count == 2
-    assert counts["8c"].total_count == 1
-    assert counts["ab"].total_count == 1
-    assert counts["8b"].total_count == 1
-    assert counts["97"].total_count == 1
-    assert counts["0a"].total_count == 2
-    assert all(item.occurrences_examined == 2 for item in measured.counts)
+    assert counts["e7"].count == 2
+    assert counts["8c"].count == 1
+    assert counts["ab"].count == 1
+    assert counts["8b"].count == 1
+    assert counts["97"].count == 1
+    assert counts["0a"].count == 2
+    assert len(measured.source_material) == 2
 
 
 def test_the_complete_declared_localities_supply_the_inputs():
@@ -97,7 +97,7 @@ def test_count_and_recurrence_are_distinct_results():
             by_byte.setdefault(byte_hex, []).append(assertion)
 
     assert [item["result"] for item in by_byte["61"]] == ["count"]
-    assert by_byte["61"][0]["dimensions"]["content"]["total_count"] == 1
+    assert by_byte["61"][0]["dimensions"]["content"]["count"] == 1
     # The newline occurs once too. No positive singleton is called recurrence.
     assert [item["result"] for item in by_byte["0a"]] == ["count"]
 
@@ -150,9 +150,9 @@ def test_recorded_results_replay_the_complete_bounded_source_read():
         if item.byte_hex == "e7" and item.result == "count"
     )
     assert count.material["dimensions"]["content"] == {
-        "occurrences_examined": 2,
+        "input_count": 2,
         "occurrences_carrying": 2,
-        "total_count": 2,
+        "count": 2,
     }
     assert count.material["assertion_scope"] == {
         "source_locality_identities": ["source"],
@@ -243,7 +243,7 @@ def test_ingest_after_the_measurement_boundary_cannot_enter_the_measurement():
         localities=("source",),
         boundary=boundary,
     )
-    assert {item.byte_hex: item.total_count for item in measured.counts} == {"61": 1}
+    assert {item.byte_hex: item.count for item in measured.counts} == {"61": 1}
 
 
 def test_a_missing_declared_locality_is_refused():
@@ -290,9 +290,9 @@ def test_every_overlapping_adjacent_byte_pair_is_measured():
         if item["result"] == "count"
     }
 
-    assert counts["7461"]["total_count"] == 4  # ta
-    assert counts["6174"]["total_count"] == 3  # at
-    assert counts["610a"]["total_count"] == 1  # a + append newline
+    assert counts["7461"]["count"] == 4  # ta
+    assert counts["6174"]["count"] == 3  # at
+    assert counts["610a"]["count"] == 1  # a + append newline
 
 
 def test_adjacent_pairs_never_cross_ingest_boundaries():
@@ -305,7 +305,7 @@ def test_adjacent_pairs_never_cross_ingest_boundaries():
     )
     counts = {
         item["assertion_subject"]["pair_hex"]: item["dimensions"]["content"][
-            "total_count"
+            "count"
         ]
         for item in event.material["assertions"]
         if item["result"] == "count"
@@ -675,9 +675,9 @@ def test_pair_validation_refuses_more_carrying_occurrences_than_total_pairs():
         if assertion["assertion_subject"]["pair_hex"] == "7461"
     )
     count["dimensions"]["content"] = {
-        "occurrences_examined": 2,
+        "input_count": 2,
         "occurrences_carrying": 2,
-        "total_count": 1,
+        "count": 1,
     }
     count["dimensions"]["identity"] = _identity(
         result="count",
