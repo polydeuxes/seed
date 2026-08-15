@@ -26,6 +26,7 @@ from tests.binary_input import binary_input
 from io import BytesIO, StringIO
 
 from seed_runtime.event import Event
+from seed_runtime.material_ingest import ingested_material_bytes
 from seed_runtime.operator_ingest import run_operator_ingest
 from seed_runtime.operator_material_boundary import operator_boundary_material
 from seed_runtime.preserved_material_measurement import INGEST_OCCURRED_KIND
@@ -317,7 +318,7 @@ def test_raw_material_without_a_supplied_representation_is_refused():
     # All three occurred at exact source occurrences.
     assert len(occurrences) == 3
     assert all("represented_material" not in event.material for event in occurrences)
-    assert occurrences[1].material["byte_count"] == len(b"\xff\xfe\x00binary\n")
+    assert ingested_material_bytes(occurrences[1]) == b"\xff\xfe\x00binary\n"
 
     declared = DeclaredMeasurement(
         representation_measured="anything",

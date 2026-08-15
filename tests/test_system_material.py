@@ -35,7 +35,6 @@ def test_system_material_preserves_exact_raw_bytes():
 
     assert occurred.kind == MATERIAL_INGEST_OCCURRED_KIND
     assert occurred.locality_identity == "locality_000001"
-    assert occurred.material["byte_count"] == len(exact)
     assert ingested_material_bytes(occurred) == exact
     assert "represented_material" not in occurred.material
 
@@ -118,7 +117,6 @@ def test_system_material_requires_only_material_boundary_and_locality():
 def test_empty_system_material_is_exact_material():
     occurred = _preserve(EventLedger(), b"")
 
-    assert occurred.material["byte_count"] == 0
     assert ingested_material_bytes(occurred) == b""
 
 
@@ -153,15 +151,15 @@ def test_ingested_material_bytes_refuses_wrong_or_corrupt_occurrences():
             Event(
                 identity="evt_x",
                 kind=MATERIAL_INGEST_OCCURRED_KIND,
-                material={"exact_bytes_hex": "zz", "byte_count": 1},
+                material={"exact_bytes_hex": "zz"},
             )
         )
-    with pytest.raises(MaterialIngestError, match="byte count differ"):
+    with pytest.raises(MaterialIngestError, match="not exact"):
         ingested_material_bytes(
             Event(
                 identity="evt_x",
                 kind=MATERIAL_INGEST_OCCURRED_KIND,
-                material={"exact_bytes_hex": "6100", "byte_count": 99},
+                material={"exact_bytes_hex": "AA"},
             )
         )
 

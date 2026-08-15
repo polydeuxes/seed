@@ -57,7 +57,6 @@ def ingest_material(
         "source_role": source_role,
         "source_boundary": source_boundary,
         "exact_bytes_hex": exact_bytes.hex(),
-        "byte_count": len(exact_bytes),
         "known_loss": list(known_loss),
         "unknowns": [
             "what this material represents remains Unknown",
@@ -132,6 +131,6 @@ def ingested_material_bytes(event: Event) -> bytes:
         exact = bytes.fromhex(encoded)
     except ValueError as exc:
         raise MaterialIngestError("Ingest occurrence carries malformed bytes") from exc
-    if exact.hex() != encoded or len(exact) != event.material.get("byte_count"):
-        raise MaterialIngestError("Ingest bytes and byte count differ")
+    if exact.hex() != encoded:
+        raise MaterialIngestError("Ingest material representation is not exact")
     return exact

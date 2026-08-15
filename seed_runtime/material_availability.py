@@ -24,10 +24,9 @@ def exact_material_identity(exact_bytes: bytes) -> str:
 
 @dataclass(frozen=True)
 class MaterialIdentity:
-    """One exact material identity and its measured count."""
+    """One exact material identity."""
 
     identity: str
-    byte_count: int
 
     def __post_init__(self) -> None:
         if type(self.identity) is not str or len(self.identity) != 64:
@@ -40,25 +39,19 @@ class MaterialIdentity:
             raise MaterialAvailabilityError(
                 "a material identity carries a malformed representation"
             ) from exc
-        # bool is an int and True == 1, so it is excluded rather than counted.
-        if type(self.byte_count) is not int or self.byte_count < 0:
-            raise MaterialAvailabilityError(
-                "a material identity requires a non-negative integer byte count"
-            )
-
     @classmethod
     def of(cls, exact_bytes: bytes) -> "MaterialIdentity":
-        return cls(identity=exact_material_identity(exact_bytes), byte_count=len(exact_bytes))
+        return cls(identity=exact_material_identity(exact_bytes))
 
     def to_json_dict(self) -> dict[str, Any]:
-        return {"identity": self.identity, "byte_count": self.byte_count}
+        return {"identity": self.identity}
 
     @classmethod
     def from_json_dict(cls, value: Any) -> "MaterialIdentity":
         if not isinstance(value, dict):
             raise MaterialAvailabilityError("a material identity is not present")
         try:
-            return cls(identity=value["identity"], byte_count=value["byte_count"])
+            return cls(identity=value["identity"])
         except KeyError as exc:
             raise MaterialAvailabilityError(
                 f"a material identity is incomplete: {exc}"
@@ -89,11 +82,9 @@ class ProcessLocalMaterial:
         return identity
 
     def _held_under(self, identity: MaterialIdentity) -> bytes | None:
-        """Return material held under the exact identity and measured count."""
+        """Return material held under the exact identity."""
 
         held = self._held.get(identity.identity)
-        if held is None or len(held) != identity.byte_count:
-            return None
         return held
 
     def is_available(self, identity: MaterialIdentity) -> bool:
