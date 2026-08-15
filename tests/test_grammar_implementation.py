@@ -21,6 +21,7 @@ from seed_runtime.adjacent_pair_measurement import (
     record_emitted_representation_adjacency,
 )
 from seed_runtime.events import CORRUPTED, EventLedger
+from seed_runtime.ids import new_id
 from seed_runtime.external_expression_relation import record_external_expression_relation
 from seed_runtime.operator_console import run_persistent_operator_console
 from seed_runtime.operator_command import (
@@ -54,6 +55,7 @@ from seed_runtime.recurrence_measurement import (
     record_measured_count,
 )
 from seed_runtime.yield_evidence import YIELD_LIVE_BOUNDARIES, yield_commitment
+from seed_runtime.yield_evidence import read_yield_edge_requirements
 
 
 GRAMMAR = Path(__file__).resolve().parents[1] / "book_of_seed/grammar.json"
@@ -895,82 +897,58 @@ def _occurrence_result_witness(bundle: dict) -> str:
 
 
 def _occurrence_result_requirements(bundle: dict) -> dict[str, bool]:
-    carrier = bundle["carrier"]
-    act_evidence = bundle.get("act_evidence")
-    content_evidence = bundle["content_evidence"]
-    if content_evidence is None:
-        return {
-            "exact_relation": False,
-            "occurrence_witness": False,
-            "intact_evidence": False,
-        }
-    carrier_occurrence_coordinate = bundle.get(
-        "carrier_occurrence_coordinate", "act_occurrence_id"
-    )
-    act_evidence_occurrence_coordinate = bundle.get(
-        "act_evidence_occurrence_coordinate", "act_occurrence_id"
-    )
-    carrier_occurrence = carrier.payload.get(carrier_occurrence_coordinate)
-    same_occurrence = carrier_occurrence == content_evidence.payload.get(
-        "dimensions", {}
-    ).get("act_occurrence_id")
-    if act_evidence is not None:
-        same_occurrence = same_occurrence and carrier_occurrence == (
-            act_evidence.payload.get(act_evidence_occurrence_coordinate)
+    ledger = bundle["ledger"]
+    result_evidence = bundle["content_evidence"]
+    responsible_act_evidence = bundle.get("act_evidence")
+
+    def record_if_supplied_representation_changed(event):
+        if event is None:
+            return None
+        stored = ledger.get(event.id)
+        if stored == event:
+            return event.id
+        recorded = event.model_copy(
+            deep=True,
+            update={"id": new_id("yield_edge_pressure")},
         )
-    yield_coordinates = content_evidence.payload.get("yield_coordinates")
-    coordinate_paths = bundle.get("yield_coordinate_paths", {})
-    if not isinstance(yield_coordinates, list) or not all(
-        isinstance(key, str)
-        and (key in carrier.payload or key in coordinate_paths)
-        for key in yield_coordinates
+        ledger.append_many([recorded])
+        return recorded.id
+
+    result_evidence_id = record_if_supplied_representation_changed(result_evidence)
+    responsible_act_evidence_id = record_if_supplied_representation_changed(
+        responsible_act_evidence
+    )
+
+    carrier = bundle["carrier"].model_copy(deep=True)
+    if (
+        result_evidence is not None
+        and result_evidence_id != result_evidence.id
+        and carrier.payload.get("yield_evidence_id") == result_evidence.id
     ):
-        return {
-            "exact_relation": False,
-            "occurrence_witness": same_occurrence,
-            "intact_evidence": (
-                bundle["ledger"].integrity_of(content_evidence.id) != CORRUPTED
-                and (
-                    act_evidence is None
-                    or bundle["ledger"].integrity_of(act_evidence.id)
-                    != CORRUPTED
-                )
-            ),
-        }
-    actual_result = {}
-    for key in yield_coordinates:
-        value = carrier.payload
-        for coordinate in coordinate_paths.get(key, (key,)):
-            value = value[coordinate]
-        actual_result[key] = value
-    actual_commitment = yield_commitment(
-        content_evidence.payload.get("yield_convention"), actual_result
-    )
-    same_result = (
-        content_evidence.payload.get("yield_commitment") == actual_commitment
-    )
-    if act_evidence is not None:
-        same_result = same_result and (
-            act_evidence.payload.get("result_commitment") == actual_commitment
+        carrier.payload["yield_evidence_id"] = result_evidence_id
+    if (
+        responsible_act_evidence is not None
+        and responsible_act_evidence_id != responsible_act_evidence.id
+        and carrier.payload.get("responsible_act_evidence_id")
+        == responsible_act_evidence.id
+    ):
+        carrier.payload["responsible_act_evidence_id"] = (
+            responsible_act_evidence_id
         )
-    evidence_is_carried = (
-        carrier.payload.get("yield_evidence_id") == content_evidence.id
-    )
-    if act_evidence is not None:
-        evidence_is_carried = evidence_is_carried and (
-            carrier.payload.get("responsible_act_evidence_id") == act_evidence.id
-        )
-    return {
-        "exact_relation": same_result and evidence_is_carried,
-        "occurrence_witness": same_occurrence,
-        "intact_evidence": (
-            bundle["ledger"].integrity_of(content_evidence.id) != CORRUPTED
-            and (
-                act_evidence is None
-                or bundle["ledger"].integrity_of(act_evidence.id) != CORRUPTED
-            )
+    carrier_id = record_if_supplied_representation_changed(carrier)
+
+    return read_yield_edge_requirements(
+        ledger,
+        carrier_event_id=carrier_id,
+        result_evidence_event_id=result_evidence_id,
+        responsible_act_evidence_event_id=responsible_act_evidence_id,
+        carrier_occurrence_coordinate=bundle.get(
+            "carrier_occurrence_coordinate", "act_occurrence_id"
         ),
-    }
+        responsible_act_occurrence_coordinate=bundle.get(
+            "act_evidence_occurrence_coordinate", "act_occurrence_id"
+        ),
+    )
 
 
 def _emission_locality_witness(bundle: dict) -> str:
@@ -1162,7 +1140,9 @@ def _structural_edge_fidelity_cases() -> dict[str, dict[str, str]]:
     )
     missing_yield = dict(yielded)
     missing_yield_carrier = yielded["carrier"].model_copy(deep=True)
-    missing_yield_carrier.payload["measurement_rule"] = "different-rule"
+    missing_yield_carrier.payload["yield_evidence_id"] = (
+        "missing-yield-evidence"
+    )
     missing_yield["carrier"] = missing_yield_carrier
     wrong_yield = dict(yielded)
     wrong_yield_act_evidence = yielded["act_evidence"].model_copy(deep=True)
@@ -1282,7 +1262,9 @@ def _successful_emission_requirement_bundles() -> dict[str, dict[str, dict]]:
 
     missing_yield = dict(emission)
     missing_yield_carrier = emission["carrier"].model_copy(deep=True)
-    missing_yield_carrier.payload["yielded_result"]["accepted_length"] += 1
+    missing_yield_carrier.payload["yield_evidence_id"] = (
+        "missing-yield-evidence"
+    )
     missing_yield["carrier"] = missing_yield_carrier
     wrong_yield = dict(emission)
     wrong_yield_carrier = emission["carrier"].model_copy(deep=True)
@@ -1350,19 +1332,7 @@ def _yield_requirement_bundles(
 ) -> dict[str, dict]:
     missing = dict(exact)
     missing_carrier = exact["carrier"].model_copy(deep=True)
-    yielded_coordinates = exact["content_evidence"].payload["yield_coordinates"]
-    missing_coordinate = next(
-        coordinate
-        for coordinate in yielded_coordinates
-        if coordinate != "act_occurrence_id"
-    )
-    missing_parent = missing_carrier.payload
-    missing_path = exact.get("yield_coordinate_paths", {}).get(
-        missing_coordinate, (missing_coordinate,)
-    )
-    for coordinate in missing_path[:-1]:
-        missing_parent = missing_parent[coordinate]
-    missing_parent.pop(missing_path[-1])
+    missing_carrier.payload["yield_evidence_id"] = "missing-yield-evidence"
     missing["carrier"] = missing_carrier
 
     wrong_occurrence = dict(exact)
@@ -1571,8 +1541,8 @@ def _additional_live_structural_edge_fidelity_cases() -> dict[
     missing_representation_yield_carrier = representation["carrier"].model_copy(
         deep=True
     )
-    missing_representation_yield_carrier.payload["representation_result"] = (
-        "different result"
+    missing_representation_yield_carrier.payload["yield_evidence_id"] = (
+        "missing-yield-evidence"
     )
     missing_representation_yield["carrier"] = missing_representation_yield_carrier
     wrong_representation_yield = dict(representation)
@@ -2252,7 +2222,7 @@ def test_representation_result_adversaries_change_one_requirement_each():
 
     missing_yield = dict(exact)
     missing_yield_carrier = exact["carrier"].model_copy(deep=True)
-    missing_yield_carrier.payload["representation_result"] = "different result"
+    missing_yield_carrier.payload["yield_evidence_id"] = "missing-yield-evidence"
     missing_yield["carrier"] = missing_yield_carrier
     wrong_yield = dict(exact)
     wrong_act_evidence = exact["act_evidence"].model_copy(deep=True)
@@ -2353,7 +2323,9 @@ def test_byte_measurement_adversaries_change_one_requirement_each():
     alternate_yield = _byte_measurement_road()
     missing_yield = dict(yielded)
     missing_yield_carrier = yielded["carrier"].model_copy(deep=True)
-    missing_yield_carrier.payload["measurement_rule"] = "different-rule"
+    missing_yield_carrier.payload["yield_evidence_id"] = (
+        "missing-yield-evidence"
+    )
     missing_yield["carrier"] = missing_yield_carrier
     wrong_yield = dict(yielded)
     wrong_act_evidence = yielded["act_evidence"].model_copy(deep=True)
@@ -2849,6 +2821,22 @@ def test_occurrence_and_result_endpoints_do_not_establish_their_relation():
     assert _occurrence_result_witness(bundle) == MISSING
 
 
+def test_yield_edge_read_resolves_occurrences_without_reencoding(monkeypatch):
+    bundle = _byte_measurement_road()
+
+    def refuse_reencoding(*_args, **_kwargs):
+        raise AssertionError("the Yield-edge read re-encoded a recorded result")
+
+    monkeypatch.setattr(
+        "seed_runtime.yield_evidence.yield_commitment", refuse_reencoding
+    )
+    assert _occurrence_result_requirements(bundle) == {
+        "exact_relation": True,
+        "occurrence_witness": True,
+        "intact_evidence": True,
+    }
+
+
 def test_exact_act_clause_is_checked_against_live_byte_measurement():
     clause = _clause("02.Acts.A")
     bundle = _byte_measurement_road()
@@ -3271,12 +3259,20 @@ def test_every_live_edge_witness_returns_its_edge_required_coordinates():
     """The vector each witness reports is the one its edge declares."""
 
     edges = json.loads(GRAMMAR.read_text(encoding="utf-8"))["structural_edges"]
+    yielded = _occurrence_result_requirements(_byte_measurement_road())
+    assert set(yielded) == set(edges["yield"]["requires"])
+
+    # The remaining witnesses are still developer-read through Python AST.
+    # Yield is deliberately absent here: its required coordinates were read
+    # from Seed's live result above, not reconstructed from function syntax.
     source = Path(__file__).read_text(encoding="utf-8")
     tree = ast.parse(source)
     for node in tree.body:
         if not isinstance(node, ast.FunctionDef):
             continue
         if node.name not in STRUCTURAL_EDGE_EVIDENCE:
+            continue
+        if node.name == "_occurrence_result_requirements":
             continue
         edge, _ = STRUCTURAL_EDGE_EVIDENCE[node.name]
         required = set(edges[edge]["requires"])

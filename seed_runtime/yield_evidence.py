@@ -19,7 +19,7 @@ import json
 from typing import Any
 
 from seed_runtime.event import Event
-from seed_runtime.events import EventLedger
+from seed_runtime.events import CORRUPTED, EventLedger
 
 YIELD_EVIDENCE_KIND = "operator.yield.evidence_recorded"
 YIELD_LIVE_BOUNDARIES = frozenset(
@@ -65,6 +65,110 @@ def yield_commitment(convention: str, content: dict[str, Any]) -> str:
         digest, json.dumps(content, sort_keys=True, separators=(",", ":"))
     )
     return digest.hexdigest()
+
+
+def read_yield_edge_requirements(
+    ledger: EventLedger,
+    *,
+    carrier_event_id: str,
+    result_evidence_event_id: str | None,
+    responsible_act_evidence_event_id: str | None = None,
+    carrier_occurrence_coordinate: str = "act_occurrence_id",
+    responsible_act_occurrence_coordinate: str = "act_occurrence_id",
+) -> dict[str, bool]:
+    """Read the three machine-grammar requirements of one exact Yield edge.
+
+    The caller supplies exact occurrence identities under pressure.  Seed
+    resolves the stored occurrences itself; it does not accept reconstructed
+    event payloads and does not re-encode the yielded result.  A missing
+    result-evidence occurrence makes every requirement absent.  Changing an
+    unrelated carrier coordinate does not.
+    """
+
+    if not isinstance(ledger, EventLedger):
+        raise TypeError("a Yield-edge read requires one EventLedger")
+    if not isinstance(carrier_event_id, str) or not carrier_event_id:
+        raise TypeError("a Yield-edge read requires one carrier occurrence")
+    carrier = ledger.get(carrier_event_id)
+    if carrier is None:
+        return {
+            "exact_relation": False,
+            "occurrence_witness": False,
+            "intact_evidence": False,
+        }
+    result_evidence = (
+        ledger.get(result_evidence_event_id)
+        if isinstance(result_evidence_event_id, str)
+        else None
+    )
+    responsible_act_evidence = (
+        ledger.get(responsible_act_evidence_event_id)
+        if isinstance(responsible_act_evidence_event_id, str)
+        else None
+    )
+    responsible_act_evidence_required = isinstance(
+        responsible_act_evidence_event_id, str
+    )
+    if result_evidence is None:
+        return {
+            "exact_relation": False,
+            "occurrence_witness": False,
+            "intact_evidence": False,
+        }
+    if not isinstance(carrier_occurrence_coordinate, str) or not (
+        carrier_occurrence_coordinate
+    ):
+        raise TypeError("the carrier occurrence coordinate must be exact")
+    if not isinstance(responsible_act_occurrence_coordinate, str) or not (
+        responsible_act_occurrence_coordinate
+    ):
+        raise TypeError("the responsible-Act occurrence coordinate must be exact")
+
+    carrier_occurrence = carrier.payload.get(carrier_occurrence_coordinate)
+    evidence_dimensions = result_evidence.payload.get("dimensions", {})
+    same_occurrence = carrier_occurrence == evidence_dimensions.get(
+        "act_occurrence_id"
+    )
+    if responsible_act_evidence is not None:
+        same_occurrence = same_occurrence and carrier_occurrence == (
+            responsible_act_evidence.payload.get(
+                responsible_act_occurrence_coordinate
+            )
+        )
+    elif responsible_act_evidence_required:
+        same_occurrence = False
+
+    evidence_is_carried = (
+        carrier.payload.get("yield_evidence_id") == result_evidence.id
+        and result_evidence.kind == YIELD_EVIDENCE_KIND
+        and result_evidence.workspace_id == carrier.workspace_id
+    )
+    if responsible_act_evidence is not None:
+        evidence_is_carried = evidence_is_carried and (
+            carrier.payload.get("responsible_act_evidence_id")
+            == responsible_act_evidence.id
+            and responsible_act_evidence.workspace_id == carrier.workspace_id
+        )
+    elif responsible_act_evidence_required:
+        evidence_is_carried = False
+
+    return {
+        "exact_relation": evidence_is_carried,
+        "occurrence_witness": same_occurrence,
+        "intact_evidence": (
+            ledger.integrity_of(result_evidence.id) != CORRUPTED
+            and (
+                (
+                    responsible_act_evidence is None
+                    and not responsible_act_evidence_required
+                )
+                or (
+                    responsible_act_evidence is not None
+                    and ledger.integrity_of(responsible_act_evidence.id) != CORRUPTED
+                )
+            )
+        ),
+    }
 
 
 def _record_yield_evidence(
