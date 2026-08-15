@@ -601,7 +601,6 @@ def test_emission_preserves_the_exact_text_written_to_its_boundary():
     assert emission.material["emitted_representation"] == output.getvalue()
     assert emission.material["emitted_representation_kind"] == "text"
     assert emission.material["output_boundary"] == "text_stream_write"
-    assert emission.material["stream_encoding_metadata"] is None
     assert emission.material["write_count"] == len(output.getvalue())
     assert emission.material["provenance_occurrence_references"] == [
         representation["representation_event_identity"],
@@ -676,11 +675,11 @@ def test_partial_output_write_preserves_attempt_and_failed_occurrences():
         "operator.representation.emission_outcome_recorded",
     ]
     failure = ledger.get(representation["emission_outcome_event_identity"])
-    assert failure.material["failure_phase"] == "text_stream_write"
-    assert failure.material["outcome"] == "write_failed"
-    assert failure.material["reported_write_count"] == (
-        failure.material["expected_write_count"] - 1
-    )
+    assert failure.material["boundary"] == "text_stream_write"
+    assert failure.material["write_count"] == len(
+        representation["emission_text"]
+    ) - 1
+    assert failure.material["error"] is None
     assert failure.material["emitted_event_identity"] is None
     assert representation["emitted_event_identity"] is None
 
@@ -706,8 +705,11 @@ def test_write_exception_preserves_unknown_boundary_acceptance():
 
     assert output.getvalue()
     failure = ledger.get(representation["emission_outcome_event_identity"])
-    assert failure.material["reported_write_count"] is None
-    assert failure.material["outcome"] == "write_failed"
+    assert failure.material["boundary"] == "text_stream_write"
+    assert failure.material["write_count"] is None
+    assert failure.material["error"] == (
+        "OSError('write failed after an unreported boundary revision')"
+    )
     assert (
         "output-boundary acceptance remains Unknown because write reported no count"
         in failure.material["unknowns"]
@@ -744,10 +746,10 @@ def test_flush_failure_does_not_erase_the_completed_text_stream_write():
     emitted = ledger.get(representation["emitted_event_identity"])
     failure = ledger.get(representation["emission_outcome_event_identity"])
     assert emitted.material["output_boundary"] == "text_stream_write"
-    assert failure.material["failure_phase"] == "text_stream_flush"
-    assert failure.material["outcome"] == "flush_failed_after_emission"
+    assert failure.material["boundary"] == "text_stream_flush"
+    assert failure.material["write_count"] == len(representation["emission_text"])
     assert failure.material["emitted_event_identity"] == emitted.identity
-    assert failure.material["error_type"] == "OSError"
+    assert failure.material["error"] == "OSError('flush failed')"
 
 
 def test_process_death_after_attempt_leaves_output_outcome_unknown():

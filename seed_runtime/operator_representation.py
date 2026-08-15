@@ -330,9 +330,6 @@ def emit_operator_representation(
             )
     emitted_representation = recorded["emission_text"]
     emission_act_identity = new_identity("operator_representation_emission_act")
-    stream_encoding_metadata = getattr(output_stream, "encoding", None)
-    if type(stream_encoding_metadata) is not str or not stream_encoding_metadata:
-        stream_encoding_metadata = None
     scope = f"locality:{representation['locality_identity']}"
     attempt_event = ledger.append(
         REPRESENTATION_EMISSION_ATTEMPT_KIND,
@@ -356,7 +353,6 @@ def emit_operator_representation(
             "representation": emitted_representation,
             "representation_kind": "text",
             "output_boundary": "text_stream_write",
-            "stream_encoding_metadata": stream_encoding_metadata,
             "known_loss": [],
             "unknowns": [
                 "output-boundary acceptance remains Unknown until an outcome is recorded",
@@ -400,8 +396,7 @@ def emit_operator_representation(
             representation=representation,
             attempt_event_identity=attempt_event.identity,
             scope=scope,
-            stream_encoding_metadata=stream_encoding_metadata,
-            phase="text_stream_write",
+            boundary="text_stream_write",
             written=None,
             error=error,
         )
@@ -414,8 +409,7 @@ def emit_operator_representation(
             representation=representation,
             attempt_event_identity=attempt_event.identity,
             scope=scope,
-            stream_encoding_metadata=stream_encoding_metadata,
-            phase="text_stream_write",
+            boundary="text_stream_write",
             written=written,
             error=None,
         )
@@ -515,7 +509,6 @@ def emit_operator_representation(
             "emitted_representation": emitted_representation,
             "emitted_representation_kind": "text",
             "output_boundary": "text_stream_write",
-            "stream_encoding_metadata": stream_encoding_metadata,
             "write_count": written,
             "responsible_act_evidence_identity": responsible_act_evidence.identity,
             "locality_evidence_identity": locality_evidence.identity,
@@ -540,8 +533,7 @@ def emit_operator_representation(
             representation=representation,
             attempt_event_identity=attempt_event.identity,
             scope=scope,
-            stream_encoding_metadata=stream_encoding_metadata,
-            phase="text_stream_flush",
+            boundary="text_stream_flush",
             written=written,
             error=error,
             emitted_event_identity=emitted_event.identity,
@@ -557,24 +549,18 @@ def _record_emission_failure_outcome(
     representation: dict[str, Any],
     attempt_event_identity: str,
     scope: str,
-    stream_encoding_metadata: str | None,
-    phase: str,
+    boundary: str,
     written: Any,
     error: Exception | None,
     emitted_event_identity: str | None = None,
 ):
     """Preserve the bounded failure without inferring downstream state."""
     if type(written) is int and written >= 0:
-        reported_write_count: int | None = written
+        write_count: int | None = written
     else:
-        reported_write_count = None
-    outcome = (
-        "flush_failed_after_emission"
-        if emitted_event_identity is not None
-        else "write_failed"
-    )
+        write_count = None
     unknowns = ["effects beyond the output boundary remain Unknown"]
-    if phase == "text_stream_write" and reported_write_count is None:
+    if boundary == "text_stream_write" and write_count is None:
         unknowns.insert(
             0,
             "output-boundary acceptance remains Unknown because write reported no count",
@@ -593,8 +579,8 @@ def _record_emission_failure_outcome(
             "representation_event_identity": representation["representation_event_identity"],
             "emitted_event_identity": emitted_event_identity,
             "dimensions": _dimensions(
-                identity=f"emission-outcome:{attempt_event_identity}:{phase}",
-                content=f"{phase} did not complete the emission call",
+                identity=f"emission-outcome:{attempt_event_identity}:{boundary}",
+                content=f"{boundary} did not complete the emission call",
                 source=attempt_event_identity,
                 responsibility=REPRESENTATION_EMISSION_RESPONSIBILITY,
                 authority="unestablished",
@@ -605,16 +591,9 @@ def _record_emission_failure_outcome(
                 scope=scope,
                 occurrence="emission failure durably recorded",
             ),
-            "failure_phase": phase,
-            "outcome": outcome,
-            "reported_write_count": reported_write_count,
-            "expected_write_count": len(
-                representation["emission_text"]
-            ),
-            "error_type": type(error).__name__ if error is not None else None,
-            "error_message": str(error) if error is not None else None,
-            "output_boundary": "text_stream_write",
-            "stream_encoding_metadata": stream_encoding_metadata,
+            "boundary": boundary,
+            "write_count": write_count,
+            "error": repr(error) if error is not None else None,
             "known_loss": [],
             "unknowns": unknowns,
             "conflicts": [],
