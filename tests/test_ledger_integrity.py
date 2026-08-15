@@ -361,7 +361,7 @@ def test_a_comparison_refuses_a_corrupted_input(path, monkeypatch):
         led.close()
 
 
-def test_a_comparison_records_each_input_s_integrity(path):
+def test_a_comparison_checks_each_input_without_copying_storage_integrity(path):
     from io import StringIO
     from seed_runtime.adjacency_pair_measurement import measure_after
     from seed_runtime.preserved_material_measurement import (
@@ -382,13 +382,17 @@ def test_a_comparison_records_each_input_s_integrity(path):
                 led, locality_identity=locality_identity,
                 finding=measure_after(occ, "a", counting_scope="s")).identity)
         finding = compare_preserved_findings(led, identities)
-        assert [i.integrity for i in finding.inputs] == [VERIFIED, VERIFIED]
+        assert [led.integrity_of(identity) for identity in identities] == [
+            VERIFIED,
+            VERIFIED,
+        ]
+        assert [item.event_identity for item in finding.inputs] == identities
+        assert all("integrity" not in item.to_json_dict() for item in finding.inputs)
     finally:
         led.close()
 
 
-def test_an_unverifiable_input_is_recorded_rather_than_refused():
-    """In-memory findings are lawfully unverifiable, and comparison proceeds."""
+def test_unverifiable_storage_does_not_become_comparison_result_material():
     from io import StringIO
     from seed_runtime.adjacency_pair_measurement import measure_after
     from seed_runtime.preserved_material_measurement import (
@@ -407,7 +411,12 @@ def test_an_unverifiable_input_is_recorded_rather_than_refused():
             finding=measure_after(occ, "a", counting_scope="s")).identity)
 
     finding = compare_preserved_findings(led, identities)
-    assert [i.integrity for i in finding.inputs] == [UNVERIFIABLE, UNVERIFIABLE]
+    assert [led.integrity_of(identity) for identity in identities] == [
+        UNVERIFIABLE,
+        UNVERIFIABLE,
+    ]
+    assert [item.event_identity for item in finding.inputs] == identities
+    assert all("integrity" not in item.to_json_dict() for item in finding.inputs)
 
 
 def test_a_nullable_occurrence_material_identity_is_refused_when_populated(path):
