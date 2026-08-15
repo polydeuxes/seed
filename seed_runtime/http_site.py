@@ -138,7 +138,7 @@ class RunningHttpSite:
         self._server = ThreadingHTTPServer(("127.0.0.1", 0), Handler)
         self._thread = Thread(
             target=self._server.serve_forever,
-            kwargs={"poll_interval": 0.05},
+            args=(0.05,),
             name="seed-http-site",
             daemon=True,
         )
