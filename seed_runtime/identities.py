@@ -1,4 +1,4 @@
-"""Identifier helpers for Seed domain objects."""
+"""Exact identity minting for Seed occurrences and results."""
 
 from __future__ import annotations
 
@@ -8,16 +8,16 @@ _next_values: dict[str, int] = {}
 _lock = Lock()
 
 
-def new_id(prefix: str) -> str:
-    """Return a compact deterministic-process unique identifier."""
+def new_identity(prefix: str) -> str:
+    """Return one process-unique identity."""
     with _lock:
         next_value = _next_values.get(prefix, 1)
         _next_values[prefix] = next_value + 1
         return f"{prefix}_{next_value:06d}"
 
 
-def reserve_id_prefix(prefix: str, max_numeric_number: int) -> None:
-    """Ensure future IDs for ``prefix`` are greater than an observed number."""
+def reserve_identity_prefix(prefix: str, max_numeric_number: int) -> None:
+    """Ensure future identities for ``prefix`` are greater than an observed number."""
     if max_numeric_number < 0:
         raise ValueError("max_numeric_number must be non-negative")
     with _lock:

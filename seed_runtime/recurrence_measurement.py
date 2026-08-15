@@ -45,7 +45,7 @@ from typing import Any, Iterable, Iterator
 
 from seed_runtime.events import EventLedger, EventLedgerBoundary
 from seed_runtime.event import Event
-from seed_runtime.ids import new_id
+from seed_runtime.identities import new_identity
 from seed_runtime.preserved_material_measurement import MEASUREMENT_RECORDED_KIND
 from seed_runtime.yield_evidence import _record_yield_evidence
 
@@ -130,11 +130,11 @@ class MeasuredCountFinding:
     measured_in: tuple[str, ...]
     measured_without_distinction: tuple[str, ...]
     coordinate_not_measured: tuple[str, ...]
-    input_event_ids: tuple[str, ...]
+    input_event_identities: tuple[str, ...]
     input_ledger_boundary: EventLedgerBoundary
     bounded_localities: tuple[str, ...]
-    measured_in_support_event_ids: tuple[str, ...] = ()
-    measured_without_distinction_support_event_ids: tuple[str, ...] = ()
+    measured_in_support_event_identities: tuple[str, ...] = ()
+    measured_without_distinction_support_event_identities: tuple[str, ...] = ()
 
     @property
     def locality_count(self) -> int:
@@ -155,7 +155,7 @@ class MeasuredCountFinding:
             "locality_count": self.locality_count,
             "recurrence_established": self.recurrence_established,
             "bounded_localities": list(self.bounded_localities),
-            "input_event_ids": list(self.input_event_ids),
+            "input_event_identities": list(self.input_event_identities),
             "input_ledger_boundary": {
                 "identity": self.input_ledger_boundary.identity,
             },
@@ -171,8 +171,8 @@ class MeasuredAssertion:
     subject: dict[str, Any]
     content: dict[str, Any]
     scope: dict[str, Any]
-    support_event_ids: tuple[str, ...] = ()
-    support_assertion_ids: tuple[str, ...] = ()
+    support_event_identities: tuple[str, ...] = ()
+    support_assertion_identities: tuple[str, ...] = ()
     completeness_boundary: EventLedgerBoundary | None = None
     completeness_occurrence_kinds: tuple[str, ...] = ()
 
@@ -203,11 +203,11 @@ class MeasuredAssertion:
             "assertion_subject": dict(self.subject),
             "assertion_scope": dict(self.scope),
             "input_support": {
-                "event_ids": list(self.support_event_ids),
+                "event_identities": list(self.support_event_identities),
                 # These dependencies are local to the same yielding
                 # occurrence. Each remains bound to that occurrence's identity
                 # before exposing it to a downstream Act.
-                "local_assertion_ids": list(self.support_assertion_ids),
+                "local_assertion_identities": list(self.support_assertion_identities),
             },
             "completeness_boundary": (
                 {"identity": self.completeness_boundary.identity}
@@ -216,7 +216,7 @@ class MeasuredAssertion:
             ),
             "completeness_scope": (
                 {
-                    "locality_ids": list(self.scope["bounded_localities"]),
+                    "locality_identities": list(self.scope["bounded_localities"]),
                     "occurrence_kinds": list(self.completeness_occurrence_kinds),
                     "requires_locality_existence": True,
                 }
@@ -236,9 +236,9 @@ class MeasuredAssertion:
 class RecordedMeasuredAssertion:
     """One addressable Assertion preserved inside its yielding occurrence."""
 
-    assertion_id: str
+    assertion_identity: str
     recorded_occurrence_reference: str
-    yielding_locality_id: str | None
+    yielding_locality_identity: str | None
     result: str
     payload: dict[str, Any]
     support_assertion_references: tuple[dict[str, str], ...] = ()
@@ -246,7 +246,7 @@ class RecordedMeasuredAssertion:
     @property
     def reference(self) -> dict[str, str]:
         return {
-            "assertion_id": self.assertion_id,
+            "assertion_identity": self.assertion_identity,
             "recorded_occurrence_reference": self.recorded_occurrence_reference,
         }
 
@@ -256,19 +256,19 @@ def assertions_of_recorded_measurement(event: Event) -> tuple[RecordedMeasuredAs
 
     if event.kind != LOCALITY_COUNT_RECORDED_KIND:
         raise RecurrenceMeasurementError(
-            f"{event.id} is {event.kind}, not a recurrence Measurement occurrence"
+            f"{event.identity} is {event.kind}, not a recurrence Measurement occurrence"
         )
     stated = event.payload.get("assertions")
     if not isinstance(stated, list):
         raise RecurrenceMeasurementError(
-            f"{event.id} does not preserve its distinct Assertions"
+            f"{event.identity} does not preserve its distinct Assertions"
         )
     read = []
     seen = set()
     for assertion in stated:
         if not isinstance(assertion, dict):
             raise RecurrenceMeasurementError(
-                f"{event.id} carries a non-object Assertion representation"
+                f"{event.identity} carries a non-object Assertion representation"
             )
         dimensions = assertion.get("dimensions")
         identity = dimensions.get("identity") if isinstance(dimensions, dict) else None
@@ -278,7 +278,7 @@ def assertions_of_recorded_measurement(event: Event) -> tuple[RecordedMeasuredAs
         scope = assertion.get("assertion_scope")
         if assertion.get("subject_kind") != "assertion":
             raise RecurrenceMeasurementError(
-                f"{event.id} carries a result that is not identified as an Assertion"
+                f"{event.identity} carries a result that is not identified as an Assertion"
             )
         if (
             not isinstance(identity, str)
@@ -289,7 +289,7 @@ def assertions_of_recorded_measurement(event: Event) -> tuple[RecordedMeasuredAs
             or not isinstance(scope, dict)
         ):
             raise RecurrenceMeasurementError(
-                f"{event.id} carries an Assertion without exact identity, result, "
+                f"{event.identity} carries an Assertion without exact identity, result, "
                 "subject, scope, and content"
             )
         bounded_localities = scope.get("bounded_localities")
@@ -301,7 +301,7 @@ def assertions_of_recorded_measurement(event: Event) -> tuple[RecordedMeasuredAs
             or any(subject.get(name) != value for name, value in declared_identity.items())
         ):
             raise RecurrenceMeasurementError(
-                f"{event.id} carries an Assertion without coherent bounded scope"
+                f"{event.identity} carries an Assertion without coherent bounded scope"
             )
         canonical = _canonical_measured_assertion_identity(
             result=result,
@@ -311,75 +311,75 @@ def assertions_of_recorded_measurement(event: Event) -> tuple[RecordedMeasuredAs
         )
         if identity != canonical:
             raise RecurrenceMeasurementError(
-                f"{event.id} carries an Assertion identity that does not match "
+                f"{event.identity} carries an Assertion identity that does not match "
                 "its carried coordinates"
             )
         if identity in seen:
             raise RecurrenceMeasurementError(
-                f"{event.id} carries duplicate Assertion identity {identity}"
+                f"{event.identity} carries duplicate Assertion identity {identity}"
             )
         seen.add(identity)
         read.append(
             RecordedMeasuredAssertion(
-                assertion_id=identity,
-                recorded_occurrence_reference=event.id,
-                yielding_locality_id=event.locality_id,
+                assertion_identity=identity,
+                recorded_occurrence_reference=event.identity,
+                yielding_locality_identity=event.locality_identity,
                 result=result,
                 payload=assertion,
             )
         )
-    identities = {assertion.assertion_id for assertion in read}
+    identities = {assertion.assertion_identity for assertion in read}
     by_result = {}
     for assertion in read:
         if assertion.result in by_result:
             raise RecurrenceMeasurementError(
-                f"{event.id} carries duplicate Assertion result {assertion.result}"
+                f"{event.identity} carries duplicate Assertion result {assertion.result}"
             )
         by_result[assertion.result] = assertion
     bound = []
     for assertion in read:
         support = assertion.payload.get("input_support")
-        local_ids = support.get("local_assertion_ids") if isinstance(support, dict) else None
-        if not isinstance(local_ids, list) or not all(
-            isinstance(value, str) for value in local_ids
+        local_identities = support.get("local_assertion_identities") if isinstance(support, dict) else None
+        if not isinstance(local_identities, list) or not all(
+            isinstance(value, str) for value in local_identities
         ):
             raise RecurrenceMeasurementError(
-                f"{event.id} carries an Assertion without local Assertion support"
+                f"{event.identity} carries an Assertion without local Assertion support"
             )
-        missing = set(local_ids) - identities
+        missing = set(local_identities) - identities
         if missing:
             raise RecurrenceMeasurementError(
-                f"{event.id} carries unresolved local Assertion support: "
+                f"{event.identity} carries unresolved local Assertion support: "
                 f"{', '.join(sorted(missing))}"
             )
         if assertion.result == "count":
             measured_in = by_result.get("measured_in")
-            expected_local_ids = (
-                [measured_in.assertion_id] if measured_in is not None else []
+            expected_local_identities = (
+                [measured_in.assertion_identity] if measured_in is not None else []
             )
         elif assertion.result == "recurrence":
             count = by_result.get("count")
-            expected_local_ids = [count.assertion_id] if count is not None else []
+            expected_local_identities = [count.assertion_identity] if count is not None else []
         else:
-            expected_local_ids = []
-        if local_ids != expected_local_ids:
+            expected_local_identities = []
+        if local_identities != expected_local_identities:
             raise RecurrenceMeasurementError(
-                f"{event.id} carries {assertion.result} with the wrong local "
+                f"{event.identity} carries {assertion.result} with the wrong local "
                 "Assertion support"
             )
         bound.append(
             RecordedMeasuredAssertion(
-                assertion_id=assertion.assertion_id,
+                assertion_identity=assertion.assertion_identity,
                 recorded_occurrence_reference=assertion.recorded_occurrence_reference,
-                yielding_locality_id=assertion.yielding_locality_id,
+                yielding_locality_identity=assertion.yielding_locality_identity,
                 result=assertion.result,
                 payload=assertion.payload,
                 support_assertion_references=tuple(
                     {
-                        "recorded_occurrence_reference": event.id,
-                        "assertion_id": local_id,
+                        "recorded_occurrence_reference": event.identity,
+                        "assertion_identity": local_identity,
                     }
-                    for local_id in local_ids
+                    for local_identity in local_identities
                 ),
             )
         )
@@ -389,14 +389,14 @@ def assertions_of_recorded_measurement(event: Event) -> tuple[RecordedMeasuredAs
 def iter_recorded_measured_assertions(
     ledger: EventLedger,
     *,
-    locality_ids: Iterable[str],
+    locality_identities: Iterable[str],
     through: EventLedgerBoundary | None = None,
 ) -> Iterator[RecordedMeasuredAssertion]:
     """Stream Assertions from exact declared Localities through one boundary."""
 
-    for locality_id in tuple(dict.fromkeys(locality_ids)):
+    for locality_identity in tuple(dict.fromkeys(locality_identities)):
         for event in ledger.iter_locality_kind(
-            locality_id,
+            locality_identity,
             LOCALITY_COUNT_RECORDED_KIND,
             through=through,
         ):
@@ -404,7 +404,7 @@ def iter_recorded_measured_assertions(
 
 
 def get_recorded_measured_assertion(
-    ledger: EventLedger, *, recorded_occurrence_reference: str, assertion_id: str
+    ledger: EventLedger, *, recorded_occurrence_reference: str, assertion_identity: str
 ) -> RecordedMeasuredAssertion | None:
     """Resolve one exact occurrence-bound Assertion reference."""
 
@@ -412,7 +412,7 @@ def get_recorded_measured_assertion(
     if event is None:
         return None
     for assertion in assertions_of_recorded_measurement(event):
-        if assertion.assertion_id == assertion_id:
+        if assertion.assertion_identity == assertion_identity:
             return assertion
     return None
 
@@ -499,7 +499,7 @@ def measure_locality_counts(
             measured_coordinate.setdefault(declared, set()).add(locality)
             coordinate_evidence.setdefault(declared, {}).setdefault(
                 locality, set()
-            ).add(event.id)
+            ).add(event.identity)
             for occupancy in event.payload.get("occupancies", []):
                 right = occupancy.get("representation")
                 if not isinstance(right, str):
@@ -509,7 +509,7 @@ def measure_locality_counts(
                     declared=declared,
                 )
                 observed.setdefault(key, set()).add(locality)
-                observed_evidence.setdefault(key, set()).add(event.id)
+                observed_evidence.setdefault(key, set()).add(event.identity)
 
     if unestablished:
         raise RecurrenceMeasurementError(
@@ -534,9 +534,9 @@ def measure_locality_counts(
         not_measured = declared_set - measured
         measured_without = measured - where
         measured_without_evidence = {
-            event_id
+            event_identity
             for locality in measured_without
-            for event_id in coordinate_evidence.get(key.declared, {}).get(
+            for event_identity in coordinate_evidence.get(key.declared, {}).get(
                 locality, set()
             )
         }
@@ -544,7 +544,7 @@ def measure_locality_counts(
         evidence = measured_in_evidence | measured_without_evidence
         # The third result stands on the complete Measurement-kind read for
         # each declared locality through the preserved ledger boundary. Copying
-        # every unrelated Measurement id into every negative finding neither
+        # every unrelated Measurement identity into every negative finding neither
         # establishes nor strengthens that completeness. Exact-coordinate,
         # Compare, and comparison-input Evidence remain carried below.
         findings.append(
@@ -553,13 +553,13 @@ def measure_locality_counts(
                 measured_in=tuple(sorted(where)),
                 measured_without_distinction=tuple(sorted(measured_without)),
                 coordinate_not_measured=tuple(sorted(not_measured)),
-                input_event_ids=tuple(sorted(evidence)),
+                input_event_identities=tuple(sorted(evidence)),
                 input_ledger_boundary=input_ledger_boundary,
                 bounded_localities=declared_localities,
-                measured_in_support_event_ids=tuple(
+                measured_in_support_event_identities=tuple(
                     sorted(measured_in_evidence)
                 ),
-                measured_without_distinction_support_event_ids=tuple(
+                measured_without_distinction_support_event_identities=tuple(
                     sorted(measured_without_evidence)
                 ),
             )
@@ -647,7 +647,7 @@ def assertions_from_measured_count(
             subject=subject,
             content=content,
             scope=scope,
-            support_event_ids=support,
+            support_event_identities=support,
             completeness_boundary=finding.input_ledger_boundary,
             completeness_occurrence_kinds=occurrence_kinds,
         )
@@ -655,13 +655,13 @@ def assertions_from_measured_count(
     measured_in = exact_set(
         "measured_in",
         finding.measured_in,
-        finding.measured_in_support_event_ids,
+        finding.measured_in_support_event_identities,
         (MEASUREMENT_RECORDED_KIND,),
     )
     measured_without = exact_set(
         "measured_without_distinction",
         finding.measured_without_distinction,
-        finding.measured_without_distinction_support_event_ids,
+        finding.measured_without_distinction_support_event_identities,
         (MEASUREMENT_RECORDED_KIND,),
     )
     coordinate_not_measured = exact_set(
@@ -678,7 +678,7 @@ def assertions_from_measured_count(
         subject=subject,
         content=count_content,
         scope=scope,
-        support_assertion_ids=(measured_in.identity,),
+        support_assertion_identities=(measured_in.identity,),
     )
     assertions = [
         measured_in,
@@ -697,7 +697,7 @@ def assertions_from_measured_count(
                 subject=subject,
                 content=recurrence_content,
                 scope=scope,
-                support_assertion_ids=(count.identity,),
+                support_assertion_identities=(count.identity,),
             )
         )
     return tuple(assertions)
@@ -706,7 +706,7 @@ def assertions_from_measured_count(
 def record_measured_count(
     ledger: EventLedger,
     *,
-    locality_id: str,
+    locality_identity: str,
     finding: MeasuredCountFinding,
 ) -> Event:
     """Preserve the distinct Assertions one recurrence Measurement yielded.
@@ -727,16 +727,16 @@ def record_measured_count(
         )
     declared = dict(finding.distinction.declared)
     assertions = assertions_from_measured_count(finding)
-    act_id = new_id("locality_count_measurement_act")
-    act_occurrence_id = new_id("locality_count_measurement_act_occurrence")
-    result_identity = new_id("locality_count_measurement_result")
+    act_identity = new_identity("locality_count_measurement_act")
+    act_occurrence_identity = new_identity("locality_count_measurement_act_occurrence")
+    result_identity = new_identity("locality_count_measurement_result")
     participation = [
         {
-            "subject_reference": event_id,
+            "subject_reference": event_identity,
             "role": "recorded Measurement occurrence",
-            "act_occurrence_id": act_occurrence_id,
+            "act_occurrence_identity": act_occurrence_identity,
         }
-        for event_id in finding.input_event_ids
+        for event_identity in finding.input_event_identities
     ]
     result_payload = {
         "result_identity": result_identity,
@@ -752,12 +752,12 @@ def record_measured_count(
                 "measurement evidence only; establishes no relation between the "
                 "localities, no source independence, and no corroboration"
             ),
-            "scope_locality": f"locality:{locality_id}",
+            "scope_locality": f"locality:{locality_identity}",
             "occurrence_preservation": "count finding durably recorded",
         },
         "assertions": [assertion.to_json_dict() for assertion in assertions],
-        "downstream_act_id": act_id,
-        "act_occurrence_id": act_occurrence_id,
+        "downstream_act_identity": act_identity,
+        "act_occurrence_identity": act_occurrence_identity,
         "participation": participation,
         "exact_act": "declared measurement",
         "occurrence_result_evidence": (
@@ -781,8 +781,8 @@ def record_measured_count(
     act_evidence = ledger.append(
         LOCALITY_COUNT_ACT_EVIDENCE_KIND,
         {
-            "downstream_act_id": act_id,
-            "act_occurrence_id": act_occurrence_id,
+            "downstream_act_identity": act_identity,
+            "act_occurrence_identity": act_occurrence_identity,
             "act": "locality count Measurement",
             "responsibility": LOCALITY_COUNT_RESPONSIBILITY,
             "responsible_boundary": "this Seed",
@@ -790,13 +790,13 @@ def record_measured_count(
             "authority": "unestablished",
             "evidence_scope": "this exact locality count Measurement occurrence only",
         },
-        locality_id=locality_id,
+        locality_identity=locality_identity,
     )
     yield_evidence = _record_yield_evidence(
         ledger,
-        locality_id=locality_id,
+        locality_identity=locality_identity,
         exact_act="locality count Measurement",
-        act_occurrence_id=act_occurrence_id,
+        act_occurrence_identity=act_occurrence_identity,
         result_kind=LOCALITY_COUNT_RESULT_KIND,
         result_identity=result_identity,
         result_content=result_payload,
@@ -809,8 +809,8 @@ def record_measured_count(
         LOCALITY_COUNT_RECORDED_KIND,
         {
             **result_payload,
-            "responsible_act_evidence_id": act_evidence.id,
-            "yield_evidence_id": yield_evidence.id,
+            "responsible_act_evidence_identity": act_evidence.identity,
+            "yield_evidence_identity": yield_evidence.identity,
         },
-        locality_id=locality_id,
+        locality_identity=locality_identity,
     )

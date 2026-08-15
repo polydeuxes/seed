@@ -36,8 +36,8 @@ def _console(monkeypatch, material: str, argv: list[str]) -> None:
 def _localities(ledger: EventLedger) -> list[str]:
     seen: list[str] = []
     for event in ledger.list():
-        if event.locality_id is not None and event.locality_id not in seen:
-            seen.append(event.locality_id)
+        if event.locality_identity is not None and event.locality_identity not in seen:
+            seen.append(event.locality_identity)
     return seen
 
 
@@ -97,7 +97,7 @@ def two_lifetimes(db, monkeypatch):
     ledger.close()
 
 
-def test_two_console_lifetimes_receive_different_locality_ids(two_lifetimes):
+def test_two_console_lifetimes_receive_different_locality_identities(two_lifetimes):
     Localities = _localities(two_lifetimes)
     assert len(Localities) == 2
     assert Localities[0] != Localities[1]
@@ -106,11 +106,11 @@ def test_two_console_lifetimes_receive_different_locality_ids(two_lifetimes):
 def test_each_lifetime_holds_only_its_own_ingress(two_lifetimes):
     first, second = _localities(two_lifetimes)
 
-    def material(locality_id):
+    def material(locality_identity):
         return [
             ingested_material_bytes(event)
             for event in ingest_occurrences(
-                two_lifetimes, locality_id=locality_id
+                two_lifetimes, locality_identity=locality_identity
             )
         ]
 
@@ -126,10 +126,10 @@ def test_a_reopened_console_does_not_continue_the_prior_standing(two_lifetimes):
     """
     first, second = _localities(two_lifetimes)
     prior = read_operator_locality_standing(
-        two_lifetimes, locality_id=first
+        two_lifetimes, locality_identity=first
     )
     later = read_operator_locality_standing(
-        two_lifetimes, locality_id=second
+        two_lifetimes, locality_identity=second
     )
 
     assert len(prior["representations"]) == 3
@@ -141,7 +141,7 @@ def test_the_earlier_lifetime_remains_projectable(two_lifetimes):
     """Bounding the read must not lose what it stopped read."""
     first = _localities(two_lifetimes)[0]
     standing = read_operator_locality_standing(
-        two_lifetimes, locality_id=first
+        two_lifetimes, locality_identity=first
     )
     assert len(standing["representations"]) == 3
 
@@ -153,10 +153,10 @@ def test_the_earlier_lifetime_remains_projectable(two_lifetimes):
 
 def test_a_locality_read_returns_only_that_locality(two_lifetimes):
     first, second = _localities(two_lifetimes)
-    for locality_id in (first, second):
-        events = two_lifetimes.list_locality(locality_id)
+    for locality_identity in (first, second):
+        events = two_lifetimes.list_locality(locality_identity)
         assert events
-        assert {e.locality_id for e in events} == {locality_id}
+        assert {e.locality_identity for e in events} == {locality_identity}
     assert len(two_lifetimes.list_locality(first)) + len(
         two_lifetimes.list_locality(second)
     ) == len(two_lifetimes.list())
@@ -167,21 +167,21 @@ def test_a_fresh_locality_reads_none_of_the_history(two_lifetimes):
     assert two_lifetimes.list()
     assert two_lifetimes.list_locality("never-recorded") == []
     standing = read_operator_locality_standing(
-        two_lifetimes, locality_id="never-recorded"
+        two_lifetimes, locality_identity="never-recorded"
     )
     assert standing["representations"] == {}
 
 
 def test_the_in_memory_ledger_scopes_the_same_way():
     ledger = EventLedger()
-    for locality_id in ("a", "b"):
+    for locality_identity in ("a", "b"):
         run_persistent_operator_console(
             ledger=ledger,
-            locality_id=locality_id,
+            locality_identity=locality_identity,
             input_stream=binary_input("material\n"),
             output_stream=StringIO(),
         )
-    assert {e.locality_id for e in ledger.list_locality("a")} == {"a"}
+    assert {e.locality_identity for e in ledger.list_locality("a")} == {"a"}
     assert len(ledger.list_locality("a")) < len(ledger.list())
 
 
@@ -190,15 +190,15 @@ def test_the_in_memory_ledger_scopes_the_same_way():
 # --------------------------------------------------------------------------
 
 
-def test_a_caller_supplied_locality_id_remains_exact():
+def test_a_caller_supplied_locality_identity_remains_exact():
     ledger = EventLedger()
     run_persistent_operator_console(
         ledger=ledger,
-        locality_id="chosen-by-the-caller",
+        locality_identity="chosen-by-the-caller",
         input_stream=binary_input("material\n"),
         output_stream=StringIO(),
     )
-    assert {event.locality_id for event in ledger.list()} == {
+    assert {event.locality_identity for event in ledger.list()} == {
         "chosen-by-the-caller"
     }
 
@@ -219,10 +219,10 @@ def _run_console_process(db: str, material: str) -> subprocess.CompletedProcess:
 
 
 def test_a_reopened_console_process_does_not_abort(db):
-    """`new_id` counts from 1 per process, so durable ids must be reserved.
+    """`new_identity` counts from 1 per process, so durable identities must be reserved.
 
     Every other test here runs its lifetimes inside one process, where the
-    counters keep climbing and no identifier is ever reissued. The second real
+    counters keep climbing and no identity is ever reissued. The second real
     `seed --db` invocation aborted on `duplicate representation reference` until
     the console's prefixes were reserved on open.
     """
@@ -244,7 +244,7 @@ def test_separate_processes_receive_separate_localities(db):
             [
                 ingested_material_bytes(event)
                 for event in ingest_occurrences(
-                    ledger, locality_id=locality
+                    ledger, locality_identity=locality
                 )
             ]
             for locality in Localities

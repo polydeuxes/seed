@@ -28,17 +28,17 @@ from seed_runtime.operator_locality_standing import (
 )
 
 
-def _advance_over(ledger, standing, event_ids, *, locality_id):
+def _advance_over(ledger, standing, event_identities, *, locality_identity):
     """Advance carried Standing over occurrences a responsible act just recorded.
 
-    The identifiers come from the act that recorded them, so nothing here
+    The identities come from the act that recorded them, so nothing here
     searches the ledger for what happened; the events are retrieved by exact
-    identifier.
+    identity.
     """
 
     return advance_operator_locality_standing(
-        [ledger.get(event_id) for event_id in event_ids],
-        locality_id=locality_id,
+        [ledger.get(event_identity) for event_identity in event_identities],
+        locality_identity=locality_identity,
         prior=standing,
     )
 
@@ -46,7 +46,7 @@ def _advance_over(ledger, standing, event_ids, *, locality_id):
 def run_persistent_operator_console(
     *,
     ledger: EventLedger,
-    locality_id: str,
+    locality_identity: str,
     input_stream: BinaryIO | TextIO,
     output_stream: TextIO,
     command_handlers: Mapping[bytes, OperatorCommandHandler] | None = None,
@@ -59,11 +59,11 @@ def run_persistent_operator_console(
     # each interaction. Each responsible act returns the occurrences it
     # recorded, so the console advances over exactly those occurrences.
     locality_standing = read_operator_locality_standing(
-        ledger, locality_id=locality_id
+        ledger, locality_identity=locality_identity
     )
     representation = record_operator_representation(
         ledger,
-        locality_id=locality_id,
+        locality_identity=locality_identity,
         locality_standing=locality_standing,
     )
     representation = emit_operator_representation(
@@ -73,11 +73,11 @@ def run_persistent_operator_console(
         ledger,
         locality_standing,
         (
-            representation["representation_event_id"],
-            representation["emission_attempt_event_id"],
-            representation["emitted_event_id"],
+            representation["representation_event_identity"],
+            representation["emission_attempt_event_identity"],
+            representation["emitted_event_identity"],
         ),
-        locality_id=locality_id,
+        locality_identity=locality_identity,
     )
     while True:
         boundary_material = operator_boundary_material(input_stream)
@@ -85,9 +85,9 @@ def run_persistent_operator_console(
             return
         if is_slash_command(boundary_material):
             command_run = run_operator_command(
-                locality_id=locality_id,
-                addressed_at_representation_event_id=representation[
-                    "representation_event_id"
+                locality_identity=locality_identity,
+                addressed_at_representation_event_identity=representation[
+                    "representation_event_identity"
                 ],
                 material=boundary_material,
                 handlers=handlers,
@@ -95,13 +95,13 @@ def run_persistent_operator_console(
             request = command_run.implementation_result
             if isinstance(request, OperatorCheckpointRequest):
                 checkpoint = open_operator_checkpoint(ledger, command_run.addressed)
-                locality_id = checkpoint.locality_id
+                locality_identity = checkpoint.locality_identity
                 locality_standing = read_operator_locality_standing(
-                    ledger, locality_id=locality_id
+                    ledger, locality_identity=locality_identity
                 )
                 representation = record_operator_representation(
                     ledger,
-                    locality_id=locality_id,
+                    locality_identity=locality_identity,
                     locality_standing=locality_standing,
                 )
                 representation = emit_operator_representation(
@@ -113,11 +113,11 @@ def run_persistent_operator_console(
                     ledger,
                     locality_standing,
                     (
-                        representation["representation_event_id"],
-                        representation["emission_attempt_event_id"],
-                        representation["emitted_event_id"],
+                        representation["representation_event_identity"],
+                        representation["emission_attempt_event_identity"],
+                        representation["emitted_event_identity"],
                     ),
-                    locality_id=locality_id,
+                    locality_identity=locality_identity,
                 )
             continue
         with ledger.batched():
@@ -125,7 +125,7 @@ def run_persistent_operator_console(
             # recency would assert a relation no occurrence determined.
             attempt_record = run_operator_ingest(
                 ledger=ledger,
-                locality_id=locality_id,
+                locality_identity=locality_identity,
                 boundary_material=boundary_material,
                 locality_standing=(
                     locality_standing if locality_standing["event_count"] else None
@@ -134,15 +134,15 @@ def run_persistent_operator_console(
             locality_standing = _advance_over(
                 ledger,
                 locality_standing,
-                attempt_record["event_ids"],
-                locality_id=locality_id,
+                attempt_record["event_identities"],
+                locality_identity=locality_identity,
             )
             if attempt_record["current_standing"]["ingest_occurrence"] is not None:
                 # The yielded Representation is preserved independently. No Compare
                 # or Identification is inferred merely from temporal proximity.
                 representation = record_operator_representation(
                     ledger,
-                    locality_id=locality_id,
+                    locality_identity=locality_identity,
                     locality_standing=locality_standing,
                 )
                 representation = emit_operator_representation(
@@ -152,9 +152,9 @@ def run_persistent_operator_console(
                     ledger,
                     locality_standing,
                     (
-                        representation["representation_event_id"],
-                        representation["emission_attempt_event_id"],
-                        representation["emitted_event_id"],
+                        representation["representation_event_identity"],
+                        representation["emission_attempt_event_identity"],
+                        representation["emitted_event_identity"],
                     ),
-                    locality_id=locality_id,
+                    locality_identity=locality_identity,
                 )

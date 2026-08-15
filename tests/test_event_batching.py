@@ -5,13 +5,13 @@ from seed_runtime.events import EventLedger, SQLiteEventLedger
 def _events() -> list[Event]:
     return [
         Event(
-            id="evt_batch_1", kind="batch.first", payload={"n": 1}
+            identity="evt_batch_1", kind="batch.first", payload={"n": 1}
         ),
         Event(
-            id="evt_batch_2", kind="batch.second", payload={"n": 2}
+            identity="evt_batch_2", kind="batch.second", payload={"n": 2}
         ),
         Event(
-            id="evt_batch_3", kind="batch.third", payload={"n": 3}
+            identity="evt_batch_3", kind="batch.third", payload={"n": 3}
         ),
     ]
 

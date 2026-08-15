@@ -17,7 +17,7 @@ What this module demonstrates is narrow and structural:
 That is the substrate later input support would require. It is **not** input support,
 participation, admission, a finding, or new Standing, none of which are
 demonstrated here. `01.Kinds` keeps applicable, admitted, and input distinct,
-and carrying an event id as Evidence establishes none of them.
+and carrying an event identity as Evidence establishes none of them.
 
 Two further limits.  Only representation representation_events were inspected; the other
 operator event kinds are also later occurrences and are not shown to reference
@@ -54,7 +54,7 @@ RECORDED = "operator.representation.recorded"
 
 def _payload_snapshot(events) -> dict[str, str]:
     return {
-        event.id: json.dumps(event.payload, sort_keys=True, default=str)
+        event.identity: json.dumps(event.payload, sort_keys=True, default=str)
         for event in events
     }
 
@@ -65,7 +65,7 @@ def ledger() -> EventLedger:
     led = EventLedger()
     run_persistent_operator_console(
         ledger=led,
-        locality_id="s",
+        locality_identity="s",
         input_stream=binary_input("first\nsecond\nthird\n"),
         output_stream=StringIO(),
     )
@@ -84,11 +84,11 @@ def test_later_representations_retain_references_to_earlier_preserved_material(
     no distinction to it.
     """
     events = ledger.list()
-    positions = {event.id: index for index, event in enumerate(events)}
+    positions = {event.identity: index for index, event in enumerate(events)}
     representation_events = [e for e in events if e.kind == RECORDED]
     assert len(representation_events) >= 3
     boundaries = [
-        e.payload["locality_standing_as_of_event_id"] for e in representation_events
+        e.payload["locality_standing_as_of_event_identity"] for e in representation_events
     ]
     # The first representation Act's read was empty.  Recording that absence is
     # itself preserved source coordinates, not an absent occurrence.
@@ -97,15 +97,15 @@ def test_later_representations_retain_references_to_earlier_preserved_material(
     for earlier, later in zip(boundaries[1:], boundaries[2:]):
         assert positions[later] > positions[earlier]
     # The last representation Act's boundary still stands after the first recorded event.
-    assert positions[boundaries[-1]] > positions[events[0].id]
+    assert positions[boundaries[-1]] > positions[events[0].identity]
 
 
 def test_later_reference_does_not_alter_earlier_events(ledger):
     """Referencing preserved material leaves that material byte-identical."""
     before = _payload_snapshot(ledger.list())
-    read_operator_locality_standing(ledger, locality_id="s")
+    read_operator_locality_standing(ledger, locality_identity="s")
     after = _payload_snapshot(
-        e for e in ledger.list() if e.id in before
+        e for e in ledger.list() if e.identity in before
     )
     assert after == before
 
@@ -117,7 +117,7 @@ def test_representation_appends_nothing(ledger):
     constitutional occurrence.  This read reads without appending.
     """
     count_before = len(ledger.list())
-    read_operator_locality_standing(ledger, locality_id="s")
+    read_operator_locality_standing(ledger, locality_identity="s")
     assert len(ledger.list()) == count_before
 
 
@@ -130,12 +130,12 @@ def test_each_representation_act_is_appended_after_every_event_it_references(led
     """
     events = ledger.list()
     representation_events = [e for e in events if e.kind == RECORDED]
-    positions = {event.id: index for index, event in enumerate(events)}
+    positions = {event.identity: index for index, event in enumerate(events)}
     # Each representation Act appears after the occurrence its boundary names.
     for representation_event in representation_events:
-        boundary = representation_event.payload["locality_standing_as_of_event_id"]
+        boundary = representation_event.payload["locality_standing_as_of_event_identity"]
         if boundary is not None:
-            assert positions[boundary] < positions[representation_event.id]
+            assert positions[boundary] < positions[representation_event.identity]
 
 
 def test_no_act_condition_change_is_claimed_here(ledger):
@@ -169,15 +169,15 @@ def represent_evidence_growth() -> str:
     led = EventLedger()
     run_persistent_operator_console(
         ledger=led,
-        locality_id="s",
+        locality_identity="s",
         input_stream=binary_input("first\nsecond\nthird\n"),
         output_stream=StringIO(),
     )
     lines = ["representation Act -> the occurrence its Standing was taken through", ""]
     for event in (e for e in led.list() if e.kind == RECORDED):
         lines.append(
-            f"  {event.id}  as_of="
-            f"{event.payload['locality_standing_as_of_event_id']}"
+            f"  {event.identity}  as_of="
+            f"{event.payload['locality_standing_as_of_event_identity']}"
         )
     return "\n".join(lines)
 

@@ -14,7 +14,7 @@ def _road(tmp_path):
     ledger = SQLiteEventLedger(str(tmp_path / "e.sqlite"))
     run_persistent_operator_console(
         ledger=ledger,
-        locality_id="s1",
+        locality_identity="s1",
         input_stream=binary_input("the cat sat\nthe cat ran\n"),
         output_stream=StringIO(),
     )
@@ -28,17 +28,17 @@ def test_the_index_restates_only_references_the_payload_carries(tmp_path):
     rows = [
         tuple(row)
         for row in ledger._connection.execute(
-            "SELECT source_id, relation, destination_id FROM event_references"
+            "SELECT source_identity, relation, destination_identity FROM event_references"
         )
     ]
     assert rows
 
-    for source_id, relation, destination_id in rows:
-        payload = ledger.get(source_id).payload
+    for source_identity, relation, destination_identity in rows:
+        payload = ledger.get(source_identity).payload
         carried = json.dumps(payload, default=str)
-        assert destination_id in carried, (
-            f"{source_id} is indexed as referencing {destination_id} under "
-            f"{relation}, and its payload does not carry that id"
+        assert destination_identity in carried, (
+            f"{source_identity} is indexed as referencing {destination_identity} under "
+            f"{relation}, and its payload does not carry that identity"
         )
 
 
@@ -47,20 +47,20 @@ def _rebuild(ledger) -> set[tuple[str, str, str]]:
 
     Occurrence order is part of the rebuild, not a detail of it. An occurrence
     may only reference one that already existed, so a rebuild consulting every
-    id present now would credit relations to payloads written before their
+    identity present now would credit relations to payloads written before their
     destination occurred.
     """
 
     rebuilt: set[tuple[str, str, str]] = set()
     existing: set[str] = set()
-    for row in ledger._connection.execute("SELECT id FROM events ORDER BY rowid"):
+    for row in ledger._connection.execute("SELECT identity FROM events ORDER BY rowid"):
         event = ledger.get(row[0])
         for relation, destination, _ in dict.fromkeys(
             _payload_references(event.payload)
         ):
             if destination in existing:
-                rebuilt.add((event.id, relation, destination))
-        existing.add(event.id)
+                rebuilt.add((event.identity, relation, destination))
+        existing.add(event.identity)
     return rebuilt
 
 
@@ -68,7 +68,7 @@ def _stored(ledger) -> set[tuple[str, str, str]]:
     return {
         tuple(row)
         for row in ledger._connection.execute(
-            "SELECT source_id, relation, destination_id FROM event_references"
+            "SELECT source_identity, relation, destination_identity FROM event_references"
         )
     }
 
@@ -85,35 +85,35 @@ def test_the_index_is_rebuildable_from_the_payloads_it_indexes(tmp_path):
     assert _stored(ledger) == _rebuild(ledger)
 
 
-def test_naming_an_id_before_its_occurrence_is_not_a_reference(tmp_path):
+def test_naming_an_identity_before_its_occurrence_is_not_a_reference(tmp_path):
     """Co-presence does not establish the relation.
 
-    A payload may hold a string that later becomes some occurrence's exact id.
+    A payload may hold a string that later becomes some occurrence's exact identity.
     `grammar.json` holds that endpoint presence does not establish a relation,
     and `02.Standing:55` that co-presence does not establish participation. An
     occurrence that could not have referenced its destination did not.
 
-    Read it the other way would also let a caller name an id it has not seen
-    and acquire an edge to whatever later takes that id.
+    Read it the other way would also let a caller name an identity it has not seen
+    and acquire an edge to whatever later takes that identity.
     """
 
     ledger = SQLiteEventLedger(str(tmp_path / "e.sqlite"))
-    naming = ledger.append("k", {"points_at": "evt_000002"}, locality_id="s1")
-    taking = ledger.append("k", {"i": 2}, locality_id="s1")
+    naming = ledger.append("k", {"points_at": "evt_000002"}, locality_identity="s1")
+    taking = ledger.append("k", {"i": 2}, locality_identity="s1")
 
-    assert taking.id == "evt_000002"
-    assert ledger.references_to(taking.id) == []
-    assert ledger.references_from(naming.id) == []
-    assert "evt_000002" in json.dumps(ledger.get(naming.id).payload)
+    assert taking.identity == "evt_000002"
+    assert ledger.references_to(taking.identity) == []
+    assert ledger.references_from(naming.identity) == []
+    assert "evt_000002" in json.dumps(ledger.get(naming.identity).payload)
 
 
 def test_the_rebuild_agrees_with_the_index_across_that_case(tmp_path):
     """The invariant has to survive the case that exposed it."""
 
     ledger = SQLiteEventLedger(str(tmp_path / "e.sqlite"))
-    ledger.append("k", {"points_at": "evt_000002"}, locality_id="s1")
-    second = ledger.append("k", {"i": 2}, locality_id="s1")
-    ledger.append("k", {"points_at": second.id}, locality_id="s1")
+    ledger.append("k", {"points_at": "evt_000002"}, locality_identity="s1")
+    second = ledger.append("k", {"i": 2}, locality_identity="s1")
+    ledger.append("k", {"points_at": second.identity}, locality_identity="s1")
 
     assert _stored(ledger) == _rebuild(ledger)
     assert len(_stored(ledger)) == 1
@@ -123,14 +123,14 @@ def test_one_reference_restated_in_one_payload_is_indexed_once(tmp_path):
     """A relation held twice in one payload is one relation."""
 
     ledger = SQLiteEventLedger(str(tmp_path / "e.sqlite"))
-    first = ledger.append("k", {"n": 1}, locality_id="s1")
+    first = ledger.append("k", {"n": 1}, locality_identity="s1")
     ledger.append(
         "k",
-        {"here": first.id, "and_again": {"here": first.id}},
-        locality_id="s1",
+        {"here": first.identity, "and_again": {"here": first.identity}},
+        locality_identity="s1",
     )
 
-    assert ledger.references_to(first.id) == [("here", ledger.list_locality("s1")[1].id)]
+    assert ledger.references_to(first.identity) == [("here", ledger.list_locality("s1")[1].identity)]
 
 
 def test_references_to_answers_what_the_payload_column_cannot(tmp_path):
@@ -144,17 +144,17 @@ def test_references_to_answers_what_the_payload_column_cannot(tmp_path):
     ]
     assert ingest
 
-    referrers = ledger.references_to(ingest[0].id)
+    referrers = ledger.references_to(ingest[0].identity)
     assert referrers
     for relation, source in referrers:
-        assert ingest[0].id in json.dumps(ledger.get(source).payload, default=str)
+        assert ingest[0].identity in json.dumps(ledger.get(source).payload, default=str)
         assert relation
 
 
-def test_an_unresolvable_id_shaped_string_is_not_an_edge(tmp_path):
+def test_an_unresolvable_identity_shaped_string_is_not_an_edge(tmp_path):
     """An edge requires an occurrence, not a string that looks like one."""
 
     ledger = SQLiteEventLedger(str(tmp_path / "e.sqlite"))
-    ledger.append("k", {"points_at": "evt_999999"}, locality_id="s1")
+    ledger.append("k", {"points_at": "evt_999999"}, locality_identity="s1")
 
     assert ledger.references_to("evt_999999") == []

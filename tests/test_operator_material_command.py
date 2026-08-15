@@ -14,9 +14,9 @@ from seed_runtime.operator_material_command import (
 
 def test_material_request_preserves_exact_argument_bytes():
     addressed = AddressedOperatorCommand(
-        command_id="command",
-        locality_id="locality",
-        addressed_at_representation_event_id="representation",
+        command_identity="command",
+        locality_identity="locality",
+        addressed_at_representation_event_identity="representation",
         frame=OperatorCommandFrame(
             exact_bytes=b"/material \xff\x00\n",
             name=b"material",
@@ -43,7 +43,7 @@ def test_material_request_does_not_cross_the_filesystem(monkeypatch, tmp_path):
 
     run_persistent_operator_console(
         ledger=ledger,
-        locality_id="root-locality",
+        locality_identity="root-locality",
         input_stream=BytesIO(b"/material " + os.fsencode(path) + b"\n"),
         output_stream=StringIO(),
     )

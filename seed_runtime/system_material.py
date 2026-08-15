@@ -10,14 +10,14 @@ from seed_runtime.material_ingest import ingest_material
 def preserve_system_material(
     ledger: EventLedger,
     *,
-    locality_id: str,
+    locality_identity: str,
     exact_bytes: bytes,
     observed_boundary: str,
     represented_material: str | None = None,
 ) -> Event:
     return ingest_material(
         ledger,
-        locality_id=locality_id,
+        locality_identity=locality_identity,
         exact_bytes=exact_bytes,
         source_role="system",
         source_boundary=observed_boundary,

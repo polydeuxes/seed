@@ -22,21 +22,21 @@ class DagLedgerComparison:
         self._connection.executescript(
             """
             CREATE TABLE IF NOT EXISTS nodes (
-                id TEXT PRIMARY KEY,
+                identity TEXT PRIMARY KEY,
                 kind TEXT NOT NULL,
-                locality_id TEXT,
+                locality_identity TEXT,
                 payload TEXT NOT NULL
             );
             CREATE TABLE IF NOT EXISTS edges (
-                source_id TEXT NOT NULL,
+                source_identity TEXT NOT NULL,
                 relation TEXT NOT NULL,
-                destination_id TEXT NOT NULL,
+                destination_identity TEXT NOT NULL,
                 ordinal INTEGER NOT NULL
             );
             CREATE INDEX IF NOT EXISTS idx_edges_source
-                ON edges (source_id, relation, ordinal, destination_id);
+                ON edges (source_identity, relation, ordinal, destination_identity);
             CREATE INDEX IF NOT EXISTS idx_edges_destination
-                ON edges (destination_id, relation, source_id);
+                ON edges (destination_identity, relation, source_identity);
             """
         )
 
@@ -50,49 +50,49 @@ class DagLedgerComparison:
         """
 
         edge_count = 0
-        earlier_ids: set[str] = set()
+        earlier_identities: set[str] = set()
         for event in events:
             self._connection.execute(
                 "INSERT OR REPLACE INTO nodes VALUES (?, ?, ?, ?)",
                 (
-                    event.id,
+                    event.identity,
                     event.kind,
-                    getattr(event, "locality_id", None),
+                    getattr(event, "locality_identity", None),
                     json.dumps(event.payload, default=str),
                 ),
             )
-            references = dict.fromkeys(_references(event.payload, earlier_ids))
+            references = dict.fromkeys(_references(event.payload, earlier_identities))
             for relation, destination, ordinal in references:
                 self._connection.execute(
                     "INSERT INTO edges VALUES (?, ?, ?, ?)",
-                    (event.id, relation, destination, ordinal),
+                    (event.identity, relation, destination, ordinal),
                 )
                 edge_count += 1
-            earlier_ids.add(event.id)
+            earlier_identities.add(event.identity)
         self._connection.commit()
         return edge_count
 
-    def references_from(self, node_id: str) -> list[tuple[str, str]]:
+    def references_from(self, node_identity: str) -> list[tuple[str, str]]:
         """What this occurrence points at."""
 
         return [
             (relation, destination)
             for relation, destination in self._connection.execute(
-                "SELECT relation, destination_id FROM edges WHERE source_id = ?"
+                "SELECT relation, destination_identity FROM edges WHERE source_identity = ?"
                 " ORDER BY relation, ordinal",
-                (node_id,),
+                (node_identity,),
             )
         ]
 
-    def references_to(self, node_id: str) -> list[tuple[str, str]]:
+    def references_to(self, node_identity: str) -> list[tuple[str, str]]:
         """What points at this occurrence -- the direction the ledger cannot index."""
 
         return [
             (relation, source)
             for relation, source in self._connection.execute(
-                "SELECT relation, source_id FROM edges WHERE destination_id = ?"
-                " ORDER BY relation, source_id",
-                (node_id,),
+                "SELECT relation, source_identity FROM edges WHERE destination_identity = ?"
+                " ORDER BY relation, source_identity",
+                (node_identity,),
             )
         ]
 
@@ -108,15 +108,15 @@ class DagLedgerComparison:
 
 
 def _references(
-    payload: Any, known_ids: set[str], relation: str = "", ordinal: int = 0
+    payload: Any, known_identities: set[str], relation: str = "", ordinal: int = 0
 ) -> list[tuple[str, str, int]]:
     found: list[tuple[str, str, int]] = []
     if isinstance(payload, dict):
         for key, nested in payload.items():
-            found.extend(_references(nested, known_ids, key, 0))
+            found.extend(_references(nested, known_identities, key, 0))
     elif isinstance(payload, list):
         for position, nested in enumerate(payload):
-            found.extend(_references(nested, known_ids, relation, position))
-    elif isinstance(payload, str) and payload in known_ids:
+            found.extend(_references(nested, known_identities, relation, position))
+    elif isinstance(payload, str) and payload in known_identities:
         found.append((relation, payload, ordinal))
     return found

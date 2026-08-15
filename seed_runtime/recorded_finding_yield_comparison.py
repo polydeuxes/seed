@@ -34,7 +34,7 @@ from dataclasses import dataclass
 
 from seed_runtime.event import Event
 from seed_runtime.events import CORRUPTED, EventLedger
-from seed_runtime.ids import new_id
+from seed_runtime.identities import new_identity
 from seed_runtime.preserved_material_measurement import (
     MEASUREMENT_RECORDED_KIND,
     PreservedMaterialMeasurementError,
@@ -68,8 +68,8 @@ UNSUPPORTED_COORDINATE = "unsupported coordinate"
 
 COMPARISON_RESULT_COORDINATES = frozenset(
     {
-        "downstream_act_id",
-        "act_occurrence_id",
+        "downstream_act_identity",
+        "act_occurrence_identity",
         "dimensions",
         "constitutional_subject",
         "compared_relation",
@@ -88,8 +88,8 @@ COMPARISON_RESULT_COORDINATES = frozenset(
 )
 COMPARISON_RECORDING_COORDINATES = frozenset(
     {
-        "responsible_act_evidence_id",
-        "yield_evidence_id",
+        "responsible_act_evidence_identity",
+        "yield_evidence_identity",
         "occurrence_preservation",
     }
 )
@@ -106,55 +106,55 @@ class RecordedFindingYieldComparisonError(ValueError):
 class RecordedFindingYieldComparison:
     """One exact Compare result carried by one recording occurrence."""
 
-    recorded_occurrence_id: str
-    yield_evidence_id: str
-    source_finding_event_id: str
+    recorded_occurrence_identity: str
+    yield_evidence_identity: str
+    source_finding_event_identity: str
     standing: str
 
     @property
     def reference(self) -> dict[str, str]:
         """Return its exact recording-occurrence reference."""
 
-        return {"recorded_occurrence_id": self.recorded_occurrence_id}
+        return {"recorded_occurrence_identity": self.recorded_occurrence_identity}
 
 
 def get_recorded_finding_yield_comparison(
-    ledger: EventLedger, event_id: str
+    ledger: EventLedger, event_identity: str
 ) -> RecordedFindingYieldComparison | None:
     """Return an exact occurrence-bound Compare result when evidenced."""
 
-    event = ledger.get(event_id)
+    event = ledger.get(event_identity)
     if event is None:
         return None
     if event.kind != FINDING_YIELD_COMPARISON_KIND:
         raise RecordedFindingYieldComparisonError(
-            f"{event_id} is {event.kind}, not a recorded finding Yield comparison"
+            f"{event_identity} is {event.kind}, not a recorded finding Yield comparison"
         )
-    if ledger.integrity_of(event_id) == CORRUPTED:
+    if ledger.integrity_of(event_identity) == CORRUPTED:
         raise RecordedFindingYieldComparisonError(
             "a corrupted occurrence cannot expose a finding Yield comparison"
         )
     payload = event.payload
     if set(payload) != COMPARISON_RESULT_COORDINATES | COMPARISON_RECORDING_COORDINATES:
         raise RecordedFindingYieldComparisonError(
-            f"{event_id} does not preserve the exact Compare result and "
+            f"{event_identity} does not preserve the exact Compare result and "
             "recording coordinate surfaces"
         )
     if payload.get("occurrence_preservation") != COMPARISON_OCCURRENCE_PRESERVATION:
         raise RecordedFindingYieldComparisonError(
-            f"{event_id} does not preserve the Compare recording occurrence"
+            f"{event_identity} does not preserve the Compare recording occurrence"
         )
-    evidence_id = payload.get("yield_evidence_id")
-    if not isinstance(evidence_id, str) or not evidence_id:
+    evidence_identity = payload.get("yield_evidence_identity")
+    if not isinstance(evidence_identity, str) or not evidence_identity:
         raise RecordedFindingYieldComparisonError(
-            f"{event_id} names no exact yield Evidence occurrence"
+            f"{event_identity} names no exact yield Evidence occurrence"
         )
-    evidence = ledger.get(evidence_id)
+    evidence = ledger.get(evidence_identity)
     if evidence is None or evidence.kind != YIELD_EVIDENCE_KIND:
         raise RecordedFindingYieldComparisonError(
-            f"{evidence_id} is not preserved yield Evidence"
+            f"{evidence_identity} is not preserved yield Evidence"
         )
-    if ledger.integrity_of(evidence_id) == CORRUPTED:
+    if ledger.integrity_of(evidence_identity) == CORRUPTED:
         raise RecordedFindingYieldComparisonError(
             "corrupted Yield Evidence cannot expose a Compare result"
         )
@@ -163,8 +163,8 @@ def get_recorded_finding_yield_comparison(
         != FINDING_YIELD_COMPARISON_RESULT_KIND
         or evidence.payload.get("yield_coordinates")
         != sorted(COMPARISON_RESULT_COORDINATES)
-        or evidence.payload.get("dimensions", {}).get("act_occurrence_id")
-        != payload.get("act_occurrence_id")
+        or evidence.payload.get("dimensions", {}).get("act_occurrence_identity")
+        != payload.get("act_occurrence_identity")
     ):
         raise RecordedFindingYieldComparisonError(
             "the named yield Evidence does not describe the exact "
@@ -175,36 +175,36 @@ def get_recorded_finding_yield_comparison(
         raise RecordedFindingYieldComparisonError(
             "the named Yield Evidence concerns a different Compare result"
         )
-    act_evidence_id = payload.get("responsible_act_evidence_id")
-    if not isinstance(act_evidence_id, str) or not act_evidence_id:
+    act_evidence_identity = payload.get("responsible_act_evidence_identity")
+    if not isinstance(act_evidence_identity, str) or not act_evidence_identity:
         raise RecordedFindingYieldComparisonError(
-            f"{event_id} names no exact responsible Act Evidence occurrence"
+            f"{event_identity} names no exact responsible Act Evidence occurrence"
         )
-    act_evidence = ledger.get(act_evidence_id)
+    act_evidence = ledger.get(act_evidence_identity)
     if (
         act_evidence is None
         or act_evidence.kind != FINDING_YIELD_COMPARISON_ACT_EVIDENCE_KIND
     ):
         raise RecordedFindingYieldComparisonError(
-            f"{act_evidence_id} is not responsible Act Evidence for this Compare"
+            f"{act_evidence_identity} is not responsible Act Evidence for this Compare"
         )
     if not all(
         read_yield_edge_requirements(
             ledger,
-            recorded_result_event_id=event.id,
-            result_evidence_event_id=evidence.id,
-            responsible_act_evidence_event_id=act_evidence.id,
+            recorded_result_event_identity=event.identity,
+            result_evidence_event_identity=evidence.identity,
+            responsible_act_evidence_event_identity=act_evidence.identity,
         ).values()
     ):
         raise RecordedFindingYieldComparisonError(
             "the Compare Event does not bind its exact Act and result Evidence"
         )
     dimensions = payload.get("dimensions")
-    source_id = payload.get("recorded_finding_reference")
+    source_identity = payload.get("recorded_finding_reference")
     standing = dimensions.get("standing") if isinstance(dimensions, dict) else None
     if (
-        not isinstance(source_id, str)
-        or not source_id
+        not isinstance(source_identity, str)
+        or not source_identity
         or standing
         not in {
             AGREES_WITH_YIELD_EVIDENCE,
@@ -212,20 +212,20 @@ def get_recorded_finding_yield_comparison(
             COMPARISON_UNKNOWN,
         }
         or not isinstance(dimensions, dict)
-        or dimensions.get("identity") != f"finding-yield-comparison:{source_id}"
+        or dimensions.get("identity") != f"finding-yield-comparison:{source_identity}"
         or dimensions.get("exact_act") != "bounded finding Yield Compare"
         or dimensions.get("responsibility")
         != FINDING_YIELD_COMPARISON_RESPONSIBILITY
         or dimensions.get("scope_locality")
-        != (f"locality:{event.locality_id}" if event.locality_id is not None else None)
+        != (f"locality:{event.locality_identity}" if event.locality_identity is not None else None)
     ):
         raise RecordedFindingYieldComparisonError(
-            f"{event_id} carries an incoherent Compare result shell"
+            f"{event_identity} carries an incoherent Compare result shell"
         )
     return RecordedFindingYieldComparison(
-        recorded_occurrence_id=event.id,
-        yield_evidence_id=evidence.id,
-        source_finding_event_id=source_id,
+        recorded_occurrence_identity=event.identity,
+        yield_evidence_identity=evidence.identity,
+        source_finding_event_identity=source_identity,
         standing=standing,
     )
 
@@ -234,9 +234,9 @@ def _provenance(event: Event, integrity: str) -> dict[str, object]:
     """The exact occurrence coordinates available to this comparison."""
 
     return {
-        "event_id": event.id,
+        "event_identity": event.identity,
         "event_kind": event.kind,
-        "locality_id": event.locality_id,
+        "locality_identity": event.locality_identity,
         "integrity": integrity,
     }
 
@@ -245,25 +245,25 @@ def _crossing(kind: str, material: str) -> dict[str, str]:
     return {"kind": kind, "material": material}
 
 
-def compare_recorded_finding_yield(ledger: EventLedger, event_id: str) -> Event:
+def compare_recorded_finding_yield(ledger: EventLedger, event_identity: str) -> Event:
     """Compare one recorded recurrence finding and its Yield Evidence."""
 
-    recorded = ledger.get(event_id)
+    recorded = ledger.get(event_identity)
     if recorded is None or recorded.kind != MEASUREMENT_RECORDED_KIND:
         raise RecordedFindingYieldComparisonError(
-            f"{event_id} is not a recorded measurement finding, and this "
+            f"{event_identity} is not a recorded measurement finding, and this "
             "comparison compares one against its yield evidence"
         )
     if recorded.payload.get("measurement_distinction") != "recurrence":
         raise RecordedFindingYieldComparisonError(
-            f"{event_id} is not a recorded recurrence Measurement finding; "
+            f"{event_identity} is not a recorded recurrence Measurement finding; "
             "this comparison does not apply recurrence's yield-evidence "
             "expectation to an unmigrated Measurement representation"
         )
-    recorded_integrity = ledger.integrity_of(event_id)
+    recorded_integrity = ledger.integrity_of(event_identity)
     if recorded_integrity == CORRUPTED:
         raise RecordedFindingYieldComparisonError(
-            f"{event_id} is corrupted, so it cannot serve as this comparison's "
+            f"{event_identity} is corrupted, so it cannot serve as this comparison's "
             "recorded finding"
         )
 
@@ -274,7 +274,7 @@ def compare_recorded_finding_yield(ledger: EventLedger, event_id: str) -> Event:
         "this Compare did not bring under its Scope"
     ]
     unresolved = False
-    named = recorded.payload.get("yield_evidence_id")
+    named = recorded.payload.get("yield_evidence_identity")
     evidence: Event | None = None
     evidence_integrity: str | None = None
     if named is None:
@@ -393,13 +393,13 @@ def compare_recorded_finding_yield(ledger: EventLedger, event_id: str) -> Event:
         "scope only; no certification, completion, responsible-boundary map, score, or "
         "correction authority"
     )
-    downstream_act_id = new_id("finding_yield_comparison_act")
-    act_occurrence_id = new_id("finding_yield_comparison_act_occurrence")
+    downstream_act_identity = new_identity("finding_yield_comparison_act")
+    act_occurrence_identity = new_identity("finding_yield_comparison_act_occurrence")
     result_payload = {
-        "downstream_act_id": downstream_act_id,
-        "act_occurrence_id": act_occurrence_id,
+        "downstream_act_identity": downstream_act_identity,
+        "act_occurrence_identity": act_occurrence_identity,
         "dimensions": {
-                "identity": f"finding-yield-comparison:{event_id}",
+                "identity": f"finding-yield-comparison:{event_identity}",
                 "content": (
                     "a recorded measurement finding compared against the "
                     "yield evidence it names"
@@ -409,8 +409,8 @@ def compare_recorded_finding_yield(ledger: EventLedger, event_id: str) -> Event:
                 "responsibility": FINDING_YIELD_COMPARISON_RESPONSIBILITY,
                 "authority": authority_boundary,
                 "scope_locality": (
-                    f"locality:{recorded.locality_id}"
-                    if recorded.locality_id is not None
+                    f"locality:{recorded.locality_identity}"
+                    if recorded.locality_identity is not None
                     else None
                 ),
             },
@@ -422,7 +422,7 @@ def compare_recorded_finding_yield(ledger: EventLedger, event_id: str) -> Event:
                 "the recorded finding names preserved yield evidence, and "
                 "that evidence concerns this exact recorded content"
             ),
-        "recorded_finding_reference": event_id,
+        "recorded_finding_reference": event_identity,
         "yield_evidence": named,
         "evidence_and_provenance": {
                 "recorded_finding": _provenance(recorded, recorded_integrity),
@@ -462,8 +462,8 @@ def compare_recorded_finding_yield(ledger: EventLedger, event_id: str) -> Event:
     responsible_act_evidence = ledger.append(
         FINDING_YIELD_COMPARISON_ACT_EVIDENCE_KIND,
         {
-            "downstream_act_id": downstream_act_id,
-            "act_occurrence_id": act_occurrence_id,
+            "downstream_act_identity": downstream_act_identity,
+            "act_occurrence_identity": act_occurrence_identity,
             "act": "bounded finding Yield Compare",
             "responsibility": FINDING_YIELD_COMPARISON_RESPONSIBILITY,
             "responsible_boundary": "this Seed",
@@ -472,15 +472,15 @@ def compare_recorded_finding_yield(ledger: EventLedger, event_id: str) -> Event:
                 "Evidence concerning this exact finding Yield Compare occurrence only"
             ),
         },
-        locality_id=recorded.locality_id,
+        locality_identity=recorded.locality_identity,
     )
     yield_evidence = _record_yield_evidence(
         ledger,
-        locality_id=recorded.locality_id,
+        locality_identity=recorded.locality_identity,
         exact_act="bounded finding Yield Compare",
-        act_occurrence_id=act_occurrence_id,
+        act_occurrence_identity=act_occurrence_identity,
         result_kind=FINDING_YIELD_COMPARISON_RESULT_KIND,
-        result_identity=f"finding-yield-comparison:{event_id}",
+        result_identity=f"finding-yield-comparison:{event_identity}",
         result_content=result_payload,
         responsibility=FINDING_YIELD_COMPARISON_RESPONSIBILITY,
         live_boundary="recorded_finding_yield_compare",
@@ -490,9 +490,9 @@ def compare_recorded_finding_yield(ledger: EventLedger, event_id: str) -> Event:
         FINDING_YIELD_COMPARISON_KIND,
         {
             **result_payload,
-            "responsible_act_evidence_id": responsible_act_evidence.id,
-            "yield_evidence_id": yield_evidence.id,
+            "responsible_act_evidence_identity": responsible_act_evidence.identity,
+            "yield_evidence_identity": yield_evidence.identity,
             "occurrence_preservation": COMPARISON_OCCURRENCE_PRESERVATION,
         },
-        locality_id=recorded.locality_id,
+        locality_identity=recorded.locality_identity,
     )

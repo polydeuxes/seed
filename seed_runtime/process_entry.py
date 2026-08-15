@@ -7,7 +7,7 @@ import sys
 from typing import Sequence
 
 from seed_runtime.events import EventLedger, SQLiteEventLedger
-from seed_runtime.ids import new_id
+from seed_runtime.identities import new_identity
 from seed_runtime.operator_console import run_persistent_operator_console
 
 def build_parser() -> argparse.ArgumentParser:
@@ -23,7 +23,7 @@ def main(argv: Sequence[str] | None = None) -> int:
     try:
         run_persistent_operator_console(
             ledger=ledger,
-            locality_id=new_id("locality"),
+            locality_identity=new_identity("locality"),
             input_stream=getattr(sys.stdin, "buffer", sys.stdin),
             output_stream=sys.stdout,
         )

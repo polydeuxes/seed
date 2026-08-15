@@ -20,13 +20,13 @@ def update_operator_ingest_standing(attempts, event, *, ledger=None) -> None:
     dimensions = event.payload.get("dimensions")
     if not isinstance(dimensions, dict):
         raise ValueError("operator Ingest occurrence carries no dimensions")
-    occurrence_id = dimensions.get("identity")
-    if type(occurrence_id) is not str or not occurrence_id:
+    occurrence_identity = dimensions.get("identity")
+    if type(occurrence_identity) is not str or not occurrence_identity:
         raise ValueError("operator Ingest occurrence carries no exact identity")
     standing = attempts.setdefault(
-        occurrence_id,
+        occurrence_identity,
         {
-            "event_ids": [],
+            "event_identities": [],
             "dimensional_standing": {},
             "current_standing": {"ingest_occurrence": None},
             "known_loss": [],
@@ -34,19 +34,19 @@ def update_operator_ingest_standing(attempts, event, *, ledger=None) -> None:
             "conflicts": [],
         },
     )
-    standing["event_ids"].append(event.id)
-    standing["dimensional_standing"][event.id] = {
+    standing["event_identities"].append(event.identity)
+    standing["dimensional_standing"][event.identity] = {
         "event_kind": event.kind,
-        "subject_reference": occurrence_id,
+        "subject_reference": occurrence_identity,
         "dimensions": dimensions,
         "provenance_occurrence_references": list(
             event.payload.get("provenance_occurrence_references", ())
         ),
     }
     standing["current_standing"]["ingest_occurrence"] = {
-        "subject_reference": occurrence_id,
+        "subject_reference": occurrence_identity,
         "dimensions": dimensions,
-        "evidence_event_id": event.id,
+        "evidence_event_identity": event.identity,
     }
     if ledger is not None:
         standing["addressable_material"] = address_ingested_material(
@@ -63,14 +63,14 @@ def update_operator_ingest_standing(attempts, event, *, ledger=None) -> None:
 def _ingest_standing(*, event, ledger):
     attempts: dict[str, dict] = {}
     update_operator_ingest_standing(attempts, event, ledger=ledger)
-    occurrence_id = event.payload["dimensions"]["identity"]
-    return attempts[occurrence_id]
+    occurrence_identity = event.payload["dimensions"]["identity"]
+    return attempts[occurrence_identity]
 
 
 def run_operator_ingest(
     *,
     ledger: EventLedger,
-    locality_id: str,
+    locality_identity: str,
     boundary_material: OperatorBoundaryMaterial,
     locality_standing: dict[str, object] | None = None,
     supplied_material_representation: str | None = None,
@@ -79,7 +79,7 @@ def run_operator_ingest(
         raise ValueError("operator boundary material must be non-EOF")
     event = ingest_material(
         ledger,
-        locality_id=locality_id,
+        locality_identity=locality_identity,
         exact_bytes=boundary_material.exact_bytes,
         source_role="operator",
         source_boundary=boundary_material.material_boundary,

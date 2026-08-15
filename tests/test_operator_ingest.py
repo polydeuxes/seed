@@ -14,7 +14,7 @@ def _run(material: bytes):
     ledger = EventLedger()
     standing = run_operator_ingest(
         ledger=ledger,
-        locality_id="s",
+        locality_identity="s",
         boundary_material=operator_boundary_material(BytesIO(material)),
     )
     return ledger, standing

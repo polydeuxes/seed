@@ -26,7 +26,7 @@ def run_null_start() -> list:
     ledger = EventLedger()
     run_persistent_operator_console(
         ledger=ledger,
-        locality_id="s",
+        locality_identity="s",
         input_stream=binary_input("\n".join([E1, E2, E3]) + "\n"),
         output_stream=StringIO(),
     )
@@ -36,7 +36,7 @@ def run_null_start() -> list:
 def represent_null_start_evidence() -> str:
     lines = []
     for position, event in enumerate(run_null_start(), start=1):
-        lines.append(f"[{position}] {event.kind}  {event.id}")
+        lines.append(f"[{position}] {event.kind}  {event.identity}")
         for key, value in sorted(event.payload.items()):
             lines.append(f"      {key} = {json.dumps(value, default=str)}")
     return "\n".join(lines) + "\n"
@@ -47,7 +47,7 @@ def ledger() -> EventLedger:
     result = EventLedger()
     run_persistent_operator_console(
         ledger=result,
-        locality_id="s",
+        locality_identity="s",
         input_stream=binary_input("\n".join([E1, E2, E3]) + "\n"),
         output_stream=StringIO(),
     )
@@ -82,10 +82,10 @@ def test_each_ingest_binds_its_exact_act_and_result_evidence(ledger):
         assert all(
             read_yield_edge_requirements(
                 ledger,
-                recorded_result_event_id=ingest.id,
-                result_evidence_event_id=ingest.payload["yield_evidence_id"],
-                responsible_act_evidence_event_id=ingest.payload[
-                    "responsible_act_evidence_id"
+                recorded_result_event_identity=ingest.identity,
+                result_evidence_event_identity=ingest.payload["yield_evidence_identity"],
+                responsible_act_evidence_event_identity=ingest.payload[
+                    "responsible_act_evidence_identity"
                 ],
             ).values()
         )
@@ -105,8 +105,8 @@ def test_ingest_evidence_is_inspectable():
 
     assert MATERIAL_INGEST_OCCURRED_KIND in represented
     assert "exact_bytes_hex" in represented
-    assert "responsible_act_evidence_id" in represented
-    assert "yield_evidence_id" in represented
+    assert "responsible_act_evidence_identity" in represented
+    assert "yield_evidence_identity" in represented
 
 
 if __name__ == "__main__":  # pragma: no cover

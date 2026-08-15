@@ -5,7 +5,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 
 from seed_runtime.events import CORRUPTED, EventLedger
-from seed_runtime.ids import new_id
+from seed_runtime.identities import new_identity
 from seed_runtime.operator_command import AddressedOperatorCommand
 
 
@@ -21,8 +21,8 @@ class OperatorCheckpointError(ValueError):
 
 @dataclass(frozen=True)
 class OperatorCheckpoint:
-    locality_id: str
-    locality_evidence_event_id: str
+    locality_identity: str
+    locality_evidence_event_identity: str
     representation_reference: str
 
 
@@ -53,29 +53,29 @@ def open_operator_checkpoint(
 
     if not isinstance(addressed_command, AddressedOperatorCommand):
         raise TypeError("checkpoint requires one addressed command")
-    checkpoint_id = addressed_command.addressed_at_representation_event_id
-    checkpoint = ledger.get(checkpoint_id) if isinstance(checkpoint_id, str) else None
+    checkpoint_identity = addressed_command.addressed_at_representation_event_identity
+    checkpoint = ledger.get(checkpoint_identity) if isinstance(checkpoint_identity, str) else None
     if (
         checkpoint is None
         or checkpoint.kind != "operator.representation.recorded"
-        or checkpoint.locality_id != addressed_command.locality_id
-        or ledger.integrity_of(checkpoint.id) == CORRUPTED
+        or checkpoint.locality_identity != addressed_command.locality_identity
+        or ledger.integrity_of(checkpoint.identity) == CORRUPTED
     ):
         raise OperatorCheckpointError(
             "checkpoint requires one intact Representation occurrence in this locality"
         )
-    command_id = addressed_command.command_id
-    if not isinstance(command_id, str):
+    command_identity = addressed_command.command_identity
+    if not isinstance(command_identity, str):
         raise OperatorCheckpointError("checkpoint requires one exact command identity")
 
-    locality_id = new_id("checkpoint_locality")
+    locality_identity = new_identity("checkpoint_locality")
     evidence = ledger.append(
         ADDRESSED_REPRESENTATION_LOCALITY_EVIDENCE_KIND,
         {
-            "first_subject": command_id,
-            "second_subject": checkpoint.id,
-            "addressed_identity": command_id,
-            "representation_reference": checkpoint.id,
+            "first_subject": command_identity,
+            "second_subject": checkpoint.identity,
+            "addressed_identity": command_identity,
+            "representation_reference": checkpoint.identity,
             "authority": "unestablished",
             "evidence_scope": (
                 "this exact addressed-identity-to-Representation Locality relation only"
@@ -84,10 +84,10 @@ def open_operator_checkpoint(
                 "what the addressed argument material represents remains Unknown"
             ],
         },
-        locality_id=locality_id,
+        locality_identity=locality_identity,
     )
     return OperatorCheckpoint(
-        locality_id=locality_id,
-        locality_evidence_event_id=evidence.id,
-        representation_reference=checkpoint.id,
+        locality_identity=locality_identity,
+        locality_evidence_event_identity=evidence.identity,
+        representation_reference=checkpoint.identity,
     )

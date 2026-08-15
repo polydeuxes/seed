@@ -33,7 +33,7 @@ bounded comparison may have as input preserved findings "only while preserving e
 input source coordinates, provenance, support support, subject, scope, authority,
 confidence or uncertainty, Unknowns, standing, and forbidden inferences".
 
-**A finding may stand on an earlier finding.** `premise_event_id` records which,
+**A finding may stand on an earlier finding.** `premise_event_identity` records which,
 so what a finding depended on travels with it. `#2387` measured why this
 matters: the same measurement yields 3.0% with no premise and 88.1% standing on
 one that bounds a position.
@@ -51,7 +51,7 @@ from typing import Any, Iterable
 from seed_runtime.events import EventLedger
 from seed_runtime.event import Event
 from seed_runtime.material_ingest import MATERIAL_INGEST_OCCURRED_KIND
-from seed_runtime.ids import new_id
+from seed_runtime.identities import new_identity
 from seed_runtime.yield_evidence import (
     YIELD_EVIDENCE_KIND,
     _record_yield_evidence,
@@ -117,7 +117,7 @@ class DeclaredMeasurement:
     representation_measured: str
     equivalence_rule: str
     counting_scope: str
-    premise_event_id: str | None = None
+    premise_event_identity: str | None = None
     # The representation this measurement measured relative to, when it had
     # one.  A finding can only supply an representation to a later measurement if it
     # records the representation it used, so this is what makes a finding
@@ -160,19 +160,19 @@ class MeasurementFinding:
     declared: DeclaredMeasurement
     positions_measured: int
     occupancies: tuple[Occupancy, ...]
-    # The identities this measurement input_ids, available while the act runs.
+    # The identities this measurement input_identities, available while the act runs.
     # On the result-Assertion path a addressable support support is supplied from
     # these inputs instead of preserving the enumeration in every result;
     # the support belongs to that path, and this dataclass does not own a second
     # coordinate for it. `#2486` measured why: copying the inputs into
     # every finding of a body cost 97% of the stored finding.
-    input_event_ids: tuple[str, ...]
-    downstream_act_id: str = field(
-        default_factory=lambda: new_id("preserved_material_measurement_act"),
+    input_event_identities: tuple[str, ...]
+    downstream_act_identity: str = field(
+        default_factory=lambda: new_identity("preserved_material_measurement_act"),
         compare=False,
     )
-    act_occurrence_id: str = field(
-        default_factory=lambda: new_id("preserved_material_measurement_occurrence"),
+    act_occurrence_identity: str = field(
+        default_factory=lambda: new_identity("preserved_material_measurement_occurrence"),
         compare=False,
     )
     # Where the measured material came from. Defaults to the weaker Assertion:
@@ -198,7 +198,7 @@ class MeasurementFinding:
             "representation_measured": self.declared.representation_measured,
             "equivalence_rule": self.declared.equivalence_rule,
             "counting_scope": self.declared.counting_scope,
-            "premise_event_id": self.declared.premise_event_id,
+            "premise_event_identity": self.declared.premise_event_identity,
             "measured_left_representation": self.declared.measured_after,
             "measurement_distinction": self.declared.distinction,
             "measured_relative_to": list(self.declared.relative_to),
@@ -211,8 +211,8 @@ class MeasurementFinding:
             # Not "input_support": the result-Assertion coordinate surface carries
             # that key and its fields are merged over this dict, so naming both
             # the same silently replaced one with the other.
-            "input_event_ids": list(self.input_event_ids),
-            "input_count": len(self.input_event_ids),
+            "input_event_identities": list(self.input_event_identities),
+            "input_count": len(self.input_event_identities),
             "boundary_notes": list(self.boundary_notes),
         }
 
@@ -240,14 +240,14 @@ class RecurrenceFinding:
     """
 
     declared: DeclaredMeasurement
-    # The localities the input_ids occurrences carried. `06.Standing.B` requires
+    # The localities the input_identities occurrences carried. `06.Standing.B` requires
     # an act material participating in an Act distinguished by locality to preserve the
-    # locality of what it input_ids, and to keep that distinct from the locality
+    # locality of what it input_identities, and to keep that distinct from the locality
     # it records into. `None` in this tuple is an occurrence that carried no
     # locality, preserved rather than filled in.
     # Recording stamps the recording locality; without this
     # coordinate a finding drawn from two localities and recorded into a third
-    # asserts only the third, and the input_ids localities survive as nothing
+    # asserts only the third, and the input_identities localities survive as nothing
     # but event identities a later reader would have to re-derive.
     input_localities: tuple[str | None, ...]
     # Preserved occurrences the measurement ran over. The denominator.
@@ -256,20 +256,20 @@ class RecurrenceFinding:
     occurrences_carrying: int
     # How many times it occurred in total across them. This is the recurrence.
     total_count: int
-    input_event_ids: tuple[str, ...]
-    downstream_act_id: str = field(
-        default_factory=lambda: new_id("preserved_recurrence_measurement_act"),
+    input_event_identities: tuple[str, ...]
+    downstream_act_identity: str = field(
+        default_factory=lambda: new_identity("preserved_recurrence_measurement_act"),
         compare=False,
     )
-    act_occurrence_id: str = field(
-        default_factory=lambda: new_id("preserved_recurrence_measurement_occurrence"),
+    act_occurrence_identity: str = field(
+        default_factory=lambda: new_identity("preserved_recurrence_measurement_occurrence"),
         compare=False,
     )
     # Where the measured material came from. Defaults to the weaker Assertion:
     # a finding that did not read from a ledger cannot say it measured
     # preserved material, and silence must not read as the stronger one.
     material_provenance: str = MATERIAL_AS_SUPPLIED
-    # The support of the inputs input_ids, where one was declared. Every
+    # The support of the inputs input_identities, where one was declared. Every
     # finding of one pass stands on the same inputs, so preserving the
     # enumeration in each copies that inputs once per representation.
     # `#2486` measured exactly this at 97% of a stored finding and built
@@ -288,7 +288,7 @@ class RecurrenceFinding:
     # A later representation carrying this same reference is another
     # representation of the same yielded result, which is lawful. One carrying
     # none is a representation of nothing yielded.
-    yield_evidence_id: str | None = None
+    yield_evidence_identity: str | None = None
     boundary_notes: tuple[str, ...] = field(default=BOUNDARY_NOTES)
 
     def to_json_dict(self) -> dict[str, Any]:
@@ -296,23 +296,23 @@ class RecurrenceFinding:
             "representation_measured": self.declared.representation_measured,
             "equivalence_rule": self.declared.equivalence_rule,
             "counting_scope": self.declared.counting_scope,
-            "premise_event_id": self.declared.premise_event_id,
+            "premise_event_identity": self.declared.premise_event_identity,
             "measurement_distinction": "recurrence",
             "input_localities": list(self.input_localities),
             "occurrences_examined": self.occurrences_examined,
             "occurrences_carrying": self.occurrences_carrying,
             "total_count": self.total_count,
-            "input_event_ids": list(self.input_event_ids),
-            "input_count": len(self.input_event_ids),
+            "input_event_identities": list(self.input_event_identities),
+            "input_count": len(self.input_event_identities),
             "boundary_notes": list(self.boundary_notes),
-            "yield_evidence_id": self.yield_evidence_id,
+            "yield_evidence_identity": self.yield_evidence_identity,
         }
         if self.input_support is not None:
             # The support replaces the enumeration rather than accompanying it.
             # Carrying both preserves the cost the support exists to avoid, and
             # leaves two representations of one support free to disagree.
             carried["input_support"] = self.input_support.to_json_dict()
-            carried.pop("input_event_ids")
+            carried.pop("input_event_identities")
         return carried
 
 
@@ -339,7 +339,7 @@ def measure_recurrence(
     goes on to disclose.
     """
 
-    input_ids: list[str] = []
+    input_identities: list[str] = []
     localities: dict[str | None, None] = {}
     examined = 0
     carrying = 0
@@ -349,7 +349,7 @@ def measure_recurrence(
     )
     for event in walked:
         text = _measurable_text(event)
-        input_ids.append(event.id)
+        input_identities.append(event.identity)
         localities[_locality_of(event)] = None
         count = occurrences_of(text)
         if not isinstance(count, int) or isinstance(count, bool) or count < 0:
@@ -368,15 +368,15 @@ def measure_recurrence(
         occurrences_examined=examined,
         occurrences_carrying=carrying,
         total_count=total,
-        input_event_ids=tuple(input_ids),
+        input_event_identities=tuple(input_identities),
     )
     if yield_in is not None:
         evidence = _record_yield(
             yield_in[0],
-            locality_id=yield_in[1],
+            locality_identity=yield_in[1],
             finding=finding,
         )
-        finding = replace(finding, yield_evidence_id=evidence.id)
+        finding = replace(finding, yield_evidence_identity=evidence.identity)
     return finding
 
 
@@ -389,9 +389,9 @@ def _locality_of(event: Event) -> str | None:
 
     """
 
-    if event.locality_id is None:
+    if event.locality_identity is None:
         return None
-    return f"locality:{event.locality_id}"
+    return f"locality:{event.locality_identity}"
 
 
 def _distinct_inputs(occurrences: Iterable[Event]) -> list[Event]:
@@ -417,11 +417,11 @@ def _distinct_inputs(occurrences: Iterable[Event]) -> list[Event]:
     inputs = list(occurrences)
     seen: set[str] = set()
     for event in inputs:
-        if event.id in seen:
+        if event.identity in seen:
             raise PreservedMaterialMeasurementError(
-                f"{event.id} appears more than once in one measured inputs"
+                f"{event.identity} appears more than once in one measured inputs"
             )
-        seen.add(event.id)
+        seen.add(event.identity)
     return inputs
 
 
@@ -430,7 +430,7 @@ def _as_preserved(
 ) -> "tuple[list[Event], str]":
     """The preserved occurrences these identities name, where a ledger says so.
 
-    An `Event` is directly formable with any id and any payload, so an
+    An `Event` is directly formable with any identity and any payload, so an
     object bearing a preserved identity may carry different material. Checking
     that an occurrence with that identity exists establishes the identity and
     not the material: `#2510` enforced this where a support support was declared,
@@ -446,10 +446,10 @@ def _as_preserved(
         return inputs, MATERIAL_AS_SUPPLIED
     preserved = []
     for event in inputs:
-        recorded = ledger.get(event.id)
+        recorded = ledger.get(event.identity)
         if recorded is None:
             raise PreservedMaterialMeasurementError(
-                f"{event.id} is not preserved in the ledger this measurement "
+                f"{event.identity} is not preserved in the ledger this measurement "
                 "reads its material from"
             )
         preserved.append(recorded)
@@ -492,7 +492,7 @@ def _result_content(finding) -> dict[str, Any]:
     )
     # The reference to the yield evidence is not part of the content that
     # evidence commits to; it is how a result says which evidence concerns it.
-    content.pop("yield_evidence_id", None)
+    content.pop("yield_evidence_identity", None)
     return content
 
 
@@ -531,7 +531,7 @@ def _recorded_yield_result(
     return content
 
 
-def _record_yield(ledger: EventLedger, *, locality_id: str, finding) -> Event:
+def _record_yield(ledger: EventLedger, *, locality_identity: str, finding) -> Event:
     """Preserve, from inside the yielding act, that it yielded this result.
 
     The distinction is not that this is private. Privacy is mechanics. It is
@@ -562,9 +562,9 @@ def _record_yield(ledger: EventLedger, *, locality_id: str, finding) -> Event:
 
     return _record_yield_evidence(
         ledger,
-        locality_id=locality_id,
+        locality_identity=locality_identity,
         exact_act="declared Measurement",
-        act_occurrence_id=finding.act_occurrence_id,
+        act_occurrence_identity=finding.act_occurrence_identity,
         result_kind=RECURRENCE_RESULT_KIND,
         result_identity=finding.declared.representation_measured,
         result_content=_result_content(finding),
@@ -596,7 +596,7 @@ def _measurable_text(event: Event) -> str:
     represented = event.payload.get("represented_material")
     if not isinstance(represented, str):
         raise PreservedMaterialMeasurementError(
-            f"{event.id} preserves no represented material"
+            f"{event.identity} preserves no represented material"
         )
     return represented
 
@@ -629,7 +629,7 @@ def measure_recurrences(
     representation per occurrence.
 
     Findings are identical to calling `measure_recurrence` for each
-    representation. Each carries its own declaration, the same input_ids
+    representation. Each carries its own declaration, the same input_identities
     inputs, and the same three counts. This differences only how many times the
     material is walked.
 
@@ -669,7 +669,7 @@ def measure_recurrences(
             "one pass has as input one input sequence, so every declaration must "
             f"disclose the same counting scope; got {len(scopes)}"
         )
-    input_ids: list[str] = []
+    input_identities: list[str] = []
     localities: dict[str | None, None] = {}
     examined = 0
     carrying: dict[str, int] = {name: 0 for name in declared}
@@ -681,17 +681,17 @@ def measure_recurrences(
         material_provenance = MATERIAL_READ_FROM_LEDGER
         preserved = []
         for event in walked:
-            recorded = support_validator.ledger.get(event.id)
+            recorded = support_validator.ledger.get(event.identity)
             if recorded is None:
                 raise PreservedMaterialMeasurementError(
-                    f"{event.id} is not preserved in the ledger this support "
+                    f"{event.identity} is not preserved in the ledger this support "
                     "support is validated against"
                 )
             preserved.append(recorded)
         walked = preserved
     for event in walked:
         text = _measurable_text(event)
-        input_ids.append(event.id)
+        input_identities.append(event.identity)
         localities[_locality_of(event)] = None
         examined += 1
         counted = counts_in(text)
@@ -712,7 +712,7 @@ def measure_recurrences(
             if count:
                 carrying[representation] += 1
                 total[representation] += count
-    inputs = tuple(input_ids)
+    inputs = tuple(input_identities)
     input_localities = tuple(localities)
     if input_support is not None:
         if support_validator is None:
@@ -726,8 +726,8 @@ def measure_recurrences(
     # One invocation performs one bounded Measurement occurrence.  Its exact
     # results remain distinct, but result fan-out does not mint another Act or
     # occurrence for each representation measured during the same pass.
-    downstream_act_id = new_id("preserved_recurrence_measurement_act")
-    act_occurrence_id = new_id("preserved_recurrence_measurement_occurrence")
+    downstream_act_identity = new_identity("preserved_recurrence_measurement_act")
+    act_occurrence_identity = new_identity("preserved_recurrence_measurement_occurrence")
     findings = tuple(
         RecurrenceFinding(
             declared=declaration,
@@ -736,10 +736,10 @@ def measure_recurrences(
             occurrences_examined=examined,
             occurrences_carrying=carrying[representation],
             total_count=total[representation],
-            input_event_ids=inputs,
+            input_event_identities=inputs,
             input_support=input_support,
-            downstream_act_id=downstream_act_id,
-            act_occurrence_id=act_occurrence_id,
+            downstream_act_identity=downstream_act_identity,
+            act_occurrence_identity=act_occurrence_identity,
         )
         for representation, declaration in declared.items()
     )
@@ -759,16 +759,16 @@ def measure_recurrences(
         for finding in findings:
             evidence = _record_yield(
                 yield_in[0],
-                locality_id=yield_in[1],
+                locality_identity=yield_in[1],
                 finding=finding,
             )
-            witnessed.append(replace(finding, yield_evidence_id=evidence.id))
+            witnessed.append(replace(finding, yield_evidence_identity=evidence.identity))
         findings = tuple(witnessed)
     return findings
 
 
 def ingest_occurrences(
-    ledger: EventLedger, *, locality_id: str
+    ledger: EventLedger, *, locality_identity: str
 ) -> list[Event]:
     """Every preserved ingest occurrence carrying this locality, in append order.
 
@@ -781,7 +781,7 @@ def ingest_occurrences(
 
     return [
         event
-        for event in ledger.list_locality(locality_id)
+        for event in ledger.list_locality(locality_identity)
         if event.kind == INGEST_OCCURRED_KIND
     ]
 
@@ -802,14 +802,14 @@ def measure_occupancy(
     """
 
     counts: dict[str, int] = {}
-    input_ids: list[str] = []
+    input_identities: list[str] = []
     measured = 0
     walked, material_provenance = _as_preserved(
         _distinct_inputs(occurrences), preserved_in
     )
     for event in walked:
         text = _measurable_text(event)
-        input_ids.append(event.id)
+        input_identities.append(event.identity)
         occupant = occupant_of(text)
         if occupant is None:
             continue
@@ -824,20 +824,20 @@ def measure_occupancy(
         material_provenance=material_provenance,
         positions_measured=measured,
         occupancies=ordered,
-        input_event_ids=tuple(input_ids),
+        input_event_identities=tuple(input_identities),
     )
 
 
 def _measurement_finding_payload(
     *,
-    locality_id: str,
+    locality_identity: str,
     finding: MeasurementFinding | RecurrenceFinding,
     extra: dict[str, Any] | None,
 ) -> dict[str, Any]:
     carried = finding.to_json_dict()
     return {
-        "downstream_act_id": finding.downstream_act_id,
-        "act_occurrence_id": finding.act_occurrence_id,
+        "downstream_act_identity": finding.downstream_act_identity,
+        "act_occurrence_identity": finding.act_occurrence_identity,
         "dimensions": {
             "identity": f"measurement:{finding.declared.representation_measured}",
             "content": finding.declared.counting_scope,
@@ -861,15 +861,15 @@ def _measurement_finding_payload(
                 "measurement evidence only; establishes no represented relation, relation, "
                 "or standing beyond the measurement assertion"
             ),
-            "scope_locality": f"locality:{locality_id}",
+            "scope_locality": f"locality:{locality_identity}",
             "occurrence_preservation": "declared measurement durably recorded",
         },
         "unknowns": ["what any measured representation means remains Unknown"],
         **carried,
         **_additive_only(finding, carried, extra),
         "provenance_occurrence_references": (
-            [finding.declared.premise_event_id]
-            if finding.declared.premise_event_id
+            [finding.declared.premise_event_identity]
+            if finding.declared.premise_event_identity
             else []
         ),
     }
@@ -878,19 +878,19 @@ def _measurement_finding_payload(
 def record_measurement_findings(
     ledger: EventLedger,
     *,
-    locality_id: str,
+    locality_identity: str,
     findings: Iterable[tuple[MeasurementFinding | RecurrenceFinding, dict[str, Any] | None]],
 ) -> list[Event]:
     """Preserve a bounded group of findings in one ledger transaction."""
 
     supplied = list(findings)
-    premise_ids = {
-        finding.declared.premise_event_id
+    premise_identities = {
+        finding.declared.premise_event_identity
         for finding, _ in supplied
-        if finding.declared.premise_event_id is not None
+        if finding.declared.premise_event_identity is not None
     }
-    for premise_id in premise_ids:
-        premise = ledger.get(premise_id)
+    for premise_identity in premise_identities:
+        premise = ledger.get(premise_identity)
         if premise is None or premise.kind != MEASUREMENT_RECORDED_KIND:
             raise PreservedMaterialMeasurementError(
                 "a premise must be a recorded measurement finding"
@@ -912,16 +912,16 @@ def record_measurement_findings(
     # Identities are collected across the whole call before any read, because
     # every finding of one pass carries the same inputs and checking per
     # finding would restore the cost `#2486` removed.
-    input_ids = {
-        event_id
+    input_identities = {
+        event_identity
         for finding, _ in supplied
-        for event_id in finding.input_event_ids
+        for event_identity in finding.input_event_identities
     }
-    for event_id in input_ids:
-        occurrence = ledger.get(event_id)
+    for event_identity in input_identities:
+        occurrence = ledger.get(event_identity)
         if occurrence is None or occurrence.kind != INGEST_OCCURRED_KIND:
             raise PreservedMaterialMeasurementError(
-                f"{event_id} is recorded as a input_ids preserved occurrence "
+                f"{event_identity} is recorded as a input_identities preserved occurrence "
                 "and this ledger preserves no such ingest occurrence"
             )
     # A recurrence finding is recordable where the act that yielded it
@@ -930,25 +930,25 @@ def record_measurement_findings(
     for finding, _ in supplied:
         if not isinstance(finding, RecurrenceFinding):
             continue
-        if finding.yield_evidence_id is None:
+        if finding.yield_evidence_identity is None:
             raise PreservedMaterialMeasurementError(
                 "this result names no yield evidence; a measuring act "
                 "preserves that evidence and the result it returns carries it"
             )
-        evidence = ledger.get(finding.yield_evidence_id)
+        evidence = ledger.get(finding.yield_evidence_identity)
         if evidence is None or evidence.kind != YIELD_EVIDENCE_KIND:
             raise PreservedMaterialMeasurementError(
-                f"{finding.yield_evidence_id} is named as this result's "
+                f"{finding.yield_evidence_identity} is named as this result's "
                 "evidence and is not preserved yield evidence"
             )
         if evidence.payload.get("result_kind") != RECURRENCE_RESULT_KIND:
             raise PreservedMaterialMeasurementError(
-                f"{finding.yield_evidence_id} is yield evidence for "
+                f"{finding.yield_evidence_identity} is yield evidence for "
                 "a different kind of result"
             )
         if (
-            evidence.payload.get("dimensions", {}).get("act_occurrence_id")
-            != finding.act_occurrence_id
+            evidence.payload.get("dimensions", {}).get("act_occurrence_identity")
+            != finding.act_occurrence_identity
         ):
             raise PreservedMaterialMeasurementError(
                 "yield Evidence concerns a different Measurement occurrence"
@@ -960,14 +960,14 @@ def record_measurement_findings(
             )
     events = [
         Event(
-            id=new_id("evt"),
+            identity=new_identity("evt"),
             kind=MEASUREMENT_RECORDED_KIND,
             payload=_measurement_finding_payload(
-                locality_id=locality_id,
+                locality_identity=locality_identity,
                 finding=finding,
                 extra=extra,
             ),
-            locality_id=locality_id,
+            locality_identity=locality_identity,
         )
         for finding, extra in supplied
     ]
@@ -977,7 +977,7 @@ def record_measurement_findings(
 def record_measurement_finding(
     ledger: EventLedger,
     *,
-    locality_id: str,
+    locality_identity: str,
     finding: MeasurementFinding | RecurrenceFinding,
     extra: dict[str, Any] | None = None,
 ) -> Event:
@@ -989,12 +989,12 @@ def record_measurement_finding(
 
     return record_measurement_findings(
         ledger,
-        locality_id=locality_id,
+        locality_identity=locality_identity,
         findings=((finding, extra),),
     )[0]
 
 
-def premise_chain(ledger: EventLedger, event_id: str) -> list[str]:
+def premise_chain(ledger: EventLedger, event_identity: str) -> list[str]:
     """Every finding this one stood on, nearest premise first.
 
     Not the runtime's `InputSupport` representation. This is the chain of
@@ -1005,11 +1005,11 @@ def premise_chain(ledger: EventLedger, event_id: str) -> list[str]:
     """
 
     chain: list[str] = []
-    current = ledger.get(event_id)
+    current = ledger.get(event_identity)
     while current is not None:
-        premise_id = current.payload.get("premise_event_id")
-        if premise_id is None:
+        premise_identity = current.payload.get("premise_event_identity")
+        if premise_identity is None:
             break
-        chain.append(premise_id)
-        current = ledger.get(premise_id)
+        chain.append(premise_identity)
+        current = ledger.get(premise_identity)
     return chain

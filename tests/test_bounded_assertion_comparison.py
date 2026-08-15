@@ -44,19 +44,19 @@ SCOPE = "one bounded locality"
 @pytest.fixture
 def ledger():
     led = EventLedger()
-    for locality_id, material in BODIES.items():
+    for locality_identity, material in BODIES.items():
         run_material_fixture_console(
-            ledger=led, locality_id=locality_id,
+            ledger=led, locality_identity=locality_identity,
             input_stream=binary_input(material + ""), output_stream=StringIO())
     return led
 
 
-def _finding(led, locality_id, representation="a", scope=SCOPE):
+def _finding(led, locality_identity, representation="a", scope=SCOPE):
     occurrences = ingest_occurrences(
-        led, locality_id=locality_id
+        led, locality_identity=locality_identity
     )
     return record_measurement_finding(
-        led, locality_id=locality_id,
+        led, locality_identity=locality_identity,
         finding=measure_after(occurrences, representation, counting_scope=scope),
     )
 
@@ -69,7 +69,7 @@ def _finding(led, locality_id, representation="a", scope=SCOPE):
 def test_a_comparison_needs_more_than_one_preserved_finding(ledger):
     one = _finding(ledger, "s1")
     with pytest.raises(BoundedComparisonError, match="exactly two"):
-        compare_preserved_findings(ledger, [one.id])
+        compare_preserved_findings(ledger, [one.identity])
 
 
 def test_more_than_two_inputs_are_refused(ledger):
@@ -82,33 +82,33 @@ def test_more_than_two_inputs_are_refused(ledger):
     """
     a, b, c = (_finding(ledger, s) for s in ("s1", "s2", "s1"))
     with pytest.raises(BoundedComparisonError, match="more than two is unbuilt"):
-        compare_preserved_findings(ledger, [a.id, b.id, c.id])
+        compare_preserved_findings(ledger, [a.identity, b.identity, c.identity])
 
 
 def test_an_input_compared_with_itself_is_refused(ledger):
     one = _finding(ledger, "s1")
     with pytest.raises(BoundedComparisonError, match="compared with itself"):
-        compare_preserved_findings(ledger, [one.id, one.id])
+        compare_preserved_findings(ledger, [one.identity, one.identity])
 
 
 def test_only_recorded_measurement_findings_may_participate(ledger):
     one = _finding(ledger, "s1")
-    ingest = ingest_occurrences(ledger, locality_id="s1")[0]
+    ingest = ingest_occurrences(ledger, locality_identity="s1")[0]
     with pytest.raises(BoundedComparisonError, match="not a recorded measurement"):
-        compare_preserved_findings(ledger, [one.id, ingest.id])
+        compare_preserved_findings(ledger, [one.identity, ingest.identity])
 
 
 def test_an_unpreserved_input_is_refused(ledger):
     one = _finding(ledger, "s1")
     with pytest.raises(BoundedComparisonError, match="no such preserved occurrence"):
-        compare_preserved_findings(ledger, [one.id, "evt_does_not_exist"])
+        compare_preserved_findings(ledger, [one.identity, "evt_does_not_exist"])
 
 
 def test_the_recorded_responsible_boundary_is_local_to_the_occurrence(ledger):
     a, b = _finding(ledger, "s1"), _finding(ledger, "s2")
     event = record_comparison_finding(
-        ledger, locality_id="s1",
-        finding=compare_preserved_findings(ledger, [a.id, b.id]))
+        ledger, locality_identity="s1",
+        finding=compare_preserved_findings(ledger, [a.identity, b.identity]))
     assert "local to the instantiated comparison" in event.payload["responsible_boundary"]
     assert "not named beyond this comparison" in event.payload["responsible_boundary"]
 
@@ -120,9 +120,9 @@ def test_the_recorded_responsible_boundary_is_local_to_the_occurrence(ledger):
 
 def test_each_input_keeps_the_coordinates_it_carries(ledger):
     a, b = _finding(ledger, "s1"), _finding(ledger, "s2")
-    finding = compare_preserved_findings(ledger, [a.id, b.id])
+    finding = compare_preserved_findings(ledger, [a.identity, b.identity])
     for supplied, preserved in zip((a, b), finding.inputs):
-        assert preserved.event_id == supplied.id
+        assert preserved.event_identity == supplied.identity
         assert preserved.carried["standing"] == "measured"
         assert preserved.carried["subject"] == supplied.payload["dimensions"]["identity"]
         assert preserved.carried["limits"] == supplied.payload["boundary_notes"]
@@ -131,7 +131,7 @@ def test_each_input_keeps_the_coordinates_it_carries(ledger):
 def test_an_absent_coordinate_is_named_and_not_supplied(ledger):
     """`#2419`: preserving does not supply what an input lacks."""
     a, b = _finding(ledger, "s1"), _finding(ledger, "s2")
-    finding = compare_preserved_findings(ledger, [a.id, b.id])
+    finding = compare_preserved_findings(ledger, [a.identity, b.identity])
     for preserved in finding.inputs:
         assert "confidence_or_uncertainty" in preserved.absent
         assert "confidence_or_uncertainty" not in preserved.carried
@@ -140,13 +140,13 @@ def test_an_absent_coordinate_is_named_and_not_supplied(ledger):
 
 def test_the_input_support_travels_with_its_input(ledger):
     seed = _finding(ledger, "s1")
-    occurrences = ingest_occurrences(ledger, locality_id="s1")
+    occurrences = ingest_occurrences(ledger, locality_identity="s1")
     standing_on = record_measurement_finding(
-        ledger, locality_id="s1",
-        finding=measure_after(occurrences, "is", counting_scope=SCOPE, premise_event_id=seed.id))
+        ledger, locality_identity="s1",
+        finding=measure_after(occurrences, "is", counting_scope=SCOPE, premise_event_identity=seed.identity))
     other = _finding(ledger, "s2")
-    finding = compare_preserved_findings(ledger, [standing_on.id, other.id])
-    assert finding.inputs[0].input_support == (seed.id,)
+    finding = compare_preserved_findings(ledger, [standing_on.identity, other.identity])
+    assert finding.inputs[0].input_support == (seed.identity,)
     assert finding.inputs[1].input_support == ()
 
 
@@ -157,16 +157,16 @@ def test_the_input_support_travels_with_its_input(ledger):
 
 def test_it_reports_which_occupants_both_findings_hold(ledger):
     a, b = _finding(ledger, "s1"), _finding(ledger, "s2")
-    finding = compare_preserved_findings(ledger, [a.id, b.id])
+    finding = compare_preserved_findings(ledger, [a.identity, b.identity])
     assert "noun" in finding.shared_occupants
     assert "verb" in finding.shared_occupants
-    assert set(finding.occupants_in_one_only) == {a.id, b.id}
+    assert set(finding.occupants_in_one_only) == {a.identity, b.identity}
 
 
 def test_findings_from_different_localities_do_not_reach_agreement(ledger):
     """The restraint. Each is exact within its own scope."""
     a, b = _finding(ledger, "s1"), _finding(ledger, "s2")
-    finding = compare_preserved_findings(ledger, [a.id, b.id])
+    finding = compare_preserved_findings(ledger, [a.identity, b.identity])
     assert finding.bounded_relation == "Unknown"
     assert "different bounded localities" in finding.relation_basis
     assert "not disagreement" in finding.relation_basis
@@ -176,7 +176,7 @@ def test_findings_from_different_localities_do_not_reach_agreement(ledger):
 def test_a_different_measured_subject_yields_Unknown(ledger):
     a = _finding(ledger, "s1", representation="a")
     b = _finding(ledger, "s2", representation="is")
-    finding = compare_preserved_findings(ledger, [a.id, b.id])
+    finding = compare_preserved_findings(ledger, [a.identity, b.identity])
     assert finding.bounded_relation == "Unknown"
     assert "same representation" in finding.relation_basis
     assert not [d for d in finding.distinctions
@@ -186,7 +186,7 @@ def test_a_different_measured_subject_yields_Unknown(ledger):
 def test_two_findings_in_one_locality_may_reach_agreement(ledger):
     """Within one scope the relation is establishable, and only there."""
     a, b = _finding(ledger, "s1"), _finding(ledger, "s1")
-    finding = compare_preserved_findings(ledger, [a.id, b.id])
+    finding = compare_preserved_findings(ledger, [a.identity, b.identity])
     assert finding.bounded_relation == "agreement"
     assert all(d.same for d in finding.distinctions)
 
@@ -201,13 +201,13 @@ def test_the_left_representation_is_compared_as_a_coordinate(ledger):
     a = _finding(ledger, "s1", representation="a")
     b = _finding(ledger, "s2", representation="a")
     by_name = {d.coordinate: d for d in
-               compare_preserved_findings(ledger, [a.id, b.id]).distinctions}
+               compare_preserved_findings(ledger, [a.identity, b.identity]).distinctions}
     assert by_name["measured_left_representation"].same
     assert by_name["measured_left_representation"].values == ("a", "a")
 
     c = _finding(ledger, "s2", representation="is")
     by_name = {d.coordinate: d for d in
-               compare_preserved_findings(ledger, [a.id, c.id]).distinctions}
+               compare_preserved_findings(ledger, [a.identity, c.identity]).distinctions}
     assert not by_name["measured_left_representation"].same
     assert by_name["measured_left_representation"].values == ("a", "is")
 
@@ -215,14 +215,14 @@ def test_the_left_representation_is_compared_as_a_coordinate(ledger):
 def test_a_different_left_representation_yields_Unknown(ledger):
     a = _finding(ledger, "s1", representation="a")
     b = _finding(ledger, "s1", representation="is")
-    finding = compare_preserved_findings(ledger, [a.id, b.id])
+    finding = compare_preserved_findings(ledger, [a.identity, b.identity])
     assert finding.bounded_relation == "Unknown"
     assert "same representation" in finding.relation_basis
 
 
 def test_the_distinctions_are_literal(ledger):
     a, b = _finding(ledger, "s1"), _finding(ledger, "s2")
-    finding = compare_preserved_findings(ledger, [a.id, b.id])
+    finding = compare_preserved_findings(ledger, [a.identity, b.identity])
     by_name = {d.coordinate: d for d in finding.distinctions}
     assert by_name["representation_measured"].same
     assert by_name["equivalence_rule"].same
@@ -239,18 +239,18 @@ def test_the_distinctions_are_literal(ledger):
 def test_the_comparison_is_recorded_as_its_own_kind(ledger):
     a, b = _finding(ledger, "s1"), _finding(ledger, "s2")
     event = record_comparison_finding(
-        ledger, locality_id="s1",
-        finding=compare_preserved_findings(ledger, [a.id, b.id]))
+        ledger, locality_identity="s1",
+        finding=compare_preserved_findings(ledger, [a.identity, b.identity]))
     assert event.kind == COMPARISON_RECORDED_KIND
-    assert event.payload["input_event_ids"] == [a.id, b.id]
+    assert event.payload["input_event_identities"] == [a.identity, b.identity]
     assert "standing" not in event.payload["dimensions"]
 
 
 def test_the_record_refuses_the_inferences_the_clause_forbids(ledger):
     a, b = _finding(ledger, "s1"), _finding(ledger, "s2")
     event = record_comparison_finding(
-        ledger, locality_id="s1",
-        finding=compare_preserved_findings(ledger, [a.id, b.id]))
+        ledger, locality_identity="s1",
+        finding=compare_preserved_findings(ledger, [a.identity, b.identity]))
     notes = " ".join(event.payload["boundary_notes"])
     assert "is not a relation between what they measured" in notes
     assert "establishes no relation between" in notes
@@ -263,9 +263,9 @@ def test_recording_a_comparison_does_not_disturb_its_inputs(ledger):
     a, b = _finding(ledger, "s1"), _finding(ledger, "s2")
     before = (dict(a.payload), dict(b.payload))
     record_comparison_finding(
-        ledger, locality_id="s1",
-        finding=compare_preserved_findings(ledger, [a.id, b.id]))
-    assert (ledger.get(a.id).payload, ledger.get(b.id).payload) == before
+        ledger, locality_identity="s1",
+        finding=compare_preserved_findings(ledger, [a.identity, b.identity]))
+    assert (ledger.get(a.identity).payload, ledger.get(b.identity).payload) == before
 
 
 def test_a_comparison_is_not_a_measurement(ledger):
@@ -273,7 +273,7 @@ def test_a_comparison_is_not_a_measurement(ledger):
 
     a, b = _finding(ledger, "s1"), _finding(ledger, "s2")
     event = record_comparison_finding(
-        ledger, locality_id="s1",
-        finding=compare_preserved_findings(ledger, [a.id, b.id]))
+        ledger, locality_identity="s1",
+        finding=compare_preserved_findings(ledger, [a.identity, b.identity]))
     assert event.kind != MEASUREMENT_RECORDED_KIND
     assert "occupancies" not in event.payload

@@ -31,7 +31,7 @@ from typing import Any, Iterable
 
 from seed_runtime.events import CORRUPTED, EventLedger
 from seed_runtime.event import Event
-from seed_runtime.ids import new_id
+from seed_runtime.identities import new_identity
 from seed_runtime.preserved_material_measurement import (
     MEASUREMENT_RECORDED_KIND,
     premise_chain,
@@ -95,7 +95,7 @@ class BoundedComparisonError(Exception):
 class PreservedInput:
     """One input as it occurred, with what it lacks named rather than filled."""
 
-    event_id: str
+    event_identity: str
     carried: dict[str, Any]
     absent: tuple[str, ...]
     input_support: tuple[str, ...]
@@ -103,7 +103,7 @@ class PreservedInput:
 
     def to_json_dict(self) -> dict[str, Any]:
         return {
-            "event_id": self.event_id,
+            "event_identity": self.event_identity,
             "carried": dict(self.carried),
             "coordinates_absent": list(self.absent),
             "input_support": list(self.input_support),
@@ -172,11 +172,11 @@ def _preserve(ledger: EventLedger, event: Event) -> PreservedInput:
     if counting_scope is not None:
         carried["counting_scope"] = counting_scope
     return PreservedInput(
-        event_id=event.id,
+        event_identity=event.identity,
         carried=carried,
         absent=tuple(absent),
-        input_support=tuple(premise_chain(ledger, event.id)),
-        integrity=ledger.integrity_of(event.id),
+        input_support=tuple(premise_chain(ledger, event.identity)),
+        integrity=ledger.integrity_of(event.identity),
     )
 
 
@@ -188,15 +188,15 @@ def _occupants(event: Event) -> set[str]:
 
 
 def compare_preserved_findings(
-    ledger: EventLedger, event_ids: Iterable[str]
+    ledger: EventLedger, event_identities: Iterable[str]
 ) -> ComparisonFinding:
     """Instantiate one comparison over preserved findings, or refuse.
 
     The responsible boundary is local to the occurrence. Nothing survives the call.
     """
 
-    ids = tuple(event_ids)
-    if len(ids) != 2:
+    identities = tuple(event_identities)
+    if len(identities) != 2:
         # Two, exactly. `01.Standing.E` says "multiple", and an earlier representation of
         # this function accepted any number and intersected them all — n-ary
         # comparison implemented while its own report called it unbuilt. What
@@ -204,22 +204,22 @@ def compare_preserved_findings(
         # intersection over n findings is not that read.
         raise BoundedComparisonError(
             "a bounded comparison has as input exactly two preserved findings; "
-            f"{len(ids)} supplied. Comparing more than two is unbuilt"
+            f"{len(identities)} supplied. Comparing more than two is unbuilt"
         )
-    if len(set(ids)) != len(ids):
+    if len(set(identities)) != len(identities):
         raise BoundedComparisonError(
             "an input compared with itself is not multiple independently "
             "preserved findings"
         )
 
     events: list[Event] = []
-    for event_id in ids:
-        event = ledger.get(event_id)
+    for event_identity in identities:
+        event = ledger.get(event_identity)
         if event is None:
-            raise BoundedComparisonError(f"no such preserved occurrence: {event_id}")
+            raise BoundedComparisonError(f"no such preserved occurrence: {event_identity}")
         if event.kind != MEASUREMENT_RECORDED_KIND:
             raise BoundedComparisonError(
-                f"{event_id} is {event.kind}, not a recorded measurement finding"
+                f"{event_identity} is {event.kind}, not a recorded measurement finding"
             )
         # This act asserts to preserve what it has as input, so this act verifies
         # what it has as input. A corrupted input cannot be preserved, only copied.
@@ -227,9 +227,9 @@ def compare_preserved_findings(
         # in-memory ledger and any occurrence written before the digest
         # existed are both lawfully unverifiable, and refusing them would
         # require a guarantee nothing ever offered.
-        if ledger.integrity_of(event_id) == CORRUPTED:
+        if ledger.integrity_of(event_identity) == CORRUPTED:
             raise BoundedComparisonError(
-                f"{event_id} does not match its recorded digest; a corrupted "
+                f"{event_identity} does not match its recorded digest; a corrupted "
                 "occurrence cannot be preserved by a comparison"
             )
         events.append(event)
@@ -257,7 +257,7 @@ def compare_preserved_findings(
     occupant_sets = [_occupants(event) for event in events]
     shared = occupant_sets[0] & occupant_sets[1]
     only = {
-        event.id: tuple(sorted(occupants - shared))
+        event.identity: tuple(sorted(occupants - shared))
         for event, occupants in zip(events, occupant_sets)
     }
 
@@ -297,60 +297,60 @@ def compare_preserved_findings(
 def record_comparison_finding(
     ledger: EventLedger,
     *,
-    locality_id: str,
+    locality_identity: str,
     finding: ComparisonFinding,
 ) -> Event:
     """Preserve one comparison occurrence so a later act may have it participate."""
 
-    input_event_ids = [item.event_id for item in finding.inputs]
-    verified = compare_preserved_findings(ledger, input_event_ids)
+    input_event_identities = [item.event_identity for item in finding.inputs]
+    verified = compare_preserved_findings(ledger, input_event_identities)
     if finding != verified:
         raise BoundedComparisonError(
             "the supplied comparison does not match its exact recorded inputs"
         )
-    act_id = new_id("bounded_comparison_act")
-    act_occurrence_id = new_id("bounded_comparison_act_occurrence")
-    result_identity = new_id("bounded_comparison_result")
-    locality_evidence_ids = []
-    applicability_event_ids = []
+    act_identity = new_identity("bounded_comparison_act")
+    act_occurrence_identity = new_identity("bounded_comparison_act_occurrence")
+    result_identity = new_identity("bounded_comparison_result")
+    locality_evidence_identities = []
+    applicability_event_identities = []
     participation = []
-    for input_event_id in input_event_ids:
+    for input_event_identity in input_event_identities:
         role = "preserved finding compared"
         locality_evidence = ledger.append(
             COMPARISON_INPUT_LOCALITY_EVIDENCE_KIND,
             {
-                "first_subject": input_event_id,
+                "first_subject": input_event_identity,
                 "second_subject": {
-                    "downstream_act_id": act_id,
-                    "act_occurrence_id": act_occurrence_id,
+                    "downstream_act_identity": act_identity,
+                    "act_occurrence_identity": act_occurrence_identity,
                     "role": role,
                 },
                 "authority": "unestablished",
                 "evidence_scope": "this exact finding-to-Compare Locality only",
             },
-            locality_id=locality_id,
+            locality_identity=locality_identity,
         )
         applicability = ledger.append(
             COMPARISON_INPUT_APPLICABILITY_KIND,
             {
-                "input_reference": input_event_id,
-                "downstream_act_id": act_id,
+                "input_reference": input_event_identity,
+                "downstream_act_identity": act_identity,
                 "role": role,
-                "locality_evidence_id": locality_evidence.id,
+                "locality_evidence_identity": locality_evidence.identity,
                 "standing": "applicable",
                 "authority": "unestablished",
                 "evidence_scope": "this exact input-to-Compare relation only",
             },
-            locality_id=locality_id,
+            locality_identity=locality_identity,
         )
-        locality_evidence_ids.append(locality_evidence.id)
-        applicability_event_ids.append(applicability.id)
+        locality_evidence_identities.append(locality_evidence.identity)
+        applicability_event_identities.append(applicability.identity)
         participation.append(
             {
-                "subject_reference": input_event_id,
+                "subject_reference": input_event_identity,
                 "role": role,
-                "act_occurrence_id": act_occurrence_id,
-                "applicability_event_id": applicability.id,
+                "act_occurrence_identity": act_occurrence_identity,
+                "applicability_event_identity": applicability.identity,
             }
         )
     result_payload = {
@@ -365,46 +365,46 @@ def record_comparison_finding(
                 "comparison evidence only; the bounded relation holds inside this "
                 "comparison boundary and establishes nothing beyond it"
             ),
-            "scope_locality": f"locality:{locality_id}",
+            "scope_locality": f"locality:{locality_identity}",
             "occurrence_preservation": "comparison occurrence durably recorded",
         },
         "responsible_boundary": (
             "this comparison occurrence; the responsible boundary is local to the instantiated "
             "comparison and is not named beyond this comparison"
         ),
-        "downstream_act_id": act_id,
-        "act_occurrence_id": act_occurrence_id,
-        "input_locality_evidence_ids": locality_evidence_ids,
-        "input_applicability_event_ids": applicability_event_ids,
+        "downstream_act_identity": act_identity,
+        "act_occurrence_identity": act_occurrence_identity,
+        "input_locality_evidence_identities": locality_evidence_identities,
+        "input_applicability_event_identities": applicability_event_identities,
         "participation": participation,
         "unknowns": [
             "what any compared representation means remains Unknown",
             "whether the compared bodies stand in any relation remains Unknown",
         ],
         "boundary_notes": list(BOUNDARY_NOTES),
-        "input_event_ids": input_event_ids,
+        "input_event_identities": input_event_identities,
         **finding.to_json_dict(),
     }
     act_evidence = ledger.append(
         COMPARISON_ACT_EVIDENCE_KIND,
         {
-            "downstream_act_id": act_id,
-            "act_occurrence_id": act_occurrence_id,
+            "downstream_act_identity": act_identity,
+            "act_occurrence_identity": act_occurrence_identity,
             "act": "bounded Compare",
             "responsibility": COMPARISON_RESPONSIBILITY,
             "responsible_boundary": "this Seed",
-            "input_applicability_event_ids": applicability_event_ids,
+            "input_applicability_event_identities": applicability_event_identities,
             "participation": participation,
             "authority": "unestablished",
             "evidence_scope": "this exact bounded Compare occurrence only",
         },
-        locality_id=locality_id,
+        locality_identity=locality_identity,
     )
     yield_evidence = _record_yield_evidence(
         ledger,
-        locality_id=locality_id,
+        locality_identity=locality_identity,
         exact_act="bounded Compare",
-        act_occurrence_id=act_occurrence_id,
+        act_occurrence_identity=act_occurrence_identity,
         result_kind=COMPARISON_RESULT_KIND,
         result_identity=result_identity,
         result_content=result_payload,
@@ -417,8 +417,8 @@ def record_comparison_finding(
         COMPARISON_RECORDED_KIND,
         {
             **result_payload,
-            "responsible_act_evidence_id": act_evidence.id,
-            "yield_evidence_id": yield_evidence.id,
+            "responsible_act_evidence_identity": act_evidence.identity,
+            "yield_evidence_identity": yield_evidence.identity,
         },
-        locality_id=locality_id,
+        locality_identity=locality_identity,
     )

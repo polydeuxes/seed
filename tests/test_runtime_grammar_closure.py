@@ -353,17 +353,17 @@ def test_every_edge_shaped_runtime_record_is_an_admitted_structural_edge():
 
 def test_every_recorded_yield_result_names_its_occurrence_and_exact_evidence():
     required = {
-        "responsible_act_evidence_id",
-        "yield_evidence_id",
+        "responsible_act_evidence_identity",
+        "yield_evidence_identity",
     }
     incomplete = []
     for path, line, _name, value, keys in _event_payloads():
-        if "yield_evidence_id" not in keys:
+        if "yield_evidence_identity" not in keys:
             continue
         occurrence_identities = {
             key
             for key in keys
-            if key == "act_occurrence_id" or key.endswith("_act_occurrence_id")
+            if key == "act_occurrence_identity" or key.endswith("_act_occurrence_identity")
         }
         missing = sorted(required - keys)
         if not occurrence_identities:
@@ -389,12 +389,12 @@ def test_every_act_evidence_occurrence_carries_the_exact_act_physiology():
         if not (name.endswith("ACT_EVIDENCE_KIND") or value.endswith("act_evidenced")):
             continue
         act_identities = {
-            key for key in keys if key == "downstream_act_id" or key.endswith("_act_id")
+            key for key in keys if key == "downstream_act_identity" or key.endswith("_act_identity")
         }
         occurrence_identities = {
             key
             for key in keys
-            if key == "act_occurrence_id" or key.endswith("_act_occurrence_id")
+            if key == "act_occurrence_identity" or key.endswith("_act_occurrence_identity")
         }
         missing = sorted(required - keys)
         if not act_identities:
@@ -413,11 +413,11 @@ def test_every_act_evidence_occurrence_carries_the_exact_act_physiology():
 def test_recorded_representation_declares_each_exact_evidence_pointer():
     required = {
         "representation_reference",
-        "representation_act_id",
-        "act_occurrence_id",
-        "responsible_act_evidence_id",
-        "locality_evidence_id",
-        "yield_evidence_id",
+        "representation_act_identity",
+        "act_occurrence_identity",
+        "responsible_act_evidence_identity",
+        "locality_evidence_identity",
+        "yield_evidence_identity",
         "emission_text",
     }
     records = [
@@ -501,9 +501,9 @@ def test_command_implementation_receives_no_constitutional_write_capability():
     names = {field.name for field in fields(AddressedOperatorCommand)}
     assert "ledger" not in names
     assert names == {
-        "command_id",
-        "locality_id",
-        "addressed_at_representation_event_id",
+        "command_identity",
+        "locality_identity",
+        "addressed_at_representation_event_identity",
         "frame",
     }
 
@@ -525,7 +525,7 @@ def test_unestablished_material_authority_does_not_cross_the_filesystem_boundary
     monkeypatch.setattr(os, "lstat", record_crossing)
     run_persistent_operator_console(
         ledger=EventLedger(),
-        locality_id="l",
+        locality_identity="l",
         input_stream=BytesIO(b"/material " + os.fsencode(material) + b"\n"),
         output_stream=StringIO(),
     )

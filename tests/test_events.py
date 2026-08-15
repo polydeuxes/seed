@@ -14,12 +14,12 @@ def test_append_records_reality_in_order():
     assert ledger.list()[1].kind == "result_condition.recorded"
 
 
-def test_get_returns_appended_event_by_id():
+def test_get_returns_appended_event_by_identity():
     ledger = EventLedger()
 
     event = ledger.append("user.message")
 
-    assert ledger.get(event.id) == event
+    assert ledger.get(event.identity) == event
 
 
 def test_event_ledger_rejects_secret_fields_in_payloads():
@@ -49,7 +49,7 @@ def test_event_secret_rejection_reaches_every_nested_container(payload):
 
 
 def test_event_secret_rejection_accepts_large_scalar_lists():
-    payload = {"input_event_ids": [f"evt_{index}" for index in range(10_000)]}
+    payload = {"input_event_identities": [f"evt_{index}" for index in range(10_000)]}
 
     event = EventLedger().append("k", payload)
 
@@ -60,7 +60,7 @@ def test_durable_large_scalar_lists_do_not_repeat_secret_traversal(
     tmp_path, monkeypatch
 ):
     ledger = SQLiteEventLedger(str(tmp_path / "seed.db"))
-    payload = {"input_event_ids": [f"evt_{index}" for index in range(10_000)]}
+    payload = {"input_event_identities": [f"evt_{index}" for index in range(10_000)]}
     event = ledger.append("k", payload)
 
     def unexpected_second_traversal(*args, **kwargs):
@@ -70,7 +70,7 @@ def test_durable_large_scalar_lists_do_not_repeat_secret_traversal(
         "seed_runtime.event.reject_secret_fields", unexpected_second_traversal
     )
 
-    assert ledger.get(event.id).payload == payload
+    assert ledger.get(event.identity).payload == payload
     ledger.close()
 
 
@@ -84,9 +84,9 @@ PROCESS_LOCAL_ID_PREFIXES: frozenset = frozenset()
 def test_every_minted_prefix_is_reserved_or_declared_process_local():
     """The invariant, held at one boundary instead of one pocket at a time.
 
-    What requires reservation is narrower than "every `new_id` call": an
+    What requires reservation is narrower than "every `new_identity` call": an
     identity must be minted, written into a durable payload, and mintable again
-    by a later process. `new_id` promises process uniqueness and nothing more,
+    by a later process. `new_identity` promises process uniqueness and nothing more,
     so a genuinely process-local identity should not be dragged into durable
     ledger mechanics merely because it shares a helper.
 
@@ -110,7 +110,7 @@ def test_every_minted_prefix_is_reserved_or_declared_process_local():
 
     minted = {}
     root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-    pattern = re.compile(r"new_id\(\s*[\"']([a-z][a-z_]*)[\"']")
+    pattern = re.compile(r"new_identity\(\s*[\"']([a-z][a-z_]*)[\"']")
     for path in glob.glob(os.path.join(root, "seed_runtime", "*.py")):
         source = open(path, encoding="utf-8").read()
         for match in pattern.finditer(source):

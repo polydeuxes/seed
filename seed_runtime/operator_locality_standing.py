@@ -55,7 +55,7 @@ def _record_distinct(collected: list[str], value: str) -> None:
 
 
 def read_operator_locality_standing(
-    ledger: EventLedger, *, locality_id: str
+    ledger: EventLedger, *, locality_identity: str
 ) -> dict[str, Any]:
     """Project bounded Locality-local Standing by replaying the whole Locality.
 
@@ -67,22 +67,22 @@ def read_operator_locality_standing(
     """
 
     return advance_operator_locality_standing(
-        ledger.list_locality(locality_id),
-        locality_id=locality_id,
+        ledger.list_locality(locality_identity),
+        locality_identity=locality_identity,
     )
 
 
 def advance_operator_locality_standing(
     events: Iterable[Event],
     *,
-    locality_id: str,
+    locality_identity: str,
     prior: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     """Advance bounded Locality-local Standing over an exact sequence of events.
 
     With no `prior`, this reads from nothing and `events` must be the whole
     Locality. With a `prior`, `events` must be exactly the applicable
-    occurrences recorded after `prior["as_of_event_id"]`, in append order; the
+    occurrences recorded after `prior["as_of_event_identity"]`, in append order; the
     prefix it already input is not revisited.
 
     The caller supplies those occurrences. Nothing here searches a ledger for
@@ -112,7 +112,7 @@ def advance_operator_locality_standing(
     Represented relation candidates are never yielded here; each preserved ingest keeps
     the authority its own event recorded.
     """
-    scope = f"locality:{locality_id}"
+    scope = f"locality:{locality_identity}"
     ingests: dict[str, dict[str, Any]] = {}
     ingest_occurrences: list[dict[str, Any]] = []
     representations: dict[str, dict[str, Any]] = {}
@@ -125,7 +125,7 @@ def advance_operator_locality_standing(
     known_loss: list[str] = []
     unknowns: list[str] = []
     conflicts: list[str] = []
-    as_of_event_id: str | None = None
+    as_of_event_identity: str | None = None
     event_count = 0
 
     if prior is not None:
@@ -138,11 +138,11 @@ def advance_operator_locality_standing(
         known_loss = prior["known_loss"]
         unknowns = prior["unknowns"]
         conflicts = prior["conflicts"]
-        as_of_event_id = prior["as_of_event_id"]
+        as_of_event_identity = prior["as_of_event_identity"]
         event_count = prior["event_count"]
 
     for event in events:
-        if event.locality_id != locality_id:
+        if event.locality_identity != locality_identity:
             continue
         if not (
             event.kind == MATERIAL_INGEST_OCCURRED_KIND
@@ -152,7 +152,7 @@ def advance_operator_locality_standing(
         if event.kind not in _SUPPORTED_KINDS:
             raise ValueError(f"unsupported operator-ingest event: {event.kind}")
         event_count += 1
-        as_of_event_id = event.id
+        as_of_event_identity = event.identity
         for key, collected in (
             ("known_loss", known_loss),
             ("unknowns", unknowns),
@@ -173,18 +173,18 @@ def advance_operator_locality_standing(
                     f"{payload['representation_reference']}"
                 )
             representations[payload["representation_reference"]] = {
-                "representation_id": payload["representation_reference"],
-                "representation_event_id": event.id,
-                "emission_attempt_event_id": None,
-                "emission_attempt_locality_evidence_id": None,
-                "emission_outcome_event_id": None,
-                "emitted_event_id": None,
+                "representation_identity": payload["representation_reference"],
+                "representation_event_identity": event.identity,
+                "emission_attempt_event_identity": None,
+                "emission_attempt_locality_evidence_identity": None,
+                "emission_outcome_event_identity": None,
+                "emitted_event_identity": None,
                 "representation_result": payload["representation_result"],
                 "emission_text": payload["emission_text"],
                 "alternative_material": payload["alternative_material"],
                 "coordinate_binding": payload["coordinate_binding"],
-                "locality_standing_as_of_event_id": payload[
-                    "locality_standing_as_of_event_id"
+                "locality_standing_as_of_event_identity": payload[
+                    "locality_standing_as_of_event_identity"
                 ],
                 "scope": payload["dimensions"]["scope_locality"],
                 "provenance": payload["dimensions"]["source_provenance"],
@@ -207,7 +207,7 @@ def advance_operator_locality_standing(
                     "representation emission attempt without recorded representation event: "
                     f"{representation_reference}"
                 )
-            representations[representation_reference]["emission_attempt_event_id"] = event.id
+            representations[representation_reference]["emission_attempt_event_identity"] = event.identity
             continue
         if event.kind == _REPRESENTATION_EMISSION_ATTEMPT_LOCALITY_EVIDENCE_KIND:
             representation_reference = event.payload["representation_reference"]
@@ -216,15 +216,15 @@ def advance_operator_locality_standing(
                     "emission-attempt Locality Evidence without recorded Representation: "
                     f"{representation_reference}"
                 )
-            if event.payload["attempt_event_id"] != representations[
+            if event.payload["attempt_event_identity"] != representations[
                 representation_reference
-            ]["emission_attempt_event_id"]:
+            ]["emission_attempt_event_identity"]:
                 raise ValueError(
                     "emission-attempt Locality Evidence names another attempt"
                 )
             representations[representation_reference][
-                "emission_attempt_locality_evidence_id"
-            ] = event.id
+                "emission_attempt_locality_evidence_identity"
+            ] = event.identity
             continue
         if event.kind == _REPRESENTATION_EMITTED_KIND:
             representation_reference = event.payload["representation_reference"]
@@ -234,8 +234,8 @@ def advance_operator_locality_standing(
                     f"{representation_reference}"
                 )
             if (
-                event.payload["representation_event_id"]
-                != representations[representation_reference]["representation_event_id"]
+                event.payload["representation_event_identity"]
+                != representations[representation_reference]["representation_event_identity"]
             ):
                 raise ValueError(
                     "representation emission does not name its recorded "
@@ -243,13 +243,13 @@ def advance_operator_locality_standing(
                 )
             if (
                 event.payload["attempt_reference"]
-                != representations[representation_reference]["emission_attempt_event_id"]
+                != representations[representation_reference]["emission_attempt_event_identity"]
             ):
                 raise ValueError(
                     "representation emission does not name its recorded attempt"
                 )
-            representations[representation_reference]["emitted_event_id"] = event.id
-            representations[representation_reference]["emission_outcome_event_id"] = event.id
+            representations[representation_reference]["emitted_event_identity"] = event.identity
+            representations[representation_reference]["emission_outcome_event_identity"] = event.identity
             continue
         if event.kind == _REPRESENTATION_EMISSION_OUTCOME_KIND:
             representation_reference = event.payload["representation_reference"]
@@ -260,25 +260,25 @@ def advance_operator_locality_standing(
                 )
             if (
                 event.payload["attempt_reference"]
-                != representations[representation_reference]["emission_attempt_event_id"]
+                != representations[representation_reference]["emission_attempt_event_identity"]
             ):
                 raise ValueError(
                     "representation emission outcome does not name its recorded attempt"
                 )
-            representations[representation_reference]["emission_outcome_event_id"] = event.id
+            representations[representation_reference]["emission_outcome_event_identity"] = event.identity
             continue
         ingest_reference = event.payload["dimensions"]["identity"]
         ingest = ingests.setdefault(
             ingest_reference,
-            {"event_ids": [], "ingest_occurrence": None},
+            {"event_identities": [], "ingest_occurrence": None},
         )
-        ingest["event_ids"].append(event.id)
+        ingest["event_identities"].append(event.identity)
         occurrence = {
             "ingest_reference": ingest_reference,
             "subject_reference": ingest_reference,
             "standing": "preserved",
             "authority": event.payload["dimensions"]["authority"],
-            "evidence_event_id": event.id,
+            "evidence_event_identity": event.identity,
             "source_role": event.payload["source_role"],
             "content": event.payload["dimensions"]["content"],
         }
@@ -290,8 +290,8 @@ def advance_operator_locality_standing(
         ingest_occurrences.append(occurrence)
 
     return {
-        "locality_id": locality_id,
-        "as_of_event_id": as_of_event_id,
+        "locality_identity": locality_identity,
+        "as_of_event_identity": as_of_event_identity,
         "event_count": event_count,
         "ingests": ingests,
         "ingest_occurrences": ingest_occurrences,

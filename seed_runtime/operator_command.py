@@ -5,7 +5,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Callable, Mapping
 
-from seed_runtime.ids import new_id
+from seed_runtime.identities import new_identity
 from seed_runtime.operator_material_boundary import OperatorBoundaryMaterial
 
 
@@ -24,9 +24,9 @@ class OperatorCommandFrame:
 
 @dataclass(frozen=True)
 class AddressedOperatorCommand:
-    command_id: str
-    locality_id: str
-    addressed_at_representation_event_id: str
+    command_identity: str
+    locality_identity: str
+    addressed_at_representation_event_identity: str
     frame: OperatorCommandFrame
 
 
@@ -71,8 +71,8 @@ def parse_slash_command(material: OperatorBoundaryMaterial) -> OperatorCommandFr
 
 def run_operator_command(
     *,
-    locality_id: str,
-    addressed_at_representation_event_id: str,
+    locality_identity: str,
+    addressed_at_representation_event_identity: str,
     material: OperatorBoundaryMaterial,
     handlers: Mapping[bytes, OperatorCommandHandler],
 ) -> OperatorCommandRun:
@@ -85,11 +85,11 @@ def run_operator_command(
     ):
         raise OperatorCommandError("command handlers require exact non-empty byte names")
 
-    command_id = new_id("operator_command")
+    command_identity = new_identity("operator_command")
     addressed_command = AddressedOperatorCommand(
-        command_id=command_id,
-        locality_id=locality_id,
-        addressed_at_representation_event_id=addressed_at_representation_event_id,
+        command_identity=command_identity,
+        locality_identity=locality_identity,
+        addressed_at_representation_event_identity=addressed_at_representation_event_identity,
         frame=frame,
     )
     handler = handlers.get(frame.name)

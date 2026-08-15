@@ -12,7 +12,7 @@ from seed_runtime.operator_locality_standing import read_operator_locality_stand
 def _attempt(ledger, text, *, locality="s", locality_standing=None):
     return run_operator_ingest(
         ledger=ledger,
-        locality_id=locality,
+        locality_identity=locality,
         boundary_material=operator_boundary_material(binary_input(text)),
         locality_standing=locality_standing,
     )
@@ -20,7 +20,7 @@ def _attempt(ledger, text, *, locality="s", locality_standing=None):
 
 def _standing(ledger, *, locality="s"):
     return read_operator_locality_standing(
-        ledger, locality_id=locality
+        ledger, locality_identity=locality
     )
 
 
@@ -32,8 +32,8 @@ def test_events_from_different_localities_cannot_influence_one_another():
     standing_one = _standing(ledger, locality="s1")
     standing_two = _standing(ledger, locality="s2")
 
-    assert standing_one["locality_id"] == "s1"
-    assert standing_two["locality_id"] == "s2"
+    assert standing_one["locality_identity"] == "s1"
+    assert standing_two["locality_identity"] == "s2"
     one_subjects = {
         occurrence["subject_reference"]
         for occurrence in standing_one["ingest_occurrences"]
@@ -45,8 +45,8 @@ def test_events_from_different_localities_cannot_influence_one_another():
     assert one_subjects == {first["current_standing"]["ingest_occurrence"]["subject_reference"]}
     assert two_subjects == {second["current_standing"]["ingest_occurrence"]["subject_reference"]}
     assert not set(standing_one["ingests"]) & set(standing_two["ingests"])
-    assert not {e for a in standing_one["ingests"].values() for e in a["event_ids"]} & {
-        e for a in standing_two["ingests"].values() for e in a["event_ids"]
+    assert not {e for a in standing_one["ingests"].values() for e in a["event_identities"]} & {
+        e for a in standing_two["ingests"].values() for e in a["event_identities"]
     }
 
 
@@ -72,8 +72,8 @@ def test_representation_is_deterministic_regardless_of_unrelated_ledger_events()
     _attempt(ledger, "locality material\n")
     before = _standing(ledger)
 
-    ledger.append("unrelated.kind", {"noise": True}, locality_id="s")
-    ledger.append("unrelated.kind", {}, locality_id="elsewhere")
+    ledger.append("unrelated.kind", {"noise": True}, locality_identity="s")
+    ledger.append("unrelated.kind", {}, locality_identity="elsewhere")
     _attempt(ledger, "other locality material\n", locality="elsewhere")
     after = _standing(ledger)
 
@@ -112,7 +112,7 @@ def test_one_attempt_behavior_unchanged_without_earlier_locality_history():
     console_ledger = EventLedger()
     run_persistent_operator_console(
         ledger=console_ledger,
-        locality_id="s",
+        locality_identity="s",
         input_stream=input_stream,
         output_stream=output_stream,
     )
@@ -128,7 +128,7 @@ def test_console_supplies_prior_locality_standing_to_later_interactions():
 
     run_persistent_operator_console(
         ledger=ledger,
-        locality_id="s",
+        locality_identity="s",
         input_stream=input_stream,
         output_stream=output_stream,
     )
@@ -137,20 +137,20 @@ def test_console_supplies_prior_locality_standing_to_later_interactions():
     assert emitted.count("Bounded Representation") == 3
     standing = _standing(ledger)
     assert len(standing["representations"]) == 3
-    first_id, second_id, third_id = list(standing["representations"])
-    assert list(standing["representations"])[-1] == third_id
+    first_identity, second_identity, third_identity = list(standing["representations"])
+    assert list(standing["representations"])[-1] == third_identity
     # The later Representation's recorded representation Act input Standing taken
     # through a strictly later occurrence than the first one's.
-    positions = {event.id: index for index, event in enumerate(ledger.list())}
-    first_representation = standing["representations"][first_id]
-    assert first_representation["locality_standing_as_of_event_id"] is None
+    positions = {event.identity: index for index, event in enumerate(ledger.list())}
+    first_representation = standing["representations"][first_identity]
+    assert first_representation["locality_standing_as_of_event_identity"] is None
     later_boundary = positions[
-        standing["representations"][third_id]["locality_standing_as_of_event_id"]
+        standing["representations"][third_identity]["locality_standing_as_of_event_identity"]
     ]
     # The first Representation's own representation Act and emission occurrences fall
     # inside the prefix the later representation Act input.
-    assert positions[first_representation["representation_event_id"]] < later_boundary
-    assert positions[first_representation["emitted_event_id"]] < later_boundary
+    assert positions[first_representation["representation_event_identity"]] < later_boundary
+    assert positions[first_representation["emitted_event_identity"]] < later_boundary
 
 
 def test_representation_does_not_mutate_ledger_or_synthesize_events():

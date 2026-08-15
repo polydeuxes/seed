@@ -19,7 +19,7 @@ LONG = SHORT + "264338327950288419716939937510"
 def _supply(ledger: EventLedger, locality: str, material: str) -> None:
     run_persistent_operator_console(
         ledger=ledger,
-        locality_id=locality,
+        locality_identity=locality,
         input_stream=binary_input(material + "\n"),
         output_stream=StringIO(),
     )
@@ -28,13 +28,13 @@ def _supply(ledger: EventLedger, locality: str, material: str) -> None:
 def _observe(ledger: EventLedger, source: str, result: str):
     byte_event = record_byte_count_layer(
         ledger,
-        source_locality_ids=(source,),
-        recording_locality_id=f"{result}-bytes",
+        source_locality_identities=(source,),
+        recording_locality_identity=f"{result}-bytes",
     )
     pair_event = record_adjacent_byte_pair_count_layer(
         ledger,
-        source_measurement_event_id=byte_event.id,
-        recording_locality_id=f"{result}-pairs",
+        source_measurement_event_identity=byte_event.identity,
+        recording_locality_identity=f"{result}-pairs",
     )
     return byte_event, pair_event
 
@@ -53,7 +53,7 @@ def test_seed_observes_one_bounded_decimal_representation_not_all_of_pi():
     _supply(ledger, "short-source", SHORT)
     byte_event, pair_event = _observe(ledger, "short-source", "short")
 
-    byte_assertions = assertions_of_recorded_byte_measurement(ledger, byte_event.id)
+    byte_assertions = assertions_of_recorded_byte_measurement(ledger, byte_event.identity)
     pair_counts = _pair_counts(pair_event)
 
     assert any(assertion.byte_hex == "2e" for assertion in byte_assertions)  # decimal point
@@ -75,9 +75,9 @@ def test_a_longer_prefix_is_new_material_and_does_not_rewrite_the_shorter_one():
     _supply(ledger, "long-source", LONG)
     long_bytes, long_pairs = _observe(ledger, "long-source", "long")
 
-    short_source = assertions_of_recorded_byte_measurement(ledger, short_bytes.id)[0]
-    long_source = assertions_of_recorded_byte_measurement(ledger, long_bytes.id)[0]
-    assert short_source.assertion_id != long_source.assertion_id
+    short_source = assertions_of_recorded_byte_measurement(ledger, short_bytes.identity)[0]
+    long_source = assertions_of_recorded_byte_measurement(ledger, long_bytes.identity)[0]
+    assert short_source.assertion_identity != long_source.assertion_identity
     assert short_bytes.payload == short_payload
     assert _pair_counts(short_pairs) == short_pair_counts
     assert _pair_counts(long_pairs)["10"] == 1

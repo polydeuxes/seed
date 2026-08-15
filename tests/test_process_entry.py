@@ -76,7 +76,7 @@ def test_reopened_live_process_allocates_a_new_locality(tmp_path):
 
     ledger = SQLiteEventLedger(database)
     try:
-        Localities = {event.locality_id for event in ledger.list()}
+        Localities = {event.locality_identity for event in ledger.list()}
     finally:
         ledger.close()
     assert None not in Localities

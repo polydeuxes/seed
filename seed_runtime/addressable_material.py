@@ -32,7 +32,7 @@ class ExactMaterial:
 
 @dataclass(frozen=True)
 class AddressableMaterial:
-    material_representation_id: str
+    material_representation_identity: str
     ingest_event_reference: str
     exact_material: ExactMaterial
     source_role: str
@@ -51,7 +51,7 @@ def address_ingested_material(
 ) -> AddressableMaterial:
     if ingest_occurrence.kind != MATERIAL_INGEST_OCCURRED_KIND:
         raise MaterialAddressError("an exact Ingest occurrence is required")
-    recorded = ledger.get(ingest_occurrence.id)
+    recorded = ledger.get(ingest_occurrence.identity)
     if recorded is None or recorded != ingest_occurrence:
         raise MaterialAddressError("the supplied Ingest occurrence is not recorded")
     source_role = ingest_occurrence.payload.get("source_role")
@@ -59,22 +59,22 @@ def address_ingested_material(
         raise MaterialAddressError("the Ingest occurrence carries no source role")
     exact = ingested_material_bytes(ingest_occurrence)
     source_span = SourceSpan(
-        source_reference=ingest_occurrence.id,
+        source_reference=ingest_occurrence.identity,
         start=0,
         end=len(exact),
     )
     exact_material = ExactMaterial(
-        material_reference=ingest_occurrence.id,
+        material_reference=ingest_occurrence.identity,
         exact_bytes_hex=exact.hex(),
         source_span=source_span,
     )
     return AddressableMaterial(
-        material_representation_id=f"material-representation:{ingest_occurrence.id}",
-        ingest_event_reference=ingest_occurrence.id,
+        material_representation_identity=f"material-representation:{ingest_occurrence.identity}",
+        ingest_event_reference=ingest_occurrence.identity,
         exact_material=exact_material,
         source_role=source_role,
-        provenance=(ingest_occurrence.id,),
-        scope=(f"locality:{ingest_occurrence.locality_id}",),
+        provenance=(ingest_occurrence.identity,),
+        scope=(f"locality:{ingest_occurrence.locality_identity}",),
         known_loss=tuple(ingest_occurrence.payload.get("known_loss", ())),
         unknowns=tuple(ingest_occurrence.payload.get("unknowns", ())),
         authority_limits=(

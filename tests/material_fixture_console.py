@@ -16,7 +16,7 @@ from tests.binary_input import BinaryFixtureInput
 
 
 def run_material_fixture_console(
-    *, ledger, locality_id, input_stream, output_stream
+    *, ledger, locality_identity, input_stream, output_stream
 ) -> None:
     """Supply represented material explicitly; infer nothing from raw bytes."""
 
@@ -26,11 +26,11 @@ def run_material_fixture_console(
     ):
         raise ValueError("developer-written represented material is required")
     locality_standing = read_operator_locality_standing(
-        ledger, locality_id=locality_id
+        ledger, locality_identity=locality_identity
     )
     representation = record_operator_representation(
         ledger,
-        locality_id=locality_id,
+        locality_identity=locality_identity,
         locality_standing=locality_standing,
     )
     representation = emit_operator_representation(
@@ -40,11 +40,11 @@ def run_material_fixture_console(
         ledger,
         locality_standing,
         (
-            representation["representation_event_id"],
-            representation["emission_attempt_event_id"],
-            representation["emitted_event_id"],
+            representation["representation_event_identity"],
+            representation["emission_attempt_event_identity"],
+            representation["emitted_event_identity"],
         ),
-        locality_id=locality_id,
+        locality_identity=locality_identity,
     )
     for supplied_line in input_stream.supplied_material.splitlines(keepends=True):
         boundary_material = operator_boundary_material(
@@ -53,7 +53,7 @@ def run_material_fixture_console(
         with ledger.batched():
             attempt = run_operator_ingest(
                 ledger=ledger,
-                locality_id=locality_id,
+                locality_identity=locality_identity,
                 boundary_material=boundary_material,
                 locality_standing=(
                     locality_standing if locality_standing["event_count"] else None
@@ -63,12 +63,12 @@ def run_material_fixture_console(
             locality_standing = _advance_over(
                 ledger,
                 locality_standing,
-                attempt["event_ids"],
-                locality_id=locality_id,
+                attempt["event_identities"],
+                locality_identity=locality_identity,
             )
             representation = record_operator_representation(
                 ledger,
-                locality_id=locality_id,
+                locality_identity=locality_identity,
                 locality_standing=locality_standing,
             )
             representation = emit_operator_representation(
@@ -78,9 +78,9 @@ def run_material_fixture_console(
                 ledger,
                 locality_standing,
                 (
-                    representation["representation_event_id"],
-                    representation["emission_attempt_event_id"],
-                    representation["emitted_event_id"],
+                    representation["representation_event_identity"],
+                    representation["emission_attempt_event_identity"],
+                    representation["emitted_event_identity"],
                 ),
-                locality_id=locality_id,
+                locality_identity=locality_identity,
             )

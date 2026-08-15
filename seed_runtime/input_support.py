@@ -15,13 +15,13 @@ class InputSupportError(ValueError):
 class InputSupport:
     """Where a finding's support lives, and what it must read to."""
 
-    locality_id: str
+    locality_identity: str
     occurrence_kind: str
     boundary_identity: str
     support_count: int
 
     def __post_init__(self) -> None:
-        for name in ("locality_id", "occurrence_kind", "boundary_identity"):
+        for name in ("locality_identity", "occurrence_kind", "boundary_identity"):
             value = getattr(self, name)
             if not isinstance(value, str) or not value:
                 raise InputSupportError(f"input support requires {name}")
@@ -36,7 +36,7 @@ class InputSupport:
     def to_json_dict(self) -> dict[str, Any]:
         return {
             "scope": {
-                "locality_id": self.locality_id,
+                "locality_identity": self.locality_identity,
                 "occurrence_kind": self.occurrence_kind,
             },
             "boundary": {"identity": self.boundary_identity},
@@ -50,7 +50,7 @@ class InputSupport:
         try:
             scope = value["scope"]
             return cls(
-                locality_id=scope["locality_id"],
+                locality_identity=scope["locality_identity"],
                 occurrence_kind=scope["occurrence_kind"],
                 boundary_identity=value["boundary"]["identity"],
                 support_count=value["support_count"],
@@ -61,14 +61,14 @@ class InputSupport:
 
 def declare_input_support(
     *,
-    locality_id: str,
+    locality_identity: str,
     occurrence_kind: str,
     boundary: EventLedgerBoundary,
     occurrence_references: Iterable[str],
 ) -> InputSupport:
     references = tuple(occurrence_references)
     return InputSupport(
-        locality_id=locality_id,
+        locality_identity=locality_identity,
         occurrence_kind=occurrence_kind,
         boundary_identity=boundary.identity,
         support_count=len(references),
@@ -89,7 +89,7 @@ class InputSupportValidator:
 
     def validate(self, support: InputSupport) -> tuple[str, ...]:
         key = (
-            support.locality_id,
+            support.locality_identity,
             support.occurrence_kind,
             support.boundary_identity,
         )
@@ -103,8 +103,8 @@ class InputSupportValidator:
             return cached
         self.reads += 1
         identities = tuple(
-            self._ledger.iter_locality_kind_ids(
-                support.locality_id,
+            self._ledger.iter_locality_kind_identities(
+                support.locality_identity,
                 support.occurrence_kind,
                 through=EventLedgerBoundary(support.boundary_identity),
             )

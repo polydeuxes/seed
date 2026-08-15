@@ -46,7 +46,7 @@ def _console(material, ledger=None):
     output = StringIO()
     run_persistent_operator_console(
         ledger=ledger,
-        locality_id="s",
+        locality_identity="s",
         input_stream=binary_input(material),
         output_stream=output,
     )
@@ -56,7 +56,7 @@ def _console(material, ledger=None):
 def _replay(events):
     ledger = EventLedger()
     ledger.extend(events)
-    return read_operator_locality_standing(ledger, locality_id="s")
+    return read_operator_locality_standing(ledger, locality_identity="s")
 
 
 def _ingress_event(index, *, unknowns):
@@ -73,13 +73,13 @@ def _ingress_event(index, *, unknowns):
             "source_role": "operator",
             "unknowns": list(unknowns),
         },
-        locality_id="s",
+        locality_identity="s",
     )
 
 
 def _advance(events, prior=None):
     return advance_operator_locality_standing(
-        events, locality_id="s", prior=prior
+        events, locality_identity="s", prior=prior
     )
 
 
@@ -126,7 +126,7 @@ def test_replay_still_works_and_agrees_with_a_single_advance():
         events = ledger.list()
         assert _advance(events) == _replay(events)
         assert read_operator_locality_standing(
-            ledger, locality_id="s"
+            ledger, locality_identity="s"
         ) == _replay(events)
 
 
@@ -156,7 +156,7 @@ def test_the_console_never_replays_the_locality(monkeypatch):
     original = operator_console.read_operator_locality_standing
 
     def record(ledger, **kwargs):
-        calls.append(len(ledger.list_locality(kwargs["locality_id"])))
+        calls.append(len(ledger.list_locality(kwargs["locality_identity"])))
         return original(ledger, **kwargs)
 
     monkeypatch.setattr(operator_console, "read_operator_locality_standing", record)
@@ -254,7 +254,7 @@ def test_the_console_keeps_no_earlier_standing():
     ledger, output = _console("alpha\nbeta\ngamma\n")
     assert output.count("Bounded Representation") == 4
     assert read_operator_locality_standing(
-        ledger, locality_id="s"
+        ledger, locality_identity="s"
     ) == _replay(ledger.list())
 
 
@@ -270,7 +270,7 @@ def test_c0_still_forms_from_empty_standing():
         for event in ledger.list()
         if event.kind == "operator.representation.recorded"
     )
-    assert supplied.payload["locality_standing_as_of_event_id"] is None
+    assert supplied.payload["locality_standing_as_of_event_identity"] is None
 
 
 def test_the_locality_records_the_same_occurrences_it_always_did():

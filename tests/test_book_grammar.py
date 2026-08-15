@@ -62,10 +62,10 @@ def test_machine_readable_grammar_traverses_responsibility_from_standing():
     active_book = _active_book()
     _assert_structural_edge_clauses(grammar, active_book)
     assert active_book.count(f"### {grammar['fidelity']['book_clause']} ") == 1
-    for clause_id, clause in grammar["clauses"].items():
+    for clause_identity, clause in grammar["clauses"].items():
         assert clause["subject"]
         assert clause["responsibility"]
-        assert active_book.count(f"### {clause_id} ") == 1
+        assert active_book.count(f"### {clause_identity} ") == 1
 
 
 def test_missing_structural_edge_clause_is_detected():

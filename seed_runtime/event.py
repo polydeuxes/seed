@@ -131,10 +131,10 @@ class Event(SeedModel):
             _require_preservable_payload(payload)
         super().__init__(**data)
 
-    id: str
+    identity: str
     kind: str
     timestamp: datetime = Field(default_factory=utc_now)
     payload: dict[str, Any] = Field(default_factory=dict)
-    locality_id: str | None = None
-    causation_id: str | None = None
-    correlation_id: str | None = None
+    locality_identity: str | None = None
+    causation_identity: str | None = None
+    correlation_identity: str | None = None

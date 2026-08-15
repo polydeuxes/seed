@@ -19,7 +19,7 @@ from seed_runtime.yield_evidence import read_yield_edge_requirements
 
 def _preserve(ledger, material=b"a.txt\nb.txt\n", **differences):
     fields = {
-        "locality_id": "locality_000001",
+        "locality_identity": "locality_000001",
         "exact_bytes": material,
         "observed_boundary": "source boundary",
     }
@@ -34,7 +34,7 @@ def test_system_material_preserves_exact_raw_bytes():
     occurred = _preserve(ledger, exact)
 
     assert occurred.kind == MATERIAL_INGEST_OCCURRED_KIND
-    assert occurred.locality_id == "locality_000001"
+    assert occurred.locality_identity == "locality_000001"
     assert occurred.payload["byte_count"] == len(exact)
     assert ingested_material_bytes(occurred) == exact
     assert "represented_material" not in occurred.payload
@@ -45,13 +45,13 @@ def test_operator_and_system_material_share_one_ingest_road():
     exact = b"\x00\xffsame material\n"
     operator_standing = run_operator_ingest(
         ledger=ledger,
-        locality_id="shared",
+        locality_identity="shared",
         boundary_material=operator_boundary_material(BytesIO(exact)),
     )
-    operator_ingest = ledger.get(operator_standing["event_ids"][-1])
+    operator_ingest = ledger.get(operator_standing["event_identities"][-1])
     system_ingest = preserve_system_material(
         ledger,
-        locality_id="shared",
+        locality_identity="shared",
         exact_bytes=exact,
         observed_boundary="system byte boundary",
     )
@@ -72,10 +72,10 @@ def test_ingest_event_binds_exact_act_and_result_evidence():
 
     assert read_yield_edge_requirements(
         ledger,
-        recorded_result_event_id=ingest.id,
-        result_evidence_event_id=ingest.payload["yield_evidence_id"],
-        responsible_act_evidence_event_id=ingest.payload[
-            "responsible_act_evidence_id"
+        recorded_result_event_identity=ingest.identity,
+        result_evidence_event_identity=ingest.payload["yield_evidence_identity"],
+        responsible_act_evidence_event_identity=ingest.payload[
+            "responsible_act_evidence_identity"
         ],
     ) == {
         "exact_relation": True,
@@ -90,15 +90,15 @@ def test_equal_material_has_distinct_ingest_occurrences_results_and_yields():
     second = _preserve(ledger, b"same exact material")
 
     assert ingested_material_bytes(first) == ingested_material_bytes(second)
-    assert first.payload["act_occurrence_id"] != second.payload["act_occurrence_id"]
+    assert first.payload["act_occurrence_identity"] != second.payload["act_occurrence_identity"]
     assert first.payload["result_identity"] != second.payload["result_identity"]
-    assert first.payload["yield_evidence_id"] != second.payload["yield_evidence_id"]
+    assert first.payload["yield_evidence_identity"] != second.payload["yield_evidence_identity"]
     assert read_yield_edge_requirements(
         ledger,
-        recorded_result_event_id=first.id,
-        result_evidence_event_id=second.payload["yield_evidence_id"],
-        responsible_act_evidence_event_id=first.payload[
-            "responsible_act_evidence_id"
+        recorded_result_event_identity=first.identity,
+        result_evidence_event_identity=second.payload["yield_evidence_identity"],
+        responsible_act_evidence_event_identity=first.payload[
+            "responsible_act_evidence_identity"
         ],
     ) == {
         "exact_relation": False,
@@ -137,21 +137,21 @@ def test_system_material_requires_exact_boundary(boundary):
 @pytest.mark.parametrize("locality", ["", "  ", None, 1, []])
 def test_system_material_requires_exact_locality(locality):
     with pytest.raises(MaterialIngestError, match="locality"):
-        _preserve(EventLedger(), locality_id=locality)
+        _preserve(EventLedger(), locality_identity=locality)
 
 
 def test_ingested_material_bytes_refuses_wrong_or_corrupt_occurrences():
     with pytest.raises(MaterialIngestError, match="only Ingest occurrences"):
-        ingested_material_bytes(Event(id="evt_x", kind="something.else", payload={}))
+        ingested_material_bytes(Event(identity="evt_x", kind="something.else", payload={}))
     for payload in ({}, {"exact_bytes_hex": None}, {"exact_bytes_hex": 7}):
         with pytest.raises(MaterialIngestError, match="carries no exact bytes"):
             ingested_material_bytes(
-                Event(id="evt_x", kind=MATERIAL_INGEST_OCCURRED_KIND, payload=payload)
+                Event(identity="evt_x", kind=MATERIAL_INGEST_OCCURRED_KIND, payload=payload)
             )
     with pytest.raises(MaterialIngestError, match="malformed bytes"):
         ingested_material_bytes(
             Event(
-                id="evt_x",
+                identity="evt_x",
                 kind=MATERIAL_INGEST_OCCURRED_KIND,
                 payload={"exact_bytes_hex": "zz", "byte_count": 1},
             )
@@ -159,7 +159,7 @@ def test_ingested_material_bytes_refuses_wrong_or_corrupt_occurrences():
     with pytest.raises(MaterialIngestError, match="byte count differ"):
         ingested_material_bytes(
             Event(
-                id="evt_x",
+                identity="evt_x",
                 kind=MATERIAL_INGEST_OCCURRED_KIND,
                 payload={"exact_bytes_hex": "6100", "byte_count": 99},
             )
@@ -174,7 +174,7 @@ def test_system_material_identity_is_reserved_across_reopen(tmp_path):
         try:
             material = preserve_system_material(
                 ledger,
-                locality_id=f"locality_{index}",
+                locality_identity=f"locality_{index}",
                 exact_bytes=f"material {index}".encode(),
                 observed_boundary="source boundary",
             )

@@ -27,10 +27,10 @@ from seed_runtime.events import (
 
 def _build(path, count=50):
     ledger = SQLiteEventLedger(str(path))
-    ids = [
-        ledger.append("k", {"i": i}, locality_id="s1").id for i in range(count)
+    identities = [
+        ledger.append("k", {"i": i}, locality_identity="s1").identity for i in range(count)
     ]
-    return ledger, ids
+    return ledger, identities
 
 
 def _lose(path, *, occurrences=0, identities=0):
@@ -60,15 +60,15 @@ def test_losing_the_tip_of_both_leaves_every_remaining_occurrence_intact(tmp_pat
     """A shorter history is still a sound one."""
 
     path = tmp_path / "e.sqlite"
-    ledger, ids = _build(path)
+    ledger, identities = _build(path)
     del ledger
 
     _lose(path, occurrences=10, identities=10)
 
     ledger = SQLiteEventLedger(str(path))
     assert len(ledger.list()) == 40
-    for event_id in ids[:40]:
-        assert ledger.integrity_of(event_id) == VERIFIED
+    for event_identity in identities[:40]:
+        assert ledger.integrity_of(event_identity) == VERIFIED
 
 
 def test_occurrences_lost_without_their_prefix_identities_refuse_to_open(tmp_path):
@@ -134,7 +134,7 @@ def test_only_the_prefix_that_vanished_is_refused(tmp_path):
     surviving = ledger.append_boundary()
     assert len(ledger.list(through=surviving)) == 40
 
-    ledger.append("k", {"i": "after"}, locality_id="s1")
+    ledger.append("k", {"i": "after"}, locality_identity="s1")
     assert len(ledger.list()) == 41
     assert len(ledger.list(through=surviving)) == 40
 
@@ -150,21 +150,21 @@ def test_a_batch_lost_whole_leaves_the_store_sound(tmp_path):
 
     path = tmp_path / "e.sqlite"
     ledger = SQLiteEventLedger(str(path))
-    kept = ledger.append("k", {"i": "committed"}, locality_id="s1")
+    kept = ledger.append("k", {"i": "committed"}, locality_identity="s1")
 
     with pytest.raises(RuntimeError):
         with ledger.batched():
             for index in range(5):
-                ledger.append("k", {"i": index}, locality_id="s1")
+                ledger.append("k", {"i": index}, locality_identity="s1")
             raise RuntimeError("crash mid-batch")
     del ledger
 
     ledger = SQLiteEventLedger(str(path))
     surviving = ledger.list()
-    assert [event.id for event in surviving] == [kept.id]
-    assert ledger.integrity_of(kept.id) == VERIFIED
+    assert [event.identity for event in surviving] == [kept.identity]
+    assert ledger.integrity_of(kept.identity) == VERIFIED
 
-    ledger.append("k", {"i": "after"}, locality_id="s1")
+    ledger.append("k", {"i": "after"}, locality_identity="s1")
     assert len(ledger.list()) == 2
 
 
@@ -174,16 +174,16 @@ def test_a_batch_that_closes_commits_every_occurrence_in_it(tmp_path):
     path = tmp_path / "e.sqlite"
     ledger = SQLiteEventLedger(str(path))
     with ledger.batched():
-        ids = [
-            ledger.append("k", {"i": index}, locality_id="s1").id
+        identities = [
+            ledger.append("k", {"i": index}, locality_identity="s1").identity
             for index in range(5)
         ]
     del ledger
 
     ledger = SQLiteEventLedger(str(path))
-    assert [event.id for event in ledger.list()] == ids
-    for event_id in ids:
-        assert ledger.integrity_of(event_id) == VERIFIED
+    assert [event.identity for event in ledger.list()] == identities
+    for event_identity in identities:
+        assert ledger.integrity_of(event_identity) == VERIFIED
 
 
 def test_a_flush_inside_a_batch_makes_what_preceded_it_durable(tmp_path):
@@ -193,14 +193,14 @@ def test_a_flush_inside_a_batch_makes_what_preceded_it_durable(tmp_path):
     ledger = SQLiteEventLedger(str(path))
     with pytest.raises(RuntimeError):
         with ledger.batched():
-            before = ledger.append("k", {"i": "before"}, locality_id="s1")
+            before = ledger.append("k", {"i": "before"}, locality_identity="s1")
             ledger.flush()
-            ledger.append("k", {"i": "after"}, locality_id="s1")
+            ledger.append("k", {"i": "after"}, locality_identity="s1")
             raise RuntimeError("crash after the flush")
     del ledger
 
     ledger = SQLiteEventLedger(str(path))
-    assert [event.id for event in ledger.list()] == [before.id]
+    assert [event.identity for event in ledger.list()] == [before.identity]
 
 
 def test_the_emission_attempt_is_durable_before_the_output_boundary(tmp_path):
@@ -236,7 +236,7 @@ def test_the_emission_attempt_is_durable_before_the_output_boundary(tmp_path):
 
     run_persistent_operator_console(
         ledger=ledger,
-        locality_id="s1",
+        locality_identity="s1",
         input_stream=binary_input("one\ntwo\n"),
         output_stream=_Watching(),
     )

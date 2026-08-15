@@ -46,11 +46,11 @@ YIELD_LIVE_BOUNDARIES = frozenset(
 def read_yield_edge_requirements(
     ledger: EventLedger,
     *,
-    recorded_result_event_id: str,
-    result_evidence_event_id: str | None,
-    responsible_act_evidence_event_id: str | None = None,
-    recorded_result_occurrence_coordinate: str = "act_occurrence_id",
-    responsible_act_occurrence_coordinate: str = "act_occurrence_id",
+    recorded_result_event_identity: str,
+    result_evidence_event_identity: str | None,
+    responsible_act_evidence_event_identity: str | None = None,
+    recorded_result_occurrence_coordinate: str = "act_occurrence_identity",
+    responsible_act_occurrence_coordinate: str = "act_occurrence_identity",
 ) -> dict[str, bool]:
     """Read the three machine-grammar requirements of one exact Yield edge.
 
@@ -63,9 +63,9 @@ def read_yield_edge_requirements(
 
     if not isinstance(ledger, EventLedger):
         raise TypeError("a Yield-edge read requires one EventLedger")
-    if not isinstance(recorded_result_event_id, str) or not recorded_result_event_id:
+    if not isinstance(recorded_result_event_identity, str) or not recorded_result_event_identity:
         raise TypeError("a Yield-edge read requires one event occurrence")
-    recorded_result_event = ledger.get(recorded_result_event_id)
+    recorded_result_event = ledger.get(recorded_result_event_identity)
     if recorded_result_event is None:
         return {
             "exact_relation": False,
@@ -73,17 +73,17 @@ def read_yield_edge_requirements(
             "intact_evidence": False,
         }
     result_evidence = (
-        ledger.get(result_evidence_event_id)
-        if isinstance(result_evidence_event_id, str)
+        ledger.get(result_evidence_event_identity)
+        if isinstance(result_evidence_event_identity, str)
         else None
     )
     responsible_act_evidence = (
-        ledger.get(responsible_act_evidence_event_id)
-        if isinstance(responsible_act_evidence_event_id, str)
+        ledger.get(responsible_act_evidence_event_identity)
+        if isinstance(responsible_act_evidence_event_identity, str)
         else None
     )
     responsible_act_evidence_required = isinstance(
-        responsible_act_evidence_event_id, str
+        responsible_act_evidence_event_identity, str
     )
     if result_evidence is None:
         return {
@@ -105,7 +105,7 @@ def read_yield_edge_requirements(
     )
     evidence_dimensions = result_evidence.payload.get("dimensions", {})
     same_occurrence = result_occurrence == evidence_dimensions.get(
-        "act_occurrence_id"
+        "act_occurrence_identity"
     )
     if responsible_act_evidence is not None:
         same_occurrence = same_occurrence and result_occurrence == (
@@ -117,7 +117,7 @@ def read_yield_edge_requirements(
         same_occurrence = False
 
     evidence_is_carried = (
-        recorded_result_event.payload.get("yield_evidence_id") == result_evidence.id
+        recorded_result_event.payload.get("yield_evidence_identity") == result_evidence.identity
         and result_evidence.kind == YIELD_EVIDENCE_KIND
     )
     result = result_evidence.payload.get("result")
@@ -152,8 +152,8 @@ def read_yield_edge_requirements(
     evidence_is_carried = evidence_is_carried and exact_carried_result
     if responsible_act_evidence is not None:
         evidence_is_carried = evidence_is_carried and (
-            recorded_result_event.payload.get("responsible_act_evidence_id")
-            == responsible_act_evidence.id
+            recorded_result_event.payload.get("responsible_act_evidence_identity")
+            == responsible_act_evidence.identity
         )
     elif responsible_act_evidence_required:
         evidence_is_carried = False
@@ -162,7 +162,7 @@ def read_yield_edge_requirements(
         "exact_relation": evidence_is_carried,
         "occurrence_witness": same_occurrence,
         "intact_evidence": (
-            ledger.integrity_of(result_evidence.id) != CORRUPTED
+            ledger.integrity_of(result_evidence.identity) != CORRUPTED
             and (
                 (
                     responsible_act_evidence is None
@@ -170,7 +170,7 @@ def read_yield_edge_requirements(
                 )
                 or (
                     responsible_act_evidence is not None
-                    and ledger.integrity_of(responsible_act_evidence.id) != CORRUPTED
+                    and ledger.integrity_of(responsible_act_evidence.identity) != CORRUPTED
                 )
             )
         ),
@@ -180,9 +180,9 @@ def read_yield_edge_requirements(
 def _record_yield_evidence(
     ledger: EventLedger,
     *,
-    locality_id: str | None,
+    locality_identity: str | None,
     exact_act: str,
-    act_occurrence_id: str,
+    act_occurrence_identity: str,
     result_kind: str,
     result_identity: str,
     result_content: dict[str, Any],
@@ -193,7 +193,7 @@ def _record_yield_evidence(
 ) -> Event:
     """Preserve Evidence from inside an act for its already-fixed result."""
 
-    if not isinstance(act_occurrence_id, str) or not act_occurrence_id:
+    if not isinstance(act_occurrence_identity, str) or not act_occurrence_identity:
         raise ValueError("Yield Evidence requires one exact Act occurrence identity")
     if live_boundary not in YIELD_LIVE_BOUNDARIES:
         raise ValueError("Yield Evidence requires one declared live boundary")
@@ -227,14 +227,14 @@ def _record_yield_evidence(
         {
             "dimensions": {
                 "identity": (
-                    f"yield-evidence:{act_occurrence_id}:{result_identity}"
+                    f"yield-evidence:{act_occurrence_identity}:{result_identity}"
                 ),
                 "content": (
                     f"evidence that {exact_act} yielded this exact "
                     f"{result_kind} at its exact Act boundary"
                 ),
                 "exact_act": exact_act,
-                "act_occurrence_id": act_occurrence_id,
+                "act_occurrence_identity": act_occurrence_identity,
                 "occurrence_result_evidence": (
                     "preserved at the exact Act boundary after this exact "
                     "result was fixed; the result carries the relation to this"
@@ -259,5 +259,5 @@ def _record_yield_evidence(
             "result_kind": result_kind,
             "live_boundary": live_boundary,
         },
-        locality_id=locality_id,
+        locality_identity=locality_identity,
     )

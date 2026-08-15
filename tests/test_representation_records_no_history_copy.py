@@ -1,15 +1,15 @@
 """A representation records the occurrence its Standing was taken through, not the prefix.
 
-`locality_standing_evidence_ids` copied locality Standing's whole append-order
+`locality_standing_evidence_identities` copied locality Standing's whole append-order
 event-reference copy into every `operator.representation.recorded` payload, beside
-`locality_standing_as_of_event_id`, which already names that occurrence.
+`locality_standing_as_of_event_identity`, which already names that occurrence.
 
 `#2372` established that the copy was exactly derivable from the boundary
 across 67 representation_events, that its only non-test reader passed it straight through,
 that no clause requires it, and that its durable growth converged on x4 per
-doubling -- an extrapolated 29 billion identifiers for one corpus file.
+doubling -- an extrapolated 29 billion identities for one corpus file.
 
-`05.Evidence:19` refuses a copied causation identifier the standing of verified
+`05.Evidence:19` refuses a copied causation identity the standing of verified
 provenance, and `05.Source.A` states copied provenance references do not turn
 source labels into established Standing. A longer list was never stronger Evidence than
 a shorter one.
@@ -42,7 +42,7 @@ def _console(material):
     output = StringIO()
     run_persistent_operator_console(
         ledger=ledger,
-        locality_id="s",
+        locality_identity="s",
         input_stream=binary_input(material),
         output_stream=output,
     )
@@ -50,7 +50,7 @@ def _console(material):
 
 
 def _standing(ledger):
-    return read_operator_locality_standing(ledger, locality_id="s")
+    return read_operator_locality_standing(ledger, locality_identity="s")
 
 
 @pytest.fixture(scope="module")
@@ -66,24 +66,24 @@ def locality():
 def test_no_representation_act_records_a_history_copy(locality):
     ledger, _ = locality
     for event in ledger.list():
-        assert "locality_standing_evidence_ids" not in event.payload
+        assert "locality_standing_evidence_identities" not in event.payload
 
 
 def test_no_projected_representation_exposes_one(locality):
     ledger, _ = locality
     for representation in _standing(ledger)["representations"].values():
-        assert "locality_standing_evidence_ids" not in representation
+        assert "locality_standing_evidence_identities" not in representation
 
 
 def test_recorded_payload_size_does_not_grow_with_locality_event_count():
-    """The defect being removed: each representation Act carried every prior event id."""
+    """The defect being removed: each representation Act carried every prior event identity."""
     sizes = []
     for lines in (5, 10, 20):
         ledger, _ = _console("material\n" * lines + "")
         representation_events = [e for e in ledger.list() if e.kind == RECORDED]
         sizes.append(len(str(representation_events[-1].payload)) - len(str(representation_events[0].payload)))
     # Payload size differs between first and last representation Act only by the
-    # boundary identifier, not by a copy that grows with the locality.
+    # boundary identity, not by a copy that grows with the locality.
     assert max(sizes) < 200, sizes
 
 
@@ -96,16 +96,16 @@ def test_the_first_representation_act_records_absence_of_a_prior_occurrence(loca
     """Recorded absence, not absence of participation."""
     ledger, _ = locality
     first = next(e for e in ledger.list() if e.kind == RECORDED)
-    assert "locality_standing_as_of_event_id" in first.payload
-    assert first.payload["locality_standing_as_of_event_id"] is None
+    assert "locality_standing_as_of_event_identity" in first.payload
+    assert first.payload["locality_standing_as_of_event_identity"] is None
 
 
 def test_each_boundary_reaches_strictly_further_than_the_last(locality):
     ledger, _ = locality
     events = ledger.list()
-    positions = {event.id: index for index, event in enumerate(events)}
+    positions = {event.identity: index for index, event in enumerate(events)}
     boundaries = [
-        e.payload["locality_standing_as_of_event_id"]
+        e.payload["locality_standing_as_of_event_identity"]
         for e in events
         if e.kind == RECORDED
     ]
@@ -125,17 +125,17 @@ def test_the_boundary_still_determines_the_participating_prefix(locality):
             return []
         collected = []
         for event in events:
-            if event.locality_id != "s":
+            if event.locality_identity != "s":
                 continue
             if not any(event.kind.startswith(family) for family in FAMILIES):
                 continue
-            collected.append(event.id)
-            if event.id == boundary:
+            collected.append(event.identity)
+            if event.identity == boundary:
                 break
         return collected
 
     for representation_event in (e for e in events if e.kind == RECORDED):
-        boundary = representation_event.payload["locality_standing_as_of_event_id"]
+        boundary = representation_event.payload["locality_standing_as_of_event_identity"]
         input = prefix_through(boundary)
         assert (input and input[-1] == boundary) or boundary is None
 
@@ -143,11 +143,11 @@ def test_the_boundary_still_determines_the_participating_prefix(locality):
 def test_every_boundary_precedes_the_representation_act_that_records_it(locality):
     ledger, _ = locality
     events = ledger.list()
-    positions = {event.id: index for index, event in enumerate(events)}
+    positions = {event.identity: index for index, event in enumerate(events)}
     for representation_event in (e for e in events if e.kind == RECORDED):
-        boundary = representation_event.payload["locality_standing_as_of_event_id"]
+        boundary = representation_event.payload["locality_standing_as_of_event_identity"]
         if boundary is not None:
-            assert positions[boundary] < positions[representation_event.id]
+            assert positions[boundary] < positions[representation_event.identity]
 
 
 # --------------------------------------------------------------------------
@@ -169,6 +169,6 @@ def test_standing_still_records_its_participation_boundary(locality):
     """Removed from the Representation, and the boundary remains on the read."""
     ledger, _ = locality
     standing = _standing(ledger)
-    assert standing["as_of_event_id"] is not None
+    assert standing["as_of_event_identity"] is not None
     assert standing["event_count"] > 0
-    assert "input_event_ids" not in standing
+    assert "input_event_identities" not in standing
