@@ -58,7 +58,8 @@ class LedgerIntegrityError(Exception):
 # altered as one whose material different, and `locality_identity` is now the
 # boundary keeping bounded localities apart.
 _OCCURRENCE_FIELDS = (
-    "identity", "kind", "timestamp", "material", "locality_identity",
+    "identity", "kind", "timestamp", "material", "exact_material",
+    "locality_identity",
 )
 
 
@@ -149,7 +150,7 @@ def _identity_of_stored_occurrence_material(row: "sqlite3.Row") -> str | None:
 
     try:
         return _occurrence_material_identity(_stored_occurrence_material(row))
-    except InvalidStoredMaterial:
+    except LedgerIntegrityError:
         return None
 
 
@@ -179,10 +180,31 @@ def _occurrence_material_identity(row: dict) -> str:
         raise LedgerIntegrityError(
             "a material identity requires every recorded field; absent: " + ", ".join(missing)
         )
-    return hashlib.sha256(
-        json.dumps({f: row[f] for f in _OCCURRENCE_FIELDS},
-                   sort_keys=True, separators=(",", ":")).encode()
-    ).hexdigest()
+    return hashlib.sha256(_identified_occurrence_bytes(row)).hexdigest()
+
+
+def _identified_occurrence_bytes(row: dict) -> bytes:
+    exact_material = row["exact_material"]
+    if exact_material is not None and type(exact_material) is not bytes:
+        raise LedgerIntegrityError("exact material must be stored as bytes or absent")
+    represented = json.dumps(
+        {
+            field: row[field]
+            for field in _OCCURRENCE_FIELDS
+            if field != "exact_material"
+        },
+        sort_keys=True,
+        separators=(",", ":"),
+    ).encode()
+    exact = b"" if exact_material is None else exact_material
+    presence = b"\x00" if exact_material is None else b"\x01"
+    return (
+        len(represented).to_bytes(8, "big")
+        + represented
+        + presence
+        + len(exact).to_bytes(8, "big")
+        + exact
+    )
 
 
 def _canonical_occurrence_bytes(event: Event) -> bytes:
@@ -192,11 +214,10 @@ def _canonical_occurrence_bytes(event: Event) -> bytes:
         "kind": event.kind,
         "timestamp": event.timestamp.isoformat(),
         "material": event.material,
+        "exact_material": event.exact_material,
         "locality_identity": event.locality_identity,
     }
-    return json.dumps(
-        represented, sort_keys=True, separators=(",", ":")
-    ).encode()
+    return _identified_occurrence_bytes(represented)
 
 
 def _next_prefix_identity(previous: str, event: Event) -> str:
@@ -236,6 +257,7 @@ class EventLedger:
         kind: str,
         material: dict[str, Any] | None = None,
         *,
+        exact_material: bytes | None = None,
         locality_identity: str | None = None,
     ) -> Event:
         """Record an event and return the stored event."""
@@ -243,6 +265,7 @@ class EventLedger:
             identity=new_identity("evt"),
             kind=kind,
             material=material or {},
+            exact_material=exact_material,
             locality_identity=locality_identity,
         )
         self._store(event)
@@ -471,6 +494,7 @@ class SQLiteEventLedger(EventLedger):
                 kind TEXT NOT NULL,
                 timestamp TEXT NOT NULL,
                 material TEXT NOT NULL,
+                exact_material BLOB,
                 locality_identity TEXT,
                 occurrence_material_identity TEXT NOT NULL
             )
@@ -576,12 +600,14 @@ class SQLiteEventLedger(EventLedger):
         kind: str,
         material: dict[str, Any] | None = None,
         *,
+        exact_material: bytes | None = None,
         locality_identity: str | None = None,
     ) -> Event:
         event = Event(
             identity=self._new_event_identity(),
             kind=kind,
             material=material or {},
+            exact_material=exact_material,
             locality_identity=locality_identity,
         )
         self._insert(event)
@@ -926,8 +952,11 @@ class SQLiteEventLedger(EventLedger):
     def _insert_without_commit(self, event: Event) -> int:
         cursor = self._connection.execute(
             """
-            INSERT INTO events (identity, kind, timestamp, material, locality_identity, occurrence_material_identity)
-            VALUES (?, ?, ?, ?, ?, ?)
+            INSERT INTO events (
+                identity, kind, timestamp, material, exact_material,
+                locality_identity, occurrence_material_identity
+            )
+            VALUES (?, ?, ?, ?, ?, ?, ?)
             """,
             self._row_values(event),
         )
@@ -1002,6 +1031,7 @@ class SQLiteEventLedger(EventLedger):
             "kind": event.kind,
             "timestamp": event.timestamp.isoformat(),
             "material": json.dumps(event.material),
+            "exact_material": event.exact_material,
             "locality_identity": event.locality_identity,
         }
         # Storage form does not participate in the occurrence material identity.
@@ -1034,6 +1064,7 @@ class SQLiteEventLedger(EventLedger):
             kind=row["kind"],
             timestamp=datetime.fromisoformat(row["timestamp"]),
             material=material,
+            exact_material=row["exact_material"],
             locality_identity=row["locality_identity"],
         )
 

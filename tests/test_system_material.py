@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from io import BytesIO
+import sqlite3
 
 import pytest
 
@@ -14,7 +15,7 @@ from seed_runtime.material_ingest import (
 from seed_runtime.operator_ingest import run_operator_ingest
 from seed_runtime.operator_material_boundary import operator_boundary_material
 from seed_runtime.system_material import preserve_system_material
-from seed_runtime.yield_evidence import read_yield_edge_requirements
+from seed_runtime.yield_evidence import YIELD_EVIDENCE_KIND, read_yield_edge_requirements
 
 
 def _preserve(ledger, material=b"a.txt\nb.txt\n", **differences):
@@ -37,6 +38,41 @@ def test_system_material_preserves_exact_raw_bytes():
     assert occurred.locality_identity == "locality_000001"
     assert ingested_material_bytes(occurred) == exact
     assert "represented_material" not in occurred.material
+
+
+def test_durable_ingest_preserves_raw_material_and_yield_evidence(tmp_path):
+    path = str(tmp_path / "material.db")
+    exact = b"\x00\xffraw material\n"
+    ledger = SQLiteEventLedger(path)
+    occurred = _preserve(ledger, exact)
+    evidence_identity = occurred.material["yield_evidence_identity"]
+    occurred_identity = occurred.identity
+    ledger.close()
+
+    connection = sqlite3.connect(path)
+    carried = connection.execute(
+        "SELECT exact_material, typeof(exact_material) FROM events WHERE identity = ?",
+        (occurred_identity,),
+    ).fetchone()
+    connection.close()
+    assert carried == (exact, "blob")
+
+    reopened = SQLiteEventLedger(path)
+    try:
+        read = reopened.get(occurred_identity)
+        evidence = reopened.get(evidence_identity)
+        assert read is not None and evidence is not None
+        assert read.exact_material == evidence.exact_material == exact
+        assert read_yield_edge_requirements(
+            reopened,
+            recorded_result_event_identity=occurred_identity,
+            result_evidence_event_identity=evidence_identity,
+            responsible_act_evidence_event_identity=read.material[
+                "responsible_act_evidence_identity"
+            ],
+        )["exact_relation"] is True
+    finally:
+        reopened.close()
 
 
 def test_operator_and_system_material_share_one_ingest_road():
@@ -85,6 +121,53 @@ def test_ingest_event_binds_exact_act_and_result_evidence():
         "occurrence_witness": True,
         "intact_evidence": True,
     }
+
+
+def test_changed_ingest_material_cannot_borrow_its_yield_evidence():
+    ledger = EventLedger()
+    ingest = _preserve(ledger, b"first")
+    changed = ledger.append(
+        MATERIAL_INGEST_OCCURRED_KIND,
+        dict(ingest.material),
+        exact_material=b"second",
+        locality_identity=ingest.locality_identity,
+    )
+
+    assert read_yield_edge_requirements(
+        ledger,
+        recorded_result_event_identity=changed.identity,
+        result_evidence_event_identity=changed.material["yield_evidence_identity"],
+        responsible_act_evidence_event_identity=changed.material[
+            "responsible_act_evidence_identity"
+        ],
+    )["exact_relation"] is False
+
+
+def test_yield_evidence_without_exact_material_cannot_certify_an_ingest():
+    ledger = EventLedger()
+    ingest = _preserve(ledger, b"material")
+    evidence = ledger.get(ingest.material["yield_evidence_identity"])
+    assert evidence is not None
+    incomplete_evidence = ledger.append(
+        YIELD_EVIDENCE_KIND,
+        dict(evidence.material),
+        locality_identity=evidence.locality_identity,
+    )
+    carried = ledger.append(
+        MATERIAL_INGEST_OCCURRED_KIND,
+        {**ingest.material, "yield_evidence_identity": incomplete_evidence.identity},
+        exact_material=ingest.exact_material,
+        locality_identity=ingest.locality_identity,
+    )
+
+    assert read_yield_edge_requirements(
+        ledger,
+        recorded_result_event_identity=carried.identity,
+        result_evidence_event_identity=incomplete_evidence.identity,
+        responsible_act_evidence_event_identity=carried.material[
+            "responsible_act_evidence_identity"
+        ],
+    )["exact_relation"] is False
 
 
 def test_equal_material_has_distinct_ingest_occurrences_results_and_yields():
@@ -145,27 +228,18 @@ def test_system_material_requires_exact_locality(locality):
 def test_ingested_material_bytes_refuses_wrong_or_corrupt_occurrences():
     with pytest.raises(MaterialIngestError, match="only Ingest occurrences"):
         ingested_material_bytes(Event(identity="evt_x", kind="something.else", material={}))
-    for material in ({}, {"exact_bytes_hex": None}, {"exact_bytes_hex": 7}):
-        with pytest.raises(MaterialIngestError, match="carries no exact bytes"):
-            ingested_material_bytes(
-                Event(identity="evt_x", kind=MATERIAL_INGEST_OCCURRED_KIND, material=material)
-            )
-    with pytest.raises(MaterialIngestError, match="malformed bytes"):
+    with pytest.raises(MaterialIngestError, match="carries no exact bytes"):
         ingested_material_bytes(
-            Event(
-                identity="evt_x",
-                kind=MATERIAL_INGEST_OCCURRED_KIND,
-                material={"exact_bytes_hex": "zz"},
-            )
+            Event(identity="evt_x", kind=MATERIAL_INGEST_OCCURRED_KIND)
         )
-    with pytest.raises(MaterialIngestError, match="not exact"):
-        ingested_material_bytes(
-            Event(
-                identity="evt_x",
-                kind=MATERIAL_INGEST_OCCURRED_KIND,
-                material={"exact_bytes_hex": "AA"},
-            )
-        )
+    corrupt = Event(
+        identity="evt_x",
+        kind=MATERIAL_INGEST_OCCURRED_KIND,
+        exact_material=b"material",
+    )
+    object.__setattr__(corrupt, "exact_material", "material")
+    with pytest.raises(MaterialIngestError, match="carries no exact bytes"):
+        ingested_material_bytes(corrupt)
 
 
 def test_system_material_identity_is_reserved_across_reopen(tmp_path):

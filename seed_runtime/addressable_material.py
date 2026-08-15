@@ -26,7 +26,7 @@ class SourceSpan:
 @dataclass(frozen=True)
 class ExactMaterial:
     material_reference: str
-    exact_bytes_hex: str
+    material: bytes
     source_span: SourceSpan
 
 
@@ -42,7 +42,7 @@ class AddressableMaterial:
     unknowns: tuple[str, ...]
     authority_limits: tuple[str, ...]
 
-    def to_json_dict(self) -> dict[str, object]:
+    def to_dict(self) -> dict[str, object]:
         return asdict(self)
 
 
@@ -65,7 +65,7 @@ def address_ingested_material(
     )
     exact_material = ExactMaterial(
         material_reference=ingest_occurrence.identity,
-        exact_bytes_hex=exact.hex(),
+        material=exact,
         source_span=source_span,
     )
     return AddressableMaterial(

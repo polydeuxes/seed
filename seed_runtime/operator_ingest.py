@@ -50,7 +50,7 @@ def update_operator_ingest_standing(attempts, event, *, ledger=None) -> None:
         standing["addressable_material"] = address_ingested_material(
             ingest_occurrence=event,
             ledger=ledger,
-        ).to_json_dict()
+        ).to_dict()
     standing["last_event_kind"] = event.kind
     for key in ("known_loss", "unknowns", "conflicts"):
         standing[key] = sorted(

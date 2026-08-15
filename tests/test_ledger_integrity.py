@@ -132,7 +132,8 @@ def test_moving_an_occurrence_between_sessions_is_detected(ledger, path):
 @pytest.mark.parametrize(
     "column,value",
     [("identity", "evt_999999"), ("kind", "other"),
-     ("timestamp", "1999-01-01T00:00:00")],
+     ("timestamp", "1999-01-01T00:00:00"),
+     ("exact_material", b"altered")],
 )
 def test_every_persisted_field_is_covered(ledger, path, column, value):
     event = ledger.append("k", {"a": 1}, locality_identity="s")
@@ -145,6 +146,20 @@ def test_every_persisted_field_is_covered(ledger, path, column, value):
     reopened = SQLiteEventLedger(path)
     # An altered `identity` is looked up under the value now stored.
     assert reopened.integrity_of(value if column == "identity" else event.identity) == CORRUPTED
+
+
+def test_exact_material_stored_as_text_is_detected(ledger, path):
+    event = ledger.append("k", exact_material=b"material")
+    con = _raw(path)
+    con.execute("DROP TRIGGER events_refuse_update")
+    con.execute(
+        "UPDATE events SET exact_material = ? WHERE identity = ?",
+        ("material", event.identity),
+    )
+    con.commit()
+    con.close()
+
+    assert SQLiteEventLedger(path).integrity_of(event.identity) == CORRUPTED
 
 
 # --------------------------------------------------------------------------
@@ -265,12 +280,13 @@ def test_a_nullable_occurrence_material_identity_is_refused(path):
     con = sqlite3.connect(path)
     con.execute(
         "CREATE TABLE events (identity TEXT PRIMARY KEY, kind TEXT NOT NULL, "
-        "timestamp TEXT NOT NULL, material TEXT NOT NULL, locality_identity TEXT, "
+        "timestamp TEXT NOT NULL, material TEXT NOT NULL, exact_material BLOB, "
+        "locality_identity TEXT, "
         "occurrence_material_identity TEXT)"
     )
     con.execute(
         "INSERT INTO events VALUES ('evt_000001','k','2026-01-01T00:00:00',"
-        "'{}','s',NULL)"
+        "'{}',NULL,'s',NULL)"
     )
     con.commit()
     con.close()
@@ -434,15 +450,25 @@ def test_a_nullable_occurrence_material_identity_is_refused_when_populated(path)
     con = sqlite3.connect(path)
     con.execute(
         "CREATE TABLE events (identity TEXT PRIMARY KEY, kind TEXT NOT NULL, "
-        "timestamp TEXT NOT NULL, material TEXT NOT NULL, locality_identity TEXT, "
+        "timestamp TEXT NOT NULL, material TEXT NOT NULL, exact_material BLOB, "
+        "locality_identity TEXT, "
         "occurrence_material_identity TEXT)"
     )
-    row = {"identity": "evt_000001", "kind": "k",
-           "timestamp": "2026-01-01T00:00:00", "material": "{}", "locality_identity": "s",
-           }
+    row = {
+        "identity": "evt_000001",
+        "kind": "k",
+        "timestamp": "2026-01-01T00:00:00",
+        "material": "{}",
+        "exact_material": None,
+        "locality_identity": "s",
+    }
     con.execute(
-        "INSERT INTO events VALUES (?,?,?,?,?,?)",
-        tuple(row.values()) + (_occurrence_material_identity(row),),
+        "INSERT INTO events VALUES (?,?,?,?,?,?,?)",
+        (
+            row["identity"], row["kind"], row["timestamp"], row["material"],
+            row["exact_material"], row["locality_identity"],
+            _occurrence_material_identity(row),
+        ),
     )
     con.commit()
     con.close()
@@ -797,8 +823,11 @@ def test_occurrence_material_identity_does_not_move_when_material_is_compressed(
     for value in (material, small):
         serialized = json.dumps(value)
         row = {
-            "identity": "evt_1", "kind": "k",
-            "timestamp": "2026-01-01T00:00:00+00:00", "material": serialized,
+            "identity": "evt_1",
+            "kind": "k",
+            "timestamp": "2026-01-01T00:00:00+00:00",
+            "material": serialized,
+            "exact_material": None,
             "locality_identity": None,
         }
         material_identity = _occurrence_material_identity(row)

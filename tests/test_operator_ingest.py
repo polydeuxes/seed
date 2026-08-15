@@ -7,7 +7,10 @@ from io import BytesIO
 from seed_runtime.events import EventLedger
 from seed_runtime.operator_ingest import run_operator_ingest
 from seed_runtime.operator_material_boundary import operator_boundary_material
-from seed_runtime.material_ingest import MATERIAL_INGEST_OCCURRED_KIND
+from seed_runtime.material_ingest import (
+    MATERIAL_INGEST_OCCURRED_KIND,
+    ingested_material_bytes,
+)
 
 
 def _run(material: bytes):
@@ -27,7 +30,7 @@ def test_arbitrary_bytes_are_preserved_without_a_gate_or_stop():
     ingests = [event for event in events if event.kind == MATERIAL_INGEST_OCCURRED_KIND]
 
     assert len(ingests) == 1
-    assert bytes.fromhex(ingests[0].material["exact_bytes_hex"]) == material
+    assert ingested_material_bytes(ingests[0]) == material
     assert ingests[0].material["source_role"] == "operator"
     assert ingests[0].material["provenance_occurrence_references"] == []
 
@@ -38,7 +41,7 @@ def test_addressable_material_is_the_exact_byte_sequence():
     addressable = standing["addressable_material"]
 
     exact = addressable["exact_material"]
-    assert bytes.fromhex(exact["exact_bytes_hex"]) == material
+    assert exact["material"] == material
     assert exact["source_span"]["end"] == len(material)
     assert addressable["provenance"] == (addressable["ingest_event_reference"],)
 

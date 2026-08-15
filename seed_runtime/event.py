@@ -117,6 +117,9 @@ def _decode_screened_event_material(raw_material: str) -> Any:
 class Event(SeedModel):
     def __init__(self, **data: Any) -> None:
         material = data.get("material", {})
+        exact_material = data.get("exact_material")
+        if exact_material is not None and type(exact_material) is not bytes:
+            raise ValueError("event exact material must be exact bytes or absent")
         if not isinstance(material, _ScreenedEventMaterial):
             reject_secret_fields(material, "event.material")
             # Refused here rather than at the store, so both ledgers refuse the
@@ -130,4 +133,5 @@ class Event(SeedModel):
     kind: str
     timestamp: datetime = Field(default_factory=utc_now)
     material: dict[str, Any] = Field(default_factory=dict)
+    exact_material: bytes | None = None
     locality_identity: str | None = None

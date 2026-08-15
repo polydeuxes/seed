@@ -120,6 +120,9 @@ def read_yield_edge_requirements(
         recorded_result_event.material.get("yield_evidence_identity") == result_evidence.identity
         and result_evidence.kind == YIELD_EVIDENCE_KIND
     )
+    evidence_is_carried = evidence_is_carried and (
+        recorded_result_event.exact_material == result_evidence.exact_material
+    )
     result = result_evidence.material.get("result")
     yield_coordinates = result_evidence.material.get("yield_coordinates")
     recorded_result_coordinates = result_evidence.material.get("recorded_result_coordinates")
@@ -190,6 +193,7 @@ def _record_yield_evidence(
     live_boundary: str,
     responsible_boundary: str = "unestablished",
     recorded_result_coordinates: dict[str, tuple[str, ...]] | None = None,
+    result_exact_material: bytes | None = None,
 ) -> Event:
     """Preserve Evidence from inside an act for its already-fixed result."""
 
@@ -199,6 +203,8 @@ def _record_yield_evidence(
         raise ValueError("Yield Evidence requires one declared live boundary")
     if type(result_content) is not dict:
         raise TypeError("Yield Evidence requires one exact yielded result")
+    if result_exact_material is not None and type(result_exact_material) is not bytes:
+        raise TypeError("Yield Evidence exact material must be exact bytes or absent")
     declared_recorded_result_coordinates = (
         {coordinate: (coordinate,) for coordinate in result_content}
         if recorded_result_coordinates is None
@@ -259,5 +265,6 @@ def _record_yield_evidence(
             "result_kind": result_kind,
             "live_boundary": live_boundary,
         },
+        exact_material=result_exact_material,
         locality_identity=locality_identity,
     )

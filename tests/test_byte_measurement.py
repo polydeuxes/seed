@@ -258,8 +258,8 @@ def test_ingest_must_match_its_exact_byte_coordinates():
     ingest = next(
         ledger.iter_locality_kind("source", MATERIAL_INGEST_OCCURRED_KIND)
     )
-    ingest.material["exact_bytes_hex"] = "not hex"
-    with pytest.raises(ByteMeasurementError, match="malformed"):
+    object.__setattr__(ingest, "exact_material", None)
+    with pytest.raises(ByteMeasurementError, match="carries no exact bytes"):
         measure_byte_counts(
             ledger, source_locality_identities=("source",)
         )

@@ -80,6 +80,24 @@ def test_equal_prefixes_share_a_boundary_and_later_divergence_does_not_break_it(
     assert [event.identity for event in right.list(through=boundary)] == ["e1", "e2"]
 
 
+def test_exact_material_participates_in_the_append_boundary():
+    left = EventLedger()
+    right = EventLedger()
+    left.extend([Event(identity="e1", kind="k", exact_material=b"left")])
+    right.extend([Event(identity="e1", kind="k", exact_material=b"right")])
+
+    assert left.append_boundary() != right.append_boundary()
+
+
+@pytest.mark.parametrize(
+    "value",
+    ("material", bytearray(b"material"), memoryview(b"material"), 1),
+)
+def test_event_exact_material_requires_raw_bytes(value):
+    with pytest.raises(ValueError, match="exact bytes or absent"):
+        Event(identity="e1", kind="k", exact_material=value)
+
+
 def test_independently_persisted_equal_prefixes_share_a_boundary(tmp_path):
     events = [
         Event(identity="e1", kind="first", material={"n": 1}),
@@ -196,9 +214,9 @@ def test_a_writer_without_prefix_maintenance_is_refused(tmp_path):
     connection = sqlite3.connect(path)
     with pytest.raises(sqlite3.OperationalError, match="seed_prefix_writer"):
         connection.execute(
-            "INSERT INTO events VALUES (?, ?, ?, ?, ?, ?)",
+            "INSERT INTO events VALUES (?, ?, ?, ?, ?, ?, ?)",
             ("foreign", "k", "2026-01-01T00:00:00+00:00", "{}",
-             None, "not-relevant"),
+             None, None, "not-relevant"),
         )
     connection.close()
 
@@ -334,6 +352,7 @@ def test_occurrence_material_identity_requires_every_recorded_field():
     complete = {
         "identity": "e", "kind": "k",
         "timestamp": "2026-01-01T00:00:00+00:00", "material": "{}",
+        "exact_material": None,
         "locality_identity": None,
     }
     assert _occurrence_material_identity(complete)

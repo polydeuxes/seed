@@ -56,7 +56,6 @@ def ingest_material(
         "act_occurrence_identity": act_occurrence_identity,
         "source_role": source_role,
         "source_boundary": source_boundary,
-        "exact_bytes_hex": exact_bytes.hex(),
         "known_loss": list(known_loss),
         "unknowns": [
             "what this material represents remains Unknown",
@@ -92,12 +91,13 @@ def ingest_material(
         live_boundary="material_ingest",
         responsible_boundary="this Seed",
         recorded_result_coordinates={key: (key,) for key in result},
+        result_exact_material=exact_bytes,
     )
     material: dict[str, object] = {
         **result,
         "dimensions": {
             "identity": result_identity,
-            "content": exact_bytes.hex(),
+            "content": result_identity,
             "source_provenance": source_boundary,
             "responsibility": MATERIAL_INGEST_RESPONSIBILITY,
             "authority": "unestablished",
@@ -115,6 +115,7 @@ def ingest_material(
     return ledger.append(
         MATERIAL_INGEST_OCCURRED_KIND,
         material,
+        exact_material=exact_bytes,
         locality_identity=locality_identity,
     )
 
@@ -124,13 +125,7 @@ def ingested_material_bytes(event: Event) -> bytes:
         raise MaterialIngestError(
             f"only Ingest occurrences carry exact material: {event.kind}"
         )
-    encoded = event.material.get("exact_bytes_hex")
-    if type(encoded) is not str:
+    exact = event.exact_material
+    if type(exact) is not bytes:
         raise MaterialIngestError("Ingest occurrence carries no exact bytes")
-    try:
-        exact = bytes.fromhex(encoded)
-    except ValueError as exc:
-        raise MaterialIngestError("Ingest occurrence carries malformed bytes") from exc
-    if exact.hex() != encoded:
-        raise MaterialIngestError("Ingest material representation is not exact")
     return exact

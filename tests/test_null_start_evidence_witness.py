@@ -102,9 +102,14 @@ def test_ingest_does_not_assert_a_represented_relation(ledger):
 
 def test_ingest_evidence_is_inspectable():
     represented = represent_null_start_evidence()
+    ingests = [
+        event
+        for event in run_null_start()
+        if event.kind == MATERIAL_INGEST_OCCURRED_KIND
+    ]
 
     assert MATERIAL_INGEST_OCCURRED_KIND in represented
-    assert "exact_bytes_hex" in represented
+    assert all(type(event.exact_material) is bytes for event in ingests)
     assert "responsible_act_evidence_identity" in represented
     assert "yield_evidence_identity" in represented
 

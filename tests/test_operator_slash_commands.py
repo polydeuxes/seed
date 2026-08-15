@@ -7,7 +7,10 @@ from io import BytesIO, StringIO
 from seed_runtime.events import EventLedger
 from seed_runtime.operator_checkpoint import ADDRESSED_REPRESENTATION_LOCALITY_EVIDENCE_KIND
 from seed_runtime.operator_console import run_persistent_operator_console
-from seed_runtime.material_ingest import MATERIAL_INGEST_OCCURRED_KIND
+from seed_runtime.material_ingest import (
+    MATERIAL_INGEST_OCCURRED_KIND,
+    ingested_material_bytes,
+)
 
 
 def _run(material: bytes, *, handlers=None):
@@ -24,7 +27,7 @@ def _run(material: bytes, *, handlers=None):
 
 def _raw_bytes(ledger: EventLedger) -> list[bytes]:
     return [
-        bytes.fromhex(event.material["exact_bytes_hex"])
+        ingested_material_bytes(event)
         for event in ledger.list_locality("root-locality")
         if event.kind == MATERIAL_INGEST_OCCURRED_KIND
     ]
@@ -90,7 +93,7 @@ def test_checkpoint_alone_divides_locality_at_the_last_representation():
     assert not any("emission" in key for key in evidence.material)
     assert _raw_bytes(ledger) == [b"before\n"]
     assert [
-        bytes.fromhex(event.material["exact_bytes_hex"])
+        ingested_material_bytes(event)
         for event in ledger.list_locality(evidence.locality_identity)
         if event.kind == MATERIAL_INGEST_OCCURRED_KIND
     ] == [b"after\n"]
