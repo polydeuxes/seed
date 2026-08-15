@@ -42,7 +42,11 @@ from material_witness_harness import (  # noqa: E402
     occurrences_across,
     invocation_occurrence,
 )
-from material_admission import preserves  # noqa: E402
+from material_admission import (  # noqa: E402
+    admission_occurrence,
+    compare_admission_results,
+    preserves,
+)
 
 
 def _implementation_functions_available():
@@ -230,6 +234,52 @@ def book_added_position_admission(
     return admit_added_position_occurrences(
         book_three_byte_format_occurrences[1],
         book_added_position_comparisons,
+    )
+
+
+@pytest.fixture(scope="module")
+def book_added_position_admission_occurrences(
+    book_three_byte_format_occurrences,
+    book_added_position_comparisons,
+    book_added_position_admission,
+):
+    additions = book_three_byte_format_occurrences[1]
+    admitted = tuple(
+        admit_added_position_occurrences(additions, (row,))
+        for row in book_added_position_comparisons
+    ) + (book_added_position_admission,)
+    return tuple(
+        admission_occurrence(
+            result,
+            boundary_identity="book-added-position-admission",
+            occurrence_position=position,
+            source_material=additions,
+        )
+        for position, result in enumerate(admitted)
+    )
+
+
+@pytest.fixture(scope="module")
+def book_added_position_admission_comparisons(
+    book_added_position_admission_occurrences,
+):
+    references = tuple(
+        occurrence.result_reference
+        for occurrence in book_added_position_admission_occurrences
+    )
+    return tuple(
+        compare_admission_results(
+            first,
+            second,
+            boundary_identity="book-added-position-admission-compare",
+            occurrence_position=position,
+        )
+        for position, (first, second) in enumerate(
+            (first, second)
+            for first in references
+            for second in references
+            if first is not second
+        )
     )
 
 
@@ -881,6 +931,102 @@ def test_equal_result_material_keeps_distinct_occurrences_in_one_admission():
     assert admission == (additions,)
     assert tuple(occurrence.position for occurrence in admission[0]) == (0, 1, 2)
     assert len({occurrence.act_occurrence_identity for occurrence in admission[0]}) == 3
+
+
+def test_each_function_and_complete_admission_has_one_exact_occurrence(
+    book_added_position_admission_occurrences,
+    book_three_byte_format_occurrences,
+):
+    additions = book_three_byte_format_occurrences[1]
+    addition_identities = {
+        occurrence.act_occurrence_identity for occurrence in additions
+    }
+
+    assert len(book_added_position_admission_occurrences) == (
+        len(COMPILED_IMPLEMENTATION_FUNCTIONS) + 1
+    )
+    assert len(
+        {
+            occurrence.act_occurrence_identity
+            for occurrence in book_added_position_admission_occurrences
+        }
+    ) == len(book_added_position_admission_occurrences)
+    assert len(
+        {
+            occurrence.result_identity
+            for occurrence in book_added_position_admission_occurrences
+        }
+    ) == len(book_added_position_admission_occurrences)
+    for occurrence in book_added_position_admission_occurrences:
+        assert {
+            addition.act_occurrence_identity
+            for admitted in occurrence.admitted_material
+            for addition in admitted
+        } == addition_identities
+
+
+def test_every_ordered_admission_result_pair_has_one_exact_compare_occurrence(
+    book_added_position_admission_occurrences,
+    book_added_position_admission_comparisons,
+):
+    occurrence_count = len(book_added_position_admission_occurrences)
+    expected = occurrence_count * (occurrence_count - 1)
+    exact_pairs = {
+        (first.result_identity, second.result_identity)
+        for first in book_added_position_admission_occurrences
+        for second in book_added_position_admission_occurrences
+        if first is not second
+    }
+
+    assert len(book_added_position_admission_comparisons) == expected
+    assert len(
+        {
+            comparison.act_occurrence_identity
+            for comparison in book_added_position_admission_comparisons
+        }
+    ) == expected
+    assert len(
+        {
+            comparison.result_identity
+            for comparison in book_added_position_admission_comparisons
+        }
+    ) == expected
+    assert {
+        (
+            comparison.first_reference.result_identity,
+            comparison.second_reference.result_identity,
+        )
+        for comparison in book_added_position_admission_comparisons
+    } == exact_pairs
+
+
+def test_complete_admission_preserves_each_function_admission(
+    book_added_position_admission_occurrences,
+    book_added_position_admission_comparisons,
+):
+    complete = book_added_position_admission_occurrences[-1].result_reference
+    from_complete = tuple(
+        comparison
+        for comparison in book_added_position_admission_comparisons
+        if comparison.first_reference == complete
+    )
+    toward_complete = tuple(
+        comparison
+        for comparison in book_added_position_admission_comparisons
+        if comparison.second_reference == complete
+    )
+
+    assert len(from_complete) == len(COMPILED_IMPLEMENTATION_FUNCTIONS)
+    assert all(comparison.result for comparison in from_complete)
+    assert len(toward_complete) == len(COMPILED_IMPLEMENTATION_FUNCTIONS)
+    assert any(not comparison.result for comparison in toward_complete)
+    assert any(
+        comparison.result for comparison in book_added_position_admission_comparisons
+    )
+    assert any(
+        not comparison.result
+        for comparison in book_added_position_admission_comparisons
+    )
 
 
 def test_every_exact_added_position_pair_has_one_compare_occurrence(
