@@ -133,7 +133,7 @@ def test_one_reference_restated_in_one_material_is_indexed_once(tmp_path):
     assert ledger.references_to(first.identity) == [("here", ledger.list_locality("s1")[1].identity)]
 
 
-def test_references_to_exposes_what_the_material_column_cannot(tmp_path):
+def test_references_to_preserves_what_the_material_column_cannot(tmp_path):
     """The direction the index exists for."""
 
     ledger = _road(tmp_path)

@@ -69,7 +69,7 @@ def test_no_representation_act_records_a_history_copy(locality):
         assert "locality_standing_evidence_identities" not in event.material
 
 
-def test_no_projected_representation_exposes_one(locality):
+def test_no_projected_representation_carries_one(locality):
     ledger, _ = locality
     for representation in _standing(ledger)["representations"].values():
         assert "locality_standing_evidence_identities" not in representation

@@ -113,7 +113,7 @@ def test_a_comparison_finding_with_yield_retains_its_exact_occurrence(recorded):
     assert read.reference == {"recorded_occurrence_identity": result.identity}
 
 
-def test_validation_exposes_no_mutable_result_material(recorded):
+def test_validation_returns_no_mutable_result_material(recorded):
     ledger, event = recorded
     result = compare_recorded_finding_yield(ledger, event.identity)
     read = get_recorded_finding_yield_comparison(ledger, result.identity)

@@ -727,7 +727,7 @@ def _unread_event_materials():
                     yield path.name, call.lineno, value
 
 
-def test_every_declared_event_occurrence_exposes_its_material_to_the_sirens():
+def test_every_declared_event_occurrence_carries_its_material_to_the_sirens():
     assert list(_unread_event_materials()) == []
 
 

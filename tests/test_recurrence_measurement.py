@@ -354,7 +354,7 @@ def test_assertion_compare_distinguishes_absence_from_carried_none(compared):
     assert distinction.same is False
 
 
-def test_assertion_compare_exposes_changed_support_without_strengthening_it(compared):
+def test_assertion_compare_records_different_support_without_strengthening_it(compared):
     finding = _by_representation(compared)["word"]
     first = record_measured_count(
         compared, locality_identity="s1", finding=finding
