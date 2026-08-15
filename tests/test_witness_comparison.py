@@ -63,3 +63,10 @@ def test_one_admission_preserves_no_other():
 
     assert len(without_distinctions) == 1
     assert all(preserves(other, without_distinctions[0]) for other in found)
+
+
+def test_repeated_comparison_uses_the_exact_prior_admission():
+    first = admissions()
+
+    assert admissions() is first
+    assert final_admission("utf-8") is final_admission("utf-8")

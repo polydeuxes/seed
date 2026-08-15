@@ -34,6 +34,7 @@ def accepts(codec: str, sequence: tuple[int, ...]) -> bool:
     return True
 
 
+@lru_cache(maxsize=None)
 def admissible_followers(codec: str, first: int) -> list[int]:
     """Every single byte this one is accepted before."""
 
@@ -78,7 +79,7 @@ def _tails(count: int) -> list[tuple[int, ...]]:
     return [(value, *rest) for value in probe for rest in _tails(count - 1)]
 
 
-@lru_cache(maxsize=16)
+@lru_cache(maxsize=None)
 def first_admission(codec: str, max_byte_count: int = 4) -> dict[object, list[int]]:
     """Material admitted by equal implementation-function results."""
 

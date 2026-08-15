@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import argparse
+from functools import lru_cache
 
 import material_admission
 from decoder_witness_harness import accepts, first_admission, decoding_implementation_functions
@@ -11,6 +12,7 @@ from decoder_witness_harness import accepts, first_admission, decoding_implement
 Admission = frozenset
 
 
+@lru_cache(maxsize=None)
 def final_admission(codec: str) -> Admission:
     """The final Admission for one implementation function."""
 
@@ -22,6 +24,7 @@ def final_admission(codec: str) -> Admission:
     return frozenset(frozenset(material) for material in admissions[-1])
 
 
+@lru_cache(maxsize=1)
 def admissions() -> dict[Admission, list[str]]:
     """Each distinct final Admission and its implementation functions."""
 
