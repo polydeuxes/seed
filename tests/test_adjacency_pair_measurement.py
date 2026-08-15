@@ -816,7 +816,7 @@ def test_emission_adjacency_refuses_corrupted_locality_evidence(tmp_path):
     locality_identity = emission.material["locality_evidence_identity"]
     ledger._connection.execute("DROP TRIGGER events_refuse_update")
     ledger._connection.execute(
-        "UPDATE events SET content_hash = ? WHERE identity= ?",
+        "UPDATE events SET occurrence_material_identity = ? WHERE identity= ?",
         ("corrupted", locality_identity),
     )
     ledger._connection.commit()

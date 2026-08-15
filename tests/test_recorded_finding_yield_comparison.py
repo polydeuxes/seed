@@ -202,7 +202,7 @@ def test_corrupted_comparison_occurrence_cannot_be_validated(tmp_path):
     result = compare_recorded_finding_yield(ledger, event.identity)
     ledger._connection.execute("DROP TRIGGER events_refuse_update")
     ledger._connection.execute(
-        "UPDATE events SET content_hash = ? WHERE identity= ?",
+        "UPDATE events SET occurrence_material_identity = ? WHERE identity= ?",
         ("corrupted", result.identity),
     )
     ledger._connection.commit()
@@ -463,7 +463,7 @@ def test_corrupted_recorded_finding_ref_is_refused(tmp_path):
     )
     ledger._connection.execute("DROP TRIGGER events_refuse_update")
     ledger._connection.execute(
-        "UPDATE events SET content_hash = ? WHERE identity= ?", ("corrupted", event.identity)
+        "UPDATE events SET occurrence_material_identity = ? WHERE identity= ?", ("corrupted", event.identity)
     )
     ledger._connection.commit()
     with pytest.raises(RecordedFindingYieldComparisonError, match="recorded finding"):
@@ -497,7 +497,7 @@ def test_corrupted_yield_evidence_leaves_comparison_unknown(tmp_path):
     )
     ledger._connection.execute("DROP TRIGGER events_refuse_update")
     ledger._connection.execute(
-        "UPDATE events SET content_hash = ? WHERE identity= ?",
+        "UPDATE events SET occurrence_material_identity = ? WHERE identity= ?",
         ("corrupted", finding.yield_evidence_identity),
     )
     ledger._connection.commit()

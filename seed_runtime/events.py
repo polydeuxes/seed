@@ -23,7 +23,7 @@ from seed_runtime.event import Event, _decode_screened_event_material
 # `06.Standing:16` names append-only records permissively, among projected
 # material representations. Nothing in active law requires append-only, and
 # nothing here asserts history cannot revision: a `DROP TRIGGER` followed by a
-# rewrite of both row and digest defeats this. The established Assertion is narrower
+# rewrite of both row and material identity defeats this. The established Assertion is narrower
 # — mutation is refused by default, and undetected corruption becomes
 # detectable.
 VERIFIED = "verified"
@@ -64,7 +64,7 @@ _OCCURRENCE_FIELDS = (
 
 # Material storage, below the integrity boundary.
 #
-# The digest is computed over the canonical JSON string, never over the stored
+# The material identity is computed over the canonical JSON string, never over the stored
 # bytes, so how a material was written down cannot revision what it commits to.
 # `#2492` was the same lesson at the other end: two base64 encodings of one
 # byte string had to read one account.
@@ -110,7 +110,7 @@ def _stored_material(serialized: str) -> str | bytes:
 
 
 class InvalidStoredMaterial(LedgerIntegrityError):
-    """A stored material cannot be returned to the string it was digested from."""
+    """A stored material cannot be returned to the string it was identified from."""
 
 
 def _serialized_material(stored: str | bytes) -> str:
@@ -121,7 +121,7 @@ def _serialized_material(stored: str | bytes) -> str:
     **Failure to read the stored representation is corruption, not a
     compressor error.** Damaged compressed bytes raise `zlib.error`, and bytes
     that decompress but are not UTF-8 raise `UnicodeDecodeError`; both mean the
-    stored row no longer carries what it was digested from, which is the
+    stored row no longer carries what it was identified from, which is the
     condition `integrity_of` exists to report. Letting either escape would make
     a corrupted store crash its reader instead of being told about it.
     """
@@ -140,26 +140,24 @@ def _serialized_material(stored: str | bytes) -> str:
     return stored
 
 
-def _digest_of_stored_row(row: "sqlite3.Row") -> str | None:
-    """The digest of a stored row, or nothing when it cannot be read.
+def _identity_of_stored_occurrence_material(row: "sqlite3.Row") -> str | None:
+    """The material identity of a stored row, or nothing when it cannot be read.
 
-    A row whose material will not decompress cannot reproduce any digest, and
-    that is exactly what `integrity_of` reports rather than raising through its
-    caller.
+    A row whose material will not decompress cannot reproduce its material
+    identity. `integrity_of` reports that result rather than raising it.
     """
 
     try:
-        return _content_digest(_digested_row(row))
+        return _occurrence_material_identity(_stored_occurrence_material(row))
     except InvalidStoredMaterial:
         return None
 
 
-def _digested_row(row: "sqlite3.Row") -> dict:
-    """A stored row as the digest was taken over it.
+def _stored_occurrence_material(row: "sqlite3.Row") -> dict:
+    """A stored row as the material identity was taken over it.
 
-    The material is returned to its canonical string, because the digest commits
-    to what the occurrence carries and not to how the store wrote it down. Left
-    unconverted, every compressed occurrence would verify as CORRUPTED.
+    The material is returned to its canonical string because the identity is
+    taken from what the occurrence carries, not its stored form.
     """
 
     values = dict(row)
@@ -167,20 +165,19 @@ def _digested_row(row: "sqlite3.Row") -> dict:
     return values
 
 
-def _content_digest(row: dict) -> str:
-    """A stable digest over the whole recorded row.
+def _occurrence_material_identity(row: dict) -> str:
+    """A stable material identity over the whole recorded row.
 
-    Every digested field must be present. `row.get` returned `None` for an
+    Every occurrence field must be present. `row.get` returned `None` for an
     absent field and for a null one alike, so a row missing `locality_identity`
-    digested identically to a row whose Locality is null — two different rows
-    committing to one digest. Unreachable through SQLite, where every column
-    exists, and refused rather than left to depend on that.
+    produced the same identity as a row whose Locality was null. SQLite supplies
+    every column; other callers are refused when a field is absent.
     """
 
     missing = [field for field in _OCCURRENCE_FIELDS if field not in row]
     if missing:
         raise LedgerIntegrityError(
-            "a digest requires every recorded field; absent: " + ", ".join(missing)
+            "a material identity requires every recorded field; absent: " + ", ".join(missing)
         )
     return hashlib.sha256(
         json.dumps({f: row[f] for f in _OCCURRENCE_FIELDS},
@@ -475,7 +472,7 @@ class SQLiteEventLedger(EventLedger):
                 timestamp TEXT NOT NULL,
                 material TEXT NOT NULL,
                 locality_identity TEXT,
-                content_hash TEXT NOT NULL
+                occurrence_material_identity TEXT NOT NULL
             )
             """)
         # The references occurrences already carry, lifted out of the material
@@ -513,40 +510,32 @@ class SQLiteEventLedger(EventLedger):
         # supports no standing; it is ledger mechanics, and the `events`
         # mutation refusal deliberately does not cover it.
         self._connection.execute("""
-            CREATE TABLE IF NOT EXISTS id_reservations (
+            CREATE TABLE IF NOT EXISTS identity_reservations (
                 prefix TEXT PRIMARY KEY,
                 max_number INTEGER NOT NULL
             )
             """)
-        # A store either was born with integrity or is not this store. There is
-        # no ALTER path: creating a new database by running a compatibility
-        # migration over the shape we no longer support is backwards, and an
-        # empty pre-digest schema is still a schema Seed does not keep.
+        # A store without the current occurrence fields is not this store.
         columns = {
             row["name"]: row
             for row in self._connection.execute("PRAGMA table_info(events)")
         }
-        expected_columns = set(_OCCURRENCE_FIELDS) | {"content_hash"}
+        expected_columns = set(_OCCURRENCE_FIELDS) | {"occurrence_material_identity"}
         if set(columns) != expected_columns:
             raise LedgerIntegrityError(
                 f"{database_path} does not carry the current occurrence fields"
             )
-        if "content_hash" not in columns:
+        if "occurrence_material_identity" not in columns:
             raise LedgerIntegrityError(
-                f"{database_path} has an events table without content_hash. "
+                f"{database_path} has an events table without occurrence_material_identity. "
                 "Seed does not migrate pre-integrity ledgers; a store either "
-                "carries digests from birth or is not supported"
+                "carries material identities from birth or is not supported"
             )
-        if not columns["content_hash"]["notnull"]:
-            # The column being present is not the invariant. A store created
-            # by the withdrawn ALTER path has a nullable digest column, and
-            # could hold nothing but valid digests today while still admitting
-            # an undigested occurrence tomorrow. Checking current rows would
-            # accept it and leave the Assertion false.
+        if not columns["occurrence_material_identity"]["notnull"]:
+            # A nullable column permits an occurrence without this identity.
             raise LedgerIntegrityError(
-                f"{database_path} declares content_hash nullable, so it was not "
-                "born with the current integrity schema. Holding no undigested "
-                "occurrence now is not the same as being unable to hold one"
+                f"{database_path} declares occurrence_material_identity nullable, so it was not "
+                "born with the current integrity schema"
             )
         # Refuse the mutation the API never performs, so that code outside the
         # API cannot perform it either. A `DROP TRIGGER` removes this; that is
@@ -578,7 +567,7 @@ class SQLiteEventLedger(EventLedger):
         self._next_event_number = max_event_number + 1
         reserve_identity_prefix("evt", max_event_number)
         for prefix, max_number in self._connection.execute(
-            "SELECT prefix, max_number FROM id_reservations"
+            "SELECT prefix, max_number FROM identity_reservations"
         ):
             reserve_identity_prefix(prefix, max_number)
 
@@ -768,10 +757,10 @@ class SQLiteEventLedger(EventLedger):
             yield row[0]
 
     def integrity_of(self, event_identity: str) -> str:
-        """Recompute the stored row's digest and compare it with the recorded one.
+        """Recompute the stored row's material identity and compare it with the recorded one.
 
         Verification belongs where the guarantee is asserted. `#2416` made
-        ordinary reads cheap, and putting a digest on `get` or `list_locality`
+        ordinary reads cheap, and putting a material identity on `get` or `list_locality`
         would charge every reader for an obligation only an Act with participating inputs
         carries.
         """
@@ -782,13 +771,13 @@ class SQLiteEventLedger(EventLedger):
             # Nothing is stored, so there is nothing to have diverged. This is
             # the absence of an occurrence, not a durable one lacking integrity.
             return UNVERIFIABLE
-        # A durable occurrence always carries a digest: the store is refused
+        # A durable occurrence always carries a material identity: the store is refused
         # at open otherwise. So this answers VERIFIED or CORRUPTED, never
         # UNVERIFIABLE. Leaving a supported unverifiable path here would let it
         # be cited later as evidence that durable references need no integrity.
         return (
             VERIFIED
-            if _digest_of_stored_row(row) == row["content_hash"]
+            if _identity_of_stored_occurrence_material(row) == row["occurrence_material_identity"]
             else CORRUPTED
         )
 
@@ -937,7 +926,7 @@ class SQLiteEventLedger(EventLedger):
     def _insert_without_commit(self, event: Event) -> int:
         cursor = self._connection.execute(
             """
-            INSERT INTO events (identity, kind, timestamp, material, locality_identity, content_hash)
+            INSERT INTO events (identity, kind, timestamp, material, locality_identity, occurrence_material_identity)
             VALUES (?, ?, ?, ?, ?, ?)
             """,
             self._row_values(event),
@@ -1015,13 +1004,10 @@ class SQLiteEventLedger(EventLedger):
             "material": json.dumps(event.material),
             "locality_identity": event.locality_identity,
         }
-        # The digest is taken from the canonical string, then the material is
-        # replaced by its stored representation. Compression therefore cannot move a
-        # digest, and an occurrence stored compressed digests identically to the
-        # same occurrence stored as text.
-        digest = _content_digest(row)
+        # Storage form does not participate in the occurrence material identity.
+        material_identity = _occurrence_material_identity(row)
         row["material"] = _stored_material(row["material"])
-        return tuple(row[f] for f in _OCCURRENCE_FIELDS) + (digest,)
+        return tuple(row[f] for f in _OCCURRENCE_FIELDS) + (material_identity,)
 
     def _validate_sqlite_batch(self, events: list[Event]) -> None:
         seen: set[str] = set()
@@ -1036,7 +1022,7 @@ class SQLiteEventLedger(EventLedger):
         except json.JSONDecodeError as exc:
             # Read as text and not as an occurrence. The same condition as
             # a material that will not decompress: the stored row no longer
-            # carries what it was digested from, so it is refused as an
+            # carries what it was identified from, so it is refused as an
             # integrity failure rather than as the parser's error. This was
             # already reachable before compression, for a text material damaged
             # in place.
@@ -1106,7 +1092,7 @@ class SQLiteEventLedger(EventLedger):
     def _persist_reservations(self, observed: dict[str, int]) -> None:
         for prefix, max_number in observed.items():
             self._connection.execute(
-                "INSERT INTO id_reservations (prefix, max_number) VALUES (?, ?) "
+                "INSERT INTO identity_reservations (prefix, max_number) VALUES (?, ?) "
                 "ON CONFLICT(prefix) DO UPDATE SET max_number = MAX(max_number, ?)",
                 (prefix, max_number, max_number),
             )

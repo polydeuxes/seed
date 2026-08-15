@@ -326,22 +326,22 @@ def test_the_two_ledgers_preserve_the_same_material(tmp_path):
         durable.close()
 
 
-def test_a_digest_requires_every_recorded_field():
+def test_occurrence_material_identity_requires_every_recorded_field():
     """An absent field and a null field are different rows."""
 
-    from seed_runtime.events import _content_digest, LedgerIntegrityError
+    from seed_runtime.events import _occurrence_material_identity, LedgerIntegrityError
 
     complete = {
         "identity": "e", "kind": "k",
         "timestamp": "2026-01-01T00:00:00+00:00", "material": "{}",
         "locality_identity": None,
     }
-    assert _content_digest(complete)
+    assert _occurrence_material_identity(complete)
 
     for field in complete:
         partial = {k: v for k, v in complete.items() if k != field}
         with pytest.raises(LedgerIntegrityError, match=field):
-            _content_digest(partial)
+            _occurrence_material_identity(partial)
 
 
 def test_a_material_carrying_a_non_json_number_is_refused(tmp_path):

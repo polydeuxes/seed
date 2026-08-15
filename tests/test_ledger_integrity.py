@@ -1,7 +1,7 @@
 """Mutation refused by default, and corruption made detectable.
 
 Neither is immutability. A `DROP TRIGGER` followed by a rewrite of both the row
-and its digest defeats all of this, and these tests say so rather than letting
+and its material identity defeats all of this, and these tests say so rather than letting
 the arrangement be read as tamper-proof storage.
 
 `06.Standing:16` names append-only records permissively, beside projected
@@ -152,22 +152,22 @@ def test_every_persisted_field_is_covered(ledger, path, column, value):
 # --------------------------------------------------------------------------
 
 
-def test_rewriting_the_row_and_its_digest_together_is_not_detected(ledger, path):
+def test_rewriting_the_row_and_its_material_identity_together_is_not_detected(ledger, path):
     """Stated as a test so the limit cannot be forgotten.
 
     Someone able to write arbitrary SQL can drop the guard, rewrite the row,
-    and recompute the digest. Detecting that needs an integrity root outside
+    and recompute the material identity. Detecting that needs an integrity root outside
     the mutable database, which this does not have and does not Assertion.
     """
-    from seed_runtime.events import _content_digest
+    from seed_runtime.events import _occurrence_material_identity
 
     event = ledger.append("k", {"a": 1}, locality_identity="s")
     con = _raw(path)
     con.execute("DROP TRIGGER events_refuse_update")
     row = dict(con.execute("SELECT * FROM events WHERE identity = ?", (event.identity,)).fetchone())
     row["material"] = '{"a": 999}'
-    con.execute("UPDATE events SET material = ?, content_hash = ? WHERE identity = ?",
-                (row["material"], _content_digest(row), event.identity))
+    con.execute("UPDATE events SET material = ?, occurrence_material_identity = ? WHERE identity = ?",
+                (row["material"], _occurrence_material_identity(row), event.identity))
     con.commit()
     con.close()
 
@@ -177,7 +177,7 @@ def test_rewriting_the_row_and_its_digest_together_is_not_detected(ledger, path)
 
 def test_verified_durable_rehydration_still_rejects_nested_secret_fields(path):
     """Row integrity and secret-field admission remain separate boundaries."""
-    from seed_runtime.events import _content_digest
+    from seed_runtime.events import _occurrence_material_identity
 
     ledger = SQLiteEventLedger(path)
     event = ledger.append("k", {"a": 1}, locality_identity="s")
@@ -188,8 +188,8 @@ def test_verified_durable_rehydration_still_rejects_nested_secret_fields(path):
     row = dict(con.execute("SELECT * FROM events WHERE identity = ?", (event.identity,)).fetchone())
     row["material"] = '{"outer":[[{"token":"not-accepted"}]]}'
     con.execute(
-        "UPDATE events SET material = ?, content_hash = ? WHERE identity = ?",
-        (row["material"], _content_digest(row), event.identity),
+        "UPDATE events SET material = ?, occurrence_material_identity = ? WHERE identity = ?",
+        (row["material"], _occurrence_material_identity(row), event.identity),
     )
     con.commit()
     con.close()
@@ -204,7 +204,7 @@ def test_verified_durable_rehydration_still_rejects_nested_secret_fields(path):
 
 
 def test_screened_durable_rehydration_still_runs_event_validation(path):
-    from seed_runtime.events import _content_digest
+    from seed_runtime.events import _occurrence_material_identity
 
     ledger = SQLiteEventLedger(path)
     event = ledger.append("k", {"a": 1}, locality_identity="s")
@@ -215,8 +215,8 @@ def test_screened_durable_rehydration_still_runs_event_validation(path):
     row = dict(con.execute("SELECT * FROM events WHERE identity = ?", (event.identity,)).fetchone())
     row["material"] = "[]"
     con.execute(
-        "UPDATE events SET material = ?, content_hash = ? WHERE identity = ?",
-        (row["material"], _content_digest(row), event.identity),
+        "UPDATE events SET material = ?, occurrence_material_identity = ? WHERE identity = ?",
+        (row["material"], _occurrence_material_identity(row), event.identity),
     )
     con.commit()
     con.close()
@@ -246,12 +246,12 @@ def _incomplete_store(path, rows=1):
 
 
 @pytest.mark.parametrize("rows", [0, 1, 5])
-def test_a_pre_digest_schema_is_refused_whether_or_not_it_holds_rows(path, rows):
+def test_a_schema_without_occurrence_material_identity_is_refused(path, rows):
     """Seed does not preserve a durable history nobody needs.
 
-    An earlier representation classified undigested rows as UNVERIFIABLE and input
+    An earlier representation classified rows without this identity as UNVERIFIABLE and input
     them, leaving a supported path on which a durable occurrence carried no
-    integrity. A later representation refused populated pre-digest stores but migrated
+    integrity. A later representation refused populated pre-material identity stores but migrated
     empty ones, which meant a new database was created by running a
     migration over the very shape being rejected.
     """
@@ -260,13 +260,13 @@ def test_a_pre_digest_schema_is_refused_whether_or_not_it_holds_rows(path, rows)
         SQLiteEventLedger(path)
 
 
-def test_a_nullable_schema_holding_an_undigested_row_is_refused(path):
+def test_a_nullable_occurrence_material_identity_is_refused(path):
     """Refused for its schema, before any row is counted."""
     con = sqlite3.connect(path)
     con.execute(
         "CREATE TABLE events (identity TEXT PRIMARY KEY, kind TEXT NOT NULL, "
         "timestamp TEXT NOT NULL, material TEXT NOT NULL, locality_identity TEXT, "
-        "content_hash TEXT)"
+        "occurrence_material_identity TEXT)"
     )
     con.execute(
         "INSERT INTO events VALUES ('evt_000001','k','2026-01-01T00:00:00',"
@@ -275,11 +275,11 @@ def test_a_nullable_schema_holding_an_undigested_row_is_refused(path):
     con.commit()
     con.close()
 
-    with pytest.raises(LedgerIntegrityError, match="declares content_hash nullable"):
+    with pytest.raises(LedgerIntegrityError, match="declares occurrence_material_identity nullable"):
         SQLiteEventLedger(path)
 
 
-def test_a_current_store_cannot_hold_an_undigested_occurrence(path):
+def test_a_current_store_requires_occurrence_material_identity(path):
     """The schema refuses it before any check has to."""
     led = SQLiteEventLedger(path)
     try:
@@ -287,7 +287,7 @@ def test_a_current_store_cannot_hold_an_undigested_occurrence(path):
         con = _raw(path)
         con.execute("DROP TRIGGER events_refuse_update")
         with pytest.raises(sqlite3.IntegrityError, match="NOT NULL"):
-            con.execute("UPDATE events SET content_hash = NULL WHERE identity = ?",
+            con.execute("UPDATE events SET occurrence_material_identity = NULL WHERE identity = ?",
                         (event.identity,))
         con.close()
     finally:
@@ -300,7 +300,7 @@ def test_a_new_store_is_born_with_the_integrity_column(path):
     try:
         info = {row["name"]: row["notnull"]
                 for row in led._connection.execute("PRAGMA table_info(events)")}
-        assert info.get("content_hash") == 1
+        assert info.get("occurrence_material_identity") == 1
         assert led.integrity_of(led.append("k", {"a": 1}).identity) == VERIFIED
     finally:
         led.close()
@@ -355,7 +355,7 @@ def test_a_comparison_refuses_a_corrupted_input(path, monkeypatch):
 
     led = SQLiteEventLedger(path)
     try:
-        with pytest.raises(BoundedComparisonError, match="does not match its recorded digest"):
+        with pytest.raises(BoundedComparisonError, match="does not match its recorded material identity"):
             compare_preserved_findings(led, identities)
     finally:
         led.close()
@@ -410,42 +410,42 @@ def test_an_unverifiable_input_is_recorded_rather_than_refused():
     assert [i.integrity for i in finding.inputs] == [UNVERIFIABLE, UNVERIFIABLE]
 
 
-def test_a_nullable_digest_schema_is_refused_even_when_fully_digested(path):
+def test_a_nullable_occurrence_material_identity_is_refused_when_populated(path):
     """The column being present is not the invariant.
 
     `#2426` asserted that opening implies the store was born current, but only
     checked that the column existed and that no row was currently NULL. A store
     created by the withdrawn ALTER path is nullable, and one populated entirely
-    with valid digests would have passed while still admitting an undigested
+    with valid material identities would have passed while still admitting an occurrence without one
     occurrence later. Prose asserting a property runtime does not enforce is the
     same defect `#2421` removed from Compare's arity.
     """
-    from seed_runtime.events import _content_digest
+    from seed_runtime.events import _occurrence_material_identity
 
     con = sqlite3.connect(path)
     con.execute(
         "CREATE TABLE events (identity TEXT PRIMARY KEY, kind TEXT NOT NULL, "
         "timestamp TEXT NOT NULL, material TEXT NOT NULL, locality_identity TEXT, "
-        "content_hash TEXT)"
+        "occurrence_material_identity TEXT)"
     )
     row = {"identity": "evt_000001", "kind": "k",
            "timestamp": "2026-01-01T00:00:00", "material": "{}", "locality_identity": "s",
            }
     con.execute(
         "INSERT INTO events VALUES (?,?,?,?,?,?)",
-        tuple(row.values()) + (_content_digest(row),),
+        tuple(row.values()) + (_occurrence_material_identity(row),),
     )
     con.commit()
     con.close()
 
-    # every row digested, and every digest correct
+    # every row identified, and every material identity correct
     con = _raw(path)
     assert con.execute(
-        "SELECT COUNT(*) FROM events WHERE content_hash IS NULL"
+        "SELECT COUNT(*) FROM events WHERE occurrence_material_identity IS NULL"
     ).fetchone()[0] == 0
     con.close()
 
-    with pytest.raises(LedgerIntegrityError, match="declares content_hash nullable"):
+    with pytest.raises(LedgerIntegrityError, match="declares occurrence_material_identity nullable"):
         SQLiteEventLedger(path)
 
 
@@ -469,7 +469,7 @@ def test_reservations_are_read_from_the_table_not_from_history(path):
 
     con = _raw(path)
     try:
-        kept = dict(con.execute("SELECT prefix, max_number FROM id_reservations"))
+        kept = dict(con.execute("SELECT prefix, max_number FROM identity_reservations"))
     finally:
         con.close()
     assert kept["operator_material"] == 42
@@ -502,7 +502,7 @@ def test_a_reservation_only_ever_rises(path):
         led.close()
     con = _raw(path)
     try:
-        kept = dict(con.execute("SELECT prefix, max_number FROM id_reservations"))
+        kept = dict(con.execute("SELECT prefix, max_number FROM identity_reservations"))
     finally:
         con.close()
     assert kept["operator_material"] == 42
@@ -517,7 +517,7 @@ def test_the_counter_table_is_not_an_occurrence(path):
         led.close()
     con = _raw(path)
     try:
-        con.execute("UPDATE id_reservations SET max_number = 99 WHERE prefix = 'operator_material'")
+        con.execute("UPDATE identity_reservations SET max_number = 99 WHERE prefix = 'operator_material'")
         con.commit()
     finally:
         con.close()
@@ -554,7 +554,7 @@ def test_a_batch_commits_its_reservations_with_its_occurrences(path):
 
     con = _raw(path)
     try:
-        kept = dict(con.execute("SELECT prefix, max_number FROM id_reservations"))
+        kept = dict(con.execute("SELECT prefix, max_number FROM identity_reservations"))
         stored = con.execute("SELECT COUNT(*) FROM events").fetchone()[0]
     finally:
         con.close()
@@ -770,17 +770,17 @@ def test_every_input_support_refusal_can_be_reached():
             InputSupport.from_json_dict(partial)
 
 
-def test_a_digest_does_not_move_when_a_material_is_compressed(tmp_path):
-    """The digest commits to what an occurrence carries, not how it was stored.
+def test_occurrence_material_identity_does_not_move_when_material_is_compressed(tmp_path):
+    """The material identity commits to what an occurrence carries, not how it was stored.
 
-    `#2494` put compression below the integrity boundary. If the digest were
+    `#2494` put compression below the integrity boundary. If the material identity were
     taken over the stored bytes instead of the canonical string, an occurrence
     would verify differently depending on whether it happened to compress, and
     a store written before compression would verify as CORRUPTED.
     """
 
     import zlib
-    from seed_runtime.events import _content_digest, _stored_material, _serialized_material
+    from seed_runtime.events import _occurrence_material_identity, _stored_material, _serialized_material
 
     material = {"dimensions": {"content": "x" * 4000}, "n": list(range(200))}
     small = {"a": 1}
@@ -792,12 +792,17 @@ def test_a_digest_does_not_move_when_a_material_is_compressed(tmp_path):
             "timestamp": "2026-01-01T00:00:00+00:00", "material": serialized,
             "locality_identity": None,
         }
-        digest = _content_digest(row)
+        material_identity = _occurrence_material_identity(row)
         stored = _stored_material(serialized)
         # Whatever the store holds, it reads the canonical string exactly,
-        # and digesting that reproduces the same commitment.
+        # and identifying that reproduces the same commitment.
         assert _serialized_material(stored) == serialized
-        assert _content_digest(dict(row, material=_serialized_material(stored))) == digest
+        assert (
+            _occurrence_material_identity(
+                dict(row, material=_serialized_material(stored))
+            )
+            == material_identity
+        )
 
     # Large materials compress and are stored as bytes; tiny ones do not and are
     # stored as text, because compressing them would cost bytes for nothing.
@@ -883,7 +888,7 @@ def test_damaged_compressed_storage_is_corruption_not_a_compressor_error(tmp_pat
 
 
 def test_a_compressed_material_altered_to_other_valid_content_is_corrupted(tmp_path):
-    """The digest still settles it when the storage reads cleanly."""
+    """The material identity still settles it when the storage reads cleanly."""
 
     import zlib
 
@@ -917,7 +922,7 @@ def test_a_stored_material_that_is_not_an_occurrence_is_refused(tmp_path):
     `JSONDecodeError` through `get()`, and so did a text material damaged in
     place — reachable before compression existed. It is the same condition as
     one that will not decompress: the stored row no longer carries what it was
-    digested from.
+    identified from.
     """
 
     import zlib

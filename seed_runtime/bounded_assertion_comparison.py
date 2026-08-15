@@ -224,12 +224,12 @@ def compare_preserved_findings(
         # This act asserts to preserve what it has as input, so this act verifies
         # what it has as input. A corrupted input cannot be preserved, only copied.
         # `unverifiable` is recorded on the input rather than refused: an
-        # in-memory ledger and any occurrence written before the digest
+        # in-memory ledger and any occurrence written before the material identity
         # existed are both lawfully unverifiable, and refusing them would
         # require a guarantee nothing ever offered.
         if ledger.integrity_of(event_identity) == CORRUPTED:
             raise BoundedComparisonError(
-                f"{event_identity} does not match its recorded digest; a corrupted "
+                f"{event_identity} does not match its recorded material identity; a corrupted "
                 "occurrence cannot be preserved by a comparison"
             )
         events.append(event)
