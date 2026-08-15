@@ -98,9 +98,9 @@ class CompiledInvocationResultReference:
 class AddedPositionOccurrence:
     boundary_identity: str
     occurrence_position: int
-    source_reference: ExactMaterialReference | ExactMaterialResultReference
+    source_reference: ExactMaterialCoordinates
     position: int
-    added_reference: ExactMaterialReference
+    added_reference: ExactMaterialCoordinates
     result_material: bytes
 
     def __post_init__(self) -> None:
@@ -108,12 +108,9 @@ class AddedPositionOccurrence:
             raise TypeError("one exact boundary identity is required")
         if type(self.occurrence_position) is not int or self.occurrence_position < 0:
             raise TypeError("one exact Act occurrence position is required")
-        if not isinstance(
-            self.source_reference,
-            (ExactMaterialReference, ExactMaterialResultReference),
-        ):
+        if not isinstance(self.source_reference, ExactMaterialCoordinates):
             raise TypeError("source material requires its exact reference")
-        if not isinstance(self.added_reference, ExactMaterialReference):
+        if not isinstance(self.added_reference, ExactMaterialCoordinates):
             raise TypeError("added material requires its exact reference")
         if len(self.added_reference.exact_material) != 1:
             raise ValueError("added material must be exactly one byte")
@@ -868,23 +865,18 @@ def preserves_original_order(
 
 
 def added_position_occurrences(
-    source_material: tuple[
-        ExactMaterialReference | ExactMaterialResultReference, ...
-    ],
-    added_material: tuple[ExactMaterialReference, ...],
+    source_material: tuple[ExactMaterialCoordinates, ...],
+    added_material: tuple[ExactMaterialCoordinates, ...],
     *,
     boundary_identity: str,
 ) -> tuple[AddedPositionOccurrence, ...]:
     if type(source_material) is not tuple or not all(
-        isinstance(
-            material,
-            (ExactMaterialReference, ExactMaterialResultReference),
-        )
+        isinstance(material, ExactMaterialCoordinates)
         for material in source_material
     ):
         raise TypeError("source material must carry exact references")
     if type(added_material) is not tuple or not all(
-        isinstance(material, ExactMaterialReference)
+        isinstance(material, ExactMaterialCoordinates)
         and type(material.exact_material) is bytes
         and len(material.exact_material) == 1
         for material in added_material

@@ -16,6 +16,7 @@ from material_admission import (
     AdmissionResultReference,
     admission_occurrence,
 )
+from compiled_format_invocation import AddedPositionOccurrence
 
 
 @dataclass(frozen=True, slots=True)
@@ -82,6 +83,97 @@ class MaterialInvocationResultReference:
 
 
 @dataclass(frozen=True, slots=True)
+class StdoutMaterialReference:
+    invocation_occurrence: "MaterialInvocationOccurrence"
+
+    def __post_init__(self) -> None:
+        if not isinstance(self.invocation_occurrence, MaterialInvocationOccurrence):
+            raise TypeError("stdout material requires its exact invocation occurrence")
+
+    @property
+    def act_occurrence_identity(self) -> tuple[str, str, int]:
+        return self.invocation_occurrence.occurrence_identity
+
+    @property
+    def result_identity(self) -> tuple[str, str, int, str]:
+        return (*self.act_occurrence_identity, "stdout")
+
+    @property
+    def exact_material(self) -> bytes:
+        return self.invocation_occurrence.stdout_bytes
+
+
+@dataclass(frozen=True, slots=True)
+class IngestedStdoutOccurrence:
+    boundary_identity: str
+    occurrence_position: int
+    stdout_reference: StdoutMaterialReference
+    ingest_reference: IngestResultReference
+
+    def __post_init__(self) -> None:
+        if type(self.boundary_identity) is not str or not self.boundary_identity:
+            raise TypeError("one exact boundary identity is required")
+        if type(self.occurrence_position) is not int or self.occurrence_position < 0:
+            raise TypeError("one exact occurrence position is required")
+        if not isinstance(self.stdout_reference, StdoutMaterialReference):
+            raise TypeError("Ingest crossing requires exact stdout material")
+        if not isinstance(self.ingest_reference, IngestResultReference):
+            raise TypeError("Ingest crossing requires one exact Ingest result")
+        if self.stdout_reference.exact_material != self.ingest_reference.exact_material:
+            raise ValueError("Ingest material differs from exact stdout material")
+
+    @property
+    def occurrence_identity(self) -> tuple[str, int]:
+        return (self.boundary_identity, self.occurrence_position)
+
+
+@dataclass(frozen=True, slots=True)
+class MaterialAddedCompareOccurrence:
+    boundary_identity: str
+    occurrence_position: int
+    addition_occurrence: AddedPositionOccurrence
+    source_invocation: "MaterialInvocationOccurrence"
+    result_invocation: "MaterialInvocationOccurrence"
+
+    def __post_init__(self) -> None:
+        if type(self.boundary_identity) is not str or not self.boundary_identity:
+            raise TypeError("one exact boundary identity is required")
+        if type(self.occurrence_position) is not int or self.occurrence_position < 0:
+            raise TypeError("one exact Compare occurrence position is required")
+        if not isinstance(self.addition_occurrence, AddedPositionOccurrence):
+            raise TypeError("Compare requires one exact addition Act occurrence")
+        if not isinstance(
+            self.source_invocation, MaterialInvocationOccurrence
+        ) or not isinstance(self.result_invocation, MaterialInvocationOccurrence):
+            raise TypeError("Compare requires exact invocation occurrences")
+        if (
+            self.source_invocation.implementation_function
+            != self.result_invocation.implementation_function
+        ):
+            raise ValueError("Compare cannot cross implementation functions")
+        if self.source_invocation.source_reference != (
+            self.addition_occurrence.source_reference
+        ):
+            raise ValueError("Compare source differs from its addition Act")
+        if self.result_invocation.source_reference != (
+            self.addition_occurrence.result_reference
+        ):
+            raise ValueError("Compare result differs from its addition Act")
+
+    @property
+    def occurrence_identity(self) -> tuple[str, str, int]:
+        return (
+            self.boundary_identity,
+            self.source_invocation.implementation_function_identity,
+            self.occurrence_position,
+        )
+
+    @property
+    def distinction(self) -> bool:
+        return self.source_invocation.coordinates != self.result_invocation.coordinates
+
+
+@dataclass(frozen=True, slots=True)
 class MaterialInvocationOccurrence:
     boundary_identity: str
     invocation_position: int
@@ -137,6 +229,10 @@ class MaterialInvocationOccurrence:
     @property
     def result_reference(self) -> MaterialInvocationResultReference:
         return MaterialInvocationResultReference(invocation_occurrence=self)
+
+    @property
+    def stdout_reference(self) -> StdoutMaterialReference:
+        return StdoutMaterialReference(invocation_occurrence=self)
 
 
 @dataclass(frozen=True, slots=True)
@@ -311,6 +407,7 @@ def reference_occurrences_across(
     implementation_functions: tuple[
         MaterialImplementationFunction, ...
     ] = MATERIAL_IMPLEMENTATION_FUNCTIONS,
+    max_workers: int = 16,
 ) -> tuple[tuple[MaterialInvocationOccurrence, ...], ...]:
     if type(references) is not tuple or any(
         type(getattr(reference, "exact_material", None)) is not bytes
@@ -322,6 +419,7 @@ def reference_occurrences_across(
         boundary_identity=boundary_identity,
         implementation_functions=implementation_functions,
         source_references=references,
+        max_workers=max_workers,
     )
 
 
@@ -367,6 +465,7 @@ def _occurrences_across(
     boundary_identity: str,
     implementation_functions: tuple[MaterialImplementationFunction, ...],
     source_references: tuple[Hashable, ...] | None = None,
+    max_workers: int = 16,
 ) -> tuple[tuple[MaterialInvocationOccurrence, ...], ...]:
     if type(exact_materials) is not tuple or any(
         type(material) is not bytes for material in exact_materials
@@ -393,6 +492,8 @@ def _occurrences_across(
         raise ValueError("implementation function identities must be distinct")
     if source_references is not None and len(source_references) != len(exact_materials):
         raise ValueError("each material requires its exact source reference")
+    if type(max_workers) is not int or max_workers < 1:
+        raise TypeError("invocation count must be one positive integer")
     if not exact_materials:
         return tuple(() for _ in implementation_functions)
     calls = tuple(
@@ -418,10 +519,54 @@ def _occurrences_across(
             source_reference=source_reference,
         )
 
-    with ThreadPoolExecutor(max_workers=min(16, len(calls))) as workers:
+    with ThreadPoolExecutor(max_workers=min(max_workers, len(calls))) as workers:
         occurrences = tuple(workers.map(invoke, calls))
     width = len(exact_materials)
     return tuple(
         occurrences[offset : offset + width]
         for offset in range(0, len(occurrences), width)
     )
+
+
+def compare_added_material_invocations(
+    additions: tuple[AddedPositionOccurrence, ...],
+    source_invocations: tuple[tuple[MaterialInvocationOccurrence, ...], ...],
+    result_invocations: tuple[tuple[MaterialInvocationOccurrence, ...], ...],
+    *,
+    boundary_identity: str,
+) -> tuple[tuple[MaterialAddedCompareOccurrence, ...], ...]:
+    if type(additions) is not tuple or not additions:
+        raise TypeError("Compare requires exact addition Act occurrences")
+    if len(source_invocations) != len(result_invocations):
+        raise ValueError("Compare requires the same implementation functions")
+    found = []
+    position = 0
+    for source_row, result_row in zip(source_invocations, result_invocations):
+        if not source_row or not result_row:
+            raise ValueError("Compare requires exact invocation occurrences")
+        if source_row[0].implementation_function != result_row[0].implementation_function:
+            raise ValueError("Compare cannot cross implementation functions")
+        source_by_reference = {
+            invocation.source_reference: invocation for invocation in source_row
+        }
+        result_by_reference = {
+            invocation.source_reference: invocation for invocation in result_row
+        }
+        row = []
+        for addition in additions:
+            source = source_by_reference.get(addition.source_reference)
+            result = result_by_reference.get(addition.result_reference)
+            if source is None or result is None:
+                raise ValueError("Compare requires each exact source and result invocation")
+            row.append(
+                MaterialAddedCompareOccurrence(
+                    boundary_identity=boundary_identity,
+                    occurrence_position=position,
+                    addition_occurrence=addition,
+                    source_invocation=source,
+                    result_invocation=result,
+                )
+            )
+            position += 1
+        found.append(tuple(row))
+    return tuple(found)
