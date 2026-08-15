@@ -273,7 +273,6 @@ def advance_operator_locality_standing(
             "authority": event.material["dimensions"]["authority"],
             "evidence_event_identity": event.identity,
             "source_role": event.material["source_role"],
-            "content": event.material["dimensions"]["content"],
         }
         if isinstance(event.material.get("represented_material"), str):
             occurrence["represented_material"] = event.material[

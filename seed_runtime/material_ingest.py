@@ -97,7 +97,6 @@ def ingest_material(
         **result,
         "dimensions": {
             "identity": result_identity,
-            "content": result_identity,
             "source_provenance": source_boundary,
             "responsibility": MATERIAL_INGEST_RESPONSIBILITY,
             "authority": "unestablished",

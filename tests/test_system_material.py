@@ -38,6 +38,15 @@ def test_system_material_preserves_exact_raw_bytes():
     assert occurred.locality_identity == "locality_000001"
     assert ingested_material_bytes(occurred) == exact
     assert "represented_material" not in occurred.material
+    assert set(occurred.material["dimensions"]) == {
+        "identity",
+        "source_provenance",
+        "responsibility",
+        "authority",
+        "evidence_scope",
+        "scope_locality",
+        "occurrence_preservation",
+    }
 
 
 def test_durable_ingest_preserves_raw_material_and_yield_evidence(tmp_path):

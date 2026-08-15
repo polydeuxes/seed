@@ -244,6 +244,18 @@ def test_console_ingest_adds_only_its_exact_occurrences():
     # Standing read remains valid and records the occurrences.
     standing = _standing(ledger)
     assert len(standing["ingest_occurrences"]) == 3
+    assert all(
+        set(occurrence)
+        == {
+            "ingest_reference",
+            "subject_reference",
+            "standing",
+            "authority",
+            "evidence_event_identity",
+            "source_role",
+        }
+        for occurrence in standing["ingest_occurrences"]
+    )
 
 
 def test_c0_presents_standing_with_no_developer_semantics():
