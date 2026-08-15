@@ -1269,8 +1269,8 @@ def test_every_probe_and_pass_reads_one_prefix_despite_a_concurrent_append(compa
         if event.kind == "operator.measurement.comparison_recorded"
     )
     material = comparison.model_copy(deep=True).material
-    material["shared_occupants"] = [
-        *material.get("shared_occupants", []),
+    material["shared_representations"] = [
+        *material.get("shared_representations", []),
         "after-boundary",
     ]
 

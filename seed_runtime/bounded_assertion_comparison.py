@@ -129,17 +129,17 @@ class Distinction:
 class ComparisonFinding:
     inputs: tuple[PreservedInput, ...]
     distinctions: tuple[Distinction, ...]
-    shared_occupants: tuple[str, ...]
-    occupants_in_one_only: dict[str, tuple[str, ...]]
+    shared_representations: tuple[str, ...]
+    representations_in_one_only: dict[str, tuple[str, ...]]
     bounded_relation: str
 
     def to_json_dict(self) -> dict[str, Any]:
         return {
             "inputs": [i.to_json_dict() for i in self.inputs],
             "distinctions": [d.to_json_dict() for d in self.distinctions],
-            "shared_occupants": list(self.shared_occupants),
-            "occupants_in_one_only": {
-                k: list(v) for k, v in self.occupants_in_one_only.items()
+            "shared_representations": list(self.shared_representations),
+            "representations_in_one_only": {
+                k: list(v) for k, v in self.representations_in_one_only.items()
             },
             "bounded_relation": self.bounded_relation,
         }
@@ -175,7 +175,7 @@ def _preserve(ledger: EventLedger, event: Event) -> PreservedInput:
     )
 
 
-def _occupants(event: Event) -> set[str]:
+def _representations(event: Event) -> set[str]:
     return {
         occupancy["representation"]
         for occupancy in event.material.get("occupancies", [])
@@ -249,11 +249,11 @@ def compare_preserved_findings(
         Distinction("bounded_locality", len(set(map(repr, scopes))) == 1, scopes)
     )
 
-    occupant_sets = [_occupants(event) for event in events]
-    shared = occupant_sets[0] & occupant_sets[1]
+    representation_sets = [_representations(event) for event in events]
+    shared = representation_sets[0] & representation_sets[1]
     only = {
-        event.identity: tuple(sorted(occupants - shared))
-        for event, occupants in zip(events, occupant_sets)
+        event.identity: tuple(sorted(representations - shared))
+        for event, representations in zip(events, representation_sets)
     }
 
     same = {d.coordinate: d.same for d in distinctions}
@@ -263,7 +263,7 @@ def compare_preserved_findings(
         relation = UNKNOWN_RELATION
     elif not same["bounded_locality"]:
         relation = UNKNOWN_RELATION
-    elif occupant_sets[0] == occupant_sets[1]:
+    elif representation_sets[0] == representation_sets[1]:
         relation = "agreement"
     else:
         relation = "conflict"
@@ -271,8 +271,8 @@ def compare_preserved_findings(
     return ComparisonFinding(
         inputs=inputs,
         distinctions=tuple(distinctions),
-        shared_occupants=tuple(sorted(shared)),
-        occupants_in_one_only=only,
+        shared_representations=tuple(sorted(shared)),
+        representations_in_one_only=only,
         bounded_relation=relation,
     )
 

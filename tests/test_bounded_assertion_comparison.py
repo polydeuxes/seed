@@ -155,12 +155,12 @@ def test_the_input_support_travels_with_its_input(ledger):
 # --------------------------------------------------------------------------
 
 
-def test_it_reports_which_occupants_both_findings_hold(ledger):
+def test_it_reports_which_representations_both_findings_hold(ledger):
     a, b = _finding(ledger, "s1"), _finding(ledger, "s2")
     finding = compare_preserved_findings(ledger, [a.identity, b.identity])
-    assert "noun" in finding.shared_occupants
-    assert "verb" in finding.shared_occupants
-    assert set(finding.occupants_in_one_only) == {a.identity, b.identity}
+    assert "noun" in finding.shared_representations
+    assert "verb" in finding.shared_representations
+    assert set(finding.representations_in_one_only) == {a.identity, b.identity}
 
 
 def test_findings_from_different_localities_do_not_reach_agreement(ledger):
