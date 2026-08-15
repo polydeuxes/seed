@@ -615,6 +615,14 @@ def _record_yield(
         yielded_content=_yielded_content(finding),
         responsibility=RESPONSIBILITY_UNESTABLISHED,
         live_boundary="preserved_material_measurement",
+        carrier_coordinates={
+            coordinate: (
+                ("dimensions", "source_provenance")
+                if coordinate == "material_provenance"
+                else (coordinate,)
+            )
+            for coordinate in _yielded_content(finding)
+        },
     )
 
 

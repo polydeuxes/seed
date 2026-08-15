@@ -2837,6 +2837,103 @@ def test_yield_edge_read_resolves_occurrences_without_reencoding(monkeypatch):
     }
 
 
+def _live_yield_exact_bundles() -> dict[str, dict]:
+    bundles = {
+        "byte_measurement": _byte_measurement_road(),
+        "representation_result": _representation_road(),
+        "successful_emission": _successful_emission_requirement_bundles()[
+            "yield"
+        ]["exact"],
+    }
+    bundles.update(
+        {
+            boundary: cases["exact"]
+            for boundary, cases in _byte_pair_yield_requirement_bundles().items()
+        }
+    )
+    bundles.update(
+        {
+            boundary: cases["exact"]
+            for boundary, cases in _remaining_yield_requirement_bundles().items()
+        }
+    )
+    assert set(bundles) == set(YIELD_LIVE_BOUNDARIES)
+    return bundles
+
+
+def _different_preservable_value(value):
+    if type(value) is bool:
+        return not value
+    if type(value) is int:
+        return value + 1
+    if type(value) is float:
+        return value + 1.0
+    if type(value) is str:
+        return value + "-different"
+    if type(value) is list:
+        return [*value, None]
+    if type(value) is dict:
+        changed = dict(value)
+        coordinate = "different"
+        while coordinate in changed:
+            coordinate += "-different"
+        changed[coordinate] = None
+        return changed
+    if value is None:
+        return "different"
+    raise TypeError(f"unpreservable yielded coordinate: {type(value).__name__}")
+
+
+def _change_one_carried_yield_coordinate(bundle: dict) -> dict:
+    changed = dict(bundle)
+    carrier = bundle["carrier"].model_copy(deep=True)
+    evidence = bundle["content_evidence"]
+    occurrence_coordinate = bundle.get(
+        "carrier_occurrence_coordinate", "act_occurrence_id"
+    )
+    for coordinate in evidence.payload["yield_coordinates"]:
+        carried_at = evidence.payload["carrier_coordinates"][coordinate]
+        if carried_at == [occurrence_coordinate]:
+            continue
+        containing = carrier.payload
+        for part in carried_at[:-1]:
+            containing = containing[part]
+        containing[carried_at[-1]] = _different_preservable_value(
+            containing[carried_at[-1]]
+        )
+        changed["carrier"] = carrier
+        return changed
+    raise AssertionError("the Yield result has no non-occurrence coordinate")
+
+
+def test_every_live_yield_carrier_is_bound_to_its_exact_evidence_result():
+    for boundary, exact in _live_yield_exact_bundles().items():
+        assert _occurrence_result_requirements(exact) == {
+            "exact_relation": True,
+            "occurrence_witness": True,
+            "intact_evidence": True,
+        }, boundary
+
+        changed_result = _change_one_carried_yield_coordinate(exact)
+        assert _occurrence_result_requirements(changed_result) == {
+            "exact_relation": False,
+            "occurrence_witness": True,
+            "intact_evidence": True,
+        }, boundary
+
+        missing_reference = dict(exact)
+        missing_reference_carrier = exact["carrier"].model_copy(deep=True)
+        missing_reference_carrier.payload["yield_evidence_id"] = (
+            "missing-yield-evidence"
+        )
+        missing_reference["carrier"] = missing_reference_carrier
+        assert _occurrence_result_requirements(missing_reference) == {
+            "exact_relation": False,
+            "occurrence_witness": True,
+            "intact_evidence": True,
+        }, boundary
+
+
 def test_exact_act_clause_is_checked_against_live_byte_measurement():
     clause = _clause("02.Acts.A")
     bundle = _byte_measurement_road()

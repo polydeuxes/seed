@@ -14,6 +14,7 @@ manufacture that relation.
 
 from __future__ import annotations
 
+from copy import deepcopy
 import hashlib
 import json
 from typing import Any
@@ -143,11 +144,43 @@ def read_yield_edge_requirements(
         and result_evidence.kind == YIELD_EVIDENCE_KIND
         and result_evidence.workspace_id == carrier.workspace_id
     )
+    yielded_result = result_evidence.payload.get("yielded_result")
+    yield_coordinates = result_evidence.payload.get("yield_coordinates")
+    carrier_coordinates = result_evidence.payload.get("carrier_coordinates")
+    exact_carried_result = False
+    if (
+        type(yielded_result) is dict
+        and type(yield_coordinates) is list
+        and type(carrier_coordinates) is dict
+        and yield_coordinates == sorted(yielded_result)
+        and set(carrier_coordinates) == set(yielded_result)
+    ):
+        carried_result = {}
+        for coordinate in yield_coordinates:
+            carried_at = carrier_coordinates.get(coordinate)
+            if type(carried_at) is not list or not carried_at or not all(
+                type(part) is str and part for part in carried_at
+            ):
+                break
+            value = carrier.payload
+            for part in carried_at:
+                if type(value) is not dict or part not in value:
+                    break
+                value = value[part]
+            else:
+                carried_result[coordinate] = value
+                continue
+            break
+        else:
+            exact_carried_result = carried_result == yielded_result
+    evidence_is_carried = evidence_is_carried and exact_carried_result
     if responsible_act_evidence is not None:
         evidence_is_carried = evidence_is_carried and (
             carrier.payload.get("responsible_act_evidence_id")
             == responsible_act_evidence.id
             and responsible_act_evidence.workspace_id == carrier.workspace_id
+            and responsible_act_evidence.payload.get("result_commitment")
+            == result_evidence.payload.get("yield_commitment")
         )
     elif responsible_act_evidence_required:
         evidence_is_carried = False
@@ -185,6 +218,7 @@ def _record_yield_evidence(
     responsibility: str,
     live_boundary: str,
     responsible_boundary: str = "unestablished",
+    carrier_coordinates: dict[str, tuple[str, ...]] | None = None,
 ) -> Event:
     """Preserve Evidence from inside an act for its already-fixed result."""
 
@@ -192,6 +226,30 @@ def _record_yield_evidence(
         raise ValueError("Yield Evidence requires one exact Act occurrence identity")
     if live_boundary not in YIELD_LIVE_BOUNDARIES:
         raise ValueError("Yield Evidence requires one declared live boundary")
+    if type(yielded_content) is not dict:
+        raise TypeError("Yield Evidence requires one exact yielded result")
+    declared_carrier_coordinates = (
+        {coordinate: (coordinate,) for coordinate in yielded_content}
+        if carrier_coordinates is None
+        else carrier_coordinates
+    )
+    if type(declared_carrier_coordinates) is not dict or set(
+        declared_carrier_coordinates
+    ) != set(yielded_content):
+        raise ValueError(
+            "Yield Evidence requires one carried coordinate for every yielded coordinate"
+        )
+    preserved_carrier_coordinates = {}
+    for coordinate, carried_at in declared_carrier_coordinates.items():
+        if type(coordinate) is not str or not coordinate:
+            raise TypeError("a yielded coordinate must be one exact representation")
+        if type(carried_at) is not tuple or not carried_at or not all(
+            type(part) is str and part for part in carried_at
+        ):
+            raise TypeError(
+                "a carried coordinate must be one nonempty tuple of exact representations"
+            )
+        preserved_carrier_coordinates[coordinate] = list(carried_at)
 
     return ledger.append(
         YIELD_EVIDENCE_KIND,
@@ -231,6 +289,8 @@ def _record_yield_evidence(
                 convention, yielded_content
             ),
             "yield_coordinates": sorted(yielded_content),
+            "yielded_result": deepcopy(yielded_content),
+            "carrier_coordinates": preserved_carrier_coordinates,
             "yielded_result_kind": yielded_result_kind,
             "live_boundary": live_boundary,
         },
