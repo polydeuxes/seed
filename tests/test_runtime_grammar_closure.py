@@ -83,6 +83,14 @@ def _module_strings(tree: ast.Module) -> dict[str, str]:
     return declared
 
 
+def _module_functions(tree: ast.Module):
+    return {
+        node.name: node
+        for node in tree.body
+        if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef))
+    }
+
+
 def _runtime_event_kinds() -> dict[str, list[str]]:
     found: dict[str, list[str]] = {}
     for path, line, name, value, _keys in _event_materials():
@@ -250,6 +258,7 @@ def _authored_strings(value, *, line: int, named, resolving=()):
 
 def _authored_event_material_strings(path: Path, tree: ast.Module):
     module_named = _named_values(tree)
+    functions = _module_functions(tree)
     for scope in _scopes(tree):
         named = {name: list(values) for name, values in module_named.items()}
         if scope is not tree:
@@ -267,7 +276,10 @@ def _authored_event_material_strings(path: Path, tree: ast.Module):
                 keywords = {item.arg: item.value for item in call.keywords}
                 material = keywords.get("material")
             resolved = _resolved_material_dict(
-                material, line=call.lineno, named=named_dicts
+                material,
+                line=call.lineno,
+                named=named_dicts,
+                functions=functions,
             )
             if resolved is None:
                 continue
@@ -297,17 +309,47 @@ def _named_dict_additions(scope):
     return found
 
 
-def _resolved_material_dict(value, *, line, named):
+def _resolved_material_dict(
+    value, *, line, named, functions=None, resolving=()
+):
     if isinstance(value, ast.Dict):
         return value
-    if not isinstance(value, ast.Name):
+    if isinstance(value, ast.Name):
+        candidates = [item for item in named.get(value.id, ()) if item[0] < line]
+        return max(candidates, default=(None, None))[1]
+    if not (
+        isinstance(value, ast.Call)
+        and isinstance(value.func, ast.Name)
+        and functions
+        and value.func.id in functions
+        and value.func.id not in resolving
+    ):
         return None
-    candidates = [item for item in named.get(value.id, ()) if item[0] < line]
-    return max(candidates, default=(None, None))[1]
+    function = functions[value.func.id]
+    returned = []
+    function_named = _named_dicts(function)
+    for node in ast.walk(function):
+        if not isinstance(node, ast.Return):
+            continue
+        resolved = _resolved_material_dict(
+            node.value,
+            line=node.lineno,
+            named=function_named,
+            functions=functions,
+            resolving=(*resolving, value.func.id),
+        )
+        if resolved is not None:
+            returned.append(resolved)
+    if not returned:
+        return None
+    return ast.Dict(
+        keys=[key for result in returned for key in result.keys],
+        values=[nested for result in returned for nested in result.values],
+    )
 
 
 def _resolved_dict_keys(
-    value: ast.Dict, *, line: int, named, additions, source_name=None
+    value: ast.Dict, *, line: int, named, additions, functions, source_name=None
 ) -> set[str]:
     found = set()
     if source_name is not None:
@@ -318,7 +360,9 @@ def _resolved_dict_keys(
         if isinstance(key, ast.Constant) and isinstance(key.value, str):
             found.add(key.value)
         elif key is None:
-            spread = _resolved_material_dict(nested, line=line, named=named)
+            spread = _resolved_material_dict(
+                nested, line=line, named=named, functions=functions
+            )
             if spread is not None:
                 found.update(
                     _resolved_dict_keys(
@@ -326,10 +370,43 @@ def _resolved_dict_keys(
                         line=line,
                         named=named,
                         additions=additions,
+                        functions=functions,
                         source_name=nested.id if isinstance(nested, ast.Name) else None,
                     )
                 )
     return found
+
+
+def _unresolved_dict_spreads(value, *, line, named, functions):
+    for key, nested in zip(value.keys, value.values):
+        if key is not None:
+            continue
+        spread = _resolved_material_dict(
+            nested, line=line, named=named, functions=functions
+        )
+        if spread is None:
+            yield nested.lineno
+            continue
+        yield from _unresolved_dict_spreads(
+            spread,
+            line=line,
+            named=named,
+            functions=functions,
+        )
+
+
+def test_unresolved_event_material_expansion_remains_visible():
+    tree = ast.parse('{"identity": result_identity, **supplied_material}')
+    material = tree.body[0].value
+
+    assert list(
+        _unresolved_dict_spreads(
+            material,
+            line=1,
+            named={},
+            functions={},
+        )
+    ) == [1]
 
 
 def test_every_runtime_event_kind_declares_its_machine_grammar_responsibility():
@@ -420,6 +497,16 @@ def test_authored_value_admission_catches_an_unadmitted_word_without_naming_it()
     ]
 
 
+def test_authored_value_admission_crosses_a_local_material_function():
+    tree = ast.parse(
+        'def material():\n    return {"standing": "invented"}\n'
+        'ledger.append(SOME_KIND, material())'
+    )
+    assert _unadmitted_authored_event_material(Path("fixture.py"), tree) == [
+        ("fixture.py", 2, "invented", "invented")
+    ]
+
+
 def test_opaque_supplied_material_is_not_seed_authored_language():
     tree = ast.parse(
         'ledger.append(SOME_KIND, {"standing": operator_material})'
@@ -449,6 +536,7 @@ def test_coordinate_substitution_siren_detects_one_shared_reference():
 def _event_materials():
     for path, tree in _runtime_trees():
         constants = _module_strings(tree)
+        functions = _module_functions(tree)
         for scope in _scopes(tree):
             named_dicts = _named_dicts(scope)
             additions = _named_dict_additions(scope)
@@ -465,7 +553,10 @@ def _event_materials():
                     kind, material = keywords.get("kind"), keywords.get("material")
                 material_expression = material
                 material = _resolved_material_dict(
-                    material_expression, line=call.lineno, named=named_dicts
+                    material_expression,
+                    line=call.lineno,
+                    named=named_dicts,
+                    functions=functions,
                 )
                 if material is None:
                     continue
@@ -488,6 +579,7 @@ def _event_materials():
                             line=call.lineno,
                             named=named_dicts,
                             additions=additions,
+                            functions=functions,
                             source_name=(
                                 material_expression.id
                                 if isinstance(material_expression, ast.Name)
@@ -500,6 +592,7 @@ def _event_materials():
 def _unread_event_materials():
     for path, tree in _runtime_trees():
         constants = _module_strings(tree)
+        functions = _module_functions(tree)
         for scope in _scopes(tree):
             named_dicts = _named_dicts(scope)
             for call in (
@@ -526,9 +619,20 @@ def _unread_event_materials():
                     value = None
                 if value is None:
                     continue
-                if _resolved_material_dict(
-                    material, line=call.lineno, named=named_dicts
-                ) is None:
+                resolved = _resolved_material_dict(
+                    material,
+                    line=call.lineno,
+                    named=named_dicts,
+                    functions=functions,
+                )
+                if resolved is None or list(
+                    _unresolved_dict_spreads(
+                        resolved,
+                        line=call.lineno,
+                        named=named_dicts,
+                        functions=functions,
+                    )
+                ):
                     yield path.name, call.lineno, value
 
 
@@ -681,6 +785,7 @@ def test_every_event_standing_claim_has_a_declared_grammar_responsibility():
     unaccounted = []
     for path, tree in _runtime_trees():
         constants = _module_strings(tree)
+        functions = _module_functions(tree)
         for scope in _scopes(tree):
             named_dicts = _named_dicts(scope)
             for call in (
@@ -697,7 +802,10 @@ def test_every_event_standing_claim_has_a_declared_grammar_responsibility():
                 if isinstance(kind, ast.Constant) and isinstance(kind.value, str):
                     value = kind.value
                 material = _resolved_material_dict(
-                    material, line=call.lineno, named=named_dicts
+                    material,
+                    line=call.lineno,
+                    named=named_dicts,
+                    functions=functions,
                 )
                 if value is None or material is None:
                     continue
