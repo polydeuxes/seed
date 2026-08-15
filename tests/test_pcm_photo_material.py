@@ -22,6 +22,11 @@ from compiled_material_invocation import (  # noqa: E402
     ingest_result_reference,
     reference_occurrences_across,
 )
+from compiled_format_invocation import (  # noqa: E402
+    COMPILED_IMPLEMENTATION_FUNCTIONS as FORMAT_IMPLEMENTATION_FUNCTIONS,
+    admit_compiled_invocation_occurrences,
+    compiled_reference_invocations,
+)
 from material_admission import compare_admission_results  # noqa: E402
 from material_fixture_media import supplied_media_material  # noqa: E402
 
@@ -132,6 +137,15 @@ def media_invocations(media_ingests):
 
 
 @pytest.fixture(scope="module")
+def media_format_invocations(media_ingests):
+    return compiled_reference_invocations(
+        media_ingests[3],
+        boundary_identity="media-format-invocation",
+        implementation_functions=FORMAT_IMPLEMENTATION_FUNCTIONS,
+    )
+
+
+@pytest.fixture(scope="module")
 def media_admissions(media_ingests, media_invocations):
     return tuple(
         admit_invocation_occurrences(
@@ -144,6 +158,23 @@ def media_admissions(media_ingests, media_invocations):
 
 
 @pytest.fixture(scope="module")
+def media_format_admissions(media_format_invocations):
+    return tuple(
+        admit_compiled_invocation_occurrences(
+            row,
+            boundary_identity="media-format-admission",
+            occurrence_position=position,
+        )
+        for position, row in enumerate(media_format_invocations)
+    )
+
+
+@pytest.fixture(scope="module")
+def all_media_admissions(media_admissions, media_format_admissions):
+    return media_admissions + media_format_admissions
+
+
+@pytest.fixture(scope="module")
 def media_admission_compares(media_admissions):
     references = tuple(
         occurrence.result_reference for occurrence in media_admissions
@@ -153,6 +184,27 @@ def media_admission_compares(media_admissions):
             first,
             second,
             boundary_identity="media-material-admission-compare",
+            occurrence_position=position,
+        )
+        for position, (first, second) in enumerate(
+            (first, second)
+            for first in references
+            for second in references
+            if first is not second
+        )
+    )
+
+
+@pytest.fixture(scope="module")
+def all_media_admission_compares(all_media_admissions):
+    references = tuple(
+        occurrence.result_reference for occurrence in all_media_admissions
+    )
+    return tuple(
+        compare_admission_results(
+            first,
+            second,
+            boundary_identity="all-media-admission-compare",
             occurrence_position=position,
         )
         for position, (first, second) in enumerate(
@@ -230,6 +282,30 @@ def test_every_exact_ingest_result_reaches_every_implementation_function(
         assert all(type(occurrence.returncode) is int for occurrence in row)
         assert all(type(occurrence.stdout_bytes) is bytes for occurrence in row)
         assert all(type(occurrence.stderr_bytes) is bytes for occurrence in row)
+
+
+def test_one_material_ladder_reaches_every_registered_compiled_function(
+    media_ingests, media_invocations, media_format_invocations
+):
+    references = media_ingests[3]
+    rows = media_invocations + media_format_invocations
+    expected_functions = IMPLEMENTATION_FUNCTIONS + FORMAT_IMPLEMENTATION_FUNCTIONS
+
+    assert len(rows) == len(expected_functions)
+    assert tuple(row[0].implementation_function for row in rows) == expected_functions
+    assert all(
+        tuple(occurrence.source_reference for occurrence in row) == references
+        if isinstance(row[0], MaterialInvocationOccurrence)
+        else tuple(occurrence.source_coordinate for occurrence in row) == references
+        for row in rows
+    )
+    assert len(
+        {
+            occurrence.occurrence_identity
+            for row in rows
+            for occurrence in row
+        }
+    ) == len(expected_functions) * len(references)
 
 
 def test_equal_material_keeps_distinct_ingest_and_invocation_occurrences(
@@ -323,6 +399,35 @@ def test_every_ordered_media_admission_pair_has_an_exact_compare_occurrence(
         )
 
 
+def test_every_compiled_function_admission_is_compared_in_both_directions(
+    all_media_admissions, all_media_admission_compares
+):
+    count = len(all_media_admissions)
+
+    assert count == len(IMPLEMENTATION_FUNCTIONS) + len(
+        FORMAT_IMPLEMENTATION_FUNCTIONS
+    )
+    assert len(all_media_admission_compares) == count * (count - 1)
+    assert {
+        (
+            comparison.first_reference.result_identity,
+            comparison.second_reference.result_identity,
+        )
+        for comparison in all_media_admission_compares
+    } == {
+        (first.result_identity, second.result_identity)
+        for first in all_media_admissions
+        for second in all_media_admissions
+        if first is not second
+    }
+    assert len(
+        {
+            admission.admitted_material
+            for admission in all_media_admissions
+        }
+    ) > 1
+
+
 def test_invocation_occurrence_refuses_material_different_from_its_ingest_result():
     reference = IngestResultReference(
         recorded_occurrence_identity="recorded",
@@ -338,7 +443,9 @@ def test_invocation_occurrence_refuses_material_different_from_its_ingest_result
             boundary_identity="boundary",
             invocation_position=0,
             exact_material=b"b",
-            implementation_function_identity="compiled-0",
+            implementation_function=MaterialImplementationFunction(
+                "compiled-0", ("file", "-b", "-")
+            ),
             returncode=0,
             stdout_bytes=b"",
             stderr_bytes=b"",

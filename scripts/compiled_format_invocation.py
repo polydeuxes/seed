@@ -8,7 +8,7 @@ import io
 import json
 import plistlib
 import tomllib
-from typing import Callable
+from typing import Callable, Protocol, runtime_checkable
 import xml.etree.ElementTree
 
 from material_admission import (
@@ -22,6 +22,17 @@ from material_admission import (
 class CompiledImplementationFunction:
     identity: str
     invocation: Callable[[bytes], object]
+
+    def __post_init__(self) -> None:
+        if type(self.identity) is not str or not self.identity:
+            raise TypeError("one exact implementation function identity is required")
+        if not callable(self.invocation):
+            raise TypeError("one exact implementation function is required")
+
+
+@runtime_checkable
+class ExactMaterialCoordinates(Protocol):
+    exact_material: bytes
 
 
 @dataclass(frozen=True, slots=True)
@@ -60,6 +71,27 @@ class ExactMaterialResultReference:
             or type(self.exact_material) is not bytes
         ):
             raise TypeError("exact material result requires its Act occurrence and result identity")
+
+
+@dataclass(frozen=True, slots=True)
+class CompiledInvocationResultReference:
+    invocation_occurrence: "CompiledInvocationOccurrence"
+
+    def __post_init__(self) -> None:
+        if not isinstance(self.invocation_occurrence, CompiledInvocationOccurrence):
+            raise TypeError("invocation result requires its exact Act occurrence")
+
+    @property
+    def act_occurrence_identity(self) -> tuple[str, str, int]:
+        return self.invocation_occurrence.occurrence_identity
+
+    @property
+    def result_identity(self) -> tuple[str, str, int, str]:
+        return (*self.act_occurrence_identity, "result")
+
+    @property
+    def coordinates(self) -> bool:
+        return self.invocation_occurrence.returned
 
 
 @dataclass(frozen=True, slots=True)
@@ -189,15 +221,52 @@ class CompiledInvocationOccurrence:
     boundary_identity: str
     invocation_position: int
     exact_material: bytes
-    implementation_function_identity: str
+    implementation_function: CompiledImplementationFunction
     returned: bool
     source_coordinate: (
-        ExactMaterialReference
-        | ExactMaterialResultReference
+        ExactMaterialCoordinates
         | AddedPositionOccurrence
         | RemovedPositionOccurrence
         | None
     ) = None
+
+    def __post_init__(self) -> None:
+        if type(self.boundary_identity) is not str or not self.boundary_identity:
+            raise TypeError("one exact boundary identity is required")
+        if type(self.invocation_position) is not int or self.invocation_position < 0:
+            raise TypeError("one exact invocation position is required")
+        if type(self.exact_material) is not bytes:
+            raise TypeError("implementation function material must be exact bytes")
+        if not isinstance(
+            self.implementation_function, CompiledImplementationFunction
+        ):
+            raise TypeError("one exact compiled implementation function is required")
+        if type(self.returned) is not bool:
+            raise TypeError("returned coordinate must be exact")
+        if self.source_coordinate is not None:
+            if isinstance(self.source_coordinate, ExactMaterialCoordinates):
+                source_material = self.source_coordinate.exact_material
+            elif isinstance(
+                self.source_coordinate,
+                (AddedPositionOccurrence, RemovedPositionOccurrence),
+            ):
+                source_material = self.source_coordinate.result_material
+            else:
+                raise TypeError("source material requires its exact reference")
+            if source_material != self.exact_material:
+                raise ValueError("invocation material differs from its exact source")
+
+    @property
+    def implementation_function_identity(self) -> str:
+        return self.implementation_function.identity
+
+    @property
+    def result_identity(self) -> tuple[str, str, int, str]:
+        return (*self.occurrence_identity, "result")
+
+    @property
+    def result_reference(self) -> CompiledInvocationResultReference:
+        return CompiledInvocationResultReference(invocation_occurrence=self)
 
     @property
     def occurrence_identity(self) -> tuple[str, str, int]:
@@ -209,9 +278,7 @@ class CompiledInvocationOccurrence:
 
     @property
     def source_material(self) -> bytes | None:
-        if isinstance(self.source_coordinate, ExactMaterialReference):
-            return self.source_coordinate.exact_material
-        if isinstance(self.source_coordinate, ExactMaterialResultReference):
+        if isinstance(self.source_coordinate, ExactMaterialCoordinates):
             return self.source_coordinate.exact_material
         if isinstance(self.source_coordinate, AddedPositionOccurrence):
             return self.source_coordinate.source_material
@@ -325,6 +392,64 @@ class AddedPositionAdmissionOccurrence:
             raise ValueError("addition Admission source differs from its Act occurrences")
         if self.admission_occurrence.admitted_material != admitted:
             raise ValueError("addition Admission differs from its Compare occurrences")
+
+    @property
+    def source_material(self):
+        return self.admission_occurrence.source_material
+
+    @property
+    def admitted_material(self):
+        return self.admission_occurrence.admitted_material
+
+    @property
+    def act_occurrence_identity(self) -> tuple[str, int]:
+        return self.admission_occurrence.act_occurrence_identity
+
+    @property
+    def result_identity(self) -> tuple[str, int, str]:
+        return self.admission_occurrence.result_identity
+
+    @property
+    def result_reference(self) -> AdmissionResultReference:
+        return AdmissionResultReference(admission_occurrence=self)
+
+
+@dataclass(frozen=True, slots=True)
+class CompiledAdmissionOccurrence:
+    admission_occurrence: AdmissionOccurrence
+    invocation_result_references: tuple[CompiledInvocationResultReference, ...]
+
+    def __post_init__(self) -> None:
+        if not isinstance(self.admission_occurrence, AdmissionOccurrence):
+            raise TypeError("compiled Admission requires its exact Act occurrence")
+        if (
+            type(self.invocation_result_references) is not tuple
+            or not self.invocation_result_references
+            or any(
+                not isinstance(reference, CompiledInvocationResultReference)
+                for reference in self.invocation_result_references
+            )
+        ):
+            raise TypeError("compiled Admission requires exact invocation results")
+        invocations = tuple(
+            reference.invocation_occurrence
+            for reference in self.invocation_result_references
+        )
+        if len({invocation.implementation_function for invocation in invocations}) != 1:
+            raise ValueError("one compiled Admission cannot cross implementation functions")
+        source_material = tuple(invocation.source_coordinate for invocation in invocations)
+        if any(source is None for source in source_material):
+            raise ValueError("compiled Admission requires exact source references")
+        if source_material != self.admission_occurrence.source_material:
+            raise ValueError("compiled Admission source differs from its invocations")
+        same_coordinates = {}
+        for invocation in invocations:
+            same_coordinates.setdefault(invocation.returned, []).append(
+                invocation.source_coordinate
+            )
+        admitted = tuple(tuple(material) for material in same_coordinates.values())
+        if admitted != self.admission_occurrence.admitted_material:
+            raise ValueError("compiled Admission differs from its invocation results")
 
     @property
     def source_material(self):
@@ -579,7 +704,7 @@ def compiled_invocation(
         boundary_identity=boundary_identity,
         invocation_position=invocation_position,
         exact_material=exact_material,
-        implementation_function_identity=implementation_function.identity,
+        implementation_function=implementation_function,
         returned=returned,
     )
 
@@ -611,9 +736,7 @@ def compiled_invocations(
 
 
 def compiled_reference_invocations(
-    references: tuple[
-        ExactMaterialReference | ExactMaterialResultReference, ...
-    ],
+    references: tuple[ExactMaterialCoordinates, ...],
     *,
     boundary_identity: str,
     implementation_functions: tuple[
@@ -621,10 +744,7 @@ def compiled_reference_invocations(
     ] = COMPILED_IMPLEMENTATION_FUNCTIONS,
 ) -> tuple[tuple[CompiledInvocationOccurrence, ...], ...]:
     if type(references) is not tuple or not all(
-        isinstance(
-            reference,
-            (ExactMaterialReference, ExactMaterialResultReference),
-        )
+        isinstance(reference, ExactMaterialCoordinates)
         for reference in references
     ):
         raise TypeError("implementation function inputs must carry exact references")
@@ -651,13 +771,18 @@ def _compiled_invocations(
     boundary_identity: str,
     implementation_functions: tuple[CompiledImplementationFunction, ...],
     source_coordinates: tuple[
-        ExactMaterialReference
-        | ExactMaterialResultReference
+        ExactMaterialCoordinates
         | AddedPositionOccurrence
         | RemovedPositionOccurrence,
         ...,
     ] | None = None,
 ) -> tuple[tuple[CompiledInvocationOccurrence, ...], ...]:
+    identities = tuple(
+        implementation_function.identity
+        for implementation_function in implementation_functions
+    )
+    if len(set(identities)) != len(identities):
+        raise ValueError("implementation function identities must be distinct")
     found = []
     for implementation_function in implementation_functions:
         occurrences = []
@@ -673,7 +798,7 @@ def _compiled_invocations(
                     boundary_identity=boundary_identity,
                     invocation_position=invocation_position,
                     exact_material=material,
-                    implementation_function_identity=implementation_function.identity,
+                    implementation_function=implementation_function,
                     returned=returned,
                     source_coordinate=(
                         source_coordinates[invocation_position]
@@ -684,6 +809,40 @@ def _compiled_invocations(
             )
         found.append(tuple(occurrences))
     return tuple(found)
+
+
+def admit_compiled_invocation_occurrences(
+    occurrences: tuple[CompiledInvocationOccurrence, ...],
+    *,
+    boundary_identity: str,
+    occurrence_position: int = 0,
+) -> CompiledAdmissionOccurrence:
+    if type(occurrences) is not tuple or not occurrences or any(
+        not isinstance(occurrence, CompiledInvocationOccurrence)
+        for occurrence in occurrences
+    ):
+        raise TypeError("compiled Admission requires exact invocation occurrences")
+    same_coordinates = {}
+    for occurrence in occurrences:
+        if occurrence.source_coordinate is None:
+            raise ValueError("compiled Admission requires exact source references")
+        same_coordinates.setdefault(occurrence.returned, []).append(
+            occurrence.source_coordinate
+        )
+    admission = admission_occurrence(
+        tuple(tuple(material) for material in same_coordinates.values()),
+        boundary_identity=boundary_identity,
+        occurrence_position=occurrence_position,
+        source_material=tuple(
+            occurrence.source_coordinate for occurrence in occurrences
+        ),
+    )
+    return CompiledAdmissionOccurrence(
+        admission_occurrence=admission,
+        invocation_result_references=tuple(
+            occurrence.result_reference for occurrence in occurrences
+        ),
+    )
 
 
 def preserves_original_order(

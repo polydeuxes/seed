@@ -86,7 +86,7 @@ class MaterialInvocationOccurrence:
     boundary_identity: str
     invocation_position: int
     exact_material: bytes
-    implementation_function_identity: str
+    implementation_function: MaterialImplementationFunction
     returncode: int
     stdout_bytes: bytes
     stderr_bytes: bytes
@@ -99,11 +99,10 @@ class MaterialInvocationOccurrence:
             raise TypeError("one exact invocation position is required")
         if type(self.exact_material) is not bytes:
             raise TypeError("implementation function material must be exact bytes")
-        if (
-            type(self.implementation_function_identity) is not str
-            or not self.implementation_function_identity
+        if not isinstance(
+            self.implementation_function, MaterialImplementationFunction
         ):
-            raise TypeError("one exact implementation function identity is required")
+            raise TypeError("one exact implementation function is required")
         if type(self.returncode) is not int:
             raise TypeError("return code must be exact")
         if type(self.stdout_bytes) is not bytes or type(self.stderr_bytes) is not bytes:
@@ -122,6 +121,10 @@ class MaterialInvocationOccurrence:
             self.implementation_function_identity,
             self.invocation_position,
         )
+
+    @property
+    def implementation_function_identity(self) -> str:
+        return self.implementation_function.identity
 
     @property
     def coordinates(self) -> tuple[int, bytes, bytes]:
@@ -157,11 +160,11 @@ class MaterialAdmissionOccurrence:
             reference.invocation_occurrence
             for reference in self.invocation_result_references
         )
-        implementation_function_identities = {
-            occurrence.implementation_function_identity
+        implementation_functions = {
+            occurrence.implementation_function
             for occurrence in invocation_occurrences
         }
-        if len(implementation_function_identities) != 1:
+        if len(implementation_functions) != 1:
             raise ValueError("one material Admission cannot cross implementation functions")
         source_material = tuple(
             occurrence.source_reference for occurrence in invocation_occurrences
@@ -278,7 +281,7 @@ def invocation_occurrence(
         boundary_identity=boundary_identity,
         invocation_position=invocation_position,
         exact_material=exact_material,
-        implementation_function_identity=implementation_function.identity,
+        implementation_function=implementation_function,
         returncode=completed.returncode,
         stdout_bytes=completed.stdout,
         stderr_bytes=completed.stderr,
