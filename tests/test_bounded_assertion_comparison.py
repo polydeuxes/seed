@@ -201,13 +201,13 @@ def test_the_left_representation_is_compared_as_a_coordinate(ledger):
     by_name = {d.coordinate: d for d in
                compare_preserved_findings(ledger, [a.identity, b.identity]).distinctions}
     assert by_name["measured_left_representation"].same
-    assert by_name["measured_left_representation"].values == ("a", "a")
+    assert by_name["measured_left_representation"].compared_material == ("a", "a")
 
     c = _finding(ledger, "s2", representation="is")
     by_name = {d.coordinate: d for d in
                compare_preserved_findings(ledger, [a.identity, c.identity]).distinctions}
     assert not by_name["measured_left_representation"].same
-    assert by_name["measured_left_representation"].values == ("a", "is")
+    assert by_name["measured_left_representation"].compared_material == ("a", "is")
 
 
 def test_a_different_left_representation_yields_Unknown(ledger):
@@ -226,7 +226,7 @@ def test_the_distinctions_are_literal(ledger):
     assert by_name["representation_measured"].same
     assert by_name["equivalence_rule"].same
     assert not by_name["bounded_locality"].same
-    assert by_name["bounded_locality"].values == (
+    assert by_name["bounded_locality"].compared_material == (
         "locality:s1", "locality:s2")
 
 

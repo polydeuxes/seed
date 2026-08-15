@@ -117,13 +117,13 @@ class Distinction:
 
     coordinate: str
     same: bool
-    values: tuple[Any, ...]
+    compared_material: tuple[Any, ...]
 
     def to_json_dict(self) -> dict[str, Any]:
         return {
             "coordinate": self.coordinate,
             "same": self.same,
-            "values": list(self.values),
+            "compared_material": list(self.compared_material),
         }
 
 
@@ -243,9 +243,9 @@ def compare_preserved_findings(
         ("measured_position", "measured_position"),
         ("measurement_distinction", "measurement_distinction"),
     ):
-        values = tuple(event.material.get(field) for event in events)
+        compared_material = tuple(event.material.get(field) for event in events)
         distinctions.append(
-            Distinction(coordinate, len(set(map(repr, values))) == 1, values)
+            Distinction(coordinate, len(set(map(repr, compared_material))) == 1, compared_material)
         )
     scopes = tuple(i.carried.get("scope") for i in inputs)
     distinctions.append(

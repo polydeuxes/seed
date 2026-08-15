@@ -42,7 +42,7 @@ class AssertionCoordinateDistinction:
     coordinate: str
     same: bool
     present: tuple[bool, bool]
-    values: tuple[Any, Any]
+    compared_material: tuple[Any, Any]
 
 
 @dataclass(frozen=True)
@@ -144,7 +144,7 @@ def _distinction_assertion_identity(
     locality_identity: str,
     coordinate: str,
     present: Iterable[bool],
-    values: Iterable[Any],
+    compared_material: Iterable[Any],
     same: bool,
 ) -> str:
     identity = {
@@ -153,7 +153,7 @@ def _distinction_assertion_identity(
         "locality_identity": locality_identity,
         "coordinate": coordinate,
         "present": list(present),
-        "values": list(values),
+        "compared_material": list(compared_material),
         "same": same,
     }
     return "assertion-yield-distinction:" + hashlib.sha256(
@@ -224,13 +224,13 @@ def compare_assertion_yields(
             _read(assertion.material, path) for assertion in assertions
         )
         present = (coordinate_reads[0][0], coordinate_reads[1][0])
-        values = (coordinate_reads[0][1], coordinate_reads[1][1])
+        compared_material = (coordinate_reads[0][1], coordinate_reads[1][1])
         distinctions.append(
             AssertionCoordinateDistinction(
                 coordinate=coordinate,
-                same=present[0] == present[1] and _exactly_same(*values),
+                same=present[0] == present[1] and _exactly_same(*compared_material),
                 present=present,
-                values=values,
+                compared_material=compared_material,
             )
         )
     return AssertionYieldComparison(
@@ -312,7 +312,7 @@ def record_assertion_yield_comparison(
         content = {
             "coordinate": distinction.coordinate,
             "present": list(distinction.present),
-            "values": list(distinction.values),
+            "compared_material": list(distinction.compared_material),
             "same": distinction.same,
         }
         identity = _distinction_assertion_identity(
@@ -526,14 +526,14 @@ def assertions_of_recorded_assertion_comparison(
             raise AssertionComparisonError(
                 f"{event.identity} carries an incoherent comparison Assertion"
             )
-        required_content = {"coordinate", "present", "values", "same"}
+        required_content = {"coordinate", "present", "compared_material", "same"}
         if set(content) != required_content:
             raise AssertionComparisonError(
                 f"{event.identity} carries an incomplete comparison result"
             )
         coordinate = content["coordinate"]
         present = content["present"]
-        values = content["values"]
+        compared_material = content["compared_material"]
         same = content["same"]
         if (
             coordinate not in COORDINATES
@@ -541,11 +541,11 @@ def assertions_of_recorded_assertion_comparison(
             or not isinstance(present, list)
             or len(present) != 2
             or not all(isinstance(value, bool) for value in present)
-            or not isinstance(values, list)
-            or len(values) != 2
+            or not isinstance(compared_material, list)
+            or len(compared_material) != 2
             or not isinstance(same, bool)
             or same
-            != (present[0] == present[1] and _exactly_same(values[0], values[1]))
+            != (present[0] == present[1] and _exactly_same(compared_material[0], compared_material[1]))
         ):
             raise AssertionComparisonError(
                 f"{event.identity} carries a result outside the Compare output contract"
@@ -557,7 +557,7 @@ def assertions_of_recorded_assertion_comparison(
             locality_identity=scope.get("locality_identity"),
             coordinate=content["coordinate"],
             present=content["present"],
-            values=content["values"],
+            compared_material=content["compared_material"],
             same=content["same"],
         )
         if identity != canonical or identity in seen:

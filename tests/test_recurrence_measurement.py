@@ -343,7 +343,7 @@ def test_assertion_compare_distinguishes_absence_from_carried_none(compared):
     )
 
     assert distinction.present == (True, False)
-    assert distinction.values == (None, None)
+    assert distinction.compared_material == (None, None)
     assert distinction.same is False
 
 
@@ -611,7 +611,7 @@ def test_validation_refuses_a_self_consistent_forged_compare_result(compared):
     assertion = event.material["assertions"][0]
     content = assertion["dimensions"]["content"]
     assert content["present"] == [True, True]
-    assert content["values"][0] == content["values"][1]
+    assert content["compared_material"][0] == content["compared_material"][1]
     content["same"] = False
     assertion["dimensions"]["identity"] = _distinction_assertion_identity(
         compared_assertion_identity=assertion["assertion_subject"][
