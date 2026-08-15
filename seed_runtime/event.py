@@ -1,4 +1,4 @@
-"""Event occurrence model and durable read boundary."""
+"""Event occurrence and durable read boundary."""
 
 from __future__ import annotations
 
@@ -7,9 +7,7 @@ import json
 import math
 from typing import Any
 
-from pydantic import Field
-
-from seed_runtime.base import SeedModel
+from pydantic import BaseModel, ConfigDict, Field
 from seed_runtime.secrets import (
     SECRET_FIELD_NAMES,
     secret_boundary_key,
@@ -114,7 +112,9 @@ def _decode_screened_event_material(raw_material: str) -> Any:
     return material
 
 
-class Event(SeedModel):
+class Event(BaseModel):
+    model_config = ConfigDict(frozen=True)
+
     def __init__(self, **data: Any) -> None:
         material = data.get("material", {})
         exact_material = data.get("exact_material")
