@@ -98,6 +98,27 @@ class PreservedMaterialMeasurementError(ValueError):
     """Raised when a measurement cannot use its declared inputs as stated."""
 
 
+def measurement_input_occurrences(material: Any) -> tuple[str, ...]:
+    inputs = material.get("inputs") if isinstance(material, dict) else None
+    if not isinstance(inputs, list):
+        raise PreservedMaterialMeasurementError(
+            "the Measurement finding carries no exact input occurrences"
+        )
+    occurrences = []
+    for item in inputs:
+        if (
+            not isinstance(item, dict)
+            or set(item) != {"occurrence_identity"}
+            or not isinstance(item["occurrence_identity"], str)
+            or not item["occurrence_identity"]
+        ):
+            raise PreservedMaterialMeasurementError(
+                "the Measurement finding carries an incomplete input occurrence"
+            )
+        occurrences.append(item["occurrence_identity"])
+    return tuple(occurrences)
+
+
 @dataclass(frozen=True)
 class DeclaredMeasurement:
     """The three disclosures `01.Source:28` requires.
@@ -152,7 +173,7 @@ class MeasurementFinding:
     # the support belongs to that path, and this dataclass does not own a second
     # coordinate for it. `#2486` measured why: copying the inputs into
     # every finding of a body cost 97% of the stored finding.
-    input_event_identities: tuple[str, ...]
+    input_occurrences: tuple[str, ...]
     downstream_act_identity: str = field(
         default_factory=lambda: new_identity("preserved_material_measurement_act"),
         compare=False,
@@ -189,8 +210,11 @@ class MeasurementFinding:
             # Not "input_support": the result-Assertion coordinate surface carries
             # that key and its fields are merged over this dict, so naming both
             # the same silently replaced one with the other.
-            "input_event_identities": list(self.input_event_identities),
-            "input_count": len(self.input_event_identities),
+            "inputs": [
+                {"occurrence_identity": identity}
+                for identity in self.input_occurrences
+            ],
+            "input_count": len(self.input_occurrences),
             "limits": list(self.limits),
         }
 
@@ -232,7 +256,7 @@ class RecurrenceFinding:
     occurrences_carrying: int
     # How many times the representation recurred across them.
     recurrence_count: int
-    input_event_identities: tuple[str, ...]
+    input_occurrences: tuple[str, ...]
     downstream_act_identity: str = field(
         default_factory=lambda: new_identity("preserved_recurrence_measurement_act"),
         compare=False,
@@ -269,7 +293,7 @@ class RecurrenceFinding:
 
     @property
     def input_count(self) -> int:
-        return len(self.input_event_identities)
+        return len(self.input_occurrences)
 
     def to_json_dict(self) -> dict[str, Any]:
         carried: dict[str, Any] = {
@@ -280,7 +304,10 @@ class RecurrenceFinding:
             "input_localities": list(self.input_localities),
             "occurrences_carrying": self.occurrences_carrying,
             "recurrence_count": self.recurrence_count,
-            "input_event_identities": list(self.input_event_identities),
+            "inputs": [
+                {"occurrence_identity": identity}
+                for identity in self.input_occurrences
+            ],
             "input_count": self.input_count,
             "limits": list(self.limits),
             "yield_evidence_identity": self.yield_evidence_identity,
@@ -290,7 +317,7 @@ class RecurrenceFinding:
             # Carrying both preserves the cost the support exists to avoid, and
             # leaves two representations of one support free to disagree.
             carried["input_support"] = self.input_support.to_json_dict()
-            carried.pop("input_event_identities")
+            carried.pop("inputs")
         return carried
 
 
@@ -343,7 +370,7 @@ def measure_recurrence(
         input_localities=tuple(localities),
         occurrences_carrying=carrying,
         recurrence_count=recurrence,
-        input_event_identities=tuple(input_identities),
+        input_occurrences=tuple(input_identities),
     )
     if yield_in is not None:
         evidence = _record_yield(
@@ -708,7 +735,7 @@ def measure_recurrences(
             input_localities=input_localities,
             occurrences_carrying=carrying[representation],
             recurrence_count=recurrence[representation],
-            input_event_identities=inputs,
+            input_occurrences=inputs,
             input_support=input_support,
             downstream_act_identity=downstream_act_identity,
             act_occurrence_identity=act_occurrence_identity,
@@ -796,7 +823,7 @@ def measure_position_representations(
         material_provenance=material_provenance,
         position_count=measured,
         representation_counts=ordered,
-        input_event_identities=tuple(input_identities),
+        input_occurrences=tuple(input_identities),
     )
 
 
@@ -858,7 +885,7 @@ def record_measurement_findings(
     input_identities = {
         event_identity
         for finding, _ in supplied
-        for event_identity in finding.input_event_identities
+        for event_identity in finding.input_occurrences
     }
     for event_identity in input_identities:
         occurrence = ledger.get(event_identity)

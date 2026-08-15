@@ -32,6 +32,7 @@ from seed_runtime.preserved_material_measurement import (
     MeasurementFinding,
     RepresentationCount,
     PreservedMaterialMeasurementError,
+    measurement_input_occurrences,
     measure_position_representations,
 )
 from seed_runtime.operator_representation import (
@@ -573,12 +574,8 @@ def measure_adjacency_pairs_from_finding(
             "adjacency-pair measurements require an exact recorded displacement-one finding"
         )
     material = tuple(occurrences)
-    recorded_identities = finding.material.get("input_event_identities")
-    if (
-        not isinstance(recorded_identities, list)
-        or not all(isinstance(value, str) and value for value in recorded_identities)
-        or tuple(event.identity for event in material) != tuple(recorded_identities)
-    ):
+    recorded_occurrences = measurement_input_occurrences(finding.material)
+    if tuple(event.identity for event in material) != recorded_occurrences:
         raise PreservedMaterialMeasurementError(
             "the supplied source occurrences differ from the finding's exact Evidence"
         )
@@ -852,11 +849,7 @@ def record_adjacency_pair_measurements(
         raise PreservedMaterialMeasurementError(
             "the read pair finding is outside this Measurement locality"
         )
-    source_identities = finding.material.get("input_event_identities")
-    if not isinstance(source_identities, list):
-        raise PreservedMaterialMeasurementError(
-            "the read pair finding carries no exact source occurrences"
-        )
+    source_identities = measurement_input_occurrences(finding.material)
     source_occurrences = []
     for source_identity in source_identities:
         source = ledger.get(source_identity) if isinstance(source_identity, str) else None
@@ -1079,7 +1072,8 @@ def get_recorded_adjacency_pair_measurements(
         if (
             ledger.integrity_of(adjacency_evidence_identity) == CORRUPTED
             or anchor.locality_identity != event.locality_identity
-            or anchor.material.get("input_event_identities") != source_identities
+            or measurement_input_occurrences(anchor.material)
+            != tuple(source_identities)
         ):
             raise PreservedMaterialMeasurementError(
                 "the adjacency-pair measurement pair-finding Evidence does not read"

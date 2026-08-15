@@ -962,15 +962,19 @@ def test_measurements_declaring_different_scopes_do_not_group(compared):
 
 def test_only_measurements_that_supply_the_count_travel_as_evidence(compared):
     finding = _by_representation(compared)["word"]
-    kinds = {compared.get(i).kind for i in finding.input_event_identities}
+    kinds = {compared.get(i).kind for i in finding.input_occurrences}
     assert kinds == {MEASUREMENT_RECORDED_KIND}
+    assert finding.to_json_dict()["inputs"] == [
+        {"occurrence_identity": identity}
+        for identity in finding.input_occurrences
+    ]
 
 
 def test_every_locality_s_measurement_is_among_the_support(compared):
     finding = _by_representation(compared)["word"]
     supporting = {
         compared.get(i).locality_identity
-        for i in finding.input_event_identities
+        for i in finding.input_occurrences
         if compared.get(i).kind == MEASUREMENT_RECORDED_KIND
     }
     assert supporting == set(finding.bounded_localities)
@@ -1012,7 +1016,7 @@ def test_the_old_aggregate_result_is_not_recorded_beside_the_assertions(compared
         "locality_count",
         "recurrence_established",
         "bounded_localities",
-        "input_event_identities",
+        "inputs",
         "input_ledger_boundary",
         "distinction",
     }
@@ -1059,8 +1063,8 @@ def test_only_relevant_evidence_places_an_locality_in_the_second_result(compared
     finding = _by_representation(compared)["word"]
 
     assert finding.measured_without_distinction == ("s4",)
-    assert exact_coordinate.identity in finding.input_event_identities
-    assert unrelated.identity not in finding.input_event_identities
+    assert exact_coordinate.identity in finding.input_occurrences
+    assert unrelated.identity not in finding.input_occurrences
 
 
 def test_a_count_of_one_is_a_finding_and_is_not_recurrence(compared):
@@ -1120,7 +1124,7 @@ def test_the_third_result_preserves_its_complete_read_not_copied_identities(comp
     finding = _by_representation(compared, declared)["word"]
 
     assert "s5" in finding.coordinate_not_measured
-    assert unrelated.identity not in finding.input_event_identities
+    assert unrelated.identity not in finding.input_occurrences
     read = compared.iter_locality_kind(
         "s5",
         MEASUREMENT_RECORDED_KIND,
@@ -1428,7 +1432,7 @@ def test_counting_recurrence_does_not_take_comparisons_as_input(compared):
     corroboration in its own words.
     """
     finding = _by_representation(compared)["word"]
-    input = [compared.get(i) for i in finding.input_event_identities]
+    input = [compared.get(i) for i in finding.input_occurrences]
     assert input
     assert {event.kind for event in input} == {MEASUREMENT_RECORDED_KIND}
     assert any(

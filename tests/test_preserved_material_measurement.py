@@ -46,6 +46,7 @@ from seed_runtime.preserved_material_measurement import (
     measure_position_representations,
     measure_recurrence,
     measure_recurrences,
+    measurement_input_occurrences,
     ingest_occurrences,
     record_measurement_finding,
 )
@@ -56,6 +57,30 @@ from seed_runtime.input_support import (
     InputSupportValidator,
     declare_input_support,
 )
+
+
+@pytest.mark.parametrize(
+    "inputs",
+    (
+        None,
+        ["evt_1"],
+        [{"occurrence_identity": ""}],
+        [{"occurrence_identity": "evt_1", "standing": "Unknown"}],
+    ),
+)
+def test_measurement_inputs_require_one_exact_coordinate_per_occurrence(inputs):
+    with pytest.raises(PreservedMaterialMeasurementError):
+        measurement_input_occurrences({"inputs": inputs})
+
+
+def test_measurement_inputs_read_each_singular_occurrence_coordinate():
+    material = {
+        "inputs": [
+            {"occurrence_identity": "evt_1"},
+            {"occurrence_identity": "evt_2"},
+        ]
+    }
+    assert measurement_input_occurrences(material) == ("evt_1", "evt_2")
 
 MATERIAL = (
     "_The_ is the definite article.\n"
@@ -133,7 +158,7 @@ def test_a_finding_names_every_occurrence_that_participated(occurrences):
     finding = measure_position_representations(
         occurrences, declared=_declared(), representation_at=_first_word
     )
-    assert finding.input_event_identities == tuple(e.identity for e in occurrences)
+    assert finding.input_occurrences == tuple(e.identity for e in occurrences)
 
 
 def test_an_absent_position_is_absent_not_unknown(occurrences):
@@ -142,7 +167,7 @@ def test_an_absent_position_is_absent_not_unknown(occurrences):
         occurrences, declared=_declared(), representation_at=_after_delimiter
     )
     assert finding.position_count == 4
-    assert len(finding.input_event_identities) == 5
+    assert len(finding.input_occurrences) == 5
 
 
 # --------------------------------------------------------------------------
@@ -461,7 +486,9 @@ def test_a_recurrence_finding_records_through_the_existing_path(
     assert event.material["representation_measured"] == "the"
     assert event.material["equivalence_rule"].startswith("exact equality")
     assert event.material["counting_scope"].startswith("preserved operator-ingest")
-    assert event.material["input_event_identities"] == [e.identity for e in occurrences]
+    assert event.material["inputs"] == [
+        {"occurrence_identity": event.identity} for event in occurrences
+    ]
 
 
 # --------------------------------------------------------------------------
@@ -511,7 +538,7 @@ def test_every_finding_carries_the_same_participating_inputs(recurrence_occurren
         occurrences, declared=declared, counts_in=_counts_in(declared)
     )
     inputs = tuple(e.identity for e in occurrences)
-    assert all(f.input_event_identities == inputs for f in findings)
+    assert all(f.input_occurrences == inputs for f in findings)
     assert all(f.input_count == len(occurrences) for f in findings)
 
 
@@ -821,10 +848,10 @@ def test_declared_input_support_replaces_the_enumeration(recurrence_occurrences)
     )
     for finding in findings:
         carried = finding.to_json_dict()
-        assert "input_event_identities" not in carried
+        assert "inputs" not in carried
         assert carried["input_support"]["support_count"] == len(occurrences)
         # the act still knows what it walked, in memory, while it runs
-        assert finding.input_event_identities == tuple(e.identity for e in occurrences)
+        assert finding.input_occurrences == tuple(e.identity for e in occurrences)
 
 
 def test_input_support_and_measurement_input_order_must_be_exact(
@@ -860,7 +887,7 @@ def test_findings_with_and_without_input_support_agree_on_everything_else(
     )
     for a, b in zip(plain, based):
         left, right = a.to_json_dict(), b.to_json_dict()
-        left.pop("input_event_identities")
+        left.pop("inputs")
         right.pop("input_support")
         assert left == right
 
@@ -1123,7 +1150,7 @@ def test_carrying_a_basis_no_longer_exempts_a_finding_from_the_recorder():
         input_localities=finding.input_localities,
         occurrences_carrying=finding.occurrences_carrying,
         recurrence_count=finding.recurrence_count,
-        input_event_identities=finding.input_event_identities,
+        input_occurrences=finding.input_occurrences,
         input_support=declare_input_support(
             locality_identity="r",
             occurrence_kind=INGEST_OCCURRED_KIND,
@@ -1269,7 +1296,7 @@ def _rebuilt(finding, **different):
         "input_localities": finding.input_localities,
         "occurrences_carrying": finding.occurrences_carrying,
         "recurrence_count": finding.recurrence_count,
-        "input_event_identities": finding.input_event_identities,
+        "input_occurrences": finding.input_occurrences,
         "downstream_act_identity": finding.downstream_act_identity,
         "act_occurrence_identity": finding.act_occurrence_identity,
         "input_support": finding.input_support,
@@ -1388,7 +1415,7 @@ def test_changing_input_identities_cannot_reuse_the_yield_witness(
     yielded = _yielded(ledger, occurrences)
     altered = _rebuilt(
         yielded,
-        input_event_identities=yielded.input_event_identities[:-1],
+        input_occurrences=yielded.input_occurrences[:-1],
     )
     with pytest.raises(PreservedMaterialMeasurementError, match="different result"):
         record_measurement_finding(

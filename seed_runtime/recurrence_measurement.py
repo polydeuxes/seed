@@ -130,7 +130,7 @@ class MeasuredCountFinding:
     measured_in: tuple[str, ...]
     measured_without_distinction: tuple[str, ...]
     coordinate_not_measured: tuple[str, ...]
-    input_event_identities: tuple[str, ...]
+    input_occurrences: tuple[str, ...]
     input_ledger_boundary: EventLedgerBoundary
     bounded_localities: tuple[str, ...]
     measured_in_support_event_identities: tuple[str, ...] = ()
@@ -155,7 +155,10 @@ class MeasuredCountFinding:
             "locality_count": self.locality_count,
             "recurrence_established": self.recurrence_established,
             "bounded_localities": list(self.bounded_localities),
-            "input_event_identities": list(self.input_event_identities),
+            "inputs": [
+                {"occurrence_identity": identity}
+                for identity in self.input_occurrences
+            ],
             "input_ledger_boundary": {
                 "identity": self.input_ledger_boundary.identity,
             },
@@ -543,7 +546,7 @@ def measure_locality_counts(
                 measured_in=tuple(sorted(where)),
                 measured_without_distinction=tuple(sorted(measured_without)),
                 coordinate_not_measured=tuple(sorted(not_measured)),
-                input_event_identities=tuple(sorted(evidence)),
+                input_occurrences=tuple(sorted(evidence)),
                 input_ledger_boundary=input_ledger_boundary,
                 bounded_localities=declared_localities,
                 measured_in_support_event_identities=tuple(
@@ -726,7 +729,7 @@ def record_measured_count(
             "role": "recorded Measurement occurrence",
             "act_occurrence_identity": act_occurrence_identity,
         }
-        for event_identity in finding.input_event_identities
+        for event_identity in finding.input_occurrences
     ]
     result_material = {
         "result_identity": result_identity,
