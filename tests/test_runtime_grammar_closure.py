@@ -340,13 +340,19 @@ def _unread_event_materials():
             for call in (
                 node for node in _scope_nodes(scope) if isinstance(node, ast.Call)
             ):
-                if not (
+                kind = None
+                material = None
+                if (
                     isinstance(call.func, ast.Attribute)
                     and call.func.attr == "append"
                     and len(call.args) >= 2
                 ):
+                    kind, material = call.args[0], call.args[1]
+                elif isinstance(call.func, ast.Name) and call.func.id == "Event":
+                    keywords = {item.arg: item.value for item in call.keywords}
+                    kind, material = keywords.get("kind"), keywords.get("material")
+                if kind is None or material is None:
                     continue
-                kind, material = call.args[0], call.args[1]
                 if isinstance(kind, ast.Name):
                     value = constants.get(kind.id)
                 elif isinstance(kind, ast.Constant) and isinstance(kind.value, str):
@@ -361,7 +367,7 @@ def _unread_event_materials():
                     yield path.name, call.lineno, value
 
 
-def test_every_declared_event_append_exposes_its_material_to_the_sirens():
+def test_every_declared_event_occurrence_exposes_its_material_to_the_sirens():
     assert list(_unread_event_materials()) == []
 
 
