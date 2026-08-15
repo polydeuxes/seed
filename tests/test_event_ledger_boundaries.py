@@ -112,7 +112,7 @@ def test_event_exact_material_requires_raw_bytes(value):
         Event(identity="e1", kind="k", exact_material=value)
 
 
-def test_independently_persisted_equal_prefixes_share_a_boundary(tmp_path):
+def test_equal_prefixes_persisted_in_separate_ledgers_share_a_boundary(tmp_path):
     events = [
         Event(identity="e1", kind="first", material={"n": 1}),
         Event(identity="e2", kind="second", material={"n": 2}),

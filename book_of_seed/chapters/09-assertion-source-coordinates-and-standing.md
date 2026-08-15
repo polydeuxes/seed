@@ -28,7 +28,7 @@ Temporal coordinates distinguish what time an Assertion describes, when Evidence
 - source occurrence absent != source occurrence supplied
 - source relation Standing != asserted-content Standing
 - recording != Standing
-- repetition != independent corroboration
+- repetition != corroboration
 - preserved Assertion != current Applicability
 
 ## Related chapters

@@ -231,7 +231,7 @@ def test_console_ingest_adds_only_its_exact_occurrences():
     kinds = [event.kind for event in ledger.list()]
     assert not any(kind.startswith("operator.interaction.") for kind in kinds)
 
-    # Every Ingest remains independent of adjacent Representation occurrences.
+    # Every Ingest retains an identity distinct from adjacent Representation occurrences.
     representations = [e for e in ledger.list() if e.kind == "operator.representation.recorded"]
     ingests = [e for e in ledger.list() if e.kind == "material.ingest.occurred"]
     assert len(ingests) == 3
@@ -517,7 +517,7 @@ def test_first_interaction_attaches_no_representation_to_the_ingest():
     ledger, _ = _run_console("first\n")
 
     # No Representation is named by the Ingest. Emission and Ingest
-    # occurrences are preserved independently; any relation between them is a
+    # occurrences retain distinct identities; any relation between them is a
     # later responsible occurrence's to establish and record.
     kinds = {event.kind for event in ledger.list()}
     assert kinds == {

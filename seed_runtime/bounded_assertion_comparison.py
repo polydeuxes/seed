@@ -1,6 +1,6 @@
 """One occurrence-local bounded comparison of preserved findings.
 
-`01.Standing.E` permits a bounded comparison to have as input multiple independently
+`01.Standing.E` permits a bounded comparison to have as input multiple separately
 preserved source-relative Assertions or findings while preserving each input's coordinates as
 that input carries them. `historical comparison report`
 records the responsible boundary: **the bounded comparison boundary in which they participate, local
@@ -82,7 +82,7 @@ LIMITS: tuple[str, ...] = (
     "within its own scope",
     "a representation occurring in both findings establishes no relation between "
     "the bodies that carried it",
-    "this comparison establishes no truth, support, input support, source independence, "
+    "this comparison establishes no truth, support, input support, source relation, "
     "or corroboration",
 )
 
@@ -200,7 +200,7 @@ def compare_preserved_findings(
         )
     if len(set(identities)) != len(identities):
         raise BoundedComparisonError(
-            "an input compared with itself is not multiple independently "
+            "an input compared with itself does not supply multiple distinct "
             "preserved findings"
         )
 

@@ -2106,7 +2106,7 @@ def assertions_of_recorded_adjacent_byte_pair_measurement(
 def input_applicability_of_recorded_adjacent_byte_pair_measurement(
     ledger: EventLedger, event_identity: str
 ) -> dict[str, Any] | None:
-    """Validate the independent input-to-Act Applicability Assertion."""
+    """Validate the exact input-to-Act Applicability Assertion."""
 
     read = assertions_of_recorded_adjacent_byte_pair_measurement(ledger, event_identity)
     if read is None:

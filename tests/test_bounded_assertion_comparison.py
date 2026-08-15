@@ -310,7 +310,7 @@ def test_the_record_refuses_the_inferences_the_clause_forbids(ledger):
     limit_material = " ".join(event.material["limits"])
     assert "is not a relation between what they measured" in limit_material
     assert "establishes no relation between" in limit_material
-    assert "no truth, support, input support, source independence, or corroboration" in limit_material
+    assert "no truth, support, input support, source relation, or corroboration" in limit_material
     assert "whether the compared bodies stand in any relation remains Unknown" in (
         event.material["unknowns"])
 

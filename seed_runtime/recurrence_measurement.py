@@ -79,9 +79,8 @@ DECLARED_IDENTITY: tuple[str, ...] = (
 )
 
 LIMITS: tuple[str, ...] = (
-    "independently preserved is not independent; nothing here establishes that "
-    "the localities' sources are unrelated",
-    "recurrence is repetition, and repetition is not independent corroboration",
+    "separate preservation establishes no relation between the localities or their sources",
+    "recurrence is repetition and does not establish corroboration",
     "an exact count is a finding at any value; a count of one establishes no "
     "recurrence",
     "the count reports the bounded localities among the occurrences this "
@@ -193,7 +192,7 @@ class MeasuredAssertion:
                 "authority": "unestablished",
                 "evidence_scope": (
                     "measurement evidence only; establishes no relation between "
-                    "the localities, no source independence, and no corroboration"
+                    "the localities or their sources, and no corroboration"
                 ),
                 "scope_locality": "the exact assertion_scope carried here",
                 "occurrence_preservation": (
@@ -229,7 +228,7 @@ class MeasuredAssertion:
             "unknowns": [
                 "what any measured representation means remains Unknown",
                 "whether the localities stand in any relation remains Unknown",
-                "whether their sources are independent remains Unknown",
+                "whether their sources have a relation remains Unknown",
             ],
             "limits": list(LIMITS),
         }
@@ -743,7 +742,7 @@ def record_measured_count(
             "authority": "unestablished",
             "evidence_scope": (
                 "measurement evidence only; establishes no relation between the "
-                "localities, no source independence, and no corroboration"
+                "localities or their sources, and no corroboration"
             ),
             "scope_locality": f"locality:{locality_identity}",
             "occurrence_preservation": "count finding durably recorded",
@@ -768,7 +767,7 @@ def record_measured_count(
         "unknowns": [
             "what any measured representation means remains Unknown",
             "whether the localities stand in any relation remains Unknown",
-            "whether their sources are independent remains Unknown",
+            "whether their sources have a relation remains Unknown",
         ],
         "limits": list(LIMITS),
     }

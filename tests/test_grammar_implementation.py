@@ -3104,7 +3104,7 @@ LOCALITY_BOUNDARIES_EVIDENCED_BY_OCCURRENCE = {
 def _declared_kind_constants(family: str) -> dict[str, list[str]]:
     """Every module-level kind constant naming this edge, found by read code.
 
-    Independent discovery, as with Yield: the registry above is not
+    Discovery from the runtime, as with Yield: the registry above is not
     asked what exists, the runtime is. A boundary that stops declaring itself,
     or a new one that never registers, both surface here.
     """
@@ -3237,7 +3237,7 @@ def _requirement_witnesses() -> set[str]:
 
 
 def test_every_live_edge_witness_names_its_edge_and_its_evidence():
-    """Independent discovery equated with the registry, for all three edges."""
+    """Runtime discovery equated with the registry, for all three edges."""
 
     assert _requirement_witnesses() == set(STRUCTURAL_EDGE_EVIDENCE), (
         "\nLive edge witnesses and the registry disagree.\n"

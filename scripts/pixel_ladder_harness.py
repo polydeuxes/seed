@@ -22,7 +22,7 @@ coordinate addressable on its own before any two are crossed.
 The pixel dimensions do not vary here. One pixel is the whole specimen, so a
 difference between two specimens is a value, not a pixel dimension.
 
-Three independent coordinates are not the space they span. Ladder C represents
+Three distinct coordinates are not the space they span. Ladder C represents
 256 specimens per channel, 768 in all; the crossed space is 256 x 256 x 256,
 16,777,216 combinations. Read each coordinate alone is what makes the
 crossed space addressable without enumerating every specimen.

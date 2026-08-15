@@ -1177,13 +1177,13 @@ def test_the_counting_scope_states_the_declaration(compared):
     assert "supplied to this Seed" not in scope
 
 
-def test_the_record_refuses_source_independence_and_corroboration(compared):
+def test_the_record_refuses_source_relation_and_corroboration(compared):
     event = record_measured_count(
         compared, locality_identity="s1",
         finding=_by_representation(compared)["word"])
     refused = " ".join(event.material["limits"])
-    assert "independently preserved is not independent" in refused
-    assert "repetition is not independent corroboration" in refused
+    assert "separate preservation establishes no relation" in refused
+    assert "repetition and does not establish corroboration" in refused
     assert "establishes no relation between the" in refused
     assert set(LIMITS) <= set(event.material["limits"])
 
@@ -1192,7 +1192,7 @@ def test_the_rendering_states_the_literal_sentence(compared):
     represented = measured_count_representation(_by_representation(compared)["word"])
     assert "recurs in 3 bounded localities" in represented
     assert SCOPE in represented
-    for word in ("agree", "corroborat", "independent source", "relation",
+    for word in ("agree", "corroborat", "source relation", "relation",
                  "confirm", "prove", "cohort", "population"):
         assert word not in represented.lower()
 
@@ -1443,5 +1443,5 @@ def test_counting_recurrence_does_not_take_comparisons_as_input(compared):
     event = record_measured_count(
         compared, locality_identity="s1", finding=finding)
     refused = " ".join(event.material["limits"])
-    assert "not independent corroboration" in refused
+    assert "does not establish corroboration" in refused
     assert "establishes no relation between the" in refused

@@ -160,7 +160,8 @@
         "Act_occurrence_or_nonoccurrence",
         "output_Standing"
       ],
-      "independently_addressable": true,
+      "distinct_identity": true,
+      "addressable": true,
       "distinct_from": [
         ["Applicability", "Admission"],
         ["Applicability", "Act_occurrence"],

@@ -13,6 +13,7 @@ from seed_runtime.material_ingest import (
     ingested_material_bytes,
 )
 from seed_runtime.operator_ingest import run_operator_ingest
+from seed_runtime.operator_locality_standing import read_operator_locality_standing
 from seed_runtime.operator_material_boundary import operator_boundary_material
 from seed_runtime.system_material import preserve_system_material
 from seed_runtime.yield_evidence import YIELD_EVIDENCE_KIND, read_yield_edge_requirements
@@ -84,19 +85,59 @@ def test_durable_ingest_preserves_raw_material_and_yield_evidence(tmp_path):
         reopened.close()
 
 
-def test_operator_and_system_material_share_one_ingest_road():
-    ledger = EventLedger()
-    exact = b"\x00\xffsame material\n"
-    operator_standing = run_operator_ingest(
+def _operator_ingest(ledger, *, locality, exact):
+    standing = run_operator_ingest(
         ledger=ledger,
-        locality_identity="shared",
+        locality_identity=locality,
         boundary_material=operator_boundary_material(BytesIO(exact)),
     )
-    operator_ingest = ledger.get(
-        operator_standing["current_standing"]["ingest_occurrence"][
+    return ledger.get(
+        standing["current_standing"]["ingest_occurrence"][
             "evidence_event_identity"
         ]
     )
+
+
+def _ingest_identities(ingest):
+    return {
+        ingest.identity,
+        ingest.material["result_identity"],
+        ingest.material["ingest_act_identity"],
+        ingest.material["act_occurrence_identity"],
+        ingest.material["responsible_act_evidence_identity"],
+        ingest.material["yield_evidence_identity"],
+    }
+
+
+def _strings(value):
+    if isinstance(value, str):
+        return {value}
+    if isinstance(value, dict):
+        return {
+            item
+            for key, carried in value.items()
+            for item in (*_strings(key), *_strings(carried))
+        }
+    if isinstance(value, (list, tuple)):
+        return {item for carried in value for item in _strings(carried)}
+    return set()
+
+
+def _ingest_events(ledger, ingest):
+    return tuple(
+        ledger.get(identity)
+        for identity in (
+            ingest.material["responsible_act_evidence_identity"],
+            ingest.material["yield_evidence_identity"],
+            ingest.identity,
+        )
+    )
+
+
+def test_operator_and_system_material_use_one_ingest_act_with_distinct_source_roles():
+    ledger = EventLedger()
+    exact = b"\x00\xffsame material\n"
+    operator_ingest = _operator_ingest(ledger, locality="shared", exact=exact)
     system_ingest = preserve_system_material(
         ledger,
         locality_identity="shared",
@@ -112,6 +153,106 @@ def test_operator_and_system_material_share_one_ingest_road():
     ) == exact
     assert operator_ingest.material["source_role"] == "operator"
     assert system_ingest.material["source_role"] == "system"
+    assert operator_ingest.material["dimensions"]["source_provenance"] == (
+        "binary-stream.readline (bytes observed directly)"
+    )
+    assert system_ingest.material["dimensions"]["source_provenance"] == (
+        "system byte boundary"
+    )
+
+
+def test_equal_operator_and_system_bytes_keep_distinct_occurrences_results_and_evidence():
+    ledger = EventLedger()
+    exact = b"same exact material"
+    operator_ingest = _operator_ingest(ledger, locality="shared", exact=exact)
+    system_ingest = preserve_system_material(
+        ledger,
+        locality_identity="shared",
+        exact_bytes=exact,
+        observed_boundary="system byte boundary",
+    )
+
+    assert operator_ingest is not None
+    assert ingested_material_bytes(operator_ingest) == ingested_material_bytes(
+        system_ingest
+    )
+    assert _ingest_identities(operator_ingest).isdisjoint(
+        _ingest_identities(system_ingest)
+    )
+    assert read_yield_edge_requirements(
+        ledger,
+        recorded_result_event_identity=operator_ingest.identity,
+        result_evidence_event_identity=system_ingest.material[
+            "yield_evidence_identity"
+        ],
+        responsible_act_evidence_event_identity=operator_ingest.material[
+            "responsible_act_evidence_identity"
+        ],
+    ) == {
+        "exact_relation": False,
+        "occurrence_witness": False,
+        "intact_evidence": True,
+    }
+
+
+def test_same_locality_preserves_both_ingest_subjects_without_relation_standing():
+    ledger = EventLedger()
+    operator_ingest = _operator_ingest(
+        ledger, locality="shared", exact=b"operator material\n"
+    )
+    system_ingest = preserve_system_material(
+        ledger,
+        locality_identity="shared",
+        exact_bytes=b"system material",
+        observed_boundary="system byte boundary",
+    )
+
+    assert operator_ingest is not None
+    standing = read_operator_locality_standing(
+        ledger, locality_identity="shared"
+    )
+    assert {
+        occurrence["subject_reference"]
+        for occurrence in standing["ingest_occurrences"]
+    } == {
+        operator_ingest.material["result_identity"],
+        system_ingest.material["result_identity"],
+    }
+    assert {
+        occurrence["source_role"]
+        for occurrence in standing["ingest_occurrences"]
+    } == {"operator", "system"}
+    assert standing["recorded_relation_standings"] == []
+
+
+def test_operator_and_system_ingest_evidence_do_not_cross_reference():
+    ledger = EventLedger()
+    operator_ingest = _operator_ingest(
+        ledger, locality="shared", exact=b"operator material\n"
+    )
+    system_ingest = preserve_system_material(
+        ledger,
+        locality_identity="shared",
+        exact_bytes=b"system material",
+        observed_boundary="system byte boundary",
+    )
+
+    assert operator_ingest is not None
+    operator_identities = _ingest_identities(operator_ingest)
+    system_identities = _ingest_identities(system_ingest)
+    operator_material = {
+        item
+        for event in _ingest_events(ledger, operator_ingest)
+        for item in _strings(event.material)
+    }
+    system_material = {
+        item
+        for event in _ingest_events(ledger, system_ingest)
+        for item in _strings(event.material)
+    }
+
+    assert operator_material.isdisjoint(system_identities)
+    assert system_material.isdisjoint(operator_identities)
 
 
 def test_ingest_event_binds_exact_act_and_result_evidence():

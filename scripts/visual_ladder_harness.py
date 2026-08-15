@@ -12,7 +12,7 @@ answer a caller can check its finding against.
   4  five letters inside the box    more ink, and not five times the one
 ```
 
-Frame size and box size vary independently, so a comparison that reports only
+Frame size and box size vary separately, so a comparison that reports only
 "the ground shrank" cannot tell which of the two moved. Ground area is the
 frame's area less the box's, and both are declared here.
 

@@ -384,8 +384,6 @@ inapplicable
 including
 incompatibility
 increment
-independent
-independently
 index
 indexing
 indivisible
@@ -825,7 +823,6 @@ validates
 validation
 validity
 value
-variable
 verification
 verified
 visibility
