@@ -17,6 +17,7 @@ from __future__ import annotations
 import pathlib
 import subprocess
 import sys
+from tests.binary_input import binary_input
 from io import StringIO
 
 import pytest
@@ -38,7 +39,7 @@ def db(tmp_path):
 
 
 def _console(monkeypatch, material: str, argv: list[str]) -> None:
-    monkeypatch.setattr("sys.stdin", StringIO(material + "exit\n"))
+    monkeypatch.setattr("sys.stdin", binary_input(material))
     monkeypatch.setattr("sys.stdout", StringIO())
     assert process_entry.main(argv) == 0
 
@@ -122,14 +123,18 @@ def test_each_lifetime_holds_only_its_own_ingress(two_lifetimes):
 
     def material(locality_id):
         return [
-            event.payload["decoded_text"]
+            bytes.fromhex(
+                two_lifetimes.get(event.payload["raw_material_event_id"]).payload[
+                    "exact_bytes_hex"
+                ]
+            )
             for event in preserved_ingress_occurrences(
                 two_lifetimes, workspace_id="local", locality_id=locality_id
             )
         ]
 
-    assert material(first) == ["first exchange\n", "more material\n"]
-    assert material(second) == ["a later exchange\n"]
+    assert material(first) == [b"first exchange\n", b"more material\n"]
+    assert material(second) == [b"a later exchange\n"]
 
 
 def test_a_reopened_console_does_not_continue_the_prior_standing(two_lifetimes):
@@ -193,7 +198,7 @@ def test_the_in_memory_ledger_scopes_the_same_way():
             ledger=ledger,
             workspace_id="w",
             locality_id=locality_id,
-            input_stream=StringIO("material\nexit\n"),
+            input_stream=binary_input("material\n"),
             output_stream=StringIO(),
         )
     assert {e.locality_id for e in ledger.list_locality("w", "a")} == {"a"}
@@ -211,7 +216,7 @@ def test_a_caller_supplied_session_id_remains_exact():
         ledger=ledger,
         workspace_id="w",
         locality_id="chosen-by-the-caller",
-        input_stream=StringIO("material\nexit\n"),
+        input_stream=binary_input("material\n"),
         output_stream=StringIO(),
     )
     assert {event.locality_id for event in ledger.list("w")} == {
@@ -227,7 +232,7 @@ def test_a_caller_supplied_session_id_remains_exact():
 def _run_console_process(db: str, material: str) -> subprocess.CompletedProcess:
     return subprocess.run(
         [sys.executable, "-m", "seed_runtime.process_entry", "--db", db],
-        input=material + "exit\n",
+        input=material + "",
         capture_output=True,
         text=True,
         cwd=str(pathlib.Path(__file__).resolve().parent.parent),
@@ -258,7 +263,11 @@ def test_separate_processes_receive_separate_sessions(db):
         assert len(sessions) == 3
         held = [
             [
-                event.payload["decoded_text"]
+                bytes.fromhex(
+                    ledger.get(event.payload["raw_material_event_id"]).payload[
+                        "exact_bytes_hex"
+                    ]
+                )
                 for event in preserved_ingress_occurrences(
                     ledger, workspace_id="local", locality_id=session
                 )
@@ -266,9 +275,9 @@ def test_separate_processes_receive_separate_sessions(db):
             for session in sessions
         ]
         assert held == [
-            ["first process\n"],
-            ["second process\n"],
-            ["third process\n"],
+            [b"first process\n"],
+            [b"second process\n"],
+            [b"third process\n"],
         ]
     finally:
         ledger.close()

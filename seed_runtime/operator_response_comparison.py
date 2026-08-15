@@ -60,11 +60,10 @@ def run_operator_response_comparison_and_identification(
     then identify the corresponding represented alternative, as two distinct
     recorded results of one responsible occurrence.
 
-    The compared representation is the ingress occurrence's recorded content
-    dimension -- the strictly decoded text with the single trailing line
-    delimiter removed by the ingress boundary -- matched exactly against C's
-    recorded coordinates.  No further trimming, normalization, case folding,
-    or interpretation occurs here.
+    The compared representation is explicit text carried by the ingress
+    occurrence, with its single trailing line delimiter removed, matched
+    exactly against C's recorded coordinates. No conversion from the raw bytes
+    occurs here.
 
     Both subjects are supplied by the caller.  That supply is not an
     Applicability determination, and nothing here establishes that these two
@@ -179,7 +178,12 @@ def run_operator_response_comparison_and_identification(
         "capture and ingress belong to different attempts",
     )
 
-    compared_representation = ingress_event.payload["dimensions"]["content"]
+    represented_material = ingress_event.payload.get("represented_material")
+    _require(
+        isinstance(represented_material, str),
+        "ingress carries no explicit material representation",
+    )
+    compared_representation = represented_material.removesuffix("\n").removesuffix("\r")
     # C's exact response coordinates are the recorded alternatives' own
     # coordinates; the binding relation is input separately below, so a
     # recorded coordinate whose binding is absent stays distinguishable.

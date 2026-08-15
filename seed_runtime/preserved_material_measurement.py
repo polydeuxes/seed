@@ -631,14 +631,17 @@ def _measurable_text(event: Event) -> str:
             f"only preserved ingress occurrences may be measured: {event.kind}"
         )
     text = event.payload.get("text_representation")
+    represented = event.payload.get("represented_material")
+    if represented is None:
+        represented = event.payload.get("decoded_text")
     if text is None:
-        text = {"available": "decoded_text" in event.payload}
+        text = {"available": represented is not None}
     if not isinstance(text, dict) or not text.get("available"):
         raise PreservedMaterialMeasurementError(
             f"{event.id} preserves material with no available text "
             "representation, and this measurement measures text"
         )
-    if "decoded_text" not in event.payload:
+    if not isinstance(represented, str):
         # The occurrence says a text representation was formed and carries no
         # decoded text. That is incoherent material, and reading the coordinate
         # and trusting it would rest the finding on a Assertion about the material
@@ -659,7 +662,7 @@ def _measurable_text(event: Event) -> str:
             f"{event.id} declares an available text representation but "
             "preserves no decoded text"
         )
-    return event.payload["decoded_text"]
+    return represented
 
 
 def measure_recurrences(

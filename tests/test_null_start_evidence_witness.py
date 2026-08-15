@@ -16,6 +16,7 @@ Run it directly to look through the microscope:
 from __future__ import annotations
 
 import json
+from tests.binary_input import binary_input
 from io import StringIO
 
 import pytest
@@ -39,7 +40,6 @@ E2 = "learn proficient english language"
 E3 = "# Nouns\n\nA noun is a word.\n\n# Verbs\n\nA verb is a word."
 
 CAPTURED = "operator.material.raw_captured"
-DECODER_OUTCOME_RECORDED = "operator.material.decoder_outcome_recorded"
 OCCURRED = "operator.material.occurred"
 
 
@@ -50,7 +50,7 @@ def run_null_start() -> list:
         ledger=ledger,
         workspace_id="w",
         locality_id="s",
-        input_stream=StringIO("\n".join([E1, E2, E3]) + "\nexit\n"),
+        input_stream=binary_input("\n".join([E1, E2, E3]) + "\n"),
         output_stream=StringIO(),
     )
     return ledger.list()
@@ -77,10 +77,9 @@ def test_null_start_accumulates_occurrence_evidence(events):
     """From nothing, the console preserves a record for every operator line."""
     assert events, "a null start preserved no events at all"
     captured = [e for e in events if e.kind == CAPTURED]
-    decoder_outcomes = [e for e in events if e.kind == DECODER_OUTCOME_RECORDED]
     occurred = [e for e in events if e.kind == OCCURRED]
-    # One capture, one decoder outcome, one ingress occurrence per delivered line.
-    assert len(captured) == len(decoder_outcomes) == len(occurred)
+    # One raw capture and one ingress occurrence per delivered line.
+    assert len(captured) == len(occurred)
     assert len(captured) > 0
 
 
@@ -92,10 +91,12 @@ def test_exact_bytes_are_preserved_for_every_capture(events):
         bytes.fromhex(exact)  # round-trips as bytes, or this raises
 
 
-def test_decoded_representation_is_preserved_for_every_ingress(events):
-    """The second measurable substrate, distinct from the bytes."""
+def test_ingress_preserves_only_the_raw_capture_reference(events):
     for event in (e for e in events if e.kind == OCCURRED):
-        assert isinstance(event.payload.get("decoded_text"), str)
+        assert "decoded_text" not in event.payload
+        assert event.payload["provenance_occurrence_refs"] == [
+            event.payload["raw_material_event_id"]
+        ]
 
 
 def test_ingress_asserts_only_occurrence_and_records_represented_relation_unknown(events):
@@ -112,31 +113,24 @@ def test_capture_asserts_only_occurrence_evidence(events):
         assert event.payload["dimensions"]["evidence_scope"] == "occurrence Evidence only"
 
 
-def test_decoder_outcome_asserts_only_decoder_outcome(events):
-    for event in (e for e in events if e.kind == DECODER_OUTCOME_RECORDED):
-        assert event.payload["dimensions"]["authority"] == "unestablished"
-        assert (
-            event.payload["dimensions"]["evidence_scope"]
-            == "decoder outcome Evidence only"
-        )
-
-
 def test_console_ingress_is_line_bounded_not_document_bounded(events):
     """E3 arrives as several occurrences, not one.
 
     This is a finding about the current ingress boundary, recorded here because it
     is not obvious and it bounds what any later measurement may range over.  A
     multi-line corpus does not enter as a single preserved material; each line
-    is its own capture, decoder outcome, and ingress occurrence.
+    is its own raw capture and ingress occurrence.
     """
-    decoded = [
-        e.payload["decoded_text"] for e in events if e.kind == OCCURRED
+    exact = [
+        bytes.fromhex(e.payload["exact_bytes_hex"])
+        for e in events
+        if e.kind == CAPTURED
     ]
-    assert decoded[0] == E1 + "\n"
-    assert decoded[1] == E2 + "\n"
+    assert exact[0] == (E1 + "\n").encode()
+    assert exact[1] == (E2 + "\n").encode()
     # E3 is not present as a single preserved representation.
-    assert E3 + "\n" not in decoded
-    assert len(decoded) == 2 + len(E3.split("\n"))
+    assert (E3 + "\n").encode() not in exact
+    assert len(exact) == 2 + len(E3.split("\n"))
 
 
 def test_null_start_does_not_activate_the_dormant_result_chain(events):

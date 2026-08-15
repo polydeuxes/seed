@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+from tests.binary_input import binary_input
 from io import StringIO
 
 from seed_runtime.events import SQLiteEventLedger, _payload_references
@@ -15,7 +16,7 @@ def _road(tmp_path):
         ledger=ledger,
         workspace_id="w",
         locality_id="s1",
-        input_stream=StringIO("the cat sat\nthe cat ran\nexit\n"),
+        input_stream=binary_input("the cat sat\nthe cat ran\n"),
         output_stream=StringIO(),
     )
     return ledger

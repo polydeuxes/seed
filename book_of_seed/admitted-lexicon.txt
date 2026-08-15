@@ -1,4 +1,8 @@
-# Admitted lexicon -- every word active law may carry.
+# Book admitted lexicon -- every word active law may carry.
+# Rosetta lexicon: ../rosetta/admitted-lexicon.txt
+#
+# This file alone governs Book proper. The Rosetta reference does not import
+# Rosetta admission into active law.
 #
 # A word absent from this file is refused.
 # A word the banned list refuses appears here only with a reason on its line.

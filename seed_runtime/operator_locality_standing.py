@@ -34,7 +34,6 @@ _SOURCE_VALIDATED_KIND = "operator.representation.source_validated"
 _REPRESENTED_RELATION_KIND = "operator.representation.represented_relation_established"
 _SUPPORTED_KINDS = {
     *_SUBJECT_BY_KIND,
-    "operator.material.decoder_outcome_recorded",
     _REPRESENTATION_RECORDED_KIND,
     _REPRESENTATION_ACT_EVIDENCE_KIND,
     _REPRESENTATION_LOCALITY_EVIDENCE_KIND,
@@ -336,7 +335,13 @@ def advance_operator_locality_standing(
             # The ingress records no Representation reference, so no check
             # here establishes that this Representation and this ingress
             # belong to one act.  That relation is unestablished.
-            expected_representation = preserved_response["content"]
+            expected_representation = preserved_response.get(
+                "represented_material", preserved_response["content"]
+            )
+            if "represented_material" in preserved_response:
+                expected_representation = expected_representation.removesuffix(
+                    "\n"
+                ).removesuffix("\r")
             expected_coordinate_set = sorted(
                 alternative["response_coordinate"]
                 for alternative in representation["alternatives"]
@@ -866,6 +871,10 @@ def advance_operator_locality_standing(
                 "raw_material_event_id": event.payload["raw_material_event_id"],
                 "content": event.payload["dimensions"]["content"],
             }
+            if isinstance(event.payload.get("represented_material"), str):
+                occurrence["represented_material"] = event.payload[
+                    "represented_material"
+                ]
             attempt["preserved_ingress"] = occurrence
             preserved_ingress_occurrences.append(occurrence)
         elif event.kind == "operator.material.stopping_occurred":

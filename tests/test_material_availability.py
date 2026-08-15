@@ -39,7 +39,7 @@ def _record(ledger, holder, identity, **changes):
         holder=holder,
         identity=identity,
         material_origin="operator",
-        observed_boundary="stdin, one frame",
+        occurrence_boundary="stdin, one frame",
     )
     fields.update(changes)
     return record_transient_material(ledger, **fields)
@@ -242,7 +242,7 @@ def test_every_refusal_can_be_reached(tmp_path):
         with pytest.raises(MaterialAvailabilityError, match="incomplete"):
             MaterialIdentity.from_json_dict(partial)
 
-    for name in ("material_origin", "observed_boundary", "locality_id"):
+    for name in ("material_origin", "occurrence_boundary", "locality_id"):
         for value in ("", "   ", None, 1, []):
             with pytest.raises(MaterialAvailabilityError, match=name):
                 _record(ledger, holder, identity, **{name: value})
@@ -292,7 +292,7 @@ def test_it_works_the_same_against_a_durable_ledger(tmp_path):
 
 
 def test_recording_requires_the_holder_that_holds_it():
-    """A permanent record must not assert what the function cannot observe.
+    """A permanent record must not assert what the function cannot establish.
 
     Taking only an identity let a caller record that material was held
     process-locally when nothing had ever held it. `record_transient_material`
@@ -341,7 +341,7 @@ def test_the_occurrence_asserts_nothing_about_any_other_source(tmp_path):
     source = tmp_path / "source.bin"
     source.write_bytes(MATERIAL)
     identity = holder.hold(source.read_bytes())
-    event = _record(ledger, holder, identity, observed_boundary=f"file read {source}")
+    event = _record(ledger, holder, identity, occurrence_boundary=f"file read {source}")
     assert source.exists()
 
     flat = str(event.payload)

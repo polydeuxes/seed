@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from io import StringIO
+from io import BytesIO, StringIO
 from pathlib import Path
 import subprocess
 import sys
@@ -42,7 +42,7 @@ def test_importing_the_live_entry_does_not_wake_dormant_modules():
 
 def test_live_entry_accepts_only_console_coordinates(monkeypatch, tmp_path):
     database = tmp_path / "seed.db"
-    monkeypatch.setattr("sys.stdin", StringIO("material\nexit\n"))
+    monkeypatch.setattr("sys.stdin", BytesIO(b"material\n"))
     monkeypatch.setattr("sys.stdout", StringIO())
 
     assert process_entry.main(["--db", str(database), "--workspace", "w"]) == 0
@@ -64,7 +64,7 @@ def test_reopened_live_process_allocates_a_new_session(tmp_path):
         str(database),
     ]
 
-    for material in ("first\nexit\n", "second\nexit\n"):
+    for material in ("first\n", "second\n"):
         result = subprocess.run(
             command,
             input=material,

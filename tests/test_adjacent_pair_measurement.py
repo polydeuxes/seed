@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 from dataclasses import replace
+from tests.binary_input import binary_input
 from io import StringIO
 
 import pytest
@@ -43,7 +44,7 @@ from seed_runtime.preserved_material_measurement import (
     preserved_ingress_occurrences,
     record_measurement_finding,
 )
-from seed_runtime.operator_console import run_persistent_operator_console
+from tests.material_fixture_console import run_material_fixture_console
 from seed_runtime.operator_representation import (
     emit_operator_representation,
     record_operator_representation,
@@ -74,11 +75,11 @@ def _after_left(text):
 @pytest.fixture
 def session():
     ledger = EventLedger()
-    run_persistent_operator_console(
+    run_material_fixture_console(
         ledger=ledger,
         workspace_id="w",
         locality_id="s",
-        input_stream=StringIO(MATERIAL + "exit\n"),
+        input_stream=binary_input(MATERIAL + ""),
         output_stream=StringIO(),
     )
     return ledger
@@ -850,7 +851,7 @@ def test_representations_are_enumerated_from_the_material(occurrences):
     offered = {
         token
         for event in occurrences
-        for token in event.payload["decoded_text"].split()
+        for token in event.payload["represented_material"].split()
     }
     assert set(representations) == offered
     assert representations == sorted(representations)
@@ -862,7 +863,7 @@ def test_comparability_restricts_representations_without_judging_them(occurrence
     restricted = enumerate_representations(occurrences, present_in=scopes)
     everywhere = set.intersection(
         *[
-            {t for e in scope for t in e.payload["decoded_text"].split()}
+            {t for e in scope for t in e.payload["represented_material"].split()}
             for scope in scopes
         ]
     )
@@ -908,9 +909,9 @@ def test_displacements_are_enumerated_from_the_material(occurrences):
     assert reachable == sorted(reachable)
     assert min(reachable) == 1
     longest = max(
-        len(e.payload["decoded_text"].split())
+        len(e.payload["represented_material"].split())
         for e in occurrences
-        if "it" in e.payload["decoded_text"].split()
+        if "it" in e.payload["represented_material"].split()
     )
     assert max(reachable) < longest
 
@@ -918,11 +919,11 @@ def test_displacements_are_enumerated_from_the_material(occurrences):
 def test_a_displacement_absent_from_the_material_is_simply_absent(session):
     """Absent because nothing reaches it, not because it was judged dull."""
     ledger = EventLedger()
-    run_persistent_operator_console(
+    run_material_fixture_console(
         ledger=ledger,
         workspace_id="w",
         locality_id="s",
-        input_stream=StringIO("alpha beta\nexit\n"),
+        input_stream=binary_input("alpha beta\n"),
         output_stream=StringIO(),
     )
     occurrences = preserved_ingress_occurrences(

@@ -1,3 +1,4 @@
+from tests.binary_input import binary_input
 from io import StringIO
 
 import pytest
@@ -15,7 +16,7 @@ from seed_runtime.operator_response_comparison import (
 )
 from seed_runtime.operator_locality_standing import read_operator_locality_standing
 from tests.closed_choice_fixture import CLOSED_CHOICE_FIXTURE_SOURCES
-from seed_runtime.operator_console import run_persistent_operator_console
+from tests.material_fixture_console import run_material_fixture_console
 
 
 def _standing(ledger, *, workspace="w", session="s"):
@@ -42,8 +43,8 @@ def _capture_after(ledger, representation, text, *, workspace="w", session="s"):
         ledger=ledger,
         workspace_id=workspace,
         locality_id=session,
-        captured_ingress=capture_stdin_material(StringIO(text)),
-        output_stream=StringIO(),
+        captured_ingress=capture_stdin_material(binary_input(text)),
+        supplied_material_representation=text,
     )
     return attempt_standing["current_standing"]["preserved_ingress"]["evidence_event_id"]
 
@@ -365,7 +366,6 @@ def test_no_synthetic_developer_source_evidence_event_is_created():
     kinds = {event.kind for event in ledger.list("w")}
     assert kinds == {
         "operator.material.raw_captured",
-        "operator.material.decoder_outcome_recorded",
         "operator.material.occurred",
         "operator.representation.recorded",
         "operator.representation.act_evidenced",
@@ -437,11 +437,11 @@ def test_exit_boundary_is_explicit_and_unambiguous():
     # `exit` escapes before ingress recording, after the ordinary C0 path.
     ledger = EventLedger()
     output = StringIO()
-    run_persistent_operator_console(
+    run_material_fixture_console(
         ledger=ledger,
         workspace_id="w",
         locality_id="s",
-        input_stream=StringIO("exit\n"),
+        input_stream=binary_input(""),
         output_stream=output,
     )
     assert [event.kind for event in ledger.list("w")] == [

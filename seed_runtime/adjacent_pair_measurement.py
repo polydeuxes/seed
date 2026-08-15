@@ -380,7 +380,9 @@ def _observe_adjacent_pair_observations(
     observations: list[AdjacentPairObservation] = []
     for source in occurrences:
         if source.kind == INGRESS_OCCURRED_KIND:
-            text = source.payload.get("decoded_text")
+            text = source.payload.get(
+                "represented_material", source.payload.get("decoded_text")
+            )
         elif source.kind == REPRESENTATION_EMITTED_KIND:
             text = source.payload.get("emitted_representation")
         elif source.kind == SYSTEM_MATERIAL_OCCURRED_KIND:
@@ -1233,7 +1235,13 @@ def get_recorded_adjacent_pair_observations(
             )
         for source_id in source_ids:
             source = ledger.get(source_id)
-            text = source.payload.get("decoded_text") if source is not None else None
+            text = (
+                source.payload.get(
+                    "represented_material", source.payload.get("decoded_text")
+                )
+                if source is not None
+                else None
+            )
             if (
                 source is None
                 or source.kind != INGRESS_OCCURRED_KIND
@@ -1618,13 +1626,17 @@ def enumerate_representations(
         seen = {
             token
             for event in scope
-            for token in _positions(event.payload["decoded_text"])
+            for token in _positions(
+                event.payload.get("represented_material", event.payload.get("decoded_text"))
+            )
         }
         everywhere = seen if everywhere is None else (everywhere & seen)
     offered = {
         token
         for event in material
-        for token in _positions(event.payload["decoded_text"])
+        for token in _positions(
+            event.payload.get("represented_material", event.payload.get("decoded_text"))
+        )
     }
     if everywhere is not None:
         offered &= everywhere
@@ -1653,7 +1665,9 @@ def enumerate_displacements(
         )
     reachable: set[int] = set()
     for event in occurrences:
-        parts = _positions(event.payload["decoded_text"])
+        parts = _positions(
+            event.payload.get("represented_material", event.payload.get("decoded_text"))
+        )
         for index, part in enumerate(parts):
             if part != representation:
                 continue

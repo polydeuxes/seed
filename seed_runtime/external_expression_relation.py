@@ -147,7 +147,7 @@ def _source_material(event: Event) -> dict[str, object]:
         raise ExternalExpressionRelationError(
             "an external-expression relation requires one operator-origin ingress occurrence"
         )
-    text = event.payload.get("decoded_text")
+    text = event.payload.get("represented_material", event.payload.get("decoded_text"))
     if not isinstance(text, str):
         raise ExternalExpressionRelationError(
             "the source occurrence carries no exact decoded material"

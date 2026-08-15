@@ -22,13 +22,13 @@ co-presence, and a finding reports co-presence.
 from __future__ import annotations
 
 import re
+from tests.binary_input import binary_input
 from io import BytesIO, StringIO
 
 from seed_runtime.event import Event
 from seed_runtime.operator_ingress import run_operator_ingress_attempt
 from seed_runtime.operator_ingress_representation import capture_stdin_material
 from seed_runtime.preserved_material_measurement import INGRESS_OCCURRED_KIND
-from io import StringIO
 
 import pytest
 
@@ -50,7 +50,7 @@ from seed_runtime.preserved_material_measurement import (
     record_measurement_finding,
 )
 from seed_runtime.yield_evidence import YIELD_EVIDENCE_KIND
-from seed_runtime.operator_console import run_persistent_operator_console
+from tests.material_fixture_console import run_material_fixture_console
 from seed_runtime.support_basis import (
     SupportBasisError,
     SupportValidator,
@@ -92,11 +92,11 @@ def _declared(**overrides):
 @pytest.fixture
 def session():
     ledger = EventLedger()
-    run_persistent_operator_console(
+    run_material_fixture_console(
         ledger=ledger,
         workspace_id="w",
         locality_id="s",
-        input_stream=StringIO(MATERIAL + "exit\n"),
+        input_stream=binary_input(MATERIAL + ""),
         output_stream=StringIO(),
     )
     return ledger
@@ -293,7 +293,7 @@ def test_the_finding_disclaims_what_a_dominant_occupant_is_not(session, occurren
 def test_recording_a_finding_does_not_disturb_the_measured_occurrences(
     session, occurrences
 ):
-    before = [(e.id, e.payload["decoded_text"]) for e in occurrences]
+    before = [(e.id, e.payload["represented_material"]) for e in occurrences]
     record_measurement_finding(
         session,
         workspace_id="w",
@@ -303,7 +303,7 @@ def test_recording_a_finding_does_not_disturb_the_measured_occurrences(
         ),
     )
     after = preserved_ingress_occurrences(session, workspace_id="w", locality_id="s")
-    assert [(e.id, e.payload["decoded_text"]) for e in after] == before
+    assert [(e.id, e.payload["represented_material"]) for e in after] == before
 
 
 def test_material_without_a_text_representation_is_refused_not_skipped():
@@ -323,21 +323,14 @@ def test_material_without_a_text_representation_is_refused_not_skipped():
             workspace_id="w",
             locality_id="s",
             captured_ingress=capture_stdin_material(BytesIO(material)),
-            output_stream=sink,
         )
     occurrences = preserved_ingress_occurrences(ledger, workspace_id="w", locality_id="s")
 
     # All three occurred, and each says whose material it is.
     assert len(occurrences) == 3
     assert {event.payload["material_origin"] for event in occurrences} == {"operator"}
-    available = [
-        event.payload["text_representation"]["available"] for event in occurrences
-    ]
-    assert available == [True, False, True]
-    unrepresented = occurrences[1].payload
-    assert "decoded_text" not in unrepresented
-    assert unrepresented["byte_count"] == len(b"\xff\xfe\x00binary\n")
-    assert unrepresented["text_representation"]["decoder_outcome"] == "bytes_rejected"
+    assert all("text_representation" not in event.payload for event in occurrences)
+    assert occurrences[1].payload["byte_count"] == len(b"\xff\xfe\x00binary\n")
 
     declared = DeclaredMeasurement(
         representation_measured="anything",
@@ -347,12 +340,8 @@ def test_material_without_a_text_representation_is_refused_not_skipped():
     with pytest.raises(PreservedMaterialMeasurementError, match="no available text"):
         measure_occupancy(occurrences, declared=declared, occupant_of=lambda text: None)
 
-    # The two that do carry one remain measurable together.
-    text_only = [occurrences[0], occurrences[2]]
-    finding = measure_occupancy(
-        text_only, declared=declared, occupant_of=lambda text: text.split()[0]
-    )
-    assert finding.positions_measured == 2
+    # Supplying text is a separate fixture boundary, not a property inferred
+    # for either byte occurrence.
 
 
 def test_an_occurrence_predating_the_coordinate_stays_measurable():
@@ -411,11 +400,11 @@ RECURRENCE_MATERIAL = (
 
 def _recurrence_ledger():
     ledger = EventLedger()
-    run_persistent_operator_console(
+    run_material_fixture_console(
         ledger=ledger,
         workspace_id="w",
         locality_id="r",
-        input_stream=StringIO(RECURRENCE_MATERIAL + "exit\n"),
+        input_stream=binary_input(RECURRENCE_MATERIAL + ""),
         output_stream=StringIO(),
     )
     return ledger

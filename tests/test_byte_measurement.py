@@ -1,3 +1,4 @@
+from tests.binary_input import binary_input
 from io import StringIO
 import hashlib
 import json
@@ -42,7 +43,7 @@ def _ledger(text="猫\n狗\n"):
         ledger=ledger,
         workspace_id="w",
         locality_id="source",
-        input_stream=StringIO(text + "exit\n"),
+        input_stream=binary_input(text + ""),
         output_stream=StringIO(),
     )
     return ledger

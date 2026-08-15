@@ -14,6 +14,7 @@ cross-body conclusion the whole arc has been avoiding.
 
 from __future__ import annotations
 
+from tests.binary_input import binary_input
 from io import StringIO
 
 import pytest
@@ -31,7 +32,7 @@ from seed_runtime.preserved_material_measurement import (
     preserved_ingress_occurrences,
     record_measurement_finding,
 )
-from seed_runtime.operator_console import run_persistent_operator_console
+from tests.material_fixture_console import run_material_fixture_console
 
 BODIES = {
     "s1": "a noun is a word\nand a verb is a word\n",
@@ -44,9 +45,9 @@ SCOPE = "one bounded exchange"
 def ledger():
     led = EventLedger()
     for locality_id, material in BODIES.items():
-        run_persistent_operator_console(
+        run_material_fixture_console(
             ledger=led, workspace_id="w", locality_id=locality_id,
-            input_stream=StringIO(material + "exit\n"), output_stream=StringIO())
+            input_stream=binary_input(material + ""), output_stream=StringIO())
     return led
 
 

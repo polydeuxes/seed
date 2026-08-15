@@ -453,7 +453,7 @@ class SQLiteEventLedger(EventLedger):
         "operator_representation", "operator_representation_act",
         "operator_representation_act_occurrence", "operator_representation_emission_act",
         "operator_representation_emission_occurrence", "operator_ingress_attempt",
-        "operator_material",
+        "operator_material", "operator_command", "checkpoint_locality",
         "session", "system_invocation", "system_invocation_occurrence",
         "system_material", "transient_material",
         "operator_response_comparison", "operator_alternative_identification",

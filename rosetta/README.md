@@ -94,7 +94,13 @@ to four current terms and to no single one of them.
 
 - [Responsibility spine](roots.md)
 - [Retired vocabulary](retired-vocabulary.md)
-- [Rosetta lexicon](admitted-lexicon.txt)
+- [Rosetta admitted lexicon](admitted-lexicon.txt)
+- [Book admitted lexicon](../book_of_seed/admitted-lexicon.txt)
+
+Rosetta keeps the translation lexicon. The Book keeps its own narrower file
+and points here without importing Rosetta admission into active law. In
+particular, Rosetta admits the `warrant` word family while Book proper admits
+only the singular ordinary verb in Seed's Standing declaration.
 
 The Book's Responsibility spine supplies the ordering. Rosetta words hang
 from the exact coordinates they translate, or record a word that named nothing

@@ -1,7 +1,8 @@
 import ast
 import json
 import re
-from io import StringIO
+from tests.binary_input import binary_input
+from io import BytesIO, StringIO
 from pathlib import Path
 
 from seed_runtime.byte_measurement import (
@@ -22,6 +23,11 @@ from seed_runtime.adjacent_pair_measurement import (
 from seed_runtime.events import CORRUPTED, EventLedger
 from seed_runtime.external_expression_relation import record_external_expression_relation
 from seed_runtime.operator_console import run_persistent_operator_console
+from seed_runtime.operator_command import (
+    COMMAND_ADDRESSED_KIND,
+)
+from seed_runtime.operator_checkpoint import CHECKPOINT_LOCALITY_EVIDENCE_KIND
+from tests.material_fixture_console import run_material_fixture_console
 from seed_runtime.operator_representation import (
     REPRESENTATION_EMISSION_INPUT_ROLE,
     emit_operator_representation,
@@ -184,7 +190,7 @@ def _byte_measurement_road() -> dict:
         ledger=ledger,
         workspace_id="w",
         locality_id="source",
-        input_stream=StringIO("ta\nexit\n"),
+        input_stream=binary_input("ta\n"),
         output_stream=StringIO(),
     )
     measurement = record_byte_count_layer(
@@ -215,7 +221,7 @@ def _recorded_applicability() -> dict:
         ledger=ledger,
         workspace_id="w",
         locality_id="source",
-        input_stream=StringIO("ta\nexit\n"),
+        input_stream=binary_input("ta\n"),
         output_stream=StringIO(),
     )
     byte_measurement = record_byte_count_layer(
@@ -392,11 +398,11 @@ def _repeated_representation_road() -> tuple[dict, dict]:
 
 def _assertion_compare_input_locality_roads() -> tuple[dict, dict]:
     ledger = _IntegrityAdversaryLedger()
-    run_persistent_operator_console(
+    run_material_fixture_console(
         ledger=ledger,
         workspace_id="w",
         locality_id="assertion-compare-source",
-        input_stream=StringIO("a word\nexit\n"),
+        input_stream=binary_input("a word\n"),
         output_stream=StringIO(),
     )
     sources = preserved_ingress_occurrences(
@@ -517,6 +523,92 @@ def _assertion_compare_input_locality_cases() -> dict[str, str]:
             if all(_assertion_compare_input_locality_requirements(bundle).values())
             else MISSING
         )
+
+    return {
+        "exact": witness(exact),
+        "edge_missing": witness(missing),
+        "wrong_occurrence": witness(wrong_occurrence),
+        "corrupted_evidence": witness(corrupted),
+        "unrelated_change": witness(unrelated),
+    }
+
+
+def _checkpoint_locality_roads() -> tuple[dict, dict]:
+    ledger = _IntegrityAdversaryLedger()
+
+    def record(locality_id: str) -> dict:
+        run_persistent_operator_console(
+            ledger=ledger,
+            workspace_id="w",
+            locality_id=locality_id,
+            input_stream=BytesIO(b"/checkpoint material\n"),
+            output_stream=StringIO(),
+        )
+        evidence = next(
+            event
+            for event in reversed(ledger.list("w"))
+            if event.kind == CHECKPOINT_LOCALITY_EVIDENCE_KIND
+        )
+        addressed = ledger.get(evidence.payload["addressed_event_id"])
+        checkpoint = ledger.get(evidence.payload["checkpoint_event_id"])
+        return {
+            "ledger": ledger,
+            "carrier": evidence,
+            "addressed": addressed,
+            "checkpoint": checkpoint,
+        }
+
+    return record("checkpoint-road-one"), record("checkpoint-road-two")
+
+
+def _checkpoint_locality_requirements(bundle: dict) -> dict[str, bool]:
+    carrier = bundle["carrier"]
+    addressed = bundle["addressed"]
+    checkpoint = bundle["checkpoint"]
+    if addressed is None or checkpoint is None:
+        return {
+            "exact_relation": False,
+            "occurrence_witness": False,
+            "intact_evidence": False,
+        }
+    exact_relation = (
+        carrier.payload.get("first_subject") == addressed.payload.get("command_id")
+        and carrier.payload.get("second_subject") == checkpoint.id
+    )
+    occurrence_witness = (
+        carrier.payload.get("addressed_event_id") == addressed.id
+        and carrier.payload.get("checkpoint_event_id") == checkpoint.id
+        and addressed.payload.get("addressed_at_representation_event_id")
+        == checkpoint.id
+        and checkpoint.kind == "operator.representation.recorded"
+        and addressed.locality_id == checkpoint.locality_id
+        and carrier.locality_id != checkpoint.locality_id
+    )
+    return {
+        "exact_relation": exact_relation,
+        "occurrence_witness": occurrence_witness,
+        "intact_evidence": all(
+            bundle["ledger"].integrity_of(event.id) != CORRUPTED
+            for event in (carrier, addressed, checkpoint)
+        ),
+    }
+
+
+def _checkpoint_locality_cases() -> dict[str, str]:
+    exact, alternate = _checkpoint_locality_roads()
+    missing = dict(exact)
+    missing["carrier"] = exact["carrier"].model_copy(deep=True)
+    missing["carrier"].payload["second_subject"] = "missing-checkpoint"
+    wrong_occurrence = dict(exact)
+    wrong_occurrence["checkpoint"] = alternate["checkpoint"]
+    corrupted, _ = _checkpoint_locality_roads()
+    corrupted["ledger"].mark_corrupted(corrupted["carrier"].id)
+    unrelated = dict(exact)
+    unrelated["addressed"] = exact["addressed"].model_copy(deep=True)
+    unrelated["addressed"].payload["argument_bytes_hex"] = "00"
+
+    def witness(bundle: dict) -> str:
+        return EXACT if all(_checkpoint_locality_requirements(bundle).values()) else MISSING
 
     return {
         "exact": witness(exact),
@@ -1607,6 +1699,9 @@ def _live_structural_edge_fidelity_cases() -> dict[
     registered[("locality", "assertion_compare_input")] = (
         _assertion_compare_input_locality_cases()
     )
+    registered[("locality", "operator_checkpoint")] = (
+        _checkpoint_locality_cases()
+    )
     registered.update(
         {
             ("yield", boundary): {
@@ -2515,7 +2610,7 @@ def test_asserted_content_identity_includes_scope_but_not_locality():
             ledger=ledger,
             workspace_id="w",
             locality_id=locality_id,
-            input_stream=StringIO("t\nexit\n"),
+            input_stream=binary_input("t\n"),
             output_stream=StringIO(),
         )
 
@@ -2997,6 +3092,7 @@ LOCALITY_BOUNDARY_BY_KIND = {
     "operator.external_expression.relation_locality_evidenced": (
         "external_expression_relation"
     ),
+    "operator.checkpoint.locality_evidenced": "operator_checkpoint",
     "operator.measurement.adjacent_pair_observation_locality_evidenced": (
         "adjacent_pair_observation"
     ),
@@ -3101,6 +3197,10 @@ def test_no_new_site_compounds_scope_with_locality():
 # or a dedicated one. grammar.json requires exact_relation, occurrence_witness,
 # and intact_evidence, and names no species for them.
 STRUCTURAL_EDGE_EVIDENCE = {
+    "_checkpoint_locality_requirements": (
+        "locality",
+        "a command-to-checkpoint locality-evidence occurrence",
+    ),
     "_assertion_compare_input_locality_requirements": (
         "locality",
         "an Assertion-to-Compare locality-evidence occurrence",

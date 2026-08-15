@@ -19,6 +19,7 @@ These tests pin the removal and the boundary that remains.
 
 from __future__ import annotations
 
+from tests.binary_input import binary_input
 from io import StringIO
 
 import pytest
@@ -43,7 +44,7 @@ def _console(material):
         ledger=ledger,
         workspace_id="w",
         locality_id="s",
-        input_stream=StringIO(material),
+        input_stream=binary_input(material),
         output_stream=output,
     )
     return ledger, output.getvalue()
@@ -55,7 +56,7 @@ def _standing(ledger):
 
 @pytest.fixture(scope="module")
 def session():
-    return _console("alpha\n\nünïcode\ndef f(x):\nexit\n")
+    return _console("alpha\n\nünïcode\ndef f(x):\n")
 
 
 # --------------------------------------------------------------------------
@@ -79,7 +80,7 @@ def test_recorded_payload_size_does_not_grow_with_session_length():
     """The defect being removed: each representation Act carried every prior event id."""
     sizes = []
     for lines in (5, 10, 20):
-        ledger, _ = _console("material\n" * lines + "exit\n")
+        ledger, _ = _console("material\n" * lines + "")
         representation_events = [e for e in ledger.list("w") if e.kind == RECORDED]
         sizes.append(len(str(representation_events[-1].payload)) - len(str(representation_events[0].payload)))
     # Payload size differs between first and last representation Act only by the

@@ -38,6 +38,7 @@ Run standalone to inspect the reference lists:
 from __future__ import annotations
 
 import json
+from tests.binary_input import binary_input
 from io import StringIO
 
 import pytest
@@ -66,7 +67,7 @@ def ledger() -> EventLedger:
         ledger=led,
         workspace_id="w",
         locality_id="s",
-        input_stream=StringIO("first\nsecond\nthird\nexit\n"),
+        input_stream=binary_input("first\nsecond\nthird\n"),
         output_stream=StringIO(),
     )
     return led
@@ -159,7 +160,6 @@ def test_no_act_condition_change_is_claimed_here(ledger):
         "operator.yield.evidence_recorded",
         "operator.representation.emitted",
         "operator.material.raw_captured",
-        "operator.material.decoder_outcome_recorded",
         "operator.material.occurred",
     }
 
@@ -170,7 +170,7 @@ def render_evidence_growth() -> str:
         ledger=led,
         workspace_id="w",
         locality_id="s",
-        input_stream=StringIO("first\nsecond\nthird\nexit\n"),
+        input_stream=binary_input("first\nsecond\nthird\n"),
         output_stream=StringIO(),
     )
     lines = ["representation Act -> the occurrence its Standing was taken through", ""]

@@ -13,6 +13,7 @@ travels with it, and the counting scope says exactly what was input.
 from __future__ import annotations
 
 from dataclasses import replace
+from tests.binary_input import binary_input
 from io import StringIO
 
 import pytest
@@ -50,7 +51,7 @@ from seed_runtime.recurrence_measurement import (
     record_measured_count,
     render_measured_count,
 )
-from seed_runtime.operator_console import run_persistent_operator_console
+from tests.material_fixture_console import run_material_fixture_console
 
 DECLARED = ("s1", "s2", "s3", "s4")   # a bounded exchange is the recorded session
 
@@ -77,9 +78,9 @@ def _compare_all(ledger, findings):
 def compared():
     ledger = EventLedger()
     for locality_id, material in EXCHANGES.items():
-        run_persistent_operator_console(
+        run_material_fixture_console(
             ledger=ledger, workspace_id="w", locality_id=locality_id,
-            input_stream=StringIO(material + "exit\n"), output_stream=StringIO())
+            input_stream=binary_input(material + ""), output_stream=StringIO())
     findings = {}
     for locality_id in EXCHANGES:
         occ = preserved_ingress_occurrences(
@@ -832,9 +833,9 @@ def test_scope_and_rule_are_part_of_assertion_identity(compared):
 
 def test_material_beside_the_act_is_not_a_measurement_input():
     ledger = EventLedger()
-    run_persistent_operator_console(
+    run_material_fixture_console(
         ledger=ledger, workspace_id="w", locality_id="s",
-        input_stream=StringIO("a word\nexit\n"), output_stream=StringIO())
+        input_stream=binary_input("a word\n"), output_stream=StringIO())
     with pytest.raises(RecurrenceMeasurementError, match="not a measured input"):
         measure_exchange_counts(
             ledger, workspace_id="w",
@@ -1069,9 +1070,9 @@ def test_recurrence_is_established_only_above_one(compared):
 
 def _add_s5(ledger):
     """An exchange that measures a different coordinate entirely."""
-    run_persistent_operator_console(
+    run_material_fixture_console(
         ledger=ledger, workspace_id="w", locality_id="s5",
-        input_stream=StringIO("nothing relevant here\nexit\n"),
+        input_stream=binary_input("nothing relevant here\n"),
         output_stream=StringIO())
     occ = preserved_ingress_occurrences(ledger, workspace_id="w", locality_id="s5")
     return record_measurement_finding(
@@ -1213,9 +1214,9 @@ def test_durable_validation_does_not_read_the_whole_workspace(tmp_path):
     ledger = SQLiteEventLedger(str(tmp_path / "seed.db"))
     try:
         for locality_id, material in EXCHANGES.items():
-            run_persistent_operator_console(
+            run_material_fixture_console(
                 ledger=ledger, workspace_id="w", locality_id=locality_id,
-                input_stream=StringIO(material + "exit\n"),
+                input_stream=binary_input(material + ""),
                 output_stream=StringIO())
         findings = {}
         for locality_id in EXCHANGES:
@@ -1362,9 +1363,9 @@ def test_a_durable_yielding_occurrence_is_identifiable_and_verifies(tmp_path):
     ledger = SQLiteEventLedger(path)
     try:
         for locality_id, material in EXCHANGES.items():
-            run_persistent_operator_console(
+            run_material_fixture_console(
                 ledger=ledger, workspace_id="w", locality_id=locality_id,
-                input_stream=StringIO(material + "exit\n"),
+                input_stream=binary_input(material + ""),
                 output_stream=StringIO())
         findings = {}
         for locality_id in EXCHANGES:

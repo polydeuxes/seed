@@ -1,4 +1,5 @@
 from copy import deepcopy
+from tests.binary_input import binary_input
 from io import StringIO
 
 from seed_runtime.events import EventLedger
@@ -13,8 +14,7 @@ def _attempt(ledger, text, *, workspace="w", session="s", locality_standing=None
         ledger=ledger,
         workspace_id=workspace,
         locality_id=session,
-        captured_ingress=capture_stdin_material(StringIO(text)),
-        output_stream=StringIO(),
+        captured_ingress=capture_stdin_material(binary_input(text)),
         locality_standing=locality_standing,
     )
 
@@ -89,7 +89,7 @@ def test_unknown_conflict_and_absence_remain_distinct():
     standing = _standing(ledger)
 
     # Unknowns are only what session events positively carry.
-    assert standing["unknowns"] == ["true source-relative encoding Unknown"]
+    assert standing["unknowns"] == ["what these bytes represent remains Unknown"]
     # No session event records a conflict or a relation standing; both stay
     # empty rather than being promoted to Unknown or to a negative Assertion.
     assert standing["conflicts"] == []
@@ -106,7 +106,7 @@ def test_one_attempt_behavior_unchanged_without_earlier_session_history():
 
     # The console passes Standing containing C0 to the first interaction,
     # and its interaction output is a bounded Representation, not the Representation.
-    input_stream = StringIO("solo material\nexit\n")
+    input_stream = binary_input("solo material\n")
     output_stream = StringIO()
     console_ledger = EventLedger()
     run_persistent_operator_console(
@@ -122,7 +122,7 @@ def test_one_attempt_behavior_unchanged_without_earlier_session_history():
 
 
 def test_console_supplies_prior_locality_standing_to_later_interactions():
-    input_stream = StringIO("first material\nsecond material\nexit\n")
+    input_stream = binary_input("first material\nsecond material\n")
     output_stream = StringIO()
     ledger = EventLedger()
 

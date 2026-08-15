@@ -17,6 +17,8 @@ import sqlite3
 
 import pytest
 
+from tests.binary_input import binary_input
+
 from seed_runtime.event import Event
 from seed_runtime.bounded_assertion_comparison import (
     BoundedComparisonError,
@@ -332,13 +334,13 @@ def test_a_comparison_refuses_a_corrupted_input(path, monkeypatch):
     from seed_runtime.adjacent_pair_measurement import measure_after
     from seed_runtime.preserved_material_measurement import (
         preserved_ingress_occurrences, record_measurement_finding)
-    from seed_runtime.operator_console import run_persistent_operator_console
+    from tests.material_fixture_console import run_material_fixture_console
 
     led = SQLiteEventLedger(path)
     for locality_id in ("s1", "s2"):
-        run_persistent_operator_console(
+        run_material_fixture_console(
             ledger=led, workspace_id="w", locality_id=locality_id,
-            input_stream=StringIO("a noun is a word\nexit\n"), output_stream=StringIO())
+            input_stream=binary_input("a noun is a word\n"), output_stream=StringIO())
     ids = []
     for locality_id in ("s1", "s2"):
         occ = preserved_ingress_occurrences(led, workspace_id="w", locality_id=locality_id)
@@ -366,14 +368,14 @@ def test_a_comparison_records_each_input_s_integrity(path):
     from seed_runtime.adjacent_pair_measurement import measure_after
     from seed_runtime.preserved_material_measurement import (
         preserved_ingress_occurrences, record_measurement_finding)
-    from seed_runtime.operator_console import run_persistent_operator_console
+    from tests.material_fixture_console import run_material_fixture_console
 
     led = SQLiteEventLedger(path)
     try:
         for locality_id in ("s1", "s2"):
-            run_persistent_operator_console(
+            run_material_fixture_console(
                 ledger=led, workspace_id="w", locality_id=locality_id,
-                input_stream=StringIO("a noun is a word\nexit\n"),
+                input_stream=binary_input("a noun is a word\n"),
                 output_stream=StringIO())
         ids = []
         for locality_id in ("s1", "s2"):
@@ -393,14 +395,14 @@ def test_an_unverifiable_input_is_recorded_rather_than_refused():
     from seed_runtime.adjacent_pair_measurement import measure_after
     from seed_runtime.preserved_material_measurement import (
         preserved_ingress_occurrences, record_measurement_finding)
-    from seed_runtime.operator_console import run_persistent_operator_console
+    from tests.material_fixture_console import run_material_fixture_console
 
     led = EventLedger()
     ids = []
     for locality_id in ("s1", "s2"):
-        run_persistent_operator_console(
+        run_material_fixture_console(
             ledger=led, workspace_id="w", locality_id=locality_id,
-            input_stream=StringIO("a noun is a word\nexit\n"), output_stream=StringIO())
+            input_stream=binary_input("a noun is a word\n"), output_stream=StringIO())
         occ = preserved_ingress_occurrences(led, workspace_id="w", locality_id=locality_id)
         ids.append(record_measurement_finding(
             led, workspace_id="w", locality_id=locality_id,

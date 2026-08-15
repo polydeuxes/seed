@@ -14,6 +14,7 @@ not been made cheaper, it has been broken.
 from __future__ import annotations
 
 import sqlite3
+from tests.binary_input import binary_input
 from io import StringIO
 
 import pytest
@@ -47,7 +48,7 @@ def _fill(ledger):
             ledger=ledger,
             workspace_id="w",
             locality_id=locality_id,
-            input_stream=StringIO(material + "exit\n"),
+            input_stream=binary_input(material + ""),
             output_stream=StringIO(),
         )
     return ledger
@@ -99,7 +100,11 @@ def test_the_occurrences_are_identical_durably(durable_ledger, locality_id):
 def test_each_body_still_gets_only_its_own_material(durable_ledger):
     held = {
         locality_id: [
-            event.payload["decoded_text"]
+            bytes.fromhex(
+                durable_ledger.get(event.payload["raw_material_event_id"]).payload[
+                    "exact_bytes_hex"
+                ]
+            )
             for event in preserved_ingress_occurrences(
                 durable_ledger, workspace_id="w", locality_id=locality_id
             )
@@ -107,7 +112,7 @@ def test_each_body_still_gets_only_its_own_material(durable_ledger):
         for locality_id in BODIES
     }
     assert held == {
-        locality_id: material.splitlines(keepends=True)
+        locality_id: [line.encode() for line in material.splitlines(keepends=True)]
         for locality_id, material in BODIES.items()
     }
 

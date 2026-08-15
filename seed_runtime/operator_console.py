@@ -2,11 +2,21 @@
 
 from __future__ import annotations
 
-from typing import TextIO
+from typing import BinaryIO, Mapping, TextIO
 
 from seed_runtime.events import EventLedger
 from seed_runtime.operator_ingress import run_operator_ingress_attempt
 from seed_runtime.operator_ingress_representation import capture_stdin_material
+from seed_runtime.operator_command import (
+    OperatorCommandHandler,
+    is_slash_command,
+    run_operator_command,
+)
+from seed_runtime.operator_checkpoint import (
+    OperatorCheckpoint,
+    open_operator_checkpoint,
+)
+from seed_runtime.operator_material_command import OperatorMaterialCommand
 from seed_runtime.operator_representation import (
     emit_operator_representation,
     record_operator_representation,
@@ -15,14 +25,6 @@ from seed_runtime.operator_locality_standing import (
     advance_operator_locality_standing,
     read_operator_locality_standing,
 )
-
-
-def _is_console_exit(material: bytes, encoding: str | None) -> bool:
-    command = material.removesuffix(b"\n").removesuffix(b"\r")
-    try:
-        return command == "exit".encode(encoding or "utf-8", errors="strict")
-    except LookupError:
-        return False
 
 
 def _advance_over(ledger, standing, event_ids, *, workspace_id, locality_id):
@@ -46,16 +48,16 @@ def run_persistent_operator_console(
     ledger: EventLedger,
     workspace_id: str,
     locality_id: str,
-    input_stream: TextIO,
+    input_stream: BinaryIO | TextIO,
     output_stream: TextIO,
-    process_boundary_escape: bool = True,
+    command_handlers: Mapping[bytes, OperatorCommandHandler] | None = None,
+    material_command: OperatorMaterialCommand | None = None,
 ) -> None:
-    """Repeat bounded operator interactions within this process."""
-    # A console that declined to install the escape does not announce it.
-    if process_boundary_escape:
-        output_stream.write("Seed console: `exit` exits.\n")
-        output_stream.flush()
-    # Standing is carried through the session rather than re-projected before
+    """Repeat raw-byte ingress and slash-command interactions."""
+    handlers = dict(command_handlers or {})
+    handlers[b"checkpoint"] = open_operator_checkpoint
+    handlers[b"material"] = material_command or OperatorMaterialCommand()
+    # Standing is carried through the locality rather than re-projected before
     # each interaction. Each responsible act returns the occurrences it
     # recorded, so the console advances over exactly those occurrences.
     locality_standing = read_operator_locality_standing(
@@ -83,16 +85,48 @@ def run_persistent_operator_console(
     )
     while True:
         captured_ingress = capture_stdin_material(input_stream)
-        # `exit` is a surrounding process escape, not operator ingress. The
-        # switch is bootstrap scaffolding for non-interactive acquisition:
-        # without the escape installed, exact material named `exit` is
-        # preserved and termination comes from EOF.
         if captured_ingress.eof:
             return
-        if process_boundary_escape and _is_console_exit(
-            captured_ingress.exact_bytes, captured_ingress.stream_encoding_metadata
-        ):
-            return
+        if is_slash_command(captured_ingress):
+            command_run = run_operator_command(
+                ledger=ledger,
+                workspace_id=workspace_id,
+                locality_id=locality_id,
+                addressed_at_representation_event_id=representation[
+                    "representation_event_id"
+                ],
+                captured=captured_ingress,
+                handlers=handlers,
+            )
+            checkpoint = command_run.implementation_result
+            if isinstance(checkpoint, OperatorCheckpoint):
+                locality_id = checkpoint.locality_id
+                locality_standing = read_operator_locality_standing(
+                    ledger, workspace_id=workspace_id, locality_id=locality_id
+                )
+                representation = record_operator_representation(
+                    ledger,
+                    workspace_id=workspace_id,
+                    locality_id=locality_id,
+                    locality_standing=locality_standing,
+                )
+                representation = emit_operator_representation(
+                    ledger,
+                    representation=representation,
+                    output_stream=output_stream,
+                )
+                locality_standing = _advance_over(
+                    ledger,
+                    locality_standing,
+                    (
+                        representation["representation_event_id"],
+                        representation["emission_attempt_event_id"],
+                        representation["emitted_event_id"],
+                    ),
+                    workspace_id=workspace_id,
+                    locality_id=locality_id,
+                )
+            continue
         # One interaction, one pair of commits. Each occurrence still reaches
         # the store with its prefix commitment, and the emission attempt is
         # flushed before the output boundary by the act that owns that order.
@@ -104,7 +138,6 @@ def run_persistent_operator_console(
                 workspace_id=workspace_id,
                 locality_id=locality_id,
                 captured_ingress=captured_ingress,
-                output_stream=output_stream,
                 locality_standing=(
                     locality_standing if locality_standing["event_count"] else None
                 ),

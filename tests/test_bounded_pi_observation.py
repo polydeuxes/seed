@@ -1,5 +1,6 @@
 """A finite decimal representation attributed to pi, observed only as bytes."""
 
+from tests.binary_input import binary_input
 from io import StringIO
 
 from seed_runtime.byte_measurement import (
@@ -20,7 +21,7 @@ def _supply(ledger: EventLedger, locality: str, material: str) -> None:
         ledger=ledger,
         workspace_id="bounded-decimal-observation",
         locality_id=locality,
-        input_stream=StringIO(material + "\nexit\n"),
+        input_stream=binary_input(material + "\n"),
         output_stream=StringIO(),
     )
 

@@ -1,3 +1,4 @@
+from tests.binary_input import binary_input
 from io import StringIO
 
 import pytest
@@ -14,7 +15,6 @@ from seed_runtime.operator_console import run_persistent_operator_console
 
 _INGRESS_KINDS = (
     "operator.material.raw_captured",
-    "operator.material.decoder_outcome_recorded",
     "operator.material.occurred",
 )
 _EMISSION_EDGE_EVIDENCE_KINDS = (
@@ -37,7 +37,7 @@ def _run_console(text, *, workspace="w", session="s"):
         ledger=ledger,
         workspace_id=workspace,
         locality_id=session,
-        input_stream=StringIO(text),
+        input_stream=binary_input(text),
         output_stream=output,
     )
     return ledger, output.getvalue()

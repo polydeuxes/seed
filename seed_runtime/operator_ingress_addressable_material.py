@@ -21,7 +21,7 @@ class SourceSpan:
     source_ref: str
     start: int
     end: int
-    exact_text: str
+    exact_bytes_hex: str
 
     def __post_init__(self) -> None:
         if not self.span_ref or not self.source_ref:
@@ -37,7 +37,7 @@ class SourceSpan:
 @dataclass(frozen=True)
 class ExactOperatorMaterial:
     material_ref: str
-    exact_text: str
+    exact_bytes_hex: str
     source_spans: tuple[SourceSpan, ...]
     provenance: tuple[str, ...] = ()
 
@@ -72,9 +72,9 @@ def addressable_material_representation_id(material: ExactOperatorMaterial) -> s
     return _stable_id("operator-ingress-addressable-material", asdict(material))
 
 
-def operator_material_full_span_id(*, ingress_event_ref: str, exact_text: str) -> str:
+def operator_material_full_span_id(*, ingress_event_ref: str, exact_bytes_hex: str) -> str:
     """Return the responsible boundary's canonical full-span material identity."""
-    return _stable_id("operator-material-full-span", (ingress_event_ref, exact_text))
+    return _stable_id("operator-material-full-span", (ingress_event_ref, exact_bytes_hex))
 
 
 @dataclass(frozen=True)
@@ -83,7 +83,6 @@ class OperatorIngressAddressableMaterial:
     material_representation_id: str
     ingress_event_ref: str
     raw_material_event_ref: str
-    decoder_outcome_event_ref: str
     exact_operator_material: ExactOperatorMaterial
     source_role: str
     provenance: tuple[str, ...]
@@ -105,7 +104,6 @@ class OperatorIngressAddressableMaterial:
             "material_representation_id",
             "ingress_event_ref",
             "raw_material_event_ref",
-            "decoder_outcome_event_ref",
             "source_role",
         ):
             _exact_string(getattr(self, name), name)
@@ -129,15 +127,14 @@ class OperatorIngressAddressableMaterial:
             _refuse("addressable material must be read-only and non-mutating")
         if self.provenance != (
             self.raw_material_event_ref,
-            self.decoder_outcome_event_ref,
             self.ingress_event_ref,
         ):
             _refuse(
-                "addressable provenance must preserve exact raw, decoder-outcome, ingress order"
+                "addressable provenance must preserve exact raw and ingress order"
             )
         material = self.exact_operator_material
         _intrinsic_string(material.material_ref, "exact material material_ref")
-        _intrinsic_string(material.exact_text, "exact material exact_text", empty=True)
+        _intrinsic_hex(material.exact_bytes_hex, "exact material exact_bytes_hex")
         _intrinsic_string_tuple(material.provenance, "exact material provenance")
         if (
             material.material_ref != self.ingress_event_ref
@@ -153,16 +150,17 @@ class OperatorIngressAddressableMaterial:
         _intrinsic_string(span.source_ref, "source span source_ref")
         _intrinsic_int(span.start, "source span start")
         _intrinsic_int(span.end, "source span end")
-        _intrinsic_string(span.exact_text, "source span exact_text", empty=True)
+        _intrinsic_hex(span.exact_bytes_hex, "source span exact_bytes_hex")
         if span.span_ref != operator_material_full_span_id(
-            ingress_event_ref=self.ingress_event_ref, exact_text=material.exact_text
+            ingress_event_ref=self.ingress_event_ref,
+            exact_bytes_hex=material.exact_bytes_hex,
         ):
             _refuse("full source span identity is forged")
-        if (span.source_ref, span.start, span.end, span.exact_text) != (
+        if (span.source_ref, span.start, span.end, span.exact_bytes_hex) != (
             self.ingress_event_ref,
             0,
-            len(material.exact_text),
-            material.exact_text,
+            len(bytes.fromhex(material.exact_bytes_hex)),
+            material.exact_bytes_hex,
         ):
             _refuse("source span must cover the complete exact material")
         if self.material_representation_id != addressable_material_representation_id(material):
@@ -199,8 +197,8 @@ class OperatorIngressAddressableMaterial:
                     source_ref=_exact_string(span.get("source_ref"), "source_ref"),
                     start=_exact_int(span.get("start"), "span start"),
                     end=_exact_int(span.get("end"), "span end"),
-                    exact_text=_exact_string(
-                        span.get("exact_text"), "span text", empty=True
+                    exact_bytes_hex=_exact_hex(
+                        span.get("exact_bytes_hex"), "span exact_bytes_hex"
                     ),
                 )
             )
@@ -208,8 +206,8 @@ class OperatorIngressAddressableMaterial:
             material_ref=_exact_string(
                 material_value.get("material_ref"), "material_ref"
             ),
-            exact_text=_exact_string(
-                material_value.get("exact_text"), "exact_text", empty=True
+            exact_bytes_hex=_exact_hex(
+                material_value.get("exact_bytes_hex"), "exact_bytes_hex"
             ),
             source_spans=tuple(rebuilt_spans),
             provenance=_string_tuple(
@@ -226,10 +224,6 @@ class OperatorIngressAddressableMaterial:
             ),
             raw_material_event_ref=_exact_string(
                 value.get("raw_material_event_ref"), "raw_material_event_ref"
-            ),
-            decoder_outcome_event_ref=_exact_string(
-                value.get("decoder_outcome_event_ref"),
-                "decoder_outcome_event_ref",
             ),
             exact_operator_material=material,
             source_role=_exact_string(value.get("source_role"), "source_role"),
@@ -272,6 +266,18 @@ def _exact_int(value: object, name: str) -> int:
     return value
 
 
+def _exact_hex(value: object, name: str) -> str:
+    if not isinstance(value, str):
+        _refuse(f"{name} must be a hexadecimal string")
+    try:
+        exact = bytes.fromhex(value)
+    except ValueError:
+        _refuse(f"{name} must be a hexadecimal string")
+    if exact.hex() != value:
+        _refuse(f"{name} must be canonical lowercase hexadecimal")
+    return value
+
+
 def _string_tuple(value: object, name: str) -> tuple[str, ...]:
     if not isinstance(value, (list, tuple)) or not all(
         isinstance(item, str) for item in value
@@ -295,6 +301,12 @@ def _intrinsic_int(value: object, name: str) -> None:
         _refuse(f"{name} must be an exact integer")
 
 
+def _intrinsic_hex(value: object, name: str) -> None:
+    if type(value) is not str:
+        _refuse(f"{name} must be an exact hexadecimal string")
+    _exact_hex(value, name)
+
+
 def validate_operator_ingress_addressable_material(
     material: OperatorIngressAddressableMaterial,
 ) -> None:
@@ -307,24 +319,18 @@ def validate_operator_ingress_addressable_material(
 def form_operator_ingress_addressable_material(
     *, ingress_occurrence: Event, ledger: EventLedger
 ) -> OperatorIngressAddressableMaterial:
-    """Form exact material from one verified, decoded initial-ingress occurrence."""
+    """Form exact bytes from one verified initial-ingress occurrence."""
     payload = ingress_occurrence.payload
     if ingress_occurrence.kind != "operator.material.occurred":
-        _refuse("a decoded ingress occurrence is required")
-    if payload.get("ingress_kind") not in {"text", "empty"}:
-        _refuse("ingress framing must be text or empty")
-    exact_text = payload.get("decoded_text")
-    if not isinstance(exact_text, str):
-        _refuse("exact decoded_text is required")
+        _refuse("an ingress occurrence is required")
+    if payload.get("ingress_kind") not in {"bytes", "empty"}:
+        _refuse("ingress framing must be bytes or empty")
     attempt = payload.get("attempt_ref")
     raw_ref = payload.get("raw_material_event_id")
-    decoder_outcome_ref = payload.get("decoder_outcome_event_id")
-    if not all(
-        isinstance(ref, str) and ref for ref in (attempt, raw_ref, decoder_outcome_ref)
-    ):
+    if not all(isinstance(ref, str) and ref for ref in (attempt, raw_ref)):
         _refuse("complete attempt and provenance occurrences are required")
-    if payload.get("provenance_occurrence_refs") != [raw_ref, decoder_outcome_ref]:
-        _refuse("provenance occurrences must preserve capture followed by decoder outcome")
+    if payload.get("provenance_occurrence_refs") != [raw_ref]:
+        _refuse("provenance occurrences must preserve the exact raw capture")
     dimensions = payload.get("dimensions")
     if (
         not isinstance(dimensions, dict)
@@ -337,7 +343,6 @@ def form_operator_ingress_addressable_material(
     if recorded is None or recorded != ingress_occurrence:
         _refuse("the supplied ingress occurrence is not the recorded occurrence")
     raw = ledger.get(raw_ref)
-    decoder_outcome = ledger.get(decoder_outcome_ref)
     common = (ingress_occurrence.workspace_id, ingress_occurrence.locality_id, attempt)
     if raw is None or (
         raw.kind != "operator.material.raw_captured"
@@ -345,35 +350,29 @@ def form_operator_ingress_addressable_material(
         or (raw.workspace_id, raw.locality_id, raw.payload.get("attempt_ref")) != common
     ):
         _refuse("initial raw-material provenance is missing or foreign")
-    if decoder_outcome is None or (
-        decoder_outcome.kind != "operator.material.decoder_outcome_recorded"
-        or decoder_outcome.payload.get("material_role") != "initial_ingress"
-        or decoder_outcome.payload.get("capture_event_id") != raw.id
-        or decoder_outcome.payload.get("decoder_succeeded") is not True
-        or decoder_outcome.payload.get("decoder_outcome") != "decoded"
-        or (
-            decoder_outcome.workspace_id,
-            decoder_outcome.locality_id,
-            decoder_outcome.payload.get("attempt_ref"),
-        )
-        != common
-    ):
-        _refuse("successful initial decoder outcome is missing or foreign")
+    exact_bytes_hex = _exact_hex(raw.payload.get("exact_bytes_hex"), "raw exact bytes")
+    exact_bytes = bytes.fromhex(exact_bytes_hex)
+    if raw.payload.get("byte_count") != len(exact_bytes):
+        _refuse("raw exact bytes and byte_count are incoherent")
+    if payload.get("byte_count") != len(exact_bytes):
+        _refuse("ingress occurrence and raw byte_count are incoherent")
+    if payload["dimensions"].get("content") != exact_bytes_hex:
+        _refuse("ingress occurrence does not preserve the raw bytes")
 
-    provenance = (raw.id, decoder_outcome.id, ingress_occurrence.id)
+    provenance = (raw.id, ingress_occurrence.id)
     span_ref = operator_material_full_span_id(
-        ingress_event_ref=ingress_occurrence.id, exact_text=exact_text
+        ingress_event_ref=ingress_occurrence.id, exact_bytes_hex=exact_bytes_hex
     )
     exact_material = ExactOperatorMaterial(
         material_ref=ingress_occurrence.id,
-        exact_text=exact_text,
+        exact_bytes_hex=exact_bytes_hex,
         source_spans=(
             SourceSpan(
                 span_ref=span_ref,
                 source_ref=ingress_occurrence.id,
                 start=0,
-                end=len(exact_text),
-                exact_text=exact_text,
+                end=len(exact_bytes),
+                exact_bytes_hex=exact_bytes_hex,
             ),
         ),
         provenance=provenance,
@@ -384,7 +383,6 @@ def form_operator_ingress_addressable_material(
         material_representation_id=representation_id,
         ingress_event_ref=ingress_occurrence.id,
         raw_material_event_ref=raw.id,
-        decoder_outcome_event_ref=decoder_outcome.id,
         exact_operator_material=exact_material,
         source_role="operator-origin material at the preserved ingress boundary",
         provenance=provenance,

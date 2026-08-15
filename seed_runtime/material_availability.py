@@ -214,7 +214,7 @@ def record_transient_material(
     holder: ProcessLocalMaterial,
     identity: MaterialIdentity,
     material_origin: str,
-    observed_boundary: str,
+    occurrence_boundary: str,
 ) -> Event:
     """Record that exact material occurred, without recording the material.
 
@@ -226,12 +226,12 @@ def record_transient_material(
     **The holder is required, and is asked.** Taking only an identity let a
     caller record that material was held process-locally when nothing had ever
     held it — a permanent record asserting something the function could not
-    observe. No re-digest is involved; the holder is asked whether it holds this
+    establish. No re-digest is involved; the holder is asked whether it holds this
     exact identity, which is the thing being asserted.
     """
 
     for name, value in (("material_origin", material_origin),
-                        ("observed_boundary", observed_boundary),
+                        ("occurrence_boundary", occurrence_boundary),
                         ("locality_id", locality_id)):
         if type(value) is not str or not value.strip():
             raise MaterialAvailabilityError(
@@ -262,7 +262,7 @@ def record_transient_material(
                     "identity": new_id("transient_material"),
                     "content": f"exact material, {identity.byte_count} bytes",
                     "standing": "occurred",
-                    "source_provenance": observed_boundary,
+                    "source_provenance": occurrence_boundary,
                     "responsibility": "transient-material-occurrence",
                     "authority": "unestablished",
                     "evidence_scope": (
@@ -276,7 +276,7 @@ def record_transient_material(
                     ),
                 },
                 "material_origin": material_origin,
-                "observed_boundary": observed_boundary,
+                "occurrence_boundary": occurrence_boundary,
                 "material_identity": identity.to_json_dict(),
                 "held_at_occurrence": "process-local",
                 "known_loss": [

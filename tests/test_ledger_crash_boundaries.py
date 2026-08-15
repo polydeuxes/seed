@@ -216,6 +216,7 @@ def test_the_emission_attempt_is_durable_before_the_output_boundary(tmp_path):
     from io import StringIO
 
     from seed_runtime.operator_console import run_persistent_operator_console
+    from tests.binary_input import binary_input
 
     path = tmp_path / "e.sqlite"
     ledger = SQLiteEventLedger(str(path))
@@ -237,9 +238,8 @@ def test_the_emission_attempt_is_durable_before_the_output_boundary(tmp_path):
         ledger=ledger,
         workspace_id="w",
         locality_id="s1",
-        input_stream=StringIO("one\ntwo\nexit\n"),
+        input_stream=binary_input("one\ntwo\n"),
         output_stream=_Watching(),
-        process_boundary_escape=False,
     )
 
     assert seen, "no stream write occurred"

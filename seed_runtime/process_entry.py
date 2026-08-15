@@ -29,7 +29,7 @@ def main(argv: Sequence[str] | None = None) -> int:
             ledger=ledger,
             workspace_id=args.workspace,
             locality_id=new_id("session"),
-            input_stream=sys.stdin,
+            input_stream=getattr(sys.stdin, "buffer", sys.stdin),
             output_stream=sys.stdout,
         )
         return 0
