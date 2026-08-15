@@ -235,8 +235,8 @@ class RecurrenceFinding:
     representation occurring three times says nothing until the material it
     occurred across is also stated, and occurring three times in one occurrence
     is not the same finding as occurring once in each of three. The clause
-    requires the bounded scope be disclosed; `occurrences_examined` is that
-    scope's size, and it is preserved rather than left to the reader.
+    requires the bounded scope be disclosed; the exact input identities and
+    their count carry that scope.
     """
 
     declared: DeclaredMeasurement
@@ -250,8 +250,6 @@ class RecurrenceFinding:
     # asserts only the third, and the input_identities localities survive as nothing
     # but event identities a later reader would have to re-derive.
     input_localities: tuple[str | None, ...]
-    # Preserved occurrences the measurement ran over. The denominator.
-    occurrences_examined: int
     # How many of them carried the representation at least once.
     occurrences_carrying: int
     # How many times the representation recurred across them.
@@ -291,6 +289,10 @@ class RecurrenceFinding:
     yield_evidence_identity: str | None = None
     limits: tuple[str, ...] = field(default=LIMITS)
 
+    @property
+    def input_count(self) -> int:
+        return len(self.input_event_identities)
+
     def to_json_dict(self) -> dict[str, Any]:
         carried: dict[str, Any] = {
             "representation_measured": self.declared.representation_measured,
@@ -299,11 +301,10 @@ class RecurrenceFinding:
             "premise_event_identity": self.declared.premise_event_identity,
             "measurement_distinction": "recurrence",
             "input_localities": list(self.input_localities),
-            "occurrences_examined": self.occurrences_examined,
             "occurrences_carrying": self.occurrences_carrying,
             "recurrence_count": self.recurrence_count,
             "input_event_identities": list(self.input_event_identities),
-            "input_count": len(self.input_event_identities),
+            "input_count": self.input_count,
             "limits": list(self.limits),
             "yield_evidence_identity": self.yield_evidence_identity,
         }
@@ -341,7 +342,6 @@ def measure_recurrence(
 
     input_identities: list[str] = []
     localities: dict[str | None, None] = {}
-    examined = 0
     carrying = 0
     recurrence = 0
     walked, material_provenance = _as_preserved(
@@ -357,7 +357,6 @@ def measure_recurrence(
                 "a recurrence count must be a non-negative integer, "
                 f"not {count!r}"
             )
-        examined += 1
         if count:
             carrying += 1
             recurrence += count
@@ -365,7 +364,6 @@ def measure_recurrence(
         declared=declared,
         material_provenance=material_provenance,
         input_localities=tuple(localities),
-        occurrences_examined=examined,
         occurrences_carrying=carrying,
         recurrence_count=recurrence,
         input_event_identities=tuple(input_identities),
@@ -399,7 +397,7 @@ def _distinct_inputs(occurrences: Iterable[Event]) -> list[Event]:
 
     The rule is not `01.Source:28`, which requires the bounded scope to be
     disclosed and says nothing about identity-distinctness. It comes from what
-    ``occurrences_examined`` asserts: a number of occurrences. One preserved
+    The input count asserts a number of occurrences. One preserved
     occurrence referenced twice is one occurrence, so counting it twice reports
     a inputs larger than the one that exists, and every count drawn from it
     carries that inflation.
@@ -671,7 +669,6 @@ def measure_recurrences(
         )
     input_identities: list[str] = []
     localities: dict[str | None, None] = {}
-    examined = 0
     carrying: dict[str, int] = {name: 0 for name in declared}
     recurrence: dict[str, int] = {name: 0 for name in declared}
     walked, material_provenance = _as_preserved(
@@ -693,7 +690,6 @@ def measure_recurrences(
         text = _measurable_text(event)
         input_identities.append(event.identity)
         localities[_locality_of(event)] = None
-        examined += 1
         counted = counts_in(text)
         if not isinstance(counted, dict):
             raise PreservedMaterialMeasurementError(
@@ -733,7 +729,6 @@ def measure_recurrences(
             declared=declaration,
             material_provenance=material_provenance,
             input_localities=input_localities,
-            occurrences_examined=examined,
             occurrences_carrying=carrying[representation],
             recurrence_count=recurrence[representation],
             input_event_identities=inputs,
