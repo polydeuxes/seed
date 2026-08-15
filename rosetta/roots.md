@@ -141,7 +141,7 @@ source implementation-function invocation occurrence
 Compare occurrence
 ```
 
-Composition preserves the same crossings:
+A composite preserves the same crossings:
 
 ```text
 removal Act occurrence
@@ -151,8 +151,8 @@ exact removal result reference
 addition Act occurrence
 ```
 
-No connective shorthand receives an Act, relation, Evidence, Authority, or
-Standing merely because the shorthand names the composition.
+A connective composite receives no Act, relation, Evidence, Authority, or
+Standing by identity.
 
 ## This
 

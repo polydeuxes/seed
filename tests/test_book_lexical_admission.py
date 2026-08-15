@@ -80,6 +80,19 @@ def test_warrant_admission_is_broad_in_rosetta_and_singular_in_book():
     assert rosetta_warrant == {"warrant", "warranted", "warranting", "warrants"}
 
 
+def test_composite_admission_is_broad_in_rosetta_and_singular_in_book():
+    book_composite = {
+        word for word in _lexicon_entries(LEXICON) if word.startswith("composite")
+    }
+    rosetta_composite = {
+        word
+        for word in _lexicon_entries(ROSETTA_LEXICON)
+        if word.startswith("composite")
+    }
+    assert book_composite == {"composite"}
+    assert rosetta_composite == {"composite", "composites"}
+
+
 def test_book_proper_admits_only_lexicon_words():
     unadmitted = {
         word: places

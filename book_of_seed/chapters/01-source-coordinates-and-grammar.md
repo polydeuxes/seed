@@ -12,6 +12,8 @@ An exact Responsibility may use supplied material only through its own Applicabi
 
 Developer-supplied connective text is material carrying source coordinates. It may assert a narrow relation within an exact representation, but equivalent text under another subject, source, Scope, occurrence, or support-relation Standing does not identify the same relation. Unsupported coordinates remain Unknown or uninstantiated.
 
+A composite names several exact coordinates. The composite does not establish any named subject, Act, relation, occurrence, Evidence, Authority, Scope, or Standing by identity; each coordinate remains required.
+
 ### 01.Source.A — Representation preserves source coordinates
 
 The responsible representation Act occurrence preserves the supplied source identity or role, source occurrence where evidenced, Scope, uncertainty, Authority limits, provenance, known loss, conflicts, and Unknowns. That preservation establishes none of the asserted source relation, Evidence, Applicability, Admission, Compare result, input support, truth, or adopted law.

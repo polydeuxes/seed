@@ -170,6 +170,8 @@ compare
 compared
 comparing
 comparison
+composite
+composites
 compatibility
 competence
 competent
