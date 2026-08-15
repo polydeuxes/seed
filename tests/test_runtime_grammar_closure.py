@@ -640,7 +640,7 @@ def test_every_declared_event_occurrence_exposes_its_material_to_the_sirens():
     assert list(_unread_event_materials()) == []
 
 
-def test_every_edge_shaped_runtime_record_is_an_admitted_structural_edge():
+def test_every_relation_shaped_runtime_record_is_an_admitted_relation():
     """Implementation-to-grammar closure for relation-shaped records."""
 
     admitted = set()
@@ -656,18 +656,18 @@ def test_every_edge_shaped_runtime_record_is_an_admitted_structural_edge():
             ) or name == "ASSERTION_LOCALITY_MOVEMENT_KIND":
                 admitted.add(value)
 
-    edge_shaped = set()
+    relation_shaped = set()
     for _path, _line, name, value, keys in _event_materials():
         if name.endswith("RELATED_KIND") or {"first_subject", "second_subject"} <= keys:
-            edge_shaped.add(value)
+            relation_shaped.add(value)
 
-    grammar_edges = set(
-        json.loads(GRAMMAR.read_text(encoding="utf-8"))["structural_edges"]
+    grammar_relations = set(
+        json.loads(GRAMMAR.read_text(encoding="utf-8"))["relations"]
     )
-    assert grammar_edges == {"participation", "yield", "locality"}
-    assert edge_shaped <= admitted, (
-        "\nRuntime records assert an edge without an admitted structural-edge witness:"
-        f"\n  {sorted(edge_shaped - admitted)}"
+    assert grammar_relations == {"participation", "yield", "locality"}
+    assert relation_shaped <= admitted, (
+        "\nRuntime records assert a relation without an admitted relation witness:"
+        f"\n  {sorted(relation_shaped - admitted)}"
     )
 
 

@@ -9,7 +9,7 @@ GRAMMAR = ROOT / "book_of_seed/grammar.json"
 ROSETTA_ROOTS = ROOT / "rosetta/roots.md"
 
 
-def _edge_line(name: str, coordinates: dict[str, object]) -> str:
+def _relation_line(name: str, coordinates: dict[str, object]) -> str:
     source = str(coordinates["from"]).replace("_", " ")
     target = str(coordinates["to"]).replace("_", " ")
     relation = name.capitalize()
@@ -18,9 +18,9 @@ def _edge_line(name: str, coordinates: dict[str, object]) -> str:
     return f"{source} ── {relation}"
 
 
-def _assert_rosetta_edge_order(grammar: dict, rosetta: str) -> None:
-    for name, coordinates in grammar["structural_edges"].items():
-        line_start = _edge_line(name, coordinates)
+def _assert_rosetta_relation_order(grammar: dict, rosetta: str) -> None:
+    for name, coordinates in grammar["relations"].items():
+        line_start = _relation_line(name, coordinates)
         matching = [
             line.strip()
             for line in rosetta.splitlines()
@@ -46,14 +46,14 @@ def _assert_live_reference(reference: str) -> None:
     assert hasattr(module, symbol), reference
 
 
-def test_rosetta_follows_machine_grammar_edge_order():
+def test_rosetta_follows_machine_grammar_relation_order():
     grammar = json.loads(GRAMMAR.read_text(encoding="utf-8"))
     rosetta = ROSETTA_ROOTS.read_text(encoding="utf-8")
 
-    _assert_rosetta_edge_order(grammar, rosetta)
+    _assert_rosetta_relation_order(grammar, rosetta)
 
 
-def test_rosetta_reversed_edge_is_detected():
+def test_rosetta_reversed_relation_is_detected():
     grammar = json.loads(GRAMMAR.read_text(encoding="utf-8"))
     rosetta = ROSETTA_ROOTS.read_text(encoding="utf-8")
     altered = rosetta.replace(
@@ -63,11 +63,11 @@ def test_rosetta_reversed_edge_is_detected():
     )
 
     try:
-        _assert_rosetta_edge_order(grammar, altered)
+        _assert_rosetta_relation_order(grammar, altered)
     except AssertionError:
         pass
     else:
-        raise AssertionError("a reversed Rosetta edge escaped comparison")
+        raise AssertionError("a reversed Rosetta relation escaped comparison")
 
 
 def test_rosetta_implementation_references_resolve():

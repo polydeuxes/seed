@@ -1,4 +1,4 @@
-"""Cross-examine the durable ledger and its edge-indexed witness."""
+"""Cross-examine the durable ledger and its reference-pair witness."""
 
 from seed_runtime.dag_ledger_comparison import DagLedgerComparison
 from seed_runtime.events import SQLiteEventLedger
@@ -76,12 +76,12 @@ def test_both_reference_directions_use_covering_indexes(tmp_path):
     dag_plans = [
         dag._connection.execute(
             "EXPLAIN QUERY PLAN SELECT relation, destination_identity "
-            "FROM edges WHERE source_identity = ? ORDER BY relation, ordinal",
+            "FROM reference_pairs WHERE source_identity = ? ORDER BY relation, ordinal",
             (target,),
         ).fetchall(),
         dag._connection.execute(
             "EXPLAIN QUERY PLAN SELECT relation, source_identity "
-            "FROM edges WHERE destination_identity = ? ORDER BY relation, source_identity",
+            "FROM reference_pairs WHERE destination_identity = ? ORDER BY relation, source_identity",
             (target,),
         ).fetchall(),
     ]

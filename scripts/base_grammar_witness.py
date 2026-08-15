@@ -11,8 +11,8 @@ import refinement_climb as rc
 GRAMMAR = Path(__file__).resolve().parents[1] / "book_of_seed" / "grammar.json"
 
 
-def edges() -> dict[str, dict]:
-    return json.loads(GRAMMAR.read_text(encoding="utf-8"))["structural_edges"]
+def relations() -> dict[str, dict]:
+    return json.loads(GRAMMAR.read_text(encoding="utf-8"))["relations"]
 
 
 def endpoints(declared: dict[str, dict]) -> list[str]:
@@ -20,7 +20,7 @@ def endpoints(declared: dict[str, dict]) -> list[str]:
 
 
 def compositions(declared: dict[str, dict]) -> list[tuple[str, str]]:
-    """Ordered edge pairs where the first ends where the second begins."""
+    """Ordered relation pairs where the first ends where the second begins."""
 
     return [
         (first, second)
@@ -30,24 +30,24 @@ def compositions(declared: dict[str, dict]) -> list[tuple[str, str]]:
 
 
 def links(declared: dict[str, dict]) -> list[tuple[str, str]]:
-    """Ordered endpoint pairs some edge runs between."""
+    """Ordered endpoint pairs some relation runs between."""
 
     return sorted({(spec["from"], spec["to"]) for spec in declared.values()})
 
 
 def shared_requirements(declared: dict[str, dict]) -> bool:
-    """Whether every edge states the same requirements."""
+    """Whether every relation states the same requirements."""
 
     return len({tuple(spec["requires"]) for spec in declared.values()}) == 1
 
 
 def main() -> int:
     argparse.ArgumentParser(description=__doc__).parse_args()
-    declared = edges()
+    declared = relations()
     ends = endpoints(declared)
 
-    print(f"  {len(declared)} edges over {len(ends)} endpoints")
-    print(f"  every edge states the same requirements: {shared_requirements(declared)}")
+    print(f"  {len(declared)} relations over {len(ends)} endpoints")
+    print(f"  every relation states the same requirements: {shared_requirements(declared)}")
     print(
         f"  linked endpoint pairs: {len(links(declared))} of {len(ends) ** 2}"
         f"   compositions: {len(compositions(declared))} of {len(declared) ** 2}"
@@ -61,7 +61,7 @@ def main() -> int:
         for name, spec in declared.items()
         if not any(other["from"] == spec["to"] for other in declared.values())
     ]
-    print(f"  edges no other edge follows: {dangling}")
+    print(f"  relations without a following relation: {dangling}")
 
     by_composition = rc.climb(
         rc.one_class(sorted(declared)),
@@ -73,7 +73,7 @@ def main() -> int:
             spec["from"] == x and spec["to"] == y for spec in declared.values()
         ),
     )
-    print(f"\n  edges climbed under composition: {rc.heights(by_composition)}")
+    print(f"\n  relations climbed under composition: {rc.heights(by_composition)}")
     print(f"  endpoints climbed under linkage:  {rc.heights(by_link)}")
     return 0
 

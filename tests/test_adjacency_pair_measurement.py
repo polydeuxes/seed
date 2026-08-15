@@ -525,7 +525,7 @@ def test_adjacency_pair_measurement_read_refuses_changed_result_or_input_evidenc
     )
     with pytest.raises(
         PreservedMaterialMeasurementError,
-        match="edge Evidence carries different coordinates",
+        match="relation Evidence carries different coordinates",
     ):
         get_recorded_adjacency_pair_measurements(ledger, different.identity)
 

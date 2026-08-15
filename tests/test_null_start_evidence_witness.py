@@ -13,7 +13,7 @@ from seed_runtime.material_ingest import (
     ingested_material_bytes,
 )
 from seed_runtime.operator_console import run_persistent_operator_console
-from seed_runtime.yield_evidence import read_yield_edge_requirements
+from seed_runtime.yield_evidence import read_yield_relation_requirements
 from tests.binary_input import binary_input
 
 
@@ -80,7 +80,7 @@ def test_each_ingest_preserves_exact_bytes(ledger):
 def test_each_ingest_binds_its_exact_act_and_result_evidence(ledger):
     for ingest in _ingests(ledger):
         assert all(
-            read_yield_edge_requirements(
+            read_yield_relation_requirements(
                 ledger,
                 recorded_result_event_identity=ingest.identity,
                 result_evidence_event_identity=ingest.material["yield_evidence_identity"],

@@ -18,7 +18,7 @@ _INGEST_KINDS = (
     "operator.yield.evidence_recorded",
     "material.ingest.occurred",
 )
-_EMISSION_EDGE_EVIDENCE_KINDS = (
+_EMISSION_RELATION_EVIDENCE_KINDS = (
     "operator.representation.emission_attempt_locality_evidenced",
     "operator.representation.emission_act_evidenced",
     "operator.representation.emission_locality_evidenced",
@@ -28,7 +28,7 @@ _FAILED_EMISSION_EVIDENCE_KINDS = (
     "operator.representation.emission_failure_act_evidenced",
     "operator.yield.evidence_recorded",
 )
-_REPRESENTATION_EDGE_EVIDENCE_KINDS = (
+_REPRESENTATION_RELATION_EVIDENCE_KINDS = (
     "operator.representation.act_evidenced",
     "operator.yield.evidence_recorded",
     "operator.representation.locality_evidenced",
@@ -186,16 +186,16 @@ def test_console_forms_c0_before_first_ingress_and_preserves_provenance_only():
     # Identification follows.
     kinds = [event.kind for event in ledger.list()]
     assert kinds == [
-        *_REPRESENTATION_EDGE_EVIDENCE_KINDS,
+        *_REPRESENTATION_RELATION_EVIDENCE_KINDS,
         "operator.representation.recorded",
         "operator.representation.emission_attempt_recorded",
-        *_EMISSION_EDGE_EVIDENCE_KINDS,
+        *_EMISSION_RELATION_EVIDENCE_KINDS,
         "operator.representation.emitted",
         *_INGEST_KINDS,
-        *_REPRESENTATION_EDGE_EVIDENCE_KINDS,
+        *_REPRESENTATION_RELATION_EVIDENCE_KINDS,
         "operator.representation.recorded",
         "operator.representation.emission_attempt_recorded",
-        *_EMISSION_EDGE_EVIDENCE_KINDS,
+        *_EMISSION_RELATION_EVIDENCE_KINDS,
         "operator.representation.emitted",
     ]
     c0_formed = next(
@@ -332,16 +332,16 @@ def test_console_presents_standing_only_across_an_ingest():
 
     kinds = [event.kind for event in ledger.list()]
     assert kinds == [
-        *_REPRESENTATION_EDGE_EVIDENCE_KINDS,
+        *_REPRESENTATION_RELATION_EVIDENCE_KINDS,
         "operator.representation.recorded",
         "operator.representation.emission_attempt_recorded",
-        *_EMISSION_EDGE_EVIDENCE_KINDS,
+        *_EMISSION_RELATION_EVIDENCE_KINDS,
         "operator.representation.emitted",
         *_INGEST_KINDS,
-        *_REPRESENTATION_EDGE_EVIDENCE_KINDS,
+        *_REPRESENTATION_RELATION_EVIDENCE_KINDS,
         "operator.representation.recorded",
         "operator.representation.emission_attempt_recorded",
-        *_EMISSION_EDGE_EVIDENCE_KINDS,
+        *_EMISSION_RELATION_EVIDENCE_KINDS,
         "operator.representation.emitted",
     ]
     # No relation or result-Standing occurrence follows by identity.
@@ -526,7 +526,7 @@ def test_first_interaction_attaches_no_representation_to_the_ingest():
         "operator.representation.locality_evidenced",
         "operator.representation.recorded",
         "operator.representation.emission_attempt_recorded",
-        *_EMISSION_EDGE_EVIDENCE_KINDS,
+        *_EMISSION_RELATION_EVIDENCE_KINDS,
         "operator.representation.emitted",
     }
     ingest = next(
@@ -669,7 +669,7 @@ def test_partial_output_write_preserves_attempt_and_failed_occurrences():
         )
 
     assert [event.kind for event in ledger.list()] == [
-        *_REPRESENTATION_EDGE_EVIDENCE_KINDS,
+        *_REPRESENTATION_RELATION_EVIDENCE_KINDS,
         "operator.representation.recorded",
         "operator.representation.emission_attempt_recorded",
         "operator.representation.emission_attempt_locality_evidenced",
@@ -737,10 +737,10 @@ def test_flush_failure_does_not_erase_the_completed_text_stream_write():
         )
 
     assert [event.kind for event in ledger.list()] == [
-        *_REPRESENTATION_EDGE_EVIDENCE_KINDS,
+        *_REPRESENTATION_RELATION_EVIDENCE_KINDS,
         "operator.representation.recorded",
         "operator.representation.emission_attempt_recorded",
-        *_EMISSION_EDGE_EVIDENCE_KINDS,
+        *_EMISSION_RELATION_EVIDENCE_KINDS,
         "operator.representation.emitted",
         *_FAILED_EMISSION_EVIDENCE_KINDS,
         "operator.representation.emission_failure_recorded",
@@ -775,7 +775,7 @@ def test_process_death_after_attempt_leaves_boundary_acceptance_unknown():
         )
 
     assert [event.kind for event in ledger.list()] == [
-        *_REPRESENTATION_EDGE_EVIDENCE_KINDS,
+        *_REPRESENTATION_RELATION_EVIDENCE_KINDS,
         "operator.representation.recorded",
         "operator.representation.emission_attempt_recorded",
         "operator.representation.emission_attempt_locality_evidenced",

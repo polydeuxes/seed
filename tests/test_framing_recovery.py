@@ -83,7 +83,7 @@ def test_a_stride_does_not_say_where_a_group_begins():
     """The same material read from byte one gives the same classes in reversed places.
 
     A partition starts somewhere, and starting at byte zero is this harness's
-    determination. Positional structure at some stride is compatible with either
+    determination. Positional recurrence at some stride is compatible with either
     phase, so it does not establish a boundary.
     """
 

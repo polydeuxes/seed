@@ -3,7 +3,7 @@
 This does not establish Responsibility. It preserves, from inside
 an act after that act has fixed its result, Evidence committing to the exact
 result coordinates. The resulting Event is Evidence for the exact
-occurrence-to-result edge; it is neither that edge nor either endpoint by identity.
+occurrence-to-result relation; it is neither that relation nor either endpoint by identity.
 
 The helper is private implementation plumbing, not the guarantee. The result's
 carried relation to this Evidence distinguishes a result with exact Yield from an
@@ -43,7 +43,7 @@ YIELD_LIVE_BOUNDARIES = frozenset(
         "successful_emission",
     }
 )
-def read_yield_edge_requirements(
+def read_yield_relation_requirements(
     ledger: EventLedger,
     *,
     recorded_result_event_identity: str,
@@ -52,7 +52,7 @@ def read_yield_edge_requirements(
     recorded_result_occurrence_coordinate: str = "act_occurrence_identity",
     responsible_act_occurrence_coordinate: str = "act_occurrence_identity",
 ) -> dict[str, bool]:
-    """Read the three machine-grammar requirements of one exact Yield edge.
+    """Read the three machine-grammar requirements of one exact Yield relation.
 
     The caller supplies exact occurrence identities under pressure.  Seed
     resolves the stored occurrences itself; it does not accept read
@@ -62,9 +62,9 @@ def read_yield_edge_requirements(
     """
 
     if not isinstance(ledger, EventLedger):
-        raise TypeError("a Yield-edge read requires one EventLedger")
+        raise TypeError("a Yield-relation read requires one EventLedger")
     if not isinstance(recorded_result_event_identity, str) or not recorded_result_event_identity:
-        raise TypeError("a Yield-edge read requires one event occurrence")
+        raise TypeError("a Yield-relation read requires one event occurrence")
     recorded_result_event = ledger.get(recorded_result_event_identity)
     if recorded_result_event is None:
         return {
@@ -292,14 +292,14 @@ def _record_yield_evidence(
                 "responsible_boundary": responsible_boundary,
                 "authority": "unestablished",
                 "evidence_scope": (
-                    "establishes the exact occurrence-to-result edge at this "
+                    "establishes the exact occurrence-to-result relation at this "
                     "Act boundary; establishes no responsibility, "
                     "authorization, or successful return from "
                     "an enclosing call"
                 ),
                 "occurrence_preservation": (
-                    "Evidence for the exact occurrence-to-result edge, "
-                    "durably recorded; not the edge or Act occurrence by identity"
+                    "Evidence for the exact occurrence-to-result relation, "
+                    "durably recorded; not the relation or Act occurrence by identity"
                 ),
             },
             "yield_coordinates": sorted(result_content),

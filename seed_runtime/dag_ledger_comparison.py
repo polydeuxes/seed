@@ -1,10 +1,10 @@
-"""A parallel edge-indexed store, for measuring against the ledger.
+"""A parallel reference-pair index, for measuring against the ledger.
 
 This establishes nothing. It records no Assertion, owns no Responsibility, and
 is not a witness any Act may consume.
 
 It writes the same occurrences with their material references lifted into an
-indexed edge table, so both traversal directions can be timed on one material.
+indexed pair table, so both traversal directions can be timed on one material.
 """
 
 from __future__ import annotations
@@ -27,29 +27,28 @@ class DagLedgerComparison:
                 locality_identity TEXT,
                 material TEXT NOT NULL
             );
-            CREATE TABLE IF NOT EXISTS edges (
+            CREATE TABLE IF NOT EXISTS reference_pairs (
                 source_identity TEXT NOT NULL,
                 relation TEXT NOT NULL,
                 destination_identity TEXT NOT NULL,
                 ordinal INTEGER NOT NULL
             );
-            CREATE INDEX IF NOT EXISTS idx_edges_source
-                ON edges (source_identity, relation, ordinal, destination_identity);
-            CREATE INDEX IF NOT EXISTS idx_edges_destination
-                ON edges (destination_identity, relation, source_identity);
+            CREATE INDEX IF NOT EXISTS idx_reference_pairs_source
+                ON reference_pairs (source_identity, relation, ordinal, destination_identity);
+            CREATE INDEX IF NOT EXISTS idx_reference_pairs_destination
+                ON reference_pairs (destination_identity, relation, source_identity);
             """
         )
 
     def load(self, events: Iterable[Any]) -> int:
-        """Write each occurrence once, and one edge per reference it carries.
+        """Write each occurrence once, and one pair per reference it carries.
 
         A reference is a material string that names another occurrence present
-        in the same material. Nothing infers a relation that the material does
-        not already carry: the edge's relation is the field name that carried
-        it, and an unresolvable string is not an edge.
+        in the same material. The pair preserves the field name that carried the
+        reference. An unresolvable string supplies no pair.
         """
 
-        edge_count = 0
+        pair_count = 0
         earlier_identities: set[str] = set()
         for event in events:
             self._connection.execute(
@@ -64,13 +63,13 @@ class DagLedgerComparison:
             references = dict.fromkeys(_references(event.material, earlier_identities))
             for relation, destination, ordinal in references:
                 self._connection.execute(
-                    "INSERT INTO edges VALUES (?, ?, ?, ?)",
+                    "INSERT INTO reference_pairs VALUES (?, ?, ?, ?)",
                     (event.identity, relation, destination, ordinal),
                 )
-                edge_count += 1
+                pair_count += 1
             earlier_identities.add(event.identity)
         self._connection.commit()
-        return edge_count
+        return pair_count
 
     def references_from(self, node_identity: str) -> list[tuple[str, str]]:
         """What this occurrence points at."""
@@ -78,7 +77,7 @@ class DagLedgerComparison:
         return [
             (relation, destination)
             for relation, destination in self._connection.execute(
-                "SELECT relation, destination_identity FROM edges WHERE source_identity = ?"
+                "SELECT relation, destination_identity FROM reference_pairs WHERE source_identity = ?"
                 " ORDER BY relation, ordinal",
                 (node_identity,),
             )
@@ -90,21 +89,21 @@ class DagLedgerComparison:
         return [
             (relation, source)
             for relation, source in self._connection.execute(
-                "SELECT relation, source_identity FROM edges WHERE destination_identity = ?"
+                "SELECT relation, source_identity FROM reference_pairs WHERE destination_identity = ?"
                 " ORDER BY relation, source_identity",
                 (node_identity,),
             )
         ]
 
     def byte_size(self) -> tuple[int, int]:
-        """Material bytes and edge-table rows, so cost is stated rather than guessed."""
+        """Material bytes and reference-pair rows, so cost is stated rather than guessed."""
 
         material_bytes = sum(
             len(row[0].encode("utf-8"))
             for row in self._connection.execute("SELECT material FROM nodes")
         )
-        edges = self._connection.execute("SELECT COUNT(*) FROM edges").fetchone()[0]
-        return material_bytes, edges
+        pairs = self._connection.execute("SELECT COUNT(*) FROM reference_pairs").fetchone()[0]
+        return material_bytes, pairs
 
 
 def _references(

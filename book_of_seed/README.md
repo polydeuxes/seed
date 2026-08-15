@@ -229,10 +229,10 @@ Stopping
 != relation by identity
 ```
 
-The Standing-to-Responsibility hierarchy is the Book's structure. It does not create a new constitutional kind, revise Responsibility assignments, require one populated shape across exact Responsibilities, or replace the exact grammar of the chapters.
+The Book begins at Standing; current Standing assigns Responsibility. This does not create a new constitutional kind, revise Responsibility assignments, require one populated shape across exact Responsibilities, or replace the exact grammar of the chapters.
 
 ```text
-structural branch present != branch value established
+branch present != branch value established
 coordinate unresolved != coordinate Unknown
 same responsible boundary != same act, responsible occurrence, Standing boundary, or exact Act
 same occurrence != same Assertion

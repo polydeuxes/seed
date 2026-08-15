@@ -61,7 +61,7 @@ from seed_runtime.recurrence_measurement import (
     record_measured_count,
 )
 from seed_runtime.yield_evidence import YIELD_LIVE_BOUNDARIES
-from seed_runtime.yield_evidence import read_yield_edge_requirements
+from seed_runtime.yield_evidence import read_yield_relation_requirements
 
 
 GRAMMAR = Path(__file__).resolve().parents[1] / "book_of_seed/grammar.json"
@@ -582,7 +582,7 @@ def _bounded_compare_input_locality_cases() -> dict[str, str]:
 
     return {
         "exact": witness(exact),
-        "edge_missing": witness(missing),
+        "relation_missing": witness(missing),
         "wrong_occurrence": witness(wrong_occurrence),
         "corrupted_evidence": witness(corrupted),
         "unrelated_occurrence": witness(unrelated),
@@ -655,7 +655,7 @@ def _assertion_compare_input_locality_cases() -> dict[str, str]:
 
     return {
         "exact": witness(exact),
-        "edge_missing": witness(missing),
+        "relation_missing": witness(missing),
         "wrong_occurrence": witness(wrong_occurrence),
         "corrupted_evidence": witness(corrupted),
         "unrelated_occurrence": witness(unrelated),
@@ -756,7 +756,7 @@ def _checkpoint_locality_cases() -> dict[str, str]:
 
     return {
         "exact": witness(exact),
-        "edge_missing": witness(missing),
+        "relation_missing": witness(missing),
         "wrong_occurrence": witness(wrong_occurrence),
         "corrupted_evidence": witness(corrupted),
         "unrelated_occurrence": witness(unrelated),
@@ -902,7 +902,7 @@ def _assertion_witness(bundle: dict) -> dict[str, str]:
         ),
         None,
     )
-    evidence_edge = (
+    evidence_relation = (
         assertion.recorded_occurrence_identity == event.identity
         and carried_assertion == material
         and content_evidence is not None
@@ -913,9 +913,9 @@ def _assertion_witness(bundle: dict) -> dict[str, str]:
         "identity": (
             EXACT if dimensions.get("identity") == expected_identity else CONTRADICTION
         ),
-        # Evidence remains on the occurrence/result edge. It is read
+        # Evidence remains on the occurrence/result relation. It is read
         # through the exact locality, not copied from input_support.
-        "Evidence": EXACT if evidence_edge else MISSING,
+        "Evidence": EXACT if evidence_relation else MISSING,
         "provenance": EXACT if dimensions.get("source_provenance") else MISSING,
         "Scope": EXACT if material.get("assertion_scope") else MISSING,
         "Authority": EXACT if dimensions.get("authority") else MISSING,
@@ -933,19 +933,19 @@ def _applicability_witness(bundle: dict) -> dict[str, str]:
     content_evidence = bundle["content_evidence"]
     content = applicability["dimensions"]["content"]
     treatment = applicability["coordinate_treatment"]
-    input_edge = (
+    input_relation = (
         act_evidence is not None
         and event.material.get("input_assertion_reference")
         == applicability.get("input_assertion_reference")
         == act_evidence.material.get("input_assertion_reference")
     )
-    act_edge = (
+    act_relation = (
         act_evidence is not None
         and event.material.get("downstream_act_identity")
         == applicability.get("downstream_act_identity")
         == act_evidence.material.get("downstream_act_identity")
     )
-    occurrence_edge = (
+    occurrence_relation = (
         act_evidence is not None
         and event.material.get("applicability_act_occurrence_identity")
         == applicability.get("applicability_act_occurrence_identity")
@@ -958,8 +958,8 @@ def _applicability_witness(bundle: dict) -> dict[str, str]:
         == applicability["dimensions"].get("standing")
     )
     return {
-        "input_identity": EXACT if input_edge else MISSING,
-        "exact_Act": EXACT if act_edge else MISSING,
+        "input_identity": EXACT if input_relation else MISSING,
+        "exact_Act": EXACT if act_relation else MISSING,
         "subject": EXACT if content.get("downstream_act") else MISSING,
         "result_boundary": EXACT if applicability.get("result_boundary") else MISSING,
         "Scope": EXACT if applicability.get("scope_locality") else MISSING,
@@ -967,7 +967,7 @@ def _applicability_witness(bundle: dict) -> dict[str, str]:
         "Authority": EXACT if applicability["dimensions"].get("authority") else MISSING,
         # The relation endpoints already identify the exact input role and the
         # exact addressed-Act role; no extra participant noun is supplied.
-        "participants_and_roles": EXACT if input_edge and act_edge else MISSING,
+        "participants_and_roles": EXACT if input_relation and act_relation else MISSING,
         "provenance": (
             EXACT
             if applicability["dimensions"].get("source_provenance")
@@ -989,7 +989,7 @@ def _applicability_witness(bundle: dict) -> dict[str, str]:
             else MISSING
         ),
         "occurrence_identity": (
-            EXACT if occurrence_edge else MISSING
+            EXACT if occurrence_relation else MISSING
         ),
         "known_loss": (
             UNKNOWN
@@ -1023,7 +1023,7 @@ def _occurrence_result_requirements(bundle: dict) -> dict[str, bool]:
             return event.identity
         recorded = deepcopy(event)
         object.__setattr__(
-            recorded, "identity", new_identity("yield_edge_pressure")
+            recorded, "identity", new_identity("yield_relation_pressure")
         )
         ledger.append_many([recorded])
         return recorded.identity
@@ -1063,7 +1063,7 @@ def _occurrence_result_requirements(bundle: dict) -> dict[str, bool]:
         )
     event_identity = record_if_supplied_representation_changed(event)
 
-    return read_yield_edge_requirements(
+    return read_yield_relation_requirements(
         ledger,
         recorded_result_event_identity=event_identity,
         result_evidence_event_identity=result_evidence_identity,
@@ -1226,7 +1226,7 @@ def _representation_locality_requirements(bundle: dict) -> dict[str, bool]:
     }
 
 
-def _structural_edge_fidelity_cases() -> dict[str, dict[str, str]]:
+def _relation_fidelity_cases() -> dict[str, dict[str, str]]:
     locality = _byte_measurement_witness()
     alternate_locality = _byte_measurement_witness()
     corrupted_locality = _byte_measurement_witness()
@@ -1311,7 +1311,7 @@ def _structural_edge_fidelity_cases() -> dict[str, dict[str, str]]:
                 locality,
                 occurrence_identity=locality["event"].identity,
             ),
-            "edge_missing": _assertion_locality_witness(
+            "relation_missing": _assertion_locality_witness(
                 missing_locality,
                 occurrence_identity=locality["event"].identity,
             ),
@@ -1332,7 +1332,7 @@ def _structural_edge_fidelity_cases() -> dict[str, dict[str, str]]:
             "exact": _participation_witness(
                 participation, role=BYTE_PAIR_INPUT_ROLE
             ),
-            "edge_missing": _participation_witness(
+            "relation_missing": _participation_witness(
                 missing_participation, role=BYTE_PAIR_INPUT_ROLE
             ),
             "wrong_occurrence": _participation_witness(
@@ -1347,7 +1347,7 @@ def _structural_edge_fidelity_cases() -> dict[str, dict[str, str]]:
         },
         "yield": {
             "exact": _occurrence_result_witness(exact_yield),
-            "edge_missing": _occurrence_result_witness(missing_yield),
+            "relation_missing": _occurrence_result_witness(missing_yield),
             "wrong_occurrence": _occurrence_result_witness(wrong_yield),
             "corrupted_evidence": _occurrence_result_witness(corrupted_yield),
             "unrelated_occurrence": _occurrence_result_witness(unrelated_yield),
@@ -1432,21 +1432,21 @@ def _successful_emission_requirement_bundles() -> dict[str, dict[str, dict]]:
     return {
         "locality": {
             "exact": emission,
-            "edge_missing": missing_locality,
+            "relation_missing": missing_locality,
             "wrong_occurrence": wrong_locality,
             "corrupted_evidence": corrupted_locality,
             "unrelated_occurrence": unrelated_locality,
         },
         "participation": {
             "exact": emission,
-            "edge_missing": missing_participation,
+            "relation_missing": missing_participation,
             "wrong_occurrence": wrong_participation,
             "corrupted_evidence": corrupted_participation,
             "unrelated_occurrence": unrelated_participation,
         },
         "yield": {
             "exact": emission,
-            "edge_missing": missing_yield,
+            "relation_missing": missing_yield,
             "wrong_occurrence": wrong_yield,
             "corrupted_evidence": corrupted_yield,
             "unrelated_occurrence": unrelated_yield,
@@ -1454,7 +1454,7 @@ def _successful_emission_requirement_bundles() -> dict[str, dict[str, dict]]:
     }
 
 
-def _emission_structural_edge_fidelity_cases() -> dict[str, dict[str, str]]:
+def _emission_relation_fidelity_cases() -> dict[str, dict[str, str]]:
     bundles = _successful_emission_requirement_bundles()
     witnesses = {
         "locality": _emission_locality_witness,
@@ -1462,8 +1462,8 @@ def _emission_structural_edge_fidelity_cases() -> dict[str, dict[str, str]]:
         "yield": _occurrence_result_witness,
     }
     return {
-        edge: {case: witnesses[edge](bundle) for case, bundle in cases.items()}
-        for edge, cases in bundles.items()
+        relation: {case: witnesses[relation](bundle) for case, bundle in cases.items()}
+        for relation, cases in bundles.items()
     }
 
 
@@ -1514,7 +1514,7 @@ def _yield_requirement_bundles(
     corrupted["ledger"].mark_corrupted(corrupted["content_evidence"].identity)
     return {
         "exact": exact,
-        "edge_missing": missing,
+        "relation_missing": missing,
         "wrong_occurrence": wrong_occurrence,
         "corrupted_evidence": corrupted,
         "unrelated_occurrence": unrelated,
@@ -1632,7 +1632,7 @@ def _locality_requirement_bundles(
     )
     return {
         "exact": exact,
-        "edge_missing": missing,
+        "relation_missing": missing,
         "wrong_occurrence": wrong_occurrence,
         "corrupted_evidence": corrupted,
         "unrelated_occurrence": unrelated,
@@ -1652,7 +1652,7 @@ def _remaining_locality_requirement_bundles() -> dict[str, dict[str, dict]]:
     }
 
 
-def _additional_live_structural_edge_fidelity_cases() -> dict[
+def _additional_live_relation_fidelity_cases() -> dict[
     tuple[str, str], dict[str, str]
 ]:
     representation, alternate_representation = _repeated_representation_witness()
@@ -1745,7 +1745,7 @@ def _additional_live_structural_edge_fidelity_cases() -> dict[
     return {
         ("locality", "representation_result"): {
             "exact": _representation_locality_witness(representation),
-            "edge_missing": _representation_locality_witness(
+            "relation_missing": _representation_locality_witness(
                 missing_representation_locality
             ),
             "wrong_occurrence": _representation_locality_witness(
@@ -1760,7 +1760,7 @@ def _additional_live_structural_edge_fidelity_cases() -> dict[
         },
         ("yield", "representation_result"): {
             "exact": _occurrence_result_witness(representation),
-            "edge_missing": _occurrence_result_witness(
+            "relation_missing": _occurrence_result_witness(
                 missing_representation_yield
             ),
             "wrong_occurrence": _occurrence_result_witness(
@@ -1775,7 +1775,7 @@ def _additional_live_structural_edge_fidelity_cases() -> dict[
         },
         ("locality", "emission_attempt"): {
             "exact": _emission_attempt_locality_witness(attempt),
-            "edge_missing": _emission_attempt_locality_witness(missing_attempt),
+            "relation_missing": _emission_attempt_locality_witness(missing_attempt),
             "wrong_occurrence": _emission_attempt_locality_witness(wrong_attempt),
             "corrupted_evidence": _emission_attempt_locality_witness(
                 corrupted_attempt
@@ -1787,7 +1787,7 @@ def _additional_live_structural_edge_fidelity_cases() -> dict[
     }
 
 
-def _live_structural_edge_fidelity_cases() -> dict[
+def _live_relation_fidelity_cases() -> dict[
     tuple[str, str], dict[str, str]
 ]:
     primary_boundaries = {
@@ -1796,16 +1796,16 @@ def _live_structural_edge_fidelity_cases() -> dict[
         "yield": "byte_measurement",
     }
     registered = {
-        (edge, primary_boundaries[edge]): cases
-        for edge, cases in _structural_edge_fidelity_cases().items()
+        (relation, primary_boundaries[relation]): cases
+        for relation, cases in _relation_fidelity_cases().items()
     }
     registered.update(
         {
-            (edge, "successful_emission"): cases
-            for edge, cases in _emission_structural_edge_fidelity_cases().items()
+            (relation, "successful_emission"): cases
+            for relation, cases in _emission_relation_fidelity_cases().items()
         }
     )
-    registered.update(_additional_live_structural_edge_fidelity_cases())
+    registered.update(_additional_live_relation_fidelity_cases())
     registered[("locality", "assertion_movement")] = _locality_fidelity_cases()
     registered[("locality", "assertion_compare_input")] = (
         _assertion_compare_input_locality_cases()
@@ -1846,8 +1846,8 @@ def _live_structural_edge_fidelity_cases() -> dict[
     return registered
 
 
-def test_primary_edge_measurements_preserve_their_live_boundaries():
-    registered = _live_structural_edge_fidelity_cases()
+def test_primary_relation_measurements_preserve_their_live_boundaries():
+    registered = _live_relation_fidelity_cases()
 
     assert ("locality", "byte_measurement") in registered
     assert ("participation", "byte_pair_measurement") in registered
@@ -1855,9 +1855,9 @@ def test_primary_edge_measurements_preserve_their_live_boundaries():
     assert ("locality", "assertion_movement") in registered
 
 
-def _structural_edge_implementation_specs() -> dict[str, dict]:
+def _relation_implementation_specs() -> dict[str, dict]:
     requirements = {
-        "exact_relation": "edge_missing",
+        "exact_relation": "relation_missing",
         "occurrence_witness": "wrong_occurrence",
         "intact_evidence": "corrupted_evidence",
     }
@@ -1883,13 +1883,13 @@ def _structural_edge_implementation_specs() -> dict[str, dict]:
     }
 
 
-def _assert_structural_edge_anatomy(grammar: dict, specs: dict[str, dict]) -> None:
-    assert set(specs) == set(grammar["structural_edges"])
+def _assert_relation_anatomy(grammar: dict, specs: dict[str, dict]) -> None:
+    assert set(specs) == set(grammar["relations"])
     relation_families = grammar["implementation_witness"]["relation_audit"][
         "families"
     ]
-    for edge, declared in grammar["structural_edges"].items():
-        witnessed = specs[edge]
+    for relation, declared in grammar["relations"].items():
+        witnessed = specs[relation]
         declared_anatomy = {
             key: value
             for key, value in declared.items()
@@ -1900,7 +1900,7 @@ def _assert_structural_edge_anatomy(grammar: dict, specs: dict[str, dict]) -> No
         }
         assert witnessed_anatomy == declared_anatomy
         assert list(witnessed["requires"]) == declared["requires"]
-        assert declared["requires"] == relation_families[edge]
+        assert declared["requires"] == relation_families[relation]
 
 
 def _act_occurrence_witness(bundle: dict) -> dict[str, str]:
@@ -1993,8 +1993,8 @@ def _locality_witness(bundle: dict) -> str:
 def _locality_fidelity_cases() -> dict[str, str]:
     exact = _recorded_applicability()
 
-    edge_missing = _recorded_applicability()
-    edge_missing["movement"].material["locality_relation"]["second_subject"] = (
+    relation_missing = _recorded_applicability()
+    relation_missing["movement"].material["locality_relation"]["second_subject"] = (
         "another bounded subject"
     )
 
@@ -2018,7 +2018,7 @@ def _locality_fidelity_cases() -> dict[str, str]:
 
     return {
         "exact": _locality_witness(exact),
-        "edge_missing": _locality_witness(edge_missing),
+        "relation_missing": _locality_witness(relation_missing),
         "wrong_occurrence": _locality_witness(wrong_occurrence),
         "corrupted_evidence": _locality_witness(corrupted_evidence),
         "unrelated_occurrence": _locality_witness(unrelated_occurrence),
@@ -2106,47 +2106,47 @@ def test_fidelity_is_this_seeds_bounded_machine_comparison():
     }
 
 
-def test_every_structural_edge_has_live_fidelity_cases():
+def test_every_relation_has_live_fidelity_cases():
     grammar = json.loads(GRAMMAR.read_text(encoding="utf-8"))
-    cases = _structural_edge_fidelity_cases()
-    specs = _structural_edge_implementation_specs()
+    cases = _relation_fidelity_cases()
+    specs = _relation_implementation_specs()
     expected = grammar["implementation_witness"]["fidelity_cases"]
 
-    _assert_structural_edge_anatomy(grammar, specs)
-    assert set(cases) == set(grammar["structural_edges"])
-    assert all(set(edge_cases) == set(expected) for edge_cases in cases.values())
+    _assert_relation_anatomy(grammar, specs)
+    assert set(cases) == set(grammar["relations"])
+    assert all(set(relation_cases) == set(expected) for relation_cases in cases.values())
     assert cases == {
-        edge: expected for edge in grammar["structural_edges"]
+        relation: expected for relation in grammar["relations"]
     }
-    for edge, spec in specs.items():
+    for relation, spec in specs.items():
         for adversary in spec["requires"].values():
-            assert cases[edge][adversary] == MISSING
+            assert cases[relation][adversary] == MISSING
 
 
-def test_emission_instantiates_each_edge_it_carries_at_its_boundary():
+def test_emission_instantiates_each_relation_it_carries_at_its_boundary():
     grammar = json.loads(GRAMMAR.read_text(encoding="utf-8"))
-    cases = _emission_structural_edge_fidelity_cases()
+    cases = _emission_relation_fidelity_cases()
     expected = grammar["implementation_witness"]["fidelity_cases"]
 
     assert set(cases) == {"locality", "participation", "yield"}
-    assert set(cases) == set(grammar["structural_edges"])
-    assert cases == {edge: expected for edge in cases}
+    assert set(cases) == set(grammar["relations"])
+    assert cases == {relation: expected for relation in cases}
 
 
-def test_every_registered_live_edge_instantiation_obeys_the_full_fidelity_matrix():
+def test_every_registered_live_relation_instantiation_obeys_the_full_fidelity_matrix():
     grammar = json.loads(GRAMMAR.read_text(encoding="utf-8"))
     expected = grammar["implementation_witness"]["fidelity_cases"]
-    registered = _live_structural_edge_fidelity_cases()
+    registered = _live_relation_fidelity_cases()
 
     assert registered
-    assert {edge for edge, _boundary in registered} == set(
-        grammar["structural_edges"]
+    assert {relation for relation, _boundary in registered} == set(
+        grammar["relations"]
     )
     assert all(cases == expected for cases in registered.values())
     assert ("locality", "representation_result") in registered
     assert ("locality", "emission_attempt") in registered
     assert {
-        boundary for edge, boundary in registered if edge == "yield"
+        boundary for relation, boundary in registered if relation == "yield"
     } == set(YIELD_LIVE_BOUNDARIES)
 
 
@@ -2189,7 +2189,7 @@ def test_every_yield_evidence_site_declares_its_live_boundary():
 def test_byte_pair_yield_adversaries_change_one_requirement_each():
     expected = {
         "exact": (True, True, True),
-        "edge_missing": (False, True, True),
+        "relation_missing": (False, True, True),
         "wrong_occurrence": (True, False, True),
         "corrupted_evidence": (True, True, False),
         "unrelated_occurrence": (True, True, True),
@@ -2208,7 +2208,7 @@ def test_byte_pair_yield_adversaries_change_one_requirement_each():
 def test_remaining_yield_adversaries_change_one_requirement_each():
     expected = {
         "exact": (True, True, True),
-        "edge_missing": (False, True, True),
+        "relation_missing": (False, True, True),
         "wrong_occurrence": (True, False, True),
         "corrupted_evidence": (True, True, False),
         "unrelated_occurrence": (True, True, True),
@@ -2227,7 +2227,7 @@ def test_remaining_yield_adversaries_change_one_requirement_each():
 def test_remaining_locality_adversaries_change_one_requirement_each():
     expected = {
         "exact": (True, True, True),
-        "edge_missing": (False, True, True),
+        "relation_missing": (False, True, True),
         "wrong_occurrence": (True, False, True),
         "corrupted_evidence": (True, True, False),
         "unrelated_occurrence": (True, True, True),
@@ -2308,7 +2308,7 @@ def test_successful_emission_adversaries_change_one_requirement_each():
             "occurrence_witness": True,
             "intact_evidence": True,
         },
-        "edge_missing": {
+        "relation_missing": {
             "exact_relation": False,
             "occurrence_witness": True,
             "intact_evidence": True,
@@ -2331,12 +2331,12 @@ def test_successful_emission_adversaries_change_one_requirement_each():
     }
 
     assert {
-        edge: {
-            case: requirement_witnesses[edge](bundle)
+        relation: {
+            case: requirement_witnesses[relation](bundle)
             for case, bundle in cases.items()
         }
-        for edge, cases in bundles.items()
-    } == {edge: expected for edge in bundles}
+        for relation, cases in bundles.items()
+    } == {relation: expected for relation in bundles}
 
 
 def test_representation_result_adversaries_change_one_requirement_each():
@@ -2388,7 +2388,7 @@ def test_representation_result_adversaries_change_one_requirement_each():
 
     expected = {
         "exact": (True, True, True),
-        "edge_missing": (False, True, True),
+        "relation_missing": (False, True, True),
         "wrong_occurrence": (True, False, True),
         "corrupted_evidence": (True, True, False),
         "unrelated_occurrence": (True, True, True),
@@ -2396,14 +2396,14 @@ def test_representation_result_adversaries_change_one_requirement_each():
     bundles = {
         "locality": {
             "exact": exact,
-            "edge_missing": missing_locality,
+            "relation_missing": missing_locality,
             "wrong_occurrence": wrong_locality,
             "corrupted_evidence": corrupted_locality,
             "unrelated_occurrence": unrelated_locality,
         },
         "yield": {
             "exact": exact,
-            "edge_missing": missing_yield,
+            "relation_missing": missing_yield,
             "wrong_occurrence": wrong_yield,
             "corrupted_evidence": corrupted_yield,
             "unrelated_occurrence": unrelated_yield,
@@ -2415,12 +2415,12 @@ def test_representation_result_adversaries_change_one_requirement_each():
     }
 
     assert {
-        edge: {
-            case: tuple(witnesses[edge](bundle).values())
+        relation: {
+            case: tuple(witnesses[relation](bundle).values())
             for case, bundle in cases.items()
         }
-        for edge, cases in bundles.items()
-    } == {edge: expected for edge in bundles}
+        for relation, cases in bundles.items()
+    } == {relation: expected for relation in bundles}
 
 
 def test_byte_measurement_adversaries_change_one_requirement_each():
@@ -2491,7 +2491,7 @@ def test_byte_measurement_adversaries_change_one_requirement_each():
 
     expected = {
         "exact": (True, True, True),
-        "edge_missing": (False, True, True),
+        "relation_missing": (False, True, True),
         "wrong_occurrence": (True, False, True),
         "corrupted_evidence": (True, True, False),
         "unrelated_occurrence": (True, True, True),
@@ -2501,7 +2501,7 @@ def test_byte_measurement_adversaries_change_one_requirement_each():
             "exact": _assertion_locality_requirements(
                 locality, occurrence_identity=locality["event"].identity
             ),
-            "edge_missing": _assertion_locality_requirements(
+            "relation_missing": _assertion_locality_requirements(
                 missing_locality, occurrence_identity=locality["event"].identity
             ),
             "wrong_occurrence": _assertion_locality_requirements(
@@ -2519,7 +2519,7 @@ def test_byte_measurement_adversaries_change_one_requirement_each():
             case: _participation_requirements(bundle, role=BYTE_PAIR_INPUT_ROLE)
             for case, bundle in {
                 "exact": participation,
-                "edge_missing": missing_participation,
+                "relation_missing": missing_participation,
                 "wrong_occurrence": wrong_participation,
                 "corrupted_evidence": corrupted_participation,
                 "unrelated_occurrence": unrelated_participation,
@@ -2529,7 +2529,7 @@ def test_byte_measurement_adversaries_change_one_requirement_each():
             case: _occurrence_result_requirements(bundle)
             for case, bundle in {
                 "exact": exact_yield,
-                "edge_missing": missing_yield,
+                "relation_missing": missing_yield,
                 "wrong_occurrence": wrong_yield,
                 "corrupted_evidence": corrupted_yield,
                 "unrelated_occurrence": unrelated_yield,
@@ -2538,9 +2538,9 @@ def test_byte_measurement_adversaries_change_one_requirement_each():
     }
 
     assert {
-        edge: {case: tuple(requirements.values()) for case, requirements in cases.items()}
-        for edge, cases in actual.items()
-    } == {edge: expected for edge in actual}
+        relation: {case: tuple(requirements.values()) for case, requirements in cases.items()}
+        for relation, cases in actual.items()
+    } == {relation: expected for relation in actual}
 
 
 def test_attempt_and_success_have_distinct_locality_relations_for_the_same_text():
@@ -2588,7 +2588,7 @@ def test_successful_emission_locality_binds_the_exact_representation():
     }
 
 
-def test_representation_act_has_an_exact_yield_edge_without_asserting_participation():
+def test_representation_act_has_an_exact_yield_relation_without_asserting_participation():
     representation = _representation_witness()
     alternate = _representation_witness()
     missing = dict(representation)
@@ -2609,13 +2609,13 @@ def test_representation_act_has_an_exact_yield_edge_without_asserting_participat
     assert "input_role" not in representation["event"].material
 
 
-def test_changed_structural_edge_anatomy_is_detected():
+def test_changed_relation_anatomy_is_detected():
     grammar = json.loads(GRAMMAR.read_text(encoding="utf-8"))
-    grammar["structural_edges"]["yield"]["from"] = "result"
+    grammar["relations"]["yield"]["from"] = "result"
 
     try:
-        _assert_structural_edge_anatomy(
-            grammar, _structural_edge_implementation_specs()
+        _assert_relation_anatomy(
+            grammar, _relation_implementation_specs()
         )
     except AssertionError:
         pass
@@ -2774,7 +2774,7 @@ def test_participation_requires_exact_subject_role_and_act_occurrence():
     grammar = json.loads(GRAMMAR.read_text(encoding="utf-8"))
     bundle = _recorded_applicability()
 
-    assert grammar["structural_edges"]["participation"] == {
+    assert grammar["relations"]["participation"] == {
         "book_clause": "01.Standing.E.1",
         "from": "subject",
         "to": "Act_occurrence",
@@ -2844,8 +2844,8 @@ def test_locality_relation_clause_is_checked_against_the_live_pair_witness():
 def test_locality_fans_out_orthogonal_adversaries_for_each_live_witness():
     exact = _recorded_applicability()
 
-    edge_missing = _recorded_applicability()
-    edge_missing["movement"].material["locality_relation"]["second_subject"] = (
+    relation_missing = _recorded_applicability()
+    relation_missing["movement"].material["locality_relation"]["second_subject"] = (
         "another bounded subject"
     )
 
@@ -2869,19 +2869,19 @@ def test_locality_fans_out_orthogonal_adversaries_for_each_live_witness():
 
     cases = {
         "exact": exact,
-        "edge_missing": edge_missing,
+        "relation_missing": relation_missing,
         "wrong_occurrence": wrong_occurrence,
         "corrupted_evidence": corrupted_evidence,
         "unrelated_occurrence": unrelated_occurrence,
     }
     assert {name: _locality_witness(case) for name, case in cases.items()} == {
         "exact": EXACT,
-        "edge_missing": MISSING,
+        "relation_missing": MISSING,
         "wrong_occurrence": MISSING,
         "corrupted_evidence": MISSING,
         "unrelated_occurrence": EXACT,
     }
-    assert _locality_requirements(edge_missing) == {
+    assert _locality_requirements(relation_missing) == {
         "exact_relation": False,
         "occurrence_witness": True,
         "intact_evidence": True,
@@ -2909,7 +2909,7 @@ def test_occurrence_and_result_endpoints_do_not_establish_their_relation():
     assert _occurrence_result_witness(bundle) == MISSING
 
 
-def test_yield_edge_read_has_no_result_reencoding_surface():
+def test_yield_relation_read_has_no_result_reencoding_surface():
     bundle = _byte_measurement_witness()
     import seed_runtime.yield_evidence as yield_module
 
@@ -3282,7 +3282,7 @@ LOCALITY_BOUNDARIES_EVIDENCED_BY_OCCURRENCE = {
 
 
 def _declared_kind_constants(family: str) -> dict[str, list[str]]:
-    """Every module-level kind constant naming this edge, found by read code.
+    """Every module-level kind constant naming this relation, found by read code.
 
     Discovery from the runtime, as with Yield: the registry above is not
     asked what exists, the runtime is. A boundary that stops declaring itself,
@@ -3309,7 +3309,7 @@ def _declared_kind_constants(family: str) -> dict[str, list[str]]:
 
 
 def test_every_locality_evidence_kind_is_declared_once_and_registered():
-    """The Yield discovery pattern, applied to the second structural edge."""
+    """The Yield discovery pattern, applied to the second relation."""
 
     discovered = _declared_kind_constants("LOCALITY_EVIDENCE_KIND")
 
@@ -3327,9 +3327,9 @@ def test_every_locality_evidence_kind_is_declared_once_and_registered():
         f"  only live:     {sorted(set(discovered) - set(LOCALITY_BOUNDARY_BY_KIND))}\n"
         f"  only registry: {sorted(set(LOCALITY_BOUNDARY_BY_KIND) - set(discovered))}"
     )
-    registered = _live_structural_edge_fidelity_cases()
+    registered = _live_relation_fidelity_cases()
     assert {
-        boundary for edge, boundary in registered if edge == "locality"
+        boundary for relation, boundary in registered if relation == "locality"
     } == (
         set(LOCALITY_BOUNDARY_BY_KIND.values())
         | LOCALITY_BOUNDARIES_EVIDENCED_BY_OCCURRENCE
@@ -3358,13 +3358,13 @@ def test_no_new_site_compounds_scope_with_locality():
     )
 
 
-# Every live structural-edge witness, and where its Evidence comes from.
+# Every live relation witness, and where its Evidence comes from.
 #
-# A dedicated Evidence event species is not what makes an edge live: Evidence
+# A dedicated Evidence event species is not what establishes a relation: Evidence
 # may be the event occurrence itself, a responsible Act evidence occurrence,
 # or a dedicated one. grammar.json requires exact_relation, occurrence_witness,
 # and intact_evidence, and names no species for them.
-STRUCTURAL_EDGE_EVIDENCE = {
+RELATION_EVIDENCE = {
     "_checkpoint_locality_requirements": (
         "locality",
         "a command-to-checkpoint locality-evidence occurrence",
@@ -3404,70 +3404,96 @@ STRUCTURAL_EDGE_EVIDENCE = {
 
 
 def _requirement_witnesses() -> set[str]:
-    """Every live edge witness, found by read this module rather than listing it."""
+    """Every live relation reader present in this module."""
 
-    tree = ast.parse(Path(__file__).read_text(encoding="utf-8"))
     return {
-        node.name
-        for node in tree.body
-        if isinstance(node, ast.FunctionDef)
-        and node.name.startswith("_")
-        and node.name.endswith("_requirements")
+        name
+        for name, value in globals().items()
+        if name.startswith("_")
+        and name.endswith("_requirements")
+        and callable(value)
     }
 
 
-def test_every_live_edge_witness_names_its_edge_and_its_evidence():
-    """Runtime discovery equated with the registry, for all three edges."""
+def _relation_coordinates_from_live_witnesses() -> dict[str, dict[str, bool]]:
+    byte_measurement = _byte_measurement_witness()
+    emission = _emission_witness()
+    representation = _representation_witness()
+    applicability = _recorded_applicability()
+    checkpoint, _ = _checkpoint_locality_witnesses()
+    assertion_compare, _ = _assertion_compare_input_locality_witnesses()
+    bounded_compare, _ = _bounded_compare_input_locality_witnesses()
 
-    assert _requirement_witnesses() == set(STRUCTURAL_EDGE_EVIDENCE), (
-        "\nLive edge witnesses and the registry disagree.\n"
-        f"  only live:     {sorted(_requirement_witnesses() - set(STRUCTURAL_EDGE_EVIDENCE))}\n"
-        f"  only registry: {sorted(set(STRUCTURAL_EDGE_EVIDENCE) - _requirement_witnesses())}"
+    return {
+        "_checkpoint_locality_requirements": _checkpoint_locality_requirements(
+            checkpoint
+        ),
+        "_assertion_compare_input_locality_requirements": (
+            _assertion_compare_input_locality_requirements(assertion_compare)
+        ),
+        "_bounded_compare_input_locality_requirements": (
+            _bounded_compare_input_locality_requirements(bounded_compare)
+        ),
+        "_locality_requirements": _locality_requirements(applicability),
+        "_assertion_locality_requirements": _assertion_locality_requirements(
+            byte_measurement,
+            occurrence_identity=byte_measurement["event"].identity,
+        ),
+        "_emission_locality_requirements": _emission_locality_requirements(emission),
+        "_emission_attempt_locality_requirements": (
+            _emission_attempt_locality_requirements(emission)
+        ),
+        "_representation_locality_requirements": (
+            _representation_locality_requirements(representation)
+        ),
+        "_emission_participation_requirements": (
+            _emission_participation_requirements(emission)
+        ),
+        "_participation_requirements": _participation_requirements(
+            applicability,
+            role=BYTE_PAIR_INPUT_ROLE,
+        ),
+        "_occurrence_result_requirements": _occurrence_result_requirements(
+            byte_measurement
+        ),
+    }
+
+
+def test_every_live_relation_witness_names_its_relation_and_its_evidence():
+    """Runtime discovery equated with the registry, for all three relations."""
+
+    assert _requirement_witnesses() == set(RELATION_EVIDENCE), (
+        "\nLive relation witnesses and the registry disagree.\n"
+        f"  only live:     {sorted(_requirement_witnesses() - set(RELATION_EVIDENCE))}\n"
+        f"  only registry: {sorted(set(RELATION_EVIDENCE) - _requirement_witnesses())}"
     )
 
-    edges = json.loads(GRAMMAR.read_text(encoding="utf-8"))["structural_edges"]
-    for witness, (edge, evidence) in STRUCTURAL_EDGE_EVIDENCE.items():
-        assert edge in edges, f"{witness} names {edge}, which is not a structural edge"
+    relations = json.loads(GRAMMAR.read_text(encoding="utf-8"))["relations"]
+    for witness, (relation, evidence) in RELATION_EVIDENCE.items():
+        assert relation in relations, f"{witness} names {relation}, which is not a relation"
         assert evidence, witness
 
 
-def test_each_structural_edge_has_a_live_witness():
-    """Each structural edge grammar.json declares has a live witness."""
+def test_each_relation_has_a_live_witness():
+    """Each relation grammar.json declares has a live witness."""
 
-    edges = json.loads(GRAMMAR.read_text(encoding="utf-8"))["structural_edges"]
-    witnessed = {edge for edge, _ in STRUCTURAL_EDGE_EVIDENCE.values()}
-    assert witnessed == set(edges)
+    relations = json.loads(GRAMMAR.read_text(encoding="utf-8"))["relations"]
+    witnessed = {relation for relation, _ in RELATION_EVIDENCE.values()}
+    assert witnessed == set(relations)
 
 
-def test_every_live_edge_witness_returns_its_edge_required_coordinates():
-    """The vector each witness reports is the one its edge declares."""
+def test_every_live_relation_witness_returns_its_relation_required_coordinates():
+    """The vector each witness reports is the one its relation declares."""
 
-    edges = json.loads(GRAMMAR.read_text(encoding="utf-8"))["structural_edges"]
-    result_requirements = _occurrence_result_requirements(_byte_measurement_witness())
-    assert set(result_requirements) == set(edges["yield"]["requires"])
+    relations = json.loads(GRAMMAR.read_text(encoding="utf-8"))["relations"]
+    reported = _relation_coordinates_from_live_witnesses()
+    assert set(reported) == _requirement_witnesses() == set(RELATION_EVIDENCE)
 
-    # The remaining witnesses are still developer-read through Python AST.
-    # Yield is deliberately absent here: its required coordinates were read
-    # from Seed's live result above, not read from function syntax.
-    source = Path(__file__).read_text(encoding="utf-8")
-    tree = ast.parse(source)
-    for node in tree.body:
-        if not isinstance(node, ast.FunctionDef):
-            continue
-        if node.name not in STRUCTURAL_EDGE_EVIDENCE:
-            continue
-        if node.name == "_occurrence_result_requirements":
-            continue
-        edge, _ = STRUCTURAL_EDGE_EVIDENCE[node.name]
-        required = set(edges[edge]["requires"])
-        reported = {
-            key.value
-            for sub in ast.walk(node)
-            if isinstance(sub, ast.Dict)
-            for key in sub.keys
-            if isinstance(key, ast.Constant) and isinstance(key.value, str)
-        }
-        assert required <= reported, (
-            f"{node.name} witnesses {edge}, which requires {sorted(required)}; "
-            f"it reports {sorted(reported)}"
+    for witness, requirements in reported.items():
+        relation, _ = RELATION_EVIDENCE[witness]
+        required = set(relations[relation]["requires"])
+        assert set(requirements) == required, (
+            f"{witness} witnesses {relation}, which requires {sorted(required)}; "
+            f"it reports {sorted(requirements)}"
         )
+        assert all(requirements.values()), witness

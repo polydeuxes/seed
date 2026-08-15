@@ -970,8 +970,8 @@ class SQLiteEventLedger(EventLedger):
     def _insert_references_without_commit(self, event: Event) -> None:
         """Index the occurrence references this material already carries.
 
-        An edge exists where the material holds the exact identity of an occurrence
-        already in this ledger. Its relation is the field name that held it.
+        A reference pair is indexed where the material holds the exact identity of an
+        occurrence already in this ledger. The field name that held it is preserved.
         """
 
         # One reference held twice under one field is one relation.

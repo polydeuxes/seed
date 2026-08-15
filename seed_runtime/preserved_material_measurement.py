@@ -6,7 +6,7 @@ and `01.Source:28` grants the finding and states its conditions:
     A declared measurement may yield bounded findings of exact equality,
     count, recurrence, prefix occurrence, the result of a declared predicate,
     or adjacency within its measurement boundary. Those findings do not
-    establish structural, grammatical, or semantic represented relation, or constitutional
+    establish grammatical or semantic represented relation, or constitutional
     standing beyond the measurement assertion. A recurrence assertion must
     disclose the representation or representation measured, the rule by which
     equivalence or sameness was determined, and the bounded scope within which
@@ -259,8 +259,8 @@ class RecurrenceFinding:
     # it and measured 96.8% on 500 findings over 2,000 occurrences.
     input_support: InputSupport | None = None
     responsible_act_evidence_identity: str | None = None
-    # Which preserved Evidence is for this result's exact Yield edge. The
-    # Evidence reference is neither the edge nor its Act occurrence by identity.
+    # Which preserved Evidence is for this result's exact Yield relation. The
+    # Evidence reference is neither the relation nor its Act occurrence by identity.
     # holds that a separately supplied representation with identical fields
     # does not carry the witnessed return's standing "unless that standing is
     # separately represented or preserved". Content equality cannot supply it:
@@ -552,7 +552,7 @@ def _record_yield(
     """Preserve exact Yield Evidence at the responsible Act boundary.
 
     The distinction is not that this is private. Privacy is mechanics. It is
-    that Standing for the occurrence-to-result edge is preserved at the
+    that Standing for the occurrence-to-result relation is preserved at the
     exact Act boundary, and
     the result carries the relation to it — so a separately supplied
     representation with identical fields carries no such relation, which is the
@@ -573,8 +573,8 @@ def _record_yield(
     The three negative coordinates stay unestablished; the material records them
     as such rather than filling them.
 
-    This occurrence is preserved Evidence for a Yield edge. It is not
-    that edge or its Act occurrence by identity.
+    This occurrence is preserved Evidence for a Yield relation. It is not
+    that relation or its Act occurrence by identity.
     """
 
     act_evidence = ledger.append(

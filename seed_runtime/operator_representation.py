@@ -8,7 +8,7 @@ from seed_runtime.events import CORRUPTED, EventLedger
 from seed_runtime.identities import new_identity
 from seed_runtime.yield_evidence import (
     _record_yield_evidence,
-    read_yield_edge_requirements,
+    read_yield_relation_requirements,
 )
 
 REPRESENTATION_RECORDED_KIND = "operator.representation.recorded"
@@ -266,7 +266,7 @@ def read_operator_representation(
         or ledger.integrity_of(locality_evidence.identity) == CORRUPTED
     ):
         raise ValueError("the recorded Representation Evidence is not exact")
-    requirements = read_yield_edge_requirements(
+    requirements = read_yield_relation_requirements(
         ledger,
         recorded_result_event_identity=event.identity,
         result_evidence_event_identity=yield_evidence_identity,

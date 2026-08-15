@@ -217,7 +217,7 @@ def test_the_left_representation_is_compared_as_a_coordinate(ledger):
     """Pair identity must not be read from prose.
 
     `representation_measured` is a sentence. The anchor a finding measured from
-    is carried structurally, and a comparison asking whether two findings share
+    is carried as an exact coordinate, and a comparison asking whether two findings share
     a left representation must read that rather than parse the sentence.
     """
     a = _finding(ledger, "s1", representation="a")

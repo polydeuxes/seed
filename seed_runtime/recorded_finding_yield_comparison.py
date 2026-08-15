@@ -38,7 +38,7 @@ from seed_runtime.preserved_material_measurement import (
 from seed_runtime.yield_evidence import (
     YIELD_EVIDENCE_KIND,
     _record_yield_evidence,
-    read_yield_edge_requirements,
+    read_yield_relation_requirements,
 )
 
 FINDING_YIELD_COMPARISON_KIND = "operator.measurement.finding_yield_compared"
@@ -182,7 +182,7 @@ def get_recorded_finding_yield_comparison(
             f"{act_evidence_identity} is not responsible Act Evidence for this Compare"
         )
     if not all(
-        read_yield_edge_requirements(
+        read_yield_relation_requirements(
             ledger,
             recorded_result_event_identity=event.identity,
             result_evidence_event_identity=evidence.identity,

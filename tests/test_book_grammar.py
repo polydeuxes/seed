@@ -13,10 +13,10 @@ def _active_book() -> str:
     )
 
 
-def _assert_structural_edge_clauses(grammar: dict, active_book: str) -> None:
-    for edge, coordinates in grammar["structural_edges"].items():
+def _assert_relation_clauses(grammar: dict, active_book: str) -> None:
+    for relation, coordinates in grammar["relations"].items():
         clause = coordinates["book_clause"]
-        assert edge
+        assert relation
         assert active_book.count(f"### {clause} ") == 1
 
 
@@ -47,19 +47,19 @@ def test_machine_readable_grammar_traverses_responsibility_from_standing():
         "content",
         "locality",
     ]
-    assert grammar["structural_edges"]["yield"]["preserves"] == [
+    assert grammar["relations"]["yield"]["preserves"] == [
         "Act_occurrence_identity",
         "result_identity",
     ]
     assert (
-        grammar["structural_edges"]["yield"][
+        grammar["relations"]["yield"][
             "equal_result_content_establishes_identity"
         ]
         is False
     )
     assert grammar["clauses"]
     active_book = _active_book()
-    _assert_structural_edge_clauses(grammar, active_book)
+    _assert_relation_clauses(grammar, active_book)
     assert active_book.count(f"### {grammar['fidelity']['book_clause']} ") == 1
     for clause_identity, clause in grammar["clauses"].items():
         assert clause["subject"]
@@ -67,16 +67,16 @@ def test_machine_readable_grammar_traverses_responsibility_from_standing():
         assert active_book.count(f"### {clause_identity} ") == 1
 
 
-def test_missing_structural_edge_clause_is_detected():
+def test_missing_relation_clause_is_detected():
     grammar = json.loads(GRAMMAR.read_text(encoding="utf-8"))
     active_book = _active_book()
-    locality_clause = grammar["structural_edges"]["locality"]["book_clause"]
+    locality_clause = grammar["relations"]["locality"]["book_clause"]
     broken_book = active_book.replace(
         f"### {locality_clause} ", "### 01.Missing.A ", 1
     )
 
     try:
-        _assert_structural_edge_clauses(grammar, broken_book)
+        _assert_relation_clauses(grammar, broken_book)
     except AssertionError:
         pass
     else:

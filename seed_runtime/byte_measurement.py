@@ -24,7 +24,7 @@ from seed_runtime.identities import new_identity
 from seed_runtime.yield_evidence import (
     YIELD_EVIDENCE_KIND,
     _record_yield_evidence,
-    read_yield_edge_requirements,
+    read_yield_relation_requirements,
 )
 from seed_runtime.material_ingest import (
     MATERIAL_INGEST_OCCURRED_KIND,
@@ -793,7 +793,7 @@ def _validate_moved_byte_assertion(
         or act_evidence.material != expected_evidence
     ):
         raise ByteMeasurementError("Assertion movement Act Evidence is not exact")
-    requirements = read_yield_edge_requirements(
+    requirements = read_yield_relation_requirements(
         ledger,
         recorded_result_event_identity=movement.identity,
         result_evidence_event_identity=movement.material.get("yield_evidence_identity"),

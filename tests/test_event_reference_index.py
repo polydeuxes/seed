@@ -22,7 +22,7 @@ def _road(tmp_path):
 
 
 def test_the_index_restates_only_references_the_material_carries(tmp_path):
-    """Every indexed edge is readable back out of the material it came from."""
+    """Every indexed reference pair is readable from its material."""
 
     ledger = _road(tmp_path)
     rows = [
@@ -94,7 +94,7 @@ def test_naming_an_identity_before_its_occurrence_is_not_a_reference(tmp_path):
     occurrence that could not have referenced its destination did not.
 
     Read it the other way would also let a caller name an identity it has not seen
-    and acquire an edge to whatever later takes that identity.
+    and acquire a reference to whatever later takes that identity.
     """
 
     ledger = SQLiteEventLedger(str(tmp_path / "e.sqlite"))
@@ -151,8 +151,8 @@ def test_references_to_answers_what_the_material_column_cannot(tmp_path):
         assert relation
 
 
-def test_an_unresolvable_identity_shaped_string_is_not_an_edge(tmp_path):
-    """An edge requires an occurrence, not a string that looks like one."""
+def test_an_unresolvable_identity_shaped_string_is_not_a_reference(tmp_path):
+    """A reference requires an occurrence, not a string that looks like one."""
 
     ledger = SQLiteEventLedger(str(tmp_path / "e.sqlite"))
     ledger.append("k", {"points_at": "evt_999999"}, locality_identity="s1")

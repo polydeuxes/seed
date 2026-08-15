@@ -302,8 +302,6 @@ during
 e
 each
 earlier
-edge
-edges
 effect
 effects
 eight
@@ -891,10 +889,6 @@ stream
 strengthen
 strengthened
 stronger
-structural
-structurally
-structure
-structures
 subject
 subjects
 substantive

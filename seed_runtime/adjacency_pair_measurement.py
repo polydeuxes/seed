@@ -1036,7 +1036,7 @@ def get_recorded_adjacency_pair_measurements(
         or locality_evidence.kind != ADJACENCY_PAIR_MEASUREMENT_LOCALITY_EVIDENCE_KIND
     ):
         raise PreservedMaterialMeasurementError(
-            "the adjacency-pair measurement result carries incomplete edge Evidence"
+            "the adjacency-pair measurement result carries incomplete relation Evidence"
         )
     act_occurrence_identity = event.material.get("act_occurrence_identity")
     downstream_act_identity = event.material.get("downstream_act_identity")
@@ -1052,7 +1052,7 @@ def get_recorded_adjacency_pair_measurements(
         or locality_evidence.material.get("carried_content") != result_material
     ):
         raise PreservedMaterialMeasurementError(
-            "the adjacency-pair measurement edge Evidence carries different coordinates"
+            "the adjacency-pair measurement relation Evidence carries different coordinates"
         )
     anchor = ledger.get(adjacency_evidence_identity)
     sources: dict[str, Event] = {}
@@ -1319,7 +1319,7 @@ def get_recorded_adjacency_pair_measurement_compare(
         for item in evidence
     ):
         raise PreservedMaterialMeasurementError(
-            "the recorded measurement Compare carries absent or corrupted edge Evidence"
+            "the recorded measurement Compare carries absent or corrupted relation Evidence"
         )
     assert act_evidence is not None
     assert yield_evidence is not None
@@ -1353,7 +1353,7 @@ def get_recorded_adjacency_pair_measurement_compare(
         or event.material.get("participation") != expected_participation
     ):
         raise PreservedMaterialMeasurementError(
-            "the recorded measurement Compare edge Evidence carries different coordinates"
+            "the recorded measurement Compare relation Evidence carries different coordinates"
         )
     for input_identity in input_identities:
         event = ledger.get(input_identity)

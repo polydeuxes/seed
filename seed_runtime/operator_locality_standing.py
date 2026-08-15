@@ -195,7 +195,7 @@ def advance_operator_locality_standing(
             _REPRESENTATION_EMISSION_ACT_EVIDENCE_KIND,
             _REPRESENTATION_EMISSION_LOCALITY_EVIDENCE_KIND,
         }:
-            # These Events preserve exact edge Evidence. They do not add or
+            # These Events preserve exact relation Evidence. They do not add or
             # revise Locality Standing by identity.
             continue
         if event.kind == _REPRESENTATION_EMISSION_ATTEMPT_KIND:

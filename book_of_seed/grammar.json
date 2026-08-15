@@ -26,7 +26,7 @@
     "result": "bounded_Fidelity_finding",
     "does_not_establish": "global_certification"
   },
-  "structural_edges": {
+  "relations": {
     "participation": {
       "book_clause": "01.Standing.E.1",
       "from": "subject",
@@ -77,7 +77,7 @@
     },
     "fidelity_cases": {
       "exact": "exact",
-      "edge_missing": "missing",
+      "relation_missing": "missing",
       "wrong_occurrence": "missing",
       "corrupted_evidence": "missing",
       "unrelated_occurrence": "exact"

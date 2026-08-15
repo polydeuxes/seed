@@ -1357,7 +1357,7 @@ def test_every_probe_and_pass_reads_one_prefix_despite_a_concurrent_append(compa
 
 
 # --------------------------------------------------------------------------
-# The occurrence-to-result edge retains its exact identities.
+# The occurrence-to-result relation retains its exact identities.
 # --------------------------------------------------------------------------
 
 

@@ -97,7 +97,7 @@ def position_support(
 
     A partition begins somewhere. Reading from byte zero is a fixed coordinate, and
     the same material read from byte one yields the same classes in reversed places, so
-    a positional structure at some stride does not say where a group starts.
+    positional recurrence at some stride does not say where a group starts.
     """
 
     body = raw[phase:]

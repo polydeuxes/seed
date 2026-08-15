@@ -8,7 +8,7 @@ lowercase mid-sentence -- "sensing is not remembering, remembering is not
 current read" -- and the section heading is lowercase.  The capital is
 orthographic.
 
-What this module demonstrates is narrow and structural:
+What this module demonstrates is narrow:
 
     earlier events remain preserved and preserved
     a later locality read can reference them

@@ -18,7 +18,7 @@ Responsibility
     └── Standing
 ```
 
-Structural relations recur across live implementation roads:
+Relations recur across live implementation roads:
 
 ```text
 content ── Locality → occurrence
@@ -28,7 +28,7 @@ first subject ── Locality → second subject
 ```
 
 The endpoints do not supply a relation by co-presence. Each relation requires
-its exact Evidence. These structural relations are not every relation
+its exact Evidence. These relations are not every relation
 about which Seed may carry an Assertion or Standing.
 
 ## Live implementation references
@@ -64,7 +64,7 @@ Machine-grammar Fidelity
 
 `Examination` describes movement from presented material toward bounded Seed
 Assertions. `Presentation` describes movement from bounded Seed Assertions
-toward an emitted representation. Neither is a structural root, Act, or
+toward an emitted representation. Neither is a root, Act, or
 occurrence. They are directions across the Responsibility spine.
 
 ## Translation shorthand

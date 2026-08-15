@@ -16,7 +16,7 @@ from seed_runtime.operator_ingest import run_operator_ingest
 from seed_runtime.operator_locality_standing import read_operator_locality_standing
 from seed_runtime.operator_material_boundary import operator_boundary_material
 from seed_runtime.system_material import preserve_system_material
-from seed_runtime.yield_evidence import YIELD_EVIDENCE_KIND, read_yield_edge_requirements
+from seed_runtime.yield_evidence import YIELD_EVIDENCE_KIND, read_yield_relation_requirements
 
 
 def _preserve(ledger, material=b"a.txt\nb.txt\n", **differences):
@@ -73,7 +73,7 @@ def test_durable_ingest_preserves_raw_material_and_yield_evidence(tmp_path):
         evidence = reopened.get(evidence_identity)
         assert read is not None and evidence is not None
         assert read.exact_material == evidence.exact_material == exact
-        assert read_yield_edge_requirements(
+        assert read_yield_relation_requirements(
             reopened,
             recorded_result_event_identity=occurred_identity,
             result_evidence_event_identity=evidence_identity,
@@ -179,7 +179,7 @@ def test_equal_operator_and_system_bytes_keep_distinct_occurrences_results_and_e
     assert _ingest_identities(operator_ingest).isdisjoint(
         _ingest_identities(system_ingest)
     )
-    assert read_yield_edge_requirements(
+    assert read_yield_relation_requirements(
         ledger,
         recorded_result_event_identity=operator_ingest.identity,
         result_evidence_event_identity=system_ingest.material[
@@ -259,7 +259,7 @@ def test_ingest_event_binds_exact_act_and_result_evidence():
     ledger = EventLedger()
     ingest = _preserve(ledger)
 
-    assert read_yield_edge_requirements(
+    assert read_yield_relation_requirements(
         ledger,
         recorded_result_event_identity=ingest.identity,
         result_evidence_event_identity=ingest.material["yield_evidence_identity"],
@@ -283,7 +283,7 @@ def test_changed_ingest_material_cannot_borrow_its_yield_evidence():
         locality_identity=ingest.locality_identity,
     )
 
-    assert read_yield_edge_requirements(
+    assert read_yield_relation_requirements(
         ledger,
         recorded_result_event_identity=changed.identity,
         result_evidence_event_identity=changed.material["yield_evidence_identity"],
@@ -310,7 +310,7 @@ def test_yield_evidence_without_exact_material_cannot_certify_an_ingest():
         locality_identity=ingest.locality_identity,
     )
 
-    assert read_yield_edge_requirements(
+    assert read_yield_relation_requirements(
         ledger,
         recorded_result_event_identity=carried.identity,
         result_evidence_event_identity=incomplete_evidence.identity,
@@ -329,7 +329,7 @@ def test_equal_material_has_distinct_ingest_occurrences_results_and_yields():
     assert first.material["act_occurrence_identity"] != second.material["act_occurrence_identity"]
     assert first.material["result_identity"] != second.material["result_identity"]
     assert first.material["yield_evidence_identity"] != second.material["yield_evidence_identity"]
-    assert read_yield_edge_requirements(
+    assert read_yield_relation_requirements(
         ledger,
         recorded_result_event_identity=first.identity,
         result_evidence_event_identity=second.material["yield_evidence_identity"],

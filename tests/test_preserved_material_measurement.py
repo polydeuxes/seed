@@ -1523,6 +1523,6 @@ def test_the_witness_asserts_no_responsibility(
         e for e in ledger.list() if e.kind == YIELD_EVIDENCE_KIND
     ][-1]
     assert witness.material["dimensions"]["responsibility"] == RESPONSIBILITY_UNESTABLISHED
-    assert "not the edge or Act occurrence by identity" in (
+    assert "not the relation or Act occurrence by identity" in (
         witness.material["dimensions"]["occurrence_preservation"]
     )

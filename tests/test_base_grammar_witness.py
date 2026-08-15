@@ -1,4 +1,4 @@
-"""What separates the declared structural edges, and what does not.
+"""What separates the declared relations, and what does not.
 
 Their stated requirements are identical, so
 anything read only those cannot tell them apart. What differs is where each
@@ -15,17 +15,17 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts"))
 import refinement_climb as rc  # noqa: E402
 from base_grammar_witness import (  # noqa: E402
     compositions,
-    edges,
+    relations,
     endpoints,
     links,
     shared_requirements,
 )
 
 
-def test_the_edges_state_identical_requirements():
+def test_the_relations_state_identical_requirements():
     """So requirements cannot be what tells one from another."""
 
-    declared = edges()
+    declared = relations()
 
     assert set(declared) == {"locality", "participation", "yield", "locality"}
     assert shared_requirements(declared)
@@ -35,7 +35,7 @@ def test_the_edges_state_identical_requirements():
 
 
 def test_the_endpoint_space_is_almost_empty():
-    declared = edges()
+    declared = relations()
     ends = endpoints(declared)
 
     assert len(ends) == 5
@@ -43,8 +43,8 @@ def test_the_endpoint_space_is_almost_empty():
     assert len(links(declared)) * 8 < len(ends) ** 2
 
 
-def test_exactly_one_pair_of_edges_composes():
-    declared = edges()
+def test_exactly_one_pair_of_relations_composes():
+    declared = relations()
     found = compositions(declared)
 
     assert found == [("participation", "yield")]
@@ -54,15 +54,15 @@ def test_exactly_one_pair_of_edges_composes():
 def test_locality_keeps_its_subject_kinds_open():
     """Content-to-Event locality does not bound every Locality endpoint kind."""
 
-    declared = edges()
+    declared = relations()
 
     assert declared["locality"]["from"] == "first_subject"
     assert declared["locality"]["to"] == "second_subject"
     assert "Act_occurrence" in endpoints(declared)
 
 
-def test_composition_separates_every_edge():
-    declared = edges()
+def test_composition_separates_every_relation():
+    declared = relations()
     rungs = rc.climb(
         rc.one_class(sorted(declared)),
         lambda a, b: declared[a]["to"] == declared[b]["from"],
@@ -73,9 +73,9 @@ def test_composition_separates_every_edge():
 
 
 def test_linkage_separates_every_endpoint():
-    """The structure such as it is lives in the endpoints."""
+    """The distinctions live in the endpoints."""
 
-    declared = edges()
+    declared = relations()
     ends = endpoints(declared)
     rungs = rc.climb(
         rc.one_class(ends),
