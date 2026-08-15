@@ -92,7 +92,7 @@ class CompiledInvocationOccurrence:
     exact_material: bytes
     implementation_function_identity: str
     returned: bool
-    source_coordinate: AddedPositionOccurrence | None = None
+    source_coordinate: ExactMaterialReference | AddedPositionOccurrence | None = None
 
     @property
     def occurrence_identity(self) -> tuple[str, str, int]:
@@ -104,17 +104,17 @@ class CompiledInvocationOccurrence:
 
     @property
     def source_material(self) -> bytes | None:
-        return (
-            self.source_coordinate.source_material
-            if self.source_coordinate is not None
-            else None
-        )
+        if isinstance(self.source_coordinate, ExactMaterialReference):
+            return self.source_coordinate.exact_material
+        if isinstance(self.source_coordinate, AddedPositionOccurrence):
+            return self.source_coordinate.source_material
+        return None
 
     @property
     def added_position(self) -> int | None:
         return (
             self.source_coordinate.position
-            if self.source_coordinate is not None
+            if isinstance(self.source_coordinate, AddedPositionOccurrence)
             else None
         )
 
@@ -122,9 +122,33 @@ class CompiledInvocationOccurrence:
     def added_material(self) -> bytes | None:
         return (
             self.source_coordinate.added_material
-            if self.source_coordinate is not None
+            if isinstance(self.source_coordinate, AddedPositionOccurrence)
             else None
         )
+
+
+@dataclass(frozen=True, slots=True)
+class AddedPositionCompareOccurrence:
+    boundary_identity: str
+    occurrence_position: int
+    implementation_function_identity: str
+    added_position_act_occurrence_identity: tuple[str, int]
+    source_invocation_occurrence_identity: tuple[str, str, int]
+    result_invocation_occurrence_identity: tuple[str, str, int]
+    source_returned: bool
+    result_returned: bool
+
+    @property
+    def occurrence_identity(self) -> tuple[str, str, int]:
+        return (
+            self.boundary_identity,
+            self.implementation_function_identity,
+            self.occurrence_position,
+        )
+
+    @property
+    def distinction(self) -> bool:
+        return self.source_returned != self.result_returned
 
 
 def _a(material: bytes):
@@ -209,12 +233,43 @@ def compiled_invocations(
     )
 
 
+def compiled_reference_invocations(
+    references: tuple[ExactMaterialReference, ...],
+    *,
+    boundary_identity: str,
+    implementation_functions: tuple[
+        CompiledImplementationFunction, ...
+    ] = COMPILED_IMPLEMENTATION_FUNCTIONS,
+) -> tuple[tuple[CompiledInvocationOccurrence, ...], ...]:
+    if type(references) is not tuple or not all(
+        isinstance(reference, ExactMaterialReference) for reference in references
+    ):
+        raise TypeError("implementation function inputs must carry exact references")
+    if type(boundary_identity) is not str or not boundary_identity:
+        raise TypeError("one exact boundary identity is required")
+    if type(implementation_functions) is not tuple or not implementation_functions:
+        raise TypeError("compiled implementation functions must be one nonempty tuple")
+    if not all(
+        isinstance(implementation_function, CompiledImplementationFunction)
+        for implementation_function in implementation_functions
+    ):
+        raise TypeError("compiled implementation functions must be exact")
+    return _compiled_invocations(
+        tuple(reference.exact_material for reference in references),
+        boundary_identity=boundary_identity,
+        implementation_functions=implementation_functions,
+        source_coordinates=references,
+    )
+
+
 def _compiled_invocations(
     exact_materials: tuple[bytes, ...],
     *,
     boundary_identity: str,
     implementation_functions: tuple[CompiledImplementationFunction, ...],
-    source_coordinates: tuple[AddedPositionOccurrence, ...] | None = None,
+    source_coordinates: tuple[
+        ExactMaterialReference | AddedPositionOccurrence, ...
+    ] | None = None,
 ) -> tuple[tuple[CompiledInvocationOccurrence, ...], ...]:
     found = []
     for implementation_function in implementation_functions:
@@ -354,3 +409,78 @@ def added_position_invocations(
         implementation_functions=implementation_functions,
         source_coordinates=occurrences,
     )
+
+
+def compare_added_position_invocations(
+    source_invocations: tuple[tuple[CompiledInvocationOccurrence, ...], ...],
+    result_invocations: tuple[tuple[CompiledInvocationOccurrence, ...], ...],
+    *,
+    boundary_identity: str,
+) -> tuple[tuple[AddedPositionCompareOccurrence, ...], ...]:
+    if type(source_invocations) is not tuple or type(result_invocations) is not tuple:
+        raise TypeError("Compare inputs must be exact invocation tuples")
+    if len(source_invocations) != len(result_invocations):
+        raise ValueError("Compare inputs require the same implementation functions")
+    if type(boundary_identity) is not str or not boundary_identity:
+        raise TypeError("one exact boundary identity is required")
+    compared = []
+    comparison_position = 0
+    for source_row, result_row in zip(source_invocations, result_invocations):
+        if not source_row or not result_row:
+            raise ValueError("Compare inputs require invocation occurrences")
+        implementation_function_identity = source_row[0].implementation_function_identity
+        if (
+            any(
+                occurrence.implementation_function_identity
+                != implementation_function_identity
+                for occurrence in source_row
+            )
+            or any(
+                occurrence.implementation_function_identity
+                != implementation_function_identity
+                for occurrence in result_row
+            )
+        ):
+            raise ValueError("Compare inputs require the same implementation function")
+        source_by_reference = {}
+        for source_invocation in source_row:
+            reference = source_invocation.source_coordinate
+            if not isinstance(reference, ExactMaterialReference):
+                raise ValueError("source invocation requires its exact material reference")
+            if reference in source_by_reference:
+                raise ValueError("source material reference entered Compare twice")
+            source_by_reference[reference] = source_invocation
+        row = []
+        for result_invocation in result_row:
+            addition = result_invocation.source_coordinate
+            if not isinstance(addition, AddedPositionOccurrence):
+                raise ValueError("result invocation requires its exact addition occurrence")
+            source_invocation = source_by_reference.get(addition.source_reference)
+            if source_invocation is None:
+                raise ValueError("addition occurrence has no exact source invocation")
+            if (
+                source_invocation.exact_material != addition.source_material
+                or result_invocation.exact_material != addition.result_material
+            ):
+                raise ValueError("invocation material differs from the addition occurrence")
+            row.append(
+                AddedPositionCompareOccurrence(
+                    boundary_identity=boundary_identity,
+                    occurrence_position=comparison_position,
+                    implementation_function_identity=implementation_function_identity,
+                    added_position_act_occurrence_identity=(
+                        addition.act_occurrence_identity
+                    ),
+                    source_invocation_occurrence_identity=(
+                        source_invocation.occurrence_identity
+                    ),
+                    result_invocation_occurrence_identity=(
+                        result_invocation.occurrence_identity
+                    ),
+                    source_returned=source_invocation.returned,
+                    result_returned=result_invocation.returned,
+                )
+            )
+            comparison_position += 1
+        compared.append(tuple(row))
+    return tuple(compared)

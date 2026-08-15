@@ -25,8 +25,10 @@ from compiled_format_invocation import (  # noqa: E402
     CompiledImplementationFunction,
     ExactMaterialReference,
     added_position_occurrences,
+    compare_added_position_invocations,
     compiled_invocation,
     compiled_invocations,
+    compiled_reference_invocations,
     added_position_invocations,
     preserves_original_order,
 )
@@ -144,8 +146,8 @@ def book_pair_invocation_occurrences(measured_book_pairs):
 
 @pytest.fixture(scope="module")
 def book_pair_format_occurrences(measured_book_pairs):
-    return compiled_invocations(
-        measured_book_pairs[3], boundary_identity="book-pair-format"
+    return compiled_reference_invocations(
+        measured_book_pairs[6], boundary_identity="book-pair-format"
     )
 
 
@@ -202,6 +204,17 @@ def book_three_byte_format_occurrences(
     )
     return returned_pairs, occurrences, added_position_invocations(
         occurrences, boundary_identity="book-three-byte-format"
+    )
+
+
+@pytest.fixture(scope="module")
+def book_added_position_comparisons(
+    book_pair_format_occurrences, book_three_byte_format_occurrences
+):
+    return compare_added_position_invocations(
+        book_pair_format_occurrences,
+        book_three_byte_format_occurrences[2],
+        boundary_identity="book-added-position-compare",
     )
 
 
@@ -315,7 +328,7 @@ def test_every_measured_pair_reaches_every_implementation_function(book_pair_inv
     not IMPLEMENTATION_FUNCTIONS_AVAILABLE,
     reason="one material implementation function is absent",
 )
-def test_distinct_implementation_functions_expose_their_admissions(book_pair_invocation_occurrences):
+def test_distinct_implementation_functions_establish_their_admissions(book_pair_invocation_occurrences):
     admissions = tuple(
         _admission(occurrences) for occurrences in book_pair_invocation_occurrences
     )
@@ -355,6 +368,11 @@ def test_every_measured_pair_reaches_every_compiled_format_implementation_functi
         tuple(occurrence.exact_material for occurrence in row) == pairs
         for row in book_pair_format_occurrences
     )
+    assert all(
+        tuple(occurrence.source_coordinate for occurrence in row)
+        == measured_book_pairs[6]
+        for row in book_pair_format_occurrences
+    )
 
 
 def test_compiled_format_implementation_functions_admit_the_same_material_differently(
@@ -373,7 +391,7 @@ def test_compiled_format_implementation_functions_admit_the_same_material_differ
     )
 
 
-def test_one_byte_differences_expose_compiled_invocation_boundaries(
+def test_one_byte_differences_establish_compiled_invocation_boundaries(
     book_pair_format_occurrences,
 ):
     boundaries = tuple(
@@ -614,7 +632,7 @@ def test_every_three_byte_result_reaches_every_compiled_implementation_function(
     )
 
 
-def test_three_byte_results_expose_different_compiled_invocation_boundaries(
+def test_three_byte_results_establish_different_compiled_invocation_boundaries(
     book_three_byte_format_occurrences,
 ):
     _, _, occurrences = book_three_byte_format_occurrences
@@ -627,6 +645,99 @@ def test_three_byte_results_expose_different_compiled_invocation_boundaries(
     assert len(set(admissions)) > 1
     assert any(boundaries)
     assert len({frozenset(found) for found in boundaries}) > 1
+
+
+def test_each_addition_compare_keeps_both_invocation_occurrences_and_the_act(
+    book_added_position_comparisons, book_three_byte_format_occurrences
+):
+    additions = book_three_byte_format_occurrences[1]
+    expected = len(COMPILED_IMPLEMENTATION_FUNCTIONS) * len(additions)
+    comparisons = tuple(
+        comparison
+        for row in book_added_position_comparisons
+        for comparison in row
+    )
+
+    assert len(comparisons) == expected
+    assert len({comparison.occurrence_identity for comparison in comparisons}) == expected
+    assert {
+        comparison.added_position_act_occurrence_identity
+        for comparison in comparisons
+    } == {addition.act_occurrence_identity for addition in additions}
+    assert len(
+        {comparison.source_invocation_occurrence_identity for comparison in comparisons}
+    ) == len(COMPILED_IMPLEMENTATION_FUNCTIONS) * len(
+        {addition.source_reference for addition in additions}
+    )
+    assert len(
+        {comparison.result_invocation_occurrence_identity for comparison in comparisons}
+    ) == expected
+
+
+def test_addition_compare_finds_same_and_different_return_coordinates(
+    book_added_position_comparisons,
+):
+    distinctions = tuple(
+        comparison.distinction
+        for row in book_added_position_comparisons
+        for comparison in row
+    )
+
+    assert any(distinctions)
+    assert any(not distinction for distinction in distinctions)
+
+
+def test_addition_compare_refuses_a_missing_source_reference():
+    first = ExactMaterialReference("source-a", "assertion-a", b"a")
+    second = ExactMaterialReference("source-b", "assertion-b", b"b")
+    added = ExactMaterialReference("added", "added-assertion", b"b")
+    implementation_function = CompiledImplementationFunction(
+        identity="fixture", invocation=lambda material: material
+    )
+    additions = added_position_occurrences(
+        (first,), (added,), boundary_identity="addition"
+    )
+    source_invocations = compiled_reference_invocations(
+        (first, second),
+        boundary_identity="source",
+        implementation_functions=(implementation_function,),
+    )
+    result_invocations = added_position_invocations(
+        additions,
+        boundary_identity="result",
+        implementation_functions=(implementation_function,),
+    )
+
+    with pytest.raises(ValueError, match="no exact source invocation"):
+        compare_added_position_invocations(
+            (source_invocations[0][1:],),
+            result_invocations,
+            boundary_identity="compare",
+        )
+
+
+def test_addition_compare_refuses_a_result_without_its_act_occurrence():
+    source = ExactMaterialReference("source", "source-assertion", b"a")
+    implementation_function = CompiledImplementationFunction(
+        identity="fixture", invocation=lambda material: material
+    )
+    source_invocations = compiled_reference_invocations(
+        (source,),
+        boundary_identity="source",
+        implementation_functions=(implementation_function,),
+    )
+    result_invocations = compiled_invocations(
+        (b"ab",),
+        boundary_identity="result",
+        implementation_functions=(implementation_function,),
+    )
+
+    with pytest.raises(ValueError, match="exact addition occurrence"):
+        compare_added_position_invocations(
+            source_invocations,
+            result_invocations,
+            boundary_identity="compare",
+        )
 
 
 def test_compiled_implementation_function_receives_the_exact_material():
