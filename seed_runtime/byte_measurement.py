@@ -187,7 +187,7 @@ class ByteMeasurementError(ValueError):
 
 @dataclass(frozen=True)
 class MeasuredByteCount:
-    byte_hex: str
+    representation: int
     occurrences_carrying: int
     count: int
 
@@ -202,7 +202,7 @@ class MeasuredByteInputs:
 
 @dataclass(frozen=True)
 class MeasuredBytePairCount:
-    pair_hex: str
+    representation: tuple[int, int]
     occurrences_carrying: int
     count: int
 
@@ -224,7 +224,7 @@ class MeasuredBytePairInputs:
 class RecordedByteAssertion:
     assertion_identity: str
     recorded_occurrence_identity: str
-    byte_hex: str | None
+    representation: int | None
     result: str
     _material_json: str
     _support_assertion_refs_json: str
@@ -254,7 +254,7 @@ class RecordedByteAssertion:
 class RecordedBytePairAssertion:
     assertion_identity: str
     recorded_occurrence_identity: str
-    pair_hex: str | None
+    representation: tuple[int, int] | None
     result: str
     _material_json: str
     _support_assertion_refs_json: str
@@ -517,7 +517,7 @@ def _measure_byte_counts_through(
         )
     counts = tuple(
         MeasuredByteCount(
-            byte_hex=f"{value:02x}",
+            representation=value,
             occurrences_carrying=carrying[value],
             count=totals[value],
         )
@@ -677,7 +677,7 @@ def _move_byte_assertion_to_locality(
     return RecordedByteAssertion(
         assertion_identity=source.assertion_identity,
         recorded_occurrence_identity=source.recorded_occurrence_identity,
-        byte_hex=source.byte_hex,
+        representation=source.representation,
         result=source.result,
         _material_json=_canonical(material),
         _support_assertion_refs_json=_canonical(list(source.support_assertion_references)),
@@ -812,7 +812,7 @@ def _validate_moved_byte_assertion(
     return RecordedByteAssertion(
         assertion_identity=source.assertion_identity,
         recorded_occurrence_identity=source.recorded_occurrence_identity,
-        byte_hex=source.byte_hex,
+        representation=source.representation,
         result=source.result,
         _material_json=_canonical(source.material),
         _support_assertion_refs_json=_canonical(list(source.support_assertion_references)),
@@ -874,7 +874,7 @@ def _measure_adjacent_byte_pair_counts_through(
         )
     counts = tuple(
         MeasuredBytePairCount(
-            pair_hex=pair.hex(),
+            representation=(pair[0], pair[1]),
             occurrences_carrying=carrying[pair],
             count=totals[pair],
         )
@@ -952,7 +952,10 @@ def _assertions(measured: MeasuredByteInputs) -> list[dict[str, Any]]:
         provenance: str,
         local_support_identities: list[str],
     ):
-        subject = {"byte_hex": item.byte_hex, "measurement_rule": BYTE_MEASUREMENT_RULE}
+        subject = {
+            "representation": item.representation,
+            "measurement_rule": BYTE_MEASUREMENT_RULE,
+        }
         identity = _identity(result=result, subject=subject, scope=scope, content=content)
         return {
             "dimensions": {
@@ -1232,7 +1235,7 @@ def assertions_of_recorded_byte_measurement(
             RecordedByteAssertion(
                 assertion_identity=assertion["dimensions"]["identity"],
                 recorded_occurrence_identity=event.identity,
-                byte_hex=assertion["assertion_subject"].get("byte_hex"),
+                representation=assertion["assertion_subject"].get("representation"),
                 result=assertion["result"],
                 _material_json=_canonical(assertion),
                 _support_assertion_refs_json=_canonical(
@@ -1265,7 +1268,7 @@ def _pair_assertions(measured: MeasuredBytePairInputs) -> list[dict[str, Any]]:
         source_support_references: list[dict[str, str]],
     ) -> dict[str, Any]:
         subject = {
-            "pair_hex": item.pair_hex,
+            "representation": list(item.representation),
             "measurement_rule": BYTE_PAIR_MEASUREMENT_RULE,
         }
         identity = _identity(result=result, subject=subject, scope=scope, content=content)
@@ -1979,7 +1982,7 @@ def assertions_of_recorded_adjacent_byte_pair_measurement(
     assertions = material.get("assertions")
     if not isinstance(assertions, list):
         raise ByteMeasurementError(f"{event_identity} carries no pair result Assertions")
-    by_pair: dict[str, dict[str, dict[str, Any]]] = {}
+    by_pair: dict[tuple[int, int], dict[str, dict[str, Any]]] = {}
     exact_keys = {
         "dimensions",
         "subject_kind",
@@ -1998,15 +2001,21 @@ def assertions_of_recorded_adjacent_byte_pair_measurement(
         subject = assertion.get("assertion_subject")
         result = assertion.get("result")
         dimensions = assertion.get("dimensions")
-        pair_hex = subject.get("pair_hex") if isinstance(subject, dict) else None
-        try:
-            pair_bytes = bytes.fromhex(pair_hex) if isinstance(pair_hex, str) else b""
-        except ValueError as exc:
-            raise ByteMeasurementError(f"{event_identity} carries a malformed pair subject") from exc
+        representation = (
+            subject.get("representation") if isinstance(subject, dict) else None
+        )
         if (
-            len(pair_bytes) != 2
+            type(representation) is not list
+            or len(representation) != 2
+            or any(
+                type(value) is not int or not 0 <= value <= 255
+                for value in representation
+            )
             or subject
-            != {"pair_hex": pair_hex, "measurement_rule": BYTE_PAIR_MEASUREMENT_RULE}
+            != {
+                "representation": representation,
+                "measurement_rule": BYTE_PAIR_MEASUREMENT_RULE,
+            }
             or result not in {"count", "recurrence"}
             or assertion.get("assertion_scope") != expected_scope
             or assertion.get("subject_kind") != "assertion"
@@ -2038,11 +2047,11 @@ def assertions_of_recorded_adjacent_byte_pair_measurement(
         )
         if dimensions.get("identity") != expected_identity:
             raise ByteMeasurementError(f"{event_identity} carries a false pair Assertion identity")
-        group = by_pair.setdefault(pair_hex, {})
+        group = by_pair.setdefault(tuple(representation), {})
         if result in group:
             raise ByteMeasurementError(f"{event_identity} duplicates one pair result")
         group[result] = assertion
-    for pair_hex, group in by_pair.items():
+    for group in by_pair.values():
         count = group.get("count")
         if count is None:
             raise ByteMeasurementError(f"{event_identity} carries recurrence without count")
@@ -2088,7 +2097,7 @@ def assertions_of_recorded_adjacent_byte_pair_measurement(
         validated_results.append(RecordedBytePairAssertion(
             assertion_identity=assertion["dimensions"]["identity"],
             recorded_occurrence_identity=event.identity,
-            pair_hex=assertion["assertion_subject"].get("pair_hex"),
+            representation=tuple(assertion["assertion_subject"]["representation"]),
             result=assertion["result"],
             _material_json=_canonical(assertion),
             _support_assertion_refs_json=_canonical(support_references),

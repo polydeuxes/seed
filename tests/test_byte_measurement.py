@@ -59,16 +59,16 @@ def test_exact_bytes_supply_the_measured_subjects_without_whitespace():
     measured = measure_byte_counts(
         _ledger(), source_locality_identities=("source",)
     )
-    counts = {item.byte_hex: item for item in measured.counts}
+    counts = {item.representation: item for item in measured.counts}
 
     # UTF-8 猫 = e7 8c ab and 狗 = e7 8b 97.  No character boundary is used or
     # asserted; these are the exact bytes Seed recorded.
-    assert counts["e7"].count == 2
-    assert counts["8c"].count == 1
-    assert counts["ab"].count == 1
-    assert counts["8b"].count == 1
-    assert counts["97"].count == 1
-    assert counts["0a"].count == 2
+    assert counts[231].count == 2
+    assert counts[140].count == 1
+    assert counts[171].count == 1
+    assert counts[139].count == 1
+    assert counts[151].count == 1
+    assert counts[10].count == 2
     assert len(measured.source_material) == 2
 
 
@@ -92,14 +92,14 @@ def test_count_and_recurrence_are_distinct_results():
     )
     by_byte = {}
     for assertion in event.material["assertions"]:
-        byte_hex = assertion["assertion_subject"].get("byte_hex")
-        if byte_hex is not None:
-            by_byte.setdefault(byte_hex, []).append(assertion)
+        representation = assertion["assertion_subject"].get("representation")
+        if representation is not None:
+            by_byte.setdefault(representation, []).append(assertion)
 
-    assert [item["result"] for item in by_byte["61"]] == ["count"]
-    assert by_byte["61"][0]["dimensions"]["content"]["count"] == 1
+    assert [item["result"] for item in by_byte[97]] == ["count"]
+    assert by_byte[97][0]["dimensions"]["content"]["count"] == 1
     # The newline occurs once too. No positive singleton is called recurrence.
-    assert [item["result"] for item in by_byte["0a"]] == ["count"]
+    assert [item["result"] for item in by_byte[10]] == ["count"]
 
 
 def test_recurrence_exists_only_above_one():
@@ -111,7 +111,7 @@ def test_recurrence_exists_only_above_one():
     results = [
         item["result"]
         for item in event.material["assertions"]
-        if item["assertion_subject"].get("byte_hex") == "61"
+        if item["assertion_subject"].get("representation") == 97
     ]
     assert results == ["count", "recurrence"]
 
@@ -147,7 +147,7 @@ def test_recorded_results_replay_the_complete_bounded_source_read():
     count = next(
         item
         for item in read
-        if item.byte_hex == "e7" and item.result == "count"
+        if item.representation == 231 and item.result == "count"
     )
     assert count.material["dimensions"]["content"] == {
         "input_count": 2,
@@ -243,7 +243,7 @@ def test_ingest_after_the_measurement_boundary_cannot_enter_the_measurement():
         localities=("source",),
         boundary=boundary,
     )
-    assert {item.byte_hex: item.count for item in measured.counts} == {"61": 1}
+    assert {item.representation: item.count for item in measured.counts} == {97: 1}
 
 
 def test_a_missing_declared_locality_is_refused():
@@ -285,14 +285,14 @@ def test_every_overlapping_adjacent_byte_pair_is_measured():
         recording_locality_identity="measurement",
     )
     counts = {
-        item["assertion_subject"]["pair_hex"]: item["dimensions"]["content"]
+        tuple(item["assertion_subject"]["representation"]): item["dimensions"]["content"]
         for item in event.material["assertions"]
         if item["result"] == "count"
     }
 
-    assert counts["7461"]["count"] == 4  # ta
-    assert counts["6174"]["count"] == 3  # at
-    assert counts["610a"]["count"] == 1  # a + append newline
+    assert counts[(116, 97)]["count"] == 4
+    assert counts[(97, 116)]["count"] == 3
+    assert counts[(97, 10)]["count"] == 1
 
 
 def test_adjacent_pairs_never_cross_ingest_boundaries():
@@ -304,15 +304,15 @@ def test_adjacent_pairs_never_cross_ingest_boundaries():
         recording_locality_identity="measurement",
     )
     counts = {
-        item["assertion_subject"]["pair_hex"]: item["dimensions"]["content"][
+        tuple(item["assertion_subject"]["representation"]): item["dimensions"]["content"][
             "count"
         ]
         for item in event.material["assertions"]
         if item["result"] == "count"
     }
 
-    assert counts == {"610a": 1, "620a": 1}
-    assert "0a62" not in counts
+    assert counts == {(97, 10): 1, (98, 10): 1}
+    assert (10, 98) not in counts
 
 
 def test_adjacency_pair_measurement_remains_byte_not_character_based():
@@ -324,14 +324,14 @@ def test_adjacency_pair_measurement_remains_byte_not_character_based():
         recording_locality_identity="measurement",
     )
     counts = {
-        item["assertion_subject"]["pair_hex"]
+        tuple(item["assertion_subject"]["representation"])
         for item in event.material["assertions"]
         if item["result"] == "count"
     }
 
     # UTF-8 bytes e7 8c ab plus the recorded newline. These are adjacent bytes,
     # not a Assertion that any pair is a character.
-    assert counts == {"e78c", "8cab", "ab0a"}
+    assert counts == {(231, 140), (140, 171), (171, 10)}
 
 
 def test_pair_count_and_recurrence_are_separate_results():
@@ -345,16 +345,16 @@ def test_pair_count_and_recurrence_are_separate_results():
     assert event.kind == BYTE_PAIR_MEASUREMENT_RECORDED_KIND
     by_pair = {}
     for assertion in event.material["assertions"]:
-        pair_hex = assertion["assertion_subject"].get("pair_hex")
-        if pair_hex is not None:
-            by_pair.setdefault(pair_hex, []).append(assertion)
+        representation = assertion["assertion_subject"].get("representation")
+        if representation is not None:
+            by_pair.setdefault(tuple(representation), []).append(assertion)
 
-    assert [item["result"] for item in by_pair["7461"]] == ["count", "recurrence"]
-    assert [item["result"] for item in by_pair["610a"]] == ["count"]
-    assert by_pair["7461"][1]["input_support"]["local_assertion_identities"] == [
-        by_pair["7461"][0]["dimensions"]["identity"]
+    assert [item["result"] for item in by_pair[(116, 97)]] == ["count", "recurrence"]
+    assert [item["result"] for item in by_pair[(97, 10)]] == ["count"]
+    assert by_pair[(116, 97)][1]["input_support"]["local_assertion_identities"] == [
+        by_pair[(116, 97)][0]["dimensions"]["identity"]
     ]
-    moved_reference = by_pair["7461"][0]["input_support"]["assertion_references"][0]
+    moved_reference = by_pair[(116, 97)][0]["input_support"]["assertion_references"][0]
     original = next(
         item
         for item in assertions_of_recorded_byte_measurement(ledger, source.identity)
@@ -394,12 +394,16 @@ def test_recorded_pair_results_replay_the_complete_bounded_source_read():
     )
     assert read
     assert all(item.recorded_occurrence_identity == event.identity for item in read)
-    assert {item.pair_hex for item in read if item.pair_hex} == {
-        "7461",
-        "6174",
-        "610a",
+    assert {item.representation for item in read if item.representation} == {
+        (116, 97),
+        (97, 116),
+        (97, 10),
     }
-    count = next(item for item in read if item.pair_hex == "7461" and item.result == "count")
+    count = next(
+        item
+        for item in read
+        if item.representation == (116, 97) and item.result == "count"
+    )
     detached = count.material
     detached["dimensions"]["standing"] = "unsupported"
     assert count.material["dimensions"]["standing"] == "measured"
@@ -437,6 +441,42 @@ def test_pair_validation_refuses_a_self_consistent_truncated_result_inputs():
     }
 
     with pytest.raises(ByteMeasurementError, match="recurrence boundary"):
+        assertions_of_recorded_adjacent_byte_pair_measurement(ledger, event.identity)
+
+
+@pytest.mark.parametrize(
+    "representation",
+    (
+        [116],
+        [116, 256],
+        [116, "97"],
+        "7461",
+        (116, 97),
+        [116, 97, 10],
+        [True, 97],
+    ),
+)
+def test_pair_validation_requires_one_exact_ordered_representation(representation):
+    ledger = _ledger("ta\n")
+    source = _byte_source(ledger)
+    event = record_adjacent_byte_pair_count_layer(
+        ledger,
+        source_measurement_event_identity=source.identity,
+        recording_locality_identity="measurement",
+    )
+    assertion = event.material["assertions"][0]
+    assertion["assertion_subject"]["representation"] = representation
+    assertion["dimensions"]["identity"] = _identity(
+        result=assertion["result"],
+        subject=assertion["assertion_subject"],
+        scope=assertion["assertion_scope"],
+        content=assertion["dimensions"]["content"],
+    )
+    ledger.get(event.material["yield_evidence_identity"]).material["result"] = {
+        name: event.material[name] for name in BYTE_PAIR_RESULT_COORDINATES
+    }
+
+    with pytest.raises(ByteMeasurementError, match="unlawful pair Assertion"):
         assertions_of_recorded_adjacent_byte_pair_measurement(ledger, event.identity)
 
 
@@ -536,7 +576,7 @@ def test_pair_applicability_has_unknown_and_conflicting_outcomes():
     unknown_source = type(source)(
         assertion_identity=source.assertion_identity,
         recorded_occurrence_identity=source.recorded_occurrence_identity,
-        byte_hex=source.byte_hex,
+        representation=source.representation,
         result=source.result,
         _material_json=json.dumps(carried),
         _support_assertion_refs_json="[]",
@@ -553,7 +593,7 @@ def test_pair_applicability_has_unknown_and_conflicting_outcomes():
     conflicting_source = type(source)(
         assertion_identity=source.assertion_identity,
         recorded_occurrence_identity=source.recorded_occurrence_identity,
-        byte_hex=source.byte_hex,
+        representation=source.representation,
         result=source.result,
         _material_json=json.dumps(conflicting_material),
         _support_assertion_refs_json="[]",
@@ -672,7 +712,7 @@ def test_pair_validation_refuses_more_carrying_occurrences_than_total_pairs():
     count = next(
         assertion
         for assertion in event.material["assertions"]
-        if assertion["assertion_subject"]["pair_hex"] == "7461"
+        if assertion["assertion_subject"]["representation"] == [116, 97]
     )
     count["dimensions"]["content"] = {
         "input_count": 2,

@@ -2676,7 +2676,7 @@ def test_asserted_content_identity_includes_scope_but_not_locality():
             assertion
             for assertion in event.material["assertions"]
             if assertion["result"] == "count"
-            and assertion["assertion_subject"].get("byte_hex") == "74"
+            and assertion["assertion_subject"].get("representation") == 116
         )
 
     first_assertion = count_assertion(first)

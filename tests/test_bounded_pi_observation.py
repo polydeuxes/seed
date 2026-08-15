@@ -41,7 +41,7 @@ def _observe(ledger: EventLedger, source: str, result: str):
 
 def _pair_counts(event):
     return {
-        bytes.fromhex(assertion["assertion_subject"]["pair_hex"]).decode("ascii"):
+        bytes(assertion["assertion_subject"]["representation"]).decode("ascii"):
         assertion["dimensions"]["content"]["count"]
         for assertion in event.material["assertions"]
         if assertion["result"] == "count"
@@ -56,7 +56,7 @@ def test_seed_observes_one_bounded_decimal_representation_not_all_of_pi():
     byte_assertions = assertions_of_recorded_byte_measurement(ledger, byte_event.identity)
     pair_counts = _pair_counts(pair_event)
 
-    assert any(assertion.byte_hex == "2e" for assertion in byte_assertions)  # decimal point
+    assert any(assertion.representation == 46 for assertion in byte_assertions)
     assert pair_counts["3."] == 1
     assert pair_counts[".1"] == 1
     assert pair_counts["59"] == 1
