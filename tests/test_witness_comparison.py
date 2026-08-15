@@ -1,8 +1,8 @@
 """What comparing witnesses establishes, and what it shows they do not do.
 
-Each decoding witness classifies the same 256 bytes, so their results compare
+Each decoding witness yields a material Locality over the same 256 bytes, so their results compare
 without translation. The refinement relation between two of those results is
-itself a relation the same climb rides, and its subjects are the earlier
+itself a relation the same climb rides, and its material is the earlier
 climb's outputs.
 """
 
@@ -15,15 +15,15 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts"))
 
 import refinement_climb as rc  # noqa: E402
 from witness_comparison_harness import (  # noqa: E402
-    final_partition,
+    final_material_locality,
     order,
-    partitions,
+    material_localities,
     refines,
 )
 
 
-def test_a_partition_refines_itself_and_the_one_holding_everything():
-    fine = final_partition("utf-8")
+def test_a_material_locality_refines_itself_and_the_one_holding_everything():
+    fine = final_material_locality("utf-8")
     everything = frozenset({frozenset(range(256))})
 
     assert refines(fine, fine)
@@ -31,8 +31,8 @@ def test_a_partition_refines_itself_and_the_one_holding_everything():
     assert not refines(everything, fine)
 
 
-def test_many_witnesses_reach_the_same_resting_partition():
-    found = partitions()
+def test_many_witnesses_reach_the_same_resting_material_locality():
+    found = material_localities()
     sizes = sorted((len(names) for names in found.values()), reverse=True)
 
     assert sum(sizes) > 100
@@ -44,10 +44,10 @@ def test_the_witnesses_do_not_converge():
     """Most pairs are incomparable: they cut the material differently.
 
     Not one finer than another. If witnesses were approaching some finest
-    partition, comparable pairs would dominate; they are 7%.
+    material Locality, comparable pairs would dominate; they are 7%.
     """
 
-    counted = order(partitions())
+    counted = order(material_localities())
 
     assert counted["comparable"] * 4 < counted["pairs"]
     assert counted["finest"] > 20
@@ -55,20 +55,20 @@ def test_the_witnesses_do_not_converge():
 
 
 def test_the_relation_over_results_is_itself_climbable():
-    """Third level: subjects are the second level's outputs."""
+    """Third level: material is the second level's outputs."""
 
-    found = partitions()
+    found = material_localities()
     keys = sorted(found, key=len)
 
-    rungs = rc.climb(rc.by(len, keys), refines)
+    localities = rc.climb(rc.by(len, keys), refines)
 
-    assert len(rungs) > 1
-    assert rc.heights(rungs)[-1] == len(keys)
-    assert rc.unseparated(rungs) == []
+    assert len(localities) > 1
+    assert rc.heights(localities)[-1] == len(keys)
+    assert rc.unseparated(localities) == []
 
 
 def test_the_coarsest_is_the_one_that_separates_nothing():
-    found = partitions()
+    found = material_localities()
     coarsest = [key for key in found if len(key) == 1]
 
     assert len(coarsest) == 1

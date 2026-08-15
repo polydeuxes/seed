@@ -19,7 +19,7 @@ from io import StringIO
 
 import pytest
 
-from seed_runtime.adjacency_pair_measurement import measure_after
+from seed_runtime.position_pair_measurement import measure_after
 from seed_runtime.assertion_comparison import (
     ASSERTION_YIELD_COMPARISON_RECORDED_KIND,
     AssertionComparisonError,
@@ -1146,7 +1146,7 @@ def test_the_bounded_scope_must_be_declared(compared):
         measure_locality_counts(compared, bounded_localities=[])
 
 
-def test_the_three_results_partition_the_bounded_localities(compared):
+def test_the_three_results_distinguish_the_bounded_localities(compared):
     for finding in measure_locality_counts(compared, bounded_localities=DECLARED):
         parts = (
             set(finding.measured_in),

@@ -1,8 +1,8 @@
 """What a decoder's refusals establish, and what they do not.
 
-A decoder answers whether it accepts exact bytes. That answer is testimony
+A decoder returns whether it accepts exact bytes. That result is testimony
 about the decoder. These pin what one interrogation measured, without taking
-the decoder's vocabulary along with its answers.
+the decoder's vocabulary along with its results.
 """
 
 from __future__ import annotations
@@ -12,19 +12,19 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts"))
 
-from decoder_witness_harness import accepts, admissible_followers, classes  # noqa: E402
+from decoder_witness_harness import accepts, admissible_followers, material_locality  # noqa: E402
 
 
 def _spans(codec: str) -> dict[tuple[int, int], tuple[object, int]]:
     return {
-        (subjects[0], subjects[-1]): (key[0], len(subjects))
-        for key, subjects in classes(codec).items()
+        (material[0], material[-1]): (key[0], len(material))
+        for key, material in material_locality(codec).items()
     }
 
 
-def test_one_witness_partitions_every_byte_exactly_once():
-    grouped = classes("utf-8")
-    covered = sorted(byte for subjects in grouped.values() for byte in subjects)
+def test_one_witness_places_every_byte_exactly_once():
+    grouped = material_locality("utf-8")
+    covered = sorted(byte for material in grouped.values() for byte in material)
 
     assert covered == list(range(256))
     assert len(grouped) == 5
@@ -47,22 +47,22 @@ def test_the_only_admissible_followers_are_one_contiguous_range():
     assert len(followers) == 64
 
 
-def test_a_second_witness_partitions_the_same_bytes_differently():
+def test_a_second_witness_places_the_same_bytes_differently():
     """Two decoders, one material, different refusals.
 
     They agree exactly on the bytes each accepts alone, and differ on
     everything after. Neither agreement nor difference is explained here.
     """
 
-    utf8 = classes("utf-8")
-    ascii_ = classes("ascii", max_byte_count=2)
+    utf8 = material_locality("utf-8")
+    ascii_ = material_locality("ascii", max_byte_count=2)
 
     assert len(ascii_) == 2
     accepted_alone = {
-        tuple(subjects) for key, subjects in utf8.items() if key[0] == 1
+        tuple(material) for key, material in utf8.items() if key[0] == 1
     }
     assert accepted_alone == {
-        tuple(subjects) for key, subjects in ascii_.items() if key[0] == 1
+        tuple(material) for key, material in ascii_.items() if key[0] == 1
     }
 
 
@@ -75,7 +75,7 @@ def test_the_witness_refuses_more_than_a_leading_bit_rule_predicts():
     """
 
     refused = next(
-        subjects for key, subjects in classes("utf-8").items() if key[0] is None
+        material for key, material in material_locality("utf-8").items() if key[0] is None
     )
 
     for byte in (0xC0, 0xC1, *range(0xF5, 0x100)):

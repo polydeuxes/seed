@@ -6,7 +6,7 @@ from io import StringIO
 
 from seed_runtime.byte_measurement import (
     assertions_of_recorded_byte_measurement,
-    record_adjacent_byte_pair_count_layer,
+    record_byte_position_pair_count_layer,
     record_byte_count_layer,
 )
 from seed_runtime.events import EventLedger
@@ -32,7 +32,7 @@ def _measure(ledger: EventLedger, source: str, result: str):
         source_locality_identities=(source,),
         recording_locality_identity=f"{result}-bytes",
     )
-    pair_event = record_adjacent_byte_pair_count_layer(
+    pair_event = record_byte_position_pair_count_layer(
         ledger,
         source_measurement_event_identity=byte_event.identity,
         recording_locality_identity=f"{result}-pairs",

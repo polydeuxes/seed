@@ -23,10 +23,10 @@ from compiled_parser_witness_harness import (  # noqa: E402
 )
 
 
-def test_the_first_family_preserves_only_exact_answers():
-    outcomes = interrogate_many(first_probe_family())
+def test_the_first_family_preserves_only_exact_results():
+    results = interrogate_many(first_probe_family())
 
-    assert tuple(outcome.exact_material for outcome in outcomes) == (
+    assert tuple(result.exact_material for result in results) == (
         b"x",
         b"x=",
         b"x=1",
@@ -39,7 +39,7 @@ def test_the_first_family_preserves_only_exact_answers():
         b"def x():\n",
         b"def x():\n pass",
     )
-    assert tuple(outcome.accepted for outcome in outcomes) == (
+    assert tuple(result.accepted for result in results) == (
         True,
         False,
         True,
@@ -52,18 +52,18 @@ def test_the_first_family_preserves_only_exact_answers():
         False,
         True,
     )
-    for outcome in outcomes:
-        if outcome.accepted:
-            assert type(outcome.result_material) is bytes
-            assert outcome.result_material
-            assert outcome.refusal_material is None
+    for result in results:
+        if result.accepted:
+            assert type(result.result_material) is bytes
+            assert result.result_material
+            assert result.refusal_material is None
         else:
-            assert outcome.result_material is None
-            assert type(outcome.refusal_material) is bytes
-            assert outcome.refusal_material
+            assert result.result_material is None
+            assert type(result.refusal_material) is bytes
+            assert result.refusal_material
 
 
-def test_the_same_exact_material_gets_the_same_exact_answer():
+def test_the_same_exact_material_gets_the_same_exact_result():
     first = interrogate(b"x=1\n")
     second = interrogate(b"x=1\n")
 
@@ -71,10 +71,10 @@ def test_the_same_exact_material_gets_the_same_exact_answer():
 
 
 def test_nearby_accepted_material_has_distinct_exact_returned_material():
-    outcomes = interrogate_many((b"a", b"b", b"c"))
+    results = interrogate_many((b"a", b"b", b"c"))
 
-    assert all(outcome.accepted for outcome in outcomes)
-    returned = [outcome.result_material for outcome in outcomes]
+    assert all(result.accepted for result in results)
+    returned = [result.result_material for result in results]
     assert len(set(returned)) == 3
     assert len({len(material) for material in returned if material is not None}) == 1
 
@@ -82,7 +82,7 @@ def test_nearby_accepted_material_has_distinct_exact_returned_material():
 def test_one_byte_pressure_is_exact_complete_and_behaviorally_divided():
     source = b"x=1"
     candidates = one_byte_substitutions(source)
-    outcomes = interrogate_many(candidates)
+    results = interrogate_many(candidates)
 
     assert len(candidates) == len(source) * 255
     assert len(set(candidates)) == len(candidates)
@@ -91,27 +91,27 @@ def test_one_byte_pressure_is_exact_complete_and_behaviorally_divided():
         and sum(left != right for left, right in zip(candidate, source)) == 1
         for candidate in candidates
     )
-    assert {outcome.accepted for outcome in outcomes} == {False, True}
+    assert {result.accepted for result in results} == {False, True}
 
 
 def test_non_utf8_source_bytes_reach_the_witness_and_are_refused():
-    outcome = interrogate(b"\xff")
+    result = interrogate(b"\xff")
 
-    assert outcome.exact_material == b"\xff"
-    assert outcome.accepted is False
-    assert outcome.result_material is None
-    assert type(outcome.refusal_material) is bytes
-    assert outcome.refusal_material
+    assert result.exact_material == b"\xff"
+    assert result.accepted is False
+    assert result.result_material is None
+    assert type(result.refusal_material) is bytes
+    assert result.refusal_material
 
 
-def test_a_null_byte_is_also_a_refusal_outcome():
-    outcome = interrogate(b"\x00")
+def test_a_null_byte_is_also_a_refusal_result():
+    result = interrogate(b"\x00")
 
-    assert outcome.exact_material == b"\x00"
-    assert outcome.accepted is False
-    assert outcome.result_material is None
-    assert type(outcome.refusal_material) is bytes
-    assert outcome.refusal_material
+    assert result.exact_material == b"\x00"
+    assert result.accepted is False
+    assert result.result_material is None
+    assert type(result.refusal_material) is bytes
+    assert result.refusal_material
 
 
 def test_a_non_byte_input_is_refused_before_interrogation():
@@ -130,9 +130,9 @@ def test_exact_bytes_reach_the_compiled_witness_without_prior_decoding(monkeypat
         return compiled(material)
 
     monkeypatch.setattr(harness.ast, "parse", record)
-    outcome = harness.interrogate(b"x=1")
+    result = harness.interrogate(b"x=1")
 
-    assert outcome.accepted is True
+    assert result.accepted is True
     assert supplied == [b"x=1"]
 
 
@@ -143,28 +143,28 @@ def test_exact_bytes_reach_the_compiled_witness_without_prior_decoding(monkeypat
 def test_distinct_compiled_parsers_receive_the_same_exact_material():
     material = b"x=1\n"
 
-    answers = tuple(
+    results = tuple(
         interrogate_compiled_parser(material, witness)
         for witness in COMPILED_PARSER_WITNESSES
     )
 
-    assert len({answer.witness for answer in answers}) == 4
-    assert all(answer.exact_material == material for answer in answers)
-    assert all(type(answer.stdout_bytes) is bytes for answer in answers)
-    assert all(type(answer.stderr_bytes) is bytes for answer in answers)
+    assert len({result.witness for result in results}) == 4
+    assert all(result.exact_material == material for result in results)
+    assert all(type(result.stdout_bytes) is bytes for result in results)
+    assert all(type(result.stderr_bytes) is bytes for result in results)
 
 
 @pytest.mark.skipif(
     any(shutil.which(witness.arguments[0]) is None for witness in COMPILED_PARSER_WITNESSES),
     reason="one compiled parser witness is unavailable",
 )
-def test_cross_parser_answers_preserve_agreement_and_disagreement():
+def test_cross_parser_results_preserve_agreement_and_disagreement():
     materials = first_probe_family()
     rows = interrogate_across_compiled_parsers(materials)
-    acceptance = tuple(tuple(answer.accepted for answer in row) for row in rows)
+    acceptance = tuple(tuple(result.accepted for result in row) for row in rows)
 
     assert len(rows) == 4
-    assert all(tuple(answer.exact_material for answer in row) == materials for row in rows)
+    assert all(tuple(result.exact_material for result in row) == materials for row in rows)
     columns = tuple(zip(*acceptance))
     assert any(len(set(column)) == 1 for column in columns)
     assert any(len(set(column)) > 1 for column in columns)

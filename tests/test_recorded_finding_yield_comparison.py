@@ -6,7 +6,7 @@ import pytest
 
 from seed_runtime.event import Event
 from seed_runtime.events import EventLedger, SQLiteEventLedger
-from seed_runtime.adjacency_pair_measurement import measure_after
+from seed_runtime.position_pair_measurement import measure_after
 from seed_runtime.recorded_finding_yield_comparison import (
     ERASURE,
     AGREES_WITH_YIELD_EVIDENCE,

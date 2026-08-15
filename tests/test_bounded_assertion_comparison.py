@@ -27,7 +27,7 @@ from seed_runtime.bounded_assertion_comparison import (
     record_comparison_finding,
 )
 from seed_runtime.events import EventLedger
-from seed_runtime.adjacency_pair_measurement import measure_after
+from seed_runtime.position_pair_measurement import measure_after
 from seed_runtime.preserved_material_measurement import (
     DeclaredMeasurement,
     ingest_occurrences,

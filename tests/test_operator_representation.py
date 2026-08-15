@@ -231,7 +231,7 @@ def test_console_ingest_adds_only_its_exact_occurrences():
     kinds = [event.kind for event in ledger.list()]
     assert not any(kind.startswith("operator.interaction.") for kind in kinds)
 
-    # Every Ingest retains an identity distinct from adjacent Representation occurrences.
+    # Every Ingest retains an identity distinct from Representation occurrences.
     representations = [e for e in ledger.list() if e.kind == "operator.representation.recorded"]
     ingests = [e for e in ledger.list() if e.kind == "material.ingest.occurred"]
     assert len(ingests) == 3

@@ -30,7 +30,9 @@ def _lexicon_entries(path: Path = LEXICON) -> dict[str, str]:
     for line in path.read_text(encoding="utf-8").split("\n"):
         if not line.strip() or line.lstrip().startswith("#"):
             continue
-        word, _, reason = line.partition("#")
+        divided = line.split("#", 1)
+        word = divided[0]
+        reason = divided[1] if len(divided) == 2 else ""
         entries[word.strip()] = reason.strip()
     return entries
 

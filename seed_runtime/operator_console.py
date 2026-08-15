@@ -40,7 +40,8 @@ def _advance_over(ledger, standing, event_identities, *, locality_identity):
     """
 
     return advance_operator_locality_standing(
-        [ledger.get(event_identity) for event_identity in event_identities],
+        ledger,
+        event_identities,
         locality_identity=locality_identity,
         prior=standing,
     )

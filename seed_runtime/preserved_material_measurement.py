@@ -5,7 +5,7 @@ and `01.Source:28` grants the finding and states its conditions:
 
     A declared measurement may yield bounded findings of exact equality,
     count, recurrence, prefix occurrence, the result of a declared predicate,
-    or adjacency within its measurement boundary. Those findings do not
+    or position within its measurement boundary. Those findings do not
     establish grammatical or semantic represented relation, or constitutional
     standing beyond the measurement assertion. A recurrence assertion must
     disclose the representation or representation measured, the rule by which

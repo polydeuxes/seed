@@ -43,7 +43,7 @@ implementation              names for how something is done on this machine
                             no constitutional clause, recorded so they stop
                             being audited as though it might
 
-worked explanation          ordinary-language answers to questions like
+worked explanation          ordinary prose returned for material like
                             "what does Standing mean"
 ```
 

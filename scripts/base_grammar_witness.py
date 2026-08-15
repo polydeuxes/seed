@@ -64,11 +64,11 @@ def main() -> int:
     print(f"  relations without a following relation: {dangling}")
 
     by_composition = rc.climb(
-        rc.one_class(sorted(declared)),
+        rc.one_material_locality(sorted(declared)),
         lambda a, b: declared[a]["to"] == declared[b]["from"],
     )
     by_link = rc.climb(
-        rc.one_class(ends),
+        rc.one_material_locality(ends),
         lambda x, y: any(
             spec["from"] == x and spec["to"] == y for spec in declared.values()
         ),

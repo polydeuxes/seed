@@ -12,14 +12,14 @@ from seed_runtime.byte_measurement import (
     _validate_moved_byte_assertion,
     assertions_of_recorded_byte_measurement,
     get_recorded_pair_input_applicability,
-    record_adjacent_byte_pair_count_layer,
+    record_byte_position_pair_count_layer,
     record_byte_count_layer,
 )
-from seed_runtime.adjacency_pair_measurement import (
+from seed_runtime.position_pair_measurement import (
     measure_after,
-    record_adjacency_pair_measurement_compare,
-    record_adjacency_pair_measurements,
-    record_emitted_representation_adjacency,
+    record_position_pair_measurement_compare,
+    record_position_pair_measurements,
+    record_emitted_representation_position_pair,
 )
 from seed_runtime.events import CORRUPTED, EventLedger
 from seed_runtime.identities import new_identity
@@ -58,6 +58,8 @@ from seed_runtime.bounded_assertion_comparison import (
 from seed_runtime.recurrence_measurement import (
     assertions_of_recorded_measurement,
     measure_locality_counts,
+    measure_occurrence_position,
+    record_occurrence_position_measurement,
     record_measured_count,
 )
 from seed_runtime.yield_evidence import YIELD_LIVE_BOUNDARIES
@@ -185,7 +187,7 @@ def _recorded_applicability() -> dict:
         source_locality_identities=("source",),
         recording_locality_identity="byte-measurement",
     )
-    pair_measurement = record_adjacent_byte_pair_count_layer(
+    pair_measurement = record_byte_position_pair_count_layer(
         ledger,
         source_measurement_event_identity=byte_measurement.identity,
         recording_locality_identity="measurement",
@@ -512,6 +514,22 @@ def _locality_count_yield_witness() -> dict:
     return _yield_bundle(ledger, event)
 
 
+def _occurrence_position_yield_witness() -> dict:
+    ledger = _IntegrityAdversaryLedger()
+    ledger.append("test.occurrence", {"material": "a"}, locality_identity="source")
+    ledger.append("test.occurrence", {"material": "b"}, locality_identity="source")
+    finding = measure_occurrence_position(
+        ledger,
+        source_locality_identity="source",
+    )
+    event = record_occurrence_position_measurement(
+        ledger,
+        recording_locality_identity="measurement",
+        finding=finding,
+    )
+    return _yield_bundle(ledger, event)
+
+
 def _bounded_compare_input_locality_witnesses() -> tuple[dict, dict]:
     exact = _bounded_assertion_compare_yield_witness()
     event = exact["event"]
@@ -833,32 +851,32 @@ def _recorded_finding_compare_yield_witness() -> dict:
     return _yield_bundle(source["ledger"], event)
 
 
-def _adjacent_measurement_yield_witness(*, compare: bool = False) -> dict:
+def _position_measurement_yield_witness(*, compare: bool = False) -> dict:
     ledger = _IntegrityAdversaryLedger()
     for text in ("L a b R", "X a b Y"):
         ledger.append(
             INGEST_OCCURRED_KIND,
             {"represented_material": text},
-            locality_identity="adjacent-measurement-yield",
+            locality_identity="position-measurement-yield",
         )
     occurrences = ingest_occurrences(
-        ledger, locality_identity="adjacent-measurement-yield"
+        ledger, locality_identity="position-measurement-yield"
     )
     finding = record_measurement_finding(
         ledger,
-        locality_identity="adjacent-measurement-yield",
+        locality_identity="position-measurement-yield",
         finding=measure_after(occurrences, "a", counting_scope="exact fixture"),
     )
-    first = record_adjacency_pair_measurements(
+    first = record_position_pair_measurements(
         ledger,
-        locality_identity="adjacent-measurement-yield",
+        locality_identity="position-measurement-yield",
         finding_event_identity=finding.identity,
     )
     if not compare:
         return _yield_bundle(ledger, first)
     representation = record_operator_representation(
         ledger,
-        locality_identity="adjacent-measurement-yield",
+        locality_identity="position-measurement-yield",
         locality_standing={"as_of_event_identity": None},
     )
     first_emission = emit_operator_representation(
@@ -868,15 +886,15 @@ def _adjacent_measurement_yield_witness(*, compare: bool = False) -> dict:
     second_emission = emit_operator_representation(
         ledger, representation=representation, output_stream=StringIO()
     )
-    first = record_emitted_representation_adjacency(
+    first = record_emitted_representation_position_pair(
         ledger, emission_event_identity=first_emission_event_identity
     )
-    second = record_emitted_representation_adjacency(
+    second = record_emitted_representation_position_pair(
         ledger, emission_event_identity=second_emission["emitted_event_identity"]
     )
-    event = record_adjacency_pair_measurement_compare(
+    event = record_position_pair_measurement_compare(
         ledger,
-        locality_identity="adjacent-measurement-yield",
+        locality_identity="position-measurement-yield",
         measurement_event_identities=(first.identity, second.identity),
     )
     return _yield_bundle(ledger, event)
@@ -1575,14 +1593,15 @@ def _byte_pair_yield_requirement_bundles() -> dict[str, dict[str, dict]]:
 
 def _remaining_yield_requirement_bundles() -> dict[str, dict[str, dict]]:
     witnesses = {
-        "adjacency_pair_measurement": _adjacent_measurement_yield_witness,
-        "adjacency_pair_measurement_compare": (
-            lambda: _adjacent_measurement_yield_witness(compare=True)
+        "position_pair_measurement": _position_measurement_yield_witness,
+        "position_pair_measurement_compare": (
+            lambda: _position_measurement_yield_witness(compare=True)
         ),
         "assertion_yield_compare": _assertion_yield_compare_witness,
         "assertion_locality_movement": _assertion_locality_movement_yield_witness,
         "bounded_assertion_compare": _bounded_assertion_compare_yield_witness,
         "locality_count_measurement": _locality_count_yield_witness,
+        "occurrence_position_measurement": _occurrence_position_yield_witness,
         "failed_emission": _failed_emission_yield_witness,
         "material_ingest": _material_ingest_yield_witness,
         "preserved_material_measurement": _preserved_material_yield_witness,
@@ -1641,9 +1660,9 @@ def _locality_requirement_bundles(
 
 def _remaining_locality_requirement_bundles() -> dict[str, dict[str, dict]]:
     witnesses = {
-        "adjacency_pair_measurement": _adjacent_measurement_yield_witness,
-        "adjacency_pair_measurement_compare": (
-            lambda: _adjacent_measurement_yield_witness(compare=True)
+        "position_pair_measurement": _position_measurement_yield_witness,
+        "position_pair_measurement_compare": (
+            lambda: _position_measurement_yield_witness(compare=True)
         ),
     }
     return {
@@ -3130,14 +3149,15 @@ def test_unrelated_yield_occurrences_do_not_share_result_identity():
         "byte_measurement": _byte_measurement_witness,
         "representation_result": _representation_witness,
         "successful_emission": _emission_witness,
-        "adjacency_pair_measurement": _adjacent_measurement_yield_witness,
-        "adjacency_pair_measurement_compare": (
-            lambda: _adjacent_measurement_yield_witness(compare=True)
+        "position_pair_measurement": _position_measurement_yield_witness,
+        "position_pair_measurement_compare": (
+            lambda: _position_measurement_yield_witness(compare=True)
         ),
         "assertion_yield_compare": _assertion_yield_compare_witness,
         "assertion_locality_movement": _assertion_locality_movement_yield_witness,
         "bounded_assertion_compare": _bounded_assertion_compare_yield_witness,
         "locality_count_measurement": _locality_count_yield_witness,
+        "occurrence_position_measurement": _occurrence_position_yield_witness,
         "failed_emission": _failed_emission_yield_witness,
         "material_ingest": _material_ingest_yield_witness,
         "preserved_material_measurement": _preserved_material_yield_witness,
@@ -3261,11 +3281,11 @@ LOCALITY_BOUNDARY_BY_KIND = {
         "bounded_compare_input"
     ),
     "operator.addressed_representation.locality_evidenced": "operator_checkpoint",
-    "operator.measurement.adjacency_pair_measurement_locality_evidenced": (
-        "adjacency_pair_measurement"
+    "operator.measurement.position_pair_measurement_locality_evidenced": (
+        "position_pair_measurement"
     ),
-    "operator.measurement.adjacency_pair_measurement_compare_locality_evidenced": (
-        "adjacency_pair_measurement_compare"
+    "operator.measurement.position_pair_measurement_compare_locality_evidenced": (
+        "position_pair_measurement_compare"
     ),
     "operator.representation.locality_evidenced": "representation_result",
     "operator.representation.emission_attempt_locality_evidenced": (

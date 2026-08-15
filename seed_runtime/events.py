@@ -292,6 +292,35 @@ class EventLedger:
         """Return an event by identity, if it exists."""
         return self._by_identity.get(event_identity)
 
+    def occurrences_in_append_order(
+        self,
+        event_identities: Iterable[str],
+        *,
+        locality_identity: str,
+    ) -> list[Event]:
+        """Resolve exact occurrences and refuse a false append order."""
+
+        events = []
+        prior_position = 0
+        seen = set()
+        for event_identity in event_identities:
+            if event_identity in seen:
+                raise ValueError("one occurrence was supplied more than once")
+            event = self.get(event_identity)
+            position = self._by_identity_position.get(event_identity)
+            if (
+                event is None
+                or position is None
+                or event.locality_identity != locality_identity
+            ):
+                raise ValueError("the supplied occurrence is not in this Locality")
+            if position <= prior_position:
+                raise ValueError("the supplied occurrences are not in append order")
+            events.append(event)
+            seen.add(event_identity)
+            prior_position = position
+        return events
+
     def append_boundary(self) -> EventLedgerBoundary:
         """Capture the exact identity of the current append prefix."""
         return EventLedgerBoundary(self._latest_prefix_identity)
@@ -444,9 +473,9 @@ class SQLiteEventLedger(EventLedger):
         "material_ingest_result",
         "operator_material", "operator_command", "checkpoint_locality", "locality",
         "system_material",
-        "represented_alternative", "adjacent_byte_pair_measurement_act",
-        "adjacent_byte_pair_measurement_occurrence",
-        "adjacent_byte_pair_measurement_result", "byte_measurement_act",
+        "represented_alternative", "byte_position_pair_measurement_act",
+        "byte_position_pair_measurement_occurrence",
+        "byte_position_pair_measurement_result", "byte_measurement_act",
         "byte_measurement_occurrence", "byte_measurement_result",
         "byte_pair_applicability_act", "byte_pair_applicability_occurrence",
         "byte_pair_applicability_result",
@@ -462,10 +491,10 @@ class SQLiteEventLedger(EventLedger):
         "finding_yield_comparison_act",
         "finding_yield_comparison_act_occurrence",
         "finding_yield_comparison_result",
-        "adjacency_pair_measurement_measurement_act",
-        "adjacency_pair_measurement_measurement_occurrence",
-        "adjacency_pair_measurement_compare_act",
-        "adjacency_pair_measurement_compare_occurrence",
+        "position_pair_measurement_measurement_act",
+        "position_pair_measurement_measurement_occurrence",
+        "position_pair_measurement_compare_act",
+        "position_pair_measurement_compare_occurrence",
         "assertion_compare_act",
         "assertion_compare_act_occurrence",
         "assertion_compare_result",
@@ -475,6 +504,9 @@ class SQLiteEventLedger(EventLedger):
         "locality_count_measurement_act",
         "locality_count_measurement_act_occurrence",
         "locality_count_measurement_result",
+        "occurrence_position_measurement_act",
+        "occurrence_position_measurement_occurrence",
+        "occurrence_position_measurement_result",
         "operator_representation_emission_failure_act",
         "operator_representation_emission_failure_act_occurrence",
         "operator_representation_emission_failure_result",
@@ -530,7 +562,7 @@ class SQLiteEventLedger(EventLedger):
         #
         # `#2414` measured the read: every material of every event
         # deserialized and walked on every open, to read the highest issued
-        # number per prefix. That is a whole-history read for an answer of a few
+        # number per prefix. That is a whole-history read for a result of a few
         # integers, and it grows without bound — 36.9s at 100,000 events,
         # extrapolating to about 356s at a million.
         #
@@ -580,7 +612,7 @@ class SQLiteEventLedger(EventLedger):
             """)
         # The boundary Localities are actually selected by. Without it the
         # Locality read returns one Locality after scanning every row, which is
-        # bounded in what it answers and not in what it reads.
+        # bounded in what it returns and not in what it reads.
         self._connection.execute("""
             CREATE INDEX IF NOT EXISTS idx_events_locality
             ON events(locality_identity)
@@ -647,6 +679,33 @@ class SQLiteEventLedger(EventLedger):
             (event_identity,),
         ).fetchone()
         return self._row_to_event(row) if row is not None else None
+
+    def occurrences_in_append_order(
+        self,
+        event_identities: Iterable[str],
+        *,
+        locality_identity: str,
+    ) -> list[Event]:
+        """Resolve exact durable occurrences and refuse a false append order."""
+
+        identities = list(event_identities)
+        if len(set(identities)) != len(identities):
+            raise ValueError("one occurrence was supplied more than once")
+        events = []
+        prior_rowid = 0
+        for event_identity in identities:
+            row = self._connection.execute(
+                "SELECT rowid, * FROM events WHERE identity = ?",
+                (event_identity,),
+            ).fetchone()
+            if row is None or row["locality_identity"] != locality_identity:
+                raise ValueError("the supplied occurrence is not in this Locality")
+            rowid = int(row["rowid"])
+            if rowid <= prior_rowid:
+                raise ValueError("the supplied occurrences are not in append order")
+            events.append(self._row_to_event(row))
+            prior_rowid = rowid
+        return events
 
     def append_boundary(self) -> EventLedgerBoundary:
         """Capture the exact identity of the current durable append prefix."""
@@ -802,7 +861,7 @@ class SQLiteEventLedger(EventLedger):
             # the absence of an occurrence, not a durable one lacking integrity.
             return UNVERIFIABLE
         # A durable occurrence always carries a material identity: the store is refused
-        # at open otherwise. So this answers VERIFIED or CORRUPTED, never
+        # at open otherwise. So this returns VERIFIED or CORRUPTED, never
         # UNVERIFIABLE. Leaving a supported unverifiable path here would let it
         # be cited later as evidence that durable references need no integrity.
         return (
@@ -1116,8 +1175,11 @@ class SQLiteEventLedger(EventLedger):
         for value in values:
             if not isinstance(value, str):
                 continue
-            prefix, separator, digits = value.rpartition("_")
-            if not separator or prefix not in reservable or not digits.isdigit():
+            divided = value.rsplit("_", 1)
+            if len(divided) != 2:
+                continue
+            prefix, digits = divided
+            if prefix not in reservable or not digits.isdigit():
                 continue
             number = int(digits)
             if number > found.get(prefix, 0):

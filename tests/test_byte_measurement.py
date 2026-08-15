@@ -20,11 +20,11 @@ from seed_runtime.byte_measurement import (
     _pair_input_applicability,
     get_recorded_pair_input_applicability,
     assertions_of_recorded_byte_measurement,
-    assertions_of_recorded_adjacent_byte_pair_measurement,
-    input_applicability_of_recorded_adjacent_byte_pair_measurement,
+    assertions_of_recorded_byte_position_pair_measurement,
+    input_applicability_of_recorded_byte_position_pair_measurement,
     measure_byte_counts,
     record_byte_count_layer,
-    record_adjacent_byte_pair_count_layer,
+    record_byte_position_pair_count_layer,
 )
 from seed_runtime.events import EventLedger
 from seed_runtime.event import Event
@@ -276,10 +276,10 @@ def test_repeated_locality_coordinate_does_not_repeat_one_ingest():
     assert repeated == once
 
 
-def test_every_overlapping_adjacent_byte_pair_is_measured():
+def test_every_overlapping_byte_position_pair_is_measured():
     ledger = _ledger("tatatata\n")
     source = _byte_source(ledger)
-    event = record_adjacent_byte_pair_count_layer(
+    event = record_byte_position_pair_count_layer(
         ledger,
         source_measurement_event_identity=source.identity,
         recording_locality_identity="measurement",
@@ -295,10 +295,10 @@ def test_every_overlapping_adjacent_byte_pair_is_measured():
     assert counts[(97, 10)]["count"] == 1
 
 
-def test_adjacent_pairs_never_cross_ingest_boundaries():
+def test_position_pairs_never_cross_ingest_boundaries():
     ledger = _ledger("a\nb\n")
     source = _byte_source(ledger)
-    event = record_adjacent_byte_pair_count_layer(
+    event = record_byte_position_pair_count_layer(
         ledger,
         source_measurement_event_identity=source.identity,
         recording_locality_identity="measurement",
@@ -315,10 +315,10 @@ def test_adjacent_pairs_never_cross_ingest_boundaries():
     assert (10, 98) not in counts
 
 
-def test_adjacency_pair_measurement_remains_byte_not_character_based():
+def test_position_pair_measurement_remains_byte_not_character_based():
     ledger = _ledger("猫\n")
     source = _byte_source(ledger)
-    event = record_adjacent_byte_pair_count_layer(
+    event = record_byte_position_pair_count_layer(
         ledger,
         source_measurement_event_identity=source.identity,
         recording_locality_identity="measurement",
@@ -329,7 +329,7 @@ def test_adjacency_pair_measurement_remains_byte_not_character_based():
         if item["result"] == "count"
     }
 
-    # UTF-8 bytes e7 8c ab plus the recorded newline. These are adjacent bytes,
+    # UTF-8 bytes e7 8c ab plus the recorded newline. These are ordered byte pairs,
     # not a Assertion that any pair is a character.
     assert counts == {(231, 140), (140, 171), (171, 10)}
 
@@ -337,7 +337,7 @@ def test_adjacency_pair_measurement_remains_byte_not_character_based():
 def test_pair_count_and_recurrence_are_separate_results():
     ledger = _ledger("tatatata\n")
     source = _byte_source(ledger)
-    event = record_adjacent_byte_pair_count_layer(
+    event = record_byte_position_pair_count_layer(
         ledger,
         source_measurement_event_identity=source.identity,
         recording_locality_identity="measurement",
@@ -363,13 +363,13 @@ def test_pair_count_and_recurrence_are_separate_results():
     assert moved_reference["assertion_identity"] == original.assertion_identity
     assert moved_reference["recorded_occurrence_identity"] == original.recorded_occurrence_identity
     assert event.material["source_movement_event_identity"] != original.recorded_occurrence_identity
-    applicability = input_applicability_of_recorded_adjacent_byte_pair_measurement(
+    applicability = input_applicability_of_recorded_byte_position_pair_measurement(
         ledger, event.identity
     )
     assert applicability["dimensions"]["standing"] == "applicable"
     assert applicability["input_assertion_reference"] == event.material["source_assertion_reference"]
     assert applicability["result_boundary"]
-    assert applicability["downstream_act"] == "declared adjacent-byte-pair Measurement"
+    assert applicability["downstream_act"] == "declared byte-position-pair Measurement"
     assert applicability["measurement_locality"] == "measurement"
     assert applicability["input_unknowns"]
     assert applicability["input_limits"]
@@ -383,13 +383,13 @@ def test_pair_count_and_recurrence_are_separate_results():
 def test_recorded_pair_results_replay_the_complete_bounded_source_read():
     ledger = _ledger("tatatata\n")
     source = _byte_source(ledger)
-    event = record_adjacent_byte_pair_count_layer(
+    event = record_byte_position_pair_count_layer(
         ledger,
         source_measurement_event_identity=source.identity,
         recording_locality_identity="measurement",
     )
 
-    read = assertions_of_recorded_adjacent_byte_pair_measurement(
+    read = assertions_of_recorded_byte_position_pair_measurement(
         ledger, event.identity
     )
     assert read
@@ -429,7 +429,7 @@ def test_recorded_pair_results_replay_the_complete_bounded_source_read():
 def test_pair_validation_refuses_a_self_consistent_truncated_result_inputs():
     ledger = _ledger("tatatata\n")
     source = _byte_source(ledger)
-    event = record_adjacent_byte_pair_count_layer(
+    event = record_byte_position_pair_count_layer(
         ledger,
         source_measurement_event_identity=source.identity,
         recording_locality_identity="measurement",
@@ -441,7 +441,7 @@ def test_pair_validation_refuses_a_self_consistent_truncated_result_inputs():
     }
 
     with pytest.raises(ByteMeasurementError, match="recurrence boundary"):
-        assertions_of_recorded_adjacent_byte_pair_measurement(ledger, event.identity)
+        assertions_of_recorded_byte_position_pair_measurement(ledger, event.identity)
 
 
 @pytest.mark.parametrize(
@@ -459,7 +459,7 @@ def test_pair_validation_refuses_a_self_consistent_truncated_result_inputs():
 def test_pair_validation_requires_one_exact_ordered_representation(representation):
     ledger = _ledger("ta\n")
     source = _byte_source(ledger)
-    event = record_adjacent_byte_pair_count_layer(
+    event = record_byte_position_pair_count_layer(
         ledger,
         source_measurement_event_identity=source.identity,
         recording_locality_identity="measurement",
@@ -477,13 +477,13 @@ def test_pair_validation_requires_one_exact_ordered_representation(representatio
     }
 
     with pytest.raises(ByteMeasurementError, match="unlawful pair Assertion"):
-        assertions_of_recorded_adjacent_byte_pair_measurement(ledger, event.identity)
+        assertions_of_recorded_byte_position_pair_measurement(ledger, event.identity)
 
 
 def test_pair_validation_does_not_perform_the_pair_measurement_again(monkeypatch):
     ledger = _ledger("tatatata\n")
     source = _byte_source(ledger)
-    event = record_adjacent_byte_pair_count_layer(
+    event = record_byte_position_pair_count_layer(
         ledger,
         source_measurement_event_identity=source.identity,
         recording_locality_identity="measurement",
@@ -493,19 +493,19 @@ def test_pair_validation_does_not_perform_the_pair_measurement_again(monkeypatch
         raise AssertionError("the pair Measurement occurred again")
 
     monkeypatch.setattr(
-        "seed_runtime.byte_measurement._measure_adjacent_byte_pair_counts_through",
+        "seed_runtime.byte_measurement._measure_byte_position_pair_counts_through",
         forbidden,
     )
     monkeypatch.setattr(
         "seed_runtime.byte_measurement._pair_input_applicability", forbidden
     )
-    assert assertions_of_recorded_adjacent_byte_pair_measurement(ledger, event.identity)
+    assert assertions_of_recorded_byte_position_pair_measurement(ledger, event.identity)
 
 
 def test_pair_validation_refuses_unsupported_input_applicability():
     ledger = _ledger("tatatata\n")
     source = _byte_source(ledger)
-    event = record_adjacent_byte_pair_count_layer(
+    event = record_byte_position_pair_count_layer(
         ledger,
         source_measurement_event_identity=source.identity,
         recording_locality_identity="measurement",
@@ -517,20 +517,20 @@ def test_pair_validation_refuses_unsupported_input_applicability():
     }
 
     with pytest.raises(ByteMeasurementError, match="historical input Applicability"):
-        assertions_of_recorded_adjacent_byte_pair_measurement(ledger, event.identity)
+        assertions_of_recorded_byte_position_pair_measurement(ledger, event.identity)
 
 
 def test_zero_measured_pairs_is_a_lawful_exact_result():
     ledger = _ledger("\n")
     source = _byte_source(ledger)
-    event = record_adjacent_byte_pair_count_layer(
+    event = record_byte_position_pair_count_layer(
         ledger,
         source_measurement_event_identity=source.identity,
         recording_locality_identity="measurement",
     )
 
     assert event.material["assertions"] == []
-    assert assertions_of_recorded_adjacent_byte_pair_measurement(ledger, event.identity) == ()
+    assert assertions_of_recorded_byte_position_pair_measurement(ledger, event.identity) == ()
 
 
 def test_applicability_identity_is_bound_to_one_exact_downstream_act():
@@ -563,7 +563,7 @@ def test_applicability_identity_is_bound_to_one_exact_downstream_act():
     assert first["downstream_act_occurrence_identity"] is None
 
 
-def test_pair_applicability_has_unknown_and_conflicting_outcomes():
+def test_pair_applicability_has_unknown_and_conflicting_results():
     ledger = _ledger("ta\n")
     source_event = _byte_source(ledger)
     source = next(
@@ -618,7 +618,7 @@ def test_pair_applicability_has_unknown_and_conflicting_outcomes():
 def test_seed_native_measurement_and_result_assertions_keep_distinct_responsibilities():
     ledger = _ledger("ta\n")
     source = _byte_source(ledger)
-    result = record_adjacent_byte_pair_count_layer(
+    result = record_byte_position_pair_count_layer(
         ledger,
         source_measurement_event_identity=source.identity,
         recording_locality_identity="measurement",
@@ -667,7 +667,7 @@ def test_seed_native_responsibility_is_earned_from_preserved_occurrences():
 def test_locality_movement_assignment_is_earned_from_the_exact_source():
     ledger = _ledger("ta\n")
     source = _byte_source(ledger)
-    pair = record_adjacent_byte_pair_count_layer(
+    pair = record_byte_position_pair_count_layer(
         ledger,
         source_measurement_event_identity=source.identity,
         recording_locality_identity="measurement",
@@ -688,7 +688,7 @@ def test_locality_movement_assignment_is_earned_from_the_exact_source():
 def test_pair_act_identity_is_not_its_occurrence_identity():
     ledger = _ledger("ta\n")
     source = _byte_source(ledger)
-    result = record_adjacent_byte_pair_count_layer(
+    result = record_byte_position_pair_count_layer(
         ledger,
         source_measurement_event_identity=source.identity,
         recording_locality_identity="measurement",
@@ -704,7 +704,7 @@ def test_pair_act_identity_is_not_its_occurrence_identity():
 def test_pair_validation_refuses_more_carrying_occurrences_than_total_pairs():
     ledger = _ledger("ta\n")
     source = _byte_source(ledger)
-    event = record_adjacent_byte_pair_count_layer(
+    event = record_byte_position_pair_count_layer(
         ledger,
         source_measurement_event_identity=source.identity,
         recording_locality_identity="measurement",
@@ -730,4 +730,4 @@ def test_pair_validation_refuses_more_carrying_occurrences_than_total_pairs():
     }
 
     with pytest.raises(ByteMeasurementError, match="unlawful pair count"):
-        assertions_of_recorded_adjacent_byte_pair_measurement(ledger, event.identity)
+        assertions_of_recorded_byte_position_pair_measurement(ledger, event.identity)

@@ -23,7 +23,7 @@ def _cross_examined_stores(tmp_path):
     return ledger, dag, events
 
 
-def test_sql_and_dag_answer_the_same_reference_relations(tmp_path):
+def test_sql_and_dag_return_the_same_reference_relations(tmp_path):
     ledger, dag, events = _cross_examined_stores(tmp_path)
 
     for event in events:

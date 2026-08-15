@@ -1,9 +1,8 @@
 #!/usr/bin/env python3
 """Form frames that differ from each other in one stated way at a time.
 
-Material whose differences are known before Seed reads it. Each rung adds one
-thing to the rung below, so a comparison between two of them has a expected
-answer a caller can check its finding against.
+Material whose differences are known before Seed reads it. Each material adds
+one supplied difference to the material before it.
 
 ```text
   1  one colour                     the frame's area, 1 distinct value
@@ -16,7 +15,7 @@ Frame size and box size vary separately, so a comparison that reports only
 "the ground shrank" cannot tell which of the two moved. Ground area is the
 frame's area less the box's, and both are declared here.
 
-Rung 4 is not rung 3 five times over. Letters carry different amounts of ink,
+The fourth material is not the third material five times over. Letters carry different amounts of ink,
 and antialiasing puts colours in the frame that neither the ground nor the ink
 was given. Both are measurable, and neither was declared.
 
@@ -26,8 +25,8 @@ material path like any other body.
 
 Usage:
 
-    visual_ladder_harness.py --out-dir rungs/
-    visual_ladder_harness.py --out-dir rungs/ --text hello --seconds 2
+    visual_ladder_harness.py --out-dir material/
+    visual_ladder_harness.py --out-dir material/ --text hello --seconds 2
 """
 
 from __future__ import annotations
@@ -83,8 +82,8 @@ def _draw_text(text: str) -> str:
     )
 
 
-def rungs(text: str, frame: str, box: str) -> list[tuple[str, str]]:
-    """Each rung's name and the filter that separates it from the one below."""
+def materials(text: str, frame: str, box: str) -> list[tuple[str, str]]:
+    """Each material name and its supplied filter."""
 
     drawn = _draw_box(frame, box)
     return [
@@ -127,7 +126,7 @@ def main() -> int:
     seen: set[str] = set()
     for frame in args.sizes.split(","):
         for box in args.boxes.split(","):
-            for name, filters in rungs(args.text, frame, box):
+            for name, filters in materials(args.text, frame, box):
                 if name in seen:
                     continue
                 seen.add(name)

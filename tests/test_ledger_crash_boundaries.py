@@ -1,8 +1,8 @@
 """What a durable ledger can and cannot lose without saying so.
 
 Losing the tip and corrupting lineage are different failures. A store that
-lost its last occurrences still answers every probe the remaining ones
-support. A store whose chain no longer matches its occurrences answers
+lost its last occurrences still returns every result the remaining ones
+support. A store whose chain no longer matches its occurrences returns
 nothing safely, and must say so rather than serve a shorter history as if it
 were the whole one.
 

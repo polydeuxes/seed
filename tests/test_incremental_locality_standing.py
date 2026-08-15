@@ -78,8 +78,13 @@ def _ingress_event(index, *, unknowns):
 
 
 def _advance(events, prior=None):
+    ledger = EventLedger()
+    ledger.extend(events)
     return advance_operator_locality_standing(
-        events, locality_identity="s", prior=prior
+        ledger,
+        (event.identity for event in events),
+        locality_identity="s",
+        prior=prior,
     )
 
 
@@ -130,6 +135,68 @@ def test_replay_still_works_and_agrees_with_a_single_advance():
         ) == _replay(events)
 
 
+def test_an_advance_refuses_reversed_exact_occurrences(tmp_path):
+    ledgers = (
+        EventLedger(),
+        SQLiteEventLedger(str(tmp_path / "reversed.sqlite")),
+    )
+    try:
+        for ledger in ledgers:
+            first = ledger.append(
+                MATERIAL_INGEST_OCCURRED_KIND,
+                {
+                    "dimensions": {
+                        "identity": "first",
+                        "authority": "unestablished",
+                    },
+                    "source_role": "operator",
+                },
+                locality_identity="s",
+            )
+            second = ledger.append(
+                MATERIAL_INGEST_OCCURRED_KIND,
+                {
+                    "dimensions": {
+                        "identity": "second",
+                        "authority": "unestablished",
+                    },
+                    "source_role": "operator",
+                },
+                locality_identity="s",
+            )
+
+            with pytest.raises(ValueError, match="not in append order"):
+                advance_operator_locality_standing(
+                    ledger,
+                    (second.identity, first.identity),
+                    locality_identity="s",
+                )
+    finally:
+        ledgers[1].close()
+
+
+def test_an_advance_refuses_an_occurrence_from_another_locality():
+    ledger = EventLedger()
+    event = ledger.append(
+        MATERIAL_INGEST_OCCURRED_KIND,
+        {
+            "dimensions": {
+                "identity": "elsewhere",
+                "authority": "unestablished",
+            },
+            "source_role": "operator",
+        },
+        locality_identity="elsewhere",
+    )
+
+    with pytest.raises(ValueError, match="not in this Locality"):
+        advance_operator_locality_standing(
+            ledger,
+            (event.identity,),
+            locality_identity="s",
+        )
+
+
 def test_a_persisted_ledger_advances_identically(tmp_path):
     ledger = SQLiteEventLedger(str(tmp_path / "ledger.sqlite"))
     try:
@@ -171,10 +238,10 @@ def test_each_advance_reads_only_what_an_act_just_recorded(monkeypatch):
     sizes = []
     original = operator_console.advance_operator_locality_standing
 
-    def record(events, **kwargs):
-        events = list(events)
-        sizes.append(len(events))
-        return original(events, **kwargs)
+    def record(ledger, event_identities, **kwargs):
+        event_identities = list(event_identities)
+        sizes.append(len(event_identities))
+        return original(ledger, event_identities, **kwargs)
 
     monkeypatch.setattr(operator_console, "advance_operator_locality_standing", record)
     _console("alpha\nbeta\ngamma\ndelta\n")

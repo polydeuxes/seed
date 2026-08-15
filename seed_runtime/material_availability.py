@@ -66,8 +66,8 @@ class ProcessLocalMaterial:
     Seed preserving material outside itself — an outward Act requiring Authority
     this module does not have and does not ask for.
 
-    A holder answers one distinction: *is this material available here now, and if
-    so what is it.* It never answers *was this material ever available*, which is
+    A holder returns one distinction: *is this material available here now, and if
+    so what is it.* It never returns *was this material ever available*, which is
     what the ledger occurrence is for.
     """
 

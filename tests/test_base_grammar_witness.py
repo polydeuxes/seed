@@ -63,13 +63,13 @@ def test_locality_keeps_its_subject_kinds_open():
 
 def test_composition_separates_every_relation():
     declared = relations()
-    rungs = rc.climb(
-        rc.one_class(sorted(declared)),
+    localities = rc.climb(
+        rc.one_material_locality(sorted(declared)),
         lambda a, b: declared[a]["to"] == declared[b]["from"],
     )
 
-    assert rc.heights(rungs) == [1, 3]
-    assert rc.unseparated(rungs) == []
+    assert rc.heights(localities) == [1, 3]
+    assert rc.unseparated(localities) == []
 
 
 def test_linkage_separates_every_endpoint():
@@ -77,12 +77,12 @@ def test_linkage_separates_every_endpoint():
 
     declared = relations()
     ends = endpoints(declared)
-    rungs = rc.climb(
-        rc.one_class(ends),
+    localities = rc.climb(
+        rc.one_material_locality(ends),
         lambda x, y: any(
             spec["from"] == x and spec["to"] == y for spec in declared.values()
         ),
     )
 
-    assert rc.heights(rungs)[-1] == len(ends)
-    assert rc.unseparated(rungs) == []
+    assert rc.heights(localities)[-1] == len(ends)
+    assert rc.unseparated(localities) == []

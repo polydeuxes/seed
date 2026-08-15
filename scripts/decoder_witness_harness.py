@@ -2,16 +2,16 @@
 """Interrogate a decoder and record what it refuses.
 
 A decoder is a witness. Asked whether it accepts an exact byte sequence it
-answers, and the answer is attributed testimony about that decoder, not a fact
+returns a result, and the result is attributed testimony about that decoder, not a fact
 about the bytes. What it accepts and refuses is measurable without read it
 and without adopting its vocabulary.
 
-**Nothing is copied.** This runs a decoder and records outcomes. No
+**Nothing is copied.** This runs a decoder and records results. No
 implementation is read, transcribed, or derived from, so no implementation's
 licence is engaged by what this produces. The witness here is Python's own
-codec, and any other decoder answers the same probes the same way.
+codec, and any other decoder returns results for the same probes.
 
-**Its words are not taken with its answers.** A decoder's source and
+**Its words are not taken with its results.** A decoder's source and
 documentation carry `code point`, `continuation byte`, `leader`, `overlong`,
 `scalar`. Those name why its author believes the boundaries fall where they
 do. This records where they fall.
@@ -26,8 +26,8 @@ What one interrogation yields, for the codec ordinarily called UTF-8:
   remaining    77   refused as a first byte at every byte count tried
 ```
 
-Five classes with exact boundaries, summing to 256. `0xc0`, `0xc1` and
-`0xf5`-`0xff` fall in the refused class though a bit-pattern read would
+Five exact material tuples, each sharing one equal result and together summing
+to 256. `0xc0`, `0xc1` and `0xf5`-`0xff` share the refused result though a bit-pattern read would
 admit them, so the witness refuses more than a leading-bit rule predicts, and
 that surplus is itself recorded rather than explained.
 
@@ -55,12 +55,12 @@ CONTINUATION_PROBE = tuple(range(0x80, 0xC0))
 
 
 def accepts(codec: str, sequence: tuple[int, ...]) -> bool:
-    """Whether the witness accepts these exact bytes. Its answer, not a fact.
+    """Whether the witness accepts these exact bytes. Its result, not a fact.
 
-    Some witnesses emit warnings while answering -- `unicode_escape` reports
+    Some witnesses emit warnings while returning -- `unicode_escape` reports
     invalid escape sequences for most of the 256 single bytes. A warning is not
     a refusal and does not revision what the witness returned, so it is filtered
-    at import rather than read as an outcome. Filtering per call costs 14x,
+    at import rather than read as a result. Filtering per call costs 14x,
     measured, and this runs millions of times.
     """
 
@@ -116,8 +116,8 @@ def _tails(count: int) -> list[tuple[int, ...]]:
 
 
 @lru_cache(maxsize=16)
-def classes(codec: str, max_byte_count: int = 4) -> dict[object, list[int]]:
-    """Bytes grouped by the outcomes the witness gave them."""
+def material_locality(codec: str, max_byte_count: int = 4) -> dict[object, list[int]]:
+    """Bytes grouped by the results the witness gave them."""
 
     grouped: dict[object, list[int]] = collections.defaultdict(list)
     for first in range(256):
@@ -133,26 +133,26 @@ NONE = "none"
 MIXED = "mixed"
 
 
-def class_adjacency(
+def measure_material_pairs(
     codec: str, read: dict[object, list[int]]
 ) -> dict[tuple[object, object], str]:
-    """Whether every, no, or some subject pair of two classes is accepted.
+    """Whether every, no, or some exact material pair is accepted.
 
-    The classes are supplied, not recomputed. This measurement stands on the
-    earlier one and cannot run without it: given other classes it reports
-    adjacency among those, and given none it reports nothing.
+    The material Locality is supplied, not recomputed. This measurement stands on the
+    earlier one and cannot run without it: given another material Locality it reports
+    ordered pairs among those, and given none it reports nothing.
 
-    Every subject pair is probed, not one representative each. A representative
-    testifies only for itself: `0x80` and `0xff` are one class under the
-    earlier measurement and behave differently here, so a single subject
-    reporting for its class would have stated `all` where the truth is `mixed`.
+    Every material pair is probed, not one representative each. A representative
+    testifies only for itself: `0x80` and `0xff` have one equal result under the
+    earlier measurement and behave differently here, so one material occurrence
+    reporting for both would have stated `all` where the truth is `mixed`.
 
     `mixed` is not a failure. It is this measurement finding the earlier
-    partition insufficient for its own purpose, which is what
+    material Locality insufficient for its own purpose, which is what
     :func:`refine` then acts on.
     """
 
-    outcomes: dict[tuple[object, object], str] = {}
+    results_by_pair: dict[tuple[object, object], str] = {}
     for first_key, firsts in read.items():
         for second_key, seconds in read.items():
             results = {
@@ -160,30 +160,30 @@ def class_adjacency(
                 for first in firsts
                 for second in seconds
             }
-            outcomes[(first_key, second_key)] = (
+            results_by_pair[(first_key, second_key)] = (
                 ALL if results == {True} else NONE if results == {False} else MIXED
             )
-    return outcomes
+    return results_by_pair
 
 
 def refine(codec: str, read: dict[object, list[int]]) -> dict[object, list[int]]:
-    subjects = [
+    material = [
         byte
         for bytes_at_one_coordinate in read.values()
         for byte in bytes_at_one_coordinate
     ]
     observed = {
         (first, second): accepts(codec, (first, second))
-        for first in subjects
-        for second in subjects
+        for first in material
+        for second in material
     }
     refined: dict[object, list[int]] = {}
     for key, bytes_at_one_coordinate in read.items():
         grouped: dict[object, list[int]] = collections.defaultdict(list)
         for byte in bytes_at_one_coordinate:
             signature = (
-                tuple(observed[byte, other] for other in subjects),
-                tuple(observed[other, byte] for other in subjects),
+                tuple(observed[byte, other] for other in material),
+                tuple(observed[other, byte] for other in material),
             )
             grouped[signature].append(byte)
         for index, split in enumerate(grouped.values()):
@@ -192,26 +192,27 @@ def refine(codec: str, read: dict[object, list[int]]) -> dict[object, list[int]]
 
 
 def climb(codec: str) -> list[dict[object, list[int]]]:
-    """Every rung, from the first partition to the one that stops moving.
+    """Each material Locality through the one that stops moving.
 
     The mechanism is `refinement_climb`, which knows nothing of codecs. What
-    this supplies is the first partition and the witness.
+    this supplies is the first material Locality and the witness.
     """
 
-    rungs = refinement_climb.climb(
+    localities = refinement_climb.climb(
         [
             tuple(bytes_at_one_coordinate)
-            for bytes_at_one_coordinate in classes(codec, 4).values()
+            for bytes_at_one_coordinate in material_locality(codec, 4).values()
         ],
         lambda first, second: accepts(codec, (first, second)),
     )
     return [
-        {index: list(subjects) for index, subjects in enumerate(rung)} for rung in rungs
+        {index: list(material) for index, material in enumerate(locality)}
+        for locality in localities
     ]
 
 
 def decoding_witnesses() -> list[str]:
-    """Every codec on this machine that answers when handed bytes."""
+    """Every codec on this machine that returns when handed bytes."""
 
     import encodings
     import pkgutil
@@ -228,20 +229,22 @@ def decoding_witnesses() -> list[str]:
 
 
 def survey() -> list[tuple[str, int, int, int]]:
-    """Each witness: its first class count, its last, and how many rungs.
+    """Each witness: its first material Locality count, its last, and total.
 
     Grouping witnesses by counts is not grouping them by shape. Two witnesses
-    with the same number of classes and admissible pairs may relate them
+    with the same number of distinct results and admissible pairs may relate them
     differently, and nothing here compares those relations.
     """
 
     rows = []
     for name in decoding_witnesses():
         try:
-            rungs = climb(name)
+            localities = climb(name)
         except Exception:
             continue
-        rows.append((name, len(rungs[0]), len(rungs[-1]), len(rungs)))
+        rows.append(
+            (name, len(localities[0]), len(localities[-1]), len(localities))
+        )
     return rows
 
 
@@ -254,30 +257,34 @@ def main() -> int:
 
     if args.survey:
         rows = survey()
-        heights = collections.Counter(rungs for _, _, _, rungs in rows)
+        heights = collections.Counter(many for _, _, _, many in rows)
         print(f"  {len(rows)} witnesses climbed")
-        print(f"  {'rungs':>6}{'witnesses':>11}   example, first classes to last")
-        for rungs, many in sorted(heights.items()):
-            name, first, last, _ = next(row for row in rows if row[3] == rungs)
-            print(f"  {rungs:>6}{many:>11}   {name:<18} {first} -> {last}")
+        print(f"  {'count':>6}{'witnesses':>11}   example, first Locality to last")
+        for locality_count, many in sorted(heights.items()):
+            name, first, last, _ = next(
+                row for row in rows if row[3] == locality_count
+            )
+            print(
+                f"  {locality_count:>6}{many:>11}   {name:<18} {first} -> {last}"
+            )
         return 0
 
-    grouped = classes(args.codec, args.max_byte_count)
+    grouped = material_locality(args.codec, args.max_byte_count)
     print(f"  witness: the codec named {args.codec!r}")
     print(f"  {'bytes':14}{'count':>7}{'shortest accepted':>19}   followers")
     total = 0
-    for (byte_count, followers), subjects in sorted(
+    for (byte_count, followers), material in sorted(
         grouped.items(), key=lambda item: (item[0][0] is None, item[0][0])
     ):
-        total += len(subjects)
+        total += len(material)
         span = (
-            f"{subjects[0]:#04x}-{subjects[-1]:#04x}"
-            if len(subjects) > 1
-            else f"{subjects[0]:#04x}"
+            f"{material[0]:#04x}-{material[-1]:#04x}"
+            if len(material) > 1
+            else f"{material[0]:#04x}"
         )
         shown = f"{followers[0]:#04x}-{followers[1]:#04x}" if followers else "-"
-        print(f"  {span:14}{len(subjects):>7}{str(byte_count):>19}   {shown}")
-    print(f"  {'':14}{total:>7}   classes: {len(grouped)}")
+        print(f"  {span:14}{len(material):>7}{str(byte_count):>19}   {shown}")
+    print(f"  {'':14}{total:>7}   distinct results: {len(grouped)}")
     return 0
 
 

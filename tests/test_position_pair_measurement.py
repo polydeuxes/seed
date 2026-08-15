@@ -1,4 +1,4 @@
-"""Exact adjacency-pair acquisition and occurrence-bound measurements."""
+"""Exact position-pair acquisition and occurrence-bound measurements."""
 
 from __future__ import annotations
 
@@ -12,26 +12,26 @@ import pytest
 
 from seed_runtime.events import EventLedger, InvalidLedgerBoundary, SQLiteEventLedger
 from seed_runtime.event import Event
-from seed_runtime.adjacency_pair_measurement import (
+from seed_runtime.position_pair_measurement import (
     EQUIVALENCE_RULE,
-    enumerate_displacements,
+    enumerate_position_difference,
     enumerate_representations,
     measure_after,
-    measure_at_displacement,
-    AdjacencyPair,
-    adjacency_pairs_from_finding,
-    measure_adjacency_pairs_from_finding,
-    measure_emitted_representation_adjacency,
-    compare_emitted_representation_adjacency,
-    record_emitted_representation_adjacency,
-    record_adjacency_pair_measurement_compare,
-    get_recorded_adjacency_pair_measurement_compare,
-    compare_adjacency_pair_measurements,
-    record_adjacency_pair_measurements,
-    get_recorded_adjacency_pair_measurements,
-    ADJACENCY_PAIR_MEASUREMENT_ACT_EVIDENCE_KIND,
-    ADJACENCY_PAIR_MEASUREMENT_LOCALITY_EVIDENCE_KIND,
-    ADJACENCY_PAIR_MEASUREMENT_RECORDED_KIND,
+    measure_at_position_difference,
+    PositionPair,
+    position_pairs_from_finding,
+    measure_position_pairs_from_finding,
+    measure_emitted_representation_position_pair,
+    compare_emitted_representation_position_pair,
+    record_emitted_representation_position_pair,
+    record_position_pair_measurement_compare,
+    get_recorded_position_pair_measurement_compare,
+    compare_position_pair_measurements,
+    record_position_pair_measurements,
+    get_recorded_position_pair_measurements,
+    POSITION_PAIR_MEASUREMENT_ACT_EVIDENCE_KIND,
+    POSITION_PAIR_MEASUREMENT_LOCALITY_EVIDENCE_KIND,
+    POSITION_PAIR_MEASUREMENT_RECORDED_KIND,
 )
 from seed_runtime.preserved_material_measurement import (
     INGEST_OCCURRED_KIND,
@@ -111,15 +111,15 @@ def test_a_finding_records_the_representation_it_measured_after(recorded_finding
 
 
 def test_pairs_are_read_from_the_record_not_supplied(locality, recorded_finding):
-    pairs = adjacency_pairs_from_finding(locality, recorded_finding.identity)
+    pairs = position_pairs_from_finding(locality, recorded_finding.identity)
     assert pairs
-    assert all(pair.left == LEFT for pair in pairs)
-    assert AdjacencyPair(left="it", right="is") in pairs
+    assert all(pair.first == LEFT for pair in pairs)
+    assert PositionPair(first="it", second="is") in pairs
 
 
 def test_every_measured_representation_becomes_a_pair(locality, recorded_finding):
     """No count or share decides which pairs are returned."""
-    pairs = adjacency_pairs_from_finding(locality, recorded_finding.identity)
+    pairs = position_pairs_from_finding(locality, recorded_finding.identity)
     assert len(pairs) == len(recorded_finding.material["representation_counts"])
 
 
@@ -138,13 +138,13 @@ def test_a_finding_that_names_no_representation_cannot_supply_one(locality, occu
         ),
     )
     with pytest.raises(PreservedMaterialMeasurementError):
-        adjacency_pairs_from_finding(locality, event.identity)
+        position_pairs_from_finding(locality, event.identity)
 
 
 def test_pairs_must_come_from_a_measurement_finding(locality, occurrences):
     foreign = locality.append("unrelated.kind", {"representation_counts": []}, locality_identity="s")
     with pytest.raises(PreservedMaterialMeasurementError):
-        adjacency_pairs_from_finding(locality, foreign.identity)
+        position_pairs_from_finding(locality, foreign.identity)
 
 
 
@@ -159,16 +159,16 @@ def _measurement_road(lines: tuple[str, ...], measured_lefts: tuple[str, ...]):
         ledger.append(
             INGEST_OCCURRED_KIND,
             {"represented_material": line},
-            locality_identity="adjacent-measurement",
+            locality_identity="position-measurement",
         )
     material = ingest_occurrences(
-        ledger, locality_identity="adjacent-measurement"
+        ledger, locality_identity="position-measurement"
     )
     measurements = []
     for measured_left in measured_lefts:
         finding = record_measurement_finding(
             ledger,
-            locality_identity="adjacent-measurement",
+            locality_identity="position-measurement",
             finding=measure_after(
                 material,
                 measured_left,
@@ -176,7 +176,7 @@ def _measurement_road(lines: tuple[str, ...], measured_lefts: tuple[str, ...]):
             ),
         )
         measurements.extend(
-            measure_adjacency_pairs_from_finding(
+            measure_position_pairs_from_finding(
                 ledger,
                 finding_event_identity=finding.identity,
                 occurrences=material,
@@ -185,7 +185,7 @@ def _measurement_road(lines: tuple[str, ...], measured_lefts: tuple[str, ...]):
     return ledger, tuple(measurements)
 
 
-def test_every_exact_pair_occurrence_preserves_its_adjacency_pair_measurement_and_evidence():
+def test_every_exact_pair_occurrence_preserves_its_position_pair_measurement_and_evidence():
     ledger, measurements = _measurement_road(
         ("L a b R a b Z",),
         ("a",),
@@ -198,43 +198,43 @@ def test_every_exact_pair_occurrence_preserves_its_adjacency_pair_measurement_an
     ]
     for measurement in measurements:
         source = ledger.get(measurement.source_occurrence_identity)
-        pair_finding = ledger.get(measurement.evidence["adjacency_evidence_event_identity"])
+        pair_finding = ledger.get(measurement.evidence["position_pair_evidence_event_identity"])
         assert pair_finding.kind == MEASUREMENT_RECORDED_KIND
         assert measurement.evidence == {
             "source_occurrence_identity": source.identity,
-            "adjacency_evidence_event_identity": pair_finding.identity,
+            "position_pair_evidence_event_identity": pair_finding.identity,
             "evidence_occurrence_identities": [
                 pair_finding.identity,
                 source.identity,
             ],
             "source_kind": INGEST_OCCURRED_KIND,
-            "locality_identity": "adjacent-measurement",
+            "locality_identity": "position-measurement",
             "exact_representation": source.material["represented_material"],
         }
-        assert measurement.pair_occurrence.right.position == (
-            measurement.pair_occurrence.left.position + 1
+        assert measurement.pair_occurrence.second.position == (
+            measurement.pair_occurrence.first.position + 1
         )
         assert measurement.fully_bounded_coordinates["identity"] == {
-            "adjacency_evidence_event_identity": pair_finding.identity,
+            "position_pair_evidence_event_identity": pair_finding.identity,
             "source_occurrence_identity": source.identity,
-            "positions": list(measurement.exact_order),
+            "exact_order": list(measurement.exact_order),
         }
 
 
-def test_adjacency_pair_measurement_refuses_a_different_or_rewritten_source_occurrence():
+def test_position_pair_measurement_refuses_a_different_or_rewritten_source_occurrence():
     ledger = EventLedger()
     for line in ("L a b R", "X a b Y"):
         ledger.append(
             INGEST_OCCURRED_KIND,
             {"represented_material": line},
-            locality_identity="adjacent-measurement",
+            locality_identity="position-measurement",
         )
     material = ingest_occurrences(
-        ledger, locality_identity="adjacent-measurement"
+        ledger, locality_identity="position-measurement"
     )
     finding = record_measurement_finding(
         ledger,
-        locality_identity="adjacent-measurement",
+        locality_identity="position-measurement",
         finding=measure_after(material, "a", counting_scope="exact fixture"),
     )
 
@@ -242,7 +242,7 @@ def test_adjacency_pair_measurement_refuses_a_different_or_rewritten_source_occu
         PreservedMaterialMeasurementError,
         match="differ from the finding's exact Evidence",
     ):
-        measure_adjacency_pairs_from_finding(
+        measure_position_pairs_from_finding(
             ledger,
             finding_event_identity=finding.identity,
             occurrences=reversed(material),
@@ -254,7 +254,7 @@ def test_adjacency_pair_measurement_refuses_a_different_or_rewritten_source_occu
         PreservedMaterialMeasurementError,
         match="source-occurrence Evidence does not read",
     ):
-        measure_adjacency_pairs_from_finding(
+        measure_position_pairs_from_finding(
             ledger,
             finding_event_identity=finding.identity,
             occurrences=(rewritten, material[1]),
@@ -266,7 +266,7 @@ def test_adjacency_pair_measurement_refuses_a_different_or_rewritten_source_occu
         PreservedMaterialMeasurementError,
         match="source-occurrence Evidence does not read",
     ):
-        measure_adjacency_pairs_from_finding(
+        measure_position_pairs_from_finding(
             ledger,
             finding_event_identity=finding.identity,
             occurrences=(relocated, material[1]),
@@ -274,11 +274,11 @@ def test_adjacency_pair_measurement_refuses_a_different_or_rewritten_source_occu
 
 
 def test_system_bytes_do_not_become_represented_material():
-    import seed_runtime.adjacency_pair_measurement as module
+    import seed_runtime.position_pair_measurement as module
 
     system_material = preserve_system_material(
         EventLedger(),
-        locality_identity="adjacent-measurement",
+        locality_identity="position-measurement",
         exact_bytes=b"L a b R",
         source_boundary="system boundary",
     )
@@ -287,14 +287,14 @@ def test_system_bytes_do_not_become_represented_material():
         PreservedMaterialMeasurementError,
         match="carries no represented material",
     ):
-        module._measure_adjacency_pair_measurements(
+        module._measure_position_pair_measurements(
             (system_material,),
-            (AdjacencyPair("a", "b"),),
-            adjacency_evidence_event_identity="evidence_not_consulted",
+            (PositionPair("a", "b"),),
+            position_pair_evidence_event_identity="evidence_not_consulted",
         )
 
 
-def test_direct_measurement_input_cannot_rewrite_order_adjacency_or_evidence():
+def test_direct_measurement_input_cannot_rewrite_order_position_pair_or_evidence():
     _, measurements = _measurement_road(("L a b R",), ("a",))
     measurement = measurements[0]
 
@@ -302,7 +302,7 @@ def test_direct_measurement_input_cannot_rewrite_order_adjacency_or_evidence():
         lambda item: replace(item, exact_order=(0, 2, 1, 3)),
         lambda item: replace(
             item,
-            left_occurrence=replace(item.left_occurrence, position=7),
+            before_occurrence=replace(item.before_occurrence, position=7),
         ),
         lambda item: replace(
             item,
@@ -324,14 +324,14 @@ def test_compare_refuses_duplicate_or_non_measurement_inputs():
 
     with pytest.raises(
         PreservedMaterialMeasurementError,
-        match="same exact adjacency-pair measurement",
+        match="same exact position-pair measurement",
     ):
-        compare_adjacency_pair_measurements((measurement, measurement))
+        compare_position_pair_measurements((measurement, measurement))
     with pytest.raises(
         PreservedMaterialMeasurementError,
         match="exact bounded measurements",
     ):
-        compare_adjacency_pair_measurements((measurement, {"looks": "similar"}))
+        compare_position_pair_measurements((measurement, {"looks": "similar"}))
 
 
 def test_boundary_absence_is_preserved_without_filling_positions():
@@ -342,8 +342,8 @@ def test_boundary_absence_is_preserved_without_filling_positions():
 
     assert [
         (
-            measurement.left_occurrence is not None,
-            measurement.right_occurrence is not None,
+            measurement.before_occurrence is not None,
+            measurement.after_occurrence is not None,
             measurement.fully_bounded_coordinates is not None,
         )
         for measurement in measurements
@@ -363,19 +363,19 @@ def test_identical_representations_do_not_identify_occurrences():
     first, second = (
         measurement.fully_bounded_coordinates for measurement in measurements
     )
-    assert first["left_occurrence"]["representation"] == second["left_occurrence"][
+    assert first["before_occurrence"]["representation"] == second["before_occurrence"][
         "representation"
     ]
     assert first["pair_occurrence"]["ordered_pair"] == second["pair_occurrence"][
         "ordered_pair"
     ]
-    assert first["right_occurrence"]["representation"] == second["right_occurrence"][
+    assert first["after_occurrence"]["representation"] == second["after_occurrence"][
         "representation"
     ]
     assert first["identity"] != second["identity"]
 
 
-def test_compare_reports_only_adjacency_coordinates_that_survive_counterexamples():
+def test_compare_reports_only_position_pair_coordinates_that_survive_counterexamples():
     _, measurements = _measurement_road(
         (
             "L a b R",
@@ -386,7 +386,7 @@ def test_compare_reports_only_adjacency_coordinates_that_survive_counterexamples
         ("a", "c"),
     )
 
-    compared = compare_adjacency_pair_measurements(measurements)
+    compared = compare_position_pair_measurements(measurements)
     assert compared == {
         "measurement_count": 4,
         "fully_bounded_measurement_count": 4,
@@ -398,44 +398,44 @@ def test_compare_reports_only_adjacency_coordinates_that_survive_counterexamples
             "ordered_pair_groups_with_multiple_endpoint_representations": 1,
             "endpoint_groups_with_multiple_ordered_pairs": 1,
         },
-        "distinct_adjacency_coordinates": [
+        "distinct_position_pair_coordinates": [
             {
-                "left_present": True,
-                "right_present": True,
-                "ordered_displacements": [1, 1, 1],
+                "before_present": True,
+                "after_present": True,
+                "exact_order_difference": [1, 1, 1],
             }
         ],
     }
 
 
-def test_adjacency_pair_measurement_measurement_records_exact_coordinates_and_reads_result():
+def test_position_pair_measurement_measurement_records_exact_coordinates_and_reads_result():
     ledger = EventLedger()
     for line in ("L a b R", "X a b Y"):
         ledger.append(
             INGEST_OCCURRED_KIND,
             {"represented_material": line},
-            locality_identity="adjacent-measurement",
+            locality_identity="position-measurement",
         )
     material = ingest_occurrences(
-        ledger, locality_identity="adjacent-measurement"
+        ledger, locality_identity="position-measurement"
     )
     finding = record_measurement_finding(
         ledger,
-        locality_identity="adjacent-measurement",
+        locality_identity="position-measurement",
         finding=measure_after(material, "a", counting_scope="exact fixture"),
     )
 
-    recorded = record_adjacency_pair_measurements(
+    recorded = record_position_pair_measurements(
         ledger,
-        locality_identity="adjacent-measurement",
+        locality_identity="position-measurement",
         finding_event_identity=finding.identity,
     )
-    read = get_recorded_adjacency_pair_measurements(
+    read = get_recorded_position_pair_measurements(
         ledger, recorded.identity
     )
 
-    assert recorded.kind == ADJACENCY_PAIR_MEASUREMENT_RECORDED_KIND
-    assert read == measure_adjacency_pairs_from_finding(
+    assert recorded.kind == POSITION_PAIR_MEASUREMENT_RECORDED_KIND
+    assert read == measure_position_pairs_from_finding(
         ledger,
         finding_event_identity=finding.identity,
         occurrences=material,
@@ -444,8 +444,8 @@ def test_adjacency_pair_measurement_measurement_records_exact_coordinates_and_re
     act_evidence = ledger.get(recorded.material["responsible_act_evidence_identity"])
     yield_evidence = ledger.get(recorded.material["yield_evidence_identity"])
     locality_evidence = ledger.get(recorded.material["locality_evidence_identity"])
-    assert act_evidence.kind == ADJACENCY_PAIR_MEASUREMENT_ACT_EVIDENCE_KIND
-    assert locality_evidence.kind == ADJACENCY_PAIR_MEASUREMENT_LOCALITY_EVIDENCE_KIND
+    assert act_evidence.kind == POSITION_PAIR_MEASUREMENT_ACT_EVIDENCE_KIND
+    assert locality_evidence.kind == POSITION_PAIR_MEASUREMENT_LOCALITY_EVIDENCE_KIND
     assert (
         recorded.material["act_occurrence_identity"]
         == act_evidence.material["act_occurrence_identity"]
@@ -489,30 +489,30 @@ def test_adjacency_pair_measurement_measurement_records_exact_coordinates_and_re
     )
 
 
-def test_adjacency_pair_measurement_read_does_not_repeat_measurement(monkeypatch):
-    import seed_runtime.adjacency_pair_measurement as module
+def test_position_pair_measurement_read_does_not_repeat_measurement(monkeypatch):
+    import seed_runtime.position_pair_measurement as module
 
     ledger, measurements = _measurement_road(("L a b R",), ("a",))
-    finding_identity = measurements[0].evidence["adjacency_evidence_event_identity"]
-    recorded = record_adjacency_pair_measurements(
+    finding_identity = measurements[0].evidence["position_pair_evidence_event_identity"]
+    recorded = record_position_pair_measurements(
         ledger,
-        locality_identity="adjacent-measurement",
+        locality_identity="position-measurement",
         finding_event_identity=finding_identity,
     )
 
     def forbidden(*args, **kwargs):
         raise AssertionError("historical address repeated Measurement")
 
-    monkeypatch.setattr(module, "_measure_adjacency_pair_measurements", forbidden)
-    assert get_recorded_adjacency_pair_measurements(ledger, recorded.identity)
+    monkeypatch.setattr(module, "_measure_position_pair_measurements", forbidden)
+    assert get_recorded_position_pair_measurements(ledger, recorded.identity)
 
 
-def test_adjacency_pair_measurement_read_refuses_changed_result_or_input_evidence():
+def test_position_pair_measurement_read_refuses_changed_result_or_input_evidence():
     ledger, measurements = _measurement_road(("L a b R",), ("a",))
-    finding_identity = measurements[0].evidence["adjacency_evidence_event_identity"]
-    recorded = record_adjacency_pair_measurements(
+    finding_identity = measurements[0].evidence["position_pair_evidence_event_identity"]
+    recorded = record_position_pair_measurements(
         ledger,
-        locality_identity="adjacent-measurement",
+        locality_identity="position-measurement",
         finding_event_identity=finding_identity,
     )
 
@@ -527,38 +527,38 @@ def test_adjacency_pair_measurement_read_refuses_changed_result_or_input_evidenc
         PreservedMaterialMeasurementError,
         match="relation Evidence carries different coordinates",
     ):
-        get_recorded_adjacency_pair_measurements(ledger, different.identity)
+        get_recorded_position_pair_measurements(ledger, different.identity)
 
     act_evidence = ledger.get(recorded.material["responsible_act_evidence_identity"])
     altered_act_material = json.loads(json.dumps(act_evidence.material))
     altered_act_material["input_applicability"][0]["standing"] = "Unknown"
     altered_act = ledger.append(
-        ADJACENCY_PAIR_MEASUREMENT_ACT_EVIDENCE_KIND,
+        POSITION_PAIR_MEASUREMENT_ACT_EVIDENCE_KIND,
         altered_act_material,
-        locality_identity="adjacent-measurement",
+        locality_identity="position-measurement",
     )
     altered_event_material = json.loads(json.dumps(recorded.material))
     altered_event_material["responsible_act_evidence_identity"] = altered_act.identity
     altered_event = ledger.append(
-        ADJACENCY_PAIR_MEASUREMENT_RECORDED_KIND,
+        POSITION_PAIR_MEASUREMENT_RECORDED_KIND,
         altered_event_material,
-        locality_identity="adjacent-measurement",
+        locality_identity="position-measurement",
     )
     with pytest.raises(
         PreservedMaterialMeasurementError,
         match="Act Evidence carries different inputs",
     ):
-        get_recorded_adjacency_pair_measurements(
+        get_recorded_position_pair_measurements(
             ledger, altered_event.identity
         )
 
 
-def test_adjacency_pair_measurement_endpoints_do_not_establish_participation():
+def test_position_pair_measurement_endpoints_do_not_establish_participation():
     ledger, measurements = _measurement_road(("L a b R",), ("a",))
-    recorded = record_adjacency_pair_measurements(
+    recorded = record_position_pair_measurements(
         ledger,
-        locality_identity="adjacent-measurement",
-        finding_event_identity=measurements[0].evidence["adjacency_evidence_event_identity"],
+        locality_identity="position-measurement",
+        finding_event_identity=measurements[0].evidence["position_pair_evidence_event_identity"],
     )
 
     missing = deepcopy(recorded)
@@ -569,7 +569,7 @@ def test_adjacency_pair_measurement_endpoints_do_not_establish_participation():
         locality_identity=missing.locality_identity,
     )
     with pytest.raises(PreservedMaterialMeasurementError, match="Participation"):
-        get_recorded_adjacency_pair_measurements(ledger, missing.identity)
+        get_recorded_position_pair_measurements(ledger, missing.identity)
 
     wrong = deepcopy(recorded)
     wrong.material["participation"][0]["act_occurrence_identity"] = "other-occurrence"
@@ -579,22 +579,22 @@ def test_adjacency_pair_measurement_endpoints_do_not_establish_participation():
         locality_identity=wrong.locality_identity,
     )
     with pytest.raises(PreservedMaterialMeasurementError, match="Participation"):
-        get_recorded_adjacency_pair_measurements(ledger, wrong.identity)
+        get_recorded_position_pair_measurements(ledger, wrong.identity)
 
 
-def test_adjacency_pair_measurement_read_refuses_self_consistent_counterfeit_source_text():
+def test_position_pair_measurement_read_refuses_self_consistent_counterfeit_source_text():
     ledger, measurements = _measurement_road(("L a b R",), ("a",))
-    finding_identity = measurements[0].evidence["adjacency_evidence_event_identity"]
-    recorded = record_adjacency_pair_measurements(
+    finding_identity = measurements[0].evidence["position_pair_evidence_event_identity"]
+    recorded = record_position_pair_measurements(
         ledger,
-        locality_identity="adjacent-measurement",
+        locality_identity="position-measurement",
         finding_event_identity=finding_identity,
     )
 
     altered_result = {
         "result_identity": recorded.material["result_identity"],
-        "adjacency_evidence_event_identity": recorded.material[
-            "adjacency_evidence_event_identity"
+        "position_pair_evidence_event_identity": recorded.material[
+            "position_pair_evidence_event_identity"
         ],
         "source_occurrence_identities": recorded.material["source_occurrence_identities"],
         "measurements": json.loads(json.dumps(recorded.material["measurements"])),
@@ -602,7 +602,7 @@ def test_adjacency_pair_measurement_read_refuses_self_consistent_counterfeit_sou
     altered_result["measurements"][0]["evidence"]["exact_representation"] = (
         "L a b counterfeit"
     )
-    altered_result["measurements"][0]["right_occurrence"]["representation"] = (
+    altered_result["measurements"][0]["after_occurrence"]["representation"] = (
         "counterfeit"
     )
     act_material = json.loads(
@@ -611,9 +611,9 @@ def test_adjacency_pair_measurement_read_refuses_self_consistent_counterfeit_sou
         )
     )
     act_evidence = ledger.append(
-        ADJACENCY_PAIR_MEASUREMENT_ACT_EVIDENCE_KIND,
+        POSITION_PAIR_MEASUREMENT_ACT_EVIDENCE_KIND,
         act_material,
-        locality_identity="adjacent-measurement",
+        locality_identity="position-measurement",
     )
     yield_material = json.loads(
         json.dumps(ledger.get(recorded.material["yield_evidence_identity"]).material)
@@ -622,16 +622,16 @@ def test_adjacency_pair_measurement_read_refuses_self_consistent_counterfeit_sou
     yield_evidence = ledger.append(
         "operator.yield.evidence_recorded",
         yield_material,
-        locality_identity="adjacent-measurement",
+        locality_identity="position-measurement",
     )
     locality_material = json.loads(
         json.dumps(ledger.get(recorded.material["locality_evidence_identity"]).material)
     )
     locality_material["carried_content"] = altered_result
     locality_evidence = ledger.append(
-        ADJACENCY_PAIR_MEASUREMENT_LOCALITY_EVIDENCE_KIND,
+        POSITION_PAIR_MEASUREMENT_LOCALITY_EVIDENCE_KIND,
         locality_material,
-        locality_identity="adjacent-measurement",
+        locality_identity="position-measurement",
     )
     event_material = json.loads(json.dumps(recorded.material))
     event_material.update(altered_result)
@@ -639,26 +639,26 @@ def test_adjacency_pair_measurement_read_refuses_self_consistent_counterfeit_sou
     event_material["yield_evidence_identity"] = yield_evidence.identity
     event_material["locality_evidence_identity"] = locality_evidence.identity
     event = ledger.append(
-        ADJACENCY_PAIR_MEASUREMENT_RECORDED_KIND,
+        POSITION_PAIR_MEASUREMENT_RECORDED_KIND,
         event_material,
-        locality_identity="adjacent-measurement",
+        locality_identity="position-measurement",
     )
 
     with pytest.raises(
         PreservedMaterialMeasurementError,
         match="different Evidence",
     ):
-        get_recorded_adjacency_pair_measurements(ledger, event.identity)
+        get_recorded_position_pair_measurements(ledger, event.identity)
 
 
 
 def test_a_pair_must_be_two_exact_representations():
     for bad in (("", "is"), ("it", ""), (None, "is")):
         with pytest.raises(PreservedMaterialMeasurementError):
-            AdjacencyPair(*bad)
+            PositionPair(*bad)
 
 
-def test_emitted_representation_adjacency_requires_exact_locality():
+def test_emitted_representation_position_pair_requires_exact_locality():
     ledger = EventLedger()
     representation = record_operator_representation(
         ledger,
@@ -675,7 +675,7 @@ def test_emitted_representation_adjacency_requires_exact_locality():
     )
     emission = ledger.get(emitted["emitted_event_identity"])
 
-    measurements = measure_emitted_representation_adjacency(
+    measurements = measure_emitted_representation_position_pair(
         ledger, emission_event_identity=emission.identity
     )
     assert measurements
@@ -685,18 +685,18 @@ def test_emitted_representation_adjacency_requires_exact_locality():
         for item in measurements
     )
     assert all(
-        item.evidence["adjacency_evidence_event_identity"]
+        item.evidence["position_pair_evidence_event_identity"]
         == emission.material["locality_evidence_identity"]
         for item in measurements
     )
-    recorded_measurements = record_emitted_representation_adjacency(
+    recorded_measurements = record_emitted_representation_position_pair(
         ledger,
         emission_event_identity=emission.identity,
     )
-    assert get_recorded_adjacency_pair_measurements(
+    assert get_recorded_position_pair_measurements(
         ledger, recorded_measurements.identity
     ) == measurements
-    assert recorded_measurements.material["adjacency_evidence_event_identity"] == (
+    assert recorded_measurements.material["position_pair_evidence_event_identity"] == (
         emission.material["locality_evidence_identity"]
     )
     assert [
@@ -711,7 +711,7 @@ def test_emitted_representation_adjacency_requires_exact_locality():
         locality_identity=copied.locality_identity,
     )
     with pytest.raises(PreservedMaterialMeasurementError, match="Locality Evidence"):
-        measure_emitted_representation_adjacency(
+        measure_emitted_representation_position_pair(
             ledger, emission_event_identity=copied.identity
         )
 
@@ -725,11 +725,11 @@ def test_emitted_representation_adjacency_requires_exact_locality():
         repeated_emission.material["emitted_representation"]
         == emission.material["emitted_representation"]
     )
-    repeated_measurements = record_emitted_representation_adjacency(
+    repeated_measurements = record_emitted_representation_position_pair(
         ledger,
         emission_event_identity=repeated_emission.identity,
     )
-    recorded_compare = record_adjacency_pair_measurement_compare(
+    recorded_compare = record_position_pair_measurement_compare(
         ledger,
         locality_identity="emission-measurement",
         measurement_event_identities=(
@@ -737,11 +737,11 @@ def test_emitted_representation_adjacency_requires_exact_locality():
             repeated_measurements.identity,
         ),
     )
-    read_compare = get_recorded_adjacency_pair_measurement_compare(
+    read_compare = get_recorded_position_pair_measurement_compare(
         ledger,
         recorded_compare.identity,
     )
-    assert read_compare == compare_emitted_representation_adjacency(
+    assert read_compare == compare_emitted_representation_position_pair(
         ledger,
         emission_event_identities=(emission.identity, repeated_emission.identity),
     )
@@ -758,11 +758,11 @@ def test_emitted_representation_adjacency_requires_exact_locality():
         locality_identity=wrong_occurrence.locality_identity,
     )
     with pytest.raises(PreservedMaterialMeasurementError, match="Locality Evidence"):
-        measure_emitted_representation_adjacency(
+        measure_emitted_representation_position_pair(
             ledger, emission_event_identity=wrong_occurrence.identity
         )
 
-    compared = compare_emitted_representation_adjacency(
+    compared = compare_emitted_representation_position_pair(
         ledger,
         emission_event_identities=(emission.identity, repeated_emission.identity),
     )
@@ -779,10 +779,10 @@ def test_emitted_representation_adjacency_requires_exact_locality():
     )
 
 
-def test_emission_adjacency_compare_requires_distinct_real_occurrences():
+def test_emission_position_pair_compare_requires_distinct_real_occurrences():
     ledger = EventLedger()
     with pytest.raises(PreservedMaterialMeasurementError, match="at least two distinct"):
-        compare_emitted_representation_adjacency(
+        compare_emitted_representation_position_pair(
             ledger,
             emission_event_identities=("same", "same"),
         )
@@ -790,14 +790,14 @@ def test_emission_adjacency_compare_requires_distinct_real_occurrences():
         PreservedMaterialMeasurementError,
         match="intact emission occurrence",
     ):
-        compare_emitted_representation_adjacency(
+        compare_emitted_representation_position_pair(
             ledger,
             emission_event_identities=("missing-one", "missing-two"),
         )
 
 
-def test_emission_adjacency_refuses_corrupted_locality_evidence(tmp_path):
-    ledger = SQLiteEventLedger(tmp_path / "emission-adjacency.sqlite")
+def test_emission_position_pair_refuses_corrupted_locality_evidence(tmp_path):
+    ledger = SQLiteEventLedger(tmp_path / "emission-position_pair.sqlite")
     representation = record_operator_representation(
         ledger,
         locality_identity="s",
@@ -821,7 +821,7 @@ def test_emission_adjacency_refuses_corrupted_locality_evidence(tmp_path):
     ledger._connection.commit()
 
     with pytest.raises(PreservedMaterialMeasurementError, match="Locality Evidence"):
-        measure_emitted_representation_adjacency(
+        measure_emitted_representation_position_pair(
             ledger,
             emission_event_identity=emission.identity,
         )
@@ -829,7 +829,7 @@ def test_emission_adjacency_refuses_corrupted_locality_evidence(tmp_path):
 
 
 # --------------------------------------------------------------------------
-# Rung 0: the material offers the representations, and nobody names one.
+# The material offers the representations, and nobody names one.
 # --------------------------------------------------------------------------
 
 
@@ -846,7 +846,7 @@ def test_representations_are_enumerated_from_the_material(occurrences):
 
 
 def test_comparability_restricts_representations_without_judging_them(occurrences):
-    """`present_in` keeps what every scope can answer, not what looks useful."""
+    """`present_in` keeps what every scope returns, not what looks useful."""
     scopes = [occurrences[:2], occurrences[2:]]
     restricted = enumerate_representations(occurrences, present_in=scopes)
     everywhere = set.intersection(
@@ -871,13 +871,13 @@ def test_agreement_is_the_discriminator_not_a_count(occurrences):
     scopes = [occurrences[:3], occurrences[3:]]
     disagreeing = []
     for representation in enumerate_representations(occurrences, present_in=scopes):
-        answers = [
+        results = [
             f.highest_count_representation.representation
             for scope in scopes
             if (f := measure_after(scope, representation, counting_scope="a scope"))
             and f.highest_count_representation is not None
         ]
-        if len(answers) == len(scopes) and len(set(answers)) > 1:
+        if len(results) == len(scopes) and len(set(results)) > 1:
             disagreeing.append(representation)
     # Nothing here promotes a disagreeing representation; it is simply not agreed.
     for representation in disagreeing:
@@ -885,27 +885,20 @@ def test_agreement_is_the_discriminator_not_a_count(occurrences):
         assert whole.highest_count_representation is not None
 
 
-# --------------------------------------------------------------------------
-# Displacement is a coordinate of the measurement, not a constant of the code.
-# --------------------------------------------------------------------------
-
-
-def test_displacements_are_enumerated_from_the_material(occurrences):
-    """What the material reaches, not what anyone thought worth measuring."""
-    reachable = enumerate_displacements(occurrences, "it")
-    assert reachable
-    assert reachable == sorted(reachable)
-    assert min(reachable) == 1
+def test_position_differences_are_enumerated_from_the_material(occurrences):
+    differences = enumerate_position_difference(occurrences, "it")
+    assert differences
+    assert differences == sorted(differences)
+    assert 0 not in differences
     longest = max(
         len(e.material["represented_material"].split())
         for e in occurrences
         if "it" in e.material["represented_material"].split()
     )
-    assert max(reachable) < longest
+    assert max(abs(difference) for difference in differences) < longest
 
 
-def test_a_displacement_absent_from_the_material_is_simply_absent(locality):
-    """Absent because nothing reaches it, not because it was judged dull."""
+def test_a_position_difference_absent_from_the_material_is_absent(locality):
     ledger = EventLedger()
     run_material_fixture_console(
         ledger=ledger,
@@ -916,25 +909,23 @@ def test_a_displacement_absent_from_the_material_is_simply_absent(locality):
     occurrences = ingest_occurrences(
         ledger, locality_identity="s"
     )
-    assert enumerate_displacements(occurrences, "alpha") == [1]
+    assert enumerate_position_difference(occurrences, "alpha") == [1]
 
 
-def test_each_displacement_is_recorded_on_its_own_finding(occurrences):
-    for displacement in (1, 2):
-        finding = measure_at_displacement(
-            occurrences, "it", displacement=displacement, counting_scope=SCOPE
+def test_each_position_difference_is_recorded_on_its_own_finding(occurrences):
+    for difference in (-2, -1, 1, 2):
+        finding = measure_at_position_difference(
+            occurrences, "it", difference=difference, counting_scope=SCOPE
         )
-        assert finding.declared.measured_position["displacement"] == displacement
-        assert finding.declared.measured_position["direction"] == "after"
+        assert finding.declared.measured_position == {"difference": difference}
 
 
-def test_no_displacement_is_preferred(occurrences):
-    """The family treats every displacement the same way."""
+def test_no_position_difference_is_preferred(occurrences):
     findings = [
-        measure_at_displacement(
-            occurrences, "it", displacement=d, counting_scope=SCOPE
+        measure_at_position_difference(
+            occurrences, "it", difference=difference, counting_scope=SCOPE
         )
-        for d in enumerate_displacements(occurrences, "it")
+        for difference in enumerate_position_difference(occurrences, "it")
     ]
     assert len({type(f) for f in findings}) == 1
     for finding in findings:
@@ -943,34 +934,28 @@ def test_no_displacement_is_preferred(occurrences):
 
 
 def test_measuring_before_is_the_same_family(occurrences):
-    after = measure_at_displacement(
-        occurrences, "is", displacement=1, direction="after", counting_scope=SCOPE
+    after = measure_at_position_difference(
+        occurrences, "is", difference=1, counting_scope=SCOPE
     )
-    before = measure_at_displacement(
-        occurrences, "is", displacement=1, direction="before", counting_scope=SCOPE
+    before = measure_at_position_difference(
+        occurrences, "is", difference=-1, counting_scope=SCOPE
     )
-    assert after.declared.measured_position["direction"] == "after"
-    assert before.declared.measured_position["direction"] == "before"
+    assert after.declared.measured_position == {"difference": 1}
+    assert before.declared.measured_position == {"difference": -1}
 
 
-def test_measure_after_is_one_displacement_of_the_family(occurrences):
-    """Kept for the continuation, carrying no privilege."""
+def test_measure_after_is_one_position_difference_of_the_family(occurrences):
     assert (
         measure_after(occurrences, "it", counting_scope=SCOPE).to_json_dict()
-        == measure_at_displacement(
-            occurrences, "it", displacement=1, direction="after", counting_scope=SCOPE
+        == measure_at_position_difference(
+            occurrences, "it", difference=1, counting_scope=SCOPE
         ).to_json_dict()
     )
 
 
-def test_a_displacement_below_one_is_refused(occurrences):
-    for bad in (0, -1):
+def test_zero_position_difference_is_refused(occurrences):
+    for bad in (0, False):
         with pytest.raises(PreservedMaterialMeasurementError):
-            measure_at_displacement(
-                occurrences, "it", displacement=bad, counting_scope=SCOPE
+            measure_at_position_difference(
+                occurrences, "it", difference=bad, counting_scope=SCOPE
             )
-
-
-def test_a_direction_outside_the_two_is_refused(occurrences):
-    with pytest.raises(PreservedMaterialMeasurementError):
-        enumerate_displacements(occurrences, "it", direction="sideways")

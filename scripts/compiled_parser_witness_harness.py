@@ -7,7 +7,7 @@ with one exact provider-produced diagnostic representation.  Both outputs are
 material attributed to that witness.  Names occurring inside them carry no
 Seed Standing merely because the provider emitted them.
 
-This harness deliberately does not inspect returned nodes, classify source,
+This harness deliberately does not inspect returned nodes or assert source
 or translate provider labels into claims such as what the source defines.  It
 preserves only:
 
@@ -29,8 +29,8 @@ import warnings
 
 
 @dataclass(frozen=True)
-class ParserWitnessOutcome:
-    """One exact answer from one compiled-parser interrogation."""
+class ParserWitnessResult:
+    """One exact result from one compiled-parser interrogation."""
 
     exact_material: bytes
     accepted: bool
@@ -45,7 +45,7 @@ class CompiledParserWitness:
 
 
 @dataclass(frozen=True)
-class CompiledParserAnswer:
+class CompiledParserResult:
     exact_material: bytes
     witness: str
     arguments: tuple[str, ...]
@@ -95,7 +95,7 @@ COMPILED_PARSER_WITNESSES = (
 def interrogate_compiled_parser(
     exact_material: bytes,
     witness: CompiledParserWitness,
-) -> CompiledParserAnswer:
+) -> CompiledParserResult:
     if type(exact_material) is not bytes:
         raise TypeError("parser witness material must be exact bytes")
     if not isinstance(witness, CompiledParserWitness):
@@ -107,7 +107,7 @@ def interrogate_compiled_parser(
         check=False,
         timeout=30,
     )
-    return CompiledParserAnswer(
+    return CompiledParserResult(
         exact_material=exact_material,
         witness=witness.name,
         arguments=witness.arguments,
@@ -120,7 +120,7 @@ def interrogate_compiled_parser(
 def interrogate_across_compiled_parsers(
     exact_materials: tuple[bytes, ...],
     witnesses: tuple[CompiledParserWitness, ...] = COMPILED_PARSER_WITNESSES,
-) -> tuple[tuple[CompiledParserAnswer, ...], ...]:
+) -> tuple[tuple[CompiledParserResult, ...], ...]:
     if type(exact_materials) is not tuple or not all(
         type(material) is bytes for material in exact_materials
     ):
@@ -133,25 +133,25 @@ def interrogate_across_compiled_parsers(
     )
 
 
-def interrogate(exact_material: bytes) -> ParserWitnessOutcome:
-    """Return the compiled parser's exact bounded answer for these bytes."""
+def interrogate(exact_material: bytes) -> ParserWitnessResult:
+    """Return the compiled parser's exact bounded result for these bytes."""
 
     if type(exact_material) is not bytes:
         raise TypeError("parser witness material must be exact bytes")
     try:
         # A warning is neither the returned parser result nor a refusal.  It
-        # does not revision which of those two outcomes occurred.
+        # does not revision which of those two results occurred.
         with warnings.catch_warnings():
             warnings.simplefilter("ignore", SyntaxWarning)
             returned = ast.parse(exact_material)
     except (SyntaxError, ValueError) as refusal:
-        return ParserWitnessOutcome(
+        return ParserWitnessResult(
             exact_material=exact_material,
             accepted=False,
             result_material=None,
             refusal_material=str(refusal).encode("utf-8"),
         )
-    return ParserWitnessOutcome(
+    return ParserWitnessResult(
         exact_material=exact_material,
         accepted=True,
         result_material=ast.dump(
@@ -199,7 +199,7 @@ def one_byte_substitutions(exact_material: bytes) -> tuple[bytes, ...]:
 
 def interrogate_many(
     exact_materials: tuple[bytes, ...],
-) -> tuple[ParserWitnessOutcome, ...]:
+) -> tuple[ParserWitnessResult, ...]:
     """Interrogate each exact supplied material once, in supplied order."""
 
     if type(exact_materials) is not tuple or not all(

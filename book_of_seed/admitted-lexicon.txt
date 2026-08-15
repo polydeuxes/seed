@@ -5,7 +5,6 @@
 # Rosetta admission into active law.
 #
 # A word absent from this file is refused.
-# A word the banned list refuses appears here only with a reason on its line.
 #
 a
 abandoned
@@ -24,7 +23,6 @@ acts
 added
 additional
 addressed
-adjacency
 adjudication
 adjudicative
 admission
@@ -723,7 +721,6 @@ strengthened
 stronger
 subject
 subjects
-substantive
 substitute
 success
 successful

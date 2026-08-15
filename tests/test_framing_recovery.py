@@ -1,8 +1,8 @@
 """What positional support measures, and what it does not select.
 
-A specimen is bytes. Partitioning them by offset under a candidate stride is
+A specimen is bytes. Beginning a material Locality at each offset under a candidate stride is
 exact, and so are the resulting value sets. Which stride, if any, frames the
-material is a further distinction these do not answer.
+material is a further distinction these do not establish.
 """
 
 from __future__ import annotations
@@ -80,9 +80,9 @@ def test_no_module_level_name_states_a_read_framing():
 
 
 def test_a_stride_does_not_say_where_a_group_begins():
-    """The same material read from byte one gives the same classes in reversed places.
+    """The same material read from byte one gives the same material tuples in reversed places.
 
-    A partition starts somewhere, and starting at byte zero is this harness's
+    A material Locality starts somewhere, and starting at byte zero is this harness's
     determination. Positional recurrence at some stride is compatible with either
     phase, so it does not establish a boundary.
     """
@@ -118,8 +118,8 @@ def test_phase_defaults_to_a_choice_and_not_a_finding():
 def test_the_materials_own_byte_count_is_not_an_internal_boundary():
     """An occurrence begins at its first byte. Nothing inside it does.
 
-    A partition read from byte zero starts where the material starts, which
-    says something about the partition. Promoting it to "a unit also begins
+    A material Locality read from byte zero starts where the material starts, which
+    says something about the Locality. Promoting it to "a unit also begins
     here" would take the occurrence's exact byte count as evidence about the
     occurrence's contents.
     """
@@ -129,15 +129,15 @@ def test_the_materials_own_byte_count_is_not_an_internal_boundary():
     # The byte count is exact and available.
     assert len(raw) == 1600
 
-    # And it is compatible with either partition phase, which is what makes it
-    # no evidence for one: the classes trade places rather than one disagreeing.
+    # And it is compatible with either Locality phase, which is what makes it
+    # no evidence for one: the material tuples trade places rather than one disagreeing.
     at_zero = position_support(raw, 2, phase=0)
     at_one = position_support(raw, 2, phase=1)
     assert {frozenset(at_zero.values())} == {frozenset(at_one.values())}
 
 
 def test_phase_zero_is_not_privileged_by_the_material():
-    """Every phase under a stride partitions the same material exactly."""
+    """Every phase under a stride carries the same material exactly."""
 
     raw = block(100)
     seen = [

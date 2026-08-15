@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
 """Ask a witness to take back what it gave, and record whether it can.
 
-A codec answers two different probes. Handed bytes it says what it makes of
+A codec returns results for two different probes. Handed bytes it says what it makes of
 them; handed that back it says which bytes it would write. Those are two
 testimonies, and this records where they disagree. Neither is corrected by the
 other here: a disagreement is a finding about the pair, not a fault in either.
 
-Four outcomes, and the last three are all things a decoder alone cannot say:
+Four results, and the last three are all things a decoder alone cannot say:
 
 ```text
   not decodable   the witness refused the bytes; nothing was asked of it
@@ -67,8 +67,8 @@ def disagreements(codec: str, limit: int = 256) -> list[tuple[int, str, str]]:
 
     found = []
     for value in range(limit):
-        outcome = round_trip(codec, (value,))
-        if outcome in (SAME, NOT_DECODABLE):
+        result = round_trip(codec, (value,))
+        if result in (SAME, NOT_DECODABLE):
             continue
         read = bytes([value]).decode(codec)
         try:
@@ -80,21 +80,21 @@ def disagreements(codec: str, limit: int = 256) -> list[tuple[int, str, str]]:
 
 
 def survey() -> list[tuple[str, collections.Counter]]:
-    """Every witness, and how it answered for single bytes and some pairs."""
+    """Every witness and its results for single bytes and some pairs."""
 
     rows = []
     for name in decoding_witnesses():
-        outcomes: collections.Counter = collections.Counter()
+        results: collections.Counter = collections.Counter()
         for value in range(256):
-            outcome = round_trip(name, (value,))
-            if outcome is not NOT_DECODABLE:
-                outcomes[outcome] += 1
+            result = round_trip(name, (value,))
+            if result is not NOT_DECODABLE:
+                results[result] += 1
         for high in range(0xC0, 0x100, 8):
             for low in range(0x80, 0x100, 8):
-                outcome = round_trip(name, (high, low))
-                if outcome is not NOT_DECODABLE:
-                    outcomes[outcome] += 1
-        rows.append((name, outcomes))
+                result = round_trip(name, (high, low))
+                if result is not NOT_DECODABLE:
+                    results[result] += 1
+        rows.append((name, results))
     return rows
 
 

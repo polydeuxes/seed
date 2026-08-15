@@ -26,8 +26,8 @@ EVENT_KIND_RESPONSIBILITIES = {
 }
 YIELD_LIVE_BOUNDARIES = frozenset(
     {
-        "adjacency_pair_measurement",
-        "adjacency_pair_measurement_compare",
+        "position_pair_measurement",
+        "position_pair_measurement_compare",
         "assertion_yield_compare",
         "assertion_locality_movement",
         "bounded_assertion_compare",
@@ -37,6 +37,7 @@ YIELD_LIVE_BOUNDARIES = frozenset(
         "byte_pair_applicability",
         "byte_pair_measurement",
         "material_ingest",
+        "occurrence_position_measurement",
         "preserved_material_measurement",
         "recorded_finding_yield_compare",
         "representation_result",

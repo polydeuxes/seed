@@ -38,7 +38,7 @@ The later Standing has the exact result or relation of the occurrence under Yiel
 3. Every instantiated responsibility must expose the branches required by that responsibility.
 4. A branch remains uninstantiated until a responsible occurrence supplies its coordinate.
 5. An instantiated coordinate whose value has not been resolved remains unresolved unless a responsible occurrence carries Unknown Standing for it.
-6. Recurrence, headings, adjacency, implementation shape, or plausible completion supply neither a branch value nor its identity.
+6. Recurrence, headings, implementation shape, or plausible completion supply neither a branch value nor its identity.
 
 ### Required identifying branches
 
@@ -91,7 +91,7 @@ Identifies the source, preservation, and occurrence history required by the exac
 
 ### Support-relation branches
 
-Where a Responsibility uses a substantive Assertion as support, the exact relation “these Evidence, Authority, Scope, provenance, and limits support this Assertion” is another Assertion. Its participants, responsible Act, occurrence, Evidence, Authority, Scope, conflicts, limits, Unknowns, and Standing each has a distinct identity and exact coordinates. Nearby coordinates, reference presence, or adjacency do not supply that relation.
+Where a Responsibility uses an Assertion as support, the exact relation “these Evidence, Authority, Scope, provenance, and limits support this Assertion” is another Assertion. Its participants, responsible Act, occurrence, Evidence, Authority, Scope, conflicts, limits, Unknowns, and Standing each has a distinct identity and exact coordinates. Nearby coordinates or reference presence do not supply that relation.
 
 Support-relation Standing does not establish the supported Assertion's Standing, Applicability, Admission, or a later input-to-result support relation. Each requires its own responsible occurrence.
 

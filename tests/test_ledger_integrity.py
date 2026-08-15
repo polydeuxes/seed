@@ -345,7 +345,7 @@ def test_an_absent_occurrence_is_unverifiable(ledger):
 
 def test_a_comparison_refuses_a_corrupted_input(path, monkeypatch):
     from io import StringIO
-    from seed_runtime.adjacency_pair_measurement import measure_after
+    from seed_runtime.position_pair_measurement import measure_after
     from seed_runtime.preserved_material_measurement import (
         ingest_occurrences, record_measurement_finding)
     from tests.material_fixture_console import run_material_fixture_console
@@ -379,7 +379,7 @@ def test_a_comparison_refuses_a_corrupted_input(path, monkeypatch):
 
 def test_a_comparison_checks_each_input_without_copying_storage_integrity(path):
     from io import StringIO
-    from seed_runtime.adjacency_pair_measurement import measure_after
+    from seed_runtime.position_pair_measurement import measure_after
     from seed_runtime.preserved_material_measurement import (
         ingest_occurrences, record_measurement_finding)
     from tests.material_fixture_console import run_material_fixture_console
@@ -410,7 +410,7 @@ def test_a_comparison_checks_each_input_without_copying_storage_integrity(path):
 
 def test_unverifiable_storage_does_not_become_comparison_result_material():
     from io import StringIO
-    from seed_runtime.adjacency_pair_measurement import measure_after
+    from seed_runtime.position_pair_measurement import measure_after
     from seed_runtime.preserved_material_measurement import (
         ingest_occurrences, record_measurement_finding)
     from tests.material_fixture_console import run_material_fixture_console

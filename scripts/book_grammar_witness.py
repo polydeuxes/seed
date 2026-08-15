@@ -2,11 +2,11 @@
 """Read the Book's own distinction statements as a witness about its terms.
 
 Every chapter carries lines of the representation `X != Y`. Asked about two terms, this
-answers whether the Book holds them apart. That is testimony about the Book,
+returns whether the Book holds them apart. That is testimony about the Book,
 not about whatever the terms name.
 
 The same refinement the codec witnesses ride applies here without revision: the
-subjects are terms rather than bytes, and the witness is a corpus rather than
+material is terms rather than bytes, and the witness is a corpus rather than
 a decoder.
 
 Usage:
@@ -60,10 +60,10 @@ def held_apart() -> dict[str, set[str]]:
 def witness(apart: dict[str, set[str]]):
     """Whether the Book holds these two terms apart."""
 
-    def answer(first: str, second: str) -> bool:
+    def result(first: str, second: str) -> bool:
         return second in apart.get(first, ())
 
-    return answer
+    return result
 
 
 def restated() -> dict[tuple[str, str], list[str]]:
@@ -103,10 +103,10 @@ def main() -> int:
         print(f"    {pair[0][:34]} != {pair[1][:28]}   at {', '.join(at)}")
 
     first = refinement_climb.by(lambda term: len(apart[term]), apart)
-    rungs = refinement_climb.climb(first, witness(apart))
-    print(f"\n  climb: {refinement_climb.heights(rungs)}")
-    left = refinement_climb.unseparated(rungs)
-    print(f"  {sum(len(c) for c in left)} terms in {len(left)} classes it never separated")
+    localities = refinement_climb.climb(first, witness(apart))
+    print(f"\n  climb: {refinement_climb.heights(localities)}")
+    left = refinement_climb.unseparated(localities)
+    print(f"  {sum(len(c) for c in left)} terms in {len(left)} material tuples it never separated")
     return 0
 
 

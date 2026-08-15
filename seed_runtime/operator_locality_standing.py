@@ -7,7 +7,6 @@ from bisect import bisect_left
 from typing import Any, Iterable
 
 from seed_runtime.events import EventLedger
-from seed_runtime.event import Event
 from seed_runtime.material_ingest import MATERIAL_INGEST_OCCURRED_KIND
 
 # The writer of these occurrences declares their kinds. A reader declaring its
@@ -67,27 +66,33 @@ def read_operator_locality_standing(
     """
 
     return advance_operator_locality_standing(
-        ledger.list_locality(locality_identity),
+        ledger,
+        (
+            event.identity
+            for event in ledger.list_locality(locality_identity)
+        ),
         locality_identity=locality_identity,
     )
 
 
 def advance_operator_locality_standing(
-    events: Iterable[Event],
+    ledger: EventLedger,
+    event_identities: Iterable[str],
     *,
     locality_identity: str,
     prior: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
-    """Advance bounded Locality-local Standing over an exact sequence of events.
+    """Advance bounded Locality-local Standing over exact ledger occurrences.
 
-    With no `prior`, this reads from nothing and `events` must be the whole
-    Locality. With a `prior`, `events` must be exactly the applicable
-    occurrences recorded after `prior["as_of_event_identity"]`, in append order; the
-    prefix it already input is not revisited.
+    With no `prior`, this reads the supplied identities from an empty Standing.
+    With a `prior`, it begins from the accumulators already established there.
+    The ledger verifies each supplied identity's Locality and their append order.
+    The caller supplies the bounded identities; this function does not infer an
+    omitted occurrence.
 
-    The caller supplies those occurrences. Nothing here searches a ledger for
-    them, because a responsible act that just recorded an occurrence already
-    holds it.
+    The caller supplies exact identities from the responsible Act that recorded
+    them. The ledger resolves those identities rather than accepting supplied
+    occurrence representations.
 
     Every accumulator the live event kinds read is seeded from `prior`, and the
     per-event branches and refusals below are the same ones replay uses. Those
@@ -105,13 +110,17 @@ def advance_operator_locality_standing(
     Standing, hands it forward, and keeps no earlier one.
 
     Accepts as input only Ingest and ``operator.representation.*``
-    events stamped with this exact Locality, in append order. The result is fully recomputable
+    events stamped with this exact Locality. The result is fully recomputable
     from the ledger and is not itself recorded: it exposes only standings,
     limits, and Unknowns the Locality's events already carry.  An empty
     coordinate is absence of record, not negative standing and not Unknown.
     No Yield is established for represented relation candidates here; each preserved ingest keeps
     the authority its own event recorded.
     """
+    events = ledger.occurrences_in_append_order(
+        event_identities,
+        locality_identity=locality_identity,
+    )
     scope = f"locality:{locality_identity}"
     ingest_occurrences: list[dict[str, Any]] = []
     representations: dict[str, dict[str, Any]] = {}

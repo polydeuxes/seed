@@ -8,9 +8,9 @@ import sys
 import pytest
 
 from seed_runtime.byte_measurement import (
-    assertions_of_recorded_adjacent_byte_pair_measurement,
+    assertions_of_recorded_byte_position_pair_measurement,
     assertions_of_recorded_byte_measurement,
-    record_adjacent_byte_pair_count_layer,
+    record_byte_position_pair_count_layer,
     record_byte_count_layer,
 )
 from seed_runtime.events import EventLedger
@@ -68,12 +68,12 @@ def measured_book_pairs():
         source_locality_identities=("book-material",),
         recording_locality_identity="book-byte-measurement",
     )
-    pair_measurement = record_adjacent_byte_pair_count_layer(
+    pair_measurement = record_byte_position_pair_count_layer(
         ledger,
         source_measurement_event_identity=byte_measurement.identity,
         recording_locality_identity="book-pair-measurement",
     )
-    assertions = assertions_of_recorded_adjacent_byte_pair_measurement(
+    assertions = assertions_of_recorded_byte_position_pair_measurement(
         ledger, pair_measurement.identity
     )
     byte_assertions = assertions_of_recorded_byte_measurement(
@@ -108,8 +108,8 @@ def book_pair_format_occurrences(measured_book_pairs):
 
 @pytest.fixture(scope="module")
 def book_byte_format_comparisons(measured_book_pairs):
-    subjects = measured_book_pairs[5]
-    pairs = tuple(bytes((first, second)) for first in subjects for second in subjects)
+    material = measured_book_pairs[5]
+    pairs = tuple(bytes((first, second)) for first in material for second in material)
     pair_occurrences = interrogate_across(pairs)
     found = []
     for witness, pair_row in zip(COMPILED_WITNESSES, pair_occurrences):
@@ -121,15 +121,15 @@ def book_byte_format_comparisons(measured_book_pairs):
             (first, second): (
                 tuple(
                     (pair_returned[first, other], pair_returned[second, other])
-                    for other in subjects
+                    for other in material
                 ),
                 tuple(
                     (pair_returned[other, first], pair_returned[other, second])
-                    for other in subjects
+                    for other in material
                 ),
             )
-            for position, first in enumerate(subjects)
-            for second in subjects[position + 1 :]
+            for position, first in enumerate(material)
+            for second in material[position + 1 :]
         }
         found.append((witness.identity, pair_returned, comparisons))
     return tuple(found)
@@ -139,7 +139,7 @@ def book_byte_format_comparisons(measured_book_pairs):
 def book_three_byte_format_occurrences(
     measured_book_pairs, book_byte_format_comparisons
 ):
-    subjects = measured_book_pairs[5]
+    material = measured_book_pairs[5]
     returned_pairs = frozenset(
         bytes(pair)
         for _, pair_returned, _ in book_byte_format_comparisons
@@ -149,28 +149,28 @@ def book_three_byte_format_occurrences(
     candidates = tuple(
         sorted(
             {
-                bytes((*pair[:position], subject, *pair[position:]))
+                bytes((*pair[:position], item, *pair[position:]))
                 for pair in returned_pairs
                 for position in range(len(pair) + 1)
-                for subject in subjects
+                for item in material
             }
         )
     )
     return returned_pairs, candidates, interrogate_across(candidates)
 
 
-def _partition(occurrences, coordinate=lambda occurrence: occurrence.coordinates):
+def _material_locality(occurrences, coordinate=lambda occurrence: occurrence.coordinates):
     grouped = defaultdict(set)
     for occurrence in occurrences:
         grouped[coordinate(occurrence)].add(occurrence.exact_material)
-    return frozenset(frozenset(subjects) for subjects in grouped.values())
+    return frozenset(frozenset(material) for material in grouped.values())
 
 
-def _partition_shape(partition):
+def _material_locality_shape(locality):
     return (
-        len(partition),
-        sum(len(block) == 1 for block in partition),
-        max(map(len, partition)),
+        len(locality),
+        sum(len(material) == 1 for material in locality),
+        max(map(len, locality)),
     )
 
 
@@ -226,8 +226,8 @@ def test_pair_material_comes_from_the_complete_recorded_measurement(measured_boo
     assert all(len(pair) == 2 for pair in pairs)
 
 
-def test_byte_subjects_come_from_the_complete_recorded_measurement(measured_book_pairs):
-    _, _, _, _, assertions, subjects = measured_book_pairs
+def test_byte_material_comes_from_the_complete_recorded_measurement(measured_book_pairs):
+    _, _, _, _, assertions, material = measured_book_pairs
     recorded = tuple(
         sorted(
             assertion.representation
@@ -236,9 +236,9 @@ def test_byte_subjects_come_from_the_complete_recorded_measurement(measured_book
         )
     )
 
-    assert subjects
-    assert subjects == recorded
-    assert len(subjects) == len(set(subjects))
+    assert material
+    assert material == recorded
+    assert len(material) == len(set(material))
 
 
 @pytest.mark.skipif(not WITNESSES_AVAILABLE, reason="one material witness is absent")
@@ -260,33 +260,33 @@ def test_every_measured_pair_reaches_every_witness(book_pair_witness_occurrences
 
 
 @pytest.mark.skipif(not WITNESSES_AVAILABLE, reason="one material witness is absent")
-def test_distinct_witnesses_expose_their_partitions(book_pair_witness_occurrences):
-    partitions = tuple(
-        _partition(occurrences) for occurrences in book_pair_witness_occurrences
+def test_distinct_witnesses_expose_their_material_localities(book_pair_witness_occurrences):
+    localities = tuple(
+        _material_locality(occurrences) for occurrences in book_pair_witness_occurrences
     )
     refinement = {
-        (first, second): refines(partitions[first], partitions[second])
-        for first in range(len(partitions))
-        for second in range(len(partitions))
+        (first, second): refines(localities[first], localities[second])
+        for first in range(len(localities))
+        for second in range(len(localities))
     }
 
-    assert len(set(partitions)) > 1
-    shapes = tuple(_partition_shape(partition) for partition in partitions)
+    assert len(set(localities)) > 1
+    shapes = tuple(_material_locality_shape(locality) for locality in localities)
     assert all(largest > 1 for _, _, largest in shapes)
     assert all(singletons < blocks for blocks, singletons, _ in shapes)
     assert all(
-        refines(partition, frozenset({frozenset().union(*partition)}))
-        for partition in partitions
+        refines(locality, frozenset({frozenset().union(*locality)}))
+        for locality in localities
     )
     assert any(
         refinement[first, second] != refinement[second, first]
-        for first in range(len(partitions))
-        for second in range(first + 1, len(partitions))
+        for first in range(len(localities))
+        for second in range(first + 1, len(localities))
     )
     assert any(
         not refinement[first, second] and not refinement[second, first]
-        for first in range(len(partitions))
-        for second in range(first + 1, len(partitions))
+        for first in range(len(localities))
+        for second in range(first + 1, len(localities))
     )
 
 
@@ -305,16 +305,16 @@ def test_every_measured_pair_reaches_every_compiled_format_witness(
 def test_compiled_format_witnesses_divide_the_same_material_differently(
     book_pair_format_occurrences,
 ):
-    return_partitions = tuple(
-        _partition(occurrences, lambda occurrence: occurrence.returned)
+    return_localities = tuple(
+        _material_locality(occurrences, lambda occurrence: occurrence.returned)
         for occurrences in book_pair_format_occurrences
     )
 
-    assert len(set(return_partitions)) > 1
-    assert sum(len(partition) > 1 for partition in return_partitions) > 1
+    assert len(set(return_localities)) > 1
+    assert sum(len(locality) > 1 for locality in return_localities) > 1
     assert all(
-        any(len(block) > 1 for block in partition)
-        for partition in return_partitions
+        any(len(material) > 1 for material in locality)
+        for locality in return_localities
     )
 
 
@@ -338,15 +338,15 @@ def test_one_byte_differences_expose_compiled_format_boundaries(
 def test_every_ordered_pair_is_compared_for_each_compiled_witness(
     book_byte_format_comparisons, measured_book_pairs
 ):
-    subjects = measured_book_pairs[5]
-    expected_pairs = {(first, second) for first in subjects for second in subjects}
-    expected_comparisons = len(subjects) * (len(subjects) - 1) // 2
+    material = measured_book_pairs[5]
+    expected_pairs = {(first, second) for first in material for second in material}
+    expected_comparisons = len(material) * (len(material) - 1) // 2
 
     for _, pair_returned, comparisons in book_byte_format_comparisons:
         assert set(pair_returned) == expected_pairs
         assert len(comparisons) == expected_comparisons
         assert all(
-            len(outgoing) == len(incoming) == len(subjects)
+            len(outgoing) == len(incoming) == len(material)
             for outgoing, incoming in comparisons.values()
         )
 
@@ -376,7 +376,7 @@ def test_three_byte_candidates_come_from_measured_bytes_and_witness_returns(
     book_three_byte_format_occurrences, measured_book_pairs
 ):
     returned_pairs, candidates, _ = book_three_byte_format_occurrences
-    subjects = set(measured_book_pairs[5])
+    material = set(measured_book_pairs[5])
 
     assert returned_pairs
     assert candidates
@@ -385,7 +385,7 @@ def test_three_byte_candidates_come_from_measured_bytes_and_witness_returns(
     assert all(
         any(
             candidate[:position] + candidate[position + 1 :] in returned_pairs
-            and candidate[position] in subjects
+            and candidate[position] in material
             for position in range(len(candidate))
         )
         for candidate in candidates
@@ -408,13 +408,13 @@ def test_three_byte_candidates_expose_different_compiled_witness_boundaries(
     book_three_byte_format_occurrences,
 ):
     _, _, occurrences = book_three_byte_format_occurrences
-    partitions = tuple(
-        _partition(row, lambda occurrence: occurrence.returned)
+    localities = tuple(
+        _material_locality(row, lambda occurrence: occurrence.returned)
         for row in occurrences
     )
     boundaries = tuple(_return_boundaries(row) for row in occurrences)
 
-    assert len(set(partitions)) > 1
+    assert len(set(localities)) > 1
     assert any(boundaries)
     assert len({frozenset(found) for found in boundaries}) > 1
 

@@ -1,7 +1,7 @@
 """Being readable and being written back the same way are separate properties.
 
-A codec answers two probes, and this records where its two answers
-disagree. Neither answer is corrected by the other: a disagreement is a
+A codec returns results for two probes, and this records where its two results
+disagree. Neither result is corrected by the other: a disagreement is a
 finding about the pair.
 """
 
@@ -62,16 +62,16 @@ def test_a_witness_may_read_what_it_will_not_write():
 def test_a_witness_may_never_write_back_what_it_read():
     """utf_8_sig writes more than it was given, for every input it accepts."""
 
-    outcomes = dict(survey())["utf_8_sig"]
+    results = dict(survey())["utf_8_sig"]
 
-    assert outcomes[SAME] == 0
-    assert outcomes[DIFFERENT] > 0
+    assert results[SAME] == 0
+    assert results[DIFFERENT] > 0
     assert round_trip("utf_8_sig", (0x41,)) == DIFFERENT
 
 
 def test_the_disagreement_is_a_minority_and_is_exact():
     rows = survey()
-    uneven = [name for name, outcomes in rows if outcomes.keys() - {SAME}]
+    uneven = [name for name, results in rows if results.keys() - {SAME}]
 
     assert len(rows) > 100
     assert 5 < len(uneven) < 20

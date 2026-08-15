@@ -10,9 +10,9 @@ holds the high half, that the grouping starts at offset zero -- these are
 coordinates the harness knows. A `.pcm` suffix and a `--period 800` argument
 are the harness talking about its material, not the material.
 
-**What the material carries instead.** Partition the bytes by offset under a
+**What the material carries instead.** Begin a material Locality from each offset under a
 candidate stride. Each offset has an exact set of byte values measured at it,
-and those sets are measurable without classifying them:
+and those sets are measurable without naming them:
 
 ```text
   amplitude 100, stride 2   |support(2,0)| = 201    |support(2,1)| = 2
@@ -31,15 +31,15 @@ selects nothing. An earlier revision used a fourfold ratio, which chose stride
 2 for no reason the material supplies; that threshold is withdrawn rather than
 replaced by a different one.
 
-**Phase is which source byte is treated as offset 0 of this partition.** Not
+**Phase is which source byte is treated as offset 0 of this material Locality.** Not
 where a group begins: nothing here establishes that a group exists. Read from
-byte zero the two classes at stride 2 are 201 values and 2; read from byte one
+byte zero the two equal-result material tuples at stride 2 have 201 values and 2; read from byte one
 they are 2 and 201, and the sets trade places exactly.
 
 The material's byte boundary is exact -- an occurrence begins at its first
-byte and ends at its last. That boundary is not an internal one. A partition
+byte and ends at its last. That boundary is not an internal one. A material Locality
 starting at byte zero starts where the material does, which is a property of
-the partition and not evidence that anything inside the material is bounded
+the Locality and not Evidence that anything inside the material is bounded
 there too.
 
 What a rule would have to distinguish, once warranted:
@@ -47,8 +47,8 @@ What a rule would have to distinguish, once warranted:
 ```text
   candidate stride     its offsets' supports stand in some exact relation
   primitive candidate  a candidate stride no proper divisor of which is one
-  partition phase      which source byte is offset 0 of the partition
-  grouping             that adjacent positions representation a unit
+  Locality phase       which source byte is offset 0 of the material Locality
+  position pair        two exact positions whose difference is one
   group boundary       where such a unit would begin and end
 ```
 
@@ -60,8 +60,8 @@ is attributed, and is not what makes the framing usable.
 
 Usage:
 
-    framing_ladder_harness.py --out-dir rungs/
-    framing_ladder_harness.py --out-dir rungs/ --amplitudes 8000,2000,500,100,20
+    framing_ladder_harness.py --out-dir material/
+    framing_ladder_harness.py --out-dir material/ --amplitudes 8000,2000,500,100,20
 """
 
 from __future__ import annotations
@@ -95,8 +95,8 @@ def position_support(
 ) -> dict[int, frozenset[int]]:
     """The exact set of byte values at each offset, under a stride and a phase.
 
-    A partition begins somewhere. Reading from byte zero is a fixed coordinate, and
-    the same material read from byte one yields the same classes in reversed places, so
+    A material Locality begins somewhere. Reading from byte zero is a fixed coordinate, and
+    the same material read from byte one yields the same material tuples in reversed places, so
     positional recurrence at some stride does not say where a group starts.
     """
 

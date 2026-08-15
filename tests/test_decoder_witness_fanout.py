@@ -1,8 +1,8 @@
 """One measurement standing on another, across every witness on this machine.
 
-Class read reads bytes. Class adjacency reads classes. The second is
+One witness yields a material Locality. The pair Measurement reads that Locality. The second is
 handed the first's finding rather than recomputing it, so it measures over
-whatever classes it is given and reports nothing without them.
+whatever material Locality it is given and reports nothing without one.
 """
 
 from __future__ import annotations
@@ -15,66 +15,66 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts"))
 from decoder_witness_harness import (  # noqa: E402
     MIXED,
     NONE,
-    class_adjacency,
-    classes,
+    measure_material_pairs,
+    material_locality,
     decoding_witnesses,
 )
 
 
 def test_the_second_measurement_takes_the_first_as_input_rather_than_repeating_it():
-    """Handed other classes, it reports adjacency among those."""
+    """Handed another material Locality, it reports ordered pairs within it."""
 
-    read = classes("utf-8", 4)
+    read = material_locality("utf-8", 4)
     supplied = {("everything",): list(range(256))}
 
-    over_read = class_adjacency("utf-8", read)
-    over_supplied = class_adjacency("utf-8", supplied)
+    over_read = measure_material_pairs("utf-8", read)
+    over_supplied = measure_material_pairs("utf-8", supplied)
 
     assert len(over_read) == len(read) ** 2
     assert len(over_supplied) == 1
-    assert class_adjacency("utf-8", {}) == {}
+    assert measure_material_pairs("utf-8", {}) == {}
 
 
-def test_adjacency_names_a_pair_class_read_could_not():
-    """A class refused as a first byte still admits followers.
+def test_complete_pairs_name_a_distinction_the_first_locality_did_not():
+    """Material sharing one refused result does not share pair results.
 
-    Class read reports 0x80-0xff as refused, which is about first bytes.
-    Adjacency finds that the subjects do not agree about following a
+    The first material Locality records 0x80-0xff as refused, which is about first bytes.
+    The pair Measurement finds that the material does not agree about following a
     two-byte first byte, which the earlier measurement had no way to state.
     """
 
-    read = classes("utf-8", 4)
-    adjacency = class_adjacency("utf-8", read)
+    read = material_locality("utf-8", 4)
+    pair_results = measure_material_pairs("utf-8", read)
 
     refused = next(key for key in read if key[0] is None)
     pair_leader = next(key for key in read if key[0] == 2)
 
-    assert adjacency[(pair_leader, refused)] == MIXED
-    assert adjacency[(refused, refused)] == NONE
+    assert pair_results[(pair_leader, refused)] == MIXED
+    assert pair_results[(refused, refused)] == NONE
 
 
-def test_every_witness_on_this_machine_answers_both_ladders():
+def test_every_witness_on_this_machine_returns_both_ladders():
     names = decoding_witnesses()
     assert len(names) > 90
 
     for name in names[:12]:
-        read = classes(name, 4)
-        assert sum(len(subjects) for subjects in read.values()) == 256
-        assert len(class_adjacency(name, read)) == len(read) ** 2
+        read = material_locality(name, 4)
+        assert sum(len(material) for material in read.values()) == 256
+        assert len(measure_material_pairs(name, read)) == len(read) ** 2
 
 
 def test_witnesses_disagree_about_where_the_boundaries_are():
-    """The fan-out is a range of answers, not one answer repeated."""
+    """The fan-out is a range of results, not one result repeated."""
 
     shapes = {
-        len(classes(name, 4))
+        len(material_locality(name, 4))
         for name in ("ascii", "utf-8", "big5", "shift_jis_2004", "latin_1")
     }
     assert len(shapes) > 2
 
 
-def test_a_witness_that_accepts_every_byte_alone_has_one_class():
-    read = classes("latin_1", 4)
+def test_a_witness_that_accepts_every_byte_alone_has_one_result_coordinate():
+    read = material_locality("latin_1", 4)
 
     assert len(read) == 1
     assert next(iter(read)) == (1, None)

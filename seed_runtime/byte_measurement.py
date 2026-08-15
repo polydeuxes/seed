@@ -7,7 +7,7 @@ Localities through one recorded ledger boundary.
 
 One byte value receives one count Assertion.  Recurrence is a separate
 Assertion and exists only where the total count exceeds one.  Byte equality
-establishes no character, word, position, adjacency, grammar, or represented
+establishes no character, word, position pair, grammar, or represented
 relation.
 """
 
@@ -37,15 +37,15 @@ INGEST_OCCURRED_KIND = MATERIAL_INGEST_OCCURRED_KIND
 BYTE_MEASUREMENT_RECORDED_KIND = "operator.measurement.byte_counts_recorded"
 BYTE_MEASUREMENT_RESULT_KIND = "exact byte-count Measurement results"
 BYTE_PAIR_MEASUREMENT_RECORDED_KIND = (
-    "operator.measurement.adjacent_byte_pair_counts_recorded"
+    "operator.measurement.byte_position_pair_counts_recorded"
 )
-BYTE_PAIR_MEASUREMENT_RESULT_KIND = "exact adjacent-byte-pair count Measurement results"
+BYTE_PAIR_MEASUREMENT_RESULT_KIND = "exact byte-position-pair count Measurement results"
 RESPONSIBILITY_UNESTABLISHED = "unestablished"
 BYTE_OCCURRENCE_PRESERVATION = (
     "byte Measurement results durably recorded after yield"
 )
 BYTE_PAIR_OCCURRENCE_PRESERVATION = (
-    "adjacent-byte-pair Measurement results durably recorded after yield"
+    "byte-position-pair Measurement results durably recorded after yield"
 )
 BYTE_RESULT_COORDINATES = frozenset(
     {
@@ -78,12 +78,12 @@ BYTE_PAIR_RESULT_COORDINATES = BYTE_RESULT_COORDINATES | {
     "input_role",
 }
 BYTE_PAIR_RESPONSIBLE_ACT_EVIDENCE_KIND = (
-    "operator.measurement.adjacent_byte_pair_responsible_act_evidenced"
+    "operator.measurement.byte_position_pair_responsible_act_evidenced"
 )
 BYTE_PAIR_APPLICABILITY_RECORDED_KIND = (
-    "operator.measurement.adjacent_byte_pair_input_applicability_recorded"
+    "operator.measurement.byte_position_pair_input_applicability_recorded"
 )
-BYTE_PAIR_APPLICABILITY_RESULT_KIND = "adjacent-byte-pair input Applicability result"
+BYTE_PAIR_APPLICABILITY_RESULT_KIND = "byte-position-pair input Applicability result"
 BYTE_PAIR_APPLICABILITY_RESULT_COORDINATES = frozenset(
     {
         "result_identity",
@@ -102,7 +102,7 @@ BYTE_PAIR_APPLICABILITY_RESULT_COORDINATES = frozenset(
     }
 )
 BYTE_PAIR_APPLICABILITY_ACT_EVIDENCE_KIND = (
-    "operator.measurement.adjacent_byte_pair_applicability_act_evidenced"
+    "operator.measurement.byte_position_pair_applicability_act_evidenced"
 )
 ASSERTION_LOCALITY_MOVEMENT_KIND = "operator.assertion.locality_movement_recorded"
 ASSERTION_LOCALITY_MOVEMENT_ACT_EVIDENCE_KIND = (
@@ -128,54 +128,54 @@ BYTE_MEASUREMENT_RULE = (
     "the byte values are identical"
 )
 BYTE_PAIR_MEASUREMENT_RULE = (
-    "each ordered pair of consecutive bytes within one exact recorded ingest "
-    "material occurrence; equal only when both byte values are identical in order"
+    "each ordered byte pair at positions whose difference is one within one exact "
+    "recorded ingest material occurrence; equal under the exact pair and order"
 )
 MEASUREMENT_EVIDENCE_SCOPE = (
     "literal byte-count Measurement Evidence only; establishes no character, "
-    "word, position, adjacency, grammar, represented relation, or relation; it "
+    "word, position pair, grammar, represented relation, or relation; it "
     "establishes new bounded byte Standing and does not revise source Standing"
 )
 SOURCE_SET_EVIDENCE_SCOPE = (
     "exact bounded source-material Measurement Evidence only; establishes no "
-    "character, word, position, adjacency, grammar, represented relation, or relation"
+    "character, word, position pair, grammar, represented relation, or relation"
 )
 PAIR_MEASUREMENT_EVIDENCE_SCOPE = (
-    "declared exact-source and literal ordered adjacent-byte-pair Measurement "
+    "declared exact-source and literal ordered byte-position-pair Measurement "
     "Evidence only; establishes no character, word, grammar, represented relation, "
-    "relation beyond the exact measured adjacency and order; "
+    "relation beyond the exact measured pair and order; "
     "it establishes new bounded pair Standing and does not revise source Standing"
 )
 BYTE_PAIR_RESULT_BOUNDARY = (
-    "establish exact counts of consecutive two-byte spans within the exact "
-    "bounded source material"
+    "establish exact counts of byte pairs at positions whose difference is one "
+    "within the exact bounded source material"
 )
-BYTE_PAIR_INPUT_ROLE = "exact bounded source material for adjacent-byte Measurement"
+BYTE_PAIR_INPUT_ROLE = "exact bounded source material for position-byte Measurement"
 SEED_NATIVE_MEASUREMENT_RESPONSIBLE_BOUNDARY = "this Seed"
 BYTE_MEASUREMENT_RESPONSIBILITY = (
     "perform the bounded exact-byte Measurement and yield only the findings "
     "established by its exact source occurrences, rule, Scope, Authority, and limits"
 )
 BYTE_PAIR_MEASUREMENT_RESPONSIBILITY = (
-    "yield exact adjacent-byte-pair findings from an "
+    "yield exact byte-position-pair findings from an "
     "applicable exact bounded source material without exceeding the source's "
     "Scope, provenance, occurrence identities, Authority, Unknowns, or limits"
 )
 BYTE_PAIR_INPUT_APPLICABILITY_RESPONSIBILITY = (
     "determine whether one exact source-material-set Assertion may participate "
-    "in one exact adjacent-byte-pair Measurement Act"
+    "in one exact byte-position-pair Measurement Act"
 )
 BYTE_PAIR_APPLICABILITY_AUTHORITY = (
     "determine Applicability of this exact proposed input to this exact downstream "
     "Act only; the resulting Standing, not this authority, determines participation"
 )
 BYTE_PAIR_UNKNOWNS = (
-    "what this ordered adjacent byte pair participates in or represents remains Unknown",
+    "what this ordered byte position pair participates in or represents remains Unknown",
 )
 BYTE_PAIR_LIMITS = (
-    "an exact adjacent-byte-pair count or recurrence establishes no character, "
+    "an exact byte-position-pair count or recurrence establishes no character, "
     "word, grammar, represented relation, relation beyond the exact measured "
-    "adjacency and order",
+    "pair and order",
 )
 MEASURED_ASSERTION_RESPONSIBILITY = (
     "preserve this measured Assertion's carried Standing coordinates"
@@ -325,7 +325,7 @@ def _pair_input_applicability(
         "input_movement_event_identity": source.locality_movement_event_identity,
         "input_role": BYTE_PAIR_INPUT_ROLE,
         "downstream_act_identity": downstream_act_identity,
-        "downstream_act": "declared adjacent-byte-pair Measurement",
+        "downstream_act": "declared byte-position-pair Measurement",
         "responsibility": BYTE_PAIR_INPUT_APPLICABILITY_RESPONSIBILITY,
         "responsible_boundary": SEED_NATIVE_MEASUREMENT_RESPONSIBLE_BOUNDARY,
         "assigned_by_responsibility": BYTE_PAIR_MEASUREMENT_RESPONSIBILITY,
@@ -408,7 +408,7 @@ def _pair_input_applicability(
         "assigned_by_responsibility": BYTE_PAIR_MEASUREMENT_RESPONSIBILITY,
         "applicability_act_identity": applicability_act_identity,
         "applicability_act_occurrence_identity": applicability_act_occurrence_identity,
-        "downstream_act": "declared adjacent-byte-pair Measurement",
+        "downstream_act": "declared byte-position-pair Measurement",
         "result_boundary": BYTE_PAIR_RESULT_BOUNDARY,
         "measurement_locality": measurement_locality_identity,
         "scope_locality": applicability_scope,
@@ -430,7 +430,7 @@ def _pair_input_applicability(
             "negative_authority": negative_authority,
         },
         "unknowns": [
-            "what any byte or adjacent byte pair represents remains Unknown",
+            "what any byte or byte position pair represents remains Unknown",
             *([basis] if standing == "Unknown" else []),
         ],
         "limits": [
@@ -546,20 +546,20 @@ def _prepare_pair_source(
         or not measurement_locality_identity
     ):
         raise ByteMeasurementError(
-            "adjacent-byte-pair Measurement requires an exact Act Locality"
+            "byte-position-pair Measurement requires an exact Act Locality"
         )
     read = assertions_of_recorded_byte_measurement(
         ledger, source_measurement_event_identity
     )
     if read is None:
-        raise ByteMeasurementError("adjacent-byte-pair Measurement requires a source")
+        raise ByteMeasurementError("byte-position-pair Measurement requires a source")
     source = next(
         (item for item in read if item.result == "exact_source_material_set"),
         None,
     )
     if source is None:
         raise ByteMeasurementError(
-            "adjacent-byte-pair Measurement requires an exact source-material-set Assertion"
+            "byte-position-pair Measurement requires an exact source-material-set Assertion"
         )
     source = _move_byte_assertion_to_locality(
         ledger,
@@ -569,7 +569,7 @@ def _prepare_pair_source(
     material = source.material
     scope = material["assertion_scope"]
     content = material["dimensions"]["content"]
-    downstream_act_identity = new_identity("adjacent_byte_pair_measurement_act")
+    downstream_act_identity = new_identity("byte_position_pair_measurement_act")
     return source, scope, content, downstream_act_identity
 
 
@@ -823,7 +823,7 @@ def _validate_moved_byte_assertion(
     )
 
 
-def _measure_adjacent_byte_pair_counts_through(
+def _measure_byte_position_pair_counts_through(
     ledger: EventLedger,
     *,
     localities: tuple[str, ...],
@@ -855,7 +855,7 @@ def _measure_adjacent_byte_pair_counts_through(
         ):
             if ledger.integrity_of(ingest.identity) == CORRUPTED:
                 raise ByteMeasurementError(
-                    "corrupted ingest cannot participate in adjacent-byte-pair Measurement"
+                    "corrupted ingest cannot participate in byte-position-pair Measurement"
                 )
             exact = _ingested_bytes(ledger, ingest)
             if ingest.identity in seen_material:
@@ -942,7 +942,7 @@ def _assertions(measured: MeasuredByteInputs) -> list[dict[str, Any]]:
             "unknowns": ["what the exact source bytes represent remains Unknown"],
             "limits": [
                 "an exact source-material set establishes no character, word, "
-                "position, adjacency, grammar, represented relation, or relation"
+                "position pair, grammar, represented relation, or relation"
             ],
         }
     ]
@@ -983,7 +983,7 @@ def _assertions(measured: MeasuredByteInputs) -> list[dict[str, Any]]:
             "unknowns": ["what this byte participates in or represents remains Unknown"],
             "limits": [
                 "an exact byte count or recurrence establishes no character, word, "
-                "position, adjacency, grammar, represented relation, or relation"
+                "position pair, grammar, represented relation, or relation"
             ],
         }
 
@@ -1344,7 +1344,7 @@ def _record_pair_responsible_act_evidence(
         {
             "downstream_act_identity": measured.downstream_act_identity,
             "act_occurrence_identity": measured.act_occurrence_identity,
-            "act": "declared adjacent-byte-pair Measurement",
+            "act": "declared byte-position-pair Measurement",
             "responsibility": BYTE_PAIR_MEASUREMENT_RESPONSIBILITY,
             "responsible_boundary": SEED_NATIVE_MEASUREMENT_RESPONSIBLE_BOUNDARY,
             "responsibility_assignment_evidence": _seed_native_measurement_assignment(
@@ -1562,7 +1562,7 @@ def get_recorded_pair_input_applicability(
         != material.get("applicability_act_occurrence_identity")
         or material.get("applicability_act_identity")
         == material.get("applicability_act_occurrence_identity")
-        or applicability_assertion.get("downstream_act") != "declared adjacent-byte-pair Measurement"
+        or applicability_assertion.get("downstream_act") != "declared byte-position-pair Measurement"
         or applicability_assertion.get("result_boundary") != BYTE_PAIR_RESULT_BOUNDARY
         or material.get("dimensions", {}).get("standing") != standing
         or material.get("downstream_act_identity") != applicability_assertion.get("downstream_act_identity")
@@ -1580,17 +1580,17 @@ def get_recorded_pair_input_applicability(
     return json.loads(_canonical(applicability_assertion))
 
 
-def record_adjacent_byte_pair_count_layer(
+def record_byte_position_pair_count_layer(
     ledger: EventLedger,
     *,
     source_measurement_event_identity: str,
     recording_locality_identity: str,
 ):
-    """Record exact adjacent-byte-pair counts without crossing append boundaries."""
+    """Record exact byte-position-pair counts without crossing append boundaries."""
 
     if not isinstance(recording_locality_identity, str) or not recording_locality_identity:
         raise ByteMeasurementError(
-            "adjacent-byte-pair Measurement recording requires an exact Locality"
+            "byte-position-pair Measurement recording requires an exact Locality"
         )
     source, scope, content, downstream_act_identity = _prepare_pair_source(
         ledger,
@@ -1616,8 +1616,8 @@ def record_adjacent_byte_pair_count_layer(
     )
     if applicability["dimensions"]["standing"] != "applicable":
         return applicability_event
-    act_occurrence_identity = new_identity("adjacent_byte_pair_measurement_occurrence")
-    measured = _measure_adjacent_byte_pair_counts_through(
+    act_occurrence_identity = new_identity("byte_position_pair_measurement_occurrence")
+    measured = _measure_byte_position_pair_counts_through(
         ledger,
         localities=tuple(scope["source_locality_identities"]),
         boundary=EventLedgerBoundary(content["completeness_boundary"]["identity"]),
@@ -1627,20 +1627,20 @@ def record_adjacent_byte_pair_count_layer(
         downstream_act_identity=downstream_act_identity,
         act_occurrence_identity=act_occurrence_identity,
     )
-    result_identity = new_identity("adjacent_byte_pair_measurement_result")
+    result_identity = new_identity("byte_position_pair_measurement_result")
     result_material = {
         "result_identity": result_identity,
         "dimensions": {
-            "identity": "adjacent-byte-pair-count-measurement-occurrence",
+            "identity": "byte-position-pair-count-measurement-occurrence",
             "content": (
-                "adjacent-byte-pair count and conditional recurrence Assertions"
+                "byte-position-pair count and conditional recurrence Assertions"
             ),
             "standing": "measured",
             "source_provenance": "the recorded source-material-set Assertion",
             "authority": "unestablished",
             "evidence_scope": PAIR_MEASUREMENT_EVIDENCE_SCOPE,
         },
-        "exact_act": "declared adjacent-byte-pair Measurement",
+        "exact_act": "declared byte-position-pair Measurement",
         "downstream_act_identity": measured.downstream_act_identity,
         "act_occurrence_identity": measured.act_occurrence_identity,
         "responsibility": BYTE_PAIR_MEASUREMENT_RESPONSIBILITY,
@@ -1669,7 +1669,7 @@ def record_adjacent_byte_pair_count_layer(
     evidence = _record_yield_evidence(
         ledger,
         locality_identity=recording_locality_identity,
-        exact_act="declared adjacent-byte-pair Measurement",
+        exact_act="declared byte-position-pair Measurement",
         act_occurrence_identity=measured.act_occurrence_identity,
         responsible_act_evidence_identity=responsible_act_evidence.identity,
         result_kind=BYTE_PAIR_MEASUREMENT_RESULT_KIND,
@@ -1707,7 +1707,7 @@ def _validate_recorded_pair_input_applicability(
         "input_movement_event_identity": source.locality_movement_event_identity,
         "input_role": BYTE_PAIR_INPUT_ROLE,
         "downstream_act_identity": downstream_act_identity,
-        "downstream_act": "declared adjacent-byte-pair Measurement",
+        "downstream_act": "declared byte-position-pair Measurement",
         "responsibility": BYTE_PAIR_INPUT_APPLICABILITY_RESPONSIBILITY,
         "responsible_boundary": SEED_NATIVE_MEASUREMENT_RESPONSIBLE_BOUNDARY,
         "assigned_by_responsibility": BYTE_PAIR_MEASUREMENT_RESPONSIBILITY,
@@ -1749,7 +1749,7 @@ def _validate_recorded_pair_input_applicability(
         "applicability_act_occurrence_identity": applicability_assertion.get(
             "applicability_act_occurrence_identity"
         ),
-        "downstream_act": "declared adjacent-byte-pair Measurement",
+        "downstream_act": "declared byte-position-pair Measurement",
         "result_boundary": BYTE_PAIR_RESULT_BOUNDARY,
         "measurement_locality": measurement_locality,
         "scope_locality": scope,
@@ -1775,7 +1775,7 @@ def _validate_recorded_pair_input_applicability(
             },
         },
         "unknowns": [
-            "what any byte or adjacent byte pair represents remains Unknown"
+            "what any byte or byte position pair represents remains Unknown"
         ],
         "limits": [
             "Applicability to this Measurement is not downstream applicability, "
@@ -1788,7 +1788,7 @@ def _validate_recorded_pair_input_applicability(
         )
 
 
-def assertions_of_recorded_adjacent_byte_pair_measurement(
+def assertions_of_recorded_byte_position_pair_measurement(
     ledger: EventLedger, event_identity: str
 ) -> tuple[RecordedBytePairAssertion, ...] | None:
     """Read the exact pair result without performing Measurement again."""
@@ -1798,7 +1798,7 @@ def assertions_of_recorded_adjacent_byte_pair_measurement(
         return None
     if event.kind != BYTE_PAIR_MEASUREMENT_RECORDED_KIND:
         raise ByteMeasurementError(
-            f"{event_identity} is not an adjacent-byte-pair Measurement occurrence"
+            f"{event_identity} is not a byte-position-pair Measurement occurrence"
         )
     if ledger.integrity_of(event_identity) == CORRUPTED:
         raise ByteMeasurementError("a corrupted occurrence cannot expose pair results")
@@ -1813,9 +1813,9 @@ def assertions_of_recorded_adjacent_byte_pair_measurement(
             f"{event_identity} does not carry the exact pair result and recording surfaces"
         )
     expected_dimensions = {
-        "identity": "adjacent-byte-pair-count-measurement-occurrence",
+        "identity": "byte-position-pair-count-measurement-occurrence",
         "content": (
-            "adjacent-byte-pair count and conditional recurrence Assertions"
+            "byte-position-pair count and conditional recurrence Assertions"
         ),
         "standing": "measured",
         "source_provenance": "the recorded source-material-set Assertion",
@@ -1824,7 +1824,7 @@ def assertions_of_recorded_adjacent_byte_pair_measurement(
     }
     if (
         material.get("occurrence_preservation") != BYTE_PAIR_OCCURRENCE_PRESERVATION
-        or material.get("exact_act") != "declared adjacent-byte-pair Measurement"
+        or material.get("exact_act") != "declared byte-position-pair Measurement"
         or material.get("responsibility") != BYTE_PAIR_MEASUREMENT_RESPONSIBILITY
         or not isinstance(material.get("downstream_act_identity"), str)
         or not material["downstream_act_identity"]
@@ -1855,7 +1855,7 @@ def assertions_of_recorded_adjacent_byte_pair_measurement(
         != material["act_occurrence_identity"]
     ):
         raise ByteMeasurementError(
-            f"{event_identity} names no exact adjacent-byte-pair yield Evidence"
+            f"{event_identity} names no exact byte-position-pair yield Evidence"
         )
     act_evidence_identity = material.get("responsible_act_evidence_identity")
     act_evidence = ledger.get(act_evidence_identity) if isinstance(act_evidence_identity, str) else None
@@ -1875,7 +1875,7 @@ def assertions_of_recorded_adjacent_byte_pair_measurement(
     expected_act_evidence = {
         "downstream_act_identity": material["downstream_act_identity"],
         "act_occurrence_identity": material["act_occurrence_identity"],
-        "act": "declared adjacent-byte-pair Measurement",
+        "act": "declared byte-position-pair Measurement",
         "responsibility": BYTE_PAIR_MEASUREMENT_RESPONSIBILITY,
         "responsible_boundary": SEED_NATIVE_MEASUREMENT_RESPONSIBLE_BOUNDARY,
         "responsibility_assignment_evidence": material[
@@ -2115,12 +2115,12 @@ def assertions_of_recorded_adjacent_byte_pair_measurement(
     return tuple(validated_results)
 
 
-def input_applicability_of_recorded_adjacent_byte_pair_measurement(
+def input_applicability_of_recorded_byte_position_pair_measurement(
     ledger: EventLedger, event_identity: str
 ) -> dict[str, Any] | None:
     """Validate the exact input-to-Act Applicability Assertion."""
 
-    read = assertions_of_recorded_adjacent_byte_pair_measurement(ledger, event_identity)
+    read = assertions_of_recorded_byte_position_pair_measurement(ledger, event_identity)
     if read is None:
         return None
     event = ledger.get(event_identity)
