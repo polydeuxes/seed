@@ -9,7 +9,7 @@ Which kinds are constitutionally recognized, and what establishes a representati
 ## Bounded resolution
 A preserved representation or record may carry an Assertion made by another Responsibility. Its shape may preserve identity, provenance, result, uncertainty, and boundaries; it does not establish that its Evidence, Authority, Scope, provenance, and limits support the Assertion. That relation requires its own Assertion and Standing.
 
-This Seed carries only Standing it can warrant through its Evidence, Authority, Scope, and preserved limits. This is a constitutional bound, not a Responsibility assignment shared across exact Responsibilities; each exact Responsibility assignment retains its own responsible boundary, Act, Evidence, Authority, Scope, and limits.
+Preserved material does not warrant an Assertion it carries. This use of warrant is a composite. This Seed carries only Standing it can warrant through its Evidence, Authority, Scope, and preserved limits.
 
 Seed may read a Responsibility only through current Standing whose subject is the exact Assertion that its responsible boundary bears that Responsibility. The assignment Assertion retains its own Evidence, Authority, Scope, limits, occurrence, and Standing. Responsibility != Standing; Standing whose subject is an assignment does not create, perform, or become the Responsibility.
 

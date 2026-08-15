@@ -803,7 +803,7 @@ verified
 visibility
 visible
 vocabulary
-warrant  # ordinary English verb in Seed's single Standing declaration; admits no Warrant noun, occurrence, or coordinate
+warrant
 was
 what
 when

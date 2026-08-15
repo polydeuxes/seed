@@ -80,6 +80,25 @@ def test_warrant_admission_is_broad_in_rosetta_and_singular_in_book():
     assert rosetta_warrant == {"warrant", "warranted", "warranting", "warrants"}
 
 
+def test_warrant_remains_lowercase_and_bounded_to_the_three_standing_sentences():
+    chapter = (BOOK / "chapters" / "02-constitutional-standing.md").read_text(
+        encoding="utf-8"
+    )
+    paragraph = next(
+        paragraph
+        for paragraph in chapter.split("\n\n")
+        if "warrant" in paragraph.lower()
+    )
+
+    assert "Warrant" not in paragraph
+    assert paragraph == (
+        "Preserved material does not warrant an Assertion it carries. "
+        "This use of warrant is a composite. "
+        "This Seed carries only Standing it can warrant through its Evidence, "
+        "Authority, Scope, and preserved limits."
+    )
+
+
 def test_composite_admission_is_broad_in_rosetta_and_singular_in_book():
     book_composite = {
         word for word in _lexicon_entries(LEXICON) if word.startswith("composite")
