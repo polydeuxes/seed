@@ -135,6 +135,30 @@ def book_byte_format_comparisons(measured_book_pairs):
     return tuple(found)
 
 
+@pytest.fixture(scope="module")
+def book_three_byte_format_occurrences(
+    measured_book_pairs, book_byte_format_comparisons
+):
+    subjects = measured_book_pairs[5]
+    returned_pairs = frozenset(
+        bytes(pair)
+        for _, pair_returned, _ in book_byte_format_comparisons
+        for pair, returned in pair_returned.items()
+        if returned
+    )
+    candidates = tuple(
+        sorted(
+            {
+                bytes((*pair[:position], subject, *pair[position:]))
+                for pair in returned_pairs
+                for position in range(len(pair) + 1)
+                for subject in subjects
+            }
+        )
+    )
+    return returned_pairs, candidates, interrogate_across(candidates)
+
+
 def _partition(occurrences, coordinate=lambda occurrence: occurrence.coordinates):
     grouped = defaultdict(set)
     for occurrence in occurrences:
@@ -346,6 +370,53 @@ def test_compiled_witnesses_establish_different_pairwise_distinctions(
     assert len(set(distinctions)) > 1
     assert any(not distinction for distinction in distinctions)
     assert any(distinction for distinction in distinctions)
+
+
+def test_three_byte_candidates_come_from_measured_bytes_and_witness_returns(
+    book_three_byte_format_occurrences, measured_book_pairs
+):
+    returned_pairs, candidates, _ = book_three_byte_format_occurrences
+    subjects = set(measured_book_pairs[5])
+
+    assert returned_pairs
+    assert candidates
+    assert len(candidates) == len(set(candidates))
+    assert all(len(candidate) == 3 for candidate in candidates)
+    assert all(
+        any(
+            candidate[:position] + candidate[position + 1 :] in returned_pairs
+            and candidate[position] in subjects
+            for position in range(len(candidate))
+        )
+        for candidate in candidates
+    )
+
+
+def test_every_three_byte_candidate_reaches_every_compiled_witness(
+    book_three_byte_format_occurrences,
+):
+    _, candidates, occurrences = book_three_byte_format_occurrences
+
+    assert len(occurrences) == len(COMPILED_WITNESSES)
+    assert all(
+        tuple(occurrence.exact_material for occurrence in row) == candidates
+        for row in occurrences
+    )
+
+
+def test_three_byte_candidates_expose_different_compiled_witness_boundaries(
+    book_three_byte_format_occurrences,
+):
+    _, _, occurrences = book_three_byte_format_occurrences
+    partitions = tuple(
+        _partition(row, lambda occurrence: occurrence.returned)
+        for row in occurrences
+    )
+    boundaries = tuple(_return_boundaries(row) for row in occurrences)
+
+    assert len(set(partitions)) > 1
+    assert any(boundaries)
+    assert len({frozenset(found) for found in boundaries}) > 1
 
 
 def test_compiled_witness_receives_the_exact_material():
