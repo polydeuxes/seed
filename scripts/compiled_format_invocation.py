@@ -36,10 +36,31 @@ class ExactMaterialReference:
 
 
 @dataclass(frozen=True, slots=True)
+class ExactMaterialResultReference:
+    act_occurrence_identity: tuple[str, int]
+    result_identity: tuple[str, int, str]
+    exact_material: bytes
+
+    def __post_init__(self) -> None:
+        if (
+            type(self.act_occurrence_identity) is not tuple
+            or len(self.act_occurrence_identity) != 2
+            or type(self.act_occurrence_identity[0]) is not str
+            or type(self.act_occurrence_identity[1]) is not int
+            or type(self.result_identity) is not tuple
+            or len(self.result_identity) != 3
+            or self.result_identity[:2] != self.act_occurrence_identity
+            or self.result_identity[2] != "result"
+            or type(self.exact_material) is not bytes
+        ):
+            raise TypeError("exact material result requires its Act occurrence and result identity")
+
+
+@dataclass(frozen=True, slots=True)
 class AddedPositionOccurrence:
     boundary_identity: str
     occurrence_position: int
-    source_reference: ExactMaterialReference
+    source_reference: ExactMaterialReference | ExactMaterialResultReference
     position: int
     added_reference: ExactMaterialReference
     result_material: bytes
@@ -49,7 +70,10 @@ class AddedPositionOccurrence:
             raise TypeError("one exact boundary identity is required")
         if type(self.occurrence_position) is not int or self.occurrence_position < 0:
             raise TypeError("one exact Act occurrence position is required")
-        if not isinstance(self.source_reference, ExactMaterialReference):
+        if not isinstance(
+            self.source_reference,
+            (ExactMaterialReference, ExactMaterialResultReference),
+        ):
             raise TypeError("source material requires its exact reference")
         if not isinstance(self.added_reference, ExactMaterialReference):
             raise TypeError("added material requires its exact reference")
@@ -75,6 +99,14 @@ class AddedPositionOccurrence:
     @property
     def result_identity(self) -> tuple[str, int, str]:
         return (self.boundary_identity, self.occurrence_position, "result")
+
+    @property
+    def result_reference(self) -> ExactMaterialResultReference:
+        return ExactMaterialResultReference(
+            act_occurrence_identity=self.act_occurrence_identity,
+            result_identity=self.result_identity,
+            exact_material=self.result_material,
+        )
 
     @property
     def source_material(self) -> bytes:
@@ -130,6 +162,14 @@ class RemovedPositionOccurrence:
         return (self.boundary_identity, self.occurrence_position, "result")
 
     @property
+    def result_reference(self) -> ExactMaterialResultReference:
+        return ExactMaterialResultReference(
+            act_occurrence_identity=self.act_occurrence_identity,
+            result_identity=self.result_identity,
+            exact_material=self.result_material,
+        )
+
+    @property
     def source_material(self) -> bytes:
         return self.source_reference.exact_material
 
@@ -147,6 +187,7 @@ class CompiledInvocationOccurrence:
     returned: bool
     source_coordinate: (
         ExactMaterialReference
+        | ExactMaterialResultReference
         | AddedPositionOccurrence
         | RemovedPositionOccurrence
         | None
@@ -163,6 +204,8 @@ class CompiledInvocationOccurrence:
     @property
     def source_material(self) -> bytes | None:
         if isinstance(self.source_coordinate, ExactMaterialReference):
+            return self.source_coordinate.exact_material
+        if isinstance(self.source_coordinate, ExactMaterialResultReference):
             return self.source_coordinate.exact_material
         if isinstance(self.source_coordinate, AddedPositionOccurrence):
             return self.source_coordinate.source_material
@@ -318,7 +361,9 @@ def compiled_invocations(
 
 
 def compiled_reference_invocations(
-    references: tuple[ExactMaterialReference, ...],
+    references: tuple[
+        ExactMaterialReference | ExactMaterialResultReference, ...
+    ],
     *,
     boundary_identity: str,
     implementation_functions: tuple[
@@ -326,7 +371,11 @@ def compiled_reference_invocations(
     ] = COMPILED_IMPLEMENTATION_FUNCTIONS,
 ) -> tuple[tuple[CompiledInvocationOccurrence, ...], ...]:
     if type(references) is not tuple or not all(
-        isinstance(reference, ExactMaterialReference) for reference in references
+        isinstance(
+            reference,
+            (ExactMaterialReference, ExactMaterialResultReference),
+        )
+        for reference in references
     ):
         raise TypeError("implementation function inputs must carry exact references")
     if type(boundary_identity) is not str or not boundary_identity:
@@ -352,7 +401,10 @@ def _compiled_invocations(
     boundary_identity: str,
     implementation_functions: tuple[CompiledImplementationFunction, ...],
     source_coordinates: tuple[
-        ExactMaterialReference | AddedPositionOccurrence | RemovedPositionOccurrence,
+        ExactMaterialReference
+        | ExactMaterialResultReference
+        | AddedPositionOccurrence
+        | RemovedPositionOccurrence,
         ...,
     ] | None = None,
 ) -> tuple[tuple[CompiledInvocationOccurrence, ...], ...]:
@@ -407,13 +459,19 @@ def preserves_original_order(
 
 
 def added_position_occurrences(
-    source_material: tuple[ExactMaterialReference, ...],
+    source_material: tuple[
+        ExactMaterialReference | ExactMaterialResultReference, ...
+    ],
     added_material: tuple[ExactMaterialReference, ...],
     *,
     boundary_identity: str,
 ) -> tuple[AddedPositionOccurrence, ...]:
     if type(source_material) is not tuple or not all(
-        isinstance(material, ExactMaterialReference) for material in source_material
+        isinstance(
+            material,
+            (ExactMaterialReference, ExactMaterialResultReference),
+        )
+        for material in source_material
     ):
         raise TypeError("source material must carry exact references")
     if type(added_material) is not tuple or not all(
@@ -609,7 +667,10 @@ def compare_added_position_invocations(
         source_by_reference = {}
         for source_invocation in source_row:
             reference = source_invocation.source_coordinate
-            if not isinstance(reference, ExactMaterialReference):
+            if not isinstance(
+                reference,
+                (ExactMaterialReference, ExactMaterialResultReference),
+            ):
                 raise ValueError("source invocation requires its exact material reference")
             if reference in source_by_reference:
                 raise ValueError("source material reference entered Compare twice")

@@ -245,6 +245,53 @@ def book_removed_position_comparisons(
     )
 
 
+@pytest.fixture(scope="module")
+def book_removal_result_additions(
+    measured_book_pairs,
+    book_removed_position_invocation_occurrences,
+    book_removed_position_comparisons,
+):
+    admitted_removal_identities = {
+        comparison.removed_position_act_occurrence_identity
+        for row in book_removed_position_comparisons
+        for comparison in row
+        if comparison.distinction
+    }
+    admitted_removals = tuple(
+        removal
+        for removal in book_removed_position_invocation_occurrences[0]
+        if removal.act_occurrence_identity in admitted_removal_identities
+    )
+    source_references = tuple(
+        removal.result_reference for removal in admitted_removals
+    )
+    source_invocations = compiled_reference_invocations(
+        source_references,
+        boundary_identity="book-removal-result-format",
+    )
+    additions = added_position_occurrences(
+        source_references,
+        measured_book_pairs[7],
+        boundary_identity="book-removal-result-addition",
+    )
+    result_invocations = added_position_invocations(
+        additions,
+        boundary_identity="book-removal-result-addition-format",
+    )
+    comparisons = compare_added_position_invocations(
+        source_invocations,
+        result_invocations,
+        boundary_identity="book-removal-result-addition-compare",
+    )
+    return (
+        admitted_removal_identities,
+        admitted_removals,
+        source_references,
+        additions,
+        comparisons,
+    )
+
+
 def _admission(occurrences, coordinate=lambda occurrence: occurrence.coordinates):
     same_result = {}
     for occurrence in occurrences:
@@ -870,6 +917,56 @@ def test_removal_compare_refuses_a_result_without_its_act_occurrence():
             result_invocations,
             boundary_identity="compare",
         )
+
+
+def test_removal_result_admission_comes_from_exact_compare_distinctions(
+    book_removal_result_additions,
+    book_removed_position_comparisons,
+):
+    admitted_identities, admitted_removals, source_references, _, _ = (
+        book_removal_result_additions
+    )
+    observed = {
+        comparison.removed_position_act_occurrence_identity
+        for row in book_removed_position_comparisons
+        for comparison in row
+        if comparison.distinction
+    }
+
+    assert admitted_identities == observed
+    assert admitted_identities
+    assert {
+        removal.act_occurrence_identity for removal in admitted_removals
+    } == admitted_identities
+    assert tuple(removal.result_reference for removal in admitted_removals) == (
+        source_references
+    )
+
+
+def test_addition_uses_exact_removal_results_as_its_source(
+    book_removal_result_additions,
+):
+    _, _, source_references, additions, comparisons = book_removal_result_additions
+    exact_sources = set(source_references)
+    addition_occurrence_identities = {
+        addition.act_occurrence_identity for addition in additions
+    }
+
+    assert additions
+    assert all(addition.source_reference in exact_sources for addition in additions)
+    assert len({addition.act_occurrence_identity for addition in additions}) == len(
+        additions
+    )
+    assert len({addition.result_identity for addition in additions}) == len(additions)
+    assert all(
+        comparison.added_position_act_occurrence_identity
+        in addition_occurrence_identities
+        for row in comparisons
+        for comparison in row
+    )
+    assert len(tuple(comparison for row in comparisons for comparison in row)) == (
+        len(COMPILED_IMPLEMENTATION_FUNCTIONS) * len(additions)
+    )
 
 
 def test_compiled_implementation_function_receives_the_exact_material():
