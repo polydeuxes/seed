@@ -567,9 +567,9 @@ def test_pair_applicability_has_unknown_and_conflicting_outcomes():
     )
 
     assert unknown["dimensions"]["standing"] == "Unknown"
-    assert unknown["unknowns"][-1] == unknown["determination_basis"]
+    assert len(unknown["unknowns"]) == 2
     assert conflicting["dimensions"]["standing"] == "conflicting"
-    assert conflicting["conflicts"] == [conflicting["determination_basis"]]
+    assert len(conflicting["conflicts"]) == 1
     assert conflicting["input_standing"] == "reported"
     assert conflicting["input_assertion_reference"] == source.reference
     assert conflicting["downstream_act_occurrence_identity"] is None

@@ -134,7 +134,6 @@ class ComparisonFinding:
     shared_occupants: tuple[str, ...]
     occupants_in_one_only: dict[str, tuple[str, ...]]
     bounded_relation: str
-    relation_basis: str
 
     def to_json_dict(self) -> dict[str, Any]:
         return {
@@ -145,7 +144,6 @@ class ComparisonFinding:
                 k: list(v) for k, v in self.occupants_in_one_only.items()
             },
             "bounded_relation": self.bounded_relation,
-            "relation_basis": self.relation_basis,
         }
 
 
@@ -264,25 +262,14 @@ def compare_preserved_findings(
     same = {d.coordinate: d.same for d in distinctions}
     if not (same["representation_measured"] and same["measured_left_representation"]):
         relation = UNKNOWN_RELATION
-        basis = "the inputs did not measure the same representation"
     elif not (same["equivalence_rule"] and same["measured_position"]):
         relation = UNKNOWN_RELATION
-        basis = "the inputs were not measured under the same rule and position"
     elif not same["bounded_locality"]:
         relation = UNKNOWN_RELATION
-        basis = (
-            "the inputs are exact within different bounded localities, so differing "
-            "results are not disagreement and matching results are not corroboration"
-        )
     elif occupant_sets[0] == occupant_sets[1]:
         relation = "agreement"
-        basis = "same representation, rule, position and bounded locality, same occupants"
     else:
         relation = "conflict"
-        basis = (
-            "same representation, rule, position and bounded locality, "
-            "different occupants"
-        )
 
     return ComparisonFinding(
         inputs=inputs,
@@ -290,7 +277,6 @@ def compare_preserved_findings(
         shared_occupants=tuple(sorted(shared)),
         occupants_in_one_only=only,
         bounded_relation=relation,
-        relation_basis=basis,
     )
 
 

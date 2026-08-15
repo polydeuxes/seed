@@ -168,9 +168,8 @@ def test_findings_from_different_localities_do_not_reach_agreement(ledger):
     a, b = _finding(ledger, "s1"), _finding(ledger, "s2")
     finding = compare_preserved_findings(ledger, [a.identity, b.identity])
     assert finding.bounded_relation == "Unknown"
-    assert "different bounded localities" in finding.relation_basis
-    assert "not disagreement" in finding.relation_basis
-    assert "not corroboration" in finding.relation_basis
+    by_name = {d.coordinate: d for d in finding.distinctions}
+    assert not by_name["bounded_locality"].same
 
 
 def test_a_different_measured_subject_yields_Unknown(ledger):
@@ -178,7 +177,6 @@ def test_a_different_measured_subject_yields_Unknown(ledger):
     b = _finding(ledger, "s2", representation="is")
     finding = compare_preserved_findings(ledger, [a.identity, b.identity])
     assert finding.bounded_relation == "Unknown"
-    assert "same representation" in finding.relation_basis
     assert not [d for d in finding.distinctions
                if d.coordinate == "representation_measured" and d.same]
 
@@ -217,7 +215,8 @@ def test_a_different_left_representation_yields_Unknown(ledger):
     b = _finding(ledger, "s1", representation="is")
     finding = compare_preserved_findings(ledger, [a.identity, b.identity])
     assert finding.bounded_relation == "Unknown"
-    assert "same representation" in finding.relation_basis
+    assert not [d for d in finding.distinctions
+                if d.coordinate == "measured_left_representation" and d.same]
 
 
 def test_the_distinctions_are_literal(ledger):

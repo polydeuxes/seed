@@ -90,7 +90,6 @@ BYTE_PAIR_APPLICABILITY_RESULT_COORDINATES = frozenset(
         "responsibility",
         "responsible_boundary",
         "assigned_by_responsibility",
-        "responsibility_basis",
         "applicability_act_identity",
         "applicability_act_occurrence_identity",
         "downstream_act_identity",
@@ -164,9 +163,6 @@ BYTE_PAIR_MEASUREMENT_RESPONSIBILITY = (
 BYTE_PAIR_INPUT_APPLICABILITY_RESPONSIBILITY = (
     "determine whether one exact source-material-set Assertion may participate "
     "in one exact adjacent-byte-pair Measurement Act"
-)
-BYTE_PAIR_RESPONSIBILITY_BASIS = (
-    "see 01.Source.E, 01.Standing.E.1, and 02.Acts"
 )
 BYTE_PAIR_APPLICABILITY_AUTHORITY = (
     "determine Applicability of this exact proposed input to this exact downstream "
@@ -411,7 +407,6 @@ def _pair_input_applicability(
         "responsibility": BYTE_PAIR_INPUT_APPLICABILITY_RESPONSIBILITY,
         "responsible_boundary": SEED_NATIVE_MEASUREMENT_RESPONSIBLE_BOUNDARY,
         "assigned_by_responsibility": BYTE_PAIR_MEASUREMENT_RESPONSIBILITY,
-        "responsibility_basis": BYTE_PAIR_RESPONSIBILITY_BASIS,
         "applicability_act_identity": applicability_act_identity,
         "applicability_act_occurrence_identity": applicability_act_occurrence_identity,
         "downstream_act": "declared adjacent-byte-pair Measurement",
@@ -423,7 +418,6 @@ def _pair_input_applicability(
         "input_unknowns": input_unknowns,
         "input_limits": input_limits,
         "conflicts": [basis] if standing == "conflicting" else [],
-        "determination_basis": basis,
         "coordinate_treatment": {
             "support_relation_standing": {
                 "carried": False,
@@ -1394,7 +1388,6 @@ def _record_pair_input_applicability(
         "responsibility": BYTE_PAIR_INPUT_APPLICABILITY_RESPONSIBILITY,
         "responsible_boundary": SEED_NATIVE_MEASUREMENT_RESPONSIBLE_BOUNDARY,
         "assigned_by_responsibility": BYTE_PAIR_MEASUREMENT_RESPONSIBILITY,
-        "responsibility_basis": BYTE_PAIR_RESPONSIBILITY_BASIS,
         "applicability_act_identity": applicability_assertion["applicability_act_identity"],
         "applicability_act_occurrence_identity": applicability_assertion[
             "applicability_act_occurrence_identity"
@@ -1560,7 +1553,6 @@ def get_recorded_pair_input_applicability(
         != SEED_NATIVE_MEASUREMENT_RESPONSIBLE_BOUNDARY
         or applicability_assertion.get("assigned_by_responsibility")
         != BYTE_PAIR_MEASUREMENT_RESPONSIBILITY
-        or applicability_assertion.get("responsibility_basis") != BYTE_PAIR_RESPONSIBILITY_BASIS
         or applicability_assertion.get("applicability_act_identity") != material.get("applicability_act_identity")
         or applicability_assertion.get("applicability_act_occurrence_identity")
         != material.get("applicability_act_occurrence_identity")
@@ -1579,7 +1571,6 @@ def get_recorded_pair_input_applicability(
         != SEED_NATIVE_MEASUREMENT_RESPONSIBLE_BOUNDARY
         or material.get("assigned_by_responsibility")
         != BYTE_PAIR_MEASUREMENT_RESPONSIBILITY
-        or material.get("responsibility_basis") != BYTE_PAIR_RESPONSIBILITY_BASIS
         or material.get("downstream_act_outcome")
         != "not established by this Applicability Assertion"
     ):
@@ -1749,7 +1740,6 @@ def _validate_recorded_pair_input_applicability(
         "responsibility": BYTE_PAIR_INPUT_APPLICABILITY_RESPONSIBILITY,
         "responsible_boundary": SEED_NATIVE_MEASUREMENT_RESPONSIBLE_BOUNDARY,
         "assigned_by_responsibility": BYTE_PAIR_MEASUREMENT_RESPONSIBILITY,
-        "responsibility_basis": BYTE_PAIR_RESPONSIBILITY_BASIS,
         "applicability_act_identity": applicability_assertion.get("applicability_act_identity"),
         "applicability_act_occurrence_identity": applicability_assertion.get(
             "applicability_act_occurrence_identity"
@@ -1763,9 +1753,6 @@ def _validate_recorded_pair_input_applicability(
         "input_unknowns": source_material["unknowns"],
         "input_limits": source_material["limits"],
         "conflicts": [],
-        "determination_basis": (
-            "exact bounded source material matches this Act and result boundary"
-        ),
         "coordinate_treatment": {
             "support_relation_standing": {
                 "carried": False,
