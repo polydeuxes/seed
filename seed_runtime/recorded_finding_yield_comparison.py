@@ -54,7 +54,7 @@ FINDING_YIELD_COMPARISON_RESPONSIBILITY = (
     "Compare one recorded finding with the exact Yield Evidence it names"
 )
 
-AGREES_WITH_YIELD_EVIDENCE = "agrees within compared coordinates"
+AGREES_WITH_YIELD_EVIDENCE = "exact within compared coordinates"
 DIFFERS_FROM_YIELD_EVIDENCE = "differs within compared coordinates"
 COMPARISON_UNKNOWN = "Unknown"
 
@@ -87,7 +87,7 @@ COMPARISON_RECORDING_COORDINATES = frozenset(
     }
 )
 COMPARISON_OCCURRENCE_PRESERVATION = (
-    "recorded finding Yield comparison durably recorded with exact result Yield Evidence"
+    "recorded finding Yield comparison occurrence with exact result Yield Evidence"
 )
 
 
@@ -262,8 +262,8 @@ def compare_recorded_finding_yield(ledger: EventLedger, event_identity: str) -> 
     crossings: list[dict[str, str]] = []
     conflicts: list[str] = []
     unknowns = [
-        "whether the finding agrees with its Yield Evidence in any coordinate "
-        "this Compare did not bring under its Scope"
+        "whether the finding is exact with its Yield Evidence in any coordinate "
+        "beyond this Compare Scope"
     ]
     unresolved = False
     named = recorded.material.get("yield_evidence_identity")
@@ -382,8 +382,8 @@ def compare_recorded_finding_yield(ledger: EventLedger, event_identity: str) -> 
 
     authority_boundary = (
         "this comparison within this exact finding-to-yield-evidence "
-        "scope only; no certification, completion, responsible-boundary map, score, or "
-        "correction authority"
+        "Scope; establishes no certification, completion, correction authority, or "
+        "responsible boundary"
     )
     downstream_act_identity = new_identity("finding_yield_comparison_act")
     act_occurrence_identity = new_identity("finding_yield_comparison_act_occurrence")
@@ -434,7 +434,7 @@ def compare_recorded_finding_yield(ledger: EventLedger, event_identity: str) -> 
                 "This establishes no movement (06.Standing.B); availability is "
                 "not movement.",
                 "This establishes no Responsibility or responsible boundary.",
-                "Agreement within these coordinates says nothing beyond them.",
+                "Agreement within these coordinates establishes nothing beyond them.",
         ],
     }
     responsible_act_evidence = ledger.append(

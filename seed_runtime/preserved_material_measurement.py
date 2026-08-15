@@ -891,9 +891,11 @@ def _measurement_finding_material(
                 "or standing beyond the measurement assertion"
             ),
             "scope_locality": f"locality:{locality_identity}",
-            "occurrence_preservation": "declared measurement durably recorded",
+            "occurrence_preservation": "declared Measurement occurrence recorded",
         },
-        "unknowns": ["what any measured representation means remains Unknown"],
+        "unknowns": [
+            "represented relation of any measured Representation remains Unknown"
+        ],
         **_finding_coordinates(finding),
     }
 

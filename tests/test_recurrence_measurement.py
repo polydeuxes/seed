@@ -1162,7 +1162,7 @@ def test_the_three_results_distinguish_the_bounded_localities(compared):
 # --------------------------------------------------------------------------
 
 
-def test_the_counting_scope_states_the_declaration(compared):
+def test_the_counting_scope_is_exact(compared):
     """`#2429` said "supplied to this Seed"; `#2430` said what it input.
 
     Neither was the bounded scope `01.Source:28` requires disclosed, because
@@ -1172,8 +1172,8 @@ def test_the_counting_scope_states_the_declaration(compared):
         compared, locality_identity="s1",
         finding=_by_representation(compared)["word"])
     scope = event.material["counting_scope"]
-    assert "declared to this measurement" in scope
-    assert "no locality enters by having measured something else" in scope
+    assert "exact bounded Localities of this Measurement" in scope
+    assert "Locality beyond the Scope is not counted" in scope
     assert "supplied to this Seed" not in scope
 
 
@@ -1184,7 +1184,7 @@ def test_the_record_refuses_source_relation_and_corroboration(compared):
     refused = " ".join(event.material["limits"])
     assert "separate preservation establishes no relation" in refused
     assert "repetition and does not establish corroboration" in refused
-    assert "establishes no relation between the" in refused
+    assert "establishes no relation between Localities" in refused
     assert set(LIMITS) <= set(event.material["limits"])
 
 
@@ -1444,4 +1444,4 @@ def test_counting_recurrence_does_not_take_comparisons_as_input(compared):
         compared, locality_identity="s1", finding=finding)
     refused = " ".join(event.material["limits"])
     assert "does not establish corroboration" in refused
-    assert "establishes no relation between the" in refused
+    assert "establishes no relation between Localities" in refused

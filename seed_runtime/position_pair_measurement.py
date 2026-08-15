@@ -792,7 +792,9 @@ def _record_position_pair_measurement_result(
             "yield_evidence_identity": yield_evidence.identity,
             "locality_evidence_identity": locality_evidence.identity,
             "known_loss": [],
-            "unknowns": ["what any carried representation means remains Unknown"],
+            "unknowns": [
+                "represented relation of any carried Representation remains Unknown"
+            ],
             "conflicts": [],
         },
         locality_identity=locality_identity,
@@ -1233,7 +1235,7 @@ def record_position_pair_measurement_compare(
             "yield_evidence_identity": yield_evidence.identity,
             "locality_evidence_identity": locality_evidence.identity,
             "unknowns": [
-                "whether any repeated source arrangement represents a grammar distinction remains Unknown"
+                "whether any repeated source material represents a grammar distinction remains Unknown"
             ],
         },
         locality_identity=locality_identity,

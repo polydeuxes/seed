@@ -404,7 +404,7 @@ def test_recording_coordinates_is_not_part_of_the_comparison_result(recorded):
         "yield_coordinates"
     ]
     assert result.material["occurrence_preservation"].startswith(
-        "recorded finding Yield comparison durably recorded"
+        "recorded finding Yield comparison occurrence"
     )
 
 

@@ -58,7 +58,7 @@ LOCALITY_COUNT_ACT_EVIDENCE_KIND = (
 )
 LOCALITY_COUNT_RESULT_KIND = "locality count Measurement result"
 LOCALITY_COUNT_RESPONSIBILITY = (
-    "Measure one exact distinction across exact bounded Localities"
+    "establish exact recurrence count across exact bounded Localities"
 )
 OCCURRENCE_POSITION_RECORDED_KIND = (
     "operator.measurement.locality_occurrence_position_recorded"
@@ -96,16 +96,13 @@ DECLARED_IDENTITY: tuple[str, ...] = (
 )
 
 LIMITS: tuple[str, ...] = (
-    "separate preservation establishes no relation between the localities or their sources",
+    "separate preservation establishes no relation between Localities or source material",
     "recurrence is repetition and does not establish corroboration",
     "an exact count is a finding at any value; a count of one establishes no "
     "recurrence",
-    "the count reports the bounded localities among the occurrences this "
-    "measurement input, not a property of the material",
-    "an locality that never measured the coordinate has not declined to measure "
-    "the distinction",
-    "measuring the same distinction establishes no relation between the "
-    "localities that measured it",
+    "the count is bounded by the input Localities and does not establish material Standing",
+    "absence of the measured coordinate at a Locality does not establish the distinction",
+    "the same measured distinction establishes no relation between Localities",
 )
 
 
@@ -255,8 +252,8 @@ class MeasuredAssertion:
                 "responsibility": MEASURED_ASSERTION_STANDING_COORDINATE_RESPONSIBILITY,
                 "authority": "unestablished",
                 "evidence_scope": (
-                    "measurement evidence only; establishes no relation between "
-                    "the localities or their sources, and no corroboration"
+                    "Measurement Evidence; establishes no relation between Localities "
+                    "or source material and no corroboration"
                 ),
                 "scope_locality": "the exact assertion_scope carried here",
                 "occurrence_preservation": (
@@ -290,9 +287,9 @@ class MeasuredAssertion:
                 else None
             ),
             "unknowns": [
-                "what any measured representation means remains Unknown",
+                "represented relation of any measured Representation remains Unknown",
                 "whether the localities stand in any relation remains Unknown",
-                "whether their sources have a relation remains Unknown",
+                "source relation remains Unknown",
             ],
             "limits": list(LIMITS),
         }
@@ -805,11 +802,11 @@ def record_measured_count(
             ),
             "authority": "unestablished",
             "evidence_scope": (
-                "measurement evidence only; establishes no relation between the "
-                "localities or their sources, and no corroboration"
+                "Measurement Evidence; establishes no relation between Localities "
+                "or source material and no corroboration"
             ),
             "scope_locality": f"locality:{locality_identity}",
-            "occurrence_preservation": "count finding durably recorded",
+            "occurrence_preservation": "count finding occurrence recorded",
         },
         "assertions": [assertion.to_json_dict() for assertion in assertions],
         "downstream_act_identity": act_identity,
@@ -824,14 +821,13 @@ def record_measured_count(
             "recorded comparison occurrences and recorded measurement occurrences"
         ),
         "counting_scope": (
-            "the bounded localities declared to this measurement; an locality "
-            "outside the declaration is not counted, and no locality enters by "
-            "having measured something else"
+            "the exact bounded Localities of this Measurement; a Locality beyond "
+            "the Scope is not counted"
         ),
         "unknowns": [
-            "what any measured representation means remains Unknown",
+            "represented relation of any measured Representation remains Unknown",
             "whether the localities stand in any relation remains Unknown",
-            "whether their sources have a relation remains Unknown",
+            "source relation remains Unknown",
         ],
         "limits": list(LIMITS),
     }

@@ -251,7 +251,7 @@ def test_the_recorded_authority_states_the_clause_s_own_limit(locality, occurren
     assert "measurement evidence only" in evidence_scope
     assert "no represented relation, relation" in evidence_scope
     assert event.material["unknowns"] == [
-        "what any measured representation means remains Unknown"
+        "represented relation of any measured Representation remains Unknown"
     ]
 
 

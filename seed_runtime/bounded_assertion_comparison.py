@@ -78,10 +78,9 @@ UNKNOWN_RELATION = "Unknown"
 
 LIMITS: tuple[str, ...] = (
     "a distinction between two findings is not a relation between what they measured",
-    "differing results across bounded localities is not disagreement; each is exact "
-    "within its own scope",
-    "a representation occurring in both findings establishes no relation between "
-    "the bodies that carried it",
+    "different results at bounded Localities do not establish conflict; each result "
+    "is exact at its Locality",
+    "shared Representation establishes no relation between finding material",
     "this comparison establishes no truth, support, input support, source relation, "
     "or corroboration",
 )
@@ -327,11 +326,11 @@ def record_comparison_finding(
             "responsibility": "bounded-comparison-boundary",
             "authority": "unestablished",
             "evidence_scope": (
-                "comparison evidence only; the bounded relation holds inside this "
-                "comparison boundary and establishes nothing beyond it"
+                "comparison Evidence for this bounded relation; establishes nothing "
+                "beyond this comparison boundary"
             ),
             "scope_locality": f"locality:{locality_identity}",
-            "occurrence_preservation": "comparison occurrence durably recorded",
+            "occurrence_preservation": "comparison occurrence recorded",
         },
         "responsible_boundary": (
             "this comparison occurrence; the responsible boundary is local to the instantiated "
@@ -341,8 +340,8 @@ def record_comparison_finding(
         "act_occurrence_identity": act_occurrence_identity,
         "participation": participation,
         "unknowns": [
-            "what any compared representation means remains Unknown",
-            "whether the compared bodies stand in any relation remains Unknown",
+            "represented relation of any compared Representation remains Unknown",
+            "relation between compared material remains Unknown",
         ],
         "limits": list(LIMITS),
         "inputs": [item.to_json_dict() for item in finding.inputs],
