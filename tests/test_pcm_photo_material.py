@@ -312,6 +312,15 @@ def test_every_ordered_media_admission_pair_has_an_exact_compare_occurrence(
         == comparison.act_occurrence_identity
         for comparison in media_admission_compares
     )
+    for comparison in media_admission_compares:
+        assert comparison.first_reference.admission_occurrence in media_admissions
+        assert comparison.second_reference.admission_occurrence in media_admissions
+        assert (
+            comparison.first_reference.admission_occurrence.invocation_result_references
+        )
+        assert (
+            comparison.second_reference.admission_occurrence.invocation_result_references
+        )
 
 
 def test_invocation_occurrence_refuses_material_different_from_its_ingest_result():

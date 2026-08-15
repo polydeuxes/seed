@@ -344,7 +344,7 @@ class AddedPositionAdmissionOccurrence:
 
     @property
     def result_reference(self) -> AdmissionResultReference:
-        return self.admission_occurrence.result_reference
+        return AdmissionResultReference(admission_occurrence=self)
 
 
 def _added_position_comparisons_by_occurrence(

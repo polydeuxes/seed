@@ -199,7 +199,7 @@ class MaterialAdmissionOccurrence:
 
     @property
     def result_reference(self) -> AdmissionResultReference:
-        return self.admission_occurrence.result_reference
+        return AdmissionResultReference(admission_occurrence=self)
 
 
 ASPELL_US = MaterialImplementationFunction(

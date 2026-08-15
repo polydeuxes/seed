@@ -1021,6 +1021,10 @@ def test_every_ordered_admission_result_pair_has_one_exact_compare_occurrence(
     } == exact_pairs
     assert all(
         comparison.result_reference.compare_occurrence is comparison
+        and comparison.first_reference.admission_occurrence
+        in book_added_position_admission_occurrences
+        and comparison.second_reference.admission_occurrence
+        in book_added_position_admission_occurrences
         and comparison.result_reference.first_reference
         == comparison.first_reference
         and comparison.result_reference.second_reference
@@ -1028,6 +1032,10 @@ def test_every_ordered_admission_result_pair_has_one_exact_compare_occurrence(
         and comparison.result_reference.result is comparison.result
         for comparison in book_added_position_admission_comparisons
     )
+
+    for comparison in book_added_position_admission_comparisons:
+        assert comparison.first_reference.admission_occurrence.comparison_occurrences
+        assert comparison.second_reference.admission_occurrence.comparison_occurrences
 
 
 def test_complete_admission_preserves_each_function_admission(

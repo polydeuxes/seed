@@ -4,11 +4,26 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Callable, Hashable, Iterable, Sequence
+from typing import Callable, Hashable, Iterable, Protocol, Sequence, runtime_checkable
 
 Material = Hashable
 Admission = list[tuple[Material, ...]]
 ImplementationFunction = Callable[[Material, Material], Hashable]
+
+
+@runtime_checkable
+class AdmissionOccurrenceCoordinates(Protocol):
+    @property
+    def act_occurrence_identity(self) -> tuple[str, int]: ...
+
+    @property
+    def result_identity(self) -> tuple[str, int, str]: ...
+
+    @property
+    def source_material(self) -> tuple[Material, ...]: ...
+
+    @property
+    def admitted_material(self) -> tuple[tuple[Material, ...], ...]: ...
 
 
 def _exact_admitted_material(
@@ -31,10 +46,12 @@ def _exact_admitted_material(
 
 @dataclass(frozen=True, slots=True)
 class AdmissionResultReference:
-    admission_occurrence: "AdmissionOccurrence"
+    admission_occurrence: AdmissionOccurrenceCoordinates
 
     def __post_init__(self) -> None:
-        if not isinstance(self.admission_occurrence, AdmissionOccurrence):
+        if not isinstance(
+            self.admission_occurrence, AdmissionOccurrenceCoordinates
+        ):
             raise TypeError("Admission result requires its exact Act occurrence")
 
     @property
