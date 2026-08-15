@@ -55,7 +55,6 @@ from seed_runtime.ids import new_id
 from seed_runtime.yield_evidence import (
     YIELD_EVIDENCE_KIND,
     _record_yield_evidence,
-    yield_commitment as _yield_content_commitment,
 )
 from seed_runtime.support_basis import (
     SupportBasis,
@@ -66,8 +65,6 @@ from seed_runtime.support_basis import (
 MEASUREMENT_RECORDED_KIND = "operator.measurement.finding_recorded"
 INGEST_OCCURRED_KIND = MATERIAL_INGEST_OCCURRED_KIND
 RECURRENCE_RESULT_KIND = "recurrence Measurement finding"
-
-MEASUREMENT_CONVENTION = "preserved_material_declared_measurement"
 
 # What a finding may say about where the material it measured came from. The
 # measuring act knows which of these is true and nothing carried it forward, so
@@ -184,7 +181,6 @@ class MeasurementFinding:
     # preserved material, and silence must not read as the stronger one.
     material_provenance: str = MATERIAL_AS_SUPPLIED
     boundary_notes: tuple[str, ...] = field(default=BOUNDARY_NOTES)
-    convention: str = MEASUREMENT_CONVENTION
 
     @property
     def highest_count_occupancy(self) -> Occupancy | None:
@@ -200,7 +196,6 @@ class MeasurementFinding:
 
     def to_json_dict(self) -> dict[str, Any]:
         return {
-            "convention": self.convention,
             "representation_measured": self.declared.representation_measured,
             "equivalence_rule": self.declared.equivalence_rule,
             "counting_scope": self.declared.counting_scope,
@@ -296,11 +291,9 @@ class RecurrenceFinding:
     # none is a representation of nothing yielded.
     yield_evidence_id: str | None = None
     boundary_notes: tuple[str, ...] = field(default=BOUNDARY_NOTES)
-    convention: str = MEASUREMENT_CONVENTION
 
     def to_json_dict(self) -> dict[str, Any]:
         carried: dict[str, Any] = {
-            "convention": self.convention,
             "representation_measured": self.declared.representation_measured,
             "equivalence_rule": self.declared.equivalence_rule,
             "counting_scope": self.declared.counting_scope,
@@ -504,18 +497,10 @@ def _result_content(finding) -> dict[str, Any]:
     return content
 
 
-def _yield_commitment(finding) -> str:
-    """A commitment over the content above, so any revision to it is a revision."""
-
-    return _yield_content_commitment(
-        MEASUREMENT_CONVENTION, _result_content(finding)
-    )
-
-
-def _recorded_yield_commitment(
+def _recorded_yield_result(
     recorded: Event, yield_coordinates: tuple[str, ...]
-) -> str:
-    """The yield commitment a recorded finding's own content implies.
+) -> dict[str, Any]:
+    """Read the exact Yield coordinates from one recorded finding.
 
     The yield evidence names the exact top-level coordinates the act
     yielded. Recording may lawfully add other coordinates, so neither an
@@ -544,7 +529,7 @@ def _recorded_yield_commitment(
             )
         else:
             content[key] = payload[key]
-    return _yield_content_commitment(MEASUREMENT_CONVENTION, content)
+    return content
 
 
 def _record_yield(ledger: EventLedger, *, locality_id: str, finding) -> Event:
@@ -579,7 +564,6 @@ def _record_yield(ledger: EventLedger, *, locality_id: str, finding) -> Event:
     return _record_yield_evidence(
         ledger,
         locality_id=locality_id,
-        convention=MEASUREMENT_CONVENTION,
         exact_act="declared Measurement",
         act_occurrence_id=finding.act_occurrence_id,
         result_kind=RECURRENCE_RESULT_KIND,
@@ -1027,11 +1011,6 @@ def record_measurement_findings(
                 f"{finding.yield_evidence_id} is yield evidence for "
                 "a different kind of result"
             )
-        if evidence.payload.get("yield_convention") != MEASUREMENT_CONVENTION:
-            raise PreservedMaterialMeasurementError(
-                f"{finding.yield_evidence_id} is yield evidence "
-                "under a different yield convention"
-            )
         if (
             evidence.payload.get("dimensions", {}).get("act_occurrence_id")
             != finding.act_occurrence_id
@@ -1039,9 +1018,7 @@ def record_measurement_findings(
             raise PreservedMaterialMeasurementError(
                 "yield Evidence concerns a different Measurement occurrence"
             )
-        if evidence.payload["yield_commitment"] != _yield_commitment(
-            finding
-        ):
+        if evidence.payload.get("result") != _result_content(finding):
             raise PreservedMaterialMeasurementError(
                 "the yield evidence this result names concerns a "
                 "different result"

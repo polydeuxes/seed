@@ -59,7 +59,7 @@ from seed_runtime.recurrence_measurement import (
     measure_locality_counts,
     record_measured_count,
 )
-from seed_runtime.yield_evidence import YIELD_LIVE_BOUNDARIES, yield_commitment
+from seed_runtime.yield_evidence import YIELD_LIVE_BOUNDARIES
 from seed_runtime.yield_evidence import read_yield_edge_requirements
 
 
@@ -2886,15 +2886,11 @@ def test_occurrence_and_result_endpoints_do_not_establish_their_relation():
     assert _occurrence_result_witness(bundle) == MISSING
 
 
-def test_yield_edge_read_resolves_occurrences_without_reencoding(monkeypatch):
+def test_yield_edge_read_has_no_result_reencoding_surface():
     bundle = _byte_measurement_road()
+    import seed_runtime.yield_evidence as yield_module
 
-    def refuse_reencoding(*_args, **_kwargs):
-        raise AssertionError("the Yield-edge read re-encoded a recorded result")
-
-    monkeypatch.setattr(
-        "seed_runtime.yield_evidence.yield_commitment", refuse_reencoding
-    )
+    assert not hasattr(yield_module, "yield_commitment")
     assert _occurrence_result_requirements(bundle) == {
         "exact_relation": True,
         "occurrence_witness": True,

@@ -5,7 +5,7 @@ from __future__ import annotations
 from seed_runtime.event import Event
 from seed_runtime.events import EventLedger
 from seed_runtime.ids import new_id
-from seed_runtime.yield_evidence import _record_yield_evidence, yield_commitment
+from seed_runtime.yield_evidence import _record_yield_evidence
 
 
 MATERIAL_INGEST_OCCURRED_KIND = "material.ingest.occurred"
@@ -14,7 +14,6 @@ EVENT_KIND_RESPONSIBILITIES = {
     MATERIAL_INGEST_OCCURRED_KIND: "02.Acts.A",
     MATERIAL_INGEST_ACT_EVIDENCE_KIND: "02.Acts.A",
 }
-MATERIAL_INGEST_CONVENTION = "material_ingest"
 MATERIAL_INGEST_RESPONSIBILITY = (
     "preserve exact material supplied at one source boundary"
 )
@@ -77,9 +76,6 @@ def ingest_material(
             "act": "Ingest exact material",
             "responsibility": MATERIAL_INGEST_RESPONSIBILITY,
             "responsible_boundary": "this Seed",
-            "result_commitment": yield_commitment(
-                MATERIAL_INGEST_CONVENTION, result
-            ),
             "authority": "unestablished",
             "evidence_scope": "Evidence concerning this exact Ingest occurrence only",
         },
@@ -88,7 +84,6 @@ def ingest_material(
     yield_evidence = _record_yield_evidence(
         ledger,
         locality_id=locality_id,
-        convention=MATERIAL_INGEST_CONVENTION,
         exact_act="Ingest exact material",
         act_occurrence_id=act_occurrence_id,
         result_kind="exact material",

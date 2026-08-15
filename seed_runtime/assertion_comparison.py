@@ -19,7 +19,7 @@ from seed_runtime.events import CORRUPTED, EventLedger
 from seed_runtime.event import Event
 from seed_runtime.ids import new_id
 from seed_runtime.support_basis import SupportValidator
-from seed_runtime.yield_evidence import _record_yield_evidence, yield_commitment
+from seed_runtime.yield_evidence import _record_yield_evidence
 from seed_runtime.recurrence_measurement import (
     RecordedMeasuredAssertion,
     get_recorded_measured_assertion,
@@ -71,7 +71,6 @@ ASSERTION_COMPARE_INPUT_APPLICABILITY_KIND = (
 ASSERTION_COMPARE_ACT_EVIDENCE_KIND = (
     "operator.assertion.compare_act_evidenced"
 )
-ASSERTION_YIELD_COMPARISON_CONVENTION = "assertion_yield_comparison"
 ASSERTION_YIELD_COMPARISON_RESULT_KIND = "Assertion Yield Compare result"
 EVENT_KIND_RESPONSIBILITIES = {
     ASSERTION_YIELD_COMPARISON_RECORDED_KIND: "02.Acts.A",
@@ -401,9 +400,6 @@ def record_assertion_yield_comparison(
             "responsible_boundary": comparison.responsible_boundary,
             "input_applicability_event_ids": applicability_event_ids,
             "participation": participation,
-            "result_commitment": yield_commitment(
-                ASSERTION_YIELD_COMPARISON_CONVENTION, result_payload
-            ),
             "authority": "unestablished",
             "evidence_scope": "this exact bounded Compare occurrence only",
         },
@@ -412,7 +408,6 @@ def record_assertion_yield_comparison(
     yield_evidence = _record_yield_evidence(
         ledger,
         locality_id=locality_id,
-        convention=ASSERTION_YIELD_COMPARISON_CONVENTION,
         exact_act="Compare",
         act_occurrence_id=act_occurrence_id,
         result_kind=ASSERTION_YIELD_COMPARISON_RESULT_KIND,

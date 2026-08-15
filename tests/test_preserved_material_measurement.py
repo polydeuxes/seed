@@ -1522,7 +1522,7 @@ def test_yield_and_recording_may_be_in_different_localities(
     assert event.kind == MEASUREMENT_RECORDED_KIND
 
 
-def test_recurrence_recorder_requires_its_yield_convention(
+def test_recurrence_recorder_requires_its_exact_yield_result(
     recurrence_occurrences,
 ):
     ledger, occurrences = recurrence_occurrences
@@ -1531,14 +1531,16 @@ def test_recurrence_recorder_requires_its_yield_convention(
     assert evidence.payload["dimensions"]["act_occurrence_id"] == (
         finding.act_occurrence_id
     )
+    altered_result = dict(evidence.payload["result"])
+    altered_result["total_count"] += 1
     forged = ledger.append(
         YIELD_EVIDENCE_KIND,
-        {**evidence.payload, "yield_convention": "another convention"},
+        {**evidence.payload, "result": altered_result},
         locality_id="r",
     )
     altered = _rebuilt(finding, yield_evidence_id=forged.id)
     with pytest.raises(
-        PreservedMaterialMeasurementError, match="different yield convention"
+        PreservedMaterialMeasurementError, match="different result"
     ):
         record_measurement_finding(
             ledger, locality_id="r", finding=altered

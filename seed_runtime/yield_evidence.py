@@ -15,8 +15,6 @@ manufacture that relation.
 from __future__ import annotations
 
 from copy import deepcopy
-import hashlib
-import json
 from typing import Any
 
 from seed_runtime.event import Event
@@ -45,37 +43,6 @@ YIELD_LIVE_BOUNDARIES = frozenset(
         "successful_emission",
     }
 )
-_YIELD_COMMITMENT_DOMAIN = b"seed.yield-evidence\0"
-
-
-def _commit_part(digest: "hashlib._Hash", value: str) -> None:
-    """Commit one declared string representation in this domain."""
-
-    if not isinstance(value, str):
-        raise TypeError(
-            "a yield commitment part is an exact representation, not "
-            f"{type(value).__name__}"
-        )
-    encoded = value.encode("utf-8")
-    digest.update(len(encoded).to_bytes(8, "big"))
-    digest.update(encoded)
-
-
-def yield_commitment(convention: str, content: dict[str, Any]) -> str:
-    """Commit to canonical JSON of declared coordinates in this domain.
-
-    The digest does not identify literal locality bytes. Distinct JSON texts
-    that decode to the same coordinate values receive the same commitment.
-    """
-
-    digest = hashlib.sha256(_YIELD_COMMITMENT_DOMAIN)
-    _commit_part(digest, convention)
-    _commit_part(
-        digest, json.dumps(content, sort_keys=True, separators=(",", ":"))
-    )
-    return digest.hexdigest()
-
-
 def read_yield_edge_requirements(
     ledger: EventLedger,
     *,
@@ -187,8 +154,6 @@ def read_yield_edge_requirements(
         evidence_is_carried = evidence_is_carried and (
             recorded_result_event.payload.get("responsible_act_evidence_id")
             == responsible_act_evidence.id
-            and responsible_act_evidence.payload.get("result_commitment")
-            == result_evidence.payload.get("yield_commitment")
         )
     elif responsible_act_evidence_required:
         evidence_is_carried = False
@@ -216,7 +181,6 @@ def _record_yield_evidence(
     ledger: EventLedger,
     *,
     locality_id: str | None,
-    convention: str,
     exact_act: str,
     act_occurrence_id: str,
     result_kind: str,
@@ -289,10 +253,6 @@ def _record_yield_evidence(
                     "durably recorded; not the edge or Act occurrence by identity"
                 ),
             },
-            "yield_convention": convention,
-            "yield_commitment": yield_commitment(
-                convention, result_content
-            ),
             "yield_coordinates": sorted(result_content),
             "result": deepcopy(result_content),
             "recorded_result_coordinates": preserved_recorded_result_coordinates,

@@ -30,7 +30,6 @@ from seed_runtime.adjacency_pair_measurement import (
     get_recorded_adjacency_pair_measurements,
     ADJACENCY_PAIR_MEASUREMENT_ACT_EVIDENCE_KIND,
     ADJACENCY_PAIR_MEASUREMENT_LOCALITY_EVIDENCE_KIND,
-    ADJACENCY_PAIR_MEASUREMENT_CONVENTION,
     ADJACENCY_PAIR_MEASUREMENT_RECORDED_KIND,
 )
 from seed_runtime.preserved_material_measurement import (
@@ -51,7 +50,6 @@ from seed_runtime.operator_representation import (
 )
 from seed_runtime.operator_locality_standing import read_operator_locality_standing
 from tests.bounded_alternative_fixture import BOUNDED_ALTERNATIVE_FIXTURE_SOURCES
-from seed_runtime.yield_evidence import yield_commitment
 from seed_runtime.system_material import preserve_system_material
 
 SCOPE = "whole locality"
@@ -608,14 +606,11 @@ def test_adjacency_pair_measurement_read_refuses_self_consistent_counterfeit_sou
     altered_result["measurements"][0]["right_occurrence"]["representation"] = (
         "counterfeit"
     )
-    commitment = yield_commitment(ADJACENCY_PAIR_MEASUREMENT_CONVENTION, altered_result)
-
     act_payload = json.loads(
         json.dumps(
             ledger.get(recorded.payload["responsible_act_evidence_id"]).payload
         )
     )
-    act_payload["result_commitment"] = commitment
     act_evidence = ledger.append(
         ADJACENCY_PAIR_MEASUREMENT_ACT_EVIDENCE_KIND,
         act_payload,
@@ -624,7 +619,7 @@ def test_adjacency_pair_measurement_read_refuses_self_consistent_counterfeit_sou
     yield_payload = json.loads(
         json.dumps(ledger.get(recorded.payload["yield_evidence_id"]).payload)
     )
-    yield_payload["yield_commitment"] = commitment
+    yield_payload["result"] = altered_result
     yield_evidence = ledger.append(
         "operator.yield.evidence_recorded",
         yield_payload,

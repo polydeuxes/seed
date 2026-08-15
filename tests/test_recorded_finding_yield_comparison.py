@@ -13,7 +13,6 @@ from seed_runtime.recorded_finding_yield_comparison import (
     COMPARISON_UNKNOWN,
     FINDING_YIELD_COMPARISON_KIND,
     FINDING_YIELD_COMPARISON_ACT_EVIDENCE_KIND,
-    FINDING_YIELD_COMPARISON_CONVENTION,
     FINDING_YIELD_COMPARISON_RESULT_KIND,
     FINDING_YIELD_COMPARISON_RESPONSIBILITY,
     UNSUPPORTED_COORDINATE,
@@ -24,18 +23,13 @@ from seed_runtime.recorded_finding_yield_comparison import (
 )
 from seed_runtime.preserved_material_measurement import (
     INGEST_OCCURRED_KIND,
-    MEASUREMENT_CONVENTION,
     MEASUREMENT_RECORDED_KIND,
     RECURRENCE_RESULT_KIND,
     DeclaredMeasurement,
     measure_recurrence,
     record_measurement_finding,
 )
-from seed_runtime.yield_evidence import (
-    YIELD_EVIDENCE_KIND,
-    yield_commitment,
-)
-from seed_runtime.support_basis import support_commitment
+from seed_runtime.yield_evidence import YIELD_EVIDENCE_KIND
 
 
 def _recorded_in(ledger):
@@ -91,17 +85,7 @@ def test_the_comparison_finding_carries_evidence_that_the_act_yielded_it(recorde
     content.pop("yield_evidence_id")
     content.pop("occurrence_preservation")
     assert evidence.payload["yield_coordinates"] == sorted(content)
-    assert evidence.payload["yield_commitment"] == yield_commitment(
-        FINDING_YIELD_COMPARISON_CONVENTION, content
-    )
-
-
-def test_yield_and_support_commitments_have_distinct_mechanical_domains():
-    content = {"a": "b"}
-    represented = '{"a":"b"}'
-    assert yield_commitment("x", content) != support_commitment(
-        "x", (represented,)
-    )
+    assert evidence.payload["result"] == content
 
 
 def test_result_shape_without_the_yield_relation_has_no_witness(recorded):
@@ -403,14 +387,13 @@ def test_lawful_recording_additions_do_not_change_the_result(recorded):
     ] == AGREES_WITH_YIELD_EVIDENCE
 
 
-def test_missing_yield_commitment_is_erasure(recorded):
+def test_missing_yield_result_is_erasure(recorded):
     ledger, event = recorded
     evidence = ledger.append(
         YIELD_EVIDENCE_KIND,
         {
             "yield_coordinates": ["total_count"],
             "result_kind": RECURRENCE_RESULT_KIND,
-            "yield_convention": MEASUREMENT_CONVENTION,
         },
         locality_id="r",
     )

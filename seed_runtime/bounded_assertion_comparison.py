@@ -36,7 +36,7 @@ from seed_runtime.preserved_material_measurement import (
     MEASUREMENT_RECORDED_KIND,
     premise_chain,
 )
-from seed_runtime.yield_evidence import _record_yield_evidence, yield_commitment
+from seed_runtime.yield_evidence import _record_yield_evidence
 
 COMPARISON_RECORDED_KIND = "operator.measurement.comparison_recorded"
 COMPARISON_ACT_EVIDENCE_KIND = "operator.measurement.comparison_act_evidenced"
@@ -46,7 +46,6 @@ COMPARISON_INPUT_LOCALITY_EVIDENCE_KIND = (
 COMPARISON_INPUT_APPLICABILITY_KIND = (
     "operator.measurement.comparison_input_applicability_recorded"
 )
-COMPARISON_CONVENTION = "bounded_assertion_comparison"
 COMPARISON_RESULT_KIND = "bounded Assertion Compare result"
 COMPARISON_RESPONSIBILITY = (
     "Compare two exact preserved findings and preserve the bounded result"
@@ -396,9 +395,6 @@ def record_comparison_finding(
             "responsible_boundary": "this Seed",
             "input_applicability_event_ids": applicability_event_ids,
             "participation": participation,
-            "result_commitment": yield_commitment(
-                COMPARISON_CONVENTION, result_payload
-            ),
             "authority": "unestablished",
             "evidence_scope": "this exact bounded Compare occurrence only",
         },
@@ -407,7 +403,6 @@ def record_comparison_finding(
     yield_evidence = _record_yield_evidence(
         ledger,
         locality_id=locality_id,
-        convention=COMPARISON_CONVENTION,
         exact_act="bounded Compare",
         act_occurrence_id=act_occurrence_id,
         result_kind=COMPARISON_RESULT_KIND,

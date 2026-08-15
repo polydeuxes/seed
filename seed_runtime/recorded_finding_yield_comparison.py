@@ -36,7 +36,6 @@ from seed_runtime.event import Event
 from seed_runtime.events import CORRUPTED, EventLedger
 from seed_runtime.ids import new_id
 from seed_runtime.preserved_material_measurement import (
-    MEASUREMENT_CONVENTION,
     MEASUREMENT_RECORDED_KIND,
     PreservedMaterialMeasurementError,
     RECURRENCE_RESULT_KIND,
@@ -45,7 +44,6 @@ from seed_runtime.yield_evidence import (
     YIELD_EVIDENCE_KIND,
     _record_yield_evidence,
     read_yield_edge_requirements,
-    yield_commitment,
 )
 
 FINDING_YIELD_COMPARISON_KIND = "operator.measurement.finding_yield_compared"
@@ -57,9 +55,6 @@ EVENT_KIND_RESPONSIBILITIES = {
     FINDING_YIELD_COMPARISON_KIND: "02.Acts.A",
     FINDING_YIELD_COMPARISON_ACT_EVIDENCE_KIND: "02.Acts.A",
 }
-FINDING_YIELD_COMPARISON_CONVENTION = (
-    "recorded_recurrence_finding_yield_comparison"
-)
 FINDING_YIELD_COMPARISON_RESPONSIBILITY = (
     "Compare one recorded finding with the exact Yield Evidence it names"
 )
@@ -164,9 +159,7 @@ def get_recorded_finding_yield_comparison(
             "corrupted Yield Evidence cannot expose a Compare result"
         )
     if (
-        evidence.payload.get("yield_convention")
-        != FINDING_YIELD_COMPARISON_CONVENTION
-        or evidence.payload.get("result_kind")
+        evidence.payload.get("result_kind")
         != FINDING_YIELD_COMPARISON_RESULT_KIND
         or evidence.payload.get("yield_coordinates")
         != sorted(COMPARISON_RESULT_COORDINATES)
@@ -178,9 +171,7 @@ def get_recorded_finding_yield_comparison(
             "Compare result contract"
         )
     yielded = {name: payload[name] for name in COMPARISON_RESULT_COORDINATES}
-    if evidence.payload.get("yield_commitment") != yield_commitment(
-        FINDING_YIELD_COMPARISON_CONVENTION, yielded
-    ):
+    if evidence.payload.get("result") != yielded:
         raise RecordedFindingYieldComparisonError(
             "the named Yield Evidence concerns a different Compare result"
         )
@@ -330,45 +321,43 @@ def compare_recorded_finding_yield(ledger: EventLedger, event_id: str) -> Event:
             elif (
                 evidence.payload.get("result_kind")
                 != RECURRENCE_RESULT_KIND
-                or evidence.payload.get("yield_convention")
-                != MEASUREMENT_CONVENTION
             ):
                 crossings.append(
                     _crossing(
                         UNSUPPORTED_COORDINATE,
                         "the named yield evidence concerns a different "
-                        "kind of result or yield convention",
+                        "kind of result",
                     )
                 )
             else:
-                commitment = evidence.payload.get("yield_commitment")
+                result = evidence.payload.get("result")
                 coordinates = evidence.payload.get("yield_coordinates")
-                if commitment is None or coordinates is None:
+                if result is None or coordinates is None:
                     crossings.append(
                         _crossing(
                             ERASURE,
-                            "the yield evidence omits the commitment or "
+                            "the yield evidence omits the result or "
                             "coordinate boundary required to compare it",
                         )
                     )
                 elif (
-                    not isinstance(commitment, str)
+                    not isinstance(result, dict)
                     or not isinstance(coordinates, list)
                     or not all(isinstance(item, str) for item in coordinates)
                     or len(set(coordinates)) != len(coordinates)
                 ):
                     unresolved = True
                     unknowns.append(
-                        "the yield evidence does not carry an readable "
-                        "commitment and exact coordinate boundary"
+                        "the yield evidence does not carry an exact result "
+                        "and coordinate boundary"
                     )
                 else:
                     from seed_runtime.preserved_material_measurement import (
-                        _recorded_yield_commitment,
+                        _recorded_yield_result,
                     )
 
                     try:
-                        recorded_commitment = _recorded_yield_commitment(
+                        recorded_result = _recorded_yield_result(
                             recorded, tuple(coordinates)
                         )
                     except PreservedMaterialMeasurementError:
@@ -376,11 +365,11 @@ def compare_recorded_finding_yield(ledger: EventLedger, event_id: str) -> Event:
                             _crossing(
                                 ERASURE,
                                 "the recorded finding omits at least one exact "
-                                "coordinate its yield evidence commits to",
+                                "coordinate its Yield Evidence carries",
                             )
                         )
                     else:
-                        if commitment != recorded_commitment:
+                        if result != recorded_result:
                             # The mismatch proves the compared relation differs.
                             # It does not prove which coordinate caused it:
                             # altered content and a misplaced evidence reference
@@ -478,9 +467,6 @@ def compare_recorded_finding_yield(ledger: EventLedger, event_id: str) -> Event:
             "act": "bounded finding Yield Compare",
             "responsibility": FINDING_YIELD_COMPARISON_RESPONSIBILITY,
             "responsible_boundary": "this Seed",
-            "result_commitment": yield_commitment(
-                FINDING_YIELD_COMPARISON_CONVENTION, result_payload
-            ),
             "authority": authority_boundary,
             "evidence_scope": (
                 "Evidence concerning this exact finding Yield Compare occurrence only"
@@ -491,7 +477,6 @@ def compare_recorded_finding_yield(ledger: EventLedger, event_id: str) -> Event:
     yield_evidence = _record_yield_evidence(
         ledger,
         locality_id=recorded.locality_id,
-        convention=FINDING_YIELD_COMPARISON_CONVENTION,
         exact_act="bounded finding Yield Compare",
         act_occurrence_id=act_occurrence_id,
         result_kind=FINDING_YIELD_COMPARISON_RESULT_KIND,

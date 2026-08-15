@@ -24,13 +24,12 @@ from typing import Iterable, Sequence
 from seed_runtime.events import CORRUPTED, EventLedger, EventLedgerBoundary
 from seed_runtime.event import Event
 from seed_runtime.ids import new_id
-from seed_runtime.yield_evidence import _record_yield_evidence, yield_commitment
+from seed_runtime.yield_evidence import _record_yield_evidence
 from seed_runtime.preserved_material_measurement import (
     INGEST_OCCURRED_KIND,
     MEASUREMENT_RECORDED_KIND,
     DeclaredMeasurement,
     MeasurementFinding,
-    MEASUREMENT_CONVENTION,
     Occupancy,
     PreservedMaterialMeasurementError,
     measure_occupancy,
@@ -64,7 +63,6 @@ ADJACENCY_PAIR_MEASUREMENT_ACT_EVIDENCE_KIND = (
 ADJACENCY_PAIR_MEASUREMENT_LOCALITY_EVIDENCE_KIND = (
     "operator.measurement.adjacency_pair_measurement_locality_evidenced"
 )
-ADJACENCY_PAIR_MEASUREMENT_CONVENTION = "adjacency_pair_measurement"
 ADJACENCY_PAIR_MEASUREMENT_COMPARE_RECORDED_KIND = (
     "operator.measurement.adjacency_pair_measurement_compare_recorded"
 )
@@ -82,9 +80,6 @@ EVENT_KIND_RESPONSIBILITIES = {
     ADJACENCY_PAIR_MEASUREMENT_COMPARE_ACT_EVIDENCE_KIND: "02.Acts.A",
     ADJACENCY_PAIR_MEASUREMENT_COMPARE_LOCALITY_EVIDENCE_KIND: "06.Standing.B",
 }
-ADJACENCY_PAIR_MEASUREMENT_COMPARE_CONVENTION = (
-    "adjacency_pair_measurement_compare"
-)
 ADJACENCY_PAIR_MEASUREMENT_RESPONSIBILITY = (
     "measure one adjacent position on each side of every exact occurrence of "
     "each ordered pair read from one exact finding"
@@ -324,7 +319,6 @@ def _is_established_after_measurement(event: Event) -> bool:
     left = event.payload.get("measured_left_representation")
     return (
         event.kind == MEASUREMENT_RECORDED_KIND
-        and event.payload.get("convention") == MEASUREMENT_CONVENTION
         and event.payload.get("equivalence_rule") == EQUIVALENCE_RULE
         and event.payload.get("measurement_distinction") == "after"
         and isinstance(left, str)
@@ -783,9 +777,6 @@ def _record_adjacency_pair_measurement_result(
             "responsible_boundary": "this Seed",
             "input_applicability": applicable_inputs,
             "participation": participation,
-            "result_commitment": yield_commitment(
-                ADJACENCY_PAIR_MEASUREMENT_CONVENTION, result_payload
-            ),
             "authority": "unestablished",
             "evidence_scope": "this exact bounded Measurement occurrence only",
         },
@@ -794,7 +785,6 @@ def _record_adjacency_pair_measurement_result(
     yield_evidence = _record_yield_evidence(
         ledger,
         locality_id=locality_id,
-        convention=ADJACENCY_PAIR_MEASUREMENT_CONVENTION,
         exact_act="exact adjacency-pair measurement Measurement",
         act_occurrence_id=act_occurrence_id,
         result_kind="exact adjacency-pair measurements",
@@ -1054,7 +1044,6 @@ def get_recorded_adjacency_pair_measurements(
         )
     act_occurrence_id = event.payload.get("act_occurrence_id")
     downstream_act_id = event.payload.get("downstream_act_id")
-    commitment = yield_commitment(ADJACENCY_PAIR_MEASUREMENT_CONVENTION, result_payload)
     if (
         not isinstance(act_occurrence_id, str)
         or not isinstance(downstream_act_id, str)
@@ -1064,10 +1053,6 @@ def get_recorded_adjacency_pair_measurements(
         != act_occurrence_id
         or locality_evidence.payload.get("act_occurrence_id")
         != act_occurrence_id
-        or act_evidence.payload.get("result_commitment") != commitment
-        or yield_evidence.payload.get("yield_commitment") != commitment
-        or yield_evidence.payload.get("yield_convention")
-        != ADJACENCY_PAIR_MEASUREMENT_CONVENTION
         or locality_evidence.payload.get("carried_content") != result_payload
     ):
         raise PreservedMaterialMeasurementError(
@@ -1245,21 +1230,16 @@ def record_adjacency_pair_measurement_compare(
             "responsible_boundary": "this Seed",
             "authority": "unestablished",
             "evidence_scope": (
-                "Evidence concerning this exact Compare occurrence, its exact "
-                "participants, and its exact result commitment"
+                "Evidence concerning this exact Compare occurrence and its exact "
+                "participants"
             ),
             "participation": participation,
-            "result_commitment": yield_commitment(
-                ADJACENCY_PAIR_MEASUREMENT_COMPARE_CONVENTION,
-                result_payload,
-            ),
         },
         locality_id=locality_id,
     )
     yield_evidence = _record_yield_evidence(
         ledger,
         locality_id=locality_id,
-        convention=ADJACENCY_PAIR_MEASUREMENT_COMPARE_CONVENTION,
         exact_act="Compare exact adjacency-pair measurement results",
         act_occurrence_id=act_occurrence_id,
         result_kind="bounded adjacency-pair measurement comparison",
@@ -1344,10 +1324,6 @@ def get_recorded_adjacency_pair_measurement_compare(
     assert yield_evidence is not None
     assert locality_evidence is not None
     act_occurrence_id = event.payload.get("act_occurrence_id")
-    commitment = yield_commitment(
-        ADJACENCY_PAIR_MEASUREMENT_COMPARE_CONVENTION,
-        result_payload,
-    )
     expected_participation = [
         {
             "subject_reference": input_id,
@@ -1365,16 +1341,12 @@ def get_recorded_adjacency_pair_measurement_compare(
         or yield_evidence.payload.get("dimensions", {}).get("act_occurrence_id")
         != act_occurrence_id
         or locality_evidence.payload.get("act_occurrence_id") != act_occurrence_id
-        or act_evidence.payload.get("result_commitment") != commitment
         or act_evidence.payload.get("authority") != "unestablished"
         or act_evidence.payload.get("evidence_scope")
         != (
-            "Evidence concerning this exact Compare occurrence, its exact "
-            "participants, and its exact result commitment"
+            "Evidence concerning this exact Compare occurrence and its exact "
+            "participants"
         )
-        or yield_evidence.payload.get("yield_commitment") != commitment
-        or yield_evidence.payload.get("yield_convention")
-        != ADJACENCY_PAIR_MEASUREMENT_COMPARE_CONVENTION
         or locality_evidence.payload.get("carried_content") != result_payload
         or act_evidence.payload.get("participation") != expected_participation
         or event.payload.get("participation") != expected_participation

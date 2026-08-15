@@ -25,7 +25,6 @@ from seed_runtime.yield_evidence import (
     YIELD_EVIDENCE_KIND,
     _record_yield_evidence,
     read_yield_edge_requirements,
-    yield_commitment,
 )
 from seed_runtime.material_ingest import (
     MATERIAL_INGEST_OCCURRED_KIND,
@@ -37,12 +36,10 @@ from seed_runtime.material_ingest import (
 INGEST_OCCURRED_KIND = MATERIAL_INGEST_OCCURRED_KIND
 BYTE_MEASUREMENT_RECORDED_KIND = "operator.measurement.byte_counts_recorded"
 BYTE_MEASUREMENT_RESULT_KIND = "exact byte-count Measurement results"
-BYTE_MEASUREMENT_CONVENTION = "exact_ingest_byte_count_measurement"
 BYTE_PAIR_MEASUREMENT_RECORDED_KIND = (
     "operator.measurement.adjacent_byte_pair_counts_recorded"
 )
 BYTE_PAIR_MEASUREMENT_RESULT_KIND = "exact adjacent-byte-pair count Measurement results"
-BYTE_PAIR_MEASUREMENT_CONVENTION = "exact_adjacent_ingest_byte_pair_count"
 RESPONSIBILITY_UNESTABLISHED = "unestablished"
 BYTE_OCCURRENCE_PRESERVATION = (
     "byte Measurement results durably recorded after yield"
@@ -85,7 +82,6 @@ BYTE_PAIR_RESPONSIBLE_ACT_EVIDENCE_KIND = (
 BYTE_PAIR_APPLICABILITY_RECORDED_KIND = (
     "operator.measurement.adjacent_byte_pair_input_applicability_recorded"
 )
-BYTE_PAIR_APPLICABILITY_CONVENTION = "adjacent_byte_pair_input_applicability"
 BYTE_PAIR_APPLICABILITY_RESULT_KIND = "adjacent-byte-pair input Applicability result"
 BYTE_PAIR_APPLICABILITY_RESULT_COORDINATES = frozenset(
     {
@@ -112,7 +108,6 @@ ASSERTION_LOCALITY_MOVEMENT_KIND = "operator.assertion.locality_movement_recorde
 ASSERTION_LOCALITY_MOVEMENT_ACT_EVIDENCE_KIND = (
     "operator.assertion.locality_movement_act_evidenced"
 )
-ASSERTION_LOCALITY_MOVEMENT_CONVENTION = "assertion_locality_movement"
 ASSERTION_LOCALITY_MOVEMENT_RESULT_KIND = "Assertion Locality movement result"
 EVENT_KIND_RESPONSIBILITIES = {
     BYTE_MEASUREMENT_RECORDED_KIND: "02.Acts.A",
@@ -673,9 +668,6 @@ def _move_byte_assertion_to_locality(
                 "second_subject": destination_locality,
                 "relation_occurrence_id": movement_occurrence_id,
             },
-            "result_commitment": yield_commitment(
-                ASSERTION_LOCALITY_MOVEMENT_CONVENTION, result_payload
-            ),
             "authority": "unestablished",
             "evidence_scope": "evidences this exact Assertion Locality movement",
         },
@@ -684,7 +676,6 @@ def _move_byte_assertion_to_locality(
     yield_evidence = _record_yield_evidence(
         ledger,
         locality_id=destination_locality,
-        convention=ASSERTION_LOCALITY_MOVEMENT_CONVENTION,
         exact_act="Assertion Locality movement",
         act_occurrence_id=movement_occurrence_id,
         result_kind=ASSERTION_LOCALITY_MOVEMENT_RESULT_KIND,
@@ -811,9 +802,6 @@ def _validate_moved_byte_assertion(
                 "movement_act_occurrence_id"
             ),
         },
-        "result_commitment": yield_commitment(
-            ASSERTION_LOCALITY_MOVEMENT_CONVENTION, expected_result
-        ),
         "authority": "unestablished",
         "evidence_scope": "evidences this exact Assertion Locality movement",
     }
@@ -1101,9 +1089,6 @@ def record_byte_count_layer(
             "responsibility_assignment_evidence": result_payload[
                 "responsibility_assignment_evidence"
             ],
-            "result_commitment": yield_commitment(
-                BYTE_MEASUREMENT_CONVENTION, result_payload
-            ),
             "authority": "unestablished",
             "evidence_scope": (
                 "Evidence concerning this exact bounded responsible Measurement "
@@ -1115,7 +1100,6 @@ def record_byte_count_layer(
     evidence = _record_yield_evidence(
         ledger,
         locality_id=recording_locality_id,
-        convention=BYTE_MEASUREMENT_CONVENTION,
         exact_act="declared Measurement",
         act_occurrence_id=act_occurrence_id,
         result_kind=BYTE_MEASUREMENT_RESULT_KIND,
@@ -1194,8 +1178,6 @@ def assertions_of_recorded_byte_measurement(
         evidence is None
         or evidence.kind != YIELD_EVIDENCE_KIND
         or ledger.integrity_of(evidence.id) == CORRUPTED
-        or evidence.payload.get("yield_convention")
-        != BYTE_MEASUREMENT_CONVENTION
         or evidence.payload.get("result_kind")
         != BYTE_MEASUREMENT_RESULT_KIND
         or evidence.payload.get("yield_coordinates")
@@ -1210,13 +1192,6 @@ def assertions_of_recorded_byte_measurement(
         raise ByteMeasurementError(
             f"{event_id} names no exact byte Measurement yield Evidence"
         )
-    yielded = {name: payload[name] for name in BYTE_RESULT_COORDINATES}
-    if evidence.payload.get("yield_commitment") != yield_commitment(
-        BYTE_MEASUREMENT_CONVENTION, yielded
-    ):
-        raise ByteMeasurementError(
-            f"{event_id} does not carry the exact yielded byte Measurement result"
-        )
     act_evidence_id = payload.get("responsible_act_evidence_id")
     act_evidence = ledger.get(act_evidence_id) if isinstance(act_evidence_id, str) else None
     expected_act_evidence = {
@@ -1228,9 +1203,6 @@ def assertions_of_recorded_byte_measurement(
         "responsibility_assignment_evidence": payload[
             "responsibility_assignment_evidence"
         ],
-        "result_commitment": yield_commitment(
-            BYTE_MEASUREMENT_CONVENTION, yielded
-        ),
         "authority": "unestablished",
         "evidence_scope": (
             "Evidence concerning this exact bounded responsible Measurement "
@@ -1401,9 +1373,6 @@ def _record_pair_responsible_act_evidence(
             ],
             "input_assertion_reference": measured.source_assertion_reference,
             "input_role": BYTE_PAIR_INPUT_ROLE,
-            "result_commitment": yield_commitment(
-                BYTE_PAIR_MEASUREMENT_CONVENTION, result_content
-            ),
             "authority": "unestablished",
             "evidence_scope": (
                 "Evidence concerning this exact bounded responsible Measurement "
@@ -1464,13 +1433,10 @@ def _record_pair_input_applicability(
             "input_movement_event_id": source.locality_movement_event_id,
             "input_role": BYTE_PAIR_INPUT_ROLE,
             "downstream_act_id": applicability_assertion["downstream_act_id"],
-            "result_commitment": yield_commitment(
-                BYTE_PAIR_APPLICABILITY_CONVENTION, result_payload
-            ),
             "authority": BYTE_PAIR_APPLICABILITY_AUTHORITY,
             "evidence_scope": (
                 "Evidence concerning this exact input Applicability "
-                "determination occurrence and its exact result commitment"
+                "determination occurrence"
             ),
         },
         locality_id=recording_locality_id,
@@ -1478,7 +1444,6 @@ def _record_pair_input_applicability(
     evidence = _record_yield_evidence(
         ledger,
         locality_id=recording_locality_id,
-        convention=BYTE_PAIR_APPLICABILITY_CONVENTION,
         exact_act="input Applicability determination",
         act_occurrence_id=applicability_assertion["applicability_act_occurrence_id"],
         result_kind=BYTE_PAIR_APPLICABILITY_RESULT_KIND,
@@ -1529,8 +1494,6 @@ def get_recorded_pair_input_applicability(
         or evidence.kind != YIELD_EVIDENCE_KIND
         or evidence.locality_id != event.locality_id
         or ledger.integrity_of(evidence.id) == CORRUPTED
-        or evidence.payload.get("yield_convention")
-        != BYTE_PAIR_APPLICABILITY_CONVENTION
         or evidence.payload.get("result_kind")
         != BYTE_PAIR_APPLICABILITY_RESULT_KIND
         or evidence.payload.get("yield_coordinates") != sorted(yielded)
@@ -1540,8 +1503,6 @@ def get_recorded_pair_input_applicability(
         != SEED_NATIVE_MEASUREMENT_RESPONSIBLE_BOUNDARY
         or evidence.payload.get("dimensions", {}).get("act_occurrence_id")
         != payload["applicability_act_occurrence_id"]
-        or evidence.payload.get("yield_commitment")
-        != yield_commitment(BYTE_PAIR_APPLICABILITY_CONVENTION, yielded)
     ):
         raise ByteMeasurementError(
             f"{event_id} names no exact Applicability yield Evidence"
@@ -1561,13 +1522,10 @@ def get_recorded_pair_input_applicability(
         "input_movement_event_id": payload["input_movement_event_id"],
         "input_role": payload["input_role"],
         "downstream_act_id": payload["downstream_act_id"],
-        "result_commitment": yield_commitment(
-            BYTE_PAIR_APPLICABILITY_CONVENTION, yielded
-        ),
         "authority": BYTE_PAIR_APPLICABILITY_AUTHORITY,
         "evidence_scope": (
             "Evidence concerning this exact input Applicability "
-            "determination occurrence and its exact result commitment"
+            "determination occurrence"
         ),
     }
     if (
@@ -1728,7 +1686,6 @@ def record_adjacent_byte_pair_count_layer(
     evidence = _record_yield_evidence(
         ledger,
         locality_id=recording_locality_id,
-        convention=BYTE_PAIR_MEASUREMENT_CONVENTION,
         exact_act="declared Measurement",
         act_occurrence_id=measured.act_occurrence_id,
         result_kind=BYTE_PAIR_MEASUREMENT_RESULT_KIND,
@@ -1906,8 +1863,6 @@ def assertions_of_recorded_adjacent_byte_pair_measurement(
         evidence is None
         or evidence.kind != YIELD_EVIDENCE_KIND
         or ledger.integrity_of(evidence.id) == CORRUPTED
-        or evidence.payload.get("yield_convention")
-        != BYTE_PAIR_MEASUREMENT_CONVENTION
         or evidence.payload.get("result_kind")
         != BYTE_PAIR_MEASUREMENT_RESULT_KIND
         or evidence.payload.get("yield_coordinates")
@@ -1921,13 +1876,6 @@ def assertions_of_recorded_adjacent_byte_pair_measurement(
     ):
         raise ByteMeasurementError(
             f"{event_id} names no exact adjacent-byte-pair yield Evidence"
-        )
-    yielded = {name: payload[name] for name in BYTE_PAIR_RESULT_COORDINATES}
-    if evidence.payload.get("yield_commitment") != yield_commitment(
-        BYTE_PAIR_MEASUREMENT_CONVENTION, yielded
-    ):
-        raise ByteMeasurementError(
-            f"{event_id} does not carry the exact yielded pair Measurement result"
         )
     act_evidence_id = payload.get("responsible_act_evidence_id")
     act_evidence = ledger.get(act_evidence_id) if isinstance(act_evidence_id, str) else None
@@ -1957,9 +1905,6 @@ def assertions_of_recorded_adjacent_byte_pair_measurement(
         "input_applicability_identity": applicability_identity,
         "input_assertion_reference": payload["source_assertion_reference"],
         "input_role": payload["input_role"],
-        "result_commitment": yield_commitment(
-            BYTE_PAIR_MEASUREMENT_CONVENTION, yielded
-        ),
         "authority": "unestablished",
         "evidence_scope": (
             "Evidence concerning this exact bounded responsible Measurement "

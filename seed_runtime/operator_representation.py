@@ -9,7 +9,6 @@ from seed_runtime.ids import new_id
 from seed_runtime.yield_evidence import (
     _record_yield_evidence,
     read_yield_edge_requirements,
-    yield_commitment,
 )
 
 REPRESENTATION_RECORDED_KIND = "operator.representation.recorded"
@@ -24,7 +23,6 @@ REPRESENTATION_ACT_EVIDENCE_KIND = "operator.representation.act_evidenced"
 REPRESENTATION_LOCALITY_EVIDENCE_KIND = (
     "operator.representation.locality_evidenced"
 )
-REPRESENTATION_CONVENTION = "operator_representation"
 REPRESENTATION_RESPONSIBILITY = (
     "yield one bounded Representation from the exact carried Locality coordinates"
 )
@@ -37,12 +35,10 @@ REPRESENTATION_EMISSION_LOCALITY_EVIDENCE_KIND = (
 REPRESENTATION_EMISSION_ATTEMPT_LOCALITY_EVIDENCE_KIND = (
     "operator.representation.emission_attempt_locality_evidenced"
 )
-REPRESENTATION_EMISSION_CONVENTION = "operator_representation_emission"
 REPRESENTATION_EMISSION_INPUT_ROLE = "exact bounded Representation"
 REPRESENTATION_EMISSION_RESPONSIBILITY = (
     "write one exact Representation to its declared text-stream boundary"
 )
-REPRESENTATION_EMISSION_OUTCOME_CONVENTION = "operator_representation_emission_outcome"
 REPRESENTATION_EMISSION_OUTCOME_RESULT_KIND = "Representation emission boundary result"
 REPRESENTATION_EMISSION_OUTCOME_RESPONSIBILITY = (
     "preserve one exact failed Representation emission boundary call"
@@ -162,9 +158,6 @@ def record_operator_representation(
             "act": "bounded Representation Act",
             "responsibility": REPRESENTATION_RESPONSIBILITY,
             "responsible_boundary": "this Seed",
-            "result_commitment": yield_commitment(
-                REPRESENTATION_CONVENTION, result_payload
-            ),
             "authority": "unestablished",
             "evidence_scope": (
                 "Evidence concerning this exact Representation Act occurrence only"
@@ -175,7 +168,6 @@ def record_operator_representation(
     yield_evidence = _record_yield_evidence(
         ledger,
         locality_id=locality_id,
-        convention=REPRESENTATION_CONVENTION,
         exact_act="bounded Representation Act",
         act_occurrence_id=act_occurrence_id,
         result_kind="bounded Representation",
@@ -466,9 +458,6 @@ def emit_operator_representation(
             "representation_reference": representation["representation_id"],
             "representation_event_id": representation["representation_event_id"],
             "input_role": REPRESENTATION_EMISSION_INPUT_ROLE,
-            "result_commitment": yield_commitment(
-                REPRESENTATION_EMISSION_CONVENTION, result_content
-            ),
             "authority": "unestablished",
             "evidence_scope": (
                 "Evidence concerning this exact emission Act occurrence and "
@@ -496,7 +485,6 @@ def emit_operator_representation(
     yield_evidence = _record_yield_evidence(
         ledger,
         locality_id=representation["locality_id"],
-        convention=REPRESENTATION_EMISSION_CONVENTION,
         exact_act="exact bounded Representation emission",
         act_occurrence_id=act_occurrence_id,
         result_kind="text-stream boundary result",
@@ -644,9 +632,6 @@ def _record_emission_failure_outcome(
             "act": "failed Representation emission boundary call",
             "responsibility": REPRESENTATION_EMISSION_OUTCOME_RESPONSIBILITY,
             "responsible_boundary": "this Seed",
-            "result_commitment": yield_commitment(
-                REPRESENTATION_EMISSION_OUTCOME_CONVENTION, result_payload
-            ),
             "authority": "unestablished",
             "evidence_scope": (
                 "this exact failed Representation emission boundary call only"
@@ -657,7 +642,6 @@ def _record_emission_failure_outcome(
     yield_evidence = _record_yield_evidence(
         ledger,
         locality_id=representation["locality_id"],
-        convention=REPRESENTATION_EMISSION_OUTCOME_CONVENTION,
         exact_act="failed Representation emission boundary call",
         act_occurrence_id=act_occurrence_id,
         result_kind=REPRESENTATION_EMISSION_OUTCOME_RESULT_KIND,

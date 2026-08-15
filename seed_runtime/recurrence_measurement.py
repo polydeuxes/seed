@@ -47,13 +47,12 @@ from seed_runtime.events import EventLedger, EventLedgerBoundary
 from seed_runtime.event import Event
 from seed_runtime.ids import new_id
 from seed_runtime.preserved_material_measurement import MEASUREMENT_RECORDED_KIND
-from seed_runtime.yield_evidence import _record_yield_evidence, yield_commitment
+from seed_runtime.yield_evidence import _record_yield_evidence
 
 LOCALITY_COUNT_RECORDED_KIND = "operator.measurement.locality_count_recorded"
 LOCALITY_COUNT_ACT_EVIDENCE_KIND = (
     "operator.measurement.locality_count_act_evidenced"
 )
-LOCALITY_COUNT_CONVENTION = "locality_count_measurement"
 LOCALITY_COUNT_RESULT_KIND = "locality count Measurement result"
 LOCALITY_COUNT_RESPONSIBILITY = (
     "Measure one exact distinction across exact bounded Localities"
@@ -788,9 +787,6 @@ def record_measured_count(
             "responsibility": LOCALITY_COUNT_RESPONSIBILITY,
             "responsible_boundary": "this Seed",
             "participation": participation,
-            "result_commitment": yield_commitment(
-                LOCALITY_COUNT_CONVENTION, result_payload
-            ),
             "authority": "unestablished",
             "evidence_scope": "this exact locality count Measurement occurrence only",
         },
@@ -799,7 +795,6 @@ def record_measured_count(
     yield_evidence = _record_yield_evidence(
         ledger,
         locality_id=locality_id,
-        convention=LOCALITY_COUNT_CONVENTION,
         exact_act="locality count Measurement",
         act_occurrence_id=act_occurrence_id,
         result_kind=LOCALITY_COUNT_RESULT_KIND,
