@@ -86,13 +86,71 @@ class AddedPositionOccurrence:
 
 
 @dataclass(frozen=True, slots=True)
+class RemovedPositionOccurrence:
+    boundary_identity: str
+    occurrence_position: int
+    source_reference: ExactMaterialReference
+    position: int
+    removed_reference: ExactMaterialReference
+    result_material: bytes
+
+    def __post_init__(self) -> None:
+        if type(self.boundary_identity) is not str or not self.boundary_identity:
+            raise TypeError("one exact boundary identity is required")
+        if type(self.occurrence_position) is not int or self.occurrence_position < 0:
+            raise TypeError("one exact Act occurrence position is required")
+        if not isinstance(self.source_reference, ExactMaterialReference):
+            raise TypeError("source material requires its exact reference")
+        if not isinstance(self.removed_reference, ExactMaterialReference):
+            raise TypeError("removed material requires its exact reference")
+        if len(self.removed_reference.exact_material) != 1:
+            raise ValueError("removed material must be exactly one byte")
+        if (
+            type(self.position) is not int
+            or self.position < 0
+            or self.position >= len(self.source_material)
+            or self.source_material[self.position : self.position + 1]
+            != self.removed_material
+            or self.result_material
+            != self.source_material[: self.position]
+            + self.source_material[self.position + 1 :]
+        ):
+            raise ValueError("result material does not preserve the exact removal")
+
+    @property
+    def act_identity(self) -> tuple[str, str]:
+        return (self.boundary_identity, "remove exact material at exact position")
+
+    @property
+    def act_occurrence_identity(self) -> tuple[str, int]:
+        return (self.boundary_identity, self.occurrence_position)
+
+    @property
+    def result_identity(self) -> tuple[str, int, str]:
+        return (self.boundary_identity, self.occurrence_position, "result")
+
+    @property
+    def source_material(self) -> bytes:
+        return self.source_reference.exact_material
+
+    @property
+    def removed_material(self) -> bytes:
+        return self.removed_reference.exact_material
+
+
+@dataclass(frozen=True, slots=True)
 class CompiledInvocationOccurrence:
     boundary_identity: str
     invocation_position: int
     exact_material: bytes
     implementation_function_identity: str
     returned: bool
-    source_coordinate: ExactMaterialReference | AddedPositionOccurrence | None = None
+    source_coordinate: (
+        ExactMaterialReference
+        | AddedPositionOccurrence
+        | RemovedPositionOccurrence
+        | None
+    ) = None
 
     @property
     def occurrence_identity(self) -> tuple[str, str, int]:
@@ -107,6 +165,8 @@ class CompiledInvocationOccurrence:
         if isinstance(self.source_coordinate, ExactMaterialReference):
             return self.source_coordinate.exact_material
         if isinstance(self.source_coordinate, AddedPositionOccurrence):
+            return self.source_coordinate.source_material
+        if isinstance(self.source_coordinate, RemovedPositionOccurrence):
             return self.source_coordinate.source_material
         return None
 
@@ -133,6 +193,30 @@ class AddedPositionCompareOccurrence:
     occurrence_position: int
     implementation_function_identity: str
     added_position_act_occurrence_identity: tuple[str, int]
+    source_invocation_occurrence_identity: tuple[str, str, int]
+    result_invocation_occurrence_identity: tuple[str, str, int]
+    source_returned: bool
+    result_returned: bool
+
+    @property
+    def occurrence_identity(self) -> tuple[str, str, int]:
+        return (
+            self.boundary_identity,
+            self.implementation_function_identity,
+            self.occurrence_position,
+        )
+
+    @property
+    def distinction(self) -> bool:
+        return self.source_returned != self.result_returned
+
+
+@dataclass(frozen=True, slots=True)
+class RemovedPositionCompareOccurrence:
+    boundary_identity: str
+    occurrence_position: int
+    implementation_function_identity: str
+    removed_position_act_occurrence_identity: tuple[str, int]
     source_invocation_occurrence_identity: tuple[str, str, int]
     result_invocation_occurrence_identity: tuple[str, str, int]
     source_returned: bool
@@ -268,7 +352,8 @@ def _compiled_invocations(
     boundary_identity: str,
     implementation_functions: tuple[CompiledImplementationFunction, ...],
     source_coordinates: tuple[
-        ExactMaterialReference | AddedPositionOccurrence, ...
+        ExactMaterialReference | AddedPositionOccurrence | RemovedPositionOccurrence,
+        ...,
     ] | None = None,
 ) -> tuple[tuple[CompiledInvocationOccurrence, ...], ...]:
     found = []
@@ -411,6 +496,85 @@ def added_position_invocations(
     )
 
 
+def removed_position_occurrences(
+    source_material: tuple[ExactMaterialReference, ...],
+    removed_material: tuple[ExactMaterialReference, ...],
+    *,
+    boundary_identity: str,
+) -> tuple[RemovedPositionOccurrence, ...]:
+    if type(source_material) is not tuple or not all(
+        isinstance(material, ExactMaterialReference) for material in source_material
+    ):
+        raise TypeError("source material must carry exact references")
+    if type(removed_material) is not tuple or not all(
+        isinstance(material, ExactMaterialReference)
+        and len(material.exact_material) == 1
+        for material in removed_material
+    ):
+        raise TypeError("removed material must carry exact one-byte references")
+    if type(boundary_identity) is not str or not boundary_identity:
+        raise TypeError("one exact boundary identity is required")
+    exact_coordinates = tuple(
+        (source, position, removed)
+        for source in source_material
+        for position in range(len(source.exact_material))
+        for removed in removed_material
+        if source.exact_material[position : position + 1]
+        == removed.exact_material
+    )
+    return tuple(
+        RemovedPositionOccurrence(
+            boundary_identity=boundary_identity,
+            occurrence_position=occurrence_position,
+            source_reference=source,
+            position=position,
+            removed_reference=removed,
+            result_material=(
+                source.exact_material[:position]
+                + source.exact_material[position + 1 :]
+            ),
+        )
+        for occurrence_position, (source, position, removed) in enumerate(
+            exact_coordinates
+        )
+    )
+
+
+def removed_position_invocations(
+    occurrences: tuple[RemovedPositionOccurrence, ...],
+    *,
+    boundary_identity: str,
+    implementation_functions: tuple[
+        CompiledImplementationFunction, ...
+    ] = COMPILED_IMPLEMENTATION_FUNCTIONS,
+) -> tuple[tuple[CompiledInvocationOccurrence, ...], ...]:
+    if type(occurrences) is not tuple or not all(
+        isinstance(occurrence, RemovedPositionOccurrence)
+        for occurrence in occurrences
+    ):
+        raise TypeError("removed-position material requires exact Act occurrences")
+    if any(
+        occurrence.occurrence_position != position
+        for position, occurrence in enumerate(occurrences)
+    ):
+        raise ValueError("removed-position Act occurrence positions must remain exact")
+    if type(boundary_identity) is not str or not boundary_identity:
+        raise TypeError("one exact boundary identity is required")
+    if type(implementation_functions) is not tuple or not implementation_functions:
+        raise TypeError("compiled implementation functions must be one nonempty tuple")
+    if not all(
+        isinstance(implementation_function, CompiledImplementationFunction)
+        for implementation_function in implementation_functions
+    ):
+        raise TypeError("compiled implementation functions must be exact")
+    return _compiled_invocations(
+        tuple(occurrence.result_material for occurrence in occurrences),
+        boundary_identity=boundary_identity,
+        implementation_functions=implementation_functions,
+        source_coordinates=occurrences,
+    )
+
+
 def compare_added_position_invocations(
     source_invocations: tuple[tuple[CompiledInvocationOccurrence, ...], ...],
     result_invocations: tuple[tuple[CompiledInvocationOccurrence, ...], ...],
@@ -470,6 +634,81 @@ def compare_added_position_invocations(
                     implementation_function_identity=implementation_function_identity,
                     added_position_act_occurrence_identity=(
                         addition.act_occurrence_identity
+                    ),
+                    source_invocation_occurrence_identity=(
+                        source_invocation.occurrence_identity
+                    ),
+                    result_invocation_occurrence_identity=(
+                        result_invocation.occurrence_identity
+                    ),
+                    source_returned=source_invocation.returned,
+                    result_returned=result_invocation.returned,
+                )
+            )
+            comparison_position += 1
+        compared.append(tuple(row))
+    return tuple(compared)
+
+
+def compare_removed_position_invocations(
+    source_invocations: tuple[tuple[CompiledInvocationOccurrence, ...], ...],
+    result_invocations: tuple[tuple[CompiledInvocationOccurrence, ...], ...],
+    *,
+    boundary_identity: str,
+) -> tuple[tuple[RemovedPositionCompareOccurrence, ...], ...]:
+    if type(source_invocations) is not tuple or type(result_invocations) is not tuple:
+        raise TypeError("Compare inputs must be exact invocation tuples")
+    if len(source_invocations) != len(result_invocations):
+        raise ValueError("Compare inputs require the same implementation functions")
+    if type(boundary_identity) is not str or not boundary_identity:
+        raise TypeError("one exact boundary identity is required")
+    compared = []
+    comparison_position = 0
+    for source_row, result_row in zip(source_invocations, result_invocations):
+        if not source_row or not result_row:
+            raise ValueError("Compare inputs require invocation occurrences")
+        implementation_function_identity = source_row[0].implementation_function_identity
+        if (
+            any(
+                occurrence.implementation_function_identity
+                != implementation_function_identity
+                for occurrence in source_row
+            )
+            or any(
+                occurrence.implementation_function_identity
+                != implementation_function_identity
+                for occurrence in result_row
+            )
+        ):
+            raise ValueError("Compare inputs require the same implementation function")
+        source_by_reference = {}
+        for source_invocation in source_row:
+            reference = source_invocation.source_coordinate
+            if not isinstance(reference, ExactMaterialReference):
+                raise ValueError("source invocation requires its exact material reference")
+            if reference in source_by_reference:
+                raise ValueError("source material reference entered Compare twice")
+            source_by_reference[reference] = source_invocation
+        row = []
+        for result_invocation in result_row:
+            removal = result_invocation.source_coordinate
+            if not isinstance(removal, RemovedPositionOccurrence):
+                raise ValueError("result invocation requires its exact removal occurrence")
+            source_invocation = source_by_reference.get(removal.source_reference)
+            if source_invocation is None:
+                raise ValueError("removal occurrence has no exact source invocation")
+            if (
+                source_invocation.exact_material != removal.source_material
+                or result_invocation.exact_material != removal.result_material
+            ):
+                raise ValueError("invocation material differs from the removal occurrence")
+            row.append(
+                RemovedPositionCompareOccurrence(
+                    boundary_identity=boundary_identity,
+                    occurrence_position=comparison_position,
+                    implementation_function_identity=implementation_function_identity,
+                    removed_position_act_occurrence_identity=(
+                        removal.act_occurrence_identity
                     ),
                     source_invocation_occurrence_identity=(
                         source_invocation.occurrence_identity

@@ -26,10 +26,13 @@ from compiled_format_invocation import (  # noqa: E402
     ExactMaterialReference,
     added_position_occurrences,
     compare_added_position_invocations,
+    compare_removed_position_invocations,
     compiled_invocation,
     compiled_invocations,
     compiled_reference_invocations,
     added_position_invocations,
+    removed_position_invocations,
+    removed_position_occurrences,
     preserves_original_order,
 )
 from material_witness_harness import (  # noqa: E402
@@ -215,6 +218,30 @@ def book_added_position_comparisons(
         book_pair_format_occurrences,
         book_three_byte_format_occurrences[2],
         boundary_identity="book-added-position-compare",
+    )
+
+
+@pytest.fixture(scope="module")
+def book_removed_position_invocation_occurrences(measured_book_pairs):
+    occurrences = removed_position_occurrences(
+        measured_book_pairs[6],
+        measured_book_pairs[7],
+        boundary_identity="book-pair-removal",
+    )
+    invocations = removed_position_invocations(
+        occurrences, boundary_identity="book-removed-position-format"
+    )
+    return occurrences, invocations
+
+
+@pytest.fixture(scope="module")
+def book_removed_position_comparisons(
+    book_pair_format_occurrences, book_removed_position_invocation_occurrences
+):
+    return compare_removed_position_invocations(
+        book_pair_format_occurrences,
+        book_removed_position_invocation_occurrences[1],
+        boundary_identity="book-removed-position-compare",
     )
 
 
@@ -734,6 +761,111 @@ def test_addition_compare_refuses_a_result_without_its_act_occurrence():
 
     with pytest.raises(ValueError, match="exact addition occurrence"):
         compare_added_position_invocations(
+            source_invocations,
+            result_invocations,
+            boundary_identity="compare",
+        )
+
+
+def test_each_measured_pair_position_has_an_exact_removal_occurrence(
+    book_removed_position_invocation_occurrences, measured_book_pairs
+):
+    occurrences, _ = book_removed_position_invocation_occurrences
+    source_references = set(measured_book_pairs[6])
+    removed_references = set(measured_book_pairs[7])
+
+    assert len(occurrences) == len(source_references) * 2
+    assert all(
+        occurrence.source_reference in source_references
+        and occurrence.removed_reference in removed_references
+        and occurrence.source_material[
+            occurrence.position : occurrence.position + 1
+        ]
+        == occurrence.removed_material
+        and occurrence.result_material
+        == occurrence.source_material[: occurrence.position]
+        + occurrence.source_material[occurrence.position + 1 :]
+        for occurrence in occurrences
+    )
+    assert len({occurrence.act_occurrence_identity for occurrence in occurrences}) == len(
+        occurrences
+    )
+    assert len({occurrence.result_identity for occurrence in occurrences}) == len(
+        occurrences
+    )
+
+
+def test_each_removal_result_reaches_every_compiled_implementation_function(
+    book_removed_position_invocation_occurrences,
+):
+    removals, invocations = book_removed_position_invocation_occurrences
+    exact_results = tuple(removal.result_material for removal in removals)
+
+    assert len(invocations) == len(COMPILED_IMPLEMENTATION_FUNCTIONS)
+    assert all(
+        tuple(invocation.exact_material for invocation in row) == exact_results
+        for row in invocations
+    )
+    assert all(
+        tuple(invocation.source_coordinate for invocation in row) == removals
+        for row in invocations
+    )
+
+
+def test_each_removal_compare_keeps_both_invocation_occurrences_and_the_act(
+    book_removed_position_comparisons,
+    book_removed_position_invocation_occurrences,
+):
+    removals = book_removed_position_invocation_occurrences[0]
+    comparisons = tuple(
+        comparison
+        for row in book_removed_position_comparisons
+        for comparison in row
+    )
+    expected = len(COMPILED_IMPLEMENTATION_FUNCTIONS) * len(removals)
+
+    assert len(comparisons) == expected
+    assert len({comparison.occurrence_identity for comparison in comparisons}) == expected
+    assert {
+        comparison.removed_position_act_occurrence_identity
+        for comparison in comparisons
+    } == {removal.act_occurrence_identity for removal in removals}
+    assert len(
+        {comparison.result_invocation_occurrence_identity for comparison in comparisons}
+    ) == expected
+
+
+def test_removal_compare_finds_same_and_different_return_coordinates(
+    book_removed_position_comparisons,
+):
+    distinctions = tuple(
+        comparison.distinction
+        for row in book_removed_position_comparisons
+        for comparison in row
+    )
+
+    assert any(distinctions)
+    assert any(not distinction for distinction in distinctions)
+
+
+def test_removal_compare_refuses_a_result_without_its_act_occurrence():
+    source = ExactMaterialReference("source", "source-assertion", b"ab")
+    implementation_function = CompiledImplementationFunction(
+        identity="fixture", invocation=lambda material: material
+    )
+    source_invocations = compiled_reference_invocations(
+        (source,),
+        boundary_identity="source",
+        implementation_functions=(implementation_function,),
+    )
+    result_invocations = compiled_invocations(
+        (b"a",),
+        boundary_identity="result",
+        implementation_functions=(implementation_function,),
+    )
+
+    with pytest.raises(ValueError, match="exact removal occurrence"):
+        compare_removed_position_invocations(
             source_invocations,
             result_invocations,
             boundary_identity="compare",
