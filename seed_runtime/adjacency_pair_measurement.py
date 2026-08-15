@@ -4,7 +4,7 @@ An **adjacency pair** is two representations, one recorded as occupying the
 position after the other. Nothing more.
 
 `#2391` validated thirteen such pairs from preserved material without a reader
-naming any representation, occupant, or delimiter.
+naming any representation or delimiter.
 
 **The pairs are not supplied.** :func:`adjacency_pairs_from_finding` reads them out of a
 recorded measurement finding, so what this round measures relative to comes
@@ -30,9 +30,9 @@ from seed_runtime.preserved_material_measurement import (
     MEASUREMENT_RECORDED_KIND,
     DeclaredMeasurement,
     MeasurementFinding,
-    Occupancy,
+    RepresentationCount,
     PreservedMaterialMeasurementError,
-    measure_occupancy,
+    measure_position_representations,
 )
 from seed_runtime.operator_representation import (
     REPRESENTATION_EMITTED_KIND,
@@ -308,8 +308,8 @@ def _adjacency_pairs_from_event(event: Event | None) -> list[AdjacencyPair]:
             "the recorded finding does not name the representation it measured after"
         )
     return [
-        AdjacencyPair(left=left, right=occupancy["representation"])
-        for occupancy in event.material["occupancies"]
+        AdjacencyPair(left=left, right=item["representation"])
+        for item in event.material["representation_counts"]
     ]
 
 
@@ -330,8 +330,8 @@ def _is_established_after_measurement(event: Event) -> bool:
 def adjacency_pairs_from_finding(ledger: EventLedger, finding_event_identity: str) -> list[AdjacencyPair]:
     """Read pairs out of a recorded finding rather than taking them from a caller.
 
-    The recorded finding names a left representation and the occupancies
-    measured after it. Every occupancy is returned; none is filtered by count
+    The recorded finding names one relative representation and the representations
+    measured after it. Every representation is returned; none is filtered by count
     or share. Which of them prove reproducible is what the
     measurement measures, not something decided here.
     """
@@ -1456,7 +1456,7 @@ def measure_at_displacement(
         )
     step = displacement if direction == "after" else -displacement
 
-    def occupant_of(text: str) -> str | None:
+    def representation_at(text: str) -> str | None:
         parts = _positions(text)
         for index, part in enumerate(parts):
             if part != representation:
@@ -1466,7 +1466,7 @@ def measure_at_displacement(
                 return parts[at]
         return None
 
-    return measure_occupancy(
+    return measure_position_representations(
         occurrences,
         declared=DeclaredMeasurement(
             representation_measured=(
@@ -1483,7 +1483,7 @@ def measure_at_displacement(
                 "displacement": displacement,
             },
         ),
-        occupant_of=occupant_of,
+        representation_at=representation_at,
     )
 
 

@@ -43,7 +43,7 @@ from seed_runtime.preserved_material_measurement import (
     RecurrenceFinding,
     DeclaredMeasurement,
     PreservedMaterialMeasurementError,
-    measure_occupancy,
+    measure_position_representations,
     measure_recurrence,
     measure_recurrences,
     ingest_occurrences,
@@ -126,22 +126,22 @@ def test_only_an_ingest_occurrence_may_be_measured(locality):
         "unrelated.kind", {"represented_material": "x"}, locality_identity="s"
     )
     with pytest.raises(PreservedMaterialMeasurementError):
-        measure_occupancy([foreign], declared=_declared(), occupant_of=_first_word)
+        measure_position_representations([foreign], declared=_declared(), representation_at=_first_word)
 
 
 def test_a_finding_names_every_occurrence_that_participated(occurrences):
-    finding = measure_occupancy(
-        occurrences, declared=_declared(), occupant_of=_first_word
+    finding = measure_position_representations(
+        occurrences, declared=_declared(), representation_at=_first_word
     )
     assert finding.input_event_identities == tuple(e.identity for e in occurrences)
 
 
 def test_an_absent_position_is_absent_not_unknown(occurrences):
     """One line carries no delimiter; it is skipped, not counted as Unknown."""
-    finding = measure_occupancy(
-        occurrences, declared=_declared(), occupant_of=_after_delimiter
+    finding = measure_position_representations(
+        occurrences, declared=_declared(), representation_at=_after_delimiter
     )
-    assert finding.positions_measured == 4
+    assert finding.position_count == 4
     assert len(finding.input_event_identities) == 5
 
 
@@ -159,8 +159,8 @@ def test_a_measurement_without_its_disclosures_is_refused(missing):
 
 
 def test_the_disclosures_are_carried_on_the_recorded_finding(locality, occurrences):
-    finding = measure_occupancy(
-        occurrences, declared=_declared(), occupant_of=_first_word
+    finding = measure_position_representations(
+        occurrences, declared=_declared(), representation_at=_first_word
     )
     event = record_measurement_finding(
         locality, locality_identity="s", finding=finding
@@ -175,8 +175,8 @@ def test_the_disclosures_are_carried_on_the_recorded_finding(locality, occurrenc
 
 
 def test_a_recorded_finding_may_participate_in_a_later_act(locality, occurrences):
-    finding = measure_occupancy(
-        occurrences, declared=_declared(), occupant_of=_first_word
+    finding = measure_position_representations(
+        occurrences, declared=_declared(), representation_at=_first_word
     )
     event = record_measurement_finding(
         locality, locality_identity="s", finding=finding
@@ -184,7 +184,7 @@ def test_a_recorded_finding_may_participate_in_a_later_act(locality, occurrences
     read = locality.get(event.identity)
     assert read is not None
     assert read.kind == MEASUREMENT_RECORDED_KIND
-    assert read.material["occupancies"]
+    assert read.material["representation_counts"]
 
 
 # --------------------------------------------------------------------------
@@ -193,23 +193,23 @@ def test_a_recorded_finding_may_participate_in_a_later_act(locality, occurrences
 
 
 def test_distinct_measurements_yield_distinct_bounded_counts(occurrences):
-    unbounded = measure_occupancy(
-        occurrences, declared=_declared(), occupant_of=_first_word
+    unbounded = measure_position_representations(
+        occurrences, declared=_declared(), representation_at=_first_word
     )
-    bounded = measure_occupancy(
-        occurrences, declared=_declared(), occupant_of=_after_delimiter
+    bounded = measure_position_representations(
+        occurrences, declared=_declared(), representation_at=_after_delimiter
     )
-    assert unbounded.highest_count_occupancy.occurrence_count / unbounded.positions_measured < 0.5
-    assert bounded.highest_count_occupancy.representation == "is"
-    assert bounded.highest_count_occupancy.occurrence_count / bounded.positions_measured == 1.0
+    assert unbounded.highest_count_representation.occurrence_count / unbounded.position_count < 0.5
+    assert bounded.highest_count_representation.representation == "is"
+    assert bounded.highest_count_representation.occurrence_count / bounded.position_count == 1.0
 
 
 def test_the_recorded_authority_states_the_clause_s_own_limit(locality, occurrences):
     event = record_measurement_finding(
         locality,
         locality_identity="s",
-        finding=measure_occupancy(
-            occurrences, declared=_declared(), occupant_of=_after_delimiter
+        finding=measure_position_representations(
+            occurrences, declared=_declared(), representation_at=_after_delimiter
         ),
     )
     assert event.material["dimensions"]["authority"] == "unestablished"
@@ -225,8 +225,8 @@ def test_the_finding_disclaims_what_a_dominant_occupant_is_not(locality, occurre
     event = record_measurement_finding(
         locality,
         locality_identity="s",
-        finding=measure_occupancy(
-            occurrences, declared=_declared(), occupant_of=_after_delimiter
+        finding=measure_position_representations(
+            occurrences, declared=_declared(), representation_at=_after_delimiter
         ),
     )
     limit_material = " ".join(event.material["limits"])
@@ -241,8 +241,8 @@ def test_recording_a_finding_does_not_disturb_the_measured_occurrences(
     record_measurement_finding(
         locality,
         locality_identity="s",
-        finding=measure_occupancy(
-            occurrences, declared=_declared(), occupant_of=_first_word
+        finding=measure_position_representations(
+            occurrences, declared=_declared(), representation_at=_first_word
         ),
     )
     after = ingest_occurrences(locality, locality_identity="s")
@@ -273,8 +273,8 @@ def test_raw_material_without_a_supplied_representation_is_refused():
         counting_scope="one bounded locality",
     )
     with pytest.raises(PreservedMaterialMeasurementError, match="no represented material"):
-        measure_occupancy(
-            occurrences, declared=declared, occupant_of=lambda material: None
+        measure_position_representations(
+            occurrences, declared=declared, representation_at=lambda material: None
         )
 
     # Supplying text is a separate fixture boundary, not a property inferred
@@ -294,8 +294,8 @@ def test_an_occurrence_without_represented_material_is_refused():
         material={},
     )
     with pytest.raises(PreservedMaterialMeasurementError, match="no represented material"):
-        measure_occupancy(
-            [occurrence], declared=declared, occupant_of=lambda material: None
+        measure_position_representations(
+            [occurrence], declared=declared, representation_at=lambda material: None
         )
 
 
@@ -784,13 +784,13 @@ def test_one_occurrence_twice_in_a_inputs_is_refused(recurrence_occurrences):
 
 
 def test_the_positional_path_also_refuses_a_repeated_occurrence(occurrences):
-    """`measure_occupancy` asserts a count of occurrences too."""
+    """`measure_position_representations` asserts a count of occurrences too."""
 
     with pytest.raises(PreservedMaterialMeasurementError, match="more than once"):
-        measure_occupancy(
+        measure_position_representations(
             list(occurrences) + [occurrences[0]],
             declared=_declared(),
-            occupant_of=_first_word,
+            representation_at=_first_word,
         )
 
 # --------------------------------------------------------------------------
@@ -1043,8 +1043,8 @@ def test_the_positional_path_cannot_record_unpreserved_material_either():
         locality_identity="r",
         material={"represented_material": "the cat"},
     )
-    finding = measure_occupancy(
-        [forged], declared=_declared(), occupant_of=_first_word
+    finding = measure_position_representations(
+        [forged], declared=_declared(), representation_at=_first_word
     )
     with pytest.raises(PreservedMaterialMeasurementError, match="preserves no such ingest"):
         record_measurement_finding(
@@ -1096,10 +1096,10 @@ def test_the_positional_path_can_bind_its_material_too(recurrence_occurrences):
             material={"represented_material": "zebra"},
         )
     ]
-    finding = measure_occupancy(
-        forged, declared=_declared(), occupant_of=_first_word, preserved_in=ledger
+    finding = measure_position_representations(
+        forged, declared=_declared(), representation_at=_first_word, preserved_in=ledger
     )
-    assert finding.occupancies[0].representation == "the"
+    assert finding.representation_counts[0].representation == "the"
 
 
 def test_carrying_a_basis_no_longer_exempts_a_finding_from_the_recorder():

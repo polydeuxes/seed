@@ -174,8 +174,8 @@ def _preserve(event: Event) -> PreservedInput:
 
 def _representations(event: Event) -> set[str]:
     return {
-        occupancy["representation"]
-        for occupancy in event.material.get("occupancies", [])
+        item["representation"]
+        for item in event.material.get("representation_counts", [])
     }
 
 

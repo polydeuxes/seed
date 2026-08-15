@@ -299,4 +299,4 @@ def test_a_comparison_is_not_a_measurement(ledger):
         ledger, locality_identity="s1",
         finding=compare_preserved_findings(ledger, [a.identity, b.identity]))
     assert event.kind != MEASUREMENT_RECORDED_KIND
-    assert "occupancies" not in event.material
+    assert "representation_counts" not in event.material

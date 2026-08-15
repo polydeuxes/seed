@@ -36,9 +36,9 @@ from seed_runtime.preserved_material_measurement import (
     INGEST_OCCURRED_KIND,
     MEASUREMENT_RECORDED_KIND,
     DeclaredMeasurement,
-    Occupancy,
+    RepresentationCount,
     PreservedMaterialMeasurementError,
-    measure_occupancy,
+    measure_position_representations,
     ingest_occurrences,
     record_measurement_finding,
 )
@@ -116,24 +116,24 @@ def test_pairs_are_read_from_the_record_not_supplied(locality, recorded_finding)
     assert AdjacencyPair(left="it", right="is") in pairs
 
 
-def test_every_occupancy_becomes_a_pair_with_no_filtering(locality, recorded_finding):
+def test_every_measured_representation_becomes_a_pair(locality, recorded_finding):
     """No count or share decides which pairs are returned."""
     pairs = adjacency_pairs_from_finding(locality, recorded_finding.identity)
-    assert len(pairs) == len(recorded_finding.material["occupancies"])
+    assert len(pairs) == len(recorded_finding.material["representation_counts"])
 
 
 def test_a_finding_that_names_no_representation_cannot_supply_one(locality, occurrences):
     event = record_measurement_finding(
         locality,
         locality_identity="s",
-        finding=measure_occupancy(
+        finding=measure_position_representations(
             occurrences,
             declared=DeclaredMeasurement(
                 representation_measured="the first representation",
                 equivalence_rule=EQUIVALENCE_RULE,
                 counting_scope="this locality",
             ),
-            occupant_of=lambda t: (t.split() or [None])[0],
+            representation_at=lambda t: (t.split() or [None])[0],
         ),
     )
     with pytest.raises(PreservedMaterialMeasurementError):
@@ -141,7 +141,7 @@ def test_a_finding_that_names_no_representation_cannot_supply_one(locality, occu
 
 
 def test_pairs_must_come_from_a_measurement_finding(locality, occurrences):
-    foreign = locality.append("unrelated.kind", {"occupancies": []}, locality_identity="s")
+    foreign = locality.append("unrelated.kind", {"representation_counts": []}, locality_identity="s")
     with pytest.raises(PreservedMaterialMeasurementError):
         adjacency_pairs_from_finding(locality, foreign.identity)
 
@@ -862,27 +862,27 @@ def test_comparability_restricts_representations_without_judging_them(occurrence
 def test_measuring_after_a_representation_records_which(occurrences):
     finding = measure_after(occurrences, "it", counting_scope="this locality")
     assert finding.declared.relative_representation == "it"
-    assert finding.highest_count_occupancy.representation == "is"
+    assert finding.highest_count_representation.representation == "is"
 
 
 
 def test_agreement_is_the_discriminator_not_a_count(occurrences):
-    """A frequent occupant that disagrees across scopes is not preferred."""
+    """A frequent representation that disagrees across scopes is not preferred."""
     scopes = [occurrences[:3], occurrences[3:]]
     disagreeing = []
     for representation in enumerate_representations(occurrences, present_in=scopes):
         answers = [
-            f.highest_count_occupancy.representation
+            f.highest_count_representation.representation
             for scope in scopes
             if (f := measure_after(scope, representation, counting_scope="a scope"))
-            and f.highest_count_occupancy is not None
+            and f.highest_count_representation is not None
         ]
         if len(answers) == len(scopes) and len(set(answers)) > 1:
             disagreeing.append(representation)
     # Nothing here promotes a disagreeing representation; it is simply not agreed.
     for representation in disagreeing:
         whole = measure_after(occurrences, representation, counting_scope="whole")
-        assert whole.highest_count_occupancy is not None
+        assert whole.highest_count_representation is not None
 
 
 # --------------------------------------------------------------------------

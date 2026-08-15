@@ -142,7 +142,7 @@ def test_the_record_shape_is_its_own(compared):
         finding=_by_right(compared)["word"])
     assert event.kind == LOCALITY_COUNT_RECORDED_KIND
     assert event.kind != MEASUREMENT_RECORDED_KIND
-    assert "occupancies" not in event.material
+    assert "representation_counts" not in event.material
     assert "standing" not in event.material["dimensions"]
     assert "responsibility" not in event.material["dimensions"]
 

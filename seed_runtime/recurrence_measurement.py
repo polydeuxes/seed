@@ -23,7 +23,7 @@ under the declared rule and Scope
 and recurrence is asserted only where N exceeds one.
 
 **Its result stands on recorded Measurement occurrences.** Each occurrence
-already carries the declared identity and every exact occupancy it measured.
+already carries the declared identity and every exact representation it measured.
 Materializing every pairwise Compare between those occurrences adds no input to
 the count and grows quadratically with the number of bounded localities.  The
 measurement therefore folds each exact Measurement once.  Compare remains a
@@ -435,7 +435,7 @@ def measure_locality_counts(
     """Count, over recorded occurrences, the localities each distinction was measured in.
 
     Each Measurement occurrence is read once.  Pairwise Compare occurrences
-    are neither required nor read: their endpoints contain no occupancy that
+    are neither required nor read: their endpoints contain no representation that
     the Measurement occurrences do not already carry.
     """
 
@@ -486,8 +486,8 @@ def measure_locality_counts(
             coordinate_evidence.setdefault(declared, {}).setdefault(
                 locality, set()
             ).add(event.identity)
-            for occupancy in event.material.get("occupancies", []):
-                right = occupancy.get("representation")
+            for item in event.material.get("representation_counts", []):
+                right = item.get("representation")
                 if not isinstance(right, str):
                     continue
                 key = MeasuredDistinction(

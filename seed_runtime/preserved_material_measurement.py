@@ -88,7 +88,7 @@ _RESERVED_RECORDING_COORDINATES = frozenset(
 LIMITS: tuple[str, ...] = (
     "A finding reports a count within its stated scope and nothing further.",
     "Recurrence establishes that a representation occurs more than once only.",
-    "A highest-count occupant of a position is not the represented relation of that position.",
+    "A highest-count representation is not the represented relation of that position.",
     "Co-presence of representations establishes no relation (01.Standing.D).",
     "This yields no represented relation, relation, truth, applicability, or admission.",
 )
@@ -132,8 +132,8 @@ class DeclaredMeasurement:
 
 
 @dataclass(frozen=True)
-class Occupancy:
-    """One representation and the number of positions it occupied."""
+class RepresentationCount:
+    """One representation and its occurrence count."""
 
     representation: str
     occurrence_count: int
@@ -144,8 +144,8 @@ class MeasurementFinding:
     """A bounded count over preserved occurrences, and what it stood on."""
 
     declared: DeclaredMeasurement
-    positions_measured: int
-    occupancies: tuple[Occupancy, ...]
+    position_count: int
+    representation_counts: tuple[RepresentationCount, ...]
     # The identities this measurement input_identities, available while the act runs.
     # On the result-Assertion path a addressable support support is supplied from
     # these inputs instead of preserving the enumeration in every result;
@@ -168,16 +168,10 @@ class MeasurementFinding:
     limits: tuple[str, ...] = field(default=LIMITS)
 
     @property
-    def highest_count_occupancy(self) -> Occupancy | None:
-        """The occupancy with the highest count, or nothing if none was measured.
+    def highest_count_representation(self) -> RepresentationCount | None:
+        """The representation with the highest count, if one was measured."""
 
-        A count, not a rank of importance. `01.Source:28` bounds a finding to
-        the measurement assertion, so the most frequent occupant of a position
-        is the most frequent occupant of a position and carries no standing
-        that a less frequent one lacks.
-        """
-
-        return self.occupancies[0] if self.occupancies else None
+        return self.representation_counts[0] if self.representation_counts else None
 
     def to_json_dict(self) -> dict[str, Any]:
         return {
@@ -187,10 +181,10 @@ class MeasurementFinding:
             "relative_representation": self.declared.relative_representation,
             "measurement_distinction": self.declared.distinction,
             "measured_position": self.declared.measured_position,
-            "positions_measured": self.positions_measured,
-            "occupancies": [
+            "position_count": self.position_count,
+            "representation_counts": [
                 {"representation": o.representation, "occurrence_count": o.occurrence_count}
-                for o in self.occupancies
+                for o in self.representation_counts
             ],
             # Not "input_support": the result-Assertion coordinate surface carries
             # that key and its fields are merged over this dict, so naming both
@@ -317,7 +311,7 @@ def measure_recurrence(
     representation that does not occur occurs zero times, which is a finding
     and not an absence of one.
 
-    Refuses the same material `measure_occupancy` refuses, for the same reason.
+    Refuses the same material `measure_position_representations` refuses, for the same reason.
     A measurement over bounded inputs cannot measure text in material
     that has none, and skipping would silently narrow the scope the finding
     goes on to disclose.
@@ -764,16 +758,16 @@ def ingest_occurrences(
     ]
 
 
-def measure_occupancy(
+def measure_position_representations(
     occurrences: Iterable[Event],
     *,
     declared: DeclaredMeasurement,
-    occupant_of: "callable[[str], str | None]",
+    representation_at: "callable[[str], str | None]",
     preserved_in: EventLedger | None = None,
 ) -> MeasurementFinding:
     """Count which representations occupy a position across preserved material.
 
-    ``occupant_of`` receives one preserved representation and returns the
+    ``representation_at`` receives one preserved representation and returns the
     representation occupying the measured position within it, or ``None`` when
     that occurrence has no such position. It performs no read; a
     position that is absent is absent, not Unknown.
@@ -788,20 +782,20 @@ def measure_occupancy(
     for event in walked:
         text = _measurable_text(event)
         input_identities.append(event.identity)
-        occupant = occupant_of(text)
-        if occupant is None:
+        representation = representation_at(text)
+        if representation is None:
             continue
         measured += 1
-        counts[occupant] = counts.get(occupant, 0) + 1
+        counts[representation] = counts.get(representation, 0) + 1
     ordered = tuple(
-        Occupancy(representation=r, occurrence_count=n)
+        RepresentationCount(representation=r, occurrence_count=n)
         for r, n in sorted(counts.items(), key=lambda kv: (-kv[1], kv[0]))
     )
     return MeasurementFinding(
         declared=declared,
         material_provenance=material_provenance,
-        positions_measured=measured,
-        occupancies=ordered,
+        position_count=measured,
+        representation_counts=ordered,
         input_event_identities=tuple(input_identities),
     )
 
