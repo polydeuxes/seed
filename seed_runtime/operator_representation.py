@@ -105,10 +105,6 @@ def record_operator_representation(
                     "representation_result": source["representation_result_boundary"],
                     "scope": scope,
                     "provenance": source["represented_source"]["reference"],
-                    # No separately recorded source-evidence events exist
-                    # for a developer-supplied source; empty is absence of
-                    # record, not negative standing and not Unknown.
-                    "evidence_event_identities": [],
                     "known_loss": [
                         "label compresses represented candidate "
                         "represented relation"

@@ -424,7 +424,7 @@ def test_alternatives_carry_complete_coordinates_and_provenance_evidence():
         representation_results.add(relation_coordinates["representation_result"])
         assert relation_coordinates["scope"] == "locality:s"
         assert relation_coordinates["provenance"] == source["reference"]
-        assert relation_coordinates["evidence_event_identities"] == []
+        assert "evidence_event_identities" not in relation_coordinates
         assert relation_coordinates["known_loss"]
         assert relation_coordinates["unknowns"] == []
         assert relation_coordinates["conflicts"] == []
