@@ -41,7 +41,7 @@ from material_witness_harness import (  # noqa: E402
     occurrences_across,
     invocation_occurrence,
 )
-from decoder_admission_comparison import preserves  # noqa: E402
+from material_admission import preserves  # noqa: E402
 
 
 def _implementation_functions_available():

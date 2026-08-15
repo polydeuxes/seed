@@ -37,12 +37,6 @@ def admissions() -> dict[Admission, list[str]]:
     return same_result
 
 
-def preserves(first: Admission, second: Admission) -> bool:
-    """Whether the first Admission preserves every distinction in the second."""
-
-    return all(any(part <= whole for whole in second) for part in first)
-
-
 def compare_admissions(found: dict[Admission, list[str]]) -> dict[str, int]:
 
     keys = list(found)
@@ -50,14 +44,16 @@ def compare_admissions(found: dict[Admission, list[str]]) -> dict[str, int]:
     below: dict[int, int] = {}
     for i, first in enumerate(keys):
         for j, second in enumerate(keys):
-            if i != j and preserves(first, second):
+            if i != j and material_admission.preserves(first, second):
                 below[i] = below.get(i, 0) + 1
                 above[j] = above.get(j, 0) + 1
     preservation_pairs = sum(
         1
         for i in range(len(keys))
         for j in range(i + 1, len(keys))
-        if preserves(keys[i], keys[j]) or preserves(keys[j], keys[i])
+        if material_admission.preserves(
+            keys[i], keys[j]
+        ) or material_admission.preserves(keys[j], keys[i])
     )
     return {
         "admissions": len(keys),

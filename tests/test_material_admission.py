@@ -120,3 +120,18 @@ def test_no_distinction_is_stated_in_both_directions():
     said = {(first, second) for _, _, first, second in statements()}
 
     assert not [(a, b) for a, b in said if (b, a) in said]
+
+
+def test_preserves_uses_no_pairwise_subset_call():
+    class ExactMaterial(frozenset):
+        calls = 0
+
+        def __le__(self, other):
+            type(self).calls += 1
+            return super().__le__(other)
+
+    first = tuple(ExactMaterial((position,)) for position in range(256))
+    second = tuple(reversed(first))
+
+    assert material_admission.preserves(first, second)
+    assert ExactMaterial.calls == 0

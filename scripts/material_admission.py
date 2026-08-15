@@ -55,3 +55,29 @@ def admission_counts(admissions: Sequence[Admission]) -> list[int]:
 
 def not_distinguished(admissions: Sequence[Admission]) -> list[tuple[Material, ...]]:
     return [material for material in admissions[-1] if len(material) > 1]
+
+
+def preserves(
+    first: Iterable[Iterable[Material]], second: Iterable[Iterable[Material]]
+) -> bool:
+    second_coordinates = tuple(tuple(material) for material in second)
+    coordinates_by_material: dict[Material, set[int]] = {}
+    for coordinate, material in enumerate(second_coordinates):
+        for item in material:
+            coordinates_by_material.setdefault(item, set()).add(coordinate)
+
+    for material in first:
+        possible: set[int] | None = None
+        for item in material:
+            item_coordinates = coordinates_by_material.get(item)
+            if not item_coordinates:
+                return False
+            if possible is None:
+                possible = set(item_coordinates)
+            else:
+                possible.intersection_update(item_coordinates)
+            if not possible:
+                return False
+        if possible is None and not second_coordinates:
+            return False
+    return True

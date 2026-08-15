@@ -12,8 +12,8 @@ from decoder_admission_comparison import (  # noqa: E402
     admissions,
     compare_admissions,
     final_admission,
-    preserves,
 )
+from material_admission import preserves  # noqa: E402
 
 
 def test_an_admission_preserves_itself_and_the_one_without_distinctions():
