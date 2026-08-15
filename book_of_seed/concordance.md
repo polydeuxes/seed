@@ -8,10 +8,8 @@ Navigation only. Entries do not grant constitutional identity or Standing.
 | Assertion Standing | [Constitutional Standing](chapters/02-constitutional-standing.md) |
 | Act and occurrence | [Acts and occurrences](chapters/03-acts-and-occurrences.md) |
 | Constraint | [Constraints and preconditions](chapters/04-constraints-and-preconditions.md) |
-| Selection | [Selection and Selection Acts](chapters/05-selection-and-selection-acts.md) |
 | movement | [Movement coordinates](chapters/06-movement-coordinates.md) |
 | result boundary | [Result boundaries and movement](chapters/07-result-boundaries-and-movement.md) |
-| Authorization | [Selection and Authorization](chapters/08-selection-and-authorization.md) |
 | source relations and normalization | [Assertion Source Coordinates and Standing](chapters/09-assertion-source-coordinates-and-standing.md) |
 | Evidence and provenance | [Evidence and provenance](chapters/10-evidence-provenance-and-explanation.md) |
 | recording and preserved Assertions | [Recording and preserved Assertions](chapters/11-recording-and-preserved-assertions.md) |

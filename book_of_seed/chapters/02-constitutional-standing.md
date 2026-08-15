@@ -20,13 +20,13 @@ Seed may read a Responsibility only through current Standing concerning the exac
 A result, preserved record, rendering, index entry, or otherwise reachable material may become locally visible to a bounded exact Act, observer, diagnostic, rendering, or later inquiry without becoming accepted, admitted, supported, represented as truth, written to the event ledger, or authorized for mutation. Reachability can create a lawful possibility for a later act, but acceptance, input support, admission, representation, recording, and implementation action remain separate family-local boundaries.
 
 ### 01.Standing.B — Constitutional kind labels are not ontology closure
-A kind label, representation form, characterization category, dataclass name, concordance entry, or recurring report type may preserve a bounded Standing distinction for the subject and exact Act it names. It does not close Seed's constitutional ontology, make similarly named material equivalent, establish mandatory grammar, or supply Authority for the exact Act without preserved Evidence, provenance, Scope, Unknowns, and the applicable occurrence boundary.
+A kind label, representation form, characterization category, implementation name, concordance entry, or recurring report type may preserve a bounded Standing distinction for the subject and exact Act it names. It does not close Seed's constitutional ontology, make similarly named material equivalent, establish mandatory grammar, or supply Authority for the exact Act without preserved Evidence, provenance, Scope, Unknowns, and the applicable occurrence boundary.
 
 ### 01.Standing.C — Constructed behavior does not confer standing
-Compiled behavior, direct instantiation, stable serialization, and compatibility Evidence may witness what an observer, rendering boundary, adapter, or other mechanism does within a bounded implementation seam. They do not establish the Standing suggested by a name, output vocabulary, or observed behavior. Such Standing still requires its own subject, responsible occurrence, Evidence, Scope, Authority, and limits.
+Compiled behavior, direct instantiation, and exact represented results may witness what a reading boundary, rendering boundary, or other mechanism does within a bounded implementation seam. They do not establish the Standing suggested by a name, output vocabulary, or behavior. Such Standing still requires its own subject, responsible occurrence, Evidence, Scope, Authority, and limits.
 
 ### 01.Standing.D — Multiplicity does not establish a collective
-Co-presence or multiplicity does not establish membership, collective Standing, relation, topology, ordering, Selection, priority, focus, a shared Act or result boundary, or higher-order identity. Each stronger Assertion requires its own bounded subject and established support relation.
+Co-presence or multiplicity does not establish membership, collective Standing, relation, topology, ordering, priority, focus, a shared Act or result boundary, or higher-order identity. Each stronger Assertion requires its own bounded subject and established support relation.
 
 ### 01.Standing.D.1 — An Assertion preserves its Standing coordinates
 A bounded **Assertion** is the exact asserted content as its own subject under its carried Evidence, provenance, Scope, Authority, conflicts, limits, **Unknowns**, and current Standing. An Assertion bears the Responsibility for preserving those applicable Standing coordinates. That Responsibility remains local to the bounded Assertion.
@@ -58,7 +58,7 @@ Role identifies the exact place a subject may occupy relative to an Act. Partici
 
 Unless the Book explicitly assigns otherwise, the Responsibility assigned to an exact Act ensures Applicability is determined for every input before participation. Applicability is determined for that Act's exact subject, content, result boundary, Scope, locality, Authority, participants and roles, and preserved limits. The determination preserves every applicable input and Act coordinate.
 
-Responsibility for determining Applicability does not require its responsible boundary to duplicate every Applicability determination personally. The same bounded occurrence may determine Applicability, or an explicitly assigned responsible occurrence may carry Applicability Standing for that exact downstream Act. The latter Standing must concern the exact input-to-Act relation and coordinates, rather than generic usefulness, compatibility, availability, or possible relevance. An explicit Book assignment therefore changes the ordinary Responsibility assignment; it does not create one Applicability occurrence shared across Acts. Applicability for one Act is not Applicability for another, and upstream Applicability is not downstream admission. The Responsibility assigned to a later Act determines its Applicability unless another exact responsible occurrence is assigned; admission remains required only where the exact Act requires it.
+Responsibility for determining Applicability does not require its responsible boundary to duplicate every Applicability determination personally. The same bounded occurrence may determine Applicability, or an explicitly assigned responsible occurrence may carry Applicability Standing for that exact downstream Act. The latter Standing must concern the exact input-to-Act relation and coordinates, rather than generic usefulness, agreement, availability, or possible relevance. An explicit Book assignment therefore changes the ordinary Responsibility assignment; it does not create one Applicability occurrence shared across Acts. Applicability for one Act is not Applicability for another, and upstream Applicability is not downstream admission. The Responsibility assigned to a later Act determines its Applicability unless another exact responsible occurrence is assigned; admission remains required only where the exact Act requires it.
 
 An Applicability occurrence may carry only **applicable**, **inapplicable**, **conflicting**, or **Unknown** for the exact input-to-Act relation and preserved coordinates. It carries none of Admission, participation, truth, a support relation for the input's Assertion, Authorization, addressed-Act occurrence, downstream Standing, or movement. An excluded input may not participate in that Act, and no result may assert that it supports the result.
 
@@ -82,9 +82,9 @@ Seed commonly orients exact constitutional subjects and relations through approx
 7. scope / locality
 8. occurrence / preservation
 
-These families are broad constitutional questions, not mandatory fields or one representation schema required across exact subjects. Dimension != field, value, constitutional kind, subject-family registry, or implementation key. The paired labels are bounded compressions of neighboring concerns, not declarations that every pair is one indivisible scalar: standing is recurrent and cross-cutting; occurrence and preservation are related but independently variable; source and provenance are neighboring but not equivalent; and authority and support are neighboring but not equivalent. Approximately eight macro-dimensional families != exactly eight constitutional fields; this grouping is neither mathematically final nor closed.
+These families are broad constitutional questions, not mandatory fields or one fixed representation required across exact subjects. Dimension != field, value, constitutional kind, closed subject-family set, or implementation key. The paired labels are bounded compressions of neighboring concerns, not declarations that every pair is one indivisible scalar: standing is recurrent and cross-cutting; occurrence and preservation are related but independently variable; source and provenance are neighboring but not equivalent; and authority and support are neighboring but not equivalent. Approximately eight macro-dimensional families != exactly eight constitutional fields; this grouping is neither mathematically final nor closed.
 
-Macro-dimensional families unfold into local coordinates under the exact subject, question, Act, Responsibility, result boundary, Scope, and Evidence boundary. No fixed coordinate count, registry, completeness requirement across exact subjects, or mandatory serialization schema applies. A coordinate may be applicable, inapplicable, known, **Unknown**, conflicting, or unresolved within that boundary.
+Macro-dimensional families unfold into local coordinates under the exact subject, question, Act, Responsibility, result boundary, Scope, and Evidence boundary. No fixed coordinate count, closed set, completeness requirement across exact subjects, or mandatory represented form applies. A coordinate may be applicable, inapplicable, known, **Unknown**, conflicting, or unresolved within that boundary.
 
 Acts, constraints, and relations are structurally distinct from dimensions. They may operate over, govern, or connect dimension-bearing subjects under their exact constitutional grammar. Dimension-bearing material != the responsible act over that material. Their presence in dimensional characterization does not make them additional dimensions, a mandatory intermediate layer, or one exhaustive taxonomy.
 
@@ -95,10 +95,10 @@ Acts, constraints, and relations are structurally distinct from dimensions. They
 - represented provenance != verified result occurrence
 - representation != constitutional standing
 - representation shape != constitutional kind
-- schema validity != lawful provenance
+- represented-form validity != lawful provenance
 - public visibility != constitutional status
 - preserved assertion != support for the assertion
-- dedicated dataclass != durable constitutional kind
+- dedicated implementation form != durable constitutional kind
 - concordance entry != constitutional legitimacy
 - new downstream subject != upstream subject re-established
 - act-local standing != inherited responsible occurrence standing
@@ -116,8 +116,6 @@ Acts, constraints, and relations are structurally distinct from dimensions. They
 - applicable != admitted
 - Admission != participation
 - participation != an established input-to-result support relation
-
-## Representative repository anchors
 
 ## Counterexamples or failure modes
 - Calling any serialized dictionary a constitutional subject.

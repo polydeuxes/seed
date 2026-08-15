@@ -27,12 +27,6 @@ Explanation is a representation exposing Evidence, provenance, conflicts, and re
 - explanation != upstream Standing
 - repeated source != independent corroboration
 
-## Representative repository anchors
-
-- `seed_runtime/evidence.py`
-- `seed_runtime/evidence_graph.py`
-- `seed_runtime/operator_ingress.py`
-
 ## Related chapters
 
 - [Assertion Source Coordinates and Standing](09-assertion-source-coordinates-and-standing.md)

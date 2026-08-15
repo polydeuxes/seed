@@ -8,7 +8,7 @@ The relation among preserved Events, Assertion-bearing material, and bounded cur
 
 An Event preserves what its responsible recording occurrence records. Recording an Assertion carrying source coordinates does not establish its content beyond the Standing supported by the responsible Standing occurrence.
 
-Replay, Selection, aggregation, ranking, suppression, caching, and read-model construction may expose preserved material under exact rules and boundaries. They do not create upstream Evidence, occurrence time, Applicability, or current Standing by identity. A responsible Act may use exposed material only through its exact Evidence, established support relations, Authority, Scope, locality, freshness, conflict, expiry, Unknowns, and surviving limits.
+Replay, aggregation, ranking, suppression, and construction of a bounded reading may expose preserved material under exact rules and boundaries. They do not create upstream Evidence, occurrence time, Applicability, or current Standing by identity. A responsible Act may use exposed material only through its exact Evidence, established support relations, Authority, Scope, locality, freshness, conflict, expiry, Unknowns, and surviving limits.
 
 ## Addressable boundaries
 
@@ -36,12 +36,6 @@ Chronology alone does not establish locality, causation, or response. An Act occ
 - locality != occurrence
 - movement != copying or revision
 - availability != Applicability
-
-## Representative repository anchors
-
-- `seed_runtime/models.py::Event`
-- `seed_runtime/condition.py` (legacy read-model mechanics)
-- `seed_runtime/byte_measurement.py` (Assertion movement witness)
 
 ## Related chapters
 

@@ -7,7 +7,7 @@ The origin, binding, extent, and non-transferability of authority across Seed's 
 What grants authority for a bounded result condition or act, and how is that authority prevented from expanding in transit?
 
 ## Bounded resolution
-Operator material and explicit approvals may contribute authority only after interpretation and scope binding. Internal models, selections, records, and provider emissions, transport structures, or ordinary-language transition labels cannot create or enlarge that authority.
+Operator material and explicit approvals may contribute authority only after interpretation and scope binding. Internal representations, records, provider emissions, transport structures, or ordinary-language transition labels cannot create or enlarge that authority.
 
 Policy wording may describe Authority granted for an exact responsible boundary, Act or movement, addressed subject, result boundary, Scope, conditions, temporal Standing, negative Authority, and Unknowns. The wording does not create, enlarge, transfer, or renew that Authority.
 
@@ -35,7 +35,6 @@ Seed may analyze source packets, support paths, source roles, boundary mismatche
 - Treating a recorded approval identifier as transferable authority.
 
 ## Related chapters
-- [Selection and authorization](08-selection-and-authorization.md)
 - [Representation, emission, and exact Act boundaries](14-representation-emission-and-locality.md)
 
 ## Authorization boundary correction 001

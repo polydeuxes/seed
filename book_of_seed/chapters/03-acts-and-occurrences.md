@@ -25,7 +25,7 @@ A Responsibility bounds what Standing may be established, preserved, or revised 
 - proposal != occurrence
 - intent classification != enactment
 - read-only/non-mutating != no constitutional occurrence
-- selection representation != Act that established it
+- representation != Act that established it
 - exact Act != exact Act constraint
 - coherence validated != upstream assertion re-proven
 - Standing concerning a new downstream subject != revision of upstream-subject Standing
@@ -34,7 +34,7 @@ A Responsibility bounds what Standing may be established, preserved, or revised 
 ## Counterexamples or failure modes
 - Treating a representation concerning a proposed, requested, or contemplated Act as Evidence that a mechanism ran.
 - Treating classified operator language as the requested act itself.
-- Treating direct construction of a selection result as evidence that exact focus evidence was validated.
+- Treating direct construction of a result as Evidence that exact focus Evidence was validated.
 
 ## Related chapters
 - [Constraints and preconditions](04-constraints-and-preconditions.md)

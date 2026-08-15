@@ -14,17 +14,14 @@ Where a bounded Stop is established, the stopping occurrence preserves the exact
 ## Important distinctions
 - stopping != completion
 - stopping != failure
-- no selected movement != no remaining required result
+- no movement != no remaining required result
 - bounded exhaustion != global impossibility
-- local stop != process termination
+- local stop != termination outside its Scope
 - source-labelled wording != Stopping by identity
 - a preventing condition != a Stopping occurrence
 
-## Representative repository anchors
-- `seed_runtime/models.py::GoalStatus`
-
 ## Counterexamples or failure modes
-- Declaring completion because no candidate was selected.
+- Declaring completion because no candidate Act occurred.
 - Continuing movement after the bounded result condition is satisfied.
 
 ## Related chapters

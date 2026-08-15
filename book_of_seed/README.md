@@ -1,18 +1,18 @@
 # Book of Seed
 
-The Book of Seed preserves the durable constitutional grammar needed to interpret Seed. It names bounded concepts, keeps important non-equivalences visible, and offers a few representative repository anchors.
+The Book of Seed preserves the durable constitutional grammar needed to interpret Seed. It names bounded concepts and keeps important non-equivalences visible.
 
-It is not a roadmap, API reference, generated topology, or substitute for repository inspection. Existing implementation and tests are Evidence of current practice; they do not carry constitutional Authority by identity. Historical audits and roadmaps are records outside active law.
+It is not a roadmap, implementation reference, generated topology, or substitute for repository inspection. Existing implementation and tests are Evidence of current practice; they do not carry constitutional Authority by identity. Historical audits and roadmaps are records outside active law.
 
-## Resolution model
+## Resolution
 
 - A **Chapter** concerns one bounded concept, Responsibility, distinction, constraint, or relation.
 - `[UNRESOLVED]` marks a question for which the current repository does not safely support a constitutional resolution.
-- Representative anchors are illustrative. Seed must inspect the repository for current responsible occurrences, exact Acts, fields, topology, discrepancies, and residue.
+- Seed must inspect the repository for current responsible occurrences, exact Acts, fields, topology, discrepancies, and residue.
 
 The [concordance](concordance.md) is a navigation aid, not an ontology.
 
-[`grammar.json`](grammar.json) is the machine representation of clause coordinates used
+The machine grammar is the machine representation of clause coordinates used
 by tests. The Markdown chapters are the explanatory representation of the same
 grammar. Neither representation is the Book by identity.
 
@@ -252,7 +252,7 @@ same occurrence != same Assertion
 > Maintain the constitutional grammar.  
 > Let Seed inspect the current implementation and emit only bounded results supported by that inspection's Evidence.
 
-Change the Book when constitutional grammar, a durable distinction, or the status of an unresolved constitutional question changes. Do not update it merely because a function moves, a field is added, a pipeline is rewired, or a new diagnostic projects the same grammar.
+Change the Book when constitutional grammar, a durable distinction, or the status of an unresolved constitutional question changes. Do not update it merely because a function moves, a field is added, a relation changes, or a new diagnostic projects the same grammar.
 
 ## Chapters
 
@@ -260,10 +260,8 @@ Change the Book when constitutional grammar, a durable distinction, or the statu
 - [Constitutional Standing](chapters/02-constitutional-standing.md)
 - [Acts and occurrences](chapters/03-acts-and-occurrences.md)
 - [Constraints and preconditions](chapters/04-constraints-and-preconditions.md)
-- [Selection and Selection Acts](chapters/05-selection-and-selection-acts.md)
 - [Movement coordinates](chapters/06-movement-coordinates.md)
 - [Result boundaries and movement](chapters/07-result-boundaries-and-movement.md)
-- [Selection and Authorization](chapters/08-selection-and-authorization.md)
 - [Assertion source coordinates and Standing](chapters/09-assertion-source-coordinates-and-standing.md)
 - [Evidence and provenance](chapters/10-evidence-provenance-and-explanation.md)
 - [Recording and preserved Assertions](chapters/11-recording-and-preserved-assertions.md)

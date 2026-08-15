@@ -12,18 +12,18 @@ A responsible Compare may accept as input current Standing and that exact result
 
 The conditions under which an exact Act may occur remain decomposed as its Responsibility, Act, applicable mechanism and material, Authority, Constraints, locality, Evidence, and occurrence. Availability, reachability, or one supported condition does not establish the others or authorize the Act.
 
-Neither a result condition nor a bounded distinction requires another Act. Selection, Authorization, movement, Standing revision, new Standing, and Stopping each require their own responsible occurrence. A result condition met within one Scope does not establish completion outside that Scope.
+Neither a result condition nor a bounded distinction requires another Act. Authorization, movement, Standing revision, new Standing, and Stopping each require their own responsible occurrence. A result condition met within one Scope does not establish completion outside that Scope.
 
 ## Important distinctions
 
 - result condition != current Standing
 - result condition != bounded distinction
 - bounded distinction != failure
-- bounded distinction != Selection or Authorization
+- bounded distinction != Authorization
 - available mechanism != authorized Act
 - Unknown condition != absent condition
 - current Standing changed != prior distinction revised
-- no selected movement != lawful Stop
+- no movement != lawful Stop
 
 ## Counterexamples or failure modes
 
@@ -35,6 +35,5 @@ Neither a result condition nor a bounded distinction requires another Act. Selec
 ## Related chapters
 
 - [Movement coordinates](06-movement-coordinates.md)
-- [Selection and Authorization](08-selection-and-authorization.md)
 - [Constraints and preconditions](04-constraints-and-preconditions.md)
 - [Stopping and completion](15-stopping-and-completion.md)
