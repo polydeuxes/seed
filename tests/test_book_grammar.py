@@ -23,7 +23,7 @@ def _assert_structural_edge_clauses(grammar: dict, active_book: str) -> None:
 def test_machine_readable_grammar_traverses_responsibility_from_standing():
     grammar = json.loads(GRAMMAR.read_text(encoding="utf-8"))
 
-    assert grammar["spine"] == {
+    assert grammar["standing"] == {
         "root": "Standing",
         "path": [
             "Standing",
