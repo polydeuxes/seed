@@ -35,7 +35,7 @@ import pytest
 from seed_runtime.events import EventLedger
 from seed_runtime.preserved_material_measurement import (
     MATERIAL_AS_SUPPLIED,
-    _yielded_content,
+    _result_content,
     RESPONSIBILITY_UNESTABLISHED,
     MATERIAL_READ_FROM_LEDGER,
     MEASUREMENT_RECORDED_KIND,
@@ -1371,7 +1371,7 @@ def _yielded(ledger, occurrences, target="the", **kw):
     )
 
 
-def test_a_yielded_result_records(recurrence_occurrences):
+def test_a_result_records(recurrence_occurrences):
     ledger, occurrences = recurrence_occurrences
     finding = _yielded(ledger, occurrences)
     event = record_measurement_finding(
@@ -1389,14 +1389,14 @@ def test_an_identical_finding_nobody_yielded_cannot_reuse_the_witness(
     yielded = _yielded(ledger, occurrences)
     supplied = _rebuilt(yielded, yield_evidence_id=None)
     # Every measured coordinate is identical. Only the relation is absent.
-    assert _yielded_content(supplied) == _yielded_content(yielded)
+    assert _result_content(supplied) == _result_content(yielded)
     with pytest.raises(PreservedMaterialMeasurementError, match="names no yield"):
         record_measurement_finding(
             ledger, locality_id="r", finding=supplied
         )
 
 
-def test_another_representation_of_the_same_yielded_result_is_lawful(
+def test_another_representation_of_the_same_result_is_lawful(
     recurrence_occurrences,
 ):
     """Carrying the same evidence is being the same result, not forging one."""

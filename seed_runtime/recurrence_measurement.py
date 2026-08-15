@@ -238,7 +238,7 @@ class RecordedMeasuredAssertion:
     """One addressable Assertion preserved inside its yielding occurrence."""
 
     assertion_id: str
-    yielding_event_id: str
+    recorded_occurrence_reference: str
     yielding_locality_id: str | None
     result: str
     payload: dict[str, Any]
@@ -248,7 +248,7 @@ class RecordedMeasuredAssertion:
     def reference(self) -> dict[str, str]:
         return {
             "assertion_id": self.assertion_id,
-            "yielding_event_id": self.yielding_event_id,
+            "recorded_occurrence_reference": self.recorded_occurrence_reference,
         }
 
 
@@ -323,7 +323,7 @@ def assertions_of_recorded_measurement(event: Event) -> tuple[RecordedMeasuredAs
         read.append(
             RecordedMeasuredAssertion(
                 assertion_id=identity,
-                yielding_event_id=event.id,
+                recorded_occurrence_reference=event.id,
                 yielding_locality_id=event.locality_id,
                 result=result,
                 payload=assertion,
@@ -371,13 +371,13 @@ def assertions_of_recorded_measurement(event: Event) -> tuple[RecordedMeasuredAs
         bound.append(
             RecordedMeasuredAssertion(
                 assertion_id=assertion.assertion_id,
-                yielding_event_id=assertion.yielding_event_id,
+                recorded_occurrence_reference=assertion.recorded_occurrence_reference,
                 yielding_locality_id=assertion.yielding_locality_id,
                 result=assertion.result,
                 payload=assertion.payload,
                 support_assertion_references=tuple(
                     {
-                        "yielding_event_id": event.id,
+                        "recorded_occurrence_reference": event.id,
                         "assertion_id": local_id,
                     }
                     for local_id in local_ids
@@ -405,11 +405,11 @@ def iter_recorded_measured_assertions(
 
 
 def get_recorded_measured_assertion(
-    ledger: EventLedger, *, yielding_event_id: str, assertion_id: str
+    ledger: EventLedger, *, recorded_occurrence_reference: str, assertion_id: str
 ) -> RecordedMeasuredAssertion | None:
     """Resolve one exact occurrence-bound Assertion reference."""
 
-    event = ledger.get(yielding_event_id)
+    event = ledger.get(recorded_occurrence_reference)
     if event is None:
         return None
     for assertion in assertions_of_recorded_measurement(event):
@@ -760,7 +760,7 @@ def record_measured_count(
         "downstream_act_id": act_id,
         "act_occurrence_id": act_occurrence_id,
         "participation": participation,
-        "yielding_act": "declared measurement",
+        "exact_act": "declared measurement",
         "occurrence_result_evidence": (
             "this exact recorded Measurement occurrence yielded the carried Assertions"
         ),
@@ -800,11 +800,11 @@ def record_measured_count(
         ledger,
         locality_id=locality_id,
         convention=LOCALITY_COUNT_CONVENTION,
-        yielding_act="locality count Measurement",
+        exact_act="locality count Measurement",
         act_occurrence_id=act_occurrence_id,
-        yielded_result_kind=LOCALITY_COUNT_RESULT_KIND,
+        result_kind=LOCALITY_COUNT_RESULT_KIND,
         result_identity=result_identity,
-        yielded_content=result_payload,
+        result_content=result_payload,
         responsibility=LOCALITY_COUNT_RESPONSIBILITY,
         live_boundary="locality_count_measurement",
         responsible_boundary="this Seed",

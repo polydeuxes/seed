@@ -153,16 +153,16 @@ def read_yield_edge_requirements(
         recorded_result_event.payload.get("yield_evidence_id") == result_evidence.id
         and result_evidence.kind == YIELD_EVIDENCE_KIND
     )
-    yielded_result = result_evidence.payload.get("yielded_result")
+    result = result_evidence.payload.get("result")
     yield_coordinates = result_evidence.payload.get("yield_coordinates")
     recorded_result_coordinates = result_evidence.payload.get("recorded_result_coordinates")
     exact_carried_result = False
     if (
-        type(yielded_result) is dict
+        type(result) is dict
         and type(yield_coordinates) is list
         and type(recorded_result_coordinates) is dict
-        and yield_coordinates == sorted(yielded_result)
-        and set(recorded_result_coordinates) == set(yielded_result)
+        and yield_coordinates == sorted(result)
+        and set(recorded_result_coordinates) == set(result)
     ):
         carried_result = {}
         for coordinate in yield_coordinates:
@@ -181,7 +181,7 @@ def read_yield_edge_requirements(
                 continue
             break
         else:
-            exact_carried_result = carried_result == yielded_result
+            exact_carried_result = carried_result == result
     evidence_is_carried = evidence_is_carried and exact_carried_result
     if responsible_act_evidence is not None:
         evidence_is_carried = evidence_is_carried and (
@@ -217,11 +217,11 @@ def _record_yield_evidence(
     *,
     locality_id: str | None,
     convention: str,
-    yielding_act: str,
+    exact_act: str,
     act_occurrence_id: str,
-    yielded_result_kind: str,
+    result_kind: str,
     result_identity: str,
-    yielded_content: dict[str, Any],
+    result_content: dict[str, Any],
     responsibility: str,
     live_boundary: str,
     responsible_boundary: str = "unestablished",
@@ -233,16 +233,16 @@ def _record_yield_evidence(
         raise ValueError("Yield Evidence requires one exact Act occurrence identity")
     if live_boundary not in YIELD_LIVE_BOUNDARIES:
         raise ValueError("Yield Evidence requires one declared live boundary")
-    if type(yielded_content) is not dict:
+    if type(result_content) is not dict:
         raise TypeError("Yield Evidence requires one exact yielded result")
     declared_recorded_result_coordinates = (
-        {coordinate: (coordinate,) for coordinate in yielded_content}
+        {coordinate: (coordinate,) for coordinate in result_content}
         if recorded_result_coordinates is None
         else recorded_result_coordinates
     )
     if type(declared_recorded_result_coordinates) is not dict or set(
         declared_recorded_result_coordinates
-    ) != set(yielded_content):
+    ) != set(result_content):
         raise ValueError(
             "Yield Evidence requires one carried coordinate for every yielded coordinate"
         )
@@ -266,10 +266,10 @@ def _record_yield_evidence(
                     f"yield-evidence:{act_occurrence_id}:{result_identity}"
                 ),
                 "content": (
-                    f"evidence that {yielding_act} yielded this exact "
-                    f"{yielded_result_kind} at its exact Act boundary"
+                    f"evidence that {exact_act} yielded this exact "
+                    f"{result_kind} at its exact Act boundary"
                 ),
-                "yielding_act": yielding_act,
+                "exact_act": exact_act,
                 "act_occurrence_id": act_occurrence_id,
                 "occurrence_result_evidence": (
                     "preserved at the exact Act boundary after this exact "
@@ -291,12 +291,12 @@ def _record_yield_evidence(
             },
             "yield_convention": convention,
             "yield_commitment": yield_commitment(
-                convention, yielded_content
+                convention, result_content
             ),
-            "yield_coordinates": sorted(yielded_content),
-            "yielded_result": deepcopy(yielded_content),
+            "yield_coordinates": sorted(result_content),
+            "result": deepcopy(result_content),
             "recorded_result_coordinates": preserved_recorded_result_coordinates,
-            "yielded_result_kind": yielded_result_kind,
+            "result_kind": result_kind,
             "live_boundary": live_boundary,
         },
         locality_id=locality_id,

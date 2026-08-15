@@ -126,10 +126,10 @@ def test_assertion_standing_coordinate_responsibility_is_distinct_from_its_yield
         assertion["responsible_boundary"] == "this recorded assertion"
         for assertion in assertions
     )
-    assert event.payload["yielding_act"] == "declared measurement"
+    assert event.payload["exact_act"] == "declared measurement"
     assert all(
         assertion["dimensions"]["responsibility"]
-        != event.payload["yielding_act"]
+        != event.payload["exact_act"]
         for assertion in assertions
     )
     assert "cohort" not in str(event.payload).lower()
@@ -188,24 +188,24 @@ def test_recorded_assertions_are_addressable_through_their_occurrence(compared):
     for assertion in assertions:
         assert assertion.reference == {
             "assertion_id": assertion.assertion_id,
-            "yielding_event_id": event.id,
+            "recorded_occurrence_reference": event.id,
         }
         assert get_recorded_measured_assertion(
             compared,
-            yielding_event_id=event.id,
+            recorded_occurrence_reference=event.id,
             assertion_id=assertion.assertion_id,
         ) == assertion
 
     by_result = {assertion.result: assertion for assertion in assertions}
     assert by_result["count"].support_assertion_references == (
         {
-            "yielding_event_id": event.id,
+            "recorded_occurrence_reference": event.id,
             "assertion_id": by_result["measured_in"].assertion_id,
         },
     )
     assert by_result["recurrence"].support_assertion_references == (
         {
-            "yielding_event_id": event.id,
+            "recorded_occurrence_reference": event.id,
             "assertion_id": by_result["count"].assertion_id,
         },
     )
@@ -265,9 +265,9 @@ def test_assertion_identity_and_yielding_occurrence_remain_distinct(compared):
     assert first.id != second.id
     assert get_recorded_measured_assertion(
         compared,
-        yielding_event_id=first.id,
+        recorded_occurrence_reference=first.id,
         assertion_id=first_count["dimensions"]["identity"],
-    ).yielding_event_id == first.id
+    ).recorded_occurrence_reference == first.id
 
 
 def test_two_yields_of_one_assertion_can_be_compared_without_relation(compared):
@@ -411,7 +411,7 @@ def test_assertion_compare_refuses_self_and_different_assertions(compared):
             (
                 count.reference,
                 {
-                    "yielding_event_id": "another-event",
+                    "recorded_occurrence_reference": "another-event",
                     "assertion_id": recurrence.assertion_id,
                 },
             ),
@@ -446,14 +446,14 @@ def test_assertion_yield_compare_records_each_literal_result_separately(compared
     assertions = assertions_of_recorded_assertion_comparison(event)
 
     assert event.kind == ASSERTION_YIELD_COMPARISON_RECORDED_KIND
-    assert event.payload["yielding_act"] == "Compare"
+    assert event.payload["exact_act"] == "Compare"
     assert event.payload["responsible_boundary"] == "this bounded comparison occurrence"
     assert len(assertions) == len(comparison.distinctions) == 10
     assert {item.coordinate for item in assertions} == {
         item.coordinate for item in comparison.distinctions
     }
     assert len({item.assertion_id for item in assertions}) == 10
-    assert all(item.yielding_event_id == event.id for item in assertions)
+    assert all(item.recorded_occurrence_reference == event.id for item in assertions)
     assert all(
         item.payload["support_basis"]["assertion_references"]
         == [first_count.reference, second_count.reference]
@@ -728,7 +728,7 @@ def test_recorded_assertion_stream_obeys_sessions_and_boundary(compared):
         )
     )
     assert len(read) == 5
-    assert {assertion.yielding_event_id for assertion in read} == {first.id}
+    assert {assertion.recorded_occurrence_reference for assertion in read} == {first.id}
 
 
 def test_exact_sets_keep_completeness_separate_from_support(compared):
@@ -1360,12 +1360,12 @@ def test_a_durable_yielding_occurrence_is_identifiable_and_verifies(tmp_path):
             )
         )
         assert read
-        assert {assertion.yielding_event_id for assertion in read} == {
+        assert {assertion.recorded_occurrence_reference for assertion in read} == {
             event.id
         }
         assert get_recorded_measured_assertion(
             reopened,
-            yielding_event_id=event.id,
+            recorded_occurrence_reference=event.id,
             assertion_id=read[0].assertion_id,
         ) == read[0]
     finally:

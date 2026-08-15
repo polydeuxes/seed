@@ -1,9 +1,4 @@
-"""Recorded Representation Acts and emission of their bounded results.
-
-A Representation carries exact content from current Locality Standing.
-It may also carry alternatives whose source relations remain separately
-bounded.
-"""
+"""Record and emit bounded Representations."""
 
 from __future__ import annotations
 
@@ -19,7 +14,7 @@ from seed_runtime.yield_evidence import (
 
 REPRESENTATION_RECORDED_KIND = "operator.representation.recorded"
 
-REPRESENTATION_EMISSION_ATTEMPTED_KIND = "operator.representation.emission_attempted"
+REPRESENTATION_EMISSION_ATTEMPT_KIND = "operator.representation.emission_attempt_recorded"
 REPRESENTATION_EMITTED_KIND = "operator.representation.emitted"
 REPRESENTATION_EMISSION_OUTCOME_KIND = "operator.representation.emission_outcome_recorded"
 REPRESENTATION_EMISSION_OUTCOME_ACT_EVIDENCE_KIND = (
@@ -54,7 +49,7 @@ REPRESENTATION_EMISSION_OUTCOME_RESPONSIBILITY = (
 )
 EVENT_KIND_RESPONSIBILITIES = {
     REPRESENTATION_RECORDED_KIND: "02.Acts.A",
-    REPRESENTATION_EMISSION_ATTEMPTED_KIND: "02.Acts.A",
+    REPRESENTATION_EMISSION_ATTEMPT_KIND: "02.Acts.A",
     REPRESENTATION_EMITTED_KIND: "02.Acts.A",
     REPRESENTATION_ACT_EVIDENCE_KIND: "02.Acts.A",
     REPRESENTATION_LOCALITY_EVIDENCE_KIND: "06.Standing.B",
@@ -90,29 +85,17 @@ def record_operator_representation(
     locality_standing: dict[str, Any],
     alternative_sources: tuple[dict[str, Any], ...] = (),
 ) -> dict[str, Any]:
-    """Record one exact bounded Representation and its exact Act occurrence.
-
-    The Representation is bounded by the supplied projected Locality Standing.
-    No alternatives are supplied by default; ``alternative_sources`` must be
-    supplied by a caller with support for the eligibility and participation
-    relations those alternatives carry.  Representation Act supplies no sources
-    nor strengthens their standing, and no alternative's represented relation is derived
-    from ingest material.  This module records what a Representation carries;
-    it does not classify the resulting combination as a shape.
-
-    Representation Act is not emission: the returned Representation carries no emission
-    occurrence until :func:`emit_operator_representation` records one.
-    """
+    """Record one exact bounded Representation and its Act occurrence."""
     representation_id = new_id("operator_representation")
     representation_act_id = new_id("operator_representation_act")
     act_occurrence_id = new_id("operator_representation_act_occurrence")
     scope = f"locality:{locality_id}"
-    alternatives = []
-    coordinate_bindings: dict[str, str] = {}
+    alternative_material = []
+    coordinate_binding: dict[str, str] = {}
     for position, source in enumerate(alternative_sources, start=1):
         alternative_id = new_id("represented_alternative")
         coordinate = str(position)
-        alternatives.append(
+        alternative_material.append(
             {
                 "alternative_id": alternative_id,
                 "role": source["role"],
@@ -139,21 +122,22 @@ def record_operator_representation(
                 },
             }
         )
-        coordinate_bindings[coordinate] = alternative_id
+        coordinate_binding[coordinate] = alternative_id
     representation_result = "bounded representation of current Locality Standing"
     content = "bounded Representation of current Locality Standing"
     occurrence = "Representation Act durably recorded"
     known_loss: list[str] = []
-    if alternatives:
+    if alternative_material:
         content = (
             "bounded Representation of current Locality Standing with "
-            f"{len(alternatives)} represented alternatives"
+            f"alternative material count {len(alternative_material)}"
         )
         occurrence = (
-            f"{len(alternatives)} alternatives, roles, response-coordinate "
-            "bindings, and represented provenance occurrences durably recorded"
+            f"alternative material count {len(alternative_material)}; roles, "
+            "response-coordinate binding, and represented provenance occurrences "
+            "durably recorded"
         )
-        representation_result += " with bounded alternatives and preserved source roles"
+        representation_result += " with bounded alternative material and preserved source roles"
         known_loss.append(
             "label compresses represented candidate relation"
         )
@@ -162,8 +146,8 @@ def record_operator_representation(
         "representation_act_id": representation_act_id,
         "act_occurrence_id": act_occurrence_id,
         "representation_result": representation_result,
-        "alternatives": alternatives,
-        "coordinate_bindings": coordinate_bindings,
+        "alternative_material": alternative_material,
+        "coordinate_binding": coordinate_binding,
         "locality_standing_as_of_event_id": locality_standing["as_of_event_id"],
         "known_loss": known_loss,
         "unknowns": [],
@@ -192,11 +176,11 @@ def record_operator_representation(
         ledger,
         locality_id=locality_id,
         convention=REPRESENTATION_CONVENTION,
-        yielding_act="bounded Representation Act",
+        exact_act="bounded Representation Act",
         act_occurrence_id=act_occurrence_id,
-        yielded_result_kind="bounded Representation",
+        result_kind="bounded Representation",
         result_identity=representation_id,
-        yielded_content=result_payload,
+        result_content=result_payload,
         responsibility=REPRESENTATION_RESPONSIBILITY,
         live_boundary="representation_result",
         responsible_boundary="this Seed",
@@ -244,8 +228,8 @@ def record_operator_representation(
         "act_occurrence_id": act_occurrence_id,
         "locality_id": locality_id,
         "representation_result": representation_result,
-        "alternatives": alternatives,
-        "coordinate_bindings": coordinate_bindings,
+        "alternative_material": alternative_material,
+        "coordinate_binding": coordinate_binding,
         "representation_event_id": representation_event.id,
         "emission_attempt_event_id": None,
         "emission_attempt_locality_evidence_id": None,
@@ -264,9 +248,9 @@ def _emission_text(representation: dict[str, Any]) -> str:
     if representation_id is None:
         representation_id = representation["representation_reference"]
     lines = [f"Bounded Representation {representation_id}"]
-    if representation["alternatives"]:
+    if representation["alternative_material"]:
         lines.append("Respond with exactly one token:")
-    for alternative in representation["alternatives"]:
+    for alternative in representation["alternative_material"]:
         lines.append(
             f"  {alternative['response_coordinate']}. {alternative['label']}"
             f"  [{alternative['role']}]"
@@ -301,7 +285,7 @@ def read_operator_representation(
     )
     if not all(requirements.values()):
         raise ValueError("the recorded Representation Yield is not exact")
-    yielded = ledger.get(yield_evidence_id).payload.get("yielded_result")
+    yielded = ledger.get(yield_evidence_id).payload.get("result")
     if (
         type(yielded) is not dict
         or locality_evidence.payload.get("carried_content") != yielded
@@ -321,8 +305,8 @@ def read_operator_representation(
         "act_occurrence_id": payload["act_occurrence_id"],
         "locality_id": event.locality_id,
         "representation_result": payload["representation_result"],
-        "alternatives": payload["alternatives"],
-        "coordinate_bindings": payload["coordinate_bindings"],
+        "alternative_material": payload["alternative_material"],
+        "coordinate_binding": payload["coordinate_binding"],
         "representation_event_id": event.id,
         "emission_text": payload["emission_text"],
     }
@@ -359,7 +343,7 @@ def emit_operator_representation(
         stream_encoding_metadata = None
     scope = f"locality:{representation['locality_id']}"
     attempt_event = ledger.append(
-        REPRESENTATION_EMISSION_ATTEMPTED_KIND,
+        REPRESENTATION_EMISSION_ATTEMPT_KIND,
         {
             "representation_reference": representation["representation_id"],
             "representation_event_id": representation["representation_event_id"],
@@ -377,8 +361,8 @@ def emit_operator_representation(
                 scope=scope,
                 occurrence="emission attempt durably recorded before output",
             ),
-            "attempted_representation": emitted_representation,
-            "attempted_representation_kind": "text",
+            "representation": emitted_representation,
+            "representation_kind": "text",
             "output_boundary": "text_stream_write",
             "stream_encoding_metadata": stream_encoding_metadata,
             "known_loss": [],
@@ -460,7 +444,7 @@ def emit_operator_representation(
         "accepted_representation_kind": "text",
         "accepted_count": written,
     }
-    yielded_content = {"yielded_result": boundary_result}
+    result_content = {"result": boundary_result}
     result_payload = {
         "emission_act_id": emission_act_id,
         "act_occurrence_id": act_occurrence_id,
@@ -469,7 +453,7 @@ def emit_operator_representation(
         "input_role": REPRESENTATION_EMISSION_INPUT_ROLE,
         "locality_relation": locality_relation,
         "boundary_result": boundary_result,
-        **yielded_content,
+        **result_content,
     }
     responsible_act_evidence = ledger.append(
         REPRESENTATION_EMISSION_ACT_EVIDENCE_KIND,
@@ -483,7 +467,7 @@ def emit_operator_representation(
             "representation_event_id": representation["representation_event_id"],
             "input_role": REPRESENTATION_EMISSION_INPUT_ROLE,
             "result_commitment": yield_commitment(
-                REPRESENTATION_EMISSION_CONVENTION, yielded_content
+                REPRESENTATION_EMISSION_CONVENTION, result_content
             ),
             "authority": "unestablished",
             "evidence_scope": (
@@ -513,11 +497,11 @@ def emit_operator_representation(
         ledger,
         locality_id=representation["locality_id"],
         convention=REPRESENTATION_EMISSION_CONVENTION,
-        yielding_act="exact bounded Representation emission",
+        exact_act="exact bounded Representation emission",
         act_occurrence_id=act_occurrence_id,
-        yielded_result_kind="text-stream boundary result",
+        result_kind="text-stream boundary result",
         result_identity=f"emission-boundary-result:{act_occurrence_id}",
-        yielded_content=yielded_content,
+        result_content=result_content,
         responsibility=REPRESENTATION_EMISSION_RESPONSIBILITY,
         live_boundary="successful_emission",
         responsible_boundary="this Seed",
@@ -674,11 +658,11 @@ def _record_emission_failure_outcome(
         ledger,
         locality_id=representation["locality_id"],
         convention=REPRESENTATION_EMISSION_OUTCOME_CONVENTION,
-        yielding_act="failed Representation emission boundary call",
+        exact_act="failed Representation emission boundary call",
         act_occurrence_id=act_occurrence_id,
-        yielded_result_kind=REPRESENTATION_EMISSION_OUTCOME_RESULT_KIND,
+        result_kind=REPRESENTATION_EMISSION_OUTCOME_RESULT_KIND,
         result_identity=result_identity,
-        yielded_content=result_payload,
+        result_content=result_payload,
         responsibility=REPRESENTATION_EMISSION_OUTCOME_RESPONSIBILITY,
         live_boundary="failed_emission_outcome",
         responsible_boundary="this Seed",

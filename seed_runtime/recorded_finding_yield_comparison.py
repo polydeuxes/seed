@@ -166,7 +166,7 @@ def get_recorded_finding_yield_comparison(
     if (
         evidence.payload.get("yield_convention")
         != FINDING_YIELD_COMPARISON_CONVENTION
-        or evidence.payload.get("yielded_result_kind")
+        or evidence.payload.get("result_kind")
         != FINDING_YIELD_COMPARISON_RESULT_KIND
         or evidence.payload.get("yield_coordinates")
         != sorted(COMPARISON_RESULT_COORDINATES)
@@ -222,7 +222,7 @@ def get_recorded_finding_yield_comparison(
         }
         or not isinstance(dimensions, dict)
         or dimensions.get("identity") != f"finding-yield-comparison:{source_id}"
-        or dimensions.get("yielding_act") != "bounded finding Yield Compare"
+        or dimensions.get("exact_act") != "bounded finding Yield Compare"
         or dimensions.get("responsibility")
         != FINDING_YIELD_COMPARISON_RESPONSIBILITY
         or dimensions.get("scope_locality")
@@ -328,7 +328,7 @@ def compare_recorded_finding_yield(ledger: EventLedger, event_id: str) -> Event:
                     )
                 )
             elif (
-                evidence.payload.get("yielded_result_kind")
+                evidence.payload.get("result_kind")
                 != RECURRENCE_RESULT_KIND
                 or evidence.payload.get("yield_convention")
                 != MEASUREMENT_CONVENTION
@@ -416,7 +416,7 @@ def compare_recorded_finding_yield(ledger: EventLedger, event_id: str) -> Event:
                     "yield evidence it names"
                 ),
                 "standing": standing,
-                "yielding_act": "bounded finding Yield Compare",
+                "exact_act": "bounded finding Yield Compare",
                 "responsibility": FINDING_YIELD_COMPARISON_RESPONSIBILITY,
                 "authority": authority_boundary,
                 "scope_locality": (
@@ -492,11 +492,11 @@ def compare_recorded_finding_yield(ledger: EventLedger, event_id: str) -> Event:
         ledger,
         locality_id=recorded.locality_id,
         convention=FINDING_YIELD_COMPARISON_CONVENTION,
-        yielding_act="bounded finding Yield Compare",
+        exact_act="bounded finding Yield Compare",
         act_occurrence_id=act_occurrence_id,
-        yielded_result_kind=FINDING_YIELD_COMPARISON_RESULT_KIND,
+        result_kind=FINDING_YIELD_COMPARISON_RESULT_KIND,
         result_identity=f"finding-yield-comparison:{event_id}",
-        yielded_content=result_payload,
+        result_content=result_payload,
         responsibility=FINDING_YIELD_COMPARISON_RESPONSIBILITY,
         live_boundary="recorded_finding_yield_compare",
         responsible_boundary="this Seed",

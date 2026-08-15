@@ -16,7 +16,7 @@ from seed_runtime.operator_representation import (
     REPRESENTATION_RECORDED_KIND as _REPRESENTATION_RECORDED_KIND,
     REPRESENTATION_ACT_EVIDENCE_KIND as _REPRESENTATION_ACT_EVIDENCE_KIND,
     REPRESENTATION_LOCALITY_EVIDENCE_KIND as _REPRESENTATION_LOCALITY_EVIDENCE_KIND,
-    REPRESENTATION_EMISSION_ATTEMPTED_KIND as _REPRESENTATION_EMISSION_ATTEMPTED_KIND,
+    REPRESENTATION_EMISSION_ATTEMPT_KIND as _REPRESENTATION_EMISSION_ATTEMPT_KIND,
     REPRESENTATION_EMITTED_KIND as _REPRESENTATION_EMITTED_KIND,
     REPRESENTATION_EMISSION_OUTCOME_KIND as _REPRESENTATION_EMISSION_OUTCOME_KIND,
     REPRESENTATION_EMISSION_ACT_EVIDENCE_KIND as _REPRESENTATION_EMISSION_ACT_EVIDENCE_KIND,
@@ -32,7 +32,7 @@ _SUPPORTED_KINDS = {
     _REPRESENTATION_RECORDED_KIND,
     _REPRESENTATION_ACT_EVIDENCE_KIND,
     _REPRESENTATION_LOCALITY_EVIDENCE_KIND,
-    _REPRESENTATION_EMISSION_ATTEMPTED_KIND,
+    _REPRESENTATION_EMISSION_ATTEMPT_KIND,
     _REPRESENTATION_EMITTED_KIND,
     _REPRESENTATION_EMISSION_OUTCOME_KIND,
     _REPRESENTATION_EMISSION_ACT_EVIDENCE_KIND,
@@ -181,8 +181,8 @@ def advance_operator_locality_standing(
                 "emitted_event_id": None,
                 "representation_result": payload["representation_result"],
                 "emission_text": payload["emission_text"],
-                "alternatives": payload["alternatives"],
-                "coordinate_bindings": payload["coordinate_bindings"],
+                "alternative_material": payload["alternative_material"],
+                "coordinate_binding": payload["coordinate_binding"],
                 "locality_standing_as_of_event_id": payload[
                     "locality_standing_as_of_event_id"
                 ],
@@ -200,7 +200,7 @@ def advance_operator_locality_standing(
             # These Events preserve exact edge Evidence. They do not add or
             # revise Locality Standing by identity.
             continue
-        if event.kind == _REPRESENTATION_EMISSION_ATTEMPTED_KIND:
+        if event.kind == _REPRESENTATION_EMISSION_ATTEMPT_KIND:
             representation_reference = event.payload["representation_reference"]
             if representation_reference not in representations:
                 raise ValueError(

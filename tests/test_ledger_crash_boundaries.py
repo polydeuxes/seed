@@ -228,7 +228,7 @@ def test_the_emission_attempt_is_durable_before_the_output_boundary(tmp_path):
             seen.append(
                 reader.execute(
                     "SELECT COUNT(*) FROM events WHERE kind = ?",
-                    ("operator.representation.emission_attempted",),
+                    ("operator.representation.emission_attempt_recorded",),
                 ).fetchone()[0]
             )
             reader.close()

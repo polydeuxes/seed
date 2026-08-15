@@ -33,7 +33,7 @@ class AssertionComparisonError(ValueError):
 @dataclass(frozen=True)
 class AssertionYieldInput:
     assertion_id: str
-    yielding_event_id: str
+    recorded_occurrence_reference: str
     integrity: str
 
 
@@ -90,14 +90,14 @@ class RecordedAssertionYieldDistinction:
     """One addressable coordinate result inside its yielding Compare occurrence."""
 
     assertion_id: str
-    yielding_event_id: str
+    recorded_occurrence_reference: str
     coordinate: str
     payload: dict[str, Any]
 
     @property
     def reference(self) -> dict[str, str]:
         return {
-            "yielding_event_id": self.yielding_event_id,
+            "recorded_occurrence_reference": self.recorded_occurrence_reference,
             "assertion_id": self.assertion_id,
         }
 
@@ -175,15 +175,15 @@ def compare_assertion_yields(
             "Assertion yield Compare has as input exactly two inputs; "
             f"{len(exact_references)} supplied"
         )
-    required = {"yielding_event_id", "assertion_id"}
+    required = {"recorded_occurrence_reference", "assertion_id"}
     if any(set(reference) != required for reference in exact_references):
         raise AssertionComparisonError(
             "each input must be one exact yielding-event and Assertion identity pair"
         )
     if (
         exact_references[0] == exact_references[1]
-        or exact_references[0]["yielding_event_id"]
-        == exact_references[1]["yielding_event_id"]
+        or exact_references[0]["recorded_occurrence_reference"]
+        == exact_references[1]["recorded_occurrence_reference"]
     ):
         raise AssertionComparisonError(
             "one yielding occurrence cannot be compared with itself"
@@ -198,14 +198,14 @@ def compare_assertion_yields(
     for reference in exact_references:
         assertion = get_recorded_measured_assertion(
             ledger,
-            yielding_event_id=reference["yielding_event_id"],
+            recorded_occurrence_reference=reference["recorded_occurrence_reference"],
             assertion_id=reference["assertion_id"],
         )
         if assertion is None:
             raise AssertionComparisonError(
                 "an Assertion reference does not resolve to its yielding occurrence"
             )
-        integrity = ledger.integrity_of(assertion.yielding_event_id)
+        integrity = ledger.integrity_of(assertion.recorded_occurrence_reference)
         if integrity == CORRUPTED:
             raise AssertionComparisonError(
                 "a corrupted yielding occurrence cannot participate in Compare"
@@ -214,7 +214,7 @@ def compare_assertion_yields(
         inputs.append(
             AssertionYieldInput(
                 assertion_id=assertion.assertion_id,
-                yielding_event_id=assertion.yielding_event_id,
+                recorded_occurrence_reference=assertion.recorded_occurrence_reference,
                 integrity=integrity,
             )
         )
@@ -253,7 +253,7 @@ def record_assertion_yield_comparison(
 
     input_references = tuple(
         {
-            "yielding_event_id": item.yielding_event_id,
+            "recorded_occurrence_reference": item.recorded_occurrence_reference,
             "assertion_id": item.assertion_id,
         }
         for item in comparison.inputs
@@ -380,7 +380,7 @@ def record_assertion_yield_comparison(
             "scope_locality": f"locality:{locality_id}",
             "occurrence_preservation": "comparison occurrence durably recorded",
         },
-        "yielding_act": "Compare",
+        "exact_act": "Compare",
         "downstream_act_id": act_id,
         "act_occurrence_id": act_occurrence_id,
         "input_locality_evidence_ids": locality_evidence_ids,
@@ -413,11 +413,11 @@ def record_assertion_yield_comparison(
         ledger,
         locality_id=locality_id,
         convention=ASSERTION_YIELD_COMPARISON_CONVENTION,
-        yielding_act="Compare",
+        exact_act="Compare",
         act_occurrence_id=act_occurrence_id,
-        yielded_result_kind=ASSERTION_YIELD_COMPARISON_RESULT_KIND,
+        result_kind=ASSERTION_YIELD_COMPARISON_RESULT_KIND,
         result_identity=result_identity,
-        yielded_content=result_payload,
+        result_content=result_payload,
         responsibility=comparison.responsibility,
         live_boundary="assertion_yield_compare",
         responsible_boundary=comparison.responsible_boundary,
@@ -449,7 +449,7 @@ def assertions_of_recorded_assertion_comparison(
         raise AssertionComparisonError(
             f"{event.id} does not preserve its distinct comparison Assertions"
         )
-    required_reference = {"yielding_event_id", "assertion_id"}
+    required_reference = {"recorded_occurrence_reference", "assertion_id"}
     if (
         not isinstance(outer_inputs, list)
         or len(outer_inputs) != 2
@@ -459,8 +459,8 @@ def assertions_of_recorded_assertion_comparison(
             or not all(isinstance(value, str) and value for value in reference.values())
             for reference in outer_inputs
         )
-        or outer_inputs[0]["yielding_event_id"]
-        == outer_inputs[1]["yielding_event_id"]
+        or outer_inputs[0]["recorded_occurrence_reference"]
+        == outer_inputs[1]["recorded_occurrence_reference"]
         or outer_inputs[0]["assertion_id"] != outer_inputs[1]["assertion_id"]
     ):
         raise AssertionComparisonError(
@@ -573,7 +573,7 @@ def assertions_of_recorded_assertion_comparison(
         read.append(
             RecordedAssertionYieldDistinction(
                 assertion_id=identity,
-                yielding_event_id=event.id,
+                recorded_occurrence_reference=event.id,
                 coordinate=content["coordinate"],
                 payload=assertion,
             )

@@ -82,7 +82,7 @@ def test_the_comparison_finding_carries_evidence_that_the_act_yielded_it(recorde
     result = compare_recorded_finding_yield(ledger, event.id)
     evidence = ledger.get(result.payload["yield_evidence_id"])
     assert evidence.kind == YIELD_EVIDENCE_KIND
-    assert evidence.payload["yielded_result_kind"] == FINDING_YIELD_COMPARISON_RESULT_KIND
+    assert evidence.payload["result_kind"] == FINDING_YIELD_COMPARISON_RESULT_KIND
     assert evidence.payload["dimensions"]["act_occurrence_id"] == result.payload[
         "act_occurrence_id"
     ]
@@ -377,7 +377,7 @@ def test_a_finding_naming_something_that_is_not_yield_evidence(recorded):
     )
 
 
-def test_lawful_recording_additions_do_not_change_the_yielded_result(recorded):
+def test_lawful_recording_additions_do_not_change_the_result(recorded):
     ledger, event = recorded
     # Build another lawful recording through the public recorder, because its
     # additive coordinate belongs to recording rather than Measurement.
@@ -409,7 +409,7 @@ def test_missing_yield_commitment_is_erasure(recorded):
         YIELD_EVIDENCE_KIND,
         {
             "yield_coordinates": ["total_count"],
-            "yielded_result_kind": RECURRENCE_RESULT_KIND,
+            "result_kind": RECURRENCE_RESULT_KIND,
             "yield_convention": MEASUREMENT_CONVENTION,
         },
         locality_id="r",

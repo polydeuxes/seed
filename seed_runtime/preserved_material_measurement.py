@@ -483,7 +483,7 @@ def _additive_only(
     return dict(extra)
 
 
-def _yielded_content(finding) -> dict[str, Any]:
+def _result_content(finding) -> dict[str, Any]:
     """Everything the measuring act established about its own result.
 
     Not `to_json_dict()`. That representation deliberately omits
@@ -508,7 +508,7 @@ def _yield_commitment(finding) -> str:
     """A commitment over the content above, so any revision to it is a revision."""
 
     return _yield_content_commitment(
-        MEASUREMENT_CONVENTION, _yielded_content(finding)
+        MEASUREMENT_CONVENTION, _result_content(finding)
     )
 
 
@@ -580,11 +580,11 @@ def _record_yield(ledger: EventLedger, *, locality_id: str, finding) -> Event:
         ledger,
         locality_id=locality_id,
         convention=MEASUREMENT_CONVENTION,
-        yielding_act="declared Measurement",
+        exact_act="declared Measurement",
         act_occurrence_id=finding.act_occurrence_id,
-        yielded_result_kind=RECURRENCE_RESULT_KIND,
+        result_kind=RECURRENCE_RESULT_KIND,
         result_identity=finding.declared.representation_measured,
-        yielded_content=_yielded_content(finding),
+        result_content=_result_content(finding),
         responsibility=RESPONSIBILITY_UNESTABLISHED,
         live_boundary="preserved_material_measurement",
         recorded_result_coordinates={
@@ -593,7 +593,7 @@ def _record_yield(ledger: EventLedger, *, locality_id: str, finding) -> Event:
                 if coordinate == "material_provenance"
                 else (coordinate,)
             )
-            for coordinate in _yielded_content(finding)
+            for coordinate in _result_content(finding)
         },
     )
 
@@ -1022,7 +1022,7 @@ def record_measurement_findings(
                 f"{finding.yield_evidence_id} is named as this result's "
                 "evidence and is not preserved yield evidence"
             )
-        if evidence.payload.get("yielded_result_kind") != RECURRENCE_RESULT_KIND:
+        if evidence.payload.get("result_kind") != RECURRENCE_RESULT_KIND:
             raise PreservedMaterialMeasurementError(
                 f"{finding.yield_evidence_id} is yield evidence for "
                 "a different kind of result"

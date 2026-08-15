@@ -620,7 +620,7 @@ def _assertion_compare_input_locality_cases() -> dict[str, str]:
     missing = dict(exact)
     missing_evidence = exact["locality_evidence"].model_copy(deep=True)
     missing_evidence.payload["first_subject"] = {
-        "yielding_event_id": "not-an-input",
+        "recorded_occurrence_reference": "not-an-input",
         "assertion_id": "not-an-input",
     }
     missing["locality_evidence"] = missing_evidence
@@ -1123,7 +1123,7 @@ def _emission_attempt_locality_requirements(bundle: dict) -> dict[str, bool]:
             "intact_evidence": False,
         }
     exact_relation = (
-        attempt.payload.get("attempted_representation")
+        attempt.payload.get("representation")
         == evidence.payload.get("carried_content")
     )
     exact_occurrence = attempt.id == evidence.payload.get("attempt_event_id")
@@ -2532,7 +2532,7 @@ def test_attempt_and_success_have_distinct_locality_relations_for_the_same_text(
         "locality_evidence"
     ]
 
-    assert emission["attempt"].payload["attempted_representation"] == emission[
+    assert emission["attempt"].payload["representation"] == emission[
         "event"
     ].payload["emitted_representation"]
     assert _emission_attempt_locality_witness(emission) == EXACT
