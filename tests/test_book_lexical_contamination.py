@@ -36,8 +36,11 @@ BANNED: tuple[tuple[str, str], ...] = (
     (r"\bsuffi\w*\b", "suffi*"),
     (r"\bpermission\w*\b", "permission*"),
     (r"\btool\w*\b", "tool*"),
-    # standalone work only; workspace/workflow are not matched
+    # Standalone work only; workflow is not matched. Workspace was a runtime
+    # partition that the Book collapsed into exact Locality relations, so it
+    # has no surviving constitutional coordinate.
     (r"\bwork(?:s|ed|ing)?\b", "work"),
+    (r"\bworkspaces?\b", "workspace"),
     (r"\bperformance\w*\b", "performance*"),
     (r"\bmethod\w*\b", "method*"),
     (r"\btrigger\w*\b", "trigger*"),
@@ -264,6 +267,7 @@ def test_identifier_separators_cannot_hide_retired_vocabulary():
         "production_evidence_id": "produc*",
         "invented_relation": "invent*",
         "coordinate_inventory": "inventory",
+        "workspace_id": "workspace",
     }
 
     for identifier, expected_label in examples.items():
