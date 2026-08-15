@@ -41,8 +41,9 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 import base64
-import hashlib
 from typing import Any
+
+from seed_runtime.material_availability import exact_material_identity
 
 
 class ExactMaterialPointerError(ValueError):
@@ -122,19 +123,21 @@ class ExactMaterialPointers:
     """A self-contained, lossless representation of one exact byte sequence."""
 
     byte_count: int
-    sha256: str
+    material_identity: str
     parts: tuple[ExactMaterialPart, ...]
     pointer_rule: ExactMaterialPointerRule
 
     def __post_init__(self) -> None:
         if type(self.byte_count) is not int or self.byte_count < 0:
             raise ExactMaterialPointerError("byte_count must be a non-negative integer")
-        if type(self.sha256) is not str or len(self.sha256) != 64:
-            raise ExactMaterialPointerError("sha256 must be a 64-character hexadecimal digest")
+        if type(self.material_identity) is not str or len(self.material_identity) != 64:
+            raise ExactMaterialPointerError(
+                "material_identity must be one 64-character hexadecimal representation"
+            )
         try:
-            bytes.fromhex(self.sha256)
+            bytes.fromhex(self.material_identity)
         except ValueError as exc:
-            raise ExactMaterialPointerError("sha256 must be hexadecimal") from exc
+            raise ExactMaterialPointerError("material_identity must be hexadecimal") from exc
         if type(self.parts) is not tuple:
             raise ExactMaterialPointerError("parts must be an exact tuple")
         if not all(isinstance(part, (LiteralPart, ReferencePart)) for part in self.parts):
@@ -146,8 +149,8 @@ class ExactMaterialPointers:
         read = read_exact_bytes(self, verify=False)
         if len(read) != self.byte_count:
             raise ExactMaterialPointerError("read material does not match byte_count")
-        if hashlib.sha256(read).hexdigest() != self.sha256:
-            raise ExactMaterialPointerError("read material does not match sha256")
+        if exact_material_identity(read) != self.material_identity:
+            raise ExactMaterialPointerError("read material does not match material_identity")
 
     def to_json_dict(self) -> dict[str, Any]:
         encoded_parts: list[dict[str, Any]] = []
@@ -165,7 +168,7 @@ class ExactMaterialPointers:
                 )
         return {
             "byte_count": self.byte_count,
-            "sha256": self.sha256,
+            "material_identity": self.material_identity,
             "pointer_rule": self.pointer_rule.to_json_dict(),
             "parts": encoded_parts,
         }
@@ -209,7 +212,7 @@ class ExactMaterialPointers:
                 raise ExactMaterialPointerError(f"unknown exact-material part kind: {kind!r}")
         return cls(
             byte_count=value.get("byte_count"),
-            sha256=value.get("sha256"),
+            material_identity=value.get("material_identity"),
             pointer_rule=ExactMaterialPointerRule.from_json_dict(value.get("pointer_rule")),
             parts=tuple(parts),
         )
@@ -239,8 +242,8 @@ def read_exact_bytes(
     if verify:
         if len(result) != encoded.byte_count:
             raise ExactMaterialPointerError("read material does not match byte_count")
-        if hashlib.sha256(result).hexdigest() != encoded.sha256:
-            raise ExactMaterialPointerError("read material does not match sha256")
+        if exact_material_identity(result) != encoded.material_identity:
+            raise ExactMaterialPointerError("read material does not match material_identity")
     return result
 
 
@@ -282,7 +285,7 @@ def represent_exact_material_pointers(
     if not exact_bytes:
         return ExactMaterialPointers(
             byte_count=0,
-            sha256=hashlib.sha256(b"").hexdigest(),
+            material_identity=exact_material_identity(b""),
             parts=(),
             pointer_rule=pointer_rule,
         )
@@ -343,7 +346,7 @@ def represent_exact_material_pointers(
     flush_literal()
     return ExactMaterialPointers(
         byte_count=size,
-        sha256=hashlib.sha256(exact_bytes).hexdigest(),
+        material_identity=exact_material_identity(exact_bytes),
         parts=tuple(parts),
         pointer_rule=pointer_rule,
     )

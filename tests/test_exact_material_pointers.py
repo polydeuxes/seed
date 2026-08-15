@@ -24,7 +24,7 @@ def test_repeated_exact_material_is_represented_by_backward_references():
     assert read_exact_bytes(encoded) == material
     assert any(isinstance(part, ReferencePart) for part in encoded.parts)
     assert encoded.byte_count == len(material)
-    assert encoded.sha256 == hashlib.sha256(material).hexdigest()
+    assert encoded.material_identity == hashlib.sha256(material).hexdigest()
 
 
 def test_a_reference_may_reuse_bytes_that_an_earlier_reference_read():
@@ -32,7 +32,7 @@ def test_a_reference_may_reuse_bytes_that_an_earlier_reference_read():
     encoded = ExactMaterialPointers(
         pointer_rule=ExactMaterialPointerRule(minimum_reference_byte_count=4, candidate_limit=64),
         byte_count=len(material),
-        sha256=hashlib.sha256(material).hexdigest(),
+        material_identity=hashlib.sha256(material).hexdigest(),
         parts=(
             LiteralPart(b"abcd"),
             ReferencePart(start=0, byte_count=4),
@@ -77,7 +77,7 @@ def test_serialized_literal_is_exact_bytes_not_decoded_text():
     encoded = ExactMaterialPointers(
         pointer_rule=ExactMaterialPointerRule(minimum_reference_byte_count=4, candidate_limit=64),
         byte_count=3,
-        sha256=hashlib.sha256(b"\x00\xffA").hexdigest(),
+        material_identity=hashlib.sha256(b"\x00\xffA").hexdigest(),
         parts=(LiteralPart(b"\x00\xffA"),),
     )
 
@@ -88,33 +88,33 @@ def test_serialized_literal_is_exact_bytes_not_decoded_text():
 
 
 def test_forward_or_partially_forward_reference_is_refused():
-    digest = hashlib.sha256(b"abcdabcd").hexdigest()
+    material_identity = hashlib.sha256(b"abcdabcd").hexdigest()
 
     with pytest.raises(ExactMaterialPointerError, match="already read"):
         ExactMaterialPointers(
             pointer_rule=ExactMaterialPointerRule(minimum_reference_byte_count=4, candidate_limit=64),
             byte_count=8,
-            sha256=digest,
+            material_identity=material_identity,
             parts=(LiteralPart(b"abcd"), ReferencePart(start=2, byte_count=4)),
         )
 
 
 def test_byte_count_and_commitment_are_verified_against_read():
-    digest = hashlib.sha256(b"abc").hexdigest()
+    material_identity = hashlib.sha256(b"abc").hexdigest()
 
     with pytest.raises(ExactMaterialPointerError, match="byte_count"):
         ExactMaterialPointers(
             pointer_rule=ExactMaterialPointerRule(minimum_reference_byte_count=4, candidate_limit=64),
             byte_count=4,
-            sha256=digest,
+            material_identity=material_identity,
             parts=(LiteralPart(b"abc"),),
         )
 
-    with pytest.raises(ExactMaterialPointerError, match="sha256"):
+    with pytest.raises(ExactMaterialPointerError, match="material_identity"):
         ExactMaterialPointers(
             pointer_rule=ExactMaterialPointerRule(minimum_reference_byte_count=4, candidate_limit=64),
             byte_count=3,
-            sha256="0" * 64,
+            material_identity="0" * 64,
             parts=(LiteralPart(b"abc"),),
         )
 
@@ -225,14 +225,14 @@ def test_an_account_without_a_addressable_representation_act_is_refused():
 # TypeError, AttributeError or binascii error escaping from an unguarded
 # operation.
 
-_DIGEST_OF_AB = hashlib.sha256(b"ab").hexdigest()
+_MATERIAL_IDENTITY_OF_AB = hashlib.sha256(b"ab").hexdigest()
 _POINTER_RULE = ExactMaterialPointerRule(minimum_reference_byte_count=4, candidate_limit=64)
 
 
 def _account(**differences):
     fields = dict(
         byte_count=2,
-        sha256=_DIGEST_OF_AB,
+        material_identity=_MATERIAL_IDENTITY_OF_AB,
         parts=(LiteralPart(b"ab"),),
         pointer_rule=_POINTER_RULE,
     )
@@ -261,11 +261,11 @@ def test_an_account_establishes_each_coordinate_it_carries():
     for value in ("2", None, True, False, 2.0, [], -1):
         with pytest.raises(ExactMaterialPointerError, match="byte_count"):
             _account(byte_count=value)
-    for value in (None, 1, [], b"a" * 64, _DIGEST_OF_AB[:63], _DIGEST_OF_AB + "0"):
-        with pytest.raises(ExactMaterialPointerError, match="sha256"):
-            _account(sha256=value)
+    for value in (None, 1, [], b"a" * 64, _MATERIAL_IDENTITY_OF_AB[:63], _MATERIAL_IDENTITY_OF_AB + "0"):
+        with pytest.raises(ExactMaterialPointerError, match="material_identity"):
+            _account(material_identity=value)
     with pytest.raises(ExactMaterialPointerError, match="hexadecimal"):
-        _account(sha256="z" * 64)
+        _account(material_identity="z" * 64)
     for value in ([LiteralPart(b"ab")], None, "ab"):
         with pytest.raises(ExactMaterialPointerError, match="exact tuple"):
             _account(parts=value)
@@ -279,8 +279,8 @@ def test_an_account_establishes_each_coordinate_it_carries():
 def test_an_account_is_verified_against_its_own_read():
     with pytest.raises(ExactMaterialPointerError, match="does not match byte_count"):
         _account(byte_count=99)
-    with pytest.raises(ExactMaterialPointerError, match="does not match sha256"):
-        _account(sha256="0" * 64)
+    with pytest.raises(ExactMaterialPointerError, match="does not match material_identity"):
+        _account(material_identity="0" * 64)
     # A reference with no preceding material, and one reaching past what exists.
     with pytest.raises(ExactMaterialPointerError, match="already read material"):
         _account(parts=(ReferencePart(start=0, byte_count=4),), byte_count=4)
@@ -350,7 +350,7 @@ def test_a_literal_must_carry_the_canonical_encoding_of_its_bytes():
             )
 
     # An encoding that decodes to different bytes is still refused, by the
-    # digest rather than by base64.
+    # material identity rather than by base64.
     with pytest.raises(ExactMaterialPointerError, match="does not match"):
         ExactMaterialPointers.from_json_dict(
             dict(carried, parts=[{"kind": "literal", "bytes_b64": "YWJk"}])
@@ -386,11 +386,11 @@ def test_representation_act_bounds_are_established_before_any_material_is_read()
 def test_read_verifies_an_account_that_was_altered_after_input():
     """The verify branch is unreachable through ordinary input, and live anyway.
 
-    `__post_init__` already checks the count and the digest against a
+    `__post_init__` already checks the count and the material identity against a
     read, so `read_exact_bytes` can never refuse an account
     that was built normally. It is not dead: a frozen dataclass is mutable
     through `object.__setattr__`, which is the in-memory analogue of the durable
-    tampering the digest exists to detect. Held so the branch is verified rather
+    tampering the material identity exists to detect. Held so the branch is verified rather
     than assumed, and so removing it later has to be a decision.
     """
 
@@ -403,8 +403,8 @@ def test_read_verifies_an_account_that_was_altered_after_input():
         read_exact_bytes(altered)
 
     altered = represent_exact_material_pointers(b"the cat jumped the cat jumped")
-    object.__setattr__(altered, "sha256", "0" * 64)
-    with pytest.raises(ExactMaterialPointerError, match="does not match sha256"):
+    object.__setattr__(altered, "material_identity", "0" * 64)
+    with pytest.raises(ExactMaterialPointerError, match="does not match material_identity"):
         read_exact_bytes(altered)
 
     # verify=False is the internal path __post_init__ uses, and does not check.
