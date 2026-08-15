@@ -295,12 +295,11 @@ def _record_yield_evidence(
                 "evidence_scope": (
                     "establishes the exact occurrence-to-result relation at this "
                     "Act boundary; establishes no responsibility, "
-                    "authorization, or successful return from "
-                    "an enclosing call"
+                    "authorization, or occurrence beyond this boundary"
                 ),
                 "occurrence_preservation": (
                     "Evidence for the exact occurrence-to-result relation, "
-                    "durably recorded; not the relation or Act occurrence by identity"
+                    "recorded; not the relation or Act occurrence by identity"
                 ),
             },
             "yield_coordinates": sorted(result_content),

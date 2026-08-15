@@ -294,7 +294,7 @@ def test_representation_act_dimensions_record_only_coordinates_that_exist():
         "bounded Representation of current Locality Standing"
     )
     assert dimensions["occurrence_preservation"] == (
-        "Representation Act durably recorded"
+        "Representation Act occurrence recorded"
     )
     # No Assertion of coordinates this Representation does not carry.
     flattened = str(dimensions).lower()
@@ -321,7 +321,7 @@ def test_representation_act_dimensions_record_only_coordinates_that_exist():
     )
     assert dimensions["occurrence_preservation"] == (
         "alternative material count 3; roles, response-coordinate binding, "
-        "and represented provenance occurrences durably recorded"
+        "and represented provenance occurrences recorded"
     )
     assert "bounded-alternative" not in str(dimensions).lower()
     assert "bounded alternative" not in str(dimensions).lower()

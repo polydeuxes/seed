@@ -79,7 +79,7 @@ def open_operator_checkpoint(
                 "this exact addressed-identity-to-Representation Locality relation only"
             ),
             "unknowns": [
-                "what the addressed argument material represents remains Unknown"
+                "what the addressed material represents remains Unknown"
             ],
         },
         locality_identity=locality_identity,

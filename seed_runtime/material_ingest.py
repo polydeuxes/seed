@@ -106,7 +106,7 @@ def ingest_material(
                 "represented relation Unknown"
             ),
             "scope_locality": f"locality:{locality_identity}",
-            "occurrence_preservation": "exact Ingest bytes durably recorded",
+            "occurrence_preservation": "exact Ingest material occurrence recorded",
         },
         "responsible_act_evidence_identity": responsible_act_evidence.identity,
         "yield_evidence_identity": yield_evidence.identity,

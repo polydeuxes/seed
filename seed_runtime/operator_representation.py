@@ -41,7 +41,7 @@ REPRESENTATION_EMISSION_RESPONSIBILITY = (
 )
 REPRESENTATION_EMISSION_FAILURE_RESULT_KIND = "Representation emission boundary failure result"
 REPRESENTATION_EMISSION_FAILURE_RESPONSIBILITY = (
-    "preserve one exact failed Representation emission boundary call"
+    "preserve one exact Representation emission failure occurrence"
 )
 EVENT_KIND_RESPONSIBILITIES = {
     REPRESENTATION_RECORDED_KIND: "02.Acts.A",
@@ -117,7 +117,7 @@ def record_operator_representation(
         coordinate_binding[coordinate] = alternative_identity
     representation_result = "bounded representation of current Locality Standing"
     content = "bounded Representation of current Locality Standing"
-    occurrence = "Representation Act durably recorded"
+    occurrence = "Representation Act occurrence recorded"
     known_loss: list[str] = []
     if alternative_material:
         content = (
@@ -127,7 +127,7 @@ def record_operator_representation(
         occurrence = (
             f"alternative material count {len(alternative_material)}; roles, "
             "response-coordinate binding, and represented provenance occurrences "
-            "durably recorded"
+            "recorded"
         )
         representation_result += " with bounded alternative material and preserved source roles"
         known_loss.append(
@@ -336,7 +336,7 @@ def emit_operator_representation(
             "emission_act_identity": emission_act_identity,
             "dimensions": _dimensions(
                 identity=f"emission-attempt:{representation['representation_identity']}",
-                content="exact text prepared for the declared output boundary",
+                content="exact Representation for the declared emission boundary",
                 source=representation["representation_event_identity"],
                 responsibility=REPRESENTATION_EMISSION_RESPONSIBILITY,
                 authority="unestablished",
@@ -345,7 +345,7 @@ def emit_operator_representation(
                     "acceptance or downstream effect"
                 ),
                 scope=scope,
-                occurrence="emission attempt durably recorded before output",
+                occurrence="emission attempt occurrence recorded before output",
             ),
             "representation": emitted_representation,
             "representation_kind": "text",
@@ -497,7 +497,7 @@ def emit_operator_representation(
             **result_material,
             "dimensions": _dimensions(
                 identity=act_occurrence_identity,
-                content="exact Representation written to console output stream",
+                content="exact Representation emitted at the declared boundary",
                 source=representation["representation_event_identity"],
                 responsibility=REPRESENTATION_EMISSION_RESPONSIBILITY,
                 authority="unestablished",
@@ -506,7 +506,7 @@ def emit_operator_representation(
                     "boundary require separate Evidence"
                 ),
                 scope=scope,
-                occurrence="emission occurrence durably recorded",
+                occurrence="emission occurrence recorded",
             ),
             "emitted_representation": emitted_representation,
             "emitted_representation_kind": "text",
@@ -581,7 +581,7 @@ def _record_emission_failure(
             "emitted_event_identity": emitted_event_identity,
             "dimensions": _dimensions(
                 identity=f"emission-failure:{attempt_event_identity}:{boundary}",
-                content=f"{boundary} did not complete the emission call",
+                content=f"{boundary} emission did not complete",
                 source=attempt_event_identity,
                 responsibility=REPRESENTATION_EMISSION_RESPONSIBILITY,
                 authority="unestablished",
@@ -590,7 +590,7 @@ def _record_emission_failure(
                     "and no acceptance beyond the reported write result"
                 ),
                 scope=scope,
-                occurrence="emission failure durably recorded",
+                occurrence="emission failure occurrence recorded",
             ),
             "boundary": boundary,
             "write_count": write_count,
@@ -609,12 +609,12 @@ def _record_emission_failure(
         {
             "downstream_act_identity": act_identity,
             "act_occurrence_identity": act_occurrence_identity,
-            "act": "failed Representation emission boundary call",
+            "act": "Representation emission failure at declared boundary",
             "responsibility": REPRESENTATION_EMISSION_FAILURE_RESPONSIBILITY,
             "responsible_boundary": "this Seed",
             "authority": "unestablished",
             "evidence_scope": (
-                "this exact failed Representation emission boundary call only"
+                "this exact Representation emission failure occurrence only"
             ),
         },
         locality_identity=representation["locality_identity"],
@@ -622,7 +622,7 @@ def _record_emission_failure(
     yield_evidence = _record_yield_evidence(
         ledger,
         locality_identity=representation["locality_identity"],
-        exact_act="failed Representation emission boundary call",
+        exact_act="Representation emission failure at declared boundary",
         act_occurrence_identity=act_occurrence_identity,
         responsible_act_evidence_identity=act_evidence.identity,
         result_kind=REPRESENTATION_EMISSION_FAILURE_RESULT_KIND,
