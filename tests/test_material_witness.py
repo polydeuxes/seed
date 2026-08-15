@@ -21,10 +21,12 @@ sys.path.insert(0, str(ROOT / "scripts"))
 
 from compiled_format_invocation import (  # noqa: E402
     AddedPositionOccurrence,
+    AddedPositionAdmissionOccurrence,
     COMPILED_IMPLEMENTATION_FUNCTIONS,
     CompiledImplementationFunction,
     ExactMaterialReference,
     admit_added_position_occurrences,
+    added_position_admission_occurrence,
     added_position_occurrences,
     compare_added_position_invocations,
     compare_added_position_pairs,
@@ -42,11 +44,7 @@ from compiled_material_invocation import (  # noqa: E402
     occurrences_across,
     invocation_occurrence,
 )
-from material_admission import (  # noqa: E402
-    admission_occurrence,
-    compare_admission_results,
-    preserves,
-)
+from material_admission import compare_admission_results, preserves  # noqa: E402
 
 
 def _implementation_functions_available():
@@ -246,18 +244,17 @@ def book_added_position_admission_occurrences(
     book_added_position_admission,
 ):
     additions = book_three_byte_format_occurrences[1]
-    admitted = tuple(
-        admit_added_position_occurrences(additions, (row,))
-        for row in book_added_position_comparisons
-    ) + (book_added_position_admission,)
+    comparison_sets = tuple(
+        (row,) for row in book_added_position_comparisons
+    ) + (book_added_position_comparisons,)
     return tuple(
-        admission_occurrence(
-            result,
+        added_position_admission_occurrence(
+            additions,
+            comparisons,
             boundary_identity="book-added-position-admission",
             occurrence_position=position,
-            source_material=additions,
         )
-        for position, result in enumerate(admitted)
+        for position, comparisons in enumerate(comparison_sets)
     )
 
 
@@ -960,11 +957,33 @@ def test_each_function_and_complete_admission_has_one_exact_occurrence(
         }
     ) == len(book_added_position_admission_occurrences)
     for occurrence in book_added_position_admission_occurrences:
+        assert occurrence.source_material == additions
+        assert occurrence.comparison_occurrences
         assert {
             addition.act_occurrence_identity
             for admitted in occurrence.admitted_material
             for addition in admitted
         } == addition_identities
+
+
+def test_addition_admission_refuses_a_result_without_its_compare_occurrences(
+    book_added_position_admission_occurrences,
+):
+    exact = book_added_position_admission_occurrences[-1]
+    first, second, *remaining = exact.admitted_material
+    changed = type(exact.admission_occurrence)(
+        boundary_identity="changed-addition-admission",
+        occurrence_position=0,
+        source_material=exact.source_material,
+        admitted_material=(first + second, *remaining),
+    )
+
+    with pytest.raises(ValueError, match="differs from its Compare occurrences"):
+        AddedPositionAdmissionOccurrence(
+            admission_occurrence=changed,
+            addition_occurrences=exact.addition_occurrences,
+            comparison_occurrences=exact.comparison_occurrences,
+        )
 
 
 def test_every_ordered_admission_result_pair_has_one_exact_compare_occurrence(

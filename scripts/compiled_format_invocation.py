@@ -11,6 +11,12 @@ import tomllib
 from typing import Callable
 import xml.etree.ElementTree
 
+from material_admission import (
+    AdmissionOccurrence,
+    AdmissionResultReference,
+    admission_occurrence,
+)
+
 
 @dataclass(frozen=True)
 class CompiledImplementationFunction:
@@ -302,6 +308,45 @@ class RemovedPositionCompareOccurrence:
         return self.source_returned != self.result_returned
 
 
+@dataclass(frozen=True, slots=True)
+class AddedPositionAdmissionOccurrence:
+    admission_occurrence: AdmissionOccurrence
+    addition_occurrences: tuple[AddedPositionOccurrence, ...]
+    comparison_occurrences: tuple[tuple[AddedPositionCompareOccurrence, ...], ...]
+
+    def __post_init__(self) -> None:
+        if not isinstance(self.admission_occurrence, AdmissionOccurrence):
+            raise TypeError("addition Admission requires its exact Act occurrence")
+        admitted = admit_added_position_occurrences(
+            self.addition_occurrences,
+            self.comparison_occurrences,
+        )
+        if self.admission_occurrence.source_material != self.addition_occurrences:
+            raise ValueError("addition Admission source differs from its Act occurrences")
+        if self.admission_occurrence.admitted_material != admitted:
+            raise ValueError("addition Admission differs from its Compare occurrences")
+
+    @property
+    def source_material(self):
+        return self.admission_occurrence.source_material
+
+    @property
+    def admitted_material(self):
+        return self.admission_occurrence.admitted_material
+
+    @property
+    def act_occurrence_identity(self) -> tuple[str, int]:
+        return self.admission_occurrence.act_occurrence_identity
+
+    @property
+    def result_identity(self) -> tuple[str, int, str]:
+        return self.admission_occurrence.result_identity
+
+    @property
+    def result_reference(self) -> AdmissionResultReference:
+        return self.admission_occurrence.result_reference
+
+
 def _added_position_comparisons_by_occurrence(
     occurrences: tuple[AddedPositionOccurrence, ...],
     comparisons: tuple[tuple[AddedPositionCompareOccurrence, ...], ...],
@@ -390,6 +435,27 @@ def admit_added_position_occurrences(
         )
         same_coordinates.setdefault(coordinates, []).append(occurrence)
     return tuple(tuple(found) for found in same_coordinates.values())
+
+
+def added_position_admission_occurrence(
+    occurrences: tuple[AddedPositionOccurrence, ...],
+    comparisons: tuple[tuple[AddedPositionCompareOccurrence, ...], ...],
+    *,
+    boundary_identity: str,
+    occurrence_position: int = 0,
+) -> AddedPositionAdmissionOccurrence:
+    admitted = admit_added_position_occurrences(occurrences, comparisons)
+    admission = admission_occurrence(
+        admitted,
+        boundary_identity=boundary_identity,
+        occurrence_position=occurrence_position,
+        source_material=occurrences,
+    )
+    return AddedPositionAdmissionOccurrence(
+        admission_occurrence=admission,
+        addition_occurrences=occurrences,
+        comparison_occurrences=comparisons,
+    )
 
 
 def compare_added_position_pairs(
