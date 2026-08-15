@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import sys
 from pathlib import Path
+import shutil
 
 import pytest
 
@@ -11,10 +12,13 @@ import pytest
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "scripts"))
 
-from python_parser_witness_harness import (  # noqa: E402
+from compiled_parser_witness_harness import (  # noqa: E402
+    COMPILED_PARSER_WITNESSES,
     first_probe_family,
     interrogate,
     interrogate_many,
+    interrogate_across_compiled_parsers,
+    interrogate_compiled_parser,
     one_byte_substitutions,
 )
 
@@ -116,7 +120,7 @@ def test_a_non_byte_input_is_refused_before_interrogation():
 
 
 def test_exact_bytes_reach_the_compiled_witness_without_prior_decoding(monkeypatch):
-    import python_parser_witness_harness as harness
+    import compiled_parser_witness_harness as harness
 
     supplied = []
     compiled = harness.ast.parse
@@ -130,3 +134,37 @@ def test_exact_bytes_reach_the_compiled_witness_without_prior_decoding(monkeypat
 
     assert outcome.accepted is True
     assert supplied == [b"x=1"]
+
+
+@pytest.mark.skipif(
+    any(shutil.which(witness.arguments[0]) is None for witness in COMPILED_PARSER_WITNESSES),
+    reason="one compiled parser witness is unavailable",
+)
+def test_distinct_compiled_parsers_receive_the_same_exact_material():
+    material = b"x=1\n"
+
+    answers = tuple(
+        interrogate_compiled_parser(material, witness)
+        for witness in COMPILED_PARSER_WITNESSES
+    )
+
+    assert len({answer.witness for answer in answers}) == 4
+    assert all(answer.exact_material == material for answer in answers)
+    assert all(type(answer.stdout_bytes) is bytes for answer in answers)
+    assert all(type(answer.stderr_bytes) is bytes for answer in answers)
+
+
+@pytest.mark.skipif(
+    any(shutil.which(witness.arguments[0]) is None for witness in COMPILED_PARSER_WITNESSES),
+    reason="one compiled parser witness is unavailable",
+)
+def test_cross_parser_answers_preserve_agreement_and_disagreement():
+    materials = first_probe_family()
+    rows = interrogate_across_compiled_parsers(materials)
+    acceptance = tuple(tuple(answer.accepted for answer in row) for row in rows)
+
+    assert len(rows) == 4
+    assert all(tuple(answer.exact_material for answer in row) == materials for row in rows)
+    columns = tuple(zip(*acceptance))
+    assert any(len(set(column)) == 1 for column in columns)
+    assert any(len(set(column)) > 1 for column in columns)
