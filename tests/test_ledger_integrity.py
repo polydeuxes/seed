@@ -836,14 +836,6 @@ def test_compressed_and_uncompressed_stores_verify_alike(tmp_path):
 
 
 def test_damaged_compressed_storage_is_corruption_not_a_compressor_error(tmp_path):
-    """Damage the compressed bytes, not the row's type.
-
-    An earlier version of this test replaced the BLOB with `json.dumps(...)`,
-    which SQLite returns as `str`, so `zlib.decompress` was never reached and
-    the test passed through the ordinary text path while asserting to exercise
-    compressed corruption. Curator caught it. Damaged compressed bytes had been
-    leaking raw `zlib.error` and `UnicodeDecodeError` through `integrity_of`.
-    """
 
     import zlib
     from seed_runtime.events import InvalidStoredMaterial

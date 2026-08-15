@@ -849,12 +849,8 @@ def _measurement_finding_material(
             "source_provenance": getattr(
                 finding, "material_provenance", MATERIAL_AS_SUPPLIED
             ),
-            # Not derived from the provenance. An earlier version made this
-            # follow material_provenance, which compresses two coordinates
-            # `#2439` had just separated and mints the sibling of a string
-            # `#2431` had already called contamination. Where the material came
-            # from and which responsible boundary bears the Measurement Responsibility are
-            # different distinctions, and only the first has been validated.
+            # Material provenance and the responsible boundary bearing the
+            # Measurement Responsibility are distinct coordinates.
             "responsibility": RESPONSIBILITY_UNESTABLISHED,
             "authority": "unestablished",
             "evidence_scope": (
@@ -903,8 +899,7 @@ def record_measurement_findings(
     # boundary only where a support support was declared; a measurement without
     # one reached the recorder unchecked.
     #
-    # An earlier version exempted findings carrying a support support, calling
-    # them verified. Carrying a support is not being verified against one: both
+    # Carrying a support is not being verified against one: both
     # `RecurrenceFinding` and `InputSupport` are directly formable, and a
     # finding verified against one ledger may be handed to another. This
     # function has no witness for either, so it exempts nothing.
