@@ -11,7 +11,6 @@ from typing import Any
 from seed_runtime.secrets import (
     SECRET_FIELD_NAMES,
     secret_boundary_key,
-    reject_secret_fields,
 )
 
 def utc_now() -> datetime:
@@ -41,34 +40,14 @@ def _screen_durable_event_object(value: dict[str, Any]) -> dict[str, Any]:
 
 
 def _require_preservable_material(value: Any, path: str = "material") -> None:
-    """Refuse a material a durable store could not return preserved.
+    """Refuse material that cannot cross the durable boundary exactly."""
 
-    JSON has no tuple and no non-string key, so a durable store silently
-    returned `[1, 2]` for a tuple and `{"1": ...}` for an integer key while the
-    in-memory ledger returned what the caller passed. The two share an API and
-    are used interchangeably, so the two ledgers returned different occurrences
-    from one append, with nothing recorded to say so.
-
-    Refused rather than coerced, and rather than declared as known loss: the
-    loss is avoidable, since a caller wanting a sequence can pass a list and one
-    wanting a key can pass a string. The path is reported because a tuple nested
-    four levels down is otherwise a long search.
-
-    **The boundary is JSON value identity, held by exact type.** A durable store
-    returns the JSON type, so a Python subclass does not survive it: an
-    `IntEnum` came back as `int`, a `str` subclass as `str`, a `list` subclass
-    as `list`. Those are the same divergence a tuple caused, so they are refused
-    the same way rather than the rule being stated as one thing and enforced as
-    another.
-    """
-
-    # `type(...) is` throughout, not `isinstance`. A durable store returns the
-    # JSON type, so an `IntEnum` came back as `int`, a `str` subclass as `str`,
-    # and a `list` subclass as `list`, while the in-memory ledger returned what
-    # the caller passed. That is the same divergence a tuple caused, and an
-    # `isinstance` gate admitted every one of them.
     if type(value) is dict:
         for key, nested in value.items():
+            if secret_boundary_key(key) in SECRET_FIELD_NAMES:
+                raise ValueError(
+                    f"secret field is not allowed in durable event material: {key}"
+                )
             if type(key) is not str:
                 raise ValueError(
                     f"{path} carries a {type(key).__name__} key {key!r}; a durable "
@@ -86,11 +65,6 @@ def _require_preservable_material(value: Any, path: str = "material") -> None:
             "pass a list to preserve it exactly"
         )
     if type(value) is float and not math.isfinite(value):
-        # Refused for a stronger reason than round-tripping. `NaN` never equals
-        # itself so it cannot round-trip at all, and `Infinity` does only under
-        # Python's own permissive encoder — neither is valid JSON, so a store
-        # holding one is readable by nothing else. `#2492` was this exact
-        # lesson: a durable boundary must not depend on one runtime's leniency.
         raise ValueError(
             f"{path} carries {value!r}, which is not a JSON number; a durable "
             "store could hold it only under a permissive reader"
@@ -148,12 +122,7 @@ class Event:
         if locality_identity is not None and type(locality_identity) is not str:
             raise ValueError("event locality identity must be a string or absent")
         if not isinstance(material, _ScreenedEventMaterial):
-            reject_secret_fields(material, "event.material")
-            # Refused here rather than at the store, so both ledgers refuse the
-            # same material identically and neither serializes first. A material
-            # read from durable JSON is already preservable by
-            # input, which is what the screened representation identifies.
-            _require_preservable_material(material)
+            _require_preservable_material(material, "event.material")
         object.__setattr__(self, "identity", identity)
         object.__setattr__(self, "kind", kind)
         object.__setattr__(self, "timestamp", utc_now() if timestamp is None else timestamp)

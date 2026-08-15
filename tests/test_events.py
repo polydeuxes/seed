@@ -56,7 +56,7 @@ def test_event_secret_rejection_accepts_large_scalar_lists():
     assert event.material == material
 
 
-def test_durable_large_scalar_lists_do_not_repeat_secret_traversal(
+def test_durable_large_scalar_lists_do_not_repeat_material_traversal(
     tmp_path, monkeypatch
 ):
     ledger = SQLiteEventLedger(str(tmp_path / "seed.db"))
@@ -67,7 +67,7 @@ def test_durable_large_scalar_lists_do_not_repeat_secret_traversal(
         raise AssertionError("durable material was screened during JSON decoding")
 
     monkeypatch.setattr(
-        "seed_runtime.event.reject_secret_fields", unexpected_second_traversal
+        "seed_runtime.event._require_preservable_material", unexpected_second_traversal
     )
 
     assert ledger.get(event.identity).material == material
