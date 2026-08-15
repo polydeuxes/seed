@@ -16,7 +16,7 @@ A representation Act occurrence yields and carries its exact bounded Representat
 
 An emission attempt may be recorded before the addressed boundary is invoked. The attempt does not establish boundary acceptance. A reported partial write or error is a failed occurrence carrying only the reported result and preserved Unknowns. An attempt without a recorded outcome leaves boundary acceptance Unknown. Where the declared boundary is the text-stream write, its acceptance establishes emission; a later flush failure does not erase that occurrence and establishes no downstream effect.
 
-Current-facing material has present Applicability only under its exact representation rule, as-of boundary, freshness, conflict treatment, and Unknowns.
+Current-facing material has present Applicability only under its exact representation rule, as-of boundary, availability, conflict treatment, and Unknowns.
 
 An Assertion may acquire another exact locality relation only through a responsible movement occurrence. Movement preserves the Assertion's identity and carried coordinates while recording its source occurrence, earlier locality relation, newly related subject, Evidence, Scope, Unknowns, and limits. Movement does not copy or strengthen the Assertion, revise its Standing, or establish Applicability.
 
