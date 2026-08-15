@@ -278,6 +278,75 @@ class RemovedPositionCompareOccurrence:
         return self.source_returned != self.result_returned
 
 
+def admit_added_position_occurrences(
+    occurrences: tuple[AddedPositionOccurrence, ...],
+    comparisons: tuple[tuple[AddedPositionCompareOccurrence, ...], ...],
+) -> tuple[tuple[AddedPositionOccurrence, ...], ...]:
+    if type(occurrences) is not tuple or not occurrences:
+        raise TypeError("Admission requires exact addition Act occurrences")
+    if type(comparisons) is not tuple or not comparisons:
+        raise TypeError("Admission requires exact Compare occurrence tuples")
+
+    occurrence_by_identity: dict[tuple[str, int], AddedPositionOccurrence] = {}
+    for occurrence in occurrences:
+        if not isinstance(occurrence, AddedPositionOccurrence):
+            raise TypeError("Admission requires exact addition Act occurrences")
+        identity = occurrence.act_occurrence_identity
+        if identity in occurrence_by_identity:
+            raise ValueError("addition Act occurrence entered Admission twice")
+        occurrence_by_identity[identity] = occurrence
+
+    expected_identities = frozenset(occurrence_by_identity)
+    coordinates: dict[tuple[str, int], list[tuple[str, bool, bool]]] = {
+        identity: [] for identity in occurrence_by_identity
+    }
+    implementation_function_identities = set()
+    for row in comparisons:
+        if type(row) is not tuple or not row:
+            raise TypeError("Admission requires exact Compare occurrence tuples")
+        implementation_function_identity = row[0].implementation_function_identity
+        if implementation_function_identity in implementation_function_identities:
+            raise ValueError("implementation function entered Admission twice")
+        implementation_function_identities.add(implementation_function_identity)
+
+        comparison_by_identity = {}
+        for comparison in row:
+            if not isinstance(comparison, AddedPositionCompareOccurrence):
+                raise TypeError("Admission requires exact addition Compare occurrences")
+            if (
+                comparison.implementation_function_identity
+                != implementation_function_identity
+            ):
+                raise ValueError("one Compare tuple crossed implementation functions")
+            identity = comparison.added_position_act_occurrence_identity
+            if identity in comparison_by_identity:
+                raise ValueError("addition Act occurrence entered one Compare tuple twice")
+            if type(comparison.source_returned) is not bool or type(
+                comparison.result_returned
+            ) is not bool:
+                raise TypeError("Compare returned coordinates must be exact booleans")
+            comparison_by_identity[identity] = comparison
+
+        if frozenset(comparison_by_identity) != expected_identities:
+            raise ValueError("Compare tuple does not carry every addition Act occurrence")
+        for identity in occurrence_by_identity:
+            comparison = comparison_by_identity[identity]
+            coordinates[identity].append(
+                (
+                    implementation_function_identity,
+                    comparison.source_returned,
+                    comparison.result_returned,
+                )
+            )
+
+    same_coordinates: dict[
+        tuple[tuple[str, bool, bool], ...], list[AddedPositionOccurrence]
+    ] = {}
+    for identity, occurrence in occurrence_by_identity.items():
+        same_coordinates.setdefault(tuple(coordinates[identity]), []).append(occurrence)
+    return tuple(tuple(found) for found in same_coordinates.values())
+
+
 def _a(material: bytes):
     return json.loads(material)
 

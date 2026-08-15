@@ -24,6 +24,7 @@ from compiled_format_invocation import (  # noqa: E402
     COMPILED_IMPLEMENTATION_FUNCTIONS,
     CompiledImplementationFunction,
     ExactMaterialReference,
+    admit_added_position_occurrences,
     added_position_occurrences,
     compare_added_position_invocations,
     compare_removed_position_invocations,
@@ -218,6 +219,16 @@ def book_added_position_comparisons(
         book_pair_format_occurrences,
         book_three_byte_format_occurrences[2],
         boundary_identity="book-added-position-compare",
+    )
+
+
+@pytest.fixture(scope="module")
+def book_added_position_admission(
+    book_three_byte_format_occurrences, book_added_position_comparisons
+):
+    return admit_added_position_occurrences(
+        book_three_byte_format_occurrences[1],
+        book_added_position_comparisons,
     )
 
 
@@ -759,6 +770,105 @@ def test_addition_compare_finds_same_and_different_return_coordinates(
 
     assert any(distinctions)
     assert any(not distinction for distinction in distinctions)
+
+
+def test_addition_admission_preserves_every_exact_act_occurrence(
+    book_added_position_admission, book_three_byte_format_occurrences
+):
+    additions = book_three_byte_format_occurrences[1]
+    admitted = tuple(
+        occurrence
+        for same_coordinates in book_added_position_admission
+        for occurrence in same_coordinates
+    )
+
+    assert len(admitted) == len(additions)
+    assert {occurrence.act_occurrence_identity for occurrence in admitted} == {
+        occurrence.act_occurrence_identity for occurrence in additions
+    }
+    assert len({occurrence.act_occurrence_identity for occurrence in admitted}) == len(
+        admitted
+    )
+
+
+def test_addition_admission_finds_recurring_complete_compare_coordinates(
+    book_added_position_admission, book_added_position_comparisons
+):
+    found = {}
+    for row in book_added_position_comparisons:
+        for comparison in row:
+            found.setdefault(
+                comparison.added_position_act_occurrence_identity, []
+            ).append(
+                (
+                    comparison.implementation_function_identity,
+                    comparison.source_returned,
+                    comparison.result_returned,
+                )
+            )
+    coordinates = {
+        identity: tuple(coordinate) for identity, coordinate in found.items()
+    }
+
+    assert len(book_added_position_admission) > 1
+    assert any(
+        len(same_coordinates) > 1
+        for same_coordinates in book_added_position_admission
+    )
+    for same_coordinates in book_added_position_admission:
+        assert len(
+            {
+                coordinates[occurrence.act_occurrence_identity]
+                for occurrence in same_coordinates
+            }
+        ) == 1
+
+
+def test_addition_admission_refuses_incomplete_compare_coverage(
+    book_three_byte_format_occurrences, book_added_position_comparisons
+):
+    incomplete = (
+        book_added_position_comparisons[0][:-1],
+        *book_added_position_comparisons[1:],
+    )
+
+    with pytest.raises(ValueError, match="every addition Act occurrence"):
+        admit_added_position_occurrences(
+            book_three_byte_format_occurrences[1],
+            incomplete,
+        )
+
+
+def test_equal_result_material_keeps_distinct_occurrences_in_one_admission():
+    source = ExactMaterialReference("source", "source-assertion", b"aa")
+    added = ExactMaterialReference("added", "added-assertion", b"a")
+    implementation_function = CompiledImplementationFunction(
+        identity="fixture", invocation=lambda material: material
+    )
+    additions = added_position_occurrences(
+        (source,), (added,), boundary_identity="equal-result-addition"
+    )
+    source_invocations = compiled_reference_invocations(
+        (source,),
+        boundary_identity="equal-result-source",
+        implementation_functions=(implementation_function,),
+    )
+    result_invocations = added_position_invocations(
+        additions,
+        boundary_identity="equal-result-result",
+        implementation_functions=(implementation_function,),
+    )
+    comparisons = compare_added_position_invocations(
+        source_invocations,
+        result_invocations,
+        boundary_identity="equal-result-compare",
+    )
+
+    admission = admit_added_position_occurrences(additions, comparisons)
+
+    assert admission == (additions,)
+    assert tuple(occurrence.position for occurrence in admission[0]) == (0, 1, 2)
+    assert len({occurrence.act_occurrence_identity for occurrence in admission[0]}) == 3
 
 
 def test_addition_compare_refuses_a_missing_source_reference():
