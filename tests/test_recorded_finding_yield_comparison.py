@@ -236,7 +236,7 @@ def test_a_content_mismatch_does_not_assert_which_crossing_caused_it(
 ):
     ledger, event = recorded
     altered = dict(event.material)
-    altered["total_count"] = 999
+    altered["recurrence_count"] = 999
     forged = ledger.append(MEASUREMENT_RECORDED_KIND, altered, locality_identity="r")
     result = compare_recorded_finding_yield(ledger, forged.identity)
     assert result.material["dimensions"]["standing"] == DIFFERS_FROM_YIELD_EVIDENCE
@@ -256,11 +256,11 @@ def test_the_comparison_revises_nothing(recorded):
 
     ledger, event = recorded
     altered = dict(event.material)
-    altered["total_count"] = 999
+    altered["recurrence_count"] = 999
     forged = ledger.append(MEASUREMENT_RECORDED_KIND, altered, locality_identity="r")
     compare_recorded_finding_yield(ledger, forged.identity)
     # The finding found differing is exactly as it was.
-    assert ledger.get(forged.identity).material["total_count"] == 999
+    assert ledger.get(forged.identity).material["recurrence_count"] == 999
     assert ledger.get(forged.identity).kind == MEASUREMENT_RECORDED_KIND
 
 
@@ -389,7 +389,7 @@ def test_missing_yield_result_is_erasure(recorded):
     evidence = ledger.append(
         YIELD_EVIDENCE_KIND,
         {
-            "yield_coordinates": ["total_count"],
+            "yield_coordinates": ["recurrence_count"],
             "result_kind": RECURRENCE_RESULT_KIND,
         },
         locality_identity="r",

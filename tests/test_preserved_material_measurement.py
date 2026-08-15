@@ -429,7 +429,7 @@ def test_material_examined_carrying_and_total_are_three_different_counts(
     # because the first occurrence carries it twice.
     assert finding.occurrences_examined == 3
     assert finding.occurrences_carrying == 2
-    assert finding.total_count == 3
+    assert finding.recurrence_count == 3
 
 
 def test_a_representation_that_never_occurs_yields_a_measurement_finding(
@@ -442,7 +442,7 @@ def test_a_representation_that_never_occurs_yields_a_measurement_finding(
         occurrences_of=_counts("zebra"),
         yield_in=(ledger, "r"),
     )
-    assert finding.total_count == 0
+    assert finding.recurrence_count == 0
     assert finding.occurrences_carrying == 0
     # The scope is still stated: a bounded measurement assertion under the
     # declared rule and scope, not a failure to measure. It establishes no
@@ -452,7 +452,7 @@ def test_a_representation_that_never_occurs_yields_a_measurement_finding(
         ledger, locality_identity="r", finding=finding
     )
     assert event.material["dimensions"]["identity"] == "measurement:zebra"
-    assert event.material["total_count"] == 0
+    assert event.material["recurrence_count"] == 0
 
 
 def test_nothing_but_a_ingest_occurrence_occurrence_may_be_recurrence_measured(
@@ -625,9 +625,9 @@ def test_a_declared_representation_that_never_occurs_still_gets_a_finding(
             occurrences, declared=declared, counts_in=_counts_in(declared)
         )
     }
-    assert findings["zebra"].total_count == 0
+    assert findings["zebra"].recurrence_count == 0
     assert findings["zebra"].occurrences_examined == 3
-    assert findings["the"].total_count == 3
+    assert findings["the"].recurrence_count == 3
 
 
 def test_counting_a_representation_that_was_not_declared_is_refused(
@@ -1061,7 +1061,7 @@ def test_a_finding_measures_what_the_ledger_carries_not_what_was_handed_in(
         support_validator=InputSupportValidator(ledger),
     )
     # The ledger carries no "zebra". The handed-in objects carried nine.
-    assert findings[0].total_count == 0
+    assert findings[0].recurrence_count == 0
 
 
 def test_an_identity_the_ledger_does_not_preserve_is_refused(
@@ -1109,7 +1109,7 @@ def test_a_finding_over_unpreserved_material_cannot_be_recorded():
         occurrences_of=_counts("zebra"),
         yield_in=(ledger, "r"),
     )
-    assert finding.total_count == 2  # the measurement itself is not the guard
+    assert finding.recurrence_count == 2  # the measurement itself is not the guard
     with pytest.raises(PreservedMaterialMeasurementError, match="preserves no such ingest"):
         record_measurement_finding(
             ledger, locality_identity="r", finding=finding
@@ -1155,7 +1155,7 @@ def test_a_real_identity_carrying_forged_material_measures_the_ledger(
     loose = measure_recurrence(
         forged, declared=_recurrence_declared("zebra"), occurrences_of=_counts("zebra")
     )
-    assert loose.total_count == 9
+    assert loose.recurrence_count == 9
 
     # Bound to the ledger those identities name: the ledger carries no zebra.
     bound = measure_recurrence(
@@ -1164,7 +1164,7 @@ def test_a_real_identity_carrying_forged_material_measures_the_ledger(
         occurrences_of=_counts("zebra"),
         preserved_in=ledger,
     )
-    assert bound.total_count == 0
+    assert bound.recurrence_count == 0
 
 
 def test_the_positional_path_can_bind_its_material_too(recurrence_occurrences):
@@ -1204,7 +1204,7 @@ def test_carrying_a_basis_no_longer_exempts_a_finding_from_the_recorder():
         input_localities=finding.input_localities,
         occurrences_examined=finding.occurrences_examined,
         occurrences_carrying=finding.occurrences_carrying,
-        total_count=finding.total_count,
+        recurrence_count=finding.recurrence_count,
         input_event_identities=finding.input_event_identities,
         input_support=declare_input_support(
             locality_identity="r",
@@ -1262,7 +1262,7 @@ def test_the_recorder_states_the_provenance_the_measurement_declared(
         occurrences_of=_counts("zebra"),
         yield_in=(ledger, "r"),
     )
-    assert finding.total_count == 6
+    assert finding.recurrence_count == 6
     event = record_measurement_finding(
         ledger, locality_identity="r", finding=finding
     )
@@ -1351,7 +1351,7 @@ def _rebuilt(finding, **different):
         "input_localities": finding.input_localities,
         "occurrences_examined": finding.occurrences_examined,
         "occurrences_carrying": finding.occurrences_carrying,
-        "total_count": finding.total_count,
+        "recurrence_count": finding.recurrence_count,
         "input_event_identities": finding.input_event_identities,
         "downstream_act_identity": finding.downstream_act_identity,
         "act_occurrence_identity": finding.act_occurrence_identity,
@@ -1414,7 +1414,7 @@ def test_another_representation_of_the_same_result_is_lawful(
 def test_evidence_for_one_result_does_not_carry_another(recurrence_occurrences):
     ledger, occurrences = recurrence_occurrences
     yielded = _yielded(ledger, occurrences)
-    borrowed = _rebuilt(yielded, total_count=yielded.total_count + 1)
+    borrowed = _rebuilt(yielded, recurrence_count=yielded.recurrence_count + 1)
     with pytest.raises(PreservedMaterialMeasurementError, match="different result"):
         record_measurement_finding(
             ledger, locality_identity="r", finding=borrowed
@@ -1445,7 +1445,7 @@ def test_results_of_one_act_occurrence_cannot_locality_yield_evidence(
 @pytest.mark.parametrize(
     "different",
     [
-        {"total_count": 999},
+        {"recurrence_count": 999},
         {"occurrences_carrying": 999},
         {"occurrences_examined": 999},
         {"material_provenance": MATERIAL_READ_FROM_LEDGER},
@@ -1479,7 +1479,7 @@ def test_recording_cannot_overwrite_what_the_measurement_established(
             ledger,
             locality_identity="r",
             finding=finding,
-            extra={"total_count": 999},
+            extra={"recurrence_count": 999},
         )
     event = record_measurement_finding(
         ledger,
@@ -1533,7 +1533,7 @@ def test_recurrence_recorder_requires_its_exact_yield_result(
         finding.act_occurrence_identity
     )
     altered_result = dict(evidence.material["result"])
-    altered_result["total_count"] += 1
+    altered_result["recurrence_count"] += 1
     forged = ledger.append(
         YIELD_EVIDENCE_KIND,
         {**evidence.material, "result": altered_result},
@@ -1575,7 +1575,7 @@ def test_the_witness_asserts_no_responsibility(
         {"dimensions": {"identity": "something else"}},
         {"unknowns": ["one nobody established"]},
         {"provenance_occurrence_references": ["evt_unsupported"]},
-        {"total_count": 999},
+        {"recurrence_count": 999},
     ],
 )
 def test_recording_may_not_replace_any_coordinate_the_material_carries(

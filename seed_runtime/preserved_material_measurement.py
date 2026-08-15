@@ -254,8 +254,8 @@ class RecurrenceFinding:
     occurrences_examined: int
     # How many of them carried the representation at least once.
     occurrences_carrying: int
-    # How many times it occurred in total across them. This is the recurrence.
-    total_count: int
+    # How many times the representation recurred across them.
+    recurrence_count: int
     input_event_identities: tuple[str, ...]
     downstream_act_identity: str = field(
         default_factory=lambda: new_identity("preserved_recurrence_measurement_act"),
@@ -301,7 +301,7 @@ class RecurrenceFinding:
             "input_localities": list(self.input_localities),
             "occurrences_examined": self.occurrences_examined,
             "occurrences_carrying": self.occurrences_carrying,
-            "total_count": self.total_count,
+            "recurrence_count": self.recurrence_count,
             "input_event_identities": list(self.input_event_identities),
             "input_count": len(self.input_event_identities),
             "limits": list(self.limits),
@@ -343,7 +343,7 @@ def measure_recurrence(
     localities: dict[str | None, None] = {}
     examined = 0
     carrying = 0
-    total = 0
+    recurrence = 0
     walked, material_provenance = _as_preserved(
         _distinct_inputs(occurrences), preserved_in
     )
@@ -360,14 +360,14 @@ def measure_recurrence(
         examined += 1
         if count:
             carrying += 1
-            total += count
+            recurrence += count
     finding = RecurrenceFinding(
         declared=declared,
         material_provenance=material_provenance,
         input_localities=tuple(localities),
         occurrences_examined=examined,
         occurrences_carrying=carrying,
-        total_count=total,
+        recurrence_count=recurrence,
         input_event_identities=tuple(input_identities),
     )
     if yield_in is not None:
@@ -673,7 +673,7 @@ def measure_recurrences(
     localities: dict[str | None, None] = {}
     examined = 0
     carrying: dict[str, int] = {name: 0 for name in declared}
-    total: dict[str, int] = {name: 0 for name in declared}
+    recurrence: dict[str, int] = {name: 0 for name in declared}
     walked, material_provenance = _as_preserved(
         _distinct_inputs(occurrences), preserved_in
     )
@@ -711,7 +711,7 @@ def measure_recurrences(
                 )
             if count:
                 carrying[representation] += 1
-                total[representation] += count
+                recurrence[representation] += count
     inputs = tuple(input_identities)
     input_localities = tuple(localities)
     if input_support is not None:
@@ -735,7 +735,7 @@ def measure_recurrences(
             input_localities=input_localities,
             occurrences_examined=examined,
             occurrences_carrying=carrying[representation],
-            total_count=total[representation],
+            recurrence_count=recurrence[representation],
             input_event_identities=inputs,
             input_support=input_support,
             downstream_act_identity=downstream_act_identity,
