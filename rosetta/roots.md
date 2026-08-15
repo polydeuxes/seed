@@ -101,6 +101,7 @@ Continuum      earlier Standing + later occurrence + Compare of preserved coordi
 Closure        bounded Fidelity claim across the exact admitted coordinates
 Interrogator   exact material + implementation-function invocation occurrence + exact returned coordinates + Measurement / Compare
 Exposure       availability at an exact Locality, or an emitted Representation; resolve the exact Act
+Recover        acquisition Act/result + Measurement + Compare + Admission + bounded Standing
 Addressability of preserved coordinates
 ```
 
