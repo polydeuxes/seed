@@ -8,15 +8,15 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "scripts"))
 
 import material_admission  # noqa: E402
-from compiled_format_witness import (  # noqa: E402
+from compiled_format_invocation import (  # noqa: E402
     candidate_material_at_added_positions,
     preserves_original_order,
 )
-from count_implementation_function import interrogate_count  # noqa: E402
+from count_implementation_function import count_invocation  # noqa: E402
 
 
 def test_absent_material_returns_zero_without_entering_returned_material():
-    occurrence = interrogate_count(b"a", b"b")
+    occurrence = count_invocation(b"a", b"b")
 
     assert occurrence.exact_material == b"a"
     assert occurrence.addressed_material == b"b"
@@ -26,7 +26,7 @@ def test_absent_material_returns_zero_without_entering_returned_material():
 def test_one_added_position_changes_both_returned_coordinates():
     candidates = candidate_material_at_added_positions((b"a",), (ord("b"),))
     occurrences = tuple(
-        interrogate_count(candidate.candidate_material, b"b")
+        count_invocation(candidate.candidate_material, b"b")
         for candidate in candidates
     )
 
@@ -51,7 +51,7 @@ def test_one_added_position_changes_both_returned_coordinates():
 def test_exact_returned_coordinates_perform_admission():
     material = (b"a", b"ba", b"ab")
     admission = material_admission.admission_by(
-        lambda exact: interrogate_count(exact, b"b").coordinates,
+        lambda exact: count_invocation(exact, b"b").coordinates,
         material,
     )
 
@@ -59,8 +59,8 @@ def test_exact_returned_coordinates_perform_admission():
 
 
 def test_recurrence_changes_count_without_repeating_returned_material():
-    once = interrogate_count(b"ab", b"b")
-    twice = interrogate_count(b"abb", b"b")
+    once = count_invocation(b"ab", b"b")
+    twice = count_invocation(b"abb", b"b")
 
     assert once.coordinates == (1, b"ab")
     assert twice.coordinates == (2, b"ab")
@@ -68,14 +68,14 @@ def test_recurrence_changes_count_without_repeating_returned_material():
 
 def test_non_byte_coordinates_are_refused_before_invocation():
     try:
-        interrogate_count("a", b"b")
+        count_invocation("a", b"b")
     except TypeError as error:
         assert str(error) == "exact material must be bytes"
     else:
         raise AssertionError("non-byte exact material was not refused")
 
     try:
-        interrogate_count(b"a", b"bb")
+        count_invocation(b"a", b"bb")
     except TypeError as error:
         assert str(error) == "addressed material must be one byte"
     else:

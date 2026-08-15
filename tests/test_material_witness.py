@@ -19,14 +19,14 @@ from seed_runtime.material_ingest import ingest_material
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "scripts"))
 
-from compiled_format_witness import (  # noqa: E402
+from compiled_format_invocation import (  # noqa: E402
     AddedPositionMaterial,
     COMPILED_IMPLEMENTATION_FUNCTIONS,
     CompiledImplementationFunction,
     candidate_material_at_added_positions,
-    interrogate,
-    interrogate_across,
-    interrogate_added_positions,
+    compiled_invocation,
+    compiled_invocations,
+    added_position_invocations,
     preserves_original_order,
 )
 from material_witness_harness import (  # noqa: E402
@@ -106,7 +106,7 @@ def book_pair_invocation_occurrences(measured_book_pairs):
 
 @pytest.fixture(scope="module")
 def book_pair_format_occurrences(measured_book_pairs):
-    return interrogate_across(
+    return compiled_invocations(
         measured_book_pairs[3], boundary_identity="book-pair-format"
     )
 
@@ -115,7 +115,7 @@ def book_pair_format_occurrences(measured_book_pairs):
 def book_byte_format_comparisons(measured_book_pairs):
     material = measured_book_pairs[5]
     pairs = tuple(bytes((first, second)) for first in material for second in material)
-    pair_occurrences = interrogate_across(
+    pair_occurrences = compiled_invocations(
         pairs, boundary_identity="book-byte-format"
     )
     found = []
@@ -157,7 +157,7 @@ def book_three_byte_format_occurrences(
         tuple(sorted(returned_pairs)),
         material,
     )
-    return returned_pairs, candidates, interrogate_added_positions(
+    return returned_pairs, candidates, added_position_invocations(
         candidates, boundary_identity="book-three-byte-format"
     )
 
@@ -347,7 +347,7 @@ def test_one_byte_differences_expose_compiled_invocation_boundaries(
     assert len({frozenset(invocation_boundaries) for invocation_boundaries in boundaries}) > 1
 
 
-def test_every_ordered_pair_is_compared_for_each_compiled_witness(
+def test_every_ordered_pair_is_compared_for_each_compiled_function(
     book_byte_format_comparisons, measured_book_pairs
 ):
     material = measured_book_pairs[5]
@@ -363,7 +363,7 @@ def test_every_ordered_pair_is_compared_for_each_compiled_witness(
         )
 
 
-def test_compiled_witnesses_establish_different_pairwise_distinctions(
+def test_compiled_functions_establish_different_pairwise_distinctions(
     book_byte_format_comparisons,
 ):
     distinctions = tuple(
@@ -440,7 +440,7 @@ def test_equal_candidate_material_keeps_each_exact_added_position():
     implementation_function = CompiledImplementationFunction(
         identity="fixture", invocation=lambda material: material
     )
-    occurrences = interrogate_added_positions(
+    occurrences = added_position_invocations(
         candidates,
         boundary_identity="equal-material-positions",
         implementation_functions=(implementation_function,),
@@ -487,7 +487,7 @@ def test_a_different_source_order_is_refused_before_the_implementation_function(
     )
 
     with pytest.raises(ValueError, match="exact source order"):
-        interrogate_added_positions(
+        added_position_invocations(
             (candidate,),
             boundary_identity="different-source-order",
             implementation_functions=(implementation_function,),
@@ -532,7 +532,7 @@ def test_compiled_implementation_function_receives_the_exact_material():
     def invocation(material):
         supplied.append(material)
 
-    occurrence = interrogate(
+    occurrence = compiled_invocation(
         b"\xff\x00",
         CompiledImplementationFunction(identity="fixture", invocation=invocation),
         boundary_identity="exact-material",
@@ -551,7 +551,7 @@ def test_equal_material_at_distinct_coordinates_reaches_the_implementation_funct
         invocation=lambda exact: supplied.append(exact),
     )
 
-    occurrences = interrogate_across(
+    occurrences = compiled_invocations(
         material,
         boundary_identity="distinct-coordinates",
         implementation_functions=(implementation_function,),
@@ -571,11 +571,11 @@ def test_compiled_implementation_function_refusal_and_input_boundary_are_distinc
 
     implementation_function = CompiledImplementationFunction(identity="fixture", invocation=invocation)
 
-    occurrence = interrogate(
+    occurrence = compiled_invocation(
         b"\x00", implementation_function, boundary_identity="returned-refusal"
     )
     with pytest.raises(TypeError, match="exact bytes"):
-        interrogate(
+        compiled_invocation(
             "material", implementation_function, boundary_identity="input-refusal"
         )
 

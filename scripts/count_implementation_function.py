@@ -18,7 +18,7 @@ class CountInvocationOccurrence:
         return (self.returned_count, self.returned_material)
 
 
-def interrogate_count(
+def count_invocation(
     exact_material: bytes, addressed_material: bytes
 ) -> CountInvocationOccurrence:
     if type(exact_material) is not bytes:

@@ -1,7 +1,7 @@
 """What a decoder's refusals establish, and what they do not.
 
 A decoder returns whether it accepts exact bytes. That result is testimony
-about the decoder. These pin what one interrogation measured, without taking
+about the decoder. These pin the exact Measurement, without taking
 the decoder's vocabulary along with its results.
 """
 

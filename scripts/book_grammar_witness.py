@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Interrogate exact Book distinction statements."""
+"""Compare exact Book distinction statements."""
 
 from __future__ import annotations
 

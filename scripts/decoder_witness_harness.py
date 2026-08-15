@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Interrogate decoder implementation functions with exact bytes."""
+"""Invoke decoder implementation functions with exact bytes."""
 
 from __future__ import annotations
 

@@ -94,7 +94,7 @@ COMPILED_IMPLEMENTATION_FUNCTIONS = tuple(
 )
 
 
-def interrogate(
+def compiled_invocation(
     exact_material: bytes,
     implementation_function: CompiledImplementationFunction,
     *,
@@ -124,7 +124,7 @@ def interrogate(
     )
 
 
-def interrogate_across(
+def compiled_invocations(
     exact_materials: tuple[bytes, ...],
     *,
     boundary_identity: str,
@@ -143,14 +143,14 @@ def interrogate_across(
         for implementation_function in implementation_functions
     ):
         raise TypeError("compiled implementation functions must be exact")
-    return _interrogate_across(
+    return _compiled_invocations(
         exact_materials,
         boundary_identity=boundary_identity,
         implementation_functions=implementation_functions,
     )
 
 
-def _interrogate_across(
+def _compiled_invocations(
     exact_materials: tuple[bytes, ...],
     *,
     boundary_identity: str,
@@ -235,7 +235,7 @@ def candidate_material_at_added_positions(
     )
 
 
-def interrogate_added_positions(
+def added_position_invocations(
     candidates: tuple[AddedPositionMaterial, ...],
     *,
     boundary_identity: str,
@@ -275,7 +275,7 @@ def interrogate_added_positions(
         for implementation_function in implementation_functions
     ):
         raise TypeError("compiled implementation functions must be exact")
-    return _interrogate_across(
+    return _compiled_invocations(
         tuple(exact_material),
         boundary_identity=boundary_identity,
         implementation_functions=implementation_functions,
