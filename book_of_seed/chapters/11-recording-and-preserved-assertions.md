@@ -7,16 +7,16 @@ The boundary between preserving Events or diagnostic output and later participat
 Which bounded responsibility may take up recorded material, and what standing, if any, may it establish?
 
 ## Bounded resolution
-A recording boundary may create an addressable representation of Events carrying source coordinates, findings, Assertions, or established Standing within its preservation horizon. A later exact Act may resolve that record reference, validate the coordinates it needs, and expose the same preserved Assertion locally. Those steps are part of that Act's input boundary; they establish no separate Responsibility, subject, occurrence, or stronger Standing. Diagnostic representation and operator material are not Seed preservation by identity. Measurement, a Standing-bearing occurrence, emission, and recording remain separate Acts.
+A recording boundary may create an addressable representation of Events carrying source coordinates, findings, Assertions, or established Standing within its Scope. A later exact Act may resolve that record reference, validate the coordinates it needs, and expose the same preserved Assertion locally. Those steps are part of that Act's input boundary; they establish no separate Responsibility, subject, occurrence, or stronger Standing. Diagnostic representation and operator material are not Seed preservation by identity. Measurement, a Standing-bearing occurrence, emission, and recording remain separate Acts.
 
 
 ## Addressable boundaries for recorded-revision witnesses
 
 ### 05.Recording.A — Recorded assertion standing
-A recording boundary may establish that a retrievable record exists and preserves an Assertion carrying source coordinates within its declared horizon. A later exact Act may consider that Assertion through Applicability. Record existence does not establish the represented source occurrence, current condition, truth, renewed occurrence, or movement to another Act.
+A recording boundary may establish that a retrievable record exists and preserves an Assertion carrying source coordinates within its declared Scope. A later exact Act may consider that Assertion through Applicability. Record existence does not establish the represented source occurrence, current Standing, truth, renewed occurrence, or movement to another Act.
 
 ### 05.Recording.B — Diagnostic-run-scoped recording
-When recorded material is admitted only to a diagnostic Act, that Act preserves the scoped subject of the recording unless a separate responsible occurrence supplies additional Standing. The result is bounded availability, not mutation of another Assertion's Standing or a condition beyond the diagnostic Scope.
+When recorded material is admitted only to a diagnostic Act, that Act preserves the scoped subject of the recording unless a separate responsible occurrence supplies additional Standing. The result is bounded availability, not mutation of another Assertion's Standing or Standing beyond the diagnostic Scope.
 
 
 ### 05.Recording.C — Preservation and discard of implementation measurements

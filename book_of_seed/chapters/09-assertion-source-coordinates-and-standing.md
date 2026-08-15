@@ -12,7 +12,7 @@ The relation “source S supplied or asserted Assertion A” is itself an Assert
 
 Standing concerning A remains separate from Standing concerning its source relation. Establishing either one does not establish the other.
 
-Normalization may represent asserted content and source coordinates in another exact Representation. It does not create a higher subject, supply missing Evidence, or strengthen Standing.
+An exact Representation Act may represent asserted content and source coordinates in another exact Representation. It does not create a higher subject, supply missing Evidence, or strengthen Standing.
 
 ### 05.Source.A — Later participation preserves source coordinates
 
@@ -33,5 +33,5 @@ Temporal coordinates distinguish what time an Assertion describes, when Evidence
 
 ## Related chapters
 
-- [Evidence and provenance](10-evidence-provenance-and-explanation.md)
+- [Evidence and provenance](10-evidence-and-provenance.md)
 - [Recording and preserved Assertions](11-recording-and-preserved-assertions.md)

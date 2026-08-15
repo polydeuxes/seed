@@ -2,26 +2,26 @@
 
 ## Constitutional subject
 
-The exact coordinates by which current Standing may be compared with a bounded result condition, and the separate occurrence required for movement.
+The exact coordinates by which current Standing may be compared with a bounded result Assertion, and the separate occurrence required for movement.
 
 ## Bounded resolution
 
-Operator material or already-established Standing may identify an exact result condition under a Scope and exact locality relation. The result condition is not a new constitutional subject by identity. It remains material or an Assertion carrying its own source, Evidence, Authority, Scope, locality, limits, conflicts, and Unknowns.
+Operator material or already-established Standing may identify an exact result Assertion under a Scope and exact locality relation. The result Assertion is not a new constitutional subject by identity. It remains material or an Assertion carrying its own source, Evidence, Authority, Scope, locality, limits, conflicts, and Unknowns.
 
-A responsible Compare may accept as input current Standing and that exact result condition. Its result is a bounded distinction Assertion preserving the compared subjects, rule, Evidence, Authority, Scope, locality, occurrence, conflicts, limits, and Unknowns. Difference, incompatibility, absence, and Unknown remain distinct results.
+A responsible Compare may accept as input current Standing and that exact result Assertion. Its result is a bounded distinction Assertion preserving the compared subjects, rule, Evidence, Authority, Scope, locality, occurrence, conflicts, limits, and Unknowns. Difference, incompatibility, absence, and Unknown remain distinct results.
 
-The conditions under which an exact Act may occur remain decomposed as its Responsibility, Act, applicable mechanism and material, Authority, Constraints, locality, Evidence, and occurrence. Availability, reachability, or one supported condition does not establish the others or authorize the Act.
+The exact coordinates under which an Act may occur remain decomposed as its Responsibility, Act, applicable mechanism and material, Authority, applicable Assertions, locality, Evidence, and occurrence. Availability, reachability, or one supported coordinate does not establish the others or authorize the Act.
 
-Neither a result condition nor a bounded distinction requires another Act. Authorization, movement, Standing revision, new Standing, and Stopping each require their own responsible occurrence. A result condition met within one Scope does not establish completion outside that Scope.
+Neither a result Assertion nor a bounded distinction requires another Act. Authorization, movement, Standing revision, new Standing, and Stopping each require their own responsible occurrence. A result Assertion having satisfied Standing within one Scope does not establish completion outside that Scope.
 
 ## Important distinctions
 
-- result condition != current Standing
-- result condition != bounded distinction
+- result Assertion != current Standing
+- result Assertion != bounded distinction
 - bounded distinction != failure
 - bounded distinction != Authorization
 - available mechanism != authorized Act
-- Unknown condition != absent condition
+- Unknown Standing != absent Assertion
 - current Standing is different != prior distinction revised
 - no movement != lawful Stop
 
@@ -29,11 +29,10 @@ Neither a result condition nor a bounded distinction requires another Act. Autho
 
 - Treating operator wording about a desired result as established Seed Standing.
 - Treating one failed or unreachable mechanism as proof that no exact Act can occur.
-- Treating a difference from a reference condition as movement established by identity.
+- Treating a difference from a reference Assertion as movement established by identity.
 - Treating satisfaction within one Scope as completion beyond that Scope.
 
 ## Related chapters
 
 - [Movement coordinates](06-movement-coordinates.md)
-- [Constraints and preconditions](04-constraints-and-preconditions.md)
 - [Stopping and completion](15-stopping-and-completion.md)

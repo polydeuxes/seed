@@ -48,7 +48,7 @@ def test_support_sizes_differ_under_every_stride_so_inequality_selects_nothing()
 
     An earlier revision selected a stride where one offset's support was four
     times another's. Inequality alone admits every stride at every amplitude,
-    so the threshold, not the material, was choosing.
+    so the count, not the material, was choosing.
     """
 
     for amplitude in (8000, 2000, 500, 100, 20):

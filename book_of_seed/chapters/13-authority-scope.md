@@ -4,12 +4,12 @@
 The binding, Scope, and non-transferability of authority across Seed's boundaries.
 
 ## Core distinction
-What grants authority for a bounded result condition or act, and how is that authority prevented from expanding in transit?
+What grants authority for a bounded result or act, and how is that authority prevented from expanding in transit?
 
 ## Bounded resolution
 Operator material and explicit approvals may contribute authority only after exact Authority and Scope binding. Internal representations, records, provider emissions, transport structures, or ordinary-language transition labels cannot create or enlarge that authority.
 
-Policy wording may describe Authority granted for an exact responsible boundary, Act or movement, addressed subject, result boundary, Scope, conditions, temporal Standing, negative Authority, and Unknowns. The wording does not create, enlarge, transfer, or renew that Authority.
+Policy wording may describe Authority granted for an exact responsible boundary, Act or movement, addressed subject, result boundary, Scope, temporal Standing, negative Authority, and Unknowns. The wording does not create, enlarge, transfer, or renew that Authority.
 
 ## Addressable boundaries for bounded input support witnesses
 
@@ -39,4 +39,4 @@ Seed may analyze source packets, support paths, source roles, boundary mismatche
 
 ## Authorization boundary correction 001
 
-Authorization is bounded Standing established only by a responsible Authority boundary. The boundary preserves the Authority subject, granting source, responsible boundary, authorized Act or movement, addressed subject, result boundary, Scope, temporal Standing, Constraints, Evidence, occurrence, negative Authority, and Unknowns. Other findings may contribute Evidence only within their own Standing and do not grant Authority by identity.
+Authorization is bounded Standing established only by a responsible Authority boundary. The boundary preserves the Authority subject, granting source, responsible boundary, authorized Act or movement, addressed subject, result boundary, Scope, temporal Standing, applicable Assertions, Evidence, occurrence, negative Authority, and Unknowns. Other findings may contribute Evidence only within their own Standing and do not grant Authority by identity.

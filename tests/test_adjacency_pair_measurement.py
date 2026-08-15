@@ -118,7 +118,7 @@ def test_pairs_are_read_from_the_record_not_supplied(locality, recorded_finding)
 
 
 def test_every_occupancy_becomes_a_pair_with_no_filtering(locality, recorded_finding):
-    """No count, share, or threshold decides which pairs are returned."""
+    """No count or share decides which pairs are returned."""
     pairs = adjacency_pairs_from_finding(locality, recorded_finding.id)
     assert len(pairs) == len(recorded_finding.payload["occupancies"])
 

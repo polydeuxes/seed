@@ -332,8 +332,8 @@ def adjacency_pairs_from_finding(ledger: EventLedger, finding_event_id: str) -> 
     """Read pairs out of a recorded finding rather than taking them from a caller.
 
     The recorded finding names a left representation and the occupancies
-    measured after it. Every occupancy is returned; none is filtered by count,
-    share, or a threshold. Which of them prove reproducible is what the
+    measured after it. Every occupancy is returned; none is filtered by count
+    or share. Which of them prove reproducible is what the
     measurement measures, not something decided here.
     """
 

@@ -14,7 +14,7 @@ An ordered provenance path is one representation of source and occurrence contin
 
 A missing or unmatched support result remains bounded to the exact corpus, query, temporal boundary, Authority, and limits that established it. It may establish only that bounded negative finding or Unknown. It does not establish falsehood, global absence, invalidity, or absence of an occurrence.
 
-Explanation is a representation exposing Evidence, provenance, conflicts, and reasons already established. It may establish a new explanation Assertion under its own Responsibility; it does not create upstream truth or occurrences.
+A Representation may expose Evidence, provenance, conflicts, and reasons already established. A responsible Act may establish an Assertion carried by that Representation under its own Responsibility; it does not create upstream truth or occurrences.
 
 ## Important distinctions
 
@@ -24,7 +24,7 @@ Explanation is a representation exposing Evidence, provenance, conflicts, and re
 - provenance reference != verified provenance
 - ordered references != causation
 - missing support != falsehood
-- explanation != upstream Standing
+- Representation != upstream Standing
 - repeated source != independent corroboration
 
 ## Related chapters

@@ -26,7 +26,7 @@ A Responsibility bounds what Standing may be established, preserved, or revised 
 - intent classification != enactment
 - read-only/non-mutating != no constitutional occurrence
 - representation != Act that established it
-- exact Act != exact Act constraint
+- exact Act != Assertion concerning that Act
 - coherence validated != upstream assertion re-proven
 - Standing concerning a new downstream subject != revision of upstream-subject Standing
 - Act occurrence-to-result relation != Assertion truth
@@ -38,6 +38,5 @@ A Responsibility bounds what Standing may be established, preserved, or revised 
 - Treating a directly supplied result as Evidence that exact focus Evidence was validated.
 
 ## Related chapters
-- [Constraints and preconditions](04-constraints-and-preconditions.md)
 - [Assertion Source Coordinates and Standing](09-assertion-source-coordinates-and-standing.md)
 - [Recording and preserved Assertions](11-recording-and-preserved-assertions.md)

@@ -6,7 +6,7 @@ It is not a roadmap, implementation reference, generated topology, or substitute
 
 ## Resolution
 
-- A **Chapter** concerns one bounded concept, Responsibility, distinction, constraint, or relation.
+- A **Chapter** concerns one bounded concept, Responsibility, distinction, or relation.
 - `[UNRESOLVED]` identifies a distinction for which the current repository does not safely support a constitutional resolution.
 - Seed must inspect the repository for current responsible occurrences, exact Acts, fields, topology, discrepancies, and residue.
 
@@ -36,7 +36,7 @@ The later Standing concerns the exact result or relation of the occurrence under
 1. Responsibility is the first branch read from current Standing concerning its exact assignment.
 2. The headings beneath it expose coordinates and relations; they do not revise Responsibility assignments.
 3. Every instantiated responsibility must expose the branches required by that responsibility.
-4. A conditional branch remains uninstantiated until a responsible occurrence supplies its coordinate.
+4. A branch remains uninstantiated until a responsible occurrence supplies its coordinate.
 5. An instantiated coordinate whose value has not been resolved remains unresolved unless a responsible occurrence carries Unknown Standing for it.
 6. Recurrence, headings, adjacency, implementation shape, or plausible completion supply neither a branch value nor its identity.
 
@@ -77,7 +77,7 @@ Identifies the Evidence supporting the exact Responsibility, Act, occurrence, re
 
 Preserve the Scope and Locality within which the Responsibility, exact Act, subject, and result apply. They do not establish Authority.
 
-### Conditional input branches
+### Input branches
 
 These branches are required where material participates in the exact Responsibility's Act.
 
@@ -89,7 +89,7 @@ Identifies where the exact input material came from. Source does not establish p
 
 Identifies the source, preservation, and occurrence history required by the exact use. Source and provenance remain distinct.
 
-### Conditional support-relation branches
+### Support-relation branches
 
 Where a Responsibility uses a substantive Assertion as support, the exact relation “these Evidence, Authority, Scope, provenance, and limits support this Assertion” is another Assertion. Its participants, responsible Act, occurrence, Evidence, Authority, Scope, conflicts, limits, Unknowns, and Standing remain independently addressable. Nearby coordinates, reference presence, or adjacency do not supply that relation.
 
@@ -192,7 +192,7 @@ Standing occurrence
 != Act occurrence by identity
 ```
 
-### Conditional preservation, standing, and neighboring branches
+### Preservation, standing, and neighboring branches
 
 These branches are exposed only where the exact responsibility instantiates them. Some may precede the act, govern it, preserve its occurrence, or belong to a later exact Act. Each retains its exact constitutional grammar.
 
@@ -208,18 +208,9 @@ Identifies any separately established Authorization input by the exact downstrea
 
 Identifies any act-local applicability or admission standing required before material may participate in the downstream act. Applicability, admission, participation, and input support remain distinct.
 
-#### Constraint
-
-Constraint is an independently bounded constitutional subject that may govern the exact proposed act, material, or responsibility. It is not reclassified as a relation merely because it governs another responsibility. A Constraint governing an Act does not assign that Constraint to the Act's Responsibility.
-
-```text
-Constraint
-!= relation by identity
-```
-
 #### Lawful Stopping
 
-Where a stopping occurrence carries a lawful Stop result, preserve separately the responsible boundary, stopping Act, stopping occurrence, and bounded Stop result. Identity among those coordinates must not be inferred. It is not reclassified as a relation merely because it connects a reason-bearing responsibility to the exact Act addressed by the Stop. Absence of movement, unresolved material, negative Standing, or a preventing condition does not supply a Stop by identity.
+Where a stopping occurrence carries a lawful Stop result, preserve separately the responsible boundary, stopping Act, stopping occurrence, and bounded Stop result. Identity among those coordinates must not be inferred. It is not reclassified as a relation merely because it connects a reason-bearing responsibility to the exact Act addressed by the Stop. Absence of movement, unresolved material, negative Standing, or a preventing Assertion does not supply a Stop by identity.
 
 ```text
 absence of movement
@@ -231,7 +222,7 @@ unresolved material
 negative standing
 != Stop
 
-preventing condition
+preventing Assertion
 != Stop
 
 Stopping
@@ -259,11 +250,10 @@ Revise the Book when constitutional grammar, a durable distinction, or the statu
 - [Source coordinates and grammar](chapters/01-source-coordinates-and-grammar.md)
 - [Constitutional Standing](chapters/02-constitutional-standing.md)
 - [Acts and occurrences](chapters/03-acts-and-occurrences.md)
-- [Constraints and preconditions](chapters/04-constraints-and-preconditions.md)
 - [Movement coordinates](chapters/06-movement-coordinates.md)
 - [Result boundaries and movement](chapters/07-result-boundaries-and-movement.md)
 - [Assertion source coordinates and Standing](chapters/09-assertion-source-coordinates-and-standing.md)
-- [Evidence and provenance](chapters/10-evidence-provenance-and-explanation.md)
+- [Evidence and provenance](chapters/10-evidence-and-provenance.md)
 - [Recording and preserved Assertions](chapters/11-recording-and-preserved-assertions.md)
 - [Events and Standing](chapters/12-events-and-standing.md)
 - [Authority Scope](chapters/13-authority-scope.md)
