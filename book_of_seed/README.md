@@ -34,8 +34,8 @@ The later Standing has the exact result or relation of the occurrence under Yiel
 ## Responsibility
 
 1. Responsibility is the first branch read from current Standing whose subject is its exact assignment.
-2. The headings beneath it expose coordinates and relations; they do not revise Responsibility assignments.
-3. Every instantiated responsibility must expose the branches required by that responsibility.
+2. The headings beneath it name coordinates and relations; they do not revise Responsibility assignments.
+3. Every instantiated responsibility must carry the branches required by that responsibility.
 4. A branch remains uninstantiated until a responsible occurrence supplies its coordinate.
 5. An instantiated coordinate whose value has not been resolved remains unresolved unless a responsible occurrence carries Unknown Standing for it.
 6. Recurrence, headings, implementation shape, or plausible completion supply neither a branch value nor its identity.
@@ -194,7 +194,7 @@ Standing occurrence
 
 ### Preservation, standing, and neighboring branches
 
-These branches are exposed only where the exact responsibility instantiates them. Some may precede the act, govern it, preserve its occurrence, or belong to a later exact Act. Each retains its exact constitutional grammar.
+These branches occur only where the exact responsibility instantiates them. Some may precede the act, govern it, preserve its occurrence, or belong to a later exact Act. Each retains its exact constitutional grammar.
 
 #### Preservation record
 

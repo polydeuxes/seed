@@ -1,4 +1,4 @@
-"""Ledger-bound occurrences read exact append prefixes without exposing positions."""
+"""Ledger-bound occurrences read exact append prefixes without position material."""
 
 from __future__ import annotations
 

@@ -111,7 +111,7 @@ def advance_operator_locality_standing(
 
     Accepts as input only Ingest and ``operator.representation.*``
     events stamped with this exact Locality. The result is fully recomputable
-    from the ledger and is not itself recorded: it exposes only standings,
+    from the ledger and is not itself recorded: it returns only standings,
     limits, and Unknowns the Locality's events already carry.  An empty
     coordinate is absence of record, not negative standing and not Unknown.
     No Yield is established for represented relation candidates here; each preserved ingest keeps

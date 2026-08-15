@@ -294,7 +294,7 @@ def _identity(
 def _seed_native_measurement_assignment(
     measured: MeasuredByteInputs | MeasuredBytePairInputs,
 ) -> dict[str, Any]:
-    """Expose why this exact preserved-material Measurement belongs here."""
+    """Return why this exact preserved-material Measurement belongs here."""
 
     return {
         "responsible_boundary": SEED_NATIVE_MEASUREMENT_RESPONSIBLE_BOUNDARY,
@@ -1115,7 +1115,7 @@ def assertions_of_recorded_byte_measurement(
     if event.kind != BYTE_MEASUREMENT_RECORDED_KIND:
         raise ByteMeasurementError(f"{event_identity} is not a byte Measurement occurrence")
     if ledger.integrity_of(event_identity) == CORRUPTED:
-        raise ByteMeasurementError("a corrupted occurrence cannot expose byte results")
+        raise ByteMeasurementError("a corrupted occurrence cannot return byte results")
     material = event.material
     if set(material) != BYTE_RESULT_COORDINATES | {
         "yield_evidence_identity",
@@ -1801,7 +1801,7 @@ def assertions_of_recorded_byte_position_pair_measurement(
             f"{event_identity} is not a byte-position-pair Measurement occurrence"
         )
     if ledger.integrity_of(event_identity) == CORRUPTED:
-        raise ByteMeasurementError("a corrupted occurrence cannot expose pair results")
+        raise ByteMeasurementError("a corrupted occurrence cannot return pair results")
     material = event.material
     exact_surface = BYTE_PAIR_RESULT_COORDINATES | {
         "yield_evidence_identity",

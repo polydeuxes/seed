@@ -269,7 +269,7 @@ class MeasuredAssertion:
                 "event_identities": list(self.support_event_identities),
                 # These dependencies are local to the same yielding
                 # occurrence. Each remains bound to that occurrence's identity
-                # before exposing it to a downstream Act.
+                # before making it available to a downstream Act.
                 "local_assertion_identities": list(self.support_assertion_identities),
             },
             "completeness_boundary": (

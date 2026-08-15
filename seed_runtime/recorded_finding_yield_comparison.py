@@ -3,7 +3,7 @@
 This Compare has one recorded finding and its named Yield Evidence as participants.
 Within that boundary it may find agreement, a coordinate difference, or
 Unknown. It does not certify this Seed, declare completion, map responsible
-boundaries, score results, expose a public diagnostic, or grant correction
+boundaries, score results, create a public diagnostic, or grant correction
 Authority.
 
 **What this compares.** One recorded recurrence Measurement finding and the
@@ -125,7 +125,7 @@ def get_recorded_finding_yield_comparison(
         )
     if ledger.integrity_of(event_identity) == CORRUPTED:
         raise RecordedFindingYieldComparisonError(
-            "a corrupted occurrence cannot expose a finding Yield comparison"
+            "a corrupted occurrence cannot return a finding Yield comparison"
         )
     material = event.material
     if set(material) != COMPARISON_RESULT_COORDINATES | COMPARISON_RECORDING_COORDINATES:
@@ -149,7 +149,7 @@ def get_recorded_finding_yield_comparison(
         )
     if ledger.integrity_of(evidence_identity) == CORRUPTED:
         raise RecordedFindingYieldComparisonError(
-            "corrupted Yield Evidence cannot expose a Compare result"
+            "corrupted Yield Evidence cannot return a Compare result"
         )
     if (
         evidence.material.get("result_kind")

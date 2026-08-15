@@ -556,7 +556,7 @@ def _record_yield(
     exact Act boundary, and
     the result carries the relation to it — so a separately supplied
     representation with identical fields carries no such relation, which is the
-    direct-instantiation counterexample states. An earlier attempt exposed this
+    direct-instantiation counterexample states. An earlier attempt showed this
     publicly, which made it a second recorder: a caller holding any object could
     record a yield over it, establishing only that a caller possessed
     something and called a function.

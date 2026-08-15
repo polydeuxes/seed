@@ -100,6 +100,7 @@ Reliance       Assertion that an exact input supports an exact result
 Continuum      earlier Standing + later occurrence + Compare of preserved coordinates
 Closure        bounded Fidelity claim across the exact admitted coordinates
 Interrogator   exact material + implementation-function invocation occurrence + exact returned coordinates + Measurement / Compare
+Exposure       availability at an exact Locality, or an emitted Representation; resolve the exact Act
 Addressability of preserved coordinates
 ```
 

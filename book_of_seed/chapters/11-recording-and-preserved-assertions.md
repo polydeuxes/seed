@@ -7,7 +7,7 @@ The boundary between preserving Events or diagnostic output and later participat
 Which bounded responsibility may take up recorded material, and what standing, if any, may it establish?
 
 ## Bounded resolution
-A recording boundary may create an exact representation of Events carrying source coordinates, findings, Assertions, or established Standing within its Scope. A later exact Act may resolve that record reference, validate the coordinates it needs, and expose the same preserved Assertion locally. Those steps are part of that Act's input boundary; they establish no separate Responsibility, subject, occurrence, or stronger Standing. Diagnostic representation and operator material are not Seed preservation by identity. Measurement, a Standing-bearing occurrence, emission, and recording remain separate Acts.
+A recording boundary may create an exact representation of Events carrying source coordinates, findings, Assertions, or established Standing within its Scope. A later exact Act may resolve that record reference, validate the coordinates it needs, and make the same preserved Assertion available at its Locality. Those steps are part of that Act's input boundary; they establish no separate Responsibility, subject, occurrence, or stronger Standing. Diagnostic representation and operator material are not Seed preservation by identity. Measurement, a Standing-bearing occurrence, emission, and recording remain separate Acts.
 
 
 ## Boundaries for recorded-revision witnesses
@@ -42,7 +42,7 @@ Seed need not preserve every implementation measurement. A measurement is preser
 - act occurrence status != implementation measurement
 - operator material != Seed preservation
 - operator omission != authority for Seed to forget
-- Seed preservation != obligation to expose every sample beyond its boundary
+- Seed preservation != obligation to make every sample available beyond its boundary
 - act occurrence != recording occurrence
 - record exists != recorded Assertion Standing established by identity
 - record exists != recorded standing lawfully established

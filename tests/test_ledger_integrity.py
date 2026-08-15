@@ -908,7 +908,7 @@ def test_damaged_compressed_storage_is_corruption_not_a_compressor_error(tmp_pat
             # Reported, never raised through the caller.
             assert ledger.integrity_of(event.identity) == CORRUPTED, label
             # And a read refuses as a ledger integrity failure rather than
-            # exposing the compressor.
+            # preserving the compressor.
             with pytest.raises(InvalidStoredMaterial):
                 ledger.get(event.identity)
         finally:

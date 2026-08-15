@@ -7,7 +7,7 @@ occurrence-to-result relation; it is neither that relation nor either endpoint b
 
 The helper is private implementation plumbing, not the guarantee. The result's
 carried relation to this Evidence distinguishes a result with exact Yield from an
-identical caller-supplied representation. Exposing a public entry point that
+identical caller-supplied representation. A public entry point that
 accepts arbitrary result content would instead create a second recorder able to
 manufacture that relation.
 """

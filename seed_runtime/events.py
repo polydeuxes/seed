@@ -42,7 +42,7 @@ class EventLedgerBoundary:
 
     Callers may retain and return the value, but only an EventLedger reads
     it. Equal ordered prefixes yield equal boundaries; a boundary does not
-    expose an append position.
+    carry an append position.
     """
 
     identity: str

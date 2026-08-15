@@ -108,7 +108,7 @@ def test_naming_an_identity_before_its_occurrence_is_not_a_reference(tmp_path):
 
 
 def test_the_rebuild_agrees_with_the_index_across_that_case(tmp_path):
-    """The invariant has to survive the case that exposed it."""
+    """The invariant has to survive this case."""
 
     ledger = SQLiteEventLedger(str(tmp_path / "e.sqlite"))
     ledger.append("k", {"points_at": "evt_000002"}, locality_identity="s1")

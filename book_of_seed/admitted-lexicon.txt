@@ -303,9 +303,6 @@ explanatory
 explicit
 explicitly
 export
-expose
-exposed
-exposure
 extraction
 f
 fabricate
@@ -431,7 +428,6 @@ live
 local
 localities
 locality
-locally
 loss
 machine
 macro

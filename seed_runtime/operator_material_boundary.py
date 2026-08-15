@@ -57,7 +57,7 @@ class OperatorBoundaryMaterial:
 def operator_boundary_material(input_stream: TextIO | BinaryIO) -> OperatorBoundaryMaterial:
     """Read one framed occurrence from a byte stream.
 
-    A live wrapped stream is accepted only when it exposes its underlying
+    A live wrapped stream is accepted only when it carries its underlying
     ``buffer``. No represented material is read here.
     Programmatic callers therefore supply a binary stream such as
     :class:`io.BytesIO`.

@@ -1198,12 +1198,12 @@ def test_the_rendering_states_the_literal_sentence(compared):
 
 
 def test_the_vocabulary_is_gone(compared):
-    """`cohort`, `population`, `body`, `survey`, `exposed` earned no place."""
+    """No statistical vocabulary enters the record."""
     event = record_measured_count(
         compared, locality_identity="s1",
         finding=_by_representation(compared)["word"])
     represented = str(event.material).lower()
-    for word in ("cohort", "population", "survey", "exposed", "bodies"):
+    for word in ("cohort", "population", "survey", "bodies"):
         assert word not in represented
 
 
