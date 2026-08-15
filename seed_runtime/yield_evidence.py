@@ -31,6 +31,7 @@ YIELD_LIVE_BOUNDARIES = frozenset(
         "adjacent_pair_observation",
         "adjacent_pair_observation_compare",
         "assertion_yield_compare",
+        "assertion_locality_movement",
         "byte_measurement",
         "byte_pair_applicability",
         "byte_pair_measurement",

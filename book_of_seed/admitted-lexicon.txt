@@ -123,7 +123,6 @@ can
 candidate
 candidates
 cannot
-canonical
 carried
 carries
 carry
@@ -151,7 +150,6 @@ code
 coherence
 collection
 collective
-commits
 commonly
 compare
 compared
@@ -246,7 +244,6 @@ dictionary
 did
 difference
 different
-digest
 dimension
 dimensional
 dimensions

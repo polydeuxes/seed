@@ -61,10 +61,9 @@
     ]
   },
   "implementation_witness": {
-    "discriminators": ["content", "locality", "digest"],
+    "discriminators": ["content", "locality"],
     "relations": {
-      "locality_relation": ["first_subject", "second_subject"],
-      "digest_commits_to": "declared_canonical_representation"
+      "locality_relation": ["first_subject", "second_subject"]
     },
     "relation_audit": {
       "endpoint_presence_establishes_relation": false,
@@ -72,11 +71,7 @@
         "candidate_participation": ["exact_relation", "occurrence_witness"],
         "participation": ["exact_relation", "occurrence_witness", "intact_evidence"],
         "locality": ["exact_relation", "occurrence_witness", "intact_evidence"],
-        "yield": ["exact_relation", "occurrence_witness", "intact_evidence"],
-        "representation_digest_carried_by_occurrence": [
-          "exact_relation",
-          "occurrence_witness"
-        ]
+        "yield": ["exact_relation", "occurrence_witness", "intact_evidence"]
       }
     },
     "fidelity_cases": {
@@ -87,9 +82,7 @@
       "unrelated_occurrence": "exact"
     },
     "non_equivalence": [
-      ["content", "locality"],
-      ["content", "digest"],
-      ["locality", "digest"]
+      ["content", "locality"]
     ]
   },
   "clauses": {

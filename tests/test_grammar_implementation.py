@@ -197,6 +197,9 @@ def _recorded_applicability() -> dict:
         "movement_act_evidence": ledger.get(
             movement.payload["movement_act_evidence_event_id"]
         ),
+        "movement_content_evidence": ledger.get(
+            movement.payload["yield_evidence_id"]
+        ),
         "pair_event": pair_measurement,
         "pair_act_evidence": ledger.get(
             pair_measurement.payload["responsible_act_evidence_id"]
@@ -204,6 +207,18 @@ def _recorded_applicability() -> dict:
         "pair_content_evidence": ledger.get(
             pair_measurement.payload["yield_evidence_id"]
         ),
+    }
+
+
+def _assertion_locality_movement_yield_road() -> dict:
+    source = _recorded_applicability()
+    return {
+        "ledger": source["ledger"],
+        "event": source["movement"],
+        "act_evidence": source["movement_act_evidence"],
+        "content_evidence": source["movement_content_evidence"],
+        "recorded_result_occurrence_coordinate": "movement_act_occurrence_id",
+        "act_evidence_occurrence_coordinate": "movement_act_occurrence_id",
     }
 
 
@@ -1368,6 +1383,7 @@ def _remaining_yield_requirement_bundles() -> dict[str, dict[str, dict]]:
             lambda: _adjacent_observation_yield_road(compare=True)
         ),
         "assertion_yield_compare": _assertion_yield_compare_road,
+        "assertion_locality_movement": _assertion_locality_movement_yield_road,
         "material_ingest": _material_ingest_yield_road,
         "preserved_material_measurement": _preserved_material_yield_road,
         "recorded_finding_yield_compare": _recorded_finding_compare_yield_road,
@@ -1854,37 +1870,25 @@ def _participation_requirements(bundle: dict, *, role: str) -> dict[str, bool]:
     }
 
 
-def test_implementation_witness_discriminates_content_locality_and_digest():
+def test_implementation_witness_discriminates_content_and_locality():
     grammar = _witness_grammar()
     ledger = EventLedger()
     content = {"a": 1, "b": 2}
 
     first = ledger.append("test.locality", dict(content), locality_id="s")
-    second = ledger.append("test.locality", dict(content), locality_id="s")
+    second = ledger.append("test.locality", dict(content), locality_id="t")
     assert first.payload == second.payload
-    assert first.id != second.id
-    assert yield_commitment("test", first.payload) == yield_commitment(
-        "test", second.payload
+    assert first.locality_id != second.locality_id
+
+    changed_content = ledger.append(
+        "test.locality", {"a": 1, "b": 3}, locality_id="s"
     )
+    assert first.payload != changed_content.payload
+    assert first.locality_id == changed_content.locality_id
 
-    first_json = '{"a":1,"b":2}'
-    second_json = '{\n  "b": 2,\n  "a": 1\n}'
-    assert first_json != second_json
-    assert json.loads(first_json) == json.loads(second_json)
-    assert yield_commitment(
-        "test", json.loads(first_json)
-    ) == yield_commitment("test", json.loads(second_json))
-
-    changed_content = {"a": 1, "b": 3}
-    assert yield_commitment("test", content) != yield_commitment(
-        "test", changed_content
-    )
-
-    assert grammar["discriminators"] == ["content", "locality", "digest"]
+    assert grammar["discriminators"] == ["content", "locality"]
     assert grammar["non_equivalence"] == [
         ["content", "locality"],
-        ["content", "digest"],
-        ["locality", "digest"],
     ]
 
 
@@ -2599,10 +2603,6 @@ def test_unjoined_endpoints_do_not_witness_an_input_to_act_relation():
                 "intact_evidence",
             ],
             "yield": ["exact_relation", "occurrence_witness", "intact_evidence"],
-            "representation_digest_carried_by_occurrence": [
-                "exact_relation",
-                "occurrence_witness",
-            ],
         },
     }
     assert witness["input_identity"] == MISSING

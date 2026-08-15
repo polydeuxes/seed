@@ -47,7 +47,6 @@ def test_machine_readable_grammar_traverses_responsibility_from_standing():
     assert grammar["implementation_witness"]["discriminators"] == [
         "content",
         "locality",
-        "digest",
     ]
     assert grammar["clauses"]
     active_book = _active_book()

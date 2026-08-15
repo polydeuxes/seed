@@ -24,6 +24,7 @@ from seed_runtime.ids import new_id
 from seed_runtime.yield_evidence import (
     YIELD_EVIDENCE_KIND,
     _record_yield_evidence,
+    read_yield_edge_requirements,
     yield_commitment,
 )
 from seed_runtime.material_ingest import (
@@ -111,6 +112,8 @@ ASSERTION_LOCALITY_MOVEMENT_KIND = "operator.assertion.locality_movement_recorde
 ASSERTION_LOCALITY_MOVEMENT_ACT_EVIDENCE_KIND = (
     "operator.assertion.locality_movement_act_evidenced"
 )
+ASSERTION_LOCALITY_MOVEMENT_CONVENTION = "assertion_locality_movement"
+ASSERTION_LOCALITY_MOVEMENT_RESULT_KIND = "Assertion Locality movement result"
 EVENT_KIND_RESPONSIBILITIES = {
     BYTE_MEASUREMENT_RECORDED_KIND: "02.Acts.A",
     BYTE_PAIR_MEASUREMENT_RECORDED_KIND: "02.Acts.A",
@@ -119,6 +122,7 @@ EVENT_KIND_RESPONSIBILITIES = {
     BYTE_PAIR_APPLICABILITY_RECORDED_KIND: "01.Standing.E.1",
     BYTE_PAIR_APPLICABILITY_ACT_EVIDENCE_KIND: "02.Acts.A",
     ASSERTION_LOCALITY_MOVEMENT_ACT_EVIDENCE_KIND: "02.Acts.A",
+    ASSERTION_LOCALITY_MOVEMENT_KIND: "06.Standing.B",
 }
 ASSERTION_LOCALITY_MOVEMENT_RESPONSIBILITY = (
     "make one exact preserved Assertion available in another Locality without "
@@ -612,6 +616,7 @@ def _move_byte_assertion_to_locality(
         raise ByteMeasurementError("Assertion locality movement requires source locality")
     movement_act_id = new_id("assertion_locality_movement_act")
     movement_occurrence_id = new_id("assertion_locality_movement_occurrence")
+    movement_result_identity = new_id("assertion_locality_movement_result")
     payload = source.payload
     assignment_evidence = {
         "responsible_boundary": SEED_NATIVE_MEASUREMENT_RESPONSIBLE_BOUNDARY,
@@ -620,6 +625,37 @@ def _move_byte_assertion_to_locality(
         "source_locality": source_locality,
         "destination_locality": destination_locality,
         "determination": "the exact preserved Assertion moved between Localities",
+    }
+    result_payload = {
+        "result_identity": movement_result_identity,
+        "movement_act_id": movement_act_id,
+        "movement_act_occurrence_id": movement_occurrence_id,
+        "responsibility": ASSERTION_LOCALITY_MOVEMENT_RESPONSIBILITY,
+        "responsible_boundary": SEED_NATIVE_MEASUREMENT_RESPONSIBLE_BOUNDARY,
+        "responsibility_assignment_evidence": assignment_evidence,
+        "source_assertion_ref": source.reference,
+        "assertion_id": source.assertion_id,
+        "source_locality": source_locality,
+        "destination_locality": destination_locality,
+        "locality_relation": {
+            "first_subject": source.reference,
+            "second_subject": destination_locality,
+            "relation_occurrence_id": movement_occurrence_id,
+        },
+        "assertion_commitment": _movement_commitment(payload),
+        "surviving_coordinates": [
+            "Evidence",
+            "Authority",
+            "Scope",
+            "Unknowns",
+            "limits",
+            "Standing",
+        ],
+        "authority": "unestablished",
+        "movement_scope": (
+            "Locality movement of this exact Assertion only; establishes no "
+            "different identity or Standing"
+        ),
     }
     act_evidence = ledger.append(
         ASSERTION_LOCALITY_MOVEMENT_ACT_EVIDENCE_KIND,
@@ -637,43 +673,35 @@ def _move_byte_assertion_to_locality(
                 "second_subject": destination_locality,
                 "relation_occurrence_id": movement_occurrence_id,
             },
+            "result_commitment": yield_commitment(
+                ASSERTION_LOCALITY_MOVEMENT_CONVENTION, result_payload
+            ),
             "authority": "unestablished",
             "evidence_scope": "evidences this exact Assertion Locality movement",
         },
         locality_id=destination_locality,
     )
+    yield_evidence = _record_yield_evidence(
+        ledger,
+        locality_id=destination_locality,
+        convention=ASSERTION_LOCALITY_MOVEMENT_CONVENTION,
+        yielding_act="Assertion Locality movement",
+        act_occurrence_id=movement_occurrence_id,
+        yielded_result_kind=ASSERTION_LOCALITY_MOVEMENT_RESULT_KIND,
+        result_identity=movement_result_identity,
+        yielded_content=result_payload,
+        responsibility=ASSERTION_LOCALITY_MOVEMENT_RESPONSIBILITY,
+        live_boundary="assertion_locality_movement",
+        responsible_boundary=SEED_NATIVE_MEASUREMENT_RESPONSIBLE_BOUNDARY,
+        recorded_result_coordinates={key: (key,) for key in result_payload},
+    )
     movement = ledger.append(
         ASSERTION_LOCALITY_MOVEMENT_KIND,
         {
-            "movement_act_id": movement_act_id,
-            "movement_act_occurrence_id": movement_occurrence_id,
+            **result_payload,
             "movement_act_evidence_event_id": act_evidence.id,
-            "responsibility": ASSERTION_LOCALITY_MOVEMENT_RESPONSIBILITY,
-            "responsible_boundary": SEED_NATIVE_MEASUREMENT_RESPONSIBLE_BOUNDARY,
-            "responsibility_assignment_evidence": assignment_evidence,
-            "source_assertion_ref": source.reference,
-            "assertion_id": source.assertion_id,
-            "source_locality": source_locality,
-            "destination_locality": destination_locality,
-            "locality_relation": {
-                "first_subject": source.reference,
-                "second_subject": destination_locality,
-                "relation_occurrence_id": movement_occurrence_id,
-            },
-            "assertion_commitment": _movement_commitment(payload),
-            "surviving_coordinates": [
-                "Evidence",
-                "Authority",
-                "Scope",
-                "Unknowns",
-                "limits",
-                "Standing",
-            ],
-            "authority": "unestablished",
-            "movement_scope": (
-                "Locality movement of this exact Assertion only; establishes no "
-                "different identity or Standing"
-            ),
+            "responsible_act_evidence_id": act_evidence.id,
+            "yield_evidence_id": yield_evidence.id,
         },
         locality_id=destination_locality,
     )
@@ -716,6 +744,48 @@ def _validate_moved_byte_assertion(
     if source_event is None:
         raise ByteMeasurementError("Assertion movement source occurrence is unavailable")
     act_evidence = ledger.get(movement.payload.get("movement_act_evidence_event_id"))
+    expected_result = {
+        "result_identity": movement.payload.get("result_identity"),
+        "movement_act_id": movement.payload.get("movement_act_id"),
+        "movement_act_occurrence_id": movement.payload.get(
+            "movement_act_occurrence_id"
+        ),
+        "responsibility": ASSERTION_LOCALITY_MOVEMENT_RESPONSIBILITY,
+        "responsible_boundary": SEED_NATIVE_MEASUREMENT_RESPONSIBLE_BOUNDARY,
+        "responsibility_assignment_evidence": {
+            "responsible_boundary": SEED_NATIVE_MEASUREMENT_RESPONSIBLE_BOUNDARY,
+            "standing": "assigned",
+            "source_assertion_ref": source.reference,
+            "source_locality": source_event.locality_id,
+            "destination_locality": movement.locality_id,
+            "determination": "the exact preserved Assertion moved between Localities",
+        },
+        "source_assertion_ref": source.reference,
+        "assertion_id": source.assertion_id,
+        "source_locality": source_event.locality_id,
+        "destination_locality": movement.locality_id,
+        "locality_relation": {
+            "first_subject": source.reference,
+            "second_subject": movement.locality_id,
+            "relation_occurrence_id": movement.payload.get(
+                "movement_act_occurrence_id"
+            ),
+        },
+        "assertion_commitment": _movement_commitment(source.payload),
+        "surviving_coordinates": [
+            "Evidence",
+            "Authority",
+            "Scope",
+            "Unknowns",
+            "limits",
+            "Standing",
+        ],
+        "authority": "unestablished",
+        "movement_scope": (
+            "Locality movement of this exact Assertion only; establishes no "
+            "different identity or Standing"
+        ),
+    }
     expected_evidence = {
         "responsibility": ASSERTION_LOCALITY_MOVEMENT_RESPONSIBILITY,
         "responsible_boundary": SEED_NATIVE_MEASUREMENT_RESPONSIBLE_BOUNDARY,
@@ -741,6 +811,9 @@ def _validate_moved_byte_assertion(
                 "movement_act_occurrence_id"
             ),
         },
+        "result_commitment": yield_commitment(
+            ASSERTION_LOCALITY_MOVEMENT_CONVENTION, expected_result
+        ),
         "authority": "unestablished",
         "evidence_scope": "evidences this exact Assertion Locality movement",
     }
@@ -751,36 +824,23 @@ def _validate_moved_byte_assertion(
         or act_evidence.payload != expected_evidence
     ):
         raise ByteMeasurementError("Assertion movement Act Evidence is not exact")
+    requirements = read_yield_edge_requirements(
+        ledger,
+        recorded_result_event_id=movement.id,
+        result_evidence_event_id=movement.payload.get("yield_evidence_id"),
+        responsible_act_evidence_event_id=movement.payload.get(
+            "responsible_act_evidence_id"
+        ),
+        recorded_result_occurrence_coordinate="movement_act_occurrence_id",
+        responsible_act_occurrence_coordinate="movement_act_occurrence_id",
+    )
+    if not all(requirements.values()):
+        raise ByteMeasurementError("Assertion movement Yield Evidence is not exact")
     expected = {
-        "movement_act_id": movement.payload.get("movement_act_id"),
-        "movement_act_occurrence_id": movement.payload.get(
-            "movement_act_occurrence_id"
-        ),
+        **expected_result,
         "movement_act_evidence_event_id": act_evidence.id,
-        "responsibility": ASSERTION_LOCALITY_MOVEMENT_RESPONSIBILITY,
-        "responsible_boundary": SEED_NATIVE_MEASUREMENT_RESPONSIBLE_BOUNDARY,
-        "responsibility_assignment_evidence": expected_evidence[
-            "responsibility_assignment_evidence"
-        ],
-        "source_assertion_ref": source.reference,
-        "assertion_id": source.assertion_id,
-        "source_locality": source_event.locality_id,
-        "destination_locality": movement.locality_id,
-        "locality_relation": expected_evidence["locality_relation"],
-        "assertion_commitment": _movement_commitment(source.payload),
-        "surviving_coordinates": [
-            "Evidence",
-            "Authority",
-            "Scope",
-            "Unknowns",
-            "limits",
-            "Standing",
-        ],
-        "authority": "unestablished",
-        "movement_scope": (
-            "Locality movement of this exact Assertion only; establishes no "
-            "different identity or Standing"
-        ),
+        "responsible_act_evidence_id": act_evidence.id,
+        "yield_evidence_id": movement.payload.get("yield_evidence_id"),
     }
     if movement.payload != expected:
         raise ByteMeasurementError("Assertion locality movement is not exact")

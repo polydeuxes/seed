@@ -104,12 +104,6 @@ None of these shorthands adds a constitutional subject, relation, occurrence,
 or Standing. If the expansion loses a distinction, read the missing exact
 coordinate rather than restoring the compressed noun.
 
-## Implementation words
-
-`digest` and `commitment` name implementation mechanisms. Recomputing a digest
-can show that declared representations match; it does not supply Content,
-Locality, occurrence, Provenance, Evidence, or Standing.
-
 ## Use
 
 Rosetta is for translation. An argument that depends on a shorthand has not

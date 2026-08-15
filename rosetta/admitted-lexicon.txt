@@ -274,7 +274,6 @@ dictionary
 did
 difference
 different
-digest
 dimension
 dimensional
 dimensions
