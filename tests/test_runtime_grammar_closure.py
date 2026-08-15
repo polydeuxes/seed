@@ -88,6 +88,28 @@ def _literal_dict_keys(tree: ast.Module):
                 yield key.lineno, key.value
 
 
+def _identity_content_substitutions(path: Path, tree: ast.Module):
+    found = []
+    for node in ast.walk(tree):
+        if not isinstance(node, ast.Dict):
+            continue
+        coordinates = {
+            key.value: value
+            for key, value in zip(node.keys, node.values)
+            if isinstance(key, ast.Constant) and isinstance(key.value, str)
+        }
+        identity = coordinates.get("identity")
+        content = coordinates.get("content")
+        if (
+            identity is not None
+            and content is not None
+            and ast.dump(identity, include_attributes=False)
+            == ast.dump(content, include_attributes=False)
+        ):
+            found.append((path.name, node.lineno))
+    return found
+
+
 def _scope_nodes(scope):
     pending = list(scope.body)
     while pending:
@@ -234,6 +256,22 @@ def test_runtime_record_vocabulary_has_constitutional_admission():
         f"{path}:{line} [{word}] {value}"
         for path, line, word, value in violations
     )
+
+
+def test_runtime_identity_and_content_are_distinct_coordinates():
+    substitutions = []
+    for path, tree in _runtime_trees():
+        substitutions.extend(_identity_content_substitutions(path, tree))
+    assert substitutions == []
+
+
+def test_identity_content_substitution_siren_detects_one_shared_expression():
+    tree = ast.parse(
+        'dimensions = {"identity": result_identity, "content": result_identity}'
+    )
+    assert _identity_content_substitutions(Path("fixture.py"), tree) == [
+        ("fixture.py", 1)
+    ]
 
 
 def _event_materials():
