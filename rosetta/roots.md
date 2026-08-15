@@ -97,6 +97,9 @@ Gap            bounded Compare result
 Goal           locality-bound material concerning a desired result
 Demand         shorthand that a bounded result is absent
 Reliance       Assertion that an exact input supports an exact result
+Continuum      earlier Standing + later occurrence + Compare of preserved coordinates
+Closure        bounded Fidelity claim across the exact admitted coordinates
+Interrogator   exact material + implementation-function invocation occurrence + exact returned coordinates + Measurement / Compare
 Addressability of preserved coordinates
 ```
 
