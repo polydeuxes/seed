@@ -81,10 +81,30 @@ def interrogate_across(
         raise TypeError("implementation function inputs must be one exact tuple of bytes")
     if type(implementation_functions) is not tuple or not implementation_functions:
         raise TypeError("compiled implementation functions must be one nonempty tuple")
-    return tuple(
-        tuple(interrogate(material, implementation_function) for material in exact_materials)
+    if not all(
+        isinstance(implementation_function, CompiledImplementationFunction)
         for implementation_function in implementation_functions
-    )
+    ):
+        raise TypeError("compiled implementation functions must be exact")
+    found = []
+    for implementation_function in implementation_functions:
+        occurrences = []
+        for material in exact_materials:
+            try:
+                implementation_function.invocation(material)
+            except Exception:
+                returned = False
+            else:
+                returned = True
+            occurrences.append(
+                CompiledInvocationOccurrence(
+                    exact_material=material,
+                    implementation_function_identity=implementation_function.identity,
+                    returned=returned,
+                )
+            )
+        found.append(tuple(occurrences))
+    return tuple(found)
 
 
 def preserves_original_order(

@@ -509,6 +509,20 @@ def test_compiled_implementation_function_receives_the_exact_material():
     assert occurrence.returned is True
 
 
+def test_equal_material_at_distinct_coordinates_reaches_the_implementation_function_each_time():
+    supplied = []
+    material = (b"aa", b"aa", b"ab")
+    implementation_function = CompiledImplementationFunction(
+        identity="fixture",
+        invocation=lambda exact: supplied.append(exact),
+    )
+
+    occurrences = interrogate_across(material, (implementation_function,))[0]
+
+    assert supplied == list(material)
+    assert tuple(occurrence.exact_material for occurrence in occurrences) == material
+
+
 def test_compiled_implementation_function_refusal_and_input_boundary_are_distinct():
     supplied = []
 
