@@ -33,7 +33,7 @@ A Responsibility bounds what Standing may be established, preserved, or revised 
 - equal result content != same result identity or Yield relation
 
 ## Counterexamples or failure modes
-- Treating a representation concerning a proposed, requested, or contemplated Act as Evidence that a mechanism ran.
+- Treating a representation concerning a proposed, requested, or contemplated Act as Evidence that the Act occurred.
 - Treating classified operator language as the requested act itself.
 - Treating a directly supplied result as Evidence that exact focus Evidence was validated.
 

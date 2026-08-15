@@ -10,7 +10,7 @@ Operator material or already-established Standing may identify an exact result A
 
 A responsible Compare may accept as input current Standing and that exact result Assertion. Its result is a bounded distinction Assertion preserving the compared subjects, rule, Evidence, Authority, Scope, locality, occurrence, conflicts, limits, and Unknowns. Difference, incompatibility, absence, and Unknown remain distinct results.
 
-The exact coordinates under which an Act may occur remain decomposed as its Responsibility, Act, applicable mechanism and material, Authority, applicable Assertions, locality, Evidence, and occurrence. Availability, reachability, or one supported coordinate does not establish the others or authorize the Act.
+The exact coordinates under which an Act may occur remain decomposed as its Responsibility, Act, applicable material, Authority, applicable Assertions, locality, Evidence, and occurrence. Available material or one supported coordinate does not establish the others or authorize the Act.
 
 Neither a result Assertion nor a bounded distinction requires another Act. Authorization, movement, Standing revision, new Standing, and Stopping each require their own responsible occurrence. A result Assertion having satisfied Standing within one Scope does not establish completion outside that Scope.
 
@@ -20,7 +20,7 @@ Neither a result Assertion nor a bounded distinction requires another Act. Autho
 - result Assertion != bounded distinction
 - bounded distinction != failure
 - bounded distinction != Authorization
-- available mechanism != authorized Act
+- an implementation can perform an Act != the Act is authorized
 - Unknown Standing != absent Assertion
 - current Standing is different != prior distinction revised
 - no movement != lawful Stop
@@ -28,7 +28,7 @@ Neither a result Assertion nor a bounded distinction requires another Act. Autho
 ## Counterexamples or failure modes
 
 - Treating operator wording about a desired result as established Seed Standing.
-- Treating one failed or unreachable mechanism as proof that no exact Act can occur.
+- Treating one implementation refusal as proof that no exact Act can occur.
 - Treating a difference from a reference Assertion as movement established by identity.
 - Treating satisfaction within one Scope as completion beyond that Scope.
 
