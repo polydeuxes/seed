@@ -26,7 +26,7 @@ A kind label, Representation, characterization category, implementation name, co
 Compiled behavior, direct instantiation, and exact represented results may witness what occurs at a read boundary, emission boundary, or other bounded implementation seam. They do not establish the Standing suggested by a name, output vocabulary, or behavior. Such Standing still requires its own subject, responsible occurrence, Evidence, Scope, Authority, and limits.
 
 ### 01.Standing.D — Multiplicity does not establish a collective
-Co-presence or multiplicity does not establish membership, collective Standing, relation, topology, ordering, priority, focus, a shared Act or result boundary, or higher-order identity. Each stronger Assertion requires its own bounded subject and established support relation.
+Co-presence or multiplicity establishes no relation, collective Standing, shared Act or result boundary, or higher-order identity. Each stronger Assertion requires its own bounded subject and established support relation.
 
 ### 01.Standing.D.1 — An Assertion preserves its Standing coordinates
 A bounded **Assertion** is the exact asserted content as its own subject under its carried Evidence, provenance, Scope, Authority, conflicts, limits, **Unknowns**, and current Standing. An Assertion bears the Responsibility for preserving those applicable Standing coordinates. That Responsibility remains local to the bounded Assertion.
