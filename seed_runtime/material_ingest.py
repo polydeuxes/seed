@@ -10,6 +10,10 @@ from seed_runtime.yield_evidence import _record_yield_evidence, yield_commitment
 
 MATERIAL_INGEST_OCCURRED_KIND = "material.ingest.occurred"
 MATERIAL_INGEST_ACT_EVIDENCE_KIND = "material.ingest.act_evidenced"
+EVENT_KIND_RESPONSIBILITIES = {
+    MATERIAL_INGEST_OCCURRED_KIND: "02.Acts.A",
+    MATERIAL_INGEST_ACT_EVIDENCE_KIND: "02.Acts.A",
+}
 MATERIAL_INGEST_CONVENTION = "material_ingest"
 MATERIAL_INGEST_RESPONSIBILITY = (
     "preserve exact material supplied at one source boundary"
@@ -76,7 +80,6 @@ def ingest_material(
             "result_commitment": yield_commitment(
                 MATERIAL_INGEST_CONVENTION, result
             ),
-            "standing": "occurred",
             "authority": "unestablished",
             "evidence_scope": "Evidence concerning this exact Ingest occurrence only",
         },
@@ -101,7 +104,6 @@ def ingest_material(
         "dimensions": {
             "identity": result_identity,
             "content": exact_bytes.hex(),
-            "standing": "preserved",
             "source_provenance": source_boundary,
             "responsibility": MATERIAL_INGEST_RESPONSIBILITY,
             "authority": "unestablished",

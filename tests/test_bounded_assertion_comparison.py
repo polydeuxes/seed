@@ -243,7 +243,7 @@ def test_the_comparison_is_recorded_as_its_own_kind(ledger):
         finding=compare_preserved_findings(ledger, [a.id, b.id]))
     assert event.kind == COMPARISON_RECORDED_KIND
     assert event.payload["input_event_ids"] == [a.id, b.id]
-    assert event.payload["dimensions"]["standing"] == "compared"
+    assert "standing" not in event.payload["dimensions"]
 
 
 def test_the_record_refuses_the_inferences_the_clause_forbids(ledger):

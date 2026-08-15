@@ -74,6 +74,14 @@ ADJACENT_PAIR_OBSERVATION_COMPARE_ACT_EVIDENCE_KIND = (
 ADJACENT_PAIR_OBSERVATION_COMPARE_LOCALITY_EVIDENCE_KIND = (
     "operator.measurement.adjacent_pair_observation_compare_locality_evidenced"
 )
+EVENT_KIND_RESPONSIBILITIES = {
+    ADJACENT_PAIR_OBSERVATION_RECORDED_KIND: "02.Acts.A",
+    ADJACENT_PAIR_OBSERVATION_ACT_EVIDENCE_KIND: "02.Acts.A",
+    ADJACENT_PAIR_OBSERVATION_LOCALITY_EVIDENCE_KIND: "06.Standing.B",
+    ADJACENT_PAIR_OBSERVATION_COMPARE_RECORDED_KIND: "02.Acts.A",
+    ADJACENT_PAIR_OBSERVATION_COMPARE_ACT_EVIDENCE_KIND: "02.Acts.A",
+    ADJACENT_PAIR_OBSERVATION_COMPARE_LOCALITY_EVIDENCE_KIND: "06.Standing.B",
+}
 ADJACENT_PAIR_OBSERVATION_COMPARE_CONVENTION = (
     "adjacent_pair_observation_compare"
 )
@@ -473,7 +481,6 @@ def observe_emitted_representation_adjacency(
         or locality.payload.get("act_occurrence_id")
         != emission.payload.get("act_occurrence_id")
         or locality.payload.get("content_kind") != "text"
-        or locality.payload.get("standing") != "carried"
         or locality.payload.get("carried_content") != text
     ):
         raise PreservedMaterialMeasurementError(
@@ -779,7 +786,6 @@ def _record_adjacent_pair_observation_result(
             "result_commitment": yield_commitment(
                 ADJACENT_PAIR_OBSERVATION_CONVENTION, result_payload
             ),
-            "standing": "occurred",
             "authority": "unestablished",
             "evidence_scope": "this exact bounded Measurement occurrence only",
         },
@@ -804,7 +810,6 @@ def _record_adjacent_pair_observation_result(
             "act_occurrence_id": act_occurrence_id,
             "content_kind": "exact adjacent-pair observations",
             "carried_content": result_payload,
-            "standing": "carried",
             "authority": "unestablished",
             "evidence_scope": "this exact result-to-occurrence Locality only",
         },
@@ -817,7 +822,6 @@ def _record_adjacent_pair_observation_result(
             "dimensions": {
                 "identity": act_occurrence_id,
                 "content": "exact adjacent-pair observations",
-                "standing": "measured",
                 "source_provenance": [adjacency_evidence_event_id, *source_ids],
                 "responsibility": ADJACENT_PAIR_OBSERVATION_RESPONSIBILITY,
                 "responsible_boundary": "this Seed",
@@ -1129,7 +1133,6 @@ def get_recorded_adjacent_pair_observations(
             or anchor.payload.get("act_occurrence_id")
             != source.payload.get("act_occurrence_id")
             or anchor.payload.get("content_kind") != "text"
-            or anchor.payload.get("standing") != "carried"
             or anchor.payload.get("carried_content") != text
             or not isinstance(text, str)
         ):
@@ -1251,7 +1254,6 @@ def record_adjacent_pair_observation_compare(
                 ADJACENT_PAIR_OBSERVATION_COMPARE_CONVENTION,
                 result_payload,
             ),
-            "standing": "occurred",
         },
         locality_id=locality_id,
     )
@@ -1273,7 +1275,6 @@ def record_adjacent_pair_observation_compare(
         {
             "act_occurrence_id": act_occurrence_id,
             "carried_content": result_payload,
-            "standing": "carried",
         },
         locality_id=locality_id,
     )

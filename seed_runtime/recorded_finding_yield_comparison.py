@@ -53,6 +53,10 @@ FINDING_YIELD_COMPARISON_ACT_EVIDENCE_KIND = (
     "operator.measurement.finding_yield_comparison_act_evidenced"
 )
 FINDING_YIELD_COMPARISON_RESULT_KIND = "recorded finding Yield comparison"
+EVENT_KIND_RESPONSIBILITIES = {
+    FINDING_YIELD_COMPARISON_KIND: "02.Acts.A",
+    FINDING_YIELD_COMPARISON_ACT_EVIDENCE_KIND: "02.Acts.A",
+}
 FINDING_YIELD_COMPARISON_CONVENTION = (
     "recorded_recurrence_finding_yield_comparison"
 )
@@ -477,7 +481,6 @@ def compare_recorded_finding_yield(ledger: EventLedger, event_id: str) -> Event:
             "result_commitment": yield_commitment(
                 FINDING_YIELD_COMPARISON_CONVENTION, result_payload
             ),
-            "standing": "occurred",
             "authority": authority_boundary,
             "evidence_scope": (
                 "Evidence concerning this exact finding Yield Compare occurrence only"

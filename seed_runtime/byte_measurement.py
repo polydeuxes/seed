@@ -111,6 +111,15 @@ ASSERTION_LOCALITY_MOVEMENT_KIND = "operator.assertion.locality_movement_recorde
 ASSERTION_LOCALITY_MOVEMENT_ACT_EVIDENCE_KIND = (
     "operator.assertion.locality_movement_act_evidenced"
 )
+EVENT_KIND_RESPONSIBILITIES = {
+    BYTE_MEASUREMENT_RECORDED_KIND: "02.Acts.A",
+    BYTE_PAIR_MEASUREMENT_RECORDED_KIND: "02.Acts.A",
+    BYTE_MEASUREMENT_RESPONSIBLE_ACT_EVIDENCE_KIND: "02.Acts.A",
+    BYTE_PAIR_RESPONSIBLE_ACT_EVIDENCE_KIND: "02.Acts.A",
+    BYTE_PAIR_APPLICABILITY_RECORDED_KIND: "01.Standing.E.1",
+    BYTE_PAIR_APPLICABILITY_ACT_EVIDENCE_KIND: "02.Acts.A",
+    ASSERTION_LOCALITY_MOVEMENT_ACT_EVIDENCE_KIND: "02.Acts.A",
+}
 ASSERTION_LOCALITY_MOVEMENT_RESPONSIBILITY = (
     "make one exact preserved Assertion available in another Locality without "
     "changing its identity, Standing, or carried limits"
@@ -1035,7 +1044,6 @@ def record_byte_count_layer(
             "result_commitment": yield_commitment(
                 BYTE_MEASUREMENT_CONVENTION, result_payload
             ),
-            "standing": "occurred",
             "authority": "unestablished",
             "evidence_scope": (
                 "Evidence concerning this exact bounded responsible Measurement "
@@ -1163,7 +1171,6 @@ def assertions_of_recorded_byte_measurement(
         "result_commitment": yield_commitment(
             BYTE_MEASUREMENT_CONVENTION, yielded
         ),
-        "standing": "occurred",
         "authority": "unestablished",
         "evidence_scope": (
             "Evidence concerning this exact bounded responsible Measurement "
@@ -1337,7 +1344,6 @@ def _record_pair_responsible_act_evidence(
             "result_commitment": yield_commitment(
                 BYTE_PAIR_MEASUREMENT_CONVENTION, yielded_content
             ),
-            "standing": "occurred",
             "authority": "unestablished",
             "evidence_scope": (
                 "Evidence concerning this exact bounded responsible Measurement "
@@ -1401,7 +1407,6 @@ def _record_pair_input_applicability(
             "result_commitment": yield_commitment(
                 BYTE_PAIR_APPLICABILITY_CONVENTION, result_payload
             ),
-            "standing": "occurred",
             "authority": BYTE_PAIR_APPLICABILITY_AUTHORITY,
             "evidence_scope": (
                 "Evidence concerning this exact input Applicability "
@@ -1499,7 +1504,6 @@ def get_recorded_pair_input_applicability(
         "result_commitment": yield_commitment(
             BYTE_PAIR_APPLICABILITY_CONVENTION, yielded
         ),
-        "standing": "occurred",
         "authority": BYTE_PAIR_APPLICABILITY_AUTHORITY,
         "evidence_scope": (
             "Evidence concerning this exact input Applicability "
@@ -1896,7 +1900,6 @@ def assertions_of_recorded_adjacent_byte_pair_measurement(
         "result_commitment": yield_commitment(
             BYTE_PAIR_MEASUREMENT_CONVENTION, yielded
         ),
-        "standing": "occurred",
         "authority": "unestablished",
         "evidence_scope": (
             "Evidence concerning this exact bounded responsible Measurement "

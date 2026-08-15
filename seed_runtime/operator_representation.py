@@ -44,15 +44,23 @@ REPRESENTATION_EMISSION_INPUT_ROLE = "exact bounded Representation"
 REPRESENTATION_EMISSION_RESPONSIBILITY = (
     "write one exact Representation to its declared text-stream boundary"
 )
+EVENT_KIND_RESPONSIBILITIES = {
+    REPRESENTATION_RECORDED_KIND: "02.Acts.A",
+    REPRESENTATION_EMITTED_KIND: "02.Acts.A",
+    REPRESENTATION_ACT_EVIDENCE_KIND: "02.Acts.A",
+    REPRESENTATION_LOCALITY_EVIDENCE_KIND: "06.Standing.B",
+    REPRESENTATION_EMISSION_ACT_EVIDENCE_KIND: "02.Acts.A",
+    REPRESENTATION_EMISSION_LOCALITY_EVIDENCE_KIND: "06.Standing.B",
+    REPRESENTATION_EMISSION_ATTEMPT_LOCALITY_EVIDENCE_KIND: "06.Standing.B",
+}
 
 def _dimensions(
-    *, identity, content, standing, source, responsibility, authority, scope, occurrence,
+    *, identity, content, source, responsibility, authority, scope, occurrence,
     evidence_scope=None,
 ):
     dimensions = {
         "identity": identity,
         "content": content,
-        "standing": standing,
         "source_provenance": source,
         "responsibility": responsibility,
         "authority": authority,
@@ -162,7 +170,6 @@ def record_operator_representation(
             "result_commitment": yield_commitment(
                 REPRESENTATION_CONVENTION, result_payload
             ),
-            "standing": "occurred",
             "authority": "unestablished",
             "evidence_scope": (
                 "Evidence concerning this exact Representation Act occurrence only"
@@ -189,7 +196,6 @@ def record_operator_representation(
             "act_occurrence_id": act_occurrence_id,
             "content_kind": "bounded Representation",
             "carried_content": result_payload,
-            "standing": "carried",
             "authority": "unestablished",
             "evidence_scope": (
                 "Evidence only for this exact Representation-to-occurrence Locality"
@@ -205,7 +211,6 @@ def record_operator_representation(
             "dimensions": _dimensions(
                 identity=act_occurrence_id,
                 content=content,
-                standing="recorded",
                 source=locality_standing["as_of_event_id"],
                 responsibility=REPRESENTATION_RESPONSIBILITY,
                 authority="unestablished",
@@ -352,7 +357,6 @@ def emit_operator_representation(
             "dimensions": _dimensions(
                 identity=f"emission-attempt:{representation['representation_id']}",
                 content="exact text prepared for the declared output boundary",
-                standing="attempt recorded; output-boundary outcome Unknown",
                 source=representation["representation_event_id"],
                 responsibility=REPRESENTATION_EMISSION_RESPONSIBILITY,
                 authority="unestablished",
@@ -386,7 +390,6 @@ def emit_operator_representation(
             "attempt_event_id": attempt_event.id,
             "content_kind": "text",
             "carried_content": emitted_representation,
-            "standing": "carried",
             "authority": "unestablished",
             "evidence_scope": (
                 "Evidence only for the exact text-to-emission-attempt Locality"
@@ -473,7 +476,6 @@ def emit_operator_representation(
             "result_commitment": yield_commitment(
                 REPRESENTATION_EMISSION_CONVENTION, yielded_content
             ),
-            "standing": "occurred",
             "authority": "unestablished",
             "evidence_scope": (
                 "Evidence concerning this exact emission Act occurrence and "
@@ -491,7 +493,6 @@ def emit_operator_representation(
             "locality_relation": locality_relation,
             "content_kind": "text",
             "carried_content": emitted_representation,
-            "standing": "carried",
             "authority": "unestablished",
             "evidence_scope": (
                 "Evidence only for the exact text-to-emission-occurrence Locality"
@@ -520,7 +521,6 @@ def emit_operator_representation(
             "dimensions": _dimensions(
                 identity=act_occurrence_id,
                 content="exact Representation written to console output stream",
-                standing="emitted",
                 source=representation["representation_event_id"],
                 responsibility=REPRESENTATION_EMISSION_RESPONSIBILITY,
                 authority="unestablished",
@@ -609,7 +609,6 @@ def _record_emission_failure_outcome(
             "dimensions": _dimensions(
                 identity=f"emission-outcome:{attempt_event_id}:{phase}",
                 content=f"{phase} did not complete the emission call",
-                standing=outcome,
                 source=attempt_event_id,
                 responsibility=REPRESENTATION_EMISSION_RESPONSIBILITY,
                 authority="unestablished",

@@ -23,10 +23,14 @@ from seed_runtime.event import Event
 from seed_runtime.events import CORRUPTED, EventLedger
 
 YIELD_EVIDENCE_KIND = "operator.yield.evidence_recorded"
+EVENT_KIND_RESPONSIBILITIES = {
+    YIELD_EVIDENCE_KIND: "02.Acts.A",
+}
 YIELD_LIVE_BOUNDARIES = frozenset(
     {
         "adjacent_pair_observation",
         "adjacent_pair_observation_compare",
+        "assertion_yield_compare",
         "byte_measurement",
         "byte_pair_applicability",
         "byte_pair_measurement",
@@ -261,7 +265,6 @@ def _record_yield_evidence(
                     f"evidence that {yielding_act} yielded this exact "
                     f"{yielded_result_kind} at its exact Act boundary"
                 ),
-                "standing": "yielded",
                 "yielding_act": yielding_act,
                 "act_occurrence_id": act_occurrence_id,
                 "occurrence_result_evidence": (

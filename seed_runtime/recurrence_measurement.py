@@ -702,7 +702,6 @@ def record_measured_count(
         "dimensions": {
             "identity": "declared-measurement-result-occurrence",
             "content": f"{len(assertions)} distinct measured Assertions recorded",
-            "standing": "recorded",
             "source_provenance": (
                 "recorded comparison occurrences and recorded measurement "
                 "occurrences"

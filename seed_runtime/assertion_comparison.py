@@ -19,6 +19,7 @@ from seed_runtime.events import CORRUPTED, EventLedger
 from seed_runtime.event import Event
 from seed_runtime.ids import new_id
 from seed_runtime.support_basis import SupportValidator
+from seed_runtime.yield_evidence import _record_yield_evidence, yield_commitment
 from seed_runtime.recurrence_measurement import (
     RecordedMeasuredAssertion,
     get_recorded_measured_assertion,
@@ -70,6 +71,14 @@ ASSERTION_COMPARE_INPUT_APPLICABILITY_KIND = (
 ASSERTION_COMPARE_ACT_EVIDENCE_KIND = (
     "operator.assertion.compare_act_evidenced"
 )
+ASSERTION_YIELD_COMPARISON_CONVENTION = "assertion_yield_comparison"
+ASSERTION_YIELD_COMPARISON_RESULT_KIND = "Assertion Yield Compare result"
+EVENT_KIND_RESPONSIBILITIES = {
+    ASSERTION_YIELD_COMPARISON_RECORDED_KIND: "02.Acts.A",
+    ASSERTION_COMPARE_INPUT_LOCALITY_EVIDENCE_KIND: "06.Standing.B",
+    ASSERTION_COMPARE_INPUT_APPLICABILITY_KIND: "01.Standing.E.1",
+    ASSERTION_COMPARE_ACT_EVIDENCE_KIND: "02.Acts.A",
+}
 
 COMPARISON_ASSERTION_STANDING_COORDINATE_RESPONSIBILITY = (
     "preserve this comparison Assertion's carried Standing coordinates"
@@ -251,6 +260,7 @@ def record_assertion_yield_comparison(
         )
     act_id = new_id("assertion_compare_act")
     act_occurrence_id = new_id("assertion_compare_act_occurrence")
+    result_identity = new_id("assertion_compare_result")
     locality_evidence_ids = []
     applicability_event_ids = []
     participation = []
@@ -265,7 +275,6 @@ def record_assertion_yield_comparison(
                     "act_occurrence_id": act_occurrence_id,
                     "role": role,
                 },
-                "standing": "local",
                 "authority": "unestablished",
                 "evidence_scope": "this exact Assertion-to-Compare Locality only",
             },
@@ -355,6 +364,28 @@ def record_assertion_yield_comparison(
                 ],
             }
         )
+    result_payload = {
+        "result_identity": result_identity,
+        "dimensions": {
+            "identity": result_identity,
+            "content": f"{len(assertions)} distinct comparison Assertions recorded",
+            "source_provenance": "two occurrence-bound Assertion yields",
+            "authority": "unestablished",
+            "evidence_scope": "literal Compare results only",
+            "scope_locality": f"locality:{locality_id}",
+            "occurrence_preservation": "comparison occurrence durably recorded",
+        },
+        "yielding_act": "Compare",
+        "downstream_act_id": act_id,
+        "act_occurrence_id": act_occurrence_id,
+        "input_locality_evidence_ids": locality_evidence_ids,
+        "input_applicability_event_ids": applicability_event_ids,
+        "participation": participation,
+        "responsible_boundary": comparison.responsible_boundary,
+        "responsibility": comparison.responsibility,
+        "inputs": list(input_refs),
+        "assertions": assertions,
+    }
     act_evidence = ledger.append(
         ASSERTION_COMPARE_ACT_EVIDENCE_KIND,
         {
@@ -365,36 +396,34 @@ def record_assertion_yield_comparison(
             "responsible_boundary": comparison.responsible_boundary,
             "input_applicability_event_ids": applicability_event_ids,
             "participation": participation,
-            "standing": "occurred",
+            "result_commitment": yield_commitment(
+                ASSERTION_YIELD_COMPARISON_CONVENTION, result_payload
+            ),
             "authority": "unestablished",
             "evidence_scope": "this exact bounded Compare occurrence only",
         },
         locality_id=locality_id,
     )
+    yield_evidence = _record_yield_evidence(
+        ledger,
+        locality_id=locality_id,
+        convention=ASSERTION_YIELD_COMPARISON_CONVENTION,
+        yielding_act="Compare",
+        act_occurrence_id=act_occurrence_id,
+        yielded_result_kind=ASSERTION_YIELD_COMPARISON_RESULT_KIND,
+        result_identity=result_identity,
+        yielded_content=result_payload,
+        responsibility=comparison.responsibility,
+        live_boundary="assertion_yield_compare",
+        responsible_boundary=comparison.responsible_boundary,
+        recorded_result_coordinates={key: (key,) for key in result_payload},
+    )
     return ledger.append(
         ASSERTION_YIELD_COMPARISON_RECORDED_KIND,
         {
-            "dimensions": {
-                "identity": "assertion-yield-comparison-occurrence",
-                "content": f"{len(assertions)} distinct comparison Assertions recorded",
-                "standing": "recorded",
-                "source_provenance": "two occurrence-bound Assertion yields",
-                "authority": "unestablished",
-                "evidence_scope": "literal Compare results only",
-                "scope_locality": f"locality:{locality_id}",
-                "occurrence_preservation": "comparison occurrence durably recorded",
-            },
-            "yielding_act": "Compare",
-            "downstream_act_id": act_id,
-            "act_occurrence_id": act_occurrence_id,
+            **result_payload,
             "responsible_act_evidence_id": act_evidence.id,
-            "input_locality_evidence_ids": locality_evidence_ids,
-            "input_applicability_event_ids": applicability_event_ids,
-            "participation": participation,
-            "responsible_boundary": comparison.responsible_boundary,
-            "responsibility": comparison.responsibility,
-            "inputs": list(input_refs),
-            "assertions": assertions,
+            "yield_evidence_id": yield_evidence.id,
         },
         locality_id=locality_id,
     )

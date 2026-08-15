@@ -451,6 +451,7 @@ class SQLiteEventLedger(EventLedger):
         "adjacent_pair_observation_compare_occurrence",
         "assertion_compare_act",
         "assertion_compare_act_occurrence",
+        "assertion_compare_result",
     })
 
     def __init__(self, database_path: str) -> None:

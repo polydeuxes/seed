@@ -10,6 +10,9 @@ from seed_runtime.operator_command import AddressedOperatorCommand
 
 
 CHECKPOINT_LOCALITY_EVIDENCE_KIND = "operator.checkpoint.locality_evidenced"
+EVENT_KIND_RESPONSIBILITIES = {
+    CHECKPOINT_LOCALITY_EVIDENCE_KIND: "06.Standing.B",
+}
 
 
 class OperatorCheckpointError(ValueError):
@@ -83,7 +86,6 @@ def open_operator_checkpoint(
             "command_id": command_id,
             "addressed_event_id": addressed.id,
             "checkpoint_event_id": checkpoint.id,
-            "standing": "local",
             "authority": "unestablished",
             "evidence_scope": (
                 "this exact command-to-checkpoint Locality relation only"

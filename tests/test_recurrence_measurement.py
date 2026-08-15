@@ -143,7 +143,7 @@ def test_the_record_shape_is_its_own(compared):
     assert event.kind == LOCALITY_COUNT_RECORDED_KIND
     assert event.kind != MEASUREMENT_RECORDED_KIND
     assert "occupancies" not in event.payload
-    assert event.payload["dimensions"]["standing"] == "recorded"
+    assert "standing" not in event.payload["dimensions"]
     assert "responsibility" not in event.payload["dimensions"]
 
 

@@ -49,10 +49,33 @@ def _module_strings(tree: ast.Module) -> dict[str, str]:
 
 def _runtime_event_kinds() -> dict[str, list[str]]:
     found: dict[str, list[str]] = {}
+    for path, line, name, value, _keys in _event_payloads():
+        found.setdefault(value, []).append(f"{path.name}:{line}:{name}")
+    return found
+
+
+def _runtime_event_kind_responsibilities() -> dict[str, list[tuple[str, str]]]:
+    found: dict[str, list[tuple[str, str]]] = {}
     for path, tree in _runtime_trees():
-        for name, value in _module_strings(tree).items():
-            if name.endswith("_KIND"):
-                found.setdefault(value, []).append(f"{path.name}:{name}")
+        constants = _module_strings(tree)
+        for node in tree.body:
+            if not isinstance(node, ast.Assign) or not isinstance(node.value, ast.Dict):
+                continue
+            if not any(
+                isinstance(name, ast.Name)
+                and name.id == "EVENT_KIND_RESPONSIBILITIES"
+                for name in node.targets
+            ):
+                continue
+            for key, value in zip(node.value.keys, node.value.values):
+                kind = constants.get(key.id) if isinstance(key, ast.Name) else None
+                clause = (
+                    value.value
+                    if isinstance(value, ast.Constant) and isinstance(value.value, str)
+                    else None
+                )
+                if kind is not None and clause is not None:
+                    found.setdefault(kind, []).append((path.name, clause))
     return found
 
 
@@ -157,15 +180,30 @@ def _resolved_dict_keys(
 def test_every_runtime_event_kind_declares_its_machine_grammar_responsibility():
     """A new event species cannot gain constitutional force from its name."""
 
-    grammar = json.loads(GRAMMAR.read_text(encoding="utf-8"))
     declared = _runtime_event_kinds()
-    accounted = grammar["implementation_witness"].get("event_kinds", {})
+    accounted = _runtime_event_kind_responsibilities()
 
     assert set(declared) == set(accounted), (
         "\nLive event kinds and machine-grammar responsibilities disagree."
         f"\n  only live: {sorted(set(declared) - set(accounted))}"
-        f"\n  only grammar: {sorted(set(accounted) - set(declared))}"
+        f"\n  only responsibility declaration: {sorted(set(accounted) - set(declared))}"
     )
+
+
+def test_each_event_kind_responsibility_names_one_machine_grammar_clause():
+    grammar = json.loads(GRAMMAR.read_text(encoding="utf-8"))
+    accounted = _runtime_event_kind_responsibilities()
+    duplicate = {
+        kind: values for kind, values in accounted.items() if len(values) != 1
+    }
+    assert duplicate == {}, f"event species declare several responsibilities: {duplicate}"
+    clauses = set(grammar["clauses"])
+    unknown = {
+        kind: values[0]
+        for kind, values in accounted.items()
+        if values[0][1] not in clauses
+    }
+    assert unknown == {}, f"event species name absent grammar clauses: {unknown}"
 
 
 def test_runtime_record_vocabulary_has_constitutional_admission():
@@ -423,10 +461,7 @@ def _standing_values(node) -> list[str]:
 
 
 def test_every_event_standing_claim_has_a_declared_grammar_responsibility():
-    accounted = set(
-        json.loads(GRAMMAR.read_text(encoding="utf-8"))["implementation_witness"]
-        .get("event_kinds", {})
-    )
+    accounted = set(_runtime_event_kind_responsibilities())
     unaccounted = []
     for path, tree in _runtime_trees():
         constants = _module_strings(tree)

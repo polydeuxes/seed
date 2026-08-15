@@ -287,7 +287,6 @@ def record_comparison_finding(
         "dimensions": {
             "identity": "bounded-assertion-comparison",
             "content": f"{len(finding.inputs)} preserved findings compared",
-            "standing": "compared",
             "source_provenance": "recorded measurement findings",
             "responsibility": "bounded-comparison-boundary",
             "authority": "unestablished",

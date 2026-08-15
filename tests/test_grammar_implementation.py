@@ -393,10 +393,18 @@ def _assertion_compare_input_locality_roads() -> tuple[dict, dict]:
         return {
             "ledger": ledger,
             "event": event,
+            "act_evidence": ledger.get(
+                event.payload["responsible_act_evidence_id"]
+            ),
+            "content_evidence": ledger.get(event.payload["yield_evidence_id"]),
             "locality_evidence": evidence,
         }
 
     return record(), record()
+
+
+def _assertion_yield_compare_road() -> dict:
+    return _assertion_compare_input_locality_roads()[0]
 
 
 def _assertion_compare_input_locality_requirements(bundle: dict) -> dict[str, bool]:
@@ -1359,6 +1367,7 @@ def _remaining_yield_requirement_bundles() -> dict[str, dict[str, dict]]:
         "adjacent_pair_observation_compare": (
             lambda: _adjacent_observation_yield_road(compare=True)
         ),
+        "assertion_yield_compare": _assertion_yield_compare_road,
         "material_ingest": _material_ingest_yield_road,
         "preserved_material_measurement": _preserved_material_yield_road,
         "recorded_finding_yield_compare": _recorded_finding_compare_yield_road,

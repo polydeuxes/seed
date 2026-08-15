@@ -613,7 +613,11 @@ def test_emission_preserves_the_exact_text_written_to_its_boundary():
     assert attempt.payload["attempted_representation"] == output.getvalue()
     assert attempt_locality_evidence.payload["carried_content"] == output.getvalue()
     assert attempt_locality_evidence.payload["attempt_event_id"] == attempt.id
-    assert attempt.payload["dimensions"]["standing"].endswith("outcome Unknown")
+    assert "standing" not in attempt.payload["dimensions"]
+    assert (
+        "output-boundary acceptance remains Unknown until an outcome is recorded"
+        in attempt.payload["unknowns"]
+    )
     assert attempt.id != emission.payload["act_occurrence_id"]
     assert emission.payload["input_role"] == "exact bounded Representation"
     assert emission.payload["boundary_result"] == {
