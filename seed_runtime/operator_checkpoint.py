@@ -24,7 +24,7 @@ class OperatorCheckpoint:
 
 
 def open_operator_checkpoint(context: OperatorCommandContext) -> OperatorCheckpoint:
-    """Begin one fresh locality at the exact emission addressed by the command.
+    """Begin one fresh locality at the exact Representation addressed by the command.
 
     Argument bytes remain part of the addressed command occurrence. They are
     not interpreted as a goal, desire, relation, Authority, or Standing here.
