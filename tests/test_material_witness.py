@@ -20,6 +20,7 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "scripts"))
 
 from compiled_format_witness import (  # noqa: E402
+    AddedPositionMaterial,
     COMPILED_IMPLEMENTATION_FUNCTIONS,
     CompiledImplementationFunction,
     candidate_material_at_added_positions,
@@ -105,14 +106,18 @@ def book_pair_invocation_occurrences(measured_book_pairs):
 
 @pytest.fixture(scope="module")
 def book_pair_format_occurrences(measured_book_pairs):
-    return interrogate_across(measured_book_pairs[3])
+    return interrogate_across(
+        measured_book_pairs[3], boundary_identity="book-pair-format"
+    )
 
 
 @pytest.fixture(scope="module")
 def book_byte_format_comparisons(measured_book_pairs):
     material = measured_book_pairs[5]
     pairs = tuple(bytes((first, second)) for first in material for second in material)
-    pair_occurrences = interrogate_across(pairs)
+    pair_occurrences = interrogate_across(
+        pairs, boundary_identity="book-byte-format"
+    )
     found = []
     for implementation_function, pair_row in zip(COMPILED_IMPLEMENTATION_FUNCTIONS, pair_occurrences):
         pair_returned = {
@@ -152,7 +157,9 @@ def book_three_byte_format_occurrences(
         tuple(sorted(returned_pairs)),
         material,
     )
-    return returned_pairs, candidates, interrogate_added_positions(candidates)
+    return returned_pairs, candidates, interrogate_added_positions(
+        candidates, boundary_identity="book-three-byte-format"
+    )
 
 
 def _admission(occurrences, coordinate=lambda occurrence: occurrence.coordinates):
@@ -386,24 +393,24 @@ def test_three_byte_candidates_come_from_measured_bytes_and_invocation_returns(
     assert returned_pairs
     assert candidates
     assert all(
-        candidate["source_material"] in returned_pairs
-        and candidate["added_material"] in {
+        candidate.source_material in returned_pairs
+        and candidate.added_material in {
             bytes((item,)) for item in material
         }
-        and len(candidate["candidate_material"]) == 3
+        and len(candidate.candidate_material) == 3
         and preserves_original_order(
-            source_material=candidate["source_material"],
-            candidate_material=candidate["candidate_material"],
-            added_position=candidate["position"],
+            source_material=candidate.source_material,
+            candidate_material=candidate.candidate_material,
+            added_position=candidate.position,
         )
         for candidate in candidates
     )
     assert len(
         {
             (
-                candidate["source_material"],
-                candidate["position"],
-                candidate["added_material"],
+                candidate.source_material,
+                candidate.position,
+                candidate.added_material,
             )
             for candidate in candidates
         }
@@ -430,16 +437,37 @@ def test_added_position_refuses_a_different_source_order():
 
 def test_equal_candidate_material_keeps_each_exact_added_position():
     candidates = candidate_material_at_added_positions((b"aa",), (ord("a"),))
+    implementation_function = CompiledImplementationFunction(
+        identity="fixture", invocation=lambda material: material
+    )
+    occurrences = interrogate_added_positions(
+        candidates,
+        boundary_identity="equal-material-positions",
+        implementation_functions=(implementation_function,),
+    )[0]
 
     assert tuple(
-        candidate["candidate_material"] for candidate in candidates
+        candidate.candidate_material for candidate in candidates
     ) == (b"aaa", b"aaa", b"aaa")
-    assert tuple(candidate["position"] for candidate in candidates) == (0, 1, 2)
+    assert tuple(candidate.position for candidate in candidates) == (0, 1, 2)
+    assert tuple(
+        (
+            occurrence.source_material,
+            occurrence.added_position,
+            occurrence.added_material,
+        )
+        for occurrence in occurrences
+    ) == ((b"aa", 0, b"a"), (b"aa", 1, b"a"), (b"aa", 2, b"a"))
+    assert len({occurrence.occurrence_identity for occurrence in occurrences}) == 3
+    assert all(
+        occurrence.source_coordinate is candidate
+        for occurrence, candidate in zip(occurrences, candidates)
+    )
     assert all(
         preserves_original_order(
-            source_material=candidate["source_material"],
-            candidate_material=candidate["candidate_material"],
-            added_position=candidate["position"],
+            source_material=candidate.source_material,
+            candidate_material=candidate.candidate_material,
+            added_position=candidate.position,
         )
         for candidate in candidates
     )
@@ -447,19 +475,23 @@ def test_equal_candidate_material_keeps_each_exact_added_position():
 
 def test_a_different_source_order_is_refused_before_the_implementation_function():
     supplied = []
-    candidate = {
-        "source_material": b"ab",
-        "position": 1,
-        "added_material": b"x",
-        "candidate_material": b"bxa",
-    }
+    candidate = AddedPositionMaterial(
+        source_material=b"ab",
+        position=1,
+        added_material=b"x",
+        candidate_material=b"bxa",
+    )
     implementation_function = CompiledImplementationFunction(
         identity="fixture",
         invocation=lambda material: supplied.append(material),
     )
 
     with pytest.raises(ValueError, match="exact source order"):
-        interrogate_added_positions((candidate,), (implementation_function,))
+        interrogate_added_positions(
+            (candidate,),
+            boundary_identity="different-source-order",
+            implementation_functions=(implementation_function,),
+        )
 
     assert supplied == []
 
@@ -469,7 +501,7 @@ def test_every_three_byte_candidate_reaches_every_compiled_implementation_functi
 ):
     _, candidates, occurrences = book_three_byte_format_occurrences
     exact_material = tuple(
-        candidate["candidate_material"] for candidate in candidates
+        candidate.candidate_material for candidate in candidates
     )
 
     assert len(occurrences) == len(COMPILED_IMPLEMENTATION_FUNCTIONS)
@@ -501,7 +533,9 @@ def test_compiled_implementation_function_receives_the_exact_material():
         supplied.append(material)
 
     occurrence = interrogate(
-        b"\xff\x00", CompiledImplementationFunction(identity="fixture", invocation=invocation)
+        b"\xff\x00",
+        CompiledImplementationFunction(identity="fixture", invocation=invocation),
+        boundary_identity="exact-material",
     )
 
     assert supplied == [b"\xff\x00"]
@@ -517,10 +551,15 @@ def test_equal_material_at_distinct_coordinates_reaches_the_implementation_funct
         invocation=lambda exact: supplied.append(exact),
     )
 
-    occurrences = interrogate_across(material, (implementation_function,))[0]
+    occurrences = interrogate_across(
+        material,
+        boundary_identity="distinct-coordinates",
+        implementation_functions=(implementation_function,),
+    )[0]
 
     assert supplied == list(material)
     assert tuple(occurrence.exact_material for occurrence in occurrences) == material
+    assert len({occurrence.occurrence_identity for occurrence in occurrences}) == 3
 
 
 def test_compiled_implementation_function_refusal_and_input_boundary_are_distinct():
@@ -532,9 +571,13 @@ def test_compiled_implementation_function_refusal_and_input_boundary_are_distinc
 
     implementation_function = CompiledImplementationFunction(identity="fixture", invocation=invocation)
 
-    occurrence = interrogate(b"\x00", implementation_function)
+    occurrence = interrogate(
+        b"\x00", implementation_function, boundary_identity="returned-refusal"
+    )
     with pytest.raises(TypeError, match="exact bytes"):
-        interrogate("material", implementation_function)
+        interrogate(
+            "material", implementation_function, boundary_identity="input-refusal"
+        )
 
     assert supplied == [b"\x00"]
     assert occurrence.returned is False

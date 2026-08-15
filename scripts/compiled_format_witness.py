@@ -18,11 +18,54 @@ class CompiledImplementationFunction:
     invocation: Callable[[bytes], object]
 
 
-@dataclass(frozen=True)
+@dataclass(frozen=True, slots=True)
+class AddedPositionMaterial:
+    source_material: bytes
+    position: int
+    added_material: bytes
+    candidate_material: bytes
+
+
+@dataclass(frozen=True, slots=True)
 class CompiledInvocationOccurrence:
+    boundary_identity: str
+    invocation_position: int
     exact_material: bytes
     implementation_function_identity: str
     returned: bool
+    source_coordinate: AddedPositionMaterial | None = None
+
+    @property
+    def occurrence_identity(self) -> tuple[str, str, int]:
+        return (
+            self.boundary_identity,
+            self.implementation_function_identity,
+            self.invocation_position,
+        )
+
+    @property
+    def source_material(self) -> bytes | None:
+        return (
+            self.source_coordinate.source_material
+            if self.source_coordinate is not None
+            else None
+        )
+
+    @property
+    def added_position(self) -> int | None:
+        return (
+            self.source_coordinate.position
+            if self.source_coordinate is not None
+            else None
+        )
+
+    @property
+    def added_material(self) -> bytes | None:
+        return (
+            self.source_coordinate.added_material
+            if self.source_coordinate is not None
+            else None
+        )
 
 
 def _a(material: bytes):
@@ -52,12 +95,20 @@ COMPILED_IMPLEMENTATION_FUNCTIONS = tuple(
 
 
 def interrogate(
-    exact_material: bytes, implementation_function: CompiledImplementationFunction
+    exact_material: bytes,
+    implementation_function: CompiledImplementationFunction,
+    *,
+    boundary_identity: str,
+    invocation_position: int = 0,
 ) -> CompiledInvocationOccurrence:
     if type(exact_material) is not bytes:
         raise TypeError("implementation function material must be exact bytes")
     if not isinstance(implementation_function, CompiledImplementationFunction):
         raise TypeError("one compiled implementation function is required")
+    if type(boundary_identity) is not str or not boundary_identity:
+        raise TypeError("one exact boundary identity is required")
+    if type(invocation_position) is not int or invocation_position < 0:
+        raise TypeError("one exact invocation position is required")
     try:
         implementation_function.invocation(exact_material)
     except Exception:
@@ -65,6 +116,8 @@ def interrogate(
     else:
         returned = True
     return CompiledInvocationOccurrence(
+        boundary_identity=boundary_identity,
+        invocation_position=invocation_position,
         exact_material=exact_material,
         implementation_function_identity=implementation_function.identity,
         returned=returned,
@@ -73,6 +126,8 @@ def interrogate(
 
 def interrogate_across(
     exact_materials: tuple[bytes, ...],
+    *,
+    boundary_identity: str,
     implementation_functions: tuple[CompiledImplementationFunction, ...] = COMPILED_IMPLEMENTATION_FUNCTIONS,
 ) -> tuple[tuple[CompiledInvocationOccurrence, ...], ...]:
     if type(exact_materials) is not tuple or not all(
@@ -81,15 +136,31 @@ def interrogate_across(
         raise TypeError("implementation function inputs must be one exact tuple of bytes")
     if type(implementation_functions) is not tuple or not implementation_functions:
         raise TypeError("compiled implementation functions must be one nonempty tuple")
+    if type(boundary_identity) is not str or not boundary_identity:
+        raise TypeError("one exact boundary identity is required")
     if not all(
         isinstance(implementation_function, CompiledImplementationFunction)
         for implementation_function in implementation_functions
     ):
         raise TypeError("compiled implementation functions must be exact")
+    return _interrogate_across(
+        exact_materials,
+        boundary_identity=boundary_identity,
+        implementation_functions=implementation_functions,
+    )
+
+
+def _interrogate_across(
+    exact_materials: tuple[bytes, ...],
+    *,
+    boundary_identity: str,
+    implementation_functions: tuple[CompiledImplementationFunction, ...],
+    source_coordinates: tuple[AddedPositionMaterial, ...] | None = None,
+) -> tuple[tuple[CompiledInvocationOccurrence, ...], ...]:
     found = []
     for implementation_function in implementation_functions:
         occurrences = []
-        for material in exact_materials:
+        for invocation_position, material in enumerate(exact_materials):
             try:
                 implementation_function.invocation(material)
             except Exception:
@@ -98,9 +169,16 @@ def interrogate_across(
                 returned = True
             occurrences.append(
                 CompiledInvocationOccurrence(
+                    boundary_identity=boundary_identity,
+                    invocation_position=invocation_position,
                     exact_material=material,
                     implementation_function_identity=implementation_function.identity,
                     returned=returned,
+                    source_coordinate=(
+                        source_coordinates[invocation_position]
+                        if source_coordinates is not None
+                        else None
+                    ),
                 )
             )
         found.append(tuple(occurrences))
@@ -132,7 +210,7 @@ def preserves_original_order(
 def candidate_material_at_added_positions(
     source_material: tuple[bytes, ...],
     added_material: tuple[int, ...],
-) -> tuple[dict[str, object], ...]:
+) -> tuple[AddedPositionMaterial, ...]:
     if type(source_material) is not tuple or not all(
         type(material) is bytes for material in source_material
     ):
@@ -143,14 +221,14 @@ def candidate_material_at_added_positions(
     ):
         raise TypeError("added material must be one exact tuple of byte values")
     return tuple(
-        {
-            "source_material": source,
-            "position": position,
-            "added_material": bytes((added,)),
-            "candidate_material": bytes(
+        AddedPositionMaterial(
+            source_material=source,
+            position=position,
+            added_material=bytes((added,)),
+            candidate_material=bytes(
                 (*source[:position], added, *source[position:])
             ),
-        }
+        )
         for source in source_material
         for position in range(len(source) + 1)
         for added in added_material
@@ -158,24 +236,23 @@ def candidate_material_at_added_positions(
 
 
 def interrogate_added_positions(
-    candidates: tuple[dict[str, object], ...],
+    candidates: tuple[AddedPositionMaterial, ...],
+    *,
+    boundary_identity: str,
     implementation_functions: tuple[CompiledImplementationFunction, ...] = COMPILED_IMPLEMENTATION_FUNCTIONS,
 ) -> tuple[tuple[CompiledInvocationOccurrence, ...], ...]:
     if type(candidates) is not tuple:
         raise TypeError("candidate material must be one exact tuple")
+    if type(boundary_identity) is not str or not boundary_identity:
+        raise TypeError("one exact boundary identity is required")
     exact_material = []
     for candidate in candidates:
-        if type(candidate) is not dict or set(candidate) != {
-            "source_material",
-            "position",
-            "added_material",
-            "candidate_material",
-        }:
+        if not isinstance(candidate, AddedPositionMaterial):
             raise TypeError("candidate material requires its exact source coordinates")
-        source = candidate["source_material"]
-        position = candidate["position"]
-        added = candidate["added_material"]
-        material = candidate["candidate_material"]
+        source = candidate.source_material
+        position = candidate.position
+        added = candidate.added_material
+        material = candidate.candidate_material
         if (
             type(added) is not bytes
             or len(added) != 1
@@ -191,4 +268,16 @@ def interrogate_added_positions(
                 "candidate material does not preserve its exact source order"
             )
         exact_material.append(material)
-    return interrogate_across(tuple(exact_material), implementation_functions)
+    if type(implementation_functions) is not tuple or not implementation_functions:
+        raise TypeError("compiled implementation functions must be one nonempty tuple")
+    if not all(
+        isinstance(implementation_function, CompiledImplementationFunction)
+        for implementation_function in implementation_functions
+    ):
+        raise TypeError("compiled implementation functions must be exact")
+    return _interrogate_across(
+        tuple(exact_material),
+        boundary_identity=boundary_identity,
+        implementation_functions=implementation_functions,
+        source_coordinates=candidates,
+    )

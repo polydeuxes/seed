@@ -26,19 +26,19 @@ def test_absent_material_returns_zero_without_entering_returned_material():
 def test_one_added_position_changes_both_returned_coordinates():
     candidates = candidate_material_at_added_positions((b"a",), (ord("b"),))
     occurrences = tuple(
-        interrogate_count(candidate["candidate_material"], b"b")
+        interrogate_count(candidate.candidate_material, b"b")
         for candidate in candidates
     )
 
-    assert tuple(candidate["candidate_material"] for candidate in candidates) == (
+    assert tuple(candidate.candidate_material for candidate in candidates) == (
         b"ba",
         b"ab",
     )
     assert all(
         preserves_original_order(
-            source_material=candidate["source_material"],
-            candidate_material=candidate["candidate_material"],
-            added_position=candidate["position"],
+            source_material=candidate.source_material,
+            candidate_material=candidate.candidate_material,
+            added_position=candidate.position,
         )
         for candidate in candidates
     )
