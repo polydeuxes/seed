@@ -255,6 +255,30 @@ class AddedPositionCompareOccurrence:
 
 
 @dataclass(frozen=True, slots=True)
+class AddedPositionPairCompareOccurrence:
+    boundary_identity: str
+    occurrence_position: int
+    source_reference: ExactMaterialReference | ExactMaterialResultReference
+    added_reference: ExactMaterialReference
+    first_position: int
+    second_position: int
+    first_added_position_act_occurrence_identity: tuple[str, int]
+    second_added_position_act_occurrence_identity: tuple[str, int]
+    first_compare_occurrence_identities: tuple[tuple[str, str, int], ...]
+    second_compare_occurrence_identities: tuple[tuple[str, str, int], ...]
+    first_returned_coordinates: tuple[tuple[str, bool, bool], ...]
+    second_returned_coordinates: tuple[tuple[str, bool, bool], ...]
+
+    @property
+    def occurrence_identity(self) -> tuple[str, int]:
+        return (self.boundary_identity, self.occurrence_position)
+
+    @property
+    def distinction(self) -> bool:
+        return self.first_returned_coordinates != self.second_returned_coordinates
+
+
+@dataclass(frozen=True, slots=True)
 class RemovedPositionCompareOccurrence:
     boundary_identity: str
     occurrence_position: int
@@ -278,10 +302,13 @@ class RemovedPositionCompareOccurrence:
         return self.source_returned != self.result_returned
 
 
-def admit_added_position_occurrences(
+def _added_position_comparisons_by_occurrence(
     occurrences: tuple[AddedPositionOccurrence, ...],
     comparisons: tuple[tuple[AddedPositionCompareOccurrence, ...], ...],
-) -> tuple[tuple[AddedPositionOccurrence, ...], ...]:
+) -> tuple[
+    dict[tuple[str, int], AddedPositionOccurrence],
+    dict[tuple[str, int], tuple[AddedPositionCompareOccurrence, ...]],
+]:
     if type(occurrences) is not tuple or not occurrences:
         raise TypeError("Admission requires exact addition Act occurrences")
     if type(comparisons) is not tuple or not comparisons:
@@ -297,7 +324,9 @@ def admit_added_position_occurrences(
         occurrence_by_identity[identity] = occurrence
 
     expected_identities = frozenset(occurrence_by_identity)
-    coordinates: dict[tuple[str, int], list[tuple[str, bool, bool]]] = {
+    comparisons_by_occurrence: dict[
+        tuple[str, int], list[AddedPositionCompareOccurrence]
+    ] = {
         identity: [] for identity in occurrence_by_identity
     }
     implementation_function_identities = set()
@@ -331,20 +360,106 @@ def admit_added_position_occurrences(
             raise ValueError("Compare tuple does not carry every addition Act occurrence")
         for identity in occurrence_by_identity:
             comparison = comparison_by_identity[identity]
-            coordinates[identity].append(
-                (
-                    implementation_function_identity,
-                    comparison.source_returned,
-                    comparison.result_returned,
-                )
-            )
+            comparisons_by_occurrence[identity].append(comparison)
+
+    return occurrence_by_identity, {
+        identity: tuple(found)
+        for identity, found in comparisons_by_occurrence.items()
+    }
+
+
+def admit_added_position_occurrences(
+    occurrences: tuple[AddedPositionOccurrence, ...],
+    comparisons: tuple[tuple[AddedPositionCompareOccurrence, ...], ...],
+) -> tuple[tuple[AddedPositionOccurrence, ...], ...]:
+    occurrence_by_identity, comparisons_by_occurrence = (
+        _added_position_comparisons_by_occurrence(occurrences, comparisons)
+    )
 
     same_coordinates: dict[
         tuple[tuple[str, bool, bool], ...], list[AddedPositionOccurrence]
     ] = {}
     for identity, occurrence in occurrence_by_identity.items():
-        same_coordinates.setdefault(tuple(coordinates[identity]), []).append(occurrence)
+        coordinates = tuple(
+            (
+                comparison.implementation_function_identity,
+                comparison.source_returned,
+                comparison.result_returned,
+            )
+            for comparison in comparisons_by_occurrence[identity]
+        )
+        same_coordinates.setdefault(coordinates, []).append(occurrence)
     return tuple(tuple(found) for found in same_coordinates.values())
+
+
+def compare_added_position_pairs(
+    occurrences: tuple[AddedPositionOccurrence, ...],
+    comparisons: tuple[tuple[AddedPositionCompareOccurrence, ...], ...],
+    *,
+    boundary_identity: str,
+) -> tuple[AddedPositionPairCompareOccurrence, ...]:
+    if type(boundary_identity) is not str or not boundary_identity:
+        raise TypeError("one exact boundary identity is required")
+    occurrence_by_identity, comparisons_by_occurrence = (
+        _added_position_comparisons_by_occurrence(occurrences, comparisons)
+    )
+    same_material = {}
+    for occurrence in occurrence_by_identity.values():
+        same_material.setdefault(
+            (occurrence.source_reference, occurrence.added_reference), []
+        ).append(occurrence)
+
+    found = []
+    for material_at_positions in same_material.values():
+        for first_offset, first in enumerate(material_at_positions):
+            for second in material_at_positions[first_offset + 1 :]:
+                first_comparisons = comparisons_by_occurrence[
+                    first.act_occurrence_identity
+                ]
+                second_comparisons = comparisons_by_occurrence[
+                    second.act_occurrence_identity
+                ]
+                found.append(
+                    AddedPositionPairCompareOccurrence(
+                        boundary_identity=boundary_identity,
+                        occurrence_position=len(found),
+                        source_reference=first.source_reference,
+                        added_reference=first.added_reference,
+                        first_position=first.position,
+                        second_position=second.position,
+                        first_added_position_act_occurrence_identity=(
+                            first.act_occurrence_identity
+                        ),
+                        second_added_position_act_occurrence_identity=(
+                            second.act_occurrence_identity
+                        ),
+                        first_compare_occurrence_identities=tuple(
+                            comparison.occurrence_identity
+                            for comparison in first_comparisons
+                        ),
+                        second_compare_occurrence_identities=tuple(
+                            comparison.occurrence_identity
+                            for comparison in second_comparisons
+                        ),
+                        first_returned_coordinates=tuple(
+                            (
+                                comparison.implementation_function_identity,
+                                comparison.source_returned,
+                                comparison.result_returned,
+                            )
+                            for comparison in first_comparisons
+                        ),
+                        second_returned_coordinates=tuple(
+                            (
+                                comparison.implementation_function_identity,
+                                comparison.source_returned,
+                                comparison.result_returned,
+                            )
+                            for comparison in second_comparisons
+                        ),
+                    )
+                )
+    return tuple(found)
 
 
 def _a(material: bytes):

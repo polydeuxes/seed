@@ -27,6 +27,7 @@ from compiled_format_invocation import (  # noqa: E402
     admit_added_position_occurrences,
     added_position_occurrences,
     compare_added_position_invocations,
+    compare_added_position_pairs,
     compare_removed_position_invocations,
     compiled_invocation,
     compiled_invocations,
@@ -229,6 +230,17 @@ def book_added_position_admission(
     return admit_added_position_occurrences(
         book_three_byte_format_occurrences[1],
         book_added_position_comparisons,
+    )
+
+
+@pytest.fixture(scope="module")
+def book_added_position_pair_comparisons(
+    book_three_byte_format_occurrences, book_added_position_comparisons
+):
+    return compare_added_position_pairs(
+        book_three_byte_format_occurrences[1],
+        book_added_position_comparisons,
+        boundary_identity="book-added-position-pair-compare",
     )
 
 
@@ -869,6 +881,110 @@ def test_equal_result_material_keeps_distinct_occurrences_in_one_admission():
     assert admission == (additions,)
     assert tuple(occurrence.position for occurrence in admission[0]) == (0, 1, 2)
     assert len({occurrence.act_occurrence_identity for occurrence in admission[0]}) == 3
+
+
+def test_every_exact_added_position_pair_has_one_compare_occurrence(
+    book_added_position_pair_comparisons,
+    book_three_byte_format_occurrences,
+    book_added_position_comparisons,
+):
+    additions = book_three_byte_format_occurrences[1]
+    additions_by_identity = {
+        occurrence.act_occurrence_identity: occurrence for occurrence in additions
+    }
+    addition_identities = set(additions_by_identity)
+    source_references = {occurrence.source_reference for occurrence in additions}
+    added_references = {occurrence.added_reference for occurrence in additions}
+    participation = {identity: 0 for identity in addition_identities}
+    compare_occurrences = {identity: [] for identity in addition_identities}
+    for row in book_added_position_comparisons:
+        for comparison in row:
+            compare_occurrences[
+                comparison.added_position_act_occurrence_identity
+            ].append(comparison)
+
+    assert len(book_added_position_pair_comparisons) == len(additions)
+    assert len(
+        {
+            comparison.occurrence_identity
+            for comparison in book_added_position_pair_comparisons
+        }
+    ) == len(book_added_position_pair_comparisons)
+    for comparison in book_added_position_pair_comparisons:
+        assert comparison.source_reference in source_references
+        assert comparison.added_reference in added_references
+        assert comparison.first_position < comparison.second_position
+        assert (
+            comparison.first_added_position_act_occurrence_identity
+            in addition_identities
+        )
+        assert (
+            comparison.second_added_position_act_occurrence_identity
+            in addition_identities
+        )
+        first = additions_by_identity[
+            comparison.first_added_position_act_occurrence_identity
+        ]
+        second = additions_by_identity[
+            comparison.second_added_position_act_occurrence_identity
+        ]
+        assert first.source_reference == second.source_reference == (
+            comparison.source_reference
+        )
+        assert first.added_reference == second.added_reference == (
+            comparison.added_reference
+        )
+        assert first.position == comparison.first_position
+        assert second.position == comparison.second_position
+        assert comparison.first_compare_occurrence_identities == tuple(
+            found.occurrence_identity
+            for found in compare_occurrences[first.act_occurrence_identity]
+        )
+        assert comparison.second_compare_occurrence_identities == tuple(
+            found.occurrence_identity
+            for found in compare_occurrences[second.act_occurrence_identity]
+        )
+        assert comparison.first_returned_coordinates == tuple(
+            (
+                found.implementation_function_identity,
+                found.source_returned,
+                found.result_returned,
+            )
+            for found in compare_occurrences[first.act_occurrence_identity]
+        )
+        assert comparison.second_returned_coordinates == tuple(
+            (
+                found.implementation_function_identity,
+                found.source_returned,
+                found.result_returned,
+            )
+            for found in compare_occurrences[second.act_occurrence_identity]
+        )
+        assert len(comparison.first_compare_occurrence_identities) == len(
+            COMPILED_IMPLEMENTATION_FUNCTIONS
+        )
+        assert len(comparison.second_compare_occurrence_identities) == len(
+            COMPILED_IMPLEMENTATION_FUNCTIONS
+        )
+        participation[
+            comparison.first_added_position_act_occurrence_identity
+        ] += 1
+        participation[
+            comparison.second_added_position_act_occurrence_identity
+        ] += 1
+    assert set(participation.values()) == {2}
+
+
+def test_added_position_pairs_find_same_and_different_complete_coordinates(
+    book_added_position_pair_comparisons,
+):
+    distinctions = tuple(
+        comparison.distinction
+        for comparison in book_added_position_pair_comparisons
+    )
+
+    assert any(distinctions)
+    assert any(not distinction for distinction in distinctions)
 
 
 def test_addition_compare_refuses_a_missing_source_reference():
