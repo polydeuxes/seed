@@ -27,7 +27,7 @@ from seed_runtime.bounded_assertion_comparison import (
     record_comparison_finding,
 )
 from seed_runtime.events import EventLedger
-from seed_runtime.adjacent_pair_measurement import measure_after
+from seed_runtime.adjacency_pair_measurement import measure_after
 from seed_runtime.preserved_material_measurement import (
     ingest_occurrences,
     record_measurement_finding,
@@ -125,7 +125,7 @@ def test_each_input_keeps_the_coordinates_it_carries(ledger):
         assert preserved.event_id == supplied.id
         assert preserved.carried["standing"] == "measured"
         assert preserved.carried["subject"] == supplied.payload["dimensions"]["identity"]
-        assert preserved.carried["forbidden_inferences"] == supplied.payload["boundary_notes"]
+        assert preserved.carried["limits"] == supplied.payload["boundary_notes"]
 
 
 def test_an_absent_coordinate_is_named_and_not_supplied(ledger):

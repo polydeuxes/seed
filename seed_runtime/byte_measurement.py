@@ -180,7 +180,7 @@ BYTE_PAIR_APPLICABILITY_AUTHORITY = (
 BYTE_PAIR_UNKNOWNS = (
     "what this ordered adjacent byte pair participates in or represents remains Unknown",
 )
-BYTE_PAIR_FORBIDDEN_INFERENCES = (
+BYTE_PAIR_LIMITS = (
     "an exact adjacent-byte-pair count or recurrence establishes no character, "
     "word, language, grammar, represented relation, relation beyond the exact measured "
     "adjacency and order, or significance",
@@ -361,7 +361,7 @@ def _pair_input_applicability(
         input_standing = payload["dimensions"]["standing"]
         input_authority = payload["dimensions"]["authority"]
         input_unknowns = payload["unknowns"]
-        input_limits = payload["forbidden_inferences"]
+        input_limits = payload["limits"]
         negative_authority = {
             "carried": True,
             "value": input_limits,
@@ -379,7 +379,7 @@ def _pair_input_applicability(
         input_standing = payload["dimensions"]["standing"]
         input_authority = payload["dimensions"]["authority"]
         input_unknowns = payload["unknowns"]
-        input_limits = payload["forbidden_inferences"]
+        input_limits = payload["limits"]
         negative_authority = {
             "carried": True,
             "value": input_limits,
@@ -393,7 +393,7 @@ def _pair_input_applicability(
         input_standing = payload["dimensions"]["standing"]
         input_authority = payload["dimensions"]["authority"]
         input_unknowns = payload["unknowns"]
-        input_limits = payload["forbidden_inferences"]
+        input_limits = payload["limits"]
         negative_authority = {
             "carried": True,
             "value": input_limits,
@@ -455,7 +455,7 @@ def _pair_input_applicability(
             "what any byte or adjacent byte pair represents remains Unknown",
             *([basis] if standing == "Unknown" else []),
         ],
-        "forbidden_inferences": [
+        "limits": [
             "Applicability to this Measurement is not downstream applicability, "
             "admission, represented relation, or authority for another use"
         ],
@@ -975,7 +975,7 @@ def _assertions(measured: MeasuredByteInputs) -> list[dict[str, Any]]:
             },
             "conflicts": "Unknown",
             "unknowns": ["what the exact source bytes represent remains Unknown"],
-            "forbidden_inferences": [
+            "limits": [
                 "an exact source-material set establishes no character, word, "
                 "language, position, adjacency, grammar, represented relation, or relation"
             ],
@@ -1013,7 +1013,7 @@ def _assertions(measured: MeasuredByteInputs) -> list[dict[str, Any]]:
             },
             "conflicts": "Unknown",
             "unknowns": ["what this byte participates in or represents remains Unknown"],
-            "forbidden_inferences": [
+            "limits": [
                 "an exact byte count or recurrence establishes no character, word, "
                 "language, position, adjacency, grammar, represented relation, or relation"
             ],
@@ -1344,7 +1344,7 @@ def _pair_assertions(measured: MeasuredBytePairInputs) -> list[dict[str, Any]]:
             },
             "conflicts": "Unknown",
             "unknowns": list(BYTE_PAIR_UNKNOWNS),
-            "forbidden_inferences": list(BYTE_PAIR_FORBIDDEN_INFERENCES),
+            "limits": list(BYTE_PAIR_LIMITS),
         }
 
     for item in measured.counts:
@@ -1816,7 +1816,7 @@ def _validate_recorded_pair_input_applicability(
         "input_standing": source_payload["dimensions"]["standing"],
         "input_authority": source_payload["dimensions"]["authority"],
         "input_unknowns": source_payload["unknowns"],
-        "input_limits": source_payload["forbidden_inferences"],
+        "input_limits": source_payload["limits"],
         "conflicts": [],
         "determination_basis": (
             "exact bounded source material matches this Act and result boundary"
@@ -1833,14 +1833,14 @@ def _validate_recorded_pair_input_applicability(
             },
             "negative_authority": {
                 "carried": True,
-                "value": source_payload["forbidden_inferences"],
+                "value": source_payload["limits"],
                 "treatment": "preserved as limits on this exact use",
             },
         },
         "unknowns": [
             "what any byte or adjacent byte pair represents remains Unknown"
         ],
-        "forbidden_inferences": [
+        "limits": [
             "Applicability to this Measurement is not downstream applicability, "
             "admission, represented relation, or authority for another use"
         ],
@@ -2078,7 +2078,7 @@ def assertions_of_recorded_adjacent_byte_pair_measurement(
         "support_basis",
         "conflicts",
         "unknowns",
-        "forbidden_inferences",
+        "limits",
     }
     for assertion in assertions:
         if not isinstance(assertion, dict) or set(assertion) != exact_keys:
@@ -2116,8 +2116,8 @@ def assertions_of_recorded_adjacent_byte_pair_measurement(
             or dimensions.get("authority") != "unestablished"
             or dimensions.get("evidence_scope") != PAIR_MEASUREMENT_EVIDENCE_SCOPE
             or assertion.get("unknowns") != list(BYTE_PAIR_UNKNOWNS)
-            or assertion.get("forbidden_inferences")
-            != list(BYTE_PAIR_FORBIDDEN_INFERENCES)
+            or assertion.get("limits")
+            != list(BYTE_PAIR_LIMITS)
         ):
             raise ByteMeasurementError(f"{event_id} carries an unlawful pair Assertion")
         content = dimensions.get("content")

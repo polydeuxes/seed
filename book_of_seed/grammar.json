@@ -39,7 +39,9 @@
       "book_clause": "02.Acts.A",
       "from": "Act_occurrence",
       "to": "result",
-      "requires": ["exact_relation", "occurrence_witness", "intact_evidence"]
+      "requires": ["exact_relation", "occurrence_witness", "intact_evidence"],
+      "preserves": ["Act_occurrence_identity", "result_identity"],
+      "equal_result_content_establishes_identity": false
     },
     "locality": {
       "book_clause": "06.Standing.B",

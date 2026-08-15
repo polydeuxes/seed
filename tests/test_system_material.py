@@ -84,6 +84,29 @@ def test_ingest_event_binds_exact_act_and_result_evidence():
     }
 
 
+def test_equal_material_has_distinct_ingest_occurrences_results_and_yields():
+    ledger = EventLedger()
+    first = _preserve(ledger, b"same exact material")
+    second = _preserve(ledger, b"same exact material")
+
+    assert ingested_material_bytes(first) == ingested_material_bytes(second)
+    assert first.payload["act_occurrence_id"] != second.payload["act_occurrence_id"]
+    assert first.payload["result_identity"] != second.payload["result_identity"]
+    assert first.payload["yield_evidence_id"] != second.payload["yield_evidence_id"]
+    assert read_yield_edge_requirements(
+        ledger,
+        recorded_result_event_id=first.id,
+        result_evidence_event_id=second.payload["yield_evidence_id"],
+        responsible_act_evidence_event_id=first.payload[
+            "responsible_act_evidence_id"
+        ],
+    ) == {
+        "exact_relation": False,
+        "occurrence_witness": False,
+        "intact_evidence": True,
+    }
+
+
 def test_system_material_requires_only_material_boundary_and_locality():
     occurred = _preserve(EventLedger(), b"different\n")
 

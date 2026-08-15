@@ -91,7 +91,7 @@ RESPONSIBILITY_UNESTABLISHED = "unestablished"
 # What recording composes around a finding's own content. A caller adding to a
 # recorded finding may not replace any of it.
 _RESERVED_RECORDING_COORDINATES = frozenset(
-    {"dimensions", "mutates_cluster", "unknowns", "provenance_occurrence_references"}
+    {"dimensions", "unknowns", "provenance_occurrence_references"}
 )
 
 BOUNDARY_NOTES: tuple[str, ...] = (
@@ -467,29 +467,7 @@ def _as_preserved(
 def _additive_only(
     finding, carried: dict[str, Any], extra: dict[str, Any] | None
 ) -> dict[str, Any]:
-    """Recording coordinates, refused where they collide with reserved ones.
-
-    Merging `extra` last let a caller record ``extra={"total_count": 999}`` over
-    a yielded count of three, so the durable result was one no act yielded.
-    Filtering silently was the first repair and was also wrong: a caller asked
-    to record one thing and the recorder recorded another without saying so.
-
-    Checking only the finding's own keys was the second, and left the way in
-    open. ``extra={"dimensions": {"identity": "x"}}`` collided with nothing the
-    finding carries, then replaced the whole dimensions object -- erasing the
-    measurement's source provenance, standing and authority by omission rather
-    than by contradiction. `mutates_cluster` and `unknowns` were reachable the
-    same way, and `provenance_occurrence_references`, written after `extra`, was
-    silently discarded.
-
-    So the rule is the whole recorded payload, not part of it: recording may
-    add a coordinate this payload does not already carry, and may not replace
-    one. Refusal rather than silent handling in either direction.
-
-    Recurrence only. The result-Assertion path composes its own dimensions
-    through `extra` by design, and refusing that is a migration rather than a
-    repair.
-    """
+    """Refuse additions that replace a carried recording coordinate."""
 
     if not extra:
         return {}
@@ -967,7 +945,6 @@ def _measurement_finding_payload(
             "scope_locality": f"locality:{locality_id}",
             "occurrence_preservation": "declared measurement durably recorded",
         },
-        "mutates_cluster": False,
         "unknowns": ["what any measured representation means remains Unknown"],
         **carried,
         **_additive_only(finding, carried, extra),

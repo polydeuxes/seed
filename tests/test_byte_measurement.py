@@ -167,7 +167,7 @@ def test_recorded_results_replay_the_complete_bounded_source_read():
     assert count.payload["dimensions"]["evidence_scope"]
     assert count.payload["unknowns"]
     assert count.payload["conflicts"] == "Unknown"
-    assert count.payload["forbidden_inferences"]
+    assert count.payload["limits"]
     assert count.support_assertion_references == (
         {
             "recorded_occurrence_id": event.id,
@@ -324,7 +324,7 @@ def test_adjacent_pairs_never_cross_ingest_boundaries():
     assert "0a62" not in counts
 
 
-def test_adjacent_pair_measurement_remains_byte_not_character_based():
+def test_adjacency_pair_measurement_remains_byte_not_character_based():
     ledger = _ledger("猫\n")
     source = _byte_source(ledger)
     event = record_adjacent_byte_pair_count_layer(

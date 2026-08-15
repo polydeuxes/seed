@@ -83,12 +83,12 @@ COMPARISON_RESULT_COORDINATES = frozenset(
         "evidence_and_provenance",
         "authority_boundary",
         "preserved_invariants",
-        "observed_crossings",
+        "crossings",
         "conflicts",
         "unknowns",
         "lawful_stopping_point",
         "revises",
-        "forbidden_inferences",
+        "limits",
     }
 )
 COMPARISON_RECORDING_COORDINATES = frozenset(
@@ -250,8 +250,8 @@ def _provenance(event: Event, integrity: str) -> dict[str, object]:
     }
 
 
-def _crossing(kind: str, observation: str) -> dict[str, str]:
-    return {"kind": kind, "observation": observation}
+def _crossing(kind: str, material: str) -> dict[str, str]:
+    return {"kind": kind, "material": material}
 
 
 def compare_recorded_finding_yield(ledger: EventLedger, event_id: str) -> Event:
@@ -276,7 +276,7 @@ def compare_recorded_finding_yield(ledger: EventLedger, event_id: str) -> Event:
             "recorded finding"
         )
 
-    observed: list[dict[str, str]] = []
+    crossings: list[dict[str, str]] = []
     conflicts: list[str] = []
     unknowns = [
         "whether the finding agrees with its Yield Evidence in any coordinate "
@@ -287,7 +287,7 @@ def compare_recorded_finding_yield(ledger: EventLedger, event_id: str) -> Event:
     evidence: Event | None = None
     evidence_integrity: str | None = None
     if named is None:
-        observed.append(
+        crossings.append(
             _crossing(
                 ERASURE,
                 "the recorded finding does not preserve the required relation "
@@ -295,7 +295,7 @@ def compare_recorded_finding_yield(ledger: EventLedger, event_id: str) -> Event:
             )
         )
     elif not isinstance(named, str) or not named:
-        observed.append(
+        crossings.append(
             _crossing(
                 UNSUPPORTED_COORDINATE,
                 "the recorded finding supplies something other than an exact "
@@ -319,7 +319,7 @@ def compare_recorded_finding_yield(ledger: EventLedger, event_id: str) -> Event:
                     "the named yield-evidence occurrence is corrupted"
                 )
             elif evidence.kind != YIELD_EVIDENCE_KIND:
-                observed.append(
+                crossings.append(
                     _crossing(
                         UNSUPPORTED_COORDINATE,
                         "the named occurrence is represented as yield "
@@ -333,7 +333,7 @@ def compare_recorded_finding_yield(ledger: EventLedger, event_id: str) -> Event:
                 or evidence.payload.get("yield_convention")
                 != MEASUREMENT_CONVENTION
             ):
-                observed.append(
+                crossings.append(
                     _crossing(
                         UNSUPPORTED_COORDINATE,
                         "the named yield evidence concerns a different "
@@ -344,7 +344,7 @@ def compare_recorded_finding_yield(ledger: EventLedger, event_id: str) -> Event:
                 commitment = evidence.payload.get("yield_commitment")
                 coordinates = evidence.payload.get("yield_coordinates")
                 if commitment is None or coordinates is None:
-                    observed.append(
+                    crossings.append(
                         _crossing(
                             ERASURE,
                             "the yield evidence omits the commitment or "
@@ -372,7 +372,7 @@ def compare_recorded_finding_yield(ledger: EventLedger, event_id: str) -> Event:
                             recorded, tuple(coordinates)
                         )
                     except PreservedMaterialMeasurementError:
-                        observed.append(
+                        crossings.append(
                             _crossing(
                                 ERASURE,
                                 "the recorded finding omits at least one exact "
@@ -385,7 +385,7 @@ def compare_recorded_finding_yield(ledger: EventLedger, event_id: str) -> Event:
                             # It does not prove which coordinate caused it:
                             # altered content and a misplaced evidence reference
                             # yield the same witness here.
-                            observed.append(
+                            crossings.append(
                                 _crossing(
                                     COMPARISON_UNKNOWN,
                                     "the named yield evidence does not "
@@ -394,7 +394,7 @@ def compare_recorded_finding_yield(ledger: EventLedger, event_id: str) -> Event:
                             )
     if unresolved:
         standing = COMPARISON_UNKNOWN
-    elif observed:
+    elif crossings:
         standing = DIFFERS_FROM_YIELD_EVIDENCE
     else:
         standing = AGREES_WITH_YIELD_EVIDENCE
@@ -451,7 +451,7 @@ def compare_recorded_finding_yield(ledger: EventLedger, event_id: str) -> Event:
                 "the comparison does not revise its witness or traverse its "
                 "support and premise relations",
         ],
-        "observed_crossings": observed,
+        "crossings": crossings,
         "conflicts": conflicts,
         "unknowns": unknowns,
         "lawful_stopping_point": (
@@ -461,12 +461,12 @@ def compare_recorded_finding_yield(ledger: EventLedger, event_id: str) -> Event:
                 "revision"
         ),
         "revises": [],
-        "forbidden_inferences": [
+        "limits": [
                 "This revises nothing (06.Standing.B); availability is not "
                 "revision.",
                 "This establishes no Responsibility or responsible boundary.",
                 "Agreement within these coordinates says nothing beyond them.",
-                "A crossing observed here is not a crossing observed of "
+                "A crossing represented here is not a crossing concerning "
                 "whatever this finding stood on.",
         ],
     }

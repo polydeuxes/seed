@@ -48,6 +48,16 @@ def test_machine_readable_grammar_traverses_responsibility_from_standing():
         "content",
         "locality",
     ]
+    assert grammar["structural_edges"]["yield"]["preserves"] == [
+        "Act_occurrence_identity",
+        "result_identity",
+    ]
+    assert (
+        grammar["structural_edges"]["yield"][
+            "equal_result_content_establishes_identity"
+        ]
+        is False
+    )
     assert grammar["clauses"]
     active_book = _active_book()
     _assert_structural_edge_clauses(grammar, active_book)
@@ -72,3 +82,19 @@ def test_missing_structural_edge_clause_is_detected():
         pass
     else:
         raise AssertionError("missing Locality clause escaped the grammar audit")
+
+
+def test_ingest_occurrence_and_yield_identity_remain_distinct():
+    chapter = (CHAPTERS / "14-representation-emission-and-locality.md").read_text(
+        encoding="utf-8"
+    )
+
+    assert (
+        "Each Ingest occurrence has one independently addressable result identity."
+        in chapter
+    )
+    assert (
+        "Equal material content does not identify either occurrence, result, or "
+        "Yield relation."
+        in chapter
+    )

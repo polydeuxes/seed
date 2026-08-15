@@ -1570,7 +1570,6 @@ def test_the_witness_asserts_no_responsibility(
     "addition",
     [
         {"dimensions": {"identity": "something else"}},
-        {"mutates_cluster": True},
         {"unknowns": ["one nobody established"]},
         {"provenance_occurrence_references": ["evt_unsupported"]},
         {"total_count": 999},

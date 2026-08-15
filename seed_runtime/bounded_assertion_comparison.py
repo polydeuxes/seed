@@ -71,7 +71,7 @@ INPUT_COORDINATES: dict[str, tuple[str, ...]] = {
     "confidence_or_uncertainty": (),
     "unknowns": ("unknowns",),
     "standing": ("dimensions", "standing"),
-    "forbidden_inferences": ("boundary_notes",),
+    "limits": ("boundary_notes",),
 }
 
 # This is not an enum; more than one relation may remain established.
@@ -378,7 +378,6 @@ def record_comparison_finding(
         "input_locality_evidence_ids": locality_evidence_ids,
         "input_applicability_event_ids": applicability_event_ids,
         "participation": participation,
-        "mutates_cluster": False,
         "unknowns": [
             "what any compared representation means remains Unknown",
             "whether the compared bodies stand in any relation remains Unknown",

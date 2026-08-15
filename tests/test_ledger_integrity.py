@@ -331,7 +331,7 @@ def test_an_absent_occurrence_is_unverifiable(ledger):
 
 def test_a_comparison_refuses_a_corrupted_input(path, monkeypatch):
     from io import StringIO
-    from seed_runtime.adjacent_pair_measurement import measure_after
+    from seed_runtime.adjacency_pair_measurement import measure_after
     from seed_runtime.preserved_material_measurement import (
         ingest_occurrences, record_measurement_finding)
     from tests.material_fixture_console import run_material_fixture_console
@@ -365,7 +365,7 @@ def test_a_comparison_refuses_a_corrupted_input(path, monkeypatch):
 
 def test_a_comparison_records_each_input_s_integrity(path):
     from io import StringIO
-    from seed_runtime.adjacent_pair_measurement import measure_after
+    from seed_runtime.adjacency_pair_measurement import measure_after
     from seed_runtime.preserved_material_measurement import (
         ingest_occurrences, record_measurement_finding)
     from tests.material_fixture_console import run_material_fixture_console
@@ -392,7 +392,7 @@ def test_a_comparison_records_each_input_s_integrity(path):
 def test_an_unverifiable_input_is_recorded_rather_than_refused():
     """In-memory findings are lawfully unverifiable, and comparison proceeds."""
     from io import StringIO
-    from seed_runtime.adjacent_pair_measurement import measure_after
+    from seed_runtime.adjacency_pair_measurement import measure_after
     from seed_runtime.preserved_material_measurement import (
         ingest_occurrences, record_measurement_finding)
     from tests.material_fixture_console import run_material_fixture_console

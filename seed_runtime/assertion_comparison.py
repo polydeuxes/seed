@@ -114,7 +114,7 @@ COORDINATES: dict[str, tuple[str, ...]] = {
     "completeness_boundary": ("completeness_boundary",),
     "completeness_scope": ("completeness_scope",),
     "unknowns": ("unknowns",),
-    "forbidden_inferences": ("forbidden_inferences",),
+    "limits": ("limits",),
 }
 
 
@@ -361,7 +361,7 @@ def record_assertion_yield_comparison(
                     "whether any exact Act will admit or have as input this result remains "
                     "Unknown",
                 ],
-                "forbidden_inferences": [
+                "limits": [
                     "literal difference is not conflict",
                     "new availability does not revise either compared Assertion",
                     "recording does not establish Applicability, admission, "

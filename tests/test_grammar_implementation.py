@@ -14,10 +14,10 @@ from seed_runtime.byte_measurement import (
     record_adjacent_byte_pair_count_layer,
     record_byte_count_layer,
 )
-from seed_runtime.adjacent_pair_measurement import (
+from seed_runtime.adjacency_pair_measurement import (
     measure_after,
-    record_adjacent_pair_observation_compare,
-    record_adjacent_pair_observations,
+    record_adjacency_pair_measurement_compare,
+    record_adjacency_pair_measurements,
     record_emitted_representation_adjacency,
 )
 from seed_runtime.events import CORRUPTED, EventLedger
@@ -26,7 +26,7 @@ from seed_runtime.material_ingest import ingest_material
 from seed_runtime.operator_console import run_persistent_operator_console
 from seed_runtime.operator_command import AddressedOperatorCommand, OperatorCommandFrame
 from seed_runtime.operator_checkpoint import (
-    CHECKPOINT_LOCALITY_EVIDENCE_KIND,
+    ADDRESSED_REPRESENTATION_LOCALITY_EVIDENCE_KIND,
     open_operator_checkpoint,
 )
 from tests.material_fixture_console import run_material_fixture_console
@@ -703,10 +703,11 @@ def _checkpoint_locality_requirements(bundle: dict) -> dict[str, bool]:
         }
     exact_relation = (
         event.payload.get("first_subject") == addressed.command_id
+        and event.payload.get("addressed_identity") == addressed.command_id
         and event.payload.get("second_subject") == checkpoint.id
     )
     occurrence_witness = (
-        event.payload.get("checkpoint_event_id") == checkpoint.id
+        event.payload.get("representation_reference") == checkpoint.id
         and addressed.addressed_at_representation_event_id == checkpoint.id
         and checkpoint.kind == "operator.representation.recorded"
         and addressed.locality_id == checkpoint.locality_id
@@ -827,32 +828,32 @@ def _recorded_finding_compare_yield_road() -> dict:
     return _yield_bundle(source["ledger"], event)
 
 
-def _adjacent_observation_yield_road(*, compare: bool = False) -> dict:
+def _adjacent_measurement_yield_road(*, compare: bool = False) -> dict:
     ledger = _IntegrityAdversaryLedger()
     for text in ("L a b R", "X a b Y"):
         ledger.append(
             INGEST_OCCURRED_KIND,
             {"represented_material": text},
-            locality_id="adjacent-observation-yield",
+            locality_id="adjacent-measurement-yield",
         )
     occurrences = ingest_occurrences(
-        ledger, locality_id="adjacent-observation-yield"
+        ledger, locality_id="adjacent-measurement-yield"
     )
     finding = record_measurement_finding(
         ledger,
-        locality_id="adjacent-observation-yield",
+        locality_id="adjacent-measurement-yield",
         finding=measure_after(occurrences, "a", counting_scope="exact fixture"),
     )
-    first = record_adjacent_pair_observations(
+    first = record_adjacency_pair_measurements(
         ledger,
-        locality_id="adjacent-observation-yield",
+        locality_id="adjacent-measurement-yield",
         finding_event_id=finding.id,
     )
     if not compare:
         return _yield_bundle(ledger, first)
     representation = record_operator_representation(
         ledger,
-        locality_id="adjacent-observation-yield",
+        locality_id="adjacent-measurement-yield",
         locality_standing={"as_of_event_id": None},
     )
     first_emission = emit_operator_representation(
@@ -868,10 +869,10 @@ def _adjacent_observation_yield_road(*, compare: bool = False) -> dict:
     second = record_emitted_representation_adjacency(
         ledger, emission_event_id=second_emission["emitted_event_id"]
     )
-    event = record_adjacent_pair_observation_compare(
+    event = record_adjacency_pair_measurement_compare(
         ledger,
-        locality_id="adjacent-observation-yield",
-        observation_event_ids=(first.id, second.id),
+        locality_id="adjacent-measurement-yield",
+        measurement_event_ids=(first.id, second.id),
     )
     return _yield_bundle(ledger, event)
 
@@ -914,7 +915,7 @@ def _assertion_witness(bundle: dict) -> dict[str, str]:
         "Scope": EXACT if payload.get("assertion_scope") else MISSING,
         "Authority": EXACT if dimensions.get("authority") else MISSING,
         "conflicts": UNKNOWN if payload.get("conflicts") == "Unknown" else MISSING,
-        "limits": EXACT if payload.get("forbidden_inferences") else MISSING,
+        "limits": EXACT if payload.get("limits") else MISSING,
         "Unknowns": EXACT if payload.get("unknowns") else MISSING,
         "Standing": EXACT if dimensions.get("standing") else MISSING,
     }
@@ -1557,9 +1558,9 @@ def _byte_pair_yield_requirement_bundles() -> dict[str, dict[str, dict]]:
 
 def _remaining_yield_requirement_bundles() -> dict[str, dict[str, dict]]:
     roads = {
-        "adjacent_pair_observation": _adjacent_observation_yield_road,
-        "adjacent_pair_observation_compare": (
-            lambda: _adjacent_observation_yield_road(compare=True)
+        "adjacency_pair_measurement": _adjacent_measurement_yield_road,
+        "adjacency_pair_measurement_compare": (
+            lambda: _adjacent_measurement_yield_road(compare=True)
         ),
         "assertion_yield_compare": _assertion_yield_compare_road,
         "assertion_locality_movement": _assertion_locality_movement_yield_road,
@@ -1622,9 +1623,9 @@ def _locality_requirement_bundles(
 
 def _remaining_locality_requirement_bundles() -> dict[str, dict[str, dict]]:
     roads = {
-        "adjacent_pair_observation": _adjacent_observation_yield_road,
-        "adjacent_pair_observation_compare": (
-            lambda: _adjacent_observation_yield_road(compare=True)
+        "adjacency_pair_measurement": _adjacent_measurement_yield_road,
+        "adjacency_pair_measurement_compare": (
+            lambda: _adjacent_measurement_yield_road(compare=True)
         ),
     }
     return {
@@ -1833,7 +1834,7 @@ def _live_structural_edge_fidelity_cases() -> dict[
     return registered
 
 
-def test_primary_edge_observations_preserve_their_live_boundaries():
+def test_primary_edge_measurements_preserve_their_live_boundaries():
     registered = _live_structural_edge_fidelity_cases()
 
     assert ("locality", "byte_measurement") in registered
@@ -1863,6 +1864,8 @@ def _structural_edge_implementation_specs() -> dict[str, dict]:
         "yield": {
             "from": "Act_occurrence",
             "to": "result",
+            "preserves": ["Act_occurrence_identity", "result_identity"],
+            "equal_result_content_establishes_identity": False,
             "requires": requirements,
         },
     }
@@ -3084,12 +3087,12 @@ LOCALITY_BOUNDARY_BY_KIND = {
     "operator.measurement.comparison_input_locality_evidenced": (
         "bounded_compare_input"
     ),
-    "operator.checkpoint.locality_evidenced": "operator_checkpoint",
-    "operator.measurement.adjacent_pair_observation_locality_evidenced": (
-        "adjacent_pair_observation"
+    "operator.addressed_representation.locality_evidenced": "operator_checkpoint",
+    "operator.measurement.adjacency_pair_measurement_locality_evidenced": (
+        "adjacency_pair_measurement"
     ),
-    "operator.measurement.adjacent_pair_observation_compare_locality_evidenced": (
-        "adjacent_pair_observation_compare"
+    "operator.measurement.adjacency_pair_measurement_compare_locality_evidenced": (
+        "adjacency_pair_measurement_compare"
     ),
     "operator.representation.locality_evidenced": "representation_result",
     "operator.representation.emission_attempt_locality_evidenced": (

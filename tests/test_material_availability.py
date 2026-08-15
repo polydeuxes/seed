@@ -9,7 +9,7 @@ from seed_runtime.material_availability import (
     MaterialAvailabilityError,
     MaterialIdentity,
     ProcessLocalMaterial,
-    material_digest,
+    exact_material_identity,
 )
 
 
@@ -23,7 +23,7 @@ def test_exact_bytes_are_addressable_while_held():
     assert holder.is_available(identity)
     assert holder.read(identity) == MATERIAL
     assert identity.byte_count == len(MATERIAL)
-    assert identity.digest == material_digest(MATERIAL)
+    assert identity.identity == exact_material_identity(MATERIAL)
     assert holder.held_count == 1
 
 
@@ -32,7 +32,7 @@ def test_release_removes_only_the_exact_identity():
     first = holder.hold(b"first material")
     second = holder.hold(b"second material")
     mismatched = MaterialIdentity(
-        digest=first.digest,
+        identity=first.identity,
         byte_count=first.byte_count + 1,
     )
 
@@ -99,21 +99,21 @@ def test_every_identity_refusal_is_reachable():
 
     for value in ("bytes", bytearray(b"x"), memoryview(b"x"), None, 1, True):
         with pytest.raises(MaterialAvailabilityError, match="is bytes"):
-            material_digest(value)
+            exact_material_identity(value)
         with pytest.raises(MaterialAvailabilityError, match="is bytes"):
             holder.hold(value)
 
-    for value in (None, 1, "z" * 64, "abc", b"a" * 64, identity.digest[:63]):
-        with pytest.raises(MaterialAvailabilityError, match="digest"):
-            MaterialIdentity(digest=value, byte_count=1)
+    for value in (None, 1, "z" * 64, "abc", b"a" * 64, identity.identity[:63]):
+        with pytest.raises(MaterialAvailabilityError, match="identity"):
+            MaterialIdentity(identity=value, byte_count=1)
     for value in ("1", None, True, False, 1.0, [], -1):
         with pytest.raises(MaterialAvailabilityError, match="byte count"):
-            MaterialIdentity(digest=identity.digest, byte_count=value)
+            MaterialIdentity(identity=identity.identity, byte_count=value)
 
     for value in (None, "x", 7, []):
         with pytest.raises(MaterialAvailabilityError, match="not present"):
             MaterialIdentity.from_json_dict(value)
-    for key in ("digest", "byte_count"):
+    for key in ("identity", "byte_count"):
         partial = {
             name: value
             for name, value in identity.to_json_dict().items()

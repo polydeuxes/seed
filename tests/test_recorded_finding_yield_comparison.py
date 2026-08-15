@@ -6,7 +6,7 @@ import pytest
 
 from seed_runtime.event import Event
 from seed_runtime.events import EventLedger, SQLiteEventLedger
-from seed_runtime.adjacent_pair_measurement import measure_after
+from seed_runtime.adjacency_pair_measurement import measure_after
 from seed_runtime.recorded_finding_yield_comparison import (
     ERASURE,
     AGREES_WITH_YIELD_EVIDENCE,
@@ -74,7 +74,7 @@ def test_a_finding_that_names_the_evidence_concerning_it_is_agreeing(recorded):
     result = compare_recorded_finding_yield(ledger, event.id)
     assert result.kind == FINDING_YIELD_COMPARISON_KIND
     assert result.payload["dimensions"]["standing"] == AGREES_WITH_YIELD_EVIDENCE
-    assert result.payload["observed_crossings"] == []
+    assert result.payload["crossings"] == []
 
 
 def test_the_comparison_finding_carries_evidence_that_the_act_yielded_it(recorded):
@@ -236,10 +236,10 @@ def test_a_finding_naming_no_yield_evidence_preserves_erasure(recorded):
     )
     result = compare_recorded_finding_yield(ledger, forged.id)
     assert result.payload["dimensions"]["standing"] == DIFFERS_FROM_YIELD_EVIDENCE
-    assert result.payload["observed_crossings"] == [
+    assert result.payload["crossings"] == [
         {
             "kind": ERASURE,
-            "observation": (
+            "material": (
                 "the recorded finding does not preserve the required relation "
                 "to yield evidence"
             ),
@@ -256,10 +256,10 @@ def test_a_content_mismatch_does_not_assert_which_crossing_caused_it(
     forged = ledger.append(MEASUREMENT_RECORDED_KIND, altered, locality_id="r")
     result = compare_recorded_finding_yield(ledger, forged.id)
     assert result.payload["dimensions"]["standing"] == DIFFERS_FROM_YIELD_EVIDENCE
-    assert result.payload["observed_crossings"] == [
+    assert result.payload["crossings"] == [
         {
             "kind": COMPARISON_UNKNOWN,
-            "observation": (
+            "material": (
                 "the named yield evidence does not concern this exact "
                 "recorded content"
             ),
@@ -298,14 +298,14 @@ def test_it_preserves_what_the_clause_requires(recorded):
         "constitutional_subject",
         "compared_relation",
         "recorded_finding_reference",
-        "observed_crossings",
+        "crossings",
         "evidence_and_provenance",
         "authority_boundary",
         "preserved_invariants",
         "conflicts",
         "unknowns",
         "lawful_stopping_point",
-        "forbidden_inferences",
+        "limits",
     ):
         assert coordinate in result.payload
 
@@ -358,7 +358,7 @@ def test_unavailable_named_evidence_leaves_comparison_unknown(recorded):
     )
     result = compare_recorded_finding_yield(ledger, forged.id)
     assert result.payload["dimensions"]["standing"] == COMPARISON_UNKNOWN
-    assert result.payload["observed_crossings"] == []
+    assert result.payload["crossings"] == []
     assert "unavailable" in " ".join(result.payload["unknowns"])
 
 
@@ -372,7 +372,7 @@ def test_a_finding_naming_something_that_is_not_yield_evidence(recorded):
     )
     result = compare_recorded_finding_yield(ledger, forged.id)
     assert (
-        result.payload["observed_crossings"][0]["kind"]
+        result.payload["crossings"][0]["kind"]
         == UNSUPPORTED_COORDINATE
     )
 
@@ -420,7 +420,7 @@ def test_missing_yield_commitment_is_erasure(recorded):
         locality_id="r",
     )
     result = compare_recorded_finding_yield(ledger, forged.id)
-    assert result.payload["observed_crossings"][0]["kind"] == ERASURE
+    assert result.payload["crossings"][0]["kind"] == ERASURE
 
 
 def test_missing_recorded_yielded_coordinate_is_erasure(recorded):
@@ -430,7 +430,7 @@ def test_missing_recorded_yielded_coordinate_is_erasure(recorded):
     altered["dimensions"].pop("source_provenance")
     forged = ledger.append(MEASUREMENT_RECORDED_KIND, altered, locality_id="r")
     result = compare_recorded_finding_yield(ledger, forged.id)
-    assert result.payload["observed_crossings"][0]["kind"] == ERASURE
+    assert result.payload["crossings"][0]["kind"] == ERASURE
 
 
 def test_absent_locality_remains_absent(recorded):

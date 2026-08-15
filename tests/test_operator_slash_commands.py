@@ -5,7 +5,7 @@ from __future__ import annotations
 from io import BytesIO, StringIO
 
 from seed_runtime.events import EventLedger
-from seed_runtime.operator_checkpoint import CHECKPOINT_LOCALITY_EVIDENCE_KIND
+from seed_runtime.operator_checkpoint import ADDRESSED_REPRESENTATION_LOCALITY_EVIDENCE_KIND
 from seed_runtime.operator_console import run_persistent_operator_console
 from seed_runtime.material_ingest import MATERIAL_INGEST_OCCURRED_KIND
 
@@ -77,14 +77,15 @@ def test_checkpoint_alone_divides_locality_at_the_last_representation():
     ledger = _run(b"before\n/checkpoint\nafter\n")
     evidence = next(
         event for event in ledger.list()
-        if event.kind == CHECKPOINT_LOCALITY_EVIDENCE_KIND
+        if event.kind == ADDRESSED_REPRESENTATION_LOCALITY_EVIDENCE_KIND
     )
-    checkpoint = ledger.get(evidence.payload["checkpoint_event_id"])
+    checkpoint = ledger.get(evidence.payload["representation_reference"])
 
     assert evidence.locality_id != "root-locality"
     assert checkpoint.kind == "operator.representation.recorded"
     assert checkpoint.locality_id == "root-locality"
     assert isinstance(evidence.payload["first_subject"], str)
+    assert evidence.payload["addressed_identity"] == evidence.payload["first_subject"]
     assert evidence.payload["second_subject"] == checkpoint.id
     assert not any("emission" in key for key in evidence.payload)
     assert _raw_bytes(ledger) == [b"before\n"]
@@ -99,12 +100,12 @@ def test_repeated_checkpoints_preserve_one_exact_checkpoint_chain():
     ledger = _run(b"/checkpoint\n/checkpoint\n")
     evidence = [
         event for event in ledger.list()
-        if event.kind == CHECKPOINT_LOCALITY_EVIDENCE_KIND
+        if event.kind == ADDRESSED_REPRESENTATION_LOCALITY_EVIDENCE_KIND
     ]
 
     assert len(evidence) == 2
-    first_checkpoint = ledger.get(evidence[0].payload["checkpoint_event_id"])
-    second_checkpoint = ledger.get(evidence[1].payload["checkpoint_event_id"])
+    first_checkpoint = ledger.get(evidence[0].payload["representation_reference"])
+    second_checkpoint = ledger.get(evidence[1].payload["representation_reference"])
     assert first_checkpoint.locality_id == "root-locality"
     assert second_checkpoint.locality_id == evidence[0].locality_id
     assert evidence[1].locality_id not in {

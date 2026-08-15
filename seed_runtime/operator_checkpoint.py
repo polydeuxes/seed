@@ -9,9 +9,9 @@ from seed_runtime.ids import new_id
 from seed_runtime.operator_command import AddressedOperatorCommand
 
 
-CHECKPOINT_LOCALITY_EVIDENCE_KIND = "operator.checkpoint.locality_evidenced"
+ADDRESSED_REPRESENTATION_LOCALITY_EVIDENCE_KIND = "operator.addressed_representation.locality_evidenced"
 EVENT_KIND_RESPONSIBILITIES = {
-    CHECKPOINT_LOCALITY_EVIDENCE_KIND: "06.Standing.B",
+    ADDRESSED_REPRESENTATION_LOCALITY_EVIDENCE_KIND: "06.Standing.B",
 }
 
 
@@ -23,7 +23,7 @@ class OperatorCheckpointError(ValueError):
 class OperatorCheckpoint:
     locality_id: str
     locality_evidence_event_id: str
-    checkpoint_event_id: str
+    representation_reference: str
 
 
 @dataclass(frozen=True)
@@ -70,18 +70,18 @@ def open_operator_checkpoint(
 
     locality_id = new_id("checkpoint_locality")
     evidence = ledger.append(
-        CHECKPOINT_LOCALITY_EVIDENCE_KIND,
+        ADDRESSED_REPRESENTATION_LOCALITY_EVIDENCE_KIND,
         {
             "first_subject": command_id,
             "second_subject": checkpoint.id,
-            "command_id": command_id,
-            "checkpoint_event_id": checkpoint.id,
+            "addressed_identity": command_id,
+            "representation_reference": checkpoint.id,
             "authority": "unestablished",
             "evidence_scope": (
-                "this exact command-to-checkpoint Locality relation only"
+                "this exact addressed-identity-to-Representation Locality relation only"
             ),
             "unknowns": [
-                "what the command argument material represents remains Unknown"
+                "what the addressed argument material represents remains Unknown"
             ],
         },
         locality_id=locality_id,
@@ -89,5 +89,5 @@ def open_operator_checkpoint(
     return OperatorCheckpoint(
         locality_id=locality_id,
         locality_evidence_event_id=evidence.id,
-        checkpoint_event_id=checkpoint.id,
+        representation_reference=checkpoint.id,
     )

@@ -79,7 +79,7 @@ DECLARED_IDENTITY: tuple[str, ...] = (
     "measurement_distinction",
 )
 
-FORBIDDEN_INFERENCES: tuple[str, ...] = (
+LIMITS: tuple[str, ...] = (
     "independently preserved is not independent; nothing here establishes that "
     "the localities' sources are unrelated",
     "recurrence is repetition, and repetition is not independent corroboration",
@@ -229,7 +229,7 @@ class MeasuredAssertion:
                 "whether the localities stand in any relation remains Unknown",
                 "whether their sources are independent remains Unknown",
             ],
-            "forbidden_inferences": list(FORBIDDEN_INFERENCES),
+            "limits": list(LIMITS),
         }
 
 
@@ -772,13 +772,12 @@ def record_measured_count(
             "outside the declaration is not counted, and no locality enters by "
             "having measured something else"
         ),
-        "mutates_cluster": False,
         "unknowns": [
             "what any measured representation means remains Unknown",
             "whether the localities stand in any relation remains Unknown",
             "whether their sources are independent remains Unknown",
         ],
-        "forbidden_inferences": list(FORBIDDEN_INFERENCES),
+        "limits": list(LIMITS),
     }
     act_evidence = ledger.append(
         LOCALITY_COUNT_ACT_EVIDENCE_KIND,

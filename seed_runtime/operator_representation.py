@@ -235,7 +235,6 @@ def record_operator_representation(
             "responsible_act_evidence_id": responsible_act_evidence.id,
             "yield_evidence_id": yield_evidence.id,
             "locality_evidence_id": locality_evidence.id,
-            "mutates_cluster": False,
         },
         locality_id=locality_id,
     )
@@ -389,7 +388,6 @@ def emit_operator_representation(
             ],
             "conflicts": [],
             "provenance_occurrence_references": [representation["representation_event_id"]],
-            "mutates_cluster": False,
         },
         locality_id=representation["locality_id"],
     )
@@ -557,7 +555,6 @@ def emit_operator_representation(
                 representation["representation_event_id"],
                 attempt_event.id,
             ],
-            "mutates_cluster": False,
         },
         locality_id=representation["locality_id"],
     )
@@ -654,7 +651,6 @@ def _record_emission_failure_outcome(
                 attempt_event_id,
                 *([emitted_event_id] if emitted_event_id is not None else []),
             ],
-            "mutates_cluster": False,
         }
     act_evidence = ledger.append(
         REPRESENTATION_EMISSION_OUTCOME_ACT_EVIDENCE_KIND,

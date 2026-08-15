@@ -18,7 +18,7 @@ from io import StringIO
 
 import pytest
 
-from seed_runtime.adjacent_pair_measurement import measure_after
+from seed_runtime.adjacency_pair_measurement import measure_after
 from seed_runtime.assertion_comparison import (
     ASSERTION_YIELD_COMPARISON_RECORDED_KIND,
     AssertionComparisonError,
@@ -40,7 +40,7 @@ from seed_runtime.preserved_material_measurement import (
 from seed_runtime.recurrence_measurement import (
     DECLARED_IDENTITY,
     LOCALITY_COUNT_RECORDED_KIND,
-    FORBIDDEN_INFERENCES,
+    LIMITS,
     MEASURED_ASSERTION_STANDING_COORDINATE_RESPONSIBILITY,
     RecurrenceMeasurementError,
     assertions_of_recorded_measurement,
@@ -1132,11 +1132,11 @@ def test_the_record_refuses_source_independence_and_corroboration(compared):
     event = record_measured_count(
         compared, locality_id="s1",
         finding=_by_right(compared)["word"])
-    refused = " ".join(event.payload["forbidden_inferences"])
+    refused = " ".join(event.payload["limits"])
     assert "independently preserved is not independent" in refused
     assert "repetition is not independent corroboration" in refused
     assert "establishes no relation between the" in refused
-    assert set(FORBIDDEN_INFERENCES) <= set(event.payload["forbidden_inferences"])
+    assert set(LIMITS) <= set(event.payload["limits"])
 
 
 def test_the_rendering_states_the_literal_sentence(compared):
@@ -1395,6 +1395,6 @@ def test_counting_recurrence_does_not_take_comparisons_as_input(compared):
 
     event = record_measured_count(
         compared, locality_id="s1", finding=finding)
-    refused = " ".join(event.payload["forbidden_inferences"])
+    refused = " ".join(event.payload["limits"])
     assert "not independent corroboration" in refused
     assert "establishes no relation between the" in refused
