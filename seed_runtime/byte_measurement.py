@@ -287,16 +287,6 @@ def _canonical(value: Any) -> str:
     )
 
 
-def _movement_commitment(payload: dict[str, Any]) -> str:
-    """Commit an Assertion under the locality-movement domain."""
-
-    digest = hashlib.sha256(b"seed.assertion-locality-movement\0")
-    encoded = _canonical(payload).encode("utf-8")
-    digest.update(len(encoded).to_bytes(8, "big"))
-    digest.update(encoded)
-    return digest.hexdigest()
-
-
 def _identity(
     *, result: str, subject: dict[str, Any], scope: dict[str, Any], content: Any
 ) -> str:
@@ -315,7 +305,7 @@ def _seed_native_measurement_assignment(
         "responsible_boundary": SEED_NATIVE_MEASUREMENT_RESPONSIBLE_BOUNDARY,
         "standing": "assigned",
         "source_occurrence_references": [dict(item) for item in measured.source_material],
-        "completeness_boundary": measured.completeness_boundary.commitment,
+        "completeness_boundary": measured.completeness_boundary.identity,
         "determination": (
             "exact ingest and raw-material occurrences were read through the "
             "recorded boundary"
@@ -637,7 +627,6 @@ def _move_byte_assertion_to_locality(
             "second_subject": destination_locality,
             "relation_occurrence_id": movement_occurrence_id,
         },
-        "assertion_commitment": _movement_commitment(payload),
         "surviving_coordinates": [
             "Evidence",
             "Authority",
@@ -762,7 +751,6 @@ def _validate_moved_byte_assertion(
                 "movement_act_occurrence_id"
             ),
         },
-        "assertion_commitment": _movement_commitment(source.payload),
         "surviving_coordinates": [
             "Evidence",
             "Authority",
@@ -927,7 +915,7 @@ def _assertions(measured: MeasuredByteInputs) -> list[dict[str, Any]]:
     source_content = {
         "source_material": list(measured.source_material),
         "completeness_boundary": {
-            "commitment": measured.completeness_boundary.commitment
+            "identity": measured.completeness_boundary.identity
         },
     }
     source_id = _identity(
@@ -1074,7 +1062,7 @@ def record_byte_count_layer(
         "measurement_rule": BYTE_MEASUREMENT_RULE,
         "source_locality_ids": list(measured.source_locality_ids),
         "completeness_boundary": {
-            "commitment": measured.completeness_boundary.commitment
+            "identity": measured.completeness_boundary.identity
         },
         "assertions": _assertions(measured),
     }
@@ -1224,8 +1212,8 @@ def assertions_of_recorded_byte_measurement(
     if (
         payload.get("measurement_rule") != BYTE_MEASUREMENT_RULE
         or not isinstance(boundary_value, dict)
-        or set(boundary_value) != {"commitment"}
-        or not isinstance(boundary_value["commitment"], str)
+        or set(boundary_value) != {"identity"}
+        or not isinstance(boundary_value["identity"], str)
         or not isinstance(localities_value, list)
         or not localities_value
         or any(not isinstance(item, str) or not item for item in localities_value)
@@ -1234,7 +1222,7 @@ def assertions_of_recorded_byte_measurement(
         raise ByteMeasurementError(
             f"{event_id} does not carry the exact byte Measurement boundary"
         )
-    boundary = EventLedgerBoundary(boundary_value["commitment"])
+    boundary = EventLedgerBoundary(boundary_value["identity"])
     measured = _measure_byte_counts_through(
         ledger,
         localities=tuple(localities_value),
@@ -1639,7 +1627,7 @@ def record_adjacent_byte_pair_count_layer(
     measured = _measure_adjacent_byte_pair_counts_through(
         ledger,
         localities=tuple(scope["source_locality_ids"]),
-        boundary=EventLedgerBoundary(content["completeness_boundary"]["commitment"]),
+        boundary=EventLedgerBoundary(content["completeness_boundary"]["identity"]),
         source_assertion_reference=source.reference,
         source_movement_event_id=source.locality_movement_event_id,
         input_applicability=applicability,
@@ -1673,7 +1661,7 @@ def record_adjacent_byte_pair_count_layer(
         "input_applicability_event_id": applicability_event.id,
         "source_locality_ids": list(measured.source_locality_ids),
         "completeness_boundary": {
-            "commitment": measured.completeness_boundary.commitment
+            "identity": measured.completeness_boundary.identity
         },
         "assertions": _pair_assertions(measured),
     }
@@ -1926,8 +1914,8 @@ def assertions_of_recorded_adjacent_byte_pair_measurement(
     localities_value = payload.get("source_locality_ids")
     if (
         not isinstance(boundary_value, dict)
-        or set(boundary_value) != {"commitment"}
-        or not isinstance(boundary_value["commitment"], str)
+        or set(boundary_value) != {"identity"}
+        or not isinstance(boundary_value["identity"], str)
         or not isinstance(localities_value, list)
         or not localities_value
         or any(not isinstance(item, str) or not item for item in localities_value)
@@ -1973,9 +1961,9 @@ def assertions_of_recorded_adjacent_byte_pair_measurement(
         "responsible_boundary": SEED_NATIVE_MEASUREMENT_RESPONSIBLE_BOUNDARY,
         "standing": "assigned",
         "source_occurrence_references": source_content["source_material"],
-        "completeness_boundary": source_content["completeness_boundary"][
-            "commitment"
-        ],
+            "completeness_boundary": source_content["completeness_boundary"][
+                "identity"
+            ],
         "determination": (
             "exact ingest and raw-material occurrences were read through the "
             "recorded boundary"

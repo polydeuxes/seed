@@ -32,19 +32,19 @@ CORRUPTED = "corrupted"
 
 
 _PREFIX_DOMAIN = b"seed.event-ledger.append-prefix\0"
-_EMPTY_PREFIX_COMMITMENT = hashlib.sha256(_PREFIX_DOMAIN + b"empty").hexdigest()
+_EMPTY_PREFIX_IDENTITY = hashlib.sha256(_PREFIX_DOMAIN + b"empty").hexdigest()
 
 
 @dataclass(frozen=True)
 class EventLedgerBoundary:
-    """An opaque commitment to one exact append prefix.
+    """The exact identity of one append prefix.
 
     Callers may retain and return the value, but only an EventLedger reads
     it. Equal ordered prefixes yield equal boundaries; a boundary does not
     expose an append position.
     """
 
-    commitment: str
+    identity: str
 
 
 class InvalidLedgerBoundary(ValueError):
@@ -205,7 +205,7 @@ def _canonical_occurrence_bytes(event: Event) -> bytes:
     ).encode()
 
 
-def _next_prefix_commitment(previous: str, event: Event) -> str:
+def _next_prefix_identity(previous: str, event: Event) -> str:
     occurrence = _canonical_occurrence_bytes(event)
     return hashlib.sha256(
         _PREFIX_DOMAIN
@@ -232,9 +232,9 @@ class EventLedger:
         self._by_id: dict[str, Event] = {}
         self._by_locality: dict[str | None, list[Event]] = defaultdict(list)
         self._by_id_position: dict[str, int] = {}
-        self._latest_prefix_commitment = _EMPTY_PREFIX_COMMITMENT
+        self._latest_prefix_identity = _EMPTY_PREFIX_IDENTITY
         self._boundary_positions: dict[str, int] = {
-            _EMPTY_PREFIX_COMMITMENT: 0
+            _EMPTY_PREFIX_IDENTITY: 0
         }
 
     def append(
@@ -279,13 +279,13 @@ class EventLedger:
         return self._by_id.get(event_id)
 
     def append_boundary(self) -> EventLedgerBoundary:
-        """Capture an opaque commitment to the current append prefix."""
-        return EventLedgerBoundary(self._latest_prefix_commitment)
+        """Capture the exact identity of the current append prefix."""
+        return EventLedgerBoundary(self._latest_prefix_identity)
 
     def _position_through(self, through: EventLedgerBoundary | None) -> int:
         if through is None:
             return len(self._events)
-        position = self._boundary_positions.get(through.commitment)
+        position = self._boundary_positions.get(through.identity)
         if position is None:
             raise InvalidLedgerBoundary(
                 "boundary does not denote an append prefix of this ledger"
@@ -390,13 +390,13 @@ class EventLedger:
         # Canonicalization may refuse a payload. Derive before making the
         # occurrence visible anywhere so a failed append cannot leave event
         # history ahead of its append-prefix mechanics.
-        commitment = _next_prefix_commitment(self._latest_prefix_commitment, event)
+        identity = _next_prefix_identity(self._latest_prefix_identity, event)
         position = len(self._events) + 1
         self._events.append(event)
         self._by_id[event.id] = event
         self._by_locality[event.locality_id].append(event)
-        self._latest_prefix_commitment = commitment
-        self._boundary_positions[commitment] = position
+        self._latest_prefix_identity = identity
+        self._boundary_positions[identity] = position
         self._by_id_position[event.id] = position
 
     def _validate_batch(self, events: list[Event]) -> None:
@@ -582,7 +582,7 @@ class SQLiteEventLedger(EventLedger):
             CREATE INDEX IF NOT EXISTS idx_events_locality_kind
             ON events(locality_id, kind)
             """)
-        self._ensure_prefix_commitments()
+        self._ensure_prefix_identities()
         self._connection.commit()
         max_event_number = self._max_event_id_number()
         self._next_event_number = max_event_number + 1
@@ -630,7 +630,7 @@ class SQLiteEventLedger(EventLedger):
         with self._connection:
             for event in stored_events:
                 event_rowid = self._insert_without_commit(event)
-                self._insert_prefix_commitment(event, event_rowid)
+                self._insert_prefix_identity(event, event_rowid)
                 self._persist_reservations(self._observed_numbers(event))
         for event in stored_events:
             self._advance_event_counter(event.id)
@@ -644,24 +644,24 @@ class SQLiteEventLedger(EventLedger):
         return self._row_to_event(row) if row is not None else None
 
     def append_boundary(self) -> EventLedgerBoundary:
-        """Capture an opaque commitment to the current durable append prefix."""
+        """Capture the exact identity of the current durable append prefix."""
         row = self._connection.execute(
-            "SELECT commitment FROM event_prefix_commitments "
+            "SELECT identity FROM event_prefix_identities "
             "ORDER BY position DESC LIMIT 1"
         ).fetchone()
         return EventLedgerBoundary(
-            row["commitment"] if row is not None else _EMPTY_PREFIX_COMMITMENT
+            row["identity"] if row is not None else _EMPTY_PREFIX_IDENTITY
         )
 
     def _rowid_through(self, through: EventLedgerBoundary | None) -> int | None:
         if through is None:
             return None
-        if through.commitment == _EMPTY_PREFIX_COMMITMENT:
+        if through.identity == _EMPTY_PREFIX_IDENTITY:
             return 0
         row = self._connection.execute(
-            "SELECT event_rowid FROM event_prefix_commitments "
-            "WHERE commitment = ?",
-            (through.commitment,),
+            "SELECT event_rowid FROM event_prefix_identities "
+            "WHERE identity = ?",
+            (through.identity,),
         ).fetchone()
         if row is None:
             raise InvalidLedgerBoundary(
@@ -822,7 +822,7 @@ class SQLiteEventLedger(EventLedger):
 
     def _write_without_commit(self, event: Event) -> None:
         event_rowid = self._insert_without_commit(event)
-        self._insert_prefix_commitment(event, event_rowid)
+        self._insert_prefix_identity(event, event_rowid)
         self._persist_reservations(self._observed_numbers(event))
 
     @contextmanager
@@ -831,7 +831,7 @@ class SQLiteEventLedger(EventLedger):
 
         What differences is how many times the store is committed, not what a
         commit contains: each occurrence still reaches the store paired with
-        its prefix commitment, because both are written before either is
+        its prefix identity, because both are written before either is
         committed. A store that loses this scope loses whole occurrences and
         keeps a chain that accounts for exactly the ones it kept.
 
@@ -858,7 +858,7 @@ class SQLiteEventLedger(EventLedger):
 
         self._connection.commit()
 
-    def _ensure_prefix_commitments(self) -> None:
+    def _ensure_prefix_identities(self) -> None:
         """Create or validate the ledger-local append-prefix mechanics.
 
         An existing store without the table receives one atomic derivation from
@@ -867,46 +867,46 @@ class SQLiteEventLedger(EventLedger):
         """
         existed = self._connection.execute(
             "SELECT 1 FROM sqlite_master WHERE type = 'table' "
-            "AND name = 'event_prefix_commitments'"
+            "AND name = 'event_prefix_identities'"
         ).fetchone() is not None
         self._connection.execute("BEGIN IMMEDIATE")
         try:
             self._connection.execute("""
-                CREATE TABLE IF NOT EXISTS event_prefix_commitments (
+                CREATE TABLE IF NOT EXISTS event_prefix_identities (
                     position INTEGER PRIMARY KEY,
                     event_rowid INTEGER NOT NULL UNIQUE,
                     event_id TEXT NOT NULL UNIQUE,
-                    commitment TEXT NOT NULL UNIQUE
+                    identity TEXT NOT NULL UNIQUE
                 )
                 """)
             self._connection.execute("""
-                CREATE TRIGGER IF NOT EXISTS prefix_commitments_refuse_update
-                BEFORE UPDATE ON event_prefix_commitments
-                BEGIN SELECT RAISE(ABORT, 'append-prefix commitments do not revision'); END
+                CREATE TRIGGER IF NOT EXISTS prefix_identities_refuse_update
+                BEFORE UPDATE ON event_prefix_identities
+                BEGIN SELECT RAISE(ABORT, 'append-prefix identities do not revision'); END
                 """)
             self._connection.execute("""
-                CREATE TRIGGER IF NOT EXISTS prefix_commitments_refuse_delete
-                BEFORE DELETE ON event_prefix_commitments
-                BEGIN SELECT RAISE(ABORT, 'append-prefix commitments are not removed'); END
+                CREATE TRIGGER IF NOT EXISTS prefix_identities_refuse_delete
+                BEFORE DELETE ON event_prefix_identities
+                BEGIN SELECT RAISE(ABORT, 'append-prefix identities are not removed'); END
                 """)
             self._connection.execute("""
                 CREATE TRIGGER IF NOT EXISTS events_require_prefix_writer
                 BEFORE INSERT ON events
                 WHEN seed_prefix_writer() != 1
-                BEGIN SELECT RAISE(ABORT, 'writer cannot maintain append-prefix commitments'); END
+                BEGIN SELECT RAISE(ABORT, 'writer cannot maintain append-prefix identities'); END
                 """)
             if not existed:
-                previous = _EMPTY_PREFIX_COMMITMENT
+                previous = _EMPTY_PREFIX_IDENTITY
                 position = 0
                 for row in self._connection.execute(
                     "SELECT rowid AS event_rowid, * FROM events ORDER BY rowid"
                 ):
                     position += 1
                     event = self._row_to_event(row)
-                    previous = _next_prefix_commitment(previous, event)
+                    previous = _next_prefix_identity(previous, event)
                     self._connection.execute(
-                        "INSERT INTO event_prefix_commitments "
-                        "(position, event_rowid, event_id, commitment) "
+                        "INSERT INTO event_prefix_identities "
+                        "(position, event_rowid, event_id, identity) "
                         "VALUES (?, ?, ?, ?)",
                         (position, row["event_rowid"], event.id, previous),
                     )
@@ -920,7 +920,7 @@ class SQLiteEventLedger(EventLedger):
         ).fetchone()
         prefix_stats = self._connection.execute(
             "SELECT COUNT(*) AS n, COALESCE(MAX(position), 0) AS position, "
-            "COALESCE(MAX(event_rowid), 0) AS tail FROM event_prefix_commitments"
+            "COALESCE(MAX(event_rowid), 0) AS tail FROM event_prefix_identities"
         ).fetchone()
         if (
             event_stats["n"] != prefix_stats["n"]
@@ -928,24 +928,24 @@ class SQLiteEventLedger(EventLedger):
             or event_stats["tail"] != prefix_stats["tail"]
         ):
             raise LedgerIntegrityError(
-                "append-prefix commitment mechanics are incomplete"
+                "append-prefix identity mechanics are incomplete"
             )
 
-    def _insert_prefix_commitment(
+    def _insert_prefix_identity(
         self, event: Event, event_rowid: int
     ) -> None:
         position_row = self._connection.execute(
             "SELECT COALESCE(MAX(position), 0) + 1 AS position, "
-            "(SELECT commitment FROM event_prefix_commitments "
+            "(SELECT identity FROM event_prefix_identities "
             " ORDER BY position DESC LIMIT 1) AS previous "
-            "FROM event_prefix_commitments"
+            "FROM event_prefix_identities"
         ).fetchone()
-        previous = position_row["previous"] or _EMPTY_PREFIX_COMMITMENT
-        commitment = _next_prefix_commitment(previous, event)
+        previous = position_row["previous"] or _EMPTY_PREFIX_IDENTITY
+        identity = _next_prefix_identity(previous, event)
         self._connection.execute(
-            "INSERT INTO event_prefix_commitments "
-            "(position, event_rowid, event_id, commitment) VALUES (?, ?, ?, ?)",
-            (position_row["position"], event_rowid, event.id, commitment),
+            "INSERT INTO event_prefix_identities "
+            "(position, event_rowid, event_id, identity) VALUES (?, ?, ?, ?)",
+            (position_row["position"], event_rowid, event.id, identity),
         )
 
     def _insert_without_commit(self, event: Event) -> int:

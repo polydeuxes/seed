@@ -81,7 +81,7 @@ def test_the_complete_declared_localities_supply_the_inputs():
         set(item) == {"ingest_occurrence_id"}
         for item in measured.source_material
     )
-    assert measured.completeness_boundary.commitment
+    assert measured.completeness_boundary.identity
 
 
 def test_count_and_recurrence_are_distinct_results():
@@ -419,12 +419,6 @@ def test_recorded_pair_results_replay_the_complete_bounded_source_read():
     assert act_evidence.payload["movement_act_occurrence_id"] == movement.payload[
         "movement_act_occurrence_id"
     ]
-    original = next(
-        item
-        for item in assertions_of_recorded_byte_measurement(ledger, source.id)
-        if item.assertion_id == movement.payload["assertion_id"]
-    )
-    assert movement.payload["assertion_commitment"]
     assert "dimensions" not in movement.payload
 
 
@@ -623,7 +617,7 @@ def test_seed_native_responsibility_is_earned_from_preserved_occurrences():
     ]["source_material"]
     assert assignment["completeness_boundary"] == source.payload[
         "completeness_boundary"
-    ]["commitment"]
+    ]["identity"]
     yield_evidence = ledger.get(source.payload["yield_evidence_id"])
     assert yield_evidence.payload["dimensions"]["responsible_boundary"] == (
         "this Seed"

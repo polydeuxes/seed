@@ -33,11 +33,11 @@ def _build(path, count=50):
     return ledger, ids
 
 
-def _lose(path, *, occurrences=0, commitments=0):
+def _lose(path, *, occurrences=0, identities=0):
     """Drop the tail of either table, as an unflushed write would."""
 
     connection = sqlite3.connect(str(path))
-    for trigger in ("events_refuse_delete", "prefix_commitments_refuse_delete"):
+    for trigger in ("events_refuse_delete", "prefix_identities_refuse_delete"):
         connection.execute(f"DROP TRIGGER IF EXISTS {trigger}")
     if occurrences:
         connection.execute(
@@ -45,12 +45,12 @@ def _lose(path, *, occurrences=0, commitments=0):
             " (SELECT rowid FROM events ORDER BY rowid DESC LIMIT ?)",
             (occurrences,),
         )
-    if commitments:
+    if identities:
         connection.execute(
-            "DELETE FROM event_prefix_commitments WHERE position IN"
-            " (SELECT position FROM event_prefix_commitments"
+            "DELETE FROM event_prefix_identities WHERE position IN"
+            " (SELECT position FROM event_prefix_identities"
             " ORDER BY position DESC LIMIT ?)",
-            (commitments,),
+            (identities,),
         )
     connection.commit()
     connection.close()
@@ -63,7 +63,7 @@ def test_losing_the_tip_of_both_leaves_every_remaining_occurrence_intact(tmp_pat
     ledger, ids = _build(path)
     del ledger
 
-    _lose(path, occurrences=10, commitments=10)
+    _lose(path, occurrences=10, identities=10)
 
     ledger = SQLiteEventLedger(str(path))
     assert len(ledger.list()) == 40
@@ -71,7 +71,7 @@ def test_losing_the_tip_of_both_leaves_every_remaining_occurrence_intact(tmp_pat
         assert ledger.integrity_of(event_id) == VERIFIED
 
 
-def test_occurrences_lost_without_their_commitments_refuse_to_open(tmp_path):
+def test_occurrences_lost_without_their_prefix_identities_refuse_to_open(tmp_path):
     """A chain longer than its occurrences is torn, not short."""
 
     path = tmp_path / "e.sqlite"
@@ -84,14 +84,14 @@ def test_occurrences_lost_without_their_commitments_refuse_to_open(tmp_path):
         SQLiteEventLedger(str(path))
 
 
-def test_commitments_lost_without_their_occurrences_refuse_to_open(tmp_path):
+def test_prefix_identities_lost_without_their_occurrences_refuse_to_open(tmp_path):
     """And the tear in the other direction."""
 
     path = tmp_path / "e.sqlite"
     ledger, _ = _build(path)
     del ledger
 
-    _lose(path, commitments=10)
+    _lose(path, identities=10)
 
     with pytest.raises(LedgerIntegrityError):
         SQLiteEventLedger(str(path))
@@ -110,7 +110,7 @@ def test_a_retained_boundary_detects_a_tip_that_was_lost(tmp_path):
     boundary = ledger.append_boundary()
     del ledger
 
-    _lose(path, occurrences=10, commitments=10)
+    _lose(path, occurrences=10, identities=10)
 
     ledger = SQLiteEventLedger(str(path))
     with pytest.raises(InvalidLedgerBoundary):
@@ -128,7 +128,7 @@ def test_only_the_prefix_that_vanished_is_refused(tmp_path):
     ledger, _ = _build(path)
     del ledger
 
-    _lose(path, occurrences=10, commitments=10)
+    _lose(path, occurrences=10, identities=10)
 
     ledger = SQLiteEventLedger(str(path))
     surviving = ledger.append_boundary()

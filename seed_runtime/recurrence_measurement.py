@@ -157,7 +157,7 @@ class MeasuredCountFinding:
             "bounded_localities": list(self.bounded_localities),
             "input_event_ids": list(self.input_event_ids),
             "input_ledger_boundary": {
-                "commitment": self.input_ledger_boundary.commitment,
+                "identity": self.input_ledger_boundary.identity,
             },
         }
 
@@ -210,7 +210,7 @@ class MeasuredAssertion:
                 "local_assertion_ids": list(self.support_assertion_ids),
             },
             "completeness_boundary": (
-                {"commitment": self.completeness_boundary.commitment}
+                {"identity": self.completeness_boundary.identity}
                 if self.completeness_boundary is not None
                 else None
             ),

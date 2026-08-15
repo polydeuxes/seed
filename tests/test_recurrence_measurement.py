@@ -737,7 +737,7 @@ def test_exact_sets_keep_completeness_separate_from_support(compared):
         assertion.result: assertion
         for assertion in assertions_from_measured_count(finding)
     }
-    boundary = {"commitment": finding.input_ledger_boundary.commitment}
+    boundary = {"identity": finding.input_ledger_boundary.identity}
 
     for result in (
         "measured_in",
@@ -748,7 +748,7 @@ def test_exact_sets_keep_completeness_separate_from_support(compared):
         assert encoded["completeness_boundary"] == boundary
         assert encoded["completeness_scope"]["locality_ids"] == list(DECLARED)
         assert encoded["completeness_scope"]["requires_locality_existence"] is True
-        assert finding.input_ledger_boundary.commitment not in (
+        assert finding.input_ledger_boundary.identity not in (
             encoded["support_basis"]["event_ids"]
             + encoded["support_basis"]["local_assertion_ids"]
         )
@@ -937,7 +937,7 @@ def test_the_input_ledger_boundary_is_preserved_as_read_provenance(compared):
 
     assert finding.input_ledger_boundary == boundary
     assert finding.to_json_dict()["input_ledger_boundary"] == {
-        "commitment": boundary.commitment,
+        "identity": boundary.identity,
     }
     recorded = record_measured_count(
         compared, locality_id="s1", finding=finding
@@ -950,7 +950,7 @@ def test_the_input_ledger_boundary_is_preserved_as_read_provenance(compared):
         "coordinate_not_measured",
     ):
         assert assertions[result]["completeness_boundary"] == {
-            "commitment": boundary.commitment,
+            "identity": boundary.identity,
         }
 
 

@@ -121,7 +121,7 @@ class SupportBasis:
 
     locality_id: str
     occurrence_kind: str
-    boundary_commitment: str
+    boundary_identity: str
     selection_rule: str
     commitment: str
     support_count: int
@@ -140,7 +140,7 @@ class SupportBasis:
                 f"a support basis must declare a recognised selection: {self.selection_rule!r}"
             )
         for name in ("locality_id", "occurrence_kind",
-                     "boundary_commitment", "commitment"):
+                     "boundary_identity", "commitment"):
             value = getattr(self, name)
             if not isinstance(value, str) or not value:
                 raise SupportBasisError(f"a support basis requires {name}")
@@ -162,7 +162,7 @@ class SupportBasis:
                 "locality_id": self.locality_id,
                 "occurrence_kind": self.occurrence_kind,
             },
-            "boundary": {"commitment": self.boundary_commitment},
+            "boundary": {"identity": self.boundary_identity},
             "selection_rule": self.selection_rule,
             "commitment": self.commitment,
             "support_count": self.support_count,
@@ -177,7 +177,7 @@ class SupportBasis:
             return cls(
                 locality_id=scope["locality_id"],
                 occurrence_kind=scope["occurrence_kind"],
-                boundary_commitment=value["boundary"]["commitment"],
+                boundary_identity=value["boundary"]["identity"],
                 selection_rule=value["selection_rule"],
                 commitment=value["commitment"],
                 support_count=value["support_count"],
@@ -199,7 +199,7 @@ def declare_complete_inputs(
     return SupportBasis(
         locality_id=locality_id,
         occurrence_kind=occurrence_kind,
-        boundary_commitment=boundary.commitment,
+        boundary_identity=boundary.identity,
         selection_rule=COMPLETE_INGRESS_INPUTS,
         commitment=support_commitment(COMPLETE_INGRESS_INPUTS, ordered),
         support_count=len(ordered),
@@ -245,7 +245,7 @@ class SupportValidator:
         key = (
             basis.locality_id,
             basis.occurrence_kind,
-            basis.boundary_commitment,
+            basis.boundary_identity,
             basis.commitment,
         )
         cached = self._validated.get(key)
@@ -277,7 +277,7 @@ class SupportValidator:
             self._ledger.iter_locality_kind_ids(
                 basis.locality_id,
                 basis.occurrence_kind,
-                through=EventLedgerBoundary(basis.boundary_commitment),
+                through=EventLedgerBoundary(basis.boundary_identity),
             )
         )
         validated = support_commitment(basis.selection_rule, identities)

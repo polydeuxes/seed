@@ -704,7 +704,7 @@ def test_a_cache_hit_still_refuses_a_contradictory_support_count():
     forged = SupportBasis(
         locality_id=honest.locality_id,
         occurrence_kind=honest.occurrence_kind,
-        boundary_commitment=honest.boundary_commitment,
+        boundary_identity=honest.boundary_identity,
         selection_rule=honest.selection_rule,
         commitment=honest.commitment,
         support_count=honest.support_count - 1,
@@ -746,7 +746,7 @@ def test_every_support_basis_refusal_can_be_reached():
     def basis(**differences):
         fields = dict(
             locality_id="s", occurrence_kind="k",
-            boundary_commitment="b", selection_rule=COMPLETE_INGRESS_INPUTS,
+            boundary_identity="b", selection_rule=COMPLETE_INGRESS_INPUTS,
             commitment=support_commitment(COMPLETE_INGRESS_INPUTS, ()),
             support_count=0,
         )
@@ -770,7 +770,7 @@ def test_every_support_basis_refusal_can_be_reached():
             SupportBasis.from_json_dict(dict(basis().to_json_dict(), selection_rule=value))
 
     for name in ("locality_id", "occurrence_kind",
-                 "boundary_commitment", "commitment"):
+                 "boundary_identity", "commitment"):
         with pytest.raises(SupportBasisError, match=f"requires {name}"):
             basis(**{name: ""})
         with pytest.raises(SupportBasisError, match=f"requires {name}"):

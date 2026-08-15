@@ -156,7 +156,7 @@ def test_an_existing_durable_sequence_is_derived_once_without_changing_rows(tmp_
     ledger.close()
 
     connection = sqlite3.connect(path)
-    connection.execute("DROP TABLE event_prefix_commitments")
+    connection.execute("DROP TABLE event_prefix_identities")
     connection.commit()
     connection.close()
 
@@ -180,8 +180,8 @@ def test_partial_durable_mechanics_are_refused(tmp_path):
     ledger.close()
 
     connection = sqlite3.connect(path)
-    connection.execute("DROP TRIGGER prefix_commitments_refuse_delete")
-    connection.execute("DELETE FROM event_prefix_commitments WHERE position = 2")
+    connection.execute("DROP TRIGGER prefix_identities_refuse_delete")
+    connection.execute("DELETE FROM event_prefix_identities WHERE position = 2")
     connection.commit()
     connection.close()
 
