@@ -42,7 +42,6 @@ def test_material_request_does_not_cross_the_filesystem(monkeypatch, tmp_path):
 
     run_persistent_operator_console(
         ledger=ledger,
-        workspace_id="w",
         locality_id="root-locality",
         input_stream=BytesIO(b"/material " + os.fsencode(path) + b"\n"),
         output_stream=StringIO(),
@@ -50,7 +49,7 @@ def test_material_request_does_not_cross_the_filesystem(monkeypatch, tmp_path):
 
     addressed = [
         event
-        for event in ledger.list("w")
+        for event in ledger.list()
         if event.kind == "operator.command.addressed"
     ]
     assert len(addressed) == 1
@@ -61,7 +60,6 @@ def test_material_request_uses_the_current_locality():
     ledger = EventLedger()
     run_persistent_operator_console(
         ledger=ledger,
-        workspace_id="w",
         locality_id="root-locality",
         input_stream=BytesIO(b"/checkpoint\n/material book\n"),
         output_stream=StringIO(),
@@ -69,12 +67,12 @@ def test_material_request_uses_the_current_locality():
 
     checkpoint = next(
         event
-        for event in ledger.list("w")
+        for event in ledger.list()
         if event.kind == CHECKPOINT_LOCALITY_EVIDENCE_KIND
     )
     material = next(
         event
-        for event in ledger.list("w")
+        for event in ledger.list()
         if event.kind == "operator.command.addressed"
         and bytes.fromhex(event.payload["command_name_hex"]) == b"material"
     )

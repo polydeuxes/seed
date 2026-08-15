@@ -1,6 +1,6 @@
 """Being readable and being written back the same way are separate properties.
 
-A codec answers two questions, and this records where its two answers
+A codec answers two probes, and this records where its two answers
 disagree. Neither answer is corrected by the other: a disagreement is a
 finding about the pair.
 """
@@ -39,7 +39,7 @@ def test_most_witnesses_write_back_what_they_read():
 def test_several_byte_sequences_may_read_as_one_thing():
     """cp875 reads four bytes as U+001A and writes a fifth for it.
 
-    So the bytes it writes are not among the bytes it read, and the reading
+    So the bytes it writes are not among the bytes it read, and the read
     does not determine what was read from.
     """
 

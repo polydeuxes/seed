@@ -133,7 +133,6 @@ def _distinction_assertion_identity(
     *,
     compared_assertion_id: str,
     inputs: Iterable[dict[str, str]],
-    workspace_id: str,
     locality_id: str,
     coordinate: str,
     present: Iterable[bool],
@@ -143,7 +142,6 @@ def _distinction_assertion_identity(
     identity = {
         "compared_assertion_id": compared_assertion_id,
         "inputs": list(inputs),
-        "workspace_id": workspace_id,
         "locality_id": locality_id,
         "coordinate": coordinate,
         "present": list(present),
@@ -181,7 +179,7 @@ def compare_assertion_yields(
             "Assertion yield Compare requires one canonical Assertion identity"
         )
 
-    reconstructed: list[RecordedMeasuredAssertion] = []
+    assertions: list[RecordedMeasuredAssertion] = []
     inputs = []
     for reference in refs:
         assertion = get_recorded_measured_assertion(
@@ -198,7 +196,7 @@ def compare_assertion_yields(
             raise AssertionComparisonError(
                 "a corrupted yielding occurrence cannot participate in Compare"
             )
-        reconstructed.append(assertion)
+        assertions.append(assertion)
         inputs.append(
             AssertionYieldInput(
                 assertion_id=assertion.assertion_id,
@@ -209,9 +207,11 @@ def compare_assertion_yields(
 
     distinctions = []
     for coordinate, path in COORDINATES.items():
-        read = tuple(_read(assertion.payload, path) for assertion in reconstructed)
-        present = (read[0][0], read[1][0])
-        values = (read[0][1], read[1][1])
+        coordinate_reads = tuple(
+            _read(assertion.payload, path) for assertion in assertions
+        )
+        present = (coordinate_reads[0][0], coordinate_reads[1][0])
+        values = (coordinate_reads[0][1], coordinate_reads[1][1])
         distinctions.append(
             AssertionCoordinateDistinction(
                 coordinate=coordinate,
@@ -232,7 +232,6 @@ def compare_assertion_yields(
 def record_assertion_yield_comparison(
     ledger: EventLedger,
     *,
-    workspace_id: str,
     locality_id: str,
     comparison: AssertionYieldComparison,
 ) -> Event:
@@ -259,7 +258,6 @@ def record_assertion_yield_comparison(
         role = "compared Assertion"
         locality_evidence = ledger.append(
             ASSERTION_COMPARE_INPUT_LOCALITY_EVIDENCE_KIND,
-            workspace_id,
             {
                 "first_subject": input_ref,
                 "second_subject": {
@@ -275,7 +273,6 @@ def record_assertion_yield_comparison(
         )
         applicability = ledger.append(
             ASSERTION_COMPARE_INPUT_APPLICABILITY_KIND,
-            workspace_id,
             {
                 "input_ref": input_ref,
                 "downstream_act_id": act_id,
@@ -308,7 +305,6 @@ def record_assertion_yield_comparison(
         identity = _distinction_assertion_identity(
             compared_assertion_id=comparison.assertion_id,
             inputs=input_refs,
-            workspace_id=workspace_id,
             locality_id=locality_id,
             **content,
         )
@@ -341,7 +337,6 @@ def record_assertion_yield_comparison(
                     "coordinate": distinction.coordinate,
                 },
                 "assertion_scope": {
-                    "workspace_id": workspace_id,
                     "locality_id": locality_id,
                     "compared_yields": list(input_refs),
                 },
@@ -362,7 +357,6 @@ def record_assertion_yield_comparison(
         )
     act_evidence = ledger.append(
         ASSERTION_COMPARE_ACT_EVIDENCE_KIND,
-        workspace_id,
         {
             "downstream_act_id": act_id,
             "act_occurrence_id": act_occurrence_id,
@@ -379,7 +373,6 @@ def record_assertion_yield_comparison(
     )
     return ledger.append(
         ASSERTION_YIELD_COMPARISON_RECORDED_KIND,
-        workspace_id,
         {
             "dimensions": {
                 "identity": "assertion-yield-comparison-occurrence",
@@ -388,7 +381,7 @@ def record_assertion_yield_comparison(
                 "source_provenance": "two occurrence-bound Assertion yields",
                 "authority": "unestablished",
                 "evidence_scope": "literal Compare results only",
-                "scope_locality": f"workspace:{workspace_id};locality:{locality_id}",
+                "scope_locality": f"locality:{locality_id}",
                 "occurrence_preservation": "comparison occurrence durably recorded",
             },
             "yielding_act": "Compare",
@@ -410,7 +403,7 @@ def record_assertion_yield_comparison(
 def assertions_of_recorded_assertion_comparison(
     event: Event,
 ) -> tuple[RecordedAssertionYieldDistinction, ...]:
-    """Reconstruct and verify every addressable result of one recorded Compare."""
+    """Read and verify every addressable result of one recorded Compare."""
 
     if event.kind != ASSERTION_YIELD_COMPARISON_RECORDED_KIND:
         raise AssertionComparisonError(
@@ -475,7 +468,7 @@ def assertions_of_recorded_assertion_comparison(
         raise AssertionComparisonError(
             f"{event.id} does not carry every distinct Compare result"
         )
-    reconstructed = []
+    read = []
     seen = set()
     seen_coordinates = set()
     for assertion in stated:
@@ -495,9 +488,7 @@ def assertions_of_recorded_assertion_comparison(
             or not isinstance(input_refs, list)
             or input_refs != outer_inputs
             or scope.get("compared_yields") != input_refs
-            or not isinstance(scope.get("workspace_id"), str)
             or not isinstance(scope.get("locality_id"), str)
-            or scope.get("workspace_id") != event.workspace_id
             or scope.get("locality_id") != event.locality_id
             or subject.get("compared_assertion_id")
             != outer_inputs[0]["assertion_id"]
@@ -534,7 +525,6 @@ def assertions_of_recorded_assertion_comparison(
         canonical = _distinction_assertion_identity(
             compared_assertion_id=subject["compared_assertion_id"],
             inputs=input_refs,
-            workspace_id=scope.get("workspace_id"),
             locality_id=scope.get("locality_id"),
             coordinate=content["coordinate"],
             present=content["present"],
@@ -546,7 +536,7 @@ def assertions_of_recorded_assertion_comparison(
                 f"{event.id} carries a comparison Assertion with invalid identity"
             )
         seen.add(identity)
-        reconstructed.append(
+        read.append(
             RecordedAssertionYieldDistinction(
                 assertion_id=identity,
                 yielding_event_id=event.id,
@@ -558,4 +548,4 @@ def assertions_of_recorded_assertion_comparison(
         raise AssertionComparisonError(
             f"{event.id} does not carry the exact Compare coordinate set"
         )
-    return tuple(reconstructed)
+    return tuple(read)

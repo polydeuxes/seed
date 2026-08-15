@@ -18,20 +18,20 @@ SECRET_FREE_GRANT_METADATA_FIELDS = frozenset(
         "interactive_prompt",
         "ssh_agent",
         "sudo_timestamp",
-        "external_vault_token_ref",
+        "vault_token_ref",
     }
 )
 
 
 def secret_boundary_key(name: object) -> str:
-    """The form this boundary compares a payload key in.
+    """The representation this boundary compares a payload key in.
 
     Three foldings: whitespace, case, and `-`/`_`. No input evidence says
     these spellings name one field; this boundary imposes that equality so a
     caller cannot slip `Token` past a check for `token`.
 
     Not the Book's Normalization (09.Assertion:15), which represents asserted
-    content and source coordinates in another exact form. No Assertion,
+    content and source coordinates in another exact representation. No Assertion,
     asserted content, or source coordinate is involved here.
     """
 
@@ -47,8 +47,8 @@ def reject_secret_fields(
     """Reject dictionaries containing raw-secret field names.
 
     The boundary is intentionally key based: Seed must not accept payload slots
-    named like raw secret carriers. References to external secret systems should
-    use explicit ``*_ref`` fields such as ``external_vault_token_ref`` instead of
+    named like raw secret carriers. References to separate secret systems should
+    use explicit ``*_ref`` fields such as ``vault_token_ref`` instead of
     raw ``token`` fields.
     """
 

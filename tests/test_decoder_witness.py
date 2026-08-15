@@ -55,7 +55,7 @@ def test_a_second_witness_partitions_the_same_bytes_differently():
     """
 
     utf8 = classes("utf-8")
-    ascii_ = classes("ascii", max_length=2)
+    ascii_ = classes("ascii", max_byte_count=2)
 
     assert len(ascii_) == 2
     accepted_alone = {
@@ -69,9 +69,9 @@ def test_a_second_witness_partitions_the_same_bytes_differently():
 def test_the_witness_refuses_more_than_a_leading_bit_rule_predicts():
     """The surplus is recorded, not explained.
 
-    A reading by leading bits alone would admit 0xc0, 0xc1 and 0xf5-0xff as
+    A read by leading bits alone would admit 0xc0, 0xc1 and 0xf5-0xff as
     first bytes. This witness refuses them, so its refusals carry something
-    beyond that reading. What that something is is not established here.
+    beyond that read. What that something is is not established here.
     """
 
     refused = next(

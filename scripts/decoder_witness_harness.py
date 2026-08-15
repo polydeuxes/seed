@@ -3,13 +3,13 @@
 
 A decoder is a witness. Asked whether it accepts an exact byte sequence it
 answers, and the answer is attributed testimony about that decoder, not a fact
-about the bytes. What it accepts and refuses is measurable without reading it
+about the bytes. What it accepts and refuses is measurable without read it
 and without adopting its vocabulary.
 
 **Nothing is copied.** This runs a decoder and records outcomes. No
 implementation is read, transcribed, or derived from, so no implementation's
 licence is engaged by what this produces. The witness here is Python's own
-codec, and any other decoder answers the same questions the same way.
+codec, and any other decoder answers the same probes the same way.
 
 **Its words are not taken with its answers.** A decoder's source and
 documentation carry `code point`, `continuation byte`, `leader`, `overlong`,
@@ -21,20 +21,20 @@ What one interrogation yields, for the codec ordinarily called UTF-8:
 ```text
   0x00-0x7f   128   accepted alone
   0xc2-0xdf    30   refused alone; accepted before one byte of 0x80-0xbf
-  0xe0-0xef    16   refused alone and in pairs; accepted at length three
-  0xf0-0xf4     5   accepted at length four
-  remaining    77   refused as a first byte at every length tried
+  0xe0-0xef    16   refused alone and in pairs; accepted at three bytes
+  0xf0-0xf4     5   accepted at four bytes
+  remaining    77   refused as a first byte at every byte count tried
 ```
 
 Five classes with exact boundaries, summing to 256. `0xc0`, `0xc1` and
-`0xf5`-`0xff` fall in the refused class though a bit-pattern reading would
+`0xf5`-`0xff` fall in the refused class though a bit-pattern read would
 admit them, so the witness refuses more than a leading-bit rule predicts, and
 that surplus is itself recorded rather than explained.
 
 Usage:
 
     decoder_witness_harness.py --codec utf-8
-    decoder_witness_harness.py --codec ascii --max-length 2
+    decoder_witness_harness.py --codec ascii --max-byte-count 2
 """
 
 from __future__ import annotations
@@ -59,7 +59,7 @@ def accepts(codec: str, sequence: tuple[int, ...]) -> bool:
 
     Some witnesses emit warnings while answering -- `unicode_escape` reports
     invalid escape sequences for most of the 256 single bytes. A warning is not
-    a refusal and does not change what the witness returned, so it is filtered
+    a refusal and does not revision what the witness returned, so it is filtered
     at import rather than read as an outcome. Filtering per call costs 14x,
     measured, and this runs millions of times.
     """
@@ -77,11 +77,13 @@ def admissible_followers(codec: str, first: int) -> list[int]:
     return [second for second in range(256) if accepts(codec, (first, second))]
 
 
-def shortest_accepted_length(codec: str, first: int, max_length: int) -> int | None:
-    """The shortest length at which this byte begins something accepted.
+def shortest_accepted_byte_count(
+    codec: str, first: int, max_byte_count: int
+) -> int | None:
+    """The smallest byte count at which this byte begins something accepted.
 
-    Lengths beyond two are probed with followers drawn from the range the
-    length-two probe found admissible, which is a choice this harness makes to
+    Byte counts beyond two are probed with followers drawn from the range the
+    two-byte probe found admissible, which is a coordinate this harness fixes to
     keep the probe finite. A byte reported as refused was refused under that
     probe, not under every sequence.
     """
@@ -90,20 +92,20 @@ def shortest_accepted_length(codec: str, first: int, max_length: int) -> int | N
         return 1
     if admissible_followers(codec, first):
         return 2
-    for length in range(3, max_length + 1):
-        for tail in _tails(length - 1):
+    for byte_count in range(3, max_byte_count + 1):
+        for tail in _tails(byte_count - 1):
             if accepts(codec, (first, *tail)):
-                return length
+                return byte_count
     return None
 
 
 def _tails(count: int) -> list[tuple[int, ...]]:
-    """Tails probed at lengths beyond two.
+    """Tails probed beyond two bytes.
 
     Each position is probed at both ends of the admissible range and once
     inside it rather than across all 64 values. A byte accepted only for some
     tail outside this probe is reported refused, which is a bound on the probe
-    and is stated rather than hidden: an exhaustive probe at length four is
+    and is stated rather than hidden: an exhaustive probe at four bytes is
     64^3 tails for every byte it must refuse.
     """
 
@@ -114,14 +116,14 @@ def _tails(count: int) -> list[tuple[int, ...]]:
 
 
 @lru_cache(maxsize=16)
-def classes(codec: str, max_length: int = 4) -> dict[object, list[int]]:
+def classes(codec: str, max_byte_count: int = 4) -> dict[object, list[int]]:
     """Bytes grouped by the outcomes the witness gave them."""
 
     grouped: dict[object, list[int]] = collections.defaultdict(list)
     for first in range(256):
-        length = shortest_accepted_length(codec, first, max_length)
-        followers = admissible_followers(codec, first) if length == 2 else []
-        key = (length, (followers[0], followers[-1]) if followers else None)
+        byte_count = shortest_accepted_byte_count(codec, first, max_byte_count)
+        followers = admissible_followers(codec, first) if byte_count == 2 else []
+        key = (byte_count, (followers[0], followers[-1]) if followers else None)
         grouped[key].append(first)
     return dict(grouped)
 
@@ -132,7 +134,7 @@ MIXED = "mixed"
 
 
 def class_adjacency(
-    codec: str, recovered: dict[object, list[int]]
+    codec: str, read: dict[object, list[int]]
 ) -> dict[tuple[object, object], str]:
     """Whether every, no, or some member pair of two classes is accepted.
 
@@ -151,8 +153,8 @@ def class_adjacency(
     """
 
     outcomes: dict[tuple[object, object], str] = {}
-    for first_key, firsts in recovered.items():
-        for second_key, seconds in recovered.items():
+    for first_key, firsts in read.items():
+        for second_key, seconds in read.items():
             results = {
                 accepts(codec, (first, second))
                 for first in firsts
@@ -164,10 +166,10 @@ def class_adjacency(
     return outcomes
 
 
-def refine(codec: str, recovered: dict[object, list[int]]) -> dict[object, list[int]]:
+def refine(codec: str, read: dict[object, list[int]]) -> dict[object, list[int]]:
     """Split each class by how its members behaved, where they behaved apart.
 
-    A class whose members all behaved alike survives unchanged. A class the
+    A class whose members all behaved alike survives preserved. A class the
     adjacency measurement found mixed decomposes into the members that share
     an outcome vector.
 
@@ -176,9 +178,9 @@ def refine(codec: str, recovered: dict[object, list[int]]) -> dict[object, list[
     different purpose and establishing a finer one.
     """
 
-    representatives = [members[0] for members in recovered.values()]
+    representatives = [members[0] for members in read.values()]
     refined: dict[object, list[int]] = {}
-    for key, members in recovered.items():
+    for key, members in read.items():
         grouped: dict[object, list[int]] = collections.defaultdict(list)
         for byte in members:
             signature = (
@@ -246,7 +248,7 @@ def survey() -> list[tuple[str, int, int, int]]:
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--codec", default="utf-8")
-    parser.add_argument("--max-length", type=int, default=4)
+    parser.add_argument("--max-byte-count", type=int, default=4)
     parser.add_argument("--survey", action="store_true")
     args = parser.parse_args()
 
@@ -260,11 +262,11 @@ def main() -> int:
             print(f"  {rungs:>6}{many:>11}   {name:<18} {first} -> {last}")
         return 0
 
-    grouped = classes(args.codec, args.max_length)
+    grouped = classes(args.codec, args.max_byte_count)
     print(f"  witness: the codec named {args.codec!r}")
     print(f"  {'bytes':14}{'count':>7}{'shortest accepted':>19}   followers")
     total = 0
-    for (length, followers), members in sorted(
+    for (byte_count, followers), members in sorted(
         grouped.items(), key=lambda item: (item[0][0] is None, item[0][0])
     ):
         total += len(members)
@@ -274,7 +276,7 @@ def main() -> int:
             else f"{members[0]:#04x}"
         )
         shown = f"{followers[0]:#04x}-{followers[1]:#04x}" if followers else "-"
-        print(f"  {span:14}{len(members):>7}{str(length):>19}   {shown}")
+        print(f"  {span:14}{len(members):>7}{str(byte_count):>19}   {shown}")
     print(f"  {'':14}{total:>7}   classes: {len(grouped)}")
     return 0
 

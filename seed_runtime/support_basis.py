@@ -29,7 +29,7 @@ re-deriving the inputs from the ledger in order to check it against itself.
 Representation of it.**
 
 ```text
-  scope              workspace, session, occurrence kind
+  scope              Locality and occurrence kind
   boundary           the exact append prefix the selection ran through
   selection rule     which occurrences within that scope were taken
   commitment         a digest over the exact ordered result
@@ -37,7 +37,7 @@ Representation of it.**
 
 **The selection rule is not metadata.** It is part of the basis's identity. Today
 every act has as input the complete inputs, so scope and boundary alone would
-reconstruct it — but an act that input three occurrences out of four thousand
+read it — but an act that input three occurrences out of four thousand
 would be validated as having input all four thousand, and the reference
 would be silently false rather than merely lossy. The rule is what keeps a
 subset-Act with participating inputs representable, and an unrecognised rule is refused rather
@@ -46,8 +46,8 @@ than assumed to mean the whole inputs.
 **The commitment is what makes validation checkable without the enumeration.**
 The check it replaces also validated the inputs from the ledger and compared
 it against the carried list, so this is not a stronger guarantee — it preserves
-substantially the same exactness in a form that is compact and reusable. What
-the commitment adds is that a later change to the selection code cannot silently
+substantially the same exactness in a representation that is compact and reusable. What
+the commitment adds is that a later revision to the selection code cannot silently
 redefine what an old finding's support was, and that one verified inputs can
 serve every finding referencing the same basis.
 """
@@ -60,10 +60,10 @@ from typing import Any, Iterable
 
 from seed_runtime.events import EventLedger, EventLedgerBoundary
 
-_COMMITMENT_DOMAIN = b"seed.support-basis.v1\0"
+_COMMITMENT_DOMAIN = b"seed.support-basis\0"
 
 # Every selection a support basis may declare. A rule outside this set is
-# refused: a basis whose selection cannot be performed is not reconstructible, and
+# refused: a basis whose selection cannot be performed is not addressable, and
 # guessing that it meant the whole inputs are the failure this set exists to
 # prevent.
 COMPLETE_INGRESS_INPUTS = "every preserved occurrence of the scope's kind through the boundary"
@@ -77,7 +77,7 @@ class SupportBasisError(ValueError):
 def _commit_part(digest: "hashlib._Hash", value: str) -> None:
     """Commit one part so no part can be mistaken for a different division.
 
-    Length-prefixed rather than separated. A separator only divides parts
+    Count-prefixed rather than separated. A separator only divides parts
     unambiguously while no part can contain it, and nothing constrains an
     `Event.id` to avoid one. Constraining identities to suit this digest would
     let a commitment dictate the repository's identity grammar, which is
@@ -117,9 +117,8 @@ def support_commitment(selection_rule: str, identities: Iterable[str]) -> str:
 
 @dataclass(frozen=True)
 class SupportBasis:
-    """Where a finding's support lives, and what it must reconstruct to."""
+    """Where a finding's support lives, and what it must read to."""
 
-    workspace_id: str
     locality_id: str
     occurrence_kind: str
     boundary_commitment: str
@@ -140,7 +139,7 @@ class SupportBasis:
             raise SupportBasisError(
                 f"a support basis must declare a recognised selection: {self.selection_rule!r}"
             )
-        for name in ("workspace_id", "locality_id", "occurrence_kind",
+        for name in ("locality_id", "occurrence_kind",
                      "boundary_commitment", "commitment"):
             value = getattr(self, name)
             if not isinstance(value, str) or not value:
@@ -160,7 +159,6 @@ class SupportBasis:
     def to_json_dict(self) -> dict[str, Any]:
         return {
             "scope": {
-                "workspace_id": self.workspace_id,
                 "locality_id": self.locality_id,
                 "occurrence_kind": self.occurrence_kind,
             },
@@ -177,7 +175,6 @@ class SupportBasis:
         try:
             scope = value["scope"]
             return cls(
-                workspace_id=scope["workspace_id"],
                 locality_id=scope["locality_id"],
                 occurrence_kind=scope["occurrence_kind"],
                 boundary_commitment=value["boundary"]["commitment"],
@@ -191,7 +188,6 @@ class SupportBasis:
 
 def declare_complete_inputs(
     *,
-    workspace_id: str,
     locality_id: str,
     occurrence_kind: str,
     boundary: EventLedgerBoundary,
@@ -201,7 +197,6 @@ def declare_complete_inputs(
 
     ordered = tuple(identities)
     return SupportBasis(
-        workspace_id=workspace_id,
         locality_id=locality_id,
         occurrence_kind=occurrence_kind,
         boundary_commitment=boundary.commitment,
@@ -212,7 +207,7 @@ def declare_complete_inputs(
 
 
 class SupportValidator:
-    """Reconstructs a declared support basis, once per distinct basis.
+    """Reads a declared support basis, once per distinct basis.
 
     **Reuse here is not a skipped verification, and a cache hit does not read
     the ledger.** Every distinct uncached basis is validated from the ledger,
@@ -223,15 +218,15 @@ class SupportValidator:
     committing to exactly the same identities under exactly the same rule, and
     because a hit still rechecks the declared count.
 
-    `#2486` measured the reuse this exists for: reconstructing one count layer
-    performed 205,328 ingress reads over **16** distinct inputss.
+    `#2486` measured the reuse this exists for: read one count layer
+    performed 205,328 ingest reads over **16** distinct inputss.
 
     An instance is bounded to one act. It holds identities, not occurrences.
     """
 
     def __init__(self, ledger: EventLedger) -> None:
         self._ledger = ledger
-        self._validated: dict[tuple[str, str, str, str, str], tuple[str, ...]] = {}
+        self._validated: dict[tuple[str, str, str, str], tuple[str, ...]] = {}
         self.reads = 0
         self.reuses = 0
 
@@ -248,7 +243,6 @@ class SupportValidator:
 
     def validate(self, basis: SupportBasis) -> tuple[str, ...]:
         key = (
-            basis.workspace_id,
             basis.locality_id,
             basis.occurrence_kind,
             basis.boundary_commitment,
@@ -269,7 +263,7 @@ class SupportValidator:
             self.reuses += 1
             return cached
         # No rule check here. A basis refuses any selection outside
-        # `SUPPORT_SELECTION_RULES` at construction, and that set has one
+        # `SUPPORT_SELECTION_RULES` when supplied, and that set has one
         # member, so a basis reaching this point can only carry the complete
         # inputs — validation performs every rule a basis can hold.
         #
@@ -281,7 +275,6 @@ class SupportValidator:
         self.reads += 1
         identities = tuple(
             self._ledger.iter_locality_kind_ids(
-                basis.workspace_id,
                 basis.locality_id,
                 basis.occurrence_kind,
                 through=EventLedgerBoundary(basis.boundary_commitment),

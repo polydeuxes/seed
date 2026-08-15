@@ -2,7 +2,7 @@
 
 A specimen is bytes. Partitioning them by offset under a candidate stride is
 exact, and so are the resulting value sets. Which stride, if any, frames the
-material is a further question these do not answer.
+material is a further distinction these do not answer.
 """
 
 from __future__ import annotations
@@ -31,8 +31,8 @@ def test_support_is_the_exact_set_of_values_at_each_offset():
 def test_one_offset_carries_two_values_where_another_carries_many():
     """The measurement, stated as the comparison it is.
 
-    What the two values are about is not measured here. Reading them as a high
-    half, or as sign extension, is an interpretation of why, and no occurrence
+    What the two values are about is not measured here. Read them as a high
+    half, or as sign extension, is a claim about why, and no occurrence
     established it.
     """
 
@@ -70,20 +70,20 @@ def test_a_stride_and_its_multiple_carry_the_same_distinction():
     assert diversity[1] == diversity[3] == position_diversity(block(100), 2)[1]
 
 
-def test_no_module_level_name_states_a_recovered_framing():
+def test_no_module_level_name_states_a_read_framing():
     """The verdict is withdrawn, not renamed."""
 
     import framing_ladder_harness as harness
 
-    assert not hasattr(harness, "recovered_width")
+    assert not hasattr(harness, "read_width")
     assert not [name for name in dir(harness) if "sample_width" in name]
 
 
 def test_a_stride_does_not_say_where_a_group_begins():
-    """The same material read from byte one gives the same classes, exchanged.
+    """The same material read from byte one gives the same classes in reversed places.
 
     A partition starts somewhere, and starting at byte zero is this harness's
-    choice. Positional structure at some stride is compatible with either
+    determination. Positional structure at some stride is compatible with either
     phase, so it does not establish a boundary.
     """
 
@@ -96,7 +96,7 @@ def test_a_stride_does_not_say_where_a_group_begins():
     assert at_zero[0] != at_zero[1]
 
 
-def test_the_exchange_is_exact_rather_than_approximate():
+def test_the_reversal_is_exact_rather_than_approximate():
     raw = block(100)
     at_zero = position_support(raw, 2, phase=0)
     at_one = position_support(raw, 2, phase=1)
@@ -108,29 +108,29 @@ def test_the_exchange_is_exact_rather_than_approximate():
 
 
 def test_phase_defaults_to_a_choice_and_not_a_finding():
-    """Reading from byte zero is what the default does, and only that."""
+    """Read from byte zero is what the default does, and only that."""
 
     raw = block(100)
     assert position_support(raw, 2) == position_support(raw, 2, phase=0)
     assert position_support(raw, 2) != position_support(raw, 2, phase=1)
 
 
-def test_the_materials_own_extent_is_not_an_internal_boundary():
+def test_the_materials_own_byte_count_is_not_an_internal_boundary():
     """An occurrence begins at its first byte. Nothing inside it does.
 
     A partition read from byte zero starts where the material starts, which
     says something about the partition. Promoting it to "a unit also begins
-    here" would take the occurrence's exact extent as evidence about the
+    here" would take the occurrence's exact byte count as evidence about the
     occurrence's contents.
     """
 
     raw = block(100)
 
-    # The extent is exact and available.
+    # The byte count is exact and available.
     assert len(raw) == 1600
 
     # And it is compatible with either partition phase, which is what makes it
-    # no evidence for one: the classes exchange rather than one disagreeing.
+    # no evidence for one: the classes trade places rather than one disagreeing.
     at_zero = position_support(raw, 2, phase=0)
     at_one = position_support(raw, 2, phase=1)
     assert {frozenset(at_zero.values())} == {frozenset(at_one.values())}

@@ -22,7 +22,7 @@ Neither a result condition nor a bounded distinction requires another Act. Autho
 - bounded distinction != Authorization
 - available mechanism != authorized Act
 - Unknown condition != absent condition
-- current Standing changed != prior distinction revised
+- current Standing is different != prior distinction revised
 - no movement != lawful Stop
 
 ## Counterexamples or failure modes

@@ -8,7 +8,7 @@ The relation among preserved Events, Assertion-bearing material, and bounded cur
 
 An Event preserves what its responsible recording occurrence records. Recording an Assertion carrying source coordinates does not establish its content beyond the Standing supported by the responsible Standing occurrence.
 
-Replay, aggregation, ranking, suppression, and construction of a bounded reading may expose preserved material under exact rules and boundaries. They do not create upstream Evidence, occurrence time, Applicability, or current Standing by identity. A responsible Act may use exposed material only through its exact Evidence, established support relations, Authority, Scope, locality, freshness, conflict, expiry, Unknowns, and surviving limits.
+Replay, aggregation, ranking, suppression, and a bounded read may expose preserved material under exact rules and boundaries. They do not create upstream Evidence, occurrence time, Applicability, or current Standing by identity. A responsible Act may use exposed material only through its exact Evidence, established support relations, Authority, Scope, locality, freshness, conflict, expiry, Unknowns, and surviving limits.
 
 ## Addressable boundaries
 

@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
 """Read the Book's own distinction statements as a witness about its terms.
 
-Every chapter carries lines of the form `X != Y`. Asked about two terms, this
+Every chapter carries lines of the representation `X != Y`. Asked about two terms, this
 answers whether the Book holds them apart. That is testimony about the Book,
 not about whatever the terms name.
 
-The same refinement the codec witnesses ride applies here without change: the
+The same refinement the codec witnesses ride applies here without revision: the
 subjects are terms rather than bytes, and the witness is a corpus rather than
 a decoder.
 

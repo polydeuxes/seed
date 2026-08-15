@@ -1,10 +1,10 @@
 """Declared measurement whose subject is Seed's own recorded occurrences.
 
-**No new Act.** `#2351` reconstructed declared measurement and said no new act,
+**No new Act.** `#2351` read declared measurement and said no new act,
 noun, or grammar is required; recurrence and count are already its findings.
 This measures a different subject — recorded comparison and measurement
 occurrences instead of preserved material — and yields an exact count of the
-bounded exchanges a distinction was measured in. Recurrence is one reading of
+bounded localities a distinction was measured in. Recurrence is one read of
 that count, established only where the count exceeds one.
 A distinct record shape is established (`#2399`: a downstream shape must not
 decide an upstream subject); a distinct Responsibility is not.
@@ -16,7 +16,7 @@ Responsibility nothing established, and `cohort`, `inputs`, `body` and
 reports is:
 
 ```text
-this measured distinction was measured in N of the declared bounded exchanges
+this measured distinction was measured in N of the declared bounded localities
 under the declared rule and Scope
 ```
 
@@ -25,7 +25,7 @@ and recurrence is asserted only where N exceeds one.
 **Its result stands on recorded Measurement occurrences.** Each occurrence
 already carries the declared identity and every exact occupancy it measured.
 Materializing every pairwise Compare between those occurrences adds no input to
-the count and grows quadratically with the number of bounded exchanges.  The
+the count and grows quadratically with the number of bounded localities.  The
 measurement therefore folds each exact Measurement once.  Compare remains a
 separate Act when literal comparison is actually requested.
 
@@ -47,7 +47,7 @@ from seed_runtime.events import EventLedger, EventLedgerBoundary
 from seed_runtime.event import Event
 from seed_runtime.preserved_material_measurement import MEASUREMENT_RECORDED_KIND
 
-EXCHANGE_COUNT_RECORDED_KIND = "operator.measurement.exchange_count_recorded"
+LOCALITY_COUNT_RECORDED_KIND = "operator.measurement.locality_count_recorded"
 
 MEASURED_ASSERTION_STANDING_COORDINATE_RESPONSIBILITY = (
     "preserve this measured Assertion's carried Standing coordinates"
@@ -62,21 +62,21 @@ DECLARED_IDENTITY: tuple[str, ...] = (
     "equivalence_rule",
     "counting_scope",
     "measured_position",
-    "measurement_form",
+    "measurement_distinction",
 )
 
 FORBIDDEN_INFERENCES: tuple[str, ...] = (
     "independently preserved is not independent; nothing here establishes that "
-    "the exchanges' sources are unrelated",
+    "the localities' sources are unrelated",
     "recurrence is repetition, and repetition is not independent corroboration",
     "an exact count is a finding at any value; a count of one establishes no "
     "recurrence",
-    "the count reports the bounded exchanges among the occurrences this "
+    "the count reports the bounded localities among the occurrences this "
     "measurement input, not a property of the material",
-    "an exchange that never measured the coordinate has not declined to measure "
+    "an locality that never measured the coordinate has not declined to measure "
     "the distinction",
     "measuring the same distinction establishes no relation between the "
-    "exchanges that measured it",
+    "localities that measured it",
 )
 
 
@@ -108,7 +108,7 @@ class MeasuredCountFinding:
 
     `01.Source:28` lists **count** and **recurrence** as separate findings of
     a declared measurement. `#2430` named this shape `RecurrenceFinding` and
-    rendered a count of one as "recurs in 1 bounded exchanges", which asserts
+    represented a count of one as "recurs in 1 bounded localities", which asserts
     recurrence where nothing recurred. The count is the finding; recurrence is
     established only where the count establishes it.
     """
@@ -119,20 +119,19 @@ class MeasuredCountFinding:
     coordinate_not_measured: tuple[str, ...]
     input_event_ids: tuple[str, ...]
     input_ledger_boundary: EventLedgerBoundary
-    workspace_id: str
-    bounded_exchanges: tuple[str, ...]
+    bounded_localities: tuple[str, ...]
     measured_in_support_event_ids: tuple[str, ...] = ()
     measured_without_distinction_support_event_ids: tuple[str, ...] = ()
 
     @property
-    def exchange_count(self) -> int:
+    def locality_count(self) -> int:
         """The exact count. Always a finding, at any value."""
         return len(self.measured_in)
 
     @property
     def recurrence_established(self) -> bool:
         """Recurrence needs something to have recurred."""
-        return self.exchange_count > 1
+        return self.locality_count > 1
 
     def to_json_dict(self) -> dict[str, Any]:
         return {
@@ -140,10 +139,9 @@ class MeasuredCountFinding:
             "measured_in": list(self.measured_in),
             "measured_without_distinction": list(self.measured_without_distinction),
             "coordinate_not_measured": list(self.coordinate_not_measured),
-            "exchange_count": self.exchange_count,
+            "locality_count": self.locality_count,
             "recurrence_established": self.recurrence_established,
-            "bounded_exchanges": list(self.bounded_exchanges),
-            "workspace_id": self.workspace_id,
+            "bounded_localities": list(self.bounded_localities),
             "input_event_ids": list(self.input_event_ids),
             "input_ledger_boundary": {
                 "commitment": self.input_ledger_boundary.commitment,
@@ -179,7 +177,7 @@ class MeasuredAssertion:
                 "authority": "unestablished",
                 "evidence_scope": (
                     "measurement evidence only; establishes no relation between "
-                    "the exchanges, no source independence, and no corroboration"
+                    "the localities, no source independence, and no corroboration"
                 ),
                 "scope_locality": "the exact assertion_scope carried here",
                 "occurrence_preservation": (
@@ -194,7 +192,7 @@ class MeasuredAssertion:
             "support_basis": {
                 "event_ids": list(self.support_event_ids),
                 # These dependencies are local to the same yielding
-                # occurrence. Reconstruction binds each to that occurrence's id
+                # occurrence. Each remains bound to that occurrence's identity
                 # before exposing it to a downstream Act.
                 "local_assertion_ids": list(self.support_assertion_ids),
             },
@@ -205,17 +203,16 @@ class MeasuredAssertion:
             ),
             "completeness_scope": (
                 {
-                    "workspace_id": self.scope["workspace_id"],
-                    "locality_ids": list(self.scope["bounded_exchanges"]),
+                    "locality_ids": list(self.scope["bounded_localities"]),
                     "occurrence_kinds": list(self.completeness_occurrence_kinds),
-                    "requires_session_existence": True,
+                    "requires_locality_existence": True,
                 }
                 if self.completeness_boundary is not None
                 else None
             ),
             "unknowns": [
                 "what any measured representation means remains Unknown",
-                "whether the exchanges stand in any relation remains Unknown",
+                "whether the localities stand in any relation remains Unknown",
                 "whether their sources are independent remains Unknown",
             ],
             "forbidden_inferences": list(FORBIDDEN_INFERENCES),
@@ -228,7 +225,7 @@ class RecordedMeasuredAssertion:
 
     assertion_id: str
     yielding_event_id: str
-    yielding_session_id: str | None
+    yielding_locality_id: str | None
     result: str
     payload: dict[str, Any]
     support_assertion_refs: tuple[dict[str, str], ...] = ()
@@ -242,9 +239,9 @@ class RecordedMeasuredAssertion:
 
 
 def assertions_of_recorded_measurement(event: Event) -> tuple[RecordedMeasuredAssertion, ...]:
-    """Reconstruct every Assertion from one exact yielding occurrence."""
+    """Read every Assertion from one exact yielding occurrence."""
 
-    if event.kind != EXCHANGE_COUNT_RECORDED_KIND:
+    if event.kind != LOCALITY_COUNT_RECORDED_KIND:
         raise RecurrenceMeasurementError(
             f"{event.id} is {event.kind}, not a recurrence Measurement occurrence"
         )
@@ -253,7 +250,7 @@ def assertions_of_recorded_measurement(event: Event) -> tuple[RecordedMeasuredAs
         raise RecurrenceMeasurementError(
             f"{event.id} does not preserve its distinct Assertions"
         )
-    reconstructed = []
+    read = []
     seen = set()
     for assertion in stated:
         if not isinstance(assertion, dict):
@@ -282,14 +279,11 @@ def assertions_of_recorded_measurement(event: Event) -> tuple[RecordedMeasuredAs
                 f"{event.id} carries an Assertion without exact identity, result, "
                 "subject, scope, and content"
             )
-        workspace_id = scope.get("workspace_id")
-        bounded_exchanges = scope.get("bounded_exchanges")
+        bounded_localities = scope.get("bounded_localities")
         declared_identity = scope.get("declared_identity")
         if (
-            not isinstance(workspace_id, str)
-            or not workspace_id
-            or not isinstance(bounded_exchanges, list)
-            or not all(isinstance(value, str) for value in bounded_exchanges)
+            not isinstance(bounded_localities, list)
+            or not all(isinstance(value, str) for value in bounded_localities)
             or not isinstance(declared_identity, dict)
             or any(subject.get(name) != value for name, value in declared_identity.items())
         ):
@@ -299,8 +293,7 @@ def assertions_of_recorded_measurement(event: Event) -> tuple[RecordedMeasuredAs
         canonical = _canonical_measured_assertion_identity(
             result=result,
             subject=subject,
-            workspace_id=workspace_id,
-            bounded_exchanges=bounded_exchanges,
+            bounded_localities=bounded_localities,
             content=content,
         )
         if identity != canonical:
@@ -313,25 +306,25 @@ def assertions_of_recorded_measurement(event: Event) -> tuple[RecordedMeasuredAs
                 f"{event.id} carries duplicate Assertion identity {identity}"
             )
         seen.add(identity)
-        reconstructed.append(
+        read.append(
             RecordedMeasuredAssertion(
                 assertion_id=identity,
                 yielding_event_id=event.id,
-                yielding_session_id=event.locality_id,
+                yielding_locality_id=event.locality_id,
                 result=result,
                 payload=assertion,
             )
         )
-    identities = {assertion.assertion_id for assertion in reconstructed}
+    identities = {assertion.assertion_id for assertion in read}
     by_result = {}
-    for assertion in reconstructed:
+    for assertion in read:
         if assertion.result in by_result:
             raise RecurrenceMeasurementError(
                 f"{event.id} carries duplicate Assertion result {assertion.result}"
             )
         by_result[assertion.result] = assertion
     bound = []
-    for assertion in reconstructed:
+    for assertion in read:
         support = assertion.payload.get("support_basis")
         local_ids = support.get("local_assertion_ids") if isinstance(support, dict) else None
         if not isinstance(local_ids, list) or not all(
@@ -365,7 +358,7 @@ def assertions_of_recorded_measurement(event: Event) -> tuple[RecordedMeasuredAs
             RecordedMeasuredAssertion(
                 assertion_id=assertion.assertion_id,
                 yielding_event_id=assertion.yielding_event_id,
-                yielding_session_id=assertion.yielding_session_id,
+                yielding_locality_id=assertion.yielding_locality_id,
                 result=assertion.result,
                 payload=assertion.payload,
                 support_assertion_refs=tuple(
@@ -383,17 +376,15 @@ def assertions_of_recorded_measurement(event: Event) -> tuple[RecordedMeasuredAs
 def iter_recorded_measured_assertions(
     ledger: EventLedger,
     *,
-    workspace_id: str,
     locality_ids: Iterable[str],
     through: EventLedgerBoundary | None = None,
 ) -> Iterator[RecordedMeasuredAssertion]:
-    """Stream Assertions from exact declared sessions through one boundary."""
+    """Stream Assertions from exact declared Localities through one boundary."""
 
     for locality_id in tuple(dict.fromkeys(locality_ids)):
         for event in ledger.iter_locality_kind(
-            workspace_id,
             locality_id,
-            EXCHANGE_COUNT_RECORDED_KIND,
+            LOCALITY_COUNT_RECORDED_KIND,
             through=through,
         ):
             yield from assertions_of_recorded_measurement(event)
@@ -413,18 +404,18 @@ def get_recorded_measured_assertion(
     return None
 
 
-def occurrences_of_declared_exchanges(
-    ledger: EventLedger, *, workspace_id: str, bounded_exchanges: Iterable[str]
+def occurrences_of_declared_localities(
+    ledger: EventLedger, *, bounded_localities: Iterable[str]
 ) -> Iterator[tuple[str, list[Event]]]:
-    """Yield each declared exchange's occurrences for compatibility.
+    """Yield each declared locality's occurrences for compatibility.
 
     Recurrence measurement no longer has as input this list-returning helper: its
     two passes use ``iter_locality_kind`` so comparison Events are folded one at
     a time. Existing callers that require the complete occurrences of one
-    exchange retain the per-exchange API introduced by ``#2441``.
+    locality retain the per-locality API introduced by ``#2441``.
     """
-    for exchange in bounded_exchanges:
-        yield exchange, ledger.list_locality(workspace_id, exchange)
+    for locality in bounded_localities:
+        yield locality, ledger.list_locality(locality)
 
 
 def _declared_of_measurement(event: Event) -> tuple[tuple[str, str], ...] | None:
@@ -436,43 +427,35 @@ def _declared_of_measurement(event: Event) -> tuple[tuple[str, str], ...] | None
     return tuple(declared)
 
 
-def measure_exchange_counts(
-    ledger: EventLedger, *, workspace_id: str, bounded_exchanges: Iterable[str]
+def measure_locality_counts(
+    ledger: EventLedger, *, bounded_localities: Iterable[str]
 ) -> list[MeasuredCountFinding]:
-    """Count, over recorded occurrences, the exchanges each distinction was measured in.
-
-    `bounded_exchanges` is required and is the declared scope. `#2430` swept
-    every measurement in the workspace instead, so an exchange entered the
-    denominator by having measured anything at all — a measurement of
-    ``"nothing"`` set the denominator of a finding about ``"a"``. That is
-    workspace visibility choosing Applicability. `01.Source:28` requires a
-    recurrence assertion to disclose the bounded scope within which occurrences
-    were counted, and a swept scope is not a declared one.
+    """Count, over recorded occurrences, the localities each distinction was measured in.
 
     Each Measurement occurrence is read once.  Pairwise Compare occurrences
     are neither required nor read: their endpoints contain no occupancy that
     the Measurement occurrences do not already carry.
     """
 
-    declared_exchanges = tuple(sorted(set(bounded_exchanges)))
-    if not declared_exchanges:
+    declared_localities = tuple(sorted(set(bounded_localities)))
+    if not declared_localities:
         raise RecurrenceMeasurementError(
             "a declared measurement discloses the bounded scope within which "
-            "occurrences were counted; no bounded exchanges were declared"
+            "occurrences were counted; no bounded localities were declared"
         )
     # Every probe and both occurrence passes have as input one ledger-local append
     # prefix. The boundary is carried as read provenance; it is not an Event
     # identity and does not strengthen the occurrences read through it.
-    input_ledger_boundary = ledger.capture_boundary()
-    # Declaring the Scope chooses which established exchanges this measurement
+    input_ledger_boundary = ledger.append_boundary()
+    # Declaring the Scope chooses which established localities this measurement
     # concerns. It does not establish them: a recorded occurrence within the
-    # session boundary does. Each declared exchange is read through that exact
+    # Locality boundary does. Each declared locality is read through that exact
     # boundary, so the existence check costs one bounded read per declared
-    # exchange rather than a pass over the workspace.
-    # The pass retains only compact indexes reconstructed from Measurement.
+    # locality.
+    # The pass retains only compact indexes read from Measurement.
     # The existence probe remains separate:
-    # declaration chooses among established sessions, and a non-measurement
-    # occurrence can establish a session without supplying a measured coordinate.
+    # declaration chooses among established Localities, and a non-measurement
+    # occurrence can establish a Locality without supplying a measured coordinate.
     measured_coordinate: dict[tuple, set[str]] = {}
     coordinate_evidence: dict[tuple, dict[str, set[str]]] = {}
     observed: dict[MeasuredDistinction, set[str]] = {}
@@ -480,15 +463,12 @@ def measure_exchange_counts(
     unestablished: list[str] = []
     measurement_seen = False
 
-    for exchange in declared_exchanges:
-        if not ledger.has_locality(
-            workspace_id, exchange, through=input_ledger_boundary
-        ):
-            unestablished.append(exchange)
+    for locality in declared_localities:
+        if not ledger.has_locality(locality, through=input_ledger_boundary):
+            unestablished.append(locality)
             continue
         for event in ledger.iter_locality_kind(
-            workspace_id,
-            exchange,
+            locality,
             MEASUREMENT_RECORDED_KIND,
             through=input_ledger_boundary,
         ):
@@ -496,9 +476,9 @@ def measure_exchange_counts(
             declared = _declared_of_measurement(event)
             if declared is None:
                 continue
-            measured_coordinate.setdefault(declared, set()).add(exchange)
+            measured_coordinate.setdefault(declared, set()).add(locality)
             coordinate_evidence.setdefault(declared, {}).setdefault(
-                exchange, set()
+                locality, set()
             ).add(event.id)
             for occupancy in event.payload.get("occupancies", []):
                 right = occupancy.get("representation")
@@ -508,14 +488,14 @@ def measure_exchange_counts(
                     right_representation=right,
                     declared=declared,
                 )
-                observed.setdefault(key, set()).add(exchange)
+                observed.setdefault(key, set()).add(locality)
                 observed_evidence.setdefault(key, set()).add(event.id)
 
     if unestablished:
         raise RecurrenceMeasurementError(
-            "declared bounded exchanges with no recorded occurrence: "
+            "declared bounded localities with no recorded occurrence: "
             f"{', '.join(unestablished)}. Declaring a measurement's Scope "
-            "chooses among established exchanges; it does not establish them"
+            "chooses among established localities; it does not establish them"
         )
     if not measurement_seen:
         raise RecurrenceMeasurementError(
@@ -524,7 +504,7 @@ def measure_exchange_counts(
         )
 
     findings = []
-    declared_set = set(declared_exchanges)
+    declared_set = set(declared_localities)
     for key in sorted(
         observed,
         key=lambda k: (-len(observed[k]), k.left, k.right_representation),
@@ -535,15 +515,15 @@ def measure_exchange_counts(
         measured_without = measured - where
         measured_without_evidence = {
             event_id
-            for exchange in measured_without
+            for locality in measured_without
             for event_id in coordinate_evidence.get(key.declared, {}).get(
-                exchange, set()
+                locality, set()
             )
         }
         measured_in_evidence = set(observed_evidence[key])
         evidence = measured_in_evidence | measured_without_evidence
         # The third result stands on the complete Measurement-kind read for
-        # each declared exchange through the preserved ledger boundary. Copying
+        # each declared locality through the preserved ledger boundary. Copying
         # every unrelated Measurement id into every negative finding neither
         # establishes nor strengthens that completeness. Exact-coordinate,
         # Compare, and comparison-input Evidence remain carried below.
@@ -555,8 +535,7 @@ def measure_exchange_counts(
                 coordinate_not_measured=tuple(sorted(not_measured)),
                 input_event_ids=tuple(sorted(evidence)),
                 input_ledger_boundary=input_ledger_boundary,
-                workspace_id=workspace_id,
-                bounded_exchanges=declared_exchanges,
+                bounded_localities=declared_localities,
                 measured_in_support_event_ids=tuple(
                     sorted(measured_in_evidence)
                 ),
@@ -568,21 +547,21 @@ def measure_exchange_counts(
     return findings
 
 
-def render_measured_count(finding: MeasuredCountFinding) -> str:
+def measured_count_representation(finding: MeasuredCountFinding) -> str:
     """The literal sentence, and nothing stronger.
 
-    A count of one says it was measured in one exchange. It does not say it
+    A count of one says it was measured in one locality. It does not say it
     recurred, because it did not.
     """
 
     declared = dict(finding.distinction.declared)
     verb = "recurs in" if finding.recurrence_established else "was measured in"
-    exchanges = "exchange" if finding.exchange_count == 1 else "exchanges"
+    localities = "locality" if finding.locality_count == 1 else "localities"
     return (
         f"({declared['measured_left_representation']!r}, "
         f"{finding.distinction.right_representation!r}) {verb} "
-        f"{finding.exchange_count} bounded {exchanges} of "
-        f"{len(finding.bounded_exchanges)} declared, at "
+        f"{finding.locality_count} bounded {localities} of "
+        f"{len(finding.bounded_localities)} declared, at "
         f"{declared['measured_position']} under "
         f"{declared['equivalence_rule']} within {declared['counting_scope']}"
     )
@@ -592,15 +571,13 @@ def _canonical_measured_assertion_identity(
     *,
     result: str,
     subject: dict[str, Any],
-    workspace_id: str,
-    bounded_exchanges: Iterable[str],
+    bounded_localities: Iterable[str],
     content: dict[str, Any],
 ) -> str:
     identified = {
         "result": result,
         "distinction": subject,
-        "workspace_id": workspace_id,
-        "bounded_exchanges": list(bounded_exchanges),
+        "bounded_localities": list(bounded_localities),
         "content": content,
     }
     return "measured-assertion:" + json.dumps(
@@ -614,8 +591,7 @@ def _result_assertion_identity(
     return _canonical_measured_assertion_identity(
         result=result,
         subject=finding.distinction.to_json_dict(),
-        workspace_id=finding.workspace_id,
-        bounded_exchanges=finding.bounded_exchanges,
+        bounded_localities=finding.bounded_localities,
         content=content,
     )
 
@@ -634,18 +610,17 @@ def assertions_from_measured_count(
 
     subject = finding.distinction.to_json_dict()
     scope = {
-        "workspace_id": finding.workspace_id,
-        "bounded_exchanges": list(finding.bounded_exchanges),
+        "bounded_localities": list(finding.bounded_localities),
         "declared_identity": dict(finding.distinction.declared),
     }
 
     def exact_set(
         result: str,
-        exchanges: tuple[str, ...],
+        localities: tuple[str, ...],
         support: tuple[str, ...],
         occurrence_kinds: tuple[str, ...],
     ) -> MeasuredAssertion:
-        content = {"exchanges": list(exchanges)}
+        content = {"localities": list(localities)}
         return MeasuredAssertion(
             identity=_result_assertion_identity(finding, result, content),
             result=result,
@@ -676,7 +651,7 @@ def assertions_from_measured_count(
         (MEASUREMENT_RECORDED_KIND,),
     )
 
-    count_content = {"exchange_count": finding.exchange_count}
+    count_content = {"locality_count": finding.locality_count}
     count = MeasuredAssertion(
         identity=_result_assertion_identity(finding, "count", count_content),
         result="count",
@@ -711,7 +686,6 @@ def assertions_from_measured_count(
 def record_measured_count(
     ledger: EventLedger,
     *,
-    workspace_id: str,
     locality_id: str,
     finding: MeasuredCountFinding,
 ) -> Event:
@@ -736,9 +710,9 @@ def record_measured_count(
             "authority": "unestablished",
             "evidence_scope": (
                 "measurement evidence only; establishes no relation between the "
-                "exchanges, no source independence, and no corroboration"
+                "localities, no source independence, and no corroboration"
             ),
-            "scope_locality": f"workspace:{workspace_id};locality:{locality_id}",
+            "scope_locality": f"locality:{locality_id}",
             "occurrence_preservation": "count finding durably recorded",
         },
         "assertions": [assertion.to_json_dict() for assertion in assertions],
@@ -750,18 +724,16 @@ def record_measured_count(
             "recorded comparison occurrences and recorded measurement occurrences"
         ),
         "counting_scope": (
-            "the bounded exchanges declared to this measurement; an exchange "
-            "outside the declaration is not counted, and no exchange enters by "
+            "the bounded localities declared to this measurement; an locality "
+            "outside the declaration is not counted, and no locality enters by "
             "having measured something else"
         ),
         "mutates_cluster": False,
         "unknowns": [
             "what any measured representation means remains Unknown",
-            "whether the exchanges stand in any relation remains Unknown",
+            "whether the localities stand in any relation remains Unknown",
             "whether their sources are independent remains Unknown",
         ],
         "forbidden_inferences": list(FORBIDDEN_INFERENCES),
     }
-    return ledger.append(
-        EXCHANGE_COUNT_RECORDED_KIND, workspace_id, payload, locality_id=locality_id
-    )
+    return ledger.append(LOCALITY_COUNT_RECORDED_KIND, payload, locality_id=locality_id)

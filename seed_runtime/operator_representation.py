@@ -1,6 +1,6 @@
 """Recorded Representation Acts and emission of their bounded results.
 
-A Representation carries exact content from current session Standing.
+A Representation carries exact content from current Locality Standing.
 It may also carry alternatives whose source relations remain separately
 bounded.
 """
@@ -9,12 +9,15 @@ from __future__ import annotations
 
 from typing import Any, TextIO
 
-from seed_runtime.events import EventLedger
+from seed_runtime.events import CORRUPTED, EventLedger
 from seed_runtime.ids import new_id
-from seed_runtime.yield_evidence import _record_yield_evidence, yield_commitment
+from seed_runtime.yield_evidence import (
+    _record_yield_evidence,
+    read_yield_edge_requirements,
+    yield_commitment,
+)
 
 REPRESENTATION_RECORDED_KIND = "operator.representation.recorded"
-from seed_runtime.operator_ingress import SEED_ORIGIN
 
 REPRESENTATION_EMISSION_ATTEMPTED_KIND = "operator.representation.emission_attempted"
 REPRESENTATION_EMITTED_KIND = "operator.representation.emitted"
@@ -23,9 +26,9 @@ REPRESENTATION_ACT_EVIDENCE_KIND = "operator.representation.act_evidenced"
 REPRESENTATION_LOCALITY_EVIDENCE_KIND = (
     "operator.representation.locality_evidenced"
 )
-REPRESENTATION_CONVENTION = "operator_representation_v1"
+REPRESENTATION_CONVENTION = "operator_representation"
 REPRESENTATION_RESPONSIBILITY = (
-    "yield one bounded Representation from the exact carried session coordinates"
+    "yield one bounded Representation from the exact carried Locality coordinates"
 )
 REPRESENTATION_EMISSION_ACT_EVIDENCE_KIND = (
     "operator.representation.emission_act_evidenced"
@@ -36,10 +39,10 @@ REPRESENTATION_EMISSION_LOCALITY_EVIDENCE_KIND = (
 REPRESENTATION_EMISSION_ATTEMPT_LOCALITY_EVIDENCE_KIND = (
     "operator.representation.emission_attempt_locality_evidenced"
 )
-REPRESENTATION_EMISSION_CONVENTION = "operator_representation_emission_v1"
+REPRESENTATION_EMISSION_CONVENTION = "operator_representation_emission"
 REPRESENTATION_EMISSION_INPUT_ROLE = "exact bounded Representation"
 REPRESENTATION_EMISSION_RESPONSIBILITY = (
-    "write one exact rendered Representation to its declared text-stream boundary"
+    "write one exact Representation to its declared text-stream boundary"
 )
 
 def _dimensions(
@@ -64,19 +67,18 @@ def _dimensions(
 def record_operator_representation(
     ledger: EventLedger,
     *,
-    workspace_id: str,
     locality_id: str,
     locality_standing: dict[str, Any],
     alternative_sources: tuple[dict[str, Any], ...] = (),
 ) -> dict[str, Any]:
     """Record one exact bounded Representation and its exact Act occurrence.
 
-    The Representation is bounded by the supplied projected session Standing.
+    The Representation is bounded by the supplied projected Locality Standing.
     No alternatives are supplied by default; ``alternative_sources`` must be
     supplied by a caller with support for the eligibility and participation
     relations those alternatives carry.  Representation Act supplies no sources
     nor strengthens their standing, and no alternative's represented relation is derived
-    from ingress material.  This module records what a Representation carries;
+    from ingest material.  This module records what a Representation carries;
     it does not classify the resulting combination as a shape.
 
     Representation Act is not emission: the returned Representation carries no emission
@@ -85,7 +87,7 @@ def record_operator_representation(
     representation_id = new_id("operator_representation")
     representation_act_id = new_id("operator_representation_act")
     act_occurrence_id = new_id("operator_representation_act_occurrence")
-    scope = f"workspace:{workspace_id};locality:{locality_id}"
+    scope = f"locality:{locality_id}"
     alternatives = []
     coordinate_bindings: dict[str, str] = {}
     for position, source in enumerate(alternative_sources, start=1):
@@ -96,7 +98,7 @@ def record_operator_representation(
                 "alternative_id": alternative_id,
                 "role": source["role"],
                 "response_coordinate": coordinate,
-                "rendered_label": source["rendered_label"],
+                "label": source["label"],
                 "represented_source": dict(source["represented_source"]),
                 # Each A-to-G representation relation preserves its own
                 # boundary; Representation-level coordinates do not transfer
@@ -110,7 +112,7 @@ def record_operator_representation(
                     # record, not negative standing and not Unknown.
                     "evidence_event_ids": [],
                     "known_loss": [
-                        "rendered label compresses represented candidate "
+                        "label compresses represented candidate "
                         "represented relation"
                     ],
                     "unknowns": [],
@@ -119,13 +121,13 @@ def record_operator_representation(
             }
         )
         coordinate_bindings[coordinate] = alternative_id
-    representation_result = "bounded representation of current session Standing"
-    content = "bounded Representation of current session Standing"
+    representation_result = "bounded representation of current Locality Standing"
+    content = "bounded Representation of current Locality Standing"
     occurrence = "Representation Act durably recorded"
     known_loss: list[str] = []
     if alternatives:
         content = (
-            "bounded Representation of current session Standing with "
+            "bounded Representation of current Locality Standing with "
             f"{len(alternatives)} represented alternatives"
         )
         occurrence = (
@@ -134,22 +136,8 @@ def record_operator_representation(
         )
         representation_result += " with bounded alternatives and preserved source roles"
         known_loss.append(
-            "rendered label compresses represented candidate relation"
+            "label compresses represented candidate relation"
         )
-    # The latest recorded exchange finding, exposed exactly as recorded;
-    # representation Act neither strengthens nor reinterprets it.
-    prior_exchange_finding = locality_standing.get("latest_exchange_finding")
-    # The reconstructed source relation is exposed only when it belongs to the
-    # exact latest finding's identification.
-    represented_relation = None
-    latest_relation = locality_standing.get("latest_represented_relation")
-    if (
-        prior_exchange_finding is not None
-        and latest_relation is not None
-        and latest_relation["identification_event_id"]
-        == prior_exchange_finding["identification"]["event_id"]
-    ):
-        represented_relation = latest_relation
     result_payload = {
         "representation_ref": representation_id,
         "representation_act_id": representation_act_id,
@@ -158,15 +146,13 @@ def record_operator_representation(
         "alternatives": alternatives,
         "coordinate_bindings": coordinate_bindings,
         "locality_standing_as_of_event_id": locality_standing["as_of_event_id"],
-        "prior_exchange_finding": prior_exchange_finding,
-        "represented_relation": represented_relation,
         "known_loss": known_loss,
         "unknowns": [],
         "conflicts": [],
     }
+    result_payload["emission_text"] = _emission_text(result_payload)
     responsible_act_evidence = ledger.append(
         REPRESENTATION_ACT_EVIDENCE_KIND,
-        workspace_id,
         {
             "representation_act_id": representation_act_id,
             "act_occurrence_id": act_occurrence_id,
@@ -186,7 +172,6 @@ def record_operator_representation(
     )
     yield_evidence = _record_yield_evidence(
         ledger,
-        workspace_id=workspace_id,
         locality_id=locality_id,
         convention=REPRESENTATION_CONVENTION,
         yielding_act="bounded Representation Act",
@@ -200,7 +185,6 @@ def record_operator_representation(
     )
     locality_evidence = ledger.append(
         REPRESENTATION_LOCALITY_EVIDENCE_KIND,
-        workspace_id,
         {
             "act_occurrence_id": act_occurrence_id,
             "content_kind": "bounded Representation",
@@ -215,7 +199,6 @@ def record_operator_representation(
     )
     representation_event = ledger.append(
         REPRESENTATION_RECORDED_KIND,
-        workspace_id,
         {
             "attempt_ref": None,
             **result_payload,
@@ -244,7 +227,6 @@ def record_operator_representation(
         "representation_id": representation_id,
         "representation_act_id": representation_act_id,
         "act_occurrence_id": act_occurrence_id,
-        "workspace_id": workspace_id,
         "locality_id": locality_id,
         "representation_result": representation_result,
         "alternatives": alternatives,
@@ -255,68 +237,80 @@ def record_operator_representation(
         "emission_outcome_event_id": None,
         "emitted_event_id": None,
         "locality_standing_as_of_event_id": locality_standing["as_of_event_id"],
-        "prior_exchange_finding": prior_exchange_finding,
-        "represented_relation": represented_relation,
+        "emission_text": result_payload["emission_text"],
         "known_loss": known_loss,
         "unknowns": [],
         "conflicts": [],
     }
 
 
-def render_operator_representation(representation: dict[str, Any]) -> str:
-    """Render the bounded Representation for the console output stream.
-
-    Rendering exposes tokens, labels, and roles.  A rendered label is not the
-    represented candidate's full represented relation; that represented relation stays preserved in the
-    recorded representation payload.
-    """
-    lines = [f"Bounded Representation {representation['representation_id']}"]
-    finding = representation.get("prior_exchange_finding")
-    if finding is not None:
-        identification = finding["identification"]
-        comparison = finding["comparison"]
-        if identification["identified_alternative"] is not None:
-            alternative = identification["identified_alternative"]
-            lines.append(
-                "Prior exchange: alternative "
-                f"{alternative['response_coordinate']} "
-                f"({alternative['rendered_label']}) corresponds to the "
-                f"captured material within {comparison['representation_ref']}. "
-                "Operator intent and selection remain Unknown."
-            )
-        elif comparison["matched_coordinate"] is not None:
-            # A matched coordinate whose binding failed is not a no-match;
-            # the two recorded results stay distinguishable here.
-            lines.append(
-                "Prior exchange: coordinate "
-                f"{comparison['matched_coordinate']} matched within "
-                f"{comparison['representation_ref']}, but no represented "
-                "alternative was lawfully identified "
-                f"({identification['basis']})."
-            )
-        else:
-            lines.append(
-                "Prior exchange: no coordinate match within "
-                f"{comparison['representation_ref']}; response represented relation and "
-                "requested treatment remain Unknown."
-            )
-    relation = representation.get("represented_relation")
-    if relation is not None:
-        lines.append(
-            f"Reconstructed source {relation['source_identity']} expresses: "
-            f"\"{relation['proposition']}\" "
-            f"({relation['source_role']}). Operator intent and "
-            "selection remain Unknown; Operator Authority for this "
-            "proposition remains unresolved."
-        )
+def _emission_text(representation: dict[str, Any]) -> str:
+    representation_id = representation.get("representation_id")
+    if representation_id is None:
+        representation_id = representation["representation_ref"]
+    lines = [f"Bounded Representation {representation_id}"]
     if representation["alternatives"]:
         lines.append("Respond with exactly one token:")
     for alternative in representation["alternatives"]:
         lines.append(
-            f"  {alternative['response_coordinate']}. {alternative['rendered_label']}"
+            f"  {alternative['response_coordinate']}. {alternative['label']}"
             f"  [{alternative['role']}]"
         )
     return "\n".join(lines) + "\n"
+
+
+def read_operator_representation(
+    ledger: EventLedger, representation_event_id: str
+) -> dict[str, Any]:
+    event = ledger.get(representation_event_id)
+    if event is None or event.kind != REPRESENTATION_RECORDED_KIND:
+        raise ValueError("the addressed occurrence is not a recorded Representation")
+    payload = event.payload
+    act_evidence = ledger.get(payload.get("responsible_act_evidence_id"))
+    locality_evidence = ledger.get(payload.get("locality_evidence_id"))
+    yield_evidence_id = payload.get("yield_evidence_id")
+    if (
+        ledger.integrity_of(event.id) == CORRUPTED
+        or act_evidence is None
+        or act_evidence.kind != REPRESENTATION_ACT_EVIDENCE_KIND
+        or locality_evidence is None
+        or locality_evidence.kind != REPRESENTATION_LOCALITY_EVIDENCE_KIND
+        or ledger.integrity_of(locality_evidence.id) == CORRUPTED
+    ):
+        raise ValueError("the recorded Representation Evidence is not exact")
+    requirements = read_yield_edge_requirements(
+        ledger,
+        recorded_result_event_id=event.id,
+        result_evidence_event_id=yield_evidence_id,
+        responsible_act_evidence_event_id=act_evidence.id,
+    )
+    if not all(requirements.values()):
+        raise ValueError("the recorded Representation Yield is not exact")
+    yielded = ledger.get(yield_evidence_id).payload.get("yielded_result")
+    if (
+        type(yielded) is not dict
+        or locality_evidence.payload.get("carried_content") != yielded
+        or locality_evidence.payload.get("act_occurrence_id")
+        != payload.get("act_occurrence_id")
+        or act_evidence.payload.get("act_occurrence_id")
+        != payload.get("act_occurrence_id")
+        or act_evidence.payload.get("representation_act_id")
+        != payload.get("representation_act_id")
+        or event.locality_id != locality_evidence.locality_id
+        or event.locality_id != act_evidence.locality_id
+    ):
+        raise ValueError("the recorded Representation coordinates are not exact")
+    return {
+        "representation_id": payload["representation_ref"],
+        "representation_act_id": payload["representation_act_id"],
+        "act_occurrence_id": payload["act_occurrence_id"],
+        "locality_id": event.locality_id,
+        "representation_result": payload["representation_result"],
+        "alternatives": payload["alternatives"],
+        "coordinate_bindings": payload["coordinate_bindings"],
+        "representation_event_id": event.id,
+        "emission_text": payload["emission_text"],
+    }
 
 
 def emit_operator_representation(
@@ -327,21 +321,30 @@ def emit_operator_representation(
 ) -> dict[str, Any]:
     """Write the Representation to the output stream and record the emission.
 
-    Emission evidences only that the rendering was written to this boundary;
+    Emission evidences only that the exact Representation was written to this boundary;
     effects beyond that output boundary require separate Evidence.
     """
-    emitted_representation = render_operator_representation(representation)
+    recorded = read_operator_representation(
+        ledger, representation.get("representation_event_id")
+    )
+    for coordinate in (
+        "representation_id",
+        "representation_event_id",
+        "locality_id",
+        "emission_text",
+    ):
+        if representation.get(coordinate) != recorded[coordinate]:
+            raise ValueError(
+                "the supplied Representation disagrees with its recorded occurrence"
+            )
+    emitted_representation = recorded["emission_text"]
     emission_act_id = new_id("operator_representation_emission_act")
     stream_encoding_metadata = getattr(output_stream, "encoding", None)
     if type(stream_encoding_metadata) is not str or not stream_encoding_metadata:
         stream_encoding_metadata = None
-    scope = (
-        f"workspace:{representation['workspace_id']};"
-        f"locality:{representation['locality_id']}"
-    )
+    scope = f"locality:{representation['locality_id']}"
     attempt_event = ledger.append(
         REPRESENTATION_EMISSION_ATTEMPTED_KIND,
-        representation["workspace_id"],
         {
             "representation_ref": representation["representation_id"],
             "representation_event_id": representation["representation_event_id"],
@@ -360,7 +363,6 @@ def emit_operator_representation(
                 scope=scope,
                 occurrence="emission attempt durably recorded before output",
             ),
-            "material_origin": SEED_ORIGIN,
             "attempted_representation": emitted_representation,
             "attempted_representation_kind": "text",
             "output_boundary": "text_stream_write",
@@ -379,7 +381,6 @@ def emit_operator_representation(
     representation["emission_attempt_event_id"] = attempt_event.id
     attempt_locality_evidence = ledger.append(
         REPRESENTATION_EMISSION_ATTEMPT_LOCALITY_EVIDENCE_KIND,
-        representation["workspace_id"],
         {
             "representation_ref": representation["representation_id"],
             "attempt_event_id": attempt_event.id,
@@ -434,11 +435,18 @@ def emit_operator_representation(
         raise ValueError("output boundary did not accept the exact representation")
 
     act_occurrence_id = new_id("operator_representation_emission_occurrence")
+    locality_relation = {
+        "first_subject": representation["representation_id"],
+        "second_subject": act_occurrence_id,
+        "relation_occurrence_id": new_id(
+            "operator_representation_emission_locality_occurrence"
+        ),
+    }
     boundary_result = {
         "boundary": "text_stream_write",
         "accepted_representation": emitted_representation,
         "accepted_representation_kind": "text",
-        "accepted_length": written,
+        "accepted_count": written,
     }
     yielded_content = {"yielded_result": boundary_result}
     result_payload = {
@@ -447,12 +455,12 @@ def emit_operator_representation(
         "representation_ref": representation["representation_id"],
         "representation_event_id": representation["representation_event_id"],
         "input_role": REPRESENTATION_EMISSION_INPUT_ROLE,
+        "locality_relation": locality_relation,
         "boundary_result": boundary_result,
         **yielded_content,
     }
     responsible_act_evidence = ledger.append(
         REPRESENTATION_EMISSION_ACT_EVIDENCE_KIND,
-        representation["workspace_id"],
         {
             "emission_act_id": emission_act_id,
             "act_occurrence_id": act_occurrence_id,
@@ -476,9 +484,11 @@ def emit_operator_representation(
     )
     locality_evidence = ledger.append(
         REPRESENTATION_EMISSION_LOCALITY_EVIDENCE_KIND,
-        representation["workspace_id"],
         {
             "act_occurrence_id": act_occurrence_id,
+            "representation_ref": representation["representation_id"],
+            "representation_event_id": representation["representation_event_id"],
+            "locality_relation": locality_relation,
             "content_kind": "text",
             "carried_content": emitted_representation,
             "standing": "carried",
@@ -491,7 +501,6 @@ def emit_operator_representation(
     )
     yield_evidence = _record_yield_evidence(
         ledger,
-        workspace_id=representation["workspace_id"],
         locality_id=representation["locality_id"],
         convention=REPRESENTATION_EMISSION_CONVENTION,
         yielding_act="exact bounded Representation emission",
@@ -505,13 +514,12 @@ def emit_operator_representation(
     )
     emitted_event = ledger.append(
         REPRESENTATION_EMITTED_KIND,
-        representation["workspace_id"],
         {
             "attempt_ref": attempt_event.id,
             **result_payload,
             "dimensions": _dimensions(
                 identity=act_occurrence_id,
-                content="representation rendering written to console output stream",
+                content="exact Representation written to console output stream",
                 standing="emitted",
                 source=representation["representation_event_id"],
                 responsibility=REPRESENTATION_EMISSION_RESPONSIBILITY,
@@ -523,12 +531,11 @@ def emit_operator_representation(
                 scope=scope,
                 occurrence="emission occurrence durably recorded",
             ),
-            "material_origin": SEED_ORIGIN,
             "emitted_representation": emitted_representation,
             "emitted_representation_kind": "text",
             "output_boundary": "text_stream_write",
             "stream_encoding_metadata": stream_encoding_metadata,
-            "write_length": written,
+            "write_count": written,
             "responsible_act_evidence_id": responsible_act_evidence.id,
             "locality_evidence_id": locality_evidence.id,
             "yield_evidence_id": yield_evidence.id,
@@ -578,23 +585,22 @@ def _record_emission_failure_outcome(
 ):
     """Preserve the bounded failure without inferring downstream state."""
     if type(written) is int and written >= 0:
-        reported_write_length: int | None = written
+        reported_write_count: int | None = written
     else:
-        reported_write_length = None
+        reported_write_count = None
     outcome = (
         "flush_failed_after_emission"
         if emitted_event_id is not None
         else "write_failed"
     )
     unknowns = ["effects beyond the output boundary remain Unknown"]
-    if phase == "text_stream_write" and reported_write_length is None:
+    if phase == "text_stream_write" and reported_write_count is None:
         unknowns.insert(
             0,
-            "output-boundary acceptance remains Unknown because write reported no length",
+            "output-boundary acceptance remains Unknown because write reported no count",
         )
     return ledger.append(
         REPRESENTATION_EMISSION_OUTCOME_KIND,
-        representation["workspace_id"],
         {
             "attempt_ref": attempt_event_id,
             "representation_ref": representation["representation_id"],
@@ -616,9 +622,9 @@ def _record_emission_failure_outcome(
             ),
             "failure_phase": phase,
             "outcome": outcome,
-            "reported_write_length": reported_write_length,
-            "expected_write_length": len(
-                render_operator_representation(representation)
+            "reported_write_count": reported_write_count,
+            "expected_write_count": len(
+                representation["emission_text"]
             ),
             "error_type": type(error).__name__ if error is not None else None,
             "error_message": str(error) if error is not None else None,

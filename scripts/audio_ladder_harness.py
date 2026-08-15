@@ -1,27 +1,27 @@
 #!/usr/bin/env python3
-"""Render sample material where one measurable coordinate changes at a time.
+"""Form sample material where one measurable coordinate differs at a time.
 
-The harness knows how it constructed each specimen. Seed receives only the
+The harness knows how it supplied each specimen. Seed receives only the
 material. Nothing here names what a difference between two specimens means.
 
 **Raw samples, no container.** A WAV header carries the sample count in its
-RIFF and data length fields, so a ladder varying only the number of samples
-changes the header too, and a Compare over whole files sees two coordinates
+RIFF and data count fields, so a ladder varying only the number of samples
+differences the header too, and a Compare over whole files sees two coordinates
 move. These files are little-endian signed 16-bit samples and nothing else.
 
-**Period length in samples is what a specimen carries.** Frequency is a
-relation between that length and a separately declared sample rate --
-`sample_rate / period_length` -- and composing it is not this harness's to do.
+**The sample count of one period is what a specimen carries.** Frequency is a
+relation between that count and a separately declared sample rate, and
+composing it is not this harness's to do.
 
 ```text
   A   repetition       one exact 800-sample block, once, twice, three times
-  B   period length    one exact block of 48000, 800, 400 samples
+  B   period sample count    one exact block of 48000, 800, 400 samples
 ```
 
 Ladder A holds the block identical and varies how many times it occurs, with
 nothing between the repeats. Ladder B holds the repeat count at one and varies
 how long the block is. A specimen in either is a whole number of periods, so
-neither ladder moves cycle count and period length together.
+neither ladder moves cycle count and period sample count together.
 """
 
 from __future__ import annotations

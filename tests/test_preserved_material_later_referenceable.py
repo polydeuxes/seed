@@ -1,7 +1,7 @@
 """Earlier preserved material remains referenceable by later occurrences.
 
 The Book uses "remembering" for preservation of source coordinates or
-standing for later lawful reconstruction (`05.Source.A`).  **This module does
+standing for later lawful read (`05.Source.A`).  **This module does
 not establish a Remembering Responsibility, Act, Standing, occurrence, or
 kind.**  In active law that word is capitalised only at sentence starts and is
 lowercase mid-sentence -- "sensing is not remembering, remembering is not
@@ -10,8 +10,8 @@ orthographic.
 
 What this module demonstrates is narrow and structural:
 
-    earlier events remain preserved and unchanged
-    a later session read can reference them
+    earlier events remain preserved and preserved
+    a later locality read can reference them
     a later representation Act carries those references
 
 That is the substrate later input support would require. It is **not** input support,
@@ -26,7 +26,7 @@ the whole past.  And `#2350` left open whether
 occurrence -- executing it proves the substrate exists, not that the read
 is lawful.
 
-This module also does not test that Seed's exact Act conditions change over time.  No
+This module also does not test that Seed's exact Act conditions revision over time.  No
 measurement act exists in the runtime, so there is no case where a later
 material access reaches material it previously could not.
 
@@ -65,7 +65,6 @@ def ledger() -> EventLedger:
     led = EventLedger()
     run_persistent_operator_console(
         ledger=led,
-        workspace_id="w",
         locality_id="s",
         input_stream=binary_input("first\nsecond\nthird\n"),
         output_stream=StringIO(),
@@ -94,7 +93,7 @@ def test_later_representations_retain_references_to_earlier_preserved_material(
     # The first representation Act's read was empty.  Recording that absence is
     # itself preserved source coordinates, not an absent occurrence.
     assert boundaries[0] is None
-    # Every later boundary reaches strictly further into the session.
+    # Every later boundary reaches strictly further into the locality.
     for earlier, later in zip(boundaries[1:], boundaries[2:]):
         assert positions[later] > positions[earlier]
     # The last representation Act's boundary still stands after the first recorded event.
@@ -104,7 +103,7 @@ def test_later_representations_retain_references_to_earlier_preserved_material(
 def test_later_reference_does_not_alter_earlier_events(ledger):
     """Referencing preserved material leaves that material byte-identical."""
     before = _payload_snapshot(ledger.list())
-    read_operator_locality_standing(ledger, workspace_id="w", locality_id="s")
+    read_operator_locality_standing(ledger, locality_id="s")
     after = _payload_snapshot(
         e for e in ledger.list() if e.id in before
     )
@@ -118,7 +117,7 @@ def test_representation_appends_nothing(ledger):
     constitutional occurrence.  This read reads without appending.
     """
     count_before = len(ledger.list())
-    read_operator_locality_standing(ledger, workspace_id="w", locality_id="s")
+    read_operator_locality_standing(ledger, locality_id="s")
     assert len(ledger.list()) == count_before
 
 
@@ -142,14 +141,18 @@ def test_each_representation_act_is_appended_after_every_event_it_references(led
 def test_no_act_condition_change_is_claimed_here(ledger):
     """Guard against this module being read as more than it is.
 
-    Only one kind of Act with participating inputs runs in this session.  If a second
+    Only one kind of Act with participating inputs runs in this locality.  If a second
     measurement or finding act is added later, this assertion should fail and
-    be replaced by a real Act-condition-change test.
+    be replaced by a real Act-condition-revision test.
     """
-    observed_operator_event_kinds = {
-        e.kind for e in ledger.list() if e.kind.startswith("operator.")
+    observed_event_kinds = {
+        e.kind
+        for e in ledger.list()
+        if e.kind.startswith(("material.", "operator."))
     }
-    assert observed_operator_event_kinds == {
+    assert observed_event_kinds == {
+        "material.ingest.act_evidenced",
+        "material.ingest.occurred",
         "operator.representation.recorded",
         "operator.representation.act_evidenced",
         "operator.representation.locality_evidenced",
@@ -159,16 +162,13 @@ def test_no_act_condition_change_is_claimed_here(ledger):
         "operator.representation.emission_locality_evidenced",
         "operator.yield.evidence_recorded",
         "operator.representation.emitted",
-        "operator.material.raw_captured",
-        "operator.material.occurred",
     }
 
 
-def render_evidence_growth() -> str:
+def represent_evidence_growth() -> str:
     led = EventLedger()
     run_persistent_operator_console(
         ledger=led,
-        workspace_id="w",
         locality_id="s",
         input_stream=binary_input("first\nsecond\nthird\n"),
         output_stream=StringIO(),
@@ -183,4 +183,4 @@ def render_evidence_growth() -> str:
 
 
 if __name__ == "__main__":  # pragma: no cover - inspection entry point
-    print(render_evidence_growth())
+    print(represent_evidence_growth())

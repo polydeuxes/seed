@@ -1,16 +1,4 @@
-"""A console lifetime is one bounded exchange carrying its exact session id.
-
-`--session` defaulted to the constant `local`, so every console lifetime
-addressed the one named session. That could not bite while the ledger was
-process-local — the previous lifetime's events were gone before the next opened
-— but `--db` makes them survive, and then a reopened console would continue an
-exchange that had ended.
-
-`--db` also could not reach the console at all: the console was the no-argument
-entry, and `--db` made the argument list non-empty.
-
-These tests pin both halves together, because neither is safe alone.
-"""
+"""Each console locality remains exact."""
 
 from __future__ import annotations
 
@@ -29,8 +17,9 @@ from seed_runtime.operator_locality_standing import (
     read_operator_locality_standing,
 )
 from seed_runtime.preserved_material_measurement import (
-    preserved_ingress_occurrences,
+    ingest_occurrences,
 )
+from seed_runtime.material_ingest import ingested_material_bytes
 
 
 @pytest.fixture
@@ -44,9 +33,9 @@ def _console(monkeypatch, material: str, argv: list[str]) -> None:
     assert process_entry.main(argv) == 0
 
 
-def _sessions(ledger: EventLedger, workspace_id: str = "local") -> list[str]:
+def _localities(ledger: EventLedger) -> list[str]:
     seen: list[str] = []
-    for event in ledger.list(workspace_id):
+    for event in ledger.list():
         if event.locality_id is not None and event.locality_id not in seen:
             seen.append(event.locality_id)
     return seen
@@ -59,7 +48,7 @@ def _sessions(ledger: EventLedger, workspace_id: str = "local") -> list[str]:
 
 @pytest.mark.parametrize(
     "argv",
-    [[], ["--db", "x"], ["--db=x"], ["--workspace", "w", "--db", "x"]],
+    [[], ["--db", "x"], ["--db=x"]],
 )
 def test_console_options_alone_select_the_console(argv):
     process_entry.build_parser().parse_args(argv)
@@ -79,7 +68,7 @@ def test_a_db_console_records_into_that_db(db, monkeypatch):
 
     ledger = SQLiteEventLedger(db)
     try:
-        assert ledger.list("local")
+        assert ledger.list()
     finally:
         ledger.close()
 
@@ -89,52 +78,44 @@ def test_the_bare_console_writes_no_durable_history(db, monkeypatch):
 
     ledger = SQLiteEventLedger(db)
     try:
-        assert ledger.list("local") == []
+        assert ledger.list() == []
     finally:
         ledger.close()
 
 
 # --------------------------------------------------------------------------
-# Two lifetimes, one durable workspace.
+# Two console Localities.
 # --------------------------------------------------------------------------
 
 
 @pytest.fixture
 def two_lifetimes(db, monkeypatch):
-    _console(monkeypatch, "first exchange\nmore material\n", ["--db", db])
-    _console(monkeypatch, "a later exchange\n", ["--db", db])
+    _console(monkeypatch, "first locality\nmore material\n", ["--db", db])
+    _console(monkeypatch, "a later locality\n", ["--db", db])
     ledger = SQLiteEventLedger(db)
     yield ledger
     ledger.close()
 
 
-def test_two_console_lifetimes_receive_different_session_ids(two_lifetimes):
-    sessions = _sessions(two_lifetimes)
-    assert len(sessions) == 2
-    assert sessions[0] != sessions[1]
-
-
-def test_both_lifetimes_share_one_workspace(two_lifetimes):
-    assert {e.workspace_id for e in two_lifetimes.list("local")} == {"local"}
+def test_two_console_lifetimes_receive_different_locality_ids(two_lifetimes):
+    Localities = _localities(two_lifetimes)
+    assert len(Localities) == 2
+    assert Localities[0] != Localities[1]
 
 
 def test_each_lifetime_holds_only_its_own_ingress(two_lifetimes):
-    first, second = _sessions(two_lifetimes)
+    first, second = _localities(two_lifetimes)
 
     def material(locality_id):
         return [
-            bytes.fromhex(
-                two_lifetimes.get(event.payload["raw_material_event_id"]).payload[
-                    "exact_bytes_hex"
-                ]
-            )
-            for event in preserved_ingress_occurrences(
-                two_lifetimes, workspace_id="local", locality_id=locality_id
+            ingested_material_bytes(event)
+            for event in ingest_occurrences(
+                two_lifetimes, locality_id=locality_id
             )
         ]
 
-    assert material(first) == [b"first exchange\n", b"more material\n"]
-    assert material(second) == [b"a later exchange\n"]
+    assert material(first) == [b"first locality\n", b"more material\n"]
+    assert material(second) == [b"a later locality\n"]
 
 
 def test_a_reopened_console_does_not_continue_the_prior_standing(two_lifetimes):
@@ -143,12 +124,12 @@ def test_a_reopened_console_does_not_continue_the_prior_standing(two_lifetimes):
     This is the test that could not previously be written against the real CLI,
     because two invocations never shared history to continue.
     """
-    first, second = _sessions(two_lifetimes)
+    first, second = _localities(two_lifetimes)
     prior = read_operator_locality_standing(
-        two_lifetimes, workspace_id="local", locality_id=first
+        two_lifetimes, locality_id=first
     )
     later = read_operator_locality_standing(
-        two_lifetimes, workspace_id="local", locality_id=second
+        two_lifetimes, locality_id=second
     )
 
     assert len(prior["representations"]) == 3
@@ -157,36 +138,36 @@ def test_a_reopened_console_does_not_continue_the_prior_standing(two_lifetimes):
 
 
 def test_the_earlier_lifetime_remains_projectable(two_lifetimes):
-    """Bounding the read must not lose what it stopped reading."""
-    first = _sessions(two_lifetimes)[0]
+    """Bounding the read must not lose what it stopped read."""
+    first = _localities(two_lifetimes)[0]
     standing = read_operator_locality_standing(
-        two_lifetimes, workspace_id="local", locality_id=first
+        two_lifetimes, locality_id=first
     )
     assert len(standing["representations"]) == 3
 
 
 # --------------------------------------------------------------------------
-# A session read reads a session.
+# A locality read reads a locality.
 # --------------------------------------------------------------------------
 
 
-def test_a_session_read_returns_only_that_session(two_lifetimes):
-    first, second = _sessions(two_lifetimes)
+def test_a_locality_read_returns_only_that_locality(two_lifetimes):
+    first, second = _localities(two_lifetimes)
     for locality_id in (first, second):
-        events = two_lifetimes.list_locality("local", locality_id)
+        events = two_lifetimes.list_locality(locality_id)
         assert events
         assert {e.locality_id for e in events} == {locality_id}
-    assert len(two_lifetimes.list_locality("local", first)) + len(
-        two_lifetimes.list_locality("local", second)
-    ) == len(two_lifetimes.list("local"))
+    assert len(two_lifetimes.list_locality(first)) + len(
+        two_lifetimes.list_locality(second)
+    ) == len(two_lifetimes.list())
 
 
-def test_a_fresh_session_reads_none_of_the_history(two_lifetimes):
+def test_a_fresh_locality_reads_none_of_the_history(two_lifetimes):
     """The console's startup read, which is the growing read."""
-    assert two_lifetimes.list("local")
-    assert two_lifetimes.list_locality("local", "never-recorded") == []
+    assert two_lifetimes.list()
+    assert two_lifetimes.list_locality("never-recorded") == []
     standing = read_operator_locality_standing(
-        two_lifetimes, workspace_id="local", locality_id="never-recorded"
+        two_lifetimes, locality_id="never-recorded"
     )
     assert standing["representations"] == {}
 
@@ -196,30 +177,28 @@ def test_the_in_memory_ledger_scopes_the_same_way():
     for locality_id in ("a", "b"):
         run_persistent_operator_console(
             ledger=ledger,
-            workspace_id="w",
             locality_id=locality_id,
             input_stream=binary_input("material\n"),
             output_stream=StringIO(),
         )
-    assert {e.locality_id for e in ledger.list_locality("w", "a")} == {"a"}
-    assert len(ledger.list_locality("w", "a")) < len(ledger.list("w"))
+    assert {e.locality_id for e in ledger.list_locality("a")} == {"a"}
+    assert len(ledger.list_locality("a")) < len(ledger.list())
 
 
 # --------------------------------------------------------------------------
-# What did not change.
+# What did not revision.
 # --------------------------------------------------------------------------
 
 
-def test_a_caller_supplied_session_id_remains_exact():
+def test_a_caller_supplied_locality_id_remains_exact():
     ledger = EventLedger()
     run_persistent_operator_console(
         ledger=ledger,
-        workspace_id="w",
         locality_id="chosen-by-the-caller",
         input_stream=binary_input("material\n"),
         output_stream=StringIO(),
     )
-    assert {event.locality_id for event in ledger.list("w")} == {
+    assert {event.locality_id for event in ledger.list()} == {
         "chosen-by-the-caller"
     }
 
@@ -233,7 +212,7 @@ def _run_console_process(db: str, material: str) -> subprocess.CompletedProcess:
     return subprocess.run(
         [sys.executable, "-m", "seed_runtime.process_entry", "--db", db],
         input=material + "",
-        capture_output=True,
+        stdout=subprocess.PIPE, stderr=subprocess.PIPE,
         text=True,
         cwd=str(pathlib.Path(__file__).resolve().parent.parent),
     )
@@ -253,26 +232,22 @@ def test_a_reopened_console_process_does_not_abort(db):
         assert "Traceback" not in result.stderr
 
 
-def test_separate_processes_receive_separate_sessions(db):
+def test_separate_processes_receive_separate_localities(db):
     for material in ("first process\n", "second process\n", "third process\n"):
         assert _run_console_process(db, material).returncode == 0
 
     ledger = SQLiteEventLedger(db)
     try:
-        sessions = _sessions(ledger)
-        assert len(sessions) == 3
+        Localities = _localities(ledger)
+        assert len(Localities) == 3
         held = [
             [
-                bytes.fromhex(
-                    ledger.get(event.payload["raw_material_event_id"]).payload[
-                        "exact_bytes_hex"
-                    ]
-                )
-                for event in preserved_ingress_occurrences(
-                    ledger, workspace_id="local", locality_id=session
+                ingested_material_bytes(event)
+                for event in ingest_occurrences(
+                    ledger, locality_id=locality
                 )
             ]
-            for session in sessions
+            for locality in Localities
         ]
         assert held == [
             [b"first process\n"],

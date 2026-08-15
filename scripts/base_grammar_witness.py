@@ -24,7 +24,7 @@ The Book's prose says Locality is "the exact evidenced relation from content to
 the occurrence that carries it", and separately holds `act occurrence` apart
 from `recording occurrence`, so an Act occurrence reads as one kind of
 occurrence. `grammar.json` states no relation between the two names, so to
-anything reading it the graph is disconnected.
+anything read it the graph is disconnected.
 
 **The edges do not separate under composition.** Climbing them by whether one
 ends where another begins yields one class: composition says nothing that

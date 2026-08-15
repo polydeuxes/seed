@@ -40,18 +40,24 @@ from seed_runtime.preserved_material_measurement import (
     MEASUREMENT_RECORDED_KIND,
     PreservedMaterialMeasurementError,
     RECURRENCE_RESULT_KIND,
-    RESPONSIBILITY_UNESTABLISHED,
 )
 from seed_runtime.yield_evidence import (
     YIELD_EVIDENCE_KIND,
     _record_yield_evidence,
+    read_yield_edge_requirements,
     yield_commitment,
 )
 
 FINDING_YIELD_COMPARISON_KIND = "operator.measurement.finding_yield_compared"
+FINDING_YIELD_COMPARISON_ACT_EVIDENCE_KIND = (
+    "operator.measurement.finding_yield_comparison_act_evidenced"
+)
 FINDING_YIELD_COMPARISON_RESULT_KIND = "recorded finding Yield comparison"
 FINDING_YIELD_COMPARISON_CONVENTION = (
-    "recorded_recurrence_finding_yield_comparison_v1"
+    "recorded_recurrence_finding_yield_comparison"
+)
+FINDING_YIELD_COMPARISON_RESPONSIBILITY = (
+    "Compare one recorded finding with the exact Yield Evidence it names"
 )
 
 AGREES_WITH_YIELD_EVIDENCE = "agrees within compared coordinates"
@@ -82,7 +88,11 @@ COMPARISON_RESULT_COORDINATES = frozenset(
     }
 )
 COMPARISON_RECORDING_COORDINATES = frozenset(
-    {"yield_evidence_id", "occurrence_preservation"}
+    {
+        "responsible_act_evidence_id",
+        "yield_evidence_id",
+        "occurrence_preservation",
+    }
 )
 COMPARISON_OCCURRENCE_PRESERVATION = (
     "recorded finding Yield comparison durably recorded after its exact result was yielded"
@@ -95,12 +105,7 @@ class RecordedFindingYieldComparisonError(ValueError):
 
 @dataclass(frozen=True)
 class RecordedFindingYieldComparison:
-    """One exact Compare result reconstructed from its recording occurrence.
-
-    Constructing this representation does not establish that reconstruction occurred.
-    A later Act must resolve its recorded-occurrence reference through the
-    ledger rather than trust the dataclass by shape.
-    """
+    """One exact Compare result carried by one recording occurrence."""
 
     recorded_occurrence_id: str
     yield_evidence_id: str
@@ -109,11 +114,7 @@ class RecordedFindingYieldComparison:
 
     @property
     def reference(self) -> dict[str, str]:
-        """Address this durable recording occurrence for later re-reconstruction.
-
-        This is not a reference to the yielding Act occurrence or to the
-        yield-Evidence occurrence. Those identities remain distinct.
-        """
+        """Return its exact recording-occurrence reference."""
 
         return {"recorded_occurrence_id": self.recorded_occurrence_id}
 
@@ -121,13 +122,7 @@ class RecordedFindingYieldComparison:
 def get_recorded_finding_yield_comparison(
     ledger: EventLedger, event_id: str
 ) -> RecordedFindingYieldComparison | None:
-    """Reconstruct one occurrence-bound Compare result without using it.
-
-    Reconstruction establishes that the occurrence carries the exact result its
-    yield Evidence commits to. It does not decide this finding's
-    Applicability to any later Act, traverse its source finding, or revise
-    anything.
-    """
+    """Return an exact occurrence-bound Compare result when evidenced."""
 
     event = ledger.get(event_id)
     if event is None:
@@ -164,11 +159,6 @@ def get_recorded_finding_yield_comparison(
         raise RecordedFindingYieldComparisonError(
             "corrupted Yield Evidence cannot expose a Compare result"
         )
-    if evidence.workspace_id != event.workspace_id:
-        raise RecordedFindingYieldComparisonError(
-            "a finding Yield comparison and its Yield Evidence must belong to "
-            "the same workspace"
-        )
     if (
         evidence.payload.get("yield_convention")
         != FINDING_YIELD_COMPARISON_CONVENTION
@@ -190,6 +180,30 @@ def get_recorded_finding_yield_comparison(
         raise RecordedFindingYieldComparisonError(
             "the named Yield Evidence concerns a different Compare result"
         )
+    act_evidence_id = payload.get("responsible_act_evidence_id")
+    if not isinstance(act_evidence_id, str) or not act_evidence_id:
+        raise RecordedFindingYieldComparisonError(
+            f"{event_id} names no exact responsible Act Evidence occurrence"
+        )
+    act_evidence = ledger.get(act_evidence_id)
+    if (
+        act_evidence is None
+        or act_evidence.kind != FINDING_YIELD_COMPARISON_ACT_EVIDENCE_KIND
+    ):
+        raise RecordedFindingYieldComparisonError(
+            f"{act_evidence_id} is not responsible Act Evidence for this Compare"
+        )
+    if not all(
+        read_yield_edge_requirements(
+            ledger,
+            recorded_result_event_id=event.id,
+            result_evidence_event_id=evidence.id,
+            responsible_act_evidence_event_id=act_evidence.id,
+        ).values()
+    ):
+        raise RecordedFindingYieldComparisonError(
+            "the Compare Event does not bind its exact Act and result Evidence"
+        )
     dimensions = payload.get("dimensions")
     source_id = payload.get("recorded_finding_ref")
     standing = dimensions.get("standing") if isinstance(dimensions, dict) else None
@@ -205,8 +219,8 @@ def get_recorded_finding_yield_comparison(
         or not isinstance(dimensions, dict)
         or dimensions.get("identity") != f"finding-yield-comparison:{source_id}"
         or dimensions.get("yielding_act") != "bounded finding Yield Compare"
-        or dimensions.get("responsibility") != RESPONSIBILITY_UNESTABLISHED
-        or dimensions.get("scope_workspace") != event.workspace_id
+        or dimensions.get("responsibility")
+        != FINDING_YIELD_COMPARISON_RESPONSIBILITY
         or dimensions.get("scope_locality")
         != (f"locality:{event.locality_id}" if event.locality_id is not None else None)
     ):
@@ -227,7 +241,6 @@ def _provenance(event: Event, integrity: str) -> dict[str, object]:
     return {
         "event_id": event.id,
         "event_kind": event.kind,
-        "workspace_id": event.workspace_id,
         "locality_id": event.locality_id,
         "integrity": integrity,
     }
@@ -246,11 +259,11 @@ def compare_recorded_finding_yield(ledger: EventLedger, event_id: str) -> Event:
             f"{event_id} is not a recorded measurement finding, and this "
             "comparison compares one against its yield evidence"
         )
-    if recorded.payload.get("measurement_form") != "recurrence":
+    if recorded.payload.get("measurement_distinction") != "recurrence":
         raise RecordedFindingYieldComparisonError(
             f"{event_id} is not a recorded recurrence Measurement finding; "
             "this comparison does not apply recurrence's yield-evidence "
-            "expectation to an unmigrated Measurement form"
+            "expectation to an unmigrated Measurement representation"
         )
     recorded_integrity = ledger.integrity_of(event_id)
     if recorded_integrity == CORRUPTED:
@@ -301,13 +314,6 @@ def compare_recorded_finding_yield(ledger: EventLedger, event_id: str) -> Event:
                 conflicts.append(
                     "the named yield-evidence occurrence is corrupted"
                 )
-            elif evidence.workspace_id != recorded.workspace_id:
-                unresolved = True
-                unknowns.append(
-                    "the named yield evidence belongs to a different "
-                    "workspace, and no established cross-workspace movement is "
-                    "available to this comparison"
-                )
             elif evidence.kind != YIELD_EVIDENCE_KIND:
                 observed.append(
                     _crossing(
@@ -349,7 +355,7 @@ def compare_recorded_finding_yield(ledger: EventLedger, event_id: str) -> Event:
                 ):
                     unresolved = True
                     unknowns.append(
-                        "the yield evidence does not carry an interpretable "
+                        "the yield evidence does not carry an readable "
                         "commitment and exact coordinate boundary"
                     )
                 else:
@@ -407,9 +413,8 @@ def compare_recorded_finding_yield(ledger: EventLedger, event_id: str) -> Event:
                 ),
                 "standing": standing,
                 "yielding_act": "bounded finding Yield Compare",
-                "responsibility": RESPONSIBILITY_UNESTABLISHED,
+                "responsibility": FINDING_YIELD_COMPARISON_RESPONSIBILITY,
                 "authority": authority_boundary,
-                "scope_workspace": recorded.workspace_id,
                 "scope_locality": (
                     f"locality:{recorded.locality_id}"
                     if recorded.locality_id is not None
@@ -461,9 +466,27 @@ def compare_recorded_finding_yield(ledger: EventLedger, event_id: str) -> Event:
                 "whatever this finding stood on.",
         ],
     }
+    responsible_act_evidence = ledger.append(
+        FINDING_YIELD_COMPARISON_ACT_EVIDENCE_KIND,
+        {
+            "downstream_act_id": downstream_act_id,
+            "act_occurrence_id": act_occurrence_id,
+            "act": "bounded finding Yield Compare",
+            "responsibility": FINDING_YIELD_COMPARISON_RESPONSIBILITY,
+            "responsible_boundary": "this Seed",
+            "result_commitment": yield_commitment(
+                FINDING_YIELD_COMPARISON_CONVENTION, result_payload
+            ),
+            "standing": "occurred",
+            "authority": authority_boundary,
+            "evidence_scope": (
+                "Evidence concerning this exact finding Yield Compare occurrence only"
+            ),
+        },
+        locality_id=recorded.locality_id,
+    )
     yield_evidence = _record_yield_evidence(
         ledger,
-        workspace_id=recorded.workspace_id,
         locality_id=recorded.locality_id,
         convention=FINDING_YIELD_COMPARISON_CONVENTION,
         yielding_act="bounded finding Yield Compare",
@@ -471,14 +494,15 @@ def compare_recorded_finding_yield(ledger: EventLedger, event_id: str) -> Event:
         yielded_result_kind=FINDING_YIELD_COMPARISON_RESULT_KIND,
         result_identity=f"finding-yield-comparison:{event_id}",
         yielded_content=result_payload,
-        responsibility=RESPONSIBILITY_UNESTABLISHED,
+        responsibility=FINDING_YIELD_COMPARISON_RESPONSIBILITY,
         live_boundary="recorded_finding_yield_compare",
+        responsible_boundary="this Seed",
     )
     return ledger.append(
         FINDING_YIELD_COMPARISON_KIND,
-        recorded.workspace_id,
         {
             **result_payload,
+            "responsible_act_evidence_id": responsible_act_evidence.id,
             "yield_evidence_id": yield_evidence.id,
             "occurrence_preservation": COMPARISON_OCCURRENCE_PRESERVATION,
         },

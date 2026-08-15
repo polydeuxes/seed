@@ -9,7 +9,7 @@ to the instantiated comparison and not named beyond this comparison.**
 So this is a call, not a service. Each invocation is one comparison occurrence
 with its own responsible boundary. There is no comparator object, no registry, and no persistent
 boundary waiting to be filled — a responsible boundary that outlived its occurrence would be
-the shared boundary the reconstruction says does not exist.
+a shared boundary that the exact coordinates do not establish.
 
 **What it has as input is what Seed recorded.** The inputs are recorded measurement
 findings. The pair findings used in the corpus experiments are computed in
@@ -17,7 +17,7 @@ experiment code and never recorded; a comparison over those would have as input 
 result Seed does not hold.
 
 **What it yields is distinctions, and a relation only where one is
-established.** Two measurements over different bounded exchanges are not in
+established.** Two measurements over different bounded localities are not in
 disagreement because their results differ — each is exact within its own scope.
 `01.Standing.E:29` holds: agreement is not truth, and comparison establishes no
 support, input support, or corroboration.
@@ -59,7 +59,7 @@ UNKNOWN_RELATION = "Unknown"
 
 BOUNDARY_NOTES: tuple[str, ...] = (
     "a distinction between two findings is not a relation between what they measured",
-    "differing results across bounded exchanges is not disagreement; each is exact "
+    "differing results across bounded localities is not disagreement; each is exact "
     "within its own scope",
     "a representation occurring in both findings establishes no relation between "
     "the bodies that carried it",
@@ -74,7 +74,7 @@ class BoundedComparisonError(Exception):
 
 @dataclass(frozen=True)
 class PreservedInput:
-    """One input as it arrived, with what it lacks named rather than filled."""
+    """One input as it occurred, with what it lacks named rather than filled."""
 
     event_id: str
     carried: dict[str, Any]
@@ -178,11 +178,11 @@ def compare_preserved_findings(
 
     ids = tuple(event_ids)
     if len(ids) != 2:
-        # Two, exactly. `01.Standing.E` says "multiple", and an earlier form of
+        # Two, exactly. `01.Standing.E` says "multiple", and an earlier representation of
         # this function accepted any number and intersected them all — n-ary
         # comparison implemented while its own report called it unbuilt. What
-        # more than two inputs jointly establish is not reconstructed, and a set
-        # intersection over n findings is not that reconstruction.
+        # more than two inputs jointly establish is not read, and a set
+        # intersection over n findings is not that read.
         raise BoundedComparisonError(
             "a bounded comparison has as input exactly two preserved findings; "
             f"{len(ids)} supplied. Comparing more than two is unbuilt"
@@ -224,7 +224,7 @@ def compare_preserved_findings(
         ("equivalence_rule", "equivalence_rule"),
         ("counting_scope", "counting_scope"),
         ("measured_position", "measured_position"),
-        ("measurement_form", "measurement_form"),
+        ("measurement_distinction", "measurement_distinction"),
     ):
         values = tuple(event.payload.get(field) for event in events)
         distinctions.append(
@@ -232,7 +232,7 @@ def compare_preserved_findings(
         )
     scopes = tuple(i.carried.get("scope") for i in inputs)
     distinctions.append(
-        Distinction("bounded_exchange", len(set(map(repr, scopes))) == 1, scopes)
+        Distinction("bounded_locality", len(set(map(repr, scopes))) == 1, scopes)
     )
 
     occupant_sets = [_occupants(event) for event in events]
@@ -249,19 +249,19 @@ def compare_preserved_findings(
     elif not (same["equivalence_rule"] and same["measured_position"]):
         relation = UNKNOWN_RELATION
         basis = "the inputs were not measured under the same rule and position"
-    elif not same["bounded_exchange"]:
+    elif not same["bounded_locality"]:
         relation = UNKNOWN_RELATION
         basis = (
-            "the inputs are exact within different bounded exchanges, so differing "
+            "the inputs are exact within different bounded localities, so differing "
             "results are not disagreement and matching results are not corroboration"
         )
     elif occupant_sets[0] == occupant_sets[1]:
         relation = "agreement"
-        basis = "same representation, rule, position and bounded exchange, same occupants"
+        basis = "same representation, rule, position and bounded locality, same occupants"
     else:
         relation = "conflict"
         basis = (
-            "same representation, rule, position and bounded exchange, "
+            "same representation, rule, position and bounded locality, "
             "different occupants"
         )
 
@@ -278,7 +278,6 @@ def compare_preserved_findings(
 def record_comparison_finding(
     ledger: EventLedger,
     *,
-    workspace_id: str,
     locality_id: str,
     finding: ComparisonFinding,
 ) -> Event:
@@ -296,7 +295,7 @@ def record_comparison_finding(
                 "comparison evidence only; the bounded relation holds inside this "
                 "comparison boundary and establishes nothing beyond it"
             ),
-            "scope_locality": f"workspace:{workspace_id};locality:{locality_id}",
+            "scope_locality": f"locality:{locality_id}",
             "occurrence_preservation": "comparison occurrence durably recorded",
         },
         "responsible_boundary": (
@@ -312,6 +311,4 @@ def record_comparison_finding(
         "input_event_ids": [i.event_id for i in finding.inputs],
         **finding.to_json_dict(),
     }
-    return ledger.append(
-        COMPARISON_RECORDED_KIND, workspace_id, payload, locality_id=locality_id
-    )
+    return ledger.append(COMPARISON_RECORDED_KIND, payload, locality_id=locality_id)

@@ -12,71 +12,71 @@ from seed_runtime.exact_material_pointers import (
     ExactMaterialPointers,
     LiteralPart,
     ReferencePart,
-    form_exact_material_pointers,
-    reconstruct_exact_bytes,
+    represent_exact_material_pointers,
+    read_exact_bytes,
 )
 
 
 def test_repeated_exact_material_is_represented_by_backward_references():
     material = b"through through through "
 
-    encoded = form_exact_material_pointers(material)
+    encoded = represent_exact_material_pointers(material)
 
-    assert reconstruct_exact_bytes(encoded) == material
+    assert read_exact_bytes(encoded) == material
     assert any(isinstance(part, ReferencePart) for part in encoded.parts)
     assert encoded.byte_count == len(material)
     assert encoded.sha256 == hashlib.sha256(material).hexdigest()
 
 
-def test_a_reference_may_reuse_bytes_that_an_earlier_reference_reconstructed():
+def test_a_reference_may_reuse_bytes_that_an_earlier_reference_read():
     material = b"abcdabcdabcd"
     encoded = ExactMaterialPointers(
-        pointer_rule=ExactMaterialPointerRule(minimum_reference_length=4, candidate_limit=64),
+        pointer_rule=ExactMaterialPointerRule(minimum_reference_byte_count=4, candidate_limit=64),
         byte_count=len(material),
         sha256=hashlib.sha256(material).hexdigest(),
         parts=(
             LiteralPart(b"abcd"),
-            ReferencePart(start=0, length=4),
+            ReferencePart(start=0, byte_count=4),
             # These bytes were themselves yielded by the preceding reference.
-            ReferencePart(start=4, length=4),
+            ReferencePart(start=4, byte_count=4),
         ),
     )
 
-    assert reconstruct_exact_bytes(encoded) == material
+    assert read_exact_bytes(encoded) == material
 
 
 def test_references_do_not_depend_on_word_or_token_boundaries():
     material = b"got through the door; through the wall"
 
-    encoded = form_exact_material_pointers(material)
+    encoded = represent_exact_material_pointers(material)
 
-    assert reconstruct_exact_bytes(encoded) == material
+    assert read_exact_bytes(encoded) == material
     references = [part for part in encoded.parts if isinstance(part, ReferencePart)]
     assert references
-    assert max(part.length for part in references) >= len(b"through the ")
+    assert max(part.byte_count for part in references) >= len(b"through the ")
 
 
-def test_arbitrary_bytes_round_trip_without_text_interpretation():
+def test_arbitrary_bytes_round_trip_without_text_read():
     material = bytes(range(256)) + bytes(range(256))
 
-    encoded = form_exact_material_pointers(material)
-    reconstructed = ExactMaterialPointers.from_json_dict(encoded.to_json_dict())
+    encoded = represent_exact_material_pointers(material)
+    read = ExactMaterialPointers.from_json_dict(encoded.to_json_dict())
 
-    assert reconstruct_exact_bytes(reconstructed) == material
-    assert any(isinstance(part, ReferencePart) for part in reconstructed.parts)
+    assert read_exact_bytes(read) == material
+    assert any(isinstance(part, ReferencePart) for part in read.parts)
 
 
 def test_empty_material_is_exactly_representable():
-    encoded = form_exact_material_pointers(b"")
+    encoded = represent_exact_material_pointers(b"")
 
     assert encoded.parts == ()
     assert encoded.byte_count == 0
-    assert reconstruct_exact_bytes(encoded) == b""
+    assert read_exact_bytes(encoded) == b""
 
 
 def test_serialized_literal_is_exact_bytes_not_decoded_text():
     encoded = ExactMaterialPointers(
-        pointer_rule=ExactMaterialPointerRule(minimum_reference_length=4, candidate_limit=64),
+        pointer_rule=ExactMaterialPointerRule(minimum_reference_byte_count=4, candidate_limit=64),
         byte_count=3,
         sha256=hashlib.sha256(b"\x00\xffA").hexdigest(),
         parts=(LiteralPart(b"\x00\xffA"),),
@@ -92,21 +92,21 @@ def test_serialized_literal_is_exact_bytes_not_decoded_text():
 def test_forward_or_partially_forward_reference_is_refused():
     digest = hashlib.sha256(b"abcdabcd").hexdigest()
 
-    with pytest.raises(ExactMaterialPointerError, match="already reconstructed"):
+    with pytest.raises(ExactMaterialPointerError, match="already read"):
         ExactMaterialPointers(
-            pointer_rule=ExactMaterialPointerRule(minimum_reference_length=4, candidate_limit=64),
+            pointer_rule=ExactMaterialPointerRule(minimum_reference_byte_count=4, candidate_limit=64),
             byte_count=8,
             sha256=digest,
-            parts=(LiteralPart(b"abcd"), ReferencePart(start=2, length=4)),
+            parts=(LiteralPart(b"abcd"), ReferencePart(start=2, byte_count=4)),
         )
 
 
-def test_byte_count_and_commitment_are_verified_against_reconstruction():
+def test_byte_count_and_commitment_are_verified_against_read():
     digest = hashlib.sha256(b"abc").hexdigest()
 
     with pytest.raises(ExactMaterialPointerError, match="byte_count"):
         ExactMaterialPointers(
-            pointer_rule=ExactMaterialPointerRule(minimum_reference_length=4, candidate_limit=64),
+            pointer_rule=ExactMaterialPointerRule(minimum_reference_byte_count=4, candidate_limit=64),
             byte_count=4,
             sha256=digest,
             parts=(LiteralPart(b"abc"),),
@@ -114,7 +114,7 @@ def test_byte_count_and_commitment_are_verified_against_reconstruction():
 
     with pytest.raises(ExactMaterialPointerError, match="sha256"):
         ExactMaterialPointers(
-            pointer_rule=ExactMaterialPointerRule(minimum_reference_length=4, candidate_limit=64),
+            pointer_rule=ExactMaterialPointerRule(minimum_reference_byte_count=4, candidate_limit=64),
             byte_count=3,
             sha256="0" * 64,
             parts=(LiteralPart(b"abc"),),
@@ -122,7 +122,7 @@ def test_byte_count_and_commitment_are_verified_against_reconstruction():
 
 
 def test_malformed_serialized_parts_are_refused():
-    honest = form_exact_material_pointers(b"abcdef").to_json_dict()
+    honest = represent_exact_material_pointers(b"abcdef").to_json_dict()
 
     malformed = dict(honest)
     malformed["parts"] = [{"kind": "literal", "bytes_b64": "not base64!"}]
@@ -130,7 +130,7 @@ def test_malformed_serialized_parts_are_refused():
         ExactMaterialPointers.from_json_dict(malformed)
 
     malformed = dict(honest)
-    malformed["parts"] = [{"kind": "reference", "start": True, "length": 4}]
+    malformed["parts"] = [{"kind": "reference", "start": True, "byte_count": 4}]
     with pytest.raises(ExactMaterialPointerError, match="reference start"):
         ExactMaterialPointers.from_json_dict(malformed)
 
@@ -142,13 +142,13 @@ def test_malformed_serialized_parts_are_refused():
 
 def test_encoder_parameters_are_exactly_bounded():
     with pytest.raises(ExactMaterialPointerError, match="exact bytes"):
-        form_exact_material_pointers(bytearray(b"abc"))
+        represent_exact_material_pointers(bytearray(b"abc"))
     for bad in (True, 1, 1.5, "4"):
-        with pytest.raises(ExactMaterialPointerError, match="minimum_reference_length"):
-            form_exact_material_pointers(b"abc", minimum_reference_length=bad)
+        with pytest.raises(ExactMaterialPointerError, match="minimum_reference_byte_count"):
+            represent_exact_material_pointers(b"abc", minimum_reference_byte_count=bad)
     for bad in (True, 0, -1, 1.5, "64"):
         with pytest.raises(ExactMaterialPointerError, match="candidate_limit"):
-            form_exact_material_pointers(b"abc", candidate_limit=bad)
+            represent_exact_material_pointers(b"abc", candidate_limit=bad)
 
 
 def test_the_account_declares_the_representation_act_that_yielded_it():
@@ -159,18 +159,18 @@ def test_the_account_declares_the_representation_act_that_yielded_it():
                 b"a fence is not a cat. the cat jumped the fence.")
 
     accounts = {
-        (minimum, limit): form_exact_material_pointers(
-            material, minimum_reference_length=minimum, candidate_limit=limit
+        (minimum, limit): represent_exact_material_pointers(
+            material, minimum_reference_byte_count=minimum, candidate_limit=limit
         )
         for minimum, limit in ((2, 64), (4, 64), (8, 64), (4, 1))
     }
     for (minimum, limit), encoded in accounts.items():
-        assert encoded.pointer_rule.minimum_reference_length == minimum
+        assert encoded.pointer_rule.minimum_reference_byte_count == minimum
         assert encoded.pointer_rule.candidate_limit == limit
-        # Reconstruction does not depend on the pointer_rule.
-        assert reconstruct_exact_bytes(encoded) == material
+        # Read does not depend on the pointer_rule.
+        assert read_exact_bytes(encoded) == material
         assert encoded.to_json_dict()["pointer_rule"] == {
-            "minimum_reference_length": minimum,
+            "minimum_reference_byte_count": minimum,
             "candidate_limit": limit,
         }
 
@@ -189,24 +189,24 @@ def test_the_account_declares_the_representation_act_that_yielded_it():
 def test_a_representation_act_establishes_what_its_coordinates_can_be():
     for value in ("4", None, True, False, 4.0, [], {}):
         with pytest.raises(ExactMaterialPointerError, match="must be an integer"):
-            ExactMaterialPointerRule(minimum_reference_length=value, candidate_limit=64)
+            ExactMaterialPointerRule(minimum_reference_byte_count=value, candidate_limit=64)
         with pytest.raises(ExactMaterialPointerError, match="must be an integer"):
-            ExactMaterialPointerRule(minimum_reference_length=4, candidate_limit=value)
+            ExactMaterialPointerRule(minimum_reference_byte_count=4, candidate_limit=value)
     with pytest.raises(ExactMaterialPointerError, match="at least 2"):
-        ExactMaterialPointerRule(minimum_reference_length=1, candidate_limit=64)
+        ExactMaterialPointerRule(minimum_reference_byte_count=1, candidate_limit=64)
     with pytest.raises(ExactMaterialPointerError, match="must be positive"):
-        ExactMaterialPointerRule(minimum_reference_length=4, candidate_limit=0)
+        ExactMaterialPointerRule(minimum_reference_byte_count=4, candidate_limit=0)
 
 
 def test_an_account_without_a_addressable_representation_act_is_refused():
-    encoded = form_exact_material_pointers(b"the cat jumped the cat jumped")
+    encoded = represent_exact_material_pointers(b"the cat jumped the cat jumped")
     carried = encoded.to_json_dict()
     assert ExactMaterialPointers.from_json_dict(carried) == encoded
 
     for absent in (None, "not an object", 7, []):
         with pytest.raises(ExactMaterialPointerError, match="pointer_rule must be an object"):
             ExactMaterialPointers.from_json_dict(dict(carried, pointer_rule=absent))
-    for key in ("minimum_reference_length", "candidate_limit"):
+    for key in ("minimum_reference_byte_count", "candidate_limit"):
         partial = {k: v for k, v in carried["pointer_rule"].items() if k != key}
         with pytest.raises(ExactMaterialPointerError, match="incomplete"):
             ExactMaterialPointers.from_json_dict(dict(carried, pointer_rule=partial))
@@ -221,42 +221,42 @@ def test_an_account_without_a_addressable_representation_act_is_refused():
 # reaches is a refusal nobody has verified, and after #2486 — where two of three
 # untested coordinate refusals turned out to admit values they asserted to
 # exclude — these are what stand between a malformed durable account and a
-# reconstruction that silently means something else.
+# read that silently means something else.
 #
 # Each case also holds that the refusal is *this module's*, never a raw
 # TypeError, AttributeError or binascii error escaping from an unguarded
 # operation.
 
 _DIGEST_OF_AB = hashlib.sha256(b"ab").hexdigest()
-_POINTER_RULE = ExactMaterialPointerRule(minimum_reference_length=4, candidate_limit=64)
+_POINTER_RULE = ExactMaterialPointerRule(minimum_reference_byte_count=4, candidate_limit=64)
 
 
-def _account(**changes):
+def _account(**differences):
     fields = dict(
         byte_count=2,
         sha256=_DIGEST_OF_AB,
         parts=(LiteralPart(b"ab"),),
         pointer_rule=_POINTER_RULE,
     )
-    fields.update(changes)
+    fields.update(differences)
     return ExactMaterialPointers(**fields)
 
 
 def test_a_literal_part_requires_non_empty_exact_bytes():
-    _account()  # the honest account is constructible
+    _account()  # the honest account is formable
     for value in ("x", bytearray(b"x"), memoryview(b"x"), None, 1, b""):
         with pytest.raises(ExactMaterialPointerError, match="non-empty exact bytes"):
             LiteralPart(value)
 
 
 def test_a_reference_part_requires_exact_positions():
-    ReferencePart(start=0, length=1)  # zero is a lawful start
+    ReferencePart(start=0, byte_count=1)  # zero is a lawful start
     for value in ("1", None, True, False, 1.0, [], -1):
         with pytest.raises(ExactMaterialPointerError, match="reference start"):
-            ReferencePart(start=value, length=1)
+            ReferencePart(start=value, byte_count=1)
     for value in ("1", None, True, False, 1.0, [], 0, -1):
-        with pytest.raises(ExactMaterialPointerError, match="reference length"):
-            ReferencePart(start=0, length=value)
+        with pytest.raises(ExactMaterialPointerError, match="reference byte_count"):
+            ReferencePart(start=0, byte_count=value)
 
 
 def test_an_account_establishes_each_coordinate_it_carries():
@@ -280,20 +280,20 @@ def test_an_account_establishes_each_coordinate_it_carries():
             _account(pointer_rule=value)
 
 
-def test_an_account_is_verified_against_its_own_reconstruction():
+def test_an_account_is_verified_against_its_own_read():
     with pytest.raises(ExactMaterialPointerError, match="does not match byte_count"):
         _account(byte_count=99)
     with pytest.raises(ExactMaterialPointerError, match="does not match sha256"):
         _account(sha256="0" * 64)
     # A reference with no preceding material, and one reaching past what exists.
-    with pytest.raises(ExactMaterialPointerError, match="already reconstructed material"):
-        _account(parts=(ReferencePart(start=0, length=4),), byte_count=4)
-    with pytest.raises(ExactMaterialPointerError, match="already reconstructed material"):
-        _account(parts=(LiteralPart(b"ab"), ReferencePart(start=0, length=4)), byte_count=6)
+    with pytest.raises(ExactMaterialPointerError, match="already read material"):
+        _account(parts=(ReferencePart(start=0, byte_count=4),), byte_count=4)
+    with pytest.raises(ExactMaterialPointerError, match="already read material"):
+        _account(parts=(LiteralPart(b"ab"), ReferencePart(start=0, byte_count=4)), byte_count=6)
 
 
 def test_a_serialized_account_is_refused_when_it_cannot_be_validated():
-    carried = form_exact_material_pointers(b"the cat jumped the cat jumped").to_json_dict()
+    carried = represent_exact_material_pointers(b"the cat jumped the cat jumped").to_json_dict()
     for value in (None, "x", 7, [], ()):
         with pytest.raises(ExactMaterialPointerError, match="must be an object"):
             ExactMaterialPointers.from_json_dict(value)
@@ -322,12 +322,12 @@ def test_a_serialized_account_is_refused_when_it_cannot_be_validated():
             )
     with pytest.raises(ExactMaterialPointerError, match="reference start"):
         ExactMaterialPointers.from_json_dict(
-            dict(carried, parts=[{"kind": "reference", "length": 4}])
+            dict(carried, parts=[{"kind": "reference", "byte_count": 4}])
         )
 
 
 def test_a_literal_must_carry_the_canonical_encoding_of_its_bytes():
-    """Acceptance must not depend on which interpreter reads the account.
+    """Acceptance must not depend on which Python process reads the account.
 
     `b64decode(validate=True)` accepted `"YWJj===="` as `b"abc"` through Python
     3.11 and refuses it as excess padding from 3.12. An earlier revision
@@ -336,13 +336,13 @@ def test_a_literal_must_carry_the_canonical_encoding_of_its_bytes():
     acceptance moved with the runtime.
 
     Canonicality is now required explicitly, which is exact and identical
-    everywhere. This is stricter than either interpreter's default in one
-    direction only: a form this module emits is always accepted, since
+    everywhere. This is stricter than either Python process's default in one
+    direction only: a representation this module emits is always accepted, since
     `to_json_dict` emits canonical base64.
     """
 
     material = b"abc"
-    account = form_exact_material_pointers(material)
+    account = represent_exact_material_pointers(material)
     carried = account.to_json_dict()
     assert carried["parts"] == [{"kind": "literal", "bytes_b64": "YWJj"}]
     assert ExactMaterialPointers.from_json_dict(carried) == account
@@ -364,76 +364,76 @@ def test_a_literal_must_carry_the_canonical_encoding_of_its_bytes():
     # whose canonical encoding carries padding.
     for exact in (b"a", b"ab", b"abc", b"abcd", bytes(range(256))):
         rebuilt = ExactMaterialPointers.from_json_dict(
-            form_exact_material_pointers(exact).to_json_dict()
+            represent_exact_material_pointers(exact).to_json_dict()
         )
-        assert reconstruct_exact_bytes(rebuilt) == exact
+        assert read_exact_bytes(rebuilt) == exact
 
 
-def test_reconstruction_refuses_material_that_is_not_an_account():
-    for value in (None, "x", 7, form_exact_material_pointers(b"abcd").to_json_dict()):
+def test_read_refuses_material_that_is_not_an_account():
+    for value in (None, "x", 7, represent_exact_material_pointers(b"abcd").to_json_dict()):
         with pytest.raises(ExactMaterialPointerError, match="must be ExactMaterialPointers"):
-            reconstruct_exact_bytes(value)
+            read_exact_bytes(value)
 
 
 def test_representation_act_bounds_are_established_before_any_material_is_read():
     for value in ("x", bytearray(b"x"), memoryview(b"x"), None, 1):
         with pytest.raises(ExactMaterialPointerError, match="exact_bytes must be exact bytes"):
-            form_exact_material_pointers(value)
+            represent_exact_material_pointers(value)
     for value in ("4", None, True, False, 4.0, [], 1, 0, -1):
-        with pytest.raises(ExactMaterialPointerError, match="minimum_reference_length"):
-            form_exact_material_pointers(b"abcdef", minimum_reference_length=value)
+        with pytest.raises(ExactMaterialPointerError, match="minimum_reference_byte_count"):
+            represent_exact_material_pointers(b"abcdef", minimum_reference_byte_count=value)
     for value in ("4", None, True, False, 4.0, [], 0, -1):
         with pytest.raises(ExactMaterialPointerError, match="candidate_limit"):
-            form_exact_material_pointers(b"abcdef", candidate_limit=value)
+            represent_exact_material_pointers(b"abcdef", candidate_limit=value)
 
 
-def test_reconstruction_verifies_an_account_that_was_altered_after_construction():
-    """The verify branch is unreachable through construction, and live anyway.
+def test_read_verifies_an_account_that_was_altered_after_input():
+    """The verify branch is unreachable through ordinary input, and live anyway.
 
     `__post_init__` already checks the count and the digest against a
-    reconstruction, so `reconstruct_exact_bytes` can never refuse an account
+    read, so `read_exact_bytes` can never refuse an account
     that was built normally. It is not dead: a frozen dataclass is mutable
     through `object.__setattr__`, which is the in-memory analogue of the durable
     tampering the digest exists to detect. Held so the branch is verified rather
     than assumed, and so removing it later has to be a decision.
     """
 
-    account = form_exact_material_pointers(b"the cat jumped the cat jumped")
-    assert reconstruct_exact_bytes(account) == b"the cat jumped the cat jumped"
+    account = represent_exact_material_pointers(b"the cat jumped the cat jumped")
+    assert read_exact_bytes(account) == b"the cat jumped the cat jumped"
 
-    altered = form_exact_material_pointers(b"the cat jumped the cat jumped")
+    altered = represent_exact_material_pointers(b"the cat jumped the cat jumped")
     object.__setattr__(altered, "byte_count", 99)
     with pytest.raises(ExactMaterialPointerError, match="does not match byte_count"):
-        reconstruct_exact_bytes(altered)
+        read_exact_bytes(altered)
 
-    altered = form_exact_material_pointers(b"the cat jumped the cat jumped")
+    altered = represent_exact_material_pointers(b"the cat jumped the cat jumped")
     object.__setattr__(altered, "sha256", "0" * 64)
     with pytest.raises(ExactMaterialPointerError, match="does not match sha256"):
-        reconstruct_exact_bytes(altered)
+        read_exact_bytes(altered)
 
     # verify=False is the internal path __post_init__ uses, and does not check.
-    assert reconstruct_exact_bytes(altered, verify=False) == b"the cat jumped the cat jumped"
+    assert read_exact_bytes(altered, verify=False) == b"the cat jumped the cat jumped"
 
 
 def test_a_candidate_too_close_to_the_current_position_is_not_referenced():
     """A source span must be complete before the part that references it begins.
 
     Overlapping references are refused by design, so a candidate whose distance
-    back is shorter than the minimum length cannot supply one and is skipped.
+    back is shorter than the minimum byte_count cannot supply one and is skipped.
     Exercised with a run, where every prior occurrence of the key sits closer
     than the minimum until enough material accumulates.
     """
 
-    account = form_exact_material_pointers(b"a" * 16, minimum_reference_length=4)
-    assert reconstruct_exact_bytes(account) == b"a" * 16
+    account = represent_exact_material_pointers(b"a" * 16, minimum_reference_byte_count=4)
+    assert read_exact_bytes(account) == b"a" * 16
     references = [p for p in account.parts if isinstance(p, ReferencePart)]
     # Every reference is non-overlapping: its source ends at or before the
     # position where it is placed.
     placed = 0
     for part in account.parts:
         if isinstance(part, ReferencePart):
-            assert part.start + part.length <= placed
-            placed += part.length
+            assert part.start + part.byte_count <= placed
+            placed += part.byte_count
         else:
             placed += len(part.exact_bytes)
     assert references, "a run should still yield at least one reference"

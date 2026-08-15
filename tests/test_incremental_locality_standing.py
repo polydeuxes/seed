@@ -1,6 +1,6 @@
-"""Advancing session Standing equals replaying it, at every occurrence boundary.
+"""Advancing locality Standing equals replaying it, at every occurrence boundary.
 
-The console projected session Standing from the first event of the session
+The console projected locality Standing from the first event of the locality
 before every interaction, so occurrence *j* was reprojected by every later one.
 `#2376` established that advancing a prior Standing over only the occurrences
 after its boundary yields exactly the replayed result across 1,077 prefix
@@ -11,7 +11,7 @@ against replay from zero through the same boundary. Timing is asserted nowhere;
 `test_the_console_never_replays_the_session` pins the architecture directly.
 
 The advance takes over its prior rather than copying it. Standing grows with the
-session, so a copy per advance would cost the session length every time and
+locality, so a copy per advance would cost the locality event count every time and
 reinstate the quadratic this replaced. That contract is exercised here so it
 cannot be softened by accident.
 """
@@ -29,6 +29,7 @@ from seed_runtime.operator_locality_standing import (
     read_operator_locality_standing,
 )
 from seed_runtime.operator_console import run_persistent_operator_console
+from seed_runtime.material_ingest import MATERIAL_INGEST_OCCURRED_KIND
 
 MATERIALS = (
     "alpha\nbeta\ngamma\n",
@@ -45,7 +46,6 @@ def _console(material, ledger=None):
     output = StringIO()
     run_persistent_operator_console(
         ledger=ledger,
-        workspace_id="w",
         locality_id="s",
         input_stream=binary_input(material),
         output_stream=output,
@@ -56,19 +56,21 @@ def _console(material, ledger=None):
 def _replay(events):
     ledger = EventLedger()
     ledger.extend(events)
-    return read_operator_locality_standing(ledger, workspace_id="w", locality_id="s")
+    return read_operator_locality_standing(ledger, locality_id="s")
 
 
 def _ingress_event(index, *, unknowns):
-    """One recorded ingress occurrence carrying distinct Unknowns."""
+    """One recorded ingest occurrence carrying distinct Unknowns."""
     ledger = EventLedger()
     return ledger.append(
-        "operator.material.raw_captured",
-        "w",
+        MATERIAL_INGEST_OCCURRED_KIND,
         {
-            "attempt_ref": f"attempt_{index}",
-            "dimensions": {"identity": f"material_{index}"},
-            "material_role": "initial_ingress",
+            "dimensions": {
+                "identity": f"material_{index}",
+                "authority": "unestablished",
+                "content": "00",
+            },
+            "source_role": "operator",
             "unknowns": list(unknowns),
         },
         locality_id="s",
@@ -77,7 +79,7 @@ def _ingress_event(index, *, unknowns):
 
 def _advance(events, prior=None):
     return advance_operator_locality_standing(
-        events, workspace_id="w", locality_id="s", prior=prior
+        events, locality_id="s", prior=prior
     )
 
 
@@ -89,7 +91,7 @@ def _advance(events, prior=None):
 @pytest.mark.parametrize("material", MATERIALS)
 def test_advancing_one_occurrence_at_a_time_equals_replay(material):
     ledger, _ = _console(material)
-    events = ledger.list("w")
+    events = ledger.list()
     standing = _advance([])
     for index in range(len(events)):
         standing = _advance([events[index]], prior=standing)
@@ -97,9 +99,9 @@ def test_advancing_one_occurrence_at_a_time_equals_replay(material):
 
 
 def test_advancing_in_the_console_s_own_groupings_equals_replay():
-    """Two Representation occurrences, then three ingress occurrences, repeating."""
+    """Two Representation occurrences, then three ingest occurrences, repeating."""
     ledger, _ = _console("alpha\nbeta\ngamma\n")
-    events = ledger.list("w")
+    events = ledger.list()
     standing = _advance([])
     input = 0
     for size in (2, 3, 2, 3, 2, 3, 2):
@@ -113,7 +115,7 @@ def test_advancing_in_the_console_s_own_groupings_equals_replay():
 
 def test_an_advance_over_no_occurrences_changes_nothing():
     ledger, _ = _console("alpha\n")
-    events = ledger.list("w")
+    events = ledger.list()
     standing = _advance(events)
     assert _advance([], prior=standing) == _replay(events)
 
@@ -121,10 +123,10 @@ def test_an_advance_over_no_occurrences_changes_nothing():
 def test_replay_still_works_and_agrees_with_a_single_advance():
     for material in MATERIALS:
         ledger, _ = _console(material)
-        events = ledger.list("w")
+        events = ledger.list()
         assert _advance(events) == _replay(events)
         assert read_operator_locality_standing(
-            ledger, workspace_id="w", locality_id="s"
+            ledger, locality_id="s"
         ) == _replay(events)
 
 
@@ -132,7 +134,7 @@ def test_a_persisted_ledger_advances_identically(tmp_path):
     ledger = SQLiteEventLedger(str(tmp_path / "ledger.sqlite"))
     try:
         _console("alpha\nünïcode\n", ledger=ledger)
-        events = ledger.list("w")
+        events = ledger.list()
         standing = _advance([])
         for index in range(len(events)):
             standing = _advance([events[index]], prior=standing)
@@ -146,7 +148,7 @@ def test_a_persisted_ledger_advances_identically(tmp_path):
 # --------------------------------------------------------------------------
 
 
-def test_the_console_never_replays_the_session(monkeypatch):
+def test_the_console_never_replays_the_locality(monkeypatch):
     """One read from nothing recorded, for C0. No replay after that."""
     calls = []
     from seed_runtime import operator_console
@@ -154,7 +156,7 @@ def test_the_console_never_replays_the_session(monkeypatch):
     original = operator_console.read_operator_locality_standing
 
     def record(ledger, **kwargs):
-        calls.append(len(ledger.list(kwargs["workspace_id"])))
+        calls.append(len(ledger.list_locality(kwargs["locality_id"])))
         return original(ledger, **kwargs)
 
     monkeypatch.setattr(operator_console, "read_operator_locality_standing", record)
@@ -176,7 +178,7 @@ def test_each_advance_reads_only_what_an_act_just_recorded(monkeypatch):
 
     monkeypatch.setattr(operator_console, "advance_operator_locality_standing", record)
     _console("alpha\nbeta\ngamma\ndelta\n")
-    assert set(sizes) <= {2, 3}, sizes
+    assert set(sizes) <= {1, 3}, sizes
 
 
 # --------------------------------------------------------------------------
@@ -185,18 +187,18 @@ def test_each_advance_reads_only_what_an_act_just_recorded(monkeypatch):
 
 
 def test_the_advance_reads_its_prior():
-    """Stated so it cannot be softened into a copy without a deliberate change.
+    """Stated so it cannot be softened into a copy without a deliberate revision.
 
-    Copying per advance would cost the session length every time, which is the
+    Copying per advance would cost the locality event count every time, which is the
     quadratic this replaced.
     """
     ledger, _ = _console("alpha\nbeta\n")
-    events = ledger.list("w")
+    events = ledger.list()
     prior = _advance(events[:5])
-    before = len(prior["preserved_ingress_occurrences"])
+    before = len(prior["ingest_occurrences"])
     advanced = _advance(events[5:], prior=prior)
-    assert advanced["attempts"] is prior["attempts"]
-    assert len(prior["preserved_ingress_occurrences"]) >= before
+    assert advanced["ingests"] is prior["ingests"]
+    assert len(prior["ingest_occurrences"]) >= before
 
 
 def test_every_growable_accumulator_participates_without_copying():
@@ -208,13 +210,13 @@ def test_every_growable_accumulator_participates_without_copying():
     them grow and restore the shape.
     """
     ledger, _ = _console("alpha\nbeta\n")
-    events = ledger.list("w")
+    events = ledger.list()
     prior = _advance(events[:5])
     advanced = _advance(events[5:], prior=prior)
     for coordinate in (
-        "attempts",
+        "ingests",
         "representations",
-        "preserved_ingress_occurrences",
+        "ingest_occurrences",
         "known_loss",
         "unknowns",
         "conflicts",
@@ -252,29 +254,29 @@ def test_the_console_keeps_no_earlier_standing():
     ledger, output = _console("alpha\nbeta\ngamma\n")
     assert output.count("Bounded Representation") == 4
     assert read_operator_locality_standing(
-        ledger, workspace_id="w", locality_id="s"
-    ) == _replay(ledger.list("w"))
+        ledger, locality_id="s"
+    ) == _replay(ledger.list())
 
 
 # --------------------------------------------------------------------------
-# Behaviour that must not have changed.
+# Behaviour that must not have different.
 # --------------------------------------------------------------------------
 
 
 def test_c0_still_forms_from_empty_standing():
     ledger, _ = _console("")
-    formed = next(
+    supplied = next(
         event
-        for event in ledger.list("w")
+        for event in ledger.list()
         if event.kind == "operator.representation.recorded"
     )
-    assert formed.payload["locality_standing_as_of_event_id"] is None
+    assert supplied.payload["locality_standing_as_of_event_id"] is None
 
 
-def test_the_session_records_the_same_occurrences_it_always_did():
+def test_the_locality_records_the_same_occurrences_it_always_did():
     ledger, output = _console("alpha\nbeta\n")
-    kinds = [event.kind for event in ledger.list("w")]
-    assert kinds.count("operator.material.occurred") == 2
+    kinds = [event.kind for event in ledger.list()]
+    assert kinds.count(MATERIAL_INGEST_OCCURRED_KIND) == 2
     assert kinds.count("operator.representation.recorded") == 3
     assert kinds.count("operator.representation.emitted") == 3
     assert output.count("Bounded Representation") == 3

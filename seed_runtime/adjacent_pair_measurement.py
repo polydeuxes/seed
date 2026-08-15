@@ -1,4 +1,4 @@
-"""Recover exact adjacent-pair occurrences from displacement-one findings.
+"""Read exact adjacent-pair occurrences from displacement-one findings.
 
 An **adjacent pair** is two representations, one recorded as occupying the
 position after the other. Nothing more.
@@ -26,7 +26,7 @@ from seed_runtime.event import Event
 from seed_runtime.ids import new_id
 from seed_runtime.yield_evidence import _record_yield_evidence, yield_commitment
 from seed_runtime.preserved_material_measurement import (
-    INGRESS_OCCURRED_KIND,
+    INGEST_OCCURRED_KIND,
     MEASUREMENT_RECORDED_KIND,
     DeclaredMeasurement,
     MeasurementFinding,
@@ -39,17 +39,10 @@ from seed_runtime.operator_representation import (
     REPRESENTATION_EMITTED_KIND,
     REPRESENTATION_EMISSION_LOCALITY_EVIDENCE_KIND,
 )
-from seed_runtime.system_material import (
-    SYSTEM_INVOCATION_MATERIAL_RELATED_KIND,
-    SYSTEM_INVOCATION_OCCURRED_KIND,
-    SYSTEM_MATERIAL_OCCURRED_KIND,
-    SystemMaterialError,
-    system_material_bytes,
-)
 
 EQUIVALENCE_RULE = "byte-for-byte equality; no normalization"
 
-# Where each form measures, stated as coordinates rather than left in the
+# Where each distinction measures, stated as coordinates rather than left in the
 # indexing.  A measurement that does not say where it looked cannot be compared
 # with one that looked elsewhere, and a coordinate that is never written down
 # cannot be observed to have never varied.
@@ -71,7 +64,7 @@ ADJACENT_PAIR_OBSERVATION_ACT_EVIDENCE_KIND = (
 ADJACENT_PAIR_OBSERVATION_LOCALITY_EVIDENCE_KIND = (
     "operator.measurement.adjacent_pair_observation_locality_evidenced"
 )
-ADJACENT_PAIR_OBSERVATION_CONVENTION = "adjacent_pair_observation_v1"
+ADJACENT_PAIR_OBSERVATION_CONVENTION = "adjacent_pair_observation"
 ADJACENT_PAIR_OBSERVATION_COMPARE_RECORDED_KIND = (
     "operator.measurement.adjacent_pair_observation_compare_recorded"
 )
@@ -82,20 +75,16 @@ ADJACENT_PAIR_OBSERVATION_COMPARE_LOCALITY_EVIDENCE_KIND = (
     "operator.measurement.adjacent_pair_observation_compare_locality_evidenced"
 )
 ADJACENT_PAIR_OBSERVATION_COMPARE_CONVENTION = (
-    "adjacent_pair_observation_compare_v1"
+    "adjacent_pair_observation_compare"
 )
 ADJACENT_PAIR_OBSERVATION_RESPONSIBILITY = (
     "observe one adjacent position on each side of every exact occurrence of "
-    "each ordered pair recovered from one exact finding"
+    "each ordered pair read from one exact finding"
 )
-PAIR_FINDING_PARTICIPATION_ROLE = "recovered ordered-pair finding"
+PAIR_FINDING_PARTICIPATION_ROLE = "read ordered-pair finding"
 SOURCE_OCCURRENCE_PARTICIPATION_ROLE = "exact preserved source occurrence"
 EMISSION_LOCALITY_PARTICIPATION_ROLE = "exact emission Locality Evidence"
 EMISSION_OCCURRENCE_PARTICIPATION_ROLE = "exact emission occurrence"
-SYSTEM_MATERIAL_RELATION_PARTICIPATION_ROLE = (
-    "exact process-occurrence-to-system-material relation"
-)
-SYSTEM_MATERIAL_OCCURRENCE_PARTICIPATION_ROLE = "exact system-material occurrence"
 OBSERVATION_COMPARE_INPUT_ROLE = "exact recorded adjacent-pair observations"
 ADJACENT_PAIR_OBSERVATION_COMPARE_RESPONSIBILITY = (
     "compare exact recorded adjacent-pair observations without identifying "
@@ -121,7 +110,7 @@ class AdjacentPair:
         if not self.left or not self.right:
             raise PreservedMaterialMeasurementError("a pair's representations must be exact")
 
-    def __str__(self) -> str:  # pragma: no cover - rendering only
+    def __str__(self) -> str:  # pragma: no cover - representation only
         return f"{self.left!r} -> {self.right!r}"
 
 
@@ -140,7 +129,7 @@ class PositionedRepresentationOccurrence:
 
 @dataclass(frozen=True)
 class ExactAdjacentPairOccurrence:
-    """One exact occurrence of an already-recovered ordered adjacent pair."""
+    """One exact occurrence of an already-read ordered adjacent pair."""
 
     pair: AdjacentPair
     left: PositionedRepresentationOccurrence
@@ -239,11 +228,9 @@ class AdjacentPairObservation:
             or evidence_ids != [finding_id, source_id]
             or evidence.get("source_kind")
             not in {
-                INGRESS_OCCURRED_KIND,
+                INGEST_OCCURRED_KIND,
                 REPRESENTATION_EMITTED_KIND,
-                SYSTEM_MATERIAL_OCCURRED_KIND,
             }
-            or not isinstance(evidence.get("workspace_id"), str)
             or not isinstance(evidence.get("locality_id"), str)
             or not isinstance(text, str)
         ):
@@ -324,14 +311,14 @@ def _adjacent_pairs_from_event(event: Event | None) -> list[AdjacentPair]:
 
 
 def _is_established_after_measurement(event: Event) -> bool:
-    """Whether a record carries the exact established displacement-1 form."""
+    """Whether a record carries the exact established displacement-1 distinction."""
 
     left = event.payload.get("measured_left_representation")
     return (
         event.kind == MEASUREMENT_RECORDED_KIND
         and event.payload.get("convention") == MEASUREMENT_CONVENTION
         and event.payload.get("equivalence_rule") == EQUIVALENCE_RULE
-        and event.payload.get("measurement_form") == "after"
+        and event.payload.get("measurement_distinction") == "after"
         and isinstance(left, str)
         and bool(left)
         and event.payload.get("measured_relative_to") == [left]
@@ -379,27 +366,17 @@ def _observe_adjacent_pair_observations(
     bounded_pairs = tuple(dict.fromkeys(pairs))
     observations: list[AdjacentPairObservation] = []
     for source in occurrences:
-        if source.kind == INGRESS_OCCURRED_KIND:
-            text = source.payload.get(
-                "represented_material", source.payload.get("decoded_text")
-            )
+        if source.kind == INGEST_OCCURRED_KIND:
+            text = source.payload.get("represented_material")
         elif source.kind == REPRESENTATION_EMITTED_KIND:
             text = source.payload.get("emitted_representation")
-        elif source.kind == SYSTEM_MATERIAL_OCCURRED_KIND:
-            exact_bytes = system_material_bytes(source)
-            try:
-                text = exact_bytes.decode("utf-8", errors="strict")
-            except UnicodeDecodeError as exc:
-                raise PreservedMaterialMeasurementError(
-                    f"{source.id} carries no exact UTF-8 representation"
-                ) from exc
         else:
             raise PreservedMaterialMeasurementError(
-                f"the source occurrence does not carry an observable representation: {source.kind}"
+                f"the source occurrence does not carry represented material: {source.kind}"
             )
         if not isinstance(text, str):
             raise PreservedMaterialMeasurementError(
-                f"{source.id} carries no exact decoded representation"
+                f"{source.id} carries no represented material"
             )
         positions = _positions(text)
         for pair in bounded_pairs:
@@ -455,7 +432,6 @@ def _observe_adjacent_pair_observations(
                                 source.id,
                             ],
                             "source_kind": source.kind,
-                            "workspace_id": source.workspace_id,
                             "locality_id": source.locality_id,
                             "exact_representation": text,
                         },
@@ -493,7 +469,6 @@ def observe_emitted_representation_adjacency(
         or locality is None
         or locality.kind != REPRESENTATION_EMISSION_LOCALITY_EVIDENCE_KIND
         or ledger.integrity_of(locality.id) == CORRUPTED
-        or locality.workspace_id != emission.workspace_id
         or locality.locality_id != emission.locality_id
         or locality.payload.get("act_occurrence_id")
         != emission.payload.get("act_occurrence_id")
@@ -515,105 +490,6 @@ def observe_emitted_representation_adjacency(
         (emission,),
         pairs,
         adjacency_evidence_event_id=locality.id,
-    )
-
-
-def observe_system_material_adjacency(
-    ledger: EventLedger,
-    *,
-    material_event_id: str,
-    relation_event_id: str,
-) -> tuple[AdjacentPairObservation, ...]:
-    """Observe text positions joined to one exact process occurrence."""
-
-    material = ledger.get(material_event_id)
-    relation = ledger.get(relation_event_id)
-    process = (
-        ledger.get(relation.payload.get("process_event_id"))
-        if relation is not None
-        and isinstance(relation.payload.get("process_event_id"), str)
-        else None
-    )
-    if (
-        material is None
-        or material.kind != SYSTEM_MATERIAL_OCCURRED_KIND
-        or ledger.integrity_of(material.id) == CORRUPTED
-        or relation is None
-        or relation.kind != SYSTEM_INVOCATION_MATERIAL_RELATED_KIND
-        or ledger.integrity_of(relation.id) == CORRUPTED
-        or process is None
-        or process.kind != SYSTEM_INVOCATION_OCCURRED_KIND
-        or ledger.integrity_of(process.id) == CORRUPTED
-        or not (
-            relation.workspace_id == material.workspace_id == process.workspace_id
-        )
-        or relation.locality_id != material.locality_id
-        or process.locality_id != material.locality_id
-        or relation.payload.get("material_occurrence_id") != material.id
-        or relation.payload.get("process_occurrence_id")
-        != process.payload.get("process_occurrence_id")
-        or relation.payload.get("preserved_byte_count")
-        != material.payload.get("byte_count")
-        or relation.payload.get("standing") != "related"
-    ):
-        raise PreservedMaterialMeasurementError(
-            "system-material adjacency requires one exact intact process relation"
-        )
-    exact_bytes = system_material_bytes(material)
-    try:
-        text = exact_bytes.decode("utf-8", errors="strict")
-    except UnicodeDecodeError as exc:
-        raise PreservedMaterialMeasurementError(
-            "system-material adjacency requires exact UTF-8 material"
-        ) from exc
-    positions = _positions(text)
-    pairs = tuple(
-        dict.fromkeys(
-            AdjacentPair(positions[index], positions[index + 1])
-            for index in range(len(positions) - 1)
-        )
-    )
-    return _observe_adjacent_pair_observations(
-        (material,),
-        pairs,
-        adjacency_evidence_event_id=relation.id,
-    )
-
-
-def record_system_material_adjacency(
-    ledger: EventLedger,
-    *,
-    material_event_id: str,
-    relation_event_id: str,
-) -> Event:
-    """Record exact adjacent positions from related process stream material."""
-
-    material = ledger.get(material_event_id)
-    observations = observe_system_material_adjacency(
-        ledger,
-        material_event_id=material_event_id,
-        relation_event_id=relation_event_id,
-    )
-    assert material is not None and material.locality_id is not None
-    return _record_adjacent_pair_observation_result(
-        ledger,
-        workspace_id=material.workspace_id,
-        locality_id=material.locality_id,
-        adjacency_evidence_event_id=relation_event_id,
-        source_ids=(material.id,),
-        observations=observations,
-        applicable_inputs=[
-            {
-                "input_ref": relation_event_id,
-                "role": SYSTEM_MATERIAL_RELATION_PARTICIPATION_ROLE,
-                "standing": "applicable",
-            },
-            {
-                "input_ref": material.id,
-                "role": SYSTEM_MATERIAL_OCCURRENCE_PARTICIPATION_ROLE,
-                "standing": "applicable",
-            },
-        ],
     )
 
 
@@ -660,7 +536,6 @@ def record_emitted_representation_adjacency(
     locality_id = emission.payload["locality_evidence_id"]
     return _record_adjacent_pair_observation_result(
         ledger,
-        workspace_id=emission.workspace_id,
         locality_id=emission.locality_id,
         adjacency_evidence_event_id=locality_id,
         source_ids=(emission.id,),
@@ -686,7 +561,7 @@ def observe_adjacent_pair_observations_from_finding(
     finding_event_id: str,
     occurrences: Iterable[Event],
 ) -> tuple[AdjacentPairObservation, ...]:
-    """Observe only adjacent pairs recovered from one recorded finding."""
+    """Observe only adjacent pairs read from one recorded finding."""
 
     finding = ledger.get(finding_event_id)
     if finding is None or ledger.integrity_of(finding_event_id) == CORRUPTED:
@@ -711,15 +586,13 @@ def observe_adjacent_pair_observations_from_finding(
         recorded = ledger.get(event.id)
         if (
             recorded is None
-            or recorded.kind != INGRESS_OCCURRED_KIND
-            or recorded.workspace_id != finding.workspace_id
+            or recorded.kind != INGEST_OCCURRED_KIND
             or recorded.locality_id != finding.locality_id
-            or recorded.workspace_id != event.workspace_id
             or recorded.locality_id != event.locality_id
             or recorded.payload != event.payload
         ):
             raise PreservedMaterialMeasurementError(
-                "the finding's source-occurrence Evidence does not reconstruct"
+                "the finding's source-occurrence Evidence does not read"
             )
     pairs = _adjacent_pairs_from_event(finding)
     return _observe_adjacent_pair_observations(
@@ -869,7 +742,6 @@ def _adjacent_pair_observation_payload(
 def _record_adjacent_pair_observation_result(
     ledger: EventLedger,
     *,
-    workspace_id: str,
     locality_id: str,
     adjacency_evidence_event_id: str,
     source_ids: tuple[str, ...],
@@ -896,7 +768,6 @@ def _record_adjacent_pair_observation_result(
     ]
     act_evidence = ledger.append(
         ADJACENT_PAIR_OBSERVATION_ACT_EVIDENCE_KIND,
-        workspace_id,
         {
             "downstream_act_id": act_id,
             "act_occurrence_id": act_occurrence_id,
@@ -916,7 +787,6 @@ def _record_adjacent_pair_observation_result(
     )
     yield_evidence = _record_yield_evidence(
         ledger,
-        workspace_id=workspace_id,
         locality_id=locality_id,
         convention=ADJACENT_PAIR_OBSERVATION_CONVENTION,
         yielding_act="exact adjacent-pair observation Measurement",
@@ -930,7 +800,6 @@ def _record_adjacent_pair_observation_result(
     )
     locality_evidence = ledger.append(
         ADJACENT_PAIR_OBSERVATION_LOCALITY_EVIDENCE_KIND,
-        workspace_id,
         {
             "act_occurrence_id": act_occurrence_id,
             "content_kind": "exact adjacent-pair observations",
@@ -943,7 +812,6 @@ def _record_adjacent_pair_observation_result(
     )
     return ledger.append(
         ADJACENT_PAIR_OBSERVATION_RECORDED_KIND,
-        workspace_id,
         {
             **result_payload,
             "dimensions": {
@@ -958,7 +826,7 @@ def _record_adjacent_pair_observation_result(
                     "measurement Evidence only; establishes no classification, "
                     "represented relation, or Standing beyond this result"
                 ),
-                "scope_locality": f"workspace:{workspace_id};locality:{locality_id}",
+                "scope_locality": f"locality:{locality_id}",
                 "occurrence_preservation": "one exact adjacent-pair observation Measurement occurrence recorded",
             },
             "downstream_act_id": act_id,
@@ -979,7 +847,6 @@ def _record_adjacent_pair_observation_result(
 def record_adjacent_pair_observations(
     ledger: EventLedger,
     *,
-    workspace_id: str,
     locality_id: str,
     finding_event_id: str,
 ) -> Event:
@@ -988,23 +855,22 @@ def record_adjacent_pair_observations(
     finding = ledger.get(finding_event_id)
     if (
         finding is None
-        or finding.workspace_id != workspace_id
         or finding.locality_id != locality_id
     ):
         raise PreservedMaterialMeasurementError(
-            "the recovered pair finding is outside this Measurement locality"
+            "the read pair finding is outside this Measurement locality"
         )
     source_ids = finding.payload.get("input_event_ids")
     if not isinstance(source_ids, list):
         raise PreservedMaterialMeasurementError(
-            "the recovered pair finding carries no exact source occurrences"
+            "the read pair finding carries no exact source occurrences"
         )
     source_occurrences = []
     for source_id in source_ids:
         source = ledger.get(source_id) if isinstance(source_id, str) else None
         if source is None:
             raise PreservedMaterialMeasurementError(
-                "the recovered pair finding names an absent source occurrence"
+                "the read pair finding names an absent source occurrence"
             )
         source_occurrences.append(source)
     observations = observe_adjacent_pair_observations_from_finding(
@@ -1029,7 +895,6 @@ def record_adjacent_pair_observations(
     ]
     return _record_adjacent_pair_observation_result(
         ledger,
-        workspace_id=workspace_id,
         locality_id=locality_id,
         adjacency_evidence_event_id=finding_event_id,
         source_ids=tuple(source_ids),
@@ -1130,21 +995,21 @@ def get_recorded_adjacent_pair_observations(
     ledger: EventLedger,
     event_id: str,
 ) -> tuple[AdjacentPairObservation, ...] | None:
-    """Recover an exact recorded result without repeating its Measurement."""
+    """Read an exact recorded result without repeating its Measurement."""
 
-    carrier = ledger.get(event_id)
-    if carrier is None:
+    event = ledger.get(event_id)
+    if event is None:
         return None
     if (
-        carrier.kind != ADJACENT_PAIR_OBSERVATION_RECORDED_KIND
+        event.kind != ADJACENT_PAIR_OBSERVATION_RECORDED_KIND
         or ledger.integrity_of(event_id) == CORRUPTED
     ):
         raise PreservedMaterialMeasurementError(
-            "the adjacent-pair observation result carrier is absent or corrupted"
+            "the adjacent-pair observation result event is absent or corrupted"
         )
-    adjacency_evidence_id = carrier.payload.get("adjacency_evidence_event_id")
-    source_ids = carrier.payload.get("source_occurrence_ids")
-    carried_observations = carrier.payload.get("observations")
+    adjacency_evidence_id = event.payload.get("adjacency_evidence_event_id")
+    source_ids = event.payload.get("source_occurrence_ids")
+    carried_observations = event.payload.get("observations")
     if (
         not isinstance(adjacency_evidence_id, str)
         or not adjacency_evidence_id
@@ -1160,9 +1025,9 @@ def get_recorded_adjacent_pair_observations(
         "source_occurrence_ids": source_ids,
         "observations": carried_observations,
     }
-    act_evidence_id = carrier.payload.get("responsible_act_evidence_id")
-    yield_evidence_id = carrier.payload.get("yield_evidence_id")
-    locality_evidence_id = carrier.payload.get("locality_evidence_id")
+    act_evidence_id = event.payload.get("responsible_act_evidence_id")
+    yield_evidence_id = event.payload.get("yield_evidence_id")
+    locality_evidence_id = event.payload.get("locality_evidence_id")
     if not all(
         isinstance(value, str) and value
         for value in (act_evidence_id, yield_evidence_id, locality_evidence_id)
@@ -1184,8 +1049,8 @@ def get_recorded_adjacent_pair_observations(
         raise PreservedMaterialMeasurementError(
             "the adjacent-pair observation result carries incomplete edge Evidence"
         )
-    act_occurrence_id = carrier.payload.get("act_occurrence_id")
-    downstream_act_id = carrier.payload.get("downstream_act_id")
+    act_occurrence_id = event.payload.get("act_occurrence_id")
+    downstream_act_id = event.payload.get("downstream_act_id")
     commitment = yield_commitment(ADJACENT_PAIR_OBSERVATION_CONVENTION, result_payload)
     if (
         not isinstance(act_occurrence_id, str)
@@ -1226,32 +1091,24 @@ def get_recorded_adjacent_pair_observations(
         ]
         if (
             ledger.integrity_of(adjacency_evidence_id) == CORRUPTED
-            or anchor.workspace_id != carrier.workspace_id
-            or anchor.locality_id != carrier.locality_id
+            or anchor.locality_id != event.locality_id
             or anchor.payload.get("input_event_ids") != source_ids
         ):
             raise PreservedMaterialMeasurementError(
-                "the adjacent-pair observation pair-finding Evidence does not reconstruct"
+                "the adjacent-pair observation pair-finding Evidence does not read"
             )
         for source_id in source_ids:
             source = ledger.get(source_id)
-            text = (
-                source.payload.get(
-                    "represented_material", source.payload.get("decoded_text")
-                )
-                if source is not None
-                else None
-            )
+            text = source.payload.get("represented_material") if source is not None else None
             if (
                 source is None
-                or source.kind != INGRESS_OCCURRED_KIND
+                or source.kind != INGEST_OCCURRED_KIND
                 or ledger.integrity_of(source_id) == CORRUPTED
-                or source.workspace_id != carrier.workspace_id
-                or source.locality_id != carrier.locality_id
+                or source.locality_id != event.locality_id
                 or not isinstance(text, str)
             ):
                 raise PreservedMaterialMeasurementError(
-                    "the adjacent-pair observation source Evidence does not reconstruct"
+                    "the adjacent-pair observation source Evidence does not read"
                 )
             sources[source_id] = source
             source_texts[source_id] = text
@@ -1267,8 +1124,7 @@ def get_recorded_adjacent_pair_observations(
             source is None
             or source.kind != REPRESENTATION_EMITTED_KIND
             or ledger.integrity_of(source.id) == CORRUPTED
-            or source.workspace_id != carrier.workspace_id
-            or source.locality_id != carrier.locality_id
+            or source.locality_id != event.locality_id
             or source.payload.get("locality_evidence_id") != anchor.id
             or anchor.payload.get("act_occurrence_id")
             != source.payload.get("act_occurrence_id")
@@ -1278,7 +1134,7 @@ def get_recorded_adjacent_pair_observations(
             or not isinstance(text, str)
         ):
             raise PreservedMaterialMeasurementError(
-                "the emitted-representation Locality Evidence does not reconstruct"
+                "the emitted-representation Locality Evidence does not read"
             )
         sources[source.id] = source
         source_texts[source.id] = text
@@ -1294,73 +1150,9 @@ def get_recorded_adjacent_pair_observations(
                 "standing": "applicable",
             },
         ]
-    elif (
-        anchor is not None
-        and anchor.kind == SYSTEM_INVOCATION_MATERIAL_RELATED_KIND
-        and ledger.integrity_of(anchor.id) != CORRUPTED
-        and len(source_ids) == 1
-    ):
-        source = ledger.get(source_ids[0])
-        process_event_id = anchor.payload.get("process_event_id")
-        process = (
-            ledger.get(process_event_id)
-            if isinstance(process_event_id, str)
-            else None
-        )
-        if source is not None and source.kind == SYSTEM_MATERIAL_OCCURRED_KIND:
-            try:
-                text = system_material_bytes(source).decode("utf-8", errors="strict")
-            except (SystemMaterialError, UnicodeDecodeError):
-                text = None
-        else:
-            text = None
-        if (
-            source is None
-            or source.kind != SYSTEM_MATERIAL_OCCURRED_KIND
-            or ledger.integrity_of(source.id) == CORRUPTED
-            or process is None
-            or process.kind != SYSTEM_INVOCATION_OCCURRED_KIND
-            or ledger.integrity_of(process.id) == CORRUPTED
-            or not (
-                source.workspace_id
-                == anchor.workspace_id
-                == process.workspace_id
-                == carrier.workspace_id
-            )
-            or not (
-                source.locality_id
-                == anchor.locality_id
-                == process.locality_id
-                == carrier.locality_id
-            )
-            or anchor.payload.get("material_occurrence_id") != source.id
-            or anchor.payload.get("process_occurrence_id")
-            != process.payload.get("process_occurrence_id")
-            or anchor.payload.get("preserved_byte_count")
-            != source.payload.get("byte_count")
-            or anchor.payload.get("standing") != "related"
-            or not isinstance(text, str)
-        ):
-            raise PreservedMaterialMeasurementError(
-                "the system-material relation Evidence does not reconstruct"
-            )
-        sources[source.id] = source
-        source_texts[source.id] = text
-        expected_inputs = [
-            {
-                "input_ref": anchor.id,
-                "role": SYSTEM_MATERIAL_RELATION_PARTICIPATION_ROLE,
-                "standing": "applicable",
-            },
-            {
-                "input_ref": source.id,
-                "role": SYSTEM_MATERIAL_OCCURRENCE_PARTICIPATION_ROLE,
-                "standing": "applicable",
-            },
-        ]
     else:
         raise PreservedMaterialMeasurementError(
-            "the adjacent-pair observation Evidence anchor does not reconstruct"
+            "the adjacent-pair observation Evidence anchor does not read"
         )
     expected_participation = [
         {
@@ -1373,7 +1165,7 @@ def get_recorded_adjacent_pair_observations(
     if (
         act_evidence.payload.get("input_applicability") != expected_inputs
         or act_evidence.payload.get("participation") != expected_participation
-        or carrier.payload.get("participation") != expected_participation
+        or event.payload.get("participation") != expected_participation
     ):
         raise PreservedMaterialMeasurementError(
             "the adjacent-pair observation Act Evidence concerns different inputs or Participation coordinates"
@@ -1387,8 +1179,7 @@ def get_recorded_adjacent_pair_observations(
         or observation.source_occurrence_id not in sources
         or observation.evidence.get("exact_representation")
         != source_texts[observation.source_occurrence_id]
-        or observation.evidence.get("workspace_id") != carrier.workspace_id
-        or observation.evidence.get("locality_id") != carrier.locality_id
+        or observation.evidence.get("locality_id") != event.locality_id
         for observation in observations
     ):
         raise PreservedMaterialMeasurementError(
@@ -1400,7 +1191,6 @@ def get_recorded_adjacent_pair_observations(
 def record_adjacent_pair_observation_compare(
     ledger: EventLedger,
     *,
-    workspace_id: str,
     locality_id: str,
     observation_event_ids: Iterable[str],
 ) -> Event:
@@ -1418,17 +1208,16 @@ def record_adjacent_pair_observation_compare(
     observations: list[AdjacentPairObservation] = []
     for event_id in input_ids:
         event = ledger.get(event_id)
-        recovered = get_recorded_adjacent_pair_observations(ledger, event_id)
+        read = get_recorded_adjacent_pair_observations(ledger, event_id)
         if (
             event is None
-            or recovered is None
-            or event.workspace_id != workspace_id
+            or read is None
             or event.locality_id != locality_id
         ):
             raise PreservedMaterialMeasurementError(
-                "an observation Compare input does not reconstruct in this locality"
+                "an observation Compare input does not read in this locality"
             )
-        observations.extend(recovered)
+        observations.extend(read)
     compared = compare_adjacent_pair_observations(observations)
     act_id = new_id("adjacent_pair_observation_compare_act")
     act_occurrence_id = new_id("adjacent_pair_observation_compare_occurrence")
@@ -1446,13 +1235,17 @@ def record_adjacent_pair_observation_compare(
     ]
     act_evidence = ledger.append(
         ADJACENT_PAIR_OBSERVATION_COMPARE_ACT_EVIDENCE_KIND,
-        workspace_id,
         {
             "downstream_act_id": act_id,
             "act_occurrence_id": act_occurrence_id,
             "act": "Compare exact adjacent-pair observation results",
             "responsibility": ADJACENT_PAIR_OBSERVATION_COMPARE_RESPONSIBILITY,
             "responsible_boundary": "this Seed",
+            "authority": "unestablished",
+            "evidence_scope": (
+                "Evidence concerning this exact Compare occurrence, its exact "
+                "participants, and its exact result commitment"
+            ),
             "participation": participation,
             "result_commitment": yield_commitment(
                 ADJACENT_PAIR_OBSERVATION_COMPARE_CONVENTION,
@@ -1464,7 +1257,6 @@ def record_adjacent_pair_observation_compare(
     )
     yield_evidence = _record_yield_evidence(
         ledger,
-        workspace_id=workspace_id,
         locality_id=locality_id,
         convention=ADJACENT_PAIR_OBSERVATION_COMPARE_CONVENTION,
         yielding_act="Compare exact adjacent-pair observation results",
@@ -1478,7 +1270,6 @@ def record_adjacent_pair_observation_compare(
     )
     locality_evidence = ledger.append(
         ADJACENT_PAIR_OBSERVATION_COMPARE_LOCALITY_EVIDENCE_KIND,
-        workspace_id,
         {
             "act_occurrence_id": act_occurrence_id,
             "carried_content": result_payload,
@@ -1488,7 +1279,6 @@ def record_adjacent_pair_observation_compare(
     )
     return ledger.append(
         ADJACENT_PAIR_OBSERVATION_COMPARE_RECORDED_KIND,
-        workspace_id,
         {
             **result_payload,
             "downstream_act_id": act_id,
@@ -1500,7 +1290,7 @@ def record_adjacent_pair_observation_compare(
             "yield_evidence_id": yield_evidence.id,
             "locality_evidence_id": locality_evidence.id,
             "unknowns": [
-                "whether any repeated external arrangement represents a grammar distinction remains Unknown"
+                "whether any repeated source arrangement represents a grammar distinction remains Unknown"
             ],
             "mutates_cluster": False,
         },
@@ -1512,20 +1302,20 @@ def get_recorded_adjacent_pair_observation_compare(
     ledger: EventLedger,
     event_id: str,
 ) -> dict[str, object] | None:
-    """Recover one durable Compare result without repeating the Compare."""
+    """Read one durable Compare result without repeating the Compare."""
 
-    carrier = ledger.get(event_id)
-    if carrier is None:
+    event = ledger.get(event_id)
+    if event is None:
         return None
     if (
-        carrier.kind != ADJACENT_PAIR_OBSERVATION_COMPARE_RECORDED_KIND
+        event.kind != ADJACENT_PAIR_OBSERVATION_COMPARE_RECORDED_KIND
         or ledger.integrity_of(event_id) == CORRUPTED
     ):
         raise PreservedMaterialMeasurementError(
             "the recorded observation Compare is absent or corrupted"
         )
-    input_ids = carrier.payload.get("observation_event_ids")
-    compared = carrier.payload.get("comparison")
+    input_ids = event.payload.get("observation_event_ids")
+    compared = event.payload.get("comparison")
     if (
         not isinstance(input_ids, list)
         or len(input_ids) < 2
@@ -1540,9 +1330,9 @@ def get_recorded_adjacent_pair_observation_compare(
         "observation_event_ids": input_ids,
         "comparison": compared,
     }
-    act_evidence = ledger.get(carrier.payload.get("responsible_act_evidence_id"))
-    yield_evidence = ledger.get(carrier.payload.get("yield_evidence_id"))
-    locality_evidence = ledger.get(carrier.payload.get("locality_evidence_id"))
+    act_evidence = ledger.get(event.payload.get("responsible_act_evidence_id"))
+    yield_evidence = ledger.get(event.payload.get("yield_evidence_id"))
+    locality_evidence = ledger.get(event.payload.get("locality_evidence_id"))
     evidence = (act_evidence, yield_evidence, locality_evidence)
     if any(
         item is None or ledger.integrity_of(item.id) == CORRUPTED
@@ -1554,7 +1344,7 @@ def get_recorded_adjacent_pair_observation_compare(
     assert act_evidence is not None
     assert yield_evidence is not None
     assert locality_evidence is not None
-    act_occurrence_id = carrier.payload.get("act_occurrence_id")
+    act_occurrence_id = event.payload.get("act_occurrence_id")
     commitment = yield_commitment(
         ADJACENT_PAIR_OBSERVATION_COMPARE_CONVENTION,
         result_payload,
@@ -1577,12 +1367,18 @@ def get_recorded_adjacent_pair_observation_compare(
         != act_occurrence_id
         or locality_evidence.payload.get("act_occurrence_id") != act_occurrence_id
         or act_evidence.payload.get("result_commitment") != commitment
+        or act_evidence.payload.get("authority") != "unestablished"
+        or act_evidence.payload.get("evidence_scope")
+        != (
+            "Evidence concerning this exact Compare occurrence, its exact "
+            "participants, and its exact result commitment"
+        )
         or yield_evidence.payload.get("yield_commitment") != commitment
         or yield_evidence.payload.get("yield_convention")
         != ADJACENT_PAIR_OBSERVATION_COMPARE_CONVENTION
         or locality_evidence.payload.get("carried_content") != result_payload
         or act_evidence.payload.get("participation") != expected_participation
-        or carrier.payload.get("participation") != expected_participation
+        or event.payload.get("participation") != expected_participation
     ):
         raise PreservedMaterialMeasurementError(
             "the recorded observation Compare edge Evidence concerns different coordinates"
@@ -1592,12 +1388,11 @@ def get_recorded_adjacent_pair_observation_compare(
         if (
             event is None
             or ledger.integrity_of(input_id) == CORRUPTED
-            or event.workspace_id != carrier.workspace_id
-            or event.locality_id != carrier.locality_id
+            or event.locality_id != event.locality_id
             or get_recorded_adjacent_pair_observations(ledger, input_id) is None
         ):
             raise PreservedMaterialMeasurementError(
-                "a recorded observation Compare input does not reconstruct"
+                "a recorded observation Compare input does not read"
             )
     return compared
 
@@ -1611,7 +1406,7 @@ def enumerate_representations(
     No representation is named here and none is preferred. When ``present_in``
     is supplied, only representations measurable in *every* one of those scopes
     are returned -- a comparability requirement, so that a later measurement can
-    ask the same question of each scope, not a judgement that the others are
+    measure the same distinction in each scope, not a judgement that the others are
     uninteresting.
 
     This is what removes the last supplied representation from the chain. The
@@ -1626,17 +1421,13 @@ def enumerate_representations(
         seen = {
             token
             for event in scope
-            for token in _positions(
-                event.payload.get("represented_material", event.payload.get("decoded_text"))
-            )
+            for token in _positions(event.payload.get("represented_material"))
         }
         everywhere = seen if everywhere is None else (everywhere & seen)
     offered = {
         token
         for event in material
-        for token in _positions(
-            event.payload.get("represented_material", event.payload.get("decoded_text"))
-        )
+        for token in _positions(event.payload.get("represented_material"))
     }
     if everywhere is not None:
         offered &= everywhere
@@ -1665,9 +1456,7 @@ def enumerate_displacements(
         )
     reachable: set[int] = set()
     for event in occurrences:
-        parts = _positions(
-            event.payload.get("represented_material", event.payload.get("decoded_text"))
-        )
+        parts = _positions(event.payload.get("represented_material"))
         for index, part in enumerate(parts):
             if part != representation:
                 continue
@@ -1719,7 +1508,7 @@ def measure_at_displacement(
             counting_scope=counting_scope,
             premise_event_id=premise_event_id,
             measured_after=representation,
-            form=direction,
+            distinction=direction,
             relative_to=(representation,),
             measured_position={
                 "anchored_on": "the representation",

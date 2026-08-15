@@ -1,54 +1,31 @@
-"""Null-start evidence witness for E1/E2/E3.
-
-This module is a microscope, not a Assertion.  It runs the live operator console
-from an empty ledger over fixed operator material and reports exactly what Seed
-preserved.  Its assertions are deliberately confined to *what is present in the
-record*.  Nothing here asserts represented relation, relation, structure, or intent, because
-none of that is established by ingress -- ``operator.material.occurred``
-records occurrence-only Evidence while the represented relation remains ``Unknown``.
-
-`render_null_start_evidence` yields the human-readable dump for inspection.
-Run it directly to look through the microscope:
-
-    python -m tests.test_null_start_evidence_witness
-"""
+"""Exact Ingest Evidence from an empty ledger."""
 
 from __future__ import annotations
 
-import json
-from tests.binary_input import binary_input
 from io import StringIO
+import json
 
 import pytest
 
 from seed_runtime.events import EventLedger
+from seed_runtime.material_ingest import (
+    MATERIAL_INGEST_OCCURRED_KIND,
+    ingested_material_bytes,
+)
 from seed_runtime.operator_console import run_persistent_operator_console
+from seed_runtime.yield_evidence import read_yield_edge_requirements
+from tests.binary_input import binary_input
 
-# Fixed, reproducible operator material.
-#
-# IMPORTANT: this material is developer-chosen.  Any regularity visible in the
-# dump -- recurring newlines, a recurring "# " prefix, a recurring "is a word."
-# -- is a property of material written here, not a discovery about Seed or
-# about any real acquisition corpus.  Do not choose a measurement because a
-# pattern appears in E3 below; that would be selecting the measurement to match
-# material we planted, which is the Structure Probe error one level up.
-#
-# E3 is a small multi-line corpus so that the module can record how the current
-# ingress boundary treats multi-line material at all.
+
 E1 = "hello"
 E2 = "learn proficient english language"
 E3 = "# Nouns\n\nA noun is a word.\n\n# Verbs\n\nA verb is a word."
 
-CAPTURED = "operator.material.raw_captured"
-OCCURRED = "operator.material.occurred"
-
 
 def run_null_start() -> list:
-    """Drive the live console from an empty ledger.  No fixture is supplied."""
     ledger = EventLedger()
     run_persistent_operator_console(
         ledger=ledger,
-        workspace_id="w",
         locality_id="s",
         input_stream=binary_input("\n".join([E1, E2, E3]) + "\n"),
         output_stream=StringIO(),
@@ -56,103 +33,81 @@ def run_null_start() -> list:
     return ledger.list()
 
 
-def render_null_start_evidence() -> str:
-    """Render every preserved coordinate, without interpreting any of it."""
-    events = run_null_start()
-    lines = [f"null-start events: {len(events)}", ""]
-    for position, event in enumerate(events, start=1):
+def represent_null_start_evidence() -> str:
+    lines = []
+    for position, event in enumerate(run_null_start(), start=1):
         lines.append(f"[{position}] {event.kind}  {event.id}")
         for key, value in sorted(event.payload.items()):
             lines.append(f"      {key} = {json.dumps(value, default=str)}")
-        lines.append("")
-    return "\n".join(lines)
+    return "\n".join(lines) + "\n"
 
 
 @pytest.fixture(scope="module")
-def events() -> list:
-    return run_null_start()
+def ledger() -> EventLedger:
+    result = EventLedger()
+    run_persistent_operator_console(
+        ledger=result,
+        locality_id="s",
+        input_stream=binary_input("\n".join([E1, E2, E3]) + "\n"),
+        output_stream=StringIO(),
+    )
+    return result
 
 
-def test_null_start_accumulates_occurrence_evidence(events):
-    """From nothing, the console preserves a record for every operator line."""
-    assert events, "a null start preserved no events at all"
-    captured = [e for e in events if e.kind == CAPTURED]
-    occurred = [e for e in events if e.kind == OCCURRED]
-    # One raw capture and one ingress occurrence per delivered line.
-    assert len(captured) == len(occurred)
-    assert len(captured) > 0
+def _ingests(ledger: EventLedger):
+    return [
+        event
+        for event in ledger.list_locality("s")
+        if event.kind == MATERIAL_INGEST_OCCURRED_KIND
+    ]
 
 
-def test_exact_bytes_are_preserved_for_every_capture(events):
-    """The measurable substrate: exact bytes, not a paraphrase of them."""
-    for event in (e for e in events if e.kind == CAPTURED):
-        exact = event.payload.get("exact_bytes_hex")
-        assert isinstance(exact, str) and exact
-        bytes.fromhex(exact)  # round-trips as bytes, or this raises
+def test_one_ingest_occurs_for_each_delivered_line(ledger):
+    ingests = _ingests(ledger)
+
+    assert len(ingests) == 2 + len(E3.split("\n"))
+    assert all(event.payload["source_role"] == "operator" for event in ingests)
 
 
-def test_ingress_preserves_only_the_raw_capture_reference(events):
-    for event in (e for e in events if e.kind == OCCURRED):
-        assert "decoded_text" not in event.payload
-        assert event.payload["provenance_occurrence_refs"] == [
-            event.payload["raw_material_event_id"]
+def test_each_ingest_preserves_exact_bytes(ledger):
+    exact = [ingested_material_bytes(event) for event in _ingests(ledger)]
+
+    assert exact[0] == (E1 + "\n").encode()
+    assert exact[1] == (E2 + "\n").encode()
+    assert (E3 + "\n").encode() not in exact
+
+
+def test_each_ingest_binds_its_exact_act_and_result_evidence(ledger):
+    for ingest in _ingests(ledger):
+        assert all(
+            read_yield_edge_requirements(
+                ledger,
+                recorded_result_event_id=ingest.id,
+                result_evidence_event_id=ingest.payload["yield_evidence_id"],
+                responsible_act_evidence_event_id=ingest.payload[
+                    "responsible_act_evidence_id"
+                ],
+            ).values()
+        )
+
+
+def test_ingest_does_not_assert_a_represented_relation(ledger):
+    for ingest in _ingests(ledger):
+        assert "represented_material" not in ingest.payload
+        assert ingest.payload["provenance_occurrence_refs"] == []
+        assert "represented relation Unknown" in ingest.payload["dimensions"][
+            "evidence_scope"
         ]
 
 
-def test_ingress_asserts_only_occurrence_and_records_represented_relation_unknown(events):
-    """Ingress states its own limit in its own record."""
-    for event in (e for e in events if e.kind == OCCURRED):
-        dimensions = event.payload["dimensions"]
-        assert dimensions["authority"] == "unestablished"
-        assert dimensions["evidence_scope"] == "occurrence only; represented relation Unknown"
+def test_ingest_evidence_is_inspectable():
+    represented = represent_null_start_evidence()
+
+    assert MATERIAL_INGEST_OCCURRED_KIND in represented
+    assert "exact_bytes_hex" in represented
+    assert "responsible_act_evidence_id" in represented
+    assert "yield_evidence_id" in represented
 
 
-def test_capture_asserts_only_occurrence_evidence(events):
-    for event in (e for e in events if e.kind == CAPTURED):
-        assert event.payload["dimensions"]["authority"] == "unestablished"
-        assert event.payload["dimensions"]["evidence_scope"] == "occurrence Evidence only"
-
-
-def test_console_ingress_is_line_bounded_not_document_bounded(events):
-    """E3 arrives as several occurrences, not one.
-
-    This is a finding about the current ingress boundary, recorded here because it
-    is not obvious and it bounds what any later measurement may range over.  A
-    multi-line corpus does not enter as a single preserved material; each line
-    is its own raw capture and ingress occurrence.
-    """
-    exact = [
-        bytes.fromhex(e.payload["exact_bytes_hex"])
-        for e in events
-        if e.kind == CAPTURED
-    ]
-    assert exact[0] == (E1 + "\n").encode()
-    assert exact[1] == (E2 + "\n").encode()
-    # E3 is not present as a single preserved representation.
-    assert (E3 + "\n").encode() not in exact
-    assert len(exact) == 2 + len(E3.split("\n"))
-
-
-def test_null_start_does_not_activate_the_dormant_result_chain(events):
-    """A null start records none of the retired chain's three event kinds.
-
-    Narrow by intent.  This asserts only that the dormant Applicability /
-    Admission / Participation chain did not run, which is consistent with its
-    gating input being fixture-only.  It makes no broader Assertion that no
-    semantic standing of any kind was established -- this module is a
-    microscope and should not issue negative constitutional findings.
-    """
-    kinds = {e.kind for e in events}
-    for semantic in (
-    ):
-        assert semantic not in kinds
-
-
-def test_render_yields_inspectable_evidence():
-    rendered = render_null_start_evidence()
-    assert "operator.material.occurred" in rendered
-    assert "exact_bytes_hex" in rendered
-
-
-if __name__ == "__main__":  # pragma: no cover - inspection entry point
-    print(render_null_start_evidence())
+if __name__ == "__main__":  # pragma: no cover
+    print(represent_null_start_evidence())

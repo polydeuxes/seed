@@ -47,9 +47,9 @@ Partition = frozenset
 def final_partition(codec: str) -> Partition:
     """Where this witness's own climb came to rest."""
 
-    recovered = classes(codec, 4)
+    read = classes(codec, 4)
     rungs = rc.climb(
-        [tuple(members) for members in recovered.values()],
+        [tuple(members) for members in read.values()],
         lambda first, second: accepts(codec, (first, second)),
     )
     return frozenset(frozenset(members) for members in rungs[-1])

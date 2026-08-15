@@ -5,7 +5,7 @@ and its digest defeats all of this, and these tests say so rather than letting
 the arrangement be read as tamper-proof storage.
 
 `06.Standing:16` names append-only records permissively, beside projected
-material and context representations. Nothing in active law requires append-only, so this
+material representations. Nothing in active law requires append-only, so this
 establishes a storage property Seed chose, not one the Book demanded.
 """
 
@@ -58,10 +58,10 @@ def _raw(path):
 
 
 def test_an_update_is_refused(ledger, path):
-    event = ledger.append("k", "w", {"a": 1})
+    event = ledger.append("k", {"a": 1})
     con = _raw(path)
     try:
-        with pytest.raises(sqlite3.IntegrityError, match="do not change"):
+        with pytest.raises(sqlite3.IntegrityError, match="do not revision"):
             con.execute("UPDATE events SET payload = ? WHERE id = ?",
                         ('{"a": 999}', event.id))
             con.commit()
@@ -71,7 +71,7 @@ def test_an_update_is_refused(ledger, path):
 
 
 def test_a_delete_is_refused(ledger, path):
-    event = ledger.append("k", "w", {"a": 1})
+    event = ledger.append("k", {"a": 1})
     con = _raw(path)
     try:
         with pytest.raises(sqlite3.IntegrityError, match="are not removed"):
@@ -84,7 +84,7 @@ def test_a_delete_is_refused(ledger, path):
 
 def test_the_refusal_survives_reopening(path):
     led = SQLiteEventLedger(path)
-    event = led.append("k", "w", {"a": 1})
+    event = led.append("k", {"a": 1})
     led.close()
 
     con = _raw(path)
@@ -101,13 +101,13 @@ def test_the_refusal_survives_reopening(path):
 
 
 def test_a_recorded_occurrence_verifies(ledger):
-    event = ledger.append("k", "w", {"a": 1}, locality_id="s")
+    event = ledger.append("k", {"a": 1}, locality_id="s")
     assert ledger.integrity_of(event.id) == VERIFIED
 
 
 def test_a_rewrite_that_drops_the_guard_is_detected(ledger, path):
     """The guard is removable. What it leaves behind is evidence."""
-    event = ledger.append("k", "w", {"a": 1})
+    event = ledger.append("k", {"a": 1})
     con = _raw(path)
     con.execute("DROP TRIGGER events_refuse_update")
     con.execute("UPDATE events SET payload = ? WHERE id = ?", ('{"a": 999}', event.id))
@@ -118,8 +118,8 @@ def test_a_rewrite_that_drops_the_guard_is_detected(ledger, path):
 
 
 def test_moving_an_occurrence_between_sessions_is_detected(ledger, path):
-    """`locality_id` is the boundary keeping bounded exchanges apart."""
-    event = ledger.append("k", "w", {"a": 1}, locality_id="s1")
+    """`locality_id` is the boundary keeping bounded localities apart."""
+    event = ledger.append("k", {"a": 1}, locality_id="s1")
     con = _raw(path)
     con.execute("DROP TRIGGER events_refuse_update")
     con.execute("UPDATE events SET locality_id = 's2' WHERE id = ?", (event.id,))
@@ -131,12 +131,12 @@ def test_moving_an_occurrence_between_sessions_is_detected(ledger, path):
 
 @pytest.mark.parametrize(
     "column,value",
-    [("id", "evt_999999"), ("kind", "other"), ("workspace_id", "elsewhere"),
-     ("actor", "someone"), ("timestamp", "1999-01-01T00:00:00"),
+    [("id", "evt_999999"), ("kind", "other"),
+     ("timestamp", "1999-01-01T00:00:00"),
      ("causation_id", "evt_x"), ("correlation_id", "evt_y")],
 )
 def test_every_persisted_field_is_covered(ledger, path, column, value):
-    event = ledger.append("k", "w", {"a": 1}, locality_id="s")
+    event = ledger.append("k", {"a": 1}, locality_id="s")
     con = _raw(path)
     con.execute("DROP TRIGGER events_refuse_update")
     con.execute(f"UPDATE events SET {column} = ? WHERE id = ?", (value, event.id))
@@ -162,7 +162,7 @@ def test_rewriting_the_row_and_its_digest_together_is_not_detected(ledger, path)
     """
     from seed_runtime.events import _content_digest
 
-    event = ledger.append("k", "w", {"a": 1}, locality_id="s")
+    event = ledger.append("k", {"a": 1}, locality_id="s")
     con = _raw(path)
     con.execute("DROP TRIGGER events_refuse_update")
     row = dict(con.execute("SELECT * FROM events WHERE id = ?", (event.id,)).fetchone())
@@ -181,7 +181,7 @@ def test_verified_durable_rehydration_still_rejects_nested_secret_fields(path):
     from seed_runtime.events import _content_digest
 
     ledger = SQLiteEventLedger(path)
-    event = ledger.append("k", "w", {"a": 1}, locality_id="s")
+    event = ledger.append("k", {"a": 1}, locality_id="s")
     ledger.close()
 
     con = _raw(path)
@@ -208,7 +208,7 @@ def test_screened_durable_rehydration_still_runs_event_validation(path):
     from seed_runtime.events import _content_digest
 
     ledger = SQLiteEventLedger(path)
-    event = ledger.append("k", "w", {"a": 1}, locality_id="s")
+    event = ledger.append("k", {"a": 1}, locality_id="s")
     ledger.close()
 
     con = _raw(path)
@@ -231,17 +231,18 @@ def test_screened_durable_rehydration_still_runs_event_validation(path):
         reopened.close()
 
 
-def _legacy_store(path, rows=1):
+def _incomplete_store(path, rows=1):
     con = sqlite3.connect(path)
     con.execute(
         "CREATE TABLE events (id TEXT PRIMARY KEY, kind TEXT NOT NULL, "
-        "workspace_id TEXT NOT NULL, actor TEXT NOT NULL, timestamp TEXT NOT NULL, "
-        "payload TEXT NOT NULL, locality_id TEXT, causation_id TEXT, correlation_id TEXT)"
+        "timestamp TEXT NOT NULL, payload TEXT NOT NULL, locality_id TEXT, "
+        "causation_id TEXT, correlation_id TEXT)"
     )
     for i in range(rows):
         con.execute(
-            "INSERT INTO events VALUES (?,'k','w','system',"
-            "'2026-01-01T00:00:00','{}','s',NULL,NULL)", (f"evt_{i:06d}",))
+            "INSERT INTO events VALUES (?,'k','2026-01-01T00:00:00','{}','s',NULL,NULL)",
+            (f"evt_{i:06d}",),
+        )
     con.commit()
     con.close()
 
@@ -250,14 +251,14 @@ def _legacy_store(path, rows=1):
 def test_a_pre_digest_schema_is_refused_whether_or_not_it_holds_rows(path, rows):
     """Seed does not preserve a durable history nobody needs.
 
-    An earlier form classified undigested rows as UNVERIFIABLE and input
+    An earlier representation classified undigested rows as UNVERIFIABLE and input
     them, leaving a supported path on which a durable occurrence carried no
-    integrity. A later form refused populated pre-digest stores but migrated
+    integrity. A later representation refused populated pre-digest stores but migrated
     empty ones, which meant a new database was created by running a
-    compatibility migration over the very shape being rejected.
+    migration over the very shape being rejected.
     """
-    _legacy_store(path, rows=rows)
-    with pytest.raises(LedgerIntegrityError, match="without content_hash"):
+    _incomplete_store(path, rows=rows)
+    with pytest.raises(LedgerIntegrityError, match="current occurrence fields"):
         SQLiteEventLedger(path)
 
 
@@ -266,13 +267,12 @@ def test_a_nullable_schema_holding_an_undigested_row_is_refused(path):
     con = sqlite3.connect(path)
     con.execute(
         "CREATE TABLE events (id TEXT PRIMARY KEY, kind TEXT NOT NULL, "
-        "workspace_id TEXT NOT NULL, actor TEXT NOT NULL, timestamp TEXT NOT NULL, "
-        "payload TEXT NOT NULL, locality_id TEXT, causation_id TEXT, "
+        "timestamp TEXT NOT NULL, payload TEXT NOT NULL, locality_id TEXT, causation_id TEXT, "
         "correlation_id TEXT, content_hash TEXT)"
     )
     con.execute(
-        "INSERT INTO events VALUES ('evt_000001','k','w','system',"
-        "'2026-01-01T00:00:00','{}','s',NULL,NULL,NULL)"
+        "INSERT INTO events VALUES ('evt_000001','k','2026-01-01T00:00:00',"
+        "'{}','s',NULL,NULL,NULL)"
     )
     con.commit()
     con.close()
@@ -285,7 +285,7 @@ def test_a_current_store_cannot_hold_an_undigested_occurrence(path):
     """The schema refuses it before any check has to."""
     led = SQLiteEventLedger(path)
     try:
-        event = led.append("k", "w", {"a": 1})
+        event = led.append("k", {"a": 1})
         con = _raw(path)
         con.execute("DROP TRIGGER events_refuse_update")
         with pytest.raises(sqlite3.IntegrityError, match="NOT NULL"):
@@ -303,21 +303,21 @@ def test_a_new_store_is_born_with_the_integrity_column(path):
         info = {row["name"]: row["notnull"]
                 for row in led._connection.execute("PRAGMA table_info(events)")}
         assert info.get("content_hash") == 1
-        assert led.integrity_of(led.append("k", "w", {"a": 1}).id) == VERIFIED
+        assert led.integrity_of(led.append("k", {"a": 1}).id) == VERIFIED
     finally:
         led.close()
 
 
 def test_no_durable_occurrence_is_ever_unverifiable(ledger):
     """The refusal at open is what makes this true."""
-    ids = [ledger.append("k", "w", {"a": i}).id for i in range(5)]
+    ids = [ledger.append("k", {"a": i}).id for i in range(5)]
     assert {ledger.integrity_of(i) for i in ids} == {VERIFIED}
 
 
 def test_an_in_memory_ledger_reports_unverifiable():
     """Objects, not stored bytes — the one storage shape that cannot verify."""
     led = EventLedger()
-    assert led.integrity_of(led.append("k", "w", {"a": 1}).id) == UNVERIFIABLE
+    assert led.integrity_of(led.append("k", {"a": 1}).id) == UNVERIFIABLE
 
 
 def test_an_absent_occurrence_is_unverifiable(ledger):
@@ -333,19 +333,19 @@ def test_a_comparison_refuses_a_corrupted_input(path, monkeypatch):
     from io import StringIO
     from seed_runtime.adjacent_pair_measurement import measure_after
     from seed_runtime.preserved_material_measurement import (
-        preserved_ingress_occurrences, record_measurement_finding)
+        ingest_occurrences, record_measurement_finding)
     from tests.material_fixture_console import run_material_fixture_console
 
     led = SQLiteEventLedger(path)
     for locality_id in ("s1", "s2"):
         run_material_fixture_console(
-            ledger=led, workspace_id="w", locality_id=locality_id,
+            ledger=led, locality_id=locality_id,
             input_stream=binary_input("a noun is a word\n"), output_stream=StringIO())
     ids = []
     for locality_id in ("s1", "s2"):
-        occ = preserved_ingress_occurrences(led, workspace_id="w", locality_id=locality_id)
+        occ = ingest_occurrences(led, locality_id=locality_id)
         ids.append(record_measurement_finding(
-            led, workspace_id="w", locality_id=locality_id,
+            led, locality_id=locality_id,
             finding=measure_after(occ, "a", counting_scope="s")).id)
     led.close()
 
@@ -367,21 +367,21 @@ def test_a_comparison_records_each_input_s_integrity(path):
     from io import StringIO
     from seed_runtime.adjacent_pair_measurement import measure_after
     from seed_runtime.preserved_material_measurement import (
-        preserved_ingress_occurrences, record_measurement_finding)
+        ingest_occurrences, record_measurement_finding)
     from tests.material_fixture_console import run_material_fixture_console
 
     led = SQLiteEventLedger(path)
     try:
         for locality_id in ("s1", "s2"):
             run_material_fixture_console(
-                ledger=led, workspace_id="w", locality_id=locality_id,
+                ledger=led, locality_id=locality_id,
                 input_stream=binary_input("a noun is a word\n"),
                 output_stream=StringIO())
         ids = []
         for locality_id in ("s1", "s2"):
-            occ = preserved_ingress_occurrences(led, workspace_id="w", locality_id=locality_id)
+            occ = ingest_occurrences(led, locality_id=locality_id)
             ids.append(record_measurement_finding(
-                led, workspace_id="w", locality_id=locality_id,
+                led, locality_id=locality_id,
                 finding=measure_after(occ, "a", counting_scope="s")).id)
         finding = compare_preserved_findings(led, ids)
         assert [i.integrity for i in finding.inputs] == [VERIFIED, VERIFIED]
@@ -394,18 +394,18 @@ def test_an_unverifiable_input_is_recorded_rather_than_refused():
     from io import StringIO
     from seed_runtime.adjacent_pair_measurement import measure_after
     from seed_runtime.preserved_material_measurement import (
-        preserved_ingress_occurrences, record_measurement_finding)
+        ingest_occurrences, record_measurement_finding)
     from tests.material_fixture_console import run_material_fixture_console
 
     led = EventLedger()
     ids = []
     for locality_id in ("s1", "s2"):
         run_material_fixture_console(
-            ledger=led, workspace_id="w", locality_id=locality_id,
+            ledger=led, locality_id=locality_id,
             input_stream=binary_input("a noun is a word\n"), output_stream=StringIO())
-        occ = preserved_ingress_occurrences(led, workspace_id="w", locality_id=locality_id)
+        occ = ingest_occurrences(led, locality_id=locality_id)
         ids.append(record_measurement_finding(
-            led, workspace_id="w", locality_id=locality_id,
+            led, locality_id=locality_id,
             finding=measure_after(occ, "a", counting_scope="s")).id)
 
     finding = compare_preserved_findings(led, ids)
@@ -427,15 +427,14 @@ def test_a_nullable_digest_schema_is_refused_even_when_fully_digested(path):
     con = sqlite3.connect(path)
     con.execute(
         "CREATE TABLE events (id TEXT PRIMARY KEY, kind TEXT NOT NULL, "
-        "workspace_id TEXT NOT NULL, actor TEXT NOT NULL, timestamp TEXT NOT NULL, "
-        "payload TEXT NOT NULL, locality_id TEXT, causation_id TEXT, "
+        "timestamp TEXT NOT NULL, payload TEXT NOT NULL, locality_id TEXT, causation_id TEXT, "
         "correlation_id TEXT, content_hash TEXT)"
     )
-    row = {"id": "evt_000001", "kind": "k", "workspace_id": "w", "actor": "system",
+    row = {"id": "evt_000001", "kind": "k",
            "timestamp": "2026-01-01T00:00:00", "payload": "{}", "locality_id": "s",
            "causation_id": None, "correlation_id": None}
     con.execute(
-        "INSERT INTO events VALUES (?,?,?,?,?,?,?,?,?,?)",
+        "INSERT INTO events VALUES (?,?,?,?,?,?,?,?)",
         tuple(row.values()) + (_content_digest(row),),
     )
     con.commit()
@@ -461,12 +460,12 @@ def test_reservations_are_read_from_the_table_not_from_history(path):
     """`#2414`'s whole-history read, replaced by a durable counter.
 
     The open cost was linear in stored events — 36.9s at 100,000 — because
-    every payload was deserialized and walked to reconstruct a few integers.
+    every payload was deserialized and walked to read a few integers.
     """
     led = SQLiteEventLedger(path)
     try:
-        led.append("k", "w", {"ref": "operator_material_000042"}, locality_id="session_000007")
-        led.append("k", "w", {"ref": "system_material_000005"})
+        led.append("k", {"ref": "operator_material_000042"}, locality_id="locality_000007")
+        led.append("k", {"ref": "system_material_000005"})
     finally:
         led.close()
 
@@ -476,7 +475,7 @@ def test_reservations_are_read_from_the_table_not_from_history(path):
     finally:
         con.close()
     assert kept["operator_material"] == 42
-    assert kept["session"] == 7
+    assert kept["locality"] == 7
     assert kept["system_material"] == 5
 
 
@@ -485,7 +484,7 @@ def test_a_reopened_store_does_not_reissue_identifiers(path):
     from seed_runtime.ids import _next_values, new_id
 
     led = SQLiteEventLedger(path)
-    led.append("k", "w", {"ref": "operator_material_000042"})
+    led.append("k", {"ref": "operator_material_000042"})
     led.close()
 
     _next_values.clear()          # a fresh process counts from 1
@@ -499,8 +498,8 @@ def test_a_reopened_store_does_not_reissue_identifiers(path):
 def test_a_reservation_only_ever_rises(path):
     led = SQLiteEventLedger(path)
     try:
-        led.append("k", "w", {"ref": "operator_material_000042"})
-        led.append("k", "w", {"ref": "operator_material_000007"})
+        led.append("k", {"ref": "operator_material_000042"})
+        led.append("k", {"ref": "operator_material_000007"})
     finally:
         led.close()
     con = _raw(path)
@@ -515,7 +514,7 @@ def test_the_counter_table_is_not_an_occurrence(path):
     """It records no Assertion, so occurrence mutation refusal does not cover it."""
     led = SQLiteEventLedger(path)
     try:
-        event = led.append("k", "w", {"ref": "operator_material_000042"})
+        event = led.append("k", {"ref": "operator_material_000042"})
     finally:
         led.close()
     con = _raw(path)
@@ -546,8 +545,7 @@ def test_a_batch_commits_its_reservations_with_its_occurrences(path):
     led._connection.set_trace_callback(commits.append)
     try:
         led.append_many([
-            Event(id=f"evt_10000{i}", kind="k", workspace_id="w",
-                  payload={"ref": f"operator_material_0000{40 + i}"}, locality_id="session_000009")
+            Event(id=f"evt_10000{i}", kind="k", payload={"ref": f"operator_material_0000{40 + i}"}, locality_id="locality_000009")
             for i in range(3)
         ])
     finally:
@@ -564,7 +562,7 @@ def test_a_batch_commits_its_reservations_with_its_occurrences(path):
         con.close()
     assert stored == 3
     assert kept["operator_material"] == 42
-    assert kept["session"] == 9
+    assert kept["locality"] == 9
 
 
 def test_a_batch_leaves_no_occurrence_without_its_reservation(path):
@@ -574,8 +572,7 @@ def test_a_batch_leaves_no_occurrence_without_its_reservation(path):
 
     led = SQLiteEventLedger(path)
     led.append_many([
-        Event(id="evt_100001", kind="k", workspace_id="w",
-              payload={"ref": "operator_material_000077"}, locality_id="s")
+        Event(id="evt_100001", kind="k", payload={"ref": "operator_material_000077"}, locality_id="s")
     ])
     led.close()
 
@@ -615,14 +612,17 @@ def test_reservable_suffix_observation_matches_a_per_prefix_scan():
                     found[prefix] = number
         return found
 
-    tokens = list(prefixes) + ["evt", "x", "", "retired_fact", "need"]
+    tokens = list(prefixes) + ["evt", "x", "", "old_fact", "need"]
     rng = random.Random(11)
 
+    def one(values):
+        return values[rng.randrange(len(values))]
+
     def identifier():
-        token = rng.choice(tokens)
-        return rng.choice([
+        token = one(tokens)
+        return one([
             f"{token}_{rng.randint(0, 999)}",
-            f"{token}_{rng.choice(['', 'x', '0a', '007'])}",
+            f"{token}_{one(['', 'x', '0a', '007'])}",
             token,
             f"_{rng.randint(0, 99)}",
             f"{token}__{rng.randint(0, 99)}",
@@ -636,7 +636,7 @@ def test_reservable_suffix_observation_matches_a_per_prefix_scan():
             return [value(depth + 1) for _ in range(rng.randint(0, 4))]
         if roll < 0.75:
             return identifier()
-        return rng.choice([None, True, 7, 3.5])
+        return one([None, True, 7, 3.5])
 
     ledger = SQLiteEventLedger.__new__(SQLiteEventLedger)
     for index in range(1500):
@@ -646,9 +646,8 @@ def test_reservable_suffix_observation_matches_a_per_prefix_scan():
         event = Event(
             id=f"evt_{index}",
             kind="k",
-            workspace_id="w",
             payload=payload,
-            locality_id=rng.choice([None, identifier(), f"session_{rng.randint(0, 9999)}"]),
+            locality_id=one([None, identifier(), f"locality_{rng.randint(0, 9999)}"]),
         )
         assert ledger._observed_numbers(event) == per_prefix_scan(event)
 
@@ -658,17 +657,16 @@ def test_a_reserved_suffix_of_zero_is_not_reserved():
     split must decline it too rather than reserve prefix zero."""
 
     ledger = SQLiteEventLedger.__new__(SQLiteEventLedger)
-    event = Event(id="evt_1", kind="k", workspace_id="w", payload={"a": "operator_material_0"})
+    event = Event(id="evt_1", kind="k", payload={"a": "operator_material_0"})
     assert ledger._observed_numbers(event) == {}
-    event = Event(id="evt_2", kind="k", workspace_id="w", payload={"a": "operator_material_1"})
+    event = Event(id="evt_2", kind="k", payload={"a": "operator_material_1"})
     assert ledger._observed_numbers(event) == {"operator_material": 1}
 
 
 def test_an_overlapping_prefix_reserves_the_longer_match():
     ledger = SQLiteEventLedger.__new__(SQLiteEventLedger)
     event = Event(
-        id="evt_1", kind="k", workspace_id="w",
-        payload={"a": "assertion_locality_movement_act_7", "b": "assertion_locality_movement_4"},
+        id="evt_1", kind="k", payload={"a": "assertion_locality_movement_act_7", "b": "assertion_locality_movement_4"},
     )
     assert ledger._observed_numbers(event) == {
         "assertion_locality_movement_act": 7,
@@ -694,17 +692,16 @@ def test_a_cache_hit_still_refuses_a_contradictory_support_count():
 
     ledger = EventLedger()
     ledger.append_many([
-        Event(id=f"evt_{index}", kind="ingress", workspace_id="w", locality_id="s")
+        Event(id=f"evt_{index}", kind="ingest", locality_id="s")
         for index in range(4)
     ])
-    boundary = ledger.capture_boundary()
-    identities = tuple(ledger.iter_locality_kind_ids("w", "s", "ingress", through=boundary))
+    boundary = ledger.append_boundary()
+    identities = tuple(ledger.iter_locality_kind_ids("s", "ingest", through=boundary))
     honest = declare_complete_inputs(
-        workspace_id="w", locality_id="s", occurrence_kind="ingress",
+        locality_id="s", occurrence_kind="ingest",
         boundary=boundary, identities=identities,
     )
     forged = SupportBasis(
-        workspace_id=honest.workspace_id,
         locality_id=honest.locality_id,
         occurrence_kind=honest.occurrence_kind,
         boundary_commitment=honest.boundary_commitment,
@@ -726,7 +723,7 @@ def test_a_cache_hit_still_refuses_a_contradictory_support_count():
         validation.validate(forged)
     assert validation.reuses == 0
 
-    # An honest second reference still reuses rather than re-reading.
+    # An honest second reference still reuses the first exact bytes.
     assert validation.validate(honest) == identities
     assert (validation.reads, validation.reuses) == (1, 1)
 
@@ -746,17 +743,17 @@ def test_every_support_basis_refusal_can_be_reached():
         support_commitment,
     )
 
-    def basis(**changes):
+    def basis(**differences):
         fields = dict(
-            workspace_id="w", locality_id="s", occurrence_kind="k",
+            locality_id="s", occurrence_kind="k",
             boundary_commitment="b", selection_rule=COMPLETE_INGRESS_INPUTS,
             commitment=support_commitment(COMPLETE_INGRESS_INPUTS, ()),
             support_count=0,
         )
-        fields.update(changes)
+        fields.update(differences)
         return SupportBasis(**fields)
 
-    basis()  # the honest one is constructible
+    basis()  # the honest one is formable
 
     with pytest.raises(SupportBasisError, match="recognised selection"):
         basis(selection_rule="a selection nobody established")
@@ -772,7 +769,7 @@ def test_every_support_basis_refusal_can_be_reached():
         with pytest.raises(SupportBasisError):
             SupportBasis.from_json_dict(dict(basis().to_json_dict(), selection_rule=value))
 
-    for name in ("workspace_id", "locality_id", "occurrence_kind",
+    for name in ("locality_id", "occurrence_kind",
                  "boundary_commitment", "commitment"):
         with pytest.raises(SupportBasisError, match=f"requires {name}"):
             basis(**{name: ""})
@@ -829,13 +826,13 @@ def test_a_commitment_distinguishes_order_and_rule_not_only_membership():
            support_commitment(COMPLETE_INGRESS_INPUTS, ("a\0b", "c"))
     assert support_commitment("a", ("b",)) != support_commitment("a\0b", ())
 
-    # And the same requirement under the length prefix that replaced it.
+    # And the same requirement under the count prefix that replaced it.
     assert support_commitment("a", ("b",)) != support_commitment("ab", ())
     assert support_commitment(COMPLETE_INGRESS_INPUTS, ("", "ab")) != \
            support_commitment(COMPLETE_INGRESS_INPUTS, ("a", "b"))
     assert support_commitment(COMPLETE_INGRESS_INPUTS, ("",)) != \
            support_commitment(COMPLETE_INGRESS_INPUTS, ())
-    # Multi-byte identities are committed by encoded length, not character count.
+    # Multi-byte identities are committed by encoded byte count, not character count.
     assert support_commitment(COMPLETE_INGRESS_INPUTS, ("é",)) != \
            support_commitment(COMPLETE_INGRESS_INPUTS, ("ab",))
 
@@ -867,13 +864,13 @@ def test_a_digest_does_not_move_when_a_payload_is_compressed(tmp_path):
     for value in (payload, small):
         serialized = json.dumps(value)
         row = {
-            "id": "evt_1", "kind": "k", "workspace_id": "w", "actor": "system",
+            "id": "evt_1", "kind": "k",
             "timestamp": "2026-01-01T00:00:00+00:00", "payload": serialized,
             "locality_id": None, "causation_id": None, "correlation_id": None,
         }
         digest = _content_digest(row)
         stored = _stored_payload(serialized)
-        # Whatever the store holds, it reconstructs the canonical string exactly,
+        # Whatever the store holds, it reads the canonical string exactly,
         # and digesting that reproduces the same commitment.
         assert _serialized_payload(stored) == serialized
         assert _content_digest(dict(row, payload=_serialized_payload(stored))) == digest
@@ -889,8 +886,8 @@ def test_compressed_and_uncompressed_stores_verify_alike(tmp_path):
     ledger = SQLiteEventLedger(path)
     payload = {"dimensions": {"content": "y" * 5000}, "n": list(range(300))}
     try:
-        compressed = ledger.append("k", "w", payload)
-        plain = ledger.append("k", "w", {"a": 1})
+        compressed = ledger.append("k", payload)
+        plain = ledger.append("k", {"a": 1})
         assert ledger.integrity_of(compressed.id) == VERIFIED
         assert ledger.integrity_of(plain.id) == VERIFIED
         assert ledger.get(compressed.id).payload == payload
@@ -898,7 +895,7 @@ def test_compressed_and_uncompressed_stores_verify_alike(tmp_path):
     finally:
         ledger.close()
 
-    # Stored forms differ; standing does not.
+    # Stored represents differ; standing does not.
     connection = sqlite3.connect(path)
     stored = {
         row[0]: row[1]
@@ -907,36 +904,6 @@ def test_compressed_and_uncompressed_stores_verify_alike(tmp_path):
     connection.close()
     assert isinstance(stored[compressed.id], bytes)
     assert isinstance(stored[plain.id], str)
-
-
-def test_a_store_written_before_compression_still_reads_and_verifies(tmp_path):
-    """Text payloads predate `#2494` and must not become unreadable or corrupt."""
-
-    path = str(tmp_path / "legacy.db")
-    ledger = SQLiteEventLedger(path)
-    payload = {"dimensions": {"content": "z" * 5000}}
-    try:
-        event = ledger.append("k", "w", payload)
-    finally:
-        ledger.close()
-
-    # Rewrite the row as an older store would have held it: canonical text, and
-    # the same digest, since the digest never covered the stored form.
-    connection = sqlite3.connect(path)
-    connection.execute("DROP TRIGGER events_refuse_update")
-    connection.execute(
-        "UPDATE events SET payload = ? WHERE id = ?",
-        (json.dumps(payload), event.id),
-    )
-    connection.commit()
-    connection.close()
-
-    ledger = SQLiteEventLedger(path)
-    try:
-        assert ledger.get(event.id).payload == payload
-        assert ledger.integrity_of(event.id) == VERIFIED
-    finally:
-        ledger.close()
 
 
 def test_damaged_compressed_storage_is_corruption_not_a_compressor_error(tmp_path):
@@ -967,7 +934,7 @@ def test_damaged_compressed_storage_is_corruption_not_a_compressor_error(tmp_pat
         path = str(tmp_path / f"{label.replace(' ', '_')}.db")
         ledger = SQLiteEventLedger(path)
         try:
-            event = ledger.append("k", "w", payload)
+            event = ledger.append("k", payload)
         finally:
             ledger.close()
 
@@ -992,14 +959,14 @@ def test_damaged_compressed_storage_is_corruption_not_a_compressor_error(tmp_pat
 
 
 def test_a_compressed_payload_altered_to_other_valid_content_is_corrupted(tmp_path):
-    """The digest still settles it when the storage reconstructs cleanly."""
+    """The digest still settles it when the storage reads cleanly."""
 
     import zlib
 
     path = str(tmp_path / "swapped.db")
     ledger = SQLiteEventLedger(path)
     try:
-        event = ledger.append("k", "w", {"dimensions": {"content": "q" * 5000}})
+        event = ledger.append("k", {"dimensions": {"content": "q" * 5000}})
     finally:
         ledger.close()
 
@@ -1020,7 +987,7 @@ def test_a_compressed_payload_altered_to_other_valid_content_is_corrupted(tmp_pa
 
 
 def test_a_stored_payload_that_is_not_an_occurrence_is_refused(tmp_path):
-    """Reconstructing as text is not reconstructing as an occurrence.
+    """Read as text is not read as an occurrence.
 
     A payload that decompresses cleanly but is not JSON raised
     `JSONDecodeError` through `get()`, and so did a text payload damaged in
@@ -1042,7 +1009,7 @@ def test_a_stored_payload_that_is_not_an_occurrence_is_refused(tmp_path):
         path = str(tmp_path / f"{label.replace(' ', '_').replace(',', '')}.db")
         ledger = SQLiteEventLedger(path)
         try:
-            event = ledger.append("k", "w", payload)
+            event = ledger.append("k", payload)
         finally:
             ledger.close()
 

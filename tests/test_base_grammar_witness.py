@@ -1,7 +1,7 @@
 """What separates the declared structural edges, and what does not.
 
 Their stated requirements are identical, so
-anything reading only those cannot tell them apart. What differs is where each
+anything read only those cannot tell them apart. What differs is where each
 runs from and to, and that is sparse.
 """
 
@@ -52,13 +52,12 @@ def test_exactly_one_pair_of_edges_composes():
 
 
 def test_locality_keeps_its_subject_kinds_open():
-    """Content-to-Event locality does not close every Locality endpoint."""
+    """Content-to-Event locality does not bound every Locality endpoint kind."""
 
     declared = edges()
 
     assert declared["locality"]["from"] == "first_subject"
     assert declared["locality"]["to"] == "second_subject"
-    assert declared["locality"]["subject_taxonomy_closed"] is False
     assert "Act_occurrence" in endpoints(declared)
 
 

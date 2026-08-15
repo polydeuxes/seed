@@ -1,13 +1,13 @@
 # Book of Seed
 
-The Book of Seed preserves the durable constitutional grammar needed to interpret Seed. It names bounded concepts and keeps important non-equivalences visible.
+The Book of Seed preserves the durable constitutional grammar needed to read Seed. It names bounded concepts and keeps important non-equivalences visible.
 
 It is not a roadmap, implementation reference, generated topology, or substitute for repository inspection. Existing implementation and tests are Evidence of current practice; they do not carry constitutional Authority by identity. Historical audits and roadmaps are records outside active law.
 
 ## Resolution
 
 - A **Chapter** concerns one bounded concept, Responsibility, distinction, constraint, or relation.
-- `[UNRESOLVED]` marks a question for which the current repository does not safely support a constitutional resolution.
+- `[UNRESOLVED]` identifies a distinction for which the current repository does not safely support a constitutional resolution.
 - Seed must inspect the repository for current responsible occurrences, exact Acts, fields, topology, discrepancies, and residue.
 
 The [concordance](concordance.md) is a navigation aid, not an ontology.
@@ -18,7 +18,7 @@ grammar. Neither representation is the Book by identity.
 
 ## Standing
 
-Standing is the Book's reading root. Seed may read an exact Responsibility assignment only through current Standing concerning the Assertion that the exact responsible boundary bears that Responsibility. Standing does not create, perform, or become the Responsibility by identity.
+Standing is the Book's root. Seed may read an exact Responsibility assignment only through current Standing concerning the Assertion that the exact responsible boundary bears that Responsibility. Standing does not create, perform, or become the Responsibility by identity.
 
 ```text
 Standing
@@ -29,12 +29,12 @@ Standing
 → Standing
 ```
 
-The later Standing concerns the exact result or relation of the occurrence under Yield Evidence. It does not revise the Standing that admitted the Responsibility assignment unless a separate responsible occurrence establishes that change.
+The later Standing concerns the exact result or relation of the occurrence under Yield Evidence. It does not revise the Standing that admitted the Responsibility assignment unless a separate responsible occurrence establishes that revision.
 
 ## Responsibility
 
 1. Responsibility is the first branch read from current Standing concerning its exact assignment.
-2. The headings beneath it expose coordinates and relations; they do not change Responsibility assignments.
+2. The headings beneath it expose coordinates and relations; they do not revise Responsibility assignments.
 3. Every instantiated responsibility must expose the branches required by that responsibility.
 4. A conditional branch remains uninstantiated until a responsible occurrence supplies its coordinate.
 5. An instantiated coordinate whose value has not been resolved remains unresolved unless a responsible occurrence carries Unknown Standing for it.
@@ -48,7 +48,7 @@ Identifies who bears and answers for the exact responsibility. It is distinct fr
 
 #### Subject or material addressed
 
-Identifies what the Responsibility concerns, evaluates, forms, preserves, or stops. Responsible-boundary identity does not supply subject identity.
+Identifies what the Responsibility concerns, evaluates, represents, preserves, or stops. Responsible-boundary identity does not supply subject identity.
 
 #### Exact responsible act
 
@@ -75,7 +75,7 @@ Identifies the Evidence supporting the exact Responsibility, Act, occurrence, re
 
 #### Scope and locality
 
-Preserve the bounded extent and place within which the Responsibility, exact Act, subject, and result apply. They do not establish Authority.
+Preserve the Scope and Locality within which the Responsibility, exact Act, subject, and result apply. They do not establish Authority.
 
 ### Conditional input branches
 
@@ -91,7 +91,7 @@ Identifies the source, preservation, and occurrence history required by the exac
 
 ### Conditional support-relation branches
 
-Where a Responsibility uses a substantive Assertion as support, the exact relation “these Evidence, Authority, Scope, provenance, and limits support this Assertion” is another Assertion. Its participants, responsible Act, occurrence, Evidence, Authority, Scope, conflicts, limits, Unknowns, and Standing remain independently recoverable. Nearby coordinates, reference presence, or adjacency do not supply that relation.
+Where a Responsibility uses a substantive Assertion as support, the exact relation “these Evidence, Authority, Scope, provenance, and limits support this Assertion” is another Assertion. Its participants, responsible Act, occurrence, Evidence, Authority, Scope, conflicts, limits, Unknowns, and Standing remain independently addressable. Nearby coordinates, reference presence, or adjacency do not supply that relation.
 
 Support-relation Standing does not establish the supported Assertion's Standing, Applicability, Admission, or a later input-to-result support relation. Each requires its own responsible occurrence.
 
@@ -129,7 +129,7 @@ Identifies the evidence supporting the exact act-occurrence Assertion, failed-ac
 
 ### Result branches
 
-These branches apply where the exact Act occurrence establishes or preserves a result. Publicly callable code, direct instantiation, constructability, and a returned shape do not establish the Act, its Authority, its occurrence, or its relation to the result.
+These branches apply where the exact Act occurrence establishes or preserves a result. Publicly callable code, direct instantiation, and a returned shape do not establish the Act, its Authority, its occurrence, or its relation to the result.
 
 #### Occurrence-result Evidence
 
@@ -238,7 +238,7 @@ Stopping
 != relation by identity
 ```
 
-The Standing-to-Responsibility hierarchy is the Book's reading structure. It does not create a new constitutional kind, change Responsibility assignments, require one populated shape across exact Responsibilities, or replace the exact grammar of the chapters.
+The Standing-to-Responsibility hierarchy is the Book's structure. It does not create a new constitutional kind, revise Responsibility assignments, require one populated shape across exact Responsibilities, or replace the exact grammar of the chapters.
 
 ```text
 structural branch present != branch value established
@@ -252,7 +252,7 @@ same occurrence != same Assertion
 > Maintain the constitutional grammar.  
 > Let Seed inspect the current implementation and emit only bounded results supported by that inspection's Evidence.
 
-Change the Book when constitutional grammar, a durable distinction, or the status of an unresolved constitutional question changes. Do not update it merely because a function moves, a field is added, a relation changes, or a new diagnostic projects the same grammar.
+Revise the Book when constitutional grammar, a durable distinction, or the status of an unresolved constitutional distinction is different. Do not update it merely because a function moves, a field is added, a relation is different, or a new diagnostic projects the same grammar.
 
 ## Chapters
 

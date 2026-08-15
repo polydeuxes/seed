@@ -3,7 +3,7 @@
 ## Constitutional subject
 The distinction between exact Acts, their occurrences, and representations concerning them.
 
-## Core question
+## Core distinction
 What establishes that an Act occurred rather than that an Act-shaped representation exists?
 
 ## Bounded resolution
@@ -17,7 +17,7 @@ Validation of an Act-shaped result does not establish the Act occurrence. A down
 A Responsibility bounds what Standing may be established, preserved, or revised concerning its bounded subject; it is not the Standing, the responsible occurrence, Applicability, an exact Act, or an Act occurrence. Seed may read that Responsibility only through current Standing concerning its exact assignment. A Responsibility governs an exact Act. An Act occurrence is one occurrence at which that Act is performed under the Responsibility. Establishing Standing concerning a new subject is not revision of Standing concerning an existing subject, and neither is preservation of existing Standing. Each is lawful only as established by the occurrence's Evidence, Authority, Scope, and preserved limits. Standing, available material, Responsibility, and exact Act identity do not by identity establish that an Act was proposed or occurred.
 
 ## Important distinctions
-- boundary invocation != assertion-bearing branch != result construction != effect beyond the boundary
+- boundary invocation != assertion-bearing branch != supplied result != effect beyond the boundary
 - successful return != every asserted effect occurred
 - failed Act != absence of Act occurrence
 - Act != representation describing an Act
@@ -34,7 +34,7 @@ A Responsibility bounds what Standing may be established, preserved, or revised 
 ## Counterexamples or failure modes
 - Treating a representation concerning a proposed, requested, or contemplated Act as Evidence that a mechanism ran.
 - Treating classified operator language as the requested act itself.
-- Treating direct construction of a result as Evidence that exact focus Evidence was validated.
+- Treating a directly supplied result as Evidence that exact focus Evidence was validated.
 
 ## Related chapters
 - [Constraints and preconditions](04-constraints-and-preconditions.md)

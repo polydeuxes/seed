@@ -1,20 +1,20 @@
 # Authority Scope
 
 ## Constitutional subject
-The origin, binding, extent, and non-transferability of authority across Seed's boundaries.
+The binding, Scope, and non-transferability of authority across Seed's boundaries.
 
-## Core question
+## Core distinction
 What grants authority for a bounded result condition or act, and how is that authority prevented from expanding in transit?
 
 ## Bounded resolution
-Operator material and explicit approvals may contribute authority only after interpretation and scope binding. Internal representations, records, provider emissions, transport structures, or ordinary-language transition labels cannot create or enlarge that authority.
+Operator material and explicit approvals may contribute authority only after exact Authority and Scope binding. Internal representations, records, provider emissions, transport structures, or ordinary-language transition labels cannot create or enlarge that authority.
 
 Policy wording may describe Authority granted for an exact responsible boundary, Act or movement, addressed subject, result boundary, Scope, conditions, temporal Standing, negative Authority, and Unknowns. The wording does not create, enlarge, transfer, or renew that Authority.
 
 ## Addressable boundaries for bounded input support witnesses
 
 ### 08.Authority.A — Bounded input support without standing expansion
-A downstream Act may stand on established content only for its exact role, addressed subject, result boundary, source or provenance, Evidence, Authority, Scope, confidence or uncertainty, and Unknown boundaries. Input support does not strengthen Standing, expand Authority, prove truth, change a Responsibility assignment, authorize implementation, or erase negative Authority.
+A downstream Act may stand on established content only for its exact role, addressed subject, result boundary, source or provenance, Evidence, Authority, Scope, confidence or uncertainty, and Unknown boundaries. Input support does not strengthen Standing, expand Authority, prove truth, revise a Responsibility assignment, authorize implementation, or erase negative Authority.
 
 
 ### 08.Authority.B — Admission is bounded participation, not ratification
@@ -22,7 +22,7 @@ An established support relation, Applicability, or Admission finding may let a s
 
 
 ### 08.Authority.C — Analytical competence is not adjudicative authority
-Seed may analyze source packets, support paths, source roles, boundary mismatches, pressure, confidence limits, temporal limits, and Unknowns under bounded repository authority. That competence does not become jurisdiction, legal authority, binding legal conclusion, validity determination, invalidity determination, enforceability determination, or institutional adjudication without separately preserved competent authority, source-of-law support, procedural posture, Assertion form, and lawful stop.
+Seed may analyze source packets, support paths, source roles, boundary mismatches, pressure, confidence limits, temporal limits, and Unknowns under bounded repository authority. That competence does not become jurisdiction, legal authority, binding legal conclusion, validity determination, invalidity determination, enforceability determination, or institutional adjudication without separately preserved competent authority, source-of-law support, procedural posture, Assertion, and lawful stop.
 
 ## Important distinctions
 - operator request != unbounded authority

@@ -3,17 +3,17 @@
 ## Constitutional subject
 Conditions that govern whether and how an exact act may proceed.
 
-## Core question
+## Core distinction
 Which constraints govern an act, and at which boundary must each be satisfied?
 
 ## Bounded resolution
-A constraint concerns the proposed act or relevant context and carries a prohibition, requirement, condition, narrowing, or deferral applicable to that act. A responsible occurrence may support that Assertion only through its applicable Authority, bound identity, and current Evidence. Constraints may govern several different acts and may be checked at several boundaries; they are not thereby sequential movement stages. A constraint result may participate in another Act without the governed act occurring.
+A constraint concerns the proposed act and carries a prohibition, requirement, condition, narrowing, or deferral applicable to that act. A responsible occurrence may support that Assertion only through its applicable Authority, bound identity, and current Evidence. Constraints may govern several different acts and may be checked at several boundaries; they are not thereby sequential movement stages. A constraint result may participate in another Act without the governed act occurring.
 
 
 ## Addressable access and Act conditions
 
 ### 02.Constraints.A — Access and an Act condition do not authorize use
-An access condition, visible route, available representation, mechanism candidate, or read-only surface preserves only its exact evidenced condition. It does not by itself establish Authorization for the Act, mutation, input support beyond an established support relation, recording admission, or change to another Assertion's Standing. Lawful use requires the exact Act's Authority, Constraints, Evidence, Responsibility, and occurrence boundary.
+An access condition, visible route, available representation, mechanism candidate, or read-only surface preserves only its exact evidenced condition. It does not by itself establish Authorization for the Act, mutation, input support beyond an established support relation, recording admission, or revision to another Assertion's Standing. Lawful use requires the exact Act's Authority, Constraints, Evidence, Responsibility, and occurrence boundary.
 
 ## Important distinctions
 - act != constraint on an act
@@ -24,7 +24,7 @@ An access condition, visible route, available representation, mechanism candidat
 
 ## Counterexamples or failure modes
 - Recording that approval is required as though approval was granted.
-- Treating a passing represented form as complete authority for the exact act.
+- Treating a passing Representation as complete authority for the exact act.
 - Treating a local precondition finding as proof that the governed act occurred.
 
 ## Related chapters
@@ -33,14 +33,14 @@ An access condition, visible route, available representation, mechanism candidat
 
 ## Constrained movement constraint correction 001
 
-A constraint is not the governed movement, a constraint result is not occurrence of the governed movement, and a constraint is not an ordered movement stage. A constraint may govern whether movement may occur, which movement remains admissible, how far movement may proceed, under which scope movement remains lawful, which standing may be supported, or when movement must stop. Passing one constraint does not establish complete Authority or Evidence for movement, emission, arrival, responsibility transition, realization, or input support beyond the result's scope.
+A constraint is not the governed movement, a constraint result is not occurrence of the governed movement, and a constraint is not an ordered movement stage. A constraint may govern whether movement may occur, which movement remains admissible, how far movement may proceed, under which scope movement remains lawful, which standing may be supported, or when movement must stop. Passing one constraint does not establish complete Authority or Evidence for movement, emission, responsibility transition, realization, or input support beyond the result's scope.
 
-At a constraint boundary, a constraint establishes or preserves the exact applicable prohibition, requirement, condition, narrowing, redirection, deferral, or unchanged constraint standing. A responsible exact Act may accept as input an applicable constraint result when determining whether a later movement remains prohibited, narrowed, redirected, deferred, or unchanged within that exact Act's exact act. The constraint result does not perform the governed movement, the exact Act, or a Stopping occurrence, and it does not change any other Assertion's Standing.
+At a constraint boundary, a constraint establishes or preserves the exact applicable prohibition, requirement, condition, narrowing, redirection, deferral, or preserved constraint standing. A responsible exact Act may accept as input an applicable constraint result when determining whether a later movement remains prohibited, narrowed, redirected, deferred, or preserved within that exact Act's exact act. The constraint result does not perform the governed movement, the exact Act, or a Stopping occurrence, and it does not revise any other Assertion's Standing.
 
 Direct answer preserved by this clause: Does a constraint result perform the movement it governs? No.
 
 ## Applicability decomposition correction 001
 
-Constraint findings and precondition material preserve only the condition established by their exact Act occurrence. A passing represented form, precondition, reachability, or feasibility finding does not establish complete Authority, another Act occurrence, mechanism Standing, representation fitness, locality availability, emission, invocation, recording, or temporal Applicability beyond its Scope.
+Constraint findings and precondition material preserve only the condition established by their exact Act occurrence. A passing Representation, precondition, reachability, or feasibility finding does not establish complete Authority, another Act occurrence, mechanism Standing, representation fitness, locality availability, emission, invocation, recording, or temporal Applicability beyond its Scope.
 
 Resource and other local conditions remain exact coordinates rather than one scalar that compresses constraint satisfaction, reachability, resources, Authority, approval, representation fitness, locality, and temporal Applicability. When a condition Assertion supports an exact Act, unestablished coordinates remain Unknown, and the Act preserves its source, subject, Scope, requirement, result, temporal Standing, limits, and Unknowns.

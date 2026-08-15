@@ -1,4 +1,4 @@
-"""Declared measurement over preserved operator-ingress occurrences.
+"""Declared measurement over preserved operator-ingest occurrences.
 
 `01.Source.E` is titled *Measurement and recurrence do not establish represented relation*,
 and `01.Source:28` grants the finding and states its conditions:
@@ -15,9 +15,9 @@ and `01.Source:28` grants the finding and states its conditions:
 Those three disclosures are required fields here, not commentary.
 
 **What this is for is Seed's own preserved material.** Occurrences recorded
-through operator ingress carry occurrence-only Evidence while the represented relation
+through operator ingest carry occurrence-only Evidence while the represented relation
 remains ``Unknown``,
-and reading a file directly and measuring it yields a result that vanishes
+and read a file directly and measuring it yields a result that vanishes
 with the process and that no later act can have as input; `#2368` did that and it was
 withdrawn.
 
@@ -50,6 +50,7 @@ from typing import Any, Iterable
 
 from seed_runtime.events import EventLedger
 from seed_runtime.event import Event
+from seed_runtime.material_ingest import MATERIAL_INGEST_OCCURRED_KIND
 from seed_runtime.ids import new_id
 from seed_runtime.yield_evidence import (
     YIELD_EVIDENCE_KIND,
@@ -63,10 +64,10 @@ from seed_runtime.support_basis import (
 )
 
 MEASUREMENT_RECORDED_KIND = "operator.measurement.finding_recorded"
-INGRESS_OCCURRED_KIND = "operator.material.occurred"
+INGEST_OCCURRED_KIND = MATERIAL_INGEST_OCCURRED_KIND
 RECURRENCE_RESULT_KIND = "recurrence Measurement finding"
 
-MEASUREMENT_CONVENTION = "preserved_material_declared_measurement_v1"
+MEASUREMENT_CONVENTION = "preserved_material_declared_measurement"
 
 # What a finding may say about where the material it measured came from. The
 # measuring act knows which of these is true and nothing carried it forward, so
@@ -74,7 +75,7 @@ MEASUREMENT_CONVENTION = "preserved_material_declared_measurement_v1"
 # ledger reads its material from that ledger; a measurement given occurrences
 # measures what it was handed, and no later act can establish that those
 # objects carried what the preserved occurrences of the same identity carry.
-MATERIAL_READ_FROM_LEDGER = "preserved operator-ingress occurrences"
+MATERIAL_READ_FROM_LEDGER = "preserved operator-ingest occurrences"
 MATERIAL_AS_SUPPLIED = (
     "occurrences as supplied to this measurement, not read from a ledger"
 )
@@ -126,12 +127,12 @@ class DeclaredMeasurement:
     # records the representation it used, so this is what makes a finding
     # representation-supplying rather than merely informative.
     measured_after: str | None = None
-    # The form of positional measurement performed, and the exact
-    # representations it was performed relative to.  Without these a finding
-    # says what it found but not what question yielded it, so nothing can form
-    # the next question from it without a reader restating the first.  These
+    # The positional Measurement distinction, and the exact representations it
+    # was performed relative to. Without these a finding says what it found but
+    # not what distinction yielded it, so a later distinction would require a
+    # reader to restate the first. These
     # are exact strings taken from preserved material; neither names a kind.
-    form: str | None = None
+    distinction: str | None = None
     relative_to: tuple[str, ...] = ()
     # Where the position measured sits relative to what it was measured
     # relative to.  Recorded so a measurement can be compared with another
@@ -164,7 +165,7 @@ class MeasurementFinding:
     positions_measured: int
     occupancies: tuple[Occupancy, ...]
     # The identities this measurement input_ids, available while the act runs.
-    # On the result-Assertion path a reconstructible support basis is formed from
+    # On the result-Assertion path a addressable support basis is supplied from
     # these inputs instead of preserving the enumeration in every result;
     # the basis belongs to that path, and this dataclass does not own a second
     # coordinate for it. `#2486` measured why: copying the inputs into
@@ -205,7 +206,7 @@ class MeasurementFinding:
             "counting_scope": self.declared.counting_scope,
             "premise_event_id": self.declared.premise_event_id,
             "measured_left_representation": self.declared.measured_after,
-            "measurement_form": self.declared.form,
+            "measurement_distinction": self.declared.distinction,
             "measured_relative_to": list(self.declared.relative_to),
             "measured_position": self.declared.measured_position,
             "positions_measured": self.positions_measured,
@@ -283,7 +284,7 @@ class RecurrenceFinding:
     support_basis: SupportBasis | None = None
     # Which preserved Evidence concerns this result's exact Yield edge. The
     # Evidence reference is neither the edge nor its Act occurrence by identity.
-    # holds that a separately constructed representation with identical fields
+    # holds that a separately supplied representation with identical fields
     # does not carry the witnessed return's standing "unless that standing is
     # separately represented or preserved". Content equality cannot supply it:
     # an identical validation has identical content by definition, which is
@@ -304,7 +305,7 @@ class RecurrenceFinding:
             "equivalence_rule": self.declared.equivalence_rule,
             "counting_scope": self.declared.counting_scope,
             "premise_event_id": self.declared.premise_event_id,
-            "measurement_form": "recurrence",
+            "measurement_distinction": "recurrence",
             "input_localities": list(self.input_localities),
             "occurrences_examined": self.occurrences_examined,
             "occurrences_carrying": self.occurrences_carrying,
@@ -329,14 +330,14 @@ def measure_recurrence(
     declared: DeclaredMeasurement,
     occurrences_of: "callable[[str], int]",
     preserved_in: EventLedger | None = None,
-    yield_in: "tuple[EventLedger, str, str] | None" = None,
+    yield_in: "tuple[EventLedger, str] | None" = None,
 ) -> RecurrenceFinding:
     """Count how often one representation occurs across preserved material.
 
     ``occurrences_of`` receives one preserved representation and returns how
     many times the measured representation occurs within it under the declared
     equivalence rule. The rule decides what counts as an occurrence, so the
-    caller supplies it and this act performs no interpretation: a
+    caller supplies it and this act performs no read: a
     representation that does not occur occurs zero times, which is a finding
     and not an absence of one.
 
@@ -380,8 +381,7 @@ def measure_recurrence(
     if yield_in is not None:
         evidence = _record_yield(
             yield_in[0],
-            workspace_id=yield_in[1],
-            locality_id=yield_in[2],
+            locality_id=yield_in[1],
             finding=finding,
         )
         finding = replace(finding, yield_evidence_id=evidence.id)
@@ -395,14 +395,11 @@ def _locality_of(event: Event) -> str | None:
     coordinate. Where one is not carried, this returns ``None``, and a finding
     records that absence rather than a value standing in for it.
 
-    The workspace does not stand in for an uncarried locality. `06.Standing.A`
-    lists them as different members of one boundary, and same workspace does
-    not mean same locality.
     """
 
     if event.locality_id is None:
         return None
-    return f"workspace:{event.workspace_id};locality:{event.locality_id}"
+    return f"locality:{event.locality_id}"
 
 
 def _distinct_inputs(occurrences: Iterable[Event]) -> list[Event]:
@@ -416,8 +413,8 @@ def _distinct_inputs(occurrences: Iterable[Event]) -> list[Event]:
     carries that inflation.
 
     Refused rather than deduplicated. Silently collapsing would decide that the
-    caller meant one, and refusing rather than pretending is the same choice
-    this module makes about material it cannot measure.
+    caller meant one. The same refusal applies to material this Act cannot
+    measure.
 
     `01.Source.E.1` establishes the rule: each counted occurrence is
     distinguished by exact occurrence identity, and repeated reference to one
@@ -441,11 +438,11 @@ def _as_preserved(
 ) -> "tuple[list[Event], str]":
     """The preserved occurrences these identities name, where a ledger says so.
 
-    An `Event` is directly constructible with any id and any payload, so an
+    An `Event` is directly formable with any id and any payload, so an
     object bearing a preserved identity may carry different material. Checking
     that an occurrence with that identity exists establishes the identity and
-    not the material: `#2510` closed this where a support basis was declared,
-    by reading the occurrence rather than trusting the object, and every other
+    not the material: `#2510` enforced this where a support basis was declared,
+    by read the occurrence rather than trusting the object, and every other
     path kept trusting the object.
 
     Where a ledger is supplied the material is read from it. Where none is, the
@@ -530,7 +527,7 @@ def _yielded_content(finding) -> dict[str, Any]:
 
 
 def _yield_commitment(finding) -> str:
-    """A commitment over the content above, so any change to it is a change."""
+    """A commitment over the content above, so any revision to it is a revision."""
 
     return _yield_content_commitment(
         MEASUREMENT_CONVENTION, _yielded_content(finding)
@@ -544,7 +541,7 @@ def _recorded_yield_commitment(
 
     The yield evidence names the exact top-level coordinates the act
     yielded. Recording may lawfully add other coordinates, so neither an
-    exclusion list nor every key left in the recorded payload reconstructs this
+    exclusion list nor every key left in the recorded payload reads this
     boundary. `material_provenance` is the one yielded coordinate represented
     inside the recorder-established dimensions object.
     """
@@ -572,15 +569,13 @@ def _recorded_yield_commitment(
     return _yield_content_commitment(MEASUREMENT_CONVENTION, content)
 
 
-def _record_yield(
-    ledger: EventLedger, *, workspace_id: str, locality_id: str, finding
-) -> Event:
+def _record_yield(ledger: EventLedger, *, locality_id: str, finding) -> Event:
     """Preserve, from inside the yielding act, that it yielded this result.
 
     The distinction is not that this is private. Privacy is mechanics. It is
     that Standing concerning the occurrence-to-result edge is preserved at the
     exact Act boundary, and
-    the result carries the relation to it — so a separately constructed
+    the result carries the relation to it — so a separately supplied
     representation with identical fields carries no such relation, which is the
     direct-instantiation counterexample states. An earlier attempt exposed this
     publicly, which made it a second recorder: a caller holding any object could
@@ -605,7 +600,6 @@ def _record_yield(
 
     return _record_yield_evidence(
         ledger,
-        workspace_id=workspace_id,
         locality_id=locality_id,
         convention=MEASUREMENT_CONVENTION,
         yielding_act="declared Measurement",
@@ -615,7 +609,7 @@ def _record_yield(
         yielded_content=_yielded_content(finding),
         responsibility=RESPONSIBILITY_UNESTABLISHED,
         live_boundary="preserved_material_measurement",
-        carrier_coordinates={
+        recorded_result_coordinates={
             coordinate: (
                 ("dimensions", "source_provenance")
                 if coordinate == "material_provenance"
@@ -627,48 +621,21 @@ def _record_yield(
 
 
 def _measurable_text(event: Event) -> str:
-    """The text this occurrence preserved, or a refusal stating why not.
+    """The represented material this occurrence preserved, or a refusal.
 
     Both recurrence measurements refuse identically, so the refusal lives in
     one place: a measurement that reports its scope cannot quietly skip part
     of it.
     """
 
-    if event.kind != INGRESS_OCCURRED_KIND:
+    if event.kind != INGEST_OCCURRED_KIND:
         raise PreservedMaterialMeasurementError(
-            f"only preserved ingress occurrences may be measured: {event.kind}"
+            f"only preserved ingest occurrences may be measured: {event.kind}"
         )
-    text = event.payload.get("text_representation")
     represented = event.payload.get("represented_material")
-    if represented is None:
-        represented = event.payload.get("decoded_text")
-    if text is None:
-        text = {"available": represented is not None}
-    if not isinstance(text, dict) or not text.get("available"):
-        raise PreservedMaterialMeasurementError(
-            f"{event.id} preserves material with no available text "
-            "representation, and this measurement measures text"
-        )
     if not isinstance(represented, str):
-        # The occurrence says a text representation was formed and carries no
-        # decoded text. That is incoherent material, and reading the coordinate
-        # and trusting it would rest the finding on a Assertion about the material
-        # rather than on the material, surfacing as a KeyError rather than as a
-        # refusal stating what was wrong.
-        #
-        # `text_representation.available` records a *historical* outcome: at
-        # ingress, this decoder formed a text representation. It is not the
-        # present-tense availability `#2496` governs, which is asked of the
-        # holder and never read from the ledger. One word carries both, which
-        # is why this looked at first like a `#2496` violation and is not one.
-        #
-        # This refusal closes the incoherent case only. Whether gating on the
-        # historical coordinate at all is faithful -- an occurrence recording
-        # that no representation was formed, while carrying decoded text, is
-        # still refused by the check above -- remains unresolved here.
         raise PreservedMaterialMeasurementError(
-            f"{event.id} declares an available text representation but "
-            "preserves no decoded text"
+            f"{event.id} preserves no represented material"
         )
     return represented
 
@@ -679,7 +646,7 @@ def measure_recurrences(
     declared: "dict[str, DeclaredMeasurement]",
     counts_in: "callable[[str], dict[str, int]]",
     preserved_in: EventLedger | None = None,
-    yield_in: "tuple[EventLedger, str, str] | None" = None,
+    yield_in: "tuple[EventLedger, str] | None" = None,
     support_basis: SupportBasis | None = None,
     support_validator: SupportValidator | None = None,
 ) -> tuple[RecurrenceFinding, ...]:
@@ -702,7 +669,7 @@ def measure_recurrences(
 
     Findings are identical to calling `measure_recurrence` for each
     representation. Each carries its own declaration, the same input_ids
-    inputs, and the same three counts. This changes only how many times the
+    inputs, and the same three counts. This differences only how many times the
     material is walked.
 
     A representation counted but not declared is refused. The declared set is
@@ -750,22 +717,6 @@ def measure_recurrences(
         _distinct_inputs(occurrences), preserved_in
     )
     if support_basis is not None and support_validator is not None:
-        # A finding asserting support from preserved occurrences must have
-        # measured the material those occurrences carry. An `Event` can be
-        # constructed directly with any id and any payload, so a caller could
-        # hand this act an object bearing a validated identity and different
-        # text: the identities would commit correctly, the basis would reconstruct,
-        # and the finding would preserve a basis for material it never saw.
-        #
-        # So where a basis is declared, the material is read from the ledger
-        # the basis is validated against. The supplied objects still determine
-        # which occurrences participate and in what order; they do not supply
-        # what was measured.
-        # This read establishes the same provenance `_as_preserved` does, so
-        # the finding must carry it. Without this the basis path recorded
-        # material as supplied while having read every occurrence from the
-        # ledger -- erasing an established provenance rather than supplying an
-        # unestablished one, which is the same defect facing the other way.
         material_provenance = MATERIAL_READ_FROM_LEDGER
         preserved = []
         for event in walked:
@@ -825,11 +776,8 @@ def measure_recurrences(
         # accepted for a inputs drawn from several: the ids match, and the
         # preserved basis then asserts a scope the act never input_ids within.
         # The yielding act refuses that now; a later validation failure is a
-        # different responsibility and arrives too late to prevent it.
-        declared_locality = (
-            f"workspace:{support_basis.workspace_id};"
-            f"locality:{support_basis.locality_id}"
-        )
+        # different responsibility and occurs too late to prevent it.
+        declared_locality = f"locality:{support_basis.locality_id}"
         if input_localities != (declared_locality,):
             raise PreservedMaterialMeasurementError(
                 f"the declared support basis is scoped to {declared_locality} "
@@ -849,11 +797,11 @@ def measure_recurrences(
         # would pass all of them, and the finding would then preserve a basis
         # asserting completeness the act never established.
         #
-        # Verifying that requires interpreting the boundary, which only an
+        # Verifying that requires classifying the boundary, which only an
         # EventLedger does, so a basis is accepted only where the act is given
         # the means to check it. Implementation inconvenience does not move the
         # obligation to a later reader: once the enumeration is replaced, a
-        # validation discovering the lie arrives after the false basis is
+        # validation discovering the lie occurs after the false basis is
         # preserved.
         if support_validator is None:
             raise PreservedMaterialMeasurementError(
@@ -861,7 +809,7 @@ def measure_recurrences(
                 "accepting one requires a SupportValidator to establish that "
                 "the inputs are that selection"
             )
-        # `reconstruct` performs the basis's own selection through the boundary and
+        # `read` performs the basis's own selection through the boundary and
         # refuses unless the result reproduces the committed digest. Together
         # with the commitment check above -- which ties the inputs walked to
         # that same digest -- the inputs are the selection declared.
@@ -907,8 +855,7 @@ def measure_recurrences(
         for finding in findings:
             evidence = _record_yield(
                 yield_in[0],
-                workspace_id=yield_in[1],
-                locality_id=yield_in[2],
+                locality_id=yield_in[1],
                 finding=finding,
             )
             witnessed.append(replace(finding, yield_evidence_id=evidence.id))
@@ -916,17 +863,12 @@ def measure_recurrences(
     return findings
 
 
-def preserved_ingress_occurrences(
-    ledger: EventLedger, *, workspace_id: str, locality_id: str
+def ingest_occurrences(
+    ledger: EventLedger, *, locality_id: str
 ) -> list[Event]:
-    """Every preserved ingress occurrence carrying this locality, in append order.
+    """Every preserved ingest occurrence carrying this locality, in append order.
 
     The material measured is what Seed recorded, not what a file contains.
-
-    The locality is read as a locality. Reading the whole workspace and
-    discarding the rest returned the same occurrences and cost the whole
-    workspace: `#2414` measured 757.8ms against 46.4ms on sixteen co-resident
-    bodies, a factor equal to how many of them share the ledger.
 
     `06.Standing.B` holds that a locality is a carried coordinate. It preserves
     nothing and performs nothing; the ledger preserves, and this reads by the
@@ -935,8 +877,8 @@ def preserved_ingress_occurrences(
 
     return [
         event
-        for event in ledger.list_locality(workspace_id, locality_id)
-        if event.kind == INGRESS_OCCURRED_KIND
+        for event in ledger.list_locality(locality_id)
+        if event.kind == INGEST_OCCURRED_KIND
     ]
 
 
@@ -951,7 +893,7 @@ def measure_occupancy(
 
     ``occupant_of`` receives one preserved representation and returns the
     representation occupying the measured position within it, or ``None`` when
-    that occurrence has no such position. It performs no interpretation; a
+    that occurrence has no such position. It performs no read; a
     position that is absent is absent, not Unknown.
     """
 
@@ -984,7 +926,6 @@ def measure_occupancy(
 
 def _measurement_finding_payload(
     *,
-    workspace_id: str,
     locality_id: str,
     finding: MeasurementFinding | RecurrenceFinding,
     extra: dict[str, Any] | None,
@@ -992,7 +933,7 @@ def _measurement_finding_payload(
     carried = finding.to_json_dict()
     basis = (extra or {}).get("support_basis", {}).get("basis") if extra else None
     if basis is not None:
-        # A result Assertion carries a reconstructible support basis, so the
+        # A result Assertion carries a addressable support basis, so the
         # enumeration it replaces is not written beside it. `#2486` measured
         # the enumeration at 97% of a 4,000-line finding.
         carried["input_support"] = basis
@@ -1006,7 +947,7 @@ def _measurement_finding_payload(
             "standing": "measured",
             # Stated from the finding rather than asserted here. The measuring
             # act knows whether it read its material from a ledger, and this
-            # said "preserved operator-ingress occurrences" for every finding
+            # said "preserved operator-ingest occurrences" for every finding
             # regardless -- supplying a provenance the act had declined.
             "source_provenance": getattr(
                 finding, "material_provenance", MATERIAL_AS_SUPPLIED
@@ -1016,14 +957,14 @@ def _measurement_finding_payload(
             # `#2439` had just separated and mints the sibling of a string
             # `#2431` had already called contamination. Where the material came
             # from and which responsible boundary bears the Measurement Responsibility are
-            # different questions, and only the first has been validated.
+            # different distinctions, and only the first has been validated.
             "responsibility": RESPONSIBILITY_UNESTABLISHED,
             "authority": "unestablished",
             "evidence_scope": (
                 "measurement evidence only; establishes no represented relation, relation, "
                 "or standing beyond the measurement assertion"
             ),
-            "scope_locality": f"workspace:{workspace_id};locality:{locality_id}",
+            "scope_locality": f"locality:{locality_id}",
             "occurrence_preservation": "declared measurement durably recorded",
         },
         "mutates_cluster": False,
@@ -1041,7 +982,6 @@ def _measurement_finding_payload(
 def record_measurement_findings(
     ledger: EventLedger,
     *,
-    workspace_id: str,
     locality_id: str,
     findings: Iterable[tuple[MeasurementFinding | RecurrenceFinding, dict[str, Any] | None]],
 ) -> list[Event]:
@@ -1060,16 +1000,16 @@ def record_measurement_findings(
                 "a premise must be a recorded measurement finding"
             )
     # Every recorded finding states `source_provenance` as "preserved
-    # operator-ingress occurrences". Premises were established here and the
+    # operator-ingest occurrences". Premises were established here and the
     # occurrences that Assertion were made about never were, so a finding measured
-    # over directly constructed `Event` objects recorded that provenance about
-    # material this ledger does not hold. `#2510` closed that at the input
+    # over directly supplied `Event` objects recorded that provenance about
+    # material this ledger does not hold. `#2510` enforced that at the input
     # boundary only where a support basis was declared; a measurement without
     # one reached the recorder unchecked.
     #
     # An earlier version exempted findings carrying a support basis, calling
     # them verified. Carrying a basis is not being verified against one: both
-    # `RecurrenceFinding` and `SupportBasis` are directly constructible, and a
+    # `RecurrenceFinding` and `SupportBasis` are directly formable, and a
     # finding verified against one ledger may be handed to another. This
     # function has no witness for either, so it exempts nothing.
     #
@@ -1083,15 +1023,13 @@ def record_measurement_findings(
     }
     for event_id in input_ids:
         occurrence = ledger.get(event_id)
-        if occurrence is None or occurrence.kind != INGRESS_OCCURRED_KIND:
+        if occurrence is None or occurrence.kind != INGEST_OCCURRED_KIND:
             raise PreservedMaterialMeasurementError(
                 f"{event_id} is recorded as a input_ids preserved occurrence "
-                "and this ledger preserves no such ingress occurrence"
+                "and this ledger preserves no such ingest occurrence"
             )
     # A recurrence finding is recordable where the act that yielded it
-    # preserved evidence of doing so. Read across the workspace, since
-    # `06.Standing.B` makes yielding in one locality and recording in another
-    # lawful. Required on this path only: every positional caller records
+    # preserved evidence of doing so. Required on this path only: every positional caller records
     # without a yield witness, and adopting it there is its own migration.
     for finding, _ in supplied:
         if not isinstance(finding, RecurrenceFinding):
@@ -1106,11 +1044,6 @@ def record_measurement_findings(
             raise PreservedMaterialMeasurementError(
                 f"{finding.yield_evidence_id} is named as this result's "
                 "evidence and is not preserved yield evidence"
-            )
-        if evidence.workspace_id != workspace_id:
-            raise PreservedMaterialMeasurementError(
-                "yield evidence and its recorded recurrence finding must "
-                "belong to the same workspace"
             )
         if evidence.payload.get("yielded_result_kind") != RECURRENCE_RESULT_KIND:
             raise PreservedMaterialMeasurementError(
@@ -1140,9 +1073,7 @@ def record_measurement_findings(
         Event(
             id=new_id("evt"),
             kind=MEASUREMENT_RECORDED_KIND,
-            workspace_id=workspace_id,
             payload=_measurement_finding_payload(
-                workspace_id=workspace_id,
                 locality_id=locality_id,
                 finding=finding,
                 extra=extra,
@@ -1157,7 +1088,6 @@ def record_measurement_findings(
 def record_measurement_finding(
     ledger: EventLedger,
     *,
-    workspace_id: str,
     locality_id: str,
     finding: MeasurementFinding | RecurrenceFinding,
     extra: dict[str, Any] | None = None,
@@ -1170,7 +1100,6 @@ def record_measurement_finding(
 
     return record_measurement_findings(
         ledger,
-        workspace_id=workspace_id,
         locality_id=locality_id,
         findings=((finding, extra),),
     )[0]

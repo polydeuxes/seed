@@ -1,4 +1,4 @@
-"""External operator control that begins a fresh locality at one checkpoint."""
+"""Operator control that begins a fresh locality at one checkpoint."""
 
 from __future__ import annotations
 
@@ -43,7 +43,7 @@ def open_operator_checkpoint(
     """Begin one fresh locality at the exact Representation addressed by the command.
 
     Argument bytes remain part of the addressed command occurrence. They are
-    not interpreted as a goal, desire, relation, Authority, or Standing here.
+    not classified as a goal, desire, relation, Authority, or Standing here.
     The checkpoint occurrence already carries the locality in which it
     occurred, so this relation stores no additional hierarchy field.
     """
@@ -64,7 +64,6 @@ def open_operator_checkpoint(
     if (
         checkpoint is None
         or checkpoint.kind != "operator.representation.recorded"
-        or checkpoint.workspace_id != addressed.workspace_id
         or checkpoint.locality_id != addressed.locality_id
         or ledger.integrity_of(checkpoint.id) == CORRUPTED
     ):
@@ -78,7 +77,6 @@ def open_operator_checkpoint(
     locality_id = new_id("checkpoint_locality")
     evidence = ledger.append(
         CHECKPOINT_LOCALITY_EVIDENCE_KIND,
-        addressed.workspace_id,
         {
             "first_subject": command_id,
             "second_subject": checkpoint.id,

@@ -45,13 +45,11 @@
       "book_clause": "06.Standing.B",
       "from": "first_subject",
       "to": "second_subject",
-      "subject_taxonomy_closed": false,
       "requires": ["exact_relation", "occurrence_witness", "intact_evidence"]
     }
   },
   "input_role": {
     "kind": "Act_local_role",
-    "subject_taxonomy_closed": false,
     "preserves_subject_identity": true,
     "distinct_from": [
       "subject",
@@ -75,9 +73,6 @@
         "participation": ["exact_relation", "occurrence_witness", "intact_evidence"],
         "locality": ["exact_relation", "occurrence_witness", "intact_evidence"],
         "yield": ["exact_relation", "occurrence_witness", "intact_evidence"],
-        "representation_mechanically_matches_digest": [
-          "mechanical_recomputation"
-        ],
         "representation_digest_carried_by_occurrence": [
           "exact_relation",
           "occurrence_witness"
@@ -89,19 +84,12 @@
       "edge_missing": "missing",
       "wrong_occurrence": "missing",
       "corrupted_evidence": "missing",
-      "unrelated_change": "exact"
+      "unrelated_occurrence": "exact"
     },
     "non_equivalence": [
       ["content", "locality"],
       ["content", "digest"],
       ["locality", "digest"]
-    ],
-    "digest_does_not_establish": [
-      "content_reconstruction",
-      "occurrence",
-      "provenance",
-      "Standing",
-      "Evidence"
     ]
   },
   "clauses": {
@@ -132,8 +120,8 @@
         "Standing_revision",
         "Stop"
       ],
-      "identity_change": {
-        "when": "asserted_content_changes",
+      "different_identity": {
+        "when": "asserted_content_is_different",
         "result": "different_Assertion"
       },
       "Unknown": {

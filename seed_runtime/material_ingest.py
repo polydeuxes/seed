@@ -1,0 +1,140 @@
+"""One exact Ingest occurrence for material supplied at a source boundary."""
+
+from __future__ import annotations
+
+from seed_runtime.event import Event
+from seed_runtime.events import EventLedger
+from seed_runtime.ids import new_id
+from seed_runtime.yield_evidence import _record_yield_evidence, yield_commitment
+
+
+MATERIAL_INGEST_OCCURRED_KIND = "material.ingest.occurred"
+MATERIAL_INGEST_ACT_EVIDENCE_KIND = "material.ingest.act_evidenced"
+MATERIAL_INGEST_CONVENTION = "material_ingest"
+MATERIAL_INGEST_RESPONSIBILITY = (
+    "preserve exact material supplied at one source boundary"
+)
+
+
+class MaterialIngestError(ValueError):
+    pass
+
+
+def ingest_material(
+    ledger: EventLedger,
+    *,
+    locality_id: str,
+    exact_bytes: bytes,
+    source_role: str,
+    source_boundary: str,
+    represented_material: str | None = None,
+    known_loss: tuple[str, ...] = (),
+) -> Event:
+    if type(exact_bytes) is not bytes:
+        raise MaterialIngestError("Ingest requires exact bytes")
+    for name, value in (
+        ("locality_id", locality_id),
+        ("source_role", source_role),
+        ("source_boundary", source_boundary),
+    ):
+        if type(value) is not str or not value.strip():
+            raise MaterialIngestError(f"Ingest requires exact {name}")
+    if represented_material is not None and type(represented_material) is not str:
+        raise MaterialIngestError("represented material must be exact material")
+    if type(known_loss) is not tuple or any(type(item) is not str for item in known_loss):
+        raise MaterialIngestError("known loss must be an exact tuple of material")
+
+    ingest_act_id = new_id("material_ingest_act")
+    act_occurrence_id = new_id("material_ingest_act_occurrence")
+    result_identity = new_id("material_ingest_result")
+    result: dict[str, object] = {
+        "result_identity": result_identity,
+        "ingest_act_id": ingest_act_id,
+        "act_occurrence_id": act_occurrence_id,
+        "source_role": source_role,
+        "source_boundary": source_boundary,
+        "exact_bytes_hex": exact_bytes.hex(),
+        "byte_count": len(exact_bytes),
+        "known_loss": list(known_loss),
+        "unknowns": [
+            "what this material represents remains Unknown",
+            "the asserted source relation remains Unknown",
+        ],
+        "provenance_occurrence_refs": [],
+    }
+    if represented_material is not None:
+        result["represented_material"] = represented_material
+
+    responsible_act_evidence = ledger.append(
+        MATERIAL_INGEST_ACT_EVIDENCE_KIND,
+        {
+            "ingest_act_id": ingest_act_id,
+            "act_occurrence_id": act_occurrence_id,
+            "act": "Ingest exact material",
+            "responsibility": MATERIAL_INGEST_RESPONSIBILITY,
+            "responsible_boundary": "this Seed",
+            "result_commitment": yield_commitment(
+                MATERIAL_INGEST_CONVENTION, result
+            ),
+            "standing": "occurred",
+            "authority": "unestablished",
+            "evidence_scope": "Evidence concerning this exact Ingest occurrence only",
+        },
+        locality_id=locality_id,
+    )
+    yield_evidence = _record_yield_evidence(
+        ledger,
+        locality_id=locality_id,
+        convention=MATERIAL_INGEST_CONVENTION,
+        yielding_act="Ingest exact material",
+        act_occurrence_id=act_occurrence_id,
+        yielded_result_kind="exact material",
+        result_identity=result_identity,
+        yielded_content=result,
+        responsibility=MATERIAL_INGEST_RESPONSIBILITY,
+        live_boundary="material_ingest",
+        responsible_boundary="this Seed",
+        recorded_result_coordinates={key: (key,) for key in result},
+    )
+    payload: dict[str, object] = {
+        **result,
+        "dimensions": {
+            "identity": result_identity,
+            "content": exact_bytes.hex(),
+            "standing": "preserved",
+            "source_provenance": source_boundary,
+            "responsibility": MATERIAL_INGEST_RESPONSIBILITY,
+            "authority": "unestablished",
+            "evidence_scope": (
+                "this exact Ingest occurrence and exact material result only; "
+                "represented relation Unknown"
+            ),
+            "scope_locality": f"locality:{locality_id}",
+            "occurrence_preservation": "exact Ingest bytes durably recorded",
+        },
+        "responsible_act_evidence_id": responsible_act_evidence.id,
+        "yield_evidence_id": yield_evidence.id,
+    }
+
+    return ledger.append(
+        MATERIAL_INGEST_OCCURRED_KIND,
+        payload,
+        locality_id=locality_id,
+    )
+
+
+def ingested_material_bytes(event: Event) -> bytes:
+    if event.kind != MATERIAL_INGEST_OCCURRED_KIND:
+        raise MaterialIngestError(
+            f"only Ingest occurrences carry exact material: {event.kind}"
+        )
+    encoded = event.payload.get("exact_bytes_hex")
+    if type(encoded) is not str:
+        raise MaterialIngestError("Ingest occurrence carries no exact bytes")
+    try:
+        exact = bytes.fromhex(encoded)
+    except ValueError as exc:
+        raise MaterialIngestError("Ingest occurrence carries malformed bytes") from exc
+    if exact.hex() != encoded or len(exact) != event.payload.get("byte_count"):
+        raise MaterialIngestError("Ingest bytes and byte count differ")
+    return exact

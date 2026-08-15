@@ -36,8 +36,8 @@ def test_whether_a_first_classification_must_carry_something_is_the_witness():
 
 
 def test_the_same_engine_climbs_a_decoder_witness():
-    recovered = classes("utf-8", 4)
-    first = [tuple(members) for members in recovered.values()]
+    read = classes("utf-8", 4)
+    first = [tuple(members) for members in read.values()]
 
     rungs = rc.climb(first, lambda a, b: accepts("utf-8", (a, b)))
 
@@ -62,9 +62,9 @@ def test_the_two_witnesses_climb_differently():
     property of the witness, and these differ by more than an order.
     """
 
-    recovered = classes("big5hkscs", 4)
+    read = classes("big5hkscs", 4)
     codec_rungs = rc.climb(
-        [tuple(m) for m in recovered.values()],
+        [tuple(m) for m in read.values()],
         lambda a, b: accepts("big5hkscs", (a, b)),
     )
     apart = held_apart()
@@ -78,9 +78,9 @@ def test_the_two_witnesses_climb_differently():
 
 
 def test_every_rung_partitions_the_same_subjects():
-    recovered = classes("utf-8", 4)
+    read = classes("utf-8", 4)
     rungs = rc.climb(
-        [tuple(m) for m in recovered.values()], lambda a, b: accepts("utf-8", (a, b))
+        [tuple(m) for m in read.values()], lambda a, b: accepts("utf-8", (a, b))
     )
 
     for rung in rungs:

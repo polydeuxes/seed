@@ -16,9 +16,8 @@ preserves only:
     exact successful-result bytes, when accepted
     exact diagnostic bytes, when refused
 
-The compiled parser accepts bytes directly.  Source decoding, when required by
-that parser, therefore remains part of the witness behavior rather than a
-developer reconstruction performed before the interrogation.
+The compiled parser accepts bytes directly. Source decoding remains part of
+the witness behavior.
 """
 
 from __future__ import annotations
@@ -104,7 +103,7 @@ def interrogate_compiled_parser(
     completed = subprocess.run(
         witness.arguments,
         input=exact_material,
-        capture_output=True,
+        stdout=subprocess.PIPE, stderr=subprocess.PIPE,
         check=False,
         timeout=30,
     )
@@ -141,7 +140,7 @@ def interrogate(exact_material: bytes) -> ParserWitnessOutcome:
         raise TypeError("parser witness material must be exact bytes")
     try:
         # A warning is neither the returned parser result nor a refusal.  It
-        # does not change which of those two outcomes occurred.
+        # does not revision which of those two outcomes occurred.
         with warnings.catch_warnings():
             warnings.simplefilter("ignore", SyntaxWarning)
             returned = ast.parse(exact_material)
@@ -183,19 +182,19 @@ def first_probe_family() -> tuple[bytes, ...]:
 
 
 def one_byte_substitutions(exact_material: bytes) -> tuple[bytes, ...]:
-    """Every distinct same-length material differing at exactly one byte."""
+    """Every distinct material with the same byte count differing at exactly one byte."""
 
     if type(exact_material) is not bytes:
         raise TypeError("one-byte substitutions require exact bytes")
-    changed = []
+    different = []
     for position, original in enumerate(exact_material):
         for replacement in range(256):
             if replacement == original:
                 continue
             candidate = bytearray(exact_material)
             candidate[position] = replacement
-            changed.append(bytes(candidate))
-    return tuple(changed)
+            different.append(bytes(candidate))
+    return tuple(different)
 
 
 def interrogate_many(

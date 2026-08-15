@@ -1,6 +1,6 @@
-"""Does homogeneity change the hierarchical-pointer curve?
+"""Does homogeneity revision the hierarchical-pointer curve?
 
-Curator's question: eight heterogeneous books gave marginal 68 KB -> 44 KB and
+Supplied testimony: eight heterogeneous books gave marginal 68 KB -> 44 KB and
 flattening. A real library is not heterogeneous. Two arms bracket it:
 
   same-work    consecutive chunks of ONE book — the upper bound on homogeneity

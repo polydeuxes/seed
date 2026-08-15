@@ -14,7 +14,6 @@ def _road(tmp_path):
     ledger = SQLiteEventLedger(str(tmp_path / "e.sqlite"))
     run_persistent_operator_console(
         ledger=ledger,
-        workspace_id="w",
         locality_id="s1",
         input_stream=binary_input("the cat sat\nthe cat ran\n"),
         output_stream=StringIO(),
@@ -94,13 +93,13 @@ def test_naming_an_id_before_its_occurrence_is_not_a_reference(tmp_path):
     and `02.Standing:55` that co-presence does not establish participation. An
     occurrence that could not have referenced its destination did not.
 
-    Reading it the other way would also let a caller name an id it has not seen
+    Read it the other way would also let a caller name an id it has not seen
     and acquire an edge to whatever later takes that id.
     """
 
     ledger = SQLiteEventLedger(str(tmp_path / "e.sqlite"))
-    naming = ledger.append("k", "w", {"points_at": "evt_000002"}, locality_id="s1")
-    taking = ledger.append("k", "w", {"i": 2}, locality_id="s1")
+    naming = ledger.append("k", {"points_at": "evt_000002"}, locality_id="s1")
+    taking = ledger.append("k", {"i": 2}, locality_id="s1")
 
     assert taking.id == "evt_000002"
     assert ledger.references_to(taking.id) == []
@@ -112,9 +111,9 @@ def test_the_rebuild_agrees_with_the_index_across_that_case(tmp_path):
     """The invariant has to survive the case that exposed it."""
 
     ledger = SQLiteEventLedger(str(tmp_path / "e.sqlite"))
-    ledger.append("k", "w", {"points_at": "evt_000002"}, locality_id="s1")
-    second = ledger.append("k", "w", {"i": 2}, locality_id="s1")
-    ledger.append("k", "w", {"points_at": second.id}, locality_id="s1")
+    ledger.append("k", {"points_at": "evt_000002"}, locality_id="s1")
+    second = ledger.append("k", {"i": 2}, locality_id="s1")
+    ledger.append("k", {"points_at": second.id}, locality_id="s1")
 
     assert _stored(ledger) == _rebuild(ledger)
     assert len(_stored(ledger)) == 1
@@ -124,32 +123,31 @@ def test_one_reference_restated_in_one_payload_is_indexed_once(tmp_path):
     """A relation held twice in one payload is one relation."""
 
     ledger = SQLiteEventLedger(str(tmp_path / "e.sqlite"))
-    first = ledger.append("k", "w", {"n": 1}, locality_id="s1")
+    first = ledger.append("k", {"n": 1}, locality_id="s1")
     ledger.append(
         "k",
-        "w",
         {"here": first.id, "and_again": {"here": first.id}},
         locality_id="s1",
     )
 
-    assert ledger.references_to(first.id) == [("here", ledger.list_locality("w", "s1")[1].id)]
+    assert ledger.references_to(first.id) == [("here", ledger.list_locality("s1")[1].id)]
 
 
 def test_references_to_answers_what_the_payload_column_cannot(tmp_path):
     """The direction the index exists for."""
 
     ledger = _road(tmp_path)
-    ingress = [
+    ingest = [
         event
-        for event in ledger.list_locality("w", "s1")
-        if event.kind.endswith("raw_captured")
+        for event in ledger.list_locality("s1")
+        if event.kind == "material.ingest.occurred"
     ]
-    assert ingress
+    assert ingest
 
-    referrers = ledger.references_to(ingress[0].id)
+    referrers = ledger.references_to(ingest[0].id)
     assert referrers
     for relation, source in referrers:
-        assert ingress[0].id in json.dumps(ledger.get(source).payload, default=str)
+        assert ingest[0].id in json.dumps(ledger.get(source).payload, default=str)
         assert relation
 
 
@@ -157,6 +155,6 @@ def test_an_unresolvable_id_shaped_string_is_not_an_edge(tmp_path):
     """An edge requires an occurrence, not a string that looks like one."""
 
     ledger = SQLiteEventLedger(str(tmp_path / "e.sqlite"))
-    ledger.append("k", "w", {"points_at": "evt_999999"}, locality_id="s1")
+    ledger.append("k", {"points_at": "evt_999999"}, locality_id="s1")
 
     assert ledger.references_to("evt_999999") == []

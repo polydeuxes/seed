@@ -22,21 +22,12 @@ def test_get_returns_appended_event_by_id():
     assert ledger.get(event.id) == event
 
 
-def test_durable_actor_is_a_preserved_label_not_a_closed_grammar(tmp_path):
-    ledger = SQLiteEventLedger(str(tmp_path / "seed.db"))
-
-    event = ledger.append("k", "w", actor="source-local-label")
-
-    assert ledger.get(event.id).actor == "source-local-label"
-    ledger.close()
-
-
 def test_event_ledger_rejects_secret_fields_in_payloads():
     ledger = EventLedger()
 
     for field in ("password", "passphrase", "token", "private_key"):
         try:
-            ledger.append("tool.call_requested", "ws", {field: "not-accepted"})
+            ledger.append("tool.call_requested", {field: "not-accepted"})
         except ValueError as exc:
             assert "secret field" in str(exc)
         else:
@@ -54,13 +45,13 @@ def test_event_ledger_rejects_secret_fields_in_payloads():
 )
 def test_event_secret_rejection_reaches_every_nested_container(payload):
     with pytest.raises(ValueError, match="secret field"):
-        EventLedger().append("k", "w", payload)
+        EventLedger().append("k", payload)
 
 
 def test_event_secret_rejection_accepts_large_scalar_lists():
     payload = {"input_event_ids": [f"evt_{index}" for index in range(10_000)]}
 
-    event = EventLedger().append("k", "w", payload)
+    event = EventLedger().append("k", payload)
 
     assert event.payload == payload
 
@@ -70,7 +61,7 @@ def test_durable_large_scalar_lists_do_not_repeat_secret_traversal(
 ):
     ledger = SQLiteEventLedger(str(tmp_path / "seed.db"))
     payload = {"input_event_ids": [f"evt_{index}" for index in range(10_000)]}
-    event = ledger.append("k", "w", payload)
+    event = ledger.append("k", payload)
 
     def unexpected_second_traversal(*args, **kwargs):
         raise AssertionError("durable payload was screened during JSON decoding")
@@ -83,13 +74,6 @@ def test_durable_large_scalar_lists_do_not_repeat_secret_traversal(
     ledger.close()
 
 
-def test_sqlite_reservable_prefixes_exclude_retired_vocabulary():
-    retired = {
-        "plan", "handoff", "auth", "need", "obs", "evd", "fact", "fact_obs"
-    }
-    assert retired.isdisjoint(SQLiteEventLedger._RESERVABLE_PREFIXES)
-
-
 # Prefixes minted for use inside one process and never written into a durable
 # payload. Reservation is about a *later* process reissuing an identity, so a
 # genuinely process-local one does not need it — but it has to be declared here
@@ -98,7 +82,7 @@ PROCESS_LOCAL_ID_PREFIXES: frozenset = frozenset()
 
 
 def test_every_minted_prefix_is_reserved_or_declared_process_local():
-    """The invariant, held mechanically instead of one pocket at a time.
+    """The invariant, held at one boundary instead of one pocket at a time.
 
     What requires reservation is narrower than "every `new_id` call": an
     identity must be minted, written into a durable payload, and mintable again
@@ -112,7 +96,7 @@ def test_every_minted_prefix_is_reserved_or_declared_process_local():
     decision into the open instead of leaving it to whoever reads the diff.
 
     Answered locally three times before this existed: `system_material` in
-    `#2491`, an exchange identity in `#2493`, `transient_material` in `#2496`.
+    `#2491`, an locality identity in `#2493`, `transient_material` in `#2496`.
     """
 
     import glob

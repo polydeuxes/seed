@@ -35,7 +35,7 @@ about which Seed may carry an Assertion or Standing.
 
 These references are representative witnesses, not a runtime inventory. They
 do not define grammar. An acquisition Act or result does not enter Rosetta
-unless an ordinary or retired word needs translation to an exact Seed
+unless an ordinary word needs translation to an exact Seed
 distinction.
 
 ```text
@@ -46,7 +46,7 @@ Measurement Responsibility / Act / occurrence / Assertions
 Yield Evidence
     seed_runtime.yield_evidence::_record_yield_evidence
 
-Assertion recovery and locality movement
+Assertion addressability and locality movement
     seed_runtime.byte_measurement::assertions_of_recorded_byte_measurement
     seed_runtime.byte_measurement::_move_byte_assertion_to_locality
 
@@ -67,7 +67,7 @@ Assertions. `Presentation` describes movement from bounded Seed Assertions
 toward an emitted representation. Neither is a structural root, Act, or
 occurrence. They are directions across the Responsibility spine.
 
-## Retired shorthand
+## Translation shorthand
 
 The following words are ordinary compression. Expand them before reasoning
 about Seed:
@@ -97,14 +97,14 @@ Gap            bounded Compare result
 Goal           locality-bound material concerning a desired result
 Demand         shorthand that a bounded result is absent
 Reliance       Assertion that an exact input supports an exact result
-Recovery       later reading and validation of preserved coordinates
+Addressability of preserved coordinates
 ```
 
 None of these shorthands adds a constitutional subject, relation, occurrence,
-or Standing. If the expansion loses a distinction, recover the missing exact
+or Standing. If the expansion loses a distinction, read the missing exact
 coordinate rather than restoring the compressed noun.
 
-## Mechanical words
+## Implementation words
 
 `digest` and `commitment` name implementation mechanisms. Recomputing a digest
 can show that declared representations match; it does not supply Content,

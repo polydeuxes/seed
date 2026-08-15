@@ -5,13 +5,13 @@ from seed_runtime.events import EventLedger, SQLiteEventLedger
 def _events() -> list[Event]:
     return [
         Event(
-            id="evt_batch_1", kind="batch.first", workspace_id="ws", payload={"n": 1}
+            id="evt_batch_1", kind="batch.first", payload={"n": 1}
         ),
         Event(
-            id="evt_batch_2", kind="batch.second", workspace_id="ws", payload={"n": 2}
+            id="evt_batch_2", kind="batch.second", payload={"n": 2}
         ),
         Event(
-            id="evt_batch_3", kind="batch.third", workspace_id="ws", payload={"n": 3}
+            id="evt_batch_3", kind="batch.third", payload={"n": 3}
         ),
     ]
 
@@ -26,7 +26,7 @@ def test_append_many_preserves_event_ordering():
         "batch.second",
         "batch.third",
     ]
-    assert [event.kind for event in ledger.list_events("ws")] == [
+    assert [event.kind for event in ledger.list_events()] == [
         "batch.first",
         "batch.second",
         "batch.third",
@@ -39,16 +39,14 @@ def test_sqlite_append_many_persists_same_events_as_repeated_append(tmp_path):
     try:
         batch.append_many(_events())
         for event in _events():
-            repeated.append(
-                event.kind, event.workspace_id, event.payload, actor=event.actor
-            )
+            repeated.append(event.kind, event.payload)
 
         assert [
-            (event.kind, event.workspace_id, event.payload)
-            for event in batch.list_events("ws")
+            (event.kind, event.payload)
+            for event in batch.list_events()
         ] == [
-            (event.kind, event.workspace_id, event.payload)
-            for event in repeated.list_events("ws")
+            (event.kind, event.payload)
+            for event in repeated.list_events()
         ]
     finally:
         batch.close()

@@ -24,7 +24,6 @@ class DagLedgerComparison:
             CREATE TABLE IF NOT EXISTS nodes (
                 id TEXT PRIMARY KEY,
                 kind TEXT NOT NULL,
-                workspace_id TEXT NOT NULL,
                 locality_id TEXT,
                 payload TEXT NOT NULL
             );
@@ -54,11 +53,10 @@ class DagLedgerComparison:
         earlier_ids: set[str] = set()
         for event in events:
             self._connection.execute(
-                "INSERT OR REPLACE INTO nodes VALUES (?, ?, ?, ?, ?)",
+                "INSERT OR REPLACE INTO nodes VALUES (?, ?, ?, ?)",
                 (
                     event.id,
                     event.kind,
-                    event.workspace_id,
                     getattr(event, "locality_id", None),
                     json.dumps(event.payload, default=str),
                 ),
@@ -101,9 +99,10 @@ class DagLedgerComparison:
     def byte_size(self) -> tuple[int, int]:
         """Payload bytes and edge-table rows, so cost is stated rather than guessed."""
 
-        payload_bytes = self._connection.execute(
-            "SELECT COALESCE(SUM(LENGTH(payload)), 0) FROM nodes"
-        ).fetchone()[0]
+        payload_bytes = sum(
+            len(row[0].encode("utf-8"))
+            for row in self._connection.execute("SELECT payload FROM nodes")
+        )
         edges = self._connection.execute("SELECT COUNT(*) FROM edges").fetchone()[0]
         return payload_bytes, edges
 

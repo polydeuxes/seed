@@ -1,243 +1,149 @@
-"""The system boundary: what came back, and who asked for it.
-
-`#2491` adds a third material boundary. The two that existed carry the
-operator's material inward and Seed's own material outward; this carries what
-the system returned when something was invoked.
-
-The distinction these tests hold hardest is that **nothing here invokes
-anything**. An invocation is declared and its result supplied, so a record never
-says Seed invoked — which is what keeps the authority question visible instead
-of arriving inside a capture path.
-"""
-
 from __future__ import annotations
 
-import shutil
-import sys
+from io import BytesIO
 
 import pytest
 
-from seed_runtime.adjacent_pair_measurement import (
-    get_recorded_adjacent_pair_observations,
-    observe_system_material_adjacency,
-    record_system_material_adjacency,
-)
-from seed_runtime.events import CORRUPTED, EventLedger, SQLiteEventLedger
 from seed_runtime.event import Event
-from seed_runtime.system_material import (
-    SYSTEM_MATERIAL_OCCURRED_KIND,
-    SYSTEM_ORIGIN,
-    DeclaredInvocation,
-    SystemMaterialError,
-    declare_invocation,
-    invoke_system,
-    preserve_system_material,
-    system_material_bytes,
+from seed_runtime.events import EventLedger, SQLiteEventLedger
+from seed_runtime.material_ingest import (
+    MATERIAL_INGEST_OCCURRED_KIND,
+    MaterialIngestError,
+    ingested_material_bytes,
 )
+from seed_runtime.operator_ingest import run_operator_ingest
+from seed_runtime.operator_material_boundary import operator_boundary_material
+from seed_runtime.system_material import preserve_system_material
+from seed_runtime.yield_evidence import read_yield_edge_requirements
 
 
-def _declared(**changes):
-    fields = dict(
-        invocation="ls corpus/",
-        declared_performer="operator system-material harness",
-        on_behalf_of="this Seed",
-    )
-    fields.update(changes)
-    return DeclaredInvocation(**fields)
-
-
-def _preserve(ledger, returned=b"a.txt\nb.txt\n", **changes):
-    fields = dict(
-        workspace_id="w",
-        locality_id="sys_000001",
-        exact_bytes=returned,
-        observed_boundary="operator harness, subprocess stdout",
-    )
-    fields.update(changes)
+def _preserve(ledger, material=b"a.txt\nb.txt\n", **differences):
+    fields = {
+        "locality_id": "locality_000001",
+        "exact_bytes": material,
+        "observed_boundary": "source boundary",
+    }
+    fields.update(differences)
     return preserve_system_material(ledger, **fields)
 
 
-def _declare(ledger, **changes):
-    fields = dict(workspace_id="w", locality_id="sys_000001", declared=_declared())
-    fields.update(changes)
-    return declare_invocation(ledger, **fields)
-
-
-class _IntegrityLedger(EventLedger):
-    def __init__(self):
-        super().__init__()
-        self.corrupted: set[str] = set()
-
-    def integrity_of(self, event_id: str) -> str:
-        return CORRUPTED if event_id in self.corrupted else super().integrity_of(event_id)
-
-
-def test_a_declaration_records_a_declaration_not_an_act():
+def test_system_material_preserves_exact_raw_bytes():
     ledger = EventLedger()
-    declaration = _declare(ledger)
+    exact = bytes(range(256)) * 3
 
-    assert declaration.payload["declared_invocation"] == {
-        "invocation": "ls corpus/",
-        "declared_performer": "operator system-material harness",
-        "on_behalf_of": "this Seed",
+    occurred = _preserve(ledger, exact)
+
+    assert occurred.kind == MATERIAL_INGEST_OCCURRED_KIND
+    assert occurred.locality_id == "locality_000001"
+    assert occurred.payload["byte_count"] == len(exact)
+    assert ingested_material_bytes(occurred) == exact
+    assert "represented_material" not in occurred.payload
+
+
+def test_operator_and_system_material_share_one_ingest_road():
+    ledger = EventLedger()
+    exact = b"\x00\xffsame material\n"
+    operator_standing = run_operator_ingest(
+        ledger=ledger,
+        locality_id="shared",
+        boundary_material=operator_boundary_material(BytesIO(exact)),
+    )
+    operator_ingest = ledger.get(operator_standing["event_ids"][-1])
+    system_ingest = preserve_system_material(
+        ledger,
+        locality_id="shared",
+        exact_bytes=exact,
+        observed_boundary="system byte boundary",
+    )
+
+    assert operator_ingest is not None
+    assert operator_ingest.kind == system_ingest.kind == MATERIAL_INGEST_OCCURRED_KIND
+    assert set(operator_ingest.payload) == set(system_ingest.payload)
+    assert ingested_material_bytes(operator_ingest) == ingested_material_bytes(
+        system_ingest
+    ) == exact
+    assert operator_ingest.payload["source_role"] == "operator"
+    assert system_ingest.payload["source_role"] == "system"
+
+
+def test_ingest_event_binds_exact_act_and_result_evidence():
+    ledger = EventLedger()
+    ingest = _preserve(ledger)
+
+    assert read_yield_edge_requirements(
+        ledger,
+        recorded_result_event_id=ingest.id,
+        result_evidence_event_id=ingest.payload["yield_evidence_id"],
+        responsible_act_evidence_event_id=ingest.payload[
+            "responsible_act_evidence_id"
+        ],
+    ) == {
+        "exact_relation": True,
+        "occurrence_witness": True,
+        "intact_evidence": True,
     }
-    assert declaration.payload["dimensions"]["authority"] == "unestablished"
-    support = declaration.payload["dimensions"]["evidence_scope"]
-    assert "establishes no act of it" in support
-    assert "no Evidence or Authority for this Seed to invoke" in support
-    # No coordinate asserts that Seed did not invoke. Not established that it
-    # did is not established that it did not, and a caller may name Seed as the
-    # declared performer.
-    assert "seed_invoked" not in declaration.payload
-    assert any("this Seed invoked" in item for item in declaration.payload["unknowns"])
-    # The occurrence must not assert the act while recording it Unknown.
-    assert any("remains Unknown" in item for item in declaration.payload["unknowns"])
-    assert "performed by" not in declaration.payload["dimensions"]["source_provenance"]
 
 
-def test_system_material_requires_no_invocation():
-    """The system yields material nobody asked for, and it is still material.
+def test_system_material_requires_only_material_boundary_and_locality():
+    occurred = _preserve(EventLedger(), b"different\n")
 
-    An earlier revision made system material inherently an invocation's answer
-    and carried the invocation's identity inside it. That excluded unprompted
-    material, and it put a relation between two subjects inside one of them.
-    """
-
-    ledger = EventLedger()
-    unprompted = _preserve(ledger, returned=b"a file changed\n")
-
-    assert unprompted.kind == SYSTEM_MATERIAL_OCCURRED_KIND
-    assert unprompted.payload["material_origin"] == SYSTEM_ORIGIN
-    for absent in ("declared_invocation", "invocation_event_id", "seed_invoked"):
-        assert absent not in unprompted.payload
-    assert unprompted.payload["provenance_occurrence_refs"] == []
-
-    # And a declaration beside it relates to it only if something establishes so.
-    declaration = _declare(ledger)
-    assert declaration.id not in str(unprompted.payload)
+    assert occurred.payload["provenance_occurrence_refs"] == []
+    assert occurred.payload["dimensions"]["scope_locality"] == "locality:locality_000001"
+    assert "invocation" not in str(occurred.payload)
 
 
-def test_returned_material_is_system_origin_and_exact():
-    ledger = EventLedger()
-    material = bytes(range(256)) * 3
-    returned = _preserve(ledger, returned=material)
-
-    assert returned.payload["material_origin"] == SYSTEM_ORIGIN
-    assert returned.payload["byte_count"] == len(material)
-    assert system_material_bytes(returned) == material
-    # Arbitrary bytes, including 0x0A, arrive whole. The console boundary is
-    # line-framed and would have cut this at its first newline.
-    assert b"\n" in material
-    assert len(material) == 768
-
-
-def test_material_without_a_text_representation_is_still_material():
-    ledger = EventLedger()
-    decoded = _preserve(ledger, returned=b"a.txt\nb.txt\n")
-    rejected = _preserve(ledger, returned=b"\xff\xfe\x00", locality_id="sys_000002")
-
-    assert decoded.payload["text_representation"]["available"] is True
-    assert decoded.payload["text_representation"]["decoder_outcome"] == "decoded"
-    assert rejected.payload["text_representation"]["available"] is False
-    assert rejected.payload["text_representation"]["decoder_outcome"] == "bytes_rejected"
-    assert rejected.payload["text_representation"]["decoder_failure"]
-    # The occurrence exists either way, and both preserve exact bytes.
-    assert system_material_bytes(rejected) == b"\xff\xfe\x00"
-
-
-def test_empty_material_is_material():
-    ledger = EventLedger()
-    occurred = _preserve(ledger, returned=b"")
+def test_empty_system_material_is_exact_material():
+    occurred = _preserve(EventLedger(), b"")
 
     assert occurred.payload["byte_count"] == 0
-    assert system_material_bytes(occurred) == b""
-    # Empty is not absent: the occurrence is recorded as having happened.
-    assert occurred.payload["dimensions"]["standing"] == "occurred"
+    assert ingested_material_bytes(occurred) == b""
 
 
-def test_the_exchange_is_declared_by_the_caller():
-    ledger = EventLedger()
-    first = _preserve(ledger, locality_id="sys_000001")
-    second = _preserve(ledger, locality_id="sys_000002")
-
-    assert first.locality_id == "sys_000001"
-    assert second.locality_id == "sys_000002"
-    assert first.payload["dimensions"]["scope_locality"] == "workspace:w;locality:sys_000001"
+@pytest.mark.parametrize("material", ["bytes", bytearray(b"x"), memoryview(b"x"), None, 1])
+def test_system_material_refuses_non_bytes(material):
+    with pytest.raises(MaterialIngestError, match="exact bytes"):
+        _preserve(EventLedger(), material)
 
 
-def test_a_declared_invocation_requires_each_attribution():
-    for name in ("invocation", "declared_performer", "on_behalf_of"):
-        for value in ("", "   ", None, 1, True, [], b"ls"):
-            with pytest.raises(SystemMaterialError, match=name):
-                _declared(**{name: value})
+@pytest.mark.parametrize("boundary", ["", "  ", None, 1, []])
+def test_system_material_requires_exact_boundary(boundary):
+    with pytest.raises(MaterialIngestError, match="boundary"):
+        _preserve(EventLedger(), observed_boundary=boundary)
 
 
-def test_preservation_refuses_what_it_cannot_preserve_exactly():
-    ledger = EventLedger()
-    for value in ("bytes", bytearray(b"x"), memoryview(b"x"), None, 1):
-        with pytest.raises(SystemMaterialError, match="exact bytes"):
-            _preserve(ledger, returned=value)
-    for value in ("", "  ", None, 1, []):
-        with pytest.raises(SystemMaterialError, match="boundary"):
-            _preserve(ledger, observed_boundary=value)
-    for value in ("", "  ", None, 1, []):
-        with pytest.raises(SystemMaterialError, match="bounded exchange"):
-            _preserve(ledger, locality_id=value)
-        with pytest.raises(SystemMaterialError, match="bounded exchange"):
-            _declare(ledger, locality_id=value)
+@pytest.mark.parametrize("locality", ["", "  ", None, 1, []])
+def test_system_material_requires_exact_locality(locality):
+    with pytest.raises(MaterialIngestError, match="locality"):
+        _preserve(EventLedger(), locality_id=locality)
 
 
-def test_exact_bytes_are_validated_or_refused_never_guessed():
-    ledger = EventLedger()
-    _preserve(ledger, returned=b"a.txt\n")
-
-    with pytest.raises(SystemMaterialError, match="only system material occurrences"):
-        system_material_bytes(
-            Event(id="evt_x", kind="something.else", workspace_id="w", payload={})
-        )
+def test_ingested_material_bytes_refuses_wrong_or_corrupt_occurrences():
+    with pytest.raises(MaterialIngestError, match="only Ingest occurrences"):
+        ingested_material_bytes(Event(id="evt_x", kind="something.else", payload={}))
     for payload in ({}, {"exact_bytes_hex": None}, {"exact_bytes_hex": 7}):
-        with pytest.raises(SystemMaterialError, match="carries no exact bytes"):
-            system_material_bytes(
-                Event(id="evt_x", kind=SYSTEM_MATERIAL_OCCURRED_KIND,
-                      workspace_id="w", payload=payload)
+        with pytest.raises(MaterialIngestError, match="carries no exact bytes"):
+            ingested_material_bytes(
+                Event(id="evt_x", kind=MATERIAL_INGEST_OCCURRED_KIND, payload=payload)
             )
-    with pytest.raises(SystemMaterialError, match="not exact bytes"):
-        system_material_bytes(
-            Event(id="evt_x", kind=SYSTEM_MATERIAL_OCCURRED_KIND, workspace_id="w",
-                  payload={"exact_bytes_hex": "zz", "byte_count": 1})
+    with pytest.raises(MaterialIngestError, match="malformed bytes"):
+        ingested_material_bytes(
+            Event(
+                id="evt_x",
+                kind=MATERIAL_INGEST_OCCURRED_KIND,
+                payload={"exact_bytes_hex": "zz", "byte_count": 1},
+            )
         )
-    with pytest.raises(SystemMaterialError, match="does not match its byte count"):
-        system_material_bytes(
-            Event(id="evt_x", kind=SYSTEM_MATERIAL_OCCURRED_KIND, workspace_id="w",
-                  payload={"exact_bytes_hex": "6100", "byte_count": 99})
+    with pytest.raises(MaterialIngestError, match="byte count differ"):
+        ingested_material_bytes(
+            Event(
+                id="evt_x",
+                kind=MATERIAL_INGEST_OCCURRED_KIND,
+                payload={"exact_bytes_hex": "6100", "byte_count": 99},
+            )
         )
 
 
-def test_system_material_is_not_operator_material():
-    """The two boundaries stay separable, which is the point of the split."""
-
-    from seed_runtime.operator_ingress import OPERATOR_ORIGIN, SEED_ORIGIN
-
-    ledger = EventLedger()
-    returned = _preserve(ledger)
-    assert returned.payload["material_origin"] not in {OPERATOR_ORIGIN, SEED_ORIGIN}
-    assert len({SYSTEM_ORIGIN, OPERATOR_ORIGIN, SEED_ORIGIN}) == 3
-
-
-def test_subject_identities_stay_distinct_across_a_durable_reopen(tmp_path):
-    """Two independent subjects must not Assertion one identity.
-
-    `new_id` is process-local, and a durable store reserves only the prefixes it
-    knows. Before these were reserved, a fresh process reissued
-    `system_material_000001` for a different subject while the event rows stayed
-    distinct, so the store accepted both.
-
-    The harness's exchange identity had the same defect and was fixed by
-    deriving it from durable contents; these were minted the same way and kept
-    it. Held across a genuine close and reopen rather than within one process,
-    since within one process the counter alone would hide it.
-    """
-
+def test_system_material_identity_is_reserved_across_reopen(tmp_path):
     database = str(tmp_path / "reopen.db")
     identities = []
     for index in range(3):
@@ -245,211 +151,12 @@ def test_subject_identities_stay_distinct_across_a_durable_reopen(tmp_path):
         try:
             material = preserve_system_material(
                 ledger,
-                workspace_id="w",
-                locality_id=f"sys_{index}",
+                locality_id=f"locality_{index}",
                 exact_bytes=f"material {index}".encode(),
-                observed_boundary="operator harness",
+                observed_boundary="source boundary",
             )
-            declaration = declare_invocation(
-                ledger,
-                workspace_id="w",
-                locality_id=f"sys_{index}",
-                declared=_declared(),
-            )
+            identities.append(material.payload["dimensions"]["identity"])
         finally:
             ledger.close()
-        identities.append((
-            material.payload["dimensions"]["identity"],
-            declaration.payload["dimensions"]["identity"],
-        ))
 
-    material_subjects = [pair[0] for pair in identities]
-    invocation_subjects = [pair[1] for pair in identities]
-    assert len(set(material_subjects)) == 3, material_subjects
-    assert len(set(invocation_subjects)) == 3, invocation_subjects
-
-    # And the exact material is still reconstructible per subject after reopening.
-    ledger = SQLiteEventLedger(database)
-    try:
-        reconstructed = [
-            system_material_bytes(event)
-            for event in ledger.list("w")
-            if event.kind == SYSTEM_MATERIAL_OCCURRED_KIND
-        ]
-    finally:
-        ledger.close()
-    assert reconstructed == [b"material 0", b"material 1", b"material 2"]
-
-
-def test_slash_ls_is_explicitly_related_to_argv_and_its_stdout_is_observed(tmp_path):
-    ls_path = shutil.which("ls")
-    assert ls_path is not None
-    (tmp_path / "alpha.txt").write_text("a", encoding="utf-8")
-    (tmp_path / "beta.txt").write_text("b", encoding="utf-8")
-    ledger = EventLedger()
-
-    run = invoke_system(
-        ledger,
-        workspace_id="w",
-        locality_id="shell-001",
-        command_representation="/ls",
-        argv=(ls_path, "-1"),
-        cwd=tmp_path,
-    )
-
-    assert run.arguments_relation.payload["command_representation"] == "/ls"
-    assert run.arguments_relation.payload["argv"] == [ls_path, "-1"]
-    assert run.occurrence.payload["returncode"] == 0
-    assert run.occurrence.payload["timed_out"] is False
-    assert system_material_bytes(run.stdout_material) == b"alpha.txt\nbeta.txt\n"
-    assert run.stdout_relation.payload["process_occurrence_id"] == (
-        run.occurrence.payload["process_occurrence_id"]
-    )
-    assert run.stdout_relation.payload["material_occurrence_id"] == (
-        run.stdout_material.id
-    )
-
-    positions = observe_system_material_adjacency(
-        ledger,
-        material_event_id=run.stdout_material.id,
-        relation_event_id=run.stdout_relation.id,
-    )
-    assert len(positions) == 1
-    assert positions[0].pair_occurrence.pair.left == "alpha.txt"
-    assert positions[0].pair_occurrence.pair.right == "beta.txt"
-
-    recorded = record_system_material_adjacency(
-        ledger,
-        material_event_id=run.stdout_material.id,
-        relation_event_id=run.stdout_relation.id,
-    )
-    recovered = get_recorded_adjacent_pair_observations(ledger, recorded.id)
-    assert recovered is not None
-    assert [item.identity for item in recovered] == [item.identity for item in positions]
-
-    event_ids = [event.id for event in ledger.list("w")]
-    assert event_ids.index(run.attempt.id) < event_ids.index(run.occurrence.id)
-
-
-def test_equal_stdout_from_another_process_cannot_replace_the_exact_relation(tmp_path):
-    ls_path = shutil.which("ls")
-    assert ls_path is not None
-    (tmp_path / "alpha.txt").write_text("a", encoding="utf-8")
-    (tmp_path / "beta.txt").write_text("b", encoding="utf-8")
-    ledger = EventLedger()
-    fields = dict(
-        ledger=ledger,
-        workspace_id="w",
-        locality_id="shell-001",
-        command_representation="/ls",
-        argv=(ls_path, "-1"),
-        cwd=tmp_path,
-    )
-    first = invoke_system(**fields)
-    second = invoke_system(**fields)
-
-    assert system_material_bytes(first.stdout_material) == system_material_bytes(
-        second.stdout_material
-    )
-    with pytest.raises(SystemMaterialError):
-        # The lower-level observer reports the exact preservation error type.
-        system_material_bytes(first.stdout_relation)
-    with pytest.raises(ValueError, match="exact intact process relation"):
-        observe_system_material_adjacency(
-            ledger,
-            material_event_id=first.stdout_material.id,
-            relation_event_id=second.stdout_relation.id,
-        )
-
-
-def test_spawn_failure_leaves_the_durable_attempt(monkeypatch, tmp_path):
-    ledger = EventLedger()
-
-    def refused(*_args, **_kwargs):
-        assert any(event.kind == "system.invocation.attempted" for event in ledger.list())
-        raise FileNotFoundError("absent program")
-
-    monkeypatch.setattr("seed_runtime.system_material.run_process_boundary", refused)
-    with pytest.raises(SystemMaterialError, match="did not start"):
-        invoke_system(
-            ledger,
-            workspace_id="w",
-            locality_id="shell-001",
-            command_representation="/ls",
-            argv=("/absent/ls",),
-            cwd=tmp_path,
-        )
-
-    kinds = [event.kind for event in ledger.list("w")]
-    assert "system.invocation.attempted" in kinds
-    assert "system.invocation.failed" in kinds
-    assert "system.invocation.occurred" not in kinds
-    assert "system.material.occurred" not in kinds
-
-
-def test_invalid_process_bounds_do_not_mint_an_attempt(tmp_path):
-    ledger = EventLedger()
-    fields = dict(
-        ledger=ledger,
-        workspace_id="w",
-        locality_id="shell-001",
-        command_representation="/ls",
-        argv=("/bin/ls",),
-        cwd=tmp_path,
-    )
-
-    for changes in (
-        {"timeout_seconds": 0},
-        {"timeout_seconds": True},
-        {"max_output_bytes": -1},
-        {"max_output_bytes": True},
-    ):
-        with pytest.raises(SystemMaterialError):
-            invoke_system(**fields, **changes)
-    assert ledger.list() == []
-
-
-def test_timeout_preserves_the_occurrence_and_exact_material_seen_before_it(tmp_path):
-    ledger = EventLedger()
-    run = invoke_system(
-        ledger,
-        workspace_id="w",
-        locality_id="shell-001",
-        command_representation="/slow",
-        argv=(
-            sys.executable,
-            "-c",
-            "import time; print('before timeout', flush=True); time.sleep(5)",
-        ),
-        cwd=tmp_path,
-        timeout_seconds=0.1,
-    )
-
-    assert run.occurrence.payload["timed_out"] is True
-    assert run.occurrence.payload["returncode"] is None
-    assert system_material_bytes(run.stdout_material) == b"before timeout\n"
-    assert run.stdout_relation.payload["complete"] is True
-
-
-def test_corrupted_process_relation_cannot_admit_identical_material(tmp_path):
-    ls_path = shutil.which("ls")
-    assert ls_path is not None
-    (tmp_path / "alpha.txt").write_text("a", encoding="utf-8")
-    (tmp_path / "beta.txt").write_text("b", encoding="utf-8")
-    ledger = _IntegrityLedger()
-    run = invoke_system(
-        ledger,
-        workspace_id="w",
-        locality_id="shell-001",
-        command_representation="/ls",
-        argv=(ls_path, "-1"),
-        cwd=tmp_path,
-    )
-    ledger.corrupted.add(run.stdout_relation.id)
-
-    with pytest.raises(ValueError, match="exact intact process relation"):
-        observe_system_material_adjacency(
-            ledger,
-            material_event_id=run.stdout_material.id,
-            relation_event_id=run.stdout_relation.id,
-        )
+    assert len(set(identities)) == 3

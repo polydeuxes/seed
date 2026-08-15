@@ -1,7 +1,7 @@
 """Material occurred, material is available now, and material is retained.
 
 `#2496` separates three things that had been wearing one coat. The occurrence is
-permanent; availability is a present-tense answer that changes without anything
+permanent; availability is a present-tense answer that differences without anything
 being recorded; retention beyond this process is an outward Act requiring an
 Authority this module does not have.
 
@@ -32,16 +32,14 @@ from seed_runtime.material_availability import (
 MATERIAL = b"the cat jumped the fence\n" * 40
 
 
-def _record(ledger, holder, identity, **changes):
+def _record(ledger, holder, identity, **differences):
     fields = dict(
-        workspace_id="w",
         locality_id="s",
         holder=holder,
         identity=identity,
-        material_origin="operator",
         occurrence_boundary="stdin, one frame",
     )
-    fields.update(changes)
+    fields.update(differences)
     return record_transient_material(ledger, **fields)
 
 
@@ -50,7 +48,7 @@ def test_transient_bytes_are_addressable_while_the_holder_holds_them():
     identity = holder.hold(MATERIAL)
 
     assert holder.is_available(identity) is True
-    assert holder.reconstruct(identity) == MATERIAL
+    assert holder.read(identity) == MATERIAL
     assert identity.byte_count == len(MATERIAL)
     assert holder.held_count == 1
 
@@ -82,12 +80,12 @@ def test_the_occurrence_identifies_what_was_held():
     identity = holder.hold(MATERIAL)
     event = _record(ledger, holder, identity)
 
-    reconstructed = identity_of_occurrence(event)
-    assert reconstructed == identity
-    assert reconstructed.digest == material_digest(MATERIAL)
-    assert reconstructed.byte_count == len(MATERIAL)
+    read = identity_of_occurrence(event)
+    assert read == identity
+    assert read.digest == material_digest(MATERIAL)
+    assert read.byte_count == len(MATERIAL)
     # The identity is enough to ask a holder for the material.
-    assert holder.reconstruct(reconstructed) == MATERIAL
+    assert holder.read(read) == MATERIAL
 
 
 def test_releasing_makes_validation_unavailable_and_leaves_the_occurrence():
@@ -99,12 +97,12 @@ def test_releasing_makes_validation_unavailable_and_leaves_the_occurrence():
     holder.release(identity)
     assert holder.is_available(identity) is False
     with pytest.raises(MaterialAvailabilityError, match="not available in this process"):
-        holder.reconstruct(identity)
+        holder.read(identity)
 
     # The occurrence is untouched. That the material occurred is permanent.
     assert identity_of_occurrence(event) == identity
     assert event.payload["dimensions"]["standing"] == "occurred"
-    assert ledger.list("w") == [event]
+    assert ledger.list() == [event]
 
 
 def test_a_fresh_holder_is_a_process_that_never_held_it():
@@ -118,7 +116,7 @@ def test_a_fresh_holder_is_a_process_that_never_held_it():
     second = ProcessLocalMaterial()
     assert second.is_available(identity) is False
     with pytest.raises(MaterialAvailabilityError):
-        second.reconstruct(identity)
+        second.read(identity)
     assert identity_of_occurrence(event) == identity
 
 
@@ -126,7 +124,7 @@ def test_an_occurrence_carries_no_availability_coordinate():
     """Availability is asked of a holder, never read from a record.
 
     A payload saying `available` would be a present-tense Assertion in a permanent
-    record: true when written, wrong the moment the process ended, and reading
+    record: true when written, wrong the moment the process ended, and read
     as true either way. What the occurrence says instead is where the material
     was held at the time, which stays true forever.
     """
@@ -151,8 +149,8 @@ def test_an_occurrence_carries_no_availability_coordinate():
 def test_nothing_is_written_anywhere(tmp_path):
     """Holding is retention without an outward act.
 
-    Spooling, a temporary file, memory mapping or restart reconstruction would each be
-    Seed preserving material outside itself, which is the Authority question
+    Spooling, a temporary file, memory mapping or restart read would each be
+    Seed preserving material outside itself, which is the Authority distinction
     `#2496` deliberately does not touch.
     """
 
@@ -165,7 +163,7 @@ def test_nothing_is_written_anywhere(tmp_path):
     identity = holder.hold(b"y" * 2_000_000)
     ledger = EventLedger()
     _record(ledger, holder, identity)
-    assert holder.reconstruct(identity) == b"y" * 2_000_000
+    assert holder.read(identity) == b"y" * 2_000_000
     holder.release_all()
 
     assert set(os.listdir(tmp_path)) == before
@@ -178,21 +176,21 @@ def test_a_holder_answers_only_the_identity_it_was_asked_for():
     first = holder.hold(b"first material")
     second = holder.hold(b"second material")
 
-    assert holder.reconstruct(first) == b"first material"
-    assert holder.reconstruct(second) == b"second material"
+    assert holder.read(first) == b"first material"
+    assert holder.read(second) == b"second material"
     assert first.digest != second.digest
 
-    # An identity is digest and extent together, and all three answers agree
+    # An identity is digest and byte count together, and all three answers agree
     # about it. Keying on the digest alone made an identity with the wrong
-    # extent report available, refuse to reconstruct, and release the material that
+    # byte count report available, refuse to read, and release the material that
     # was genuinely held.
     mismatched = MaterialIdentity(digest=first.digest, byte_count=first.byte_count + 1)
     assert holder.is_available(mismatched) is False
     with pytest.raises(MaterialAvailabilityError, match="not available"):
-        holder.reconstruct(mismatched)
+        holder.read(mismatched)
     holder.release(mismatched)
     assert holder.is_available(first) is True
-    assert holder.reconstruct(first) == b"first material"
+    assert holder.read(first) == b"first material"
 
 
 def test_identical_material_is_one_identity():
@@ -201,7 +199,7 @@ def test_identical_material_is_one_identity():
     b = holder.hold(b"the same exact bytes")
     assert a == b
     assert holder.held_count == 1
-    assert holder.reconstruct(a) == b"the same exact bytes"
+    assert holder.read(a) == b"the same exact bytes"
 
 
 def test_empty_material_occurred():
@@ -212,7 +210,7 @@ def test_empty_material_occurred():
 
     assert identity.byte_count == 0
     assert holder.is_available(identity) is True
-    assert holder.reconstruct(identity) == b""
+    assert holder.read(identity) == b""
     assert identity_of_occurrence(event) == identity
 
 
@@ -242,7 +240,7 @@ def test_every_refusal_can_be_reached(tmp_path):
         with pytest.raises(MaterialAvailabilityError, match="incomplete"):
             MaterialIdentity.from_json_dict(partial)
 
-    for name in ("material_origin", "occurrence_boundary", "locality_id"):
+    for name in ("occurrence_boundary", "locality_id"):
         for value in ("", "   ", None, 1, []):
             with pytest.raises(MaterialAvailabilityError, match=name):
                 _record(ledger, holder, identity, **{name: value})
@@ -255,11 +253,11 @@ def test_every_refusal_can_be_reached(tmp_path):
 
     with pytest.raises(MaterialAvailabilityError, match="only transient material"):
         identity_of_occurrence(
-            Event(id="evt_x", kind="something.else", workspace_id="w", payload={})
+            Event(id="evt_x", kind="something.else", payload={})
         )
     with pytest.raises(MaterialAvailabilityError, match="not present"):
         identity_of_occurrence(
-            Event(id="evt_x", kind=MATERIAL_OCCURRED_KIND, workspace_id="w", payload={})
+            Event(id="evt_x", kind=MATERIAL_OCCURRED_KIND, payload={})
         )
 
 
@@ -281,9 +279,9 @@ def test_it_works_the_same_against_a_durable_ledger(tmp_path):
     ledger = SQLiteEventLedger(path)
     fresh = ProcessLocalMaterial()
     try:
-        reconstructed = identity_of_occurrence(ledger.get(event_id))
-        assert reconstructed == identity
-        assert fresh.is_available(reconstructed) is False
+        read = identity_of_occurrence(ledger.get(event_id))
+        assert read == identity
+        assert fresh.is_available(read) is False
         # The occurrence survived exactly; the material did not, and nothing
         # pretends otherwise.
         assert ledger.integrity_of(event_id) == "verified"
@@ -306,7 +304,7 @@ def test_recording_requires_the_holder_that_holds_it():
 
     with pytest.raises(MaterialAvailabilityError, match="does not hold this material"):
         _record(ledger, holder, never_held)
-    assert ledger.list("w") == []
+    assert ledger.list() == []
 
     # A holder that once held it but has released it cannot record it either.
     identity = holder.hold(MATERIAL)
@@ -326,17 +324,17 @@ def test_recording_requires_the_holder_that_holds_it():
 
 
 def test_the_occurrence_asserts_nothing_about_any_other_source(tmp_path):
-    """Process-locally held and externally located are simultaneous.
+    """Process-locally held and separately located are simultaneous.
 
     Bytes read from a file are both at once, so recording that this process held
     them establishes nothing about whether anything else does. No locator
-    recorded is not no external source — the same rule that made a filename
+    recorded is not no separate source — the same rule that made a filename
     source-labelled material rather than truth.
     """
 
     ledger = EventLedger()
     holder = ProcessLocalMaterial()
-    # Material that plainly does have an external source, manufactured here so
+    # Material that plainly does have a separate source, supplied here so
     # the test does not depend on any particular machine's filesystem.
     source = tmp_path / "source.bin"
     source.write_bytes(MATERIAL)
@@ -345,7 +343,7 @@ def test_the_occurrence_asserts_nothing_about_any_other_source(tmp_path):
     assert source.exists()
 
     flat = str(event.payload)
-    for forbidden in ("no external source", "only source", "sole source"):
+    for forbidden in ("no separate source", "only source", "sole source"):
         assert forbidden not in flat
     assert any("any other source" in item for item in event.payload["unknowns"])
     # What it does say is exactly what happened.
@@ -356,7 +354,7 @@ def test_the_occurrence_identity_survives_a_fresh_process(tmp_path):
     """`transient_material` is durably minted and must be durably reserved.
 
     **In a fresh process, not a reopen.** `new_id` keeps its counter for the
-    lifetime of the interpreter, so reopening a store in the same process
+    lifetime of the Python process, so reopening a store in the same process
     increments regardless of what the store reserves — an earlier version of
     this test passed with the reservation removed and therefore proved nothing.
     Curator caught it. The collision this guards against needs a genuinely new
@@ -377,8 +375,8 @@ def test_the_occurrence_identity_survives_a_fresh_process(tmp_path):
         "from seed_runtime.ids import new_id\n"
         "ledger = SQLiteEventLedger(sys.argv[2])\n"
         "try:\n"
-        "    ledger.append('k', 'w', {'identity': new_id(sys.argv[3])})\n"
-        "    print(ledger.list('w')[-1].payload['identity'])\n"
+        "    ledger.append('k', {'identity': new_id(sys.argv[3])})\n"
+        "    print(ledger.list()[-1].payload['identity'])\n"
         "finally:\n"
         "    ledger.close()\n"
     )
@@ -388,7 +386,7 @@ def test_the_occurrence_identity_survives_a_fresh_process(tmp_path):
     for _ in range(3):
         result = subprocess.run(
             [sys.executable, str(program), str(root), database, "transient_material"],
-            capture_output=True, text=True, timeout=120,
+            stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, timeout=120,
         )
         assert result.returncode == 0, result.stderr
         minted.append(result.stdout.strip())

@@ -1,7 +1,7 @@
 """What a durable ledger can and cannot lose without saying so.
 
 Losing the tip and corrupting lineage are different failures. A store that
-lost its last occurrences still answers every question the remaining ones
+lost its last occurrences still answers every probe the remaining ones
 support. A store whose chain no longer matches its occurrences answers
 nothing safely, and must say so rather than serve a shorter history as if it
 were the whole one.
@@ -28,7 +28,7 @@ from seed_runtime.events import (
 def _build(path, count=50):
     ledger = SQLiteEventLedger(str(path))
     ids = [
-        ledger.append("k", "w", {"i": i}, locality_id="s1").id for i in range(count)
+        ledger.append("k", {"i": i}, locality_id="s1").id for i in range(count)
     ]
     return ledger, ids
 
@@ -66,7 +66,7 @@ def test_losing_the_tip_of_both_leaves_every_remaining_occurrence_intact(tmp_pat
     _lose(path, occurrences=10, commitments=10)
 
     ledger = SQLiteEventLedger(str(path))
-    assert len(ledger.list("w")) == 40
+    assert len(ledger.list()) == 40
     for event_id in ids[:40]:
         assert ledger.integrity_of(event_id) == VERIFIED
 
@@ -102,19 +102,19 @@ def test_a_retained_boundary_detects_a_tip_that_was_lost(tmp_path):
 
     Truncating both tables together leaves a store that is internally
     consistent and cannot tell, alone, that it is shorter than it was. A
-    holder of a boundary captured before the loss can.
+    holder of a boundary recorded before the loss can.
     """
 
     path = tmp_path / "e.sqlite"
     ledger, _ = _build(path)
-    boundary = ledger.capture_boundary()
+    boundary = ledger.append_boundary()
     del ledger
 
     _lose(path, occurrences=10, commitments=10)
 
     ledger = SQLiteEventLedger(str(path))
     with pytest.raises(InvalidLedgerBoundary):
-        ledger.list("w", through=boundary)
+        ledger.list(through=boundary)
 
 
 def test_only_the_prefix_that_vanished_is_refused(tmp_path):
@@ -131,12 +131,12 @@ def test_only_the_prefix_that_vanished_is_refused(tmp_path):
     _lose(path, occurrences=10, commitments=10)
 
     ledger = SQLiteEventLedger(str(path))
-    surviving = ledger.capture_boundary()
-    assert len(ledger.list("w", through=surviving)) == 40
+    surviving = ledger.append_boundary()
+    assert len(ledger.list(through=surviving)) == 40
 
-    ledger.append("k", "w", {"i": "after"}, locality_id="s1")
-    assert len(ledger.list("w")) == 41
-    assert len(ledger.list("w", through=surviving)) == 40
+    ledger.append("k", {"i": "after"}, locality_id="s1")
+    assert len(ledger.list()) == 41
+    assert len(ledger.list(through=surviving)) == 40
 
 
 def test_a_batch_lost_whole_leaves_the_store_sound(tmp_path):
@@ -150,22 +150,22 @@ def test_a_batch_lost_whole_leaves_the_store_sound(tmp_path):
 
     path = tmp_path / "e.sqlite"
     ledger = SQLiteEventLedger(str(path))
-    kept = ledger.append("k", "w", {"i": "committed"}, locality_id="s1")
+    kept = ledger.append("k", {"i": "committed"}, locality_id="s1")
 
     with pytest.raises(RuntimeError):
         with ledger.batched():
             for index in range(5):
-                ledger.append("k", "w", {"i": index}, locality_id="s1")
+                ledger.append("k", {"i": index}, locality_id="s1")
             raise RuntimeError("crash mid-batch")
     del ledger
 
     ledger = SQLiteEventLedger(str(path))
-    surviving = ledger.list("w")
+    surviving = ledger.list()
     assert [event.id for event in surviving] == [kept.id]
     assert ledger.integrity_of(kept.id) == VERIFIED
 
-    ledger.append("k", "w", {"i": "after"}, locality_id="s1")
-    assert len(ledger.list("w")) == 2
+    ledger.append("k", {"i": "after"}, locality_id="s1")
+    assert len(ledger.list()) == 2
 
 
 def test_a_batch_that_closes_commits_every_occurrence_in_it(tmp_path):
@@ -175,13 +175,13 @@ def test_a_batch_that_closes_commits_every_occurrence_in_it(tmp_path):
     ledger = SQLiteEventLedger(str(path))
     with ledger.batched():
         ids = [
-            ledger.append("k", "w", {"i": index}, locality_id="s1").id
+            ledger.append("k", {"i": index}, locality_id="s1").id
             for index in range(5)
         ]
     del ledger
 
     ledger = SQLiteEventLedger(str(path))
-    assert [event.id for event in ledger.list("w")] == ids
+    assert [event.id for event in ledger.list()] == ids
     for event_id in ids:
         assert ledger.integrity_of(event_id) == VERIFIED
 
@@ -193,14 +193,14 @@ def test_a_flush_inside_a_batch_makes_what_preceded_it_durable(tmp_path):
     ledger = SQLiteEventLedger(str(path))
     with pytest.raises(RuntimeError):
         with ledger.batched():
-            before = ledger.append("k", "w", {"i": "before"}, locality_id="s1")
+            before = ledger.append("k", {"i": "before"}, locality_id="s1")
             ledger.flush()
-            ledger.append("k", "w", {"i": "after"}, locality_id="s1")
+            ledger.append("k", {"i": "after"}, locality_id="s1")
             raise RuntimeError("crash after the flush")
     del ledger
 
     ledger = SQLiteEventLedger(str(path))
-    assert [event.id for event in ledger.list("w")] == [before.id]
+    assert [event.id for event in ledger.list()] == [before.id]
 
 
 def test_the_emission_attempt_is_durable_before_the_output_boundary(tmp_path):
@@ -236,7 +236,6 @@ def test_the_emission_attempt_is_durable_before_the_output_boundary(tmp_path):
 
     run_persistent_operator_console(
         ledger=ledger,
-        workspace_id="w",
         locality_id="s1",
         input_stream=binary_input("one\ntwo\n"),
         output_stream=_Watching(),

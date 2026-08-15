@@ -3,7 +3,7 @@
 ## Constitutional subject
 The grounds for stopping inquiry or movement and the stronger Assertion that a bounded result condition is complete.
 
-## Core question
+## Core distinction
 Which exact evidenced conditions can support a bounded responsible exact Act stopping its present act, a responsible stopping occurrence at a competent boundary that establishes a bounded stop, or the stronger completion Assertion for an exact bounded result condition?
 
 ## Bounded resolution

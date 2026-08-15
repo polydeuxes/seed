@@ -6,7 +6,7 @@ from io import BytesIO
 
 
 class BinaryFixtureInput(BytesIO):
-    """Exact bytes plus the developer-written material that formed the fixture."""
+    """Exact bytes plus the developer-written material that supplied the fixture."""
 
     def __init__(self, exact_bytes: bytes, supplied_material: str | None) -> None:
         super().__init__(exact_bytes)

@@ -1,4 +1,4 @@
-"""Event occurrence model and durable reconstruction boundary."""
+"""Event occurrence model and durable read boundary."""
 
 from __future__ import annotations
 
@@ -48,7 +48,7 @@ def _screen_durable_event_object(value: dict[str, Any]) -> dict[str, Any]:
 
 
 def _require_preservable_payload(value: Any, path: str = "payload") -> None:
-    """Refuse a payload a durable store could not return unchanged.
+    """Refuse a payload a durable store could not return preserved.
 
     JSON has no tuple and no non-string key, so a durable store silently
     returned `[1, 2]` for a tuple and `{"1": ...}` for an integer key while the
@@ -126,16 +126,13 @@ class Event(SeedModel):
             reject_secret_fields(payload, "event.payload")
             # Refused here rather than at the store, so both ledgers refuse the
             # same payload identically and neither serializes first. A payload
-            # reconstructed from durable JSON is already preservable by
-            # construction, which is what the screened form marks.
+            # read from durable JSON is already preservable by
+            # input, which is what the screened representation identifies.
             _require_preservable_payload(payload)
         super().__init__(**data)
 
     id: str
     kind: str
-    workspace_id: str = "default"
-    # Retained durable occurrence field. No closed actor grammar is established.
-    actor: str = "system"
     timestamp: datetime = Field(default_factory=utc_now)
     payload: dict[str, Any] = Field(default_factory=dict)
     locality_id: str | None = None

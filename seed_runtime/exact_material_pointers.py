@@ -1,14 +1,14 @@
 """Lossless storage mechanics for exact material recurrence.
 
-This module is deliberately below language and constitutional interpretation.
+This module is deliberately below language and constitutional read.
 It establishes only a reversible representation of exact bytes:
 
     novel bytes        -> literal bytes
-    later recurrence   -> reference to an earlier reconstructed byte span
+    later recurrence   -> reference to an earlier read byte span
     ordered parts      -> the exact original bytes
 
 A reference establishes byte reuse only. It establishes no subject identity,
-represented relation, relation, grammar, or standing beyond exact reconstruction.
+represented relation, relation, grammar, or standing beyond the exact bytes.
 
 **What this carries is the recurrence its declared pointer_rule found, not the
 recurrence present in the material.** The pointer_rule bounds the search, and the
@@ -23,18 +23,18 @@ changing only the candidate bound moved hundreds of references. So:
 ```
 
 An absent reference may mean the recurrence is shorter than the minimum, that
-its source fell outside the candidate bound, or that an earlier greedy choice
-input the bytes it would have matched. The pointer_rule is therefore carried in
+its source fell outside the candidate bound, or that an earlier greedy reference
+used the bytes it would have matched. The pointer_rule is therefore carried in
 the representation, because an account of a bounded search that does not
 disclose its bounds reads as a complete one.
 
-Reconstruction does not depend on the pointer_rule. The parts alone reconstruct
+Read does not depend on the pointer_rule. The parts alone read
 exactly, and the pointer_rule bounds only what the account may be read to mean.
 
 References are backward-only and non-overlapping with the bytes currently being
-formed. Every reference therefore terminates in material that is already fully
-reconstructable from earlier parts; no external source lookup or brute-force
-reconstruction is involved.
+supplied. Every reference therefore terminates in material that is already fully
+addressable from earlier parts; no separate source lookup or brute-force
+read is involved.
 """
 
 from __future__ import annotations
@@ -45,11 +45,11 @@ import hashlib
 from typing import Any
 
 
-ENCODING_VERSION = "exact-material-backreference-v1"
+ENCODING_VERSION = "exact-material-backreference"
 
 
 class ExactMaterialPointerError(ValueError):
-    """An exact-material pointer representation cannot be formed or reconstructed."""
+    """An exact-material pointer representation cannot be supplied or read."""
 
 
 @dataclass(frozen=True)
@@ -64,13 +64,13 @@ class LiteralPart:
 @dataclass(frozen=True)
 class ReferencePart:
     start: int
-    length: int
+    byte_count: int
 
     def __post_init__(self) -> None:
         if type(self.start) is not int or self.start < 0:
             raise ExactMaterialPointerError("a reference start must be a non-negative integer")
-        if type(self.length) is not int or self.length <= 0:
-            raise ExactMaterialPointerError("a reference length must be a positive integer")
+        if type(self.byte_count) is not int or self.byte_count <= 0:
+            raise ExactMaterialPointerError("a reference byte_count must be a positive integer")
 
 
 ExactMaterialPart = LiteralPart | ReferencePart
@@ -85,25 +85,25 @@ class ExactMaterialPointerRule:
     findings rather than contradictory ones, and become comparable subjects.
     """
 
-    minimum_reference_length: int
+    minimum_reference_byte_count: int
     candidate_limit: int
 
     def __post_init__(self) -> None:
-        for name in ("minimum_reference_length", "candidate_limit"):
+        for name in ("minimum_reference_byte_count", "candidate_limit"):
             value = getattr(self, name)
             # `bool` is an `int` and `True == 1`, so it is excluded explicitly.
             if type(value) is not int:
                 raise ExactMaterialPointerError(
                     f"{name} must be an integer, not {type(value).__name__}"
                 )
-        if self.minimum_reference_length < 2:
-            raise ExactMaterialPointerError("minimum_reference_length must be at least 2")
+        if self.minimum_reference_byte_count < 2:
+            raise ExactMaterialPointerError("minimum_reference_byte_count must be at least 2")
         if self.candidate_limit <= 0:
             raise ExactMaterialPointerError("candidate_limit must be positive")
 
     def to_json_dict(self) -> dict[str, Any]:
         return {
-            "minimum_reference_length": self.minimum_reference_length,
+            "minimum_reference_byte_count": self.minimum_reference_byte_count,
             "candidate_limit": self.candidate_limit,
         }
 
@@ -113,7 +113,7 @@ class ExactMaterialPointerRule:
             raise ExactMaterialPointerError("a pointer_rule must be an object")
         try:
             return cls(
-                minimum_reference_length=value["minimum_reference_length"],
+                minimum_reference_byte_count=value["minimum_reference_byte_count"],
                 candidate_limit=value["candidate_limit"],
             )
         except KeyError as exc:
@@ -149,11 +149,11 @@ class ExactMaterialPointers:
             raise ExactMaterialPointerError(
                 "an account must declare the pointer_rule that yielded it"
             )
-        reconstructed = reconstruct_exact_bytes(self, verify=False)
-        if len(reconstructed) != self.byte_count:
-            raise ExactMaterialPointerError("reconstructed material does not match byte_count")
-        if hashlib.sha256(reconstructed).hexdigest() != self.sha256:
-            raise ExactMaterialPointerError("reconstructed material does not match sha256")
+        read = read_exact_bytes(self, verify=False)
+        if len(read) != self.byte_count:
+            raise ExactMaterialPointerError("read material does not match byte_count")
+        if hashlib.sha256(read).hexdigest() != self.sha256:
+            raise ExactMaterialPointerError("read material does not match sha256")
 
     def to_json_dict(self) -> dict[str, Any]:
         encoded_parts: list[dict[str, Any]] = []
@@ -167,7 +167,7 @@ class ExactMaterialPointers:
                 )
             else:
                 encoded_parts.append(
-                    {"kind": "reference", "start": part.start, "length": part.length}
+                    {"kind": "reference", "start": part.start, "byte_count": part.byte_count}
                 )
         return {
             "version": self.version,
@@ -201,7 +201,7 @@ class ExactMaterialPointers:
                 # runtime's opinion. `b64decode(validate=True)` accepted
                 # "YWJj====" as b"abc" through Python 3.11 and refuses it as
                 # excess padding from 3.12, so an account's acceptance depended
-                # on the interpreter reading it. Re-encoding is exact and the
+                # on the Python process read it. Re-encoding is exact and the
                 # same everywhere.
                 if base64.b64encode(exact).decode("ascii") != encoded:
                     raise ExactMaterialPointerError(
@@ -209,7 +209,9 @@ class ExactMaterialPointers:
                     )
                 parts.append(LiteralPart(exact))
             elif kind == "reference":
-                parts.append(ReferencePart(start=raw.get("start"), length=raw.get("length")))
+                parts.append(
+                    ReferencePart(start=raw.get("start"), byte_count=raw.get("byte_count"))
+                )
             else:
                 raise ExactMaterialPointerError(f"unknown exact-material part kind: {kind!r}")
         return cls(
@@ -221,39 +223,39 @@ class ExactMaterialPointers:
         )
 
 
-def reconstruct_exact_bytes(
+def read_exact_bytes(
     encoded: ExactMaterialPointers, *, verify: bool = True
 ) -> bytes:
-    """Reconstruct exact bytes from literals and already-reconstructed references."""
+    """Read exact bytes from literals and already-read references."""
 
     if not isinstance(encoded, ExactMaterialPointers):
         raise ExactMaterialPointerError("encoded material must be ExactMaterialPointers")
-    reconstructed = bytearray()
+    read = bytearray()
     for part in encoded.parts:
         if isinstance(part, LiteralPart):
-            reconstructed.extend(part.exact_bytes)
+            read.extend(part.exact_bytes)
             continue
-        end = part.start + part.length
+        end = part.start + part.byte_count
         # A reference may point to bytes yielded by an earlier reference, but
         # its complete source span must already exist before this part begins.
-        if end > len(reconstructed):
+        if end > len(read):
             raise ExactMaterialPointerError(
-                "a reference must resolve wholly inside already reconstructed material"
+                "a reference must resolve wholly inside already read material"
             )
-        reconstructed.extend(reconstructed[part.start:end])
-    result = bytes(reconstructed)
+        read.extend(read[part.start:end])
+    result = bytes(read)
     if verify:
         if len(result) != encoded.byte_count:
-            raise ExactMaterialPointerError("reconstructed material does not match byte_count")
+            raise ExactMaterialPointerError("read material does not match byte_count")
         if hashlib.sha256(result).hexdigest() != encoded.sha256:
-            raise ExactMaterialPointerError("reconstructed material does not match sha256")
+            raise ExactMaterialPointerError("read material does not match sha256")
     return result
 
 
-def form_exact_material_pointers(
+def represent_exact_material_pointers(
     exact_bytes: bytes,
     *,
-    minimum_reference_length: int = 4,
+    minimum_reference_byte_count: int = 4,
     candidate_limit: int = 64,
 ) -> ExactMaterialPointers:
     """Greedily find exact backward recurrence within the declared bounds.
@@ -268,20 +270,20 @@ def form_exact_material_pointers(
     considered** — which on material recurring more than `candidate_limit`
     times is not the earliest in the material.
 
-    Both bounds are recorded on the result. They do not affect reconstruction,
+    Both bounds are recorded on the result. They do not affect read,
     which is exact under any pointer_rule; they bound what the account may be read
     to mean.
     """
 
     if type(exact_bytes) is not bytes:
         raise ExactMaterialPointerError("exact_bytes must be exact bytes")
-    if type(minimum_reference_length) is not int or minimum_reference_length < 2:
-        raise ExactMaterialPointerError("minimum_reference_length must be an integer >= 2")
+    if type(minimum_reference_byte_count) is not int or minimum_reference_byte_count < 2:
+        raise ExactMaterialPointerError("minimum_reference_byte_count must be an integer >= 2")
     if type(candidate_limit) is not int or candidate_limit <= 0:
         raise ExactMaterialPointerError("candidate_limit must be a positive integer")
 
     pointer_rule = ExactMaterialPointerRule(
-        minimum_reference_length=minimum_reference_length,
+        minimum_reference_byte_count=minimum_reference_byte_count,
         candidate_limit=candidate_limit,
     )
 
@@ -299,9 +301,9 @@ def form_exact_material_pointers(
     size = len(exact_bytes)
 
     def index_position(position: int) -> None:
-        if position + minimum_reference_length > size:
+        if position + minimum_reference_byte_count > size:
             return
-        key = exact_bytes[position : position + minimum_reference_length]
+        key = exact_bytes[position : position + minimum_reference_byte_count]
         index.setdefault(key, []).append(position)
 
     def flush_literal() -> None:
@@ -312,33 +314,35 @@ def form_exact_material_pointers(
     position = 0
     while position < size:
         best_start = -1
-        best_length = 0
-        if position + minimum_reference_length <= size:
-            key = exact_bytes[position : position + minimum_reference_length]
+        best_byte_count = 0
+        if position + minimum_reference_byte_count <= size:
+            key = exact_bytes[position : position + minimum_reference_byte_count]
             candidates = index.get(key, ())[-candidate_limit:]
             for start in candidates:
                 # The source span must be complete before this part begins.
-                max_length = min(size - position, position - start)
-                if max_length < minimum_reference_length:
+                max_byte_count = min(size - position, position - start)
+                if max_byte_count < minimum_reference_byte_count:
                     continue
-                length = minimum_reference_length
+                byte_count = minimum_reference_byte_count
                 while (
-                    length < max_length
-                    and exact_bytes[start + length] == exact_bytes[position + length]
+                    byte_count < max_byte_count
+                    and exact_bytes[start + byte_count] == exact_bytes[position + byte_count]
                 ):
-                    length += 1
-                if length > best_length or (
-                    length == best_length and length >= minimum_reference_length and start < best_start
+                    byte_count += 1
+                if byte_count > best_byte_count or (
+                    byte_count == best_byte_count
+                    and byte_count >= minimum_reference_byte_count
+                    and start < best_start
                 ):
                     best_start = start
-                    best_length = length
+                    best_byte_count = byte_count
 
-        if best_length >= minimum_reference_length:
+        if best_byte_count >= minimum_reference_byte_count:
             flush_literal()
-            parts.append(ReferencePart(start=best_start, length=best_length))
-            for indexed_position in range(position, position + best_length):
+            parts.append(ReferencePart(start=best_start, byte_count=best_byte_count))
+            for indexed_position in range(position, position + best_byte_count):
                 index_position(indexed_position)
-            position += best_length
+            position += best_byte_count
         else:
             literal.append(exact_bytes[position])
             index_position(position)

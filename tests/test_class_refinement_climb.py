@@ -31,9 +31,9 @@ def test_one_member_cannot_testify_for_its_class():
     pair whose members disagree 13 times out of 77.
     """
 
-    recovered = classes("utf-8", 4)
-    refused = next(members for key, members in recovered.items() if key[0] is None)
-    leader = next(members for key, members in recovered.items() if key[0] == 2)[0]
+    read = classes("utf-8", 4)
+    refused = next(members for key, members in read.items() if key[0] is None)
+    leader = next(members for key, members in read.items() if key[0] == 2)[0]
 
     accepted = [byte for byte in refused if accepts("utf-8", (leader, byte))]
 
@@ -63,15 +63,15 @@ def test_the_climb_ends_exactly_where_nothing_is_mixed():
 
 
 def test_refinement_splits_only_where_members_behaved_apart():
-    recovered = classes("utf-8", 4)
-    refined = refine("utf-8", recovered)
+    read = classes("utf-8", 4)
+    refined = refine("utf-8", read)
 
-    assert len(refined) == len(recovered) + 1
+    assert len(refined) == len(read) + 1
     assert sorted(len(members) for members in refined.values()) == [5, 13, 16, 30, 64, 128]
 
 
 def test_every_rung_partitions_the_same_material():
-    """Refining changes where the lines fall, never what is being divided."""
+    """Refining differences where the lines fall, never what is being divided."""
 
     for rung in climb("utf-8"):
         covered = sorted(byte for members in rung.values() for byte in members)

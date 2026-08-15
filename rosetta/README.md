@@ -13,7 +13,7 @@ and this can be plainly readable.
 
 ## Purpose
 
-The Book sheds vocabulary. Terms are retired when they name nothing, when they
+The Book sheds vocabulary. Terms leave when they name nothing, when they
 compress several distinctions into one word, or when they are ordinary English
 that acquired constitutional-looking capitalisation.
 
@@ -28,7 +28,7 @@ Responsibility spine        ordinary-English traversal of the same spine used
                             by the Book and instantiated by runtime occurrences;
                             Examination and Presentation are directional views
 
-retired vocabulary          words the Book no longer uses, and what
+translation vocabulary      words the Book does not use, and what
                             current grammar covers what they covered
 
 external / ordinary words   English that was never constitutional but
@@ -38,8 +38,8 @@ implementation vocabulary   runtime and repository names that are not
                             constitutional grammar
 
 
-mechanical                  names for how something is done on this machine
-                            in this language, whose mechanical role supports
+implementation              names for how something is done on this machine
+                            in this language, whose exact behavior supports
                             no constitutional clause, recorded so they stop
                             being audited as though it might
 
@@ -81,19 +81,18 @@ constitutional because Seed produced it.
 ```text
 book_of_seed/       constitutional grammar only
 concordance.md      navigation across live grammar, with aliases
-rosetta/            external and retired vocabulary, translation
+rosetta/            translation vocabulary and exact mappings
 reports + git       historical testimony, preserved as written
 ```
 
 The concordance maps live terms and states that aliases "do not grant
-constitutional equivalence or standing." This directory maps retired ones,
+constitutional equivalence or standing." This directory maps those words,
 where the mapping is frequently not an alias relationship: `State` corresponds
 to four current terms and to no single one of them.
 
 ## Files
 
 - [Responsibility spine](roots.md)
-- [Retired vocabulary](retired-vocabulary.md)
 - [Rosetta admitted lexicon](admitted-lexicon.txt)
 - [Book admitted lexicon](../book_of_seed/admitted-lexicon.txt)
 

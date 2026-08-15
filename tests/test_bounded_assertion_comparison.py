@@ -1,14 +1,14 @@
 """The smallest bounded Assertion comparison, and what it refuses to conclude.
 
-`01.Standing.E` permits it. `#2416` reconstructed its responsible boundary as local to each
+`01.Standing.E` permits it. `#2416` read its responsible boundary as local to each
 instantiated comparison and never extends beyond its exact bounds, so these tests pin that the
 comparison is an occurrence and not a service: nothing survives a call, and
 there is no object to hold.
 
 The restraint is pinned as carefully as the result. Two measurements over
-different bounded exchanges are each exact within their own scope, so differing
+different bounded localities are each exact within their own scope, so differing
 results are not disagreement and matching results are not corroboration. A test
-that let this yield `agreement` across exchanges would be manufacturing the
+that let this yield `agreement` across localities would be manufacturing the
 cross-body conclusion the whole arc has been avoiding.
 """
 
@@ -29,7 +29,7 @@ from seed_runtime.bounded_assertion_comparison import (
 from seed_runtime.events import EventLedger
 from seed_runtime.adjacent_pair_measurement import measure_after
 from seed_runtime.preserved_material_measurement import (
-    preserved_ingress_occurrences,
+    ingest_occurrences,
     record_measurement_finding,
 )
 from tests.material_fixture_console import run_material_fixture_console
@@ -38,7 +38,7 @@ BODIES = {
     "s1": "a noun is a word\nand a verb is a word\n",
     "s2": "a noun is a thing\nand a verb is a thing\n",
 }
-SCOPE = "one bounded exchange"
+SCOPE = "one bounded locality"
 
 
 @pytest.fixture
@@ -46,17 +46,17 @@ def ledger():
     led = EventLedger()
     for locality_id, material in BODIES.items():
         run_material_fixture_console(
-            ledger=led, workspace_id="w", locality_id=locality_id,
+            ledger=led, locality_id=locality_id,
             input_stream=binary_input(material + ""), output_stream=StringIO())
     return led
 
 
 def _finding(led, locality_id, representation="a", scope=SCOPE):
-    occurrences = preserved_ingress_occurrences(
-        led, workspace_id="w", locality_id=locality_id
+    occurrences = ingest_occurrences(
+        led, locality_id=locality_id
     )
     return record_measurement_finding(
-        led, workspace_id="w", locality_id=locality_id,
+        led, locality_id=locality_id,
         finding=measure_after(occurrences, representation, counting_scope=scope),
     )
 
@@ -75,10 +75,10 @@ def test_a_comparison_needs_more_than_one_preserved_finding(ledger):
 def test_more_than_two_inputs_are_refused(ledger):
     """The report said n-ary comparison was unbuilt; the runtime built it.
 
-    An earlier form accepted any number and intersected them all, so a
+    An earlier representation accepted any number and intersected them all, so a
     three-body comparison existed and nothing said what it established. What
-    more than two inputs jointly establish is not reconstructed, and a set
-    intersection is not that reconstruction.
+    more than two inputs jointly establish is not read, and a set
+    intersection is not that read.
     """
     a, b, c = (_finding(ledger, s) for s in ("s1", "s2", "s1"))
     with pytest.raises(BoundedComparisonError, match="more than two is unbuilt"):
@@ -93,9 +93,9 @@ def test_an_input_compared_with_itself_is_refused(ledger):
 
 def test_only_recorded_measurement_findings_may_participate(ledger):
     one = _finding(ledger, "s1")
-    ingress = preserved_ingress_occurrences(ledger, workspace_id="w", locality_id="s1")[0]
+    ingest = ingest_occurrences(ledger, locality_id="s1")[0]
     with pytest.raises(BoundedComparisonError, match="not a recorded measurement"):
-        compare_preserved_findings(ledger, [one.id, ingress.id])
+        compare_preserved_findings(ledger, [one.id, ingest.id])
 
 
 def test_an_unpreserved_input_is_refused(ledger):
@@ -107,14 +107,14 @@ def test_an_unpreserved_input_is_refused(ledger):
 def test_the_recorded_responsible_boundary_is_local_to_the_occurrence(ledger):
     a, b = _finding(ledger, "s1"), _finding(ledger, "s2")
     event = record_comparison_finding(
-        ledger, workspace_id="w", locality_id="s1",
+        ledger, locality_id="s1",
         finding=compare_preserved_findings(ledger, [a.id, b.id]))
     assert "local to the instantiated comparison" in event.payload["responsible_boundary"]
     assert "not named beyond this comparison" in event.payload["responsible_boundary"]
 
 
 # --------------------------------------------------------------------------
-# Each input arrives with what it carries, and what it lacks is named.
+# Each input occurs with what it carries, and what it lacks is named.
 # --------------------------------------------------------------------------
 
 
@@ -140,9 +140,9 @@ def test_an_absent_coordinate_is_named_and_not_supplied(ledger):
 
 def test_the_support_basis_travels_with_its_input(ledger):
     seed = _finding(ledger, "s1")
-    occurrences = preserved_ingress_occurrences(ledger, workspace_id="w", locality_id="s1")
+    occurrences = ingest_occurrences(ledger, locality_id="s1")
     standing_on = record_measurement_finding(
-        ledger, workspace_id="w", locality_id="s1",
+        ledger, locality_id="s1",
         finding=measure_after(occurrences, "is", counting_scope=SCOPE, premise_event_id=seed.id))
     other = _finding(ledger, "s2")
     finding = compare_preserved_findings(ledger, [standing_on.id, other.id])
@@ -163,12 +163,12 @@ def test_it_reports_which_occupants_both_findings_hold(ledger):
     assert set(finding.occupants_in_one_only) == {a.id, b.id}
 
 
-def test_findings_from_different_exchanges_do_not_reach_agreement(ledger):
+def test_findings_from_different_localities_do_not_reach_agreement(ledger):
     """The restraint. Each is exact within its own scope."""
     a, b = _finding(ledger, "s1"), _finding(ledger, "s2")
     finding = compare_preserved_findings(ledger, [a.id, b.id])
     assert finding.bounded_relation == "Unknown"
-    assert "different bounded exchanges" in finding.relation_basis
+    assert "different bounded localities" in finding.relation_basis
     assert "not disagreement" in finding.relation_basis
     assert "not corroboration" in finding.relation_basis
 
@@ -183,7 +183,7 @@ def test_a_different_measured_subject_yields_Unknown(ledger):
                if d.coordinate == "representation_measured" and d.same]
 
 
-def test_two_findings_in_one_exchange_may_reach_agreement(ledger):
+def test_two_findings_in_one_locality_may_reach_agreement(ledger):
     """Within one scope the relation is establishable, and only there."""
     a, b = _finding(ledger, "s1"), _finding(ledger, "s1")
     finding = compare_preserved_findings(ledger, [a.id, b.id])
@@ -192,7 +192,7 @@ def test_two_findings_in_one_exchange_may_reach_agreement(ledger):
 
 
 def test_the_left_representation_is_compared_as_a_coordinate(ledger):
-    """Pair identity must not be reconstructed from prose.
+    """Pair identity must not be read from prose.
 
     `representation_measured` is a sentence. The anchor a finding measured from
     is carried structurally, and a comparison asking whether two findings share
@@ -226,9 +226,9 @@ def test_the_distinctions_are_literal(ledger):
     by_name = {d.coordinate: d for d in finding.distinctions}
     assert by_name["representation_measured"].same
     assert by_name["equivalence_rule"].same
-    assert not by_name["bounded_exchange"].same
-    assert by_name["bounded_exchange"].values == (
-        "workspace:w;locality:s1", "workspace:w;locality:s2")
+    assert not by_name["bounded_locality"].same
+    assert by_name["bounded_locality"].values == (
+        "locality:s1", "locality:s2")
 
 
 # --------------------------------------------------------------------------
@@ -239,7 +239,7 @@ def test_the_distinctions_are_literal(ledger):
 def test_the_comparison_is_recorded_as_its_own_kind(ledger):
     a, b = _finding(ledger, "s1"), _finding(ledger, "s2")
     event = record_comparison_finding(
-        ledger, workspace_id="w", locality_id="s1",
+        ledger, locality_id="s1",
         finding=compare_preserved_findings(ledger, [a.id, b.id]))
     assert event.kind == COMPARISON_RECORDED_KIND
     assert event.payload["input_event_ids"] == [a.id, b.id]
@@ -249,7 +249,7 @@ def test_the_comparison_is_recorded_as_its_own_kind(ledger):
 def test_the_record_refuses_the_inferences_the_clause_forbids(ledger):
     a, b = _finding(ledger, "s1"), _finding(ledger, "s2")
     event = record_comparison_finding(
-        ledger, workspace_id="w", locality_id="s1",
+        ledger, locality_id="s1",
         finding=compare_preserved_findings(ledger, [a.id, b.id]))
     notes = " ".join(event.payload["boundary_notes"])
     assert "is not a relation between what they measured" in notes
@@ -263,7 +263,7 @@ def test_recording_a_comparison_does_not_disturb_its_inputs(ledger):
     a, b = _finding(ledger, "s1"), _finding(ledger, "s2")
     before = (dict(a.payload), dict(b.payload))
     record_comparison_finding(
-        ledger, workspace_id="w", locality_id="s1",
+        ledger, locality_id="s1",
         finding=compare_preserved_findings(ledger, [a.id, b.id]))
     assert (ledger.get(a.id).payload, ledger.get(b.id).payload) == before
 
@@ -273,7 +273,7 @@ def test_a_comparison_is_not_a_measurement(ledger):
 
     a, b = _finding(ledger, "s1"), _finding(ledger, "s2")
     event = record_comparison_finding(
-        ledger, workspace_id="w", locality_id="s1",
+        ledger, locality_id="s1",
         finding=compare_preserved_findings(ledger, [a.id, b.id]))
     assert event.kind != MEASUREMENT_RECORDED_KIND
     assert "occupancies" not in event.payload

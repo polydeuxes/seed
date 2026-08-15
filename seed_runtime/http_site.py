@@ -47,7 +47,7 @@ class HttpBoundaryObservation:
     request_path: str
     response_status: int | None
     material_path: str | None
-    body_length: int | None
+    body_byte_count: int | None
     failure_type: str | None = None
 
 
@@ -71,7 +71,7 @@ class RunningHttpSite:
         site = self
 
         class Handler(BaseHTTPRequestHandler):
-            protocol_version = "HTTP/1.1"
+            protocol_version = "HTTP/1.0"
 
             def log_message(self, _format: str, *_args: object) -> None:
                 return
@@ -83,7 +83,6 @@ class RunningHttpSite:
                     site._record("response_attempt", "GET", self.path, 404, None, 0)
                     try:
                         self.send_response_only(404)
-                        self.send_header("Content-Length", "0")
                         self.send_header("Connection", "close")
                         self.end_headers()
                         self.wfile.flush()
@@ -112,7 +111,6 @@ class RunningHttpSite:
                 try:
                     self.send_response_only(200)
                     self.send_header("Content-Type", material.media_type)
-                    self.send_header("Content-Length", str(len(material.body)))
                     self.send_header("Connection", "close")
                     self.end_headers()
                     self.wfile.write(material.body)
@@ -154,7 +152,7 @@ class RunningHttpSite:
         request_path: str,
         response_status: int | None,
         material_path: str | None,
-        body_length: int | None,
+        body_byte_count: int | None,
         failure_type: str | None = None,
     ) -> None:
         with self._observation_lock:
@@ -168,7 +166,7 @@ class RunningHttpSite:
                     request_path=request_path,
                     response_status=response_status,
                     material_path=material_path,
-                    body_length=body_length,
+                    body_byte_count=body_byte_count,
                     failure_type=failure_type,
                 )
             )

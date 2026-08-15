@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
-"""Render material in which a byte grouping is recoverable rather than declared.
+"""Form material in which a byte grouping is addressable rather than declared.
 
 The other ladders vary a coordinate within a framing. This one varies material
-so that the framing itself becomes recoverable, because a specimen does not
+so that the framing itself becomes addressable, because a specimen does not
 carry one.
 
 Raw bytes are raw bytes. That two of them are one sample, that the second
@@ -12,7 +12,7 @@ are the harness talking about its material, not the material.
 
 **What the material carries instead.** Partition the bytes by offset under a
 candidate stride. Each offset has an exact set of byte values observed at it,
-and those sets are measurable without interpreting them:
+and those sets are measurable without classifying them:
 
 ```text
   amplitude 100, stride 2   |support(2,0)| = 201    |support(2,1)| = 2
@@ -25,7 +25,7 @@ and those sets are measurable without interpreting them:
 high half, that the values at it are sign extension, that a stride of 2 is a
 sample -- is not measured here and is not asserted here.
 
-**The rule that would select a framing from this is unrecovered.** Support
+**The rule that would select a framing from this is unread.** Support
 sizes differ at every stride and every amplitude above, so inequality alone
 selects nothing. An earlier revision used a fourfold ratio, which chose stride
 2 for no reason the material supplies; that threshold is withdrawn rather than
@@ -34,10 +34,10 @@ replaced by a different one.
 **Phase is which source byte is treated as offset 0 of this partition.** Not
 where a group begins: nothing here establishes that a group exists. Read from
 byte zero the two classes at stride 2 are 201 values and 2; read from byte one
-they are 2 and 201, and the sets exchange exactly.
+they are 2 and 201, and the sets trade places exactly.
 
-The material's own extent is exact -- an occurrence begins at its first byte
-and ends at its last. That boundary is not an internal one. A partition
+The material's byte boundary is exact -- an occurrence begins at its first
+byte and ends at its last. That boundary is not an internal one. A partition
 starting at byte zero starts where the material does, which is a property of
 the partition and not evidence that anything inside the material is bounded
 there too.
@@ -48,14 +48,14 @@ What a rule would have to distinguish, once warranted:
   candidate stride     its offsets' supports stand in some exact relation
   primitive candidate  a candidate stride no proper divisor of which is one
   partition phase      which source byte is offset 0 of the partition
-  grouping             that adjacent positions form a unit
+  grouping             that adjacent positions representation a unit
   group boundary       where such a unit would begin and end
 ```
 
 The second is what would separate stride 2 from stride 4, which agrees with it
 because it is two of them. None is established.
 
-The harness may still testify to how it constructed a specimen. That testimony
+The harness may still testify to how it supplied a specimen. That testimony
 is attributed, and is not what makes the framing usable.
 
 Usage:
@@ -95,8 +95,8 @@ def position_support(
 ) -> dict[int, frozenset[int]]:
     """The exact set of byte values at each offset, under a stride and a phase.
 
-    A partition begins somewhere. Reading it from byte zero is a choice, and
-    the same material read from byte one yields the same classes exchanged, so
+    A partition begins somewhere. Reading from byte zero is a fixed coordinate, and
+    the same material read from byte one yields the same classes in reversed places, so
     a positional structure at some stride does not say where a group starts.
     """
 
@@ -125,7 +125,7 @@ def main() -> int:
         )
         print(f"  {path.name:26}{len(raw):>7}   {measured}")
     print("\n  No stride is selected. Support sizes differ under every stride,")
-    print("  so the rule that would choose one is unrecovered.")
+    print("  so the rule that would choose one is unread.")
     return 0
 
 

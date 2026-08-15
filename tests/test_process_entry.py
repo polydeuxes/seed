@@ -33,28 +33,28 @@ def test_importing_the_live_entry_does_not_wake_dormant_modules():
             ),
         ],
         check=False,
-        capture_output=True,
+        stdout=subprocess.PIPE, stderr=subprocess.PIPE,
         text=True,
     )
 
     assert result.returncode == 0, result.stderr
 
 
-def test_live_entry_accepts_only_console_coordinates(monkeypatch, tmp_path):
+def test_live_entry_accepts_the_database_coordinate(monkeypatch, tmp_path):
     database = tmp_path / "seed.db"
     monkeypatch.setattr("sys.stdin", BytesIO(b"material\n"))
     monkeypatch.setattr("sys.stdout", StringIO())
 
-    assert process_entry.main(["--db", str(database), "--workspace", "w"]) == 0
+    assert process_entry.main(["--db", str(database)]) == 0
 
     ledger = SQLiteEventLedger(database)
     try:
-        assert ledger.list("w")
+        assert ledger.list()
     finally:
         ledger.close()
 
 
-def test_reopened_live_process_allocates_a_new_session(tmp_path):
+def test_reopened_live_process_allocates_a_new_locality(tmp_path):
     database = tmp_path / "seed.db"
     command = [
         sys.executable,
@@ -69,18 +69,18 @@ def test_reopened_live_process_allocates_a_new_session(tmp_path):
             command,
             input=material,
             check=False,
-            capture_output=True,
+            stdout=subprocess.PIPE, stderr=subprocess.PIPE,
             text=True,
         )
         assert result.returncode == 0, result.stderr
 
     ledger = SQLiteEventLedger(database)
     try:
-        sessions = {event.locality_id for event in ledger.list("local")}
+        Localities = {event.locality_id for event in ledger.list()}
     finally:
         ledger.close()
-    assert None not in sessions
-    assert len(sessions) == 2
+    assert None not in Localities
+    assert len(Localities) == 2
 
 
 @pytest.mark.parametrize(

@@ -19,7 +19,6 @@ LONG = SHORT + "264338327950288419716939937510"
 def _supply(ledger: EventLedger, locality: str, material: str) -> None:
     run_persistent_operator_console(
         ledger=ledger,
-        workspace_id="bounded-decimal-observation",
         locality_id=locality,
         input_stream=binary_input(material + "\n"),
         output_stream=StringIO(),
@@ -29,14 +28,12 @@ def _supply(ledger: EventLedger, locality: str, material: str) -> None:
 def _observe(ledger: EventLedger, source: str, result: str):
     byte_event = record_byte_count_layer(
         ledger,
-        workspace_id="bounded-decimal-observation",
         source_locality_ids=(source,),
         recording_locality_id=f"{result}-bytes",
     )
     pair_event = record_adjacent_byte_pair_count_layer(
         ledger,
         source_measurement_event_id=byte_event.id,
-        workspace_id="bounded-decimal-observation",
         recording_locality_id=f"{result}-pairs",
     )
     return byte_event, pair_event

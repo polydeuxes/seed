@@ -1,12 +1,12 @@
-"""Process-local repetition around bounded operator ingress and Representation."""
+"""Operator Ingest, slash commands, Representation, and emission."""
 
 from __future__ import annotations
 
 from typing import BinaryIO, Mapping, TextIO
 
 from seed_runtime.events import EventLedger
-from seed_runtime.operator_ingress import run_operator_ingress_attempt
-from seed_runtime.operator_ingress_representation import capture_stdin_material
+from seed_runtime.operator_ingest import run_operator_ingest
+from seed_runtime.operator_material_boundary import operator_boundary_material
 from seed_runtime.operator_command import (
     OperatorCommandHandler,
     is_slash_command,
@@ -28,7 +28,7 @@ from seed_runtime.operator_locality_standing import (
 )
 
 
-def _advance_over(ledger, standing, event_ids, *, workspace_id, locality_id):
+def _advance_over(ledger, standing, event_ids, *, locality_id):
     """Advance carried Standing over occurrences a responsible act just recorded.
 
     The identifiers come from the act that recorded them, so nothing here
@@ -38,7 +38,6 @@ def _advance_over(ledger, standing, event_ids, *, workspace_id, locality_id):
 
     return advance_operator_locality_standing(
         [ledger.get(event_id) for event_id in event_ids],
-        workspace_id=workspace_id,
         locality_id=locality_id,
         prior=standing,
     )
@@ -47,13 +46,12 @@ def _advance_over(ledger, standing, event_ids, *, workspace_id, locality_id):
 def run_persistent_operator_console(
     *,
     ledger: EventLedger,
-    workspace_id: str,
     locality_id: str,
     input_stream: BinaryIO | TextIO,
     output_stream: TextIO,
     command_handlers: Mapping[bytes, OperatorCommandHandler] | None = None,
 ) -> None:
-    """Repeat raw-byte ingress and slash-command interactions."""
+    """Repeat exact-byte Ingest and slash-command occurrences."""
     handlers = dict(command_handlers or {})
     handlers[b"checkpoint"] = request_operator_checkpoint
     handlers[b"material"] = request_operator_material
@@ -61,11 +59,10 @@ def run_persistent_operator_console(
     # each interaction. Each responsible act returns the occurrences it
     # recorded, so the console advances over exactly those occurrences.
     locality_standing = read_operator_locality_standing(
-        ledger, workspace_id=workspace_id, locality_id=locality_id
+        ledger, locality_id=locality_id
     )
     representation = record_operator_representation(
         ledger,
-        workspace_id=workspace_id,
         locality_id=locality_id,
         locality_standing=locality_standing,
     )
@@ -80,22 +77,20 @@ def run_persistent_operator_console(
             representation["emission_attempt_event_id"],
             representation["emitted_event_id"],
         ),
-        workspace_id=workspace_id,
         locality_id=locality_id,
     )
     while True:
-        captured_ingress = capture_stdin_material(input_stream)
-        if captured_ingress.eof:
+        boundary_material = operator_boundary_material(input_stream)
+        if boundary_material.eof:
             return
-        if is_slash_command(captured_ingress):
+        if is_slash_command(boundary_material):
             command_run = run_operator_command(
                 ledger=ledger,
-                workspace_id=workspace_id,
                 locality_id=locality_id,
                 addressed_at_representation_event_id=representation[
                     "representation_event_id"
                 ],
-                captured=captured_ingress,
+                material=boundary_material,
                 handlers=handlers,
             )
             request = command_run.implementation_result
@@ -103,11 +98,10 @@ def run_persistent_operator_console(
                 checkpoint = open_operator_checkpoint(ledger, command_run.addressed)
                 locality_id = checkpoint.locality_id
                 locality_standing = read_operator_locality_standing(
-                    ledger, workspace_id=workspace_id, locality_id=locality_id
+                    ledger, locality_id=locality_id
                 )
                 representation = record_operator_representation(
                     ledger,
-                    workspace_id=workspace_id,
                     locality_id=locality_id,
                     locality_standing=locality_standing,
                 )
@@ -124,21 +118,16 @@ def run_persistent_operator_console(
                         representation["emission_attempt_event_id"],
                         representation["emitted_event_id"],
                     ),
-                    workspace_id=workspace_id,
                     locality_id=locality_id,
                 )
             continue
-        # One interaction, one pair of commits. Each occurrence still reaches
-        # the store with its prefix commitment, and the emission attempt is
-        # flushed before the output boundary by the act that owns that order.
         with ledger.batched():
-            # No Representation is attached to this capture. Selecting one by
+            # No Representation is attached to this Ingest. Selecting one by
             # recency would assert a relation no occurrence determined.
-            attempt_record = run_operator_ingress_attempt(
+            attempt_record = run_operator_ingest(
                 ledger=ledger,
-                workspace_id=workspace_id,
                 locality_id=locality_id,
-                captured_ingress=captured_ingress,
+                boundary_material=boundary_material,
                 locality_standing=(
                     locality_standing if locality_standing["event_count"] else None
                 ),
@@ -147,15 +136,13 @@ def run_persistent_operator_console(
                 ledger,
                 locality_standing,
                 attempt_record["event_ids"],
-                workspace_id=workspace_id,
                 locality_id=locality_id,
             )
-            if attempt_record["current_standing"]["preserved_ingress"] is not None:
+            if attempt_record["current_standing"]["ingest_occurrence"] is not None:
                 # The yielded Representation is preserved independently. No Compare
                 # or Identification is inferred merely from temporal proximity.
                 representation = record_operator_representation(
                     ledger,
-                    workspace_id=workspace_id,
                     locality_id=locality_id,
                     locality_standing=locality_standing,
                 )
@@ -170,6 +157,5 @@ def run_persistent_operator_console(
                         representation["emission_attempt_event_id"],
                         representation["emitted_event_id"],
                     ),
-                    workspace_id=workspace_id,
                     locality_id=locality_id,
                 )

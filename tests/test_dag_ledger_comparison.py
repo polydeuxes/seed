@@ -6,16 +6,14 @@ from seed_runtime.events import SQLiteEventLedger
 
 def _cross_examined_stores(tmp_path):
     ledger = SQLiteEventLedger(str(tmp_path / "ledger.sqlite"))
-    first = ledger.append("first", "w", {"value": 1}, locality_id="s")
+    first = ledger.append("first", {"value": 1}, locality_id="s")
     second = ledger.append(
         "second",
-        "w",
         {"source_ref": first.id, "nested": {"source_ref": first.id}},
         locality_id="s",
     )
     third = ledger.append(
         "third",
-        "w",
         {"first_ref": first.id, "second_ref": second.id},
         locality_id="s",
     )
@@ -36,8 +34,8 @@ def test_sql_and_dag_answer_the_same_reference_relations(tmp_path):
 def test_neither_store_turns_a_future_id_string_into_a_relation(tmp_path):
     ledger = SQLiteEventLedger(str(tmp_path / "future.sqlite"))
     future_id = f"evt_{ledger._next_event_number + 1:06d}"
-    naming = ledger.append("naming", "w", {"source_ref": future_id}, locality_id="s")
-    future = ledger.append("future", "w", {}, locality_id="s")
+    naming = ledger.append("naming", {"source_ref": future_id}, locality_id="s")
+    future = ledger.append("future", {}, locality_id="s")
     assert future.id == future_id
 
     dag = DagLedgerComparison()

@@ -1,4 +1,4 @@
-"""Ledger-bound occurrences reconstruct exact append prefixes without exposing positions."""
+"""Ledger-bound occurrences read exact append prefixes without exposing positions."""
 
 from __future__ import annotations
 
@@ -17,25 +17,28 @@ from seed_runtime.event import Event
 
 
 def _exercise_scoped_reads(ledger):
-    first = ledger.append("wanted", "w", {"n": 1}, locality_id="s")
-    ledger.append("other", "elsewhere", {"n": 2}, locality_id="s")
-    boundary = ledger.capture_boundary()
-    ledger.append("wanted", "w", {"n": 3}, locality_id="s")
-    ledger.append("wanted", "w", {"n": 4}, locality_id="later")
+    first = ledger.append("wanted", {"n": 1}, locality_id="s")
+    ledger.append("other", {"n": 2}, locality_id="s")
+    boundary = ledger.append_boundary()
+    ledger.append("wanted", {"n": 3}, locality_id="s")
+    ledger.append("wanted", {"n": 4}, locality_id="later")
 
     assert [event.id for event in ledger.list(through=boundary)] == [
         first.id,
         ledger.list()[1].id,
     ]
-    assert [event.id for event in ledger.list("w", through=boundary)] == [first.id]
+    assert [event.id for event in ledger.list(through=boundary)] == [
+        first.id,
+        ledger.list()[1].id,
+    ]
     assert [event.id for event in ledger.list_locality(
-        "w", "s", through=boundary
-    )] == [first.id]
+        "s", through=boundary
+    )] == [first.id, ledger.list()[1].id]
     assert [event.id for event in ledger.iter_locality_kind(
-        "w", "s", "wanted", through=boundary
+        "s", "wanted", through=boundary
     )] == [first.id]
-    assert ledger.has_locality("w", "s", through=boundary) is True
-    assert ledger.has_locality("w", "later", through=boundary) is False
+    assert ledger.has_locality("s", through=boundary) is True
+    assert ledger.has_locality("later", through=boundary) is False
     return boundary
 
 
@@ -55,40 +58,40 @@ def test_one_boundary_constrains_every_ordered_reader(tmp_path, durable):
 
 def test_empty_boundary_excludes_later_occurrences():
     ledger = EventLedger()
-    boundary = ledger.capture_boundary()
-    ledger.append("k", "w")
+    boundary = ledger.append_boundary()
+    ledger.append("k")
     assert ledger.list(through=boundary) == []
 
 
 def test_equal_prefixes_share_a_boundary_and_later_divergence_does_not_break_it():
     events = [
-        Event(id="e1", kind="first", workspace_id="w", payload={"n": 1}),
-        Event(id="e2", kind="second", workspace_id="w", payload={"n": 2}),
+        Event(id="e1", kind="first", payload={"n": 1}),
+        Event(id="e2", kind="second", payload={"n": 2}),
     ]
     left = EventLedger()
     right = EventLedger()
     left.extend(events)
     right.extend(events)
-    boundary = left.capture_boundary()
+    boundary = left.append_boundary()
 
-    right.append("later", "w", {"side": "right"})
+    right.append("later", {"side": "right"})
 
-    assert right.capture_boundary() != boundary
+    assert right.append_boundary() != boundary
     assert [event.id for event in right.list(through=boundary)] == ["e1", "e2"]
 
 
 def test_independently_persisted_equal_prefixes_share_a_boundary(tmp_path):
     events = [
-        Event(id="e1", kind="first", workspace_id="w", payload={"n": 1}),
-        Event(id="e2", kind="second", workspace_id="w", payload={"n": 2}),
+        Event(id="e1", kind="first", payload={"n": 1}),
+        Event(id="e2", kind="second", payload={"n": 2}),
     ]
     left = SQLiteEventLedger(str(tmp_path / "left.db"))
     right = SQLiteEventLedger(str(tmp_path / "right.db"))
     try:
         left.extend(events)
         right.extend(events)
-        boundary = left.capture_boundary()
-        right.append("later", "w")
+        boundary = left.append_boundary()
+        right.append("later")
 
         assert [event.id for event in right.list(through=boundary)] == ["e1", "e2"]
     finally:
@@ -99,8 +102,8 @@ def test_independently_persisted_equal_prefixes_share_a_boundary(tmp_path):
 @pytest.mark.parametrize("durable", (False, True))
 def test_batched_and_repeated_appends_yield_the_same_boundary(tmp_path, durable):
     events = [
-        Event(id="e1", kind="first", workspace_id="w", payload={"n": 1}),
-        Event(id="e2", kind="second", workspace_id="w", payload={"n": 2}),
+        Event(id="e1", kind="first", payload={"n": 1}),
+        Event(id="e2", kind="second", payload={"n": 2}),
     ]
     if durable:
         batched = SQLiteEventLedger(str(tmp_path / "batched.db"))
@@ -113,7 +116,7 @@ def test_batched_and_repeated_appends_yield_the_same_boundary(tmp_path, durable)
         for event in events:
             repeated.extend([event])
 
-        assert batched.capture_boundary() == repeated.capture_boundary()
+        assert batched.append_boundary() == repeated.append_boundary()
     finally:
         if durable:
             batched.close()
@@ -123,19 +126,19 @@ def test_batched_and_repeated_appends_yield_the_same_boundary(tmp_path, durable)
 def test_a_boundary_from_a_different_prefix_is_refused():
     left = EventLedger()
     right = EventLedger()
-    left.append("k", "w", {"value": "left"})
-    right.append("k", "w", {"value": "right"})
+    left.append("k", {"value": "left"})
+    right.append("k", {"value": "right"})
 
     with pytest.raises(InvalidLedgerBoundary):
-        right.list(through=left.capture_boundary())
+        right.list(through=left.append_boundary())
 
 
 def test_a_durable_boundary_survives_reopen(tmp_path):
     path = str(tmp_path / "ledger.db")
     ledger = SQLiteEventLedger(path)
-    first = ledger.append("k", "w", {"n": 1})
-    boundary = ledger.capture_boundary()
-    ledger.append("k", "w", {"n": 2})
+    first = ledger.append("k", {"n": 1})
+    boundary = ledger.append_boundary()
+    ledger.append("k", {"n": 2})
     ledger.close()
 
     reopened = SQLiteEventLedger(path)
@@ -148,8 +151,8 @@ def test_a_durable_boundary_survives_reopen(tmp_path):
 def test_an_existing_durable_sequence_is_derived_once_without_changing_rows(tmp_path):
     path = str(tmp_path / "ledger.db")
     ledger = SQLiteEventLedger(path)
-    events = [ledger.append("k", "w", {"n": n}) for n in range(3)]
-    before = ledger.capture_boundary()
+    events = [ledger.append("k", {"n": n}) for n in range(3)]
+    before = ledger.append_boundary()
     ledger.close()
 
     connection = sqlite3.connect(path)
@@ -159,7 +162,7 @@ def test_an_existing_durable_sequence_is_derived_once_without_changing_rows(tmp_
 
     reopened = SQLiteEventLedger(path)
     try:
-        assert reopened.capture_boundary() == before
+        assert reopened.append_boundary() == before
         assert [event.id for event in reopened.list(through=before)] == [
             event.id for event in events
         ]
@@ -171,8 +174,8 @@ def test_partial_durable_mechanics_are_refused(tmp_path):
     path = str(tmp_path / "ledger.db")
     ledger = SQLiteEventLedger(path)
     ledger.append_many([
-        Event(id="e1", kind="k", workspace_id="w"),
-        Event(id="e2", kind="k", workspace_id="w"),
+        Event(id="e1", kind="k"),
+        Event(id="e2", kind="k"),
     ])
     ledger.close()
 
@@ -193,14 +196,14 @@ def test_a_writer_without_prefix_maintenance_is_refused(tmp_path):
     connection = sqlite3.connect(path)
     with pytest.raises(sqlite3.OperationalError, match="seed_prefix_writer"):
         connection.execute(
-            "INSERT INTO events VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
-            ("foreign", "k", "w", "system", "2026-01-01T00:00:00+00:00",
-             "{}", None, None, None, "not-relevant"),
+            "INSERT INTO events VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+            ("foreign", "k", "2026-01-01T00:00:00+00:00", "{}",
+             None, None, None, "not-relevant"),
         )
     connection.close()
 
 
-def test_a_constructed_unknown_boundary_is_refused():
+def test_a_formed_unknown_boundary_is_refused():
     ledger = EventLedger()
     with pytest.raises(InvalidLedgerBoundary):
         ledger.list(through=EventLedgerBoundary("0" * 64))
@@ -210,9 +213,9 @@ def test_a_refused_payload_leaves_the_ledger_unchanged():
     """Whatever is refused, nothing is left half-appended.
 
     The refusal moved earlier than the serializer: `#2495` refuses a payload a
-    durable store could not return unchanged, so an unsupported value is now
+    durable store could not return preserved, so an unsupported value is now
     declined by name rather than as a `TypeError` out of `json.dumps`. What this
-    test is about is unchanged — the boundary and the history stay exactly as
+    test is about is preserved — the boundary and the history stay exactly as
     they were.
     """
 
@@ -223,12 +226,12 @@ def test_a_refused_payload_leaves_the_ledger_unchanged():
         {"set": {1, 2}},
     ):
         ledger = EventLedger()
-        before = ledger.capture_boundary()
+        before = ledger.append_boundary()
 
         with pytest.raises(ValueError):
-            ledger.append("k", "w", payload)
+            ledger.append("k", payload)
 
-        assert ledger.capture_boundary() == before
+        assert ledger.append_boundary() == before
         assert ledger.list() == []
 
 
@@ -236,37 +239,37 @@ def _identity_read_matches_occurrence_read(ledger):
     """An identity read returns exactly the identities the occurrence read does.
 
     Both ledgers are held to it, and at every boundary, because a caller that
-    compares reconstructed identities against carried ones must not be able to reach
-    a different bounded inputs by reading less.
+    compares read identities against carried ones must not be able to reach
+    a different bounded inputs by read less.
     """
 
     boundaries = [None]
     ledger.append_many([
-        Event(id="i1", kind="ingress", workspace_id="w", locality_id="s"),
-        Event(id="i2", kind="other", workspace_id="w", locality_id="s"),
-        Event(id="i3", kind="ingress", workspace_id="w", locality_id="other"),
+        Event(id="i1", kind="ingest", locality_id="s"),
+        Event(id="i2", kind="other", locality_id="s"),
+        Event(id="i3", kind="ingest", locality_id="other"),
     ])
-    boundaries.append(ledger.capture_boundary())
+    boundaries.append(ledger.append_boundary())
     ledger.append_many([
-        Event(id="i4", kind="ingress", workspace_id="w", locality_id="s"),
-        Event(id="i5", kind="ingress", workspace_id="other", locality_id="s"),
+        Event(id="i4", kind="ingest", locality_id="s"),
+        Event(id="i5", kind="ingest", locality_id="other"),
     ])
-    boundaries.append(ledger.capture_boundary())
+    boundaries.append(ledger.append_boundary())
 
     for boundary in boundaries:
         occurrences = [
             event.id
-            for event in ledger.iter_locality_kind("w", "s", "ingress", through=boundary)
+            for event in ledger.iter_locality_kind("s", "ingest", through=boundary)
         ]
         identities = list(
-            ledger.iter_locality_kind_ids("w", "s", "ingress", through=boundary)
+            ledger.iter_locality_kind_ids("s", "ingest", through=boundary)
         )
         assert identities == occurrences
 
-    assert list(ledger.iter_locality_kind_ids("w", "s", "ingress")) == ["i1", "i4"]
-    assert list(ledger.iter_locality_kind_ids("w", "s", "ingress",
+    assert list(ledger.iter_locality_kind_ids("s", "ingest")) == ["i1", "i4"]
+    assert list(ledger.iter_locality_kind_ids("s", "ingest",
                                              through=boundaries[1])) == ["i1"]
-    assert list(ledger.iter_locality_kind_ids("w", "s", "absent")) == []
+    assert list(ledger.iter_locality_kind_ids("s", "absent")) == []
 
 
 def test_an_in_memory_identity_read_matches_its_occurrence_read():
@@ -298,8 +301,8 @@ def test_the_two_ledgers_preserve_the_same_payload(tmp_path):
             "text": "the cat", "list": [1, 2], "nested": {"a": {"b": [1, {"c": None}]}},
             "numbers": [1, 1.5, True, False, None],
         }
-        in_memory = memory.append("k", "w", preservable)
-        stored = durable.append("k", "w", preservable)
+        in_memory = memory.append("k", preservable)
+        stored = durable.append("k", preservable)
         assert memory.get(in_memory.id).payload == preservable
         assert durable.get(stored.id).payload == preservable
 
@@ -313,9 +316,9 @@ def test_the_two_ledgers_preserve_the_same_payload(tmp_path):
             {"set": {1}},
         ):
             with pytest.raises(ValueError) as memory_refusal:
-                memory.append("k", "w", payload)
+                memory.append("k", payload)
             with pytest.raises(ValueError) as durable_refusal:
-                durable.append("k", "w", payload)
+                durable.append("k", payload)
             assert str(memory_refusal.value) == str(durable_refusal.value)
             # The path is reported, so a nested one is findable.
             assert "payload[" in str(memory_refusal.value)
@@ -329,7 +332,7 @@ def test_a_digest_requires_every_recorded_field():
     from seed_runtime.events import _content_digest, LedgerIntegrityError
 
     complete = {
-        "id": "e", "kind": "k", "workspace_id": "w", "actor": "system",
+        "id": "e", "kind": "k",
         "timestamp": "2026-01-01T00:00:00+00:00", "payload": "{}",
         "locality_id": None, "causation_id": None, "correlation_id": None,
     }
@@ -356,17 +359,17 @@ def test_a_payload_carrying_a_non_json_number_is_refused(tmp_path):
     try:
         for value in (float("nan"), float("inf"), float("-inf")):
             with pytest.raises(ValueError, match="not a JSON number"):
-                memory.append("k", "w", {"a": value})
+                memory.append("k", {"a": value})
             with pytest.raises(ValueError, match="not a JSON number"):
-                durable.append("k", "w", {"a": value})
+                durable.append("k", {"a": value})
             with pytest.raises(ValueError, match=r"payload\['a'\]\['b'\]\[0\]"):
-                memory.append("k", "w", {"a": {"b": [value]}})
+                memory.append("k", {"a": {"b": [value]}})
 
         # Ordinary numbers, including the awkward ones, still pass.
         finite = {"large": 1e308, "small": 5e-324, "negative zero": -0.0,
                   "int": 0, "negative": -5, "bool": True}
-        in_memory = memory.append("k", "w", finite)
-        stored = durable.append("k", "w", finite)
+        in_memory = memory.append("k", finite)
+        stored = durable.append("k", finite)
         assert memory.get(in_memory.id).payload == durable.get(stored.id).payload
     finally:
         durable.close()
@@ -407,15 +410,15 @@ def test_a_python_subclass_does_not_survive_the_store_and_is_refused(tmp_path):
             {Name("key"): 1},
         ):
             with pytest.raises(ValueError) as from_memory:
-                memory.append("k", "w", payload)
+                memory.append("k", payload)
             with pytest.raises(ValueError) as from_durable:
-                durable.append("k", "w", payload)
+                durable.append("k", payload)
             assert str(from_memory.value) == str(from_durable.value)
 
         # bool is an int subclass and must remain admissible.
         both = {"true": True, "false": False, "int": 1}
-        in_memory = memory.append("k", "w", both)
-        stored = durable.append("k", "w", both)
+        in_memory = memory.append("k", both)
+        stored = durable.append("k", both)
         assert memory.get(in_memory.id).payload == both
         assert durable.get(stored.id).payload == both
         assert type(durable.get(stored.id).payload["true"]) is bool

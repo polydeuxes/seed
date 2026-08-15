@@ -3,55 +3,54 @@ from tests.binary_input import binary_input
 from io import StringIO
 
 from seed_runtime.events import EventLedger
-from seed_runtime.operator_ingress import run_operator_ingress_attempt
-from seed_runtime.operator_ingress_representation import capture_stdin_material
+from seed_runtime.operator_ingest import run_operator_ingest
+from seed_runtime.operator_material_boundary import operator_boundary_material
 from seed_runtime.operator_console import run_persistent_operator_console
 from seed_runtime.operator_locality_standing import read_operator_locality_standing
 
 
-def _attempt(ledger, text, *, workspace="w", session="s", locality_standing=None):
-    return run_operator_ingress_attempt(
+def _attempt(ledger, text, *, locality="s", locality_standing=None):
+    return run_operator_ingest(
         ledger=ledger,
-        workspace_id=workspace,
-        locality_id=session,
-        captured_ingress=capture_stdin_material(binary_input(text)),
+        locality_id=locality,
+        boundary_material=operator_boundary_material(binary_input(text)),
         locality_standing=locality_standing,
     )
 
 
-def _standing(ledger, *, workspace="w", session="s"):
+def _standing(ledger, *, locality="s"):
     return read_operator_locality_standing(
-        ledger, workspace_id=workspace, locality_id=session
+        ledger, locality_id=locality
     )
 
 
-def test_events_from_different_sessions_cannot_influence_one_another():
+def test_events_from_different_localities_cannot_influence_one_another():
     ledger = EventLedger()
-    first = _attempt(ledger, "first session material\n", session="s1")
-    second = _attempt(ledger, "second session material\n", session="s2")
+    first = _attempt(ledger, "first locality material\n", locality="s1")
+    second = _attempt(ledger, "second locality material\n", locality="s2")
 
-    standing_one = _standing(ledger, session="s1")
-    standing_two = _standing(ledger, session="s2")
+    standing_one = _standing(ledger, locality="s1")
+    standing_two = _standing(ledger, locality="s2")
 
     assert standing_one["locality_id"] == "s1"
     assert standing_two["locality_id"] == "s2"
     one_subjects = {
         occurrence["subject_ref"]
-        for occurrence in standing_one["preserved_ingress_occurrences"]
+        for occurrence in standing_one["ingest_occurrences"]
     }
     two_subjects = {
         occurrence["subject_ref"]
-        for occurrence in standing_two["preserved_ingress_occurrences"]
+        for occurrence in standing_two["ingest_occurrences"]
     }
-    assert one_subjects == {first["current_standing"]["preserved_ingress"]["subject_ref"]}
-    assert two_subjects == {second["current_standing"]["preserved_ingress"]["subject_ref"]}
-    assert not set(standing_one["attempts"]) & set(standing_two["attempts"])
-    assert not {e for a in standing_one["attempts"].values() for e in a["event_ids"]} & {
-        e for a in standing_two["attempts"].values() for e in a["event_ids"]
+    assert one_subjects == {first["current_standing"]["ingest_occurrence"]["subject_ref"]}
+    assert two_subjects == {second["current_standing"]["ingest_occurrence"]["subject_ref"]}
+    assert not set(standing_one["ingests"]) & set(standing_two["ingests"])
+    assert not {e for a in standing_one["ingests"].values() for e in a["event_ids"]} & {
+        e for a in standing_two["ingests"].values() for e in a["event_ids"]
     }
 
 
-def test_next_attempt_reads_standing_from_earlier_same_session_events():
+def test_next_attempt_reads_standing_from_earlier_same_locality_events():
     ledger = EventLedger()
     first = _attempt(ledger, "earlier material\n")
 
@@ -59,23 +58,23 @@ def test_next_attempt_reads_standing_from_earlier_same_session_events():
     second = _attempt(ledger, "later material\n", locality_standing=standing)
 
     assert second["locality_standing"] is standing
-    inherited = second["locality_standing"]["preserved_ingress_occurrences"]
+    inherited = second["locality_standing"]["ingest_occurrences"]
     assert [occurrence["subject_ref"] for occurrence in inherited] == [
-        first["current_standing"]["preserved_ingress"]["subject_ref"]
+        first["current_standing"]["ingest_occurrence"]["subject_ref"]
     ]
-    assert first["current_standing"]["preserved_ingress"]["subject_ref"] == (
+    assert first["current_standing"]["ingest_occurrence"]["subject_ref"] == (
         inherited[0]["subject_ref"]
     )
 
 
 def test_representation_is_deterministic_regardless_of_unrelated_ledger_events():
     ledger = EventLedger()
-    _attempt(ledger, "session material\n")
+    _attempt(ledger, "locality material\n")
     before = _standing(ledger)
 
-    ledger.append("unrelated.kind", "w", {"noise": True}, locality_id="s")
-    ledger.append("unrelated.kind", "other-workspace", {}, locality_id="s")
-    _attempt(ledger, "other session material\n", session="elsewhere")
+    ledger.append("unrelated.kind", {"noise": True}, locality_id="s")
+    ledger.append("unrelated.kind", {}, locality_id="elsewhere")
+    _attempt(ledger, "other locality material\n", locality="elsewhere")
     after = _standing(ledger)
 
     assert after == before
@@ -88,18 +87,20 @@ def test_unknown_conflict_and_absence_remain_distinct():
 
     standing = _standing(ledger)
 
-    # Unknowns are only what session events positively carry.
-    assert standing["unknowns"] == ["what these bytes represent remains Unknown"]
-    # No session event records a conflict or a relation standing; both stay
+    # Unknowns are only what locality events positively carry.
+    assert standing["unknowns"] == [
+        "the asserted source relation remains Unknown",
+        "what this material represents remains Unknown",
+    ]
+    # No locality event records a conflict or a relation standing; both stay
     # empty rather than being promoted to Unknown or to a negative Assertion.
     assert standing["conflicts"] == []
     assert standing["recorded_relation_standings"] == []
-    assert "relation" not in " ".join(standing["unknowns"])
     next_attempt = _attempt(ledger, "next\n", locality_standing=standing)
     assert next_attempt["locality_standing"]["recorded_relation_standings"] == []
 
 
-def test_one_attempt_behavior_unchanged_without_earlier_session_history():
+def test_one_attempt_behavior_unchanged_without_earlier_locality_history():
     baseline_ledger = EventLedger()
     baseline = _attempt(baseline_ledger, "solo material\n")
     assert "locality_standing" not in baseline
@@ -111,14 +112,13 @@ def test_one_attempt_behavior_unchanged_without_earlier_session_history():
     console_ledger = EventLedger()
     run_persistent_operator_console(
         ledger=console_ledger,
-        workspace_id="w",
         locality_id="s",
         input_stream=input_stream,
         output_stream=output_stream,
     )
-    rendered = output_stream.getvalue()
-    assert "Bounded Representation" in rendered
-    assert "Session Standing" not in rendered
+    emitted = output_stream.getvalue()
+    assert "Bounded Representation" in emitted
+    assert "Locality Standing" not in emitted
 
 
 def test_console_supplies_prior_locality_standing_to_later_interactions():
@@ -128,21 +128,20 @@ def test_console_supplies_prior_locality_standing_to_later_interactions():
 
     run_persistent_operator_console(
         ledger=ledger,
-        workspace_id="w",
         locality_id="s",
         input_stream=input_stream,
         output_stream=output_stream,
     )
 
-    rendered = output_stream.getvalue()
-    assert rendered.count("Bounded Representation") == 3
+    emitted = output_stream.getvalue()
+    assert emitted.count("Bounded Representation") == 3
     standing = _standing(ledger)
     assert len(standing["representations"]) == 3
     first_id, second_id, third_id = list(standing["representations"])
     assert list(standing["representations"])[-1] == third_id
     # The later Representation's recorded representation Act input Standing taken
     # through a strictly later occurrence than the first one's.
-    positions = {event.id: index for index, event in enumerate(ledger.list("w"))}
+    positions = {event.id: index for index, event in enumerate(ledger.list())}
     first_representation = standing["representations"][first_id]
     assert first_representation["locality_standing_as_of_event_id"] is None
     later_boundary = positions[
@@ -157,8 +156,8 @@ def test_console_supplies_prior_locality_standing_to_later_interactions():
 def test_representation_does_not_mutate_ledger_or_synthesize_events():
     ledger = EventLedger()
     _attempt(ledger, "material\n")
-    events_before = deepcopy(ledger.list("w"))
+    events_before = deepcopy(ledger.list())
 
     _standing(ledger)
 
-    assert ledger.list("w") == events_before
+    assert ledger.list() == events_before

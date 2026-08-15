@@ -1,6 +1,6 @@
 """One measurement standing on another, across every witness on this machine.
 
-Class recovery reads bytes. Class adjacency reads classes. The second is
+Class read reads bytes. Class adjacency reads classes. The second is
 handed the first's finding rather than recomputing it, so it measures over
 whatever classes it is given and reports nothing without them.
 """
@@ -24,30 +24,30 @@ from decoder_witness_harness import (  # noqa: E402
 def test_the_second_measurement_takes_the_first_as_input_rather_than_repeating_it():
     """Handed other classes, it reports adjacency among those."""
 
-    recovered = classes("utf-8", 4)
+    read = classes("utf-8", 4)
     supplied = {("everything",): list(range(256))}
 
-    over_recovered = class_adjacency("utf-8", recovered)
+    over_read = class_adjacency("utf-8", read)
     over_supplied = class_adjacency("utf-8", supplied)
 
-    assert len(over_recovered) == len(recovered) ** 2
+    assert len(over_read) == len(read) ** 2
     assert len(over_supplied) == 1
     assert class_adjacency("utf-8", {}) == {}
 
 
-def test_adjacency_names_a_pair_class_recovery_could_not():
+def test_adjacency_names_a_pair_class_read_could_not():
     """A class refused as a first byte still admits followers.
 
-    Class recovery reports 0x80-0xff as refused, which is about first bytes.
+    Class read reports 0x80-0xff as refused, which is about first bytes.
     Adjacency finds that class's members do not agree about following a
-    length-two first byte, which the earlier measurement had no way to state.
+    two-byte first byte, which the earlier measurement had no way to state.
     """
 
-    recovered = classes("utf-8", 4)
-    adjacency = class_adjacency("utf-8", recovered)
+    read = classes("utf-8", 4)
+    adjacency = class_adjacency("utf-8", read)
 
-    refused = next(key for key in recovered if key[0] is None)
-    pair_leader = next(key for key in recovered if key[0] == 2)
+    refused = next(key for key in read if key[0] is None)
+    pair_leader = next(key for key in read if key[0] == 2)
 
     assert adjacency[(pair_leader, refused)] == MIXED
     assert adjacency[(refused, refused)] == NONE
@@ -58,9 +58,9 @@ def test_every_witness_on_this_machine_answers_both_ladders():
     assert len(names) > 90
 
     for name in names[:12]:
-        recovered = classes(name, 4)
-        assert sum(len(members) for members in recovered.values()) == 256
-        assert len(class_adjacency(name, recovered)) == len(recovered) ** 2
+        read = classes(name, 4)
+        assert sum(len(members) for members in read.values()) == 256
+        assert len(class_adjacency(name, read)) == len(read) ** 2
 
 
 def test_witnesses_disagree_about_where_the_boundaries_are():
@@ -74,7 +74,7 @@ def test_witnesses_disagree_about_where_the_boundaries_are():
 
 
 def test_a_witness_that_accepts_every_byte_alone_has_one_class():
-    recovered = classes("latin_1", 4)
+    read = classes("latin_1", 4)
 
-    assert len(recovered) == 1
-    assert next(iter(recovered)) == (1, None)
+    assert len(read) == 1
+    assert next(iter(read)) == (1, None)

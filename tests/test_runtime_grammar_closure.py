@@ -1,6 +1,6 @@
 """Reverse Fidelity sirens from live implementation back to machine grammar.
 
-These tests are deliberately closed over what the runtime declares.  They do
+These tests are deliberately bounded by what the runtime declares. They do
 not ask a hand-maintained list which implementation roads should be inspected.
 Red means the implementation contains constitutional material the machine
 grammar and its deterministic witnesses do not yet account for.
@@ -15,12 +15,13 @@ import inspect
 import json
 import os
 from pathlib import Path
+import re
 
 from seed_runtime.events import EventLedger
 from seed_runtime.operator_checkpoint import open_operator_checkpoint
 from seed_runtime.operator_command import AddressedOperatorCommand
 from seed_runtime.operator_console import run_persistent_operator_console
-from tests.test_book_lexical_contamination import COMPILED, scan_active_line
+from tests.test_book_lexical_admission import admitted_lexicon, scan_active_line
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -64,6 +65,95 @@ def _literal_dict_keys(tree: ast.Module):
                 yield key.lineno, key.value
 
 
+def _scope_nodes(scope):
+    pending = list(scope.body)
+    while pending:
+        node = pending.pop()
+        yield node
+        if isinstance(
+            node, (ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef, ast.Lambda)
+        ):
+            continue
+        pending.extend(ast.iter_child_nodes(node))
+
+
+def _scopes(tree: ast.Module):
+    yield tree
+    for node in ast.walk(tree):
+        if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef)):
+            yield node
+
+
+def _named_dicts(scope):
+    found = {}
+    for node in _scope_nodes(scope):
+        if not isinstance(node, (ast.Assign, ast.AnnAssign)):
+            continue
+        value = node.value
+        if not isinstance(value, ast.Dict):
+            continue
+        names = node.targets if isinstance(node, ast.Assign) else [node.target]
+        for name in names:
+            if isinstance(name, ast.Name):
+                found.setdefault(name.id, []).append((node.lineno, value))
+    return found
+
+
+def _named_dict_additions(scope):
+    found = {}
+    for node in _scope_nodes(scope):
+        if not isinstance(node, ast.Assign):
+            continue
+        targets = node.targets
+        for target in targets:
+            if not (
+                isinstance(target, ast.Subscript)
+                and isinstance(target.value, ast.Name)
+                and isinstance(target.slice, ast.Constant)
+                and isinstance(target.slice.value, str)
+            ):
+                continue
+            found.setdefault(target.value.id, []).append(
+                (node.lineno, target.slice.value)
+            )
+    return found
+
+
+def _resolved_payload_dict(value, *, line, named):
+    if isinstance(value, ast.Dict):
+        return value
+    if not isinstance(value, ast.Name):
+        return None
+    candidates = [item for item in named.get(value.id, ()) if item[0] < line]
+    return max(candidates, default=(None, None))[1]
+
+
+def _resolved_dict_keys(
+    value: ast.Dict, *, line: int, named, additions, source_name=None
+) -> set[str]:
+    found = set()
+    if source_name is not None:
+        found.update(
+            key for added_line, key in additions.get(source_name, ()) if added_line < line
+        )
+    for key, nested in zip(value.keys, value.values):
+        if isinstance(key, ast.Constant) and isinstance(key.value, str):
+            found.add(key.value)
+        elif key is None:
+            spread = _resolved_payload_dict(nested, line=line, named=named)
+            if spread is not None:
+                found.update(
+                    _resolved_dict_keys(
+                        spread,
+                        line=line,
+                        named=named,
+                        additions=additions,
+                        source_name=nested.id if isinstance(nested, ast.Name) else None,
+                    )
+                )
+    return found
+
+
 def test_every_runtime_event_kind_declares_its_machine_grammar_responsibility():
     """A new event species cannot gain constitutional force from its name."""
 
@@ -78,10 +168,11 @@ def test_every_runtime_event_kind_declares_its_machine_grammar_responsibility():
     )
 
 
-def test_runtime_record_vocabulary_passes_the_constitutional_exclusion_gate():
-    """Event species and record coordinates cannot hide retired vocabulary."""
+def test_runtime_record_vocabulary_has_constitutional_admission():
+    """Event species and record coordinates require lexical admission."""
 
     violations = []
+    admitted = admitted_lexicon()
     for path, tree in _runtime_trees():
         material = [
             (node.lineno, node.value.value)
@@ -97,40 +188,98 @@ def test_runtime_record_vocabulary_passes_the_constitutional_exclusion_gate():
         material.extend(_literal_dict_keys(tree))
         for line, value in material:
             scanned = scan_active_line(value)
-            for pattern, label in COMPILED:
-                if pattern.search(scanned):
-                    violations.append((path.name, line, label, value))
+            for word in re.findall(r"[A-Za-z]+", scanned.lower()):
+                if word not in admitted:
+                    violations.append((path.name, line, word, value))
 
     assert violations == [], "\n" + "\n".join(
-        f"{path}:{line} [{label}] {value}"
-        for path, line, label, value in violations
+        f"{path}:{line} [{word}] {value}"
+        for path, line, word, value in violations
     )
 
 
 def _event_payloads():
     for path, tree in _runtime_trees():
         constants = _module_strings(tree)
-        for call in (node for node in ast.walk(tree) if isinstance(node, ast.Call)):
-            kind = None
-            payload = None
-            if isinstance(call.func, ast.Attribute) and call.func.attr == "append":
-                if len(call.args) >= 3:
-                    kind, payload = call.args[0], call.args[2]
-            elif isinstance(call.func, ast.Name) and call.func.id == "Event":
-                named = {item.arg: item.value for item in call.keywords}
-                kind, payload = named.get("kind"), named.get("payload")
-            if not isinstance(payload, ast.Dict):
-                continue
-            if isinstance(kind, ast.Name):
-                value = constants.get(kind.id)
-                name = kind.id
-            elif isinstance(kind, ast.Constant) and isinstance(kind.value, str):
-                value = kind.value
-                name = "literal"
-            else:
-                continue
-            if value is not None:
-                yield path, call.lineno, name, value, payload
+        for scope in _scopes(tree):
+            named_dicts = _named_dicts(scope)
+            additions = _named_dict_additions(scope)
+            for call in (
+                node for node in _scope_nodes(scope) if isinstance(node, ast.Call)
+            ):
+                kind = None
+                payload = None
+                if isinstance(call.func, ast.Attribute) and call.func.attr == "append":
+                    if len(call.args) >= 2:
+                        kind, payload = call.args[0], call.args[1]
+                elif isinstance(call.func, ast.Name) and call.func.id == "Event":
+                    keywords = {item.arg: item.value for item in call.keywords}
+                    kind, payload = keywords.get("kind"), keywords.get("payload")
+                payload_expression = payload
+                payload = _resolved_payload_dict(
+                    payload_expression, line=call.lineno, named=named_dicts
+                )
+                if payload is None:
+                    continue
+                if isinstance(kind, ast.Name):
+                    value = constants.get(kind.id)
+                    name = kind.id
+                elif isinstance(kind, ast.Constant) and isinstance(kind.value, str):
+                    value = kind.value
+                    name = "literal"
+                else:
+                    continue
+                if value is not None:
+                    yield (
+                        path,
+                        call.lineno,
+                        name,
+                        value,
+                        _resolved_dict_keys(
+                            payload,
+                            line=call.lineno,
+                            named=named_dicts,
+                            additions=additions,
+                            source_name=(
+                                payload_expression.id
+                                if isinstance(payload_expression, ast.Name)
+                                else None
+                            ),
+                        ),
+                    )
+
+
+def _unread_event_payloads():
+    for path, tree in _runtime_trees():
+        constants = _module_strings(tree)
+        for scope in _scopes(tree):
+            named_dicts = _named_dicts(scope)
+            for call in (
+                node for node in _scope_nodes(scope) if isinstance(node, ast.Call)
+            ):
+                if not (
+                    isinstance(call.func, ast.Attribute)
+                    and call.func.attr == "append"
+                    and len(call.args) >= 2
+                ):
+                    continue
+                kind, payload = call.args[0], call.args[1]
+                if isinstance(kind, ast.Name):
+                    value = constants.get(kind.id)
+                elif isinstance(kind, ast.Constant) and isinstance(kind.value, str):
+                    value = kind.value
+                else:
+                    value = None
+                if value is None:
+                    continue
+                if _resolved_payload_dict(
+                    payload, line=call.lineno, named=named_dicts
+                ) is None:
+                    yield path.name, call.lineno, value
+
+
+def test_every_declared_event_append_exposes_its_payload_to_the_sirens():
+    assert list(_unread_event_payloads()) == []
 
 
 def test_every_edge_shaped_runtime_record_is_an_admitted_structural_edge():
@@ -150,12 +299,7 @@ def test_every_edge_shaped_runtime_record_is_an_admitted_structural_edge():
                 admitted.add(value)
 
     edge_shaped = set()
-    for _path, _line, name, value, payload in _event_payloads():
-        keys = {
-            key.value
-            for key in payload.keys
-            if isinstance(key, ast.Constant) and isinstance(key.value, str)
-        }
+    for _path, _line, name, value, keys in _event_payloads():
         if name.endswith("RELATED_KIND") or {"first_subject", "second_subject"} <= keys:
             edge_shaped.add(value)
 
@@ -169,30 +313,150 @@ def test_every_edge_shaped_runtime_record_is_an_admitted_structural_edge():
     )
 
 
-def test_no_bare_standing_value_bypasses_standing_physiology():
-    """A status string cannot receive the constitutional Standing coordinate."""
+def test_every_recorded_yield_result_names_its_occurrence_and_exact_evidence():
+    required = {
+        "responsible_act_evidence_id",
+        "yield_evidence_id",
+    }
+    incomplete = []
+    for path, line, _name, value, keys in _event_payloads():
+        if "yield_evidence_id" not in keys:
+            continue
+        occurrence_identities = {
+            key
+            for key in keys
+            if key == "act_occurrence_id" or key.endswith("_act_occurrence_id")
+        }
+        missing = sorted(required - keys)
+        if not occurrence_identities:
+            missing.append("exact Act occurrence identity")
+        if missing:
+            incomplete.append((path.name, line, value, missing))
 
+    assert incomplete == [], "\n" + "\n".join(
+        f"{path}:{line} {kind} lacks {missing}"
+        for path, line, kind, missing in incomplete
+    )
+
+
+def test_every_act_evidence_occurrence_carries_the_exact_act_physiology():
     required = {
         "responsibility",
+        "responsible_boundary",
         "authority",
         "evidence_scope",
-        "scope_locality",
-        "occurrence_preservation",
     }
-    bare = []
-    for path, tree in _runtime_trees():
-        for node in (item for item in ast.walk(tree) if isinstance(item, ast.Dict)):
-            keys = {
-                key.value
-                for key in node.keys
-                if isinstance(key, ast.Constant) and isinstance(key.value, str)
-            }
-            if "standing" in keys and not required <= keys:
-                bare.append((path.name, node.lineno, sorted(keys)))
+    incomplete = []
+    for path, line, name, value, keys in _event_payloads():
+        if not (name.endswith("ACT_EVIDENCE_KIND") or value.endswith("act_evidenced")):
+            continue
+        act_identities = {
+            key for key in keys if key == "downstream_act_id" or key.endswith("_act_id")
+        }
+        occurrence_identities = {
+            key
+            for key in keys
+            if key == "act_occurrence_id" or key.endswith("_act_occurrence_id")
+        }
+        missing = sorted(required - keys)
+        if not act_identities:
+            missing.append("exact Act identity")
+        if not occurrence_identities:
+            missing.append("exact Act occurrence identity")
+        if missing:
+            incomplete.append((path.name, line, value, missing))
 
-    assert bare == [], "\n" + "\n".join(
-        f"{path}:{line} bare Standing beside {keys}"
-        for path, line, keys in bare
+    assert incomplete == [], "\n" + "\n".join(
+        f"{path}:{line} {kind} lacks {missing}"
+        for path, line, kind, missing in incomplete
+    )
+
+
+def test_recorded_representation_declares_each_exact_evidence_pointer():
+    required = {
+        "representation_ref",
+        "representation_act_id",
+        "act_occurrence_id",
+        "responsible_act_evidence_id",
+        "locality_evidence_id",
+        "yield_evidence_id",
+        "emission_text",
+    }
+    records = [
+        (path.name, line, keys)
+        for path, line, _name, value, keys in _event_payloads()
+        if value == "operator.representation.recorded"
+    ]
+    assert records
+    assert [
+        (path, line, sorted(required - keys))
+        for path, line, keys in records
+        if required - keys
+    ] == []
+
+
+def _standing_values(node) -> list[str]:
+    found = []
+    if isinstance(node, ast.Dict):
+        for key, value in zip(node.keys, node.values):
+            if (
+                isinstance(key, ast.Constant)
+                and key.value == "standing"
+                and isinstance(value, ast.Constant)
+                and isinstance(value.value, str)
+            ):
+                found.append(value.value)
+            found.extend(_standing_values(value))
+    elif isinstance(node, ast.Call):
+        for keyword in node.keywords:
+            if (
+                keyword.arg == "standing"
+                and isinstance(keyword.value, ast.Constant)
+                and isinstance(keyword.value.value, str)
+            ):
+                found.append(keyword.value.value)
+            found.extend(_standing_values(keyword.value))
+    elif isinstance(node, (ast.List, ast.Tuple)):
+        for item in node.elts:
+            found.extend(_standing_values(item))
+    return found
+
+
+def test_every_event_standing_claim_has_a_declared_grammar_responsibility():
+    accounted = set(
+        json.loads(GRAMMAR.read_text(encoding="utf-8"))["implementation_witness"]
+        .get("event_kinds", {})
+    )
+    unaccounted = []
+    for path, tree in _runtime_trees():
+        constants = _module_strings(tree)
+        for scope in _scopes(tree):
+            named_dicts = _named_dicts(scope)
+            for call in (
+                node for node in _scope_nodes(scope) if isinstance(node, ast.Call)
+            ):
+                if not (
+                    isinstance(call.func, ast.Attribute)
+                    and call.func.attr == "append"
+                    and len(call.args) >= 2
+                ):
+                    continue
+                kind, payload = call.args[0], call.args[1]
+                value = constants.get(kind.id) if isinstance(kind, ast.Name) else None
+                if isinstance(kind, ast.Constant) and isinstance(kind.value, str):
+                    value = kind.value
+                payload = _resolved_payload_dict(
+                    payload, line=call.lineno, named=named_dicts
+                )
+                if value is None or payload is None:
+                    continue
+                standings = _standing_values(payload)
+                if standings and value not in accounted:
+                    unaccounted.append((path.name, call.lineno, value, standings))
+
+    assert unaccounted == [], "\n" + "\n".join(
+        f"{path}:{line} {kind} carries Standing {standings} without grammar responsibility"
+        for path, line, kind, standings in unaccounted
     )
 
 
@@ -201,7 +465,6 @@ def test_command_implementation_receives_no_constitutional_write_capability():
 
     names = {field.name for field in fields(AddressedOperatorCommand)}
     assert "ledger" not in names
-    assert "workspace_id" not in names
     assert "locality_id" not in names
 
 
@@ -222,7 +485,6 @@ def test_unestablished_material_authority_does_not_cross_the_filesystem_boundary
     monkeypatch.setattr(os, "lstat", record_crossing)
     run_persistent_operator_console(
         ledger=EventLedger(),
-        workspace_id="w",
         locality_id="l",
         input_stream=BytesIO(b"/material " + os.fsencode(material) + b"\n"),
         output_stream=StringIO(),

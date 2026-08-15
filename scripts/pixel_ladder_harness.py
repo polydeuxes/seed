@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
-"""Render pixel material where one measurable coordinate changes at a time.
+"""Form pixel material where one measurable coordinate differs at a time.
 
-The harness knows how it constructed each specimen. Seed receives only the
+The harness knows how it supplied each specimen. Seed receives only the
 material. Nothing here names what a difference between two specimens means.
 
 **Raw channel bytes, no container and no encoder.** PNG is lossless, which
@@ -17,15 +17,15 @@ here is exactly its channel bytes.
 
 Ladder P is the floor: three bytes, differing in all three. Ladder C moves one
 channel and holds the other two, once per channel, so each channel is a
-coordinate recoverable on its own before any two are crossed.
+coordinate addressable on its own before any two are crossed.
 
-Extent is not varied here. One pixel is the whole specimen, so a difference
-between two of them is a value and cannot be an extent.
+The pixel dimensions do not vary here. One pixel is the whole specimen, so a
+difference between two specimens is a value, not a pixel dimension.
 
-Three independent coordinates are not the space they span. Ladder C renders
+Three independent coordinates are not the space they span. Ladder C represents
 256 specimens per channel, 768 in all; the crossed space is 256 x 256 x 256,
-16,777,216 combinations. Recovering each coordinate alone is what makes the
-crossed space addressable without rendering it.
+16,777,216 combinations. Read each coordinate alone is what makes the
+crossed space addressable without enumerating every specimen.
 
 **A specimen does not carry its own framing.** Three bytes are three bytes.
 That the first is one channel, that the three together are one pixel, and that
@@ -74,7 +74,7 @@ def main() -> int:
         "--step",
         type=int,
         default=85,
-        help="channel-ladder stride; 1 renders every value of every channel",
+        help="channel-ladder stride; 1 represents every value of every channel",
     )
     args = parser.parse_args()
 

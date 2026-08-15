@@ -21,8 +21,8 @@ from seed_runtime.event import Event, _decode_screened_event_payload
 # What a ledger can say about a stored occurrence's integrity.
 #
 # `06.Standing:16` names append-only records permissively, among projected
-# material and context representations. Nothing in active law requires append-only, and
-# nothing here asserts history cannot change: a `DROP TRIGGER` followed by a
+# material representations. Nothing in active law requires append-only, and
+# nothing here asserts history cannot revision: a `DROP TRIGGER` followed by a
 # rewrite of both row and digest defeats this. The established Assertion is narrower
 # — mutation is refused by default, and undetected corruption becomes
 # detectable.
@@ -31,7 +31,7 @@ UNVERIFIABLE = "unverifiable"
 CORRUPTED = "corrupted"
 
 
-_PREFIX_DOMAIN = b"seed.event-ledger.append-prefix.v1\0"
+_PREFIX_DOMAIN = b"seed.event-ledger.append-prefix\0"
 _EMPTY_PREFIX_COMMITMENT = hashlib.sha256(_PREFIX_DOMAIN + b"empty").hexdigest()
 
 
@@ -39,7 +39,7 @@ _EMPTY_PREFIX_COMMITMENT = hashlib.sha256(_PREFIX_DOMAIN + b"empty").hexdigest()
 class EventLedgerBoundary:
     """An opaque commitment to one exact append prefix.
 
-    Callers may retain and return the value, but only an EventLedger interprets
+    Callers may retain and return the value, but only an EventLedger reads
     it. Equal ordered prefixes yield equal boundaries; a boundary does not
     expose an append position.
     """
@@ -54,21 +54,21 @@ class InvalidLedgerBoundary(ValueError):
 class LedgerIntegrityError(Exception):
     """A durable store cannot supply the integrity its occurrences require."""
 
-# Every persisted field, because an occurrence moved between sessions is as
-# altered as one whose payload changed, and `locality_id` is now the boundary
-# keeping bounded exchanges apart.
-_DIGESTED_FIELDS = (
-    "id", "kind", "workspace_id", "actor", "timestamp", "payload",
-    "locality_id", "causation_id", "correlation_id",
+# Every persisted field, because an occurrence moved between Localities is as
+# altered as one whose payload different, and `locality_id` is now the boundary
+# keeping bounded localities apart.
+_OCCURRENCE_FIELDS = (
+    "id", "kind", "timestamp", "payload", "locality_id", "causation_id",
+    "correlation_id",
 )
 
 
 # Payload storage, below the integrity boundary.
 #
 # The digest is computed over the canonical JSON string, never over the stored
-# bytes, so how a payload was written down cannot change what it commits to.
+# bytes, so how a payload was written down cannot revision what it commits to.
 # `#2492` was the same lesson at the other end: two base64 encodings of one
-# byte string had to reconstruct one account.
+# byte string had to read one account.
 #
 # Level 1 rather than 6 or 9. `#2494` measured 4.9x against 5.3x at less than
 # half the compression cost, and decompression is flat across levels at roughly
@@ -101,7 +101,7 @@ def _stored_payload(serialized: str) -> str | bytes:
     """The payload as stored: compressed when that is smaller, else as written.
 
     A payload that does not shrink is stored as text, because compressing it
-    would cost bytes and reads for nothing. The two forms are told apart on read
+    would cost bytes and reads for nothing. The two represents are told apart on read
     by their type, which SQLite preserves.
     """
 
@@ -117,9 +117,9 @@ class InvalidStoredPayload(LedgerIntegrityError):
 def _serialized_payload(stored: str | bytes) -> str:
     """The canonical JSON string a stored payload carries.
 
-    A store written before compression holds text, and reads unchanged.
+    A store written before compression holds text, and reads preserved.
 
-    **Failure to reconstruct the stored representation is corruption, not a
+    **Failure to read the stored representation is corruption, not a
     compressor error.** Damaged compressed bytes raise `zlib.error`, and bytes
     that decompress but are not UTF-8 raise `UnicodeDecodeError`; both mean the
     stored row no longer carries what it was digested from, which is the
@@ -132,7 +132,7 @@ def _serialized_payload(stored: str | bytes) -> str:
             return zlib.decompress(stored).decode("utf-8")
         except (zlib.error, UnicodeDecodeError) as exc:
             raise InvalidStoredPayload(
-                f"a stored payload could not be reconstructed: {exc}"
+                f"a stored payload could not be read: {exc}"
             ) from exc
     if not isinstance(stored, str):
         raise InvalidStoredPayload(
@@ -142,7 +142,7 @@ def _serialized_payload(stored: str | bytes) -> str:
 
 
 def _digest_of_stored_row(row: "sqlite3.Row") -> str | None:
-    """The digest of a stored row, or nothing when it cannot be reconstructed.
+    """The digest of a stored row, or nothing when it cannot be read.
 
     A row whose payload will not decompress cannot reproduce any digest, and
     that is exactly what `integrity_of` reports rather than raising through its
@@ -173,18 +173,18 @@ def _content_digest(row: dict) -> str:
 
     Every digested field must be present. `row.get` returned `None` for an
     absent field and for a null one alike, so a row missing `locality_id`
-    digested identically to a row whose session is null — two different rows
+    digested identically to a row whose Locality is null — two different rows
     committing to one digest. Unreachable through SQLite, where every column
     exists, and refused rather than left to depend on that.
     """
 
-    missing = [field for field in _DIGESTED_FIELDS if field not in row]
+    missing = [field for field in _OCCURRENCE_FIELDS if field not in row]
     if missing:
         raise LedgerIntegrityError(
             "a digest requires every recorded field; absent: " + ", ".join(missing)
         )
     return hashlib.sha256(
-        json.dumps({f: row[f] for f in _DIGESTED_FIELDS},
+        json.dumps({f: row[f] for f in _OCCURRENCE_FIELDS},
                    sort_keys=True, separators=(",", ":")).encode()
     ).hexdigest()
 
@@ -194,8 +194,6 @@ def _canonical_occurrence_bytes(event: Event) -> bytes:
     represented = {
         "id": event.id,
         "kind": event.kind,
-        "workspace_id": event.workspace_id,
-        "actor": event.actor,
         "timestamp": event.timestamp.isoformat(),
         "payload": event.payload,
         "locality_id": event.locality_id,
@@ -232,7 +230,7 @@ class EventLedger:
     def __init__(self) -> None:
         self._events: list[Event] = []
         self._by_id: dict[str, Event] = {}
-        self._by_workspace: dict[str, list[Event]] = defaultdict(list)
+        self._by_locality: dict[str | None, list[Event]] = defaultdict(list)
         self._by_id_position: dict[str, int] = {}
         self._latest_prefix_commitment = _EMPTY_PREFIX_COMMITMENT
         self._boundary_positions: dict[str, int] = {
@@ -242,10 +240,8 @@ class EventLedger:
     def append(
         self,
         kind: str,
-        workspace_id: str = "default",
         payload: dict[str, Any] | None = None,
         *,
-        actor: str = "system",
         locality_id: str | None = None,
         causation_id: str | None = None,
         correlation_id: str | None = None,
@@ -254,8 +250,6 @@ class EventLedger:
         event = Event(
             id=new_id("evt"),
             kind=kind,
-            workspace_id=workspace_id,
-            actor=actor,
             payload=payload or {},
             locality_id=locality_id,
             causation_id=causation_id,
@@ -270,7 +264,7 @@ class EventLedger:
     ) -> list[Event]:
         """Record pre-built events in order and return the stored events.
 
-        Event granularity remains unchanged: each supplied Event is stored as its
+        Event granularity remains preserved: each supplied Event is stored as its
         own ledger event. Implementations may batch the underlying persistence
         transaction for storage efficiency.
         """
@@ -284,7 +278,7 @@ class EventLedger:
         """Return an event by id, if it exists."""
         return self._by_id.get(event_id)
 
-    def capture_boundary(self) -> EventLedgerBoundary:
+    def append_boundary(self) -> EventLedgerBoundary:
         """Capture an opaque commitment to the current append prefix."""
         return EventLedgerBoundary(self._latest_prefix_commitment)
 
@@ -300,29 +294,19 @@ class EventLedger:
 
     def list(
         self,
-        workspace_id: str | None = None,
         *,
         through: EventLedgerBoundary | None = None,
     ) -> list[Event]:
-        """Return events in append order, optionally scoped to a workspace."""
+        """Return events in append order."""
         position = self._position_through(through)
-        if workspace_id is None:
-            return list(self._events[:position])
-        bounded = []
-        for event in self._by_workspace.get(workspace_id, []):
-            if self._by_id_position[event.id] > position:
-                break
-            bounded.append(event)
-        return bounded
+        return list(self._events[:position])
 
     def list_events(
         self,
-        workspace_id: str | None = None,
         *,
         through: EventLedgerBoundary | None = None,
     ) -> list[Event]:
-        """Backward-compatible alias for :meth:`list`."""
-        return self.list(workspace_id, through=through)
+        return self.list(through=through)
 
     def integrity_of(self, event_id: str) -> str:
         """What this ledger can say about a stored occurrence's integrity.
@@ -336,77 +320,68 @@ class EventLedger:
 
     def list_locality(
         self,
-        workspace_id: str,
         locality_id: str,
         *,
         through: EventLedgerBoundary | None = None,
     ) -> list[Event]:
-        """Return one session's events in append order.
-
-        A session representation reads a session. Reading the whole workspace and
-        discarding the rest costs the whole workspace, which for a durable
-        ledger grows without bound while the answer does not.
-        """
+        """Return one Locality's events in append order."""
+        position = self._position_through(through)
         return [
             event
-            for event in self.list(workspace_id, through=through)
-            if event.locality_id == locality_id
+            for event in self._by_locality.get(locality_id, ())
+            if self._by_id_position[event.id] <= position
         ]
 
     def has_locality(
         self,
-        workspace_id: str,
         locality_id: str,
         *,
         through: EventLedgerBoundary | None = None,
     ) -> bool:
-        """Whether at least one occurrence establishes this session boundary."""
+        """Whether at least one occurrence establishes this Locality boundary."""
         position = self._position_through(through)
-        for event in self._by_workspace.get(workspace_id, ()):
+        for event in self._by_locality.get(locality_id, ()):
             if self._by_id_position[event.id] > position:
                 break
-            if event.locality_id == locality_id:
-                return True
+            return True
         return False
 
     def iter_locality_kind(
         self,
-        workspace_id: str,
         locality_id: str,
         kind: str,
         *,
         through: EventLedgerBoundary | None = None,
     ) -> Iterator[Event]:
-        """Yield one kind from one session without collecting a result list."""
+        """Yield one kind from one Locality without collecting a result list."""
         position = self._position_through(through)
-        for event in self._by_workspace.get(workspace_id, ()):
+        for event in self._by_locality.get(locality_id, ()):
             if self._by_id_position[event.id] > position:
                 break
-            if event.locality_id == locality_id and event.kind == kind:
+            if event.kind == kind:
                 yield event
 
     def iter_locality_kind_ids(
         self,
-        workspace_id: str,
         locality_id: str,
         kind: str,
         *,
         through: EventLedgerBoundary | None = None,
     ) -> Iterator[str]:
-        """Yield the identities of one kind from one session, in append order.
+        """Yield the identities of one kind from one Locality, in append order.
 
         The same bounded rows in the same order as `iter_locality_kind`, returning
-        only their identities. It does not reconstruct or inspect occurrence
+        only their identities. It does not read or inspect occurrence
         payloads. A caller requiring occurrence content must use the occurrence
         read; `integrity_of` remains the separate integrity boundary.
         """
         for event in self.iter_locality_kind(
-            workspace_id, locality_id, kind, through=through
+            locality_id, kind, through=through
         ):
             yield event.id
 
     def extend(self, events: Iterable[Event]) -> None:
-        """Append externally constructed events while preserving order and IDs."""
+        """Append supplied events while preserving order and IDs."""
         self.append_many(events)
 
     def _store(self, event: Event) -> None:
@@ -419,7 +394,7 @@ class EventLedger:
         position = len(self._events) + 1
         self._events.append(event)
         self._by_id[event.id] = event
-        self._by_workspace[event.workspace_id].append(event)
+        self._by_locality[event.locality_id].append(event)
         self._latest_prefix_commitment = commitment
         self._boundary_positions[commitment] = position
         self._by_id_position[event.id] = position
@@ -447,16 +422,16 @@ class SQLiteEventLedger(EventLedger):
     # wrong with them before: no console had ever written durable history.
     # The prefixes `_observed_numbers` may reserve, as a set for membership.
     # Every entry is minted by current runtime code and may be carried by a
-    # durable occurrence. Retired vocabulary does not remain merely because an
-    # older ledger may contain a similarly shaped string.
+    # durable occurrence.
     _RESERVABLE_PREFIXES = frozenset({
         "operator_representation", "operator_representation_act",
         "operator_representation_act_occurrence", "operator_representation_emission_act",
-        "operator_representation_emission_occurrence", "operator_ingress_attempt",
-        "operator_material", "operator_command", "checkpoint_locality",
-        "session", "system_invocation", "system_invocation_occurrence",
+        "operator_representation_emission_occurrence",
+        "operator_representation_emission_locality_occurrence",
+        "material_ingest_act", "material_ingest_act_occurrence",
+        "material_ingest_result",
+        "operator_material", "operator_command", "checkpoint_locality", "locality",
         "system_material", "transient_material",
-        "operator_response_comparison", "operator_alternative_identification",
         "represented_alternative", "adjacent_byte_pair_measurement_act",
         "adjacent_byte_pair_measurement_occurrence", "byte_measurement_act",
         "byte_measurement_occurrence", "byte_pair_applicability_act",
@@ -474,8 +449,6 @@ class SQLiteEventLedger(EventLedger):
         "adjacent_pair_observation_measurement_occurrence",
         "adjacent_pair_observation_compare_act",
         "adjacent_pair_observation_compare_occurrence",
-        "external_expression_relation_act",
-        "external_expression_relation_act_occurrence",
         "assertion_compare_act",
         "assertion_compare_act_occurrence",
     })
@@ -496,8 +469,6 @@ class SQLiteEventLedger(EventLedger):
             CREATE TABLE IF NOT EXISTS events (
                 id TEXT PRIMARY KEY,
                 kind TEXT NOT NULL,
-                workspace_id TEXT NOT NULL,
-                actor TEXT NOT NULL,
                 timestamp TEXT NOT NULL,
                 payload TEXT NOT NULL,
                 locality_id TEXT,
@@ -529,10 +500,10 @@ class SQLiteEventLedger(EventLedger):
             CREATE INDEX IF NOT EXISTS idx_event_references_source_covering
             ON event_references (source_id, relation, ordinal, destination_id)
             """)
-        # Minted identifier counters, kept durably instead of reconstructed.
+        # Minted identifier counters, kept durably instead of read.
         #
-        # `#2414` measured the reconstruction: every payload of every event
-        # deserialized and walked on every open, to reconstruct the highest issued
+        # `#2414` measured the read: every payload of every event
+        # deserialized and walked on every open, to read the highest issued
         # number per prefix. That is a whole-history read for an answer of a few
         # integers, and it grows without bound — 36.9s at 100,000 events,
         # extrapolating to about 356s at a million.
@@ -554,6 +525,11 @@ class SQLiteEventLedger(EventLedger):
             row["name"]: row
             for row in self._connection.execute("PRAGMA table_info(events)")
         }
+        expected_columns = set(_OCCURRENCE_FIELDS) | {"content_hash"}
+        if set(columns) != expected_columns:
+            raise LedgerIntegrityError(
+                f"{database_path} does not carry the current occurrence fields"
+            )
         if "content_hash" not in columns:
             raise LedgerIntegrityError(
                 f"{database_path} has an events table without content_hash. "
@@ -577,23 +553,23 @@ class SQLiteEventLedger(EventLedger):
         self._connection.execute("""
             CREATE TRIGGER IF NOT EXISTS events_refuse_update
             BEFORE UPDATE ON events
-            BEGIN SELECT RAISE(ABORT, 'recorded occurrences do not change'); END
+            BEGIN SELECT RAISE(ABORT, 'recorded occurrences do not revision'); END
             """)
         self._connection.execute("""
             CREATE TRIGGER IF NOT EXISTS events_refuse_delete
             BEFORE DELETE ON events
             BEGIN SELECT RAISE(ABORT, 'recorded occurrences are not removed'); END
             """)
-        # The boundary sessions are actually selected by. Without it the
-        # session read returns one session after scanning every row, which is
+        # The boundary Localities are actually selected by. Without it the
+        # Locality read returns one Locality after scanning every row, which is
         # bounded in what it answers and not in what it reads.
         self._connection.execute("""
-            CREATE INDEX IF NOT EXISTS idx_events_workspace_session
-            ON events(workspace_id, locality_id)
+            CREATE INDEX IF NOT EXISTS idx_events_locality
+            ON events(locality_id)
             """)
         self._connection.execute("""
-            CREATE INDEX IF NOT EXISTS idx_events_workspace_session_kind
-            ON events(workspace_id, locality_id, kind)
+            CREATE INDEX IF NOT EXISTS idx_events_locality_kind
+            ON events(locality_id, kind)
             """)
         self._ensure_prefix_commitments()
         self._connection.commit()
@@ -608,10 +584,8 @@ class SQLiteEventLedger(EventLedger):
     def append(
         self,
         kind: str,
-        workspace_id: str = "default",
         payload: dict[str, Any] | None = None,
         *,
-        actor: str = "system",
         locality_id: str | None = None,
         causation_id: str | None = None,
         correlation_id: str | None = None,
@@ -619,8 +593,6 @@ class SQLiteEventLedger(EventLedger):
         event = Event(
             id=self._new_event_id(),
             kind=kind,
-            workspace_id=workspace_id,
-            actor=actor,
             payload=payload or {},
             locality_id=locality_id,
             causation_id=causation_id,
@@ -642,8 +614,8 @@ class SQLiteEventLedger(EventLedger):
         # `append` does that; this path did not. A failure between the two
         # commits left durable occurrences carrying identifiers whose counters
         # were stale on reopen, which is the collision `#2428` exists to
-        # prevent. `evt` is partly shielded because open reconstructs the maximum
-        # event id separately; the payload and session prefixes are not.
+        # prevent. `evt` is partly shielded because open reads the maximum
+        # event id separately; the payload and Locality prefixes are not.
         with self._connection:
             for event in stored_events:
                 event_rowid = self._insert_without_commit(event)
@@ -660,7 +632,7 @@ class SQLiteEventLedger(EventLedger):
         ).fetchone()
         return self._row_to_event(row) if row is not None else None
 
-    def capture_boundary(self) -> EventLedgerBoundary:
+    def append_boundary(self) -> EventLedgerBoundary:
         """Capture an opaque commitment to the current durable append prefix."""
         row = self._connection.execute(
             "SELECT commitment FROM event_prefix_commitments "
@@ -688,51 +660,36 @@ class SQLiteEventLedger(EventLedger):
 
     def list(
         self,
-        workspace_id: str | None = None,
         *,
         through: EventLedgerBoundary | None = None,
     ) -> list[Event]:
         rowid = self._rowid_through(through)
         boundary_sql = "" if rowid is None else " WHERE rowid <= ?"
         boundary_args: tuple[Any, ...] = () if rowid is None else (rowid,)
-        if workspace_id is None:
-            rows = self._connection.execute(
-                f"SELECT * FROM events{boundary_sql} ORDER BY rowid",
-                boundary_args,
-            ).fetchall()
-        else:
-            qualifier = "WHERE" if rowid is None else "AND"
-            rows = self._connection.execute(
-                f"SELECT * FROM events{boundary_sql} {qualifier} "
-                "workspace_id = ? ORDER BY rowid",
-                (*boundary_args, workspace_id),
-            ).fetchall()
+        rows = self._connection.execute(
+            f"SELECT * FROM events{boundary_sql} ORDER BY rowid",
+            boundary_args,
+        ).fetchall()
         return [self._row_to_event(row) for row in rows]
 
     def list_events(
         self,
-        workspace_id: str | None = None,
         *,
         through: EventLedgerBoundary | None = None,
     ) -> list[Event]:
-        return self.list(workspace_id, through=through)
+        return self.list(through=through)
 
     def list_locality(
         self,
-        workspace_id: str,
         locality_id: str,
         *,
         through: EventLedgerBoundary | None = None,
     ) -> list[Event]:
         rowid = self._rowid_through(through)
         boundary = "" if rowid is None else "AND rowid <= ? "
-        args: tuple[Any, ...] = (
-            (workspace_id, locality_id)
-            if rowid is None
-            else (workspace_id, locality_id, rowid)
-        )
+        args: tuple[Any, ...] = (locality_id,) if rowid is None else (locality_id, rowid)
         rows = self._connection.execute(
-            "SELECT * FROM events WHERE workspace_id = ? AND locality_id = ? "
+            "SELECT * FROM events WHERE locality_id = ? "
             + boundary
             + "ORDER BY rowid",
             args,
@@ -741,20 +698,15 @@ class SQLiteEventLedger(EventLedger):
 
     def has_locality(
         self,
-        workspace_id: str,
         locality_id: str,
         *,
         through: EventLedgerBoundary | None = None,
     ) -> bool:
         rowid = self._rowid_through(through)
         boundary = "" if rowid is None else "AND rowid <= ? "
-        args: tuple[Any, ...] = (
-            (workspace_id, locality_id)
-            if rowid is None
-            else (workspace_id, locality_id, rowid)
-        )
+        args: tuple[Any, ...] = (locality_id,) if rowid is None else (locality_id, rowid)
         row = self._connection.execute(
-            "SELECT 1 FROM events WHERE workspace_id = ? AND locality_id = ? "
+            "SELECT 1 FROM events WHERE locality_id = ? "
             + boundary
             + "LIMIT 1",
             args,
@@ -763,7 +715,6 @@ class SQLiteEventLedger(EventLedger):
 
     def iter_locality_kind(
         self,
-        workspace_id: str,
         locality_id: str,
         kind: str,
         *,
@@ -772,12 +723,10 @@ class SQLiteEventLedger(EventLedger):
         rowid = self._rowid_through(through)
         boundary = "" if rowid is None else "AND rowid <= ? "
         args: tuple[Any, ...] = (
-            (workspace_id, locality_id, kind)
-            if rowid is None
-            else (workspace_id, locality_id, kind, rowid)
+            (locality_id, kind) if rowid is None else (locality_id, kind, rowid)
         )
         rows = self._connection.execute(
-            "SELECT * FROM events WHERE workspace_id = ? AND locality_id = ? "
+            "SELECT * FROM events WHERE locality_id = ? "
             "AND kind = ? " + boundary + "ORDER BY rowid",
             args,
         )
@@ -786,7 +735,6 @@ class SQLiteEventLedger(EventLedger):
 
     def iter_locality_kind_ids(
         self,
-        workspace_id: str,
         locality_id: str,
         kind: str,
         *,
@@ -796,7 +744,7 @@ class SQLiteEventLedger(EventLedger):
 
         The same row selection, boundary and order, returning only identities.
 
-        **This does not reconstruct or inspect occurrence payloads**, and the
+        **This does not read or inspect occurrence payloads**, and the
         difference is nameable rather than merely cheaper: the occurrence read
         decodes each payload through `_decode_screened_event_payload`, which
         refuses a durable payload carrying a secret field name. An identity read
@@ -805,19 +753,17 @@ class SQLiteEventLedger(EventLedger):
         `integrity_of` remains the separate integrity boundary.
 
         The signature-count inputs run measured why this is worth its own
-        read: one 300-occurrence ingress read costs 7.09 ms as Events and
+        read: one 300-occurrence ingest read costs 7.09 ms as Events and
         0.25 ms as identities, because 902 bytes of JSON per occurrence are
         decoded and discarded by a caller that keeps only the identity.
         """
         rowid = self._rowid_through(through)
         boundary = "" if rowid is None else "AND rowid <= ? "
         args: tuple[Any, ...] = (
-            (workspace_id, locality_id, kind)
-            if rowid is None
-            else (workspace_id, locality_id, kind, rowid)
+            (locality_id, kind) if rowid is None else (locality_id, kind, rowid)
         )
         rows = self._connection.execute(
-            "SELECT id FROM events WHERE workspace_id = ? AND locality_id = ? "
+            "SELECT id FROM events WHERE locality_id = ? "
             "AND kind = ? " + boundary + "ORDER BY rowid",
             args,
         )
@@ -872,7 +818,7 @@ class SQLiteEventLedger(EventLedger):
     def batched(self) -> Iterator[None]:
         """Hold one transaction open across appends until this scope closes.
 
-        What changes is how many times the store is committed, not what a
+        What differences is how many times the store is committed, not what a
         commit contains: each occurrence still reaches the store paired with
         its prefix commitment, because both are written before either is
         committed. A store that loses this scope loses whole occurrences and
@@ -925,7 +871,7 @@ class SQLiteEventLedger(EventLedger):
             self._connection.execute("""
                 CREATE TRIGGER IF NOT EXISTS prefix_commitments_refuse_update
                 BEFORE UPDATE ON event_prefix_commitments
-                BEGIN SELECT RAISE(ABORT, 'append-prefix commitments do not change'); END
+                BEGIN SELECT RAISE(ABORT, 'append-prefix commitments do not revision'); END
                 """)
             self._connection.execute("""
                 CREATE TRIGGER IF NOT EXISTS prefix_commitments_refuse_delete
@@ -994,8 +940,8 @@ class SQLiteEventLedger(EventLedger):
     def _insert_without_commit(self, event: Event) -> int:
         cursor = self._connection.execute(
             """
-            INSERT INTO events (id, kind, workspace_id, actor, timestamp, payload, locality_id, causation_id, correlation_id, content_hash)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            INSERT INTO events (id, kind, timestamp, payload, locality_id, causation_id, correlation_id, content_hash)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
             """,
             self._row_values(event),
         )
@@ -1068,8 +1014,6 @@ class SQLiteEventLedger(EventLedger):
         row = {
             "id": event.id,
             "kind": event.kind,
-            "workspace_id": event.workspace_id,
-            "actor": event.actor,
             "timestamp": event.timestamp.isoformat(),
             "payload": json.dumps(event.payload),
             "locality_id": event.locality_id,
@@ -1077,12 +1021,12 @@ class SQLiteEventLedger(EventLedger):
             "correlation_id": event.correlation_id,
         }
         # The digest is taken from the canonical string, then the payload is
-        # replaced by its stored form. Compression therefore cannot move a
+        # replaced by its stored representation. Compression therefore cannot move a
         # digest, and an occurrence stored compressed digests identically to the
         # same occurrence stored as text.
         digest = _content_digest(row)
         row["payload"] = _stored_payload(row["payload"])
-        return tuple(row[f] for f in _DIGESTED_FIELDS) + (digest,)
+        return tuple(row[f] for f in _OCCURRENCE_FIELDS) + (digest,)
 
     def _validate_sqlite_batch(self, events: list[Event]) -> None:
         seen: set[str] = set()
@@ -1095,20 +1039,18 @@ class SQLiteEventLedger(EventLedger):
         try:
             payload = _decode_screened_event_payload(_serialized_payload(row["payload"]))
         except json.JSONDecodeError as exc:
-            # Reconstructed as text and not as an occurrence. The same condition as
+            # Read as text and not as an occurrence. The same condition as
             # a payload that will not decompress: the stored row no longer
             # carries what it was digested from, so it is refused as an
             # integrity failure rather than as the parser's error. This was
             # already reachable before compression, for a text payload damaged
             # in place.
             raise InvalidStoredPayload(
-                f"a stored payload is not a reconstructible occurrence: {exc}"
+                f"a stored payload is not a addressable occurrence: {exc}"
             ) from exc
         return Event(
             id=row["id"],
             kind=row["kind"],
-            workspace_id=row["workspace_id"],
-            actor=row["actor"],
             timestamp=datetime.fromisoformat(row["timestamp"]),
             payload=payload,
             locality_id=row["locality_id"],

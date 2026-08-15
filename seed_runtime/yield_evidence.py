@@ -7,7 +7,7 @@ occurrence-to-result edge; it is neither that edge nor either endpoint by identi
 
 The helper is private implementation plumbing, not the guarantee. The result's
 carried relation to this Evidence distinguishes a yielded result from an
-identical caller-constructed representation. Exposing a public entry point that
+identical caller-supplied representation. Exposing a public entry point that
 accepts arbitrary result content would instead create a second recorder able to
 manufacture that relation.
 """
@@ -30,18 +30,18 @@ YIELD_LIVE_BOUNDARIES = frozenset(
         "byte_measurement",
         "byte_pair_applicability",
         "byte_pair_measurement",
-        "external_expression_relation",
+        "material_ingest",
         "preserved_material_measurement",
         "recorded_finding_yield_compare",
         "representation_result",
         "successful_emission",
     }
 )
-_YIELD_COMMITMENT_DOMAIN = b"seed.yield-evidence.v1\0"
+_YIELD_COMMITMENT_DOMAIN = b"seed.yield-evidence\0"
 
 
 def _commit_part(digest: "hashlib._Hash", value: str) -> None:
-    """Commit one declared string representation in this mechanical domain."""
+    """Commit one declared string representation in this domain."""
 
     if not isinstance(value, str):
         raise TypeError(
@@ -71,27 +71,27 @@ def yield_commitment(convention: str, content: dict[str, Any]) -> str:
 def read_yield_edge_requirements(
     ledger: EventLedger,
     *,
-    carrier_event_id: str,
+    recorded_result_event_id: str,
     result_evidence_event_id: str | None,
     responsible_act_evidence_event_id: str | None = None,
-    carrier_occurrence_coordinate: str = "act_occurrence_id",
+    recorded_result_occurrence_coordinate: str = "act_occurrence_id",
     responsible_act_occurrence_coordinate: str = "act_occurrence_id",
 ) -> dict[str, bool]:
     """Read the three machine-grammar requirements of one exact Yield edge.
 
     The caller supplies exact occurrence identities under pressure.  Seed
-    resolves the stored occurrences itself; it does not accept reconstructed
+    resolves the stored occurrences itself; it does not accept read
     event payloads and does not re-encode the yielded result.  A missing
     result-evidence occurrence makes every requirement absent.  Changing an
-    unrelated carrier coordinate does not.
+    unrelated event coordinate does not.
     """
 
     if not isinstance(ledger, EventLedger):
         raise TypeError("a Yield-edge read requires one EventLedger")
-    if not isinstance(carrier_event_id, str) or not carrier_event_id:
-        raise TypeError("a Yield-edge read requires one carrier occurrence")
-    carrier = ledger.get(carrier_event_id)
-    if carrier is None:
+    if not isinstance(recorded_result_event_id, str) or not recorded_result_event_id:
+        raise TypeError("a Yield-edge read requires one event occurrence")
+    recorded_result_event = ledger.get(recorded_result_event_id)
+    if recorded_result_event is None:
         return {
             "exact_relation": False,
             "occurrence_witness": False,
@@ -116,22 +116,24 @@ def read_yield_edge_requirements(
             "occurrence_witness": False,
             "intact_evidence": False,
         }
-    if not isinstance(carrier_occurrence_coordinate, str) or not (
-        carrier_occurrence_coordinate
+    if not isinstance(recorded_result_occurrence_coordinate, str) or not (
+        recorded_result_occurrence_coordinate
     ):
-        raise TypeError("the carrier occurrence coordinate must be exact")
+        raise TypeError("the event occurrence coordinate must be exact")
     if not isinstance(responsible_act_occurrence_coordinate, str) or not (
         responsible_act_occurrence_coordinate
     ):
         raise TypeError("the responsible-Act occurrence coordinate must be exact")
 
-    carrier_occurrence = carrier.payload.get(carrier_occurrence_coordinate)
+    result_occurrence = recorded_result_event.payload.get(
+        recorded_result_occurrence_coordinate
+    )
     evidence_dimensions = result_evidence.payload.get("dimensions", {})
-    same_occurrence = carrier_occurrence == evidence_dimensions.get(
+    same_occurrence = result_occurrence == evidence_dimensions.get(
         "act_occurrence_id"
     )
     if responsible_act_evidence is not None:
-        same_occurrence = same_occurrence and carrier_occurrence == (
+        same_occurrence = same_occurrence and result_occurrence == (
             responsible_act_evidence.payload.get(
                 responsible_act_occurrence_coordinate
             )
@@ -140,29 +142,28 @@ def read_yield_edge_requirements(
         same_occurrence = False
 
     evidence_is_carried = (
-        carrier.payload.get("yield_evidence_id") == result_evidence.id
+        recorded_result_event.payload.get("yield_evidence_id") == result_evidence.id
         and result_evidence.kind == YIELD_EVIDENCE_KIND
-        and result_evidence.workspace_id == carrier.workspace_id
     )
     yielded_result = result_evidence.payload.get("yielded_result")
     yield_coordinates = result_evidence.payload.get("yield_coordinates")
-    carrier_coordinates = result_evidence.payload.get("carrier_coordinates")
+    recorded_result_coordinates = result_evidence.payload.get("recorded_result_coordinates")
     exact_carried_result = False
     if (
         type(yielded_result) is dict
         and type(yield_coordinates) is list
-        and type(carrier_coordinates) is dict
+        and type(recorded_result_coordinates) is dict
         and yield_coordinates == sorted(yielded_result)
-        and set(carrier_coordinates) == set(yielded_result)
+        and set(recorded_result_coordinates) == set(yielded_result)
     ):
         carried_result = {}
         for coordinate in yield_coordinates:
-            carried_at = carrier_coordinates.get(coordinate)
+            carried_at = recorded_result_coordinates.get(coordinate)
             if type(carried_at) is not list or not carried_at or not all(
                 type(part) is str and part for part in carried_at
             ):
                 break
-            value = carrier.payload
+            value = recorded_result_event.payload
             for part in carried_at:
                 if type(value) is not dict or part not in value:
                     break
@@ -176,9 +177,8 @@ def read_yield_edge_requirements(
     evidence_is_carried = evidence_is_carried and exact_carried_result
     if responsible_act_evidence is not None:
         evidence_is_carried = evidence_is_carried and (
-            carrier.payload.get("responsible_act_evidence_id")
+            recorded_result_event.payload.get("responsible_act_evidence_id")
             == responsible_act_evidence.id
-            and responsible_act_evidence.workspace_id == carrier.workspace_id
             and responsible_act_evidence.payload.get("result_commitment")
             == result_evidence.payload.get("yield_commitment")
         )
@@ -207,7 +207,6 @@ def read_yield_edge_requirements(
 def _record_yield_evidence(
     ledger: EventLedger,
     *,
-    workspace_id: str,
     locality_id: str | None,
     convention: str,
     yielding_act: str,
@@ -218,7 +217,7 @@ def _record_yield_evidence(
     responsibility: str,
     live_boundary: str,
     responsible_boundary: str = "unestablished",
-    carrier_coordinates: dict[str, tuple[str, ...]] | None = None,
+    recorded_result_coordinates: dict[str, tuple[str, ...]] | None = None,
 ) -> Event:
     """Preserve Evidence from inside an act for its already-fixed result."""
 
@@ -228,19 +227,19 @@ def _record_yield_evidence(
         raise ValueError("Yield Evidence requires one declared live boundary")
     if type(yielded_content) is not dict:
         raise TypeError("Yield Evidence requires one exact yielded result")
-    declared_carrier_coordinates = (
+    declared_recorded_result_coordinates = (
         {coordinate: (coordinate,) for coordinate in yielded_content}
-        if carrier_coordinates is None
-        else carrier_coordinates
+        if recorded_result_coordinates is None
+        else recorded_result_coordinates
     )
-    if type(declared_carrier_coordinates) is not dict or set(
-        declared_carrier_coordinates
+    if type(declared_recorded_result_coordinates) is not dict or set(
+        declared_recorded_result_coordinates
     ) != set(yielded_content):
         raise ValueError(
             "Yield Evidence requires one carried coordinate for every yielded coordinate"
         )
-    preserved_carrier_coordinates = {}
-    for coordinate, carried_at in declared_carrier_coordinates.items():
+    preserved_recorded_result_coordinates = {}
+    for coordinate, carried_at in declared_recorded_result_coordinates.items():
         if type(coordinate) is not str or not coordinate:
             raise TypeError("a yielded coordinate must be one exact representation")
         if type(carried_at) is not tuple or not carried_at or not all(
@@ -249,11 +248,10 @@ def _record_yield_evidence(
             raise TypeError(
                 "a carried coordinate must be one nonempty tuple of exact representations"
             )
-        preserved_carrier_coordinates[coordinate] = list(carried_at)
+        preserved_recorded_result_coordinates[coordinate] = list(carried_at)
 
     return ledger.append(
         YIELD_EVIDENCE_KIND,
-        workspace_id,
         {
             "dimensions": {
                 "identity": (
@@ -290,7 +288,7 @@ def _record_yield_evidence(
             ),
             "yield_coordinates": sorted(yielded_content),
             "yielded_result": deepcopy(yielded_content),
-            "carrier_coordinates": preserved_carrier_coordinates,
+            "recorded_result_coordinates": preserved_recorded_result_coordinates,
             "yielded_result_kind": yielded_result_kind,
             "live_boundary": live_boundary,
         },

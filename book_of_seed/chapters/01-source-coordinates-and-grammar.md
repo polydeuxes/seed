@@ -6,7 +6,7 @@ The locality of exact content and the boundary between supplied material and See
 
 ## Bounded resolution
 
-Provider vocabulary, representations, confidence labels, and connective text enter as material carrying source coordinates. Seed preserves their source, supplied context, Scope, uncertainty, Authority limits, provenance or provenance Unknown, known loss, conflicts, and surviving limits.
+Provider vocabulary, representations, confidence labels, and connective text enter as material carrying source coordinates. Seed preserves their source, Scope, uncertainty, Authority limits, provenance or provenance Unknown, known loss, conflicts, and surviving limits.
 
 A supplied representation may become Seed-addressable without becoming Evidence, applicable input, adopted law, truth, or native grammar. Equal content under another source or occurrence does not establish equal identity or Standing.
 
@@ -16,11 +16,11 @@ Developer-supplied connective text is material carrying source coordinates. It m
 
 ### 01.Source.A — Addressability preserves source coordinates
 
-The responsible representation Act occurrence preserves the supplied source identity or role, material origin, source occurrence where evidenced, supplied context, Scope, uncertainty, Authority limits, provenance, known loss, conflicts, and Unknowns. Addressability establishes none of the asserted source relation, Evidence, Applicability, Admission, Compare result, input support, truth, or adopted law.
+The responsible representation Act occurrence preserves the supplied source identity or role, source occurrence where evidenced, Scope, uncertainty, Authority limits, provenance, known loss, conflicts, and Unknowns. Addressability establishes none of the asserted source relation, Evidence, Applicability, Admission, Compare result, input support, truth, or adopted law.
 
 ### 01.Source.B — Cross-boundary participation preserves limits
 
-An exact Act may accept as input supplied material only within its carried Scope and surviving limits. Summarizing, indexing, citing, comparing, rendering, or attaching does not erase those coordinates or relocate Authority.
+An exact Act may accept as input supplied material only within its carried Scope and surviving limits. Summarizing, indexing, citing, comparing, representing, or attaching does not erase those coordinates or relocate Authority.
 
 ### 01.Source.C — Fidelity is bounded comparison
 
@@ -42,7 +42,7 @@ A candidate preserves every applicable source role, representation Act occurrenc
 
 ### 01.Source.F — Supplied material may assert a relation
 
-Supplied material may assert that X represents or identifies Y. The responsible representation Act occurrence preserves source identity or role, material origin, source occurrence where evidenced, Scope, provenance, Authority limits, known loss, conflicts, and Unknowns. Locality, labels, reference resolution, shape, or repetition do not support either the source relation or represented relation. Each requires a responsible occurrence.
+Supplied material may assert that X represents or identifies Y. The responsible representation Act occurrence preserves source identity or role, source occurrence where evidenced, Scope, provenance, Authority limits, known loss, conflicts, and Unknowns. Locality, labels, reference resolution, shape, or repetition do not support either the source relation or represented relation. Each requires a responsible occurrence.
 
 ## Important distinctions
 

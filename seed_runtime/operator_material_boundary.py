@@ -1,4 +1,4 @@
-"""Byte-boundary representation evidence for one operator-ingress occurrence."""
+"""Exact operator material at one byte-stream boundary."""
 
 from __future__ import annotations
 
@@ -6,19 +6,18 @@ from dataclasses import dataclass
 from typing import BinaryIO, TextIO
 
 
-class OperatorIngressRepresentationError(ValueError):
-    """An operator-ingress representation or metadata is malformed."""
+class OperatorMaterialBoundaryError(ValueError):
+    """Operator material or its byte-stream boundary is malformed."""
 
 
 @dataclass(frozen=True)
-class CapturedOperatorMaterial:
+class OperatorBoundaryMaterial:
     """Material observed at the smallest stdin boundary available to the caller."""
 
     exact_bytes: bytes
     eof: bool
     delimiter_hex: str | None
-    capture_boundary: str
-    byte_material_origin: str
+    material_boundary: str
     known_loss: tuple[str, ...]
 
     def __post_init__(self) -> None:
@@ -26,21 +25,20 @@ class CapturedOperatorMaterial:
             type(self.exact_bytes) is not bytes
             or type(self.eof) is not bool
             or (self.delimiter_hex is not None and type(self.delimiter_hex) is not str)
-            or type(self.capture_boundary) is not str
-            or type(self.byte_material_origin) is not str
+            or type(self.material_boundary) is not str
             or type(self.known_loss) is not tuple
         )
         if invalid_type:
-            raise OperatorIngressRepresentationError(
-                "malformed captured operator material"
+            raise OperatorMaterialBoundaryError(
+                "malformed operator boundary material"
             )
-        if not self.capture_boundary or not self.byte_material_origin:
-            raise OperatorIngressRepresentationError(
-                "malformed captured operator material"
+        if not self.material_boundary:
+            raise OperatorMaterialBoundaryError(
+                "malformed operator boundary material"
             )
         if any(type(item) is not str for item in self.known_loss):
-            raise OperatorIngressRepresentationError(
-                "malformed captured operator material"
+            raise OperatorMaterialBoundaryError(
+                "malformed operator boundary material"
             )
         expected_delimiter = (
             "0d0a"
@@ -48,19 +46,19 @@ class CapturedOperatorMaterial:
             else "0a" if self.exact_bytes.endswith(b"\n") else None
         )
         if self.eof is not (self.exact_bytes == b""):
-            raise OperatorIngressRepresentationError(
-                "malformed captured operator material"
+            raise OperatorMaterialBoundaryError(
+                "malformed operator boundary material"
             )
         if self.delimiter_hex != expected_delimiter:
-            raise OperatorIngressRepresentationError(
-                "malformed captured operator material"
+            raise OperatorMaterialBoundaryError(
+                "malformed operator boundary material"
             )
 
-def capture_stdin_material(input_stream: TextIO | BinaryIO) -> CapturedOperatorMaterial:
+def operator_boundary_material(input_stream: TextIO | BinaryIO) -> OperatorBoundaryMaterial:
     """Read one framed occurrence from a byte stream.
 
     A live wrapped stream is accepted only when it exposes its underlying
-    ``buffer``. No represented material is reconstructed here.
+    ``buffer``. No represented material is read here.
     Programmatic callers therefore supply a binary stream such as
     :class:`io.BytesIO`.
     """
@@ -68,31 +66,26 @@ def capture_stdin_material(input_stream: TextIO | BinaryIO) -> CapturedOperatorM
     if binary is not None:
         material = binary.readline()
         boundary = "stdin.buffer.readline"
-        byte_material_origin = "direct_boundary_observation"
         loss = (
             "transport bytes before the stdin byte-stream boundary are not observable",
         )
     else:
         material = input_stream.readline()
         boundary = "binary-stream.readline (bytes observed directly)"
-        byte_material_origin = "direct_boundary_observation"
         loss = (
             "transport bytes before the supplied binary-stream boundary are not observable",
         )
     if type(material) is not bytes:
-        raise OperatorIngressRepresentationError(
-            "operator ingress requires a binary stream"
-        )
+        raise OperatorMaterialBoundaryError("operator material requires a binary stream")
     delimiter = (
         "0d0a"
         if material.endswith(b"\r\n")
         else "0a" if material.endswith(b"\n") else None
     )
-    return CapturedOperatorMaterial(
+    return OperatorBoundaryMaterial(
         exact_bytes=material,
         eof=material == b"",
         delimiter_hex=delimiter,
-        capture_boundary=boundary,
-        byte_material_origin=byte_material_origin,
+        material_boundary=boundary,
         known_loss=loss,
     )

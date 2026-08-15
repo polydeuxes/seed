@@ -4,36 +4,36 @@ Three things wore one coat, and separating them is the whole of this module:
 
 ```text
   material occurred            a durable occurrence, permanent
-  material is available now    a question with a present-tense answer
+  material is available now    a distinction with a present-tense answer
   material is durably retained not this; that is an outward Act
 ```
 
 **An occurrence records that material occurred. It does not record that the
-material is available.** Availability changes without anything being recorded —
+material is available.** Availability differences without anything being recorded —
 a process exits and every byte it held is gone — so a payload asserting
 `available` would be stating present-tense Standing in a permanent record, and
-would be wrong the moment the process ended while still reading as true. Current
+would be wrong the moment the process ended while still read as true. Current
 availability is asked of the holder, never read from the ledger.
 
 What the occurrence records is what stays true: material with this digest and
-this extent occurred, and at that occurrence **this process held it**.
+this byte count occurred, and at that occurrence **this process held it**.
 
 **That says nothing about anything else holding it.** Bytes read from a file are
-process-locally held and externally located at the same moment, so recording the
+process-locally held and separately located at the same moment, so recording the
 first establishes nothing about the second. No locator recorded is not no
-external source — the same rule that made a filename source label rather than
+separate source — the same rule that made a filename source label rather than
 truth. This module does not know whether another source exists and does not
 Assertion to.
 
-**The body is not in the ledger.** The occurrence carries identity and extent;
+**The body is not in the ledger.** The occurrence carries identity and byte count;
 the bytes live in a process-local holder. `#2491` measured the alternative on a
 74 KB archive: the occurrence was 149,241 bytes, 99.3% of it hex, while identity
-and extent areabout 1 KB regardless of size.
+and byte count are about 1 KB regardless of size.
 
 **Nothing here writes anything anywhere.** Holding bytes in memory is retention
 without an outward act. Writing them to disk is Seed changing the world outside
-itself, which is an Authority question this module deliberately does not touch —
-no temp files, no spooling, no memory mapping, no restart reconstruction. When the
+itself, which is an Authority distinction this module deliberately does not touch —
+no temp files, no spooling, no memory mapping, no restart read. When the
 process ends the bytes are gone, and that is honest rather than a defect.
 """
 
@@ -51,14 +51,14 @@ MATERIAL_OCCURRED_KIND = "material.transient.occurred"
 
 
 class MaterialAvailabilityError(ValueError):
-    """Exact material could not be identified, held, or reconstructed as stated."""
+    """Exact material could not be identified, held, or read as stated."""
 
 
 def material_digest(exact_bytes: bytes) -> str:
     """A digest identifying exact material independently of holding it.
 
     **One canonical exact-material digest, shared with the pointer account.**
-    `ExactMaterialPointers.sha256` is `sha256` over the reconstructed bytes, and
+    `ExactMaterialPointers.sha256` is `sha256` over the read bytes, and
     an earlier revision of this module domain-separated its own, so the same
     body had two values both describable as *the digest of this exact material*.
 
@@ -69,7 +69,7 @@ def material_digest(exact_bytes: bytes) -> str:
     commits to, so separating them would have made two names for one thing that
     disagree.
 
-    They now agree by construction, which is what lets a pointer account and a
+    They now agree exactly, which is what lets a pointer account and a
     material identity for one body be recognised as concerning it without an
     intervening step.
     """
@@ -86,7 +86,7 @@ class MaterialIdentity:
     """What material was, without being the material.
 
     Carrying this instead of the body is what keeps an occurrence a constant
-    size. It identifies; it does not reconstruct. Nothing reconstructs material from
+    size. It identifies; it does not read. Nothing reads material from
     a digest, and a reader holding one knows what to ask for rather than
     what it says.
     """
@@ -132,11 +132,11 @@ class ProcessLocalMaterial:
     """Exact material this process holds, for as long as it holds it.
 
     Deliberately not durable. There is no spooling, no temporary file, no
-    memory mapping and no restart reconstruction, because every one of those would be
+    memory mapping and no restart read, because every one of those would be
     Seed preserving material outside itself — an outward Act requiring Authority
     this module does not have and does not ask for.
 
-    A holder answers one question: *is this material available here now, and if
+    A holder answers one distinction: *is this material available here now, and if
     so what is it.* It never answers *was this material ever available*, which is
     what the ledger occurrence is for.
     """
@@ -152,11 +152,11 @@ class ProcessLocalMaterial:
         return identity
 
     def _held_under(self, identity: MaterialIdentity) -> bytes | None:
-        """What is held under this exact identity, digest and extent together.
+        """What is held under this exact identity, digest and byte count together.
 
         Keying on the digest alone made the three answers disagree: an identity
-        with the right digest and the wrong extent reported available, refused
-        to reconstruct, and — worst — released the material that was genuinely
+        with the right digest and the wrong byte count reported available, refused
+        to read, and — worst — released the material that was genuinely
         held. One identity, one answer.
         """
 
@@ -168,15 +168,15 @@ class ProcessLocalMaterial:
     def is_available(self, identity: MaterialIdentity) -> bool:
         return self._held_under(identity) is not None
 
-    def reconstruct(self, identity: MaterialIdentity) -> bytes:
+    def read(self, identity: MaterialIdentity) -> bytes:
         """The exact material, or a refusal naming what is unavailable.
 
         The material is not re-digested. It is held *under* its digest, so
-        anything found under one reproduces it by construction, and a check that
-        cannot fail is not free here: re-digesting was 98% of a 5 MB reconstruction
+        anything found under one reproduces it exactly, and a check that
+        cannot fail is not free here: re-digesting was 98% of a 5 MB read
         and 100% of a 50 MB one, at 130 ms each.
 
-        The extent is still checked, because an identity is supplied by a caller
+        The byte count is still checked, because an identity is supplied by a caller
         and may disagree with what the digest names.
         """
 
@@ -191,7 +191,7 @@ class ProcessLocalMaterial:
         """Stop holding this exact material. The occurrence of it is untouched.
 
         An identity that does not name what is held releases nothing. Keying on
-        the digest alone meant an identity with the wrong extent destroyed the
+        the digest alone meant an identity with the wrong byte count destroyed the
         material it had just been refused.
         """
 
@@ -209,17 +209,15 @@ class ProcessLocalMaterial:
 def record_transient_material(
     ledger: EventLedger,
     *,
-    workspace_id: str,
     locality_id: str,
     holder: ProcessLocalMaterial,
     identity: MaterialIdentity,
-    material_origin: str,
     occurrence_boundary: str,
 ) -> Event:
     """Record that exact material occurred, without recording the material.
 
     The occurrence carries no availability coordinate. Availability is a
-    present-tense answer that changes without anything being recorded, so a
+    present-tense answer that differences without anything being recorded, so a
     payload asserting it would read as true after it stopped being so. What is
     recorded is that at this occurrence this process held the material.
 
@@ -230,8 +228,7 @@ def record_transient_material(
     exact identity, which is the thing being asserted.
     """
 
-    for name, value in (("material_origin", material_origin),
-                        ("occurrence_boundary", occurrence_boundary),
+    for name, value in (("occurrence_boundary", occurrence_boundary),
                         ("locality_id", locality_id)):
         if type(value) is not str or not value.strip():
             raise MaterialAvailabilityError(
@@ -255,7 +252,6 @@ def record_transient_material(
         Event(
             id=new_id("evt"),
             kind=MATERIAL_OCCURRED_KIND,
-            workspace_id=workspace_id,
             locality_id=locality_id,
             payload={
                 "dimensions": {
@@ -269,13 +265,12 @@ def record_transient_material(
                         "occurrence-only; represented relation Unknown. Records that material "
                         "occurred, never that it is available now"
                     ),
-                    "scope_locality": f"workspace:{workspace_id};locality:{locality_id}",
+                    "scope_locality": f"locality:{locality_id}",
                     "occurrence_preservation": (
-                        "identity and extent durably recorded; the material itself "
+                        "identity and byte count durably recorded; the material itself "
                         "was held process-locally and is not preserved here"
                     ),
                 },
-                "material_origin": material_origin,
                 "occurrence_boundary": occurrence_boundary,
                 "material_identity": identity.to_json_dict(),
                 "held_at_occurrence": "process-local",

@@ -35,7 +35,7 @@ def test_seed_hosts_exact_html_and_image_material_at_distinct_paths():
         assert pixel_headers["Content-Type"] == "application/octet-stream"
 
         responses = [item for item in site.observations if item.phase == "response"]
-        assert [(item.material_path, item.body_length) for item in responses] == [
+        assert [(item.material_path, item.body_byte_count) for item in responses] == [
             ("/", len(html)),
             ("/pixel.rgb", len(pixel)),
         ]
@@ -47,7 +47,6 @@ def test_response_attempt_precedes_response_boundary_observation():
             200,
             {
                 "Content-Type": "text/plain",
-                "Content-Length": "5",
                 "Connection": "close",
             },
             b"seed\n",

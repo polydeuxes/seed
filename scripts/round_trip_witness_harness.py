@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Ask a witness to take back what it gave, and record whether it can.
 
-A codec answers two different questions. Handed bytes it says what it makes of
+A codec answers two different probes. Handed bytes it says what it makes of
 them; handed that back it says which bytes it would write. Those are two
 testimonies, and this records where they disagree. Neither is corrected by the
 other here: a disagreement is a finding about the pair, not a fault in either.
@@ -63,7 +63,7 @@ def round_trip(codec: str, sequence: tuple[int, ...]) -> str | None:
 
 
 def disagreements(codec: str, limit: int = 256) -> list[tuple[int, str, str]]:
-    """Each single byte the witness reads but does not write back unchanged."""
+    """Each single byte the witness reads but does not write back preserved."""
 
     found = []
     for value in range(limit):
@@ -106,7 +106,7 @@ def main() -> int:
 
     if args.codec:
         found = disagreements(args.codec)
-        print(f"  {args.codec}: {len(found)} single bytes not written back unchanged")
+        print(f"  {args.codec}: {len(found)} single bytes not written back preserved")
         for value, read, written in found[: args.show]:
             print(f"    {value:#04x}  reads as {read:>10}  writes {written}")
         return 0

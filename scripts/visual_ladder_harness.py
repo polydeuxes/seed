@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Render frames that differ from each other in one stated way at a time.
+"""Form frames that differ from each other in one stated way at a time.
 
 Material whose differences are known before Seed reads it. Each rung adds one
 thing to the rung below, so a comparison between two of them has a expected
@@ -20,8 +20,8 @@ Rung 4 is not rung 3 five times over. Letters carry different amounts of ink,
 and antialiasing puts colours in the frame that neither the ground nor the ink
 was given. Both are measurable, and neither was declared.
 
-This script performs the rendering, under the operator's authority, in a
-subprocess. What arrives afterwards is a file, and it enters through the
+This script represents the material under the operator's authority in a
+subprocess. What occurs afterwards is a file, and it enters through the
 material path like any other body.
 
 Usage:
@@ -36,8 +36,8 @@ import argparse
 import subprocess
 from pathlib import Path
 
-# Construction descriptions, not Seed grammar. A specimen carries pixel values
-# and extents; `ground`, `box` and `ink` are how this harness built them.
+# Supplied descriptions, not Seed grammar. A specimen carries pixel values
+# and pixel dimensions; `ground`, `box` and `ink` are how this harness built them.
 GROUND = "red"
 BOX = "black"
 INK = "white"
@@ -49,7 +49,7 @@ VALUES = ("0x000000", "0x808080", "0xffffff")
 
 
 def value_ladder(out_dir: Path, size: str, values: tuple[str, ...]) -> list[Path]:
-    """Pixel value varies. Extent, encoding and every other coordinate do not."""
+    """Pixel value varies. Pixel dimensions and encoding do not."""
 
     written = []
     for value in values:
@@ -58,7 +58,7 @@ def value_ladder(out_dir: Path, size: str, values: tuple[str, ...]) -> list[Path
             ["ffmpeg", "-v", "error", "-y",
              "-f", "lavfi", "-i", f"color=c={value}:s={size}:d=1",
              "-frames:v", "1", str(out)],
-            capture_output=True,
+            stdout=subprocess.PIPE, stderr=subprocess.PIPE,
         )
         if result.returncode != 0:
             raise SystemExit(
@@ -95,7 +95,7 @@ def rungs(text: str, frame: str, box: str) -> list[tuple[str, str]]:
     ]
 
 
-def render(name: str, filters: str, out_dir: Path, size: str, seconds: float) -> Path:
+def emit_visual_material(name: str, filters: str, out_dir: Path, size: str, seconds: float) -> Path:
     out = out_dir / f"{name}.mp4"
     command = [
         "ffmpeg", "-v", "error", "-y",
@@ -104,7 +104,7 @@ def render(name: str, filters: str, out_dir: Path, size: str, seconds: float) ->
     if filters:
         command += ["-vf", filters]
     command += ["-c:v", "libx264", "-pix_fmt", "yuv420p", str(out)]
-    result = subprocess.run(command, capture_output=True)
+    result = subprocess.run(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     if result.returncode != 0:
         raise SystemExit(
             f"{name} failed: " + result.stderr.decode("utf-8", "replace")[-400:]
@@ -131,7 +131,7 @@ def main() -> int:
                 if name in seen:
                     continue
                 seen.add(name)
-                out = render(name, filters, args.out_dir, frame, args.seconds)
+                out = emit_visual_material(name, filters, args.out_dir, frame, args.seconds)
                 print(f"{name:26} {out.stat().st_size:7} bytes")
     return 0
 
