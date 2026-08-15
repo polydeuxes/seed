@@ -12,8 +12,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from seed_runtime.events import SQLiteEventLedger
 from seed_runtime.identities import new_identity
-from seed_runtime.material_ingest import ingested_material_bytes
-from seed_runtime.system_material import preserve_system_material
+from seed_runtime.material_ingest import ingest_material, ingested_material_bytes
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -39,11 +38,15 @@ def main(argv: list[str] | None = None) -> int:
     ledger = SQLiteEventLedger(args.db)
     try:
         locality = args.locality or new_identity("locality")
-        occurred = preserve_system_material(
+        occurred = ingest_material(
             ledger,
             locality_identity=locality,
             exact_bytes=material,
+            source_role="system",
             source_boundary=boundary,
+            known_loss=(
+                "material before the supplied system boundary is not available here",
+            ),
         )
         assert ingested_material_bytes(occurred) == material
     finally:

@@ -10,12 +10,12 @@ from seed_runtime.events import EventLedger, SQLiteEventLedger
 from seed_runtime.material_ingest import (
     MATERIAL_INGEST_OCCURRED_KIND,
     MaterialIngestError,
+    ingest_material,
     ingested_material_bytes,
 )
 from seed_runtime.operator_ingest import run_operator_ingest
 from seed_runtime.operator_locality_standing import read_operator_locality_standing
 from seed_runtime.operator_material_boundary import operator_boundary_material
-from seed_runtime.system_material import preserve_system_material
 from seed_runtime.yield_evidence import YIELD_EVIDENCE_KIND, read_yield_relation_requirements
 
 
@@ -26,7 +26,14 @@ def _preserve(ledger, material=b"a.txt\nb.txt\n", **differences):
         "source_boundary": "source boundary",
     }
     fields.update(differences)
-    return preserve_system_material(ledger, **fields)
+    return ingest_material(
+        ledger,
+        source_role="system",
+        known_loss=(
+            "material before the supplied system boundary is not available here",
+        ),
+        **fields,
+    )
 
 
 def test_system_material_preserves_exact_raw_bytes():
@@ -138,7 +145,7 @@ def test_operator_and_system_material_use_one_ingest_act_with_distinct_source_ro
     ledger = EventLedger()
     exact = b"\x00\xffsame material\n"
     operator_ingest = _operator_ingest(ledger, locality="shared", exact=exact)
-    system_ingest = preserve_system_material(
+    system_ingest = _preserve(
         ledger,
         locality_identity="shared",
         exact_bytes=exact,
@@ -165,7 +172,7 @@ def test_equal_operator_and_system_bytes_keep_distinct_occurrences_results_and_e
     ledger = EventLedger()
     exact = b"same exact material"
     operator_ingest = _operator_ingest(ledger, locality="shared", exact=exact)
-    system_ingest = preserve_system_material(
+    system_ingest = _preserve(
         ledger,
         locality_identity="shared",
         exact_bytes=exact,
@@ -200,7 +207,7 @@ def test_same_locality_preserves_both_ingest_subjects_without_relation_standing(
     operator_ingest = _operator_ingest(
         ledger, locality="shared", exact=b"operator material\n"
     )
-    system_ingest = preserve_system_material(
+    system_ingest = _preserve(
         ledger,
         locality_identity="shared",
         exact_bytes=b"system material",
@@ -230,7 +237,7 @@ def test_operator_and_system_ingest_evidence_do_not_cross_reference():
     operator_ingest = _operator_ingest(
         ledger, locality="shared", exact=b"operator material\n"
     )
-    system_ingest = preserve_system_material(
+    system_ingest = _preserve(
         ledger,
         locality_identity="shared",
         exact_bytes=b"system material",
@@ -398,7 +405,7 @@ def test_system_material_identity_is_reserved_across_reopen(tmp_path):
     for index in range(3):
         ledger = SQLiteEventLedger(database)
         try:
-            material = preserve_system_material(
+            material = _preserve(
                 ledger,
                 locality_identity=f"locality_{index}",
                 exact_bytes=f"material {index}".encode(),

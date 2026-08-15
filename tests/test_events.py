@@ -95,8 +95,6 @@ def test_every_minted_prefix_is_reserved_or_declared_process_local():
     reserved or **declared** process-local above. Adding a prefix forces that
     decision into the open instead of leaving it to whoever reads the diff.
 
-    The earlier occurrences were `system_material` in `#2491` and a locality
-    identity in `#2493`.
     """
 
     import glob

@@ -498,7 +498,6 @@ def test_reservations_are_read_from_the_table_not_from_history(path):
     led = SQLiteEventLedger(path)
     try:
         led.append("k", {"reference": "operator_material_000042"}, locality_identity="locality_000007")
-        led.append("k", {"reference": "system_material_000005"})
     finally:
         led.close()
 
@@ -509,7 +508,6 @@ def test_reservations_are_read_from_the_table_not_from_history(path):
         con.close()
     assert kept["operator_material"] == 42
     assert kept["locality"] == 7
-    assert kept["system_material"] == 5
 
 
 def test_a_reopened_store_does_not_reissue_identifiers(path):

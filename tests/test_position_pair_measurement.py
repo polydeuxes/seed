@@ -50,7 +50,7 @@ from seed_runtime.operator_representation import (
 )
 from seed_runtime.operator_locality_standing import read_operator_locality_standing
 from tests.bounded_alternative_fixture import BOUNDED_ALTERNATIVE_FIXTURE_SOURCES
-from seed_runtime.system_material import preserve_system_material
+from seed_runtime.material_ingest import ingest_material
 
 SCOPE = "whole locality"
 MATERIAL = (
@@ -276,11 +276,15 @@ def test_position_pair_measurement_refuses_a_different_or_rewritten_source_occur
 def test_system_bytes_do_not_become_represented_material():
     import seed_runtime.position_pair_measurement as module
 
-    system_material = preserve_system_material(
+    system_material = ingest_material(
         EventLedger(),
         locality_identity="position-measurement",
         exact_bytes=b"L a b R",
+        source_role="system",
         source_boundary="system boundary",
+        known_loss=(
+            "material before the supplied system boundary is not available here",
+        ),
     )
 
     with pytest.raises(
