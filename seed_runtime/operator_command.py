@@ -11,7 +11,6 @@ from seed_runtime.operator_ingress_representation import CapturedOperatorMateria
 
 
 COMMAND_ADDRESSED_KIND = "operator.command.addressed"
-COMMAND_COMPLETED_KIND = "operator.command.completed"
 COMMAND_UNAVAILABLE_KIND = "operator.command.unavailable"
 
 
@@ -29,26 +28,17 @@ class OperatorCommandFrame:
 
 
 @dataclass(frozen=True)
-class OperatorCommandContext:
-    ledger: EventLedger
-    workspace_id: str
-    locality_id: str
-    command_id: str
+class AddressedOperatorCommand:
     addressed_event_id: str
-    addressed_at_representation_event_id: str
     frame: OperatorCommandFrame
 
 
-OperatorCommandHandler = Callable[[OperatorCommandContext], object]
+OperatorCommandHandler = Callable[[AddressedOperatorCommand], object]
 
 
 @dataclass(frozen=True)
 class OperatorCommandRun:
-    """Mechanical command routing plus an unconstrained implementation result."""
-
-    frame: OperatorCommandFrame
-    locality_id: str
-    addressed_event_id: str
+    addressed: AddressedOperatorCommand
     implementation_result: object
 
 
@@ -91,13 +81,7 @@ def run_operator_command(
     captured: CapturedOperatorMaterial,
     handlers: Mapping[bytes, OperatorCommandHandler],
 ) -> OperatorCommandRun:
-    """Invoke one exact registered slash name in the supplied locality.
-
-    Name selection compares bytes. Argument bytes remain bytes and are supplied
-    to the selected implementation function without converting the material.
-    Locality division is not implied by the slash prefix; `/checkpoint` owns
-    that external operator control explicitly.
-    """
+    """Invoke one exact registered slash name in the supplied locality."""
 
     frame = parse_slash_command(captured)
     if not isinstance(handlers, Mapping) or not all(
@@ -117,7 +101,6 @@ def run_operator_command(
             "exact_bytes_hex": frame.exact_bytes.hex(),
             "command_name_hex": frame.name.hex(),
             "argument_bytes_hex": frame.arguments.hex(),
-            "standing": "addressed",
             "authority": "unestablished",
             "unknowns": [
                 "operator intent beyond addressing this slash name remains Unknown"
@@ -126,6 +109,10 @@ def run_operator_command(
         locality_id=locality_id,
     )
     ledger.flush()
+    addressed_command = AddressedOperatorCommand(
+        addressed_event_id=addressed.id,
+        frame=frame,
+    )
     handler = handlers.get(frame.name)
     if handler is None:
         ledger.append(
@@ -135,44 +122,17 @@ def run_operator_command(
                 "command_id": command_id,
                 "addressed_event_id": addressed.id,
                 "command_name_hex": frame.name.hex(),
-                "standing": "no registered implementation function",
                 "authority": "unestablished",
             },
             locality_id=locality_id,
         )
         return OperatorCommandRun(
-            frame=frame,
-            locality_id=locality_id,
-            addressed_event_id=addressed.id,
+            addressed=addressed_command,
             implementation_result=None,
         )
 
-    implementation_result = handler(
-        OperatorCommandContext(
-            ledger=ledger,
-            workspace_id=workspace_id,
-            locality_id=locality_id,
-            command_id=command_id,
-            addressed_event_id=addressed.id,
-            addressed_at_representation_event_id=addressed_at_representation_event_id,
-            frame=frame,
-        )
-    )
-    ledger.append(
-        COMMAND_COMPLETED_KIND,
-        workspace_id,
-        {
-            "command_id": command_id,
-            "addressed_event_id": addressed.id,
-            "command_name_hex": frame.name.hex(),
-            "standing": "implementation function returned",
-            "authority": "unestablished",
-        },
-        locality_id=locality_id,
-    )
+    implementation_result = handler(addressed_command)
     return OperatorCommandRun(
-        frame=frame,
-        locality_id=locality_id,
-        addressed_event_id=addressed.id,
+        addressed=addressed_command,
         implementation_result=implementation_result,
     )

@@ -18,12 +18,8 @@ from pathlib import Path
 
 from seed_runtime.events import EventLedger
 from seed_runtime.operator_checkpoint import open_operator_checkpoint
-from seed_runtime.operator_command import OperatorCommandContext
+from seed_runtime.operator_command import AddressedOperatorCommand
 from seed_runtime.operator_console import run_persistent_operator_console
-from seed_runtime.operator_material_command import (
-    MATERIAL_TARGET_READ_KIND,
-    OperatorMaterialCommand,
-)
 from tests.test_book_lexical_contamination import COMPILED, scan_active_line
 
 
@@ -203,7 +199,10 @@ def test_no_bare_standing_value_bypasses_standing_physiology():
 def test_command_implementation_receives_no_constitutional_write_capability():
     """The slash-command boundary may not hand an implementation the ledger."""
 
-    assert "ledger" not in {field.name for field in fields(OperatorCommandContext)}
+    names = {field.name for field in fields(AddressedOperatorCommand)}
+    assert "ledger" not in names
+    assert "workspace_id" not in names
+    assert "locality_id" not in names
 
 
 def test_unestablished_material_authority_does_not_cross_the_filesystem_boundary(
@@ -220,7 +219,7 @@ def test_unestablished_material_authority_does_not_cross_the_filesystem_boundary
         crossed.append(path)
         return real_lstat(path)
 
-    monkeypatch.setattr("seed_runtime.operator_material_command.os.lstat", record_crossing)
+    monkeypatch.setattr(os, "lstat", record_crossing)
     run_persistent_operator_console(
         ledger=EventLedger(),
         workspace_id="w",
@@ -230,43 +229,6 @@ def test_unestablished_material_authority_does_not_cross_the_filesystem_boundary
     )
 
     assert crossed == []
-
-
-def test_filesystem_read_reconstructs_the_complete_act_and_yield_physiology(tmp_path):
-    """Any Seed-owned read must carry the machine grammar's exact Act road."""
-
-    material = tmp_path / "book.bin"
-    material.write_bytes(b"book bytes")
-    ledger = EventLedger()
-    run_persistent_operator_console(
-        ledger=ledger,
-        workspace_id="w",
-        locality_id="l",
-        input_stream=BytesIO(b"/material " + os.fsencode(material) + b"\n"),
-        output_stream=StringIO(),
-        material_command=OperatorMaterialCommand(),
-    )
-    read = next(event for event in ledger.list("w") if event.kind == MATERIAL_TARGET_READ_KIND)
-    occurrence = read.payload.get("act_occurrence_id")
-
-    assert isinstance(occurrence, str) and occurrence
-    evidence = [
-        event
-        for event in ledger.list("w")
-        if event.payload.get("act_occurrence_id") == occurrence
-        and event.payload.get("act")
-        and event.payload.get("responsibility")
-        and event.payload.get("responsible_boundary")
-    ]
-    yielded = [
-        event
-        for event in ledger.list("w")
-        if event.payload.get("dimensions", {}).get("act_occurrence_id") == occurrence
-        and event.payload.get("yield_commitment")
-    ]
-    assert evidence
-    assert yielded
-    assert read.payload.get("yield_evidence_id") == yielded[0].id
 
 
 def test_checkpoint_names_the_representation_it_addresses_not_an_emission():

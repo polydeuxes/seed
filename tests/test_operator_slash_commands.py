@@ -7,7 +7,6 @@ from io import BytesIO, StringIO
 from seed_runtime.events import EventLedger
 from seed_runtime.operator_command import (
     COMMAND_ADDRESSED_KIND,
-    COMMAND_COMPLETED_KIND,
     COMMAND_UNAVAILABLE_KIND,
 )
 from seed_runtime.operator_checkpoint import CHECKPOINT_LOCALITY_EVIDENCE_KIND
@@ -56,12 +55,12 @@ def test_slash_frame_invokes_the_exact_registered_implementation_function():
     assert context.frame.name == b"inspect"
     assert context.frame.arguments == b"\xff\x00"
     assert context.frame.exact_bytes == b"/inspect \xff\x00\n"
-    assert context.locality_id == "root-locality"
+    addressed = ledger.get(context.addressed_event_id)
+    assert addressed.locality_id == "root-locality"
     assert _raw_bytes(ledger) == []
-    assert [event.kind for event in ledger.list_locality("w", context.locality_id)
+    assert [event.kind for event in ledger.list_locality("w", addressed.locality_id)
             if event.kind.startswith("operator.command.")] == [
         COMMAND_ADDRESSED_KIND,
-        COMMAND_COMPLETED_KIND,
     ]
 
 

@@ -13,10 +13,11 @@ from seed_runtime.operator_command import (
     run_operator_command,
 )
 from seed_runtime.operator_checkpoint import (
-    OperatorCheckpoint,
+    OperatorCheckpointRequest,
     open_operator_checkpoint,
+    request_operator_checkpoint,
 )
-from seed_runtime.operator_material_command import OperatorMaterialCommand
+from seed_runtime.operator_material_command import request_operator_material
 from seed_runtime.operator_representation import (
     emit_operator_representation,
     record_operator_representation,
@@ -51,12 +52,11 @@ def run_persistent_operator_console(
     input_stream: BinaryIO | TextIO,
     output_stream: TextIO,
     command_handlers: Mapping[bytes, OperatorCommandHandler] | None = None,
-    material_command: OperatorMaterialCommand | None = None,
 ) -> None:
     """Repeat raw-byte ingress and slash-command interactions."""
     handlers = dict(command_handlers or {})
-    handlers[b"checkpoint"] = open_operator_checkpoint
-    handlers[b"material"] = material_command or OperatorMaterialCommand()
+    handlers[b"checkpoint"] = request_operator_checkpoint
+    handlers[b"material"] = request_operator_material
     # Standing is carried through the locality rather than re-projected before
     # each interaction. Each responsible act returns the occurrences it
     # recorded, so the console advances over exactly those occurrences.
@@ -98,8 +98,9 @@ def run_persistent_operator_console(
                 captured=captured_ingress,
                 handlers=handlers,
             )
-            checkpoint = command_run.implementation_result
-            if isinstance(checkpoint, OperatorCheckpoint):
+            request = command_run.implementation_result
+            if isinstance(request, OperatorCheckpointRequest):
+                checkpoint = open_operator_checkpoint(ledger, command_run.addressed)
                 locality_id = checkpoint.locality_id
                 locality_standing = read_operator_locality_standing(
                     ledger, workspace_id=workspace_id, locality_id=locality_id
