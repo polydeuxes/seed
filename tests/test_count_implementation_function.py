@@ -9,7 +9,8 @@ sys.path.insert(0, str(ROOT / "scripts"))
 
 import material_admission  # noqa: E402
 from compiled_format_invocation import (  # noqa: E402
-    candidate_material_at_added_positions,
+    ExactMaterialReference,
+    added_position_occurrences,
     preserves_original_order,
 )
 from count_implementation_function import count_invocation  # noqa: E402
@@ -24,23 +25,27 @@ def test_absent_material_returns_zero_without_entering_returned_material():
 
 
 def test_one_added_position_changes_both_returned_coordinates():
-    candidates = candidate_material_at_added_positions((b"a",), (ord("b"),))
+    source = ExactMaterialReference("source-occurrence", "source-assertion", b"a")
+    added = ExactMaterialReference("added-occurrence", "added-assertion", b"b")
+    added_occurrences = added_position_occurrences(
+        (source,), (added,), boundary_identity="count-addition"
+    )
     occurrences = tuple(
-        count_invocation(candidate.candidate_material, b"b")
-        for candidate in candidates
+        count_invocation(occurrence.result_material, b"b")
+        for occurrence in added_occurrences
     )
 
-    assert tuple(candidate.candidate_material for candidate in candidates) == (
+    assert tuple(occurrence.result_material for occurrence in added_occurrences) == (
         b"ba",
         b"ab",
     )
     assert all(
         preserves_original_order(
-            source_material=candidate.source_material,
-            candidate_material=candidate.candidate_material,
-            added_position=candidate.position,
+            source_material=occurrence.source_material,
+            result_material=occurrence.result_material,
+            added_position=occurrence.position,
         )
-        for candidate in candidates
+        for occurrence in added_occurrences
     )
     assert tuple(occurrence.coordinates for occurrence in occurrences) == (
         (1, b"ba"),

@@ -20,10 +20,11 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "scripts"))
 
 from compiled_format_invocation import (  # noqa: E402
-    AddedPositionMaterial,
+    AddedPositionOccurrence,
     COMPILED_IMPLEMENTATION_FUNCTIONS,
     CompiledImplementationFunction,
-    candidate_material_at_added_positions,
+    ExactMaterialReference,
+    added_position_occurrences,
     compiled_invocation,
     compiled_invocations,
     added_position_invocations,
@@ -96,7 +97,44 @@ def measured_book_pairs():
             if assertion.result == "count" and assertion.representation is not None
         )
     )
-    return paths, ingests, assertions, pairs, byte_assertions, byte_values
+    pair_material = tuple(
+        sorted(
+            (
+                ExactMaterialReference(
+                    recorded_occurrence_identity=assertion.recorded_occurrence_identity,
+                    assertion_identity=assertion.assertion_identity,
+                    exact_material=bytes(assertion.representation),
+                )
+                for assertion in assertions or ()
+                if assertion.result == "count" and assertion.representation is not None
+            ),
+            key=lambda material: material.exact_material,
+        )
+    )
+    byte_material = tuple(
+        sorted(
+            (
+                ExactMaterialReference(
+                    recorded_occurrence_identity=assertion.recorded_occurrence_identity,
+                    assertion_identity=assertion.assertion_identity,
+                    exact_material=bytes((assertion.representation,)),
+                )
+                for assertion in byte_assertions or ()
+                if assertion.result == "count" and assertion.representation is not None
+            ),
+            key=lambda material: material.exact_material,
+        )
+    )
+    return (
+        paths,
+        ingests,
+        assertions,
+        pairs,
+        byte_assertions,
+        byte_values,
+        pair_material,
+        byte_material,
+    )
 
 
 @pytest.fixture(scope="module")
@@ -153,12 +191,17 @@ def book_three_byte_format_occurrences(
         for pair, returned in pair_returned.items()
         if returned
     )
-    candidates = candidate_material_at_added_positions(
-        tuple(sorted(returned_pairs)),
-        material,
+    occurrences = added_position_occurrences(
+        tuple(
+            reference
+            for reference in measured_book_pairs[6]
+            if reference.exact_material in returned_pairs
+        ),
+        measured_book_pairs[7],
+        boundary_identity="book-three-byte-addition",
     )
-    return returned_pairs, candidates, added_position_invocations(
-        candidates, boundary_identity="book-three-byte-format"
+    return returned_pairs, occurrences, added_position_invocations(
+        occurrences, boundary_identity="book-three-byte-format"
     )
 
 
@@ -207,7 +250,7 @@ IMPLEMENTATION_FUNCTIONS_AVAILABLE = _implementation_functions_available()
 
 
 def test_every_current_book_material_has_its_own_ingest(measured_book_pairs):
-    paths, ingests, _, _, _, _ = measured_book_pairs
+    paths, ingests, *_ = measured_book_pairs
 
     assert len(paths) == len(ingests)
     assert len({ingest.identity for ingest in ingests}) == len(paths)
@@ -217,7 +260,7 @@ def test_every_current_book_material_has_its_own_ingest(measured_book_pairs):
 
 
 def test_pair_material_comes_from_the_complete_recorded_measurement(measured_book_pairs):
-    _, _, assertions, pairs, _, _ = measured_book_pairs
+    _, _, assertions, pairs, *_ = measured_book_pairs
     recorded = tuple(
         sorted(
             bytes(assertion.representation)
@@ -233,7 +276,7 @@ def test_pair_material_comes_from_the_complete_recorded_measurement(measured_boo
 
 
 def test_byte_material_comes_from_the_complete_recorded_measurement(measured_book_pairs):
-    _, _, _, _, assertions, material = measured_book_pairs
+    _, _, _, _, assertions, material, *_ = measured_book_pairs
     recorded = tuple(
         sorted(
             assertion.representation
@@ -384,72 +427,115 @@ def test_compiled_functions_establish_different_pairwise_distinctions(
     assert any(distinction for distinction in distinctions)
 
 
-def test_three_byte_candidates_come_from_measured_bytes_and_invocation_returns(
+def test_three_byte_results_keep_their_measured_material_references(
     book_three_byte_format_occurrences, measured_book_pairs
 ):
-    returned_pairs, candidates, _ = book_three_byte_format_occurrences
+    returned_pairs, occurrences, _ = book_three_byte_format_occurrences
     material = set(measured_book_pairs[5])
+    source_references = {
+        (
+            reference.recorded_occurrence_identity,
+            reference.assertion_identity,
+        )
+        for reference in measured_book_pairs[6]
+    }
+    added_references = {
+        (
+            reference.recorded_occurrence_identity,
+            reference.assertion_identity,
+        )
+        for reference in measured_book_pairs[7]
+    }
 
     assert returned_pairs
-    assert candidates
+    assert occurrences
     assert all(
-        candidate.source_material in returned_pairs
-        and candidate.added_material in {
+        occurrence.source_material in returned_pairs
+        and occurrence.added_material in {
             bytes((item,)) for item in material
         }
-        and len(candidate.candidate_material) == 3
+        and len(occurrence.result_material) == 3
         and preserves_original_order(
-            source_material=candidate.source_material,
-            candidate_material=candidate.candidate_material,
-            added_position=candidate.position,
+            source_material=occurrence.source_material,
+            result_material=occurrence.result_material,
+            added_position=occurrence.position,
         )
-        for candidate in candidates
+        for occurrence in occurrences
+    )
+    assert all(
+        (
+            occurrence.source_reference.recorded_occurrence_identity,
+            occurrence.source_reference.assertion_identity,
+        )
+        in source_references
+        and (
+            occurrence.added_reference.recorded_occurrence_identity,
+            occurrence.added_reference.assertion_identity,
+        )
+        in added_references
+        for occurrence in occurrences
     )
     assert len(
         {
             (
-                candidate.source_material,
-                candidate.position,
-                candidate.added_material,
+                occurrence.source_reference.recorded_occurrence_identity,
+                occurrence.source_reference.assertion_identity,
+                occurrence.position,
+                occurrence.added_reference.recorded_occurrence_identity,
+                occurrence.added_reference.assertion_identity,
             )
-            for candidate in candidates
+            for occurrence in occurrences
         }
-    ) == len(candidates)
+    ) == len(occurrences)
+    assert len({occurrence.act_occurrence_identity for occurrence in occurrences}) == len(
+        occurrences
+    )
+    assert len({occurrence.result_identity for occurrence in occurrences}) == len(
+        occurrences
+    )
 
 
 def test_added_position_refuses_a_different_source_order():
     assert preserves_original_order(
         source_material=b"ab",
-        candidate_material=b"axb",
+        result_material=b"axb",
         added_position=1,
     )
     assert not preserves_original_order(
         source_material=b"ab",
-        candidate_material=b"bxa",
+        result_material=b"bxa",
         added_position=1,
     )
     assert not preserves_original_order(
         source_material=b"ab",
-        candidate_material=b"axb",
+        result_material=b"axb",
         added_position=0,
     )
 
 
-def test_equal_candidate_material_keeps_each_exact_added_position():
-    candidates = candidate_material_at_added_positions((b"aa",), (ord("a"),))
+def test_equal_result_material_keeps_each_exact_added_position_occurrence():
+    source = ExactMaterialReference("source-occurrence", "source-assertion", b"aa")
+    added = ExactMaterialReference("added-occurrence", "added-assertion", b"a")
+    added_occurrences = added_position_occurrences(
+        (source,), (added,), boundary_identity="equal-material-addition"
+    )
     implementation_function = CompiledImplementationFunction(
         identity="fixture", invocation=lambda material: material
     )
     occurrences = added_position_invocations(
-        candidates,
+        added_occurrences,
         boundary_identity="equal-material-positions",
         implementation_functions=(implementation_function,),
     )[0]
 
     assert tuple(
-        candidate.candidate_material for candidate in candidates
+        occurrence.result_material for occurrence in added_occurrences
     ) == (b"aaa", b"aaa", b"aaa")
-    assert tuple(candidate.position for candidate in candidates) == (0, 1, 2)
+    assert tuple(occurrence.position for occurrence in added_occurrences) == (0, 1, 2)
+    assert len(
+        {occurrence.act_occurrence_identity for occurrence in added_occurrences}
+    ) == 3
+    assert len({occurrence.result_identity for occurrence in added_occurrences}) == 3
     assert tuple(
         (
             occurrence.source_material,
@@ -460,48 +546,65 @@ def test_equal_candidate_material_keeps_each_exact_added_position():
     ) == ((b"aa", 0, b"a"), (b"aa", 1, b"a"), (b"aa", 2, b"a"))
     assert len({occurrence.occurrence_identity for occurrence in occurrences}) == 3
     assert all(
-        occurrence.source_coordinate is candidate
-        for occurrence, candidate in zip(occurrences, candidates)
+        occurrence.source_coordinate is added_occurrence
+        for occurrence, added_occurrence in zip(occurrences, added_occurrences)
     )
     assert all(
         preserves_original_order(
-            source_material=candidate.source_material,
-            candidate_material=candidate.candidate_material,
-            added_position=candidate.position,
+            source_material=occurrence.source_material,
+            result_material=occurrence.result_material,
+            added_position=occurrence.position,
         )
-        for candidate in candidates
+        for occurrence in added_occurrences
     )
 
 
 def test_a_different_source_order_is_refused_before_the_implementation_function():
     supplied = []
-    candidate = AddedPositionMaterial(
-        source_material=b"ab",
-        position=1,
-        added_material=b"x",
-        candidate_material=b"bxa",
-    )
+    source = ExactMaterialReference("source-occurrence", "source-assertion", b"ab")
+    added = ExactMaterialReference("added-occurrence", "added-assertion", b"x")
     implementation_function = CompiledImplementationFunction(
         identity="fixture",
         invocation=lambda material: supplied.append(material),
     )
 
     with pytest.raises(ValueError, match="exact source order"):
-        added_position_invocations(
-            (candidate,),
-            boundary_identity="different-source-order",
-            implementation_functions=(implementation_function,),
+        AddedPositionOccurrence(
+            boundary_identity="different-source-addition",
+            occurrence_position=0,
+            source_reference=source,
+            position=1,
+            added_reference=added,
+            result_material=b"bxa",
         )
 
     assert supplied == []
 
 
-def test_every_three_byte_candidate_reaches_every_compiled_implementation_function(
+def test_equal_source_material_keeps_distinct_source_assertion_references():
+    first = ExactMaterialReference("source-a", "assertion-a", b"aa")
+    second = ExactMaterialReference("source-b", "assertion-b", b"aa")
+    added = ExactMaterialReference("added", "added-assertion", b"a")
+
+    occurrences = added_position_occurrences(
+        (first, second), (added,), boundary_identity="equal-source-addition"
+    )
+
+    assert len(occurrences) == 6
+    assert {occurrence.source_reference for occurrence in occurrences} == {
+        first,
+        second,
+    }
+    assert len({occurrence.act_occurrence_identity for occurrence in occurrences}) == 6
+    assert len({occurrence.result_identity for occurrence in occurrences}) == 6
+
+
+def test_every_three_byte_result_reaches_every_compiled_implementation_function(
     book_three_byte_format_occurrences,
 ):
-    _, candidates, occurrences = book_three_byte_format_occurrences
+    _, added_occurrences, occurrences = book_three_byte_format_occurrences
     exact_material = tuple(
-        candidate.candidate_material for candidate in candidates
+        occurrence.result_material for occurrence in added_occurrences
     )
 
     assert len(occurrences) == len(COMPILED_IMPLEMENTATION_FUNCTIONS)
@@ -511,7 +614,7 @@ def test_every_three_byte_candidate_reaches_every_compiled_implementation_functi
     )
 
 
-def test_three_byte_candidates_expose_different_compiled_invocation_boundaries(
+def test_three_byte_results_expose_different_compiled_invocation_boundaries(
     book_three_byte_format_occurrences,
 ):
     _, _, occurrences = book_three_byte_format_occurrences
