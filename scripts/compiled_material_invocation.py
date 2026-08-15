@@ -83,51 +83,6 @@ class MaterialInvocationResultReference:
 
 
 @dataclass(frozen=True, slots=True)
-class StdoutMaterialReference:
-    invocation_occurrence: "MaterialInvocationOccurrence"
-
-    def __post_init__(self) -> None:
-        if not isinstance(self.invocation_occurrence, MaterialInvocationOccurrence):
-            raise TypeError("stdout material requires its exact invocation occurrence")
-
-    @property
-    def act_occurrence_identity(self) -> tuple[str, str, int]:
-        return self.invocation_occurrence.occurrence_identity
-
-    @property
-    def result_identity(self) -> tuple[str, str, int, str]:
-        return (*self.act_occurrence_identity, "stdout")
-
-    @property
-    def exact_material(self) -> bytes:
-        return self.invocation_occurrence.stdout_bytes
-
-
-@dataclass(frozen=True, slots=True)
-class IngestedStdoutOccurrence:
-    boundary_identity: str
-    occurrence_position: int
-    stdout_reference: StdoutMaterialReference
-    ingest_reference: IngestResultReference
-
-    def __post_init__(self) -> None:
-        if type(self.boundary_identity) is not str or not self.boundary_identity:
-            raise TypeError("one exact boundary identity is required")
-        if type(self.occurrence_position) is not int or self.occurrence_position < 0:
-            raise TypeError("one exact occurrence position is required")
-        if not isinstance(self.stdout_reference, StdoutMaterialReference):
-            raise TypeError("Ingest crossing requires exact stdout material")
-        if not isinstance(self.ingest_reference, IngestResultReference):
-            raise TypeError("Ingest crossing requires one exact Ingest result")
-        if self.stdout_reference.exact_material != self.ingest_reference.exact_material:
-            raise ValueError("Ingest material differs from exact stdout material")
-
-    @property
-    def occurrence_identity(self) -> tuple[str, int]:
-        return (self.boundary_identity, self.occurrence_position)
-
-
-@dataclass(frozen=True, slots=True)
 class MaterialAddedCompareOccurrence:
     boundary_identity: str
     occurrence_position: int
@@ -229,11 +184,6 @@ class MaterialInvocationOccurrence:
     @property
     def result_reference(self) -> MaterialInvocationResultReference:
         return MaterialInvocationResultReference(invocation_occurrence=self)
-
-    @property
-    def stdout_reference(self) -> StdoutMaterialReference:
-        return StdoutMaterialReference(invocation_occurrence=self)
-
 
 @dataclass(frozen=True, slots=True)
 class MaterialAdmissionOccurrence:

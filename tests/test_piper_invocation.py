@@ -16,7 +16,6 @@ from compiled_format_invocation import (  # noqa: E402
     added_position_occurrences,
 )
 from compiled_material_invocation import (  # noqa: E402
-    IngestedStdoutOccurrence,
     MaterialAddedCompareOccurrence,
     compare_added_material_invocations,
     ingest_result_reference,
@@ -162,26 +161,11 @@ def test_each_piper_result_can_enter_a_fresh_locality_as_exact_material(
     references = tuple(
         ingest_result_reference(ledger, event.identity) for event in ingests
     )
-    crossings = tuple(
-        IngestedStdoutOccurrence(
-            boundary_identity="piper-stdout-ingest",
-            occurrence_position=position,
-            stdout_reference=invocation.stdout_reference,
-            ingest_reference=reference,
-        )
-        for position, (invocation, reference) in enumerate(
-            zip(invocations, references)
-        )
-    )
 
     assert len({event.locality_identity for event in ingests}) == len(ingests)
-    assert len({crossing.occurrence_identity for crossing in crossings}) == len(
-        crossings
+    assert tuple(reference.exact_material for reference in references) == tuple(
+        invocation.stdout_bytes for invocation in invocations
     )
-    assert tuple(crossing.stdout_reference for crossing in crossings) == tuple(
-        invocation.stdout_reference for invocation in invocations
-    )
-    assert tuple(crossing.ingest_reference for crossing in crossings) == references
     assert len({reference.result_identity for reference in references}) == len(
         references
     )
