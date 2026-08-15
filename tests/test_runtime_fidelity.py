@@ -209,7 +209,23 @@ def _resolved_named_value(name: str, *, line: int, named):
     return max(candidates, default=(None, None))[1]
 
 
-def _authored_strings(value, *, line: int, named, resolving=()):
+def _local_call_bindings(call: ast.Call, function) -> dict[str, list[tuple[int, ast.AST]]]:
+    parameters = [*function.args.posonlyargs, *function.args.args]
+    found = {
+        parameter.arg: [(0, supplied)]
+        for parameter, supplied in zip(parameters, call.args)
+    }
+    found.update(
+        {
+            keyword.arg: [(0, keyword.value)]
+            for keyword in call.keywords
+            if keyword.arg is not None
+        }
+    )
+    return found
+
+
+def _authored_strings(value, *, line: int, named, functions=None, resolving=()):
     if isinstance(value, ast.Constant):
         if isinstance(value.value, str):
             yield value.lineno, value.value
@@ -223,16 +239,29 @@ def _authored_strings(value, *, line: int, named, resolving=()):
                 resolved,
                 line=line,
                 named=named,
+                functions=functions,
                 resolving=(*resolving, value.id),
             )
         return
     if isinstance(value, ast.Dict):
         for nested in value.values:
-            yield from _authored_strings(nested, line=line, named=named, resolving=resolving)
+            yield from _authored_strings(
+                nested,
+                line=line,
+                named=named,
+                functions=functions,
+                resolving=resolving,
+            )
         return
     if isinstance(value, (ast.List, ast.Tuple, ast.Set)):
         for nested in value.elts:
-            yield from _authored_strings(nested, line=line, named=named, resolving=resolving)
+            yield from _authored_strings(
+                nested,
+                line=line,
+                named=named,
+                functions=functions,
+                resolving=resolving,
+            )
         return
     if isinstance(value, ast.JoinedStr):
         for nested in value.values:
@@ -241,7 +270,13 @@ def _authored_strings(value, *, line: int, named, resolving=()):
         return
     if isinstance(value, (ast.BinOp, ast.IfExp)):
         for nested in ast.iter_child_nodes(value):
-            yield from _authored_strings(nested, line=line, named=named, resolving=resolving)
+            yield from _authored_strings(
+                nested,
+                line=line,
+                named=named,
+                functions=functions,
+                resolving=resolving,
+            )
         return
     if (
         isinstance(value, ast.Call)
@@ -249,10 +284,53 @@ def _authored_strings(value, *, line: int, named, resolving=()):
         and value.func.id in {"dict", "list", "set", "tuple"}
     ):
         for nested in value.args:
-            yield from _authored_strings(nested, line=line, named=named, resolving=resolving)
+            yield from _authored_strings(
+                nested,
+                line=line,
+                named=named,
+                functions=functions,
+                resolving=resolving,
+            )
         for keyword in value.keywords:
             yield from _authored_strings(
-                keyword.value, line=line, named=named, resolving=resolving
+                keyword.value,
+                line=line,
+                named=named,
+                functions=functions,
+                resolving=resolving,
+            )
+        return
+    if not (
+        isinstance(value, ast.Call)
+        and isinstance(value.func, ast.Name)
+        and functions
+        and value.func.id in functions
+        and value.func.id not in resolving
+    ):
+        return
+    function = functions[value.func.id]
+    function_named = {name: list(values) for name, values in named.items()}
+    for name, values in _named_values(function).items():
+        function_named.setdefault(name, []).extend(values)
+    function_named.update(_local_call_bindings(value, function))
+    function_dicts = _named_dicts(function)
+    for node in _scope_nodes(function):
+        if not isinstance(node, ast.Return):
+            continue
+        returned = _resolved_material_dict(
+            node.value,
+            line=node.lineno,
+            named=function_dicts,
+            functions=functions,
+            resolving=(*resolving, value.func.id),
+        )
+        if returned is not None:
+            yield from _authored_strings(
+                returned,
+                line=line,
+                named=function_named,
+                functions=functions,
+                resolving=(*resolving, value.func.id),
             )
 
 
@@ -284,7 +362,10 @@ def _authored_event_material_strings(path: Path, tree: ast.Module):
             if resolved is None:
                 continue
             for line, authored in _authored_strings(
-                resolved, line=call.lineno, named=named
+                resolved,
+                line=call.lineno,
+                named=named,
+                functions=functions,
             ):
                 yield path.name, line, authored
 
@@ -504,6 +585,16 @@ def test_authored_value_admission_crosses_a_local_material_function():
     )
     assert _unadmitted_authored_event_material(Path("fixture.py"), tree) == [
         ("fixture.py", 2, "invented", "invented")
+    ]
+
+
+def test_authored_value_admission_binds_local_material_function_arguments():
+    tree = ast.parse(
+        'def material(*, standing):\n    return {"standing": standing}\n'
+        'ledger.append(SOME_KIND, {"dimensions": material(standing="invented")})'
+    )
+    assert _unadmitted_authored_event_material(Path("fixture.py"), tree) == [
+        ("fixture.py", 3, "invented", "invented")
     ]
 
 
