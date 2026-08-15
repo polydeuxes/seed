@@ -433,7 +433,9 @@ def _assertion_compare_input_locality_roads() -> tuple[dict, dict]:
             locality_identity="assertion-compare-target",
             comparison=comparison,
         )
-        evidence = ledger.get(event.material["input_locality_evidence_identities"][0])
+        evidence = ledger.get(
+            event.material["participation"][0]["locality_evidence_identity"]
+        )
         return {
             "ledger": ledger,
             "event": event,
@@ -515,7 +517,7 @@ def _bounded_compare_input_locality_roads() -> tuple[dict, dict]:
     first = {
         **exact,
         "locality_evidence": exact["ledger"].get(
-            event.material["input_locality_evidence_identities"][0]
+            event.material["participation"][0]["locality_evidence_identity"]
         ),
     }
     alternate = _bounded_assertion_compare_yield_road()
@@ -523,7 +525,7 @@ def _bounded_compare_input_locality_roads() -> tuple[dict, dict]:
     second = {
         **alternate,
         "locality_evidence": alternate["ledger"].get(
-            alternate_event.material["input_locality_evidence_identities"][0]
+            alternate_event.material["participation"][0]["locality_evidence_identity"]
         ),
     }
     return first, second
@@ -541,9 +543,11 @@ def _bounded_compare_input_locality_requirements(bundle: dict) -> dict[str, bool
     first_subject = evidence.material.get("first_subject")
     second_subject = evidence.material.get("second_subject")
     return {
-        "exact_relation": (
-            first_subject in event.material.get("input_event_identities", [])
-            and evidence.identity in event.material.get("input_locality_evidence_identities", [])
+        "exact_relation": any(
+            isinstance(item, dict)
+            and item.get("subject_reference") == first_subject
+            and item.get("locality_evidence_identity") == evidence.identity
+            for item in event.material.get("participation", [])
         ),
         "occurrence_witness": (
             isinstance(second_subject, dict)
@@ -595,9 +599,11 @@ def _assertion_compare_input_locality_requirements(bundle: dict) -> dict[str, bo
         }
     first_subject = evidence.material.get("first_subject")
     second_subject = evidence.material.get("second_subject")
-    exact_relation = (
-        first_subject in event.material.get("inputs", [])
-        and evidence.identity in event.material.get("input_locality_evidence_identities", [])
+    exact_relation = any(
+        isinstance(item, dict)
+        and item.get("subject_reference") == first_subject
+        and item.get("locality_evidence_identity") == evidence.identity
+        for item in event.material.get("participation", [])
     )
     exact_occurrence = (
         isinstance(second_subject, dict)

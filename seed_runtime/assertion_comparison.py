@@ -265,8 +265,6 @@ def record_assertion_yield_comparison(
     act_identity = new_identity("assertion_compare_act")
     act_occurrence_identity = new_identity("assertion_compare_act_occurrence")
     result_identity = new_identity("assertion_compare_result")
-    locality_evidence_identities = []
-    applicability_event_identities = []
     participation = []
     for input_reference in input_references:
         role = "compared Assertion"
@@ -297,13 +295,12 @@ def record_assertion_yield_comparison(
             },
             locality_identity=locality_identity,
         )
-        locality_evidence_identities.append(locality_evidence.identity)
-        applicability_event_identities.append(applicability.identity)
         participation.append(
             {
                 "subject_reference": input_reference,
                 "role": role,
                 "act_occurrence_identity": act_occurrence_identity,
+                "locality_evidence_identity": locality_evidence.identity,
                 "applicability_event_identity": applicability.identity,
             }
         )
@@ -382,8 +379,6 @@ def record_assertion_yield_comparison(
         "exact_act": "Compare",
         "downstream_act_identity": act_identity,
         "act_occurrence_identity": act_occurrence_identity,
-        "input_locality_evidence_identities": locality_evidence_identities,
-        "input_applicability_event_identities": applicability_event_identities,
         "participation": participation,
         "responsible_boundary": comparison.responsible_boundary,
         "responsibility": comparison.responsibility,
@@ -398,7 +393,6 @@ def record_assertion_yield_comparison(
             "act": "Compare",
             "responsibility": comparison.responsibility,
             "responsible_boundary": comparison.responsible_boundary,
-            "input_applicability_event_identities": applicability_event_identities,
             "participation": participation,
             "authority": "unestablished",
             "evidence_scope": "this exact bounded Compare occurrence only",
@@ -462,32 +456,35 @@ def assertions_of_recorded_assertion_comparison(
             f"{event.identity} does not carry two distinct yields of one Assertion"
         )
     act_occurrence_identity = event.material.get("act_occurrence_identity")
-    locality_identities = event.material.get("input_locality_evidence_identities")
-    applicability_identities = event.material.get("input_applicability_event_identities")
     participation = event.material.get("participation")
     if (
         not isinstance(act_occurrence_identity, str)
         or not act_occurrence_identity
-        or not isinstance(locality_identities, list)
-        or len(locality_identities) != len(outer_inputs)
-        or len(set(locality_identities)) != len(locality_identities)
-        or not all(isinstance(value, str) and value for value in locality_identities)
-        or not isinstance(applicability_identities, list)
-        or len(applicability_identities) != len(outer_inputs)
-        or len(set(applicability_identities)) != len(applicability_identities)
-        or not all(isinstance(value, str) and value for value in applicability_identities)
-        or participation
-        != [
-            {
-                "subject_reference": input_reference,
-                "role": "compared Assertion",
-                "act_occurrence_identity": act_occurrence_identity,
-                "applicability_event_identity": applicability_identity,
+        or not isinstance(participation, list)
+        or len(participation) != len(outer_inputs)
+        or any(
+            not isinstance(item, dict)
+            or set(item)
+            != {
+                "subject_reference",
+                "role",
+                "act_occurrence_identity",
+                "locality_evidence_identity",
+                "applicability_event_identity",
             }
-            for input_reference, applicability_identity in zip(
-                outer_inputs, applicability_identities
-            )
-        ]
+            or item["subject_reference"] != input_reference
+            or item["role"] != "compared Assertion"
+            or item["act_occurrence_identity"] != act_occurrence_identity
+            or not isinstance(item["locality_evidence_identity"], str)
+            or not item["locality_evidence_identity"]
+            or not isinstance(item["applicability_event_identity"], str)
+            or not item["applicability_event_identity"]
+            for input_reference, item in zip(outer_inputs, participation)
+        )
+        or len({item["locality_evidence_identity"] for item in participation})
+        != len(participation)
+        or len({item["applicability_event_identity"] for item in participation})
+        != len(participation)
     ):
         raise AssertionComparisonError(
             f"{event.identity} does not preserve exact input Locality, Applicability, "

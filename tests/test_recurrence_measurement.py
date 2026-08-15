@@ -446,6 +446,20 @@ def test_assertion_yield_compare_records_each_literal_result_separately(compared
     assertions = assertions_of_recorded_assertion_comparison(event)
 
     assert event.kind == ASSERTION_YIELD_COMPARISON_RECORDED_KIND
+    assert set(event.material) == {
+        "result_identity",
+        "dimensions",
+        "exact_act",
+        "downstream_act_identity",
+        "act_occurrence_identity",
+        "participation",
+        "responsible_boundary",
+        "responsibility",
+        "inputs",
+        "assertions",
+        "responsible_act_evidence_identity",
+        "yield_evidence_identity",
+    }
     assert event.material["exact_act"] == "Compare"
     assert event.material["responsible_boundary"] == "this bounded comparison occurrence"
     assert len(assertions) == len(comparison.distinctions) == 10
@@ -484,16 +498,22 @@ def test_yielded_assertions_enter_compare_through_exact_input_relations(compared
         ),
     )
 
-    assert len(recorded.material["input_locality_evidence_identities"]) == 2
-    assert len(recorded.material["input_applicability_event_identities"]) == 2
-    for input_reference, locality_identity, applicability_identity, participation in zip(
+    assert len(recorded.material["participation"]) == 2
+    act_evidence = compared.get(recorded.material["responsible_act_evidence_identity"])
+    assert act_evidence.material["participation"] == recorded.material["participation"]
+    for input_reference, participation in zip(
         recorded.material["inputs"],
-        recorded.material["input_locality_evidence_identities"],
-        recorded.material["input_applicability_event_identities"],
         recorded.material["participation"],
     ):
-        locality = compared.get(locality_identity)
-        applicability = compared.get(applicability_identity)
+        assert set(participation) == {
+            "subject_reference",
+            "role",
+            "act_occurrence_identity",
+            "locality_evidence_identity",
+            "applicability_event_identity",
+        }
+        locality = compared.get(participation["locality_evidence_identity"])
+        applicability = compared.get(participation["applicability_event_identity"])
         assert locality.material["first_subject"] == input_reference
         assert locality.material["second_subject"]["act_occurrence_identity"] == (
             recorded.material["act_occurrence_identity"]
@@ -505,6 +525,7 @@ def test_yielded_assertions_enter_compare_through_exact_input_relations(compared
             "subject_reference": input_reference,
             "role": "compared Assertion",
             "act_occurrence_identity": recorded.material["act_occurrence_identity"],
+            "locality_evidence_identity": locality.identity,
             "applicability_event_identity": applicability.identity,
         }
 
@@ -531,8 +552,17 @@ def test_locality_and_applicability_do_not_substitute_for_participation(compared
             compared, tuple(item.reference for item in inputs)
         ),
     ).model_copy(deep=True)
-    assert recorded.material["input_locality_evidence_identities"]
-    assert recorded.material["input_applicability_event_identities"]
+    assert all(
+        set(item)
+        == {
+            "subject_reference",
+            "role",
+            "act_occurrence_identity",
+            "locality_evidence_identity",
+            "applicability_event_identity",
+        }
+        for item in recorded.material["participation"]
+    )
     recorded.material["participation"] = []
 
     with pytest.raises(AssertionComparisonError, match="Participation"):

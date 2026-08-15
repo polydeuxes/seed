@@ -291,8 +291,6 @@ def record_comparison_finding(
     act_identity = new_identity("bounded_comparison_act")
     act_occurrence_identity = new_identity("bounded_comparison_act_occurrence")
     result_identity = new_identity("bounded_comparison_result")
-    locality_evidence_identities = []
-    applicability_event_identities = []
     participation = []
     for input_event_identity in input_event_identities:
         role = "preserved finding compared"
@@ -323,13 +321,12 @@ def record_comparison_finding(
             },
             locality_identity=locality_identity,
         )
-        locality_evidence_identities.append(locality_evidence.identity)
-        applicability_event_identities.append(applicability.identity)
         participation.append(
             {
                 "subject_reference": input_event_identity,
                 "role": role,
                 "act_occurrence_identity": act_occurrence_identity,
+                "locality_evidence_identity": locality_evidence.identity,
                 "applicability_event_identity": applicability.identity,
             }
         )
@@ -354,15 +351,12 @@ def record_comparison_finding(
         ),
         "downstream_act_identity": act_identity,
         "act_occurrence_identity": act_occurrence_identity,
-        "input_locality_evidence_identities": locality_evidence_identities,
-        "input_applicability_event_identities": applicability_event_identities,
         "participation": participation,
         "unknowns": [
             "what any compared representation means remains Unknown",
             "whether the compared bodies stand in any relation remains Unknown",
         ],
         "limits": list(LIMITS),
-        "input_event_identities": input_event_identities,
         **finding.to_json_dict(),
     }
     act_evidence = ledger.append(
@@ -373,7 +367,6 @@ def record_comparison_finding(
             "act": "bounded Compare",
             "responsibility": COMPARISON_RESPONSIBILITY,
             "responsible_boundary": "this Seed",
-            "input_applicability_event_identities": applicability_event_identities,
             "participation": participation,
             "authority": "unestablished",
             "evidence_scope": "this exact bounded Compare occurrence only",

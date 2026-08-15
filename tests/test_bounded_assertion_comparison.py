@@ -265,7 +265,40 @@ def test_the_comparison_is_recorded_as_its_own_kind(ledger):
         ledger, locality_identity="s1",
         finding=compare_preserved_findings(ledger, [a.identity, b.identity]))
     assert event.kind == COMPARISON_RECORDED_KIND
-    assert event.material["input_event_identities"] == [a.identity, b.identity]
+    assert set(event.material) == {
+        "result_identity",
+        "dimensions",
+        "responsible_boundary",
+        "downstream_act_identity",
+        "act_occurrence_identity",
+        "participation",
+        "unknowns",
+        "limits",
+        "inputs",
+        "distinctions",
+        "shared_representations",
+        "representations_in_one_only",
+        "bounded_relation",
+        "responsible_act_evidence_identity",
+        "yield_evidence_identity",
+    }
+    assert [item["subject_reference"] for item in event.material["participation"]] == [
+        a.identity,
+        b.identity,
+    ]
+    act_evidence = ledger.get(event.material["responsible_act_evidence_identity"])
+    assert act_evidence.material["participation"] == event.material["participation"]
+    assert all(
+        set(item)
+        == {
+            "subject_reference",
+            "role",
+            "act_occurrence_identity",
+            "locality_evidence_identity",
+            "applicability_event_identity",
+        }
+        for item in event.material["participation"]
+    )
     assert "standing" not in event.material["dimensions"]
 
 
