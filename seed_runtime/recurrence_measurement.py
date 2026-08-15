@@ -417,20 +417,6 @@ def get_recorded_measured_assertion(
     return None
 
 
-def occurrences_of_declared_localities(
-    ledger: EventLedger, *, bounded_localities: Iterable[str]
-) -> Iterator[tuple[str, list[Event]]]:
-    """Yield each declared locality's occurrences for compatibility.
-
-    Recurrence measurement no longer has as input this list-returning helper: its
-    two passes use ``iter_locality_kind`` so comparison Events are folded one at
-    a time. Existing callers that require the complete occurrences of one
-    locality retain the per-locality API introduced by ``#2441``.
-    """
-    for locality in bounded_localities:
-        yield locality, ledger.list_locality(locality)
-
-
 def _declared_of_measurement(event: Event) -> tuple[tuple[str, str], ...] | None:
     declared = []
     for name in DECLARED_IDENTITY:

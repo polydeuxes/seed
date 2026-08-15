@@ -3,10 +3,11 @@
 from __future__ import annotations
 
 from datetime import datetime, timezone
-from importlib.util import find_spec
 import json
 import math
 from typing import Any
+
+from pydantic import Field
 
 from seed_runtime.base import SeedModel
 from seed_runtime.secrets import (
@@ -14,12 +15,6 @@ from seed_runtime.secrets import (
     secret_boundary_key,
     reject_secret_fields,
 )
-
-if find_spec("pydantic") is not None:
-    from pydantic import Field
-else:
-    from seed_runtime._pydantic_compat import Field
-
 
 def utc_now() -> datetime:
     """Return a timezone-aware UTC timestamp."""
