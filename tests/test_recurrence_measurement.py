@@ -92,9 +92,9 @@ def compared():
     return ledger
 
 
-def _by_right(ledger, declared=None):
+def _by_representation(ledger, declared=None):
     return {
-        f.distinction.right_representation: f
+        f.distinction.representation: f
         for f in measure_locality_counts(
             ledger, bounded_localities=declared or DECLARED)
     }
@@ -113,7 +113,7 @@ def test_assertion_standing_coordinate_responsibility_is_distinct_from_its_yield
     """The yielding Act and the result's Standing-coordinate responsible boundary remain distinct."""
     event = record_measured_count(
         compared, locality_identity="s1",
-        finding=_by_right(compared)["word"])
+        finding=_by_representation(compared)["word"])
     assertions = event.material["assertions"]
     assert assertions
     assert all(
@@ -139,7 +139,7 @@ def test_assertion_standing_coordinate_responsibility_is_distinct_from_its_yield
 def test_the_record_shape_is_its_own(compared):
     event = record_measured_count(
         compared, locality_identity="s1",
-        finding=_by_right(compared)["word"])
+        finding=_by_representation(compared)["word"])
     assert event.kind == LOCALITY_COUNT_RECORDED_KIND
     assert event.kind != MEASUREMENT_RECORDED_KIND
     assert "representation_counts" not in event.material
@@ -148,7 +148,7 @@ def test_the_record_shape_is_its_own(compared):
 
 
 def test_one_occurrence_preserves_every_distinct_result(compared):
-    finding = _by_right(compared)["word"]
+    finding = _by_representation(compared)["word"]
     event = record_measured_count(
         compared, locality_identity="s1", finding=finding
     )
@@ -173,7 +173,7 @@ def test_recorded_assertions_are_addressable_through_their_occurrence(compared):
     event = record_measured_count(
         compared,
         locality_identity="s1",
-        finding=_by_right(compared)["word"],
+        finding=_by_representation(compared)["word"],
     )
     assertions = assertions_of_recorded_measurement(event)
 
@@ -215,7 +215,7 @@ def test_validation_refuses_assertion_identity_that_does_not_match_content(compa
     event = record_measured_count(
         compared,
         locality_identity="s1",
-        finding=_by_right(compared)["word"],
+        finding=_by_representation(compared)["word"],
     ).model_copy(deep=True)
     assertion = _assertions_by_result(event)["count"]
     assertion["dimensions"]["content"]["locality_count"] += 1
@@ -230,7 +230,7 @@ def test_validation_refuses_non_assertion_and_unresolved_local_support(compared)
     event = record_measured_count(
         compared,
         locality_identity="s1",
-        finding=_by_right(compared)["word"],
+        finding=_by_representation(compared)["word"],
     ).model_copy(deep=True)
     _assertions_by_result(event)["count"]["subject_kind"] = "not-an-assertion"
     with pytest.raises(RecurrenceMeasurementError, match="not identified"):
@@ -239,7 +239,7 @@ def test_validation_refuses_non_assertion_and_unresolved_local_support(compared)
     event = record_measured_count(
         compared,
         locality_identity="s1",
-        finding=_by_right(compared)["word"],
+        finding=_by_representation(compared)["word"],
     ).model_copy(deep=True)
     _assertions_by_result(event)["count"]["input_support"][
         "local_assertion_identities"
@@ -249,7 +249,7 @@ def test_validation_refuses_non_assertion_and_unresolved_local_support(compared)
 
 
 def test_assertion_identity_and_yielding_occurrence_remain_distinct(compared):
-    finding = _by_right(compared)["word"]
+    finding = _by_representation(compared)["word"]
     first = record_measured_count(
         compared, locality_identity="s1", finding=finding
     )
@@ -271,7 +271,7 @@ def test_assertion_identity_and_yielding_occurrence_remain_distinct(compared):
 
 
 def test_two_yields_of_one_assertion_can_be_compared_without_relation(compared):
-    finding = _by_right(compared)["word"]
+    finding = _by_representation(compared)["word"]
     first = record_measured_count(
         compared, locality_identity="s1", finding=finding
     )
@@ -305,7 +305,7 @@ def test_two_yields_of_one_assertion_can_be_compared_without_relation(compared):
 
 
 def test_assertion_compare_distinguishes_absence_from_carried_none(compared):
-    finding = _by_right(compared)["word"]
+    finding = _by_representation(compared)["word"]
     first = record_measured_count(
         compared, locality_identity="s1", finding=finding
     )
@@ -348,7 +348,7 @@ def test_assertion_compare_distinguishes_absence_from_carried_none(compared):
 
 
 def test_assertion_compare_exposes_changed_support_without_strengthening_it(compared):
-    finding = _by_right(compared)["word"]
+    finding = _by_representation(compared)["word"]
     first = record_measured_count(
         compared, locality_identity="s1", finding=finding
     )
@@ -395,7 +395,7 @@ def test_assertion_compare_refuses_self_and_different_assertions(compared):
     event = record_measured_count(
         compared,
         locality_identity="s1",
-        finding=_by_right(compared)["word"],
+        finding=_by_representation(compared)["word"],
     )
     assertions = assertions_of_recorded_measurement(event)
     count = next(assertion for assertion in assertions if assertion.result == "count")
@@ -419,7 +419,7 @@ def test_assertion_compare_refuses_self_and_different_assertions(compared):
 
 
 def test_assertion_yield_compare_records_each_literal_result_separately(compared):
-    finding = _by_right(compared)["word"]
+    finding = _by_representation(compared)["word"]
     first = record_measured_count(
         compared, locality_identity="s1", finding=finding
     )
@@ -462,7 +462,7 @@ def test_assertion_yield_compare_records_each_literal_result_separately(compared
 
 
 def test_yielded_assertions_enter_compare_through_exact_input_relations(compared):
-    finding = _by_right(compared)["word"]
+    finding = _by_representation(compared)["word"]
     first = record_measured_count(
         compared, locality_identity="s1", finding=finding
     )
@@ -510,7 +510,7 @@ def test_yielded_assertions_enter_compare_through_exact_input_relations(compared
 
 
 def test_locality_and_applicability_do_not_substitute_for_participation(compared):
-    finding = _by_right(compared)["word"]
+    finding = _by_representation(compared)["word"]
     first = record_measured_count(
         compared, locality_identity="s1", finding=finding
     )
@@ -540,7 +540,7 @@ def test_locality_and_applicability_do_not_substitute_for_participation(compared
 
 
 def test_recording_comparison_results_does_not_establish_support_or_revision(compared):
-    finding = _by_right(compared)["word"]
+    finding = _by_representation(compared)["word"]
     first = record_measured_count(
         compared, locality_identity="s1", finding=finding
     )
@@ -571,7 +571,7 @@ def test_recording_comparison_results_does_not_establish_support_or_revision(com
 
 
 def test_recorded_comparison_assertion_identity_is_recomputed(compared):
-    finding = _by_right(compared)["word"]
+    finding = _by_representation(compared)["word"]
     first = record_measured_count(
         compared, locality_identity="s1", finding=finding
     )
@@ -593,7 +593,7 @@ def test_recorded_comparison_assertion_identity_is_recomputed(compared):
 
 
 def test_validation_refuses_a_self_consistent_forged_compare_result(compared):
-    finding = _by_right(compared)["word"]
+    finding = _by_representation(compared)["word"]
     first = record_measured_count(
         compared, locality_identity="s1", finding=finding
     )
@@ -627,7 +627,7 @@ def test_validation_refuses_a_self_consistent_forged_compare_result(compared):
 
 
 def test_validation_requires_the_exact_compare_coordinate_set(compared):
-    finding = _by_right(compared)["word"]
+    finding = _by_representation(compared)["word"]
     first = record_measured_count(
         compared, locality_identity="s1", finding=finding
     )
@@ -649,7 +649,7 @@ def test_validation_requires_the_exact_compare_coordinate_set(compared):
 
 
 def test_comparison_assertion_identity_includes_its_recorded_scope(compared):
-    finding = _by_right(compared)["word"]
+    finding = _by_representation(compared)["word"]
     first = record_measured_count(
         compared, locality_identity="s1", finding=finding
     )
@@ -681,7 +681,7 @@ def test_comparison_assertion_identity_includes_its_recorded_scope(compared):
 
 
 def test_recording_refuses_a_comparison_not_established_from_its_inputs(compared):
-    finding = _by_right(compared)["word"]
+    finding = _by_representation(compared)["word"]
     first = record_measured_count(
         compared, locality_identity="s1", finding=finding
     )
@@ -708,7 +708,7 @@ def test_recording_refuses_a_comparison_not_established_from_its_inputs(compared
 
 
 def test_recorded_assertion_stream_obeys_sessions_and_boundary(compared):
-    finding = _by_right(compared)["word"]
+    finding = _by_representation(compared)["word"]
     first = record_measured_count(
         compared, locality_identity="s1", finding=finding
     )
@@ -732,7 +732,7 @@ def test_recorded_assertion_stream_obeys_sessions_and_boundary(compared):
 
 
 def test_exact_sets_keep_completeness_separate_from_support(compared):
-    finding = _by_right(compared)["word"]
+    finding = _by_representation(compared)["word"]
     assertions = {
         assertion.result: assertion
         for assertion in assertions_from_measured_count(finding)
@@ -768,7 +768,7 @@ def test_exact_sets_keep_completeness_separate_from_support(compared):
 
 
 def test_count_and_recurrence_stand_on_assertions_not_raw_events(compared):
-    assertions = assertions_from_measured_count(_by_right(compared)["word"])
+    assertions = assertions_from_measured_count(_by_representation(compared)["word"])
     by_result = {assertion.result: assertion for assertion in assertions}
 
     assert by_result["count"].support_event_identities == ()
@@ -784,7 +784,7 @@ def test_count_and_recurrence_stand_on_assertions_not_raw_events(compared):
 
 
 def test_scope_and_rule_are_part_of_assertion_identity(compared):
-    finding = _by_right(compared)["word"]
+    finding = _by_representation(compared)["word"]
     declared = dict(finding.distinction.declared)
     other_scope = dict(declared, counting_scope="another bounded scope")
     other_rule = dict(declared, equivalence_rule="another exact rule")
@@ -879,7 +879,7 @@ def test_the_declared_identity_includes_the_counting_scope(compared):
     assert "counting_scope" in DECLARED_IDENTITY
     assert "representation_measured" in DECLARED_IDENTITY
     assert "measurement_distinction" in DECLARED_IDENTITY
-    declared = dict(_by_right(compared)["word"].distinction.declared)
+    declared = dict(_by_representation(compared)["word"].distinction.declared)
     assert set(declared) == set(DECLARED_IDENTITY)
     assert declared["counting_scope"] == SCOPE
 
@@ -898,13 +898,13 @@ def test_measurements_declaring_different_scopes_do_not_group(compared):
     scopes = {
         dict(f.distinction.declared)["counting_scope"]
         for f in measure_locality_counts(compared, bounded_localities=DECLARED)
-        if f.distinction.right_representation == "word"
+        if f.distinction.representation == "word"
     }
     assert scopes == {SCOPE, "a different scope"}
     counts = {
         dict(f.distinction.declared)["counting_scope"]: f.locality_count
         for f in measure_locality_counts(compared, bounded_localities=DECLARED)
-        if f.distinction.right_representation == "word"
+        if f.distinction.representation == "word"
     }
     assert counts[SCOPE] == 3            # s1 s2 s3
     assert counts["a different scope"] == 2   # s1 s2 only
@@ -916,13 +916,13 @@ def test_measurements_declaring_different_scopes_do_not_group(compared):
 
 
 def test_only_measurements_that_supply_the_count_travel_as_evidence(compared):
-    finding = _by_right(compared)["word"]
+    finding = _by_representation(compared)["word"]
     kinds = {compared.get(i).kind for i in finding.input_event_identities}
     assert kinds == {MEASUREMENT_RECORDED_KIND}
 
 
 def test_every_locality_s_measurement_is_among_the_support(compared):
-    finding = _by_right(compared)["word"]
+    finding = _by_representation(compared)["word"]
     supporting = {
         compared.get(i).locality_identity
         for i in finding.input_event_identities
@@ -933,7 +933,7 @@ def test_every_locality_s_measurement_is_among_the_support(compared):
 
 def test_the_input_ledger_boundary_is_preserved_as_read_provenance(compared):
     boundary = compared.append_boundary()
-    finding = _by_right(compared)["word"]
+    finding = _by_representation(compared)["word"]
 
     assert finding.input_ledger_boundary == boundary
     assert finding.to_json_dict()["input_ledger_boundary"] == {
@@ -958,7 +958,7 @@ def test_the_old_aggregate_result_is_not_recorded_beside_the_assertions(compared
     event = record_measured_count(
         compared,
         locality_identity="s1",
-        finding=_by_right(compared)["word"],
+        finding=_by_representation(compared)["word"],
     )
     old_aggregate_fields = {
         "measured_in",
@@ -980,13 +980,13 @@ def test_the_old_aggregate_result_is_not_recorded_beside_the_assertions(compared
 
 
 def test_it_counts_the_localities_the_distinction_recurs_in(compared):
-    finding = _by_right(compared)["word"]
+    finding = _by_representation(compared)["word"]
     assert finding.locality_count == 3
     assert finding.measured_in == ("s1", "s2", "s3")
 
 
 def test_measuring_the_coordinate_without_the_distinction_is_its_own_result(compared):
-    finding = _by_right(compared)["word"]
+    finding = _by_representation(compared)["word"]
     assert finding.measured_without_distinction == ("s4",)
 
 
@@ -1011,7 +1011,7 @@ def test_only_relevant_evidence_places_an_locality_in_the_second_result(compared
         finding=measure_after(occurrences, "nothing", counting_scope=SCOPE),
     )
 
-    finding = _by_right(compared)["word"]
+    finding = _by_representation(compared)["word"]
 
     assert finding.measured_without_distinction == ("s4",)
     assert exact_coordinate.identity in finding.input_event_identities
@@ -1025,7 +1025,7 @@ def test_a_count_of_one_is_a_finding_and_is_not_recurrence(compared):
     "recurs in 1 bounded localities", asserting recurrence where nothing
     recurred.
     """
-    finding = _by_right(compared)["thing"]
+    finding = _by_representation(compared)["thing"]
     assert finding.measured_in == ("s4",)
     assert finding.locality_count == 1
     assert finding.recurrence_established is False
@@ -1041,7 +1041,7 @@ def test_a_count_of_one_is_a_finding_and_is_not_recurrence(compared):
 
 
 def test_recurrence_is_established_only_above_one(compared):
-    finding = _by_right(compared)["word"]
+    finding = _by_representation(compared)["word"]
     assert finding.locality_count == 3
     assert finding.recurrence_established is True
     assert "recurs in 3 bounded localities" in measured_count_representation(finding)
@@ -1062,7 +1062,7 @@ def _add_s5(ledger):
 def test_an_locality_that_never_measured_the_coordinate_is_distinguished(compared):
     _add_s5(compared)
     declared = DECLARED + ("s5",)
-    finding = _by_right(compared, declared)["word"]
+    finding = _by_representation(compared, declared)["word"]
     assert "s5" in finding.coordinate_not_measured
     assert "s5" not in finding.measured_without_distinction
     assert "s5" not in finding.measured_in
@@ -1072,7 +1072,7 @@ def test_the_third_result_preserves_its_complete_read_not_copied_identities(comp
     """The ledger boundary reads the complete negative-classification read."""
     unrelated = _add_s5(compared)
     declared = DECLARED + ("s5",)
-    finding = _by_right(compared, declared)["word"]
+    finding = _by_representation(compared, declared)["word"]
 
     assert "s5" in finding.coordinate_not_measured
     assert unrelated.identity not in finding.input_event_identities
@@ -1086,7 +1086,7 @@ def test_the_third_result_preserves_its_complete_read_not_copied_identities(comp
 
 def test_an_undeclared_locality_enters_nothing(compared):
     _add_s5(compared)
-    finding = _by_right(compared)["word"]          # s5 not declared
+    finding = _by_representation(compared)["word"]          # s5 not declared
     assert "s5" not in finding.bounded_localities
     assert "s5" not in finding.coordinate_not_measured
     assert len(finding.bounded_localities) == 4
@@ -1121,7 +1121,7 @@ def test_the_counting_scope_states_the_declaration(compared):
     """
     event = record_measured_count(
         compared, locality_identity="s1",
-        finding=_by_right(compared)["word"])
+        finding=_by_representation(compared)["word"])
     scope = event.material["counting_scope"]
     assert "declared to this measurement" in scope
     assert "no locality enters by having measured something else" in scope
@@ -1131,7 +1131,7 @@ def test_the_counting_scope_states_the_declaration(compared):
 def test_the_record_refuses_source_independence_and_corroboration(compared):
     event = record_measured_count(
         compared, locality_identity="s1",
-        finding=_by_right(compared)["word"])
+        finding=_by_representation(compared)["word"])
     refused = " ".join(event.material["limits"])
     assert "independently preserved is not independent" in refused
     assert "repetition is not independent corroboration" in refused
@@ -1140,7 +1140,7 @@ def test_the_record_refuses_source_independence_and_corroboration(compared):
 
 
 def test_the_rendering_states_the_literal_sentence(compared):
-    represented = measured_count_representation(_by_right(compared)["word"])
+    represented = measured_count_representation(_by_representation(compared)["word"])
     assert "recurs in 3 bounded localities" in represented
     assert SCOPE in represented
     for word in ("agree", "corroborat", "independent source", "relation",
@@ -1152,7 +1152,7 @@ def test_the_vocabulary_is_gone(compared):
     """`cohort`, `population`, `body`, `survey`, `exposed` earned no place."""
     event = record_measured_count(
         compared, locality_identity="s1",
-        finding=_by_right(compared)["word"])
+        finding=_by_representation(compared)["word"])
     represented = str(event.material).lower()
     for word in ("cohort", "population", "survey", "exposed", "bodies"):
         assert word not in represented
@@ -1303,7 +1303,7 @@ def test_every_probe_and_pass_reads_one_prefix_despite_a_concurrent_append(compa
     assert set(seen_boundaries) == {boundary}
     assert all(finding.input_ledger_boundary == boundary for finding in findings)
     assert "after-boundary" not in {
-        finding.distinction.right_representation for finding in findings
+        finding.distinction.representation for finding in findings
     }
 
 
@@ -1382,7 +1382,7 @@ def test_counting_recurrence_does_not_take_comparisons_as_input(compared):
     enter this Act merely by co-presence. The count's own record also refuses
     corroboration in its own words.
     """
-    finding = _by_right(compared)["word"]
+    finding = _by_representation(compared)["word"]
     input = [compared.get(i) for i in finding.input_event_identities]
     assert input
     assert {event.kind for event in input} == {MEASUREMENT_RECORDED_KIND}

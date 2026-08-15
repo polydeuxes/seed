@@ -101,12 +101,12 @@ class RecurrenceMeasurementError(Exception):
 class MeasuredDistinction:
     """What was measured, under the whole declared identity it was measured with."""
 
-    right_representation: str
+    representation: str
     declared: tuple[tuple[str, str], ...]
 
     def to_json_dict(self) -> dict[str, Any]:
         return {
-            "right_representation": self.right_representation,
+            "representation": self.representation,
             **{name: value for name, value in self.declared},
         }
 
@@ -487,11 +487,11 @@ def measure_locality_counts(
                 locality, set()
             ).add(event.identity)
             for item in event.material.get("representation_counts", []):
-                right = item.get("representation")
-                if not isinstance(right, str):
+                representation = item.get("representation")
+                if not isinstance(representation, str):
                     continue
                 key = MeasuredDistinction(
-                    right_representation=right,
+                    representation=representation,
                     declared=declared,
                 )
                 observed.setdefault(key, set()).add(locality)
@@ -516,7 +516,7 @@ def measure_locality_counts(
         key=lambda k: (
             -len(observed[k]),
             k.relative_representation,
-            k.right_representation,
+            k.representation,
         ),
     ):
         where = observed[key]
@@ -569,7 +569,7 @@ def measured_count_representation(finding: MeasuredCountFinding) -> str:
     localities = "locality" if finding.locality_count == 1 else "localities"
     return (
         f"({declared['relative_representation']!r}, "
-        f"{finding.distinction.right_representation!r}) {verb} "
+        f"{finding.distinction.representation!r}) {verb} "
         f"{finding.locality_count} bounded {localities} of "
         f"{len(finding.bounded_localities)} declared, at "
         f"{declared['measured_position']} under "
