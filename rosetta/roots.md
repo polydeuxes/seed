@@ -104,6 +104,75 @@ Exposure       availability at an exact Locality, or an emitted Representation; 
 Addressability of preserved coordinates
 ```
 
+## Connective shorthand
+
+A connective noun does not establish a Seed relation. Translation resolves the
+exact coordinates doing the work:
+
+```text
+exact subject or material
+    ↓
+exact Act + Responsibility + Authority + Scope
+    ↓
+Act occurrence + Evidence + Participation
+    ↓
+Yield or exact Locality relation
+    ↓
+exact result + Standing
+    ↓
+Compare
+```
+
+Material acquisition currently gives a concrete example:
+
+```text
+measured source Assertion reference
+    + measured material Assertion reference
+    ↓
+addition Act occurrence at an exact position
+    ↓
+exact material result identity
+
+source implementation-function invocation occurrence
+    + addition Act occurrence
+    + result implementation-function invocation occurrence
+    ↓
+Compare occurrence
+```
+
+Composition preserves the same crossings:
+
+```text
+removal Act occurrence
+    ↓
+exact removal result reference
+    ↓
+addition Act occurrence
+```
+
+No connective shorthand receives an Act, relation, Evidence, Authority, or
+Standing merely because the shorthand names the composition.
+
+## This
+
+`This` is not discarded as connective material and does not establish
+currentness or identity by itself. Keep the coordinates that can discriminate
+its represented relation:
+
+```text
+exact material occurrence
+    + Representation occurrence
+    + exact addressed subject
+    + Locality
+    + occurrence boundary
+    + represented-relation Evidence or Unknown
+```
+
+The same material under another occurrence or Locality does not preserve the
+addressed subject by identity. Different material at the same occurrence does
+not establish a different addressed subject by identity. Acquisition compares
+both directions before a bounded represented relation receives Standing.
+
 None of these shorthands adds a constitutional subject, relation, occurrence,
 or Standing. If the expansion loses a distinction, read the missing exact
 coordinate rather than restoring the compressed noun.
