@@ -18,14 +18,14 @@ class MaterialAddressError(ValueError):
 
 @dataclass(frozen=True)
 class SourceSpan:
-    source_ref: str
+    source_reference: str
     start: int
     end: int
 
 
 @dataclass(frozen=True)
 class ExactMaterial:
-    material_ref: str
+    material_reference: str
     exact_bytes_hex: str
     source_span: SourceSpan
 
@@ -33,7 +33,7 @@ class ExactMaterial:
 @dataclass(frozen=True)
 class AddressableMaterial:
     material_representation_id: str
-    ingest_event_ref: str
+    ingest_event_reference: str
     exact_material: ExactMaterial
     source_role: str
     provenance: tuple[str, ...]
@@ -59,18 +59,18 @@ def address_ingested_material(
         raise MaterialAddressError("the Ingest occurrence carries no source role")
     exact = ingested_material_bytes(ingest_occurrence)
     source_span = SourceSpan(
-        source_ref=ingest_occurrence.id,
+        source_reference=ingest_occurrence.id,
         start=0,
         end=len(exact),
     )
     exact_material = ExactMaterial(
-        material_ref=ingest_occurrence.id,
+        material_reference=ingest_occurrence.id,
         exact_bytes_hex=exact.hex(),
         source_span=source_span,
     )
     return AddressableMaterial(
         material_representation_id=f"material-representation:{ingest_occurrence.id}",
-        ingest_event_ref=ingest_occurrence.id,
+        ingest_event_reference=ingest_occurrence.id,
         exact_material=exact_material,
         source_role=source_role,
         provenance=(ingest_occurrence.id,),

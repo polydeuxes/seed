@@ -37,14 +37,14 @@ def update_operator_ingest_standing(attempts, event, *, ledger=None) -> None:
     standing["event_ids"].append(event.id)
     standing["dimensional_standing"][event.id] = {
         "event_kind": event.kind,
-        "subject_ref": occurrence_id,
+        "subject_reference": occurrence_id,
         "dimensions": dimensions,
-        "provenance_occurrence_refs": list(
-            event.payload.get("provenance_occurrence_refs", ())
+        "provenance_occurrence_references": list(
+            event.payload.get("provenance_occurrence_references", ())
         ),
     }
     standing["current_standing"]["ingest_occurrence"] = {
-        "subject_ref": occurrence_id,
+        "subject_reference": occurrence_id,
         "dimensions": dimensions,
         "evidence_event_id": event.id,
     }

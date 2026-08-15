@@ -96,7 +96,7 @@ def test_every_minted_prefix_is_reserved_or_declared_process_local():
     decision into the open instead of leaving it to whoever reads the diff.
 
     Answered locally three times before this existed: `system_material` in
-    `#2491`, an locality identity in `#2493`, `transient_material` in `#2496`.
+    `#2491` and a locality identity in `#2493`.
     """
 
     import glob

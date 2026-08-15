@@ -45,9 +45,23 @@ from typing import Any, Iterable, Iterator
 
 from seed_runtime.events import EventLedger, EventLedgerBoundary
 from seed_runtime.event import Event
+from seed_runtime.ids import new_id
 from seed_runtime.preserved_material_measurement import MEASUREMENT_RECORDED_KIND
+from seed_runtime.yield_evidence import _record_yield_evidence, yield_commitment
 
 LOCALITY_COUNT_RECORDED_KIND = "operator.measurement.locality_count_recorded"
+LOCALITY_COUNT_ACT_EVIDENCE_KIND = (
+    "operator.measurement.locality_count_act_evidenced"
+)
+LOCALITY_COUNT_CONVENTION = "locality_count_measurement"
+LOCALITY_COUNT_RESULT_KIND = "locality count Measurement result"
+LOCALITY_COUNT_RESPONSIBILITY = (
+    "Measure one exact distinction across exact bounded Localities"
+)
+EVENT_KIND_RESPONSIBILITIES = {
+    LOCALITY_COUNT_RECORDED_KIND: "02.Acts.A",
+    LOCALITY_COUNT_ACT_EVIDENCE_KIND: "02.Acts.A",
+}
 
 MEASURED_ASSERTION_STANDING_COORDINATE_RESPONSIBILITY = (
     "preserve this measured Assertion's carried Standing coordinates"
@@ -228,7 +242,7 @@ class RecordedMeasuredAssertion:
     yielding_locality_id: str | None
     result: str
     payload: dict[str, Any]
-    support_assertion_refs: tuple[dict[str, str], ...] = ()
+    support_assertion_references: tuple[dict[str, str], ...] = ()
 
     @property
     def reference(self) -> dict[str, str]:
@@ -361,7 +375,7 @@ def assertions_of_recorded_measurement(event: Event) -> tuple[RecordedMeasuredAs
                 yielding_locality_id=assertion.yielding_locality_id,
                 result=assertion.result,
                 payload=assertion.payload,
-                support_assertion_refs=tuple(
+                support_assertion_references=tuple(
                     {
                         "yielding_event_id": event.id,
                         "assertion_id": local_id,
@@ -428,7 +442,10 @@ def _declared_of_measurement(event: Event) -> tuple[tuple[str, str], ...] | None
 
 
 def measure_locality_counts(
-    ledger: EventLedger, *, bounded_localities: Iterable[str]
+    ledger: EventLedger,
+    *,
+    bounded_localities: Iterable[str],
+    through: EventLedgerBoundary | None = None,
 ) -> list[MeasuredCountFinding]:
     """Count, over recorded occurrences, the localities each distinction was measured in.
 
@@ -446,7 +463,11 @@ def measure_locality_counts(
     # Every probe and both occurrence passes have as input one ledger-local append
     # prefix. The boundary is carried as read provenance; it is not an Event
     # identity and does not strengthen the occurrences read through it.
-    input_ledger_boundary = ledger.append_boundary()
+    input_ledger_boundary = through or ledger.append_boundary()
+    if not isinstance(input_ledger_boundary, EventLedgerBoundary):
+        raise RecurrenceMeasurementError(
+            "a locality count Measurement requires one exact ledger boundary"
+        )
     # Declaring the Scope chooses which established localities this measurement
     # concerns. It does not establish them: a recorded occurrence within the
     # Locality boundary does. Each declared locality is read through that exact
@@ -696,11 +717,32 @@ def record_measured_count(
     Standing to its carried coordinates.
     """
 
+    verified = measure_locality_counts(
+        ledger,
+        bounded_localities=finding.bounded_localities,
+        through=finding.input_ledger_boundary,
+    )
+    if finding not in verified:
+        raise RecurrenceMeasurementError(
+            "the supplied locality count does not match its exact recorded inputs"
+        )
     declared = dict(finding.distinction.declared)
     assertions = assertions_from_measured_count(finding)
-    payload = {
+    act_id = new_id("locality_count_measurement_act")
+    act_occurrence_id = new_id("locality_count_measurement_act_occurrence")
+    result_identity = new_id("locality_count_measurement_result")
+    participation = [
+        {
+            "subject_reference": event_id,
+            "role": "recorded Measurement occurrence",
+            "act_occurrence_id": act_occurrence_id,
+        }
+        for event_id in finding.input_event_ids
+    ]
+    result_payload = {
+        "result_identity": result_identity,
         "dimensions": {
-            "identity": "declared-measurement-result-occurrence",
+            "identity": result_identity,
             "content": f"{len(assertions)} distinct measured Assertions recorded",
             "source_provenance": (
                 "recorded comparison occurrences and recorded measurement "
@@ -715,6 +757,9 @@ def record_measured_count(
             "occurrence_preservation": "count finding durably recorded",
         },
         "assertions": [assertion.to_json_dict() for assertion in assertions],
+        "downstream_act_id": act_id,
+        "act_occurrence_id": act_occurrence_id,
+        "participation": participation,
         "yielding_act": "declared measurement",
         "occurrence_result_evidence": (
             "this exact recorded Measurement occurrence yielded the carried Assertions"
@@ -735,4 +780,43 @@ def record_measured_count(
         ],
         "forbidden_inferences": list(FORBIDDEN_INFERENCES),
     }
-    return ledger.append(LOCALITY_COUNT_RECORDED_KIND, payload, locality_id=locality_id)
+    act_evidence = ledger.append(
+        LOCALITY_COUNT_ACT_EVIDENCE_KIND,
+        {
+            "downstream_act_id": act_id,
+            "act_occurrence_id": act_occurrence_id,
+            "act": "locality count Measurement",
+            "responsibility": LOCALITY_COUNT_RESPONSIBILITY,
+            "responsible_boundary": "this Seed",
+            "participation": participation,
+            "result_commitment": yield_commitment(
+                LOCALITY_COUNT_CONVENTION, result_payload
+            ),
+            "authority": "unestablished",
+            "evidence_scope": "this exact locality count Measurement occurrence only",
+        },
+        locality_id=locality_id,
+    )
+    yield_evidence = _record_yield_evidence(
+        ledger,
+        locality_id=locality_id,
+        convention=LOCALITY_COUNT_CONVENTION,
+        yielding_act="locality count Measurement",
+        act_occurrence_id=act_occurrence_id,
+        yielded_result_kind=LOCALITY_COUNT_RESULT_KIND,
+        result_identity=result_identity,
+        yielded_content=result_payload,
+        responsibility=LOCALITY_COUNT_RESPONSIBILITY,
+        live_boundary="locality_count_measurement",
+        responsible_boundary="this Seed",
+        recorded_result_coordinates={key: (key,) for key in result_payload},
+    )
+    return ledger.append(
+        LOCALITY_COUNT_RECORDED_KIND,
+        {
+            **result_payload,
+            "responsible_act_evidence_id": act_evidence.id,
+            "yield_evidence_id": yield_evidence.id,
+        },
+        locality_id=locality_id,
+    )

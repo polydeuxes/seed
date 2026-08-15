@@ -35,15 +35,15 @@ def test_events_from_different_localities_cannot_influence_one_another():
     assert standing_one["locality_id"] == "s1"
     assert standing_two["locality_id"] == "s2"
     one_subjects = {
-        occurrence["subject_ref"]
+        occurrence["subject_reference"]
         for occurrence in standing_one["ingest_occurrences"]
     }
     two_subjects = {
-        occurrence["subject_ref"]
+        occurrence["subject_reference"]
         for occurrence in standing_two["ingest_occurrences"]
     }
-    assert one_subjects == {first["current_standing"]["ingest_occurrence"]["subject_ref"]}
-    assert two_subjects == {second["current_standing"]["ingest_occurrence"]["subject_ref"]}
+    assert one_subjects == {first["current_standing"]["ingest_occurrence"]["subject_reference"]}
+    assert two_subjects == {second["current_standing"]["ingest_occurrence"]["subject_reference"]}
     assert not set(standing_one["ingests"]) & set(standing_two["ingests"])
     assert not {e for a in standing_one["ingests"].values() for e in a["event_ids"]} & {
         e for a in standing_two["ingests"].values() for e in a["event_ids"]
@@ -59,11 +59,11 @@ def test_next_attempt_reads_standing_from_earlier_same_locality_events():
 
     assert second["locality_standing"] is standing
     inherited = second["locality_standing"]["ingest_occurrences"]
-    assert [occurrence["subject_ref"] for occurrence in inherited] == [
-        first["current_standing"]["ingest_occurrence"]["subject_ref"]
+    assert [occurrence["subject_reference"] for occurrence in inherited] == [
+        first["current_standing"]["ingest_occurrence"]["subject_reference"]
     ]
-    assert first["current_standing"]["ingest_occurrence"]["subject_ref"] == (
-        inherited[0]["subject_ref"]
+    assert first["current_standing"]["ingest_occurrence"]["subject_reference"] == (
+        inherited[0]["subject_reference"]
     )
 
 

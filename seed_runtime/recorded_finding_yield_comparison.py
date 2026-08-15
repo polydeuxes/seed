@@ -78,7 +78,7 @@ COMPARISON_RESULT_COORDINATES = frozenset(
         "dimensions",
         "constitutional_subject",
         "compared_relation",
-        "recorded_finding_ref",
+        "recorded_finding_reference",
         "yield_evidence",
         "evidence_and_provenance",
         "authority_boundary",
@@ -209,7 +209,7 @@ def get_recorded_finding_yield_comparison(
             "the Compare Event does not bind its exact Act and result Evidence"
         )
     dimensions = payload.get("dimensions")
-    source_id = payload.get("recorded_finding_ref")
+    source_id = payload.get("recorded_finding_reference")
     standing = dimensions.get("standing") if isinstance(dimensions, dict) else None
     if (
         not isinstance(source_id, str)
@@ -433,7 +433,7 @@ def compare_recorded_finding_yield(ledger: EventLedger, event_id: str) -> Event:
                 "the recorded finding names preserved yield evidence, and "
                 "that evidence concerns this exact recorded content"
             ),
-        "recorded_finding_ref": event_id,
+        "recorded_finding_reference": event_id,
         "yield_evidence": named,
         "evidence_and_provenance": {
                 "recorded_finding": _provenance(recorded, recorded_integrity),

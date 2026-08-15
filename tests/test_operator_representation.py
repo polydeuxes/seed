@@ -24,6 +24,10 @@ _EMISSION_EDGE_EVIDENCE_KINDS = (
     "operator.representation.emission_locality_evidenced",
     "operator.yield.evidence_recorded",
 )
+_FAILED_EMISSION_EVIDENCE_KINDS = (
+    "operator.representation.emission_outcome_act_evidenced",
+    "operator.yield.evidence_recorded",
+)
 _REPRESENTATION_EDGE_EVIDENCE_KINDS = (
     "operator.representation.act_evidenced",
     "operator.yield.evidence_recorded",
@@ -122,7 +126,7 @@ def test_representation_reader_refuses_a_developer_formed_event():
     event = ledger.append(
         "operator.representation.recorded",
         {
-            "representation_ref": "developer-supplied",
+            "representation_reference": "developer-supplied",
             "representation_act_id": "developer-supplied-act",
             "act_occurrence_id": "developer-supplied-occurrence",
         },
@@ -213,7 +217,7 @@ def test_console_forms_c0_before_first_ingress_and_preserves_provenance_only():
         for event in ledger.list()
         if event.kind == "material.ingest.occurred"
     )
-    assert "yielded_after_representation_ref" not in ingest.payload
+    assert "yielded_after_representation_reference" not in ingest.payload
     assert "yielded_after_representation_event_id" not in ingest.payload
     assert "yielded_after_representation_emitted_event_id" not in ingest.payload
     assert c0_emitted.kind == "operator.representation.emitted"
@@ -235,7 +239,7 @@ def test_console_ingest_adds_only_its_exact_occurrences():
     ingests = [e for e in ledger.list() if e.kind == "material.ingest.occurred"]
     assert len(ingests) == 3
     for ingest in ingests:
-        assert "yielded_after_representation_ref" not in ingest.payload
+        assert "yielded_after_representation_reference" not in ingest.payload
 
     # Standing read remains valid and records the occurrences.
     standing = _standing(ledger)
@@ -357,7 +361,7 @@ def test_console_presents_standing_only_across_an_ingest():
         c1.payload["locality_standing_as_of_event_id"] == ingest.id
     )
     assert c0.payload["alternatives"] == [] and c1.payload["alternatives"] == []
-    assert "yielded_after_representation_ref" not in ingest.payload
+    assert "yielded_after_representation_reference" not in ingest.payload
     # No developer result semantics anywhere in the locality.
     locality = str([e.payload for e in ledger.list()])
     assert "developer-supplied" not in locality
@@ -531,7 +535,7 @@ def test_first_interaction_attaches_no_representation_to_the_ingest():
         if event.kind == "material.ingest.occurred"
     )
     first_representation = next(iter(_standing(ledger)["representations"].values()))
-    assert "yielded_after_representation_ref" not in ingest.payload
+    assert "yielded_after_representation_reference" not in ingest.payload
     assert first_representation["representation_id"]
 
 
@@ -570,7 +574,7 @@ def test_representation_act_is_recorded_before_emission_and_they_stay_distinct()
     assert representation["act_occurrence_id"] == locality_evidence.payload[
         "act_occurrence_id"
     ]
-    assert locality_evidence.payload["carried_content"]["representation_ref"] == (
+    assert locality_evidence.payload["carried_content"]["representation_reference"] == (
         representation["representation_id"]
     )
     assert "input_role" not in representation_event.payload
@@ -602,7 +606,7 @@ def test_emission_preserves_the_exact_text_written_to_its_boundary():
     assert emission.payload["output_boundary"] == "text_stream_write"
     assert emission.payload["stream_encoding_metadata"] is None
     assert emission.payload["write_count"] == len(output.getvalue())
-    assert emission.payload["provenance_occurrence_refs"] == [
+    assert emission.payload["provenance_occurrence_references"] == [
         representation["representation_event_id"],
         representation["emission_attempt_event_id"],
     ]
@@ -629,7 +633,7 @@ def test_emission_preserves_the_exact_text_written_to_its_boundary():
     act_evidence = ledger.get(emission.payload["responsible_act_evidence_id"])
     locality_evidence = ledger.get(emission.payload["locality_evidence_id"])
     yield_evidence = ledger.get(emission.payload["yield_evidence_id"])
-    assert act_evidence.payload["representation_ref"] == representation[
+    assert act_evidence.payload["representation_reference"] == representation[
         "representation_id"
     ]
     assert act_evidence.payload["act_occurrence_id"] == emission.payload[
@@ -671,6 +675,7 @@ def test_partial_output_write_preserves_attempt_and_failed_occurrences():
         "operator.representation.recorded",
         "operator.representation.emission_attempted",
         "operator.representation.emission_attempt_locality_evidenced",
+        *_FAILED_EMISSION_EVIDENCE_KINDS,
         "operator.representation.emission_outcome_recorded",
     ]
     failure = ledger.get(representation["emission_outcome_event_id"])
@@ -736,6 +741,7 @@ def test_flush_failure_does_not_erase_the_completed_text_stream_write():
         "operator.representation.emission_attempted",
         *_EMISSION_EDGE_EVIDENCE_KINDS,
         "operator.representation.emitted",
+        *_FAILED_EMISSION_EVIDENCE_KINDS,
         "operator.representation.emission_outcome_recorded",
     ]
     emitted = ledger.get(representation["emitted_event_id"])

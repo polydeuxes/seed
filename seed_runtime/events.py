@@ -431,7 +431,7 @@ class SQLiteEventLedger(EventLedger):
         "material_ingest_act", "material_ingest_act_occurrence",
         "material_ingest_result",
         "operator_material", "operator_command", "checkpoint_locality", "locality",
-        "system_material", "transient_material",
+        "system_material",
         "represented_alternative", "adjacent_byte_pair_measurement_act",
         "adjacent_byte_pair_measurement_occurrence", "byte_measurement_act",
         "byte_measurement_occurrence", "byte_pair_applicability_act",
@@ -453,6 +453,15 @@ class SQLiteEventLedger(EventLedger):
         "assertion_compare_act",
         "assertion_compare_act_occurrence",
         "assertion_compare_result",
+        "bounded_comparison_act",
+        "bounded_comparison_act_occurrence",
+        "bounded_comparison_result",
+        "locality_count_measurement_act",
+        "locality_count_measurement_act_occurrence",
+        "locality_count_measurement_result",
+        "operator_representation_emission_outcome_act",
+        "operator_representation_emission_outcome_act_occurrence",
+        "operator_representation_emission_outcome_result",
     })
 
     def __init__(self, database_path: str) -> None:

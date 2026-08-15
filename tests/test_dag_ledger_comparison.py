@@ -9,12 +9,12 @@ def _cross_examined_stores(tmp_path):
     first = ledger.append("first", {"value": 1}, locality_id="s")
     second = ledger.append(
         "second",
-        {"source_ref": first.id, "nested": {"source_ref": first.id}},
+        {"source_reference": first.id, "nested": {"source_reference": first.id}},
         locality_id="s",
     )
     third = ledger.append(
         "third",
-        {"first_ref": first.id, "second_ref": second.id},
+        {"first_reference": first.id, "second_reference": second.id},
         locality_id="s",
     )
     events = ledger.list()
@@ -34,7 +34,7 @@ def test_sql_and_dag_answer_the_same_reference_relations(tmp_path):
 def test_neither_store_turns_a_future_id_string_into_a_relation(tmp_path):
     ledger = SQLiteEventLedger(str(tmp_path / "future.sqlite"))
     future_id = f"evt_{ledger._next_event_number + 1:06d}"
-    naming = ledger.append("naming", {"source_ref": future_id}, locality_id="s")
+    naming = ledger.append("naming", {"source_reference": future_id}, locality_id="s")
     future = ledger.append("future", {}, locality_id="s")
     assert future.id == future_id
 
@@ -51,8 +51,8 @@ def test_both_stores_collapse_one_repeated_reference_relation(tmp_path):
     ledger, dag, events = _cross_examined_stores(tmp_path)
     second = events[1]
 
-    assert ledger.references_from(second.id) == [("source_ref", events[0].id)]
-    assert dag.references_from(second.id) == [("source_ref", events[0].id)]
+    assert ledger.references_from(second.id) == [("source_reference", events[0].id)]
+    assert dag.references_from(second.id) == [("source_reference", events[0].id)]
 
 
 def test_both_reference_directions_use_covering_indexes(tmp_path):

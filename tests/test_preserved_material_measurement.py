@@ -205,7 +205,7 @@ def test_a_finding_standing_on_another_preserves_which(locality, occurrences):
         ),
     )
     assert second.payload["premise_event_id"] == first.id
-    assert first.id in second.payload["provenance_occurrence_refs"]
+    assert first.id in second.payload["provenance_occurrence_references"]
     assert premise_chain(locality, second.id) == [first.id]
 
 
@@ -1572,7 +1572,7 @@ def test_the_witness_asserts_no_responsibility(
         {"dimensions": {"identity": "something else"}},
         {"mutates_cluster": True},
         {"unknowns": ["one nobody established"]},
-        {"provenance_occurrence_refs": ["evt_unsupported"]},
+        {"provenance_occurrence_references": ["evt_unsupported"]},
         {"total_count": 999},
     ],
 )

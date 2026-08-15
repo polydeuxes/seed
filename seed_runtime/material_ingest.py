@@ -64,7 +64,7 @@ def ingest_material(
             "what this material represents remains Unknown",
             "the asserted source relation remains Unknown",
         ],
-        "provenance_occurrence_refs": [],
+        "provenance_occurrence_references": [],
     }
     if represented_material is not None:
         result["represented_material"] = represented_material

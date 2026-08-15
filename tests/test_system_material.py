@@ -87,7 +87,7 @@ def test_ingest_event_binds_exact_act_and_result_evidence():
 def test_system_material_requires_only_material_boundary_and_locality():
     occurred = _preserve(EventLedger(), b"different\n")
 
-    assert occurred.payload["provenance_occurrence_refs"] == []
+    assert occurred.payload["provenance_occurrence_references"] == []
     assert occurred.payload["dimensions"]["scope_locality"] == "locality:locality_000001"
     assert "invocation" not in str(occurred.payload)
 

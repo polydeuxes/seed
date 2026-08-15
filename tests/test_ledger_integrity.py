@@ -464,8 +464,8 @@ def test_reservations_are_read_from_the_table_not_from_history(path):
     """
     led = SQLiteEventLedger(path)
     try:
-        led.append("k", {"ref": "operator_material_000042"}, locality_id="locality_000007")
-        led.append("k", {"ref": "system_material_000005"})
+        led.append("k", {"reference": "operator_material_000042"}, locality_id="locality_000007")
+        led.append("k", {"reference": "system_material_000005"})
     finally:
         led.close()
 
@@ -484,7 +484,7 @@ def test_a_reopened_store_does_not_reissue_identifiers(path):
     from seed_runtime.ids import _next_values, new_id
 
     led = SQLiteEventLedger(path)
-    led.append("k", {"ref": "operator_material_000042"})
+    led.append("k", {"reference": "operator_material_000042"})
     led.close()
 
     _next_values.clear()          # a fresh process counts from 1
@@ -498,8 +498,8 @@ def test_a_reopened_store_does_not_reissue_identifiers(path):
 def test_a_reservation_only_ever_rises(path):
     led = SQLiteEventLedger(path)
     try:
-        led.append("k", {"ref": "operator_material_000042"})
-        led.append("k", {"ref": "operator_material_000007"})
+        led.append("k", {"reference": "operator_material_000042"})
+        led.append("k", {"reference": "operator_material_000007"})
     finally:
         led.close()
     con = _raw(path)
@@ -514,7 +514,7 @@ def test_the_counter_table_is_not_an_occurrence(path):
     """It records no Assertion, so occurrence mutation refusal does not cover it."""
     led = SQLiteEventLedger(path)
     try:
-        event = led.append("k", {"ref": "operator_material_000042"})
+        event = led.append("k", {"reference": "operator_material_000042"})
     finally:
         led.close()
     con = _raw(path)
@@ -545,7 +545,7 @@ def test_a_batch_commits_its_reservations_with_its_occurrences(path):
     led._connection.set_trace_callback(commits.append)
     try:
         led.append_many([
-            Event(id=f"evt_10000{i}", kind="k", payload={"ref": f"operator_material_0000{40 + i}"}, locality_id="locality_000009")
+            Event(id=f"evt_10000{i}", kind="k", payload={"reference": f"operator_material_0000{40 + i}"}, locality_id="locality_000009")
             for i in range(3)
         ])
     finally:
@@ -572,7 +572,7 @@ def test_a_batch_leaves_no_occurrence_without_its_reservation(path):
 
     led = SQLiteEventLedger(path)
     led.append_many([
-        Event(id="evt_100001", kind="k", payload={"ref": "operator_material_000077"}, locality_id="s")
+        Event(id="evt_100001", kind="k", payload={"reference": "operator_material_000077"}, locality_id="s")
     ])
     led.close()
 

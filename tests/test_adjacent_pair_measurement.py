@@ -458,13 +458,13 @@ def test_adjacent_pair_observation_measurement_records_exact_coordinates_and_rea
     )
     assert act_evidence.payload["input_applicability"] == [
         {
-            "input_ref": finding.id,
+            "input_reference": finding.id,
             "role": "read ordered-pair finding",
             "standing": "applicable",
         },
         *[
             {
-                "input_ref": event.id,
+                "input_reference": event.id,
                 "role": "exact preserved source occurrence",
                 "standing": "applicable",
             }
@@ -474,13 +474,13 @@ def test_adjacent_pair_observation_measurement_records_exact_coordinates_and_rea
     assert recorded.payload["participation"] == act_evidence.payload["participation"]
     assert recorded.payload["participation"] == [
         {
-            "subject_ref": finding.id,
+            "subject_reference": finding.id,
             "role": "read ordered-pair finding",
             "act_occurrence_id": recorded.payload["act_occurrence_id"],
         },
         *[
             {
-                "subject_ref": event.id,
+                "subject_reference": event.id,
                 "role": "exact preserved source occurrence",
                 "act_occurrence_id": recorded.payload["act_occurrence_id"],
             }
@@ -706,7 +706,7 @@ def test_emitted_representation_adjacency_requires_exact_locality():
         emission.payload["locality_evidence_id"]
     )
     assert [
-        item["subject_ref"] for item in recorded_observations.payload["participation"]
+        item["subject_reference"] for item in recorded_observations.payload["participation"]
     ] == [emission.payload["locality_evidence_id"], emission.id]
 
     copied = emission.model_copy(deep=True)
@@ -752,7 +752,7 @@ def test_emitted_representation_adjacency_requires_exact_locality():
         emission_event_ids=(emission.id, repeated_emission.id),
     )
     assert [
-        item["subject_ref"] for item in recorded_compare.payload["participation"]
+        item["subject_reference"] for item in recorded_compare.payload["participation"]
     ] == [recorded_observations.id, repeated_observations.id]
     wrong_occurrence = emission.model_copy(deep=True)
     wrong_occurrence.payload["locality_evidence_id"] = repeated_emission.payload[

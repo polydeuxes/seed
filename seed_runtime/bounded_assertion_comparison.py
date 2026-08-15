@@ -31,12 +31,32 @@ from typing import Any, Iterable
 
 from seed_runtime.events import CORRUPTED, EventLedger
 from seed_runtime.event import Event
+from seed_runtime.ids import new_id
 from seed_runtime.preserved_material_measurement import (
     MEASUREMENT_RECORDED_KIND,
     premise_chain,
 )
+from seed_runtime.yield_evidence import _record_yield_evidence, yield_commitment
 
 COMPARISON_RECORDED_KIND = "operator.measurement.comparison_recorded"
+COMPARISON_ACT_EVIDENCE_KIND = "operator.measurement.comparison_act_evidenced"
+COMPARISON_INPUT_LOCALITY_EVIDENCE_KIND = (
+    "operator.measurement.comparison_input_locality_evidenced"
+)
+COMPARISON_INPUT_APPLICABILITY_KIND = (
+    "operator.measurement.comparison_input_applicability_recorded"
+)
+COMPARISON_CONVENTION = "bounded_assertion_comparison"
+COMPARISON_RESULT_KIND = "bounded Assertion Compare result"
+COMPARISON_RESPONSIBILITY = (
+    "Compare two exact preserved findings and preserve the bounded result"
+)
+EVENT_KIND_RESPONSIBILITIES = {
+    COMPARISON_RECORDED_KIND: "02.Acts.A",
+    COMPARISON_ACT_EVIDENCE_KIND: "02.Acts.A",
+    COMPARISON_INPUT_LOCALITY_EVIDENCE_KIND: "06.Standing.B",
+    COMPARISON_INPUT_APPLICABILITY_KIND: "01.Standing.E.1",
+}
 
 # Coordinates preserved from each recorded measurement finding
 # carries each. A coordinate absent from an input is named as absent and never
@@ -283,9 +303,61 @@ def record_comparison_finding(
 ) -> Event:
     """Preserve one comparison occurrence so a later act may have it participate."""
 
-    payload = {
+    input_event_ids = [item.event_id for item in finding.inputs]
+    verified = compare_preserved_findings(ledger, input_event_ids)
+    if finding != verified:
+        raise BoundedComparisonError(
+            "the supplied comparison does not match its exact recorded inputs"
+        )
+    act_id = new_id("bounded_comparison_act")
+    act_occurrence_id = new_id("bounded_comparison_act_occurrence")
+    result_identity = new_id("bounded_comparison_result")
+    locality_evidence_ids = []
+    applicability_event_ids = []
+    participation = []
+    for input_event_id in input_event_ids:
+        role = "preserved finding compared"
+        locality_evidence = ledger.append(
+            COMPARISON_INPUT_LOCALITY_EVIDENCE_KIND,
+            {
+                "first_subject": input_event_id,
+                "second_subject": {
+                    "downstream_act_id": act_id,
+                    "act_occurrence_id": act_occurrence_id,
+                    "role": role,
+                },
+                "authority": "unestablished",
+                "evidence_scope": "this exact finding-to-Compare Locality only",
+            },
+            locality_id=locality_id,
+        )
+        applicability = ledger.append(
+            COMPARISON_INPUT_APPLICABILITY_KIND,
+            {
+                "input_reference": input_event_id,
+                "downstream_act_id": act_id,
+                "role": role,
+                "locality_evidence_id": locality_evidence.id,
+                "standing": "applicable",
+                "authority": "unestablished",
+                "evidence_scope": "this exact input-to-Compare relation only",
+            },
+            locality_id=locality_id,
+        )
+        locality_evidence_ids.append(locality_evidence.id)
+        applicability_event_ids.append(applicability.id)
+        participation.append(
+            {
+                "subject_reference": input_event_id,
+                "role": role,
+                "act_occurrence_id": act_occurrence_id,
+                "applicability_event_id": applicability.id,
+            }
+        )
+    result_payload = {
+        "result_identity": result_identity,
         "dimensions": {
-            "identity": "bounded-assertion-comparison",
+            "identity": result_identity,
             "content": f"{len(finding.inputs)} preserved findings compared",
             "source_provenance": "recorded measurement findings",
             "responsibility": "bounded-comparison-boundary",
@@ -301,13 +373,58 @@ def record_comparison_finding(
             "this comparison occurrence; the responsible boundary is local to the instantiated "
             "comparison and is not named beyond this comparison"
         ),
+        "downstream_act_id": act_id,
+        "act_occurrence_id": act_occurrence_id,
+        "input_locality_evidence_ids": locality_evidence_ids,
+        "input_applicability_event_ids": applicability_event_ids,
+        "participation": participation,
         "mutates_cluster": False,
         "unknowns": [
             "what any compared representation means remains Unknown",
             "whether the compared bodies stand in any relation remains Unknown",
         ],
         "boundary_notes": list(BOUNDARY_NOTES),
-        "input_event_ids": [i.event_id for i in finding.inputs],
+        "input_event_ids": input_event_ids,
         **finding.to_json_dict(),
     }
-    return ledger.append(COMPARISON_RECORDED_KIND, payload, locality_id=locality_id)
+    act_evidence = ledger.append(
+        COMPARISON_ACT_EVIDENCE_KIND,
+        {
+            "downstream_act_id": act_id,
+            "act_occurrence_id": act_occurrence_id,
+            "act": "bounded Compare",
+            "responsibility": COMPARISON_RESPONSIBILITY,
+            "responsible_boundary": "this Seed",
+            "input_applicability_event_ids": applicability_event_ids,
+            "participation": participation,
+            "result_commitment": yield_commitment(
+                COMPARISON_CONVENTION, result_payload
+            ),
+            "authority": "unestablished",
+            "evidence_scope": "this exact bounded Compare occurrence only",
+        },
+        locality_id=locality_id,
+    )
+    yield_evidence = _record_yield_evidence(
+        ledger,
+        locality_id=locality_id,
+        convention=COMPARISON_CONVENTION,
+        yielding_act="bounded Compare",
+        act_occurrence_id=act_occurrence_id,
+        yielded_result_kind=COMPARISON_RESULT_KIND,
+        result_identity=result_identity,
+        yielded_content=result_payload,
+        responsibility=COMPARISON_RESPONSIBILITY,
+        live_boundary="bounded_assertion_compare",
+        responsible_boundary="this Seed",
+        recorded_result_coordinates={key: (key,) for key in result_payload},
+    )
+    return ledger.append(
+        COMPARISON_RECORDED_KIND,
+        {
+            **result_payload,
+            "responsible_act_evidence_id": act_evidence.id,
+            "yield_evidence_id": yield_evidence.id,
+        },
+        locality_id=locality_id,
+    )

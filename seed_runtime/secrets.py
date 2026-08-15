@@ -18,7 +18,7 @@ SECRET_FREE_GRANT_METADATA_FIELDS = frozenset(
         "interactive_prompt",
         "ssh_agent",
         "sudo_timestamp",
-        "vault_token_ref",
+        "vault_token_reference",
     }
 )
 
@@ -48,7 +48,7 @@ def reject_secret_fields(
 
     The boundary is intentionally key based: Seed must not accept payload slots
     named like raw secret carriers. References to separate secret systems should
-    use explicit ``*_ref`` fields such as ``vault_token_ref`` instead of
+    use explicit ``*_reference`` fields such as ``vault_token_reference`` instead of
     raw ``token`` fields.
     """
 

@@ -91,7 +91,7 @@ RESPONSIBILITY_UNESTABLISHED = "unestablished"
 # What recording composes around a finding's own content. A caller adding to a
 # recorded finding may not replace any of it.
 _RESERVED_RECORDING_COORDINATES = frozenset(
-    {"dimensions", "mutates_cluster", "unknowns", "provenance_occurrence_refs"}
+    {"dimensions", "mutates_cluster", "unknowns", "provenance_occurrence_references"}
 )
 
 BOUNDARY_NOTES: tuple[str, ...] = (
@@ -479,7 +479,7 @@ def _additive_only(
     finding carries, then replaced the whole dimensions object -- erasing the
     measurement's source provenance, standing and authority by omission rather
     than by contradiction. `mutates_cluster` and `unknowns` were reachable the
-    same way, and `provenance_occurrence_refs`, written after `extra`, was
+    same way, and `provenance_occurrence_references`, written after `extra`, was
     silently discarded.
 
     So the rule is the whole recorded payload, not part of it: recording may
@@ -971,7 +971,7 @@ def _measurement_finding_payload(
         "unknowns": ["what any measured representation means remains Unknown"],
         **carried,
         **_additive_only(finding, carried, extra),
-        "provenance_occurrence_refs": (
+        "provenance_occurrence_references": (
             [finding.declared.premise_event_id]
             if finding.declared.premise_event_id
             else []

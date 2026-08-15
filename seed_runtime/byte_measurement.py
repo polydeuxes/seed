@@ -73,7 +73,7 @@ BYTE_PAIR_RESULT_COORDINATES = BYTE_RESULT_COORDINATES | {
     "act_occurrence_id",
     "responsibility",
     "responsible_boundary",
-    "source_assertion_ref",
+    "source_assertion_reference",
     "source_movement_event_id",
     "input_applicability",
     "input_applicability_event_id",
@@ -98,7 +98,7 @@ BYTE_PAIR_APPLICABILITY_RESULT_COORDINATES = frozenset(
         "applicability_act_id",
         "applicability_act_occurrence_id",
         "downstream_act_id",
-        "input_assertion_ref",
+        "input_assertion_reference",
         "input_movement_event_id",
         "input_role",
         "applicability",
@@ -223,7 +223,7 @@ class MeasuredBytePairInputs:
     source_locality_ids: tuple[str, ...]
     completeness_boundary: EventLedgerBoundary
     source_material: tuple[dict[str, str], ...]
-    source_assertion_ref: dict[str, str]
+    source_assertion_reference: dict[str, str]
     source_movement_event_id: str | None
     input_applicability: dict[str, Any]
     downstream_act_id: str
@@ -248,7 +248,7 @@ class RecordedByteAssertion:
         return json.loads(self._payload_json)
 
     @property
-    def support_assertion_refs(self) -> tuple[dict[str, str], ...]:
+    def support_assertion_references(self) -> tuple[dict[str, str], ...]:
         """Return detached occurrence-bound local support addresses."""
 
         return tuple(json.loads(self._support_assertion_refs_json))
@@ -275,7 +275,7 @@ class RecordedBytePairAssertion:
         return json.loads(self._payload_json)
 
     @property
-    def support_assertion_refs(self) -> tuple[dict[str, str], ...]:
+    def support_assertion_references(self) -> tuple[dict[str, str], ...]:
         return tuple(json.loads(self._support_assertion_refs_json))
 
     @property
@@ -319,7 +319,7 @@ def _seed_native_measurement_assignment(
     return {
         "responsible_boundary": SEED_NATIVE_MEASUREMENT_RESPONSIBLE_BOUNDARY,
         "standing": "assigned",
-        "source_occurrence_refs": [dict(item) for item in measured.source_material],
+        "source_occurrence_references": [dict(item) for item in measured.source_material],
         "completeness_boundary": measured.completeness_boundary.commitment,
         "determination": (
             "exact ingest and raw-material occurrences were read through the "
@@ -341,7 +341,7 @@ def _pair_input_applicability(
     payload = source.payload
     scope = payload["assertion_scope"]
     content = {
-        "input_assertion_ref": source.reference,
+        "input_assertion_reference": source.reference,
         "input_movement_event_id": source.locality_movement_event_id,
         "input_role": BYTE_PAIR_INPUT_ROLE,
         "downstream_act_id": downstream_act_id,
@@ -418,7 +418,7 @@ def _pair_input_applicability(
             "authority": BYTE_PAIR_APPLICABILITY_AUTHORITY,
         },
         "result": "input_applicability",
-        "input_assertion_ref": source.reference,
+        "input_assertion_reference": source.reference,
         "input_movement_event_id": source.locality_movement_event_id,
         "input_role": BYTE_PAIR_INPUT_ROLE,
         "downstream_act_id": downstream_act_id,
@@ -621,7 +621,7 @@ def _move_byte_assertion_to_locality(
     assignment_evidence = {
         "responsible_boundary": SEED_NATIVE_MEASUREMENT_RESPONSIBLE_BOUNDARY,
         "standing": "assigned",
-        "source_assertion_ref": source.reference,
+        "source_assertion_reference": source.reference,
         "source_locality": source_locality,
         "destination_locality": destination_locality,
         "determination": "the exact preserved Assertion moved between Localities",
@@ -633,7 +633,7 @@ def _move_byte_assertion_to_locality(
         "responsibility": ASSERTION_LOCALITY_MOVEMENT_RESPONSIBILITY,
         "responsible_boundary": SEED_NATIVE_MEASUREMENT_RESPONSIBLE_BOUNDARY,
         "responsibility_assignment_evidence": assignment_evidence,
-        "source_assertion_ref": source.reference,
+        "source_assertion_reference": source.reference,
         "assertion_id": source.assertion_id,
         "source_locality": source_locality,
         "destination_locality": destination_locality,
@@ -665,7 +665,7 @@ def _move_byte_assertion_to_locality(
             "responsibility_assignment_evidence": assignment_evidence,
             "movement_act_id": movement_act_id,
             "movement_act_occurrence_id": movement_occurrence_id,
-            "source_assertion_ref": source.reference,
+            "source_assertion_reference": source.reference,
             "source_locality": source_locality,
             "destination_locality": destination_locality,
             "locality_relation": {
@@ -711,7 +711,7 @@ def _move_byte_assertion_to_locality(
         byte_hex=source.byte_hex,
         result=source.result,
         _payload_json=_canonical(payload),
-        _support_assertion_refs_json=_canonical(list(source.support_assertion_refs)),
+        _support_assertion_refs_json=_canonical(list(source.support_assertion_references)),
         locality_movement_event_id=movement.id,
     )
 
@@ -724,17 +724,17 @@ def _validate_moved_byte_assertion(
         return None
     if ledger.integrity_of(movement.id) == CORRUPTED:
         raise ByteMeasurementError("Assertion locality movement is corrupted")
-    source_ref = movement.payload.get("source_assertion_ref")
-    if not isinstance(source_ref, dict):
+    source_reference = movement.payload.get("source_assertion_reference")
+    if not isinstance(source_reference, dict):
         raise ByteMeasurementError("Assertion movement carries no exact source")
     source_results = assertions_of_recorded_byte_measurement(
-        ledger, source_ref.get("recorded_occurrence_id")
+        ledger, source_reference.get("recorded_occurrence_id")
     )
     source = next(
         (
             item
             for item in source_results or ()
-            if item.assertion_id == source_ref.get("assertion_id")
+            if item.assertion_id == source_reference.get("assertion_id")
         ),
         None,
     )
@@ -755,12 +755,12 @@ def _validate_moved_byte_assertion(
         "responsibility_assignment_evidence": {
             "responsible_boundary": SEED_NATIVE_MEASUREMENT_RESPONSIBLE_BOUNDARY,
             "standing": "assigned",
-            "source_assertion_ref": source.reference,
+            "source_assertion_reference": source.reference,
             "source_locality": source_event.locality_id,
             "destination_locality": movement.locality_id,
             "determination": "the exact preserved Assertion moved between Localities",
         },
-        "source_assertion_ref": source.reference,
+        "source_assertion_reference": source.reference,
         "assertion_id": source.assertion_id,
         "source_locality": source_event.locality_id,
         "destination_locality": movement.locality_id,
@@ -792,7 +792,7 @@ def _validate_moved_byte_assertion(
         "responsibility_assignment_evidence": {
             "responsible_boundary": SEED_NATIVE_MEASUREMENT_RESPONSIBLE_BOUNDARY,
             "standing": "assigned",
-            "source_assertion_ref": source.reference,
+            "source_assertion_reference": source.reference,
             "source_locality": source_event.locality_id,
             "destination_locality": movement.locality_id,
             "determination": "the exact preserved Assertion moved between Localities",
@@ -801,7 +801,7 @@ def _validate_moved_byte_assertion(
         "movement_act_occurrence_id": movement.payload.get(
             "movement_act_occurrence_id"
         ),
-        "source_assertion_ref": source.reference,
+        "source_assertion_reference": source.reference,
         "source_locality": source_event.locality_id,
         "destination_locality": movement.locality_id,
         "locality_relation": {
@@ -850,7 +850,7 @@ def _validate_moved_byte_assertion(
         byte_hex=source.byte_hex,
         result=source.result,
         _payload_json=_canonical(source.payload),
-        _support_assertion_refs_json=_canonical(list(source.support_assertion_refs)),
+        _support_assertion_refs_json=_canonical(list(source.support_assertion_references)),
         locality_movement_event_id=movement.id,
     )
 
@@ -860,7 +860,7 @@ def _measure_adjacent_byte_pair_counts_through(
     *,
     localities: tuple[str, ...],
     boundary: EventLedgerBoundary,
-    source_assertion_ref: dict[str, str],
+    source_assertion_reference: dict[str, str],
     source_movement_event_id: str | None,
     input_applicability: dict[str, Any],
     downstream_act_id: str,
@@ -922,7 +922,7 @@ def _measure_adjacent_byte_pair_counts_through(
         source_locality_ids=localities,
         completeness_boundary=boundary,
         source_material=tuple(source_material),
-        source_assertion_ref=source_assertion_ref,
+        source_assertion_reference=source_assertion_reference,
         source_movement_event_id=source_movement_event_id,
         input_applicability=input_applicability,
         downstream_act_id=downstream_act_id,
@@ -1316,7 +1316,7 @@ def _pair_assertions(measured: MeasuredBytePairInputs) -> list[dict[str, Any]]:
         content: dict[str, Any],
         provenance: str,
         local_support_ids: list[str],
-        source_support_refs: list[dict[str, str]],
+        source_support_references: list[dict[str, str]],
     ) -> dict[str, Any]:
         subject = {
             "pair_hex": item.pair_hex,
@@ -1339,7 +1339,7 @@ def _pair_assertions(measured: MeasuredBytePairInputs) -> list[dict[str, Any]]:
             "assertion_subject": subject,
             "assertion_scope": scope,
             "support_basis": {
-                "assertion_refs": source_support_refs,
+                "assertion_references": source_support_references,
                 "local_assertion_ids": local_support_ids,
             },
             "conflicts": "Unknown",
@@ -1358,7 +1358,7 @@ def _pair_assertions(measured: MeasuredBytePairInputs) -> list[dict[str, Any]]:
             },
             provenance="the exact source-material-set Assertion referenced here",
             local_support_ids=[],
-            source_support_refs=[measured.source_assertion_ref],
+            source_support_references=[measured.source_assertion_reference],
         )
         results.append(count)
         if item.total_count > 1:
@@ -1369,7 +1369,7 @@ def _pair_assertions(measured: MeasuredBytePairInputs) -> list[dict[str, Any]]:
                     content={"recurrence_established": True},
                     provenance="the exact count Assertion carried here",
                     local_support_ids=[count["dimensions"]["identity"]],
-                    source_support_refs=[],
+                    source_support_references=[],
                 )
             )
     return results
@@ -1399,7 +1399,7 @@ def _record_pair_responsible_act_evidence(
             "input_applicability_identity": measured.input_applicability["dimensions"][
                 "identity"
             ],
-            "input_assertion_ref": measured.source_assertion_ref,
+            "input_assertion_reference": measured.source_assertion_reference,
             "input_role": BYTE_PAIR_INPUT_ROLE,
             "result_commitment": yield_commitment(
                 BYTE_PAIR_MEASUREMENT_CONVENTION, yielded_content
@@ -1443,7 +1443,7 @@ def _record_pair_input_applicability(
             "applicability_act_occurrence_id"
         ],
         "downstream_act_id": applicability_assertion["downstream_act_id"],
-        "input_assertion_ref": source.reference,
+        "input_assertion_reference": source.reference,
         "input_movement_event_id": source.locality_movement_event_id,
         "input_role": BYTE_PAIR_INPUT_ROLE,
         "applicability": applicability_assertion,
@@ -1460,7 +1460,7 @@ def _record_pair_input_applicability(
             "responsibility": BYTE_PAIR_INPUT_APPLICABILITY_RESPONSIBILITY,
             "responsible_boundary": SEED_NATIVE_MEASUREMENT_RESPONSIBLE_BOUNDARY,
             "assigned_by_responsibility": BYTE_PAIR_MEASUREMENT_RESPONSIBILITY,
-            "input_assertion_ref": source.reference,
+            "input_assertion_reference": source.reference,
             "input_movement_event_id": source.locality_movement_event_id,
             "input_role": BYTE_PAIR_INPUT_ROLE,
             "downstream_act_id": applicability_assertion["downstream_act_id"],
@@ -1557,7 +1557,7 @@ def get_recorded_pair_input_applicability(
         "responsibility": BYTE_PAIR_INPUT_APPLICABILITY_RESPONSIBILITY,
         "responsible_boundary": SEED_NATIVE_MEASUREMENT_RESPONSIBLE_BOUNDARY,
         "assigned_by_responsibility": BYTE_PAIR_MEASUREMENT_RESPONSIBILITY,
-        "input_assertion_ref": payload["input_assertion_ref"],
+        "input_assertion_reference": payload["input_assertion_reference"],
         "input_movement_event_id": payload["input_movement_event_id"],
         "input_role": payload["input_role"],
         "downstream_act_id": payload["downstream_act_id"],
@@ -1624,7 +1624,7 @@ def get_recorded_pair_input_applicability(
         or applicability_assertion.get("result_boundary") != BYTE_PAIR_RESULT_BOUNDARY
         or payload.get("dimensions", {}).get("standing") != standing
         or payload.get("downstream_act_id") != applicability_assertion.get("downstream_act_id")
-        or payload.get("input_assertion_ref") != applicability_assertion.get("input_assertion_ref")
+        or payload.get("input_assertion_reference") != applicability_assertion.get("input_assertion_reference")
         or payload.get("input_role") != BYTE_PAIR_INPUT_ROLE
         or applicability_assertion.get("input_role") != BYTE_PAIR_INPUT_ROLE
         or payload.get("responsibility")
@@ -1682,7 +1682,7 @@ def record_adjacent_byte_pair_count_layer(
         ledger,
         localities=tuple(scope["source_locality_ids"]),
         boundary=EventLedgerBoundary(content["completeness_boundary"]["commitment"]),
-        source_assertion_ref=source.reference,
+        source_assertion_reference=source.reference,
         source_movement_event_id=source.locality_movement_event_id,
         input_applicability=applicability,
         downstream_act_id=downstream_act_id,
@@ -1708,7 +1708,7 @@ def record_adjacent_byte_pair_count_layer(
             measured
         ),
         "measurement_rule": BYTE_PAIR_MEASUREMENT_RULE,
-        "source_assertion_ref": measured.source_assertion_ref,
+        "source_assertion_reference": measured.source_assertion_reference,
         "source_movement_event_id": measured.source_movement_event_id,
         "input_role": BYTE_PAIR_INPUT_ROLE,
         "input_applicability": measured.input_applicability,
@@ -1762,7 +1762,7 @@ def _validate_recorded_pair_input_applicability(
     source_payload = source.payload
     scope = source_payload["assertion_scope"]
     content = {
-        "input_assertion_ref": source.reference,
+        "input_assertion_reference": source.reference,
         "input_movement_event_id": source.locality_movement_event_id,
         "input_role": BYTE_PAIR_INPUT_ROLE,
         "downstream_act_id": downstream_act_id,
@@ -1796,7 +1796,7 @@ def _validate_recorded_pair_input_applicability(
             "authority": BYTE_PAIR_APPLICABILITY_AUTHORITY,
         },
         "result": "input_applicability",
-        "input_assertion_ref": source.reference,
+        "input_assertion_reference": source.reference,
         "input_movement_event_id": source.locality_movement_event_id,
         "input_role": BYTE_PAIR_INPUT_ROLE,
         "downstream_act_id": downstream_act_id,
@@ -1955,7 +1955,7 @@ def assertions_of_recorded_adjacent_byte_pair_measurement(
         ],
         "result_boundary": BYTE_PAIR_RESULT_BOUNDARY,
         "input_applicability_identity": applicability_identity,
-        "input_assertion_ref": payload["source_assertion_ref"],
+        "input_assertion_reference": payload["source_assertion_reference"],
         "input_role": payload["input_role"],
         "result_commitment": yield_commitment(
             BYTE_PAIR_MEASUREMENT_CONVENTION, yielded
@@ -1991,23 +1991,23 @@ def assertions_of_recorded_adjacent_byte_pair_measurement(
         raise ByteMeasurementError(
             f"{event_id} does not carry the exact pair Measurement boundary"
         )
-    source_ref = payload.get("source_assertion_ref")
+    source_reference = payload.get("source_assertion_reference")
     if (
-        not isinstance(source_ref, dict)
-        or set(source_ref) != {"recorded_occurrence_id", "assertion_id"}
-        or not all(isinstance(value, str) and value for value in source_ref.values())
+        not isinstance(source_reference, dict)
+        or set(source_reference) != {"recorded_occurrence_id", "assertion_id"}
+        or not all(isinstance(value, str) and value for value in source_reference.values())
     ):
         raise ByteMeasurementError(f"{event_id} carries no exact source Assertion")
     movement_event_id = payload.get("source_movement_event_id")
     if movement_event_id is None:
         source_results = assertions_of_recorded_byte_measurement(
-            ledger, source_ref["recorded_occurrence_id"]
+            ledger, source_reference["recorded_occurrence_id"]
         )
         source = next(
             (
                 item
                 for item in source_results or ()
-                if item.assertion_id == source_ref["assertion_id"]
+                if item.assertion_id == source_reference["assertion_id"]
             ),
             None,
         )
@@ -2015,7 +2015,7 @@ def assertions_of_recorded_adjacent_byte_pair_measurement(
         source = _validate_moved_byte_assertion(ledger, movement_event_id)
     else:
         source = None
-    if source is not None and source.assertion_id != source_ref["assertion_id"]:
+    if source is not None and source.assertion_id != source_reference["assertion_id"]:
         source = None
     if source is None or event.locality_id is None:
         raise ByteMeasurementError(
@@ -2027,7 +2027,7 @@ def assertions_of_recorded_adjacent_byte_pair_measurement(
     expected_assignment_evidence = {
         "responsible_boundary": SEED_NATIVE_MEASUREMENT_RESPONSIBLE_BOUNDARY,
         "standing": "assigned",
-        "source_occurrence_refs": source_content["source_material"],
+        "source_occurrence_references": source_content["source_material"],
         "completeness_boundary": source_content["completeness_boundary"][
             "commitment"
         ],
@@ -2143,7 +2143,7 @@ def assertions_of_recorded_adjacent_byte_pair_measurement(
             or count_content["occurrences_carrying"] > count_content["occurrences_examined"]
             or count_content["occurrences_carrying"] > count_content["total_count"]
             or count["support_basis"]
-            != {"assertion_refs": [source_ref], "local_assertion_ids": []}
+            != {"assertion_references": [source_reference], "local_assertion_ids": []}
             or count["dimensions"]["source_provenance"]
             != "the exact source-material-set Assertion referenced here"
         ):
@@ -2157,7 +2157,7 @@ def assertions_of_recorded_adjacent_byte_pair_measurement(
             != "the exact count Assertion carried here"
             or recurrence["support_basis"]
             != {
-                "assertion_refs": [],
+                "assertion_references": [],
                 "local_assertion_ids": [count["dimensions"]["identity"]],
             }
         ):
@@ -2165,8 +2165,8 @@ def assertions_of_recorded_adjacent_byte_pair_measurement(
     validated_results = []
     for assertion in assertions:
         support = assertion["support_basis"]
-        support_refs = list(support["assertion_refs"])
-        support_refs.extend(
+        support_references = list(support["assertion_references"])
+        support_references.extend(
             {
                 "recorded_occurrence_id": event.id,
                 "assertion_id": local_id,
@@ -2179,7 +2179,7 @@ def assertions_of_recorded_adjacent_byte_pair_measurement(
             pair_hex=assertion["assertion_subject"].get("pair_hex"),
             result=assertion["result"],
             _payload_json=_canonical(assertion),
-            _support_assertion_refs_json=_canonical(support_refs),
+            _support_assertion_refs_json=_canonical(support_references),
         ))
     return tuple(validated_results)
 

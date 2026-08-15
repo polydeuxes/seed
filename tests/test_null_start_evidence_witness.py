@@ -94,7 +94,7 @@ def test_each_ingest_binds_its_exact_act_and_result_evidence(ledger):
 def test_ingest_does_not_assert_a_represented_relation(ledger):
     for ingest in _ingests(ledger):
         assert "represented_material" not in ingest.payload
-        assert ingest.payload["provenance_occurrence_refs"] == []
+        assert ingest.payload["provenance_occurrence_references"] == []
         assert "represented relation Unknown" in ingest.payload["dimensions"][
             "evidence_scope"
         ]

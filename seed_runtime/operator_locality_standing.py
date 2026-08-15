@@ -167,13 +167,13 @@ def advance_operator_locality_standing(
             continue
         if event.kind == _REPRESENTATION_RECORDED_KIND:
             payload = event.payload
-            if payload["representation_ref"] in representations:
+            if payload["representation_reference"] in representations:
                 raise ValueError(
                     "duplicate representation reference: "
-                    f"{payload['representation_ref']}"
+                    f"{payload['representation_reference']}"
                 )
-            representations[payload["representation_ref"]] = {
-                "representation_id": payload["representation_ref"],
+            representations[payload["representation_reference"]] = {
+                "representation_id": payload["representation_reference"],
                 "representation_event_id": event.id,
                 "emission_attempt_event_id": None,
                 "emission_attempt_locality_evidence_id": None,
@@ -201,81 +201,81 @@ def advance_operator_locality_standing(
             # revise Locality Standing by identity.
             continue
         if event.kind == _REPRESENTATION_EMISSION_ATTEMPTED_KIND:
-            representation_ref = event.payload["representation_ref"]
-            if representation_ref not in representations:
+            representation_reference = event.payload["representation_reference"]
+            if representation_reference not in representations:
                 raise ValueError(
                     "representation emission attempt without recorded representation event: "
-                    f"{representation_ref}"
+                    f"{representation_reference}"
                 )
-            representations[representation_ref]["emission_attempt_event_id"] = event.id
+            representations[representation_reference]["emission_attempt_event_id"] = event.id
             continue
         if event.kind == _REPRESENTATION_EMISSION_ATTEMPT_LOCALITY_EVIDENCE_KIND:
-            representation_ref = event.payload["representation_ref"]
-            if representation_ref not in representations:
+            representation_reference = event.payload["representation_reference"]
+            if representation_reference not in representations:
                 raise ValueError(
                     "emission-attempt Locality Evidence without recorded Representation: "
-                    f"{representation_ref}"
+                    f"{representation_reference}"
                 )
             if event.payload["attempt_event_id"] != representations[
-                representation_ref
+                representation_reference
             ]["emission_attempt_event_id"]:
                 raise ValueError(
                     "emission-attempt Locality Evidence names another attempt"
                 )
-            representations[representation_ref][
+            representations[representation_reference][
                 "emission_attempt_locality_evidence_id"
             ] = event.id
             continue
         if event.kind == _REPRESENTATION_EMITTED_KIND:
-            representation_ref = event.payload["representation_ref"]
-            if representation_ref not in representations:
+            representation_reference = event.payload["representation_reference"]
+            if representation_reference not in representations:
                 raise ValueError(
                     "representation emission without recorded representation event: "
-                    f"{representation_ref}"
+                    f"{representation_reference}"
                 )
             if (
                 event.payload["representation_event_id"]
-                != representations[representation_ref]["representation_event_id"]
+                != representations[representation_reference]["representation_event_id"]
             ):
                 raise ValueError(
                     "representation emission does not name its recorded "
                     "representation Act occurrence"
                 )
             if (
-                event.payload["attempt_ref"]
-                != representations[representation_ref]["emission_attempt_event_id"]
+                event.payload["attempt_reference"]
+                != representations[representation_reference]["emission_attempt_event_id"]
             ):
                 raise ValueError(
                     "representation emission does not name its recorded attempt"
                 )
-            representations[representation_ref]["emitted_event_id"] = event.id
-            representations[representation_ref]["emission_outcome_event_id"] = event.id
+            representations[representation_reference]["emitted_event_id"] = event.id
+            representations[representation_reference]["emission_outcome_event_id"] = event.id
             continue
         if event.kind == _REPRESENTATION_EMISSION_OUTCOME_KIND:
-            representation_ref = event.payload["representation_ref"]
-            if representation_ref not in representations:
+            representation_reference = event.payload["representation_reference"]
+            if representation_reference not in representations:
                 raise ValueError(
                     "representation emission outcome without recorded representation event: "
-                    f"{representation_ref}"
+                    f"{representation_reference}"
                 )
             if (
-                event.payload["attempt_ref"]
-                != representations[representation_ref]["emission_attempt_event_id"]
+                event.payload["attempt_reference"]
+                != representations[representation_reference]["emission_attempt_event_id"]
             ):
                 raise ValueError(
                     "representation emission outcome does not name its recorded attempt"
                 )
-            representations[representation_ref]["emission_outcome_event_id"] = event.id
+            representations[representation_reference]["emission_outcome_event_id"] = event.id
             continue
-        ingest_ref = event.payload["dimensions"]["identity"]
+        ingest_reference = event.payload["dimensions"]["identity"]
         ingest = ingests.setdefault(
-            ingest_ref,
+            ingest_reference,
             {"event_ids": [], "ingest_occurrence": None},
         )
         ingest["event_ids"].append(event.id)
         occurrence = {
-            "ingest_ref": ingest_ref,
-            "subject_ref": ingest_ref,
+            "ingest_reference": ingest_reference,
+            "subject_reference": ingest_reference,
             "standing": "preserved",
             "authority": event.payload["dimensions"]["authority"],
             "evidence_event_id": event.id,

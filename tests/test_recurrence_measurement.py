@@ -197,13 +197,13 @@ def test_recorded_assertions_are_addressable_through_their_occurrence(compared):
         ) == assertion
 
     by_result = {assertion.result: assertion for assertion in assertions}
-    assert by_result["count"].support_assertion_refs == (
+    assert by_result["count"].support_assertion_references == (
         {
             "yielding_event_id": event.id,
             "assertion_id": by_result["measured_in"].assertion_id,
         },
     )
-    assert by_result["recurrence"].support_assertion_refs == (
+    assert by_result["recurrence"].support_assertion_references == (
         {
             "yielding_event_id": event.id,
             "assertion_id": by_result["count"].assertion_id,
@@ -455,7 +455,7 @@ def test_assertion_yield_compare_records_each_literal_result_separately(compared
     assert len({item.assertion_id for item in assertions}) == 10
     assert all(item.yielding_event_id == event.id for item in assertions)
     assert all(
-        item.payload["support_basis"]["assertion_refs"]
+        item.payload["support_basis"]["assertion_references"]
         == [first_count.reference, second_count.reference]
         for item in assertions
     )
@@ -486,7 +486,7 @@ def test_yielded_assertions_enter_compare_through_exact_input_relations(compared
 
     assert len(recorded.payload["input_locality_evidence_ids"]) == 2
     assert len(recorded.payload["input_applicability_event_ids"]) == 2
-    for input_ref, locality_id, applicability_id, participation in zip(
+    for input_reference, locality_id, applicability_id, participation in zip(
         recorded.payload["inputs"],
         recorded.payload["input_locality_evidence_ids"],
         recorded.payload["input_applicability_event_ids"],
@@ -494,15 +494,15 @@ def test_yielded_assertions_enter_compare_through_exact_input_relations(compared
     ):
         locality = compared.get(locality_id)
         applicability = compared.get(applicability_id)
-        assert locality.payload["first_subject"] == input_ref
+        assert locality.payload["first_subject"] == input_reference
         assert locality.payload["second_subject"]["act_occurrence_id"] == (
             recorded.payload["act_occurrence_id"]
         )
-        assert applicability.payload["input_ref"] == input_ref
+        assert applicability.payload["input_reference"] == input_reference
         assert applicability.payload["locality_evidence_id"] == locality.id
         assert applicability.payload["standing"] == "applicable"
         assert participation == {
-            "subject_ref": input_ref,
+            "subject_reference": input_reference,
             "role": "compared Assertion",
             "act_occurrence_id": recorded.payload["act_occurrence_id"],
             "applicability_event_id": applicability.id,
@@ -617,7 +617,7 @@ def test_validation_refuses_a_self_consistent_forged_compare_result(compared):
         compared_assertion_id=assertion["assertion_subject"][
             "compared_assertion_id"
         ],
-        inputs=assertion["support_basis"]["assertion_refs"],
+        inputs=assertion["support_basis"]["assertion_references"],
         locality_id="s1",
         **content,
     )

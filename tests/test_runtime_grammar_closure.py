@@ -412,7 +412,7 @@ def test_every_act_evidence_occurrence_carries_the_exact_act_physiology():
 
 def test_recorded_representation_declares_each_exact_evidence_pointer():
     required = {
-        "representation_ref",
+        "representation_reference",
         "representation_act_id",
         "act_occurrence_id",
         "responsible_act_evidence_id",
@@ -500,7 +500,12 @@ def test_command_implementation_receives_no_constitutional_write_capability():
 
     names = {field.name for field in fields(AddressedOperatorCommand)}
     assert "ledger" not in names
-    assert "locality_id" not in names
+    assert names == {
+        "command_id",
+        "locality_id",
+        "addressed_at_representation_event_id",
+        "frame",
+    }
 
 
 def test_unestablished_material_authority_does_not_cross_the_filesystem_boundary(

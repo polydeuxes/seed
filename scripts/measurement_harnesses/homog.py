@@ -37,7 +37,7 @@ def span(s, rules, memo):
 CHUNK=50_000
 def run(label, bodies):
     print(f"\n  {label}\n")
-    print(f"  {'bodies':>7}{'material':>11}{'rules':>9}{'account':>11}{'mean span':>11}{'refs/MB':>11}{'marginal':>11}")
+    print(f"  {'bodies':>7}{'material':>11}{'rules':>9}{'account':>11}{'mean span':>11}{'references/MB':>14}{'marginal':>11}")
     prev=0
     for n in range(1,len(bodies)+1):
         data=b"".join(bodies[:n])

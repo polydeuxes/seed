@@ -297,7 +297,7 @@ def test_it_preserves_what_the_clause_requires(recorded):
     for coordinate in (
         "constitutional_subject",
         "compared_relation",
-        "recorded_finding_ref",
+        "recorded_finding_reference",
         "observed_crossings",
         "evidence_and_provenance",
         "authority_boundary",

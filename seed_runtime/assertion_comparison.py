@@ -169,28 +169,33 @@ def compare_assertion_yields(
 ) -> AssertionYieldComparison:
     """Compare two exact yields of the same canonical Assertion."""
 
-    refs = tuple(references)
-    if len(refs) != 2:
+    exact_references = tuple(references)
+    if len(exact_references) != 2:
         raise AssertionComparisonError(
-            f"Assertion yield Compare has as input exactly two inputs; {len(refs)} supplied"
+            "Assertion yield Compare has as input exactly two inputs; "
+            f"{len(exact_references)} supplied"
         )
     required = {"yielding_event_id", "assertion_id"}
-    if any(set(reference) != required for reference in refs):
+    if any(set(reference) != required for reference in exact_references):
         raise AssertionComparisonError(
             "each input must be one exact yielding-event and Assertion identity pair"
         )
-    if refs[0] == refs[1] or refs[0]["yielding_event_id"] == refs[1]["yielding_event_id"]:
+    if (
+        exact_references[0] == exact_references[1]
+        or exact_references[0]["yielding_event_id"]
+        == exact_references[1]["yielding_event_id"]
+    ):
         raise AssertionComparisonError(
             "one yielding occurrence cannot be compared with itself"
         )
-    if refs[0]["assertion_id"] != refs[1]["assertion_id"]:
+    if exact_references[0]["assertion_id"] != exact_references[1]["assertion_id"]:
         raise AssertionComparisonError(
             "Assertion yield Compare requires one canonical Assertion identity"
         )
 
     assertions: list[RecordedMeasuredAssertion] = []
     inputs = []
-    for reference in refs:
+    for reference in exact_references:
         assertion = get_recorded_measured_assertion(
             ledger,
             yielding_event_id=reference["yielding_event_id"],
@@ -230,7 +235,7 @@ def compare_assertion_yields(
             )
         )
     return AssertionYieldComparison(
-        assertion_id=refs[0]["assertion_id"],
+        assertion_id=exact_references[0]["assertion_id"],
         inputs=(inputs[0], inputs[1]),
         distinctions=tuple(distinctions),
     )
@@ -246,14 +251,14 @@ def record_assertion_yield_comparison(
 ) -> Event:
     """Preserve each literal Compare result without establishing later input support."""
 
-    input_refs = tuple(
+    input_references = tuple(
         {
             "yielding_event_id": item.yielding_event_id,
             "assertion_id": item.assertion_id,
         }
         for item in comparison.inputs
     )
-    verified = compare_assertion_yields(ledger, input_refs)
+    verified = compare_assertion_yields(ledger, input_references)
     if comparison != verified:
         raise AssertionComparisonError(
             "the supplied comparison does not match its occurrence-bound inputs"
@@ -264,12 +269,12 @@ def record_assertion_yield_comparison(
     locality_evidence_ids = []
     applicability_event_ids = []
     participation = []
-    for input_ref in input_refs:
+    for input_reference in input_references:
         role = "compared Assertion"
         locality_evidence = ledger.append(
             ASSERTION_COMPARE_INPUT_LOCALITY_EVIDENCE_KIND,
             {
-                "first_subject": input_ref,
+                "first_subject": input_reference,
                 "second_subject": {
                     "downstream_act_id": act_id,
                     "act_occurrence_id": act_occurrence_id,
@@ -283,7 +288,7 @@ def record_assertion_yield_comparison(
         applicability = ledger.append(
             ASSERTION_COMPARE_INPUT_APPLICABILITY_KIND,
             {
-                "input_ref": input_ref,
+                "input_reference": input_reference,
                 "downstream_act_id": act_id,
                 "role": role,
                 "locality_evidence_id": locality_evidence.id,
@@ -297,7 +302,7 @@ def record_assertion_yield_comparison(
         applicability_event_ids.append(applicability.id)
         participation.append(
             {
-                "subject_ref": input_ref,
+                "subject_reference": input_reference,
                 "role": role,
                 "act_occurrence_id": act_occurrence_id,
                 "applicability_event_id": applicability.id,
@@ -313,7 +318,7 @@ def record_assertion_yield_comparison(
         }
         identity = _distinction_assertion_identity(
             compared_assertion_id=comparison.assertion_id,
-            inputs=input_refs,
+            inputs=input_references,
             locality_id=locality_id,
             **content,
         )
@@ -347,9 +352,9 @@ def record_assertion_yield_comparison(
                 },
                 "assertion_scope": {
                     "locality_id": locality_id,
-                    "compared_yields": list(input_refs),
+                    "compared_yields": list(input_references),
                 },
-                "support_basis": {"assertion_refs": list(input_refs)},
+                "support_basis": {"assertion_references": list(input_references)},
                 "unknowns": [
                     "whether a literal difference is Applicable to either input "
                     "Assertion remains Unknown",
@@ -383,7 +388,7 @@ def record_assertion_yield_comparison(
         "participation": participation,
         "responsible_boundary": comparison.responsible_boundary,
         "responsibility": comparison.responsibility,
-        "inputs": list(input_refs),
+        "inputs": list(input_references),
         "assertions": assertions,
     }
     act_evidence = ledger.append(
@@ -444,13 +449,13 @@ def assertions_of_recorded_assertion_comparison(
         raise AssertionComparisonError(
             f"{event.id} does not preserve its distinct comparison Assertions"
         )
-    required_ref = {"yielding_event_id", "assertion_id"}
+    required_reference = {"yielding_event_id", "assertion_id"}
     if (
         not isinstance(outer_inputs, list)
         or len(outer_inputs) != 2
         or any(
             not isinstance(reference, dict)
-            or set(reference) != required_ref
+            or set(reference) != required_reference
             or not all(isinstance(value, str) and value for value in reference.values())
             for reference in outer_inputs
         )
@@ -479,12 +484,12 @@ def assertions_of_recorded_assertion_comparison(
         or participation
         != [
             {
-                "subject_ref": input_ref,
+                "subject_reference": input_reference,
                 "role": "compared Assertion",
                 "act_occurrence_id": act_occurrence_id,
                 "applicability_event_id": applicability_id,
             }
-            for input_ref, applicability_id in zip(
+            for input_reference, applicability_id in zip(
                 outer_inputs, applicability_ids
             )
         ]
@@ -507,16 +512,16 @@ def assertions_of_recorded_assertion_comparison(
         subject = assertion.get("assertion_subject") if isinstance(assertion, dict) else None
         scope = assertion.get("assertion_scope") if isinstance(assertion, dict) else None
         support = assertion.get("support_basis") if isinstance(assertion, dict) else None
-        input_refs = support.get("assertion_refs") if isinstance(support, dict) else None
+        input_references = support.get("assertion_references") if isinstance(support, dict) else None
         if (
             assertion.get("subject_kind") != "assertion"
             or assertion.get("result") != "assertion_yield_coordinate_distinction"
             or not isinstance(content, dict)
             or not isinstance(subject, dict)
             or not isinstance(scope, dict)
-            or not isinstance(input_refs, list)
-            or input_refs != outer_inputs
-            or scope.get("compared_yields") != input_refs
+            or not isinstance(input_references, list)
+            or input_references != outer_inputs
+            or scope.get("compared_yields") != input_references
             or not isinstance(scope.get("locality_id"), str)
             or scope.get("locality_id") != event.locality_id
             or subject.get("compared_assertion_id")
@@ -553,7 +558,7 @@ def assertions_of_recorded_assertion_comparison(
         seen_coordinates.add(coordinate)
         canonical = _distinction_assertion_identity(
             compared_assertion_id=subject["compared_assertion_id"],
-            inputs=input_refs,
+            inputs=input_references,
             locality_id=scope.get("locality_id"),
             coordinate=content["coordinate"],
             present=content["present"],

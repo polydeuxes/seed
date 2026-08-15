@@ -5,13 +5,8 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Callable, Mapping
 
-from seed_runtime.events import EventLedger
 from seed_runtime.ids import new_id
 from seed_runtime.operator_material_boundary import OperatorBoundaryMaterial
-
-
-COMMAND_ADDRESSED_KIND = "operator.command.addressed"
-COMMAND_UNAVAILABLE_KIND = "operator.command.unavailable"
 
 
 class OperatorCommandError(ValueError):
@@ -29,7 +24,9 @@ class OperatorCommandFrame:
 
 @dataclass(frozen=True)
 class AddressedOperatorCommand:
-    addressed_event_id: str
+    command_id: str
+    locality_id: str
+    addressed_at_representation_event_id: str
     frame: OperatorCommandFrame
 
 
@@ -74,7 +71,6 @@ def parse_slash_command(material: OperatorBoundaryMaterial) -> OperatorCommandFr
 
 def run_operator_command(
     *,
-    ledger: EventLedger,
     locality_id: str,
     addressed_at_representation_event_id: str,
     material: OperatorBoundaryMaterial,
@@ -90,39 +86,14 @@ def run_operator_command(
         raise OperatorCommandError("command handlers require exact non-empty byte names")
 
     command_id = new_id("operator_command")
-    addressed = ledger.append(
-        COMMAND_ADDRESSED_KIND,
-        {
-            "command_id": command_id,
-            "locality_id": locality_id,
-            "addressed_at_representation_event_id": addressed_at_representation_event_id,
-            "exact_bytes_hex": frame.exact_bytes.hex(),
-            "command_name_hex": frame.name.hex(),
-            "argument_bytes_hex": frame.arguments.hex(),
-            "authority": "unestablished",
-            "unknowns": [
-                "operator intent beyond addressing this slash name remains Unknown"
-            ],
-        },
-        locality_id=locality_id,
-    )
-    ledger.flush()
     addressed_command = AddressedOperatorCommand(
-        addressed_event_id=addressed.id,
+        command_id=command_id,
+        locality_id=locality_id,
+        addressed_at_representation_event_id=addressed_at_representation_event_id,
         frame=frame,
     )
     handler = handlers.get(frame.name)
     if handler is None:
-        ledger.append(
-            COMMAND_UNAVAILABLE_KIND,
-            {
-                "command_id": command_id,
-                "addressed_event_id": addressed.id,
-                "command_name_hex": frame.name.hex(),
-                "authority": "unestablished",
-            },
-            locality_id=locality_id,
-        )
         return OperatorCommandRun(
             addressed=addressed_command,
             implementation_result=None,

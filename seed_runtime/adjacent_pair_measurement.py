@@ -549,12 +549,12 @@ def record_emitted_representation_adjacency(
         observations=observations,
         applicable_inputs=[
             {
-                "input_ref": locality_id,
+                "input_reference": locality_id,
                 "role": EMISSION_LOCALITY_PARTICIPATION_ROLE,
                 "standing": "applicable",
             },
             {
-                "input_ref": emission.id,
+                "input_reference": emission.id,
                 "role": EMISSION_OCCURRENCE_PARTICIPATION_ROLE,
                 "standing": "applicable",
             },
@@ -767,7 +767,7 @@ def _record_adjacent_pair_observation_result(
     }
     participation = [
         {
-            "subject_ref": item["input_ref"],
+            "subject_reference": item["input_reference"],
             "role": item["role"],
             "act_occurrence_id": act_occurrence_id,
         }
@@ -884,13 +884,13 @@ def record_adjacent_pair_observations(
     )
     applicable_inputs = [
         {
-            "input_ref": finding_event_id,
+            "input_reference": finding_event_id,
             "role": PAIR_FINDING_PARTICIPATION_ROLE,
             "standing": "applicable",
         },
         *[
             {
-                "input_ref": source_id,
+                "input_reference": source_id,
                 "role": SOURCE_OCCURRENCE_PARTICIPATION_ROLE,
                 "standing": "applicable",
             }
@@ -1080,13 +1080,13 @@ def get_recorded_adjacent_pair_observations(
     if anchor is not None and _is_established_after_measurement(anchor):
         expected_inputs = [
             {
-                "input_ref": adjacency_evidence_id,
+                "input_reference": adjacency_evidence_id,
                 "role": PAIR_FINDING_PARTICIPATION_ROLE,
                 "standing": "applicable",
             },
             *[
                 {
-                    "input_ref": source_id,
+                    "input_reference": source_id,
                     "role": SOURCE_OCCURRENCE_PARTICIPATION_ROLE,
                     "standing": "applicable",
                 }
@@ -1143,12 +1143,12 @@ def get_recorded_adjacent_pair_observations(
         source_texts[source.id] = text
         expected_inputs = [
             {
-                "input_ref": anchor.id,
+                "input_reference": anchor.id,
                 "role": EMISSION_LOCALITY_PARTICIPATION_ROLE,
                 "standing": "applicable",
             },
             {
-                "input_ref": source.id,
+                "input_reference": source.id,
                 "role": EMISSION_OCCURRENCE_PARTICIPATION_ROLE,
                 "standing": "applicable",
             },
@@ -1159,7 +1159,7 @@ def get_recorded_adjacent_pair_observations(
         )
     expected_participation = [
         {
-            "subject_ref": item["input_ref"],
+            "subject_reference": item["input_reference"],
             "role": item["role"],
             "act_occurrence_id": act_occurrence_id,
         }
@@ -1230,7 +1230,7 @@ def record_adjacent_pair_observation_compare(
     }
     participation = [
         {
-            "subject_ref": event_id,
+            "subject_reference": event_id,
             "role": OBSERVATION_COMPARE_INPUT_ROLE,
             "act_occurrence_id": act_occurrence_id,
         }
@@ -1352,7 +1352,7 @@ def get_recorded_adjacent_pair_observation_compare(
     )
     expected_participation = [
         {
-            "subject_ref": input_id,
+            "subject_reference": input_id,
             "role": OBSERVATION_COMPARE_INPUT_ROLE,
             "act_occurrence_id": act_occurrence_id,
         }

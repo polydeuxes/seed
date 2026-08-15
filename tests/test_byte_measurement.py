@@ -168,7 +168,7 @@ def test_recorded_results_replay_the_complete_bounded_source_read():
     assert count.payload["unknowns"]
     assert count.payload["conflicts"] == "Unknown"
     assert count.payload["forbidden_inferences"]
-    assert count.support_assertion_refs == (
+    assert count.support_assertion_references == (
         {
             "recorded_occurrence_id": event.id,
             "assertion_id": event.payload["assertions"][0]["dimensions"]["identity"],
@@ -179,9 +179,9 @@ def test_recorded_results_replay_the_complete_bounded_source_read():
     detached_payload["dimensions"]["standing"] = "unsupported"
     assert count.payload["dimensions"]["standing"] == "measured"
 
-    detached_refs = count.support_assertion_refs
-    detached_refs[0]["assertion_id"] = "unsupported"
-    assert count.support_assertion_refs[0]["assertion_id"] != "unsupported"
+    detached_references = count.support_assertion_references
+    detached_references[0]["assertion_id"] = "unsupported"
+    assert count.support_assertion_references[0]["assertion_id"] != "unsupported"
 
     # Read preserves exact durable JSON kinds. It does not protect the
     # result by transmuting lists to tuples or dicts to proxy objects.
@@ -363,20 +363,20 @@ def test_pair_count_and_recurrence_are_separate_results():
     assert by_pair["7461"][1]["support_basis"]["local_assertion_ids"] == [
         by_pair["7461"][0]["dimensions"]["identity"]
     ]
-    moved_ref = by_pair["7461"][0]["support_basis"]["assertion_refs"][0]
+    moved_reference = by_pair["7461"][0]["support_basis"]["assertion_references"][0]
     original = next(
         item
         for item in assertions_of_recorded_byte_measurement(ledger, source.id)
         if item.result == "exact_source_material_set"
     )
-    assert moved_ref["assertion_id"] == original.assertion_id
-    assert moved_ref["recorded_occurrence_id"] == original.recorded_occurrence_id
+    assert moved_reference["assertion_id"] == original.assertion_id
+    assert moved_reference["recorded_occurrence_id"] == original.recorded_occurrence_id
     assert event.payload["source_movement_event_id"] != original.recorded_occurrence_id
     applicability = input_applicability_of_recorded_adjacent_byte_pair_measurement(
         ledger, event.id
     )
     assert applicability["dimensions"]["standing"] == "applicable"
-    assert applicability["input_assertion_ref"] == event.payload["source_assertion_ref"]
+    assert applicability["input_assertion_reference"] == event.payload["source_assertion_reference"]
     assert applicability["result_boundary"]
     assert applicability["downstream_act"] == "declared adjacent-byte-pair Measurement"
     assert applicability["measurement_locality"] == "measurement"
@@ -412,10 +412,10 @@ def test_recorded_pair_results_replay_the_complete_bounded_source_read():
     detached = count.payload
     detached["dimensions"]["standing"] = "unsupported"
     assert count.payload["dimensions"]["standing"] == "measured"
-    assert count.support_assertion_refs[0]["recorded_occurrence_id"] == source.id
+    assert count.support_assertion_references[0]["recorded_occurrence_id"] == source.id
     movement = ledger.get(event.payload["source_movement_event_id"])
-    assert movement.payload["source_assertion_ref"]["recorded_occurrence_id"] == source.id
-    assert movement.payload["assertion_id"] == count.support_assertion_refs[0]["assertion_id"]
+    assert movement.payload["source_assertion_reference"]["recorded_occurrence_id"] == source.id
+    assert movement.payload["assertion_id"] == count.support_assertion_references[0]["assertion_id"]
     assert movement.payload["source_locality"] == "byte-measurement"
     assert movement.payload["destination_locality"] == "measurement"
     assert movement.payload["movement_act_id"] != movement.payload[
@@ -598,7 +598,7 @@ def test_pair_applicability_has_unknown_and_conflicting_outcomes():
     assert conflicting["dimensions"]["standing"] == "conflicting"
     assert conflicting["conflicts"] == [conflicting["determination_basis"]]
     assert conflicting["input_standing"] == "reported"
-    assert conflicting["input_assertion_ref"] == source.reference
+    assert conflicting["input_assertion_reference"] == source.reference
     assert conflicting["downstream_act_occurrence_id"] is None
 
 
@@ -639,7 +639,7 @@ def test_seed_native_responsibility_is_earned_from_preserved_occurrences():
     )
 
     assert assignment["responsible_boundary"] == "this Seed"
-    assert assignment["source_occurrence_refs"] == source_set["dimensions"][
+    assert assignment["source_occurrence_references"] == source_set["dimensions"][
         "content"
     ]["source_material"]
     assert assignment["completeness_boundary"] == source.payload[
@@ -665,7 +665,7 @@ def test_locality_movement_assignment_is_earned_from_the_exact_source():
     assert assignment == {
         "responsible_boundary": "this Seed",
         "standing": "assigned",
-        "source_assertion_ref": movement.payload["source_assertion_ref"],
+        "source_assertion_reference": movement.payload["source_assertion_reference"],
         "source_locality": "byte-measurement",
         "destination_locality": "measurement",
         "determination": "the exact preserved Assertion moved between Localities",

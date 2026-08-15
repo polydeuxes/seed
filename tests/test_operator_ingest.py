@@ -29,7 +29,7 @@ def test_arbitrary_bytes_are_preserved_without_a_gate_or_stop():
     assert len(ingests) == 1
     assert bytes.fromhex(ingests[0].payload["exact_bytes_hex"]) == material
     assert ingests[0].payload["source_role"] == "operator"
-    assert ingests[0].payload["provenance_occurrence_refs"] == []
+    assert ingests[0].payload["provenance_occurrence_references"] == []
 
 
 def test_addressable_material_is_the_exact_byte_sequence():
@@ -40,7 +40,7 @@ def test_addressable_material_is_the_exact_byte_sequence():
     exact = addressable["exact_material"]
     assert bytes.fromhex(exact["exact_bytes_hex"]) == material
     assert exact["source_span"]["end"] == len(material)
-    assert addressable["provenance"] == (addressable["ingest_event_ref"],)
+    assert addressable["provenance"] == (addressable["ingest_event_reference"],)
 
 
 def test_empty_line_is_material_but_eof_is_not_an_attempt():

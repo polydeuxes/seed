@@ -85,7 +85,6 @@ def run_persistent_operator_console(
             return
         if is_slash_command(boundary_material):
             command_run = run_operator_command(
-                ledger=ledger,
                 locality_id=locality_id,
                 addressed_at_representation_event_id=representation[
                     "representation_event_id"

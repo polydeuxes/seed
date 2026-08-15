@@ -53,27 +53,18 @@ def open_operator_checkpoint(
 
     if not isinstance(addressed_command, AddressedOperatorCommand):
         raise TypeError("checkpoint requires one addressed command")
-    addressed = ledger.get(addressed_command.addressed_event_id)
-    if (
-        addressed is None
-        or addressed.kind != "operator.command.addressed"
-        or ledger.integrity_of(addressed.id) == CORRUPTED
-    ):
-        raise OperatorCheckpointError(
-            "checkpoint requires its intact addressed command occurrence"
-        )
-    checkpoint_id = addressed.payload.get("addressed_at_representation_event_id")
+    checkpoint_id = addressed_command.addressed_at_representation_event_id
     checkpoint = ledger.get(checkpoint_id) if isinstance(checkpoint_id, str) else None
     if (
         checkpoint is None
         or checkpoint.kind != "operator.representation.recorded"
-        or checkpoint.locality_id != addressed.locality_id
+        or checkpoint.locality_id != addressed_command.locality_id
         or ledger.integrity_of(checkpoint.id) == CORRUPTED
     ):
         raise OperatorCheckpointError(
             "checkpoint requires one intact Representation occurrence in this locality"
         )
-    command_id = addressed.payload.get("command_id")
+    command_id = addressed_command.command_id
     if not isinstance(command_id, str):
         raise OperatorCheckpointError("checkpoint requires one exact command identity")
 
@@ -84,7 +75,6 @@ def open_operator_checkpoint(
             "first_subject": command_id,
             "second_subject": checkpoint.id,
             "command_id": command_id,
-            "addressed_event_id": addressed.id,
             "checkpoint_event_id": checkpoint.id,
             "authority": "unestablished",
             "evidence_scope": (
