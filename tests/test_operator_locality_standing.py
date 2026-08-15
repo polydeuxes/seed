@@ -44,9 +44,12 @@ def test_events_from_different_localities_cannot_influence_one_another():
     }
     assert one_subjects == {first["current_standing"]["ingest_occurrence"]["subject_reference"]}
     assert two_subjects == {second["current_standing"]["ingest_occurrence"]["subject_reference"]}
-    assert not set(standing_one["ingests"]) & set(standing_two["ingests"])
-    assert not {e for a in standing_one["ingests"].values() for e in a["event_identities"]} & {
-        e for a in standing_two["ingests"].values() for e in a["event_identities"]
+    assert not {
+        occurrence["evidence_event_identity"]
+        for occurrence in standing_one["ingest_occurrences"]
+    } & {
+        occurrence["evidence_event_identity"]
+        for occurrence in standing_two["ingest_occurrences"]
     }
 
 

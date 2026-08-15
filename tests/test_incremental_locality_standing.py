@@ -197,7 +197,7 @@ def test_the_advance_reads_its_prior():
     prior = _advance(events[:5])
     before = len(prior["ingest_occurrences"])
     advanced = _advance(events[5:], prior=prior)
-    assert advanced["ingests"] is prior["ingests"]
+    assert advanced["ingest_occurrences"] is prior["ingest_occurrences"]
     assert len(prior["ingest_occurrences"]) >= before
 
 
@@ -214,7 +214,6 @@ def test_every_growable_accumulator_participates_without_copying():
     prior = _advance(events[:5])
     advanced = _advance(events[5:], prior=prior)
     for coordinate in (
-        "ingests",
         "representations",
         "ingest_occurrences",
         "known_loss",

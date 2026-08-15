@@ -113,7 +113,6 @@ def advance_operator_locality_standing(
     the authority its own event recorded.
     """
     scope = f"locality:{locality_identity}"
-    ingests: dict[str, dict[str, Any]] = {}
     ingest_occurrences: list[dict[str, Any]] = []
     representations: dict[str, dict[str, Any]] = {}
     # Kept sorted and distinct in place rather than as a set sorted on return.
@@ -132,7 +131,6 @@ def advance_operator_locality_standing(
         # Every accumulator the live event kinds read, taken over from the
         # Standing that already input the earlier occurrences.  Not copied:
         # see the shared-accumulator note above.
-        ingests = prior["ingests"]
         ingest_occurrences = prior["ingest_occurrences"]
         representations = prior["representations"]
         known_loss = prior["known_loss"]
@@ -268,11 +266,6 @@ def advance_operator_locality_standing(
             representations[representation_reference]["emission_outcome_event_identity"] = event.identity
             continue
         ingest_reference = event.material["dimensions"]["identity"]
-        ingest = ingests.setdefault(
-            ingest_reference,
-            {"event_identities": [], "ingest_occurrence": None},
-        )
-        ingest["event_identities"].append(event.identity)
         occurrence = {
             "ingest_reference": ingest_reference,
             "subject_reference": ingest_reference,
@@ -286,14 +279,12 @@ def advance_operator_locality_standing(
             occurrence["represented_material"] = event.material[
                 "represented_material"
             ]
-        ingest["ingest_occurrence"] = occurrence
         ingest_occurrences.append(occurrence)
 
     return {
         "locality_identity": locality_identity,
         "as_of_event_identity": as_of_event_identity,
         "event_count": event_count,
-        "ingests": ingests,
         "ingest_occurrences": ingest_occurrences,
         "representations": representations,
         # No "current" Representation is projected.  Emission order is
