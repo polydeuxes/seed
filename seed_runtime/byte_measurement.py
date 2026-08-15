@@ -633,6 +633,7 @@ def _move_byte_assertion_to_locality(
     act_evidence = ledger.append(
         ASSERTION_LOCALITY_MOVEMENT_ACT_EVIDENCE_KIND,
         {
+            "act": "Assertion Locality movement",
             "responsibility": ASSERTION_LOCALITY_MOVEMENT_RESPONSIBILITY,
             "responsible_boundary": SEED_NATIVE_MEASUREMENT_RESPONSIBLE_BOUNDARY,
             "responsibility_assignment_evidence": assignment_evidence,
@@ -656,12 +657,14 @@ def _move_byte_assertion_to_locality(
         locality_identity=destination_locality,
         exact_act="Assertion Locality movement",
         act_occurrence_identity=movement_occurrence_identity,
+        responsible_act_evidence_identity=act_evidence.identity,
         result_kind=ASSERTION_LOCALITY_MOVEMENT_RESULT_KIND,
         result_identity=movement_result_identity,
         result_content=result_material,
         responsibility=ASSERTION_LOCALITY_MOVEMENT_RESPONSIBILITY,
         live_boundary="assertion_locality_movement",
         responsible_boundary=SEED_NATIVE_MEASUREMENT_RESPONSIBLE_BOUNDARY,
+        responsible_act_occurrence_coordinate="movement_act_occurrence_identity",
         recorded_result_coordinates={key: (key,) for key in result_material},
     )
     movement = ledger.append(
@@ -754,6 +757,7 @@ def _validate_moved_byte_assertion(
         ),
     }
     expected_evidence = {
+        "act": "Assertion Locality movement",
         "responsibility": ASSERTION_LOCALITY_MOVEMENT_RESPONSIBILITY,
         "responsible_boundary": SEED_NATIVE_MEASUREMENT_RESPONSIBLE_BOUNDARY,
         "responsibility_assignment_evidence": {
@@ -1038,7 +1042,7 @@ def record_byte_count_layer(
                 "authority": "unestablished",
                 "evidence_scope": MEASUREMENT_EVIDENCE_SCOPE,
         },
-        "exact_act": "declared Measurement",
+        "exact_act": "declared exact-byte Measurement",
         "downstream_act_identity": downstream_act_identity,
         "act_occurrence_identity": act_occurrence_identity,
         "responsibility": BYTE_MEASUREMENT_RESPONSIBILITY,
@@ -1075,8 +1079,9 @@ def record_byte_count_layer(
     evidence = _record_yield_evidence(
         ledger,
         locality_identity=recording_locality_identity,
-        exact_act="declared Measurement",
+        exact_act="declared exact-byte Measurement",
         act_occurrence_identity=act_occurrence_identity,
+        responsible_act_evidence_identity=responsible_act_evidence.identity,
         result_kind=BYTE_MEASUREMENT_RESULT_KIND,
         result_identity="byte-count-measurement-occurrence",
         result_content=result_material,
@@ -1119,7 +1124,7 @@ def assertions_of_recorded_byte_measurement(
         )
     if (
         material.get("occurrence_preservation") != BYTE_OCCURRENCE_PRESERVATION
-        or material.get("exact_act") != "declared Measurement"
+        or material.get("exact_act") != "declared exact-byte Measurement"
         or material.get("responsibility") != BYTE_MEASUREMENT_RESPONSIBILITY
         or material.get("responsible_boundary")
         != SEED_NATIVE_MEASUREMENT_RESPONSIBLE_BOUNDARY
@@ -1420,12 +1425,14 @@ def _record_pair_input_applicability(
         locality_identity=recording_locality_identity,
         exact_act="input Applicability determination",
         act_occurrence_identity=applicability_assertion["applicability_act_occurrence_identity"],
+        responsible_act_evidence_identity=applicability_act_evidence.identity,
         result_kind=BYTE_PAIR_APPLICABILITY_RESULT_KIND,
         result_identity=applicability_assertion["dimensions"]["identity"],
         result_content=result_material,
         responsibility=BYTE_PAIR_INPUT_APPLICABILITY_RESPONSIBILITY,
         live_boundary="byte_pair_applicability",
         responsible_boundary=SEED_NATIVE_MEASUREMENT_RESPONSIBLE_BOUNDARY,
+        responsible_act_occurrence_coordinate="applicability_act_occurrence_identity",
     )
     return ledger.append(
         BYTE_PAIR_APPLICABILITY_RECORDED_KIND,
@@ -1629,7 +1636,7 @@ def record_adjacent_byte_pair_count_layer(
             "authority": "unestablished",
             "evidence_scope": PAIR_MEASUREMENT_EVIDENCE_SCOPE,
         },
-        "exact_act": "declared Measurement",
+        "exact_act": "declared adjacent-byte-pair Measurement",
         "downstream_act_identity": measured.downstream_act_identity,
         "act_occurrence_identity": measured.act_occurrence_identity,
         "responsibility": BYTE_PAIR_MEASUREMENT_RESPONSIBILITY,
@@ -1658,8 +1665,9 @@ def record_adjacent_byte_pair_count_layer(
     evidence = _record_yield_evidence(
         ledger,
         locality_identity=recording_locality_identity,
-        exact_act="declared Measurement",
+        exact_act="declared adjacent-byte-pair Measurement",
         act_occurrence_identity=measured.act_occurrence_identity,
+        responsible_act_evidence_identity=responsible_act_evidence.identity,
         result_kind=BYTE_PAIR_MEASUREMENT_RESULT_KIND,
         result_identity="adjacent-byte-pair-count-measurement-occurrence",
         result_content=result_material,
@@ -1812,7 +1820,7 @@ def assertions_of_recorded_adjacent_byte_pair_measurement(
     }
     if (
         material.get("occurrence_preservation") != BYTE_PAIR_OCCURRENCE_PRESERVATION
-        or material.get("exact_act") != "declared Measurement"
+        or material.get("exact_act") != "declared adjacent-byte-pair Measurement"
         or material.get("responsibility") != BYTE_PAIR_MEASUREMENT_RESPONSIBILITY
         or not isinstance(material.get("downstream_act_identity"), str)
         or not material["downstream_act_identity"]

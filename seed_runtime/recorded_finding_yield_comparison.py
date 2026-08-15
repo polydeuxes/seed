@@ -454,6 +454,7 @@ def compare_recorded_finding_yield(ledger: EventLedger, event_identity: str) -> 
         locality_identity=recorded.locality_identity,
         exact_act="bounded finding Yield Compare",
         act_occurrence_identity=act_occurrence_identity,
+        responsible_act_evidence_identity=responsible_act_evidence.identity,
         result_kind=FINDING_YIELD_COMPARISON_RESULT_KIND,
         result_identity=f"finding-yield-comparison:{event_identity}",
         result_content=result_material,

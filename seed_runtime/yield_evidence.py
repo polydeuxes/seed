@@ -48,7 +48,7 @@ def read_yield_edge_requirements(
     *,
     recorded_result_event_identity: str,
     result_evidence_event_identity: str | None,
-    responsible_act_evidence_event_identity: str | None = None,
+    responsible_act_evidence_event_identity: str | None,
     recorded_result_occurrence_coordinate: str = "act_occurrence_identity",
     responsible_act_occurrence_coordinate: str = "act_occurrence_identity",
 ) -> dict[str, bool]:
@@ -82,9 +82,6 @@ def read_yield_edge_requirements(
         if isinstance(responsible_act_evidence_event_identity, str)
         else None
     )
-    responsible_act_evidence_required = isinstance(
-        responsible_act_evidence_event_identity, str
-    )
     if result_evidence is None:
         return {
             "exact_relation": False,
@@ -113,7 +110,7 @@ def read_yield_edge_requirements(
                 responsible_act_occurrence_coordinate
             )
         )
-    elif responsible_act_evidence_required:
+    else:
         same_occurrence = False
 
     evidence_is_carried = (
@@ -154,11 +151,22 @@ def read_yield_edge_requirements(
             exact_carried_result = carried_result == result
     evidence_is_carried = evidence_is_carried and exact_carried_result
     if responsible_act_evidence is not None:
+        exact_act_evidence = (
+            evidence_dimensions.get("exact_act")
+            == responsible_act_evidence.material.get("act")
+            and evidence_dimensions.get("responsibility")
+            == responsible_act_evidence.material.get("responsibility")
+            and evidence_dimensions.get("responsible_boundary")
+            == responsible_act_evidence.material.get("responsible_boundary")
+        )
         evidence_is_carried = evidence_is_carried and (
             recorded_result_event.material.get("responsible_act_evidence_identity")
             == responsible_act_evidence.identity
+            and result_evidence.material.get("responsible_act_evidence_identity")
+            == responsible_act_evidence.identity
+            and exact_act_evidence
         )
-    elif responsible_act_evidence_required:
+    else:
         evidence_is_carried = False
 
     return {
@@ -167,14 +175,8 @@ def read_yield_edge_requirements(
         "intact_evidence": (
             ledger.integrity_of(result_evidence.identity) != CORRUPTED
             and (
-                (
-                    responsible_act_evidence is None
-                    and not responsible_act_evidence_required
-                )
-                or (
-                    responsible_act_evidence is not None
-                    and ledger.integrity_of(responsible_act_evidence.identity) != CORRUPTED
-                )
+                responsible_act_evidence is not None
+                and ledger.integrity_of(responsible_act_evidence.identity) != CORRUPTED
             )
         ),
     }
@@ -186,12 +188,14 @@ def _record_yield_evidence(
     locality_identity: str | None,
     exact_act: str,
     act_occurrence_identity: str,
+    responsible_act_evidence_identity: str,
     result_kind: str,
     result_identity: str,
     result_content: dict[str, Any],
     responsibility: str,
     live_boundary: str,
     responsible_boundary: str = "unestablished",
+    responsible_act_occurrence_coordinate: str = "act_occurrence_identity",
     recorded_result_coordinates: dict[str, tuple[str, ...]] | None = None,
     result_exact_material: bytes | None = None,
 ) -> Event:
@@ -199,6 +203,30 @@ def _record_yield_evidence(
 
     if not isinstance(act_occurrence_identity, str) or not act_occurrence_identity:
         raise ValueError("Yield Evidence requires one exact Act occurrence identity")
+    if (
+        not isinstance(responsible_act_evidence_identity, str)
+        or not responsible_act_evidence_identity
+    ):
+        raise ValueError("Yield Evidence requires exact responsible Act Evidence")
+    if (
+        not isinstance(responsible_act_occurrence_coordinate, str)
+        or not responsible_act_occurrence_coordinate
+    ):
+        raise ValueError("Yield Evidence requires one exact Act occurrence coordinate")
+    responsible_act_evidence = ledger.get(responsible_act_evidence_identity)
+    if (
+        responsible_act_evidence is None
+        or responsible_act_evidence.material.get(responsible_act_occurrence_coordinate)
+        != act_occurrence_identity
+        or responsible_act_evidence.material.get("act") != exact_act
+        or responsible_act_evidence.material.get("responsibility") != responsibility
+        or responsible_act_evidence.material.get("responsible_boundary")
+        != responsible_boundary
+        or ledger.integrity_of(responsible_act_evidence_identity) == CORRUPTED
+    ):
+        raise ValueError(
+            "Yield Evidence requires intact responsible Act Evidence for its occurrence"
+        )
     if live_boundary not in YIELD_LIVE_BOUNDARIES:
         raise ValueError("Yield Evidence requires one declared live boundary")
     if type(result_content) is not dict:
@@ -231,6 +259,7 @@ def _record_yield_evidence(
     return ledger.append(
         YIELD_EVIDENCE_KIND,
         {
+            "responsible_act_evidence_identity": responsible_act_evidence_identity,
             "dimensions": {
                 "identity": (
                     f"yield-evidence:{act_occurrence_identity}:{result_identity}"

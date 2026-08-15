@@ -57,6 +57,11 @@ from seed_runtime.input_support import (
 )
 
 MEASUREMENT_RECORDED_KIND = "operator.measurement.finding_recorded"
+MEASUREMENT_ACT_EVIDENCE_KIND = "operator.measurement.finding_act_evidenced"
+EVENT_KIND_RESPONSIBILITIES = {
+    MEASUREMENT_RECORDED_KIND: "02.Acts.A",
+    MEASUREMENT_ACT_EVIDENCE_KIND: "02.Acts.A",
+}
 INGEST_OCCURRED_KIND = MATERIAL_INGEST_OCCURRED_KIND
 RECURRENCE_RESULT_KIND = "recurrence Measurement finding"
 
@@ -189,28 +194,7 @@ class MeasurementFinding:
         return self.representation_counts[0] if self.representation_counts else None
 
     def to_json_dict(self) -> dict[str, Any]:
-        return {
-            "representation_measured": self.declared.representation_measured,
-            "equivalence_rule": self.declared.equivalence_rule,
-            "counting_scope": self.declared.counting_scope,
-            "relative_representation": self.declared.relative_representation,
-            "measurement_distinction": self.declared.distinction,
-            "measured_position": self.declared.measured_position,
-            "position_count": self.position_count,
-            "representation_counts": [
-                {"representation": o.representation, "occurrence_count": o.occurrence_count}
-                for o in self.representation_counts
-            ],
-            # Not "input_support": the result-Assertion coordinate surface carries
-            # that key and its fields are merged over this dict, so naming both
-            # the same silently replaced one with the other.
-            "inputs": [
-                {"occurrence_identity": identity}
-                for identity in self.input_occurrences
-            ],
-            "input_count": len(self.input_occurrences),
-            "limits": list(self.limits),
-        }
+        return _finding_coordinates(self)
 
 
 @dataclass(frozen=True)
@@ -270,6 +254,7 @@ class RecurrenceFinding:
     # InputSupport to carry the support instead. This path was written without
     # it and measured 96.8% on 500 findings over 2,000 occurrences.
     input_support: InputSupport | None = None
+    responsible_act_evidence_identity: str | None = None
     # Which preserved Evidence is for this result's exact Yield edge. The
     # Evidence reference is neither the edge nor its Act occurrence by identity.
     # holds that a separately supplied representation with identical fields
@@ -290,29 +275,71 @@ class RecurrenceFinding:
         return len(self.input_occurrences)
 
     def to_json_dict(self) -> dict[str, Any]:
-        carried: dict[str, Any] = {
-            "representation_measured": self.declared.representation_measured,
-            "equivalence_rule": self.declared.equivalence_rule,
-            "counting_scope": self.declared.counting_scope,
-            "measurement_distinction": "recurrence",
-            "input_localities": list(self.input_localities),
-            "occurrences_carrying": self.occurrences_carrying,
-            "recurrence_count": self.recurrence_count,
+        return _finding_coordinates(self)
+
+
+def _finding_coordinates(
+    finding: MeasurementFinding | RecurrenceFinding,
+) -> dict[str, Any]:
+    if isinstance(finding, MeasurementFinding):
+        return {
+            "representation_measured": finding.declared.representation_measured,
+            "equivalence_rule": finding.declared.equivalence_rule,
+            "counting_scope": finding.declared.counting_scope,
+            "relative_representation": finding.declared.relative_representation,
+            "measurement_distinction": finding.declared.distinction,
+            "measured_position": finding.declared.measured_position,
+            "position_count": finding.position_count,
+            "representation_counts": [
+                {
+                    "representation": occurrence.representation,
+                    "occurrence_count": occurrence.occurrence_count,
+                }
+                for occurrence in finding.representation_counts
+            ],
             "inputs": [
                 {"occurrence_identity": identity}
-                for identity in self.input_occurrences
+                for identity in finding.input_occurrences
             ],
-            "input_count": self.input_count,
-            "limits": list(self.limits),
-            "yield_evidence_identity": self.yield_evidence_identity,
+            "input_count": len(finding.input_occurrences),
+            "limits": list(finding.limits),
         }
-        if self.input_support is not None:
-            # The support replaces the enumeration rather than accompanying it.
-            # Carrying both preserves the cost the support exists to avoid, and
-            # leaves two representations of one support free to disagree.
-            carried["input_support"] = self.input_support.to_json_dict()
-            carried.pop("inputs")
-        return carried
+    if finding.input_support is None:
+        return {
+            "representation_measured": finding.declared.representation_measured,
+            "equivalence_rule": finding.declared.equivalence_rule,
+            "counting_scope": finding.declared.counting_scope,
+            "measurement_distinction": "recurrence",
+            "input_localities": list(finding.input_localities),
+            "occurrences_carrying": finding.occurrences_carrying,
+            "recurrence_count": finding.recurrence_count,
+            "inputs": [
+                {"occurrence_identity": identity}
+                for identity in finding.input_occurrences
+            ],
+            "input_count": finding.input_count,
+            "limits": list(finding.limits),
+            "yield_evidence_identity": finding.yield_evidence_identity,
+            "responsible_act_evidence_identity": (
+                finding.responsible_act_evidence_identity
+            ),
+        }
+    return {
+        "representation_measured": finding.declared.representation_measured,
+        "equivalence_rule": finding.declared.equivalence_rule,
+        "counting_scope": finding.declared.counting_scope,
+        "measurement_distinction": "recurrence",
+        "input_localities": list(finding.input_localities),
+        "occurrences_carrying": finding.occurrences_carrying,
+        "recurrence_count": finding.recurrence_count,
+        "input_support": finding.input_support.to_json_dict(),
+        "input_count": finding.input_count,
+        "limits": list(finding.limits),
+        "yield_evidence_identity": finding.yield_evidence_identity,
+        "responsible_act_evidence_identity": (
+            finding.responsible_act_evidence_identity
+        ),
+    }
 
 
 def measure_recurrence(
@@ -367,12 +394,16 @@ def measure_recurrence(
         input_occurrences=tuple(input_identities),
     )
     if yield_in is not None:
-        evidence = _record_yield(
+        act_evidence, evidence = _record_yield(
             yield_in[0],
             locality_identity=yield_in[1],
             finding=finding,
         )
-        finding = replace(finding, yield_evidence_identity=evidence.identity)
+        finding = replace(
+            finding,
+            responsible_act_evidence_identity=act_evidence.identity,
+            yield_evidence_identity=evidence.identity,
+        )
     return finding
 
 
@@ -470,6 +501,7 @@ def _result_content(finding) -> dict[str, Any]:
     # The reference to the yield evidence is not part of the content that
     # evidence commits to; it is how a result names its Evidence.
     content.pop("yield_evidence_identity", None)
+    content.pop("responsible_act_evidence_identity", None)
     return content
 
 
@@ -508,7 +540,9 @@ def _recorded_yield_result(
     return content
 
 
-def _record_yield(ledger: EventLedger, *, locality_identity: str, finding) -> Event:
+def _record_yield(
+    ledger: EventLedger, *, locality_identity: str, finding
+) -> tuple[Event, Event]:
     """Preserve exact Yield Evidence at the responsible Act boundary.
 
     The distinction is not that this is private. Privacy is mechanics. It is
@@ -537,11 +571,25 @@ def _record_yield(ledger: EventLedger, *, locality_identity: str, finding) -> Ev
     that edge or its Act occurrence by identity.
     """
 
-    return _record_yield_evidence(
+    act_evidence = ledger.append(
+        MEASUREMENT_ACT_EVIDENCE_KIND,
+        {
+            "downstream_act_identity": finding.downstream_act_identity,
+            "act_occurrence_identity": finding.act_occurrence_identity,
+            "act": "declared Measurement",
+            "responsibility": RESPONSIBILITY_UNESTABLISHED,
+            "responsible_boundary": "unestablished",
+            "authority": "unestablished",
+            "evidence_scope": "Evidence for this exact Measurement occurrence only",
+        },
+        locality_identity=locality_identity,
+    )
+    yield_evidence = _record_yield_evidence(
         ledger,
         locality_identity=locality_identity,
         exact_act="declared Measurement",
         act_occurrence_identity=finding.act_occurrence_identity,
+        responsible_act_evidence_identity=act_evidence.identity,
         result_kind=RECURRENCE_RESULT_KIND,
         result_identity=finding.declared.representation_measured,
         result_content=_result_content(finding),
@@ -556,6 +604,7 @@ def _record_yield(ledger: EventLedger, *, locality_identity: str, finding) -> Ev
             for coordinate in _result_content(finding)
         },
     )
+    return act_evidence, yield_evidence
 
 
 def _measurable_text(event: Event) -> str:
@@ -731,12 +780,18 @@ def measure_recurrences(
         # let it Assertion the stronger thing, and is not done here.
         witnessed = []
         for finding in findings:
-            evidence = _record_yield(
+            act_evidence, evidence = _record_yield(
                 yield_in[0],
                 locality_identity=yield_in[1],
                 finding=finding,
             )
-            witnessed.append(replace(finding, yield_evidence_identity=evidence.identity))
+            witnessed.append(
+                replace(
+                    finding,
+                    responsible_act_evidence_identity=act_evidence.identity,
+                    yield_evidence_identity=evidence.identity,
+                )
+            )
         findings = tuple(witnessed)
     return findings
 
@@ -807,7 +862,6 @@ def _measurement_finding_material(
     locality_identity: str,
     finding: MeasurementFinding | RecurrenceFinding,
 ) -> dict[str, Any]:
-    carried = finding.to_json_dict()
     return {
         "downstream_act_identity": finding.downstream_act_identity,
         "act_occurrence_identity": finding.act_occurrence_identity,
@@ -834,7 +888,7 @@ def _measurement_finding_material(
             "occurrence_preservation": "declared measurement durably recorded",
         },
         "unknowns": ["what any measured representation means remains Unknown"],
-        **carried,
+        **_finding_coordinates(finding),
     }
 
 

@@ -1028,10 +1028,22 @@ def _occurrence_result_requirements(bundle: dict) -> dict[str, bool]:
         ledger.append_many([recorded])
         return recorded.identity
 
-    result_evidence_identity = record_if_supplied_representation_changed(result_evidence)
     responsible_act_evidence_identity = record_if_supplied_representation_changed(
         responsible_act_evidence
     )
+    if (
+        result_evidence is not None
+        and responsible_act_evidence is not None
+        and responsible_act_evidence_identity is not None
+        and responsible_act_evidence_identity != responsible_act_evidence.identity
+        and result_evidence.material.get("responsible_act_evidence_identity")
+        == responsible_act_evidence.identity
+    ):
+        result_evidence = deepcopy(result_evidence)
+        result_evidence.material["responsible_act_evidence_identity"] = (
+            responsible_act_evidence_identity
+        )
+    result_evidence_identity = record_if_supplied_representation_changed(result_evidence)
 
     event = deepcopy(bundle["event"])
     if (
@@ -2154,6 +2166,17 @@ def test_every_yield_evidence_site_declares_its_live_boundary():
                 f"{path.name}:{node.lineno} must declare one literal live_boundary"
             )
             assert isinstance(boundary.value, str) and boundary.value
+            responsible_act_evidence = next(
+                (
+                    keyword.value
+                    for keyword in node.keywords
+                    if keyword.arg == "responsible_act_evidence_identity"
+                ),
+                None,
+            )
+            assert responsible_act_evidence is not None, (
+                f"{path.name}:{node.lineno} must name responsible Act Evidence"
+            )
             declared.append(boundary.value)
 
     assert len(declared) == len(set(declared))
@@ -2989,6 +3012,79 @@ def test_every_live_recorded_yield_result_is_bound_to_its_exact_evidence_result(
             "exact_relation": False,
             "occurrence_witness": True,
             "intact_evidence": True,
+        }, boundary
+
+        missing_act_reference = dict(exact)
+        missing_act_reference_event = deepcopy(exact["event"])
+        missing_act_reference_event.material["responsible_act_evidence_identity"] = (
+            "missing-act-evidence"
+        )
+        missing_act_reference["event"] = missing_act_reference_event
+        assert _occurrence_result_requirements(missing_act_reference) == {
+            "exact_relation": False,
+            "occurrence_witness": True,
+            "intact_evidence": True,
+        }, boundary
+
+        wrong_yield_act_reference = dict(exact)
+        wrong_yield_evidence = deepcopy(exact["content_evidence"])
+        wrong_yield_evidence.material["responsible_act_evidence_identity"] = (
+            "different-act-evidence"
+        )
+        wrong_yield_act_reference["content_evidence"] = wrong_yield_evidence
+        assert _occurrence_result_requirements(wrong_yield_act_reference) == {
+            "exact_relation": False,
+            "occurrence_witness": True,
+            "intact_evidence": True,
+        }, boundary
+
+        wrong_act = dict(exact)
+        wrong_act_evidence = deepcopy(exact["act_evidence"])
+        wrong_act_evidence.material["act"] = "different Act"
+        wrong_act["act_evidence"] = wrong_act_evidence
+        assert _occurrence_result_requirements(wrong_act) == {
+            "exact_relation": False,
+            "occurrence_witness": True,
+            "intact_evidence": True,
+        }, boundary
+
+        wrong_responsibility = dict(exact)
+        wrong_responsibility_evidence = deepcopy(exact["act_evidence"])
+        wrong_responsibility_evidence.material["responsibility"] = (
+            "different Responsibility"
+        )
+        wrong_responsibility["act_evidence"] = wrong_responsibility_evidence
+        assert _occurrence_result_requirements(wrong_responsibility) == {
+            "exact_relation": False,
+            "occurrence_witness": True,
+            "intact_evidence": True,
+        }, boundary
+
+        wrong_boundary = dict(exact)
+        wrong_boundary_evidence = deepcopy(exact["act_evidence"])
+        wrong_boundary_evidence.material["responsible_boundary"] = (
+            "different responsible boundary"
+        )
+        wrong_boundary["act_evidence"] = wrong_boundary_evidence
+        assert _occurrence_result_requirements(wrong_boundary) == {
+            "exact_relation": False,
+            "occurrence_witness": True,
+            "intact_evidence": True,
+        }, boundary
+
+        absent_act_evidence = dict(exact)
+        absent_act_evidence["act_evidence"] = None
+        assert _occurrence_result_requirements(absent_act_evidence) == {
+            "exact_relation": False,
+            "occurrence_witness": False,
+            "intact_evidence": False,
+        }, boundary
+
+        exact["ledger"].mark_corrupted(exact["act_evidence"].identity)
+        assert _occurrence_result_requirements(exact) == {
+            "exact_relation": True,
+            "occurrence_witness": True,
+            "intact_evidence": False,
         }, boundary
 
 

@@ -791,11 +791,10 @@ def test_batch_and_single_survive_the_recording_boundary_identically(
     )
     ]
     # Occurrence identity is the Event identity, which is outside the material. The
-    # one material coordinate that legitimately differs is `yield_evidence_identity`: these
-    # are two yields of the same content, and each names its own evidence.
     def _without_its_own_evidence(event):
         material = dict(event.material)
         material.pop("yield_evidence_identity", None)
+        material.pop("responsible_act_evidence_identity", None)
         material.pop("downstream_act_identity", None)
         material.pop("act_occurrence_identity", None)
         return material

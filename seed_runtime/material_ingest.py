@@ -84,6 +84,7 @@ def ingest_material(
         locality_identity=locality_identity,
         exact_act="Ingest exact material",
         act_occurrence_identity=act_occurrence_identity,
+        responsible_act_evidence_identity=responsible_act_evidence.identity,
         result_kind="exact material",
         result_identity=result_identity,
         result_content=result,

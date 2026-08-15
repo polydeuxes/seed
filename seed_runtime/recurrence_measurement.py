@@ -790,6 +790,7 @@ def record_measured_count(
         locality_identity=locality_identity,
         exact_act="locality count Measurement",
         act_occurrence_identity=act_occurrence_identity,
+        responsible_act_evidence_identity=act_evidence.identity,
         result_kind=LOCALITY_COUNT_RESULT_KIND,
         result_identity=result_identity,
         result_content=result_material,
