@@ -27,6 +27,7 @@ from compiled_format_invocation import (  # noqa: E402
     ExactMaterialReference,
     admit_added_position_occurrences,
     added_position_admission_occurrence,
+    added_position_admission_occurrences,
     added_position_occurrences,
     compare_added_position_invocations,
     compare_added_position_pairs,
@@ -44,7 +45,7 @@ from compiled_material_invocation import (  # noqa: E402
     occurrences_across,
     invocation_occurrence,
 )
-from material_admission import compare_admission_results, preserves  # noqa: E402
+from material_admission import compare_admission_result_pairs, preserves  # noqa: E402
 
 
 def _implementation_functions_available():
@@ -243,18 +244,10 @@ def book_added_position_admission_occurrences(
     book_added_position_comparisons,
     book_added_position_admission,
 ):
-    additions = book_three_byte_format_occurrences[1]
-    comparison_sets = tuple(
-        (row,) for row in book_added_position_comparisons
-    ) + (book_added_position_comparisons,)
-    return tuple(
-        added_position_admission_occurrence(
-            additions,
-            comparisons,
-            boundary_identity="book-added-position-admission",
-            occurrence_position=position,
-        )
-        for position, comparisons in enumerate(comparison_sets)
+    return added_position_admission_occurrences(
+        book_three_byte_format_occurrences[1],
+        book_added_position_comparisons,
+        boundary_identity="book-added-position-admission",
     )
 
 
@@ -266,19 +259,9 @@ def book_added_position_admission_comparisons(
         occurrence.result_reference
         for occurrence in book_added_position_admission_occurrences
     )
-    return tuple(
-        compare_admission_results(
-            first,
-            second,
-            boundary_identity="book-added-position-admission-compare",
-            occurrence_position=position,
-        )
-        for position, (first, second) in enumerate(
-            (first, second)
-            for first in references
-            for second in references
-            if first is not second
-        )
+    return compare_admission_result_pairs(
+        references,
+        boundary_identity="book-added-position-admission-compare",
     )
 
 
@@ -1038,26 +1021,26 @@ def test_every_ordered_admission_result_pair_has_one_exact_compare_occurrence(
         assert comparison.second_reference.admission_occurrence.comparison_occurrences
 
 
-def test_complete_admission_preserves_each_function_admission(
+def test_every_function_admission_preserves_each_function_admission(
     book_added_position_admission_occurrences,
     book_added_position_admission_comparisons,
 ):
-    complete = book_added_position_admission_occurrences[-1].result_reference
-    from_complete = tuple(
+    every_function = book_added_position_admission_occurrences[-1].result_reference
+    from_every_function = tuple(
         comparison
         for comparison in book_added_position_admission_comparisons
-        if comparison.first_reference == complete
+        if comparison.first_reference == every_function
     )
-    toward_complete = tuple(
+    toward_every_function = tuple(
         comparison
         for comparison in book_added_position_admission_comparisons
-        if comparison.second_reference == complete
+        if comparison.second_reference == every_function
     )
 
-    assert len(from_complete) == len(COMPILED_IMPLEMENTATION_FUNCTIONS)
-    assert all(comparison.result for comparison in from_complete)
-    assert len(toward_complete) == len(COMPILED_IMPLEMENTATION_FUNCTIONS)
-    assert any(not comparison.result for comparison in toward_complete)
+    assert len(from_every_function) == len(COMPILED_IMPLEMENTATION_FUNCTIONS)
+    assert all(comparison.result for comparison in from_every_function)
+    assert len(toward_every_function) == len(COMPILED_IMPLEMENTATION_FUNCTIONS)
+    assert any(not comparison.result for comparison in toward_every_function)
     assert any(
         comparison.result for comparison in book_added_position_admission_comparisons
     )

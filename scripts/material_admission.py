@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Admit material through complete ordered-pair implementation-function coverage."""
+"""Admit material through every ordered implementation-function pair."""
 
 from __future__ import annotations
 
@@ -213,8 +213,8 @@ def _admit(
     for material_at_one_coordinate in first:
         same_result: dict[Hashable, list[Material]] = {}
         for item in material_at_one_coordinate:
-            complete = (tuple(outgoing[position]), tuple(incoming[position]))
-            same_result.setdefault(complete, []).append(item)
+            coordinates = (tuple(outgoing[position]), tuple(incoming[position]))
+            same_result.setdefault(coordinates, []).append(item)
             position += 1
         admitted.extend(tuple(found) for found in same_result.values())
     return admitted
@@ -295,4 +295,34 @@ def compare_admission_results(
             first_reference.admitted_material,
             second_reference.admitted_material,
         ),
+    )
+
+
+def compare_admission_result_pairs(
+    references: tuple[AdmissionResultReference, ...],
+    *,
+    boundary_identity: str,
+) -> tuple[AdmissionCompareOccurrence, ...]:
+    if (
+        type(references) is not tuple
+        or len(references) < 2
+        or any(not isinstance(reference, AdmissionResultReference) for reference in references)
+    ):
+        raise TypeError("Compare requires exact Admission result references")
+    result_identities = tuple(reference.result_identity for reference in references)
+    if len(set(result_identities)) != len(result_identities):
+        raise ValueError("one Admission result entered Compare twice")
+    return tuple(
+        compare_admission_results(
+            first,
+            second,
+            boundary_identity=boundary_identity,
+            occurrence_position=position,
+        )
+        for position, (first, second) in enumerate(
+            (first, second)
+            for first in references
+            for second in references
+            if first is not second
+        )
     )

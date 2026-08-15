@@ -1,4 +1,4 @@
-"""Admission under complete pair implementation-function coverage."""
+"""Admission under every exact implementation-function pair."""
 
 from __future__ import annotations
 
@@ -263,4 +263,53 @@ def test_admission_compare_refuses_a_changed_result():
             first_reference=fine.result_reference,
             second_reference=broad.result_reference,
             result=False,
+        )
+
+
+def test_every_ordered_admission_result_pair_has_one_compare_occurrence():
+    admissions = tuple(
+        material_admission.admission_occurrence(
+            admission,
+            boundary_identity="pair-admission",
+            occurrence_position=position,
+        )
+        for position, admission in enumerate(
+            (
+                (("a", "b"),),
+                (("a",), ("b",)),
+                (("a",), ("b",)),
+            )
+        )
+    )
+
+    comparisons = material_admission.compare_admission_result_pairs(
+        tuple(admission.result_reference for admission in admissions),
+        boundary_identity="admission-result-pairs",
+    )
+
+    assert len(comparisons) == len(admissions) * (len(admissions) - 1)
+    assert {
+        (comparison.first_reference, comparison.second_reference)
+        for comparison in comparisons
+    } == {
+        (first.result_reference, second.result_reference)
+        for first in admissions
+        for second in admissions
+        if first is not second
+    }
+    assert len({comparison.act_occurrence_identity for comparison in comparisons}) == len(
+        comparisons
+    )
+
+
+def test_admission_result_pair_compare_refuses_one_result_twice():
+    admission = material_admission.admission_occurrence(
+        (("a",),),
+        boundary_identity="one-admission",
+    )
+
+    with pytest.raises(ValueError, match="entered Compare twice"):
+        material_admission.compare_admission_result_pairs(
+            (admission.result_reference, admission.result_reference),
+            boundary_identity="repeated-admission-result",
         )

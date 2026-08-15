@@ -17,6 +17,7 @@ from compiled_format_invocation import (  # noqa: E402
     COMPILED_IMPLEMENTATION_FUNCTIONS,
     CompiledImplementationFunction,
     added_position_admission_occurrence,
+    added_position_admission_occurrences,
     added_position_invocations,
     added_position_occurrences,
     compare_added_position_invocations,
@@ -30,16 +31,14 @@ from compiled_material_invocation import (  # noqa: E402
     ingest_result_reference,
     reference_occurrences_across,
 )
-from material_admission import compare_admission_results  # noqa: E402
-from piper_invocation import (  # noqa: E402
-    piper_implementation_function,
-    piper_invocations,
+from material_admission import compare_admission_result_pairs  # noqa: E402
+
+
+COMPILED_EXECUTABLE = ROOT / ".venv" / "bin" / "piper"
+COMPILED_MATERIAL = (
+    Path.home() / ".local" / "share" / "piper-voices" / "en_US-lessac-medium.onnx"
 )
-
-
-PIPER = ROOT / ".venv" / "bin" / "piper"
-MODEL = Path.home() / ".local" / "share" / "piper-voices" / "en_US-lessac-medium.onnx"
-PIPER_AVAILABLE = PIPER.is_file() and MODEL.is_file()
+COMPILED_FUNCTION_AVAILABLE = COMPILED_EXECUTABLE.is_file() and COMPILED_MATERIAL.is_file()
 
 
 def _codec_functions() -> tuple[CompiledImplementationFunction, ...]:
@@ -64,22 +63,22 @@ def _material_functions() -> tuple[MaterialImplementationFunction, ...]:
 
 
 @pytest.fixture(scope="module")
-def piper_material():
-    if not PIPER_AVAILABLE:
-        pytest.skip("Piper implementation function is unavailable")
+def small_boundary_material():
+    if not COMPILED_FUNCTION_AVAILABLE:
+        pytest.skip("compiled implementation function is unavailable")
     book = (ROOT / "book_of_seed" / "README.md").read_bytes()
     start = book.index(b"Seed")
     ledger = EventLedger()
     source = ingest_material(
         ledger,
-        locality_identity="piper-source",
+        locality_identity="small-boundary-source",
         exact_bytes=book[start : start + 4],
         source_role="fixture material",
         source_boundary="fixture-0",
     )
     added = ingest_material(
         ledger,
-        locality_identity="piper-added",
+        locality_identity="small-boundary-added",
         exact_bytes=b" ",
         source_role="fixture material",
         source_boundary="fixture-1",
@@ -89,7 +88,7 @@ def piper_material():
     additions = added_position_occurrences(
         (source_reference,),
         (added_reference,),
-        boundary_identity="piper-material-addition",
+        boundary_identity="small-boundary-material-addition",
     )
     earlier_function_count = sum(
         map(
@@ -101,26 +100,32 @@ def piper_material():
             ),
         )
     )
-    implementation = piper_implementation_function(
-        executable=PIPER,
-        model=MODEL,
+    implementation = MaterialImplementationFunction(
         identity=f"compiled-{earlier_function_count}",
+        invocation=(
+            str(COMPILED_EXECUTABLE),
+            "-m",
+            str(COMPILED_MATERIAL),
+            "--output-raw",
+        ),
     )
-    source_invocations = piper_invocations(
+    source_invocations = reference_occurrences_across(
         (source_reference,),
-        (implementation,),
-        boundary_identity="piper-source-invocation",
+        implementation_functions=(implementation,),
+        boundary_identity="small-boundary-source-invocation",
+        max_workers=1,
     )
-    result_invocations = piper_invocations(
+    result_invocations = reference_occurrences_across(
         tuple(addition.result_reference for addition in additions),
-        (implementation,),
-        boundary_identity="piper-result-invocation",
+        implementation_functions=(implementation,),
+        boundary_identity="small-boundary-result-invocation",
+        max_workers=1,
     )
     comparisons = compare_added_material_invocations(
         additions,
         source_invocations,
         result_invocations,
-        boundary_identity="piper-addition-compare",
+        boundary_identity="small-boundary-addition-compare",
     )
     return (
         ledger,
@@ -134,22 +139,22 @@ def piper_material():
     )
 
 
-def test_piper_receives_exact_book_material_without_a_text_conversion(piper_material):
-    source_reference = piper_material[1]
-    source_invocation = piper_material[5][0][0]
+def test_compiled_function_receives_the_exact_book_material(small_boundary_material):
+    source_reference = small_boundary_material[1]
+    source_invocation = small_boundary_material[5][0][0]
 
     assert source_reference.exact_material == b"Seed"
     assert source_invocation.exact_material == source_reference.exact_material
     assert source_invocation.source_reference == source_reference
-    assert source_invocation.implementation_function == piper_material[4]
+    assert source_invocation.implementation_function == small_boundary_material[4]
     assert source_invocation.returncode == 0
     assert source_invocation.stdout_bytes
     assert source_invocation.stderr_bytes == b""
 
 
-def test_every_addition_position_has_an_exact_piper_invocation(piper_material):
-    additions = piper_material[3]
-    result_invocations = piper_material[6][0]
+def test_every_addition_position_has_an_exact_invocation(small_boundary_material):
+    additions = small_boundary_material[3]
+    result_invocations = small_boundary_material[6][0]
 
     assert tuple(addition.position for addition in additions) == (0, 1, 2, 3, 4)
     assert len(result_invocations) == len(additions)
@@ -163,9 +168,9 @@ def test_every_addition_position_has_an_exact_piper_invocation(piper_material):
     assert all(invocation.stdout_bytes for invocation in result_invocations)
 
 
-def test_piper_comparison_keeps_each_addition_and_both_invocations(piper_material):
-    additions = piper_material[3]
-    comparisons = piper_material[7][0]
+def test_comparison_keeps_each_addition_and_both_invocations(small_boundary_material):
+    additions = small_boundary_material[3]
+    comparisons = small_boundary_material[7][0]
 
     assert len(comparisons) == len(additions)
     assert tuple(comparison.addition_occurrence for comparison in comparisons) == additions
@@ -185,14 +190,14 @@ def test_piper_comparison_keeps_each_addition_and_both_invocations(piper_materia
     assert any(comparison.distinction for comparison in comparisons)
 
 
-def test_piper_comparisons_enter_the_same_addition_admission(piper_material):
-    additions = piper_material[3]
-    comparisons = piper_material[7]
+def test_comparisons_enter_the_same_addition_admission(small_boundary_material):
+    additions = small_boundary_material[3]
+    comparisons = small_boundary_material[7]
 
     admission = added_position_admission_occurrence(
         additions,
         comparisons,
-        boundary_identity="piper-addition-admission",
+        boundary_identity="small-boundary-addition-admission",
     )
 
     assert admission.source_material == additions
@@ -205,9 +210,9 @@ def test_piper_comparisons_enter_the_same_addition_admission(piper_material):
     assert admission.result_reference.admission_occurrence is admission
 
 
-def test_addition_admission_refuses_a_lookalike_compare(piper_material):
-    additions = piper_material[3]
-    comparisons = piper_material[7]
+def test_addition_admission_refuses_a_lookalike_compare(small_boundary_material):
+    additions = small_boundary_material[3]
+    comparisons = small_boundary_material[7]
     exact = comparisons[0][0]
     lookalike = SimpleNamespace(
         implementation_function_identity=exact.implementation_function_identity,
@@ -223,7 +228,7 @@ def test_addition_admission_refuses_a_lookalike_compare(piper_material):
         added_position_admission_occurrence(
             additions,
             ((lookalike, *comparisons[0][1:]),),
-            boundary_identity="lookalike-piper-admission",
+            boundary_identity="lookalike-small-boundary-admission",
         )
 
 
@@ -237,10 +242,12 @@ def test_small_boundary_refuses_a_lookalike_material_reference():
         )
 
 
-def test_one_small_boundary_compares_all_implementation_functions(piper_material):
-    source_reference = piper_material[1]
-    additions = piper_material[3]
-    piper_comparisons = piper_material[7]
+def test_one_small_boundary_compares_all_implementation_functions(
+    small_boundary_material,
+):
+    source_reference = small_boundary_material[1]
+    additions = small_boundary_material[3]
+    additional_comparisons = small_boundary_material[7]
     compiled_functions = COMPILED_IMPLEMENTATION_FUNCTIONS + _codec_functions()
     material_functions = _material_functions()
 
@@ -278,37 +285,17 @@ def test_one_small_boundary_compares_all_implementation_functions(piper_material
     comparison_rows = (
         *compiled_comparisons,
         *material_comparisons,
-        *piper_comparisons,
+        *additional_comparisons,
     )
-    admission_occurrences = tuple(
-        added_position_admission_occurrence(
-            additions,
-            (row,),
-            boundary_identity="small-boundary-admission",
-            occurrence_position=position,
-        )
-        for position, row in enumerate(comparison_rows)
-    )
-    complete = added_position_admission_occurrence(
+    admissions = added_position_admission_occurrences(
         additions,
         comparison_rows,
         boundary_identity="small-boundary-admission",
-        occurrence_position=len(comparison_rows),
     )
-    admissions = (*admission_occurrences, complete)
-    comparisons = tuple(
-        compare_admission_results(
-            first.result_reference,
-            second.result_reference,
-            boundary_identity="small-boundary-admission-compare",
-            occurrence_position=position,
-        )
-        for position, (first, second) in enumerate(
-            (first, second)
-            for first in admissions
-            for second in admissions
-            if first is not second
-        )
+    every_function_admission = admissions[-1]
+    comparisons = compare_admission_result_pairs(
+        tuple(admission.result_reference for admission in admissions),
+        boundary_identity="small-boundary-admission-compare",
     )
 
     expected_function_count = len(compiled_functions) + len(material_functions) + 1
@@ -322,34 +309,36 @@ def test_one_small_boundary_compares_all_implementation_functions(piper_material
     )
     assert {
         occurrence.act_occurrence_identity
-        for same_coordinates in complete.admitted_material
+        for same_coordinates in every_function_admission.admitted_material
         for occurrence in same_coordinates
     } == {occurrence.act_occurrence_identity for occurrence in additions}
     assert len({admission.admitted_material for admission in admissions}) > 1
-    from_complete = tuple(
+    from_every_function = tuple(
         comparison
         for comparison in comparisons
-        if comparison.first_reference == complete.result_reference
+        if comparison.first_reference == every_function_admission.result_reference
     )
-    toward_complete = tuple(
+    toward_every_function = tuple(
         comparison
         for comparison in comparisons
-        if comparison.second_reference == complete.result_reference
+        if comparison.second_reference == every_function_admission.result_reference
     )
-    assert len(from_complete) == len(toward_complete) == len(comparison_rows)
-    assert all(comparison.result for comparison in from_complete)
-    assert any(not comparison.result for comparison in toward_complete)
+    assert len(from_every_function) == len(toward_every_function) == len(
+        comparison_rows
+    )
+    assert all(comparison.result for comparison in from_every_function)
+    assert any(not comparison.result for comparison in toward_every_function)
 
 
-def test_each_piper_result_can_enter_a_fresh_locality_as_exact_material(
-    piper_material,
+def test_each_returned_material_can_enter_a_fresh_locality(
+    small_boundary_material,
 ):
-    ledger = piper_material[0]
-    invocations = piper_material[6][0]
+    ledger = small_boundary_material[0]
+    invocations = small_boundary_material[6][0]
     ingests = tuple(
         ingest_material(
             ledger,
-            locality_identity=f"piper-result-{position}",
+            locality_identity=f"small-boundary-result-{position}",
             exact_bytes=invocation.stdout_bytes,
             source_role="fixture material",
             source_boundary=f"fixture-result-{position}",
@@ -369,14 +358,14 @@ def test_each_piper_result_can_enter_a_fresh_locality_as_exact_material(
     )
 
 
-def test_piper_compare_refuses_a_result_from_another_addition(piper_material):
-    additions = piper_material[3]
-    source = piper_material[5][0][0]
-    results = piper_material[6][0]
+def test_compare_refuses_a_result_from_another_addition(small_boundary_material):
+    additions = small_boundary_material[3]
+    source = small_boundary_material[5][0][0]
+    results = small_boundary_material[6][0]
 
     with pytest.raises(ValueError, match="result differs from its addition Act"):
         MaterialAddedCompareOccurrence(
-            boundary_identity="changed-piper-compare",
+            boundary_identity="changed-small-boundary-compare",
             occurrence_position=0,
             addition_occurrence=additions[0],
             source_invocation=source,

@@ -607,6 +607,26 @@ def added_position_admission_occurrence(
     )
 
 
+def added_position_admission_occurrences(
+    occurrences: tuple[AddedPositionOccurrence, ...],
+    comparisons: tuple[tuple[object, ...], ...],
+    *,
+    boundary_identity: str,
+) -> tuple[AddedPositionAdmissionOccurrence, ...]:
+    if type(comparisons) is not tuple or not comparisons:
+        raise TypeError("Admission requires exact Compare occurrence tuples")
+    comparison_sets = tuple((row,) for row in comparisons) + (comparisons,)
+    return tuple(
+        added_position_admission_occurrence(
+            occurrences,
+            comparison_set,
+            boundary_identity=boundary_identity,
+            occurrence_position=position,
+        )
+        for position, comparison_set in enumerate(comparison_sets)
+    )
+
+
 def compare_added_position_pairs(
     occurrences: tuple[AddedPositionOccurrence, ...],
     comparisons: tuple[tuple[AddedPositionCompareOccurrence, ...], ...],

@@ -27,7 +27,7 @@ from compiled_format_invocation import (  # noqa: E402
     admit_compiled_invocation_occurrences,
     compiled_reference_invocations,
 )
-from material_admission import compare_admission_results  # noqa: E402
+from material_admission import compare_admission_result_pairs  # noqa: E402
 from material_fixture_media import supplied_media_material  # noqa: E402
 
 
@@ -179,19 +179,9 @@ def media_admission_compares(media_admissions):
     references = tuple(
         occurrence.result_reference for occurrence in media_admissions
     )
-    return tuple(
-        compare_admission_results(
-            first,
-            second,
-            boundary_identity="media-material-admission-compare",
-            occurrence_position=position,
-        )
-        for position, (first, second) in enumerate(
-            (first, second)
-            for first in references
-            for second in references
-            if first is not second
-        )
+    return compare_admission_result_pairs(
+        references,
+        boundary_identity="media-material-admission-compare",
     )
 
 
@@ -200,19 +190,9 @@ def all_media_admission_compares(all_media_admissions):
     references = tuple(
         occurrence.result_reference for occurrence in all_media_admissions
     )
-    return tuple(
-        compare_admission_results(
-            first,
-            second,
-            boundary_identity="all-media-admission-compare",
-            occurrence_position=position,
-        )
-        for position, (first, second) in enumerate(
-            (first, second)
-            for first in references
-            for second in references
-            if first is not second
-        )
+    return compare_admission_result_pairs(
+        references,
+        boundary_identity="all-media-admission-compare",
     )
 
 
