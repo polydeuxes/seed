@@ -21,6 +21,7 @@ _sql: dict[str, int] = {}
 _sqlite_connect = sqlite3.connect
 _lock = threading.Lock()
 _profiler: cProfile.Profile | None = None
+_baselines: list[tuple[dict[str, list[int]], dict[str, int]]] = []
 
 
 def _identity(path: Path, line: int, name: str) -> str:
@@ -98,13 +99,51 @@ def implementation_function_identities() -> tuple[str, ...]:
     )
 
 
-def measurement() -> dict[str, object]:
+def _profile_coordinates(profiler: cProfile.Profile) -> dict[str, list[int]]:
+    found: dict[str, list[int]] = {}
+    for entry in profiler.getstats():
+        if not isinstance(entry.code, CodeType):
+            continue
+        identity = _source_identity(entry.code)
+        if identity is None:
+            continue
+        coordinates = found.setdefault(identity, [0, 0, 0])
+        coordinates[0] += entry.callcount
+        coordinates[1] += round(entry.totaltime * 1_000_000_000)
+        coordinates[2] += round(entry.inlinetime * 1_000_000_000)
+    return found
+
+
+def _coordinate_difference(
+    current: dict[str, list[int]], prior: dict[str, list[int]]
+) -> dict[str, list[int]]:
+    return {
+        identity: [
+            current.get(identity, [0, 0, 0])[coordinate]
+            - prior.get(identity, [0, 0, 0])[coordinate]
+            for coordinate in range(3)
+        ]
+        for identity in current.keys() | prior.keys()
+    }
+
+
+def _sql_difference(current: dict[str, int], prior: dict[str, int]) -> dict[str, int]:
+    return {
+        statement: current.get(statement, 0) - prior.get(statement, 0)
+        for statement in current.keys() | prior.keys()
+        if current.get(statement, 0) != prior.get(statement, 0)
+    }
+
+
+def _measurement(
+    python_coordinates: dict[str, list[int]], sql_coordinates: dict[str, int]
+) -> dict[str, object]:
     identities = implementation_function_identities()
     python = {
         identity: {
-            "occurrence_count": _python.get(identity, [0, 0, 0])[0],
-            "elapsed_nanoseconds": _python.get(identity, [0, 0, 0])[1],
-            "self_elapsed_nanoseconds": _python.get(identity, [0, 0, 0])[2],
+            "occurrence_count": python_coordinates.get(identity, [0, 0, 0])[0],
+            "elapsed_nanoseconds": python_coordinates.get(identity, [0, 0, 0])[1],
+            "self_elapsed_nanoseconds": python_coordinates.get(identity, [0, 0, 0])[2],
         }
         for identity in identities
     }
@@ -115,15 +154,25 @@ def measurement() -> dict[str, object]:
     }
     return {
         "python": python,
-        "sql": dict(sorted(_sql.items())),
+        "sql": dict(sorted(sql_coordinates.items())),
         "reference_pair": reference_pair,
     }
 
 
+def measurement() -> dict[str, object]:
+    return _measurement(_python, _sql)
+
+
 def begin() -> None:
     global _profiler
+    if _profiler is not None:
+        _profiler.disable()
+        _baselines.append((_profile_coordinates(_profiler), dict(_sql)))
+        _profiler.enable()
+        return
     _python.clear()
     _sql.clear()
+    _baselines.clear()
     sqlite3.connect = _connect
     _profiler = cProfile.Profile()
     _profiler.enable()
@@ -131,19 +180,21 @@ def begin() -> None:
 
 def finish() -> dict[str, object]:
     global _profiler
-    if _profiler is not None:
-        _profiler.disable()
-        for entry in _profiler.getstats():
-            if not isinstance(entry.code, CodeType):
-                continue
-            identity = _source_identity(entry.code)
-            if identity is None:
-                continue
-            coordinates = _python.setdefault(identity, [0, 0, 0])
-            coordinates[0] += entry.callcount
-            coordinates[1] += round(entry.totaltime * 1_000_000_000)
-            coordinates[2] += round(entry.inlinetime * 1_000_000_000)
-        _profiler = None
+    if _profiler is None:
+        return measurement()
+    _profiler.disable()
+    current_python = _profile_coordinates(_profiler)
+    if _baselines:
+        prior_python, prior_sql = _baselines.pop()
+        found = _measurement(
+            _coordinate_difference(current_python, prior_python),
+            _sql_difference(_sql, prior_sql),
+        )
+        _profiler.enable()
+        return found
+    _python.clear()
+    _python.update(current_python)
+    _profiler = None
     sqlite3.connect = _sqlite_connect
     return measurement()
 

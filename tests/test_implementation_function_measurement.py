@@ -60,6 +60,26 @@ def test_uninvoked_compiled_identity_remains_unobserved():
     }
 
 
+def test_one_measurement_does_not_replace_an_active_measurement():
+    measured.begin()
+    try:
+        measured._identity(ROOT, 1, "before")
+        measured.begin()
+        try:
+            measured._identity(ROOT, 2, "inside")
+        finally:
+            inside = measured.finish()
+        measured._identity(ROOT, 3, "after")
+    finally:
+        complete = measured.finish()
+
+    identity = next(
+        identity for identity in complete["python"] if identity.endswith(":_identity")
+    )
+    assert inside["python"][identity]["occurrence_count"] == 1
+    assert complete["python"][identity]["occurrence_count"] == 3
+
+
 def test_reference_pair_measurement_contains_each_surviving_function():
     result = measured.measurement()
 
