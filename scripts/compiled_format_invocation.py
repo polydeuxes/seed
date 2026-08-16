@@ -1778,6 +1778,7 @@ def recurring_added_returned_coordinate(
     additions: tuple[AddedPositionOccurrence, ...],
     addition: AddedPositionOccurrence,
     source_invocation: CompiledInvocationOccurrence,
+    _addition_by_identity: dict[tuple[str, int], AddedPositionOccurrence] | None = None,
 ) -> bool | None:
     if (
         type(comparisons) is not tuple
@@ -1803,7 +1804,7 @@ def recurring_added_returned_coordinate(
         return None
     if source_invocation.source_coordinate != addition.source_reference:
         raise ValueError("source invocation differs from the addition Act")
-    addition_by_identity = {
+    addition_by_identity = _addition_by_identity or {
         found.act_occurrence_identity: found for found in additions
     }
     if len(addition_by_identity) != len(additions):
@@ -1898,6 +1899,9 @@ def first_recurring_added_compare(
         raise ValueError("recurrence source invocations must be exact and distinct")
     if len({invocation.returned for invocation in source_invocations}) < 2:
         return (), None, None
+    addition_by_identity = {
+        addition.act_occurrence_identity: addition for addition in additions
+    }
 
     comparisons = []
     for addition in additions[:act_occurrence_count_limit]:
@@ -1910,6 +1914,7 @@ def first_recurring_added_compare(
                 additions,
                 addition,
                 source_invocation,
+                addition_by_identity,
             )
             if len(comparisons) >= 2
             else None
@@ -2077,6 +2082,7 @@ def recurring_removed_returned_coordinate(
     removals: tuple[RemovedPositionOccurrence, ...],
     removal: RemovedPositionOccurrence,
     source_invocation: CompiledInvocationOccurrence,
+    _removal_by_identity: dict[tuple[str, int], RemovedPositionOccurrence] | None = None,
 ) -> bool | None:
     if type(comparisons) is not tuple or len(comparisons) < 2 or any(
         not isinstance(comparison, RemovedPositionCompareOccurrence)
@@ -2093,7 +2099,7 @@ def recurring_removed_returned_coordinate(
         raise TypeError("recurrence requires one exact removal and source invocation")
     if source_invocation.source_coordinate != removal.source_reference:
         raise ValueError("source invocation differs from the removal Act")
-    removal_by_identity = {
+    removal_by_identity = _removal_by_identity or {
         found.act_occurrence_identity: found for found in removals
     }
     if len(removal_by_identity) != len(removals):
@@ -2175,6 +2181,9 @@ def first_recurring_removed_compare(
         raise ValueError("recurrence source invocations must be exact and distinct")
     if len({invocation.returned for invocation in source_invocations}) < 2:
         return (), None, None
+    removal_by_identity = {
+        removal.act_occurrence_identity: removal for removal in removals
+    }
     comparisons = []
     for removal in removals[:act_occurrence_count_limit]:
         source_invocation = source_by_reference.get(removal.source_reference)
@@ -2182,7 +2191,11 @@ def first_recurring_removed_compare(
             raise ValueError("recurrence requires each exact source invocation")
         coordinate = (
             recurring_removed_returned_coordinate(
-                tuple(comparisons), removals, removal, source_invocation
+                tuple(comparisons),
+                removals,
+                removal,
+                source_invocation,
+                removal_by_identity,
             )
             if len(comparisons) >= 2
             else None
