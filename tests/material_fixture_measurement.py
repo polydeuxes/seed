@@ -3,7 +3,10 @@ from __future__ import annotations
 from pathlib import Path
 import sys
 
-from seed_runtime.byte_measurement import record_byte_count_layer
+from seed_runtime.byte_measurement import (
+    record_byte_measurement_responsible_act_evidence,
+    record_byte_measurement_result,
+)
 from seed_runtime.events import EventLedger
 from seed_runtime.material_ingest import ingest_material
 
@@ -23,9 +26,13 @@ def measured_one_byte_material():
         source_role="fixture material",
         source_boundary="fixture-0",
     )
-    measurement = record_byte_count_layer(
+    act_evidence = record_byte_measurement_responsible_act_evidence(
         ledger,
         source_localities=("one-byte-material",),
         recording_locality_identity="one-byte-measurement",
+    )
+    measurement = record_byte_measurement_result(
+        ledger,
+        responsible_act_evidence_event_identity=act_evidence.identity,
     )
     return ledger, exact_byte_material_references(ledger, measurement.identity)

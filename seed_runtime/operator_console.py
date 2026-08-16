@@ -4,7 +4,10 @@ from __future__ import annotations
 
 from typing import BinaryIO, Mapping, TextIO
 
-from seed_runtime.byte_measurement import record_byte_count_layer
+from seed_runtime.byte_measurement import (
+    record_byte_measurement_responsible_act_evidence,
+    record_byte_measurement_result,
+)
 from seed_runtime.events import EventLedger
 from seed_runtime.operator_ingest import run_operator_ingest
 from seed_runtime.operator_material_boundary import operator_boundary_material
@@ -192,16 +195,29 @@ def run_persistent_operator_console(
                 (ingest_occurrence["evidence_event_identity"],),
                 locality_identity=locality_identity,
             )
-            measurement = record_byte_count_layer(
+            measurement_act_evidence = (
+                record_byte_measurement_responsible_act_evidence(
+                    ledger,
+                    source_localities=(locality_identity,),
+                    recording_locality_identity=locality_identity,
+                )
+            )
+            locality_standing = _advance_over(
                 ledger,
-                source_localities=(locality_identity,),
-                recording_locality_identity=locality_identity,
+                locality_standing,
+                (measurement_act_evidence.identity,),
+                locality_identity=locality_identity,
+            )
+            measurement = record_byte_measurement_result(
+                ledger,
+                responsible_act_evidence_event_identity=(
+                    measurement_act_evidence.identity
+                ),
             )
             locality_standing = _advance_over(
                 ledger,
                 locality_standing,
                 (
-                    measurement.material["responsible_act_evidence_identity"],
                     measurement.material["yield_evidence_identity"],
                     measurement.identity,
                 ),

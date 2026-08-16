@@ -1024,13 +1024,13 @@ def _assertions(measured: MeasuredByteInputs) -> list[dict[str, Any]]:
     return results
 
 
-def record_byte_count_layer(
+def record_byte_measurement_responsible_act_evidence(
     ledger: EventLedger,
     *,
     source_localities: Iterable[str],
     recording_locality_identity: str,
 ):
-    """Record one bounded Measurement occurrence with distinct byte results."""
+    """Record Evidence for one exact bounded byte Measurement Act occurrence."""
 
     if not isinstance(recording_locality_identity, str) or not recording_locality_identity:
         raise ByteMeasurementError(
@@ -1038,10 +1038,167 @@ def record_byte_count_layer(
         )
     downstream_act_identity = new_identity("byte_measurement_act")
     act_occurrence_identity = new_identity("byte_measurement_occurrence")
-    result_identity = new_identity("byte_measurement_result")
-    measured = measure_byte_counts(
-        ledger, source_localities=source_localities
+    localities = tuple(dict.fromkeys(source_localities))
+    if not localities or any(type(item) is not str or not item for item in localities):
+        raise ByteMeasurementError(
+            "byte Measurement requires exact declared source Localities"
+        )
+    boundary = ledger.append_boundary()
+    missing = [
+        locality
+        for locality in localities
+        if not ledger.has_locality(locality, through=boundary)
+    ]
+    if missing:
+        raise ByteMeasurementError(
+            "declared source Localities are absent through the Measurement boundary: "
+            + ", ".join(missing)
+        )
+    source_material = []
+    seen_material = set()
+    for locality in localities:
+        for ingest in ledger.iter_locality_kind(
+            locality, INGEST_OCCURRED_KIND, through=boundary
+        ):
+            _ingested_bytes(ledger, ingest)
+            if ingest.identity in seen_material:
+                raise ByteMeasurementError(
+                    "one Ingest occurrence cannot enter a byte Measurement twice"
+                )
+            seen_material.add(ingest.identity)
+            source_material.append({"ingest_occurrence_identity": ingest.identity})
+    if not source_material:
+        raise ByteMeasurementError(
+            "declared source Localities contain no ingest through the Measurement boundary"
+        )
+    responsibility_assignment_evidence = {
+        "responsible_boundary": SEED_NATIVE_MEASUREMENT_RESPONSIBLE_BOUNDARY,
+        "standing": "assigned",
+        "source_occurrence_references": source_material,
+        "completeness_boundary": boundary.identity,
+        "determination": (
+            "exact Ingest and material occurrences through the recorded boundary"
+        ),
+    }
+    return ledger.append(
+        BYTE_MEASUREMENT_RESPONSIBLE_ACT_EVIDENCE_KIND,
+        {
+            "downstream_act_identity": downstream_act_identity,
+            "act_occurrence_identity": act_occurrence_identity,
+            "act": "declared exact-byte Measurement",
+            "responsibility": BYTE_MEASUREMENT_RESPONSIBILITY,
+            "responsible_boundary": SEED_NATIVE_MEASUREMENT_RESPONSIBLE_BOUNDARY,
+            "responsibility_assignment_evidence": responsibility_assignment_evidence,
+            "source_localities": list(localities),
+            "authority": "unestablished",
+            "evidence_scope": (
+                "Evidence for this exact bounded responsible Measurement "
+                "occurrence only; establishes no responsibility"
+            ),
+        },
+        locality_identity=recording_locality_identity,
     )
+
+
+def _measurement_of_responsible_act_evidence(
+    ledger: EventLedger, responsible_act_evidence_event_identity: str
+) -> tuple[Any, MeasuredByteInputs]:
+    event = ledger.get(responsible_act_evidence_event_identity)
+    if (
+        event is None
+        or event.kind != BYTE_MEASUREMENT_RESPONSIBLE_ACT_EVIDENCE_KIND
+        or ledger.integrity_of(event.identity) == CORRUPTED
+    ):
+        raise ByteMeasurementError(
+            "byte Measurement Yield requires one exact responsible Act Evidence occurrence"
+        )
+    material = event.material
+    localities = material.get("source_localities")
+    assignment = material.get("responsibility_assignment_evidence")
+    boundary_identity = (
+        assignment.get("completeness_boundary")
+        if type(assignment) is dict
+        else None
+    )
+    if (
+        type(localities) is not list
+        or not localities
+        or any(type(item) is not str or not item for item in localities)
+        or len(set(localities)) != len(localities)
+        or type(boundary_identity) is not str
+        or not boundary_identity
+        or type(event.locality_identity) is not str
+        or not event.locality_identity
+    ):
+        raise ByteMeasurementError(
+            "byte Measurement responsible Act Evidence carries malformed coordinates"
+        )
+    measured = _measure_byte_counts_through(
+        ledger,
+        localities=tuple(localities),
+        boundary=EventLedgerBoundary(boundary_identity),
+    )
+    expected = {
+        "downstream_act_identity": material.get("downstream_act_identity"),
+        "act_occurrence_identity": material.get("act_occurrence_identity"),
+        "act": "declared exact-byte Measurement",
+        "responsibility": BYTE_MEASUREMENT_RESPONSIBILITY,
+        "responsible_boundary": SEED_NATIVE_MEASUREMENT_RESPONSIBLE_BOUNDARY,
+        "responsibility_assignment_evidence": _seed_native_measurement_assignment(
+            measured
+        ),
+        "source_localities": list(measured.source_localities),
+        "authority": "unestablished",
+        "evidence_scope": (
+            "Evidence for this exact bounded responsible Measurement "
+            "occurrence only; establishes no responsibility"
+        ),
+    }
+    if (
+        type(material.get("downstream_act_identity")) is not str
+        or not material["downstream_act_identity"]
+        or type(material.get("act_occurrence_identity")) is not str
+        or not material["act_occurrence_identity"]
+        or material["downstream_act_identity"] == material["act_occurrence_identity"]
+        or material != expected
+    ):
+        raise ByteMeasurementError(
+            "byte Measurement responsible Act Evidence is not exact"
+        )
+    return event, measured
+
+
+def record_byte_measurement_result(
+    ledger: EventLedger,
+    *,
+    responsible_act_evidence_event_identity: str,
+):
+    """Record the Yield and result of one exact evidenced byte Measurement Act."""
+
+    supplied = ledger.get(responsible_act_evidence_event_identity)
+    if (
+        supplied is None
+        or supplied.kind != BYTE_MEASUREMENT_RESPONSIBLE_ACT_EVIDENCE_KIND
+        or ledger.integrity_of(supplied.identity) == CORRUPTED
+    ):
+        raise ByteMeasurementError(
+            "byte Measurement Yield requires one exact responsible Act Evidence occurrence"
+        )
+    for kind in (YIELD_EVIDENCE_KIND, BYTE_MEASUREMENT_RECORDED_KIND):
+        for event in ledger.iter_locality_kind(supplied.locality_identity, kind):
+            if (
+                event.material.get("responsible_act_evidence_identity")
+                == supplied.identity
+            ):
+                raise ByteMeasurementError(
+                    "byte Measurement responsible Act occurrence already has a Yield or result"
+                )
+
+    responsible_act_evidence, measured = _measurement_of_responsible_act_evidence(
+        ledger, supplied.identity
+    )
+
+    result_identity = new_identity("byte_measurement_result")
     result_material = {
         "result_identity": result_identity,
         "dimensions": {
@@ -1055,8 +1212,12 @@ def record_byte_count_layer(
                 "evidence_scope": MEASUREMENT_EVIDENCE_SCOPE,
         },
         "exact_act": "declared exact-byte Measurement",
-        "downstream_act_identity": downstream_act_identity,
-        "act_occurrence_identity": act_occurrence_identity,
+        "downstream_act_identity": responsible_act_evidence.material[
+            "downstream_act_identity"
+        ],
+        "act_occurrence_identity": responsible_act_evidence.material[
+            "act_occurrence_identity"
+        ],
         "responsibility": BYTE_MEASUREMENT_RESPONSIBILITY,
         "responsible_boundary": SEED_NATIVE_MEASUREMENT_RESPONSIBLE_BOUNDARY,
         "responsibility_assignment_evidence": _seed_native_measurement_assignment(
@@ -1069,30 +1230,13 @@ def record_byte_count_layer(
         },
         "assertions": _assertions(measured),
     }
-    responsible_act_evidence = ledger.append(
-        BYTE_MEASUREMENT_RESPONSIBLE_ACT_EVIDENCE_KIND,
-        {
-            "downstream_act_identity": downstream_act_identity,
-            "act_occurrence_identity": act_occurrence_identity,
-            "act": "declared exact-byte Measurement",
-            "responsibility": BYTE_MEASUREMENT_RESPONSIBILITY,
-            "responsible_boundary": SEED_NATIVE_MEASUREMENT_RESPONSIBLE_BOUNDARY,
-            "responsibility_assignment_evidence": result_material[
-                "responsibility_assignment_evidence"
-            ],
-            "authority": "unestablished",
-            "evidence_scope": (
-                "Evidence for this exact bounded responsible Measurement "
-                "occurrence only; establishes no responsibility"
-            ),
-        },
-        locality_identity=recording_locality_identity,
-    )
     evidence = _record_yield_evidence(
         ledger,
-        locality_identity=recording_locality_identity,
+        locality_identity=responsible_act_evidence.locality_identity,
         exact_act="declared exact-byte Measurement",
-        act_occurrence_identity=act_occurrence_identity,
+        act_occurrence_identity=responsible_act_evidence.material[
+            "act_occurrence_identity"
+        ],
         responsible_act_evidence_identity=responsible_act_evidence.identity,
         result_kind=BYTE_MEASUREMENT_RESULT_KIND,
         result_identity=result_identity,
@@ -1109,7 +1253,7 @@ def record_byte_count_layer(
             "responsible_act_evidence_identity": responsible_act_evidence.identity,
             "occurrence_preservation": BYTE_OCCURRENCE_PRESERVATION,
         },
-        locality_identity=recording_locality_identity,
+        locality_identity=responsible_act_evidence.locality_identity,
     )
 
 
@@ -1194,6 +1338,7 @@ def assertions_of_recorded_byte_measurement(
         "responsibility_assignment_evidence": material[
             "responsibility_assignment_evidence"
         ],
+        "source_localities": material["source_localities"],
         "authority": "unestablished",
         "evidence_scope": (
             "Evidence for this exact bounded responsible Measurement "

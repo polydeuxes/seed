@@ -12,10 +12,25 @@ from seed_runtime.byte_measurement import (
     assertions_of_recorded_byte_position_pair_measurement,
     assertions_of_recorded_byte_measurement,
     record_byte_position_pair_count_layer,
-    record_byte_count_layer,
+    record_byte_measurement_responsible_act_evidence,
+    record_byte_measurement_result,
 )
 from seed_runtime.events import EventLedger
 from seed_runtime.material_ingest import ingest_material
+
+
+def _record_byte_measurement(
+    ledger, *, source_localities, recording_locality_identity
+):
+    act_evidence = record_byte_measurement_responsible_act_evidence(
+        ledger,
+        source_localities=source_localities,
+        recording_locality_identity=recording_locality_identity,
+    )
+    return record_byte_measurement_result(
+        ledger,
+        responsible_act_evidence_event_identity=act_evidence.identity,
+    )
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -114,7 +129,7 @@ def measured_book_pairs():
         )
         for material in supplied_material
     )
-    byte_measurement = record_byte_count_layer(
+    byte_measurement = _record_byte_measurement(
         ledger,
         source_localities=("book-material",),
         recording_locality_identity="book-material-measurement",

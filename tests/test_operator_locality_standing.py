@@ -7,7 +7,8 @@ import pytest
 from seed_runtime.byte_measurement import (
     BYTE_MEASUREMENT_RECORDED_KIND,
     ByteMeasurementError,
-    record_byte_count_layer,
+    record_byte_measurement_responsible_act_evidence,
+    record_byte_measurement_result,
 )
 from seed_runtime.events import CORRUPTED, EventLedger
 from seed_runtime.material_ingest import ingest_material
@@ -20,6 +21,20 @@ from seed_runtime.operator_ingest import run_operator_ingest
 from seed_runtime.operator_material_boundary import operator_boundary_material
 from seed_runtime.operator_console import run_persistent_operator_console
 from seed_runtime.operator_locality_standing import read_operator_locality_standing
+
+
+def _record_byte_measurement(
+    ledger, *, source_localities, recording_locality_identity
+):
+    act_evidence = record_byte_measurement_responsible_act_evidence(
+        ledger,
+        source_localities=source_localities,
+        recording_locality_identity=recording_locality_identity,
+    )
+    return record_byte_measurement_result(
+        ledger,
+        responsible_act_evidence_event_identity=act_evidence.identity,
+    )
 
 
 def _attempt(ledger, text, *, locality="s", locality_standing=None):
@@ -39,7 +54,7 @@ def _standing(ledger, *, locality="s"):
 
 def _record_measurement(ledger, measurement_kind):
     if measurement_kind == BYTE_MEASUREMENT_RECORDED_KIND:
-        return record_byte_count_layer(
+        return _record_byte_measurement(
             ledger,
             source_localities=("s",),
             recording_locality_identity="s",
@@ -152,7 +167,7 @@ def test_locality_standing_carries_only_exact_yielded_result_identities():
         source_role="operator",
         source_boundary="test boundary",
     )
-    measurement = record_byte_count_layer(
+    measurement = _record_byte_measurement(
         ledger,
         source_localities=("s",),
         recording_locality_identity="s",

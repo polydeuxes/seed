@@ -256,10 +256,11 @@ def test_each_advance_reads_only_what_an_act_just_recorded(monkeypatch):
 
     monkeypatch.setattr(operator_console, "advance_operator_locality_standing", record)
     _console("alpha\nbeta\ngamma\ndelta\n")
-    # One identity for Ingest, three for each Measurement, and all ten exact
-    # identities for a successful Representation lifecycle. No call grows
-    # with the ledger.
-    assert set(sizes) <= {1, 3, 10}, sizes
+    # One identity for Ingest or the separately observable byte Measurement
+    # Act Evidence, two for its Yield/result, three for occurrence-position
+    # Measurement, and all ten exact identities for a successful
+    # Representation lifecycle. No call grows with the ledger.
+    assert set(sizes) <= {1, 2, 3, 10}, sizes
 
 
 @pytest.mark.parametrize(

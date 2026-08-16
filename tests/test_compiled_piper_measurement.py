@@ -8,7 +8,10 @@ from unittest.mock import patch
 import pytest
 
 from seed_runtime.events import EventLedger
-from seed_runtime.byte_measurement import record_byte_count_layer
+from seed_runtime.byte_measurement import (
+    record_byte_measurement_responsible_act_evidence,
+    record_byte_measurement_result,
+)
 from seed_runtime.material_ingest import ingest_material
 
 
@@ -57,10 +60,14 @@ def supplied_piper_material():
         source_role="fixture material",
         source_boundary="fixture-0",
     )
-    measurement = record_byte_count_layer(
+    act_evidence = record_byte_measurement_responsible_act_evidence(
         ledger,
         source_localities=("supplied-piper-material",),
         recording_locality_identity="supplied-piper-byte-measurement",
+    )
+    measurement = record_byte_measurement_result(
+        ledger,
+        responsible_act_evidence_event_identity=act_evidence.identity,
     )
     references = exact_byte_material_references(ledger, measurement.identity)
     implementation_function = piper_implementation_function(

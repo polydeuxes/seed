@@ -7,10 +7,25 @@ from io import StringIO
 from seed_runtime.byte_measurement import (
     assertions_of_recorded_byte_measurement,
     record_byte_position_pair_count_layer,
-    record_byte_count_layer,
+    record_byte_measurement_responsible_act_evidence,
+    record_byte_measurement_result,
 )
 from seed_runtime.events import EventLedger
 from seed_runtime.operator_console import run_persistent_operator_console
+
+
+def _record_byte_measurement(
+    ledger, *, source_localities, recording_locality_identity
+):
+    act_evidence = record_byte_measurement_responsible_act_evidence(
+        ledger,
+        source_localities=source_localities,
+        recording_locality_identity=recording_locality_identity,
+    )
+    return record_byte_measurement_result(
+        ledger,
+        responsible_act_evidence_event_identity=act_evidence.identity,
+    )
 
 
 SHORT = "3.14159265358979323846"
@@ -27,7 +42,7 @@ def _supply(ledger: EventLedger, locality: str, material: str) -> None:
 
 
 def _measure(ledger: EventLedger, source: str, result: str):
-    byte_event = record_byte_count_layer(
+    byte_event = _record_byte_measurement(
         ledger,
         source_localities=(source,),
         recording_locality_identity=f"{result}-bytes",

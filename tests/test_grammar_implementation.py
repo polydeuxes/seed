@@ -24,7 +24,8 @@ from seed_runtime.byte_measurement import (
     assertions_of_recorded_byte_measurement,
     get_recorded_pair_input_applicability,
     record_byte_position_pair_count_layer,
-    record_byte_count_layer,
+    record_byte_measurement_responsible_act_evidence,
+    record_byte_measurement_result,
 )
 from seed_runtime.events import CORRUPTED, EventLedger
 from seed_runtime.identities import new_identity
@@ -54,6 +55,20 @@ from seed_runtime.occurrence_position_measurement import (
 from seed_runtime.yield_evidence import YIELD_LIVE_BOUNDARIES
 from seed_runtime.yield_evidence import read_yield_relation_requirements
 from tests.bounded_alternative_fixture import BOUNDED_ALTERNATIVE_FIXTURE_SOURCES
+
+
+def _record_byte_measurement(
+    ledger, *, source_localities, recording_locality_identity
+):
+    act_evidence = record_byte_measurement_responsible_act_evidence(
+        ledger,
+        source_localities=source_localities,
+        recording_locality_identity=recording_locality_identity,
+    )
+    return record_byte_measurement_result(
+        ledger,
+        responsible_act_evidence_event_identity=act_evidence.identity,
+    )
 
 
 GRAMMAR = Path(__file__).resolve().parents[1] / "book_of_seed/grammar.json"
@@ -143,7 +158,7 @@ def _byte_measurement_witness() -> dict:
         input_stream=binary_input("ta\n"),
         output_stream=StringIO(),
     )
-    measurement = record_byte_count_layer(
+    measurement = _record_byte_measurement(
         ledger,
         source_localities=("source",),
         recording_locality_identity="byte-measurement",
@@ -172,7 +187,7 @@ def _recorded_applicability() -> dict:
         input_stream=binary_input("ta\n"),
         output_stream=StringIO(),
     )
-    byte_measurement = record_byte_count_layer(
+    byte_measurement = _record_byte_measurement(
         ledger,
         source_localities=("source",),
         recording_locality_identity="byte-measurement",
@@ -2527,17 +2542,17 @@ def test_asserted_content_identity_includes_scope_but_not_locality():
             output_stream=StringIO(),
         )
 
-    first = record_byte_count_layer(
+    first = _record_byte_measurement(
         ledger,
         source_localities=("source-one",),
         recording_locality_identity="measurement-one",
     )
-    repeated = record_byte_count_layer(
+    repeated = _record_byte_measurement(
         ledger,
         source_localities=("source-one",),
         recording_locality_identity="measurement-two",
     )
-    other_scope = record_byte_count_layer(
+    other_scope = _record_byte_measurement(
         ledger,
         source_localities=("source-two",),
         recording_locality_identity="measurement-three",

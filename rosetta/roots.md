@@ -40,7 +40,8 @@ distinction.
 
 ```text
 Measurement Responsibility / Act / occurrence / Assertions
-    seed_runtime.byte_measurement::record_byte_count_layer
+    seed_runtime.byte_measurement::record_byte_measurement_responsible_act_evidence
+    seed_runtime.byte_measurement::record_byte_measurement_result
     seed_runtime.byte_measurement::record_byte_position_pair_count_layer
 
 Yield Evidence

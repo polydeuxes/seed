@@ -9,7 +9,10 @@ SCRIPT_DIRECTORY = Path(__file__).resolve().parent
 sys.path.insert(0, str(SCRIPT_DIRECTORY))
 sys.path.insert(0, str(SCRIPT_DIRECTORY.parent))
 
-from seed_runtime.byte_measurement import record_byte_count_layer
+from seed_runtime.byte_measurement import (
+    record_byte_measurement_responsible_act_evidence,
+    record_byte_measurement_result,
+)
 from seed_runtime.events import EventLedger
 from seed_runtime.material_ingest import ingest_material
 
@@ -43,10 +46,14 @@ def measured_material():
         source_role="fixture material",
         source_boundary="fixture-0",
     )
-    occurrence = record_byte_count_layer(
+    act_evidence = record_byte_measurement_responsible_act_evidence(
         ledger,
         source_localities=("compiled-material-source",),
         recording_locality_identity="compiled-material-measurement",
+    )
+    occurrence = record_byte_measurement_result(
+        ledger,
+        responsible_act_evidence_event_identity=act_evidence.identity,
     )
     return ledger, exact_byte_material_references(ledger, occurrence.identity)
 

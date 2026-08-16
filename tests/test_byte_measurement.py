@@ -10,6 +10,7 @@ from seed_runtime.byte_measurement import (
     BYTE_PAIR_APPLICABILITY_RECORDED_KIND,
     BYTE_PAIR_RESULT_COORDINATES,
     BYTE_MEASUREMENT_RECORDED_KIND,
+    BYTE_MEASUREMENT_RESPONSIBLE_ACT_EVIDENCE_KIND,
     BYTE_RESULT_COORDINATES,
     BYTE_MEASUREMENT_RULE,
     ByteMeasurementError,
@@ -23,10 +24,11 @@ from seed_runtime.byte_measurement import (
     assertions_of_recorded_byte_position_pair_measurement,
     input_applicability_of_recorded_byte_position_pair_measurement,
     measure_byte_counts,
-    record_byte_count_layer,
+    record_byte_measurement_responsible_act_evidence,
+    record_byte_measurement_result,
     record_byte_position_pair_count_layer,
 )
-from seed_runtime.events import EventLedger
+from seed_runtime.events import EventLedger, SQLiteEventLedger
 from seed_runtime.event import Event
 from seed_runtime.operator_console import run_persistent_operator_console
 from seed_runtime.yield_evidence import YIELD_EVIDENCE_KIND
@@ -34,6 +36,20 @@ from seed_runtime.material_ingest import (
     MATERIAL_INGEST_OCCURRED_KIND,
     ingest_material,
 )
+
+
+def _record_byte_measurement(
+    ledger, *, source_localities, recording_locality_identity
+):
+    act_evidence = record_byte_measurement_responsible_act_evidence(
+        ledger,
+        source_localities=source_localities,
+        recording_locality_identity=recording_locality_identity,
+    )
+    return record_byte_measurement_result(
+        ledger,
+        responsible_act_evidence_event_identity=act_evidence.identity,
+    )
 
 
 def _ledger(text="猫\n狗\n"):
@@ -48,11 +64,182 @@ def _ledger(text="猫\n狗\n"):
 
 
 def _byte_source(ledger):
-    return record_byte_count_layer(
+    return _record_byte_measurement(
         ledger,
         source_localities=("source",),
         recording_locality_identity="byte-measurement",
     )
+
+
+def test_responsible_act_evidence_is_observable_before_yield_and_result():
+    ledger = _ledger("a\n")
+
+    act_evidence = record_byte_measurement_responsible_act_evidence(
+        ledger,
+        source_localities=("source",),
+        recording_locality_identity="measurement",
+    )
+
+    assert act_evidence.kind == BYTE_MEASUREMENT_RESPONSIBLE_ACT_EVIDENCE_KIND
+    assert ledger.list_locality("measurement") == [act_evidence]
+    assert act_evidence.material["source_localities"] == ["source"]
+    assert act_evidence.material["responsibility_assignment_evidence"][
+        "source_occurrence_references"
+    ]
+
+    result = record_byte_measurement_result(
+        ledger,
+        responsible_act_evidence_event_identity=act_evidence.identity,
+    )
+    events = ledger.list_locality("measurement")
+    assert [event.kind for event in events] == [
+        BYTE_MEASUREMENT_RESPONSIBLE_ACT_EVIDENCE_KIND,
+        YIELD_EVIDENCE_KIND,
+        BYTE_MEASUREMENT_RECORDED_KIND,
+    ]
+    assert result.material["responsible_act_evidence_identity"] == act_evidence.identity
+    assert result.material["yield_evidence_identity"] == events[1].identity
+    assert ledger.occurrences_in_append_order(
+        (act_evidence.identity, events[1].identity, result.identity),
+        locality_identity="measurement",
+    ) == events
+
+
+def test_two_stages_traverse_byte_counts_once(monkeypatch):
+    from seed_runtime import byte_measurement
+
+    ledger = _ledger("ab\n")
+    calls = []
+    original = byte_measurement._measure_byte_counts_through
+
+    def count(*args, **kwargs):
+        calls.append(kwargs["boundary"].identity)
+        return original(*args, **kwargs)
+
+    monkeypatch.setattr(byte_measurement, "_measure_byte_counts_through", count)
+    act_evidence = record_byte_measurement_responsible_act_evidence(
+        ledger,
+        source_localities=("source",),
+        recording_locality_identity="measurement",
+    )
+    assert calls == []
+
+    record_byte_measurement_result(
+        ledger,
+        responsible_act_evidence_event_identity=act_evidence.identity,
+    )
+    assert calls == [
+        act_evidence.material["responsibility_assignment_evidence"][
+            "completeness_boundary"
+        ]
+    ]
+
+
+def test_yield_resolves_the_exact_act_evidence_after_reopen(tmp_path):
+    path = str(tmp_path / "measurement.sqlite")
+    ledger = SQLiteEventLedger(path)
+    ingest_material(
+        ledger,
+        locality_identity="source",
+        exact_bytes=b"durable",
+        source_role="operator",
+        source_boundary="durable boundary",
+    )
+    act_evidence = record_byte_measurement_responsible_act_evidence(
+        ledger,
+        source_localities=("source",),
+        recording_locality_identity="measurement",
+    )
+    act_evidence_identity = act_evidence.identity
+    ledger.close()
+
+    ledger = SQLiteEventLedger(path)
+    try:
+        result = record_byte_measurement_result(
+            ledger,
+            responsible_act_evidence_event_identity=act_evidence_identity,
+        )
+        assert result.material["responsible_act_evidence_identity"] == (
+            act_evidence_identity
+        )
+        assert assertions_of_recorded_byte_measurement(ledger, result.identity)
+    finally:
+        ledger.close()
+
+
+def test_material_appended_after_act_evidence_cannot_enter_its_result():
+    ledger = _ledger("a")
+    act_evidence = record_byte_measurement_responsible_act_evidence(
+        ledger,
+        source_localities=("source",),
+        recording_locality_identity="measurement",
+    )
+    ingest_material(
+        ledger,
+        locality_identity="source",
+        exact_bytes=b"b",
+        source_role="operator",
+        source_boundary="later boundary",
+    )
+
+    result = record_byte_measurement_result(
+        ledger,
+        responsible_act_evidence_event_identity=act_evidence.identity,
+    )
+    counts = {
+        item.representation: item.material["dimensions"]["content"]["count"]
+        for item in assertions_of_recorded_byte_measurement(ledger, result.identity)
+        if item.result == "count"
+    }
+    assert counts == {97: 1}
+
+
+def test_one_responsible_act_occurrence_cannot_yield_twice(monkeypatch):
+    from seed_runtime import byte_measurement
+
+    ledger = _ledger("a\n")
+    act_evidence = record_byte_measurement_responsible_act_evidence(
+        ledger,
+        source_localities=("source",),
+        recording_locality_identity="measurement",
+    )
+    record_byte_measurement_result(
+        ledger,
+        responsible_act_evidence_event_identity=act_evidence.identity,
+    )
+    event_count = len(ledger.list())
+
+    def forbidden(*args, **kwargs):
+        raise AssertionError("a consumed Act occurrence must not be measured again")
+
+    monkeypatch.setattr(byte_measurement, "_measure_byte_counts_through", forbidden)
+
+    with pytest.raises(ByteMeasurementError, match="already has a Yield or result"):
+        record_byte_measurement_result(
+            ledger,
+            responsible_act_evidence_event_identity=act_evidence.identity,
+        )
+    assert len(ledger.list()) == event_count
+
+
+@pytest.mark.parametrize("identity", ("missing", None))
+def test_yield_refuses_missing_responsible_act_evidence(identity):
+    with pytest.raises(ByteMeasurementError, match="exact responsible Act Evidence"):
+        record_byte_measurement_result(
+            EventLedger(),
+            responsible_act_evidence_event_identity=identity,
+        )
+
+
+def test_yield_refuses_a_different_occurrence_kind():
+    ledger = _ledger("a\n")
+    wrong = next(event for event in ledger.list() if event.locality_identity == "source")
+
+    with pytest.raises(ByteMeasurementError, match="exact responsible Act Evidence"):
+        record_byte_measurement_result(
+            ledger,
+            responsible_act_evidence_event_identity=wrong.identity,
+        )
 
 
 def test_exact_bytes_supply_the_measured_subjects_without_whitespace():
@@ -85,7 +272,7 @@ def test_the_complete_declared_localities_supply_the_inputs():
 
 
 def test_count_and_recurrence_are_distinct_results():
-    event = record_byte_count_layer(
+    event = _record_byte_measurement(
         _ledger("ab\n"),
         source_localities=("source",),
         recording_locality_identity="measurement",
@@ -103,7 +290,7 @@ def test_count_and_recurrence_are_distinct_results():
 
 
 def test_recurrence_exists_only_above_one():
-    event = record_byte_count_layer(
+    event = _record_byte_measurement(
         _ledger("aa\n"),
         source_localities=("source",),
         recording_locality_identity="measurement",
@@ -117,7 +304,7 @@ def test_recurrence_exists_only_above_one():
 
 
 def test_the_rule_is_mechanics_not_an_unchecked_callable():
-    event = record_byte_count_layer(
+    event = _record_byte_measurement(
         _ledger("the cat\n"),
         source_localities=("source",),
         recording_locality_identity="measurement",
@@ -129,7 +316,7 @@ def test_the_rule_is_mechanics_not_an_unchecked_callable():
 
 def test_recorded_results_replay_the_complete_bounded_source_read():
     ledger = _ledger("猫\n狗\n")
-    event = record_byte_count_layer(
+    event = _record_byte_measurement(
         ledger,
         source_localities=("source",),
         recording_locality_identity="measurement",
@@ -191,7 +378,7 @@ def test_recorded_results_replay_the_complete_bounded_source_read():
 
 def test_a_self_consistent_truncated_source_assertion_is_refused():
     ledger = _ledger("a\nb\n")
-    event = record_byte_count_layer(
+    event = _record_byte_measurement(
         ledger,
         source_localities=("source",),
         recording_locality_identity="measurement",
@@ -211,7 +398,7 @@ def test_a_self_consistent_truncated_source_assertion_is_refused():
 
 def test_recording_occurrence_evidence_is_validated_exactly():
     ledger = _ledger("a\n")
-    event = record_byte_count_layer(
+    event = _record_byte_measurement(
         ledger,
         source_localities=("source",),
         recording_locality_identity="measurement",

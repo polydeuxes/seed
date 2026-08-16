@@ -9,9 +9,24 @@ import pytest
 from seed_runtime.events import EventLedger
 from seed_runtime.material_ingest import MATERIAL_INGEST_OCCURRED_KIND, ingest_material
 from seed_runtime.byte_measurement import (
-    record_byte_count_layer,
+    record_byte_measurement_responsible_act_evidence,
+    record_byte_measurement_result,
     record_byte_position_pair_count_layer,
 )
+
+
+def _record_byte_measurement(
+    ledger, *, source_localities, recording_locality_identity
+):
+    act_evidence = record_byte_measurement_responsible_act_evidence(
+        ledger,
+        source_localities=source_localities,
+        recording_locality_identity=recording_locality_identity,
+    )
+    return record_byte_measurement_result(
+        ledger,
+        responsible_act_evidence_event_identity=act_evidence.identity,
+    )
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -83,7 +98,7 @@ def acquired_book_material():
 @pytest.fixture(scope="module")
 def acquired_book_relations(acquired_book_material):
     ledger, _, ingests, _, _, _, book_admission = acquired_book_material
-    byte_measurement = record_byte_count_layer(
+    byte_measurement = _record_byte_measurement(
         ledger,
         source_localities=("book-material-acquisition",),
         recording_locality_identity="book-material-byte-measurement",
@@ -172,7 +187,7 @@ def acquired_book_relations(acquired_book_material):
 @pytest.fixture(scope="module")
 def complete_book_admission_acts(acquired_book_material):
     ledger, _, _, _, _, book_invocation_rows, book_admission = acquired_book_material
-    byte_measurement = record_byte_count_layer(
+    byte_measurement = _record_byte_measurement(
         ledger,
         source_localities=("book-material-acquisition",),
         recording_locality_identity="book-material-acquisition",
