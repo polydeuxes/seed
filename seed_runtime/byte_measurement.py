@@ -688,6 +688,19 @@ def _move_byte_assertion_to_locality(
     )
 
 
+def move_recorded_byte_assertion_to_locality(
+    ledger: EventLedger,
+    *,
+    source: RecordedByteAssertion,
+    destination_locality: str,
+) -> RecordedByteAssertion:
+    return _move_byte_assertion_to_locality(
+        ledger,
+        source=source,
+        destination_locality=destination_locality,
+    )
+
+
 def _validate_moved_byte_assertion(
     ledger: EventLedger, movement_event_identity: str
 ) -> RecordedByteAssertion | None:

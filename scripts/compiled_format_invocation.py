@@ -14,6 +14,7 @@ import xml.etree.ElementTree
 from seed_runtime.byte_measurement import (
     assertions_of_recorded_byte_measurement,
     assertions_of_recorded_byte_position_pair_measurement,
+    move_recorded_byte_assertion_to_locality,
 )
 from seed_runtime.events import EventLedger
 
@@ -47,6 +48,7 @@ class ExactMaterialReference:
     assertion_identity: str
     locality_identity: str
     exact_material: bytes
+    locality_movement_event_identity: str | None = None
 
     def __post_init__(self) -> None:
         if (
@@ -57,6 +59,13 @@ class ExactMaterialReference:
             or type(self.locality_identity) is not str
             or not self.locality_identity
             or type(self.exact_material) is not bytes
+            or (
+                self.locality_movement_event_identity is not None
+                and (
+                    type(self.locality_movement_event_identity) is not str
+                    or not self.locality_movement_event_identity
+                )
+            )
         ):
             raise TypeError("exact material requires its occurrence-bound Assertion reference")
 
@@ -220,6 +229,45 @@ def exact_byte_material_references(
         for assertion in assertions or ()
         if assertion.result == "count" and assertion.representation is not None
     )
+
+
+def moved_exact_byte_material_references(
+    ledger: EventLedger,
+    measurement_occurrence_identity: str,
+    *,
+    destination_locality: str,
+) -> tuple[ExactMaterialReference, ...]:
+    if not isinstance(ledger, EventLedger):
+        raise TypeError("moved exact byte references require one EventLedger")
+    if type(destination_locality) is not str or not destination_locality:
+        raise TypeError("moved exact byte references require one destination Locality")
+    event = ledger.get(measurement_occurrence_identity)
+    if event is None:
+        raise ValueError("moved exact byte references require one Measurement occurrence")
+    assertions = assertions_of_recorded_byte_measurement(
+        ledger, measurement_occurrence_identity
+    )
+    found = []
+    for assertion in assertions or ():
+        if assertion.result != "count" or assertion.representation is None:
+            continue
+        moved = move_recorded_byte_assertion_to_locality(
+            ledger,
+            source=assertion,
+            destination_locality=destination_locality,
+        )
+        found.append(
+            ExactMaterialReference(
+                recorded_occurrence_identity=moved.recorded_occurrence_identity,
+                assertion_identity=moved.assertion_identity,
+                locality_identity=destination_locality,
+                exact_material=bytes((moved.representation,)),
+                locality_movement_event_identity=(
+                    moved.locality_movement_event_identity
+                ),
+            )
+        )
+    return tuple(found)
 
 
 def exact_byte_pair_material_references(

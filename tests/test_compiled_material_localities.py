@@ -18,6 +18,7 @@ from compiled_format_invocation import (  # noqa: E402
     admission_added_position_occurrences,
     admission_result_added_position_occurrences,
     exact_byte_material_references,
+    moved_exact_byte_material_references,
 )
 from compiled_material_invocation import (  # noqa: E402
     MaterialImplementationFunction,
@@ -102,6 +103,50 @@ def test_every_measured_byte_reaches_the_compiled_function(material_invocations)
     assert tuple(occurrence.source_reference for occurrence in occurrences) == references
     assert len({occurrence.occurrence_identity for occurrence in occurrences}) == 256
     assert all(occurrence.returned for occurrence in occurrences)
+
+
+def test_moved_byte_references_keep_identity_and_can_enter_one_new_locality(
+    material_invocations,
+):
+    ledger, references, _ = material_invocations
+    measurement = next(
+        event
+        for event in ledger.list()
+        if event.locality_identity == "one-byte-measurement"
+        and "assertions" in event.material
+    )
+
+    moved = moved_exact_byte_material_references(
+        ledger,
+        measurement.identity,
+        destination_locality="one-byte-pairs",
+    )
+
+    assert len(moved) == len(references) == 256
+    assert {reference.locality_identity for reference in moved} == {
+        "one-byte-pairs"
+    }
+    assert {
+        reference.locality_movement_event_identity for reference in moved
+    } == {
+        event.identity
+        for event in ledger.list_locality("one-byte-pairs")
+        if event.kind == "operator.assertion.locality_movement_recorded"
+    }
+    assert tuple(reference.assertion_identity for reference in moved) == tuple(
+        reference.assertion_identity for reference in references
+    )
+    admission = admission_occurrence(
+        (moved,),
+        boundary_identity="one-byte-moved-admission",
+        source_material=moved,
+    )
+    additions = admission_added_position_occurrences(
+        admission.result_reference,
+        boundary_identity="one-byte-moved-addition",
+        admitted_material_act_occurrence_count_limit=(len(moved) + 1) * len(moved) ** 2,
+    )
+    assert additions
 
 
 def test_compiled_function_establishes_distinct_raw_coordinates(
