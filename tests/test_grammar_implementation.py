@@ -1940,6 +1940,25 @@ def _representation_source_witness(bundle: dict) -> dict[str, str]:
         if isinstance(source_reference, str)
         else None
     )
+    standing_boundary = material.get("locality_standing_as_of_event_identity")
+    standing_boundary_event = (
+        bundle["ledger"].get(standing_boundary)
+        if isinstance(standing_boundary, str)
+        else None
+    )
+    try:
+        if source_reference != standing_boundary:
+            bundle["ledger"].occurrences_in_append_order(
+                (source_reference, standing_boundary),
+                locality_identity=event.locality_identity,
+            )
+        bundle["ledger"].occurrences_in_append_order(
+            (standing_boundary, event.identity),
+            locality_identity=event.locality_identity,
+        )
+        standing_boundary_is_exact = True
+    except (TypeError, ValueError):
+        standing_boundary_is_exact = False
     return {
         "responsibility": (
             EXACT
@@ -1956,8 +1975,9 @@ def _representation_source_witness(bundle: dict) -> dict[str, str]:
         ),
         "locality_standing_as_of_event_identity": (
             EXACT
-            if material.get("locality_standing_as_of_event_identity")
-            == source_reference
+            if standing_boundary_is_exact
+            and standing_boundary_event is not None
+            and bundle["ledger"].integrity_of(standing_boundary) != CORRUPTED
             else MISSING
         ),
         "source_provenance": (
@@ -3393,6 +3413,49 @@ def test_representation_source_clause_is_checked_against_one_live_result():
         tuple(distinction) for distinction in clause["distinct_from"]
     ]
     assert set(distinctions.values()) == {True}
+
+
+def test_representation_source_and_standing_boundary_remain_distinct_coordinates():
+    ledger = _IntegrityAdversaryLedger()
+    source = ingest_material(
+        ledger,
+        locality_identity="representation-source",
+        exact_bytes=b"source material",
+        source_role="operator",
+        source_boundary="exact source boundary",
+    )
+    later = ingest_material(
+        ledger,
+        locality_identity="representation-source",
+        exact_bytes=b"later material",
+        source_role="operator",
+        source_boundary="later source boundary",
+    )
+    representation = record_operator_representation(
+        ledger,
+        locality_identity="representation-source",
+        locality_standing=read_operator_locality_standing(
+            ledger, locality_identity="representation-source"
+        ),
+        source_occurrence_reference=source.identity,
+    )
+    event = ledger.get(representation["representation_event_identity"])
+    bundle = {
+        "ledger": ledger,
+        "source": source,
+        "event": event,
+        "act_evidence": ledger.get(
+            event.material["responsible_act_evidence_identity"]
+        ),
+        "locality_evidence": ledger.get(
+            event.material["locality_evidence_identity"]
+        ),
+        "content_evidence": ledger.get(event.material["yield_evidence_identity"]),
+    }
+
+    assert source.identity != later.identity
+    assert event.material["locality_standing_as_of_event_identity"] == later.identity
+    assert set(_representation_source_witness(bundle).values()) == {EXACT}
 
 
 def test_representation_result_act_and_locality_species_keep_their_clauses():

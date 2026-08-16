@@ -285,6 +285,20 @@ def test_recorded_standing_reference_survives_durable_reopen(tmp_path):
         assert _ingested_materials(reopened, point["standing"]) == [
             b"book material\n"
         ]
+        source_occurrence_identity = point["standing"]["ingest_occurrences"][0][
+            "evidence_event_identity"
+        ]
+        representation = record_operator_representation(
+            reopened,
+            locality_identity="source",
+            locality_standing=point["standing"],
+            source_occurrence_reference=source_occurrence_identity,
+        )
+        output = BytesIO()
+        emit_operator_representation_material(
+            reopened, representation=representation, output_stream=output
+        )
+        assert output.getvalue() == b"book material\n"
     finally:
         reopened.close()
 

@@ -551,6 +551,64 @@ def test_representation_refuses_a_source_from_another_locality():
         )
 
 
+def test_representation_refuses_a_source_after_its_standing_boundary():
+    ledger = EventLedger()
+    first = ingest_material(
+        ledger,
+        locality_identity="s",
+        exact_bytes=b"first",
+        source_role="operator",
+        source_boundary="fixture boundary",
+    )
+    boundary_standing = _standing(ledger)
+    later = ingest_material(
+        ledger,
+        locality_identity="s",
+        exact_bytes=b"later",
+        source_role="operator",
+        source_boundary="fixture boundary",
+    )
+    boundary_standing["exact_result_occurrences"][later.identity] = None
+
+    with pytest.raises(ValueError, match="outside its Standing boundary"):
+        record_operator_representation(
+            ledger,
+            locality_identity="s",
+            locality_standing=boundary_standing,
+            source_occurrence_reference=later.identity,
+        )
+
+    assert first.identity != later.identity
+
+
+def test_representation_refuses_a_standing_boundary_from_another_locality():
+    ledger = EventLedger()
+    source = ingest_material(
+        ledger,
+        locality_identity="s",
+        exact_bytes=b"source",
+        source_role="operator",
+        source_boundary="fixture boundary",
+    )
+    other = ingest_material(
+        ledger,
+        locality_identity="other",
+        exact_bytes=b"other",
+        source_role="operator",
+        source_boundary="fixture boundary",
+    )
+    standing = _standing(ledger)
+    standing["as_of_event_identity"] = other.identity
+
+    with pytest.raises(ValueError, match="Standing boundary is not exact"):
+        record_operator_representation(
+            ledger,
+            locality_identity="s",
+            locality_standing=standing,
+            source_occurrence_reference=source.identity,
+        )
+
+
 def test_representation_refuses_corrupted_source_material():
     ledger = EventLedger()
     source = ingest_material(
