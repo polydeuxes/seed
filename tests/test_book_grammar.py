@@ -14,11 +14,23 @@ def _active_book() -> str:
     )
 
 
-def _book_clause_identities() -> set[str]:
+def _book_clause_identities() -> set[bytes]:
+    return {
+        identity
+        for path in sorted(CHAPTERS.glob("*.md"))
+        for identity in re.findall(
+            rb"^### ([0-9]+\.[A-Za-z]+\.[A-Za-z0-9.]+) ",
+            path.read_bytes(),
+            re.M,
+        )
+    }
+
+
+def _machine_clause_identities() -> set[bytes]:
     return set(
         re.findall(
-            r"^### ([0-9]+\.[A-Za-z]+\.[A-Za-z0-9.]+) ",
-            _active_book(),
+            rb'^    "([0-9]+\.[A-Za-z]+\.[A-Za-z0-9.]+)": \{$',
+            GRAMMAR.read_bytes(),
             re.M,
         )
     )
@@ -95,8 +107,7 @@ def test_missing_relation_clause_is_detected():
 
 
 def test_book_and_machine_grammar_have_the_same_clauses():
-    grammar = json.loads(GRAMMAR.read_text(encoding="utf-8"))
-    assert _book_clause_identities() == set(grammar["clauses"])
+    assert _book_clause_identities() == _machine_clause_identities()
 
 
 def test_ingest_occurrence_and_yield_identity_remain_distinct():
