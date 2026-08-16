@@ -28,7 +28,6 @@ def main() -> int:
             all(positions[position] == mark for position in line)
             for line in LINES
         )
-    sys.stdout.buffer.write(positions)
     return 0
 
 

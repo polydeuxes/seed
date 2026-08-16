@@ -78,6 +78,19 @@ def material_invocations():
 @pytest.fixture(scope="module")
 def material_pair_invocations(material_invocations):
     ledger, references, source_occurrences = material_invocations
+    admission = admit_invocation_occurrences(
+        source_occurrences,
+        boundary_identity="one-byte-compiled-material-admission",
+    )
+    smallest_count = min(len(material) for material in admission.admitted_material)
+    smallest_material = tuple(
+        material
+        for material in admission.admitted_material
+        if len(material) == smallest_count
+    )
+    if len(smallest_material) != 1:
+        raise ValueError("one exact bounded Admission is required")
+    bounded_material = smallest_material[0]
     additions = tuple(
         AddedPositionOccurrence(
             boundary_identity="one-byte-pair-addition",
@@ -88,7 +101,9 @@ def material_pair_invocations(material_invocations):
             result_material=source.exact_material + added.exact_material,
         )
         for position, (source, added) in enumerate(
-            zip(references, references[1:])
+            (source, added)
+            for source in bounded_material
+            for added in bounded_material
         )
     )
     implementation_function = source_occurrences[0].implementation_function
@@ -103,7 +118,14 @@ def material_pair_invocations(material_invocations):
         (result_occurrences,),
         boundary_identity="one-byte-pair-compare",
     )[0]
-    return ledger, references, additions, result_occurrences, comparisons
+    return (
+        ledger,
+        references,
+        bounded_material,
+        additions,
+        result_occurrences,
+        comparisons,
+    )
 
 
 def test_every_measured_byte_reaches_the_compiled_function(material_invocations):
@@ -173,15 +195,25 @@ def test_each_returned_material_enters_a_fresh_locality(material_invocations):
 def test_each_ordered_material_pair_has_one_exact_addition_occurrence(
     material_pair_invocations,
 ):
-    _, references, additions, _, _ = material_pair_invocations
+    _, references, bounded_material, additions, _, _ = material_pair_invocations
+    exact_pairs = tuple(
+        (source, added)
+        for source in bounded_material
+        for added in bounded_material
+    )
 
-    assert len(additions) == len(references) - 1
-    assert tuple(addition.source_reference for addition in additions) == references[:-1]
-    assert tuple(addition.added_reference for addition in additions) == references[1:]
+    assert 1 < len(bounded_material) < len(references)
+    assert len(additions) == len(bounded_material) ** 2
+    assert tuple(addition.source_reference for addition in additions) == tuple(
+        source for source, _ in exact_pairs
+    )
+    assert tuple(addition.added_reference for addition in additions) == tuple(
+        added for _, added in exact_pairs
+    )
     assert tuple(addition.position for addition in additions) == (1,) * len(additions)
     assert tuple(addition.result_material for addition in additions) == tuple(
-        first.exact_material + second.exact_material
-        for first, second in zip(references, references[1:])
+        source.exact_material + added.exact_material
+        for source, added in exact_pairs
     )
     assert len({addition.act_occurrence_identity for addition in additions}) == len(
         additions
@@ -192,7 +224,7 @@ def test_each_ordered_material_pair_has_one_exact_addition_occurrence(
 def test_each_added_result_reaches_the_same_compiled_function(
     material_pair_invocations,
 ):
-    _, _, additions, occurrences, _ = material_pair_invocations
+    _, _, _, additions, occurrences, _ = material_pair_invocations
 
     assert len(occurrences) == len(additions)
     assert tuple(occurrence.source_reference for occurrence in occurrences) == tuple(
@@ -209,7 +241,7 @@ def test_each_added_result_reaches_the_same_compiled_function(
 def test_exact_addition_occurrence_binds_source_and_result_invocations(
     material_pair_invocations,
 ):
-    _, _, additions, result_occurrences, comparisons = material_pair_invocations
+    _, _, _, additions, result_occurrences, comparisons = material_pair_invocations
 
     assert len(comparisons) == len(additions) == len(result_occurrences)
     assert tuple(
@@ -227,7 +259,7 @@ def test_exact_addition_occurrence_binds_source_and_result_invocations(
 def test_added_result_coordinates_establish_more_than_one_admission(
     material_pair_invocations,
 ):
-    _, _, additions, occurrences, _ = material_pair_invocations
+    _, _, _, additions, occurrences, _ = material_pair_invocations
     admission = admit_invocation_occurrences(
         occurrences,
         boundary_identity="one-byte-pair-compiled-material-admission",
