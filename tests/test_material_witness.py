@@ -44,8 +44,10 @@ from compiled_format_invocation import (  # noqa: E402
 from compiled_material_invocation import (  # noqa: E402
     MATERIAL_IMPLEMENTATION_FUNCTIONS,
     MaterialImplementationFunction,
+    admit_invocation_occurrences,
     occurrences_across,
     invocation_occurrence,
+    reference_occurrences_across,
 )
 from material_admission import compare_admission_result_pairs, preserves  # noqa: E402
 
@@ -154,6 +156,23 @@ def book_pair_invocation_occurrences(measured_book_pairs):
     return occurrences_across(
         measured_book_pairs[3], boundary_identity="book-pair-material"
     )
+
+
+@pytest.fixture(scope="module")
+def book_pair_compiled_material_occurrences(measured_book_pairs):
+    invocation = ("/usr/bin/env", "-i", "/bin/bash", "--noprofile", "--norc", "-n")
+    if any(not Path(part).is_file() for part in (invocation[0], invocation[2])):
+        pytest.skip("compiled implementation function is unavailable")
+    function = MaterialImplementationFunction(
+        identity="compiled-0",
+        invocation=invocation,
+    )
+    occurrences = reference_occurrences_across(
+        measured_book_pairs[6],
+        boundary_identity="book-pair-compiled-material-invocation",
+        implementation_functions=(function,),
+    )[0]
+    return function, occurrences
 
 
 @pytest.fixture(scope="module")
@@ -487,6 +506,73 @@ def test_distinct_implementation_functions_establish_their_admissions(book_pair_
         for first in range(len(admissions))
         for second in range(first + 1, len(admissions))
     )
+
+
+def test_measured_book_pairs_reach_one_compiled_material_function(
+    book_pair_compiled_material_occurrences,
+    measured_book_pairs,
+):
+    function, occurrences = book_pair_compiled_material_occurrences
+
+    assert function.invocation == (
+        "/usr/bin/env",
+        "-i",
+        "/bin/bash",
+        "--noprofile",
+        "--norc",
+        "-n",
+    )
+    assert tuple(occurrence.invocation_position for occurrence in occurrences) == tuple(
+        range(len(measured_book_pairs[6]))
+    )
+    assert tuple(occurrence.source_reference for occurrence in occurrences) == (
+        measured_book_pairs[6]
+    )
+    assert all(occurrence.returned for occurrence in occurrences)
+    assert len({occurrence.coordinates for occurrence in occurrences}) > 1
+
+
+def test_compiled_material_function_exposes_one_byte_return_code_boundaries(
+    book_pair_compiled_material_occurrences,
+):
+    _, occurrences = book_pair_compiled_material_occurrences
+    same_position = {}
+    for occurrence in occurrences:
+        material = occurrence.exact_material
+        for position in range(len(material)):
+            same_position.setdefault(
+                (position, material[:position], material[position + 1 :]),
+                [],
+            ).append(occurrence)
+    boundaries = tuple(
+        (first.exact_material, second.exact_material)
+        for material_at_position in same_position.values()
+        for position, first in enumerate(material_at_position)
+        for second in material_at_position[position + 1 :]
+        if first.returncode != second.returncode
+    )
+
+    assert boundaries
+    assert all(_one_byte_apart(first, second) for first, second in boundaries)
+
+
+def test_compiled_material_results_enter_one_exact_admission(
+    book_pair_compiled_material_occurrences,
+    measured_book_pairs,
+):
+    _, occurrences = book_pair_compiled_material_occurrences
+    admission = admit_invocation_occurrences(
+        occurrences,
+        boundary_identity="book-pair-compiled-material-admission",
+    )
+
+    assert admission.source_material == measured_book_pairs[6]
+    assert len(admission.admitted_material) > 1
+    assert {
+        reference
+        for same_coordinates in admission.admitted_material
+        for reference in same_coordinates
+    } == set(measured_book_pairs[6])
 
 
 def test_every_measured_pair_reaches_every_compiled_format_implementation_function(
@@ -1465,7 +1551,7 @@ def test_exact_bytes_reach_the_implementation_function_without_prior_decoding(mo
     assert found.stdout_bytes == b"implementation function material"
 
 
-def test_wait_boundary_preserves_an_invocation_that_did_not_return(monkeypatch):
+def test_time_limit_preserves_an_invocation_that_did_not_return(monkeypatch):
     function = MaterialImplementationFunction(
         identity="compiled-0",
         invocation=("compiled-0",),
@@ -1485,13 +1571,13 @@ def test_wait_boundary_preserves_an_invocation_that_did_not_return(monkeypatch):
     occurrence = invocation_occurrence(
         b"material",
         function,
-        boundary_identity="wait-boundary",
-        wait_seconds=0.25,
+        boundary_identity="time-limit-boundary",
+        time_limit_second_count=0.25,
     )
 
     assert occurrence.returned is False
     assert occurrence.returncode is None
     assert occurrence.stdout_bytes == b"available output"
     assert occurrence.stderr_bytes is None
-    assert occurrence.wait_seconds == 0.25
+    assert occurrence.time_limit_second_count == 0.25
     assert occurrence.coordinates == (0.25, False, None, b"available output", None)

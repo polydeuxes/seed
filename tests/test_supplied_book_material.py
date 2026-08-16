@@ -67,7 +67,7 @@ def test_supplied_order_survives_distinct_localities_and_compiled_invocations(
                 invocation=(executable,),
             ),
         ),
-        wait_seconds=31.0,
+        time_limit_second_count=31.0,
     )[0]
 
     assert len({event.locality_identity for event in ingests}) == len(ingests)
@@ -78,7 +78,10 @@ def test_supplied_order_survives_distinct_localities_and_compiled_invocations(
         range(len(references))
     )
     assert tuple(occurrence.source_reference for occurrence in occurrences) == references
-    assert all(occurrence.wait_seconds == 31.0 for occurrence in occurrences)
+    assert all(
+        occurrence.time_limit_second_count == 31.0
+        for occurrence in occurrences
+    )
     assert tuple(occurrence.exact_material for occurrence in occurrences) == (
         supplied_material_in_order
     )

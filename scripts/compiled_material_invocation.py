@@ -108,8 +108,11 @@ class MaterialAddedCompareOccurrence:
             != self.result_invocation.implementation_function
         ):
             raise ValueError("Compare cannot cross implementation functions")
-        if self.source_invocation.wait_seconds != self.result_invocation.wait_seconds:
-            raise ValueError("Compare cannot cross wait boundaries")
+        if (
+            self.source_invocation.time_limit_second_count
+            != self.result_invocation.time_limit_second_count
+        ):
+            raise ValueError("Compare cannot cross time limits")
         if self.source_invocation.source_reference != (
             self.addition_occurrence.source_reference
         ):
@@ -163,7 +166,7 @@ class MaterialInvocationOccurrence:
     stdout_bytes: bytes | None
     stderr_bytes: bytes | None
     source_reference: Hashable | None = None
-    wait_seconds: float = 30.0
+    time_limit_second_count: float = 30.0
 
     def __post_init__(self) -> None:
         if type(self.boundary_identity) is not str or not self.boundary_identity:
@@ -178,8 +181,11 @@ class MaterialInvocationOccurrence:
             raise TypeError("one exact implementation function is required")
         if type(self.returned) is not bool:
             raise TypeError("returned coordinate must be exact")
-        if type(self.wait_seconds) is not float or self.wait_seconds <= 0:
-            raise TypeError("one exact positive wait in seconds is required")
+        if (
+            type(self.time_limit_second_count) is not float
+            or self.time_limit_second_count <= 0
+        ):
+            raise TypeError("one exact positive time limit second count is required")
         if self.returned:
             if type(self.returncode) is not int:
                 raise TypeError("a returned invocation requires its exact return code")
@@ -215,7 +221,7 @@ class MaterialInvocationOccurrence:
         self,
     ) -> tuple[float, bool, int | None, bytes | None, bytes | None]:
         return (
-            self.wait_seconds,
+            self.time_limit_second_count,
             self.returned,
             self.returncode,
             self.stdout_bytes,
@@ -257,8 +263,13 @@ class MaterialAdmissionOccurrence:
         }
         if len(implementation_functions) != 1:
             raise ValueError("one material Admission cannot cross implementation functions")
-        if len({occurrence.wait_seconds for occurrence in invocation_occurrences}) != 1:
-            raise ValueError("one material Admission cannot cross wait boundaries")
+        if len(
+            {
+                occurrence.time_limit_second_count
+                for occurrence in invocation_occurrences
+            }
+        ) != 1:
+            raise ValueError("one material Admission cannot cross time limits")
         source_material = tuple(
             occurrence.source_reference for occurrence in invocation_occurrences
         )
@@ -357,14 +368,17 @@ def invocation_occurrence(
     boundary_identity: str,
     invocation_position: int = 0,
     source_reference: Hashable | None = None,
-    wait_seconds: float = 30.0,
+    time_limit_second_count: float = 30.0,
 ) -> MaterialInvocationOccurrence:
     if type(exact_material) is not bytes:
         raise TypeError("implementation function material must be exact bytes")
     if not isinstance(implementation_function, MaterialImplementationFunction):
         raise TypeError("one material implementation function is required")
-    if type(wait_seconds) is not float or wait_seconds <= 0:
-        raise TypeError("one exact positive wait in seconds is required")
+    if (
+        type(time_limit_second_count) is not float
+        or time_limit_second_count <= 0
+    ):
+        raise TypeError("one exact positive time limit second count is required")
     try:
         completed = subprocess.run(
             implementation_function.invocation,
@@ -372,7 +386,7 @@ def invocation_occurrence(
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
             check=False,
-            timeout=wait_seconds,
+            timeout=time_limit_second_count,
         )
     except subprocess.TimeoutExpired as occurrence:
         return MaterialInvocationOccurrence(
@@ -385,7 +399,7 @@ def invocation_occurrence(
             stdout_bytes=occurrence.stdout,
             stderr_bytes=occurrence.stderr,
             source_reference=source_reference,
-            wait_seconds=wait_seconds,
+            time_limit_second_count=time_limit_second_count,
         )
     return MaterialInvocationOccurrence(
         boundary_identity=boundary_identity,
@@ -397,7 +411,7 @@ def invocation_occurrence(
         stdout_bytes=completed.stdout,
         stderr_bytes=completed.stderr,
         source_reference=source_reference,
-        wait_seconds=wait_seconds,
+        time_limit_second_count=time_limit_second_count,
     )
 
 
@@ -408,13 +422,13 @@ def occurrences_across(
     implementation_functions: tuple[
         MaterialImplementationFunction, ...
     ] = MATERIAL_IMPLEMENTATION_FUNCTIONS,
-    wait_seconds: float = 30.0,
+    time_limit_second_count: float = 30.0,
 ) -> tuple[tuple[MaterialInvocationOccurrence, ...], ...]:
     return _occurrences_across(
         exact_materials,
         boundary_identity=boundary_identity,
         implementation_functions=implementation_functions,
-        wait_seconds=wait_seconds,
+        time_limit_second_count=time_limit_second_count,
     )
 
 
@@ -426,7 +440,7 @@ def reference_occurrences_across(
         MaterialImplementationFunction, ...
     ] = MATERIAL_IMPLEMENTATION_FUNCTIONS,
     max_workers: int = 16,
-    wait_seconds: float = 30.0,
+    time_limit_second_count: float = 30.0,
 ) -> tuple[tuple[MaterialInvocationOccurrence, ...], ...]:
     if type(references) is not tuple or any(
         type(getattr(reference, "exact_material", None)) is not bytes
@@ -439,7 +453,7 @@ def reference_occurrences_across(
         implementation_functions=implementation_functions,
         source_references=references,
         max_workers=max_workers,
-        wait_seconds=wait_seconds,
+        time_limit_second_count=time_limit_second_count,
     )
 
 
@@ -486,7 +500,7 @@ def _occurrences_across(
     implementation_functions: tuple[MaterialImplementationFunction, ...],
     source_references: tuple[Hashable, ...] | None = None,
     max_workers: int = 16,
-    wait_seconds: float = 30.0,
+    time_limit_second_count: float = 30.0,
 ) -> tuple[tuple[MaterialInvocationOccurrence, ...], ...]:
     if type(exact_materials) is not tuple or any(
         type(material) is not bytes for material in exact_materials
@@ -515,8 +529,11 @@ def _occurrences_across(
         raise ValueError("each material requires its exact source reference")
     if type(max_workers) is not int or max_workers < 1:
         raise TypeError("invocation count must be one positive integer")
-    if type(wait_seconds) is not float or wait_seconds <= 0:
-        raise TypeError("one exact positive wait in seconds is required")
+    if (
+        type(time_limit_second_count) is not float
+        or time_limit_second_count <= 0
+    ):
+        raise TypeError("one exact positive time limit second count is required")
     if not exact_materials:
         return tuple(() for _ in implementation_functions)
     calls = tuple(
@@ -540,7 +557,7 @@ def _occurrences_across(
             boundary_identity=boundary_identity,
             invocation_position=position,
             source_reference=source_reference,
-            wait_seconds=wait_seconds,
+            time_limit_second_count=time_limit_second_count,
         )
 
     with ThreadPoolExecutor(max_workers=min(max_workers, len(calls))) as workers:

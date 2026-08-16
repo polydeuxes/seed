@@ -54,12 +54,26 @@ def _codec_functions() -> tuple[CompiledImplementationFunction, ...]:
 
 def _material_functions() -> tuple[MaterialImplementationFunction, ...]:
     first = len(COMPILED_IMPLEMENTATION_FUNCTIONS) + len(_codec_functions())
-    return tuple(
+    functions = tuple(
         MaterialImplementationFunction(
             identity=f"compiled-{first + position}",
             invocation=function.invocation,
         )
         for position, function in enumerate(MATERIAL_IMPLEMENTATION_FUNCTIONS)
+    )
+    return (
+        *functions,
+        MaterialImplementationFunction(
+            identity=f"compiled-{first + len(functions)}",
+            invocation=(
+                "/usr/bin/env",
+                "-i",
+                "/bin/bash",
+                "--noprofile",
+                "--norc",
+                "-n",
+            ),
+        ),
     )
 
 
@@ -374,14 +388,17 @@ def test_compare_refuses_a_result_from_another_addition(small_boundary_material)
         )
 
 
-def test_compare_refuses_different_wait_boundaries(small_boundary_material):
+def test_compare_refuses_different_time_limits(small_boundary_material):
     addition = small_boundary_material[3][0]
     source = small_boundary_material[5][0][0]
-    result = replace(small_boundary_material[6][0][0], wait_seconds=31.0)
+    result = replace(
+        small_boundary_material[6][0][0],
+        time_limit_second_count=31.0,
+    )
 
-    with pytest.raises(ValueError, match="cannot cross wait boundaries"):
+    with pytest.raises(ValueError, match="cannot cross time limits"):
         MaterialAddedCompareOccurrence(
-            boundary_identity="changed-wait-compare",
+            boundary_identity="changed-time-limit-compare",
             occurrence_position=0,
             addition_occurrence=addition,
             source_invocation=source,
