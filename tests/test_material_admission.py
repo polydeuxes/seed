@@ -44,6 +44,23 @@ def test_a_nonrepresentative_pair_cannot_hide_inside_a_final_admission():
             assert len({implementation_function(a, b) for a in firsts for b in seconds}) == 1
 
 
+def test_admission_invokes_each_ordered_pair_once_in_source_order():
+    material = ("a", "b", "c")
+    invocations = []
+
+    def implementation_function(first, second):
+        invocations.append((first, second))
+        return first == second
+
+    material_admission.admit([material], implementation_function)
+
+    assert invocations == [
+        (first, second)
+        for first in material
+        for second in material
+    ]
+
+
 def test_the_same_admission_uses_a_decoder_witness():
     read = first_admission("utf-8", 4)
     first = [tuple(material) for material in read.values()]

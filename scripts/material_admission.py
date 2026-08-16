@@ -240,19 +240,20 @@ def _admit(
     first: Admission, implementation_function: ImplementationFunction
 ) -> Admission:
     material = tuple(other for found in first for other in found)
-    outgoing: list[list[Hashable]] = [[] for _ in material]
-    incoming: list[list[Hashable]] = [[] for _ in material]
-    for first_position, first_material in enumerate(material):
-        for second_position, second_material in enumerate(material):
-            result = implementation_function(first_material, second_material)
-            outgoing[first_position].append(result)
-            incoming[second_position].append(result)
+    outgoing = tuple(
+        tuple(
+            implementation_function(first_material, second_material)
+            for second_material in material
+        )
+        for first_material in material
+    )
+    incoming = tuple(zip(*outgoing))
     admitted: Admission = []
     position = 0
     for material_at_one_coordinate in first:
         same_result: dict[Hashable, list[Material]] = {}
         for item in material_at_one_coordinate:
-            coordinates = (tuple(outgoing[position]), tuple(incoming[position]))
+            coordinates = (outgoing[position], incoming[position])
             same_result.setdefault(coordinates, []).append(item)
             position += 1
         admitted.extend(tuple(found) for found in same_result.values())
