@@ -87,6 +87,30 @@
     ]
   },
   "clauses": {
+    "01.Source.D": {
+      "subject": "declared_Measurement_result",
+      "responsibility": {
+        "kind": "Measurement_result_boundary",
+        "coordinates": [
+          "responsibility",
+          "responsible_boundary",
+          "responsibility_assignment_evidence",
+          "measurement_rule",
+          "source_localities",
+          "completeness_boundary",
+          "assertions"
+        ]
+      },
+      "findings": ["count", "recurrence"],
+      "distinct_from": [
+        ["Measurement_result", "exact_Act_occurrence"],
+        ["Measurement_occurrence", "recording_occurrence"],
+        [
+          "Measurement_Responsibility",
+          "Assertion_Standing_coordinate_Responsibility"
+        ]
+      ]
+    },
     "01.Standing.D.1": {
       "subject": "Assertion",
       "identity": ["result", "subject", "Scope", "content"],

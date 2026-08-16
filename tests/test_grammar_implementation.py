@@ -7,7 +7,18 @@ from io import BytesIO, StringIO
 from pathlib import Path
 
 from seed_runtime.byte_measurement import (
+    BYTE_MEASUREMENT_RECORDED_KIND,
+    BYTE_MEASUREMENT_RESPONSIBLE_ACT_EVIDENCE_KIND,
+    BYTE_MEASUREMENT_RESPONSIBILITY,
+    BYTE_MEASUREMENT_RULE,
     BYTE_PAIR_INPUT_ROLE,
+    BYTE_PAIR_MEASUREMENT_RECORDED_KIND,
+    BYTE_PAIR_RESPONSIBLE_ACT_EVIDENCE_KIND,
+    BYTE_PAIR_MEASUREMENT_RESPONSIBILITY,
+    BYTE_PAIR_MEASUREMENT_RULE,
+    MEASURED_ASSERTION_RESPONSIBILITY,
+    SEED_NATIVE_MEASUREMENT_RESPONSIBLE_BOUNDARY,
+    EVENT_KIND_RESPONSIBILITIES,
     _identity,
     _validate_moved_byte_assertion,
     assertions_of_recorded_byte_measurement,
@@ -1498,6 +1509,163 @@ def _act_occurrence_witness(bundle: dict) -> dict[str, str]:
     }
 
 
+def _measurement_result_witness(bundle: dict) -> dict[str, str]:
+    event = bundle["event"]
+    material = event.material
+    expected = {
+        BYTE_MEASUREMENT_RECORDED_KIND: (
+            BYTE_MEASUREMENT_RESPONSIBILITY,
+            BYTE_MEASUREMENT_RULE,
+            True,
+        ),
+        BYTE_PAIR_MEASUREMENT_RECORDED_KIND: (
+            BYTE_PAIR_MEASUREMENT_RESPONSIBILITY,
+            BYTE_PAIR_MEASUREMENT_RULE,
+            False,
+        ),
+    }.get(event.kind)
+    if expected is None:
+        return {
+            coordinate: MISSING
+            for coordinate in _clause("01.Source.D")["responsibility"][
+                "coordinates"
+            ]
+        }
+    expected_responsibility, expected_rule, carries_source_set = expected
+    assignment = material.get("responsibility_assignment_evidence")
+    localities = material.get("source_localities")
+    boundary = material.get("completeness_boundary")
+    assertions = material.get("assertions")
+    expected_scope = (
+        {"source_localities": localities}
+        if isinstance(localities, list) and localities
+        else None
+    )
+    assertion_results = (
+        [item.get("result") for item in assertions]
+        if isinstance(assertions, list)
+        and all(isinstance(item, dict) for item in assertions)
+        else None
+    )
+    carried_assertions_are_exact = bool(
+        assertion_results is not None
+        and all(
+            item.get("assertion_subject", {}).get("measurement_rule")
+            == expected_rule
+            and item.get("assertion_scope") == expected_scope
+            and item.get("dimensions", {}).get("responsibility")
+            == MEASURED_ASSERTION_RESPONSIBILITY
+            for item in assertions
+        )
+        and set(assertion_results)
+        <= (
+            {"exact_source_material_set", "count", "recurrence"}
+            if carries_source_set
+            else {"count", "recurrence"}
+        )
+        and (
+            assertion_results[:1] == ["exact_source_material_set"]
+            if carries_source_set
+            else "exact_source_material_set" not in assertion_results
+        )
+    )
+    assignment_is_exact = bool(
+        isinstance(assignment, dict)
+        and set(assignment)
+        == {
+            "responsible_boundary",
+            "standing",
+            "source_occurrence_references",
+            "completeness_boundary",
+            "determination",
+        }
+        and assignment["responsible_boundary"]
+        == SEED_NATIVE_MEASUREMENT_RESPONSIBLE_BOUNDARY
+        and assignment["standing"] == "assigned"
+        and isinstance(assignment["source_occurrence_references"], list)
+        and assignment["source_occurrence_references"]
+        and all(
+            isinstance(reference, dict)
+            and set(reference) == {"ingest_occurrence_identity"}
+            and isinstance(reference["ingest_occurrence_identity"], str)
+            and reference["ingest_occurrence_identity"]
+            for reference in assignment["source_occurrence_references"]
+        )
+        and isinstance(assignment["determination"], str)
+        and assignment["determination"]
+    )
+    return {
+        "responsibility": (
+            EXACT
+            if material.get("responsibility") == expected_responsibility
+            else MISSING
+        ),
+        "responsible_boundary": (
+            EXACT
+            if material.get("responsible_boundary")
+            == SEED_NATIVE_MEASUREMENT_RESPONSIBLE_BOUNDARY
+            else MISSING
+        ),
+        "responsibility_assignment_evidence": (
+            EXACT if assignment_is_exact else MISSING
+        ),
+        "measurement_rule": (
+            EXACT if material.get("measurement_rule") == expected_rule else MISSING
+        ),
+        "source_localities": (
+            EXACT
+            if isinstance(localities, list)
+            and localities
+            and len(localities) == len(set(localities))
+            and all(isinstance(locality, str) and locality for locality in localities)
+            else MISSING
+        ),
+        "completeness_boundary": (
+            EXACT
+            if isinstance(boundary, dict)
+            and set(boundary) == {"identity"}
+            and isinstance(boundary["identity"], str)
+            and boundary["identity"]
+            and isinstance(assignment, dict)
+            and assignment.get("completeness_boundary") == boundary["identity"]
+            else MISSING
+        ),
+        "assertions": EXACT if carried_assertions_are_exact else MISSING,
+    }
+
+
+def _measurement_result_distinctions(bundle: dict) -> dict[tuple[str, str], bool]:
+    event = bundle["event"]
+    material = event.material
+    assertions = material.get("assertions")
+    assertion_responsibilities = (
+        {
+            item.get("dimensions", {}).get("responsibility")
+            for item in assertions
+            if isinstance(item, dict)
+        }
+        if isinstance(assertions, list)
+        else set()
+    )
+    return {
+        ("Measurement_result", "exact_Act_occurrence"): (
+            material.get("result_identity")
+            != material.get("act_occurrence_identity")
+        ),
+        ("Measurement_occurrence", "recording_occurrence"): (
+            material.get("act_occurrence_identity") != event.identity
+        ),
+        (
+            "Measurement_Responsibility",
+            "Assertion_Standing_coordinate_Responsibility",
+        ): (
+            bool(assertion_responsibilities)
+            and assertion_responsibilities == {MEASURED_ASSERTION_RESPONSIBILITY}
+            and material.get("responsibility") not in assertion_responsibilities
+        ),
+    }
+
+
 def _locality_requirements(bundle: dict) -> dict[str, bool]:
     ledger = bundle["ledger"]
     movement = bundle["movement"]
@@ -2706,6 +2874,141 @@ def test_exact_act_clause_is_checked_against_live_byte_measurement():
         "act_occurrence_identity"
     ]
     assert _occurrence_result_witness(bundle) == EXACT
+
+
+def test_measurement_result_clause_is_checked_against_live_byte_and_pair_results():
+    clause = _clause("01.Source.D")
+    byte = _byte_measurement_witness()
+    pair_bundle = _recorded_applicability()
+    pair = {"event": pair_bundle["pair_event"]}
+
+    assert clause["findings"] == ["count", "recurrence"]
+    for bundle in (byte, pair):
+        witness = _measurement_result_witness(bundle)
+        distinctions = _measurement_result_distinctions(bundle)
+
+        assert set(witness) == set(clause["responsibility"]["coordinates"])
+        assert set(witness.values()) == {EXACT}
+        assert list(distinctions) == [
+            tuple(distinction) for distinction in clause["distinct_from"]
+        ]
+        assert set(distinctions.values()) == {True}
+
+
+def test_measurement_result_carriers_and_responsible_act_evidence_name_their_own_clauses():
+    assert {
+        EVENT_KIND_RESPONSIBILITIES[BYTE_MEASUREMENT_RECORDED_KIND],
+        EVENT_KIND_RESPONSIBILITIES[BYTE_PAIR_MEASUREMENT_RECORDED_KIND],
+    } == {"01.Source.D"}
+    assert {
+        EVENT_KIND_RESPONSIBILITIES[
+            BYTE_MEASUREMENT_RESPONSIBLE_ACT_EVIDENCE_KIND
+        ],
+        EVENT_KIND_RESPONSIBILITIES[
+            BYTE_PAIR_RESPONSIBLE_ACT_EVIDENCE_KIND
+        ],
+    } == {"02.Acts.A"}
+
+
+def test_measurement_result_and_exact_act_clauses_do_not_absorb_each_other():
+    act_without_result = _byte_measurement_witness()
+    act_without_result["event"].material["assertions"] = []
+
+    assert set(_act_occurrence_witness(act_without_result).values()) == {EXACT}
+    assert _measurement_result_witness(act_without_result) == {
+        "responsibility": EXACT,
+        "responsible_boundary": EXACT,
+        "responsibility_assignment_evidence": EXACT,
+        "measurement_rule": EXACT,
+        "source_localities": EXACT,
+        "completeness_boundary": EXACT,
+        "assertions": MISSING,
+    }
+
+    result_without_act_evidence = _byte_measurement_witness()
+    result_without_act_evidence["act_evidence"] = None
+
+    assert set(
+        _measurement_result_witness(result_without_act_evidence).values()
+    ) == {EXACT}
+    act_witness = _act_occurrence_witness(result_without_act_evidence)
+    assert act_witness["exact_Act"] == MISSING
+    assert act_witness["Act_occurrence"] == MISSING
+    assert act_witness["occurrence_Evidence"] == MISSING
+
+
+def test_measurement_result_distinction_adversaries_collapse_one_boundary_each():
+    mutations = {
+        ("Measurement_result", "exact_Act_occurrence"): lambda bundle: bundle[
+            "event"
+        ].material.__setitem__(
+            "result_identity",
+            bundle["event"].material["act_occurrence_identity"],
+        ),
+        ("Measurement_occurrence", "recording_occurrence"): lambda bundle: (
+            object.__setattr__(
+                bundle["event"],
+                "identity",
+                bundle["event"].material["act_occurrence_identity"],
+            )
+        ),
+        (
+            "Measurement_Responsibility",
+            "Assertion_Standing_coordinate_Responsibility",
+        ): lambda bundle: [
+            item["dimensions"].__setitem__(
+                "responsibility", bundle["event"].material["responsibility"]
+            )
+            for item in bundle["event"].material["assertions"]
+        ],
+    }
+
+    for collapsed, mutate in mutations.items():
+        bundle = _byte_measurement_witness()
+        mutate(bundle)
+        distinctions = _measurement_result_distinctions(bundle)
+
+        assert distinctions[collapsed] is False
+        assert all(
+            preserved
+            for distinction, preserved in distinctions.items()
+            if distinction != collapsed
+        )
+
+
+def test_measurement_result_adversaries_change_the_declared_coordinate_only():
+    mutations = {
+        "responsibility": lambda material: material.__setitem__(
+            "responsibility", BYTE_PAIR_MEASUREMENT_RESPONSIBILITY
+        ),
+        "responsible_boundary": lambda material: material.__setitem__(
+            "responsible_boundary", "a different boundary"
+        ),
+        "responsibility_assignment_evidence": lambda material: material[
+            "responsibility_assignment_evidence"
+        ].__setitem__("standing", "unestablished"),
+        "measurement_rule": lambda material: material.__setitem__(
+            "measurement_rule", BYTE_PAIR_MEASUREMENT_RULE
+        ),
+        "completeness_boundary": lambda material: material[
+            "responsibility_assignment_evidence"
+        ].__setitem__("completeness_boundary", "a different boundary"),
+        "assertions": lambda material: material["assertions"][0][
+            "assertion_subject"
+        ].__setitem__("measurement_rule", BYTE_PAIR_MEASUREMENT_RULE),
+    }
+
+    for changed, mutate in mutations.items():
+        bundle = _byte_measurement_witness()
+        mutate(bundle["event"].material)
+        witness = _measurement_result_witness(bundle)
+
+        assert witness[changed] == MISSING
+        assert all(
+            standing == EXACT
+            for coordinate, standing in witness.items()
+            if coordinate != changed
+        )
 
 
 def test_act_and_occurrence_identities_do_not_establish_their_relation():
