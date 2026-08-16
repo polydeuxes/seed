@@ -775,6 +775,64 @@ def test_pair_and_byte_admissions_require_every_compiled_function(
         )
 
 
+def test_compiled_admission_reads_exact_invocation_rows_once(monkeypatch):
+    references = tuple(
+        ExactMaterialReference(
+            f"one-reading-occurrence-{position}",
+            f"one-reading-assertion-{position}",
+            "one-reading-locality",
+            bytes((position,)),
+        )
+        for position in range(8)
+    )
+    functions = tuple(
+        CompiledImplementationFunction(
+            identity=f"one-reading-function-{position}",
+            invocation=lambda material, position=position: material[position:],
+        )
+        for position in range(3)
+    )
+    rows = compiled_reference_invocations(
+        references,
+        boundary_identity="one-reading-invocation",
+        implementation_functions=functions,
+    )
+    readings = []
+    original = compiled_format_invocation._compiled_admission_reading
+
+    def measured_reading(occurrence_rows):
+        readings.append(occurrence_rows)
+        return original(occurrence_rows)
+
+    monkeypatch.setattr(
+        compiled_format_invocation,
+        "_compiled_admission_reading",
+        measured_reading,
+    )
+    admission = admit_compiled_invocation_rows(
+        rows,
+        boundary_identity="one-reading-admission",
+    )
+
+    assert readings == [rows]
+    assert admission.source_material == references
+    assert tuple(
+        reference.invocation_occurrence
+        for reference in admission.invocation_result_references
+    ) == tuple(occurrence for row in rows for occurrence in row)
+
+    changed = replace(rows[0][0], returned=not rows[0][0].returned)
+    with pytest.raises(ValueError, match="differs from its invocation results"):
+        replace(
+            admission,
+            invocation_result_references=(
+                changed.result_reference,
+                *admission.invocation_result_references[1:],
+            ),
+        )
+    assert len(readings) == 2
+
+
 def test_format_recurrence_precedes_later_moved_material(
     book_pair_format_occurrences,
     book_three_byte_format_occurrences,
