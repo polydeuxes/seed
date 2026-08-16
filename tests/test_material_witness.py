@@ -38,6 +38,7 @@ from compiled_format_invocation import (  # noqa: E402
     added_position_admission_occurrences,
     added_position_result_admission_occurrence,
     admission_added_position_occurrences,
+    admission_removed_position_occurrences,
     admission_result_added_position_occurrences,
     added_position_occurrences,
     compare_added_position_invocations,
@@ -2544,6 +2545,199 @@ def test_removal_compare_refuses_a_result_without_its_act_occurrence():
             result_invocations,
             boundary_identity="compare",
         )
+
+
+def test_admitted_source_lineage_crosses_every_exact_removal_boundary():
+    sources = (
+        ExactMaterialReference(
+            "admitted-removal-source-0",
+            "admitted-removal-assertion-0",
+            "admitted-removal-locality",
+            b"ab",
+        ),
+        ExactMaterialReference(
+            "admitted-removal-source-1",
+            "admitted-removal-assertion-1",
+            "admitted-removal-locality",
+            b"cd",
+        ),
+    )
+    source_admission = admission_occurrence(
+        (sources,),
+        boundary_identity="admitted-removal-source-admission",
+        source_material=sources,
+    )
+    removals = admission_removed_position_occurrences(
+        source_admission.result_reference,
+        boundary_identity="admitted-removal-act",
+        admitted_material_act_occurrence_count_limit=4,
+    )
+
+    assert len(removals) == 4
+    assert all(
+        removal.source_admission_result_reference
+        == source_admission.result_reference
+        and removal.source_admitted_material_position == 0
+        and sources[removal.source_admitted_reference_position]
+        == removal.source_reference
+        and removal.removed_reference.source_reference == removal.source_reference
+        and removal.removed_reference.position == removal.position
+        and removal.result_reference.source_admission_result_reference
+        == source_admission.result_reference
+        and removal.result_reference.source_admitted_material_position == 0
+        and removal.result_reference.source_admitted_reference_position
+        == removal.source_admitted_reference_position
+        for removal in removals
+    )
+
+    implementation_function = CompiledImplementationFunction(
+        "admitted-removal-function", lambda material: None
+    )
+    source_invocations = compiled_reference_invocations(
+        sources,
+        boundary_identity="admitted-removal-source-invocation",
+        implementation_functions=(implementation_function,),
+    )
+    result_invocations = removed_position_invocations(
+        removals,
+        boundary_identity="admitted-removal-result-invocation",
+        implementation_functions=(implementation_function,),
+    )
+    comparisons = compare_removed_position_invocations(
+        source_invocations,
+        result_invocations,
+        boundary_identity="admitted-removal-compare",
+    )
+    removal_by_identity = {
+        removal.act_occurrence_identity: removal for removal in removals
+    }
+
+    assert all(
+        comparison.removed_position_result_reference
+        == removal_by_identity[
+            comparison.removed_position_act_occurrence_identity
+        ].result_reference
+        and comparison.removed_position_result_reference.source_admission_result_reference
+        == source_admission.result_reference
+        for row in comparisons
+        for comparison in row
+    )
+
+
+def test_removal_refuses_swapped_admission_lineage_and_mismatched_act_result():
+    sources = (
+        ExactMaterialReference(
+            "swapped-removal-source-0",
+            "swapped-removal-assertion-0",
+            "swapped-removal-locality",
+            b"a",
+        ),
+        ExactMaterialReference(
+            "swapped-removal-source-1",
+            "swapped-removal-assertion-1",
+            "swapped-removal-locality",
+            b"b",
+        ),
+    )
+    source_admission = admission_occurrence(
+        (sources,),
+        boundary_identity="swapped-removal-source-admission",
+        source_material=sources,
+    )
+    swapped_admission = admission_occurrence(
+        ((sources[1], sources[0]),),
+        boundary_identity="swapped-removal-other-admission",
+        source_material=sources,
+    )
+    removals = admission_removed_position_occurrences(
+        source_admission.result_reference,
+        boundary_identity="swapped-removal-act",
+        admitted_material_act_occurrence_count_limit=2,
+    )
+
+    with pytest.raises(ValueError, match="source differs from its Admission"):
+        replace(
+            removals[0],
+            source_admission_result_reference=swapped_admission.result_reference,
+        )
+
+    implementation_function = CompiledImplementationFunction(
+        "swapped-removal-function", lambda material: None
+    )
+    comparisons = compare_removed_position_invocations(
+        compiled_reference_invocations(
+            sources,
+            boundary_identity="swapped-removal-source-invocation",
+            implementation_functions=(implementation_function,),
+        ),
+        removed_position_invocations(
+            removals,
+            boundary_identity="swapped-removal-result-invocation",
+            implementation_functions=(implementation_function,),
+        ),
+        boundary_identity="swapped-removal-compare",
+    )
+
+    with pytest.raises(ValueError, match="Act differs from its exact result"):
+        replace(
+            comparisons[0][0],
+            removed_position_act_occurrence_identity=(
+                removals[1].act_occurrence_identity
+            ),
+        )
+
+    swapped_result_lineage = replace(
+        removals[0].result_reference,
+        source_admission_result_reference=swapped_admission.result_reference,
+        source_admitted_reference_position=1,
+    )
+    swapped_comparison_lineage = replace(
+        comparisons[0][0],
+        removed_position_result_reference=swapped_result_lineage,
+    )
+    with pytest.raises(ValueError, match="result differs from its exact Act"):
+        admit_removed_position_results(
+            removals,
+            ((swapped_comparison_lineage, *comparisons[0][1:]),),
+        )
+
+
+def test_removal_occurrence_limit_does_not_split_an_admitted_tuple():
+    sources = (
+        ExactMaterialReference(
+            "bounded-removal-source-0",
+            "bounded-removal-assertion-0",
+            "bounded-removal-locality",
+            b"ab",
+        ),
+        ExactMaterialReference(
+            "bounded-removal-source-1",
+            "bounded-removal-assertion-1",
+            "bounded-removal-locality",
+            b"c",
+        ),
+        ExactMaterialReference(
+            "bounded-removal-source-2",
+            "bounded-removal-assertion-2",
+            "bounded-removal-locality",
+            b"d",
+        ),
+    )
+    source_admission = admission_occurrence(
+        ((sources[0], sources[1]), (sources[2],)),
+        boundary_identity="bounded-removal-source-admission",
+        source_material=sources,
+    )
+
+    removals = admission_removed_position_occurrences(
+        source_admission.result_reference,
+        boundary_identity="bounded-removal-act",
+        admitted_material_act_occurrence_count_limit=2,
+    )
+
+    assert len(removals) == 1
+    assert removals[0].source_reference == sources[2]
+    assert removals[0].source_admitted_material_position == 1
 
 
 def test_addition_result_admission_comes_from_exact_compare_distinctions(

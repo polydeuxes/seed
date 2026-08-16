@@ -472,22 +472,27 @@ class ExactMaterialResultReference:
             or type(self.exact_material) is not bytes
         ):
             raise TypeError("exact material result requires its Act occurrence and result identity")
-        admission_coordinates = (
+        source_admission_coordinates = (
             self.source_admission_result_reference,
             self.source_admitted_material_position,
             self.source_admitted_reference_position,
+        )
+        added_admission_coordinates = (
             self.added_admission_result_reference,
             self.added_admitted_material_position,
             self.added_admitted_reference_position,
-            self.admitted_material_act_occurrence_count_limit,
         )
-        if any(coordinate is not None for coordinate in admission_coordinates):
+        has_source_admission = any(
+            coordinate is not None for coordinate in source_admission_coordinates
+        )
+        has_added_admission = any(
+            coordinate is not None for coordinate in added_admission_coordinates
+        )
+        if has_source_admission:
             if not isinstance(
                 self.source_admission_result_reference, AdmissionResultReference
-            ) or not isinstance(
-                self.added_admission_result_reference, AdmissionResultReference
             ):
-                raise TypeError("material result requires its exact Admission results")
+                raise TypeError("material result requires its exact source Admission result")
             if (
                 type(self.source_admitted_material_position) is not int
                 or self.source_admitted_material_position < 0
@@ -501,7 +506,15 @@ class ExactMaterialResultReference:
                         self.source_admitted_material_position
                     ]
                 )
-                or type(self.added_admitted_material_position) is not int
+            ):
+                raise TypeError("material result requires its exact admitted source position")
+        if has_added_admission:
+            if not isinstance(
+                self.added_admission_result_reference, AdmissionResultReference
+            ):
+                raise TypeError("material result requires its exact added Admission result")
+            if (
+                type(self.added_admitted_material_position) is not int
                 or self.added_admitted_material_position < 0
                 or self.added_admitted_material_position
                 >= len(self.added_admission_result_reference.admitted_material)
@@ -514,12 +527,15 @@ class ExactMaterialResultReference:
                     ]
                 )
             ):
-                raise TypeError("material result requires its exact admitted positions")
+                raise TypeError("material result requires its exact admitted added position")
+        if has_source_admission or has_added_admission:
             if (
                 type(self.admitted_material_act_occurrence_count_limit) is not int
                 or self.admitted_material_act_occurrence_count_limit < 1
             ):
                 raise TypeError("material result requires its exact Act occurrence count limit")
+        elif self.admitted_material_act_occurrence_count_limit is not None:
+            raise TypeError("material result occurrence limit requires Admission lineage")
 
     def __hash__(self) -> int:
         return hash(self.result_identity)
@@ -717,10 +733,14 @@ class RemovedPositionOccurrence:
     boundary_identity: str
     locality_identity: str
     occurrence_position: int
-    source_reference: ExactMaterialReference
+    source_reference: ExactMaterialCoordinates
     position: int
-    removed_reference: ExactMaterialReference
+    removed_reference: ExactMaterialCoordinates
     result_material: bytes
+    source_admission_result_reference: AdmissionResultReference | None = None
+    source_admitted_material_position: int | None = None
+    source_admitted_reference_position: int | None = None
+    admitted_material_act_occurrence_count_limit: int | None = None
 
     def __post_init__(self) -> None:
         if type(self.boundary_identity) is not str or not self.boundary_identity:
@@ -729,13 +749,15 @@ class RemovedPositionOccurrence:
             raise TypeError("removal Act requires one exact Locality")
         if type(self.occurrence_position) is not int or self.occurrence_position < 0:
             raise TypeError("one exact Act occurrence position is required")
-        if not isinstance(self.source_reference, ExactMaterialReference):
+        if not _is_exact_material_coordinates(self.source_reference):
             raise TypeError("source material requires its exact reference")
-        if not isinstance(self.removed_reference, ExactMaterialReference):
+        if not _is_exact_material_coordinates(self.removed_reference):
             raise TypeError("removed material requires its exact reference")
         if (
-            self.source_reference.locality_identity != self.locality_identity
-            or self.removed_reference.locality_identity != self.locality_identity
+            getattr(self.source_reference, "locality_identity", None)
+            != self.locality_identity
+            or getattr(self.removed_reference, "locality_identity", None)
+            != self.locality_identity
         ):
             raise ValueError("removal Act material crossed Localities")
         if len(self.removed_reference.exact_material) != 1:
@@ -751,6 +773,44 @@ class RemovedPositionOccurrence:
             + self.source_material[self.position + 1 :]
         ):
             raise ValueError("result material does not preserve the exact removal")
+        admission_coordinates = (
+            self.source_admission_result_reference,
+            self.source_admitted_material_position,
+            self.source_admitted_reference_position,
+            self.admitted_material_act_occurrence_count_limit,
+        )
+        if any(coordinate is not None for coordinate in admission_coordinates):
+            if not isinstance(
+                self.source_admission_result_reference, AdmissionResultReference
+            ):
+                raise TypeError("removal Act requires its exact source Admission result")
+            if (
+                type(self.source_admitted_material_position) is not int
+                or self.source_admitted_material_position < 0
+                or self.source_admitted_material_position
+                >= len(self.source_admission_result_reference.admitted_material)
+                or type(self.source_admitted_reference_position) is not int
+                or self.source_admitted_reference_position < 0
+                or self.source_admitted_reference_position
+                >= len(
+                    self.source_admission_result_reference.admitted_material[
+                        self.source_admitted_material_position
+                    ]
+                )
+            ):
+                raise TypeError("removal Act requires its exact admitted source position")
+            if (
+                type(self.admitted_material_act_occurrence_count_limit) is not int
+                or self.admitted_material_act_occurrence_count_limit < 1
+            ):
+                raise TypeError("removal Act requires its exact occurrence count limit")
+            source_admitted_reference = (
+                self.source_admission_result_reference.admitted_material[
+                    self.source_admitted_material_position
+                ][self.source_admitted_reference_position]
+            )
+            if self.source_reference != source_admitted_reference:
+                raise ValueError("removal Act source differs from its Admission")
 
     @property
     def act_identity(self) -> tuple[str, str]:
@@ -771,6 +831,12 @@ class RemovedPositionOccurrence:
             result_identity=self.result_identity,
             locality_identity=self.locality_identity,
             exact_material=self.result_material,
+            source_admission_result_reference=self.source_admission_result_reference,
+            source_admitted_material_position=self.source_admitted_material_position,
+            source_admitted_reference_position=self.source_admitted_reference_position,
+            admitted_material_act_occurrence_count_limit=(
+                self.admitted_material_act_occurrence_count_limit
+            ),
         )
 
     @property
@@ -931,10 +997,22 @@ class RemovedPositionCompareOccurrence:
     occurrence_position: int
     implementation_function_identity: str
     removed_position_act_occurrence_identity: tuple[str, int]
+    removed_position_result_reference: ExactMaterialResultReference
     source_invocation_occurrence_identity: tuple[str, str, int]
     result_invocation_occurrence_identity: tuple[str, str, int]
     source_returned: bool
     result_returned: bool
+
+    def __post_init__(self) -> None:
+        if not isinstance(
+            self.removed_position_result_reference, ExactMaterialResultReference
+        ):
+            raise TypeError("removal Compare requires its exact Act result")
+        if (
+            self.removed_position_result_reference.act_occurrence_identity
+            != self.removed_position_act_occurrence_identity
+        ):
+            raise ValueError("removal Compare Act differs from its exact result")
 
     @property
     def occurrence_identity(self) -> tuple[str, str, int]:
@@ -1444,6 +1522,11 @@ def _removed_position_comparisons_by_occurrence(
             identity = comparison.removed_position_act_occurrence_identity
             if identity in comparison_by_identity:
                 raise ValueError("removal Act occurrence entered one Compare tuple twice")
+            occurrence = occurrence_by_identity.get(identity)
+            if occurrence is None:
+                raise ValueError("Compare occurrence has no exact removal Act occurrence")
+            if comparison.removed_position_result_reference != occurrence.result_reference:
+                raise ValueError("removal Compare result differs from its exact Act")
             comparison_by_identity[identity] = comparison
         if frozenset(comparison_by_identity) != expected_identities:
             raise ValueError("Compare tuple does not carry every removal Act occurrence")
@@ -2115,17 +2198,17 @@ def added_position_invocations(
 
 
 def removed_position_occurrences(
-    source_material: tuple[ExactMaterialReference, ...],
-    removed_material: tuple[ExactMaterialReference, ...],
+    source_material: tuple[ExactMaterialCoordinates, ...],
+    removed_material: tuple[ExactMaterialCoordinates, ...],
     *,
     boundary_identity: str,
 ) -> tuple[RemovedPositionOccurrence, ...]:
     if type(source_material) is not tuple or not all(
-        isinstance(material, ExactMaterialReference) for material in source_material
+        _is_exact_material_coordinates(material) for material in source_material
     ):
         raise TypeError("source material must carry exact references")
     if type(removed_material) is not tuple or not all(
-        isinstance(material, ExactMaterialReference)
+        _is_exact_material_coordinates(material)
         and len(material.exact_material) == 1
         for material in removed_material
     ):
@@ -2157,6 +2240,80 @@ def removed_position_occurrences(
             exact_coordinates
         )
     )
+
+
+def admission_removed_position_occurrences(
+    source_admission_result_reference: AdmissionResultReference,
+    *,
+    boundary_identity: str,
+    admitted_material_act_occurrence_count_limit: int,
+) -> tuple[RemovedPositionOccurrence, ...]:
+    if not isinstance(
+        source_admission_result_reference, AdmissionResultReference
+    ):
+        raise TypeError("removal Acts require one exact source Admission result")
+    if type(boundary_identity) is not str or not boundary_identity:
+        raise TypeError("one exact boundary identity is required")
+    if (
+        type(admitted_material_act_occurrence_count_limit) is not int
+        or admitted_material_act_occurrence_count_limit < 1
+    ):
+        raise TypeError("one exact positive Act occurrence count limit is required")
+
+    found = []
+    for admitted_position, admitted_material in enumerate(
+        source_admission_result_reference.admitted_material
+    ):
+        if any(
+            not _is_exact_material_coordinates(material)
+            for material in admitted_material
+        ):
+            raise TypeError("removal Acts require exact admitted source material")
+        locality_identities = {
+            getattr(material, "locality_identity", None)
+            for material in admitted_material
+        }
+        if None in locality_identities:
+            raise TypeError("removal Acts require exact source material Localities")
+        if len(locality_identities) != 1:
+            raise ValueError("one admitted source material tuple crossed Localities")
+        occurrence_count = sum(
+            len(source.exact_material) for source in admitted_material
+        )
+        if occurrence_count > admitted_material_act_occurrence_count_limit:
+            continue
+        for source_reference_position, source in enumerate(admitted_material):
+            for position in range(len(source.exact_material)):
+                removed = ExactPositionMaterialReference(
+                    source_reference=source,
+                    position=position,
+                    exact_material=source.exact_material[position : position + 1],
+                )
+                found.append(
+                    RemovedPositionOccurrence(
+                        boundary_identity=boundary_identity,
+                        locality_identity=source.locality_identity,
+                        occurrence_position=len(found),
+                        source_reference=source,
+                        position=position,
+                        removed_reference=removed,
+                        result_material=(
+                            source.exact_material[:position]
+                            + source.exact_material[position + 1 :]
+                        ),
+                        source_admission_result_reference=(
+                            source_admission_result_reference
+                        ),
+                        source_admitted_material_position=admitted_position,
+                        source_admitted_reference_position=(
+                            source_reference_position
+                        ),
+                        admitted_material_act_occurrence_count_limit=(
+                            admitted_material_act_occurrence_count_limit
+                        ),
+                    )
+                )
+    return tuple(found)
 
 
 def removed_position_invocations(
@@ -2666,7 +2823,7 @@ def compare_removed_position_invocations(
         source_by_reference = {}
         for source_invocation in source_row:
             reference = source_invocation.source_coordinate
-            if not isinstance(reference, ExactMaterialReference):
+            if not _is_exact_material_coordinates(reference):
                 raise ValueError("source invocation requires its exact material reference")
             if reference in source_by_reference:
                 raise ValueError("source material reference entered Compare twice")
@@ -2692,6 +2849,7 @@ def compare_removed_position_invocations(
                     removed_position_act_occurrence_identity=(
                         removal.act_occurrence_identity
                     ),
+                    removed_position_result_reference=removal.result_reference,
                     source_invocation_occurrence_identity=(
                         source_invocation.occurrence_identity
                     ),
@@ -2735,6 +2893,12 @@ def recurring_removed_returned_coordinate(
     if len(removal_by_identity) != len(removals):
         raise ValueError("removal Act occurrence entered recurrence twice")
     coordinates = (
+        (
+            removal.source_admission_result_reference.result_identity,
+            removal.source_admitted_material_position,
+        )
+        if removal.source_admission_result_reference is not None
+        else None,
         len(removal.source_material),
         removal.removed_material,
         removal.position,
@@ -2750,6 +2914,12 @@ def recurring_removed_returned_coordinate(
         if prior is None:
             raise ValueError("Compare occurrence has no exact removal Act occurrence")
         prior_coordinates = (
+            (
+                prior.source_admission_result_reference.result_identity,
+                prior.source_admitted_material_position,
+            )
+            if prior.source_admission_result_reference is not None
+            else None,
             len(prior.source_material),
             prior.removed_material,
             prior.position,
@@ -2844,6 +3014,7 @@ def first_recurring_removed_compare(
             occurrence_position=len(comparisons),
             implementation_function_identity=implementation_function.identity,
             removed_position_act_occurrence_identity=removal.act_occurrence_identity,
+            removed_position_result_reference=removal.result_reference,
             source_invocation_occurrence_identity=source_invocation.occurrence_identity,
             result_invocation_occurrence_identity=result_invocation.occurrence_identity,
             source_returned=source_invocation.returned,
@@ -2964,6 +3135,7 @@ def first_recurring_removed_compare_across(
                 occurrence_position=occurrence_position,
                 implementation_function_identity=function.identity,
                 removed_position_act_occurrence_identity=removal.act_occurrence_identity,
+                removed_position_result_reference=removal.result_reference,
                 source_invocation_occurrence_identity=source_invocation.occurrence_identity,
                 result_invocation_occurrence_identity=result_invocation.occurrence_identity,
                 source_returned=source_invocation.returned,
