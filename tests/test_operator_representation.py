@@ -56,6 +56,10 @@ _REPRESENTATION_RELATION_EVIDENCE_KINDS = (
 )
 
 
+class DictSubclass(dict):
+    pass
+
+
 def _run_console(text, *, locality="s"):
     ledger = EventLedger()
     output = StringIO()
@@ -211,7 +215,9 @@ def test_representation_addresses_one_exact_carried_measurement_result():
         ],
         "yield_evidence_identity": measurement.material["yield_evidence_identity"],
     }
-    assert standing["measurement_occurrences"] == [expected_reference]
+    assert standing["measurement_occurrences"] == {
+        measurement.identity: expected_reference
+    }
     assert event.material["attempt_reference"] == measurement.identity
     assert (
         locality_evidence.material["carried_content"]["attempt_reference"]
@@ -260,7 +266,7 @@ def test_representation_rejects_each_wrong_carried_measurement_coordinate(
     ledger = EventLedger()
     measurement = _byte_measurement(ledger)
     standing = _standing(ledger)
-    standing["measurement_occurrences"][0][coordinate] = "other"
+    standing["measurement_occurrences"][measurement.identity][coordinate] = "other"
 
     with pytest.raises(ValueError, match="Measurement"):
         record_operator_representation(
@@ -275,10 +281,60 @@ def test_exact_result_carrier_does_not_stand_for_measurement_result_carrier():
     ledger = EventLedger()
     measurement = _byte_measurement(ledger)
     standing = _standing(ledger)
-    standing["measurement_occurrences"] = []
+    standing["measurement_occurrences"] = {}
     standing["exact_result_occurrences"][measurement.identity] = None
 
     with pytest.raises(ValueError, match="Measurement is not carried"):
+        record_operator_representation(
+            ledger,
+            locality_identity="s",
+            locality_standing=standing,
+            source_event_identity=measurement.identity,
+        )
+
+
+@pytest.mark.parametrize("carrier", ([], DictSubclass()))
+def test_representation_refuses_a_nonexact_measurement_carrier(carrier):
+    ledger = EventLedger()
+    measurement = _byte_measurement(ledger)
+    standing = _standing(ledger)
+    standing["measurement_occurrences"] = carrier
+
+    with pytest.raises(ValueError, match="exact carried Measurement results"):
+        record_operator_representation(
+            ledger,
+            locality_identity="s",
+            locality_standing=standing,
+            source_event_identity=measurement.identity,
+        )
+
+
+def test_representation_refuses_a_measurement_reference_under_the_wrong_key():
+    ledger = EventLedger()
+    measurement = _byte_measurement(ledger)
+    standing = _standing(ledger)
+    reference = standing["measurement_occurrences"].pop(measurement.identity)
+    standing["measurement_occurrences"]["other"] = reference
+
+    with pytest.raises(ValueError, match="Measurement is not carried"):
+        record_operator_representation(
+            ledger,
+            locality_identity="s",
+            locality_standing=standing,
+            source_event_identity=measurement.identity,
+        )
+
+
+def test_representation_refuses_a_subclassed_measurement_reference():
+    ledger = EventLedger()
+    measurement = _byte_measurement(ledger)
+    standing = _standing(ledger)
+    reference = standing["measurement_occurrences"][measurement.identity]
+    standing["measurement_occurrences"][measurement.identity] = DictSubclass(
+        reference
+    )
+
+    with pytest.raises(ValueError, match="Measurement is not exact"):
         record_operator_representation(
             ledger,
             locality_identity="s",

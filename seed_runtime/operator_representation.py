@@ -309,18 +309,11 @@ def _exact_source_material(
         raise ValueError("Representation requires exact carried result occurrences")
     if ledger.integrity_of(source.identity) == CORRUPTED:
         raise ValueError("Representation source occurrence is corrupted")
-    measurement_occurrences = locality_standing.get("measurement_occurrences", [])
-    if type(measurement_occurrences) is not list:
+    measurement_occurrences = locality_standing.get("measurement_occurrences", {})
+    if type(measurement_occurrences) is not dict:
         raise ValueError("Representation requires exact carried Measurement results")
-    measurement_references = [
-        reference
-        for reference in measurement_occurrences
-        if type(reference) is dict
-        and reference.get("recorded_occurrence_identity") == source.identity
-    ]
-    if measurement_references:
-        if len(measurement_references) != 1:
-            raise ValueError("Representation source Measurement is not exact")
+    if source.identity in measurement_occurrences:
+        measurement_reference = measurement_occurrences[source.identity]
         expected_reference = {
             "recorded_occurrence_identity": source.identity,
             "result_identity": source.material.get("result_identity"),
@@ -334,7 +327,10 @@ def _exact_source_material(
                 "yield_evidence_identity"
             ),
         }
-        if measurement_references[0] != expected_reference:
+        if (
+            type(measurement_reference) is not dict
+            or measurement_reference != expected_reference
+        ):
             raise ValueError("Representation source Measurement is not exact")
         if source.kind == BYTE_MEASUREMENT_RECORDED_KIND:
             finding = assertions_of_recorded_byte_measurement(ledger, source.identity)

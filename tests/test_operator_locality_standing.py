@@ -21,7 +21,14 @@ from seed_runtime.occurrence_position_measurement import (
 from seed_runtime.operator_ingest import run_operator_ingest
 from seed_runtime.operator_material_boundary import operator_boundary_material
 from seed_runtime.operator_console import run_persistent_operator_console
-from seed_runtime.operator_locality_standing import read_operator_locality_standing
+from seed_runtime.operator_locality_standing import (
+    advance_operator_locality_standing,
+    read_operator_locality_standing,
+)
+
+
+class DictSubclass(dict):
+    pass
 
 
 def _record_byte_measurement(
@@ -136,9 +143,14 @@ def test_locality_standing_carries_exact_measurement_identities_in_append_order(
 
     standing = _standing(ledger)
 
-    assert standing["measurement_occurrences"] == [
-        _measurement_coordinates(byte),
-        _measurement_coordinates(positions),
+    assert type(standing["measurement_occurrences"]) is dict
+    assert standing["measurement_occurrences"] == {
+        byte.identity: _measurement_coordinates(byte),
+        positions.identity: _measurement_coordinates(positions),
+    }
+    assert list(standing["measurement_occurrences"]) == [
+        byte.identity,
+        positions.identity,
     ]
     assert all(
         set(occurrence)
@@ -149,20 +161,41 @@ def test_locality_standing_carries_exact_measurement_identities_in_append_order(
             "responsible_act_evidence_identity",
             "yield_evidence_identity",
         }
-        for occurrence in standing["measurement_occurrences"]
+        for occurrence in standing["measurement_occurrences"].values()
     )
     assert "assertions" not in str(standing["measurement_occurrences"])
     assert "occurrences" not in {
         key
-        for occurrence in standing["measurement_occurrences"]
+        for occurrence in standing["measurement_occurrences"].values()
         for key in occurrence
     }
+    assert all(
+        type(identity) is str
+        and type(reference) is dict
+        and reference["recorded_occurrence_identity"] == identity
+        for identity, reference in standing["measurement_occurrences"].items()
+    )
 
 
 def test_locality_standing_carries_no_measurement_without_a_recorded_result():
     ledger = _measurement_ledger()
 
-    assert _standing(ledger)["measurement_occurrences"] == []
+    assert _standing(ledger)["measurement_occurrences"] == {}
+
+
+@pytest.mark.parametrize("carrier", ([], DictSubclass()))
+def test_advance_refuses_a_nonexact_prior_measurement_accumulator(carrier):
+    ledger = _measurement_ledger()
+    standing = _standing(ledger)
+    standing["measurement_occurrences"] = carrier
+
+    with pytest.raises(ValueError, match="exact Measurement occurrences"):
+        advance_operator_locality_standing(
+            ledger,
+            (),
+            locality_identity="s",
+            prior=standing,
+        )
 
 
 def test_locality_standing_carries_only_exact_yielded_result_identities():
@@ -381,10 +414,7 @@ def test_unrelated_event_cannot_enter_measurement_occurrences(measurement_kind):
     after = _standing(ledger)
 
     assert after == before
-    assert unrelated.identity not in {
-        occurrence["recorded_occurrence_identity"]
-        for occurrence in after["measurement_occurrences"]
-    }
+    assert unrelated.identity not in after["measurement_occurrences"]
 
 
 def test_next_attempt_reads_standing_from_earlier_same_locality_events():

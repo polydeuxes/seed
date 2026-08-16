@@ -180,7 +180,7 @@ def advance_operator_locality_standing(
     )
     scope = f"locality:{locality_identity}"
     ingest_occurrences: list[dict[str, Any]] = []
-    measurement_occurrences: list[dict[str, str]] = []
+    measurement_occurrences: dict[str, dict[str, str]] = {}
     exact_result_occurrences: dict[str, None] = {}
     representations: dict[str, dict[str, Any]] = {}
     # Kept sorted and distinct in place rather than as a set sorted on return.
@@ -201,6 +201,10 @@ def advance_operator_locality_standing(
         # see the shared-accumulator note above.
         ingest_occurrences = prior["ingest_occurrences"]
         measurement_occurrences = prior["measurement_occurrences"]
+        if type(measurement_occurrences) is not dict:
+            raise ValueError(
+                "prior Locality Standing requires exact Measurement occurrences"
+            )
         exact_result_occurrences = prior["exact_result_occurrences"]
         representations = prior["representations"]
         known_loss = prior["known_loss"]
@@ -236,13 +240,13 @@ def advance_operator_locality_standing(
             continue
         if event.kind == BYTE_MEASUREMENT_RECORDED_KIND:
             assertions_of_recorded_byte_measurement(ledger, event.identity)
-            measurement_occurrences.append(
+            measurement_occurrences[event.identity] = (
                 _measurement_occurrence_coordinates(event)
             )
             continue
         if event.kind == OCCURRENCE_POSITION_RECORDED_KIND:
             get_recorded_occurrence_position_measurement(ledger, event.identity)
-            measurement_occurrences.append(
+            measurement_occurrences[event.identity] = (
                 _measurement_occurrence_coordinates(event)
             )
             continue
