@@ -7,6 +7,8 @@ import subprocess
 
 import pytest
 
+FIDELITY_SUBJECT = "supplied_function_invocation"
+
 from scripts import operator_host_provider
 from seed_runtime.supplied_invocation_material import (
     SuppliedSystemMaterialOccurrence,

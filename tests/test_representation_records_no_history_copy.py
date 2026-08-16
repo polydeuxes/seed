@@ -24,6 +24,8 @@ from io import StringIO
 
 import pytest
 
+FIDELITY_SUBJECT = "exact_Representation_occurrence"
+
 from seed_runtime.events import EventLedger
 from seed_runtime.operator_locality_standing import read_operator_locality_standing
 from seed_runtime.operator_console import run_persistent_operator_console

@@ -258,3 +258,20 @@ def test_the_exact_material_attempt_is_durable_before_raw_egress(tmp_path):
 
     assert seen == [1]
     assert output.getvalue() == source.exact_material
+
+
+FIDELITY_SUBJECTS = {
+    "exact_emission_boundary": (
+        test_the_exact_material_attempt_is_durable_before_raw_egress,
+    ),
+    "durable_ledger_boundary": (
+        test_losing_the_tip_of_both_leaves_every_remaining_occurrence_intact,
+        test_occurrences_lost_without_their_prefix_identities_refuse_to_open,
+        test_prefix_identities_lost_without_their_occurrences_refuse_to_open,
+        test_a_retained_boundary_detects_a_tip_that_was_lost,
+        test_only_the_prefix_that_vanished_is_refused,
+        test_a_batch_lost_whole_leaves_the_store_sound,
+        test_a_batch_that_closes_commits_every_occurrence_in_it,
+        test_a_flush_inside_a_batch_makes_what_preceded_it_durable,
+    ),
+}

@@ -4,6 +4,10 @@ from io import BytesIO, StringIO
 
 import pytest
 
+FIDELITY_SUBJECT = (
+    "this_Seed_bears_Standing_Locality_continuation_Responsibility"
+)
+
 from seed_runtime.events import EventLedger
 from seed_runtime.material_ingest import MATERIAL_INGEST_OCCURRED_KIND
 from seed_runtime.operator_command import (

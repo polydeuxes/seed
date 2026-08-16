@@ -18,6 +18,8 @@ from datetime import datetime
 
 import pytest
 
+FIDELITY_SUBJECT = "ledger_identity"
+
 from seed_runtime.event import Event
 from seed_runtime.events import (
     CORRUPTED,

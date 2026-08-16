@@ -2,6 +2,8 @@ from __future__ import annotations
 
 import pytest
 
+FIDELITY_SUBJECT = "operator_Locality_occurrence"
+
 from seed_runtime.operator_command import (
     AddressedOperatorCommand,
     OperatorCommandFrame,

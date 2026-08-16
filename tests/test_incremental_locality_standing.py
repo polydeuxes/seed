@@ -23,6 +23,8 @@ from io import BytesIO, StringIO
 
 import pytest
 
+FIDELITY_SUBJECT = "current_Locality_Standing"
+
 from seed_runtime.events import EventLedger, SQLiteEventLedger
 from seed_runtime.operator_locality_standing import (
     advance_operator_locality_standing,

@@ -6,6 +6,8 @@ from pathlib import Path
 
 import pytest
 
+FIDELITY_SUBJECT = "one_direct_recorded_Standing_boundary_Locality_relation"
+
 from seed_runtime.events import CORRUPTED, EventLedger, SQLiteEventLedger
 from seed_runtime.operator_checkpoint import (
     STANDING_BOUNDARY_REFERENCE_RECORDED_KIND,

@@ -44,12 +44,19 @@ def _acquired_bytes(ledger: EventLedger) -> list[bytes]:
     ]
 
 
-def test_non_slash_frames_are_raw_data_and_eof_ends_the_loop():
+def test_non_slash_frames_are_exact_operator_material():
     ledger = _run(b"exit\n\xff\x00\n")
 
     assert _raw_bytes(ledger) == [b"exit\n", b"\xff\x00\n"]
     assert _acquired_bytes(ledger) == [b"exit\n", b"\xff\x00\n"]
     assert not [event for event in ledger.list() if event.kind.startswith("operator.command.")]
+
+
+def test_eof_ends_input_without_establishing_a_material_result():
+    ledger = _run(b"")
+
+    assert _raw_bytes(ledger) == []
+    assert _acquired_bytes(ledger) == []
 
 
 def test_slash_frame_invokes_the_exact_registered_implementation_function():
@@ -88,14 +95,18 @@ def test_an_ordinary_command_does_not_divide_locality():
     assert ledger.get(representation_identity).locality_identity == "root-locality"
 
 
-def test_checkpoint_records_one_boundary_reference_without_dividing_locality():
+def test_checkpoint_records_one_boundary_reference():
     ledger = _run(b"before\n/checkpoint\nafter\n")
     checkpoint = next(
         event for event in ledger.list()
         if event.kind == STANDING_BOUNDARY_REFERENCE_RECORDED_KIND
     )
     assert checkpoint.locality_identity == "root-locality"
-    assert _raw_bytes(ledger) == [b"before\n", b"after\n"]
+
+
+def test_checkpoint_does_not_divide_locality():
+    ledger = _run(b"before\n/checkpoint\nafter\n")
+
     assert {event.locality_identity for event in ledger.list()} == {"root-locality"}
 
 
@@ -122,11 +133,17 @@ def test_unregistered_slash_name_reaches_the_exact_ingress_road():
     ]
 
 
-def test_exit_is_material_and_does_not_establish_stop():
+def test_exit_is_exact_operator_material():
     ledger = _run(b"/exit\nafter\n")
 
     assert _raw_bytes(ledger) == [b"/exit\n", b"after\n"]
     assert _acquired_bytes(ledger) == [b"/exit\n", b"after\n"]
+
+
+def test_exit_does_not_establish_stop():
+    ledger = _run(b"/exit\nafter\n")
+
+    assert _raw_bytes(ledger)[-1] == b"after\n"
     assert not [
         event for event in ledger.list() if event.kind.startswith("operator.command.")
     ]
@@ -136,3 +153,28 @@ def test_unregistered_binary_slash_material_is_preserved_exactly():
     ledger = _run(b"/\xff\x00 material\n")
 
     assert _raw_bytes(ledger) == [b"/\xff\x00 material\n"]
+
+
+FIDELITY_SUBJECTS = {
+    "Stop": (
+        test_eof_ends_input_without_establishing_a_material_result,
+        test_exit_does_not_establish_stop,
+    ),
+    "operator_function_invocation": (
+        test_slash_frame_invokes_the_exact_registered_implementation_function,
+    ),
+    "operator_material_occurrence": (
+        test_non_slash_frames_are_exact_operator_material,
+        test_unregistered_slash_name_reaches_the_exact_ingress_road,
+        test_exit_is_exact_operator_material,
+        test_unregistered_binary_slash_material_is_preserved_exactly,
+    ),
+    "one_exact_recorded_Standing_boundary_reference": (
+        test_checkpoint_records_one_boundary_reference,
+        test_repeated_checkpoints_record_distinct_exact_references_without_a_chain,
+    ),
+    "operator_Locality_occurrence": (
+        test_an_ordinary_command_does_not_divide_locality,
+        test_checkpoint_does_not_divide_locality,
+    ),
+}

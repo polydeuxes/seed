@@ -4,6 +4,8 @@ from io import StringIO
 
 import pytest
 
+FIDELITY_SUBJECT = "current_Locality_Standing"
+
 from seed_runtime.byte_measurement import (
     BYTE_MEASUREMENT_RECORDED_KIND,
     BYTE_PAIR_MEASUREMENT_RECORDED_KIND,

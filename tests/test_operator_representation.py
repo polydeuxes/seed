@@ -3,6 +3,8 @@ from io import BytesIO, StringIO
 
 import pytest
 
+FIDELITY_SUBJECT = "exact_Representation_occurrence"
+
 from seed_runtime.byte_measurement import (
     assertions_of_recorded_byte_measurement,
     record_byte_measurement_responsible_act_evidence,

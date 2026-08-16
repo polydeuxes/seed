@@ -255,8 +255,9 @@ def test_live_process_composes_the_bounded_host_provider(tmp_path, name):
     assert result.stdout == expected
 
 
-def test_live_process_ingests_pytest_measurement_without_egressing_it(tmp_path):
-    database = tmp_path / "pytest.db"
+@pytest.fixture(scope="module")
+def live_pytest_invocation(tmp_path_factory):
+    database = tmp_path_factory.mktemp("live-pytest") / "pytest.db"
     nodeid = (
         b"tests/test_implementation_function_measurement.py::"
         b"test_compiled_code_supplies_identities_without_ast_taxonomy"
@@ -287,11 +288,19 @@ def test_live_process_ingests_pytest_measurement_without_egressing_it(tmp_path):
         ]
     finally:
         ledger.close()
-    assert len(ingests) >= 6
     supplied = ingests[1:]
     supplied_by_boundary = {
         event.material["source_boundary"]: event for event in supplied
     }
+    return result, ingests, supplied, supplied_by_boundary
+
+
+def test_live_process_ingests_each_supplied_pytest_occurrence(
+    live_pytest_invocation,
+):
+    _, ingests, supplied, supplied_by_boundary = live_pytest_invocation
+
+    assert len(ingests) >= 6
     assert {
         "implementation function catalog",
         "implementation function measurement",
@@ -312,6 +321,13 @@ def test_live_process_ingests_pytest_measurement_without_egressing_it(tmp_path):
         event.material["provenance_occurrence_references"]
         for event in supplied
     ] == [[ingests[0].identity]] * len(supplied)
+
+
+def test_live_process_egresses_only_provider_selected_occurrences(
+    live_pytest_invocation,
+):
+    result, _, supplied, supplied_by_boundary = live_pytest_invocation
+
     assert result.stdout == b"".join(
         event.exact_material
         for event in supplied
@@ -320,13 +336,26 @@ def test_live_process_ingests_pytest_measurement_without_egressing_it(tmp_path):
         )
     )
     assert result.stderr == b""
+    assert (
+        supplied_by_boundary["implementation function catalog"].exact_material
+        not in result.stdout
+    )
+    assert (
+        supplied_by_boundary["implementation function measurement"].exact_material
+        not in result.stdout
+    )
+
+
+def test_live_process_preserves_the_exact_pytest_measurement_result(
+    live_pytest_invocation,
+):
+    _, _, _, supplied_by_boundary = live_pytest_invocation
+
     catalog = supplied_by_boundary["implementation function catalog"]
     measurement = supplied_by_boundary["implementation function measurement"]
     completion = supplied_by_boundary["invocation completion"]
     assert catalog.exact_material
-    assert catalog.exact_material not in result.stdout
     assert measurement.exact_material
-    assert measurement.exact_material not in result.stdout
     assert completion.exact_material == b""
 
 
@@ -337,3 +366,43 @@ def test_live_entry_has_only_help_and_database_flags():
         ("-h", "--help"),
         ("--db",),
     ]
+
+
+FIDELITY_SUBJECTS = {
+    "Stop": (
+        test_primordial_slash_frame_is_the_existing_eof_boundary,
+        test_primordial_slash_preserves_prior_occurrences_and_ends_input,
+    ),
+    "operator_boundary": (
+        test_host_escape_preserves_non_bytes_and_bytes_subclass_boundaries,
+        test_host_escape_does_not_decode_or_reframe_other_bytes,
+        test_host_escape_latches_without_consuming_later_buffered_material,
+    ),
+    "operator_entry": (
+        test_project_script_uses_the_live_process_entry,
+        test_live_entry_accepts_the_database_coordinate,
+        test_live_entry_has_only_help_and_database_flags,
+    ),
+    "supplied_function_invocation": (
+        test_live_process_composes_the_bounded_host_provider,
+    ),
+    "operator_material_occurrence": (
+        test_other_slash_material_remains_exact_operator_material,
+    ),
+    "supplied_material_invocation": (
+        test_live_process_ingests_each_supplied_pytest_occurrence,
+    ),
+    "declared_Measurement_result": (
+        test_live_process_preserves_the_exact_pytest_measurement_result,
+    ),
+    "exact_emission_boundary": (
+        test_live_entry_does_not_emit_operator_material_back_to_stdout,
+        test_live_process_egresses_only_provider_selected_occurrences,
+    ),
+    "operator_Locality_occurrence": (
+        test_reopened_live_process_allocates_a_new_locality,
+    ),
+    "function_reference": (
+        test_importing_the_live_entry_does_not_wake_dormant_modules,
+    ),
+}

@@ -5,6 +5,8 @@ from io import BytesIO, StringIO
 
 import pytest
 
+FIDELITY_SUBJECT = "one_exact_recorded_Standing_boundary_reference"
+
 from seed_runtime.events import EventLedger, SQLiteEventLedger
 from seed_runtime.operator_checkpoint import (
     STANDING_BOUNDARY_REFERENCE_ACT_EVIDENCE_KIND,

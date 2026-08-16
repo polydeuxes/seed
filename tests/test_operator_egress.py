@@ -4,6 +4,8 @@ from io import BytesIO
 
 import pytest
 
+FIDELITY_SUBJECT = "exact_emission_boundary"
+
 from seed_runtime.operator_egress import (
     ExactMaterialEgressFailure,
     emit_exact_material,

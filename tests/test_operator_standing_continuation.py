@@ -4,6 +4,10 @@ from copy import deepcopy
 
 import pytest
 
+FIDELITY_SUBJECT = (
+    "this_Seed_bears_Standing_Locality_continuation_Responsibility"
+)
+
 from seed_runtime.events import EventLedger, SQLiteEventLedger
 from seed_runtime.material_ingest import ingest_material
 from seed_runtime.operator_locality_standing import (

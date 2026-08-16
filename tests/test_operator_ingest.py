@@ -4,6 +4,8 @@ from __future__ import annotations
 
 from io import BytesIO
 
+import pytest
+
 from seed_runtime.events import EventLedger
 from seed_runtime.operator_ingest import (
     run_operator_ingest,
@@ -26,7 +28,7 @@ def _run(material: bytes):
     return ledger, standing
 
 
-def test_arbitrary_bytes_are_preserved_without_a_gate_or_stop():
+def test_arbitrary_bytes_are_preserved_as_one_operator_occurrence():
     material = b"\xff\xfe\x00binary\n"
     ledger, standing = _run(material)
     events = ledger.list_locality("s")
@@ -50,10 +52,15 @@ def test_current_standing_names_the_exact_ingest_occurrence():
     assert occurrence.material["provenance_occurrence_references"] == []
 
 
-def test_empty_line_is_material_but_eof_is_not_an_attempt():
+def test_empty_line_is_exact_operator_material():
     _, standing = _run(b"\n")
 
     assert standing["current_standing"]["ingest_occurrence"] is not None
+
+
+def test_eof_is_not_an_operator_material_occurrence():
+    with pytest.raises(ValueError, match="must be non-EOF"):
+        _run(b"")
 
 
 def test_ingest_standing_preserves_first_occurrence_order_without_sorting():
@@ -89,3 +96,16 @@ def test_ingest_standing_preserves_first_occurrence_order_without_sorting():
     assert standing["known_loss"] == ["later", "earlier", "third"]
     assert standing["unknown"] == ["second", "first", "third"]
     assert standing["conflicts"] == ["right", "left", "middle"]
+
+
+FIDELITY_SUBJECTS = {
+    "current_Locality_Standing": (
+        test_current_standing_names_the_exact_ingest_occurrence,
+        test_ingest_standing_preserves_first_occurrence_order_without_sorting,
+    ),
+    "operator_material_occurrence": (
+        test_arbitrary_bytes_are_preserved_as_one_operator_occurrence,
+        test_empty_line_is_exact_operator_material,
+        test_eof_is_not_an_operator_material_occurrence,
+    ),
+}

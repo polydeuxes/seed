@@ -4,6 +4,8 @@ from io import BytesIO, StringIO
 
 import pytest
 
+FIDELITY_SUBJECT = "supplied_material_invocation"
+
 from seed_runtime.byte_measurement import BYTE_MEASUREMENT_RECORDED_KIND
 from seed_runtime.events import EventLedger
 from seed_runtime.material_ingest import (
