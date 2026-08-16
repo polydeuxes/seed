@@ -4,6 +4,8 @@ from pathlib import Path
 import sqlite3
 import sys
 
+import pytest
+
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "scripts"))
@@ -78,6 +80,32 @@ def test_one_measurement_does_not_replace_an_active_measurement():
     )
     assert inside["python"][identity]["occurrence_count"] == 1
     assert complete["python"][identity]["occurrence_count"] == 3
+
+
+def test_one_pytest_occurrence_keeps_its_exact_implementation_measurement():
+    class Item:
+        nodeid = "tests/exact.py::test_one_occurrence"
+
+    measured.begin()
+    protocol = measured.pytest_runtest_protocol(Item(), None)
+    try:
+        next(protocol)
+        measured._identity(ROOT, 7, "inside-pytest-occurrence")
+        with pytest.raises(StopIteration):
+            next(protocol)
+    finally:
+        result = measured.finish()
+
+    assert len(result["pytest"]) == 1
+    occurrence = result["pytest"][0]
+    assert occurrence["occurrence_position"] == 0
+    assert occurrence["pytest_identity"] == Item.nodeid
+    identity = next(
+        identity
+        for identity in occurrence["python"]
+        if identity.endswith(":_identity")
+    )
+    assert occurrence["python"][identity]["occurrence_count"] == 1
 
 
 def test_reference_pair_measurement_contains_each_surviving_function():

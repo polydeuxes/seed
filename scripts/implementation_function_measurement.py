@@ -11,6 +11,8 @@ import threading
 from types import CodeType
 from typing import Callable
 
+import pytest
+
 
 ROOT = Path(__file__).resolve().parents[1]
 OUTPUT_ENVIRONMENT_COORDINATE = "SEED_IMPLEMENTATION_FUNCTION_MEASUREMENT"
@@ -22,6 +24,7 @@ _sqlite_connect = sqlite3.connect
 _lock = threading.Lock()
 _profiler: cProfile.Profile | None = None
 _baselines: list[tuple[dict[str, list[int]], dict[str, int]]] = []
+_pytest_occurrences: list[dict[str, object]] = []
 
 
 def _identity(path: Path, line: int, name: str) -> str:
@@ -156,6 +159,24 @@ def _measurement(
         "python": python,
         "sql": dict(sorted(sql_coordinates.items())),
         "reference_pair": reference_pair,
+        "pytest": tuple(_pytest_occurrences),
+    }
+
+
+def _observed_measurement(
+    python_coordinates: dict[str, list[int]], sql_coordinates: dict[str, int]
+) -> dict[str, object]:
+    return {
+        "python": {
+            identity: {
+                "occurrence_count": coordinates[0],
+                "elapsed_nanoseconds": coordinates[1],
+                "self_elapsed_nanoseconds": coordinates[2],
+            }
+            for identity, coordinates in sorted(python_coordinates.items())
+            if any(coordinates)
+        },
+        "sql": dict(sorted(sql_coordinates.items())),
     }
 
 
@@ -173,6 +194,7 @@ def begin() -> None:
     _python.clear()
     _sql.clear()
     _baselines.clear()
+    _pytest_occurrences.clear()
     sqlite3.connect = _connect
     _profiler = cProfile.Profile()
     _profiler.enable()
@@ -199,9 +221,42 @@ def finish() -> dict[str, object]:
     return measurement()
 
 
+def _finish_observed() -> dict[str, object]:
+    global _profiler
+    if _profiler is None or not _baselines:
+        raise RuntimeError("one enclosing implementation measurement is required")
+    _profiler.disable()
+    current_python = _profile_coordinates(_profiler)
+    prior_python, prior_sql = _baselines.pop()
+    found = _observed_measurement(
+        _coordinate_difference(current_python, prior_python),
+        _sql_difference(_sql, prior_sql),
+    )
+    _profiler.enable()
+    return found
+
+
 def pytest_sessionstart(session: object) -> None:
     del session
     begin()
+
+
+@pytest.hookimpl(hookwrapper=True)
+def pytest_runtest_protocol(item: object, nextitem: object):
+    del nextitem
+    occurrence_position = len(_pytest_occurrences)
+    begin()
+    try:
+        yield
+    finally:
+        found = _finish_observed()
+    _pytest_occurrences.append(
+        {
+            "occurrence_position": occurrence_position,
+            "pytest_identity": item.nodeid,
+            **found,
+        }
+    )
 
 
 def pytest_sessionfinish(session: object, exitstatus: int) -> None:
