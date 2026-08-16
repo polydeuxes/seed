@@ -1942,6 +1942,49 @@ def first_recurring_added_compare(
     return tuple(comparisons), None, None
 
 
+def first_recurring_added_compare_across(
+    additions: tuple[AddedPositionOccurrence, ...],
+    source_invocation_rows: tuple[tuple[CompiledInvocationOccurrence, ...], ...],
+    *,
+    boundary_identity: str,
+    act_occurrence_count_limit: int,
+) -> tuple[
+    tuple[tuple[AddedPositionCompareOccurrence, ...], ...],
+    tuple[bool, ...] | None,
+    tuple[AddedPositionCompareOccurrence, ...] | None,
+]:
+    if type(source_invocation_rows) is not tuple or not source_invocation_rows:
+        raise TypeError("joint recurrence requires exact invocation rows")
+    functions = tuple(row[0].implementation_function for row in source_invocation_rows if row)
+    if len(functions) != len(source_invocation_rows) or len(
+        {function.identity for function in functions}
+    ) != len(functions):
+        raise ValueError("joint recurrence requires distinct implementation functions")
+    results = tuple(
+        first_recurring_added_compare(
+            additions,
+            row,
+            function,
+            boundary_identity=f"{boundary_identity}-{function.identity}",
+            act_occurrence_count_limit=act_occurrence_count_limit,
+        )
+        for row, function in zip(source_invocation_rows, functions)
+    )
+    if any(later is None for _, _, later in results):
+        return tuple(earlier for earlier, _, _ in results), None, None
+    later_occurrences = tuple(later for _, _, later in results)
+    if len({later.added_position_act_occurrence_identity for later in later_occurrences}) != 1:
+        return tuple(earlier for earlier, _, _ in results), None, None
+    coordinates = tuple(coordinate for _, coordinate, _ in results)
+    if len(set(coordinates)) != 1:
+        return tuple(earlier for earlier, _, _ in results), None, None
+    return (
+        tuple(earlier for earlier, _, _ in results),
+        coordinates,
+        later_occurrences,
+    )
+
+
 def compare_removed_position_invocations(
     source_invocations: tuple[tuple[CompiledInvocationOccurrence, ...], ...],
     result_invocations: tuple[tuple[CompiledInvocationOccurrence, ...], ...],

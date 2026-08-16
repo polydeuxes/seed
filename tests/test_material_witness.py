@@ -43,6 +43,7 @@ from compiled_format_invocation import (  # noqa: E402
     added_position_invocations,
     removed_position_invocations,
     first_recurring_added_compare,
+    first_recurring_added_compare_across,
     recurring_added_returned_coordinate,
     recurring_removed_returned_coordinate,
     first_recurring_removed_compare,
@@ -725,6 +726,22 @@ def test_format_recurrence_precedes_later_moved_material(
         break
 
     assert found is not None
+
+
+def test_format_recurrence_refuses_without_full_function_vector(
+    book_three_byte_format_occurrences,
+    book_pair_format_occurrences,
+):
+    additions = book_three_byte_format_occurrences[1]
+    earlier, coordinate, later = first_recurring_added_compare_across(
+        additions,
+        book_pair_format_occurrences,
+        boundary_identity="book-joint-format-recurrence",
+        act_occurrence_count_limit=len(additions),
+    )
+    assert later is None
+    assert coordinate is None
+    assert len(earlier) == len(book_pair_format_occurrences)
 
 
 def test_compiled_format_implementation_functions_admit_the_same_material_differently(
