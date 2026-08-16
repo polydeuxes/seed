@@ -300,7 +300,6 @@ expand
 expanding
 expansion
 expectation
-expiry
 explanatory
 explicit
 explicitly
@@ -337,7 +336,6 @@ generated
 generic
 global
 govern
-governed
 governs
 grammar
 grant
@@ -385,7 +383,6 @@ input
 inputs
 inquiry
 inspect
-inspectable
 inspection
 instantiate
 instantiated
@@ -448,7 +445,6 @@ measured
 measurement
 measurements
 meets
-memory
 mere
 merely
 mismatches
@@ -486,8 +482,6 @@ nor
 not
 nothing
 novelty
-object
-objective
 obligation
 occupied
 occupy
@@ -588,7 +582,6 @@ rather
 ratification
 re
 read
-reality
 reason
 reasons
 rebuildable
@@ -624,7 +617,6 @@ repeated
 repetition
 replace
 replay
-replayed
 report
 reported
 repository
@@ -799,7 +791,6 @@ validates
 validation
 validity
 value
-verification
 verified
 visibility
 visible

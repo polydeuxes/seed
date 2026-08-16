@@ -61,6 +61,6 @@ Seed need not preserve every implementation measurement. A measurement is preser
 - Attaching diagnostic-only output directly to hosts or other boundaries.
 
 ## Related chapters
-- [Assertion Source Coordinates and Standing](09-assertion-source-coordinates-and-standing.md)
-- [Events and Standing](12-events-and-standing.md)
+- [Assertion Source Coordinates](09-assertion-source-coordinates.md)
+- [Locality relations](12-locality-relations.md)
 - [Acts and occurrences](03-acts-and-occurrences.md)

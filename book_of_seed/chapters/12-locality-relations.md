@@ -1,22 +1,12 @@
-# Events and Standing
+# Locality Relations
 
 ## Constitutional subject
 
-The relation among preserved Events, Assertion-bearing material, and bounded current Standing.
+The exact locality relation between two exact bounded subjects.
 
 ## Bounded resolution
 
-An Event preserves what its responsible recording occurrence records. Recording an Assertion carrying source coordinates does not establish its content beyond the Standing supported by the responsible Standing occurrence.
-
-A bounded read may Yield preserved material under its exact rule and boundaries. The read does not create upstream Evidence, occurrence time, Applicability, or current Standing by identity. A responsible Act may use that material through its exact Evidence, established support relations, Authority, Scope, locality, conflict, expiry, Unknowns, and surviving limits.
-
-## Locality boundaries
-
-### 06.Standing.A — Current Standing is bounded
-
-Recorded material and previously established Standing may support current Standing only through the responsible Act in which they participate. Current Standing is repository-governed and inspectable; it is not a durable object, objective reality, complete memory, truth beyond its bounds, mandatory agreement, or verification of every preserved Assertion.
-
-### 06.Standing.B — Locality
+### 06.Locality.A — Locality
 
 Locality is the exact evidenced relation that two exact bounded subjects are local to one another. The subjects do not establish that relation by identity, co-presence, chronology, or a shared label. A locality relation preserves both subjects, its exact Evidence, occurrence, limits, and Unknowns.
 
@@ -28,10 +18,6 @@ Chronology alone does not establish locality, causation, or response. An Act occ
 
 ## Important distinctions
 
-- Event != occurrence
-- recording != Standing occurrence
-- replayed material != current Standing
-- current Standing != objective reality
 - locality subjects != locality relation
 - locality != occurrence
 - movement != copying or revision
@@ -40,4 +26,4 @@ Chronology alone does not establish locality, causation, or response. An Act occ
 ## Related chapters
 
 - [Recording and preserved Assertions](11-recording-and-preserved-assertions.md)
-- [Assertion Source Coordinates and Standing](09-assertion-source-coordinates-and-standing.md)
+- [Assertion Source Coordinates](09-assertion-source-coordinates.md)

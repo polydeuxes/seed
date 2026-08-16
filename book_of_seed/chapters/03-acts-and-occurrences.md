@@ -34,5 +34,5 @@ A Responsibility bounds what Standing may be established, preserved, or revised 
 - Treating a directly supplied result as Evidence that exact focus Evidence was validated.
 
 ## Related chapters
-- [Assertion Source Coordinates and Standing](09-assertion-source-coordinates-and-standing.md)
+- [Assertion Source Coordinates](09-assertion-source-coordinates.md)
 - [Recording and preserved Assertions](11-recording-and-preserved-assertions.md)

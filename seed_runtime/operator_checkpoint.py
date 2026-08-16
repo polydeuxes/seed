@@ -11,7 +11,7 @@ from seed_runtime.operator_command import AddressedOperatorCommand
 
 ADDRESSED_REPRESENTATION_LOCALITY_EVIDENCE_KIND = "operator.addressed_representation.locality_evidenced"
 EVENT_KIND_RESPONSIBILITIES = {
-    ADDRESSED_REPRESENTATION_LOCALITY_EVIDENCE_KIND: "06.Standing.B",
+    ADDRESSED_REPRESENTATION_LOCALITY_EVIDENCE_KIND: "06.Locality.A",
 }
 
 

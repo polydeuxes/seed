@@ -43,7 +43,7 @@
       "equal_result_content_establishes_identity": false
     },
     "locality": {
-      "book_clause": "06.Standing.B",
+      "book_clause": "06.Locality.A",
       "from": "first_subject",
       "to": "second_subject",
       "requires": ["exact_relation", "occurrence_witness", "intact_evidence"]
@@ -206,7 +206,7 @@
         ["occurrence_to_result", "Assertion_truth"]
       ]
     },
-    "06.Standing.B": {
+    "06.Locality.A": {
       "subject": "Locality_relation",
       "identity": [
         "first_subject",

@@ -58,4 +58,4 @@ Supplied material may assert that X represents or identifies Y. The responsible 
 ## Related chapters
 
 - [Constitutional Standing](02-constitutional-standing.md)
-- [Assertion Source Coordinates and Standing](09-assertion-source-coordinates-and-standing.md)
+- [Assertion Source Coordinates](09-assertion-source-coordinates.md)

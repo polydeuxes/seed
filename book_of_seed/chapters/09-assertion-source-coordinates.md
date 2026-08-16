@@ -1,4 +1,4 @@
-# Assertion Source Coordinates and Standing
+# Assertion Source Coordinates
 
 ## Constitutional subject
 
@@ -18,7 +18,7 @@ An exact Representation Act may represent asserted content and source coordinate
 
 A recorded Assertion, diagnostic finding, or Evidence record may participate only through the exact Act's Applicability boundary. Participation preserves every carried source coordinate and limit; it does not establish the asserted content or its source relation.
 
-## Temporal Standing
+## Temporal coordinates
 
 Temporal coordinates distinguish what time an Assertion describes, the Evidence occurrence time, when another occurrence happened, when material was recorded, and when a later Act considered it. One timestamp does not establish the others.
 

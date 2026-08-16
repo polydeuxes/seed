@@ -2353,7 +2353,7 @@ def test_unjoined_endpoints_do_not_witness_an_input_to_act_relation():
 
 
 def test_locality_relation_clause_is_checked_against_the_live_pair_witness():
-    clause = _clause("06.Standing.B")
+    clause = _clause("06.Locality.A")
     bundle = _recorded_applicability()
     relation = bundle["movement"].material["locality_relation"]
 
@@ -2847,7 +2847,7 @@ def test_every_locality_evidence_kind_is_declared_once_and_registered():
     )
 
 
-# Every module recording a `scope_locality` dimension. 06.Standing.B makes
+# Every module recording a `scope_locality` dimension. 06.Locality.A makes
 # locality a coordinate in its own right, and 01.Standing.E.1 enumerates Scope
 # and locality separately among the coordinates Applicability is determined
 # for. This compound field carries both in one string. A regression boundary,
@@ -2864,7 +2864,7 @@ def test_no_new_site_compounds_scope_with_locality():
     )
     assert sites <= SCOPE_LOCALITY_COMPOUND_SITES, (
         f"\n{sites} sites compound Scope with locality, up from "
-        f"{SCOPE_LOCALITY_COMPOUND_SITES}. 06.Standing.B carries locality as "
+        f"{SCOPE_LOCALITY_COMPOUND_SITES}. 06.Locality.A carries locality as "
         "its own coordinate; a new site glues it to Scope again."
     )
 

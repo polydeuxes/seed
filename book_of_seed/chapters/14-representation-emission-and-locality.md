@@ -41,4 +41,4 @@ Authority does not move merely because material moves.
 ## Related chapters
 - [Constitutional standing](02-constitutional-standing.md)
 - [Authority scope](13-authority-scope.md)
-- [Events and Standing](12-events-and-standing.md)
+- [Locality relations](12-locality-relations.md)
