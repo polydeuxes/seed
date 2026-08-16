@@ -122,6 +122,14 @@ def test_durable_ingest_preserves_raw_material_and_yield_evidence(tmp_path):
         evidence = reopened.get(evidence_identity)
         assert read is not None and evidence is not None
         assert read.exact_material == evidence.exact_material == exact
+        assert set(evidence.material["dimensions"]) == {
+            "identity",
+            "exact_act",
+            "act_occurrence_identity",
+            "responsibility",
+            "responsible_boundary",
+            "authority",
+        }
         assert read_yield_relation_requirements(
             reopened,
             recorded_result_event_identity=occurred_identity,

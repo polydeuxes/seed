@@ -276,28 +276,11 @@ def _record_yield_evidence(
                 "identity": (
                     f"yield-evidence:{act_occurrence_identity}:{result_identity}"
                 ),
-                "content": (
-                    f"Evidence for the exact Yield from the {exact_act} occurrence "
-                    f"to this exact {result_kind} result at its Act boundary"
-                ),
                 "exact_act": exact_act,
                 "act_occurrence_identity": act_occurrence_identity,
-                "occurrence_result_evidence": (
-                    "preserved at the exact Act boundary after this exact "
-                    "result was fixed; the result carries the relation to this"
-                ),
                 "responsibility": responsibility,
                 "responsible_boundary": responsible_boundary,
                 "authority": "unestablished",
-                "evidence_scope": (
-                    "establishes the exact occurrence-to-result relation at this "
-                    "Act boundary; establishes no responsibility, "
-                    "authorization, or occurrence beyond this boundary"
-                ),
-                "occurrence_preservation": (
-                    "Evidence for the exact occurrence-to-result relation, "
-                    "recorded; not the relation or Act occurrence by identity"
-                ),
             },
             "yield_coordinates": sorted(result_content),
             "result": deepcopy(result_content),
