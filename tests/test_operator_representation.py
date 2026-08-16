@@ -3,8 +3,12 @@ from io import BytesIO, StringIO
 
 import pytest
 
-from seed_runtime.byte_measurement import assertions_of_recorded_byte_measurement
-from seed_runtime.events import EventLedger
+from seed_runtime.byte_measurement import (
+    assertions_of_recorded_byte_measurement,
+    record_byte_measurement_responsible_act_evidence,
+    record_byte_measurement_result,
+)
+from seed_runtime.events import CORRUPTED, EventLedger
 from seed_runtime.operator_representation import (
     emit_operator_representation_material,
     emit_operator_representation,
@@ -81,6 +85,25 @@ def _fixture_representation(ledger, *, locality="s"):
 def _standing(ledger, *, locality="s"):
     return read_operator_locality_standing(
         ledger, locality_identity=locality
+    )
+
+
+def _byte_measurement(ledger, *, locality="s"):
+    ingest_material(
+        ledger,
+        locality_identity=locality,
+        exact_bytes=b"aba",
+        source_role="operator",
+        source_boundary="fixture boundary",
+    )
+    responsible_act_evidence = record_byte_measurement_responsible_act_evidence(
+        ledger,
+        source_localities=(locality,),
+        recording_locality_identity=locality,
+    )
+    return record_byte_measurement_result(
+        ledger,
+        responsible_act_evidence_event_identity=responsible_act_evidence.identity,
     )
 
 
@@ -162,6 +185,170 @@ def test_representation_carries_exact_material_without_claiming_meaning():
     assert event.exact_material == b"hello"
     assert evidence.exact_material == b"hello"
     assert event.material["attempt_reference"] == source.identity
+
+
+def test_representation_addresses_one_exact_carried_measurement_result():
+    ledger = EventLedger()
+    measurement = _byte_measurement(ledger)
+    standing = _standing(ledger)
+
+    representation = record_operator_representation(
+        ledger,
+        locality_identity="s",
+        locality_standing=standing,
+        source_event_identity=measurement.identity,
+    )
+
+    event = ledger.get(representation["representation_event_identity"])
+    locality_evidence = ledger.get(representation["locality_evidence_identity"])
+    yield_evidence = ledger.get(representation["yield_evidence_identity"])
+    expected_reference = {
+        "recorded_occurrence_identity": measurement.identity,
+        "result_identity": measurement.material["result_identity"],
+        "act_occurrence_identity": measurement.material["act_occurrence_identity"],
+        "responsible_act_evidence_identity": measurement.material[
+            "responsible_act_evidence_identity"
+        ],
+        "yield_evidence_identity": measurement.material["yield_evidence_identity"],
+    }
+    assert standing["measurement_occurrences"] == [expected_reference]
+    assert event.material["attempt_reference"] == measurement.identity
+    assert (
+        locality_evidence.material["carried_content"]["attempt_reference"]
+        == measurement.identity
+    )
+    assert (
+        yield_evidence.material["result"]["attempt_reference"]
+        == measurement.identity
+    )
+    for material in (
+        event.material,
+        locality_evidence.material["carried_content"],
+        yield_evidence.material["result"],
+    ):
+        assert "assertions" not in material
+        assert "measurement_rule" not in material
+        assert "occurrence_preservation" not in material
+    assert event.exact_material is None
+    assert locality_evidence.exact_material is None
+    assert yield_evidence.exact_material is None
+    assert read_operator_representation(ledger, event.identity)[
+        "source_event_identity"
+    ] == measurement.identity
+
+    with pytest.raises(ValueError, match="carries no exact material"):
+        emit_operator_representation_material(
+            ledger,
+            representation=representation,
+            output_stream=BytesIO(),
+        )
+
+
+@pytest.mark.parametrize(
+    "coordinate",
+    (
+        "recorded_occurrence_identity",
+        "result_identity",
+        "act_occurrence_identity",
+        "responsible_act_evidence_identity",
+        "yield_evidence_identity",
+    ),
+)
+def test_representation_rejects_each_wrong_carried_measurement_coordinate(
+    coordinate,
+):
+    ledger = EventLedger()
+    measurement = _byte_measurement(ledger)
+    standing = _standing(ledger)
+    standing["measurement_occurrences"][0][coordinate] = "other"
+
+    with pytest.raises(ValueError, match="Measurement"):
+        record_operator_representation(
+            ledger,
+            locality_identity="s",
+            locality_standing=standing,
+            source_event_identity=measurement.identity,
+        )
+
+
+def test_exact_result_carrier_does_not_stand_for_measurement_result_carrier():
+    ledger = EventLedger()
+    measurement = _byte_measurement(ledger)
+    standing = _standing(ledger)
+    standing["measurement_occurrences"] = []
+    standing["exact_result_occurrences"][measurement.identity] = None
+
+    with pytest.raises(ValueError, match="Measurement is not carried"):
+        record_operator_representation(
+            ledger,
+            locality_identity="s",
+            locality_standing=standing,
+            source_event_identity=measurement.identity,
+        )
+
+
+def test_representation_rejects_corrupted_measurement_yield(monkeypatch):
+    ledger = EventLedger()
+    measurement = _byte_measurement(ledger)
+    standing = _standing(ledger)
+    yield_identity = measurement.material["yield_evidence_identity"]
+    integrity_of = ledger.integrity_of
+    monkeypatch.setattr(
+        ledger,
+        "integrity_of",
+        lambda identity: (
+            CORRUPTED if identity == yield_identity else integrity_of(identity)
+        ),
+    )
+
+    with pytest.raises(ValueError):
+        record_operator_representation(
+            ledger,
+            locality_identity="s",
+            locality_standing=standing,
+            source_event_identity=measurement.identity,
+        )
+
+
+def test_unrelated_occurrence_does_not_change_addressed_measurement_result():
+    ledger = EventLedger()
+    measurement = _byte_measurement(ledger)
+    ingest_material(
+        ledger,
+        locality_identity="s",
+        exact_bytes=b"unrelated",
+        source_role="operator",
+        source_boundary="fixture boundary",
+    )
+
+    representation = record_operator_representation(
+        ledger,
+        locality_identity="s",
+        locality_standing=_standing(ledger),
+        source_event_identity=measurement.identity,
+    )
+
+    assert representation["exact_material"] is None
+    assert ledger.get(representation["representation_event_identity"]).material[
+        "attempt_reference"
+    ] == measurement.identity
+
+
+def test_representation_reader_rejects_a_substituted_measurement_reference():
+    ledger = EventLedger()
+    measurement = _byte_measurement(ledger)
+    representation = record_operator_representation(
+        ledger,
+        locality_identity="s",
+        locality_standing=_standing(ledger),
+        source_event_identity=measurement.identity,
+    )
+    other = _byte_measurement(ledger)
+    event = ledger.get(representation["representation_event_identity"])
+    event.material["attempt_reference"] = other.identity
+
+    with pytest.raises(ValueError, match="not exact"):
+        read_operator_representation(ledger, event.identity)
 
 
 def test_representation_consumes_an_exact_yielded_representation_result():
