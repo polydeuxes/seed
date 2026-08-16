@@ -752,16 +752,17 @@ def test_implementation_and_machine_grammar_have_the_same_clauses():
         for values in _runtime_assertion_responsibility_clauses().values()
         if len(values) == 1
     }
-    machine_clauses = {
-        identity.decode("ascii")
-        for identity in re.findall(
-            rb'^    "([0-9]+\.[A-Za-z]+\.[A-Za-z0-9.]+)": \{$',
-            GRAMMAR.read_bytes(),
-            re.M,
-        )
+    machine = json.loads(GRAMMAR.read_text(encoding="utf-8"))["clauses"]
+    machine_clauses = set(machine)
+    declared_without_event_species = {
+        identity
+        for identity, clause in machine.items()
+        if "implementation_witness" in clause
     }
+    implemented_clauses = event_clauses | assertion_clauses
 
-    assert event_clauses | assertion_clauses == machine_clauses
+    assert implemented_clauses <= machine_clauses
+    assert machine_clauses - implemented_clauses == declared_without_event_species
 
 
 def test_runtime_record_vocabulary_has_constitutional_admission():

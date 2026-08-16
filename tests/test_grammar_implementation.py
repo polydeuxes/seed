@@ -2584,8 +2584,8 @@ def test_implementation_witness_discriminates_content_locality_and_occurrence():
 
 def _assert_ordered_fidelity_representation(fidelity: dict) -> None:
     assert fidelity == {
-        "book_clause": "01.Source.C",
         "subject": "this_Seed",
+        "implementation_witness": "deterministic_tests",
         "subjects": [
             "machine_grammar",
             "live_implementation",
@@ -2604,6 +2604,18 @@ def _assert_ordered_fidelity_representation(fidelity: dict) -> None:
         "comparison": "deterministic_tests",
         "witness": "live_implementation",
         "result": "bounded_Fidelity_finding",
+        "preserves": [
+            "Evidence",
+            "provenance",
+            "Authority",
+            "Scope",
+            "conflicts",
+            "Unknown",
+            "erasure",
+            "unsupported_coordinates",
+            "mutation",
+            "Authority_relocation",
+        ],
         "comparison_order": [
             "live_implementation",
             "deterministic_tests",
@@ -2615,7 +2627,10 @@ def _assert_ordered_fidelity_representation(fidelity: dict) -> None:
             "exact_relation",
             "supporting_measurements",
         ],
-        "does_not_establish": "global_certification",
+        "does_not_establish": [
+            "global_certification",
+            "correction_Authority",
+        ],
     }
     assert len(fidelity["ordered_subject_relations"]) == 6
     assert {
@@ -2636,11 +2651,13 @@ def _assert_ordered_fidelity_representation(fidelity: dict) -> None:
 def test_fidelity_is_this_seeds_bounded_machine_comparison():
     grammar = json.loads(GRAMMAR.read_text(encoding="utf-8"))
 
-    _assert_ordered_fidelity_representation(grammar["fidelity"])
+    _assert_ordered_fidelity_representation(grammar["clauses"]["01.Source.C"])
 
 
 def test_fidelity_refuses_collapsed_direction_and_inverted_representation_order():
-    fidelity = json.loads(GRAMMAR.read_text(encoding="utf-8"))["fidelity"]
+    fidelity = json.loads(GRAMMAR.read_text(encoding="utf-8"))["clauses"][
+        "01.Source.C"
+    ]
 
     collapsed_direction = deepcopy(fidelity)
     collapsed_direction["ordered_subject_relations"][1] = list(
@@ -3425,6 +3442,7 @@ def test_candidate_clause_preserves_coordinates_without_promoting_the_subject():
 
     assert clause == {
         "subject": "candidate",
+        "implementation_witness": "unestablished",
         "preserves": [
             "applicable_source_role",
             "Representation_Act_occurrence",
@@ -3450,6 +3468,7 @@ def test_cross_boundary_participation_preserves_scope_and_limits():
 
     assert clause == {
         "subject": "supplied_material_as_input_to_exact_Act",
+        "implementation_witness": "unestablished",
         "coordinates": [
             "supplied_material",
             "input_role",

@@ -95,10 +95,12 @@ def test_machine_readable_grammar_traverses_responsibility_from_standing():
     assert grammar["clauses"]
     active_book = _active_book()
     _assert_relation_clauses(grammar, active_book)
-    assert active_book.count(f"### {grammar['fidelity']['book_clause']} ") == 1
     for clause_identity, clause in grammar["clauses"].items():
         assert clause["subject"]
-        assert clause["responsibility"]
+        assert ("responsibility" in clause) or (
+            clause["implementation_witness"]
+            in {"deterministic_tests", "unestablished"}
+        )
         assert active_book.count(f"### {clause_identity} ") == 1
 
 
@@ -133,3 +135,38 @@ def test_missing_relation_clause_is_detected():
 
 def test_book_and_machine_grammar_have_the_same_clauses():
     assert _book_clause_identities() == _machine_clause_identities()
+
+
+def test_clauses_without_event_species_name_their_witness_in_book_order():
+    grammar = json.loads(GRAMMAR.read_text(encoding="utf-8"))
+    declarations = tuple(
+        (identity, clause["implementation_witness"])
+        for identity, clause in grammar["clauses"].items()
+        if "implementation_witness" in clause
+    )
+
+    assert declarations == (
+        ("01.Source.B", "unestablished"),
+        ("01.Source.C", "deterministic_tests"),
+        ("01.Source.D.1", "unestablished"),
+        ("01.Source.E", "unestablished"),
+        ("01.Source.F", "unestablished"),
+        ("01.Standing.A", "unestablished"),
+        ("01.Standing.B", "unestablished"),
+        ("01.Standing.C", "unestablished"),
+        ("01.Standing.D", "unestablished"),
+        ("01.Standing.D.2", "unestablished"),
+        ("01.Standing.E", "unestablished"),
+        ("01.Standing.F", "unestablished"),
+        ("05.Recording.A", "unestablished"),
+        ("05.Recording.B", "unestablished"),
+        ("05.Recording.C", "unestablished"),
+        ("05.Source.A", "unestablished"),
+        ("08.Authority.A", "unestablished"),
+        ("08.Authority.B", "unestablished"),
+        ("08.Authority.C", "unestablished"),
+    )
+    assert all(
+        "responsibility" not in grammar["clauses"][identity]
+        for identity, _witness in declarations
+    )

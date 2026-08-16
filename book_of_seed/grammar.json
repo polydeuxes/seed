@@ -31,40 +31,6 @@
       "result_Standing_revision"
     ]
   },
-  "fidelity": {
-    "book_clause": "01.Source.C",
-    "subject": "this_Seed",
-    "subjects": [
-      "machine_grammar",
-      "live_implementation",
-      "deterministic_tests"
-    ],
-    "ordered_subject_relations": [
-      ["machine_grammar", "live_implementation"],
-      ["live_implementation", "machine_grammar"],
-      ["machine_grammar", "deterministic_tests"],
-      ["deterministic_tests", "machine_grammar"],
-      ["live_implementation", "deterministic_tests"],
-      ["deterministic_tests", "live_implementation"]
-    ],
-    "ordered_subject_relations_established": false,
-    "grammar": "machine_grammar",
-    "comparison": "deterministic_tests",
-    "witness": "live_implementation",
-    "result": "bounded_Fidelity_finding",
-    "comparison_order": [
-      "live_implementation",
-      "deterministic_tests",
-      "machine_grammar",
-      "bounded_Fidelity_finding"
-    ],
-    "representation_order": [
-      "bounded_Fidelity_finding",
-      "exact_relation",
-      "supporting_measurements"
-    ],
-    "does_not_establish": "global_certification"
-  },
   "relations": {
     "participation": {
       "book_clause": "01.Standing.E.1",
@@ -197,6 +163,7 @@
     },
     "01.Source.B": {
       "subject": "supplied_material_as_input_to_exact_Act",
+      "implementation_witness": "unestablished",
       "coordinates": [
         "supplied_material",
         "input_role",
@@ -216,6 +183,55 @@
         "attaching"
       ],
       "does_not_establish": ["Authority_relocation"]
+    },
+    "01.Source.C": {
+      "subject": "this_Seed",
+      "implementation_witness": "deterministic_tests",
+      "subjects": [
+        "machine_grammar",
+        "live_implementation",
+        "deterministic_tests"
+      ],
+      "ordered_subject_relations": [
+        ["machine_grammar", "live_implementation"],
+        ["live_implementation", "machine_grammar"],
+        ["machine_grammar", "deterministic_tests"],
+        ["deterministic_tests", "machine_grammar"],
+        ["live_implementation", "deterministic_tests"],
+        ["deterministic_tests", "live_implementation"]
+      ],
+      "ordered_subject_relations_established": false,
+      "grammar": "machine_grammar",
+      "comparison": "deterministic_tests",
+      "witness": "live_implementation",
+      "result": "bounded_Fidelity_finding",
+      "preserves": [
+        "Evidence",
+        "provenance",
+        "Authority",
+        "Scope",
+        "conflicts",
+        "Unknown",
+        "erasure",
+        "unsupported_coordinates",
+        "mutation",
+        "Authority_relocation"
+      ],
+      "comparison_order": [
+        "live_implementation",
+        "deterministic_tests",
+        "machine_grammar",
+        "bounded_Fidelity_finding"
+      ],
+      "representation_order": [
+        "bounded_Fidelity_finding",
+        "exact_relation",
+        "supporting_measurements"
+      ],
+      "does_not_establish": [
+        "global_certification",
+        "correction_Authority"
+      ]
     },
     "01.Source.D": {
       "subject": "declared_Measurement_result",
@@ -311,8 +327,22 @@
         ]
       ]
     },
+    "01.Source.D.1": {
+      "subject": "counted_occurrence",
+      "implementation_witness": "unestablished",
+      "coordinates": [
+        "exact_occurrence_identity",
+        "counted_occurrence"
+      ],
+      "repeated_reference_to_one_occurrence": {
+        "create_another_occurrence": false,
+        "increment_another_occurrence": false
+      },
+      "counting_references": "different_declared_Measurement"
+    },
     "01.Source.E": {
       "subject": "candidate",
+      "implementation_witness": "unestablished",
       "preserves": [
         "applicable_source_role",
         "Representation_Act_occurrence",
@@ -325,6 +355,41 @@
         "Act_occurrence_by_candidate_identity",
         "occurrence_result_relation_by_candidate_identity",
         "Participation_by_candidate_identity"
+      ]
+    },
+    "01.Source.F": {
+      "subject": "represented_relation",
+      "implementation_witness": "unestablished",
+      "assertion": {
+        "first_subject": "X",
+        "relation": "represents_or_identifies",
+        "second_subject": "Y"
+      },
+      "preserves": [
+        "source_identity_or_role",
+        "source_occurrence_where_evidenced",
+        "Scope",
+        "provenance",
+        "Authority_limits",
+        "known_loss",
+        "conflicts",
+        "Unknown"
+      ],
+      "does_not_support": [
+        "source_relation_by_Locality",
+        "source_relation_by_labels",
+        "source_relation_by_reference_resolution",
+        "source_relation_by_shape",
+        "source_relation_by_repetition",
+        "represented_relation_by_Locality",
+        "represented_relation_by_labels",
+        "represented_relation_by_reference_resolution",
+        "represented_relation_by_shape",
+        "represented_relation_by_repetition"
+      ],
+      "requires": [
+        "responsible_source_relation_occurrence",
+        "responsible_represented_relation_occurrence"
       ]
     },
     "01.Source.G": {
@@ -370,6 +435,88 @@
         ["equal_exact_material", "equal_result_identity"]
       ]
     },
+    "01.Standing.A": {
+      "subject": "preserved_material",
+      "implementation_witness": "unestablished",
+      "may_have": ["exact_identity", "Locality"],
+      "does_not_establish": [
+        "acceptance",
+        "input_support",
+        "Admission",
+        "representation_as_truth",
+        "recording",
+        "implementation_action"
+      ],
+      "requires": "separate_family_local_boundary"
+    },
+    "01.Standing.B": {
+      "subject": "bounded_named_distinction",
+      "implementation_witness": "unestablished",
+      "names": [
+        "kind_label",
+        "Representation",
+        "characterization_category",
+        "implementation_name",
+        "concordance_entry",
+        "recurring_report_type"
+      ],
+      "preserves": ["subject", "exact_Act"],
+      "requires": [
+        "Evidence",
+        "provenance",
+        "Scope",
+        "Unknown",
+        "applicable_occurrence_boundary"
+      ],
+      "does_not_establish": [
+        "Standing",
+        "equivalence_by_name",
+        "mandatory_grammar",
+        "Authority_for_exact_Act"
+      ]
+    },
+    "01.Standing.C": {
+      "subject": "implementation_boundary_witness",
+      "implementation_witness": "unestablished",
+      "witnesses": [
+        "compiled_behavior",
+        "direct_instantiation",
+        "exact_represented_result"
+      ],
+      "bounded_seam": [
+        "read_boundary",
+        "emission_boundary",
+        "other_implementation_seam"
+      ],
+      "Standing_requires": [
+        "subject",
+        "responsible_occurrence",
+        "Evidence",
+        "Scope",
+        "Authority",
+        "limits"
+      ],
+      "does_not_establish": [
+        "Standing_by_name",
+        "Standing_by_output_vocabulary",
+        "Standing_by_behavior"
+      ]
+    },
+    "01.Standing.D": {
+      "subject": "multiplicity",
+      "implementation_witness": "unestablished",
+      "does_not_establish": [
+        "relation",
+        "collective_Standing",
+        "shared_Act",
+        "shared_result_boundary",
+        "higher_order_identity"
+      ],
+      "stronger_Assertion_requires": [
+        "bounded_subject",
+        "established_support_relation"
+      ]
+    },
     "01.Standing.D.1": {
       "subject": "Assertion",
       "identity": ["result", "subject", "Scope", "content"],
@@ -404,6 +551,83 @@
       "Unknown": {
         "requires_elimination": false
       }
+    },
+    "01.Standing.D.2": {
+      "subject": "later_Assertion_with_current_Standing",
+      "implementation_witness": "unestablished",
+      "Applicability_considered_with_respect_to": "current_Standing_for_same_subject",
+      "earlier_Assertions": {
+        "preserve_exact_identity_and_reference": true,
+        "each_is_separate_Applicability_boundary": false,
+        "each_requires_Compare": false
+      },
+      "Applicability_does_not_establish": [
+        "agreement",
+        "relation",
+        "truth",
+        "corroboration",
+        "revision"
+      ],
+      "Compare_result": {
+        "may_have_own_subject": true,
+        "does_not_replace_upstream_subject": true,
+        "participation_in_another_Act": "unestablished"
+      },
+      "movement_preserves": [
+        "only_established_movement",
+        "previously_established_coordinates",
+        "Unknown_coordinates",
+        "same_subject"
+      ],
+      "does_not_establish": [
+        "current_Standing_into_Compare",
+        "Compare_result_as_finding_for_another_Act",
+        "prior_Assertion_count_requirement"
+      ]
+    },
+    "01.Standing.E": {
+      "subject": "bounded_relation_Assertion",
+      "implementation_witness": "unestablished",
+      "preserves": [
+        "participants_and_roles",
+        "relation_Assertion",
+        "Evidence",
+        "Scope",
+        "exact_Act",
+        "Authority",
+        "occurrence",
+        "conflicts",
+        "limits",
+        "Unknown_or_unresolved_Standing"
+      ],
+      "represented_relation_preserves": [
+        "participants_and_roles",
+        "relation_Assertion",
+        "source_identity",
+        "source_occurrence_where_evidenced",
+        "Evidence",
+        "Scope",
+        "exact_Act_and_result_boundary",
+        "provenance",
+        "Authority",
+        "known_loss",
+        "conflicts",
+        "limits",
+        "Unknown_or_unresolved_Standing"
+      ],
+      "distinct_from": [
+        ["candidate_relation", "source_labelled_relation_material"],
+        ["source_labelled_relation_material", "established_relation_Standing"],
+        ["candidate_relation", "established_relation_Standing"],
+        ["applicable", "admitted"],
+        ["Admission", "participation"],
+        ["participation", "input_supports_result"]
+      ],
+      "does_not_establish": [
+        "negation_from_unsupported_Evidence",
+        "source_occurrence_from_source_label",
+        "represented_relation_from_source_label"
+      ]
     },
     "01.Standing.E.1": {
       "subject": "input_to_exact_Act_relation",
@@ -454,6 +678,58 @@
       "persistent_Standing": {
         "establishes_new_Act": false
       }
+    },
+    "01.Standing.F": {
+      "subject": "dimensional_characterization",
+      "implementation_witness": "unestablished",
+      "macro_dimensional_families": [
+        ["subject", "identity"],
+        ["assertion", "content"],
+        ["standing"],
+        ["source", "provenance"],
+        ["responsibility"],
+        ["authority", "support"],
+        ["scope", "locality"],
+        ["occurrence", "preservation"]
+      ],
+      "families_are": [
+        "broad_constitutional_distinctions",
+        "bounded_compressions_of_neighboring_coordinates"
+      ],
+      "families_are_not": [
+        "mandatory_fields",
+        "one_fixed_representation",
+        "indivisible_scalar",
+        "exactly_eight_constitutional_fields",
+        "mathematically_final",
+        "constitutionally_final"
+      ],
+      "local_coordinates_are_bounded_by": [
+        "exact_subject",
+        "distinction",
+        "Act",
+        "Responsibility",
+        "result_boundary",
+        "Scope",
+        "Evidence_boundary"
+      ],
+      "coordinate_Standing": [
+        "applicable",
+        "inapplicable",
+        "known",
+        "Unknown",
+        "conflicting",
+        "unresolved"
+      ],
+      "does_not_establish": [
+        "fixed_coordinate_count",
+        "final_set",
+        "completeness_requirement",
+        "mandatory_Representation",
+        "Acts_as_dimensions",
+        "relations_as_dimensions",
+        "exhaustive_taxonomy"
+      ]
     },
     "02.Acts.A": {
       "subject": "exact_Act_occurrence",
@@ -520,6 +796,53 @@
         ["movement", "Act_occurrence"]
       ]
     },
+    "05.Recording.A": {
+      "subject": "retrievable_record_of_Assertion",
+      "implementation_witness": "unestablished",
+      "recording_boundary_may_establish": [
+        "retrievable_record_exists",
+        "Assertion_with_source_coordinates_preserved_within_declared_Scope"
+      ],
+      "later_exact_Act_may_consider": "recorded_Assertion_through_Applicability",
+      "does_not_establish": [
+        "represented_source_occurrence",
+        "current_Standing",
+        "truth",
+        "renewed_occurrence",
+        "movement_to_another_Act"
+      ]
+    },
+    "05.Recording.B": {
+      "subject": "diagnostic_run_scoped_recording",
+      "implementation_witness": "unestablished",
+      "requires": [
+        "recorded_material_admitted_only_to_diagnostic_Act",
+        "separate_responsible_occurrence_for_additional_Standing"
+      ],
+      "preserves": "scoped_subject_of_recording",
+      "result": "bounded_availability",
+      "does_not_establish": [
+        "mutation_of_another_Assertion_Standing",
+        "Standing_beyond_diagnostic_Scope"
+      ]
+    },
+    "05.Recording.C": {
+      "subject": "implementation_measurement_preservation_decision",
+      "implementation_witness": "unestablished",
+      "preservation_required_when_discarding_would_erase": [
+        "material_Evidence",
+        "established_Standing_not_otherwise_retained"
+      ],
+      "recording_may_preserve": [
+        "Assertion_with_source_coordinates",
+        "already_established_Standing"
+      ],
+      "does_not_establish": [
+        "Standing_by_record_existence",
+        "upstream_Assertion_by_record_existence",
+        "Compare_by_record_existence"
+      ]
+    },
     "05.Recording.D": {
       "subject": "one_exact_recorded_Standing_boundary_reference",
       "responsibility": {
@@ -561,6 +884,24 @@
         ["recording_Act", "Act_occurrence"],
         ["Act_occurrence", "recorded_result"],
         ["recorded_Standing_boundary_reference", "addressed_Standing"]
+      ]
+    },
+    "05.Source.A": {
+      "subject": "recorded_material_participation",
+      "implementation_witness": "unestablished",
+      "subjects_that_may_participate": [
+        "recorded_Assertion",
+        "diagnostic_finding",
+        "Evidence_record"
+      ],
+      "requires": "exact_Act_Applicability_boundary",
+      "participation_preserves": [
+        "every_carried_source_coordinate",
+        "every_carried_limit"
+      ],
+      "does_not_establish": [
+        "asserted_content",
+        "source_relation"
       ]
     },
     "06.Locality.A": {
@@ -701,6 +1042,84 @@
         ["exact_Act", "Act_occurrence"],
         ["Act_occurrence", "Locality_relation"],
         ["recorded_Standing_boundary_reference", "Locality_relation"]
+      ]
+    },
+    "08.Authority.A": {
+      "subject": "bounded_input_support",
+      "implementation_witness": "unestablished",
+      "downstream_Act_may_stand_on_established_content_only_for": [
+        "exact_role",
+        "addressed_subject",
+        "result_boundary",
+        "source_or_provenance",
+        "Evidence",
+        "Authority",
+        "Scope",
+        "confidence_or_uncertainty",
+        "Unknown_boundaries"
+      ],
+      "does_not_establish": [
+        "Standing_beyond_bounds",
+        "Authority_beyond_bounds",
+        "truth",
+        "Responsibility_assignment_revision",
+        "implementation_authorization",
+        "negative_Authority_erasure"
+      ]
+    },
+    "08.Authority.B": {
+      "subject": "bounded_participation_not_ratification",
+      "implementation_witness": "unestablished",
+      "supporting_findings": [
+        "established_support_relation",
+        "Applicability",
+        "Admission"
+      ],
+      "participation_bounded_by": [
+        "Evidence",
+        "responsible_boundary",
+        "result_boundary",
+        "Authority",
+        "negative_Authority",
+        "confidence",
+        "Unknown_limits"
+      ],
+      "does_not_establish": [
+        "truth",
+        "Authority_beyond_bounds",
+        "mutation_Authority",
+        "Book_ratification",
+        "reusable_approval"
+      ]
+    },
+    "08.Authority.C": {
+      "subject": "analytical_competence",
+      "implementation_witness": "unestablished",
+      "may_analyze_under_bounded_repository_Authority": [
+        "source_packets",
+        "support_paths",
+        "source_roles",
+        "boundary_mismatches",
+        "pressure",
+        "confidence_limits",
+        "temporal_limits",
+        "Unknown"
+      ],
+      "does_not_establish": [
+        "jurisdiction",
+        "legal_Authority",
+        "binding_legal_conclusion",
+        "validity_determination",
+        "invalidity_determination",
+        "enforceability_determination",
+        "institutional_adjudication"
+      ],
+      "requires": [
+        "separately_preserved_competent_Authority",
+        "source_of_law_support",
+        "procedural_posture",
+        "Assertion",
+        "lawful_stop"
       ]
     }
   }
