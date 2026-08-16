@@ -75,6 +75,8 @@ The following words are ordinary compression. Expand them before reasoning
 about Seed:
 
 ```text
+Book           this constitutional language + ordered clause coordinates + this Book's admitted lexicon; Book != lexicon by identity
+Lexicon        admitted words only; admission of a word establishes no clause, coordinate, relation, or Standing
 Producer       Act occurrence + Yield + result
 Consumer       subject + role + Applicability + Participation
 Participant    subject + exact Participation relation to one Act occurrence under one role; not Candidate by identity

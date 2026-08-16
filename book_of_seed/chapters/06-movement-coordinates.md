@@ -13,7 +13,7 @@ Unknown, and Standing.
 ### 03.Movement.A — Movement is not mutation
 
 The movement occurrence carries only the exact transition in its Assertion. A
-implementation write, recorded Event, route revision, represented Assertion revision,
+write, recorded Event, route revision, represented Assertion revision,
 recorded-material revision, or displayed label does not supply movement by identity.
 
 Movement is not an Act occurrence by identity. Different Standing does not open
@@ -21,7 +21,7 @@ later movement by identity.
 
 ## Important distinctions
 
-- movement != implementation mutation
+- movement != mutation
 - candidate identity resolution != movement
 - displayed position label != established transition
 

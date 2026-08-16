@@ -513,6 +513,7 @@ legal
 legitimacy
 length
 let
+lexicon
 limit
 limits
 live

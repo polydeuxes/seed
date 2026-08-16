@@ -77,7 +77,7 @@ def test_machine_readable_grammar_traverses_responsibility_from_standing():
             "result_Standing_revision",
         ],
     }
-    assert grammar["implementation_witness"]["discriminators"] == [
+    assert grammar["witness"]["discriminators"] == [
         "content",
         "locality",
         "occurrence",
@@ -98,7 +98,7 @@ def test_machine_readable_grammar_traverses_responsibility_from_standing():
     for clause_identity, clause in grammar["clauses"].items():
         assert clause["subject"]
         assert ("responsibility" in clause) or (
-            clause["implementation_witness"]
+            clause["witness"]
             in {"deterministic_tests", "unestablished"}
         )
         assert active_book.count(f"### {clause_identity} ") == 1
@@ -115,10 +115,21 @@ def test_this_occurs_only_as_exact_machine_roots():
     assert uses == [
         (("book_material_reference",), "this_Book"),
         (("root_references", 0, "reference"), "this_Witness"),
-        (("root_references", 1, "reference"), "this_Book"),
-        (("root_references", 2, "reference"), "this_Seed"),
-        (("root_references", 3, "reference"), "this_Rosetta"),
-        (("root_references", 4, "reference"), "this_Fidelity"),
+        (("root_references", 1, "reference"), "this_Grammar"),
+        (("root_references", 2, "reference"), "this_Book"),
+        (("root_references", 3, "reference"), "this_Seed"),
+        (("root_references", 4, "reference"), "this_Rosetta"),
+        (("root_references", 5, "reference"), "this_Fidelity"),
+        (("machine_grammar", "subject"), "this_Grammar"),
+        (("machine_grammar", "book_material_reference"), "this_Book"),
+        (
+            ("machine_grammar", "represented_relation", "first_subject"),
+            "this_Grammar",
+        ),
+        (
+            ("machine_grammar", "represented_relation", "second_subject"),
+            "this_Book",
+        ),
         (("clauses", "01.Source.C", "subject"), "this_Fidelity"),
         (
             ("clauses", "01.Source.C", "comparison", "first_subject"),
@@ -126,7 +137,7 @@ def test_this_occurs_only_as_exact_machine_roots():
         ),
         (
             ("clauses", "01.Source.C", "comparison", "second_subject"),
-            "this_Book",
+            "this_Grammar",
         ),
         (
             ("clauses", "01.Source.C", "comparison", "addressed_subject"),
@@ -137,7 +148,7 @@ def test_this_occurs_only_as_exact_machine_roots():
             "this_Fidelity",
         ),
         (("clauses", "01.Source.C", "comparison_order", 0), "this_Witness"),
-        (("clauses", "01.Source.C", "comparison_order", 2), "this_Book"),
+        (("clauses", "01.Source.C", "comparison_order", 2), "this_Grammar"),
         (("clauses", "01.Source.C", "comparison_order", 3), "this_Fidelity"),
         (("clauses", "01.Source.C", "representation_order", 0), "this_Fidelity"),
         (
@@ -183,8 +194,9 @@ def test_machine_root_references_remain_distinct_and_in_declared_order():
     assert grammar["root_references"] == [
         {
             "reference": "this_Witness",
-            "coordinate": "implementation_witness",
+            "coordinate": "witness",
         },
+        {"reference": "this_Grammar", "coordinate": "machine_grammar"},
         {"reference": "this_Book", "coordinate": "book_material"},
         {"reference": "this_Seed", "coordinate": "seed_subject"},
         {"reference": "this_Rosetta", "coordinate": "rosetta_reference"},
@@ -193,14 +205,24 @@ def test_machine_root_references_remain_distinct_and_in_declared_order():
             "coordinate": "bounded_Fidelity_finding",
         },
     ]
+    assert grammar["machine_grammar"] == {
+        "subject": "this_Grammar",
+        "book_material_reference": "this_Book",
+        "represented_relation": {
+            "first_subject": "this_Grammar",
+            "relation": "represents",
+            "second_subject": "this_Book",
+        },
+        "equal_identity": False,
+    }
 
 
 def test_clauses_without_event_species_name_their_witness_in_book_order():
     grammar = json.loads(GRAMMAR.read_text(encoding="utf-8"))
     declarations = tuple(
-        (identity, clause["implementation_witness"])
+        (identity, clause["witness"])
         for identity, clause in grammar["clauses"].items()
-        if "implementation_witness" in clause
+        if "witness" in clause
     )
 
     assert declarations == (

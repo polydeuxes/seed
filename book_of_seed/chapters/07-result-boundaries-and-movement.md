@@ -20,7 +20,7 @@ Neither a result Assertion nor a bounded distinction requires another Act. Autho
 - result Assertion != bounded distinction
 - bounded distinction != failure
 - bounded distinction != Authorization
-- an implementation can perform an Act != the Act is authorized
+- a function can perform an Act != the Act is authorized
 - Unknown Standing != absent Assertion
 - current Standing is different != prior distinction revised
 - no movement != lawful Stop
@@ -28,7 +28,7 @@ Neither a result Assertion nor a bounded distinction requires another Act. Autho
 ## Counterexamples or failure modes
 
 - Treating operator wording about a desired result as established Seed Standing.
-- Treating one implementation refusal as proof that no exact Act can occur.
+- Treating one function refusal as proof that no exact Act can occur.
 - Treating a difference from a reference Assertion as movement established by identity.
 - Treating satisfaction within one Scope as completion beyond that Scope.
 

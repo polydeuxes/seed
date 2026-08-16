@@ -109,6 +109,20 @@ def test_rosetta_participant_decompresses_to_the_participation_relation():
     ) in rosetta
 
 
+def test_rosetta_book_decompresses_to_language_clauses_and_lexicon():
+    rosetta = ROSETTA_ROOTS.read_text(encoding="utf-8")
+
+    assert {"book", "language", "lexicon"} <= _rosetta_admission()
+    assert (
+        "Book           this constitutional language + ordered clause "
+        "coordinates + this Book's admitted lexicon; Book != lexicon by identity"
+    ) in rosetta
+    assert (
+        "Lexicon        admitted words only; admission of a word establishes "
+        "no clause, coordinate, relation, or Standing"
+    ) in rosetta
+
+
 def test_rosetta_missing_implementation_reference_is_detected():
     try:
         _assert_live_reference("seed_runtime.evidence_of_yield_relation::_missing")

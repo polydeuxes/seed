@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import json
 import re
 from pathlib import Path
 
@@ -53,22 +52,11 @@ def book_proper_words() -> dict[str, list[tuple[str, int]]]:
 
 
 def machine_grammar_words() -> set[str]:
-    grammar = json.loads((BOOK / "grammar.json").read_text(encoding="utf-8"))
-    if grammar.get("book_material_reference") != "this_Book":
-        raise ValueError("machine grammar has no exact reference to this Book")
-
-    literal_words = {
+    return {
         word
         for line in (BOOK / "grammar.json").read_text().split("\n")
         for word in re.findall(r"[A-Za-z]+", scan_active_line(line).lower())
     }
-    referenced_book_words = {
-        word
-        for path in (*((BOOK / "chapters").glob("*.md")), BOOK / "README.md", BOOK / "concordance.md")
-        for line in path.read_text(encoding="utf-8").split("\n")
-        for word in re.findall(r"[A-Za-z]+", scan_active_line(line).lower())
-    }
-    return literal_words | referenced_book_words
 
 
 def test_book_proper_scope_excludes_rosetta():

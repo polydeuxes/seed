@@ -2,7 +2,7 @@
 
 The Book of Seed preserves the durable constitutional grammar needed to read Seed. It names bounded concepts and keeps important non-equivalences visible.
 
-It is not a roadmap, implementation reference, generated topology, or substitute for repository inspection. Existing implementation and tests are Evidence of current practice; they do not carry constitutional Authority by identity. Historical audits and roadmaps are records outside active law.
+It is not a roadmap, witness reference, generated topology, or substitute for repository inspection. Existing witnesses and tests are Evidence of current practice; they do not carry constitutional Authority by identity. Historical audits and roadmaps are records outside active law.
 
 ## Resolution
 
@@ -37,7 +37,7 @@ The later Standing has the exact result or relation of the occurrence under Yiel
 3. Every instantiated responsibility must carry the branches required by that responsibility.
 4. A branch remains uninstantiated until a responsible occurrence supplies its coordinate.
 5. An instantiated coordinate whose value has not been resolved remains unresolved unless a responsible occurrence carries Unknown Standing for it.
-6. Recurrence, headings, implementation shape, or plausible completion supply neither a branch value nor its identity.
+6. Recurrence, headings, witness shape, or plausible completion supply neither a branch value nor its identity.
 
 ### Required identifying branches
 
@@ -240,7 +240,7 @@ same occurrence != same Assertion
 ## Maintenance rule
 
 > Maintain the constitutional grammar.  
-> Let Seed inspect the current implementation and emit only bounded results supported by that inspection's Evidence.
+> Let this Seed inspect this Witness and emit only bounded results supported by that inspection's Evidence.
 
 Revise the Book when constitutional grammar, a durable distinction, or the status of an unresolved constitutional distinction is different. Function movement, added fields, different relations, or a new diagnostic Representation of the same grammar do not require revision.
 

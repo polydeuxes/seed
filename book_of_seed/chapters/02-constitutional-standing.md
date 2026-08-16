@@ -17,13 +17,13 @@ Seed may read a Responsibility only through current Standing whose subject is th
 ## Preserved material
 
 ### 01.Standing.A — Preserved material is not promotion
-A result, preserved record, representation, index entry, or other material may have an exact identity and Locality without becoming accepted, admitted, supported, represented as truth, written to the event ledger, or authorized for mutation. Exact identity, preservation, and Locality do not establish acceptance, input support, admission, representation, recording, or implementation action; each remains a separate family-local boundary.
+A result, preserved record, representation, index entry, or other material may have an exact identity and Locality without becoming accepted, admitted, supported, represented as truth, written to the event ledger, or authorized for mutation. Exact identity, preservation, and Locality do not establish acceptance, input support, admission, representation, recording, or action; each remains a separate family-local boundary.
 
 ### 01.Standing.B — Names do not establish Standing
-A kind label, Representation, characterization category, implementation name, concordance entry, or recurring report type may preserve a bounded distinction for the subject and exact Act it names. It does not establish Standing, make similarly named material equivalent, establish mandatory grammar, or supply Authority for the exact Act without preserved Evidence, provenance, Scope, Unknown, and the applicable occurrence boundary.
+A kind label, Representation, characterization category, function name, concordance entry, or recurring report type may preserve a bounded distinction for the subject and exact Act it names. It does not establish Standing, make similarly named material equivalent, establish mandatory grammar, or supply Authority for the exact Act without preserved Evidence, provenance, Scope, Unknown, and the applicable occurrence boundary.
 
-### 01.Standing.C — Implementation behavior does not confer standing
-Compiled behavior, direct instantiation, and exact represented results may witness what occurs at a read boundary, emission boundary, or other bounded implementation seam. They do not establish the Standing suggested by a name, output vocabulary, or behavior. Such Standing still requires its own subject, responsible occurrence, Evidence, Scope, Authority, and limits.
+### 01.Standing.C — Behavior does not confer standing
+Compiled behavior, direct instantiation, and exact represented results may witness what occurs at a read boundary, emission boundary, or other bounded seam. They do not establish the Standing suggested by a name, output vocabulary, or behavior. Such Standing still requires its own subject, responsible occurrence, Evidence, Scope, Authority, and limits.
 
 ### 01.Standing.D — Multiplicity does not establish a collective
 Co-presence or multiplicity establishes no relation, collective Standing, shared Act or result boundary, or higher-order identity. Each stronger Assertion requires its own bounded subject and established support relation.
@@ -62,13 +62,13 @@ Responsibility for determining Applicability does not require its responsible bo
 
 An Applicability occurrence may carry only **applicable**, **inapplicable**, **conflicting**, or **Unknown** for the exact input-to-Act relation and preserved coordinates. It carries none of Admission, participation, truth, a support relation for the input's Assertion, Authorization, addressed-Act occurrence, downstream Standing, or movement. An excluded input may not participate in that Act, and no result may assert that it supports the result.
 
-Exclusion of one proposed input does not by itself establish whether the exact act occurs. That determination remains with the responsibility assigned to perform the exact act, under the relations, evidence, authority, scope, and other boundaries assigned to that responsibility for the exact occurrence. One rejected candidate is not all candidates rejected; candidate exclusion establishes neither Authorization, act prohibition, nor a lawful Stop; act occurrence without an excluded input does not mean that input was applicable; and an act result is not a result supported by an excluded input. A lawful Stop requires its own competent act, authority, evidence, and material carrying source coordinates; absence of act occurrence is not by itself a lawful Stop, and an implementation return or quiescence is not by itself a lawful Stop.
+Exclusion of one proposed input does not by itself establish whether the exact act occurs. That determination remains with the responsibility assigned to perform the exact act, under the relations, evidence, authority, scope, and other boundaries assigned to that responsibility for the exact occurrence. One rejected candidate is not all candidates rejected; candidate exclusion establishes neither Authorization, act prohibition, nor a lawful Stop; act occurrence without an excluded input does not mean that input was applicable; and an act result is not a result supported by an excluded input. A lawful Stop requires its own competent act, authority, evidence, and material carrying source coordinates; absence of act occurrence is not by itself a lawful Stop, and a return or quiescence is not by itself a lawful Stop.
 
 An alternative input does not participate by availability, similarity, equal content, or exclusion of another input. Before participation, the Responsibility assigned to the Act determines or validates Applicability for that exact input-to-Act relation and every coordinate the Act requires. Whether one input may occupy another's exact role remains **Unknown** unless a responsible occurrence establishes that relation for the exact Act, result boundary, and Scope.
 
 One bounded responsible occurrence may determine Applicability for inputs, exclude **inapplicable**, **conflicting**, or **Unknown** inputs, perform the exact Act or carry an absence-of-Act-occurrence finding within its assigned boundaries, and carry bounded output Standing where its Evidence and Authority support it. Each Assertion has a distinct identity and exact coordinates. Same occurrence is not same Assertion; Applicability success is not Act occurrence; Act occurrence does not supply output Standing by identity; and output Standing is not downstream Applicability or Admission.
 
-An exact Act occurrence may carry only the bounded Standing of its result when its Evidence and Authority support that exact Assertion. Result existence does not supply Standing by identity. Lawfully supported Standing persists without later participation, but persistence supplies neither another Act, Responsibility, result boundary, nor occurrence. Applicability supplies neither a result, another Assertion, nor implementation Authority.
+An exact Act occurrence may carry only the bounded Standing of its result when its Evidence and Authority support that exact Assertion. Result existence does not supply Standing by identity. Lawfully supported Standing persists without later participation, but persistence supplies neither another Act, Responsibility, result boundary, nor occurrence. Applicability supplies neither a result, another Assertion, nor Authority.
 
 ### 01.Standing.F — Dimensional characterization
 Seed commonly orients exact constitutional subjects and relations through approximately eight recurring macro-dimensional families:
@@ -82,7 +82,7 @@ Seed commonly orients exact constitutional subjects and relations through approx
 7. scope / locality
 8. occurrence / preservation
 
-These families are broad constitutional distinctions, not mandatory fields or one fixed representation required across exact subjects. Dimension != field, value, constitutional kind, fixed subject-family set, or implementation key. The paired labels are bounded compressions of neighboring coordinates, not declarations that every pair is one indivisible scalar: standing is recurrent and cross-cutting; occurrence and preservation are related but separate; source and provenance are neighboring but not equivalent; and authority and support are neighboring but not equivalent. Approximately eight macro-dimensional families != exactly eight constitutional fields; this grouping is neither mathematically nor constitutionally final.
+These families are broad constitutional distinctions, not mandatory fields or one fixed representation required across exact subjects. Dimension != field, value, constitutional kind, fixed subject-family set, or key. The paired labels are bounded compressions of neighboring coordinates, not declarations that every pair is one indivisible scalar: standing is recurrent and cross-cutting; occurrence and preservation are related but separate; source and provenance are neighboring but not equivalent; and authority and support are neighboring but not equivalent. Approximately eight macro-dimensional families != exactly eight constitutional fields; this grouping is neither mathematically nor constitutionally final.
 
 Macro-dimensional families unfold into local coordinates under the exact subject, distinction, Act, Responsibility, result boundary, Scope, and Evidence boundary. No fixed coordinate count, final set, completeness requirement across exact subjects, or mandatory Representation applies. A coordinate may be applicable, inapplicable, known, **Unknown**, conflicting, or unresolved within that boundary.
 
@@ -98,11 +98,11 @@ Acts and relations are distinct from dimensions. They may operate over or connec
 - Representation validity != lawful provenance
 - public visibility != constitutional status
 - preserved assertion != support for the assertion
-- dedicated implementation representation != durable constitutional kind
+- dedicated representation != durable constitutional kind
 - concordance entry != constitutional legitimacy
 - new downstream subject != upstream subject re-established
 - act-local standing != inherited responsible occurrence standing
-- implementation behavior != constitutional standing
+- behavior != constitutional standing
 - multiplicity != collective standing
 - Assertion responsible boundary != responsible occurrence or result-establishing Act
 - Assertion Standing persists != continuation or constitutional Stop established by identity

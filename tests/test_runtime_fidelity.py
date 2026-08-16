@@ -1,8 +1,8 @@
-"""Reverse Fidelity sirens from live implementation back to machine grammar.
+"""Reverse Fidelity sirens from the live witness back to machine grammar.
 
 These tests are deliberately bounded by what the runtime declares. They do
-not ask a hand-maintained list which implementation witnesses should be inspected.
-Red means the implementation contains constitutional material the machine
+not ask a hand-maintained list which witnesses should be inspected.
+Red means the witness contains constitutional material the machine
 grammar and its deterministic witnesses do not yet account for.
 """
 
@@ -741,7 +741,7 @@ def test_nested_assertion_clause_is_not_an_event_kind_responsibility():
     assert "01.Standing.D.1" in assertion_clauses
 
 
-def test_implementation_and_machine_grammar_have_the_same_clauses():
+def test_witness_and_machine_grammar_account_for_the_same_clauses():
     event_clauses = {
         values[0][1]
         for values in _runtime_event_kind_responsibilities().values()
@@ -757,7 +757,7 @@ def test_implementation_and_machine_grammar_have_the_same_clauses():
     declared_without_event_species = {
         identity
         for identity, clause in machine.items()
-        if "implementation_witness" in clause
+        if "witness" in clause
     }
     implemented_clauses = event_clauses | assertion_clauses
 
@@ -1189,8 +1189,8 @@ def test_every_event_standing_claim_has_a_declared_grammar_responsibility():
     )
 
 
-def test_command_implementation_receives_no_constitutional_write_capability():
-    """The slash-command boundary may not hand an implementation the ledger."""
+def test_command_handler_receives_no_constitutional_write_capability():
+    """The slash-command boundary may not hand a handler the ledger."""
 
     names = {field.name for field in fields(AddressedOperatorCommand)}
     assert "ledger" not in names

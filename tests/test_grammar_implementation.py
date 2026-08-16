@@ -153,7 +153,7 @@ def _clause(clause_identity: str) -> dict:
 
 
 def _witness_grammar() -> dict:
-    return json.loads(GRAMMAR.read_text(encoding="utf-8"))["implementation_witness"]
+    return json.loads(GRAMMAR.read_text(encoding="utf-8"))["witness"]
 
 
 def test_every_grammar_representation_composite_preserves_material_order():
@@ -1842,7 +1842,7 @@ def test_primary_relation_measurements_preserve_their_live_boundaries():
     assert ("locality", "assertion_movement") in registered
 
 
-def _relation_implementation_specs() -> dict[str, dict]:
+def _relation_witness_specs() -> dict[str, dict]:
     requirements = {
         "exact_relation": "relation_missing",
         "occurrence_witness": "wrong_occurrence",
@@ -1879,7 +1879,7 @@ def _relation_implementation_specs() -> dict[str, dict]:
 
 def _assert_relation_anatomy(grammar: dict, specs: dict[str, dict]) -> None:
     assert set(specs) == set(grammar["relations"])
-    relation_families = grammar["implementation_witness"]["relation_audit"][
+    relation_families = grammar["witness"]["relation_audit"][
         "families"
     ]
     for relation, declared in grammar["relations"].items():
@@ -2554,7 +2554,7 @@ def _participation_requirements(bundle: dict, *, role: str) -> dict[str, bool]:
     }
 
 
-def test_implementation_witness_discriminates_content_locality_and_occurrence():
+def test_witness_discriminates_content_locality_and_occurrence():
     grammar = _witness_grammar()
     ledger = EventLedger()
     content = {"a": 1, "b": 2}
@@ -2588,11 +2588,11 @@ def _assert_ordered_fidelity_representation(fidelity: dict) -> None:
     assert fidelity == {
         "subject": "this_Fidelity",
         "book_material_reference": "01.Source.C",
-        "implementation_witness": "unestablished",
+        "witness": "unestablished",
         "comparison": {
             "first_subject": "this_Witness",
             "relation": "comparison",
-            "second_subject": "this_Book",
+            "second_subject": "this_Grammar",
             "addressed_subject": "this_Seed",
             "boundary": "deterministic_tests",
             "result": "this_Fidelity",
@@ -2612,7 +2612,7 @@ def _assert_ordered_fidelity_representation(fidelity: dict) -> None:
         "comparison_order": [
             "this_Witness",
             "deterministic_tests",
-            "this_Book",
+            "this_Grammar",
             "this_Fidelity",
         ],
         "representation_order": [
@@ -2637,7 +2637,7 @@ def _assert_ordered_fidelity_representation(fidelity: dict) -> None:
     assert fidelity["comparison_order"] != fidelity["representation_order"]
 
 
-def test_fidelity_is_this_seeds_bounded_machine_comparison():
+def test_fidelity_is_bounded_witness_grammar_comparison_for_this_seed():
     grammar = json.loads(GRAMMAR.read_text(encoding="utf-8"))
 
     _assert_ordered_fidelity_representation(grammar["clauses"]["01.Source.C"])
@@ -2685,8 +2685,8 @@ def test_fidelity_refuses_collapsed_subjects_tests_as_subject_and_inverted_order
 def test_every_relation_has_live_fidelity_cases():
     grammar = json.loads(GRAMMAR.read_text(encoding="utf-8"))
     cases = _relation_fidelity_cases()
-    specs = _relation_implementation_specs()
-    expected = grammar["implementation_witness"]["fidelity_cases"]
+    specs = _relation_witness_specs()
+    expected = grammar["witness"]["fidelity_cases"]
 
     _assert_relation_anatomy(grammar, specs)
     assert set(cases) == set(grammar["relations"])
@@ -2702,7 +2702,7 @@ def test_every_relation_has_live_fidelity_cases():
 def test_emission_instantiates_each_relation_it_carries_at_its_boundary():
     grammar = json.loads(GRAMMAR.read_text(encoding="utf-8"))
     cases = _emission_relation_fidelity_cases()
-    expected = grammar["implementation_witness"]["fidelity_cases"]
+    expected = grammar["witness"]["fidelity_cases"]
 
     assert set(cases) == set(grammar["relations"])
     assert set(cases) == set(grammar["relations"])
@@ -2711,7 +2711,7 @@ def test_emission_instantiates_each_relation_it_carries_at_its_boundary():
 
 def test_every_registered_live_relation_instantiation_obeys_the_full_fidelity_matrix():
     grammar = json.loads(GRAMMAR.read_text(encoding="utf-8"))
-    expected = grammar["implementation_witness"]["fidelity_cases"]
+    expected = grammar["witness"]["fidelity_cases"]
     registered = _live_relation_fidelity_cases()
 
     assert registered
@@ -3179,12 +3179,12 @@ def test_changed_relation_anatomy_is_detected():
 
     try:
         _assert_relation_anatomy(
-            grammar, _relation_implementation_specs()
+            grammar, _relation_witness_specs()
         )
     except AssertionError:
         pass
     else:
-        raise AssertionError("reversed Yield anatomy escaped implementation Fidelity")
+        raise AssertionError("reversed Yield anatomy escaped witness Fidelity")
 
 
 def test_content_and_locality_endpoints_do_not_establish_locality_relation():
@@ -3441,7 +3441,7 @@ def test_candidate_clause_preserves_coordinates_without_promoting_the_subject():
     assert clause == {
         "subject": "candidate",
         "book_material_reference": "01.Source.E",
-        "implementation_witness": "unestablished",
+        "witness": "unestablished",
         "preserves": [
             "applicable_source_role",
             "Representation_Act_occurrence",
@@ -3468,7 +3468,7 @@ def test_cross_boundary_participation_preserves_scope_and_limits():
     assert clause == {
         "subject": "supplied_material_as_input_to_exact_Act",
         "book_material_reference": "01.Source.B",
-        "implementation_witness": "unestablished",
+        "witness": "unestablished",
         "coordinates": [
             "supplied_material",
             "input_role",
@@ -4256,7 +4256,7 @@ def test_pair_occurrence_measurement_is_structured_in_the_grammar_representation
             "subject": "occurrence_of_recurrent_byte_pair",
             "finding": "position",
         },
-        "implementation_representation": {
+        "witness": {
             "event_occurrences": [
                 {
                     "first_subject": "Evidence",
@@ -4329,11 +4329,11 @@ def test_pair_occurrence_measurement_is_structured_in_the_grammar_representation
         == {"first_position", "second_position", "completeness_boundary"}
         for assertion in material["assertions"]
     )
-    implementation = declared["implementation_representation"]
-    assert set(implementation["input_references"]) <= set(material)
-    assert set(implementation["result_coordinates"]) <= set(material)
-    assert implementation["determination"] in material
-    evidence_occurrence = implementation["event_occurrences"][0]
+    witness = declared["witness"]
+    assert set(witness["input_references"]) <= set(material)
+    assert set(witness["result_coordinates"]) <= set(material)
+    assert witness["determination"] in material
+    evidence_occurrence = witness["event_occurrences"][0]
     evidence_occurrence_name = "_".join(
         (
             evidence_occurrence["first_subject"],
@@ -4343,7 +4343,7 @@ def test_pair_occurrence_measurement_is_structured_in_the_grammar_representation
         )
     ).lower()
     assert bundle["act_evidence"].kind.endswith(evidence_occurrence_name)
-    evidence_of_yield_relation = implementation["event_occurrences"][1]
+    evidence_of_yield_relation = witness["event_occurrences"][1]
     evidence_of_yield_relation_name = "_".join(
         (
             evidence_of_yield_relation["first_subject"],
@@ -4355,7 +4355,7 @@ def test_pair_occurrence_measurement_is_structured_in_the_grammar_representation
     assert bundle["evidence_of_yield_relation"].kind.endswith(
         evidence_of_yield_relation_name
     )
-    yield_relation = implementation["yield_relation"]
+    yield_relation = witness["yield_relation"]
     assert yield_relation == {
         "first_subject": "result",
         "relation": "of",
@@ -4363,7 +4363,7 @@ def test_pair_occurrence_measurement_is_structured_in_the_grammar_representation
         "from": "Act_occurrence",
         "to": "result",
     }
-    recording_occurrence_of_result = implementation["event_occurrences"][2]
+    recording_occurrence_of_result = witness["event_occurrences"][2]
     recording_occurrence_of_result_name = "_".join(
         (
             recording_occurrence_of_result["first_subject"],
@@ -4372,7 +4372,7 @@ def test_pair_occurrence_measurement_is_structured_in_the_grammar_representation
         )
     ).lower()
     assert bundle["event"].kind.endswith(recording_occurrence_of_result_name)
-    assert implementation["evidence_carried_by_result_occurrence_relation"] == {
+    assert witness["evidence_carried_by_result_occurrence_relation"] == {
         "first_subject": "Evidence_of_Yield_relation",
         "relation": "carried_by",
         "second_subject": "recording_occurrence_of_result",
