@@ -46,6 +46,7 @@ from compiled_format_invocation import (  # noqa: E402
     recurring_added_returned_coordinate,
     recurring_removed_returned_coordinate,
     first_recurring_removed_compare,
+    first_recurring_removed_compare_across,
     removed_position_occurrences,
     exact_byte_material_references,
     exact_byte_pair_material_references,
@@ -1637,6 +1638,22 @@ def test_removal_recurrence_is_recovered_before_later_compare(
         comparison.removed_position_act_occurrence_identity
         for comparison in earlier
     }
+
+
+def test_removal_recurrence_refuses_without_full_function_vector(
+    book_removed_position_invocation_occurrences,
+    book_pair_format_occurrences,
+):
+    removals, _ = book_removed_position_invocation_occurrences
+    earlier, coordinates, later = first_recurring_removed_compare_across(
+        removals,
+        book_pair_format_occurrences,
+        boundary_identity="book-removal-joint-recurrence",
+        act_occurrence_count_limit=len(removals),
+    )
+    assert later is None
+    assert coordinates is None
+    assert len(earlier) == len(book_pair_format_occurrences)
 
 
 def test_removal_compare_refuses_a_result_without_its_act_occurrence():
