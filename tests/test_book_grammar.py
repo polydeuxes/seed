@@ -75,6 +75,7 @@ def test_machine_readable_grammar_traverses_responsibility_from_standing():
             "Responsibility_by_identity",
             "Responsibility_occurrence",
             "result_Standing_revision",
+            "branch_value_by_completion_without_responsible_occurrence_and_Evidence",
         ],
     }
     assert grammar["witness"]["discriminators"] == [

@@ -37,7 +37,7 @@ The later Standing has the exact result or relation of the occurrence under Yiel
 3. Every instantiated responsibility must carry the branches required by that responsibility.
 4. A branch remains uninstantiated until a responsible occurrence supplies its coordinate.
 5. An instantiated coordinate whose value has not been resolved remains unresolved unless a responsible occurrence carries Unknown Standing for it.
-6. Recurrence, headings, witness shape, or plausible completion supply neither a branch value nor its identity.
+6. Recurrence, headings, witness shape, or completion without a responsible occurrence and Evidence supply neither a branch value nor its identity.
 
 ### Required identifying branches
 
