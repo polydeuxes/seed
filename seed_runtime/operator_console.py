@@ -21,6 +21,10 @@ from seed_runtime.operator_material_command import (
     OperatorMaterialRequest,
     request_operator_material,
 )
+from seed_runtime.operator_locality_command import (
+    OperatorLocalityRequest,
+    request_operator_locality,
+)
 from seed_runtime.operator_representation import (
     emit_operator_representation,
     record_operator_representation,
@@ -62,6 +66,7 @@ def run_persistent_operator_console(
     handlers = dict(command_handlers or {})
     handlers[b"checkpoint"] = request_operator_checkpoint
     handlers[b"material"] = request_operator_material
+    handlers[b"locality"] = request_operator_locality
     # Standing is carried through the locality rather than re-projected before
     # each interaction. Each responsible act returns the occurrences it
     # recorded, so the console advances over exactly those occurrences.
@@ -101,6 +106,19 @@ def run_persistent_operator_console(
                 handlers=handlers,
             )
             request = command_run.implementation_result
+            if isinstance(request, OperatorLocalityRequest):
+                if not ledger.has_locality(request.locality_identity):
+                    raise ValueError("/locality requires an existing Locality")
+                locality_identity = request.locality_identity
+                locality_standing = read_operator_locality_standing(
+                    ledger, locality_identity=locality_identity
+                )
+                representation = record_operator_representation(
+                    ledger,
+                    locality_identity=locality_identity,
+                    locality_standing=locality_standing,
+                )
+                continue
             if isinstance(request, (OperatorCheckpointRequest, OperatorMaterialRequest)):
                 checkpoint = open_operator_checkpoint(ledger, command_run.addressed)
                 locality_identity = checkpoint.locality_identity
