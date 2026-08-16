@@ -276,8 +276,13 @@ def test_public_export_does_not_establish_standing():
 
 def test_applicability_requires_more_than_usefulness_agreement_or_availability():
     grammar = json.loads(GRAMMAR.read_text(encoding="utf-8"))
+    clause = grammar["clauses"]["01.Standing.E.1"]
 
-    assert grammar["clauses"]["01.Standing.E.1"]["does_not_establish"] == [
+    assert clause["responsibility"] == {
+        "default": "exact_Act_Responsibility",
+        "override": "assigned_responsible_occurrence",
+    }
+    assert clause["does_not_establish"] == [
         "Applicability_by_usefulness",
         "Applicability_by_agreement",
         "Applicability_by_availability",
