@@ -29,10 +29,6 @@ EVENT_KIND_RESPONSIBILITIES = {
 }
 
 
-class OccurrencePositionMeasurementError(Exception):
-    pass
-
-
 @dataclass(frozen=True)
 class OccurrencePositionFinding:
     """Exact occurrence positions within one Locality and append boundary."""
@@ -45,11 +41,11 @@ class OccurrencePositionFinding:
         if not isinstance(self.source_locality_identity, str) or not (
             self.source_locality_identity
         ):
-            raise OccurrencePositionMeasurementError(
+            raise ValueError(
                 "one exact source Locality is required"
             )
         if not isinstance(self.completeness_boundary, EventLedgerBoundary):
-            raise OccurrencePositionMeasurementError(
+            raise ValueError(
                 "one exact append boundary is required"
             )
         identities = []
@@ -62,12 +58,12 @@ class OccurrencePositionFinding:
                 or type(occurrence[1]) is not int
                 or occurrence[1] != expected_position
             ):
-                raise OccurrencePositionMeasurementError(
+                raise ValueError(
                     "each exact occurrence requires its measured position"
                 )
             identities.append(occurrence[0])
         if len(set(identities)) != len(identities):
-            raise OccurrencePositionMeasurementError(
+            raise ValueError(
                 "one occurrence cannot occupy more than one measured position"
             )
 
@@ -95,7 +91,7 @@ def measure_occurrence_position(
     if not isinstance(ledger, EventLedger):
         raise TypeError("occurrence position Measurement requires one EventLedger")
     if not isinstance(source_locality_identity, str) or not source_locality_identity:
-        raise OccurrencePositionMeasurementError(
+        raise ValueError(
             "one exact source Locality is required"
         )
     boundary = through or ledger.append_boundary()
@@ -104,7 +100,7 @@ def measure_occurrence_position(
         through=boundary,
     )
     if any(ledger.integrity_of(event.identity) == CORRUPTED for event in occurrences):
-        raise OccurrencePositionMeasurementError(
+        raise ValueError(
             "occurrence position Measurement requires intact occurrences"
         )
     return OccurrencePositionFinding(
@@ -169,7 +165,7 @@ def record_occurrence_position_measurement(
         through=finding.completeness_boundary,
     )
     if finding != exact:
-        raise OccurrencePositionMeasurementError(
+        raise ValueError(
             "the supplied occurrence position finding differs from the exact boundary"
         )
 
@@ -255,7 +251,7 @@ def get_recorded_occurrence_position_measurement(
         or event.kind != OCCURRENCE_POSITION_RECORDED_KIND
         or ledger.integrity_of(event.identity) == CORRUPTED
     ):
-        raise OccurrencePositionMeasurementError(
+        raise ValueError(
             "the occurrence position Measurement result is absent or corrupted"
         )
     material = event.material
@@ -270,7 +266,7 @@ def get_recorded_occurrence_position_measurement(
         or not isinstance(boundary["identity"], str)
         or type(occurrences) is not list
     ):
-        raise OccurrencePositionMeasurementError(
+        raise ValueError(
             "the occurrence position Measurement carries malformed coordinates"
         )
     try:
@@ -283,12 +279,12 @@ def get_recorded_occurrence_position_measurement(
                 if type(item) is dict and set(item) == {"identity", "position"}
             ),
         )
-    except (KeyError, TypeError, OccurrencePositionMeasurementError) as error:
-        raise OccurrencePositionMeasurementError(
+    except (KeyError, TypeError, ValueError) as error:
+        raise ValueError(
             "the occurrence position Measurement carries malformed occurrences"
         ) from error
     if len(finding.occurrences) != len(occurrences):
-        raise OccurrencePositionMeasurementError(
+        raise ValueError(
             "the occurrence position Measurement carries malformed occurrences"
         )
 
@@ -328,7 +324,7 @@ def get_recorded_occurrence_position_measurement(
         or ledger.integrity_of(act_evidence.identity) == CORRUPTED
         or act_evidence.material != expected_act_evidence
     ):
-        raise OccurrencePositionMeasurementError(
+        raise ValueError(
             "the occurrence position Measurement carries no exact Act Evidence"
         )
     requirements = read_yield_relation_requirements(
@@ -342,7 +338,7 @@ def get_recorded_occurrence_position_measurement(
         responsible_act_evidence_event_identity=act_evidence.identity,
     )
     if not all(requirements.values()):
-        raise OccurrencePositionMeasurementError(
+        raise ValueError(
             "the occurrence position Measurement carries no exact Yield Evidence"
         )
     carried = {
@@ -355,7 +351,7 @@ def get_recorded_occurrence_position_measurement(
         }
     }
     if carried != result_material:
-        raise OccurrencePositionMeasurementError(
+        raise ValueError(
             "the occurrence position Measurement result differs from its coordinates"
         )
     exact = measure_occurrence_position(
@@ -364,7 +360,7 @@ def get_recorded_occurrence_position_measurement(
         through=finding.completeness_boundary,
     )
     if finding != exact:
-        raise OccurrencePositionMeasurementError(
+        raise ValueError(
             "the occurrence position Measurement differs from its exact boundary"
         )
     return finding

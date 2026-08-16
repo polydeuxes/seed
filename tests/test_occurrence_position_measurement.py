@@ -7,7 +7,6 @@ from seed_runtime.occurrence_position_measurement import (
     OCCURRENCE_POSITION_ACT_EVIDENCE_KIND,
     OCCURRENCE_POSITION_RECORDED_KIND,
     OccurrencePositionFinding,
-    OccurrencePositionMeasurementError,
     get_recorded_occurrence_position_measurement,
     measure_occurrence_position,
     record_occurrence_position_measurement,
@@ -117,7 +116,7 @@ def test_supplied_reversal_cannot_replace_the_ledger_measurement():
     )
 
     with pytest.raises(
-        OccurrencePositionMeasurementError,
+        ValueError,
         match="differs from the exact boundary",
     ):
         record_occurrence_position_measurement(
@@ -171,7 +170,7 @@ def test_changed_position_is_not_certified_by_unchanged_evidence():
     ledger, _occurrences, _boundary, _finding, recorded = recorded_road()
     recorded.material["occurrences"][0]["position"] = 1
 
-    with pytest.raises(OccurrencePositionMeasurementError):
+    with pytest.raises(ValueError):
         get_recorded_occurrence_position_measurement(ledger, recorded.identity)
 
 
@@ -189,7 +188,7 @@ def test_corrupted_input_act_or_yield_evidence_is_refused():
         )
         ledger.corrupted.add(corrupted_identity)
 
-        with pytest.raises(OccurrencePositionMeasurementError):
+        with pytest.raises(ValueError):
             get_recorded_occurrence_position_measurement(ledger, recorded.identity)
 
 
@@ -199,7 +198,7 @@ def test_wrong_boundary_is_refused_without_reconstructing_positions():
     changed["identity"] = "not-a-boundary"
     recorded.material["completeness_boundary"] = changed
 
-    with pytest.raises(OccurrencePositionMeasurementError):
+    with pytest.raises(ValueError):
         get_recorded_occurrence_position_measurement(ledger, recorded.identity)
 
 
