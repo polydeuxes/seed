@@ -9,7 +9,7 @@ Which exact evidenced material or Standing can support a bounded responsible exa
 ## Bounded resolution
 Evidence may support distinct reasons for non-movement: an Assertion, exhaustion or impossibility finding, operator boundary, unresolved Evidence or Authority, resource limit, unresolved causation, preservation failure, or satisfied Scope. No emitted representation, status field, or Assertion supplies Stopping or completion by identity. `[UNRESOLVED]` Which relations among these coordinates support a stopping occurrence or the stronger completion Assertion remains unclear.
 
-Where a bounded Stop is established, the stopping occurrence preserves the exact supported reason rather than silent absence. Material evidenced as inapplicable, unsupported material, missing required binding, outside-Authority Standing, and an Unknown established because a required binding remains unresolved remain distinguishable. This discipline does not make every unresolved coordinate establish a Stop or assign Stopping the reason-establishing Responsibility.
+Where a bounded Stop is established, the stopping occurrence preserves the exact supported reason. Absence of a recorded stopping occurrence or reason Evidence does not establish a Stop. Material evidenced as inapplicable, unsupported material, missing required binding, outside-Authority Standing, and an Unknown established because a required binding remains unresolved remain distinguishable. This discipline does not make every unresolved coordinate establish a Stop or assign Stopping the reason-establishing Responsibility.
 
 ## Important distinctions
 - stopping != completion
