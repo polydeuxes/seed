@@ -10,6 +10,7 @@ from seed_runtime.events import EventLedger, SQLiteEventLedger
 from seed_runtime.identities import new_identity
 from seed_runtime.operator_console import run_persistent_operator_console
 from scripts.operator_host_provider import invoke_operator_host
+from scripts.primordial_host_escape import primordial_host_input
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -23,11 +24,12 @@ def main(argv: Sequence[str] | None = None) -> int:
     args = parser.parse_args(argv)
     ledger: EventLedger = SQLiteEventLedger(args.db) if args.db else EventLedger()
     raw_output_stream = getattr(sys.stdout, "buffer", None)
+    raw_input_stream = getattr(sys.stdin, "buffer", sys.stdin)
     try:
         run_persistent_operator_console(
             ledger=ledger,
             locality_identity=new_identity("locality"),
-            input_stream=getattr(sys.stdin, "buffer", sys.stdin),
+            input_stream=primordial_host_input(raw_input_stream),
             output_stream=sys.stdout,
             raw_output_stream=raw_output_stream,
             host_invocation_provider=(
