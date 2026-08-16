@@ -21,6 +21,7 @@ from seed_runtime.material_ingest import ingest_material
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "scripts"))
 
+import compiled_format_invocation  # noqa: E402
 from compiled_format_invocation import (  # noqa: E402
     AddedPositionOccurrence,
     AddedPositionAdmissionOccurrence,
@@ -1834,7 +1835,9 @@ def test_addition_admission_refuses_incomplete_compare_coverage(
         )
 
 
-def test_equal_result_material_keeps_distinct_occurrences_in_one_admission():
+def test_equal_result_material_keeps_distinct_occurrences_in_one_admission(
+    monkeypatch,
+):
     source = ExactMaterialReference(
         "source", "source-assertion", "fixture-locality", b"aa"
     )
@@ -1863,9 +1866,28 @@ def test_equal_result_material_keeps_distinct_occurrences_in_one_admission():
         boundary_identity="equal-result-compare",
     )
 
-    admission = admit_added_position_occurrences(additions, comparisons)
+    original = compiled_format_invocation._added_position_comparisons_by_occurrence
+    read_count = 0
+
+    def measured(occurrences, exact_comparisons):
+        nonlocal read_count
+        read_count += 1
+        return original(occurrences, exact_comparisons)
+
+    monkeypatch.setattr(
+        compiled_format_invocation,
+        "_added_position_comparisons_by_occurrence",
+        measured,
+    )
+    admission_occurrence = added_position_admission_occurrence(
+        additions,
+        comparisons,
+        boundary_identity="equal-result-admission",
+    )
+    admission = admission_occurrence.admitted_material
 
     assert admission == (additions,)
+    assert read_count == 1
     assert tuple(occurrence.position for occurrence in admission[0]) == (0, 1, 2)
     assert len({occurrence.act_occurrence_identity for occurrence in admission[0]}) == 3
 

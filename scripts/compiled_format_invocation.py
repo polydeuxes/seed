@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import ast
-from dataclasses import dataclass
+from dataclasses import InitVar, dataclass, field
 import io
 import json
 import plistlib
@@ -950,21 +950,53 @@ class RemovedPositionCompareOccurrence:
 
 
 @dataclass(frozen=True, slots=True)
+class _AddedPositionAdmissionReading:
+    addition_occurrences: tuple[AddedPositionOccurrence, ...]
+    comparison_occurrences: tuple[tuple[object, ...], ...]
+    admitted_material: tuple[tuple[AddedPositionOccurrence, ...], ...] = field(
+        init=False
+    )
+
+    def __post_init__(self) -> None:
+        object.__setattr__(
+            self,
+            "admitted_material",
+            _admit_added_position_occurrences(
+                self.addition_occurrences,
+                self.comparison_occurrences,
+            ),
+        )
+
+
+@dataclass(frozen=True, slots=True)
 class AddedPositionAdmissionOccurrence:
     admission_occurrence: AdmissionOccurrence
     addition_occurrences: tuple[AddedPositionOccurrence, ...]
     comparison_occurrences: tuple[tuple[object, ...], ...]
+    _reading: InitVar[_AddedPositionAdmissionReading | None] = None
 
-    def __post_init__(self) -> None:
+    def __post_init__(
+        self,
+        _reading: _AddedPositionAdmissionReading | None,
+    ) -> None:
         if not isinstance(self.admission_occurrence, AdmissionOccurrence):
             raise TypeError("addition Admission requires its exact Act occurrence")
-        admitted = admit_added_position_occurrences(
-            self.addition_occurrences,
-            self.comparison_occurrences,
+        reading = (
+            _AddedPositionAdmissionReading(
+                self.addition_occurrences,
+                self.comparison_occurrences,
+            )
+            if _reading is None
+            else _reading
         )
+        if (
+            reading.addition_occurrences != self.addition_occurrences
+            or reading.comparison_occurrences != self.comparison_occurrences
+        ):
+            raise ValueError("addition Admission reading differs from its occurrences")
         if self.admission_occurrence.source_material != self.addition_occurrences:
             raise ValueError("addition Admission source differs from its Act occurrences")
-        if self.admission_occurrence.admitted_material != admitted:
+        if self.admission_occurrence.admitted_material != reading.admitted_material:
             raise ValueError("addition Admission differs from its Compare occurrences")
 
     @property
@@ -993,14 +1025,30 @@ class AddedPositionResultAdmissionOccurrence:
     admission_occurrence: AdmissionOccurrence
     addition_occurrences: tuple[AddedPositionOccurrence, ...]
     comparison_occurrences: tuple[tuple[object, ...], ...]
+    _reading: InitVar[_AddedPositionAdmissionReading | None] = None
 
-    def __post_init__(self) -> None:
+    def __post_init__(
+        self,
+        _reading: _AddedPositionAdmissionReading | None,
+    ) -> None:
         if not isinstance(self.admission_occurrence, AdmissionOccurrence):
             raise TypeError("addition result Admission requires its exact Act occurrence")
-        admitted = admit_added_position_results(
-            self.addition_occurrences,
-            self.comparison_occurrences,
+        reading = (
+            _AddedPositionAdmissionReading(
+                self.addition_occurrences,
+                self.comparison_occurrences,
+            )
+            if _reading is None
+            else _reading
         )
+        if (
+            reading.addition_occurrences != self.addition_occurrences
+            or reading.comparison_occurrences != self.comparison_occurrences
+        ):
+            raise ValueError(
+                "addition result Admission reading differs from its occurrences"
+            )
+        admitted = _added_position_result_material(reading.admitted_material)
         source_material = tuple(
             occurrence.result_reference for occurrence in self.addition_occurrences
         )
@@ -1224,7 +1272,7 @@ def _added_position_comparisons_by_occurrence(
     }
 
 
-def admit_added_position_occurrences(
+def _admit_added_position_occurrences(
     occurrences: tuple[AddedPositionOccurrence, ...],
     comparisons: tuple[tuple[object, ...], ...],
 ) -> tuple[tuple[AddedPositionOccurrence, ...], ...]:
@@ -1248,6 +1296,16 @@ def admit_added_position_occurrences(
     return tuple(tuple(found) for found in same_coordinates.values())
 
 
+def admit_added_position_occurrences(
+    occurrences: tuple[AddedPositionOccurrence, ...],
+    comparisons: tuple[tuple[object, ...], ...],
+) -> tuple[tuple[AddedPositionOccurrence, ...], ...]:
+    return _AddedPositionAdmissionReading(
+        occurrences,
+        comparisons,
+    ).admitted_material
+
+
 def added_position_admission_occurrence(
     occurrences: tuple[AddedPositionOccurrence, ...],
     comparisons: tuple[tuple[object, ...], ...],
@@ -1255,9 +1313,9 @@ def added_position_admission_occurrence(
     boundary_identity: str,
     occurrence_position: int = 0,
 ) -> AddedPositionAdmissionOccurrence:
-    admitted = admit_added_position_occurrences(occurrences, comparisons)
+    reading = _AddedPositionAdmissionReading(occurrences, comparisons)
     admission = admission_occurrence(
-        admitted,
+        reading.admitted_material,
         boundary_identity=boundary_identity,
         occurrence_position=occurrence_position,
         source_material=occurrences,
@@ -1266,6 +1324,16 @@ def added_position_admission_occurrence(
         admission_occurrence=admission,
         addition_occurrences=occurrences,
         comparison_occurrences=comparisons,
+        _reading=reading,
+    )
+
+
+def _added_position_result_material(
+    admitted_occurrences: tuple[tuple[AddedPositionOccurrence, ...], ...],
+) -> tuple[tuple[ExactMaterialResultReference, ...], ...]:
+    return tuple(
+        tuple(occurrence.result_reference for occurrence in admitted)
+        for admitted in admitted_occurrences
     )
 
 
@@ -1273,14 +1341,11 @@ def admit_added_position_results(
     occurrences: tuple[AddedPositionOccurrence, ...],
     comparisons: tuple[tuple[object, ...], ...],
 ) -> tuple[tuple[ExactMaterialResultReference, ...], ...]:
-    admitted_occurrences = admit_added_position_occurrences(
+    reading = _AddedPositionAdmissionReading(
         occurrences,
         comparisons,
     )
-    return tuple(
-        tuple(occurrence.result_reference for occurrence in admitted)
-        for admitted in admitted_occurrences
-    )
+    return _added_position_result_material(reading.admitted_material)
 
 
 def added_position_result_admission_occurrence(
@@ -1290,7 +1355,8 @@ def added_position_result_admission_occurrence(
     boundary_identity: str,
     occurrence_position: int = 0,
 ) -> AddedPositionResultAdmissionOccurrence:
-    admitted = admit_added_position_results(occurrences, comparisons)
+    reading = _AddedPositionAdmissionReading(occurrences, comparisons)
+    admitted = _added_position_result_material(reading.admitted_material)
     source_material = tuple(occurrence.result_reference for occurrence in occurrences)
     admission = admission_occurrence(
         admitted,
@@ -1302,6 +1368,7 @@ def added_position_result_admission_occurrence(
         admission_occurrence=admission,
         addition_occurrences=occurrences,
         comparison_occurrences=comparisons,
+        _reading=reading,
     )
 
 
