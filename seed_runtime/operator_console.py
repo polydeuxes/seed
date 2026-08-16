@@ -25,6 +25,10 @@ from seed_runtime.operator_material_command import (
     OperatorMaterialRequest,
     request_operator_material,
 )
+from seed_runtime.operator_memory_command import (
+    OperatorMemoryRequest,
+    request_operator_memory,
+)
 from seed_runtime.operator_locality_command import (
     OperatorLocalityRequest,
     request_operator_locality,
@@ -32,6 +36,11 @@ from seed_runtime.operator_locality_command import (
 from seed_runtime.operator_representation import (
     emit_operator_representation_material,
     record_operator_representation,
+)
+from seed_runtime.operator_standing_continuation import (
+    record_standing_locality_continuation_responsibility_assignment,
+    record_standing_locality_continuation_responsible_act_evidence,
+    record_standing_locality_continuation_result,
 )
 from seed_runtime.operator_locality_standing import (
     advance_operator_locality_standing,
@@ -84,6 +93,7 @@ def run_persistent_operator_console(
     handlers = dict(command_handlers or {})
     handlers[b"checkpoint"] = request_operator_checkpoint
     handlers[b"material"] = request_operator_material
+    handlers[b"memory"] = request_operator_memory
     handlers[b"locality"] = request_operator_locality
     # Standing is carried through the locality rather than re-projected before
     # each interaction. Each responsible act returns the occurrences it
@@ -132,6 +142,73 @@ def run_persistent_operator_console(
                 locality_identity = request.locality_identity
                 locality_standing = read_operator_locality_standing(
                     ledger, locality_identity=locality_identity
+                )
+                representation = record_operator_representation(
+                    ledger,
+                    locality_identity=locality_identity,
+                    locality_standing=locality_standing,
+                )
+                locality_standing = _advance_over_representation(
+                    ledger, locality_standing, representation
+                )
+                continue
+            if isinstance(request, OperatorMemoryRequest):
+                assignment = (
+                    record_standing_locality_continuation_responsibility_assignment(
+                        ledger,
+                        source_locality_identity=locality_identity,
+                        addressed_representation_event_identity=representation[
+                            "representation_event_identity"
+                        ],
+                    )
+                )
+                locality_identity = assignment.locality_identity
+                locality_standing = read_operator_locality_standing(
+                    ledger, locality_identity=locality_identity
+                )
+                assignment_representation = record_operator_representation(
+                    ledger,
+                    locality_identity=locality_identity,
+                    locality_standing=locality_standing,
+                )
+                locality_standing = _advance_over_representation(
+                    ledger, locality_standing, assignment_representation
+                )
+                continuation_act_evidence = (
+                    record_standing_locality_continuation_responsible_act_evidence(
+                        ledger,
+                        responsibility_assignment_event_identity=assignment.identity,
+                        responsibility_assignment_standing=locality_standing,
+                    )
+                )
+                locality_standing = _advance_over(
+                    ledger,
+                    locality_standing,
+                    (continuation_act_evidence.identity,),
+                    locality_identity=locality_identity,
+                )
+                act_evidence_representation = record_operator_representation(
+                    ledger,
+                    locality_identity=locality_identity,
+                    locality_standing=locality_standing,
+                )
+                locality_standing = _advance_over_representation(
+                    ledger, locality_standing, act_evidence_representation
+                )
+                continuation = record_standing_locality_continuation_result(
+                    ledger,
+                    responsible_act_evidence_event_identity=(
+                        continuation_act_evidence.identity
+                    ),
+                )
+                locality_standing = _advance_over(
+                    ledger,
+                    locality_standing,
+                    (
+                        continuation.material["yield_evidence_identity"],
+                        continuation.identity,
+                    ),
+                    locality_identity=locality_identity,
                 )
                 representation = record_operator_representation(
                     ledger,

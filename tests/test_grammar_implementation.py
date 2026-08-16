@@ -47,6 +47,15 @@ from seed_runtime.operator_representation import (
     emit_operator_representation_material,
     record_operator_representation,
 )
+from seed_runtime.operator_standing_continuation import (
+    EVENT_KIND_RESPONSIBILITIES as CONTINUATION_EVENT_KIND_RESPONSIBILITIES,
+    STANDING_LOCALITY_CONTINUATION_ACT_EVIDENCE_KIND,
+    STANDING_LOCALITY_CONTINUATION_RECORDED_KIND,
+    STANDING_LOCALITY_CONTINUATION_RESPONSIBILITY_ASSIGNMENT_RECORDED_KIND,
+    record_standing_locality_continuation_responsibility_assignment,
+    record_standing_locality_continuation_responsible_act_evidence,
+    record_standing_locality_continuation_result,
+)
 from seed_runtime.occurrence_position_measurement import (
     measure_occurrence_position,
     record_occurrence_position_measurement_responsible_act_evidence,
@@ -467,6 +476,35 @@ def _occurrence_position_yield_witness() -> dict:
     event = record_occurrence_position_measurement_result(
         ledger,
         finding=finding,
+        responsible_act_evidence_event_identity=act_evidence.identity,
+    )
+    return _yield_bundle(ledger, event)
+
+
+def _standing_locality_continuation_yield_witness() -> dict:
+    ledger = _IntegrityAdversaryLedger()
+    representation = record_operator_representation(
+        ledger,
+        locality_identity="standing-continuation-source",
+        locality_standing={"as_of_event_identity": None},
+    )
+    assignment = record_standing_locality_continuation_responsibility_assignment(
+        ledger,
+        source_locality_identity="standing-continuation-source",
+        addressed_representation_event_identity=representation[
+            "representation_event_identity"
+        ],
+    )
+    assignment_standing = read_operator_locality_standing(
+        ledger, locality_identity=assignment.locality_identity
+    )
+    act_evidence = record_standing_locality_continuation_responsible_act_evidence(
+        ledger,
+        responsibility_assignment_event_identity=assignment.identity,
+        responsibility_assignment_standing=assignment_standing,
+    )
+    event = record_standing_locality_continuation_result(
+        ledger,
         responsible_act_evidence_event_identity=act_evidence.identity,
     )
     return _yield_bundle(ledger, event)
@@ -1300,6 +1338,9 @@ def _remaining_yield_requirement_bundles() -> dict[str, dict[str, dict]]:
         "occurrence_position_measurement": _occurrence_position_yield_witness,
         "failed_emission": _failed_emission_yield_witness,
         "material_ingest": _material_ingest_yield_witness,
+        "standing_locality_continuation": (
+            _standing_locality_continuation_yield_witness
+        ),
     }
     boundaries = {}
     for boundary, witness in witnesses.items():
@@ -3032,6 +3073,9 @@ def test_unrelated_yield_occurrences_do_not_share_result_identity():
         "occurrence_position_measurement": _occurrence_position_yield_witness,
         "failed_emission": _failed_emission_yield_witness,
         "material_ingest": _material_ingest_yield_witness,
+        "standing_locality_continuation": (
+            _standing_locality_continuation_yield_witness
+        ),
     }
     pairs = {
         boundary: (factory(), factory())
@@ -3098,6 +3142,18 @@ def test_representation_result_act_and_locality_species_keep_their_clauses():
     ] == "02.Acts.A"
     assert REPRESENTATION_EVENT_KIND_RESPONSIBILITIES[
         REPRESENTATION_LOCALITY_EVIDENCE_KIND
+    ] == "06.Locality.A"
+
+
+def test_standing_locality_continuation_stages_keep_distinct_machine_clauses():
+    assert CONTINUATION_EVENT_KIND_RESPONSIBILITIES[
+        STANDING_LOCALITY_CONTINUATION_RESPONSIBILITY_ASSIGNMENT_RECORDED_KIND
+    ] == "06.Locality.B"
+    assert CONTINUATION_EVENT_KIND_RESPONSIBILITIES[
+        STANDING_LOCALITY_CONTINUATION_ACT_EVIDENCE_KIND
+    ] == "02.Acts.A"
+    assert CONTINUATION_EVENT_KIND_RESPONSIBILITIES[
+        STANDING_LOCALITY_CONTINUATION_RECORDED_KIND
     ] == "06.Locality.A"
 
 

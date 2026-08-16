@@ -488,6 +488,13 @@ class SQLiteEventLedger(EventLedger):
         "operator_representation_emission_failure_act",
         "operator_representation_emission_failure_act_occurrence",
         "operator_representation_emission_failure_result",
+        "standing_locality",
+        "standing_locality_continuation_act",
+        "standing_locality_continuation_occurrence",
+        "standing_locality_continuation_relation_occurrence",
+        "standing_locality_continuation_result_boundary",
+        "standing_locality_continuation_responsibility_assignment",
+        "standing_locality_continuation_responsibility_subject",
     })
 
     def __init__(self, database_path: str) -> None:

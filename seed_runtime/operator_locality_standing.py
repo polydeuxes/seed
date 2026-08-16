@@ -18,6 +18,13 @@ from seed_runtime.occurrence_position_measurement import (
     OCCURRENCE_POSITION_RECORDED_KIND,
     get_recorded_occurrence_position_measurement,
 )
+from seed_runtime.operator_standing_continuation import (
+    STANDING_LOCALITY_CONTINUATION_ACT_EVIDENCE_KIND,
+    STANDING_LOCALITY_CONTINUATION_RECORDED_KIND,
+    STANDING_LOCALITY_CONTINUATION_RESPONSIBILITY_ASSIGNMENT_RECORDED_KIND,
+    get_recorded_standing_locality_continuation,
+    get_standing_locality_continuation_responsibility_assignment,
+)
 from seed_runtime.yield_evidence import read_yield_relation_requirements
 
 # The writer of these occurrences declares their kinds. A reader declaring its
@@ -46,10 +53,16 @@ _MEASUREMENT_RECORDED_KINDS = {
     BYTE_MEASUREMENT_RECORDED_KIND,
     OCCURRENCE_POSITION_RECORDED_KIND,
 }
+_STANDING_LOCALITY_CONTINUATION_KINDS = {
+    STANDING_LOCALITY_CONTINUATION_RESPONSIBILITY_ASSIGNMENT_RECORDED_KIND,
+    STANDING_LOCALITY_CONTINUATION_ACT_EVIDENCE_KIND,
+    STANDING_LOCALITY_CONTINUATION_RECORDED_KIND,
+}
 _SUPPORTED_KINDS = {
     *_SUBJECT_BY_KIND,
     *_MEASUREMENT_ACT_EVIDENCE_KINDS,
     *_MEASUREMENT_RECORDED_KINDS,
+    *_STANDING_LOCALITY_CONTINUATION_KINDS,
     _REPRESENTATION_RECORDED_KIND,
     _REPRESENTATION_ACT_EVIDENCE_KIND,
     _REPRESENTATION_LOCALITY_EVIDENCE_KIND,
@@ -183,6 +196,8 @@ def advance_operator_locality_standing(
     measurement_occurrences: dict[str, dict[str, str]] = {}
     exact_result_occurrences: dict[str, None] = {}
     representations: dict[str, dict[str, Any]] = {}
+    recorded_relation_standings: dict[str, None] = {}
+    responsibility_assignment_occurrences: dict[str, None] = {}
     # Kept sorted and distinct in place rather than as a set sorted on return.
     # A set would have to be rebuilt from the prior list and re-sorted on every
     # advance, which costs the accumulated size each time.  These coordinates
@@ -207,6 +222,18 @@ def advance_operator_locality_standing(
             )
         exact_result_occurrences = prior["exact_result_occurrences"]
         representations = prior["representations"]
+        recorded_relation_standings = prior["recorded_relation_standings"]
+        if type(recorded_relation_standings) is not dict:
+            raise ValueError(
+                "prior Locality Standing requires exact recorded relation occurrences"
+            )
+        responsibility_assignment_occurrences = prior[
+            "responsibility_assignment_occurrences"
+        ]
+        if type(responsibility_assignment_occurrences) is not dict:
+            raise ValueError(
+                "prior Locality Standing requires exact Responsibility assignment occurrences"
+            )
         known_loss = prior["known_loss"]
         unknowns = prior["unknowns"]
         conflicts = prior["conflicts"]
@@ -221,6 +248,7 @@ def advance_operator_locality_standing(
             or event.kind.startswith("operator.representation.")
             or event.kind in _MEASUREMENT_ACT_EVIDENCE_KINDS
             or event.kind in _MEASUREMENT_RECORDED_KINDS
+            or event.kind in _STANDING_LOCALITY_CONTINUATION_KINDS
         ):
             continue
         if event.kind not in _SUPPORTED_KINDS:
@@ -237,6 +265,21 @@ def advance_operator_locality_standing(
         if _carries_exact_result(ledger, event):
             exact_result_occurrences[event.identity] = None
         if event.kind in _MEASUREMENT_ACT_EVIDENCE_KINDS:
+            continue
+        if (
+            event.kind
+            == STANDING_LOCALITY_CONTINUATION_RESPONSIBILITY_ASSIGNMENT_RECORDED_KIND
+        ):
+            get_standing_locality_continuation_responsibility_assignment(
+                ledger, event.identity
+            )
+            responsibility_assignment_occurrences[event.identity] = None
+            continue
+        if event.kind == STANDING_LOCALITY_CONTINUATION_ACT_EVIDENCE_KIND:
+            continue
+        if event.kind == STANDING_LOCALITY_CONTINUATION_RECORDED_KIND:
+            get_recorded_standing_locality_continuation(ledger, event.identity)
+            recorded_relation_standings[event.identity] = None
             continue
         if event.kind == BYTE_MEASUREMENT_RECORDED_KIND:
             assertions_of_recorded_byte_measurement(ledger, event.identity)
@@ -382,10 +425,12 @@ def advance_operator_locality_standing(
         # preserved in `representations`, which retains representation Act and
         # emission occurrences in append order; naming one of them current
         # would assert present relevance that no occurrence establishes.
-        # Exactly the relation standings recorded by Locality events.  No
-        # current event kind records one, so this stays empty until a
-        # responsible occurrence does; emptiness is absence of record only.
-        "recorded_relation_standings": [],
+        # Exactly the relation standings recorded by Locality events;
+        # emptiness is absence of record only.
+        "recorded_relation_standings": recorded_relation_standings,
+        "responsibility_assignment_occurrences": (
+            responsibility_assignment_occurrences
+        ),
         "known_loss": known_loss,
         "unknowns": unknowns,
         "conflicts": conflicts,

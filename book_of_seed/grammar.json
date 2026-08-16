@@ -295,6 +295,51 @@
         ["locality", "occurrence"],
         ["Locality_relation", "Participation"]
       ]
+    },
+    "06.Locality.B": {
+      "subject": "this_Seed_bears_Standing_Locality_continuation_Responsibility",
+      "responsibility": {
+        "kind": "Standing_Locality_continuation_assignment",
+        "coordinates": [
+          "responsible_boundary",
+          "source_Standing_boundary",
+          "addressed_Representation_occurrence",
+          "destination_Locality",
+          "Evidence_occurrence",
+          "Authority",
+          "Scope",
+          "limits",
+          "Unknowns",
+          "Standing"
+        ]
+      },
+      "authority": "active_Book_within_exact_Scope",
+      "requires": [
+        "intact_addressed_Representation_occurrence",
+        "exact_source_Standing_boundary",
+        "new_destination_Locality",
+        "intact_Evidence_occurrence"
+      ],
+      "does_not_establish": [
+        "continuation_Act",
+        "Act_occurrence",
+        "Locality_relation",
+        "Yield",
+        "result",
+        "Applicability",
+        "Participation",
+        "copying",
+        "Standing_revision",
+        "hierarchy",
+        "global_Standing",
+        "other_Locality_relation"
+      ],
+      "distinct_from": [
+        ["Responsibility_assignment", "continuation_Act"],
+        ["Responsibility_assignment", "Act_occurrence"],
+        ["Responsibility_assignment", "Locality_relation"],
+        ["Responsibility_assignment", "result"]
+      ]
     }
   }
 }

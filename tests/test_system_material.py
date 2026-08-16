@@ -229,7 +229,7 @@ def test_same_locality_preserves_both_ingest_subjects_without_relation_standing(
         occurrence["source_role"]
         for occurrence in standing["ingest_occurrences"]
     } == {"operator", "system"}
-    assert standing["recorded_relation_standings"] == []
+    assert standing["recorded_relation_standings"] == {}
 
 
 def test_operator_and_system_ingest_evidence_do_not_cross_reference():
