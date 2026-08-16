@@ -8,6 +8,11 @@ import pytest
 
 from seed_runtime.events import EventLedger
 from seed_runtime.material_ingest import ingest_material
+from seed_runtime.occurrence_position_measurement import (
+    get_recorded_occurrence_position_measurement,
+    measure_occurrence_position,
+    record_occurrence_position_measurement,
+)
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -53,6 +58,16 @@ def acquired_story_material():
         invocation_rows,
         boundary_identity="supplied-story-material-admission",
     )
+    positions = measure_occurrence_position(
+        ledger,
+        source_locality_identity="supplied-story-material",
+        through=boundary,
+    )
+    position_result = record_occurrence_position_measurement(
+        ledger,
+        recording_locality_identity="supplied-story-material",
+        finding=positions,
+    )
     return (
         exact_material,
         ledger,
@@ -61,13 +76,15 @@ def acquired_story_material():
         references,
         invocation_rows,
         admission,
+        positions,
+        position_result,
     )
 
 
 def test_each_story_material_has_one_exact_ordered_ingest_occurrence(
     acquired_story_material,
 ):
-    exact_material, ledger, ingests, boundary, references, _, _ = (
+    exact_material, ledger, ingests, boundary, references, _, _, _, _ = (
         acquired_story_material
     )
 
@@ -94,7 +111,9 @@ def test_each_story_material_has_one_exact_ordered_ingest_occurrence(
 def test_each_compiled_function_receives_the_same_story_occurrence_order(
     acquired_story_material,
 ):
-    _, _, _, _, references, invocation_rows, admission = acquired_story_material
+    _, _, _, _, references, invocation_rows, admission, _, _ = (
+        acquired_story_material
+    )
 
     assert len(invocation_rows) == len(COMPILED_IMPLEMENTATION_FUNCTIONS)
     assert all(
@@ -116,6 +135,35 @@ def test_each_compiled_function_receives_the_same_story_occurrence_order(
         occurrence.result_reference
         for row in invocation_rows
         for occurrence in row
+    )
+
+
+def test_each_invocation_position_matches_the_measured_occurrence_position(
+    acquired_story_material,
+):
+    _, ledger, ingests, _, _, invocation_rows, _, positions, recorded = (
+        acquired_story_material
+    )
+
+    positions_by_identity = dict(positions.occurrences)
+    ingest_positions = tuple(
+        positions_by_identity[ingest.identity]
+        for ingest in ingests
+    )
+    assert ingest_positions == tuple(sorted(ingest_positions))
+    assert get_recorded_occurrence_position_measurement(
+        ledger,
+        recorded.identity,
+    ) == positions
+    assert all(
+        tuple(
+            positions_by_identity[
+                occurrence.source_coordinate.recorded_occurrence_identity
+            ]
+            for occurrence in row
+        )
+        == ingest_positions
+        for row in invocation_rows
     )
 
 
