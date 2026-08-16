@@ -65,7 +65,7 @@ def test_ingest_standing_preserves_first_occurrence_order_without_sorting():
             "source_role": "operator",
             "dimensions": {"identity": "operator-result"},
             "known_loss": ["later", "earlier"],
-            "unknowns": ["second", "first"],
+            "unknown": ["second", "first"],
             "conflicts": ["right", "left"],
         },
         locality_identity="s",
@@ -76,7 +76,7 @@ def test_ingest_standing_preserves_first_occurrence_order_without_sorting():
             "source_role": "operator",
             "dimensions": {"identity": "operator-result"},
             "known_loss": ["third", "later"],
-            "unknowns": ["third", "second"],
+            "unknown": ["third", "second"],
             "conflicts": ["middle", "right"],
         },
         locality_identity="s",
@@ -87,5 +87,5 @@ def test_ingest_standing_preserves_first_occurrence_order_without_sorting():
 
     standing = attempts["operator-result"]
     assert standing["known_loss"] == ["later", "earlier", "third"]
-    assert standing["unknowns"] == ["second", "first", "third"]
+    assert standing["unknown"] == ["second", "first", "third"]
     assert standing["conflicts"] == ["right", "left", "middle"]

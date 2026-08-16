@@ -62,8 +62,8 @@ def _replay(events):
     return read_operator_locality_standing(ledger, locality_identity="s")
 
 
-def _ingress_event(index, *, unknowns):
-    """One recorded ingest occurrence carrying distinct Unknowns."""
+def _ingress_event(index, *, unknown):
+    """One recorded ingest occurrence carrying distinct Unknown."""
     ledger = EventLedger()
     return ledger.append(
         MATERIAL_INGEST_OCCURRED_KIND,
@@ -74,7 +74,7 @@ def _ingress_event(index, *, unknowns):
                 "content": "00",
             },
             "source_role": "operator",
-            "unknowns": list(unknowns),
+            "unknown": list(unknown),
         },
         locality_identity="s",
     )
@@ -294,7 +294,7 @@ def test_each_console_road_leaves_incremental_standing_equal_to_replay(
                     "authority": "unestablished",
                 },
                 "source_role": "operator",
-                "unknowns": [],
+                "unknown": [],
             },
             locality_identity="existing",
         )
@@ -404,7 +404,7 @@ def test_the_advance_reads_its_prior():
 def test_every_growable_accumulator_participates_without_copying():
     """The prior-transfer rule has to hold for all of them, not most of them.
 
-    `known_loss`, `unknowns` and `conflicts` were rebuilt from the prior on
+    `known_loss`, `unknown` and `conflicts` were rebuilt from the prior on
     every advance and re-sorted on every return. They do not grow on the five
     live kinds, so the measured path stayed linear, but acquisition would make
     them grow and restore the shape.
@@ -425,35 +425,35 @@ def test_every_growable_accumulator_participates_without_copying():
         "recorded_standing_boundary_references",
         "recorded_standing_boundary_locality_relations",
         "known_loss",
-        "unknowns",
+        "unknown",
         "conflicts",
     ):
         assert advanced[coordinate] is prior[coordinate], coordinate
 
 
 def test_a_growing_unknown_set_does_not_reintroduce_per_advance_copying():
-    """Distinct Unknowns per occurrence, which acquisition would yield."""
+    """Distinct Unknown per occurrence, which acquisition would yield."""
     standing = _advance([])
-    held = standing["unknowns"]
+    held = standing["unknown"]
     for index in range(200):
-        event = _ingress_event(index, unknowns=[f"unknown {index}"])
+        event = _ingress_event(index, unknown=[f"unknown {index}"])
         standing = _advance([event], prior=standing)
         # The same sequence throughout: never rebuilt, never re-sorted into a
         # new object, however many distinct values accumulate.
-        assert standing["unknowns"] is held
-    assert len(standing["unknowns"]) == 200
-    assert standing["unknowns"] == sorted(standing["unknowns"])
-    assert len(set(standing["unknowns"])) == 200
+        assert standing["unknown"] is held
+    assert len(standing["unknown"]) == 200
+    assert standing["unknown"] == sorted(standing["unknown"])
+    assert len(set(standing["unknown"])) == 200
 
 
 def test_repeated_values_are_recorded_once():
     standing = _advance([])
     for index in range(5):
         standing = _advance(
-            [_ingress_event(index, unknowns=["one repeated unknown"])],
+            [_ingress_event(index, unknown=["one repeated unknown"])],
             prior=standing,
         )
-    assert standing["unknowns"] == ["one repeated unknown"]
+    assert standing["unknown"] == ["one repeated unknown"]
 
 
 def test_the_console_keeps_no_earlier_standing():

@@ -8,7 +8,7 @@ from typing import Any
 from seed_runtime.event import Event
 from seed_runtime.events import CORRUPTED, EventLedger
 from seed_runtime.identities import new_identity
-from seed_runtime.material_ingest import MATERIAL_RESULT_UNKNOWNS
+from seed_runtime.material_ingest import MATERIAL_RESULT_UNKNOWN
 from seed_runtime.operator_material_boundary import OperatorBoundaryMaterial
 from seed_runtime.operator_representation import read_operator_representation
 from seed_runtime.evidence_of_yield_relation import (
@@ -176,7 +176,7 @@ def _assignment_material(
                 "Authority for another Act"
             ),
         ],
-        "unknowns": [
+        "unknown": [
             "what exact material the operator boundary supplies remains Unknown"
         ],
     }
@@ -246,7 +246,7 @@ def _result_material(
             "exact material establishes no represented relation",
             "this result establishes no other boundary occurrence",
         ],
-        "unknowns": list(MATERIAL_RESULT_UNKNOWNS),
+        "unknown": list(MATERIAL_RESULT_UNKNOWN),
     }
 
 
@@ -275,7 +275,7 @@ def _recorded_result_material(
         "authority": result_material["authority"],
         "standing": result_material["standing"],
         "limits": result_material["limits"],
-        "unknowns": result_material["unknowns"],
+        "unknown": result_material["unknown"],
         "responsible_act_evidence_identity": responsible_act_evidence_identity,
         "evidence_of_yield_relation_identity": evidence_of_yield_relation_identity,
     }

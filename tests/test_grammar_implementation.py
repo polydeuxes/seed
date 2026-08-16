@@ -880,7 +880,7 @@ def _assertion_witness(bundle: dict) -> dict[str, str]:
         "Authority": EXACT if dimensions.get("authority") else MISSING,
         "conflicts": UNKNOWN if material.get("conflicts") == "Unknown" else MISSING,
         "limits": EXACT if material.get("limits") else MISSING,
-        "Unknowns": EXACT if material.get("unknowns") else MISSING,
+        "Unknown": EXACT if material.get("unknown") else MISSING,
         "Standing": EXACT if dimensions.get("standing") else MISSING,
     }
 
@@ -957,7 +957,7 @@ def _applicability_witness(bundle: dict) -> dict[str, str]:
             else MISSING
         ),
         "conflicts": EXACT if "conflicts" in applicability else MISSING,
-        "Unknowns": EXACT if applicability.get("unknowns") else MISSING,
+        "Unknown": EXACT if applicability.get("unknown") else MISSING,
         "negative_Authority": (
             EXACT if treatment.get("negative_authority") else MISSING
         ),
@@ -2254,8 +2254,8 @@ def _representation_source_witness(bundle: dict) -> dict[str, str]:
         "conflicts": (
             EXACT if isinstance(material.get("conflicts"), list) else MISSING
         ),
-        "unknowns": (
-            EXACT if isinstance(material.get("unknowns"), list) else MISSING
+        "unknown": (
+            EXACT if isinstance(material.get("unknown"), list) else MISSING
         ),
     }
 
@@ -2357,7 +2357,7 @@ def _movement_coordinate_witness(bundle: dict) -> dict[str, str]:
         "Evidence",
         "Authority",
         "Scope",
-        "Unknowns",
+        "Unknown",
         "limits",
         "Standing",
     ]
@@ -2457,9 +2457,9 @@ def _movement_coordinate_witness(bundle: dict) -> dict[str, str]:
             if exact_surviving and isinstance(source_material.get("limits"), list)
             else MISSING
         ),
-        "Unknowns": (
+        "Unknown": (
             EXACT
-            if exact_surviving and isinstance(source_material.get("unknowns"), list)
+            if exact_surviving and isinstance(source_material.get("unknown"), list)
             else MISSING
         ),
         "Standing": (
@@ -3212,7 +3212,7 @@ def test_assertion_clause_is_checked_against_a_live_byte_assertion():
         "Authority": EXACT,
         "conflicts": UNKNOWN,
         "limits": EXACT,
-        "Unknowns": EXACT,
+        "Unknown": EXACT,
         "Standing": EXACT,
     }
 
@@ -3293,7 +3293,7 @@ def test_applicability_clause_is_checked_against_a_live_pair_determination():
         "occurrence_identity": EXACT,
         "known_loss": UNKNOWN,
         "conflicts": EXACT,
-        "Unknowns": EXACT,
+        "Unknown": EXACT,
         "negative_Authority": EXACT,
     }
 
@@ -3327,7 +3327,7 @@ def _assert_role_distinctions(distinctions: dict) -> None:
             "candidate",
             "Participation_relation",
         ],
-        "ordered_coordinate_pairs": [
+        "ordered_coordinate_pair": [
             ["subject", "candidate"],
             ["candidate", "subject"],
             ["subject", "Participation_relation"],
@@ -3335,7 +3335,7 @@ def _assert_role_distinctions(distinctions: dict) -> None:
             ["candidate", "Participation_relation"],
             ["Participation_relation", "candidate"],
         ],
-        "ordered_coordinate_pairs_establish_relation": False,
+        "ordered_coordinate_pair_establishes_relation": False,
         "candidate_coordinates": [
             "applicable_source_role",
             "Representation_Act_occurrence",
@@ -3361,18 +3361,18 @@ def _assert_role_distinctions(distinctions: dict) -> None:
             "Participation_by_candidate_identity",
         ],
     }
-    assert len(distinctions["ordered_coordinate_pairs"]) == 6
+    assert len(distinctions["ordered_coordinate_pair"]) == 6
     assert {
         tuple(reversed(pair))
-        for pair in distinctions["ordered_coordinate_pairs"]
+        for pair in distinctions["ordered_coordinate_pair"]
     } == {
-        tuple(pair) for pair in distinctions["ordered_coordinate_pairs"]
+        tuple(pair) for pair in distinctions["ordered_coordinate_pair"]
     }
     assert all(
         first != second
-        for first, second in distinctions["ordered_coordinate_pairs"]
+        for first, second in distinctions["ordered_coordinate_pair"]
     )
-    assert distinctions["ordered_coordinate_pairs_establish_relation"] is False
+    assert distinctions["ordered_coordinate_pair_establishes_relation"] is False
 
 
 def test_subject_candidate_and_participation_relation_are_distinguished_in_both_directions():
@@ -3391,8 +3391,8 @@ def test_role_distinctions_refuse_direction_collapse_and_identity_promotion():
     ]
 
     collapsed_direction = deepcopy(distinctions)
-    collapsed_direction["ordered_coordinate_pairs"][1] = list(
-        collapsed_direction["ordered_coordinate_pairs"][0]
+    collapsed_direction["ordered_coordinate_pair"][1] = list(
+        collapsed_direction["ordered_coordinate_pair"][0]
     )
 
     def assert_refused(changed: dict) -> None:
@@ -3405,11 +3405,11 @@ def test_role_distinctions_refuse_direction_collapse_and_identity_promotion():
     assert_refused(collapsed_direction)
 
     missing_comparison = deepcopy(distinctions)
-    missing_comparison["ordered_coordinate_pairs"].pop()
+    missing_comparison["ordered_coordinate_pair"].pop()
     assert_refused(missing_comparison)
 
     promoted_by_identity = deepcopy(distinctions)
-    promoted_by_identity["ordered_coordinate_pairs_establish_relation"] = True
+    promoted_by_identity["ordered_coordinate_pair_establishes_relation"] = True
     assert_refused(promoted_by_identity)
 
     compressed_coordinates = deepcopy(distinctions)
@@ -4046,9 +4046,9 @@ def test_assertion_movement_coordinates_refuse_crossing_or_loss():
         "limits": lambda bundle: bundle["movement"].material[
             "surviving_coordinates"
         ].remove("limits"),
-        "Unknowns": lambda bundle: bundle["movement"].material[
+        "Unknown": lambda bundle: bundle["movement"].material[
             "surviving_coordinates"
-        ].remove("Unknowns"),
+        ].remove("Unknown"),
         "Standing": lambda bundle: bundle["movement"].material[
             "surviving_coordinates"
         ].remove("Standing"),
@@ -4174,7 +4174,7 @@ def test_representation_source_coordinate_adversaries_preserve_exact_dependencie
         ),
         "known_loss": lambda material: material.__setitem__("known_loss", None),
         "conflicts": lambda material: material.__setitem__("conflicts", None),
-        "unknowns": lambda material: material.__setitem__("unknowns", None),
+        "unknown": lambda material: material.__setitem__("unknown", None),
     }
 
     for changed, mutate in mutations.items():

@@ -20,7 +20,7 @@ Seed may read a Responsibility only through current Standing whose subject is th
 A result, preserved record, representation, index entry, or other material may have an exact identity and Locality without becoming accepted, admitted, supported, represented as truth, written to the event ledger, or authorized for mutation. Exact identity, preservation, and Locality do not establish acceptance, input support, admission, representation, recording, or implementation action; each remains a separate family-local boundary.
 
 ### 01.Standing.B — Names do not establish Standing
-A kind label, Representation, characterization category, implementation name, concordance entry, or recurring report type may preserve a bounded distinction for the subject and exact Act it names. It does not establish Standing, make similarly named material equivalent, establish mandatory grammar, or supply Authority for the exact Act without preserved Evidence, provenance, Scope, Unknowns, and the applicable occurrence boundary.
+A kind label, Representation, characterization category, implementation name, concordance entry, or recurring report type may preserve a bounded distinction for the subject and exact Act it names. It does not establish Standing, make similarly named material equivalent, establish mandatory grammar, or supply Authority for the exact Act without preserved Evidence, provenance, Scope, Unknown, and the applicable occurrence boundary.
 
 ### 01.Standing.C — Implementation behavior does not confer standing
 Compiled behavior, direct instantiation, and exact represented results may witness what occurs at a read boundary, emission boundary, or other bounded implementation seam. They do not establish the Standing suggested by a name, output vocabulary, or behavior. Such Standing still requires its own subject, responsible occurrence, Evidence, Scope, Authority, and limits.
@@ -29,7 +29,7 @@ Compiled behavior, direct instantiation, and exact represented results may witne
 Co-presence or multiplicity establishes no relation, collective Standing, shared Act or result boundary, or higher-order identity. Each stronger Assertion requires its own bounded subject and established support relation.
 
 ### 01.Standing.D.1 — An Assertion preserves its Standing coordinates
-A bounded **Assertion** is the exact asserted content as its own subject under its carried Evidence, provenance, Scope, Authority, conflicts, limits, **Unknowns**, and current Standing. An Assertion bears the Responsibility for preserving those applicable Standing coordinates. That Responsibility remains local to the bounded Assertion.
+A bounded **Assertion** is the exact asserted content as its own subject under its carried Evidence, provenance, Scope, Authority, conflicts, limits, **Unknown**, and current Standing. An Assertion bears the Responsibility for preserving those applicable Standing coordinates. That Responsibility remains local to the bounded Assertion.
 
 The Assertion does not thereby perform the Act occurrence that supplied it, supply itself, or become that occurrence. A responsible Act occurrence may carry an Assertion and only the bounded Standing supported by its Evidence and Authority. The Assertion's Standing-coordinate Responsibility begins with the result; it does not relocate the Act's Responsibility or occurrence-result Evidence into the result. Act occurrence != Assertion responsible boundary, result-carrying Act != Assertion Responsibility, and recorded occurrence != result-carrying occurrence.
 
@@ -47,12 +47,12 @@ A relation is its own bounded Assertion subject. Its Standing preserves each app
 
 One bounded relation Assertion asserts that X identifies or represents Y. It preserves each applicable coordinate, including participants and roles, the relation Assertion, source identity, source occurrence where evidenced, Evidence, Scope, exact Act and result boundary, provenance, Authority, known loss, conflicts, limits, and Unknown or unresolved Standing.
 
-Material may carry the Assertion that X identifies or represents Y without supporting that relation. A responsible occurrence establishes only the relation its Authority, Evidence, Scope, provenance, conflicts, loss, and preserved **Unknowns**. A source label identifies an asserted source role; it establishes neither a source occurrence nor the represented relation.
+Material may carry the Assertion that X identifies or represents Y without supporting that relation. A responsible occurrence establishes only the relation its Authority, Evidence, Scope, provenance, conflicts, loss, and preserved **Unknown**. A source label identifies an asserted source role; it establishes neither a source occurrence nor the represented relation.
 
 An established relation may receive an Act-local Applicability determination. Where the exact Act requires Admission, the relation must be admitted before participation. Applicable is not admitted; Admission is not participation; participation does not establish that the input supports the result. Each relation remains local to the exact Responsibility and Act.
 
 ### 01.Standing.E.1 — The exact Act responsible boundary ordinarily determines input Applicability
-Input is an Act-local role, not a constitutional kind. An exact bounded subject may bear that role relative to an exact Act while retaining its own identity, content, locality, provenance, Evidence, Authority, Scope, limits, Unknowns, and Standing. Another subject's locality does not make that represented subject the input by identity. Input role != input subject, locality, Applicability, Admission, participation, input-to-result support, Act occurrence, or result Standing.
+Input is an Act-local role, not a constitutional kind. An exact bounded subject may bear that role relative to an exact Act while retaining its own identity, content, locality, provenance, Evidence, Authority, Scope, limits, Unknown, and Standing. Another subject's locality does not make that represented subject the input by identity. Input role != input subject, locality, Applicability, Admission, participation, input-to-result support, Act occurrence, or result Standing.
 
 Role identifies the exact place a subject may occupy relative to an Act. Participation is the occurrence-bound relation that an exact subject occupied an exact role in an exact Act occurrence. Subject, role, Act, applicable Standing, and Act occurrence do not establish participation by co-presence.
 

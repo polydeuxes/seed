@@ -115,7 +115,7 @@
       "candidate",
       "Participation_relation"
     ],
-    "ordered_coordinate_pairs": [
+    "ordered_coordinate_pair": [
       ["subject", "candidate"],
       ["candidate", "subject"],
       ["subject", "Participation_relation"],
@@ -123,7 +123,7 @@
       ["candidate", "Participation_relation"],
       ["Participation_relation", "candidate"]
     ],
-    "ordered_coordinate_pairs_establish_relation": false,
+    "ordered_coordinate_pair_establishes_relation": false,
     "candidate_coordinates": [
       "applicable_source_role",
       "Representation_Act_occurrence",
@@ -187,7 +187,7 @@
           "authority",
           "known_loss",
           "conflicts",
-          "unknowns"
+          "unknown"
         ]
       },
       "distinct_from": [
@@ -344,7 +344,7 @@
           "occurrence_of_Evidence_event",
           "Authority",
           "limits",
-          "Unknowns",
+          "Unknown",
           "Standing"
         ]
       },
@@ -383,7 +383,7 @@
           "Authority",
           "conflicts",
           "limits",
-          "Unknowns",
+          "Unknown",
           "Standing"
         ]
       },
@@ -428,7 +428,7 @@
         "occurrence_identity",
         "known_loss",
         "conflicts",
-        "Unknowns",
+        "Unknown",
         "negative_Authority"
       ],
       "standings": ["applicable", "inapplicable", "conflicting", "Unknown"],
@@ -503,7 +503,7 @@
           "Authority",
           "Scope",
           "limits",
-          "Unknowns",
+          "Unknown",
           "Standing"
         ]
       },
@@ -536,7 +536,7 @@
           "occurrence_of_Evidence_event",
           "Authority",
           "limits",
-          "Unknowns",
+          "Unknown",
           "Standing"
         ]
       },
@@ -583,14 +583,14 @@
           "relation_occurrence",
           "Evidence",
           "limits",
-          "Unknowns"
+          "Unknown"
         ]
       },
       "preserves": [
         "first_subject_identity",
         "second_subject_identity",
         "Evidence",
-        "Unknowns",
+        "Unknown",
         "limits"
       ],
       "does_not_establish": [
@@ -620,7 +620,7 @@
           "Authority",
           "Scope",
           "limits",
-          "Unknowns",
+          "Unknown",
           "Standing"
         ]
       },
@@ -668,7 +668,7 @@
           "Authority",
           "Scope",
           "limits",
-          "Unknowns",
+          "Unknown",
           "Standing"
         ]
       },
@@ -684,7 +684,7 @@
         "destination_Locality",
         "relation_occurrence",
         "limits",
-        "Unknowns"
+        "Unknown"
       ],
       "does_not_establish": [
         "Standing_copy",

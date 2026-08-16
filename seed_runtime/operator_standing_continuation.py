@@ -195,7 +195,7 @@ def _assignment_material(
             "this assignment is bounded to one direct occurrence and result boundary",
             "availability at this Locality is not Applicability or Participation",
         ],
-        "unknowns": [
+        "unknown": [
             "Applicability of every carried subject to another Act remains Unknown"
         ],
     }
@@ -287,7 +287,7 @@ def _result_material(
         },
         "standing": "preserved",
         "authority": "unestablished",
-        "unknowns": [
+        "unknown": [
             "Applicability of every carried subject to another Act remains Unknown"
         ],
         "limits": [
@@ -330,7 +330,7 @@ def _recorded_result_material(
         "locality_relation": result_material["locality_relation"],
         "standing": result_material["standing"],
         "authority": result_material["authority"],
-        "unknowns": result_material["unknowns"],
+        "unknown": result_material["unknown"],
         "limits": result_material["limits"],
         "responsible_act_evidence_identity": responsible_act_evidence_identity,
         "evidence_of_yield_relation_identity": evidence_of_yield_relation_identity,

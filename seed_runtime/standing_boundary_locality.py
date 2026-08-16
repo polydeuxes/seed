@@ -161,7 +161,7 @@ def _assignment_material(
             "this assignment is bounded to one direct Locality relation",
             "the relation carries no addressed Standing",
         ],
-        "unknowns": [
+        "unknown": [
             "Applicability of the recorded boundary to another Act remains Unknown"
         ],
     }
@@ -251,7 +251,7 @@ def _result_material(act: Event) -> dict[str, Any]:
             "the relation carries no addressed Standing",
             "the relation establishes no Compare",
         ],
-        "unknowns": [
+        "unknown": [
             "Applicability of the recorded boundary to another Act remains Unknown"
         ],
     }
@@ -287,7 +287,7 @@ def _recorded_result_material(
         "authority": deepcopy(result_material["authority"]),
         "standing": result_material["standing"],
         "limits": list(result_material["limits"]),
-        "unknowns": list(result_material["unknowns"]),
+        "unknown": list(result_material["unknown"]),
         "responsible_act_evidence_identity": responsible_act_evidence_identity,
         "evidence_of_yield_relation_identity": evidence_of_yield_relation_identity,
     }

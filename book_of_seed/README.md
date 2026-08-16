@@ -90,7 +90,7 @@ Identifies the source, preservation, and occurrence history required by the exac
 
 ### Support-relation branches
 
-Where a Responsibility uses an Assertion as support, the exact relation “these Evidence, Authority, Scope, provenance, and limits support this Assertion” is another Assertion. Its participants, responsible Act, occurrence, Evidence, Authority, Scope, conflicts, limits, Unknowns, and Standing each has a distinct identity and exact coordinates. Nearby coordinates or reference presence do not supply that relation.
+Where a Responsibility uses an Assertion as support, the exact relation “these Evidence, Authority, Scope, provenance, and limits support this Assertion” is another Assertion. Its participants, responsible Act, occurrence, Evidence, Authority, Scope, conflicts, limits, Unknown, and Standing each has a distinct identity and exact coordinates. Nearby coordinates or reference presence do not supply that relation.
 
 Support-relation Standing does not establish the supported Assertion's Standing, Applicability, Admission, or a later input-to-result support relation. Each requires its own responsible occurrence.
 

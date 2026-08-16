@@ -16,7 +16,7 @@ A composite names several exact coordinates. The composite does not establish an
 
 ### 01.Source.A — Representation preserves source coordinates
 
-The responsible representation Act occurrence preserves the supplied source identity or role, source occurrence where evidenced, Scope, uncertainty, Authority limits, provenance, known loss, conflicts, and Unknowns. That preservation establishes none of the asserted source relation, Evidence, Applicability, Admission, Compare result, input support, truth, or adopted law.
+The responsible representation Act occurrence preserves the supplied source identity or role, source occurrence where evidenced, Scope, uncertainty, Authority limits, provenance, known loss, conflicts, and Unknown. That preservation establishes none of the asserted source relation, Evidence, Applicability, Admission, Compare result, input support, truth, or adopted law.
 
 ### 01.Source.B — Cross-boundary participation preserves limits
 
@@ -24,7 +24,7 @@ An exact Act may accept as input supplied material only within its carried Scope
 
 ### 01.Source.C — Fidelity is bounded comparison
 
-Fidelity is bounded comparison of this Seed's live implementation witness with its machine grammar through deterministic tests. Each test has only its declared distinction as its subject and may carry a bounded Fidelity finding. It preserves its Evidence, provenance, Authority, Scope, conflicts, Unknowns, erasure, unsupported coordinates, mutation, or Authority relocation. A passing test does not certify this Seed beyond that test's boundary or establish correction Authority.
+Fidelity is bounded comparison of this Seed's live implementation witness with its machine grammar through deterministic tests. Each test has only its declared distinction as its subject and may carry a bounded Fidelity finding. It preserves its Evidence, provenance, Authority, Scope, conflicts, Unknown, erasure, unsupported coordinates, mutation, or Authority relocation. A passing test does not certify this Seed beyond that test's boundary or establish correction Authority.
 
 ### 01.Source.D — Measurement carries only its declared result
 
@@ -44,11 +44,11 @@ A candidate preserves every applicable source role, representation Act occurrenc
 
 ### 01.Source.F — Supplied material may assert a relation
 
-Supplied material may assert that X represents or identifies Y. The responsible representation Act occurrence preserves source identity or role, source occurrence where evidenced, Scope, provenance, Authority limits, known loss, conflicts, and Unknowns. Locality, labels, reference resolution, shape, or repetition do not support either the source relation or represented relation. Each requires a responsible occurrence.
+Supplied material may assert that X represents or identifies Y. The responsible representation Act occurrence preserves source identity or role, source occurrence where evidenced, Scope, provenance, Authority limits, known loss, conflicts, and Unknown. Locality, labels, reference resolution, shape, or repetition do not support either the source relation or represented relation. Each requires a responsible occurrence.
 
 ### 01.Source.G — One exact operator material boundary occurrence
 
-Within the exact Scope of an intact addressed Representation, current Locality Standing boundary, and one result boundary, active Book assigns this Seed the Responsibility only to preserve one exact material result supplied at one operator boundary. The assignment preserves its own subject, responsible boundary, exact Act, Act occurrence, result boundary, Locality, Scope, Evidence occurrence, Authority, limits, Unknowns, and Standing.
+Within the exact Scope of an intact addressed Representation, current Locality Standing boundary, and one result boundary, active Book assigns this Seed the Responsibility only to preserve one exact material result supplied at one operator boundary. The assignment preserves its own subject, responsible boundary, exact Act, Act occurrence, result boundary, Locality, Scope, Evidence occurrence, Authority, limits, Unknown, and Standing.
 
 The assignment, exact Act, Act occurrence, Yield, and material result remain distinct by identity. Equal exact material under another occurrence does not identify either result or occurrence. Active Book Authority is bounded to preserving the exact supplied material at that one boundary. It establishes no represented relation, Applicability, Participation, Authority for another Act, recurrence, completion, or Authority for another occurrence.
 

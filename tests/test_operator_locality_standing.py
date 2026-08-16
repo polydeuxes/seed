@@ -481,8 +481,8 @@ def test_unknown_conflict_and_absence_remain_distinct():
 
     standing = _standing(ledger)
 
-    # Unknowns are only what locality events positively carry.
-    assert standing["unknowns"] == ["represented_relation", "source_relation"]
+    # Unknown are only what locality events positively carry.
+    assert standing["unknown"] == ["represented_relation", "source_relation"]
     # No locality event records a conflict or a relation standing; both stay
     # empty rather than being promoted to Unknown or to a negative Assertion.
     assert standing["conflicts"] == []

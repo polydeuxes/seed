@@ -194,7 +194,7 @@ def record_operator_representation(
         "representation_result": representation_result,
         "locality_standing_as_of_event_identity": as_of_event_identity,
         "known_loss": known_loss,
-        "unknowns": [],
+        "unknown": [],
         "conflicts": [],
     }
     responsible_act_evidence = ledger.append(
@@ -293,7 +293,7 @@ def record_operator_representation(
         "locality_standing_as_of_event_identity": as_of_event_identity,
         "exact_material": exact_material,
         "known_loss": known_loss,
-        "unknowns": [],
+        "unknown": [],
         "conflicts": [],
     }
 
@@ -533,7 +533,7 @@ def emit_operator_representation_material(
                 occurrence="emission attempt occurrence recorded before output",
             ),
             "known_loss": [],
-            "unknowns": [
+            "unknown": [
                 "output-boundary acceptance remains Unknown until Evidence establishes it",
                 "effects beyond the output boundary remain Unknown",
             ],
@@ -701,7 +701,7 @@ def emit_operator_representation_material(
             "locality_evidence_identity": locality_evidence.identity,
             "evidence_of_yield_relation_identity": evidence_of_yield_relation.identity,
             "known_loss": [],
-            "unknowns": [],
+            "unknown": [],
             "conflicts": [],
             "provenance_occurrence_references": [
                 representation["representation_event_identity"],
@@ -737,7 +737,7 @@ def _record_exact_material_emission_failure(
 ):
     """Preserve only the exact result reported by a failed byte egress."""
 
-    unknowns = [
+    unknown = [
         "output-boundary result remains Unknown",
         "effects beyond the output boundary remain Unknown",
     ]
@@ -772,7 +772,7 @@ def _record_exact_material_emission_failure(
         "reported_count": reported_count,
         "error": repr(error) if error is not None else None,
         "known_loss": [],
-        "unknowns": unknowns,
+        "unknown": unknown,
         "conflicts": [],
         "provenance_occurrence_references": [
             representation["representation_event_identity"],

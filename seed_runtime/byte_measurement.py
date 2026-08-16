@@ -156,7 +156,7 @@ BYTE_MEASUREMENT_RESPONSIBILITY = (
 BYTE_PAIR_MEASUREMENT_RESPONSIBILITY = (
     "Yield exact byte-position-pair findings from an applicable exact bounded "
     "source material within its Scope, provenance, occurrence references, "
-    "Authority, Unknowns, and limits"
+    "Authority, Unknown, and limits"
 )
 BYTE_PAIR_INPUT_APPLICABILITY_RESPONSIBILITY = (
     "determine whether one exact source-material-set Assertion may participate "
@@ -166,7 +166,7 @@ BYTE_PAIR_APPLICABILITY_AUTHORITY = (
     "determine Applicability of this exact proposed input to this exact downstream "
     "Act only; the resulting Standing, not this authority, determines participation"
 )
-BYTE_PAIR_UNKNOWNS = (
+BYTE_PAIR_UNKNOWN = (
     "what this ordered byte position pair participates in or represents remains Unknown",
 )
 BYTE_PAIR_LIMITS = (
@@ -338,7 +338,7 @@ def _pair_input_applicability(
         source_provenance = material["dimensions"]["source_provenance"]
         input_standing = material["dimensions"]["standing"]
         input_authority = material["dimensions"]["authority"]
-        input_unknowns = material["unknowns"]
+        input_unknown = material["unknown"]
         input_limits = material["limits"]
         negative_authority = {
             "carried": True,
@@ -356,7 +356,7 @@ def _pair_input_applicability(
         source_provenance = material["dimensions"]["source_provenance"]
         input_standing = material["dimensions"]["standing"]
         input_authority = material["dimensions"]["authority"]
-        input_unknowns = material["unknowns"]
+        input_unknown = material["unknown"]
         input_limits = material["limits"]
         negative_authority = {
             "carried": True,
@@ -370,7 +370,7 @@ def _pair_input_applicability(
         source_provenance = material["dimensions"]["source_provenance"]
         input_standing = material["dimensions"]["standing"]
         input_authority = material["dimensions"]["authority"]
-        input_unknowns = material["unknowns"]
+        input_unknown = material["unknown"]
         input_limits = material["limits"]
         negative_authority = {
             "carried": True,
@@ -412,7 +412,7 @@ def _pair_input_applicability(
         "scope_locality": applicability_scope,
         "input_standing": input_standing,
         "input_authority": input_authority,
-        "input_unknowns": input_unknowns,
+        "input_unknown": input_unknown,
         "input_limits": input_limits,
         "conflicts": [basis] if standing == "conflicting" else [],
         "coordinate_treatment": {
@@ -427,7 +427,7 @@ def _pair_input_applicability(
             },
             "negative_authority": negative_authority,
         },
-        "unknowns": [
+        "unknown": [
             "what any byte or byte position pair represents remains Unknown",
             *([basis] if standing == "Unknown" else []),
         ],
@@ -613,7 +613,7 @@ def _move_byte_assertion_to_locality(
             "Evidence",
             "Authority",
             "Scope",
-            "Unknowns",
+            "Unknown",
             "limits",
             "Standing",
         ],
@@ -752,7 +752,7 @@ def _validate_moved_byte_assertion(
             "Evidence",
             "Authority",
             "Scope",
-            "Unknowns",
+            "Unknown",
             "limits",
             "Standing",
         ],
@@ -944,7 +944,7 @@ def _assertions(measured: MeasuredByteInputs) -> list[dict[str, Any]]:
                 "local_assertion_references": [],
             },
             "conflicts": "Unknown",
-            "unknowns": ["what the exact source bytes represent remains Unknown"],
+            "unknown": ["what the exact source bytes represent remains Unknown"],
             "limits": [
                 "exact source-material set bounded by source occurrences and "
                 "completeness boundary"
@@ -985,7 +985,7 @@ def _assertions(measured: MeasuredByteInputs) -> list[dict[str, Any]]:
                 "local_assertion_references": local_support_references,
             },
             "conflicts": "Unknown",
-            "unknowns": ["what this byte participates in or represents remains Unknown"],
+            "unknown": ["what this byte participates in or represents remains Unknown"],
             "limits": [
                 "exact byte count or recurrence bounded by source occurrences and "
                 "Measurement rule"
@@ -1446,7 +1446,7 @@ def _pair_assertions(measured: MeasuredBytePairInputs) -> list[dict[str, Any]]:
                 "local_assertion_references": local_support_references,
             },
             "conflicts": "Unknown",
-            "unknowns": list(BYTE_PAIR_UNKNOWNS),
+            "unknown": list(BYTE_PAIR_UNKNOWN),
             "limits": list(BYTE_PAIR_LIMITS),
         }
 
@@ -1905,7 +1905,7 @@ def _validate_recorded_pair_input_applicability(
         "scope_locality": scope,
         "input_standing": source_material["dimensions"]["standing"],
         "input_authority": source_material["dimensions"]["authority"],
-        "input_unknowns": source_material["unknowns"],
+        "input_unknown": source_material["unknown"],
         "input_limits": source_material["limits"],
         "conflicts": [],
         "coordinate_treatment": {
@@ -1924,7 +1924,7 @@ def _validate_recorded_pair_input_applicability(
                 "treatment": "preserved as limits on this exact use",
             },
         },
-        "unknowns": [
+        "unknown": [
             "what any byte or byte position pair represents remains Unknown"
         ],
         "limits": [
@@ -2155,7 +2155,7 @@ def assertions_of_recorded_byte_position_pair_measurement(
         "assertion_scope",
         "input_support",
         "conflicts",
-        "unknowns",
+        "unknown",
         "limits",
     }
     for assertion in assertions:
@@ -2199,7 +2199,7 @@ def assertions_of_recorded_byte_position_pair_measurement(
             or dimensions.get("responsibility") != MEASURED_ASSERTION_RESPONSIBILITY
             or dimensions.get("authority") != "unestablished"
             or dimensions.get("evidence_scope") != PAIR_MEASUREMENT_EVIDENCE_SCOPE
-            or assertion.get("unknowns") != list(BYTE_PAIR_UNKNOWNS)
+            or assertion.get("unknown") != list(BYTE_PAIR_UNKNOWN)
             or assertion.get("limits")
             != list(BYTE_PAIR_LIMITS)
         ):

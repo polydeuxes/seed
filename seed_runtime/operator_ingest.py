@@ -28,7 +28,7 @@ def update_operator_ingest_standing(attempts, event) -> None:
             "dimensional_standing": {},
             "current_standing": {"ingest_occurrence": None},
             "known_loss": [],
-            "unknowns": [],
+            "unknown": [],
             "conflicts": [],
         },
     )
@@ -46,7 +46,7 @@ def update_operator_ingest_standing(attempts, event) -> None:
         "evidence_event_identity": event.identity,
     }
     standing["last_event_kind"] = event.kind
-    for key in ("known_loss", "unknowns", "conflicts"):
+    for key in ("known_loss", "unknown", "conflicts"):
         for value in event.material.get(key, ()):
             if value not in standing[key]:
                 standing[key].append(value)

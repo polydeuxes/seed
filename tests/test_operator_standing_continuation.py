@@ -567,7 +567,7 @@ def test_prior_relation_carrier_must_remain_one_identity_dictionary():
         "result_boundary_identity",
         "standing",
         "limits",
-        "unknowns",
+        "unknown",
     ),
 )
 def test_changed_responsibility_assignment_coordinates_are_refused(coordinate):

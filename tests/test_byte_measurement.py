@@ -464,7 +464,7 @@ def test_recorded_results_replay_the_complete_bounded_source_read():
     assert count.material["dimensions"]["source_provenance"]
     assert count.material["dimensions"]["authority"] == "unestablished"
     assert count.material["dimensions"]["evidence_scope"]
-    assert count.material["unknowns"]
+    assert count.material["unknown"]
     assert count.material["conflicts"] == "Unknown"
     assert count.material["limits"]
     assert count.support_assertion_references == (
@@ -691,7 +691,7 @@ def test_pair_count_and_recurrence_are_separate_results():
     assert applicability["result_boundary"]
     assert applicability["downstream_act"] == "declared byte-position-pair Measurement"
     assert applicability["measurement_locality"] == "measurement"
-    assert applicability["input_unknowns"]
+    assert applicability["input_unknown"]
     assert applicability["input_limits"]
     assert applicability["conflicts"] == []
     assert applicability["coordinate_treatment"]["support_relation_standing"] == {
@@ -939,7 +939,7 @@ def test_pair_applicability_has_unknown_and_conflicting_results():
     )
 
     assert unknown["dimensions"]["standing"] == "Unknown"
-    assert len(unknown["unknowns"]) == 2
+    assert len(unknown["unknown"]) == 2
     assert conflicting["dimensions"]["standing"] == "conflicting"
     assert len(conflicting["conflicts"]) == 1
     assert conflicting["input_standing"] == "reported"

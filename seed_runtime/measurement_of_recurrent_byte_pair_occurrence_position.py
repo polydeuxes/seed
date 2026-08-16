@@ -700,7 +700,7 @@ def _position_assertions_of_measurement(finding: FindingOfRecurrentBytePairOccur
                     "local_assertion_references": [],
                 },
                 "conflicts": "Unknown",
-                "unknowns": [
+                "unknown": [
                     "what this ordered pair occurrence relation is remains Unknown"
                 ],
                 "limits": [

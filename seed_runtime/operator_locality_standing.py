@@ -431,7 +431,7 @@ def advance_operator_locality_standing(
 
     The result is fully recomputable
     from the ledger and is not itself recorded: it returns only standings,
-    limits, and Unknowns the Locality's events already carry.  An empty
+    limits, and Unknown the Locality's events already carry.  An empty
     coordinate is absence of record, not negative standing and not Unknown.
     No Yield is established for represented relation candidates here; each preserved ingest keeps
     the authority its own event recorded.
@@ -457,7 +457,7 @@ def advance_operator_locality_standing(
     # grow, and the prior-transfer rule has to hold for every accumulator that
     # can.
     known_loss: list[str] = []
-    unknowns: list[str] = []
+    unknown: list[str] = []
     conflicts: list[str] = []
     as_of_event_identity: str | None = None
     event_count = 0
@@ -508,7 +508,7 @@ def advance_operator_locality_standing(
                 "prior Locality Standing requires exact operator material acquire Act occurrences"
             )
         known_loss = prior["known_loss"]
-        unknowns = prior["unknowns"]
+        unknown = prior["unknown"]
         conflicts = prior["conflicts"]
         as_of_event_identity = prior["as_of_event_identity"]
         event_count = prior["event_count"]
@@ -533,7 +533,7 @@ def advance_operator_locality_standing(
         as_of_event_identity = event.identity
         for key, collected in (
             ("known_loss", known_loss),
-            ("unknowns", unknowns),
+            ("unknown", unknown),
             ("conflicts", conflicts),
         ):
             for value in event.material.get(key, ()):
@@ -659,7 +659,7 @@ def advance_operator_locality_standing(
                 "scope": material["dimensions"]["scope_locality"],
                 "provenance": material["dimensions"]["source_provenance"],
                 "known_loss": material["known_loss"],
-                "unknowns": material["unknowns"],
+                "unknown": material["unknown"],
                 "conflicts": material["conflicts"],
             }
             continue
@@ -779,6 +779,6 @@ def advance_operator_locality_standing(
             operator_material_acquire_act_occurrences
         ),
         "known_loss": known_loss,
-        "unknowns": unknowns,
+        "unknown": unknown,
         "conflicts": conflicts,
     }

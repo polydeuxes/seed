@@ -258,7 +258,7 @@ def test_one_recording_act_cannot_yield_twice():
         "scope",
         "authority",
         "limits",
-        "unknowns",
+        "unknown",
     ),
 )
 def test_changed_assignment_coordinates_are_refused(coordinate):

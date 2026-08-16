@@ -8,7 +8,7 @@ The exact coordinates of bounded movement.
 
 A movement Assertion identifies its subject, source coordinates, destination
 coordinates, exact Act, occurrence, Evidence, Authority, Scope, limits,
-Unknowns, and Standing.
+Unknown, and Standing.
 
 ### 03.Movement.A — Movement is not mutation
 

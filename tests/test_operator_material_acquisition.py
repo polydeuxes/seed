@@ -411,7 +411,7 @@ def test_act_refuses_assignment_not_carried_by_supplied_standing():
         "authority",
         "standing",
         "limits",
-        "unknowns",
+        "unknown",
     ),
 )
 def test_changed_assignment_coordinates_are_refused(coordinate):
@@ -448,7 +448,7 @@ def test_changed_assignment_coordinates_are_refused(coordinate):
         "authority",
         "standing",
         "limits",
-        "unknowns",
+        "unknown",
         "responsible_act_evidence_identity",
         "evidence_of_yield_relation_identity",
     ),

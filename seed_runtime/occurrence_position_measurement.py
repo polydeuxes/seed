@@ -243,7 +243,7 @@ def _position_assertions(
                     "local_assertion_references": [],
                 },
                 "conflicts": "Unknown",
-                "unknowns": [
+                "unknown": [
                     "what this occurrence participates in or represents remains Unknown"
                 ],
                 "limits": [

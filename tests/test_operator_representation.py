@@ -1096,7 +1096,7 @@ def test_console_forms_c0_before_first_ingress_and_preserves_provenance_only():
         if event.kind == "operator.representation.recorded"
     )
     assert c0_formed.material["locality_standing_as_of_event_identity"] is None
-    assert c0_formed.material["unknowns"] == []
+    assert c0_formed.material["unknown"] == []
     # The console attaches no Representation to the Ingest: recording order
     # does not determine a relation between the two occurrences.
     ingest = next(
@@ -1148,7 +1148,7 @@ def test_c0_presents_standing_with_no_developer_semantics():
     # recorded what it input, rather than being skipped.
     material = ledger.get(c0["representation_event_identity"]).material
     assert material["locality_standing_as_of_event_identity"] is None
-    assert material["unknowns"] == []
+    assert material["unknown"] == []
     assert material["conflicts"] == []
 
     # No developer-supplied sources, represented relations, or treatment.

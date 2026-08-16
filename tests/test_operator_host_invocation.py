@@ -165,7 +165,7 @@ def test_host_provider_receives_an_acquired_exact_command_before_it_occurs():
         for event in ingests[1:]
     ] == [[ingests[0].identity]] * 3
     assert all(
-        event.material["unknowns"] == ["represented_relation", "source_relation"]
+        event.material["unknown"] == ["represented_relation", "source_relation"]
         for event in ingests[1:]
     )
     assert len({event.material["result_identity"] for event in ingests}) == 4
