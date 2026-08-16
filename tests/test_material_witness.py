@@ -806,6 +806,26 @@ def test_removal_recurrence_preflight_returns_no_later_compare(
     assert later is None
 
 
+def test_recurrence_preflight_refuses_wrong_function_identity(
+    book_three_byte_format_occurrences,
+    book_pair_format_occurrences,
+):
+    row = book_pair_format_occurrences[0]
+    wrong = CompiledImplementationFunction(
+        identity="compiled-wrong-preflight",
+        invocation=row[0].implementation_function.invocation,
+    )
+    with pytest.raises(ValueError, match="exact and distinct"):
+        first_recurring_added_compare(
+            book_three_byte_format_occurrences[1],
+            row,
+            wrong,
+            boundary_identity="wrong-preflight-function",
+            act_occurrence_count_limit=10,
+            invoke_later=False,
+        )
+
+
 def test_joint_recurrence_refuses_reordered_source_occurrences(
     book_three_byte_format_occurrences,
     book_pair_format_occurrences,
