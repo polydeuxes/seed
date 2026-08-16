@@ -8,6 +8,10 @@ import pytest
 
 from seed_runtime.events import EventLedger
 from seed_runtime.material_ingest import MATERIAL_INGEST_OCCURRED_KIND, ingest_material
+from seed_runtime.byte_measurement import (
+    record_byte_count_layer,
+    record_byte_position_pair_count_layer,
+)
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -15,8 +19,14 @@ sys.path.insert(0, str(ROOT / "scripts"))
 
 from compiled_format_invocation import (  # noqa: E402
     COMPILED_IMPLEMENTATION_FUNCTIONS,
+    added_position_admission_occurrence,
+    added_position_invocations,
+    admission_result_added_position_occurrences,
     admit_compiled_invocation_rows,
+    compare_added_position_invocations,
     compiled_reference_invocations,
+    exact_byte_pair_material_references,
+    moved_exact_byte_material_references,
 )
 from compiled_material_invocation import ingest_result_reference  # noqa: E402
 
@@ -61,6 +71,84 @@ def acquired_book_material():
         references,
         invocation_rows,
         admission,
+    )
+
+
+@pytest.fixture(scope="module")
+def acquired_book_relations(acquired_book_material):
+    ledger, _, ingests, _, _, _, book_admission = acquired_book_material
+    byte_measurement = record_byte_count_layer(
+        ledger,
+        source_localities=("book-material-acquisition",),
+        recording_locality_identity="book-material-byte-measurement",
+    )
+    pair_measurement = record_byte_position_pair_count_layer(
+        ledger,
+        source_measurement_event_identity=byte_measurement.identity,
+        recording_locality_identity="book-material-pair-measurement",
+    )
+    pair_references = exact_byte_pair_material_references(
+        ledger, pair_measurement.identity
+    )
+    byte_references = moved_exact_byte_material_references(
+        ledger,
+        byte_measurement.identity,
+        destination_locality="book-material-pair-measurement",
+    )
+    pair_invocation_rows = compiled_reference_invocations(
+        pair_references,
+        boundary_identity="book-pair-acquisition-invocation",
+        implementation_functions=COMPILED_IMPLEMENTATION_FUNCTIONS,
+    )
+    byte_invocation_rows = compiled_reference_invocations(
+        byte_references,
+        boundary_identity="book-byte-acquisition-invocation",
+        implementation_functions=COMPILED_IMPLEMENTATION_FUNCTIONS,
+    )
+    pair_admission = admit_compiled_invocation_rows(
+        pair_invocation_rows,
+        boundary_identity="book-pair-acquisition-admission",
+    )
+    byte_admission = admit_compiled_invocation_rows(
+        byte_invocation_rows,
+        boundary_identity="book-byte-acquisition-admission",
+    )
+    additions = admission_result_added_position_occurrences(
+        pair_admission.result_reference,
+        byte_admission.result_reference,
+        boundary_identity="book-acquired-addition",
+        admitted_material_act_occurrence_count_limit=4096,
+    )
+    result_invocation_rows = added_position_invocations(
+        additions,
+        boundary_identity="book-acquired-addition-invocation",
+        implementation_functions=COMPILED_IMPLEMENTATION_FUNCTIONS,
+    )
+    comparisons = compare_added_position_invocations(
+        pair_invocation_rows,
+        result_invocation_rows,
+        boundary_identity="book-acquired-addition-compare",
+    )
+    addition_admission = added_position_admission_occurrence(
+        additions,
+        comparisons,
+        boundary_identity="book-acquired-addition-admission",
+    )
+    return (
+        ingests,
+        book_admission,
+        byte_measurement,
+        pair_measurement,
+        pair_references,
+        byte_references,
+        pair_invocation_rows,
+        byte_invocation_rows,
+        pair_admission,
+        byte_admission,
+        additions,
+        result_invocation_rows,
+        comparisons,
+        addition_admission,
     )
 
 
@@ -170,6 +258,69 @@ def test_book_admission_refuses_an_incomplete_reordered_or_repeated_function_row
             (invocation_rows[0], invocation_rows[0]),
             boundary_identity="repeated-book-function-admission",
         )
+
+
+def test_book_measurements_retain_every_exact_file_occurrence(
+    acquired_book_relations,
+):
+    ingests, _, byte_measurement, pair_measurement, *_ = acquired_book_relations
+    source_references = byte_measurement.material[
+        "responsibility_assignment_evidence"
+    ]["source_occurrence_references"]
+
+    assert tuple(
+        reference["ingest_occurrence_identity"] for reference in source_references
+    ) == tuple(occurrence.identity for occurrence in ingests)
+    assert byte_measurement.material["source_localities"] == [
+        "book-material-acquisition"
+    ]
+    assert pair_measurement.material["source_assertion_reference"] == {
+        "recorded_occurrence_identity": byte_measurement.identity,
+        "assertion_identity": byte_measurement.material["assertions"][0][
+            "dimensions"
+        ]["identity"],
+    }
+
+
+def test_complete_book_admission_reaches_recurring_addition_relations(
+    acquired_book_relations,
+):
+    (
+        _,
+        book_admission,
+        _,
+        _,
+        pair_references,
+        byte_references,
+        pair_invocation_rows,
+        byte_invocation_rows,
+        pair_admission,
+        byte_admission,
+        additions,
+        result_invocation_rows,
+        comparisons,
+        addition_admission,
+    ) = acquired_book_relations
+
+    assert book_admission.source_material
+    assert pair_admission.source_material == pair_references
+    assert byte_admission.source_material == byte_references
+    assert len(pair_invocation_rows) == len(byte_invocation_rows) == len(
+        COMPILED_IMPLEMENTATION_FUNCTIONS
+    )
+    assert additions
+    assert all(len(row) == len(additions) for row in result_invocation_rows)
+    assert all(len(row) == len(additions) for row in comparisons)
+    assert addition_admission.source_material == additions
+    assert any(
+        len(same_coordinates) > 1
+        for same_coordinates in addition_admission.admitted_material
+    )
+    assert {
+        occurrence
+        for same_coordinates in addition_admission.admitted_material
+        for occurrence in same_coordinates
+    } == set(additions)
 
 
 def test_later_material_does_not_enter_the_book_completeness_boundary(
