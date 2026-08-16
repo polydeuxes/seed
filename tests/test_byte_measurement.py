@@ -1063,3 +1063,62 @@ def test_pair_validation_refuses_more_carrying_occurrences_than_total_pairs():
 
     with pytest.raises(ByteMeasurementError, match="unlawful pair count"):
         assertions_of_recorded_byte_position_pair_measurement(ledger, event.identity)
+
+
+FIDELITY_SUBJECTS = {
+    "act_evidence_responsibility_boundary_occurrence_authority_scope": (
+        test_responsible_act_evidence_is_observable_before_yield_and_result,
+        test_one_responsible_act_occurrence_cannot_yield_twice,
+        test_yield_refuses_missing_responsible_act_evidence,
+        test_seed_native_measurement_and_result_assertions_keep_distinct_responsibilities,
+        test_seed_native_responsibility_is_earned_from_preserved_occurrences,
+    ),
+    "exact_act_occurrence": (
+        test_pair_act_identity_is_not_its_occurrence_identity,
+    ),
+    "yield_result_occurrence_evidence": (
+        test_yield_resolves_the_exact_act_evidence_after_reopen,
+        test_material_appended_after_act_evidence_cannot_enter_its_result,
+        test_yield_refuses_a_different_occurrence_kind,
+    ),
+    "declared_measurement_result": (
+        test_two_stages_traverse_byte_counts_once,
+        test_each_exact_ingest_is_counted_once_without_losing_zero_occurrence_material,
+        test_each_replay_validates_each_exact_ingest_once_and_reads_independently,
+        test_exact_bytes_supply_the_measured_subjects_without_whitespace,
+        test_the_complete_declared_localities_supply_the_inputs,
+        test_recurrence_exists_only_above_one,
+        test_the_rule_is_mechanics_not_an_unchecked_callable,
+        test_recorded_results_replay_the_complete_bounded_source_read,
+        test_a_self_consistent_truncated_source_assertion_is_refused,
+        test_recording_occurrence_evidence_is_validated_exactly,
+        test_ingest_after_the_measurement_boundary_cannot_enter_the_measurement,
+        test_a_missing_declared_locality_is_refused,
+        test_ingest_must_match_its_exact_byte_coordinates,
+        test_repeated_locality_coordinate_does_not_repeat_one_ingest,
+        test_every_overlapping_byte_position_pair_is_measured,
+        test_byte_position_pair_results_follow_first_observed_pair_positions,
+        test_position_pairs_never_cross_ingest_boundaries,
+        test_position_pair_measurement_remains_byte_not_character_based,
+        test_recorded_pair_results_replay_the_complete_bounded_source_read,
+        test_pair_validation_refuses_a_self_consistent_truncated_result_inputs,
+        test_pair_validation_does_not_perform_the_pair_measurement_again,
+        test_zero_measured_pairs_is_a_lawful_exact_result,
+        test_pair_validation_refuses_more_carrying_occurrences_than_total_pairs,
+    ),
+    "measurement_result_distinctions": (
+        test_count_and_recurrence_are_distinct_results,
+        test_pair_count_and_recurrence_are_separate_results,
+    ),
+    "applicability_determination": (
+        test_pair_validation_refuses_unsupported_input_applicability,
+        test_applicability_identity_is_bound_to_one_exact_downstream_act,
+        test_pair_applicability_has_unknown_and_conflicting_results,
+    ),
+    "one_exact_movement_assertion": (
+        test_locality_movement_assignment_is_earned_from_the_exact_source,
+    ),
+    "representation_source_coordinates": (
+        test_pair_validation_requires_one_exact_ordered_representation,
+    ),
+}

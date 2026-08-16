@@ -96,7 +96,7 @@ def _record(ledger, locality, finding):
     return act, result
 
 
-def test_pair_occurrence_measurement_yields_exact_positions_without_a_sign():
+def test_pair_occurrence_measurement_finds_exact_positions_without_a_sign():
     ledger, locality, _pair, _recurrence, _source, finding = _fixture()
 
     assert finding.occurrences == ((1, 0), (1, 6), (5, 0), (5, 6))
@@ -109,6 +109,10 @@ def test_pair_occurrence_measurement_yields_exact_positions_without_a_sign():
         1,
         5,
     }
+
+
+def test_pair_occurrence_measurement_yield_preserves_the_exact_finding():
+    ledger, locality, _pair, _recurrence, _source, finding = _fixture()
 
     act, result = _record(ledger, locality, finding)
     read = get_recorded_result_of_measurement_of_recurrent_byte_pair_occurrence_position(ledger, result.identity)
@@ -522,3 +526,34 @@ def test_each_measurement_of_pair_occurrence_position_crossing_refuses_its_own_c
         get_recorded_result_of_measurement_of_recurrent_byte_pair_occurrence_position(
             ledger, result.identity
         )
+
+
+FIDELITY_SUBJECTS = {
+    "assertion_standing_coordinates": (
+        test_measurement_result_does_not_promote_across_the_three_later_crossings,
+        test_pair_occurrence_result_enters_standing_as_one_exact_measurement_reference,
+    ),
+    "act_evidence_responsibility_boundary_occurrence_authority_scope": (
+        test_act_evidence_has_inputs_and_responsibility_but_no_result_finding,
+    ),
+    "yield_result_occurrence_evidence": (
+        test_pair_occurrence_measurement_yield_preserves_the_exact_finding,
+        test_occurrence_position_yield_cannot_impersonate_measurement_of_pair_occurrence_position_yield,
+    ),
+    "declared_measurement_result": (
+        test_pair_occurrence_measurement_finds_exact_positions_without_a_sign,
+        test_same_boundary_pair_fan_out_reads_the_pair_result_once,
+        test_same_boundary_pair_fan_out_requires_exact_distinct_recurrence_subjects,
+        test_same_boundary_pair_fan_out_keeps_each_result_evidence_independent,
+        test_occurrence_limit_is_explicit_and_preserves_exact_known_loss,
+        test_same_bytes_cannot_substitute_another_ingest_occurrence,
+        test_count_assertion_cannot_impersonate_recurrence_and_result_is_single_use,
+        test_unrelated_later_material_does_not_move_the_measured_boundary,
+    ),
+    "locality_relation_coordinates": (
+        test_distinct_locality_and_pre_source_boundary_are_refused,
+    ),
+    "representation_source_coordinates": (
+        test_each_measurement_of_pair_occurrence_position_crossing_refuses_its_own_corruption,
+    ),
+}

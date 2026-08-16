@@ -339,3 +339,20 @@ def test_piper_removal_results_form_one_exact_later_admission(
         for same_coordinates in result_admission.admitted_material
         for reference in same_coordinates
     } == {removal.result_reference for removal in removals}
+
+
+FIDELITY_SUBJECTS = {
+    "exact_act_occurrence": (
+        test_piper_loads_provider_model_once_for_the_work,
+        test_each_measured_material_from_one_supplied_work_reaches_piper,
+        test_piper_resident_boundary_refuses_unpreserved_invocation_options,
+        test_piper_preserves_every_exact_raw_result_coordinate,
+        test_each_piper_removal_result_reaches_one_exact_later_invocation,
+    ),
+    "input_act_relation_occurrence": (
+        test_piper_admission_keeps_every_invocation_result,
+        test_piper_admission_refuses_different_invocation_coordinates,
+        test_full_piper_admission_drives_whole_exact_removal_tuples,
+        test_piper_removal_results_form_one_exact_later_admission,
+    ),
+}

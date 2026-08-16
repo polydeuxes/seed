@@ -122,7 +122,7 @@ def test_each_story_material_has_one_exact_ordered_ingest_occurrence(
 def test_each_compiled_function_receives_the_same_story_occurrence_order(
     acquired_story_material,
 ):
-    _, _, _, _, references, invocation_rows, admission, _, _ = (
+    _, _, _, _, references, invocation_rows, _, _, _ = (
         acquired_story_material
     )
 
@@ -136,6 +136,15 @@ def test_each_compiled_function_receives_the_same_story_occurrence_order(
         == tuple(range(len(references)))
         for row in invocation_rows
     )
+
+
+def test_story_invocation_results_enter_one_complete_admission(
+    acquired_story_material,
+):
+    _, _, _, _, references, invocation_rows, admission, _, _ = (
+        acquired_story_material
+    )
+
     assert admission.source_material == references
     assert 1 < len(admission.admitted_material) < len(references)
     assert any(
@@ -213,3 +222,21 @@ def test_story_admission_refuses_one_changed_invocation_result(
                 *admission.invocation_result_references[1:],
             ),
         )
+
+
+FIDELITY_SUBJECTS = {
+    "exact_act_occurrence": (
+        test_each_compiled_function_receives_the_same_story_occurrence_order,
+    ),
+    "content_locality_occurrence_distinction": (
+        test_each_story_material_has_one_exact_ordered_ingest_occurrence,
+    ),
+    "input_act_relation_occurrence": (
+        test_story_invocation_results_enter_one_complete_admission,
+        test_story_occurrence_order_refuses_one_reordered_compiled_function,
+        test_story_admission_refuses_one_changed_invocation_result,
+    ),
+    "relation_required_coordinates": (
+        test_each_invocation_position_matches_the_measured_occurrence_position,
+    ),
+}

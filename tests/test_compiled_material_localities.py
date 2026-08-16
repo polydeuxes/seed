@@ -105,7 +105,8 @@ def test_every_measured_byte_reaches_the_compiled_function(material_invocations)
     assert all(occurrence.returned for occurrence in occurrences)
 
 
-def test_moved_byte_references_keep_identity_and_can_enter_one_new_locality(
+@pytest.fixture(scope="module")
+def moved_byte_references(
     material_invocations,
 ):
     ledger, references, _ = material_invocations
@@ -122,6 +123,14 @@ def test_moved_byte_references_keep_identity_and_can_enter_one_new_locality(
         destination_locality="one-byte-pairs",
     )
 
+    return ledger, references, moved
+
+
+def test_moved_byte_references_keep_identity_in_one_new_locality(
+    moved_byte_references,
+):
+    ledger, references, moved = moved_byte_references
+
     assert len(moved) == len(references) == 256
     assert {reference.locality_identity for reference in moved} == {
         "one-byte-pairs"
@@ -136,6 +145,12 @@ def test_moved_byte_references_keep_identity_and_can_enter_one_new_locality(
     assert tuple(reference.assertion_identity for reference in moved) == tuple(
         reference.assertion_identity for reference in references
     )
+
+
+def test_moved_byte_references_can_enter_one_new_admission(
+    moved_byte_references,
+):
+    _, _, moved = moved_byte_references
     admission = admission_occurrence(
         (moved,),
         boundary_identity="one-byte-moved-admission",
@@ -562,3 +577,34 @@ def test_added_result_coordinates_establish_more_than_one_admission(
         addition.result_reference for addition in additions
     )
     assert len(admission.admitted_material) > 1
+
+
+FIDELITY_SUBJECTS = {
+    "exact_act_occurrence": (
+        test_every_measured_byte_reaches_the_compiled_function,
+        test_compiled_function_establishes_distinct_raw_coordinates,
+        test_one_byte_material_crosses_the_return_code_boundary,
+        test_each_added_result_reaches_the_same_compiled_function,
+    ),
+    "measurement_result_distinctions": (
+        test_return_compare_does_not_inherit_provider_material_distinctions,
+    ),
+    "input_act_relation_occurrence": (
+        test_moved_byte_references_can_enter_one_new_admission,
+        test_return_admission_does_not_replace_exact_result_material,
+        test_each_ordered_material_pair_has_one_exact_addition_occurrence,
+        test_act_occurrence_limit_never_splits_admitted_material,
+        test_addition_cannot_cross_its_exact_admitted_material,
+        test_addition_refuses_another_admitted_reference_position,
+        test_distinct_admission_results_bind_each_addition_input,
+        test_exact_addition_occurrence_binds_source_and_result_invocations,
+        test_added_result_coordinates_establish_more_than_one_admission,
+    ),
+    "one_exact_movement_assertion": (
+        test_moved_byte_references_keep_identity_in_one_new_locality,
+    ),
+    "locality_relation_coordinates": (
+        test_each_returned_material_enters_a_fresh_locality,
+        test_distinct_admission_results_do_not_cross_localities_or_split_a_tuple,
+    ),
+}

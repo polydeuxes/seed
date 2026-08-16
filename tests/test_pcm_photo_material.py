@@ -461,3 +461,29 @@ def test_material_admission_refuses_a_result_from_another_function(
             admission_occurrence=admission.admission_occurrence,
             invocation_result_references=substituted,
         )
+
+
+FIDELITY_SUBJECTS = {
+    "exact_act_occurrence": (
+        test_every_exact_ingest_result_reaches_every_implementation_function,
+        test_one_material_ladder_reaches_every_registered_compiled_function,
+        test_invocations_refuse_repeated_implementation_function_identity,
+    ),
+    "content_locality_occurrence_distinction": (
+        test_pcm_lossy_audio_and_photo_material_are_exact_fixture_testimony,
+    ),
+    "input_act_relation_occurrence": (
+        test_each_compiled_function_establishes_one_exact_admission,
+        test_media_implementation_functions_do_not_all_make_one_admission,
+        test_every_ordered_media_admission_pair_has_an_exact_compare_occurrence,
+        test_every_compiled_function_admission_is_compared_in_both_directions,
+        test_material_admission_refuses_a_result_from_another_function,
+    ),
+    "relation_required_coordinates": (
+        test_equal_material_keeps_distinct_ingest_and_invocation_occurrences,
+        test_invocation_occurrence_refuses_material_different_from_its_ingest_result,
+    ),
+    "locality_relation_coordinates": (
+        test_each_supplied_material_has_a_fresh_locality_and_exact_ingest_result,
+    ),
+}

@@ -655,3 +655,37 @@ def test_durable_position_identities_are_not_reissued_after_reopen(tmp_path):
             assert new_identity(prefix) == f"{prefix}_{prior_number + 1:06d}"
     finally:
         reopened.close()
+
+
+FIDELITY_SUBJECTS = {
+    "act_evidence_responsibility_boundary_occurrence_authority_scope": (
+        test_corrupted_source_cannot_enter_act_evidence_after_measurement,
+        test_act_evidence_is_observed_before_yield_without_reconstructing_finding,
+        test_result_refuses_arbitrary_act_evidence_identity_without_appending,
+        test_result_refuses_wrong_kind_and_corrupted_act_evidence,
+    ),
+    "yield_result_occurrence_evidence": (
+        test_recorded_position_measurement_has_exact_act_and_evidence_of_yield_relation,
+        test_result_refuses_substituted_finding_without_appending_yield,
+        test_one_measurement_act_cannot_yield_two_results,
+        test_corrupted_input_act_or_evidence_of_yield_relation_is_refused,
+        test_durable_locality_positions_read_through_their_exact_yield,
+    ),
+    "declared_measurement_result": (
+        test_a_later_occurrence_does_not_revise_the_bounded_positions,
+        test_supplied_reversal_cannot_replace_the_ledger_measurement,
+        test_subclass_finding_cannot_replace_the_exact_measurement_type,
+        test_recording_and_reading_do_not_reconstruct_complete_result_material,
+        test_position_finding_establishes_no_stronger_relation,
+        test_changed_position_is_not_certified_by_unchanged_evidence,
+        test_result_carries_one_ordered_assertion_per_exact_position,
+        test_missing_reordered_duplicated_or_substituted_assertions_are_refused,
+        test_wrong_result_boundary_coordinates_are_refused,
+        test_wrong_boundary_is_refused_without_reconstructing_positions,
+        test_durable_position_identities_are_not_reissued_after_reopen,
+    ),
+    "locality_relation_coordinates": (
+        test_exact_locality_occurrences_receive_exact_positions,
+        test_another_locality_does_not_enter_the_position_measurement,
+    ),
+}
