@@ -23,7 +23,9 @@ from seed_runtime.operator_command import (
 )
 from seed_runtime.operator_checkpoint import (
     OperatorCheckpointRequest,
-    open_operator_checkpoint,
+    record_standing_boundary_reference_responsibility_assignment,
+    record_standing_boundary_reference_responsible_act_evidence,
+    record_standing_boundary_reference_result,
     request_operator_checkpoint,
 )
 from seed_runtime.operator_memory_command import (
@@ -435,10 +437,60 @@ def run_persistent_operator_console(
                 )
                 continue
             if isinstance(request, OperatorCheckpointRequest):
-                checkpoint = open_operator_checkpoint(ledger, command_run.addressed)
-                locality_identity = checkpoint.locality_identity
-                locality_standing = read_operator_locality_standing(
-                    ledger, locality_identity=locality_identity
+                assignment = (
+                    record_standing_boundary_reference_responsibility_assignment(
+                        ledger,
+                        addressed_command=command_run.addressed,
+                        locality_standing=locality_standing,
+                    )
+                )
+                locality_standing = _advance_over(
+                    ledger,
+                    locality_standing,
+                    (assignment.identity,),
+                    locality_identity=locality_identity,
+                )
+                representation = record_operator_representation(
+                    ledger,
+                    locality_identity=locality_identity,
+                    locality_standing=locality_standing,
+                )
+                locality_standing = _advance_over_representation(
+                    ledger, locality_standing, representation
+                )
+                act_evidence = (
+                    record_standing_boundary_reference_responsible_act_evidence(
+                        ledger,
+                        responsibility_assignment_event_identity=assignment.identity,
+                        responsibility_assignment_standing=locality_standing,
+                    )
+                )
+                locality_standing = _advance_over(
+                    ledger,
+                    locality_standing,
+                    (act_evidence.identity,),
+                    locality_identity=locality_identity,
+                )
+                representation = record_operator_representation(
+                    ledger,
+                    locality_identity=locality_identity,
+                    locality_standing=locality_standing,
+                )
+                locality_standing = _advance_over_representation(
+                    ledger, locality_standing, representation
+                )
+                checkpoint = record_standing_boundary_reference_result(
+                    ledger,
+                    responsible_act_evidence_event_identity=act_evidence.identity,
+                )
+                locality_standing = _advance_over(
+                    ledger,
+                    locality_standing,
+                    (
+                        checkpoint.material["yield_evidence_identity"],
+                        checkpoint.identity,
+                    ),
+                    locality_identity=locality_identity,
                 )
                 representation = record_operator_representation(
                     ledger,

@@ -5,7 +5,7 @@ from __future__ import annotations
 from io import BytesIO, StringIO
 
 from seed_runtime.events import EventLedger
-from seed_runtime.operator_checkpoint import ADDRESSED_REPRESENTATION_LOCALITY_EVIDENCE_KIND
+from seed_runtime.operator_checkpoint import STANDING_BOUNDARY_REFERENCE_RECORDED_KIND
 from seed_runtime.operator_console import run_persistent_operator_console
 from seed_runtime.operator_material_acquisition import (
     OPERATOR_MATERIAL_ACQUIRE_RECORDED_KIND,
@@ -88,91 +88,29 @@ def test_an_ordinary_command_does_not_divide_locality():
     assert ledger.get(representation_identity).locality_identity == "root-locality"
 
 
-def test_checkpoint_alone_divides_locality_at_the_last_representation():
+def test_checkpoint_records_one_boundary_reference_without_dividing_locality():
     ledger = _run(b"before\n/checkpoint\nafter\n")
-    evidence = next(
+    checkpoint = next(
         event for event in ledger.list()
-        if event.kind == ADDRESSED_REPRESENTATION_LOCALITY_EVIDENCE_KIND
+        if event.kind == STANDING_BOUNDARY_REFERENCE_RECORDED_KIND
     )
-    checkpoint = ledger.get(evidence.material["second_subject"])
-
-    assert evidence.locality_identity != "root-locality"
-    assert checkpoint.kind == "operator.representation.recorded"
     assert checkpoint.locality_identity == "root-locality"
-    assert isinstance(evidence.material["first_subject"], str)
-    assert evidence.material["second_subject"] == checkpoint.identity
-    assert not any("emission" in key for key in evidence.material)
-    assert _raw_bytes(ledger) == [b"before\n"]
-    assert [
-        ingested_material_bytes(event)
-        for event in ledger.list_locality(evidence.locality_identity)
-        if event.kind == MATERIAL_INGEST_OCCURRED_KIND
-    ] == [b"after\n"]
+    assert _raw_bytes(ledger) == [b"before\n", b"after\n"]
+    assert {event.locality_identity for event in ledger.list()} == {"root-locality"}
 
 
-def test_checkpoint_carries_one_representation_reference_not_source_locality_occurrences():
-    ledger = _run(b"one\ntwo\n/checkpoint\nafter\n")
-    evidence = next(
-        event
-        for event in ledger.list()
-        if event.kind == ADDRESSED_REPRESENTATION_LOCALITY_EVIDENCE_KIND
-    )
-    source_occurrences = {
-        event.identity for event in ledger.list_locality("root-locality")
-    }
-    destination_occurrences = ledger.list_locality(evidence.locality_identity)
-
-    def referenced_identities(material):
-        if isinstance(material, dict):
-            return {
-                identity
-                for value in material.values()
-                for identity in referenced_identities(value)
-            }
-        if isinstance(material, list):
-            return {
-                identity
-                for value in material
-                for identity in referenced_identities(value)
-            }
-        return {material} if isinstance(material, str) else set()
-
-    source_references = {
-        identity
-        for event in destination_occurrences
-        for identity in referenced_identities(event.material)
-        if identity in source_occurrences
-    }
-
-    assert source_references == {evidence.material["second_subject"]}
-    first_destination_representation = next(
-        event
-        for event in destination_occurrences
-        if event.kind == "operator.representation.recorded"
-    )
-    assert (
-        first_destination_representation.material[
-            "locality_standing_as_of_event_identity"
-        ]
-        is None
-    )
-
-
-def test_repeated_checkpoints_preserve_one_exact_checkpoint_chain():
+def test_repeated_checkpoints_record_distinct_exact_references_without_a_chain():
     ledger = _run(b"/checkpoint\n/checkpoint\n")
-    evidence = [
+    records = [
         event for event in ledger.list()
-        if event.kind == ADDRESSED_REPRESENTATION_LOCALITY_EVIDENCE_KIND
+        if event.kind == STANDING_BOUNDARY_REFERENCE_RECORDED_KIND
     ]
 
-    assert len(evidence) == 2
-    first_checkpoint = ledger.get(evidence[0].material["second_subject"])
-    second_checkpoint = ledger.get(evidence[1].material["second_subject"])
-    assert first_checkpoint.locality_identity == "root-locality"
-    assert second_checkpoint.locality_identity == evidence[0].locality_identity
-    assert evidence[1].locality_identity not in {
-        "root-locality", evidence[0].locality_identity
-    }
+    assert len(records) == 2
+    assert records[0].material["result_identity"] != records[1].material[
+        "result_identity"
+    ]
+    assert {record.locality_identity for record in records} == {"root-locality"}
 
 
 def test_unregistered_slash_name_reaches_the_exact_ingress_road():

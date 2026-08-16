@@ -34,8 +34,13 @@ from seed_runtime.operator_console import run_persistent_operator_console
 from seed_runtime.operator_locality_standing import read_operator_locality_standing
 from seed_runtime.operator_command import AddressedOperatorCommand, OperatorCommandFrame
 from seed_runtime.operator_checkpoint import (
-    ADDRESSED_REPRESENTATION_LOCALITY_EVIDENCE_KIND,
-    open_operator_checkpoint,
+    EVENT_KIND_RESPONSIBILITIES as CHECKPOINT_EVENT_KIND_RESPONSIBILITIES,
+    STANDING_BOUNDARY_REFERENCE_ACT_EVIDENCE_KIND,
+    STANDING_BOUNDARY_REFERENCE_RECORDED_KIND,
+    STANDING_BOUNDARY_REFERENCE_RESPONSIBILITY_ASSIGNMENT_RECORDED_KIND,
+    record_standing_boundary_reference_responsibility_assignment,
+    record_standing_boundary_reference_responsible_act_evidence,
+    record_standing_boundary_reference_result,
 )
 from seed_runtime.operator_representation import (
     EVENT_KIND_RESPONSIBILITIES as REPRESENTATION_EVENT_KIND_RESPONSIBILITIES,
@@ -563,105 +568,49 @@ def _operator_material_acquire_yield_witness() -> dict:
     return _yield_bundle(ledger, event)
 
 
-def _checkpoint_locality_witnesses() -> tuple[dict, dict]:
+def _standing_boundary_reference_yield_witness() -> dict:
     ledger = _IntegrityAdversaryLedger()
-
-    def record(locality_identity: str) -> dict:
-        representation = record_operator_representation(
-            ledger,
-            locality_identity=locality_identity,
-            locality_standing={"as_of_event_identity": None},
-        )
-        addressed = AddressedOperatorCommand(
-            command_identity=new_identity("operator_command"),
-            locality_identity=locality_identity,
-            addressed_at_representation_event_identity=representation[
-                "representation_event_identity"
-            ],
-            frame=OperatorCommandFrame(
-                exact_bytes=b"/checkpoint material\n",
-                name=b"checkpoint",
-                arguments=b"material",
-            ),
-        )
-        checkpoint_result = open_operator_checkpoint(ledger, addressed)
-        evidence = ledger.get(checkpoint_result.locality_evidence_event_identity)
-        checkpoint = ledger.get(
-            addressed.addressed_at_representation_event_identity
-        )
-        return {
-            "ledger": ledger,
-            "event": evidence,
-            "addressed": addressed,
-            "checkpoint": checkpoint,
-        }
-
-    return record("checkpoint-witness-one"), record("checkpoint-witness-two")
-
-
-def _checkpoint_locality_requirements(bundle: dict) -> dict[str, bool]:
-    event = bundle["event"]
-    addressed = bundle["addressed"]
-    checkpoint = bundle["checkpoint"]
-    if addressed is None or checkpoint is None:
-        return {
-            "exact_relation": False,
-            "occurrence_witness": False,
-            "intact_evidence": False,
-        }
-    exact_relation = (
-        event.material.get("first_subject") == addressed.command_identity
-        and event.material.get("second_subject") == checkpoint.identity
+    locality_identity = "standing-boundary-reference"
+    standing = read_operator_locality_standing(
+        ledger, locality_identity=locality_identity
     )
-    occurrence_witness = (
-        addressed.addressed_at_representation_event_identity == checkpoint.identity
-        and checkpoint.kind == "operator.representation.recorded"
-        and addressed.locality_identity == checkpoint.locality_identity
-        and event.locality_identity != checkpoint.locality_identity
+    representation = record_operator_representation(
+        ledger,
+        locality_identity=locality_identity,
+        locality_standing=standing,
     )
-    return {
-        "exact_relation": exact_relation,
-        "occurrence_witness": occurrence_witness,
-        "intact_evidence": all(
-            bundle["ledger"].integrity_of(item.identity) != CORRUPTED
-            for item in (event, checkpoint)
-        ),
-    }
-
-
-def _checkpoint_locality_cases() -> dict[str, str]:
-    exact, alternate = _checkpoint_locality_witnesses()
-    missing = dict(exact)
-    missing["event"] = deepcopy(exact["event"])
-    missing["event"].material["second_subject"] = "missing-checkpoint"
-    wrong_occurrence = dict(exact)
-    wrong_occurrence["checkpoint"] = alternate["checkpoint"]
-    corrupted, _ = _checkpoint_locality_witnesses()
-    corrupted["ledger"].mark_corrupted(corrupted["event"].identity)
-    unrelated = dict(exact)
-    unrelated["addressed"] = AddressedOperatorCommand(
-        command_identity=exact["addressed"].command_identity,
-        locality_identity=exact["addressed"].locality_identity,
-        addressed_at_representation_event_identity=(
-            exact["addressed"].addressed_at_representation_event_identity
-        ),
+    standing = read_operator_locality_standing(
+        ledger, locality_identity=locality_identity
+    )
+    addressed = AddressedOperatorCommand(
+        command_identity=new_identity("operator_command"),
+        locality_identity=locality_identity,
+        addressed_at_representation_event_identity=representation[
+            "representation_event_identity"
+        ],
         frame=OperatorCommandFrame(
-            exact_bytes=b"/checkpoint other\n",
+            exact_bytes=b"/checkpoint\n",
             name=b"checkpoint",
-            arguments=b"other",
+            arguments=b"",
         ),
     )
-
-    def witness(bundle: dict) -> str:
-        return EXACT if all(_checkpoint_locality_requirements(bundle).values()) else MISSING
-
-    return {
-        "exact": witness(exact),
-        "relation_missing": witness(missing),
-        "wrong_occurrence": witness(wrong_occurrence),
-        "corrupted_evidence": witness(corrupted),
-        "unrelated_occurrence": witness(unrelated),
-    }
+    assignment = record_standing_boundary_reference_responsibility_assignment(
+        ledger,
+        addressed_command=addressed,
+        locality_standing=standing,
+    )
+    assignment_standing = read_operator_locality_standing(
+        ledger, locality_identity=locality_identity
+    )
+    act = record_standing_boundary_reference_responsible_act_evidence(
+        ledger,
+        responsibility_assignment_event_identity=assignment.identity,
+        responsibility_assignment_standing=assignment_standing,
+    )
+    event = record_standing_boundary_reference_result(
+        ledger, responsible_act_evidence_event_identity=act.identity
+    )
+    return _yield_bundle(ledger, event)
 
 
 def _yield_bundle(ledger, event) -> dict:
@@ -1392,6 +1341,7 @@ def _remaining_yield_requirement_bundles() -> dict[str, dict[str, dict]]:
         "failed_emission": _failed_emission_yield_witness,
         "material_ingest": _material_ingest_yield_witness,
         "operator_material_acquire": _operator_material_acquire_yield_witness,
+        "standing_boundary_reference": _standing_boundary_reference_yield_witness,
         "standing_locality_continuation": (
             _standing_locality_continuation_yield_witness
         ),
@@ -1565,9 +1515,6 @@ def _live_relation_fidelity_cases() -> dict[
     )
     registered.update(_additional_live_relation_fidelity_cases())
     registered[("locality", "assertion_movement")] = _locality_fidelity_cases()
-    registered[("locality", "operator_checkpoint")] = (
-        _checkpoint_locality_cases()
-    )
     registered.update(
         {
             ("yield", boundary): {
@@ -3128,6 +3075,7 @@ def test_unrelated_yield_occurrences_do_not_share_result_identity():
         "failed_emission": _failed_emission_yield_witness,
         "material_ingest": _material_ingest_yield_witness,
         "operator_material_acquire": _operator_material_acquire_yield_witness,
+        "standing_boundary_reference": _standing_boundary_reference_yield_witness,
         "standing_locality_continuation": (
             _standing_locality_continuation_yield_witness
         ),
@@ -3222,6 +3170,18 @@ def test_operator_material_acquire_stages_keep_distinct_machine_clauses():
     assert ACQUIRE_EVENT_KIND_RESPONSIBILITIES[
         OPERATOR_MATERIAL_ACQUIRE_RECORDED_KIND
     ] == "01.Source.G"
+
+
+def test_standing_boundary_reference_stages_keep_distinct_machine_clauses():
+    assert CHECKPOINT_EVENT_KIND_RESPONSIBILITIES[
+        STANDING_BOUNDARY_REFERENCE_RESPONSIBILITY_ASSIGNMENT_RECORDED_KIND
+    ] == "05.Recording.D"
+    assert CHECKPOINT_EVENT_KIND_RESPONSIBILITIES[
+        STANDING_BOUNDARY_REFERENCE_ACT_EVIDENCE_KIND
+    ] == "02.Acts.A"
+    assert CHECKPOINT_EVENT_KIND_RESPONSIBILITIES[
+        STANDING_BOUNDARY_REFERENCE_RECORDED_KIND
+    ] == "05.Recording.D"
 
 
 def test_representation_source_act_and_locality_witnesses_do_not_absorb_each_other():
@@ -3517,7 +3477,6 @@ def test_each_dimensions_call_separates_authority_from_its_evidence_scope():
 
 
 LOCALITY_BOUNDARY_BY_KIND = {
-    "operator.addressed_representation.locality_evidenced": "operator_checkpoint",
     "operator.representation.locality_evidenced": "representation_result",
     "operator.representation.emission_attempt_locality_evidenced": (
         "emission_attempt"
@@ -3616,10 +3575,6 @@ def test_no_new_site_compounds_scope_with_locality():
 # or a dedicated one. grammar.json requires exact_relation, occurrence_witness,
 # and intact_evidence, and names no species for them.
 RELATION_EVIDENCE = {
-    "_checkpoint_locality_requirements": (
-        "locality",
-        "a command-to-checkpoint locality-evidence occurrence",
-    ),
     "_locality_requirements": (
         "locality",
         "the responsible movement Evidence occurrence",
@@ -3663,12 +3618,7 @@ def _relation_coordinates_from_live_witnesses() -> dict[str, dict[str, bool]]:
     emission = _emission_witness()
     representation = _representation_witness()
     applicability = _recorded_applicability()
-    checkpoint, _ = _checkpoint_locality_witnesses()
-
     return {
-        "_checkpoint_locality_requirements": _checkpoint_locality_requirements(
-            checkpoint
-        ),
         "_locality_requirements": _locality_requirements(applicability),
         "_assertion_locality_requirements": _assertion_locality_requirements(
             byte_measurement,

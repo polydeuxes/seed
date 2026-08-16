@@ -17,7 +17,9 @@ from pathlib import Path
 import re
 
 from seed_runtime.events import EventLedger
-from seed_runtime.operator_checkpoint import open_operator_checkpoint
+from seed_runtime.operator_checkpoint import (
+    record_standing_boundary_reference_responsibility_assignment,
+)
 from seed_runtime.operator_command import AddressedOperatorCommand
 from seed_runtime.operator_console import run_persistent_operator_console
 from tests.test_book_lexical_admission import (
@@ -1195,7 +1197,9 @@ def test_command_implementation_receives_no_constitutional_write_capability():
 
 
 def test_checkpoint_names_the_representation_it_addresses_not_an_emission():
-    wording = inspect.getdoc(open_operator_checkpoint) or ""
+    wording = inspect.getdoc(
+        record_standing_boundary_reference_responsibility_assignment
+    ) or ""
 
-    assert "exact Representation addressed by the command" in wording
-    assert "exact emission addressed by the command" not in wording
+    assert "exact addressed Representation" in wording
+    assert "exact addressed emission" not in wording

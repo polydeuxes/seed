@@ -22,6 +22,11 @@ When recorded material is admitted only to a diagnostic Act, that Act preserves 
 ### 05.Recording.C — Preservation and discard of implementation measurements
 Seed need not preserve every implementation measurement. A measurement is preserved when discarding it would erase material Evidence or established Standing not otherwise retained. Recording may preserve an Assertion carrying source coordinates or already established Standing. Record existence does not establish that Standing, establish the upstream Assertion, or perform Compare.
 
+### 05.Recording.D — Exact Standing boundary reference
+Within one current Locality Standing and one intact addressed Representation, active Book assigns this Seed the Responsibility only to record that Representation and its exact Standing boundary as one durable bounded reference in the same Locality. The assignment preserves its own subject, the exact recording Act and occurrence, result identity, source Locality, addressed Representation occurrence, exact Standing boundary, Scope, Evidence occurrence, Authority, limits, Unknowns, and Standing.
+
+The assignment, recording Act, Act occurrence, Yield, and recorded result remain distinct by identity. The recorded reference does not copy the Standing it references. Record existence establishes no represented relation, Standing revision, movement, Locality relation, Applicability, Participation, Compare, or Authority for another Act. Another recorded reference requires another exact assignment and Act occurrence.
+
 
 
 
@@ -46,6 +51,8 @@ Seed need not preserve every implementation measurement. A measurement is preser
 - act occurrence != recording occurrence
 - record exists != recorded Assertion Standing established by identity
 - record exists != recorded standing lawfully established
+- recorded Standing boundary reference != addressed Standing
+- recorded Standing boundary reference != movement or Locality relation
 - preservation decision != Standing decision
 - extraction occurrence != original act occurrence
 - recording != later participation

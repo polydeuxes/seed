@@ -295,6 +295,49 @@
         ["occurrence_to_result", "Assertion_truth"]
       ]
     },
+    "05.Recording.D": {
+      "subject": "one_exact_recorded_Standing_boundary_reference",
+      "responsibility": {
+        "kind": "exact_Standing_boundary_reference_recording",
+        "coordinates": [
+          "Responsibility_assignment_subject",
+          "exact_recording_Act",
+          "Act_occurrence",
+          "result_identity",
+          "source_Locality",
+          "addressed_Representation_occurrence",
+          "exact_Standing_boundary",
+          "Scope",
+          "Evidence_occurrence",
+          "Authority",
+          "limits",
+          "Unknowns",
+          "Standing"
+        ]
+      },
+      "authority": "active_Book_within_exact_Scope",
+      "preserves": [
+        "addressed_Representation_occurrence",
+        "exact_Standing_boundary",
+        "source_Locality"
+      ],
+      "does_not_establish": [
+        "represented_relation",
+        "Standing_revision",
+        "movement",
+        "Locality_relation",
+        "Applicability",
+        "Participation",
+        "Compare",
+        "Authority_for_another_Act"
+      ],
+      "distinct_from": [
+        ["Responsibility_assignment", "recording_Act"],
+        ["recording_Act", "Act_occurrence"],
+        ["Act_occurrence", "recorded_result"],
+        ["recorded_Standing_boundary_reference", "addressed_Standing"]
+      ]
+    },
     "06.Locality.A": {
       "subject": "Locality_relation",
       "identity": [
