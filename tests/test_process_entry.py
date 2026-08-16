@@ -10,6 +10,7 @@ import pytest
 
 from seed_runtime import process_entry
 from seed_runtime.events import SQLiteEventLedger
+from seed_runtime.material_ingest import MATERIAL_INGEST_OCCURRED_KIND
 from seed_runtime.operator_material_acquisition import (
     OPERATOR_MATERIAL_ACQUIRE_RECORDED_KIND,
 )
@@ -239,6 +240,58 @@ def test_live_process_composes_the_bounded_host_provider(tmp_path, name):
 
     assert result.returncode == 0, result.stderr
     assert result.stdout == expected
+
+
+def test_live_process_ingests_pytest_measurement_without_egressing_it(tmp_path):
+    database = tmp_path / "pytest.db"
+    nodeid = (
+        b"tests/test_implementation_function_measurement.py::"
+        b"test_compiled_code_supplies_identities_without_ast_taxonomy"
+    )
+
+    result = subprocess.run(
+        [
+            sys.executable,
+            "-m",
+            "seed_runtime.process_entry",
+            "--db",
+            str(database),
+        ],
+        input=b"!pytest " + nodeid + b"\n",
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        check=False,
+        cwd=str(Path(__file__).resolve().parent.parent),
+    )
+
+    assert result.returncode == 0, result.stderr
+    ledger = SQLiteEventLedger(database)
+    try:
+        ingests = [
+            event
+            for event in ledger.list()
+            if event.kind == MATERIAL_INGEST_OCCURRED_KIND
+        ]
+    finally:
+        ledger.close()
+    assert len(ingests) == 5
+    assert [event.material["source_boundary"] for event in ingests[-4:]] == [
+        "invocation output",
+        "invocation error",
+        "implementation function measurement",
+        "invocation end",
+    ]
+    assert [
+        event.material["provenance_occurrence_references"]
+        for event in ingests[-4:]
+    ] == [[ingests[0].identity]] * 4
+    assert result.stdout == (
+        ingests[-4].exact_material + ingests[-3].exact_material
+    )
+    assert result.stderr == b""
+    assert ingests[-2].exact_material
+    assert ingests[-2].exact_material not in result.stdout
+    assert ingests[-1].exact_material == b""
 
 
 def test_live_entry_has_only_help_and_database_flags():

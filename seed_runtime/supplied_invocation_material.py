@@ -32,26 +32,38 @@ class SuppliedMaterialOccurrence:
 
 @dataclass(frozen=True, slots=True)
 class SuppliedInvocationMaterial:
-    output_material: SuppliedMaterialOccurrence
-    error_material: SuppliedMaterialOccurrence
-    end_material: SuppliedMaterialOccurrence
+    occurrences: tuple[SuppliedMaterialOccurrence, ...]
+    egress_occurrence_positions: tuple[int, ...]
 
     def __post_init__(self) -> None:
-        occurrences = (
-            self.output_material,
-            self.error_material,
-            self.end_material,
-        )
-        if any(
-            type(occurrence) is not SuppliedMaterialOccurrence
-            for occurrence in occurrences
+        if (
+            type(self.occurrences) is not tuple
+            or not self.occurrences
+            or any(
+                type(occurrence) is not SuppliedMaterialOccurrence
+                for occurrence in self.occurrences
+            )
         ):
             raise TypeError("exact supplied material required")
         boundaries = tuple(
-            occurrence.source_boundary for occurrence in occurrences
+            occurrence.source_boundary for occurrence in self.occurrences
         )
         if len(set(boundaries)) != len(boundaries):
             raise ValueError("distinct source boundary required")
+        if (
+            type(self.egress_occurrence_positions) is not tuple
+            or any(
+                type(position) is not int
+                or position < 0
+                or position >= len(self.occurrences)
+                for position in self.egress_occurrence_positions
+            )
+        ):
+            raise TypeError("exact egress occurrence positions required")
+        if len(set(self.egress_occurrence_positions)) != len(
+            self.egress_occurrence_positions
+        ):
+            raise ValueError("distinct egress occurrence positions required")
 
 
 SuppliedInvocationProvider = Callable[[bytes], SuppliedInvocationMaterial]
@@ -63,8 +75,8 @@ def ingest_supplied_invocation_material(
     locality_identity: str,
     command_occurrence_reference: str,
     supplied: SuppliedInvocationMaterial,
-) -> tuple[Event, Event, Event]:
-    """Ingest supplied output, error, and end material in exact order."""
+) -> tuple[Event, ...]:
+    """Ingest one ordered tuple of exact supplied material occurrences."""
 
     if type(supplied) is not SuppliedInvocationMaterial:
         raise TypeError("exact supplied material required")
@@ -93,9 +105,5 @@ def ingest_supplied_invocation_material(
             known_loss=occurrence.known_loss,
             provenance_occurrence_references=(command_occurrence.identity,),
         )
-        for occurrence in (
-            supplied.output_material,
-            supplied.error_material,
-            supplied.end_material,
-        )
+        for occurrence in supplied.occurrences
     )

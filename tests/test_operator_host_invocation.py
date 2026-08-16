@@ -18,6 +18,10 @@ from seed_runtime.operator_console import run_persistent_operator_console
 from seed_runtime.operator_locality_standing import (
     read_operator_locality_standing,
 )
+from seed_runtime.operator_material_acquisition import (
+    OPERATOR_MATERIAL_ACQUIRE_ACT_EVIDENCE_KIND,
+    OPERATOR_MATERIAL_ACQUIRE_RECORDED_KIND,
+)
 from seed_runtime.supplied_invocation_material import (
     SuppliedInvocationMaterial,
     SuppliedMaterialOccurrence,
@@ -30,9 +34,12 @@ def _supplied(
     *, output=b"\x00\xffout", error=b"same", end=b""
 ) -> SuppliedInvocationMaterial:
     return SuppliedInvocationMaterial(
-        output_material=SuppliedMaterialOccurrence(output, "provider:0"),
-        error_material=SuppliedMaterialOccurrence(error, "provider:1"),
-        end_material=SuppliedMaterialOccurrence(end, "provider:2"),
+        occurrences=(
+            SuppliedMaterialOccurrence(output, "provider:0"),
+            SuppliedMaterialOccurrence(error, "provider:1"),
+            SuppliedMaterialOccurrence(end, "provider:2"),
+        ),
+        egress_occurrence_positions=(0, 1),
     )
 
 
@@ -52,6 +59,43 @@ def _command(ledger, *, locality="locality", exact=b"!ls\n"):
         source_role="operator",
         source_boundary="operator boundary",
     )
+
+
+def _represented_boundary_kinds(ledger):
+    represented = []
+    for event in ledger.list_locality("locality"):
+        if event.kind != "operator.representation.recorded":
+            continue
+        standing_boundary = event.material[
+            "locality_standing_as_of_event_identity"
+        ]
+        source_reference = event.material["source_occurrence_reference"]
+        represented.append(
+            (
+                (
+                    None
+                    if standing_boundary is None
+                    else ledger.get(standing_boundary).kind
+                ),
+                (
+                    None
+                    if source_reference is None
+                    else ledger.get(source_reference).kind
+                ),
+            )
+        )
+    return tuple(represented)
+
+
+_COMPLETE_COMMAND_REPRESENTED_BOUNDARIES = (
+    (None, None),
+    (OPERATOR_MATERIAL_ACQUIRE_ACT_EVIDENCE_KIND, None),
+    (
+        OPERATOR_MATERIAL_ACQUIRE_RECORDED_KIND,
+        OPERATOR_MATERIAL_ACQUIRE_RECORDED_KIND,
+    ),
+    (OCCURRENCE_POSITION_RECORDED_KIND, None),
+)
 
 
 def test_host_provider_receives_an_acquired_exact_command_before_it_occurs():
@@ -78,13 +122,10 @@ def test_host_provider_receives_an_acquired_exact_command_before_it_occurs():
                 if event.kind == OCCURRENCE_POSITION_RECORDED_KIND
             ]
         ) == 1
-        assert len(
-            [
-                event
-                for event in ledger.list_locality("locality")
-                if event.kind == "operator.representation.recorded"
-            ]
-        ) == 2
+        assert (
+            _represented_boundary_kinds(ledger)
+            == _COMPLETE_COMMAND_REPRESENTED_BOUNDARIES
+        )
         return _supplied()
 
     run_persistent_operator_console(
@@ -181,15 +222,62 @@ def test_provider_death_leaves_the_complete_command_acquisition():
             if event.kind == BYTE_MEASUREMENT_RECORDED_KIND
         ]
     ) == 1
-    representations = [
-        event
+    assert (
+        _represented_boundary_kinds(ledger)
+        == _COMPLETE_COMMAND_REPRESENTED_BOUNDARIES
+    )
+
+
+def test_provider_declares_exact_egress_order_without_egressing_other_results():
+    ledger = EventLedger()
+    raw_output = BytesIO()
+    supplied = SuppliedInvocationMaterial(
+        occurrences=(
+            SuppliedMaterialOccurrence(b"output", "provider:output"),
+            SuppliedMaterialOccurrence(b"error", "provider:error"),
+            SuppliedMaterialOccurrence(b"artifact", "provider:artifact"),
+            SuppliedMaterialOccurrence(b"end", "provider:end"),
+        ),
+        egress_occurrence_positions=(1, 0),
+    )
+
+    run_persistent_operator_console(
+        ledger=ledger,
+        locality_identity="locality",
+        input_stream=BytesIO(b"!ls\n"),
+        output_stream=StringIO(),
+        raw_output_stream=raw_output,
+        host_invocation_provider=lambda _exact: supplied,
+    )
+
+    ingests = _ingests(ledger)
+    supplied_ingests = ingests[1:]
+    assert [event.exact_material for event in supplied_ingests] == [
+        b"output",
+        b"error",
+        b"artifact",
+        b"end",
+    ]
+    assert [
+        event.material["provenance_occurrence_references"]
+        for event in supplied_ingests
+    ] == [[ingests[0].identity]] * 4
+    assert raw_output.getvalue() == b"erroroutput"
+    supplied_identities = {event.identity for event in supplied_ingests}
+    assert [
+        event.material["source_occurrence_reference"]
         for event in ledger.list_locality("locality")
         if event.kind == "operator.representation.recorded"
-    ]
-    assert len(representations) == 2
-    assert representations[-1].material[
-        "locality_standing_as_of_event_identity"
-    ] is not None
+        and event.material["source_occurrence_reference"]
+        in supplied_identities
+    ] == [supplied_ingests[1].identity, supplied_ingests[0].identity]
+    standing = read_operator_locality_standing(
+        ledger, locality_identity="locality"
+    )
+    assert [
+        occurrence["evidence_event_identity"]
+        for occurrence in standing["ingest_occurrences"][-4:]
+    ] == [event.identity for event in supplied_ingests]
 
 
 def test_missing_supplied_result_is_refused_after_command_acquisition():
@@ -242,15 +330,21 @@ def test_supplied_boundaries_and_carrier_require_exact_types():
 
     with pytest.raises(ValueError, match="distinct source boundary required"):
         SuppliedInvocationMaterial(
-            output_material=SuppliedMaterialOccurrence(b"", "same"),
-            error_material=SuppliedMaterialOccurrence(b"", "same"),
-            end_material=SuppliedMaterialOccurrence(b"", "end"),
+            occurrences=(
+                SuppliedMaterialOccurrence(b"", "same"),
+                SuppliedMaterialOccurrence(b"", "same"),
+                SuppliedMaterialOccurrence(b"", "end"),
+            ),
+            egress_occurrence_positions=(0, 1),
         )
     with pytest.raises(TypeError, match="exact supplied material required"):
         SuppliedInvocationMaterial(
-            output_material=OtherOccurrence(b"", "output"),
-            error_material=SuppliedMaterialOccurrence(b"", "error"),
-            end_material=SuppliedMaterialOccurrence(b"", "end"),
+            occurrences=(
+                OtherOccurrence(b"", "output"),
+                SuppliedMaterialOccurrence(b"", "error"),
+                SuppliedMaterialOccurrence(b"", "end"),
+            ),
+            egress_occurrence_positions=(0, 1),
         )
 
     class OtherMaterial(SuppliedInvocationMaterial):
@@ -264,10 +358,37 @@ def test_supplied_boundaries_and_carrier_require_exact_types():
             locality_identity="locality",
             command_occurrence_reference=command.identity,
             supplied=OtherMaterial(
-                output_material=SuppliedMaterialOccurrence(b"", "output"),
-                error_material=SuppliedMaterialOccurrence(b"", "error"),
-                end_material=SuppliedMaterialOccurrence(b"", "end"),
+                occurrences=(
+                    SuppliedMaterialOccurrence(b"", "output"),
+                    SuppliedMaterialOccurrence(b"", "error"),
+                    SuppliedMaterialOccurrence(b"", "end"),
+                ),
+                egress_occurrence_positions=(0, 1),
             ),
+        )
+
+
+@pytest.mark.parametrize(
+    ("positions", "error_type"),
+    (
+        ([0], TypeError),
+        ((0, 0), ValueError),
+        ((3,), TypeError),
+        ((-1,), TypeError),
+        ((True,), TypeError),
+    ),
+)
+def test_supplied_egress_positions_are_exact_distinct_and_bounded(
+    positions, error_type
+):
+    with pytest.raises(error_type, match="egress occurrence positions"):
+        SuppliedInvocationMaterial(
+            occurrences=(
+                SuppliedMaterialOccurrence(b"", "output"),
+                SuppliedMaterialOccurrence(b"", "error"),
+                SuppliedMaterialOccurrence(b"", "end"),
+            ),
+            egress_occurrence_positions=positions,
         )
 
 

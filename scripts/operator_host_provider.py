@@ -1,11 +1,14 @@
 #!/usr/bin/env python3
-"""Bounded host mechanics for exact ``!ls`` and ``!cat`` material."""
+"""Bounded host mechanics for exact opt-in operator invocations."""
 
 from __future__ import annotations
 
 import os
+from pathlib import Path
 import selectors
 import subprocess
+import sys
+import tempfile
 import time
 
 from seed_runtime.supplied_invocation_material import (
@@ -16,10 +19,24 @@ from seed_runtime.supplied_invocation_material import (
 
 TIME_LIMIT_SECONDS = 2.0
 MATERIAL_BYTE_LIMIT = 65536
+IMPLEMENTATION_MEASUREMENT_BYTE_LIMIT = 262144
 _IMPLEMENTATIONS = {
     b"ls": b"/usr/bin/ls",
     b"cat": b"/usr/bin/cat",
 }
+_PYTEST_INVOCATION = (
+    os.fsencode(sys.executable),
+    b"-m",
+    b"pytest",
+    b"-q",
+    b"-p",
+    b"scripts.implementation_function_measurement",
+    b"--",
+)
+_PYTEST_MEASUREMENT_ENVIRONMENT_COORDINATE = (
+    "SEED_IMPLEMENTATION_FUNCTION_MEASUREMENT"
+)
+_ROOT = Path(__file__).resolve().parents[1]
 _LIMIT_LOSS = (
     "material beyond the supplied boundary is not available",
 )
@@ -53,27 +70,40 @@ def _invocation_argv(exact_command: bytes) -> tuple[bytes, ...]:
         if split_at < len(addressed)
         else b""
     )
-    implementation = _IMPLEMENTATIONS.get(name)
-    if implementation is None:
-        raise OperatorHostProviderError("one exact invocation is required")
+    if name == b"pytest":
+        invocation = _PYTEST_INVOCATION
+    else:
+        implementation = _IMPLEMENTATIONS.get(name)
+        if implementation is None:
+            raise OperatorHostProviderError("one exact invocation is required")
+        invocation = (implementation,)
     if b"\x00" in argument:
         raise OperatorHostProviderError("exact material cannot cross this boundary")
     if not argument:
-        return (implementation,)
-    return implementation, b"--", argument
+        return invocation
+    if name == b"pytest":
+        return *invocation, argument
+    return *invocation, b"--", argument
 
 
 def _bounded_invocation(
     argv: tuple[bytes, ...],
+    *,
+    environment: dict[str, str] | None = None,
+    working_directory: Path | None = None,
 ) -> tuple[bytes, bytes, bool, bool, bool]:
-    process = subprocess.Popen(
-        argv,
-        stdin=subprocess.DEVNULL,
-        stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE,
-        bufsize=0,
-        shell=False,
-    )
+    coordinates = {
+        "stdin": subprocess.DEVNULL,
+        "stdout": subprocess.PIPE,
+        "stderr": subprocess.PIPE,
+        "bufsize": 0,
+        "shell": False,
+    }
+    if environment is not None:
+        coordinates["env"] = environment
+    if working_directory is not None:
+        coordinates["cwd"] = working_directory
+    process = subprocess.Popen(argv, **coordinates)
     if process.stdout is None or process.stderr is None:
         process.kill()
         process.wait()
@@ -143,25 +173,112 @@ def _bounded_invocation(
     )
 
 
+def _bounded_artifact(
+    path: Path, *, missing_is_known_loss: bool = False
+) -> tuple[bytes, bool]:
+    try:
+        with path.open("rb") as stream:
+            material = stream.read(IMPLEMENTATION_MEASUREMENT_BYTE_LIMIT + 1)
+    except FileNotFoundError as error:
+        if missing_is_known_loss:
+            return b"", True
+        raise OperatorHostProviderError(
+            "exact implementation measurement material required"
+        ) from error
+    return (
+        material[:IMPLEMENTATION_MEASUREMENT_BYTE_LIMIT],
+        len(material) > IMPLEMENTATION_MEASUREMENT_BYTE_LIMIT,
+    )
+
+
+def _supplied_invocation(
+    output: bytes,
+    error: bytes,
+    *,
+    timed_out: bool,
+    output_limited: bool,
+    error_limited: bool,
+    additional_occurrences: tuple[SuppliedMaterialOccurrence, ...] = (),
+) -> SuppliedInvocationMaterial:
+    invocation_loss = (
+        _LIMIT_LOSS
+        if timed_out or output_limited or error_limited
+        else ()
+    )
+    return SuppliedInvocationMaterial(
+        occurrences=(
+            SuppliedMaterialOccurrence(
+                exact_bytes=output,
+                source_boundary="invocation output",
+                known_loss=invocation_loss,
+            ),
+            SuppliedMaterialOccurrence(
+                exact_bytes=error,
+                source_boundary="invocation error",
+                known_loss=invocation_loss,
+            ),
+            *additional_occurrences,
+            SuppliedMaterialOccurrence(
+                exact_bytes=b"",
+                source_boundary="invocation end",
+            ),
+        ),
+        egress_occurrence_positions=(0, 1),
+    )
+
+
 def invoke_operator_host(exact_command: bytes) -> SuppliedInvocationMaterial:
     argv = _invocation_argv(exact_command)
-    output, error, timed_out, output_limited, error_limited = (
-        _bounded_invocation(argv)
-    )
-    timed_loss = _LIMIT_LOSS if timed_out else ()
-    return SuppliedInvocationMaterial(
-        output_material=SuppliedMaterialOccurrence(
-            exact_bytes=output,
-            source_boundary="invocation output",
-            known_loss=_LIMIT_LOSS if output_limited else timed_loss,
-        ),
-        error_material=SuppliedMaterialOccurrence(
-            exact_bytes=error,
-            source_boundary="invocation error",
-            known_loss=_LIMIT_LOSS if error_limited else timed_loss,
-        ),
-        end_material=SuppliedMaterialOccurrence(
-            exact_bytes=b"",
-            source_boundary="invocation end",
+    if argv[: len(_PYTEST_INVOCATION)] != _PYTEST_INVOCATION:
+        output, error, timed_out, output_limited, error_limited = (
+            _bounded_invocation(argv)
+        )
+        return _supplied_invocation(
+            output,
+            error,
+            timed_out=timed_out,
+            output_limited=output_limited,
+            error_limited=error_limited,
+        )
+    with tempfile.TemporaryDirectory(prefix="seed-pytest-measurement-") as directory:
+        artifact_path = Path(directory) / "implementation-measurement"
+        output, error, timed_out, output_limited, error_limited = (
+            _bounded_invocation(
+                argv,
+                environment={
+                    "PYTEST_DISABLE_PLUGIN_AUTOLOAD": "1",
+                    "PYTHONDONTWRITEBYTECODE": "1",
+                    _PYTEST_MEASUREMENT_ENVIRONMENT_COORDINATE: str(
+                        artifact_path
+                    ),
+                },
+                working_directory=_ROOT,
+            )
+        )
+        artifact, artifact_limited = _bounded_artifact(
+            artifact_path,
+            missing_is_known_loss=(
+                timed_out or output_limited or error_limited
+            ),
+        )
+    return _supplied_invocation(
+        output,
+        error,
+        timed_out=timed_out,
+        output_limited=output_limited,
+        error_limited=error_limited,
+        additional_occurrences=(
+            SuppliedMaterialOccurrence(
+                exact_bytes=artifact,
+                source_boundary="implementation function measurement",
+                known_loss=(
+                    _LIMIT_LOSS
+                    if artifact_limited
+                    or timed_out
+                    or output_limited
+                    or error_limited
+                    else ()
+                ),
+            ),
         ),
     )

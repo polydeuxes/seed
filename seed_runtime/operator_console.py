@@ -305,7 +305,12 @@ def run_persistent_operator_console(
                     locality_standing,
                     locality_identity=locality_identity,
                 )
-                for supplied_occurrence in supplied_occurrences[:2]:
+                for egress_occurrence_position in (
+                    supplied.egress_occurrence_positions
+                ):
+                    supplied_occurrence = supplied_occurrences[
+                        egress_occurrence_position
+                    ]
                     representation = record_operator_representation(
                         ledger,
                         locality_identity=locality_identity,
