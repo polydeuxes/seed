@@ -769,6 +769,11 @@ def test_format_recurrence_accepts_a_matching_full_function_vector(
     assert later is not None
     assert coordinate is not None
     assert len(earlier) == 2
+    assert any(
+        comparison.result_invocation_occurrence_identity
+        != later[0].result_invocation_occurrence_identity
+        for comparison in earlier[0]
+    )
 
 
 def test_compiled_format_implementation_functions_admit_the_same_material_differently(
@@ -1725,6 +1730,11 @@ def test_removal_recurrence_accepts_a_matching_full_function_vector(
     assert later is not None
     assert coordinate is not None
     assert len(earlier) == 2
+    assert any(
+        comparison.result_invocation_occurrence_identity
+        != later[0].result_invocation_occurrence_identity
+        for comparison in earlier[0]
+    )
 
 
 def test_removal_compare_refuses_a_result_without_its_act_occurrence():
