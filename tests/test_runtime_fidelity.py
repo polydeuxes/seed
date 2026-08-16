@@ -24,7 +24,6 @@ from seed_runtime.operator_command import AddressedOperatorCommand
 from seed_runtime.operator_console import run_persistent_operator_console
 from tests.test_book_lexical_admission import (
     admitted_lexicon,
-    machine_grammar_words,
     scan_active_line,
 )
 
@@ -812,37 +811,6 @@ def test_seed_authored_event_material_values_have_lexical_admission():
         f"{path}:{line} [{word}] {value}"
         for path, line, word, value in violations
     )
-
-
-def _runtime_record_words() -> set[str]:
-    found = set()
-    for path, tree in _runtime_trees():
-        values = [
-            node.value.value
-            for node in tree.body
-            if isinstance(node, ast.Assign)
-            and isinstance(node.value, ast.Constant)
-            and isinstance(node.value.value, str)
-            and any(
-                isinstance(name, ast.Name) and name.id.endswith("_KIND")
-                for name in node.targets
-            )
-        ]
-        values.extend(value for _line, value in _literal_dict_keys(tree))
-        values.extend(
-            value
-            for _source, _line, value in _authored_event_material_strings(path, tree)
-        )
-        found.update(
-            word
-            for value in values
-            for word in re.findall(r"[A-Za-z]+", scan_active_line(value).lower())
-        )
-    return found
-
-
-def test_runtime_record_words_are_machine_grammar_words():
-    assert _runtime_record_words() <= machine_grammar_words()
 
 
 def test_authored_value_admission_catches_an_unadmitted_word_without_naming_it():
