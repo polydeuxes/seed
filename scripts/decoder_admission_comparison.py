@@ -42,19 +42,19 @@ def compare_admissions(found: dict[Admission, list[str]]) -> dict[str, int]:
     keys = list(found)
     above: dict[int, int] = {}
     below: dict[int, int] = {}
+    preservation_pairs = 0
     for i, first in enumerate(keys):
-        for j, second in enumerate(keys):
-            if i != j and material_admission.preserves(first, second):
+        for j in range(i + 1, len(keys)):
+            second = keys[j]
+            first_preserves_second = material_admission.preserves(first, second)
+            second_preserves_first = material_admission.preserves(second, first)
+            if first_preserves_second:
                 below[i] = below.get(i, 0) + 1
                 above[j] = above.get(j, 0) + 1
-    preservation_pairs = sum(
-        1
-        for i in range(len(keys))
-        for j in range(i + 1, len(keys))
-        if material_admission.preserves(
-            keys[i], keys[j]
-        ) or material_admission.preserves(keys[j], keys[i])
-    )
+            if second_preserves_first:
+                below[j] = below.get(j, 0) + 1
+                above[i] = above.get(i, 0) + 1
+            preservation_pairs += first_preserves_second or second_preserves_first
     return {
         "admissions": len(keys),
         "not_preserved_by_another": sum(

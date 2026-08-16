@@ -70,3 +70,26 @@ def test_repeated_comparison_uses_the_exact_prior_admission():
 
     assert admissions() is first
     assert final_admission("utf-8") is final_admission("utf-8")
+
+
+def test_each_ordered_admission_pair_is_read_once(monkeypatch):
+    found = {
+        frozenset({frozenset({0, 1, 2})}): ["compiled-0"],
+        frozenset({frozenset({0, 1}), frozenset({2})}): ["compiled-1"],
+        frozenset({frozenset({0}), frozenset({1}), frozenset({2})}): [
+            "compiled-2"
+        ],
+    }
+    calls = []
+    exact = material_admission.preserves
+
+    def measured(first, second):
+        calls.append((first, second))
+        return exact(first, second)
+
+    monkeypatch.setattr(material_admission, "preserves", measured)
+
+    compare_admissions(found)
+
+    assert len(calls) == 6
+    assert len(set(calls)) == 6
