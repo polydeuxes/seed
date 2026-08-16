@@ -48,30 +48,40 @@ def exact_casting_material():
         )
         for locality, material, boundary in (
             (
-                "material-casting-corpus",
+                "material-casting-L1",
                 b"".join(books),
                 "sixteen supplied books",
             ),
             (
-                "material-casting-operator",
+                "material-casting-L1",
                 b"what does this exact material distinguish?\n",
                 "operator material",
             ),
             (
-                "material-casting-today",
+                "material-casting-L1",
                 b"one bounded session material\n",
                 "today material",
             ),
             (
-                "material-casting-lineage",
+                "material-casting-L1",
                 b"one exact earlier lineage material\n",
                 "lineage material",
             ),
+            (
+                "material-casting-L2",
+                b"available elsewhere is not applicable here\n",
+                "unrelated Locality material",
+            ),
         )
     )
-    corpus_reference, operator_reference, today_reference, lineage_reference = tuple(
-        ingest_result_reference(ledger, occurrence.identity)
-        for occurrence in occurrences
+    (
+        corpus_reference,
+        operator_reference,
+        today_reference,
+        lineage_reference,
+        unrelated_locality_reference,
+    ) = tuple(
+        ingest_result_reference(ledger, occurrence.identity) for occurrence in occurrences
     )
     return (
         books,
@@ -83,6 +93,7 @@ def exact_casting_material():
         operator_reference,
         today_reference,
         lineage_reference,
+        unrelated_locality_reference,
     )
 
 
@@ -141,7 +152,7 @@ def _cast_against_books(subject, books, *, boundary_identity):
 def test_operator_today_and_lineage_material_are_discriminated_in_separate_castings(
     exact_casting_material,
 ):
-    _, _, books, operator, today, lineage = exact_casting_material
+    _, _, books, operator, today, lineage, _ = exact_casting_material
     castings = tuple(
         _cast_against_books(subject, books, boundary_identity=name)
         for name, subject in (
@@ -231,7 +242,7 @@ def test_casting_stops_at_compare_without_granting_admission_or_applicability(
 def test_material_partition_and_compare_refuse_crossed_coordinates(
     exact_casting_material,
 ):
-    books, corpus_reference, book_references, operator, today, *_ = (
+    books, corpus_reference, book_references, operator, today, _, unrelated = (
         exact_casting_material
     )
     references = (operator, *book_references)
@@ -264,4 +275,28 @@ def test_material_partition_and_compare_refuse_crossed_coordinates(
             invocations,
             ((operator, operator),),
             boundary_identity="self-casting-compare",
+        )
+    crossed_invocations = compiled_reference_invocations(
+        (operator, unrelated),
+        boundary_identity="crossed-locality-casting-invocation",
+    )
+    with pytest.raises(ValueError, match="crossed Localities"):
+        compare_compiled_reference_invocations(
+            crossed_invocations,
+            ((operator, unrelated),),
+            boundary_identity="crossed-locality-casting-compare",
+        )
+    crossed_material_invocations = reference_occurrences_across(
+        (operator, unrelated),
+        boundary_identity="crossed-locality-material-invocation",
+        implementation_functions=(MATERIAL_IMPLEMENTATION_FUNCTIONS[0],),
+        max_workers=2,
+        time_limit_second_count=5.0,
+        material_byte_count_limit=4096,
+    )
+    with pytest.raises(ValueError, match="crossed Localities"):
+        compare_material_reference_invocations(
+            crossed_material_invocations,
+            ((operator, unrelated),),
+            boundary_identity="crossed-locality-material-compare",
         )

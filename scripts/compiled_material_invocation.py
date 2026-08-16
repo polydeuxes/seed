@@ -434,6 +434,15 @@ class MaterialReferenceCompareOccurrence:
             == self.second_invocation.source_reference
         ):
             raise ValueError("one exact material reference cannot compare with itself")
+        if (
+            getattr(self.first_invocation.source_reference, "locality_identity", None)
+            != getattr(
+                self.second_invocation.source_reference,
+                "locality_identity",
+                None,
+            )
+        ):
+            raise ValueError("Compare material crossed Localities")
 
     @property
     def implementation_function_identity(self) -> str:
