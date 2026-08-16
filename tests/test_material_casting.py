@@ -8,6 +8,18 @@ import pytest
 
 from seed_runtime.events import EventLedger
 from seed_runtime.material_ingest import ingest_material
+from seed_runtime.operator_checkpoint import (
+    record_standing_boundary_reference_responsibility_assignment,
+    record_standing_boundary_reference_responsible_act_evidence,
+    record_standing_boundary_reference_result,
+)
+from seed_runtime.operator_command import AddressedOperatorCommand, OperatorCommandFrame
+from seed_runtime.operator_locality_standing import (
+    advance_operator_locality_standing,
+    read_carried_recorded_standing,
+    read_operator_locality_standing,
+)
+from seed_runtime.operator_representation import record_operator_representation
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -48,27 +60,27 @@ def exact_casting_material():
         )
         for locality, material, boundary in (
             (
-                "material-casting-L1",
+                "material-casting-source-locality",
                 b"".join(books),
                 "sixteen supplied books",
             ),
             (
-                "material-casting-L1",
+                "material-casting-source-locality",
                 b"what does this exact material distinguish?\n",
                 "operator material",
             ),
             (
-                "material-casting-L1",
+                "material-casting-source-locality",
                 b"one bounded session material\n",
                 "today material",
             ),
             (
-                "material-casting-L1",
+                "material-casting-source-locality",
                 b"one exact earlier lineage material\n",
                 "lineage material",
             ),
             (
-                "material-casting-L2",
+                "material-casting-unrelated-locality",
                 b"available elsewhere is not applicable here\n",
                 "unrelated Locality material",
             ),
@@ -146,6 +158,108 @@ def _cast_against_books(subject, books, *, boundary_identity):
         compiled_comparisons,
         material_invocations,
         material_comparisons,
+    )
+
+
+def _record_checkpoint(ledger, *, locality_identity):
+    standing = read_operator_locality_standing(
+        ledger, locality_identity=locality_identity
+    )
+    representation = record_operator_representation(
+        ledger,
+        locality_identity=locality_identity,
+        locality_standing=standing,
+    )
+    standing = advance_operator_locality_standing(
+        ledger,
+        representation["recorded_occurrence_references"],
+        locality_identity=locality_identity,
+        prior=standing,
+    )
+    command = AddressedOperatorCommand(
+        command_identity="material-casting-checkpoint-command",
+        locality_identity=locality_identity,
+        addressed_at_representation_event_identity=representation[
+            "representation_event_identity"
+        ],
+        frame=OperatorCommandFrame(
+            exact_bytes=b"/checkpoint\n", name=b"checkpoint", arguments=b""
+        ),
+    )
+    assignment = record_standing_boundary_reference_responsibility_assignment(
+        ledger,
+        addressed_command=command,
+        locality_standing=standing,
+    )
+    act = record_standing_boundary_reference_responsible_act_evidence(
+        ledger,
+        responsibility_assignment_event_identity=assignment.identity,
+        responsibility_assignment_standing=read_operator_locality_standing(
+            ledger, locality_identity=locality_identity
+        ),
+    )
+    return record_standing_boundary_reference_result(
+        ledger, responsible_act_evidence_event_identity=act.identity
+    )
+
+
+def test_operator_material_casts_against_exact_corpus_checkpoint_standing(
+    exact_casting_material,
+):
+    books = exact_casting_material[0]
+    locality_identity = "checkpointed-material-casting-locality"
+    ledger = EventLedger()
+    corpus = ingest_material(
+        ledger,
+        locality_identity=locality_identity,
+        exact_bytes=b"".join(books),
+        source_role="fixture material",
+        source_boundary="sixteen supplied books",
+    )
+    checkpoint = _record_checkpoint(
+        ledger, locality_identity=locality_identity
+    )
+    operator = ingest_material(
+        ledger,
+        locality_identity=locality_identity,
+        exact_bytes=b"what does this exact material distinguish?\n",
+        source_role="operator material",
+        source_boundary="operator material",
+    )
+
+    point = read_carried_recorded_standing(
+        ledger,
+        locality_identity=locality_identity,
+        recorded_occurrence_identity=checkpoint.identity,
+    )
+    assert [
+        occurrence["evidence_event_identity"]
+        for occurrence in point["standing"]["ingest_occurrences"]
+    ] == [corpus.identity]
+    corpus_reference = ingest_result_reference(ledger, corpus.identity)
+    operator_reference = ingest_result_reference(ledger, operator.identity)
+    book_references = exact_material_partition_references(
+        corpus_reference, tuple(map(len, books))
+    )
+
+    casting = _cast_against_books(
+        operator_reference,
+        book_references,
+        boundary_identity="checkpointed-operator",
+    )
+    comparisons = (*casting[2], *casting[4])
+
+    assert operator.identity not in {
+        occurrence["evidence_event_identity"]
+        for occurrence in point["standing"]["ingest_occurrences"]
+    }
+    assert len(comparisons) == 9
+    assert all(len(row) == 16 for row in comparisons)
+    assert all(
+        not hasattr(comparison, "applicability")
+        and not hasattr(comparison, "admitted_material")
+        for row in comparisons
+        for comparison in row
     )
 
 
