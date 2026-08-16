@@ -22,7 +22,7 @@ def test_each_game_function_receives_every_exact_one_byte_material():
         functions, references
     )
 
-    assert len(occurrences) == len(exact) == len(returned) == len(functions) == 4
+    assert len(occurrences) == len(exact) == len(returned) == len(functions) == 5
     for position in range(len(functions)):
         assert tuple(
             occurrence.source_reference for occurrence in occurrences[position]
@@ -34,7 +34,7 @@ def test_each_game_function_receives_every_exact_one_byte_material():
             == returned[position].source_material
             == references
         )
-    assert len(exact_compares) == len(return_compares) == 12
+    assert len(exact_compares) == len(return_compares) == 20
     assert {comparison.first_reference for comparison in exact_compares} == {
         admission.result_reference for admission in exact
     }
@@ -76,4 +76,4 @@ def test_each_game_function_receives_every_exact_one_byte_material():
         )
     assert len(addition_admissions) == len(functions) + 1
     assert len(addition_admissions[-1].comparison_occurrences) == len(functions)
-    assert len(result_exact_compares) == len(result_return_compares) == 12
+    assert len(result_exact_compares) == len(result_return_compares) == 20

@@ -55,6 +55,10 @@ def implementation_functions() -> tuple[MaterialImplementationFunction, ...]:
             identity="compiled-3",
             invocation=("/usr/bin/env", "-i", "/usr/games/hoichess", "-x"),
         ),
+        MaterialImplementationFunction(
+            identity="compiled-4",
+            invocation=("/usr/bin/env", "-i", "/usr/games/hoixiangqi", "-x"),
+        ),
     )
 
 
