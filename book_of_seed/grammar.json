@@ -142,6 +142,15 @@
   "clauses": {
     "01.Source.A": {
       "subject": "Representation_source_coordinates",
+      "implementation_coordinates": [
+        "representations",
+        "emission_attempt",
+        "emitted_result",
+        "emission_failure",
+        "accepted_count",
+        "reported_count",
+        "error"
+      ],
       "responsibility": {
         "kind": "source_coordinate_preservation",
         "coordinates": [
@@ -235,6 +244,25 @@
     },
     "01.Source.D": {
       "subject": "declared_Measurement_result",
+      "implementation_relations": [
+        "Measurement_counts_exact_occurrences",
+        "the_measured_result_carries_what_the_declared_rule_determines",
+        "complete_Measurement_results_recorded_after_Yield",
+        "coordinate_value_and_treatment",
+        "occurrences_carrying_result",
+        "position_coordinates_whose_difference_is_one"
+      ],
+      "result_carries": {
+        "first_subject": "result",
+        "relation": "carries",
+        "second_subject": "findings",
+        "bounded_by": ["declared_rule", "declared_boundary"]
+      },
+      "it_reference": {
+        "first_subject": "it",
+        "relation": "identifies",
+        "second_subject": "result"
+      },
       "responsibility": {
         "kind": "Measurement_result_boundary",
         "coordinates": [
@@ -394,6 +422,7 @@
     },
     "01.Source.G": {
       "subject": "one_exact_operator_material_boundary_occurrence",
+      "implementation_relation": "acquire_what_the_operator_boundary_supplies",
       "responsibility": {
         "kind": "operator_material_boundary_result_preservation",
         "coordinates": [
@@ -438,7 +467,7 @@
     "01.Standing.A": {
       "subject": "preserved_material",
       "implementation_witness": "unestablished",
-      "may_have": ["exact_identity", "Locality"],
+      "may_have": ["exact_identity", "Locality", "representations"],
       "does_not_establish": [
         "acceptance",
         "input_support",
@@ -544,6 +573,7 @@
         "Standing_revision",
         "Stop"
       ],
+      "relation_preservation": "Standing_remains_without_revising_and_is_not_revised_by_identity",
       "different_identity": {
         "when": "asserted_content_is_different",
         "result": "different_Assertion"
@@ -631,6 +661,10 @@
     },
     "01.Standing.E.1": {
       "subject": "input_to_exact_Act_relation",
+      "implementation_relations": [
+        "responsible_boundary_may_determine_whether_an_exact_proposed_input_may_participate_before_the_Act_occurrence",
+        "the_resulting_Standing_determines_the_participating_input"
+      ],
       "responsibility": {
         "default": "exact_Act_Responsibility",
         "override": "assigned_responsible_occurrence"
@@ -734,6 +768,18 @@
     "02.Acts.A": {
       "subject": "exact_Act_occurrence",
       "identity": ["exact_Act", "Act_occurrence"],
+      "implementation_relations": [
+        "the_exact_Act_occurred_at_the_boundary",
+        "perform_exact_Act_and_carry_its_result_until_Evidence_of_Yield",
+        "result_remains_distinct",
+        "emission_attempt_recorded_before_output",
+        "emit_accepted_exact_Representation_result",
+        "emitted_result",
+        "reported_partial_result_and_error",
+        "emission_failure_at_declared_boundary",
+        "effects_beyond_output_boundary_remain_Unknown"
+      ],
+      "occurrence_coordinates": ["timestamp"],
       "responsibility": {
         "coordinates": [
           "Responsibility",
@@ -767,6 +813,7 @@
     },
     "03.Movement.A": {
       "subject": "one_exact_movement_Assertion",
+      "implementation_relation": "make_one_exact_preserved_Assertion_available_in_another_Locality_and_preserve_its_identity_Standing_and_carried_limits",
       "responsibility": {
         "kind": "exact_transition_preservation",
         "coordinates": [
@@ -845,6 +892,7 @@
     },
     "05.Recording.D": {
       "subject": "one_exact_recorded_Standing_boundary_reference",
+      "record_kind": "durable_bounded_reference",
       "responsibility": {
         "kind": "exact_Standing_boundary_reference_recording",
         "coordinates": [

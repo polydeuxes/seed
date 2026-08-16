@@ -1,4 +1,5 @@
 from copy import deepcopy
+from collections import Counter
 import ast
 import json
 import re
@@ -178,7 +179,7 @@ def test_every_grammar_representation_composite_preserves_material_order():
         },
     }
 
-    ordered: dict[tuple[str, ...], set[tuple[str, ...]]] = {}
+    ordered: dict[frozenset[tuple[str, int]], set[tuple[str, ...]]] = {}
     relations_of: list[tuple[str, str]] = []
 
     def visit(value):
@@ -192,7 +193,8 @@ def test_every_grammar_representation_composite_preserves_material_order():
         elif isinstance(value, str):
             words = tuple(re.findall(r"[A-Za-z]+", value.lower()))
             if len(words) > 1:
-                ordered.setdefault(tuple(sorted(words)), set()).add(words)
+                material = frozenset(Counter(words).items())
+                ordered.setdefault(material, set()).add(words)
             if "_of_" in value and "_as_of_" not in value:
                 first_subject, second_subject = value.split("_of_", 1)
                 relations_of.append((first_subject, second_subject))
@@ -4228,6 +4230,20 @@ def test_measurement_result_clause_is_checked_against_live_byte_pair_and_positio
             tuple(distinction) for distinction in clause["distinct_from"]
         ]
         assert set(distinctions.values()) == {True}
+
+
+def test_measurement_result_pronoun_reference_does_not_compress_the_relation():
+    assert _clause("01.Source.D")["result_carries"] == {
+        "first_subject": "result",
+        "relation": "carries",
+        "second_subject": "findings",
+        "bounded_by": ["declared_rule", "declared_boundary"],
+    }
+    assert _clause("01.Source.D")["it_reference"] == {
+        "first_subject": "it",
+        "relation": "identifies",
+        "second_subject": "result",
+    }
 
 
 def test_pair_occurrence_measurement_is_structured_in_the_grammar_representation():
