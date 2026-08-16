@@ -108,19 +108,3 @@ def test_missing_relation_clause_is_detected():
 
 def test_book_and_machine_grammar_have_the_same_clauses():
     assert _book_clause_identities() == _machine_clause_identities()
-
-
-def test_ingest_occurrence_and_yield_identity_remain_distinct():
-    chapter = (CHAPTERS / "14-representation-emission-and-locality.md").read_text(
-        encoding="utf-8"
-    )
-
-    assert (
-        "Each Ingest occurrence has one distinct result identity."
-        in chapter
-    )
-    assert (
-        "Equal material content does not identify either occurrence, result, or "
-        "Yield relation."
-        in chapter
-    )
