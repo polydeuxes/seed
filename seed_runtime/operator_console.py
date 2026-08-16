@@ -21,10 +21,6 @@ from seed_runtime.operator_checkpoint import (
     open_operator_checkpoint,
     request_operator_checkpoint,
 )
-from seed_runtime.operator_material_command import (
-    OperatorMaterialRequest,
-    request_operator_material,
-)
 from seed_runtime.operator_memory_command import (
     OperatorMemoryRequest,
     request_operator_memory,
@@ -92,7 +88,6 @@ def run_persistent_operator_console(
     """Repeat exact-byte Ingest and slash-command occurrences."""
     handlers = dict(command_handlers or {})
     handlers[b"checkpoint"] = request_operator_checkpoint
-    handlers[b"material"] = request_operator_material
     handlers[b"memory"] = request_operator_memory
     handlers[b"locality"] = request_operator_locality
     # Standing is carried through the locality rather than re-projected before
@@ -219,7 +214,7 @@ def run_persistent_operator_console(
                     ledger, locality_standing, representation
                 )
                 continue
-            if isinstance(request, (OperatorCheckpointRequest, OperatorMaterialRequest)):
+            if isinstance(request, OperatorCheckpointRequest):
                 checkpoint = open_operator_checkpoint(ledger, command_run.addressed)
                 locality_identity = checkpoint.locality_identity
                 locality_standing = read_operator_locality_standing(

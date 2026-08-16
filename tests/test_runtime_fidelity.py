@@ -13,7 +13,6 @@ from dataclasses import fields
 from io import BytesIO, StringIO
 import inspect
 import json
-import os
 from pathlib import Path
 import re
 
@@ -1193,31 +1192,6 @@ def test_command_implementation_receives_no_constitutional_write_capability():
         "addressed_at_representation_event_identity",
         "frame",
     }
-
-
-def test_unestablished_material_authority_does_not_cross_the_filesystem_boundary(
-    monkeypatch, tmp_path
-):
-    """An operator request alone is not Authority for a Seed-owned read."""
-
-    material = tmp_path / "book.bin"
-    material.write_bytes(b"book bytes")
-    crossed = []
-    real_lstat = os.lstat
-
-    def record_crossing(path):
-        crossed.append(path)
-        return real_lstat(path)
-
-    monkeypatch.setattr(os, "lstat", record_crossing)
-    run_persistent_operator_console(
-        ledger=EventLedger(),
-        locality_identity="l",
-        input_stream=BytesIO(b"/material " + os.fsencode(material) + b"\n"),
-        output_stream=StringIO(),
-    )
-
-    assert crossed == []
 
 
 def test_checkpoint_names_the_representation_it_addresses_not_an_emission():

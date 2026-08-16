@@ -273,7 +273,6 @@ def test_each_advance_reads_only_what_an_act_just_recorded(monkeypatch):
         (b"/locality list\n", False, False),
         (b"/locality\n", False, False),
         (b"/checkpoint\n", False, False),
-        (b"/material exact/path\n", False, False),
         (b"/locality existing\n", False, True),
     ),
 )
