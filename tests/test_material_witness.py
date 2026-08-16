@@ -175,6 +175,20 @@ def book_pair_compiled_material_occurrences(measured_book_pairs):
 
 
 @pytest.fixture(scope="module")
+def book_byte_compiled_material_occurrences(
+    measured_book_pairs,
+    book_pair_compiled_material_occurrences,
+):
+    function, _ = book_pair_compiled_material_occurrences
+    occurrences = reference_occurrences_across(
+        measured_book_pairs[7],
+        boundary_identity="book-byte-compiled-material-invocation",
+        implementation_functions=(function,),
+    )[0]
+    return function, occurrences
+
+
+@pytest.fixture(scope="module")
 def book_pair_format_occurrences(measured_book_pairs):
     return compiled_reference_invocations(
         measured_book_pairs[6], boundary_identity="book-pair-format"
@@ -596,6 +610,56 @@ def test_compiled_material_results_enter_one_exact_admission(
         for same_coordinates in admission.admitted_material
         for reference in same_coordinates
     } == set(measured_book_pairs[6])
+
+
+def test_bash_admission_additions_reach_one_later_compare(
+    book_pair_compiled_material_occurrences,
+    book_byte_compiled_material_occurrences,
+):
+    function, source_invocations = book_pair_compiled_material_occurrences
+    _, added_invocations = book_byte_compiled_material_occurrences
+    source_admission = admit_invocation_occurrences(
+        source_invocations,
+        boundary_identity="book-bash-pair-admission",
+    )
+    added_admission = admit_invocation_occurrences(
+        added_invocations,
+        boundary_identity="book-bash-byte-admission",
+    )
+    additions = admission_result_added_position_occurrences(
+        source_admission.result_reference,
+        added_admission.result_reference,
+        boundary_identity="book-bash-addition",
+        admitted_material_act_occurrence_count_limit=4096,
+    )
+
+    earlier, coordinates, later = first_recurring_added_return_compare(
+        additions,
+        source_invocations,
+        function,
+        boundary_identity="book-bash-addition-recurrence",
+        act_occurrence_count_limit=len(additions),
+    )
+
+    assert additions
+    assert len(earlier) >= 2
+    assert later is not None
+    assert coordinates == later.result_coordinates
+    assert later.addition_occurrence.result_material not in {
+        comparison.addition_occurrence.result_material for comparison in earlier
+    }
+    conflicting = replace(
+        earlier[-1],
+        result_invocation=replace(
+            earlier[-1].result_invocation,
+            returncode=1 - earlier[-1].result_invocation.returncode,
+        ),
+    )
+    assert recurring_added_result_coordinates(
+        (*earlier[:-1], conflicting),
+        later.addition_occurrence,
+        later.source_invocation,
+    ) is None
 
 
 def test_every_measured_pair_reaches_every_compiled_format_implementation_function(
