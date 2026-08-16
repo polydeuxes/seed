@@ -270,7 +270,6 @@ def advance_operator_locality_standing(
                 "emission_failure_event_identity": None,
                 "emitted_event_identity": None,
                 "representation_result": material["representation_result"],
-                "emission_text": material["emission_text"],
                 "alternative_material": material["alternative_material"],
                 "coordinate_binding": material["coordinate_binding"],
                 "locality_standing_as_of_event_identity": material[

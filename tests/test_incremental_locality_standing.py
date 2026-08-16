@@ -258,27 +258,27 @@ def test_each_advance_reads_only_what_an_act_just_recorded(monkeypatch):
     _console("alpha\nbeta\ngamma\ndelta\n")
     # One identity for Ingest or the separately observable byte Measurement
     # Act Evidence, two for its Yield/result, three for occurrence-position
-    # Measurement, and all ten exact identities for a successful
-    # Representation lifecycle. No call grows with the ledger.
-    assert set(sizes) <= {1, 2, 3, 10}, sizes
+    # Measurement, four for a record-only Representation, and all ten exact
+    # identities for a successful raw Representation lifecycle. No call grows
+    # with the ledger.
+    assert set(sizes) <= {1, 2, 3, 4, 10}, sizes
 
 
 @pytest.mark.parametrize(
-    ("material", "emit_initial", "raw", "existing_locality"),
+    ("material", "raw", "existing_locality"),
     (
-        (b"", False, False, False),
-        (b"", True, False, False),
-        (b"exact text road\n", False, False, False),
-        (b"\x00\xff raw road\n", False, True, False),
-        (b"/locality list\n", False, False, False),
-        (b"/locality\n", False, False, False),
-        (b"/checkpoint\n", False, False, False),
-        (b"/material exact/path\n", False, False, False),
-        (b"/locality existing\n", False, False, True),
+        (b"", False, False),
+        (b"record-only road\n", False, False),
+        (b"\x00\xff raw road\n", True, False),
+        (b"/locality list\n", False, False),
+        (b"/locality\n", False, False),
+        (b"/checkpoint\n", False, False),
+        (b"/material exact/path\n", False, False),
+        (b"/locality existing\n", False, True),
     ),
 )
 def test_each_console_road_leaves_incremental_standing_equal_to_replay(
-    monkeypatch, material, emit_initial, raw, existing_locality
+    monkeypatch, material, raw, existing_locality
 ):
     from seed_runtime import operator_console
 
@@ -311,7 +311,6 @@ def test_each_console_road_leaves_incremental_standing_equal_to_replay(
         locality_identity="s",
         input_stream=binary_input(material),
         output_stream=StringIO(),
-        emit_initial_representation=emit_initial,
         raw_output_stream=BytesIO() if raw else None,
     )
 
@@ -328,7 +327,7 @@ def test_a_failed_console_emission_advances_every_recorded_occurrence(
 ):
     from seed_runtime import operator_console
 
-    class FailedBoundary(StringIO):
+    class FailedBoundary(BytesIO):
         def write(self, value):
             if failure == "write":
                 super().write(value[:-1])
@@ -355,8 +354,9 @@ def test_a_failed_console_emission_advances_every_recorded_occurrence(
         run_persistent_operator_console(
             ledger=ledger,
             locality_identity="s",
-            input_stream=binary_input(b""),
-            output_stream=FailedBoundary(),
+            input_stream=binary_input(b"exact raw material\n"),
+            output_stream=StringIO(),
+            raw_output_stream=FailedBoundary(),
         )
 
     assert observed[-1] == read_operator_locality_standing(
@@ -442,7 +442,7 @@ def test_repeated_values_are_recorded_once():
 def test_the_console_keeps_no_earlier_standing():
     """The only holder hands its Standing forward and retains nothing."""
     ledger, output = _console("alpha\nbeta\ngamma\n")
-    assert output.count("Bounded Representation") == 4
+    assert output == ""
     assert read_operator_locality_standing(
         ledger, locality_identity="s"
     ) == _replay(ledger.list())
@@ -468,5 +468,5 @@ def test_the_locality_records_the_same_occurrences_it_always_did():
     kinds = [event.kind for event in ledger.list()]
     assert kinds.count(MATERIAL_INGEST_OCCURRED_KIND) == 2
     assert kinds.count("operator.representation.recorded") == 3
-    assert kinds.count("operator.representation.emitted") == 3
-    assert output.count("Bounded Representation") == 3
+    assert kinds.count("operator.representation.emitted") == 0
+    assert output == ""

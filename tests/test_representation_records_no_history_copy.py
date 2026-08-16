@@ -161,9 +161,9 @@ def test_the_locality_still_projects_deterministically(locality):
     assert _standing(ledger) == _standing(ledger)
 
 
-def test_the_console_still_presents_every_interaction(locality):
+def test_the_console_records_every_interaction_without_authored_output(locality):
     _, output = locality
-    assert output.count("Bounded Representation") == 5
+    assert output == ""
 
 
 def test_standing_still_records_its_participation_boundary(locality):

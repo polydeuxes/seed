@@ -93,7 +93,7 @@
         "kind": "source_coordinate_preservation",
         "coordinates": [
           "responsibility",
-          "attempt_reference",
+          "source_occurrence_reference",
           "locality_standing_as_of_event_identity",
           "source_provenance",
           "scope_locality",

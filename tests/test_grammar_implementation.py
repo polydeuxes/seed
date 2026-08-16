@@ -37,7 +37,6 @@ from seed_runtime.operator_checkpoint import (
     ADDRESSED_REPRESENTATION_LOCALITY_EVIDENCE_KIND,
     open_operator_checkpoint,
 )
-from tests.material_fixture_console import run_material_fixture_console
 from seed_runtime.operator_representation import (
     EVENT_KIND_RESPONSIBILITIES as REPRESENTATION_EVENT_KIND_RESPONSIBILITIES,
     REPRESENTATION_ACT_EVIDENCE_KIND,
@@ -45,7 +44,7 @@ from seed_runtime.operator_representation import (
     REPRESENTATION_LOCALITY_EVIDENCE_KIND,
     REPRESENTATION_RECORDED_KIND,
     REPRESENTATION_RESPONSIBILITY,
-    emit_operator_representation,
+    emit_operator_representation_material,
     record_operator_representation,
 )
 from seed_runtime.occurrence_position_measurement import (
@@ -238,15 +237,25 @@ def _assertion_locality_movement_yield_witness() -> dict:
 
 def _emission_witness() -> dict:
     ledger = _IntegrityAdversaryLedger()
+    source = ingest_material(
+        ledger,
+        locality_identity="emission",
+        exact_bytes=b"emission",
+        source_role="operator",
+        source_boundary="exact source boundary",
+    )
     representation = record_operator_representation(
         ledger,
         locality_identity="emission",
-        locality_standing={"as_of_event_identity": None},
+        locality_standing=read_operator_locality_standing(
+            ledger, locality_identity="emission"
+        ),
+        source_occurrence_reference=source.identity,
     )
-    emit_operator_representation(
+    emit_operator_representation_material(
         ledger,
         representation=representation,
-        output_stream=StringIO(),
+        output_stream=BytesIO(),
     )
     event = ledger.get(representation["emitted_event_identity"])
     return {
@@ -265,19 +274,29 @@ def _emission_witness() -> dict:
 
 
 def _failed_emission_yield_witness() -> dict:
-    class PartialOutput(StringIO):
+    class PartialOutput(BytesIO):
         def write(self, value):
             super().write(value[:-1])
             return len(value) - 1
 
     ledger = _IntegrityAdversaryLedger()
+    source = ingest_material(
+        ledger,
+        locality_identity="failed-emission",
+        exact_bytes=b"failed-emission",
+        source_role="operator",
+        source_boundary="exact source boundary",
+    )
     representation = record_operator_representation(
         ledger,
         locality_identity="failed-emission",
-        locality_standing={"as_of_event_identity": None},
+        locality_standing=read_operator_locality_standing(
+            ledger, locality_identity="failed-emission"
+        ),
+        source_occurrence_reference=source.identity,
     )
     try:
-        emit_operator_representation(
+        emit_operator_representation_material(
             ledger,
             representation=representation,
             output_stream=PartialOutput(),
@@ -290,15 +309,25 @@ def _failed_emission_yield_witness() -> dict:
 
 def _repeated_emission_attempt_witness() -> tuple[dict, dict]:
     ledger = _IntegrityAdversaryLedger()
+    source = ingest_material(
+        ledger,
+        locality_identity="repeated-emission-attempt",
+        exact_bytes=b"repeated-emission-attempt",
+        source_role="operator",
+        source_boundary="exact source boundary",
+    )
     representation = record_operator_representation(
         ledger,
         locality_identity="repeated-emission-attempt",
-        locality_standing={"as_of_event_identity": None},
+        locality_standing=read_operator_locality_standing(
+            ledger, locality_identity="repeated-emission-attempt"
+        ),
+        source_occurrence_reference=source.identity,
     )
-    emit_operator_representation(
+    emit_operator_representation_material(
         ledger,
         representation=representation,
-        output_stream=StringIO(),
+        output_stream=BytesIO(),
     )
     first_attempt = ledger.get(representation["emission_attempt_event_identity"])
     first_evidence = ledger.get(
@@ -312,10 +341,10 @@ def _repeated_emission_attempt_witness() -> tuple[dict, dict]:
         first_event.material["locality_evidence_identity"]
     )
     first_yield_evidence = ledger.get(first_event.material["yield_evidence_identity"])
-    emit_operator_representation(
+    emit_operator_representation_material(
         ledger,
         representation=representation,
-        output_stream=StringIO(),
+        output_stream=BytesIO(),
     )
     second_attempt = ledger.get(representation["emission_attempt_event_identity"])
     second_evidence = ledger.get(
@@ -384,7 +413,7 @@ def _sourced_representation_witness() -> dict:
             ledger, locality_identity="representation-source"
         ),
         alternative_sources=BOUNDED_ALTERNATIVE_FIXTURE_SOURCES,
-        source_event_identity=source.identity,
+        source_occurrence_reference=source.identity,
     )
     event = ledger.get(representation["representation_event_identity"])
     return {
@@ -796,8 +825,8 @@ def _emission_locality_requirements(bundle: dict) -> dict[str, bool]:
         == evidence.material.get("act_occurrence_identity")
         and event.material.get("representation_event_identity")
         == evidence.material.get("representation_event_identity")
-        and event.material.get("emitted_representation")
-        == evidence.material.get("carried_content")
+        and type(event.exact_material) is bytes
+        and event.exact_material == evidence.exact_material
     )
     exact_occurrence = bool(
         isinstance(event_relation, dict)
@@ -830,8 +859,8 @@ def _emission_attempt_locality_requirements(bundle: dict) -> dict[str, bool]:
             "intact_evidence": False,
         }
     exact_relation = (
-        attempt.material.get("representation")
-        == evidence.material.get("carried_content")
+        type(attempt.exact_material) is bytes
+        and attempt.exact_material == evidence.exact_material
     )
     exact_occurrence = attempt.identity == evidence.material.get("attempt_event_identity")
     exact_subject = (
@@ -1050,7 +1079,9 @@ def _successful_emission_requirement_bundles() -> dict[str, dict[str, dict]]:
 
     missing_locality = dict(emission)
     missing_locality_evidence = deepcopy(emission["locality_evidence"])
-    missing_locality_evidence.material["carried_content"] = "different content"
+    object.__setattr__(
+        missing_locality_evidence, "exact_material", b"different material"
+    )
     missing_locality["locality_evidence"] = missing_locality_evidence
     wrong_locality = dict(emission)
     wrong_locality_evidence = deepcopy(emission["locality_evidence"])
@@ -1728,7 +1759,7 @@ def _representation_source_witness(bundle: dict) -> dict[str, str]:
     material = event.material
     dimensions = material.get("dimensions")
     dimensions = dimensions if isinstance(dimensions, dict) else {}
-    source_reference = material.get("attempt_reference")
+    source_reference = material.get("source_occurrence_reference")
     source = (
         bundle["ledger"].get(source_reference)
         if isinstance(source_reference, str)
@@ -1760,7 +1791,7 @@ def _representation_source_witness(bundle: dict) -> dict[str, str]:
             if dimensions.get("responsibility") == REPRESENTATION_RESPONSIBILITY
             else MISSING
         ),
-        "attempt_reference": (
+        "source_occurrence_reference": (
             EXACT
             if source is not None
             and bundle["ledger"].integrity_of(source.identity) != CORRUPTED
@@ -1813,7 +1844,7 @@ def _representation_source_distinctions(
             != material.get("act_occurrence_identity")
         ),
         ("Representation_source_coordinates", "Locality_relation"): (
-            material.get("attempt_reference")
+            material.get("source_occurrence_reference")
             != material.get("locality_evidence_identity")
         ),
     }
@@ -2121,7 +2152,6 @@ def test_emission_attempt_locality_adversaries_change_one_requirement_each():
 
     missing_relation = dict(exact)
     different = dict(exact["attempt_locality_evidence"].material)
-    different["carried_content"] = "different carried content"
     missing_relation["attempt_locality_evidence"] = exact["ledger"].append(
         exact["attempt_locality_evidence"].kind,
         different,
@@ -2413,7 +2443,7 @@ def test_byte_measurement_adversaries_change_one_requirement_each():
     } == {relation: expected for relation in actual}
 
 
-def test_attempt_and_success_have_distinct_locality_relations_for_the_same_text():
+def test_attempt_and_success_have_distinct_locality_relations_for_exact_material():
     emission = _emission_witness()
     alternate = _emission_witness()
     wrong_attempt = dict(emission)
@@ -2425,9 +2455,7 @@ def test_attempt_and_success_have_distinct_locality_relations_for_the_same_text(
         "locality_evidence"
     ]
 
-    assert emission["attempt"].material["representation"] == emission[
-        "event"
-    ].material["emitted_representation"]
+    assert emission["attempt"].exact_material == emission["event"].exact_material
     assert _emission_attempt_locality_witness(emission) == EXACT
     assert _emission_attempt_locality_witness(wrong_attempt) == MISSING
     assert (
@@ -3075,10 +3103,15 @@ def test_representation_result_act_and_locality_species_keep_their_clauses():
 
 def test_representation_source_act_and_locality_witnesses_do_not_absorb_each_other():
     source_missing = _sourced_representation_witness()
-    source_missing["event"].material["attempt_reference"] = None
+    for material in (
+        source_missing["event"].material,
+        source_missing["content_evidence"].material["result"],
+        source_missing["locality_evidence"].material["carried_content"],
+    ):
+        material["source_occurrence_reference"] = None
 
     source_witness = _representation_source_witness(source_missing)
-    assert source_witness["attempt_reference"] == MISSING
+    assert source_witness["source_occurrence_reference"] == MISSING
     assert source_witness["locality_standing_as_of_event_identity"] == MISSING
     assert _representation_act_evidence_witness(source_missing)
     assert _representation_locality_witness(source_missing) == EXACT
@@ -3110,7 +3143,7 @@ def test_representation_source_distinction_adversaries_collapse_one_boundary_eac
 
     source_is_locality = _sourced_representation_witness()
     source_is_locality["event"].material["locality_evidence_identity"] = (
-        source_is_locality["event"].material["attempt_reference"]
+        source_is_locality["event"].material["source_occurrence_reference"]
     )
     assert _representation_source_distinctions(source_is_locality) == {
         ("Representation_result", "exact_Act_occurrence"): True,

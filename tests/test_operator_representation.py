@@ -11,7 +11,6 @@ from seed_runtime.byte_measurement import (
 from seed_runtime.events import CORRUPTED, EventLedger
 from seed_runtime.operator_representation import (
     emit_operator_representation_material,
-    emit_operator_representation,
     read_operator_representation,
     record_operator_representation,
 )
@@ -38,16 +37,6 @@ _OCCURRENCE_POSITION_MEASUREMENT_KINDS = (
     "operator.measurement.locality_occurrence_position_act_evidenced",
     "operator.yield.evidence_recorded",
     "operator.measurement.locality_occurrence_position_recorded",
-)
-_EMISSION_RELATION_EVIDENCE_KINDS = (
-    "operator.representation.emission_attempt_locality_evidenced",
-    "operator.representation.emission_act_evidenced",
-    "operator.representation.emission_locality_evidenced",
-    "operator.yield.evidence_recorded",
-)
-_FAILED_EMISSION_EVIDENCE_KINDS = (
-    "operator.representation.emission_failure_act_evidenced",
-    "operator.yield.evidence_recorded",
 )
 _REPRESENTATION_RELATION_EVIDENCE_KINDS = (
     "operator.representation.act_evidenced",
@@ -80,9 +69,6 @@ def _fixture_representation(ledger, *, locality="s"):
         locality_standing=_standing(ledger, locality=locality),
         alternative_sources=BOUNDED_ALTERNATIVE_FIXTURE_SOURCES,
     )
-    emit_operator_representation(
-        ledger, representation=representation, output_stream=StringIO()
-    )
     return representation
 
 
@@ -111,15 +97,12 @@ def _byte_measurement(ledger, *, locality="s"):
     )
 
 
-def _record_and_emit(ledger, *, locality="s"):
-    representation = record_operator_representation(
+def _record_fixture_representation(ledger, *, locality="s"):
+    return record_operator_representation(
         ledger,
         locality_identity=locality,
         locality_standing=_standing(ledger, locality=locality),
         alternative_sources=BOUNDED_ALTERNATIVE_FIXTURE_SOURCES,
-    )
-    return emit_operator_representation(
-        ledger, representation=representation, output_stream=StringIO()
     )
 
 
@@ -155,15 +138,14 @@ def test_representation_reader_reads_the_exact_recorded_representation():
             "locality_evidence_identity"
         ],
         "representation_event_identity": representation["representation_event_identity"],
-        "event_identities_in_append_order": representation[
-            "event_identities_in_append_order"
+        "recorded_occurrence_references": representation[
+            "recorded_occurrence_references"
         ],
-        "emission_text": representation["emission_text"],
-        "source_event_identity": None,
+        "source_occurrence_reference": None,
         "exact_material": None,
     }
     assert ledger.occurrences_in_append_order(
-        recorded["event_identities_in_append_order"],
+        recorded["recorded_occurrence_references"],
         locality_identity="s",
     )
 
@@ -181,14 +163,14 @@ def test_representation_carries_exact_material_without_claiming_meaning():
         ledger,
         locality_identity="s",
         locality_standing=_standing(ledger),
-        source_event_identity=source.identity,
+        source_occurrence_reference=source.identity,
     )
     event = ledger.get(representation["representation_event_identity"])
     evidence = ledger.get(event.material["yield_evidence_identity"])
 
     assert event.exact_material == b"hello"
     assert evidence.exact_material == b"hello"
-    assert event.material["attempt_reference"] == source.identity
+    assert event.material["source_occurrence_reference"] == source.identity
 
 
 def test_representation_addresses_one_exact_carried_measurement_result():
@@ -200,7 +182,7 @@ def test_representation_addresses_one_exact_carried_measurement_result():
         ledger,
         locality_identity="s",
         locality_standing=standing,
-        source_event_identity=measurement.identity,
+        source_occurrence_reference=measurement.identity,
     )
 
     event = ledger.get(representation["representation_event_identity"])
@@ -218,13 +200,13 @@ def test_representation_addresses_one_exact_carried_measurement_result():
     assert standing["measurement_occurrences"] == {
         measurement.identity: expected_reference
     }
-    assert event.material["attempt_reference"] == measurement.identity
+    assert event.material["source_occurrence_reference"] == measurement.identity
     assert (
-        locality_evidence.material["carried_content"]["attempt_reference"]
+        locality_evidence.material["carried_content"]["source_occurrence_reference"]
         == measurement.identity
     )
     assert (
-        yield_evidence.material["result"]["attempt_reference"]
+        yield_evidence.material["result"]["source_occurrence_reference"]
         == measurement.identity
     )
     for material in (
@@ -239,7 +221,7 @@ def test_representation_addresses_one_exact_carried_measurement_result():
     assert locality_evidence.exact_material is None
     assert yield_evidence.exact_material is None
     assert read_operator_representation(ledger, event.identity)[
-        "source_event_identity"
+        "source_occurrence_reference"
     ] == measurement.identity
 
     with pytest.raises(ValueError, match="carries no exact material"):
@@ -273,7 +255,7 @@ def test_representation_rejects_each_wrong_carried_measurement_coordinate(
             ledger,
             locality_identity="s",
             locality_standing=standing,
-            source_event_identity=measurement.identity,
+            source_occurrence_reference=measurement.identity,
         )
 
 
@@ -289,7 +271,7 @@ def test_exact_result_carrier_does_not_stand_for_measurement_result_carrier():
             ledger,
             locality_identity="s",
             locality_standing=standing,
-            source_event_identity=measurement.identity,
+            source_occurrence_reference=measurement.identity,
         )
 
 
@@ -305,7 +287,7 @@ def test_representation_refuses_a_nonexact_measurement_carrier(carrier):
             ledger,
             locality_identity="s",
             locality_standing=standing,
-            source_event_identity=measurement.identity,
+            source_occurrence_reference=measurement.identity,
         )
 
 
@@ -321,7 +303,7 @@ def test_representation_refuses_a_measurement_reference_under_the_wrong_key():
             ledger,
             locality_identity="s",
             locality_standing=standing,
-            source_event_identity=measurement.identity,
+            source_occurrence_reference=measurement.identity,
         )
 
 
@@ -339,7 +321,7 @@ def test_representation_refuses_a_subclassed_measurement_reference():
             ledger,
             locality_identity="s",
             locality_standing=standing,
-            source_event_identity=measurement.identity,
+            source_occurrence_reference=measurement.identity,
         )
 
 
@@ -362,7 +344,7 @@ def test_representation_rejects_corrupted_measurement_yield(monkeypatch):
             ledger,
             locality_identity="s",
             locality_standing=standing,
-            source_event_identity=measurement.identity,
+            source_occurrence_reference=measurement.identity,
         )
 
 
@@ -381,12 +363,12 @@ def test_unrelated_occurrence_does_not_change_addressed_measurement_result():
         ledger,
         locality_identity="s",
         locality_standing=_standing(ledger),
-        source_event_identity=measurement.identity,
+        source_occurrence_reference=measurement.identity,
     )
 
     assert representation["exact_material"] is None
     assert ledger.get(representation["representation_event_identity"]).material[
-        "attempt_reference"
+        "source_occurrence_reference"
     ] == measurement.identity
 
 
@@ -397,11 +379,29 @@ def test_representation_reader_rejects_a_substituted_measurement_reference():
         ledger,
         locality_identity="s",
         locality_standing=_standing(ledger),
-        source_event_identity=measurement.identity,
+        source_occurrence_reference=measurement.identity,
     )
     other = _byte_measurement(ledger)
     event = ledger.get(representation["representation_event_identity"])
-    event.material["attempt_reference"] = other.identity
+    event.material["source_occurrence_reference"] = other.identity
+
+    with pytest.raises(ValueError, match="not exact"):
+        read_operator_representation(ledger, event.identity)
+
+
+def test_emission_attempt_reference_cannot_substitute_for_representation_source():
+    ledger = EventLedger()
+    measurement = _byte_measurement(ledger)
+    representation = record_operator_representation(
+        ledger,
+        locality_identity="s",
+        locality_standing=_standing(ledger),
+        source_occurrence_reference=measurement.identity,
+    )
+    event = ledger.get(representation["representation_event_identity"])
+    event.material["attempt_reference"] = event.material.pop(
+        "source_occurrence_reference"
+    )
 
     with pytest.raises(ValueError, match="not exact"):
         read_operator_representation(ledger, event.identity)
@@ -420,7 +420,7 @@ def test_representation_consumes_an_exact_yielded_representation_result():
         ledger,
         locality_identity="s",
         locality_standing=_standing(ledger),
-        source_event_identity=source.identity,
+        source_occurrence_reference=source.identity,
     )
     first_event = ledger.get(first["representation_event_identity"])
     standing = _standing(ledger)
@@ -429,7 +429,7 @@ def test_representation_consumes_an_exact_yielded_representation_result():
         ledger,
         locality_identity="s",
         locality_standing=standing,
-        source_event_identity=first_event.identity,
+        source_occurrence_reference=first_event.identity,
     )
     second_event = ledger.get(second["representation_event_identity"])
 
@@ -437,7 +437,7 @@ def test_representation_consumes_an_exact_yielded_representation_result():
         source.identity: None,
         first_event.identity: None,
     }
-    assert second_event.material["attempt_reference"] == first_event.identity
+    assert second_event.material["source_occurrence_reference"] == first_event.identity
     assert second_event.exact_material == b"\x00\xffresult"
     assert ledger.get(
         second_event.material["yield_evidence_identity"]
@@ -472,7 +472,7 @@ def test_representation_refuses_a_raw_carrier_without_exact_yield():
             ledger,
             locality_identity="s",
             locality_standing=standing,
-            source_event_identity=unrelated.identity,
+            source_occurrence_reference=unrelated.identity,
         )
 
 
@@ -493,7 +493,7 @@ def test_representation_refuses_a_nonidentity_result_carrier():
             ledger,
             locality_identity="s",
             locality_standing=standing,
-            source_event_identity=source.identity,
+            source_occurrence_reference=source.identity,
         )
 
 
@@ -515,7 +515,7 @@ def test_representation_refuses_a_missing_source_occurrence():
             ledger,
             locality_identity="s",
             locality_standing=_standing(ledger),
-            source_event_identity="missing-source",
+            source_occurrence_reference="missing-source",
         )
 
 
@@ -534,7 +534,7 @@ def test_representation_refuses_a_source_from_another_locality():
             ledger,
             locality_identity="second",
             locality_standing=_standing(ledger, locality="second"),
-            source_event_identity=source.identity,
+            source_occurrence_reference=source.identity,
         )
 
 
@@ -555,7 +555,7 @@ def test_representation_refuses_corrupted_source_material():
             ledger,
             locality_identity="s",
             locality_standing=standing,
-            source_event_identity=source.identity,
+            source_occurrence_reference=source.identity,
         )
 
 
@@ -572,7 +572,7 @@ def test_representation_reader_and_egress_refuse_changed_material():
         ledger,
         locality_identity="s",
         locality_standing=_standing(ledger),
-        source_event_identity=source.identity,
+        source_occurrence_reference=source.identity,
     )
     event = ledger.get(representation["representation_event_identity"])
     object.__setattr__(event, "exact_material", b"goodbye")
@@ -600,7 +600,7 @@ def test_exact_egress_reads_the_recorded_representation_material():
         ledger,
         locality_identity="s",
         locality_standing=_standing(ledger),
-        source_event_identity=source.identity,
+        source_occurrence_reference=source.identity,
     )
     output = BytesIO()
 
@@ -623,9 +623,9 @@ def test_exact_egress_reads_the_recorded_representation_material():
     )
     yield_evidence = ledger.get(representation["emission_yield_evidence_identity"])
 
-    assert representation["event_identities_in_append_order"] == tuple(
+    assert representation["recorded_occurrence_references"] == tuple(
         occurrence.identity for occurrence in ledger.list()
-    )[-len(representation["event_identities_in_append_order"]):]
+    )[-len(representation["recorded_occurrence_references"]):]
     assert (
         attempt.exact_material
         == attempt_locality.exact_material
@@ -739,7 +739,7 @@ def test_exact_material_emission_preserves_each_bounded_failure_result(
         ledger,
         locality_identity="s",
         locality_standing=_standing(ledger),
-        source_event_identity=source.identity,
+        source_occurrence_reference=source.identity,
     )
 
     with pytest.raises(error_type):
@@ -763,9 +763,9 @@ def test_exact_material_emission_preserves_each_bounded_failure_result(
     assert failure.material["error"] == error_material
     assert failure.material["emitted_event_identity"] is None
     assert representation["emitted_event_identity"] is None
-    assert representation["event_identities_in_append_order"] == tuple(
+    assert representation["recorded_occurrence_references"] == tuple(
         occurrence.identity for occurrence in ledger.list()
-    )[-len(representation["event_identities_in_append_order"]):]
+    )[-len(representation["recorded_occurrence_references"]):]
     assert all(
         read_yield_relation_requirements(
             ledger,
@@ -807,7 +807,7 @@ def test_exact_material_process_death_leaves_only_the_durable_attempt():
         ledger,
         locality_identity="s",
         locality_standing=_standing(ledger),
-        source_event_identity=source.identity,
+        source_occurrence_reference=source.identity,
     )
 
     with pytest.raises(ProcessDeath):
@@ -821,9 +821,9 @@ def test_exact_material_process_death_leaves_only_the_durable_attempt():
     assert representation["emission_attempt_locality_evidence_identity"] is not None
     assert representation["emission_failure_event_identity"] is None
     assert representation["emitted_event_identity"] is None
-    assert representation["event_identities_in_append_order"] == tuple(
+    assert representation["recorded_occurrence_references"] == tuple(
         occurrence.identity for occurrence in ledger.list()
-    )[-len(representation["event_identities_in_append_order"]):]
+    )[-len(representation["recorded_occurrence_references"]):]
 
 
 def test_exact_material_emission_recovers_recorded_order_and_refuses_wrong_occurrence():
@@ -839,10 +839,10 @@ def test_exact_material_emission_recovers_recorded_order_and_refuses_wrong_occur
         ledger,
         locality_identity="s",
         locality_standing=_standing(ledger),
-        source_event_identity=source.identity,
+        source_occurrence_reference=source.identity,
     )
-    representation["event_identities_in_append_order"] = tuple(
-        reversed(representation["event_identities_in_append_order"])
+    representation["recorded_occurrence_references"] = tuple(
+        reversed(representation["recorded_occurrence_references"])
     )
 
     emit_operator_representation_material(
@@ -851,15 +851,15 @@ def test_exact_material_emission_recovers_recorded_order_and_refuses_wrong_occur
         output_stream=BytesIO(),
     )
 
-    assert representation["event_identities_in_append_order"] == tuple(
+    assert representation["recorded_occurrence_references"] == tuple(
         occurrence.identity for occurrence in ledger.list()
-    )[-len(representation["event_identities_in_append_order"]):]
+    )[-len(representation["recorded_occurrence_references"]):]
 
     other = record_operator_representation(
         ledger,
         locality_identity="s",
         locality_standing=_standing(ledger),
-        source_event_identity=source.identity,
+        source_occurrence_reference=source.identity,
     )
     other["representation_identity"] = representation["representation_identity"]
     with pytest.raises(ValueError, match="differs"):
@@ -879,7 +879,6 @@ def test_raw_console_egress_uses_its_recorded_representation_result():
         locality_identity="s",
         input_stream=binary_input(b"hello\n"),
         output_stream=StringIO(),
-        emit_initial_representation=False,
         raw_output_stream=raw_output,
     )
 
@@ -889,7 +888,7 @@ def test_raw_console_egress_uses_its_recorded_representation_result():
         if event.kind == "operator.representation.recorded"
         and event.exact_material is not None
     )
-    source_event = ledger.get(representation_event.material["attempt_reference"])
+    source_event = ledger.get(representation_event.material["source_occurrence_reference"])
     assert source_event is not None
     assert source_event.exact_material == representation_event.exact_material == b"hello\n"
     assert raw_output.getvalue() == representation_event.exact_material
@@ -927,7 +926,7 @@ def test_representation_reader_refuses_a_developer_formed_event():
 def test_representation_reader_refuses_a_different_carried_result():
     ledger = EventLedger()
     _, event = _recorded_representation(ledger)
-    event.material["emission_text"] += "different"
+    event.material["representation_result"] = "different"
 
     with pytest.raises(ValueError, match="Yield is not exact"):
         read_operator_representation(ledger, event.identity)
@@ -958,7 +957,7 @@ def test_representation_reader_refuses_different_locality_evidence_content():
     ledger = EventLedger()
     _, event = _recorded_representation(ledger)
     evidence = ledger.get(event.material["locality_evidence_identity"])
-    evidence.material["carried_content"]["emission_text"] += "different"
+    evidence.material["carried_content"]["known_loss"] = ["different"]
 
     with pytest.raises(ValueError, match="coordinates are not exact"):
         read_operator_representation(ledger, event.identity)
@@ -968,49 +967,38 @@ def test_console_forms_c0_before_first_ingress_and_preserves_provenance_only():
     ledger, _ = _run_console("hello\n")
 
     # A current Representation existing does not make the newest Ingest and the
-    # most recently emitted Representation participants in one Compare.  The
+    # most recently recorded Representation participants in one Compare.  The
     # occurrence and its exact Yield relation are preserved; no Compare or
     # Identification follows.
     kinds = [event.kind for event in ledger.list()]
     assert kinds == [
         *_REPRESENTATION_RELATION_EVIDENCE_KINDS,
         "operator.representation.recorded",
-        "operator.representation.emission_attempt_recorded",
-        *_EMISSION_RELATION_EVIDENCE_KINDS,
-        "operator.representation.emitted",
         *_INGEST_KINDS,
         *_BYTE_MEASUREMENT_KINDS,
         *_OCCURRENCE_POSITION_MEASUREMENT_KINDS,
         *_REPRESENTATION_RELATION_EVIDENCE_KINDS,
         "operator.representation.recorded",
-        "operator.representation.emission_attempt_recorded",
-        *_EMISSION_RELATION_EVIDENCE_KINDS,
-        "operator.representation.emitted",
     ]
     c0_formed = next(
         event
         for event in ledger.list()
         if event.kind == "operator.representation.recorded"
     )
-    c0_emitted = next(
-        event
-        for event in ledger.list()
-        if event.kind == "operator.representation.emitted"
-    )
     assert c0_formed.material["locality_standing_as_of_event_identity"] is None
     assert c0_formed.material["unknowns"] == []
-    # The console attaches no Representation to the Ingest: several emissions
-    # may precede it and nothing determines which, if any, it relates to.
+    # The console attaches no Representation to the Ingest: recording order
+    # does not determine a relation between the two occurrences.
     ingest = next(
         event
         for event in ledger.list()
         if event.kind == "material.ingest.occurred"
     )
-    assert c0_emitted.kind == "operator.representation.emitted"
+    assert ingest.material.get("representation_reference") is None
 
 
 def test_console_ingest_adds_only_its_exact_occurrences():
-    # The required proving: C emitted, E preserved, yield provenance
+    # The required proving: C recorded, E preserved, yield provenance
     # retained, and no Compare or Identification occurrence.  Recency does not
     # make C and E participants in one act; 01.Standing.E.1 requires the act
     # responsible boundary to determine input-to-Act Applicability, and no read
@@ -1046,8 +1034,6 @@ def test_c0_presents_standing_with_no_developer_semantics():
     c0 = record_operator_representation(
         ledger, locality_identity="s", locality_standing=standing
     )
-    emit_operator_representation(ledger, representation=c0, output_stream=StringIO())
-
     # Empty Standing is legitimately input: the representation Act occurred and
     # recorded what it input, rather than being skipped.
     material = ledger.get(c0["representation_event_identity"]).material
@@ -1066,9 +1052,6 @@ def test_c0_presents_standing_with_no_developer_semantics():
         "developer-supplied",
     ):
         assert injected not in flattened, injected
-    emission_text = c0["emission_text"]
-    assert emission_text == f"Bounded Representation {c0['representation_identity']}\n"
-    assert "Respond with exactly one token" not in emission_text
 
 
 def test_representation_act_dimensions_record_only_coordinates_that_exist():
@@ -1123,17 +1106,11 @@ def test_console_presents_standing_only_across_an_ingest():
     assert kinds == [
         *_REPRESENTATION_RELATION_EVIDENCE_KINDS,
         "operator.representation.recorded",
-        "operator.representation.emission_attempt_recorded",
-        *_EMISSION_RELATION_EVIDENCE_KINDS,
-        "operator.representation.emitted",
         *_INGEST_KINDS,
         *_BYTE_MEASUREMENT_KINDS,
         *_OCCURRENCE_POSITION_MEASUREMENT_KINDS,
         *_REPRESENTATION_RELATION_EVIDENCE_KINDS,
         "operator.representation.recorded",
-        "operator.representation.emission_attempt_recorded",
-        *_EMISSION_RELATION_EVIDENCE_KINDS,
-        "operator.representation.emitted",
     ]
     # No relation or result-Standing occurrence follows by identity.
     assert not any(k.startswith("operator.interaction.") for k in kinds)
@@ -1153,7 +1130,7 @@ def test_console_presents_standing_only_across_an_ingest():
     )
     # C1 uses Standing that now contains the Ingest occurrence.
     # C1's Standing was taken through the last event recorded before it,
-    # C0's own representation Act and emission included.
+    # C0's own Representation Act included.
     assert (
         c1.material["locality_standing_as_of_event_identity"] == positions.identity
     )
@@ -1170,7 +1147,7 @@ def test_console_presents_standing_only_across_an_ingest():
     assert "Establish richer shared grammar" not in locality
 
 
-def test_c0_and_c1_are_recorded_and_emitted_in_order():
+def test_c0_and_c1_are_recorded_in_order_without_authored_output():
     ledger, output = _run_console("hello\n")
 
     events = ledger.list()
@@ -1183,9 +1160,11 @@ def test_c0_and_c1_are_recorded_and_emitted_in_order():
         i for i, event in enumerate(events)
         if event.kind == "operator.representation.recorded"
     ]
-    emitted = [i for i, event in enumerate(events) if event.kind == "operator.representation.emitted"]
-    assert recorded[0] < emitted[0] < ingest_index < recorded[1] < emitted[1]
-    assert output.count("Bounded Representation") == 2
+    assert recorded[0] < ingest_index < recorded[1]
+    assert output == ""
+    assert not any(
+        event.kind == "operator.representation.emitted" for event in events
+    )
 
 
 def test_alternatives_carry_complete_coordinates_and_provenance_evidence():
@@ -1251,13 +1230,12 @@ def test_no_new_represented_relation_candidate_is_supplied():
         alternative["represented_source"]["source_role"] == "developer-supplied"
         for alternative in representation["alternative_material"]
     )
-    assert " means " not in representation["emission_text"]
 
 
 def test_representations_from_other_localities_cannot_enter():
     ledger = EventLedger()
-    _record_and_emit(ledger, locality="s1")
-    _record_and_emit(ledger, locality="s2")
+    _record_fixture_representation(ledger, locality="s1")
+    _record_fixture_representation(ledger, locality="s2")
 
     absent = _standing(ledger, locality="s3")
     assert absent["representations"] == {}
@@ -1267,11 +1245,11 @@ def test_representations_from_other_localities_cannot_enter():
 
 def test_representation_representation_is_deterministic_under_unrelated_events():
     ledger = EventLedger()
-    _record_and_emit(ledger)
+    _record_fixture_representation(ledger)
     before = _standing(ledger)
 
     ledger.append("unrelated.kind", {"noise": True}, locality_identity="s")
-    _record_and_emit(ledger, locality="elsewhere")
+    _record_fixture_representation(ledger, locality="elsewhere")
     after = _standing(ledger)
 
     assert after == before
@@ -1281,7 +1259,7 @@ def test_next_console_iteration_validates_c1_and_forms_c2():
     # Direct read: after C1 is recorded, the read side returns its
     # complete alternative_material and bindings.
     ledger = EventLedger()
-    c1 = _record_and_emit(ledger)
+    c1 = _record_fixture_representation(ledger)
     read = list(_standing(ledger)["representations"].values())[-1]
     assert read["representation_identity"] == c1["representation_identity"]
     assert read["alternative_material"] == c1["alternative_material"]
@@ -1293,19 +1271,18 @@ def test_next_console_iteration_validates_c1_and_forms_c2():
     console_ledger, output = _run_console("first\nsecond\n")
     standing = _standing(console_ledger)
     assert len(standing["representations"]) == 3
-    assert output.count("Bounded Representation") == 3
+    assert output == ""
     _, second_identity, third_identity = list(standing["representations"])
     assert list(standing["representations"])[-1] == third_identity
     c1 = standing["representations"][second_identity]
     c2 = standing["representations"][third_identity]
-    # C2's Standing boundary stands after C1's representation Act and emission
-    # occurrences, so both fall inside the prefix it input.
+    # C2's Standing boundary stands after C1's Representation Act.
     positions = {
         event.identity: index for index, event in enumerate(console_ledger.list())
     }
     boundary = positions[c2["locality_standing_as_of_event_identity"]]
     assert positions[c1["representation_event_identity"]] < boundary
-    assert positions[c1["emitted_event_identity"]] < boundary
+    assert c1["emitted_event_identity"] is None
     # The represented source candidates keep stable exact identities
     # across representation Acts.
     identities = lambda representation: [
@@ -1318,7 +1295,7 @@ def test_next_console_iteration_validates_c1_and_forms_c2():
 def test_first_interaction_attaches_no_representation_to_the_ingest():
     ledger, _ = _run_console("first\n")
 
-    # No Representation is named by the Ingest. Emission and Ingest
+    # No Representation is named by the Ingest. Representation and Ingest
     # occurrences retain distinct identities; any relation between them is a
     # later responsible occurrence's to establish and record.
     kinds = {event.kind for event in ledger.list()}
@@ -1329,9 +1306,6 @@ def test_first_interaction_attaches_no_representation_to_the_ingest():
         "operator.representation.act_evidenced",
         "operator.representation.locality_evidenced",
         "operator.representation.recorded",
-        "operator.representation.emission_attempt_recorded",
-        *_EMISSION_RELATION_EVIDENCE_KINDS,
-        "operator.representation.emitted",
     }
     ingest = next(
         event
@@ -1425,7 +1399,7 @@ def test_absent_ingest_records_no_measurement(monkeypatch):
     )
 
 
-def test_representation_act_is_recorded_before_emission_and_they_stay_distinct():
+def test_representation_act_is_recorded_without_manufacturing_emission():
     ledger = EventLedger()
     representation = record_operator_representation(
         ledger,
@@ -1434,8 +1408,7 @@ def test_representation_act_is_recorded_before_emission_and_they_stay_distinct()
         alternative_sources=BOUNDED_ALTERNATIVE_FIXTURE_SOURCES,
     )
     assert representation["emitted_event_identity"] is None
-    # Representation Act is read; its emission coordinate stays unrecorded until
-    # an emission occurrence supplies it.
+    # Representation Act is read; no emission occurrence is manufactured.
     recorded = list(_standing(ledger)["representations"].values())[-1]
     assert recorded["representation_event_identity"] == representation["representation_event_identity"]
     assert recorded["emitted_event_identity"] is None
@@ -1465,260 +1438,6 @@ def test_representation_act_is_recorded_before_emission_and_they_stay_distinct()
     )
     assert "input_role" not in representation_event.material
 
-    emit_operator_representation(
-        ledger, representation=representation, output_stream=StringIO()
-    )
     read = list(_standing(ledger)["representations"].values())[-1]
     assert read["representation_identity"] == representation["representation_identity"]
-
-
-def test_emission_preserves_the_exact_text_written_to_its_boundary():
-    ledger = EventLedger()
-    representation = record_operator_representation(
-        ledger,
-        locality_identity="s",
-        locality_standing=_standing(ledger),
-        alternative_sources=BOUNDED_ALTERNATIVE_FIXTURE_SOURCES,
-    )
-    output = StringIO()
-
-    emit_operator_representation(
-        ledger, representation=representation, output_stream=output
-    )
-
-    emission = ledger.get(representation["emitted_event_identity"])
-    assert emission.material["emitted_representation"] == output.getvalue()
-    assert emission.material["emitted_representation_kind"] == "text"
-    assert emission.material["output_boundary"] == "text_stream_write"
-    assert emission.material["write_count"] == len(output.getvalue())
-    assert emission.material["provenance_occurrence_references"] == [
-        representation["representation_event_identity"],
-        representation["emission_attempt_event_identity"],
-    ]
-    attempt = ledger.get(representation["emission_attempt_event_identity"])
-    attempt_locality_evidence = ledger.get(
-        representation["emission_attempt_locality_evidence_identity"]
-    )
-    assert attempt.material["representation"] == output.getvalue()
-    assert attempt_locality_evidence.material["carried_content"] == output.getvalue()
-    assert attempt_locality_evidence.material["attempt_event_identity"] == attempt.identity
-    assert "standing" not in attempt.material["dimensions"]
-    assert (
-        "output-boundary acceptance remains Unknown until Evidence establishes it"
-        in attempt.material["unknowns"]
-    )
-    assert attempt.identity != emission.material["act_occurrence_identity"]
-    assert emission.material["input_role"] == "exact bounded Representation"
-    assert emission.material["boundary_result"] == {
-        "boundary": "text_stream_write",
-        "accepted_representation": output.getvalue(),
-        "accepted_representation_kind": "text",
-        "accepted_count": len(output.getvalue()),
-    }
-    act_evidence = ledger.get(emission.material["responsible_act_evidence_identity"])
-    locality_evidence = ledger.get(emission.material["locality_evidence_identity"])
-    yield_evidence = ledger.get(emission.material["yield_evidence_identity"])
-    assert act_evidence.material["representation_reference"] == representation[
-        "representation_identity"
-    ]
-    assert act_evidence.material["act_occurrence_identity"] == emission.material[
-        "act_occurrence_identity"
-    ]
-    assert locality_evidence.material["carried_content"] == output.getvalue()
-    assert locality_evidence.material["act_occurrence_identity"] == emission.material[
-        "act_occurrence_identity"
-    ]
-    assert locality_evidence.material["act_occurrence_identity"] != attempt.identity
-    assert yield_evidence.material["dimensions"]["act_occurrence_identity"] == emission.material[
-        "act_occurrence_identity"
-    ]
-    assert representation["emission_failure_event_identity"] is None
-
-
-def test_partial_output_write_preserves_attempt_and_failed_occurrences():
-    class PartialOutput(StringIO):
-        def write(self, value):
-            super().write(value[:-1])
-            return len(value) - 1
-
-    ledger = EventLedger()
-    representation = record_operator_representation(
-        ledger,
-        locality_identity="s",
-        locality_standing=_standing(ledger),
-    )
-
-    with pytest.raises(
-        ValueError, match="did not accept the exact representation"
-    ):
-        emit_operator_representation(
-            ledger, representation=representation, output_stream=PartialOutput()
-        )
-
-    assert [event.kind for event in ledger.list()] == [
-        *_REPRESENTATION_RELATION_EVIDENCE_KINDS,
-        "operator.representation.recorded",
-        "operator.representation.emission_attempt_recorded",
-        "operator.representation.emission_attempt_locality_evidenced",
-        *_FAILED_EMISSION_EVIDENCE_KINDS,
-        "operator.representation.emission_failure_recorded",
-    ]
-    failure = ledger.get(representation["emission_failure_event_identity"])
-    assert failure.material["boundary"] == "text_stream_write"
-    assert failure.material["write_count"] == len(
-        representation["emission_text"]
-    ) - 1
-    assert failure.material["error"] is None
-    assert failure.material["emitted_event_identity"] is None
-    assert representation["emitted_event_identity"] is None
-    assert representation["event_identities_in_append_order"] == tuple(
-        event.identity for event in ledger.list()
-    )
-    assert representation["emission_failure_act_evidence_identity"] == ledger.get(
-        representation["emission_failure_event_identity"]
-    ).material["responsible_act_evidence_identity"]
-    assert representation["emission_failure_yield_evidence_identity"] == ledger.get(
-        representation["emission_failure_event_identity"]
-    ).material["yield_evidence_identity"]
-
-
-def test_write_exception_preserves_unknown_boundary_acceptance():
-    class WriteFailure(StringIO):
-        def write(self, value):
-            super().write(value[:1])
-            raise OSError("write failed after an unreported boundary revision")
-
-    ledger = EventLedger()
-    representation = record_operator_representation(
-        ledger,
-        locality_identity="s",
-        locality_standing=_standing(ledger),
-    )
-    output = WriteFailure()
-
-    with pytest.raises(OSError, match="unreported boundary revision"):
-        emit_operator_representation(
-            ledger, representation=representation, output_stream=output
-        )
-
-    assert output.getvalue()
-    failure = ledger.get(representation["emission_failure_event_identity"])
-    assert failure.material["boundary"] == "text_stream_write"
-    assert failure.material["write_count"] is None
-    assert failure.material["error"] == (
-        "OSError('write failed after an unreported boundary revision')"
-    )
-    assert (
-        "output-boundary acceptance remains Unknown because write reported no count"
-        in failure.material["unknowns"]
-    )
-    assert representation["emitted_event_identity"] is None
-
-
-def test_flush_failure_does_not_erase_the_completed_text_stream_write():
-    class FlushFailure(StringIO):
-        def flush(self):
-            raise OSError("flush failed")
-
-    ledger = EventLedger()
-    representation = record_operator_representation(
-        ledger,
-        locality_identity="s",
-        locality_standing=_standing(ledger),
-    )
-
-    with pytest.raises(OSError, match="flush failed"):
-        emit_operator_representation(
-            ledger, representation=representation, output_stream=FlushFailure()
-        )
-
-    assert [event.kind for event in ledger.list()] == [
-        *_REPRESENTATION_RELATION_EVIDENCE_KINDS,
-        "operator.representation.recorded",
-        "operator.representation.emission_attempt_recorded",
-        *_EMISSION_RELATION_EVIDENCE_KINDS,
-        "operator.representation.emitted",
-        *_FAILED_EMISSION_EVIDENCE_KINDS,
-        "operator.representation.emission_failure_recorded",
-    ]
-    emitted = ledger.get(representation["emitted_event_identity"])
-    failure = ledger.get(representation["emission_failure_event_identity"])
-    assert emitted.material["output_boundary"] == "text_stream_write"
-    assert failure.material["boundary"] == "text_stream_flush"
-    assert failure.material["write_count"] == len(representation["emission_text"])
-    assert failure.material["emitted_event_identity"] == emitted.identity
-    assert failure.material["error"] == "OSError('flush failed')"
-    assert representation["event_identities_in_append_order"] == tuple(
-        event.identity for event in ledger.list()
-    )
-
-
-def test_successful_emission_returns_every_exact_identity_in_append_order():
-    ledger = EventLedger()
-    representation = _record_and_emit(ledger)
-    emitted = ledger.get(representation["emitted_event_identity"])
-
-    assert representation["event_identities_in_append_order"] == tuple(
-        event.identity for event in ledger.list()
-    )
-    assert representation["emission_act_evidence_identity"] == emitted.material[
-        "responsible_act_evidence_identity"
-    ]
-    assert representation["emission_locality_evidence_identity"] == emitted.material[
-        "locality_evidence_identity"
-    ]
-    assert representation["emission_yield_evidence_identity"] == emitted.material[
-        "yield_evidence_identity"
-    ]
-
-
-def test_emission_does_not_accept_caller_supplied_occurrence_order():
-    ledger = EventLedger()
-    representation, _ = _recorded_representation(ledger)
-    representation["event_identities_in_append_order"] = tuple(
-        reversed(representation["event_identities_in_append_order"])
-    )
-
-    emit_operator_representation(
-        ledger, representation=representation, output_stream=StringIO()
-    )
-
-    assert representation["event_identities_in_append_order"] == tuple(
-        event.identity for event in ledger.list()
-    )
-
-
-def test_process_death_after_attempt_leaves_boundary_acceptance_unknown():
-    class SimulatedProcessDeath(BaseException):
-        pass
-
-    class CrashingOutput(StringIO):
-        def write(self, value):
-            raise SimulatedProcessDeath()
-
-    ledger = EventLedger()
-    representation = record_operator_representation(
-        ledger,
-        locality_identity="s",
-        locality_standing=_standing(ledger),
-    )
-
-    with pytest.raises(SimulatedProcessDeath):
-        emit_operator_representation(
-            ledger, representation=representation, output_stream=CrashingOutput()
-        )
-
-    assert [event.kind for event in ledger.list()] == [
-        *_REPRESENTATION_RELATION_EVIDENCE_KINDS,
-        "operator.representation.recorded",
-        "operator.representation.emission_attempt_recorded",
-        "operator.representation.emission_attempt_locality_evidenced",
-    ]
-    read = list(_standing(ledger)["representations"].values())[-1]
-    assert read["emission_attempt_event_identity"] is not None
-    assert read["emission_attempt_locality_evidence_identity"] is not None
-    assert read["emission_failure_event_identity"] is None
     assert read["emitted_event_identity"] is None
-    assert representation["event_identities_in_append_order"] == tuple(
-        event.identity for event in ledger.list()
-    )

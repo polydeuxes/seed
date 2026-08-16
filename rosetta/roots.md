@@ -55,7 +55,7 @@ Applicability
     seed_runtime.byte_measurement::get_recorded_pair_input_applicability
 
 Emission Locality / Participation / Yield
-    seed_runtime.operator_representation::emit_operator_representation
+    seed_runtime.operator_representation::emit_operator_representation_material
 
 Machine-grammar Fidelity
     tests/test_grammar_implementation.py

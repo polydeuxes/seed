@@ -31,7 +31,6 @@ from seed_runtime.operator_locality_command import (
 )
 from seed_runtime.operator_representation import (
     emit_operator_representation_material,
-    emit_operator_representation,
     record_operator_representation,
 )
 from seed_runtime.operator_locality_standing import (
@@ -67,7 +66,7 @@ def _advance_over_representation(ledger, standing, representation):
     return _advance_over(
         ledger,
         standing,
-        representation["event_identities_in_append_order"],
+        representation["recorded_occurrence_references"],
         locality_identity=representation["locality_identity"],
     )
 
@@ -79,7 +78,6 @@ def run_persistent_operator_console(
     input_stream: BinaryIO | TextIO,
     output_stream: TextIO,
     command_handlers: Mapping[bytes, OperatorCommandHandler] | None = None,
-    emit_initial_representation: bool = True,
     raw_output_stream: BinaryIO | None = None,
 ) -> None:
     """Repeat exact-byte Ingest and slash-command occurrences."""
@@ -98,19 +96,9 @@ def run_persistent_operator_console(
         locality_identity=locality_identity,
         locality_standing=locality_standing,
     )
-    if emit_initial_representation:
-        try:
-            representation = emit_operator_representation(
-                ledger, representation=representation, output_stream=output_stream
-            )
-        finally:
-            locality_standing = _advance_over_representation(
-                ledger, locality_standing, representation
-            )
-    else:
-        locality_standing = _advance_over_representation(
-            ledger, locality_standing, representation
-        )
+    locality_standing = _advance_over_representation(
+        ledger, locality_standing, representation
+    )
     while True:
         boundary_material = operator_boundary_material(input_stream)
         if boundary_material.eof:
@@ -165,16 +153,9 @@ def run_persistent_operator_console(
                     locality_identity=locality_identity,
                     locality_standing=locality_standing,
                 )
-                try:
-                    representation = emit_operator_representation(
-                        ledger,
-                        representation=representation,
-                        output_stream=output_stream,
-                    )
-                finally:
-                    locality_standing = _advance_over_representation(
-                        ledger, locality_standing, representation
-                    )
+                locality_standing = _advance_over_representation(
+                    ledger, locality_standing, representation
+                )
             continue
         with ledger.batched():
             attempt_record = run_operator_ingest(
@@ -262,29 +243,26 @@ def run_persistent_operator_console(
                     ledger,
                     locality_identity=locality_identity,
                     locality_standing=locality_standing,
-                    source_event_identity=ingest_occurrence[
+                    source_occurrence_reference=ingest_occurrence[
                         "evidence_event_identity"
                     ],
                 )
-                emit_operator_representation_material(
-                    ledger,
-                    representation=representation,
-                    output_stream=raw_output_stream,
-                )
-                locality_standing = _advance_over_representation(
-                    ledger, locality_standing, representation
-                )
+                try:
+                    emit_operator_representation_material(
+                        ledger,
+                        representation=representation,
+                        output_stream=raw_output_stream,
+                    )
+                finally:
+                    locality_standing = _advance_over_representation(
+                        ledger, locality_standing, representation
+                    )
                 continue
             representation = record_operator_representation(
                 ledger,
                 locality_identity=locality_identity,
                 locality_standing=locality_standing,
             )
-            try:
-                representation = emit_operator_representation(
-                    ledger, representation=representation, output_stream=output_stream
-                )
-            finally:
-                locality_standing = _advance_over_representation(
-                    ledger, locality_standing, representation
-                )
+            locality_standing = _advance_over_representation(
+                ledger, locality_standing, representation
+            )

@@ -203,52 +203,6 @@ def test_a_flush_inside_a_batch_makes_what_preceded_it_durable(tmp_path):
     assert [event.identity for event in ledger.list()] == [before.identity]
 
 
-def test_the_emission_attempt_is_durable_before_the_output_boundary(tmp_path):
-    """A second reader sees the attempt at the moment the stream is written.
-
-    Emission reaches outside Seed. An attempt still sitting in an uncommitted
-    batch would let the world receive what no durable occurrence records was
-    tried, and no later commit can undo having sent it.
-
-    The reader is a separate connection, so it sees committed rows only.
-    """
-
-    from io import StringIO
-
-    from seed_runtime.operator_console import run_persistent_operator_console
-    from tests.binary_input import binary_input
-
-    path = tmp_path / "e.sqlite"
-    ledger = SQLiteEventLedger(str(path))
-    seen: list[int] = []
-
-    class _Watching(StringIO):
-        def write(self, value: str) -> int:
-            reader = sqlite3.connect(str(path))
-            seen.append(
-                reader.execute(
-                    "SELECT COUNT(*) FROM events WHERE kind = ?",
-                    ("operator.representation.emission_attempt_recorded",),
-                ).fetchone()[0]
-            )
-            reader.close()
-            return super().write(value)
-
-    run_persistent_operator_console(
-        ledger=ledger,
-        locality_identity="s1",
-        input_stream=binary_input("one\ntwo\n"),
-        output_stream=_Watching(),
-    )
-
-    assert seen, "no stream write occurred"
-    # The nth write is preceded by its own attempt, so at least n attempts are
-    # committed by the time it happens. Without the flush this reads
-    # [1, 1, 2, 3]: every write but the first reaches the boundary while its
-    # own attempt is still uncommitted.
-    assert seen == list(range(1, len(seen) + 1)), seen
-
-
 def test_the_exact_material_attempt_is_durable_before_raw_egress(tmp_path):
     """The byte road exposes no material before its exact attempt is durable."""
 
@@ -279,7 +233,7 @@ def test_the_exact_material_attempt_is_durable_before_raw_egress(tmp_path):
         ledger,
         locality_identity="s1",
         locality_standing=standing,
-        source_event_identity=source.identity,
+        source_occurrence_reference=source.identity,
     )
     seen: list[int] = []
 

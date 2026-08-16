@@ -1102,7 +1102,6 @@ def test_recorded_representation_declares_each_exact_evidence_pointer():
         "responsible_act_evidence_identity",
         "locality_evidence_identity",
         "yield_evidence_identity",
-        "emission_text",
     }
     records = [
         (path.name, line, keys)

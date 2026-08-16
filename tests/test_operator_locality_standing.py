@@ -472,8 +472,8 @@ def test_one_attempt_behavior_unchanged_without_earlier_locality_history():
     baseline = _attempt(baseline_ledger, "solo material\n")
     assert "locality_standing" not in baseline
 
-    # The console passes Standing containing C0 to the first interaction,
-    # and its interaction output is a bounded Representation, not the Representation.
+    # The console passes Standing containing C0 to the first interaction and
+    # does not manufacture outward material for the generic Representation.
     input_stream = binary_input("solo material\n")
     output_stream = StringIO()
     console_ledger = EventLedger()
@@ -483,9 +483,8 @@ def test_one_attempt_behavior_unchanged_without_earlier_locality_history():
         input_stream=input_stream,
         output_stream=output_stream,
     )
-    emitted = output_stream.getvalue()
-    assert "Bounded Representation" in emitted
-    assert "Locality Standing" not in emitted
+    assert output_stream.getvalue() == ""
+    assert len(_standing(console_ledger)["representations"]) == 2
 
 
 def test_console_supplies_prior_locality_standing_to_later_interactions():
@@ -500,8 +499,7 @@ def test_console_supplies_prior_locality_standing_to_later_interactions():
         output_stream=output_stream,
     )
 
-    emitted = output_stream.getvalue()
-    assert emitted.count("Bounded Representation") == 3
+    assert output_stream.getvalue() == ""
     standing = _standing(ledger)
     assert len(standing["representations"]) == 3
     first_identity, second_identity, third_identity = list(standing["representations"])
@@ -514,10 +512,9 @@ def test_console_supplies_prior_locality_standing_to_later_interactions():
     later_boundary = positions[
         standing["representations"][third_identity]["locality_standing_as_of_event_identity"]
     ]
-    # The first Representation's own representation Act and emission occurrences fall
-    # inside the prefix the later representation Act input.
+    # The first Representation Act falls inside the prefix the later Act input.
     assert positions[first_representation["representation_event_identity"]] < later_boundary
-    assert positions[first_representation["emitted_event_identity"]] < later_boundary
+    assert first_representation["emitted_event_identity"] is None
 
 
 def test_representation_does_not_mutate_ledger_or_synthesize_events():
