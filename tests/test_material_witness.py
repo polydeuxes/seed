@@ -2144,7 +2144,7 @@ def test_removal_recurrence_is_recovered_before_later_compare(
     }
 
 
-def test_removal_recurrence_refuses_without_full_function_vector(
+def test_removal_recurrence_does_not_claim_coordinates_without_one_later_act(
     book_removed_position_invocation_occurrences,
     book_pair_format_occurrences,
 ):
@@ -2252,6 +2252,67 @@ def test_full_function_coordinates_precede_every_removed_material_invocation():
         ("first", b"b"),
         ("second", b"a"),
         ("second", b"b"),
+        ("first", b"c"),
+        ("second", b"c"),
+    ]
+
+
+def test_unknown_removal_function_coordinate_does_not_erase_the_known_coordinate():
+    supplied = []
+
+    def first(material):
+        supplied.append(("first", material))
+        if material == b"dx":
+            raise ValueError("refused")
+
+    def second(material):
+        supplied.append(("second", material))
+
+    source_references = tuple(
+        ExactMaterialReference(
+            f"unknown-removal-source-{position}",
+            f"unknown-removal-assertion-{position}",
+            "unknown-removal-locality",
+            material,
+        )
+        for position, material in enumerate((b"ax", b"bx", b"cx", b"dx"))
+    )
+    removed_reference = ExactMaterialReference(
+        "unknown-removed-source",
+        "unknown-removed-assertion",
+        "unknown-removal-locality",
+        b"x",
+    )
+    removals = removed_position_occurrences(
+        source_references,
+        (removed_reference,),
+        boundary_identity="unknown-removal",
+    )
+    functions = (
+        CompiledImplementationFunction("compiled-removal-first", first),
+        CompiledImplementationFunction("compiled-removal-second", second),
+    )
+    source_rows = compiled_reference_invocations(
+        source_references,
+        boundary_identity="unknown-removal-source-invocation",
+        implementation_functions=functions,
+    )
+    supplied.clear()
+
+    earlier, coordinates, later = first_recurring_removed_compare_across(
+        removals,
+        source_rows,
+        boundary_identity="unknown-removal-prospective",
+        act_occurrence_count_limit=len(removals),
+    )
+
+    assert tuple(len(row) for row in earlier) == (2, 0)
+    assert coordinates == (True, None)
+    assert later is not None
+    assert tuple(comparison.result_returned for comparison in later) == (True, True)
+    assert supplied == [
+        ("first", b"a"),
+        ("first", b"b"),
         ("first", b"c"),
         ("second", b"c"),
     ]
