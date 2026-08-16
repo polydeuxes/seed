@@ -6,7 +6,7 @@ from io import BytesIO, StringIO
 
 import pytest
 
-pytestmark = pytest.mark.subject("operator_material_acquisition_witness")
+FIDELITY_SUBJECT = "operator_material_acquisition_witness"
 
 from seed_runtime.operator_material_boundary import (
     OperatorMaterialBoundaryError,

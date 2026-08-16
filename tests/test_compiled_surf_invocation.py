@@ -15,13 +15,12 @@ from compiled_surf_invocation import (  # noqa: E402
 )
 
 
-pytestmark = [
-    pytest.mark.skipif(
-        not Path("/usr/bin/surf").is_file(),
-        reason="one compiled implementation function is absent",
-    ),
-    pytest.mark.subject("compiled_material_invocation_witness"),
-]
+FIDELITY_SUBJECT = "compiled_material_invocation_witness"
+
+pytestmark = pytest.mark.skipif(
+    not Path("/usr/bin/surf").is_file(),
+    reason="one compiled implementation function is absent",
+)
 
 
 def test_exact_material_reaches_each_surf_invocation_occurrence():

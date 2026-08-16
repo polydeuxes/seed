@@ -1,13 +1,11 @@
 from __future__ import annotations
 
-import pytest
-
 from scripts import system_material_harness
 from seed_runtime.events import SQLiteEventLedger
 from seed_runtime.material_ingest import ingested_material_bytes
 
 
-pytestmark = pytest.mark.subject("exact_material_preservation_witness")
+FIDELITY_SUBJECT = "exact_material_preservation_witness"
 
 
 def test_file_material_crosses_the_live_system_ingest_signature(tmp_path, capsys):

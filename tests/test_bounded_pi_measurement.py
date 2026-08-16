@@ -4,8 +4,6 @@ from copy import deepcopy
 from tests.binary_input import binary_input
 from io import StringIO
 
-import pytest
-
 from seed_runtime.byte_measurement import (
     assertions_of_recorded_byte_measurement,
     record_byte_position_pair_count_layer,
@@ -16,7 +14,7 @@ from seed_runtime.events import EventLedger
 from seed_runtime.operator_console import run_persistent_operator_console
 
 
-pytestmark = pytest.mark.subject("material_measurement_witness")
+FIDELITY_SUBJECT = "material_measurement_witness"
 
 
 def _record_byte_measurement(

@@ -5,7 +5,7 @@ import sqlite3
 
 import pytest
 
-pytestmark = pytest.mark.subject("exact_material_preservation_witness")
+FIDELITY_SUBJECT = "exact_material_preservation_witness"
 
 from seed_runtime.event import Event
 from seed_runtime.events import CORRUPTED, EventLedger, SQLiteEventLedger
