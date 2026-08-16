@@ -3337,7 +3337,7 @@ def _assert_role_distinctions(distinctions: dict) -> None:
         ],
         "ordered_coordinate_pairs_establish_relation": False,
         "candidate_coordinates": [
-            "source_role",
+            "applicable_source_role",
             "Representation_Act_occurrence",
             "Scope",
             "Authority",
@@ -3417,6 +3417,31 @@ def test_role_distinctions_refuse_direction_collapse_and_identity_promotion():
         compressed_coordinates["Participation_relation_coordinates"]
     )
     assert_refused(compressed_coordinates)
+
+
+def test_candidate_clause_preserves_coordinates_without_promoting_the_subject():
+    clause = _clause("01.Source.E")
+    grammar = json.loads(GRAMMAR.read_text(encoding="utf-8"))
+
+    assert clause == {
+        "subject": "candidate",
+        "preserves": [
+            "applicable_source_role",
+            "Representation_Act_occurrence",
+            "Scope",
+            "Authority",
+            "provenance",
+            "Unknowns",
+        ],
+        "does_not_establish": [
+            "Act_occurrence_by_candidate_identity",
+            "occurrence_result_relation_by_candidate_identity",
+            "Participation_by_candidate_identity",
+        ],
+    }
+    assert grammar["role_distinctions"]["candidate_coordinates"] == clause[
+        "preserves"
+    ]
 
 
 def test_participation_requires_exact_subject_role_and_act_occurrence():

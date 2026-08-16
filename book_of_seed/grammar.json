@@ -125,7 +125,7 @@
     ],
     "ordered_coordinate_pairs_establish_relation": false,
     "candidate_coordinates": [
-      "source_role",
+      "applicable_source_role",
       "Representation_Act_occurrence",
       "Scope",
       "Authority",
@@ -287,6 +287,22 @@
           "Measurement_Responsibility",
           "Assertion_Standing_coordinate_Responsibility"
         ]
+      ]
+    },
+    "01.Source.E": {
+      "subject": "candidate",
+      "preserves": [
+        "applicable_source_role",
+        "Representation_Act_occurrence",
+        "Scope",
+        "Authority",
+        "provenance",
+        "Unknowns"
+      ],
+      "does_not_establish": [
+        "Act_occurrence_by_candidate_identity",
+        "occurrence_result_relation_by_candidate_identity",
+        "Participation_by_candidate_identity"
       ]
     },
     "01.Source.G": {
