@@ -681,7 +681,7 @@ def test_locality_movement_assignment_is_earned_from_the_exact_source():
         "source_assertion_reference": movement.material["source_assertion_reference"],
         "source_locality": "byte-measurement",
         "destination_locality": "measurement",
-        "determination": "the exact preserved Assertion moved between Localities",
+        "determination": "the exact preserved Assertion available in another Locality",
     }
 
 
