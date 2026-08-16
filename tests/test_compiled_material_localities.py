@@ -14,7 +14,9 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "scripts"))
 
 from compiled_format_invocation import (  # noqa: E402
+    ExactMaterialReference,
     admission_added_position_occurrences,
+    admission_result_added_position_occurrences,
     exact_byte_material_references,
 )
 from compiled_material_invocation import (  # noqa: E402
@@ -189,7 +191,7 @@ def test_each_ordered_material_pair_has_one_exact_addition_occurrence(
 ):
     _, references, admission, additions, _, _ = material_pair_invocations
     admitted_positions = {
-        addition.admitted_material_position for addition in additions
+        addition.source_admitted_material_position for addition in additions
     }
     assert len(admitted_positions) == 1
     bounded_material = admission.admitted_material[admitted_positions.pop()]
@@ -218,7 +220,13 @@ def test_each_ordered_material_pair_has_one_exact_addition_occurrence(
         for source, position, added in exact_pairs
     )
     assert all(
-        addition.admission_result_reference == admission.result_reference
+        addition.source_admission_result_reference == admission.result_reference
+        and addition.added_admission_result_reference == admission.result_reference
+        for addition in additions
+    )
+    assert all(
+        addition.source_admitted_material_position
+        == addition.added_admitted_material_position
         for addition in additions
     )
     assert all(
@@ -248,7 +256,7 @@ def test_act_occurrence_limit_never_splits_admitted_material(
         found = tuple(
             addition
             for addition in additions
-            if addition.admitted_material_position == admitted_position
+            if addition.source_admitted_material_position == admitted_position
         )
         if expected_count <= limit:
             assert len(found) == expected_count
@@ -265,12 +273,12 @@ def test_addition_cannot_cross_its_exact_admitted_material(
         reference
         for reference in references
         if reference
-        not in addition.admission_result_reference.admitted_material[
-            addition.admitted_material_position
+        not in addition.added_admission_result_reference.admitted_material[
+            addition.added_admitted_material_position
         ]
     )
 
-    with pytest.raises(ValueError, match="differs from its Admission"):
+    with pytest.raises(ValueError, match="differs from its Admissions"):
         replace(
             addition,
             added_reference=other,
@@ -280,6 +288,95 @@ def test_addition_cannot_cross_its_exact_admitted_material(
                 + addition.source_material[addition.position :]
             ),
         )
+
+
+def test_distinct_admission_results_bind_each_addition_input():
+    sources = (
+        ExactMaterialReference("source-0", "assertion-0", "bounded-material", b"\x00\x00"),
+        ExactMaterialReference("source-1", "assertion-1", "bounded-material", b"\x01\x01"),
+    )
+    added = (
+        ExactMaterialReference("added-0", "assertion-2", "bounded-material", b"\x02"),
+        ExactMaterialReference("added-1", "assertion-3", "bounded-material", b"\x03"),
+    )
+    source_admission = admission_occurrence(
+        (sources,),
+        boundary_identity="source-admission",
+        source_material=sources,
+    )
+    added_admission = admission_occurrence(
+        (added,),
+        boundary_identity="added-admission",
+        source_material=added,
+    )
+
+    additions = admission_result_added_position_occurrences(
+        source_admission.result_reference,
+        added_admission.result_reference,
+        boundary_identity="two-admission-addition",
+        admitted_material_act_occurrence_count_limit=12,
+    )
+
+    assert len(additions) == 12
+    assert all(
+        addition.source_admission_result_reference
+        == source_admission.result_reference
+        and addition.added_admission_result_reference
+        == added_admission.result_reference
+        and addition.source_admitted_material_position == 0
+        and addition.added_admitted_material_position == 0
+        for addition in additions
+    )
+    assert tuple(addition.source_reference for addition in additions) == tuple(
+        source for source in sources for _ in range(6)
+    )
+    assert all(
+        addition.result_reference.source_admission_result_reference
+        == source_admission.result_reference
+        and addition.result_reference.added_admission_result_reference
+        == added_admission.result_reference
+        for addition in additions
+    )
+
+
+def test_distinct_admission_results_do_not_cross_localities_or_split_a_tuple():
+    source = ExactMaterialReference(
+        "source", "source-assertion", "source-locality", b"aa"
+    )
+    added = ExactMaterialReference(
+        "added", "added-assertion", "added-locality", b"a"
+    )
+    source_admission = admission_occurrence(
+        ((source,),),
+        boundary_identity="source-admission",
+        source_material=(source,),
+    )
+    added_admission = admission_occurrence(
+        ((added,),),
+        boundary_identity="added-admission",
+        source_material=(added,),
+    )
+
+    with pytest.raises(ValueError, match="crossed Localities"):
+        admission_result_added_position_occurrences(
+            source_admission.result_reference,
+            added_admission.result_reference,
+            boundary_identity="cross-locality-addition",
+            admitted_material_act_occurrence_count_limit=3,
+        )
+
+    local_added = replace(added, locality_identity="source-locality")
+    local_added_admission = admission_occurrence(
+        ((local_added,),),
+        boundary_identity="local-added-admission",
+        source_material=(local_added,),
+    )
+    assert admission_result_added_position_occurrences(
+        source_admission.result_reference,
+        local_added_admission.result_reference,
+        boundary_identity="bounded-addition",
+        admitted_material_act_occurrence_count_limit=2,
+    ) == ()
 
 
 def test_each_added_result_reaches_the_same_compiled_function(

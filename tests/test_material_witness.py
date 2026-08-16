@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from dataclasses import replace
 from pathlib import Path
 import shutil
 import subprocess
@@ -91,12 +92,12 @@ def measured_book_pairs():
     byte_measurement = record_byte_count_layer(
         ledger,
         source_locality_identities=("book-material",),
-        recording_locality_identity="book-byte-measurement",
+        recording_locality_identity="book-material-measurement",
     )
     pair_measurement = record_byte_position_pair_count_layer(
         ledger,
         source_measurement_event_identity=byte_measurement.identity,
-        recording_locality_identity="book-pair-measurement",
+        recording_locality_identity="book-material-measurement",
     )
     assertions = assertions_of_recorded_byte_position_pair_measurement(
         ledger, pair_measurement.identity
@@ -423,7 +424,7 @@ def test_pair_material_comes_from_the_complete_recorded_measurement(measured_boo
     assert all(len(pair) == 2 for pair in pairs)
     assert tuple(reference.exact_material for reference in pair_material) == pairs
     assert {reference.locality_identity for reference in pair_material} == {
-        "book-pair-measurement"
+        "book-material-measurement"
     }
 
 
@@ -444,7 +445,7 @@ def test_byte_material_comes_from_the_complete_recorded_measurement(measured_boo
         bytes((value,)) for value in material
     )
     assert {reference.locality_identity for reference in byte_material} == {
-        "book-byte-measurement"
+        "book-material-measurement"
     }
 
 
@@ -770,6 +771,10 @@ def test_equal_result_material_keeps_each_exact_added_position_occurrence():
         {occurrence.act_occurrence_identity for occurrence in added_occurrences}
     ) == 3
     assert len({occurrence.result_identity for occurrence in added_occurrences}) == 3
+    assert {
+        occurrence.result_reference.locality_identity
+        for occurrence in added_occurrences
+    } == {"fixture-locality"}
     assert tuple(
         (
             occurrence.source_material,
@@ -791,6 +796,8 @@ def test_equal_result_material_keeps_each_exact_added_position_occurrence():
         )
         for occurrence in added_occurrences
     )
+    with pytest.raises(ValueError, match="crossed Localities"):
+        replace(added_occurrences[0], locality_identity="other-locality")
 
 
 def test_a_different_source_order_is_refused_before_the_implementation_function():
@@ -809,6 +816,7 @@ def test_a_different_source_order_is_refused_before_the_implementation_function(
     with pytest.raises(ValueError, match="exact source order"):
         AddedPositionOccurrence(
             boundary_identity="different-source-addition",
+            locality_identity="fixture-locality",
             occurrence_position=0,
             source_reference=source,
             position=1,

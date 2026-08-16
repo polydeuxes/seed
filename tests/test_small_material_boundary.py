@@ -86,14 +86,14 @@ def small_boundary_material():
     ledger = EventLedger()
     source = ingest_material(
         ledger,
-        locality_identity="small-boundary-source",
+        locality_identity="small-boundary-material",
         exact_bytes=book[start : start + 4],
         source_role="fixture material",
         source_boundary="fixture-0",
     )
     added = ingest_material(
         ledger,
-        locality_identity="small-boundary-added",
+        locality_identity="small-boundary-material",
         exact_bytes=b" ",
         source_role="fixture material",
         source_boundary="fixture-1",
