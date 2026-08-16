@@ -1886,6 +1886,8 @@ def first_recurring_added_compare(
         or act_occurrence_count_limit < 1
     ):
         raise TypeError("one exact positive Act occurrence count limit is required")
+    if type(invoke_later) is not bool:
+        raise TypeError("later invocation control must be exact")
     source_by_reference = {
         invocation.source_coordinate: invocation for invocation in source_invocations
     }
