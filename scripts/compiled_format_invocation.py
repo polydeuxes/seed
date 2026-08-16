@@ -816,6 +816,52 @@ class AddedPositionAdmissionOccurrence:
 
 
 @dataclass(frozen=True, slots=True)
+class AddedPositionResultAdmissionOccurrence:
+    admission_occurrence: AdmissionOccurrence
+    addition_occurrences: tuple[AddedPositionOccurrence, ...]
+    comparison_occurrences: tuple[tuple[object, ...], ...]
+
+    def __post_init__(self) -> None:
+        if not isinstance(self.admission_occurrence, AdmissionOccurrence):
+            raise TypeError("addition result Admission requires its exact Act occurrence")
+        admitted = admit_added_position_results(
+            self.addition_occurrences,
+            self.comparison_occurrences,
+        )
+        source_material = tuple(
+            occurrence.result_reference for occurrence in self.addition_occurrences
+        )
+        if self.admission_occurrence.source_material != source_material:
+            raise ValueError(
+                "addition result Admission source differs from its Act results"
+            )
+        if self.admission_occurrence.admitted_material != admitted:
+            raise ValueError(
+                "addition result Admission differs from its Compare occurrences"
+            )
+
+    @property
+    def source_material(self):
+        return self.admission_occurrence.source_material
+
+    @property
+    def admitted_material(self):
+        return self.admission_occurrence.admitted_material
+
+    @property
+    def act_occurrence_identity(self) -> tuple[str, int]:
+        return self.admission_occurrence.act_occurrence_identity
+
+    @property
+    def result_identity(self) -> tuple[str, int, str]:
+        return self.admission_occurrence.result_identity
+
+    @property
+    def result_reference(self) -> AdmissionResultReference:
+        return AdmissionResultReference(admission_occurrence=self)
+
+
+@dataclass(frozen=True, slots=True)
 class RemovedPositionResultAdmissionOccurrence:
     admission_occurrence: AdmissionOccurrence
     removal_occurrences: tuple[RemovedPositionOccurrence, ...]
@@ -1044,6 +1090,42 @@ def added_position_admission_occurrence(
         source_material=occurrences,
     )
     return AddedPositionAdmissionOccurrence(
+        admission_occurrence=admission,
+        addition_occurrences=occurrences,
+        comparison_occurrences=comparisons,
+    )
+
+
+def admit_added_position_results(
+    occurrences: tuple[AddedPositionOccurrence, ...],
+    comparisons: tuple[tuple[object, ...], ...],
+) -> tuple[tuple[ExactMaterialResultReference, ...], ...]:
+    admitted_occurrences = admit_added_position_occurrences(
+        occurrences,
+        comparisons,
+    )
+    return tuple(
+        tuple(occurrence.result_reference for occurrence in admitted)
+        for admitted in admitted_occurrences
+    )
+
+
+def added_position_result_admission_occurrence(
+    occurrences: tuple[AddedPositionOccurrence, ...],
+    comparisons: tuple[tuple[object, ...], ...],
+    *,
+    boundary_identity: str,
+    occurrence_position: int = 0,
+) -> AddedPositionResultAdmissionOccurrence:
+    admitted = admit_added_position_results(occurrences, comparisons)
+    source_material = tuple(occurrence.result_reference for occurrence in occurrences)
+    admission = admission_occurrence(
+        admitted,
+        boundary_identity=boundary_identity,
+        occurrence_position=occurrence_position,
+        source_material=source_material,
+    )
+    return AddedPositionResultAdmissionOccurrence(
         admission_occurrence=admission,
         addition_occurrences=occurrences,
         comparison_occurrences=comparisons,

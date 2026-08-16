@@ -24,15 +24,18 @@ sys.path.insert(0, str(ROOT / "scripts"))
 from compiled_format_invocation import (  # noqa: E402
     AddedPositionOccurrence,
     AddedPositionAdmissionOccurrence,
+    AddedPositionResultAdmissionOccurrence,
     RemovedPositionResultAdmissionOccurrence,
     COMPILED_IMPLEMENTATION_FUNCTIONS,
     CompiledImplementationFunction,
     ExactMaterialReference,
     admit_compiled_invocation_rows,
     admit_added_position_occurrences,
+    admit_added_position_results,
     admit_removed_position_results,
     added_position_admission_occurrence,
     added_position_admission_occurrences,
+    added_position_result_admission_occurrence,
     admission_added_position_occurrences,
     admission_result_added_position_occurrences,
     added_position_occurrences,
@@ -279,6 +282,47 @@ def book_added_position_comparisons(
         book_pair_format_occurrences,
         book_three_byte_format_occurrences[2],
         boundary_identity="book-added-position-compare",
+    )
+
+
+@pytest.fixture(scope="module")
+def book_addition_result_additions(
+    book_three_byte_format_occurrences,
+    book_added_position_comparisons,
+    book_format_admissions,
+):
+    additions = book_three_byte_format_occurrences[1]
+    result_admission = added_position_result_admission_occurrence(
+        additions,
+        book_added_position_comparisons,
+        boundary_identity="book-addition-result-admission",
+    )
+    source_references = result_admission.source_material
+    source_invocations = compiled_reference_invocations(
+        source_references,
+        boundary_identity="book-addition-result-format",
+    )
+    later_additions = admission_result_added_position_occurrences(
+        result_admission.result_reference,
+        book_format_admissions[1].result_reference,
+        boundary_identity="book-addition-result-later-addition",
+        admitted_material_act_occurrence_count_limit=4096,
+    )
+    result_invocations = added_position_invocations(
+        later_additions,
+        boundary_identity="book-addition-result-later-format",
+    )
+    comparisons = compare_added_position_invocations(
+        source_invocations,
+        result_invocations,
+        boundary_identity="book-addition-result-later-compare",
+    )
+    return (
+        result_admission,
+        source_references,
+        source_invocations,
+        later_additions,
+        comparisons,
     )
 
 
@@ -2357,6 +2401,67 @@ def test_removal_compare_refuses_a_result_without_its_act_occurrence():
             result_invocations,
             boundary_identity="compare",
         )
+
+
+def test_addition_result_admission_comes_from_exact_compare_distinctions(
+    book_addition_result_additions,
+    book_added_position_comparisons,
+):
+    admission, source_references, _, _, _ = book_addition_result_additions
+    additions = admission.addition_occurrences
+
+    assert admission.admitted_material == admit_added_position_results(
+        additions,
+        book_added_position_comparisons,
+    )
+    assert source_references == tuple(
+        addition.result_reference for addition in additions
+    )
+    assert {
+        reference
+        for same_coordinates in admission.admitted_material
+        for reference in same_coordinates
+    } == set(source_references)
+
+    changed = replace(
+        book_added_position_comparisons[0][-1],
+        result_returned=not book_added_position_comparisons[0][-1].result_returned,
+    )
+    with pytest.raises(ValueError, match="differs from its Compare"):
+        AddedPositionResultAdmissionOccurrence(
+            admission_occurrence=admission.admission_occurrence,
+            addition_occurrences=additions,
+            comparison_occurrences=(
+                (*book_added_position_comparisons[0][:-1], changed),
+                *book_added_position_comparisons[1:],
+            ),
+        )
+
+
+def test_later_addition_uses_exact_earlier_addition_results(
+    book_addition_result_additions,
+):
+    result_admission, source_references, _, additions, comparisons = (
+        book_addition_result_additions
+    )
+    exact_sources = set(source_references)
+    addition_occurrence_identities = {
+        addition.act_occurrence_identity for addition in additions
+    }
+
+    assert additions
+    assert all(addition.source_reference in exact_sources for addition in additions)
+    assert all(
+        addition.source_admission_result_reference
+        == result_admission.result_reference
+        for addition in additions
+    )
+    assert all(
+        comparison.added_position_act_occurrence_identity
+        in addition_occurrence_identities
+        for row in comparisons
+        for comparison in row
+    )
 
 
 def test_removal_result_admission_comes_from_exact_compare_distinctions(
