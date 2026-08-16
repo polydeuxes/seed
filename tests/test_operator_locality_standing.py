@@ -2,7 +2,16 @@ from copy import deepcopy
 from tests.binary_input import binary_input
 from io import StringIO
 
-from seed_runtime.events import EventLedger
+import pytest
+
+from seed_runtime.byte_measurement import (
+    BYTE_MEASUREMENT_RECORDED_KIND,
+    ByteMeasurementError,
+)
+from seed_runtime.events import CORRUPTED, EventLedger
+from seed_runtime.occurrence_position_measurement import (
+    OCCURRENCE_POSITION_RECORDED_KIND,
+)
 from seed_runtime.operator_ingest import run_operator_ingest
 from seed_runtime.operator_material_boundary import operator_boundary_material
 from seed_runtime.operator_console import run_persistent_operator_console
@@ -51,6 +60,41 @@ def test_events_from_different_localities_cannot_influence_one_another():
         occurrence["evidence_event_identity"]
         for occurrence in standing_two["ingest_occurrences"]
     }
+
+
+@pytest.mark.parametrize(
+    ("measurement_kind", "error_type"),
+    (
+        (BYTE_MEASUREMENT_RECORDED_KIND, ByteMeasurementError),
+        (OCCURRENCE_POSITION_RECORDED_KIND, ValueError),
+    ),
+)
+def test_locality_standing_refuses_a_corrupted_measurement(
+    monkeypatch, measurement_kind, error_type
+):
+    ledger = EventLedger()
+    run_persistent_operator_console(
+        ledger=ledger,
+        locality_identity="s",
+        input_stream=binary_input("material\n"),
+        output_stream=StringIO(),
+    )
+    measurement = next(
+        event for event in ledger.list() if event.kind == measurement_kind
+    )
+    integrity_of = ledger.integrity_of
+    monkeypatch.setattr(
+        ledger,
+        "integrity_of",
+        lambda identity: (
+            CORRUPTED
+            if identity == measurement.identity
+            else integrity_of(identity)
+        ),
+    )
+
+    with pytest.raises(error_type, match="corrupted"):
+        _standing(ledger)
 
 
 def test_next_attempt_reads_standing_from_earlier_same_locality_events():

@@ -35,6 +35,10 @@ from seed_runtime.operator_locality_standing import (
     advance_operator_locality_standing,
     read_operator_locality_standing,
 )
+from seed_runtime.occurrence_position_measurement import (
+    measure_occurrence_position,
+    record_occurrence_position_measurement,
+)
 
 
 def _advance_over(ledger, standing, event_identities, *, locality_identity):
@@ -192,6 +196,26 @@ def run_persistent_operator_console(
                     measurement.material["responsible_act_evidence_identity"],
                     measurement.material["yield_evidence_identity"],
                     measurement.identity,
+                ),
+                locality_identity=locality_identity,
+            )
+            position_measurement = record_occurrence_position_measurement(
+                ledger,
+                recording_locality_identity=locality_identity,
+                finding=measure_occurrence_position(
+                    ledger,
+                    source_locality_identity=locality_identity,
+                ),
+            )
+            locality_standing = _advance_over(
+                ledger,
+                locality_standing,
+                (
+                    position_measurement.material[
+                        "responsible_act_evidence_identity"
+                    ],
+                    position_measurement.material["yield_evidence_identity"],
+                    position_measurement.identity,
                 ),
                 locality_identity=locality_identity,
             )

@@ -77,9 +77,10 @@ def _ingress_event(index, *, unknowns):
     )
 
 
-def _advance(events, prior=None):
-    ledger = EventLedger()
-    ledger.extend(events)
+def _advance(events, prior=None, *, ledger=None):
+    if ledger is None:
+        ledger = EventLedger()
+        ledger.extend(events)
     return advance_operator_locality_standing(
         ledger,
         (event.identity for event in events),
@@ -98,8 +99,12 @@ def test_advancing_one_occurrence_at_a_time_equals_replay(material):
     ledger, _ = _console(material)
     events = ledger.list()
     standing = _advance([])
+    prefix = EventLedger()
     for index in range(len(events)):
-        standing = _advance([events[index]], prior=standing)
+        prefix.extend((events[index],))
+        standing = _advance(
+            [events[index]], prior=standing, ledger=prefix
+        )
         assert standing == _replay(events[: index + 1])
 
 
@@ -108,12 +113,14 @@ def test_advancing_in_the_console_s_own_groupings_equals_replay():
     ledger, _ = _console("alpha\nbeta\ngamma\n")
     events = ledger.list()
     standing = _advance([])
+    prefix = EventLedger()
     input = 0
     for size in (2, 3, 2, 3, 2, 3, 2):
         batch = events[input : input + size]
         if not batch:
             break
-        standing = _advance(batch, prior=standing)
+        prefix.extend(batch)
+        standing = _advance(batch, prior=standing, ledger=prefix)
         input += len(batch)
         assert standing == _replay(events[:input])
 
@@ -203,8 +210,12 @@ def test_a_persisted_ledger_advances_identically(tmp_path):
         _console("alpha\nünïcode\n", ledger=ledger)
         events = ledger.list()
         standing = _advance([])
+        prefix = EventLedger()
         for index in range(len(events)):
-            standing = _advance([events[index]], prior=standing)
+            prefix.extend((events[index],))
+            standing = _advance(
+                [events[index]], prior=standing, ledger=prefix
+            )
         assert standing == _replay(events)
     finally:
         ledger.close()
@@ -261,9 +272,12 @@ def test_the_advance_reads_its_prior():
     """
     ledger, _ = _console("alpha\nbeta\n")
     events = ledger.list()
-    prior = _advance(events[:5])
+    prefix = EventLedger()
+    prefix.extend(events[:5])
+    prior = _advance(events[:5], ledger=prefix)
     before = len(prior["ingest_occurrences"])
-    advanced = _advance(events[5:], prior=prior)
+    prefix.extend(events[5:])
+    advanced = _advance(events[5:], prior=prior, ledger=prefix)
     assert advanced["ingest_occurrences"] is prior["ingest_occurrences"]
     assert len(prior["ingest_occurrences"]) >= before
 
@@ -278,8 +292,11 @@ def test_every_growable_accumulator_participates_without_copying():
     """
     ledger, _ = _console("alpha\nbeta\n")
     events = ledger.list()
-    prior = _advance(events[:5])
-    advanced = _advance(events[5:], prior=prior)
+    prefix = EventLedger()
+    prefix.extend(events[:5])
+    prior = _advance(events[:5], ledger=prefix)
+    prefix.extend(events[5:])
+    advanced = _advance(events[5:], prior=prior, ledger=prefix)
     for coordinate in (
         "representations",
         "ingest_occurrences",

@@ -13,6 +13,9 @@ from seed_runtime.operator_representation import (
 )
 from seed_runtime.material_ingest import ingest_material
 from seed_runtime.operator_locality_standing import read_operator_locality_standing
+from seed_runtime.occurrence_position_measurement import (
+    get_recorded_occurrence_position_measurement,
+)
 from tests.bounded_alternative_fixture import BOUNDED_ALTERNATIVE_FIXTURE_SOURCES
 from seed_runtime.operator_console import run_persistent_operator_console
 
@@ -25,6 +28,11 @@ _BYTE_MEASUREMENT_KINDS = (
     "operator.measurement.byte_responsible_act_evidenced",
     "operator.yield.evidence_recorded",
     "operator.measurement.byte_counts_recorded",
+)
+_OCCURRENCE_POSITION_MEASUREMENT_KINDS = (
+    "operator.measurement.locality_occurrence_position_act_evidenced",
+    "operator.yield.evidence_recorded",
+    "operator.measurement.locality_occurrence_position_recorded",
 )
 _EMISSION_RELATION_EVIDENCE_KINDS = (
     "operator.representation.emission_attempt_locality_evidenced",
@@ -374,6 +382,7 @@ def test_console_forms_c0_before_first_ingress_and_preserves_provenance_only():
         "operator.representation.emitted",
         *_INGEST_KINDS,
         *_BYTE_MEASUREMENT_KINDS,
+        *_OCCURRENCE_POSITION_MEASUREMENT_KINDS,
         *_REPRESENTATION_RELATION_EVIDENCE_KINDS,
         "operator.representation.recorded",
         "operator.representation.emission_attempt_recorded",
@@ -521,6 +530,7 @@ def test_console_presents_standing_only_across_an_ingest():
         "operator.representation.emitted",
         *_INGEST_KINDS,
         *_BYTE_MEASUREMENT_KINDS,
+        *_OCCURRENCE_POSITION_MEASUREMENT_KINDS,
         *_REPRESENTATION_RELATION_EVIDENCE_KINDS,
         "operator.representation.recorded",
         "operator.representation.emission_attempt_recorded",
@@ -538,11 +548,22 @@ def test_console_presents_standing_only_across_an_ingest():
     ingest = next(
         event for event in events if event.kind == "material.ingest.occurred"
     )
+    positions = next(
+        event
+        for event in events
+        if event.kind == "operator.measurement.locality_occurrence_position_recorded"
+    )
     # C1 uses Standing that now contains the Ingest occurrence.
     # C1's Standing was taken through the last event recorded before it,
     # C0's own representation Act and emission included.
     assert (
-        c1.material["locality_standing_as_of_event_identity"] == ingest.identity
+        c1.material["locality_standing_as_of_event_identity"] == positions.identity
+    )
+    assert ingest.identity in dict(
+        get_recorded_occurrence_position_measurement(
+            ledger,
+            positions.identity,
+        ).occurrences
     )
     assert c0.material["alternative_material"] == [] and c1.material["alternative_material"] == []
     # No developer result semantics anywhere in the locality.
@@ -706,6 +727,7 @@ def test_first_interaction_attaches_no_representation_to_the_ingest():
     assert kinds == {
         *_INGEST_KINDS,
         *_BYTE_MEASUREMENT_KINDS,
+        *_OCCURRENCE_POSITION_MEASUREMENT_KINDS,
         "operator.representation.act_evidenced",
         "operator.representation.locality_evidenced",
         "operator.representation.recorded",
@@ -752,7 +774,34 @@ def test_each_ingest_freezes_one_exact_byte_measurement_boundary():
     assert second_counts == {10: 2, 97: 1, 98: 1}
 
 
-def test_absent_ingest_records_no_byte_measurement(monkeypatch):
+def test_each_ingest_freezes_one_exact_occurrence_position_boundary():
+    ledger, _ = _run_console("a\nb\n")
+    measurements = tuple(
+        event
+        for event in ledger.list()
+        if event.kind == "operator.measurement.locality_occurrence_position_recorded"
+    )
+
+    assert len(measurements) == 2
+    findings = tuple(
+        get_recorded_occurrence_position_measurement(ledger, event.identity)
+        for event in measurements
+    )
+    for finding in findings:
+        expected = ledger.list_locality(
+            "s",
+            through=finding.completeness_boundary,
+        )
+        assert finding.occurrences == tuple(
+            (event.identity, position)
+            for position, event in enumerate(expected)
+        )
+    assert measurements[0].identity not in dict(findings[0].occurrences)
+    assert measurements[0].identity in dict(findings[1].occurrences)
+    assert measurements[1].identity not in dict(findings[1].occurrences)
+
+
+def test_absent_ingest_records_no_measurement(monkeypatch):
     monkeypatch.setattr(
         "seed_runtime.operator_console.run_operator_ingest",
         lambda **_coordinates: {
@@ -769,7 +818,11 @@ def test_absent_ingest_records_no_byte_measurement(monkeypatch):
     )
 
     assert not any(
-        event.kind == "operator.measurement.byte_counts_recorded"
+        event.kind
+        in {
+            "operator.measurement.byte_counts_recorded",
+            "operator.measurement.locality_occurrence_position_recorded",
+        }
         for event in ledger.list()
     )
 

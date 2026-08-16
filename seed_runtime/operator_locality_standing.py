@@ -8,6 +8,16 @@ from typing import Any, Iterable
 
 from seed_runtime.events import EventLedger
 from seed_runtime.material_ingest import MATERIAL_INGEST_OCCURRED_KIND
+from seed_runtime.byte_measurement import (
+    BYTE_MEASUREMENT_RECORDED_KIND,
+    BYTE_MEASUREMENT_RESPONSIBLE_ACT_EVIDENCE_KIND,
+    assertions_of_recorded_byte_measurement,
+)
+from seed_runtime.occurrence_position_measurement import (
+    OCCURRENCE_POSITION_ACT_EVIDENCE_KIND,
+    OCCURRENCE_POSITION_RECORDED_KIND,
+    get_recorded_occurrence_position_measurement,
+)
 
 # The writer of these occurrences declares their kinds. A reader declaring its
 # own copy would be a second contract, free to drift from the first.
@@ -26,8 +36,18 @@ from seed_runtime.operator_representation import (
 _SUBJECT_BY_KIND = {
     MATERIAL_INGEST_OCCURRED_KIND: "ingest_occurrence",
 }
+_MEASUREMENT_ACT_EVIDENCE_KINDS = {
+    BYTE_MEASUREMENT_RESPONSIBLE_ACT_EVIDENCE_KIND,
+    OCCURRENCE_POSITION_ACT_EVIDENCE_KIND,
+}
+_MEASUREMENT_RECORDED_KINDS = {
+    BYTE_MEASUREMENT_RECORDED_KIND,
+    OCCURRENCE_POSITION_RECORDED_KIND,
+}
 _SUPPORTED_KINDS = {
     *_SUBJECT_BY_KIND,
+    *_MEASUREMENT_ACT_EVIDENCE_KINDS,
+    *_MEASUREMENT_RECORDED_KINDS,
     _REPRESENTATION_RECORDED_KIND,
     _REPRESENTATION_ACT_EVIDENCE_KIND,
     _REPRESENTATION_LOCALITY_EVIDENCE_KIND,
@@ -109,8 +129,7 @@ def advance_operator_locality_standing(
     time and reinstate the quadratic this replaced. The console holds one
     Standing, hands it forward, and keeps no earlier one.
 
-    Accepts as input only Ingest and ``operator.representation.*``
-    events stamped with this exact Locality. The result is fully recomputable
+    The result is fully recomputable
     from the ledger and is not itself recorded: it returns only standings,
     limits, and Unknowns the Locality's events already carry.  An empty
     coordinate is absence of record, not negative standing and not Unknown.
@@ -154,6 +173,8 @@ def advance_operator_locality_standing(
         if not (
             event.kind == MATERIAL_INGEST_OCCURRED_KIND
             or event.kind.startswith("operator.representation.")
+            or event.kind in _MEASUREMENT_ACT_EVIDENCE_KINDS
+            or event.kind in _MEASUREMENT_RECORDED_KINDS
         ):
             continue
         if event.kind not in _SUPPORTED_KINDS:
@@ -167,6 +188,14 @@ def advance_operator_locality_standing(
         ):
             for value in event.material.get(key, ()):
                 _record_distinct(collected, value)
+        if event.kind in _MEASUREMENT_ACT_EVIDENCE_KINDS:
+            continue
+        if event.kind == BYTE_MEASUREMENT_RECORDED_KIND:
+            assertions_of_recorded_byte_measurement(ledger, event.identity)
+            continue
+        if event.kind == OCCURRENCE_POSITION_RECORDED_KIND:
+            get_recorded_occurrence_position_measurement(ledger, event.identity)
+            continue
         if event.kind in {
             _REPRESENTATION_ACT_EVIDENCE_KIND,
             _REPRESENTATION_LOCALITY_EVIDENCE_KIND,
