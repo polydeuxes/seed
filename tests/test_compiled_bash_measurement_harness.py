@@ -15,6 +15,9 @@ from compiled_material_measurement_harness import (  # noqa: E402
     measure_added_material,
     measure_functions,
 )
+from compiled_material_invocation import (  # noqa: E402
+    first_recurring_added_return_compare_across,
+)
 
 
 def test_bash_syntax_and_dungeon_receive_the_same_exact_material():
@@ -69,4 +72,28 @@ def test_bash_syntax_and_dungeon_receive_the_same_exact_material():
         == addition.act_occurrence_identity
         for row in comparisons
         for comparison, addition in zip(row, additions)
+    )
+
+    earlier, coordinates, later = first_recurring_added_return_compare_across(
+        additions,
+        source_rows,
+        boundary_identity="compiled-bash-distinct-function-recurrence",
+        act_occurrence_count_limit=len(additions),
+    )
+
+    assert coordinates is not None
+    assert len(coordinates) == len(functions)
+    assert later is not None
+    assert tuple(comparison.result_coordinates for comparison in later) == coordinates
+    assert len(
+        {
+            comparison.addition_occurrence.act_occurrence_identity
+            for comparison in later
+        }
+    ) == 1
+    assert all(
+        comparison.addition_occurrence.act_occurrence_identity
+        != later[0].addition_occurrence.act_occurrence_identity
+        for row in earlier
+        for comparison in row
     )
