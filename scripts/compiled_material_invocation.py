@@ -309,6 +309,43 @@ class MaterialAdmissionOccurrence:
         return AdmissionResultReference(admission_occurrence=self)
 
 
+@dataclass(frozen=True, slots=True)
+class MaterialLocalityAdmissionOccurrence:
+    locality_identity: str
+    material_admission: MaterialAdmissionOccurrence
+
+    def __post_init__(self) -> None:
+        if type(self.locality_identity) is not str or not self.locality_identity:
+            raise TypeError("material Admission requires one exact Locality")
+        if not isinstance(self.material_admission, MaterialAdmissionOccurrence):
+            raise TypeError("material Locality requires one exact Admission occurrence")
+        if any(
+            getattr(material, "locality_identity", None) != self.locality_identity
+            for material in self.material_admission.source_material
+        ):
+            raise ValueError("material Admission crossed Localities")
+
+    @property
+    def act_occurrence_identity(self) -> tuple[str, int]:
+        return self.material_admission.act_occurrence_identity
+
+    @property
+    def result_identity(self) -> tuple[str, int, str]:
+        return self.material_admission.result_identity
+
+    @property
+    def source_material(self):
+        return self.material_admission.source_material
+
+    @property
+    def admitted_material(self):
+        return self.material_admission.admitted_material
+
+    @property
+    def result_reference(self) -> AdmissionResultReference:
+        return self.material_admission.result_reference
+
+
 ASPELL_US = MaterialImplementationFunction(
     identity="aspell-en-US",
     invocation=("aspell", "--lang=en_US", "pipe"),
@@ -490,6 +527,43 @@ def admit_invocation_occurrences(
         invocation_result_references=tuple(
             occurrence.result_reference for occurrence in occurrences
         ),
+    )
+
+
+def material_locality_admission_occurrences(
+    occurrences: tuple[MaterialInvocationOccurrence, ...],
+    *,
+    boundary_identity: str,
+) -> tuple[MaterialLocalityAdmissionOccurrence, ...]:
+    if type(occurrences) is not tuple or not occurrences:
+        raise TypeError("material Localities require exact invocation occurrences")
+    if any(
+        not isinstance(occurrence, MaterialInvocationOccurrence)
+        for occurrence in occurrences
+    ):
+        raise TypeError("material Localities require exact invocation occurrences")
+    if type(boundary_identity) is not str or not boundary_identity:
+        raise TypeError("one exact boundary identity is required")
+    by_locality = {}
+    for occurrence in occurrences:
+        locality_identity = getattr(
+            occurrence.source_reference, "locality_identity", None
+        )
+        if type(locality_identity) is not str or not locality_identity:
+            raise TypeError("material Admission requires its exact source Locality")
+        by_locality.setdefault(locality_identity, []).append(occurrence)
+    return tuple(
+        MaterialLocalityAdmissionOccurrence(
+            locality_identity=locality_identity,
+            material_admission=admit_invocation_occurrences(
+                tuple(locality_occurrences),
+                boundary_identity=boundary_identity,
+                occurrence_position=position,
+            ),
+        )
+        for position, (locality_identity, locality_occurrences) in enumerate(
+            by_locality.items()
+        )
     )
 
 

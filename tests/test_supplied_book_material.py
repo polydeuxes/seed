@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from dataclasses import replace
 from pathlib import Path
 import shutil
 import sys
@@ -16,6 +17,7 @@ sys.path.insert(0, str(ROOT / "scripts"))
 from compiled_material_invocation import (  # noqa: E402
     MaterialImplementationFunction,
     ingest_result_reference,
+    material_locality_admission_occurrences,
     reference_occurrences_across,
 )
 from material_fixture_books import MATERIAL_WINDOWS, supplied_book_material  # noqa: E402
@@ -90,3 +92,22 @@ def test_supplied_order_survives_distinct_localities_and_compiled_invocations(
     )
     assert all(occurrence.returncode == 0 for occurrence in occurrences)
     assert all(occurrence.stderr_bytes == b"" for occurrence in occurrences)
+
+    admissions = material_locality_admission_occurrences(
+        occurrences,
+        boundary_identity="supplied-material-locality-admission",
+    )
+    assert tuple(admission.locality_identity for admission in admissions) == tuple(
+        reference.locality_identity for reference in references
+    )
+    assert tuple(admission.source_material for admission in admissions) == tuple(
+        (reference,) for reference in references
+    )
+    assert len({admission.act_occurrence_identity for admission in admissions}) == len(
+        admissions
+    )
+    with pytest.raises(ValueError, match="crossed Localities"):
+        replace(
+            admissions[0],
+            locality_identity=admissions[1].locality_identity,
+        )
