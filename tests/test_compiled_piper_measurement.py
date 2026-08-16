@@ -17,6 +17,7 @@ sys.path.insert(0, str(ROOT / "scripts"))
 
 from compiled_material_invocation import (  # noqa: E402
     MaterialAdmissionOccurrence,
+    compare_removed_material_invocations,
 )
 from compiled_format_invocation import (  # noqa: E402
     admission_removed_position_occurrences,
@@ -86,6 +87,36 @@ def supplied_piper_material():
         admission,
         model_load_count,
     )
+
+
+@pytest.fixture(scope="module")
+def supplied_piper_removal_material(supplied_piper_material):
+    references = supplied_piper_material[3]
+    implementation_function = supplied_piper_material[4]
+    source_occurrences = supplied_piper_material[5]
+    source_admission = supplied_piper_material[6]
+    act_occurrence_count_limit = min(
+        len(reference.exact_material) for reference in references
+    )
+    removals = admission_removed_position_occurrences(
+        source_admission.result_reference,
+        boundary_identity="supplied-piper-material-removal",
+        admitted_material_act_occurrence_count_limit=act_occurrence_count_limit,
+    )
+    result_occurrences, result_admission = piper_material_occurrences(
+        tuple(removal.result_reference for removal in removals),
+        implementation_function,
+        boundary_identity="supplied-piper-removal-material",
+        time_limit_second_count=12.0,
+        material_byte_count_limit=65536,
+    )
+    comparisons = compare_removed_material_invocations(
+        removals,
+        (source_occurrences,),
+        (result_occurrences,),
+        boundary_identity="supplied-piper-removal-compare",
+    )
+    return removals, result_occurrences, comparisons[0], result_admission
 
 
 def test_piper_loads_provider_model_once_for_the_work(supplied_piper_material):
@@ -214,6 +245,7 @@ def test_piper_admission_refuses_different_invocation_coordinates(
 
 def test_full_piper_admission_drives_whole_exact_removal_tuples(
     supplied_piper_material,
+    supplied_piper_removal_material,
 ):
     references = supplied_piper_material[3]
     admission = supplied_piper_material[6]
@@ -221,13 +253,7 @@ def test_full_piper_admission_drives_whole_exact_removal_tuples(
         len(reference.exact_material) for reference in references
     )
 
-    removals = admission_removed_position_occurrences(
-        admission.result_reference,
-        boundary_identity="supplied-piper-material-removal",
-        admitted_material_act_occurrence_count_limit=(
-            act_occurrence_count_limit
-        ),
-    )
+    removals = supplied_piper_removal_material[0]
     eligible_admitted_material = tuple(
         admitted
         for admitted in admission.admitted_material
@@ -270,3 +296,39 @@ def test_full_piper_admission_drives_whole_exact_removal_tuples(
         == tuple(range(len(reference.exact_material)))
         for reference in eligible_references
     )
+
+
+def test_each_piper_removal_result_reaches_one_exact_later_invocation(
+    supplied_piper_removal_material,
+):
+    removals, result_occurrences, comparisons, _ = supplied_piper_removal_material
+
+    assert tuple(
+        occurrence.source_reference for occurrence in result_occurrences
+    ) == tuple(removal.result_reference for removal in removals)
+    assert tuple(occurrence.exact_material for occurrence in result_occurrences) == tuple(
+        removal.result_material for removal in removals
+    )
+    assert len({occurrence.occurrence_identity for occurrence in result_occurrences}) == len(
+        result_occurrences
+    )
+    assert tuple(comparison.removal_occurrence for comparison in comparisons) == removals
+    assert any(comparison.distinction for comparison in comparisons)
+
+
+def test_piper_removal_results_form_one_exact_later_admission(
+    supplied_piper_removal_material,
+):
+    removals, result_occurrences, _, result_admission = supplied_piper_removal_material
+
+    assert result_admission.source_material == tuple(
+        removal.result_reference for removal in removals
+    )
+    assert result_admission.invocation_result_references == tuple(
+        occurrence.result_reference for occurrence in result_occurrences
+    )
+    assert {
+        reference
+        for same_coordinates in result_admission.admitted_material
+        for reference in same_coordinates
+    } == {removal.result_reference for removal in removals}
