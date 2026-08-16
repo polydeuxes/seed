@@ -61,6 +61,114 @@ class ExactMaterialReference:
             raise TypeError("exact material requires its occurrence-bound Assertion reference")
 
 
+@dataclass(frozen=True, slots=True)
+class ExactPositionMaterialReference:
+    source_reference: ExactMaterialCoordinates
+    position: int
+    exact_material: bytes
+
+    def __post_init__(self) -> None:
+        if not _is_exact_material_coordinates(self.source_reference):
+            raise TypeError("position material requires its exact source reference")
+        if type(getattr(self.source_reference, "locality_identity", None)) is not str:
+            raise TypeError("position material requires its exact source Locality")
+        if (
+            type(self.position) is not int
+            or self.position < 0
+            or self.position >= len(self.source_reference.exact_material)
+        ):
+            raise ValueError("position material requires one exact source position")
+        if (
+            type(self.exact_material) is not bytes
+            or len(self.exact_material) != 1
+            or self.source_reference.exact_material[
+                self.position : self.position + 1
+            ]
+            != self.exact_material
+        ):
+            raise ValueError("position material differs from its exact source")
+
+    @property
+    def locality_identity(self) -> str:
+        return self.source_reference.locality_identity
+
+    @property
+    def occurrence_identity(self):
+        return (self.source_reference, self.position)
+
+
+@dataclass(frozen=True, slots=True)
+class ExactPositionPairMaterialReference:
+    first_reference: ExactPositionMaterialReference
+    second_reference: ExactPositionMaterialReference
+    exact_material: bytes
+
+    def __post_init__(self) -> None:
+        if not isinstance(
+            self.first_reference, ExactPositionMaterialReference
+        ) or not isinstance(self.second_reference, ExactPositionMaterialReference):
+            raise TypeError("position pair requires exact position material")
+        if self.first_reference.source_reference != self.second_reference.source_reference:
+            raise ValueError("position pair cannot cross source material")
+        if self.second_reference.position != self.first_reference.position + 1:
+            raise ValueError("position pair does not preserve exact source order")
+        if self.exact_material != (
+            self.first_reference.exact_material + self.second_reference.exact_material
+        ):
+            raise ValueError("position pair differs from its exact source material")
+
+    @property
+    def source_reference(self):
+        return self.first_reference.source_reference
+
+    @property
+    def locality_identity(self) -> str:
+        return self.first_reference.locality_identity
+
+    @property
+    def occurrence_identity(self):
+        return (
+            self.source_reference,
+            self.first_reference.position,
+            self.second_reference.position,
+        )
+
+
+def exact_position_material_references(
+    source_reference: ExactMaterialCoordinates,
+) -> tuple[ExactPositionMaterialReference, ...]:
+    if not _is_exact_material_coordinates(source_reference):
+        raise TypeError("position material requires one exact source reference")
+    if type(getattr(source_reference, "locality_identity", None)) is not str:
+        raise TypeError("position material requires one exact source Locality")
+    return tuple(
+        ExactPositionMaterialReference(
+            source_reference=source_reference,
+            position=position,
+            exact_material=source_reference.exact_material[position : position + 1],
+        )
+        for position in range(len(source_reference.exact_material))
+    )
+
+
+def exact_position_pair_material_references(
+    position_references: tuple[ExactPositionMaterialReference, ...],
+) -> tuple[ExactPositionPairMaterialReference, ...]:
+    if type(position_references) is not tuple or any(
+        not isinstance(reference, ExactPositionMaterialReference)
+        for reference in position_references
+    ):
+        raise TypeError("position pairs require exact position material")
+    return tuple(
+        ExactPositionPairMaterialReference(
+            first_reference=first,
+            second_reference=second,
+            exact_material=first.exact_material + second.exact_material,
+        )
+        for first, second in zip(position_references, position_references[1:])
+    )
+
+
 def exact_byte_material_references(
     ledger: EventLedger, measurement_occurrence_identity: str
 ) -> tuple[ExactMaterialReference, ...]:
@@ -161,6 +269,8 @@ def _is_exact_material_coordinates(material: object) -> bool:
         (
             ExactMaterialReference,
             ExactMaterialResultReference,
+            ExactPositionMaterialReference,
+            ExactPositionPairMaterialReference,
             IngestResultReference,
         ),
     )
