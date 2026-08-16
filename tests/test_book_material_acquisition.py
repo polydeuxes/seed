@@ -192,6 +192,14 @@ def complete_book_admission_acts(acquired_book_material):
         boundary_identity="complete-book-admission-addition",
         admitted_material_act_occurrence_count_limit=22_000,
     )
+    earlier_comparisons, prospective_coordinates, later_comparisons = (
+        first_recurring_added_compare_across(
+            additions,
+            book_invocation_rows,
+            boundary_identity="complete-book-admission-addition-prospective",
+            act_occurrence_count_limit=len(additions),
+        )
+    )
     result_invocation_rows = added_position_invocations(
         additions,
         boundary_identity="complete-book-admission-addition-invocation",
@@ -212,6 +220,9 @@ def complete_book_admission_acts(acquired_book_material):
         additions,
         result_invocation_rows,
         comparisons,
+        earlier_comparisons,
+        prospective_coordinates,
+        later_comparisons,
     )
 
 
@@ -403,9 +414,9 @@ def test_complete_book_admission_reaches_recurring_addition_relations(
         pair_admission,
         byte_admission,
         additions,
-        earlier_comparisons,
-        prospective_coordinates,
-        later_comparisons,
+        _,
+        _,
+        _,
         result_invocation_rows,
         comparisons,
         addition_admission,
@@ -493,6 +504,9 @@ def test_complete_book_admission_drives_later_exact_material_acts(
         additions,
         result_invocation_rows,
         comparisons,
+        _,
+        _,
+        _,
     ) = complete_book_admission_acts
 
     assert additions
@@ -525,7 +539,7 @@ def test_complete_book_admission_drives_later_exact_material_acts(
 def test_complete_book_later_acts_refuse_broken_admission_lineage(
     complete_book_admission_acts,
 ):
-    book_admission, _, _, _, _, byte_admission, additions, _, _ = (
+    book_admission, _, _, _, _, byte_admission, additions, _, _, _, _, _ = (
         complete_book_admission_acts
     )
     addition = additions[0]
@@ -555,6 +569,9 @@ def test_complete_book_compare_refuses_a_mismatched_act_result_occurrence(
         additions,
         result_invocation_rows,
         _,
+        _,
+        _,
+        _,
     ) = complete_book_admission_acts
     different = next(
         addition
@@ -566,6 +583,56 @@ def test_complete_book_compare_refuses_a_mismatched_act_result_occurrence(
             result_invocation_rows[0][0],
             source_coordinate=different,
         )
+
+
+def test_complete_book_admission_freezes_one_coordinate_before_later_invocation(
+    complete_book_admission_acts,
+):
+    (
+        book_admission,
+        _,
+        _,
+        _,
+        _,
+        _,
+        additions,
+        _,
+        _,
+        earlier_comparisons,
+        prospective_coordinates,
+        later_comparisons,
+    ) = complete_book_admission_acts
+
+    assert prospective_coordinates is not None
+    assert later_comparisons is not None
+    assert any(coordinate is not None for coordinate in prospective_coordinates)
+    compared_coordinates = tuple(
+        (coordinate, comparison.result_returned)
+        for coordinate, comparison in zip(
+            prospective_coordinates, later_comparisons
+        )
+        if coordinate is not None
+    )
+    assert compared_coordinates
+    assert any(
+        coordinate != returned
+        for coordinate, returned in compared_coordinates
+    )
+    later_act = later_comparisons[0].added_position_act_occurrence_identity
+    assert all(
+        comparison.added_position_act_occurrence_identity != later_act
+        for row in earlier_comparisons
+        for comparison in row
+    )
+    later_addition = next(
+        addition
+        for addition in additions
+        if addition.act_occurrence_identity == later_act
+    )
+    assert (
+        later_addition.source_admission_result_reference
+        == book_admission.result_reference
+    )
 
 
 def test_earlier_and_later_book_admissions_keep_distinct_occurrence_sets(
