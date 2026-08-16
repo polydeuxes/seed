@@ -788,6 +788,24 @@ def test_recurrence_preflight_returns_no_later_compare(
     assert later is None
 
 
+def test_removal_recurrence_preflight_returns_no_later_compare(
+    book_removed_position_invocation_occurrences,
+    book_pair_format_occurrences,
+):
+    removals, _ = book_removed_position_invocation_occurrences
+    earlier, coordinate, later = first_recurring_removed_compare(
+        removals,
+        book_pair_format_occurrences[0],
+        book_pair_format_occurrences[0][0].implementation_function,
+        boundary_identity="book-removal-recurrence-preflight",
+        act_occurrence_count_limit=len(removals),
+        invoke_later=False,
+    )
+    assert earlier
+    assert coordinate is not None
+    assert later is None
+
+
 def test_joint_recurrence_refuses_reordered_source_occurrences(
     book_three_byte_format_occurrences,
     book_pair_format_occurrences,
