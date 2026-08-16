@@ -884,6 +884,8 @@ still
 stop
 stopping
 stops
+stories
+story
 stream
 strengthen
 strengthened

@@ -102,6 +102,7 @@ Closure        bounded Fidelity claim across the exact admitted coordinates
 Interrogator   exact material + implementation-function invocation occurrence + exact returned coordinates + Measurement / Compare
 Exposure       availability at an exact Locality, or an emitted Representation; resolve the exact Act
 Recover        acquisition Act/result + Measurement + Compare + Admission + bounded Standing
+Story          ordered exact occurrences through Localities + Acts / Participation + results + later Compare
 Addressability of preserved coordinates
 ```
 
