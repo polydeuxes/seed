@@ -6,8 +6,6 @@ import json
 import re
 from pathlib import Path
 
-import pytest
-
 ROOT = Path(__file__).resolve().parents[1]
 BOOK = ROOT / "book_of_seed"
 BOOK_ADMISSION = BOOK / "book_admission.txt"
@@ -62,14 +60,12 @@ def machine_grammar_words() -> set[str]:
     }
 
 
-@pytest.mark.subject("active_book_scope")
 def test_book_proper_scope_excludes_rosetta():
     files = {path.relative_to(ROOT).as_posix() for path in book_proper_files()}
     assert any(path.startswith("book_of_seed/chapters/") for path in files)
     assert not any("/rosetta/" in path or path.startswith("rosetta/") for path in files)
 
 
-@pytest.mark.subject("admitted_material_reference_relative_resolution")
 def test_admitted_material_reference_subjects_resolve_relative_markdown_links():
     grammar = json.loads((BOOK / "grammar.json").read_text(encoding="utf-8"))
     declared_references = {
@@ -101,7 +97,6 @@ def test_admitted_material_reference_subjects_resolve_relative_markdown_links():
     assert missing == []
 
 
-@pytest.mark.subject("book_rosetta_admission_distinction")
 def test_book_has_its_own_admission_and_points_to_rosetta():
     assert BOOK_ADMISSION == ROOT / "book_of_seed" / "book_admission.txt"
     assert ROSETTA_ADMISSION != BOOK_ADMISSION
@@ -116,7 +111,6 @@ def test_book_has_its_own_admission_and_points_to_rosetta():
     )
 
 
-@pytest.mark.subject("book_rosetta_warrant_admission_distinction")
 def test_warrant_admission_is_broad_in_rosetta_and_singular_in_book():
     book_warrant = {
         word
@@ -132,7 +126,6 @@ def test_warrant_admission_is_broad_in_rosetta_and_singular_in_book():
     assert rosetta_warrant == {"warrant", "warranted", "warranting", "warrants"}
 
 
-@pytest.mark.subject("clause_coordinate_vocabulary_admission")
 def test_clause_coordinate_tokens_require_explicit_curation():
     assert "g" in book_admission()
     assert "g" in _admission_entries(ROSETTA_ADMISSION)
@@ -147,7 +140,6 @@ def test_clause_coordinate_tokens_require_explicit_curation():
     assert uncurated_coordinate_words == {"uncuratedcoordinate"}
 
 
-@pytest.mark.subject("warrant_standing_boundary")
 def test_warrant_remains_lowercase_and_bounded_to_the_three_standing_sentences():
     chapter = (BOOK / "chapters" / "02_constitutional_standing.md").read_text(
         encoding="utf-8"
@@ -167,7 +159,6 @@ def test_warrant_remains_lowercase_and_bounded_to_the_three_standing_sentences()
     )
 
 
-@pytest.mark.subject("book_rosetta_composite_admission_distinction")
 def test_composite_admission_is_broad_in_rosetta_and_singular_in_book():
     book_composite = {
         word
@@ -183,7 +174,6 @@ def test_composite_admission_is_broad_in_rosetta_and_singular_in_book():
     assert rosetta_composite == {"composite", "composites"}
 
 
-@pytest.mark.subject("active_book_within_book_admission")
 def test_book_proper_is_within_book_admission():
     unadmitted = {
         word: places
@@ -202,7 +192,6 @@ def test_book_proper_is_within_book_admission():
     )
 
 
-@pytest.mark.subject("book_admission_active_law_use")
 def test_book_admission_carries_no_unused_words():
     unused = sorted(book_admission() - set(book_proper_words()))
     assert not unused, (
@@ -211,6 +200,37 @@ def test_book_admission_carries_no_unused_words():
     )
 
 
-@pytest.mark.subject("book_admission_machine_grammar_vocabulary_equality")
 def test_book_admission_and_machine_grammar_match():
     assert book_admission() == machine_grammar_words()
+
+
+FIDELITY_SUBJECTS = {
+    "warrant_standing_boundary": (
+        test_warrant_remains_lowercase_and_bounded_to_the_three_standing_sentences,
+    ),
+    "active_book_scope": (test_book_proper_scope_excludes_rosetta,),
+    "admitted_material_reference_relative_resolution": (
+        test_admitted_material_reference_subjects_resolve_relative_markdown_links,
+    ),
+    "book_rosetta_admission_distinction": (
+        test_book_has_its_own_admission_and_points_to_rosetta,
+    ),
+    "book_rosetta_warrant_admission_distinction": (
+        test_warrant_admission_is_broad_in_rosetta_and_singular_in_book,
+    ),
+    "clause_coordinate_vocabulary_admission": (
+        test_clause_coordinate_tokens_require_explicit_curation,
+    ),
+    "book_rosetta_composite_admission_distinction": (
+        test_composite_admission_is_broad_in_rosetta_and_singular_in_book,
+    ),
+    "active_book_within_book_admission": (
+        test_book_proper_is_within_book_admission,
+    ),
+    "book_admission_active_law_use": (
+        test_book_admission_carries_no_unused_words,
+    ),
+    "book_admission_machine_grammar_vocabulary_equality": (
+        test_book_admission_and_machine_grammar_match,
+    ),
+}

@@ -2,8 +2,6 @@ import json
 from pathlib import Path
 import re
 
-import pytest
-
 
 ROOT = Path(__file__).resolve().parents[1]
 GRAMMAR = ROOT / "book_of_seed/grammar.json"
@@ -56,7 +54,6 @@ def _machine_strings(value, path=()):
         yield path, value
 
 
-@pytest.mark.subject("standing_responsibility_path")
 def test_machine_readable_grammar_traverses_responsibility_from_standing():
     grammar = json.loads(GRAMMAR.read_text(encoding="utf-8"))
 
@@ -83,7 +80,6 @@ def test_machine_readable_grammar_traverses_responsibility_from_standing():
     }
 
 
-@pytest.mark.subject("content_locality_occurrence_distinction")
 def test_machine_witness_discriminates_content_locality_and_occurrence():
     grammar = json.loads(GRAMMAR.read_text(encoding="utf-8"))
 
@@ -94,7 +90,6 @@ def test_machine_witness_discriminates_content_locality_and_occurrence():
     ]
 
 
-@pytest.mark.subject("yield_relation_identity")
 def test_machine_yield_relation_preserves_occurrence_and_result_identity():
     grammar = json.loads(GRAMMAR.read_text(encoding="utf-8"))
 
@@ -110,7 +105,6 @@ def test_machine_yield_relation_preserves_occurrence_and_result_identity():
     )
 
 
-@pytest.mark.subject("machine_clause_witness_responsibility")
 def test_machine_clauses_name_one_book_witness_or_responsibility():
     grammar = json.loads(GRAMMAR.read_text(encoding="utf-8"))
 
@@ -125,14 +119,12 @@ def test_machine_clauses_name_one_book_witness_or_responsibility():
         assert active_book.count(f"### {clause_identity} ") == 1
 
 
-@pytest.mark.subject("relation_book_clause_reference")
 def test_machine_relations_name_one_book_clause():
     grammar = json.loads(GRAMMAR.read_text(encoding="utf-8"))
 
     _assert_relation_clauses(grammar, _active_book())
 
 
-@pytest.mark.subject("this_machine_root_reference")
 def test_this_occurs_only_as_exact_machine_roots():
     grammar = json.loads(GRAMMAR.read_text(encoding="utf-8"))
     uses = [
@@ -223,7 +215,6 @@ def test_this_occurs_only_as_exact_machine_roots():
     ]
 
 
-@pytest.mark.subject("relation_book_clause_reference")
 def test_missing_relation_clause_is_detected():
     grammar = json.loads(GRAMMAR.read_text(encoding="utf-8"))
     active_book = _active_book()
@@ -240,12 +231,10 @@ def test_missing_relation_clause_is_detected():
         raise AssertionError("missing Locality clause escaped the grammar audit")
 
 
-@pytest.mark.subject("book_machine_clause_identity_equality")
 def test_book_and_machine_grammar_have_the_same_clauses():
     assert _book_clause_identities() == _machine_clause_identities()
 
 
-@pytest.mark.subject("machine_clause_book_material_reference")
 def test_machine_clauses_address_their_exact_book_material():
     grammar = json.loads(GRAMMAR.read_text(encoding="utf-8"))
 
@@ -256,7 +245,6 @@ def test_machine_clauses_address_their_exact_book_material():
     ) == tuple((identity, identity) for identity in grammar["clauses"])
 
 
-@pytest.mark.subject("machine_root_reference_order")
 def test_machine_root_references_remain_distinct_and_in_declared_order():
     grammar = json.loads(GRAMMAR.read_text(encoding="utf-8"))
 
@@ -280,7 +268,6 @@ def test_machine_root_references_remain_distinct_and_in_declared_order():
     ]
 
 
-@pytest.mark.subject("machine_grammar_represents_book")
 def test_machine_grammar_represents_the_book_without_identity_equality():
     grammar = json.loads(GRAMMAR.read_text(encoding="utf-8"))
 
@@ -296,7 +283,6 @@ def test_machine_grammar_represents_the_book_without_identity_equality():
     }
 
 
-@pytest.mark.subject("unestablished_clause_witness_order")
 def test_clauses_without_event_species_name_their_witness_in_book_order():
     grammar = json.loads(GRAMMAR.read_text(encoding="utf-8"))
     declarations = tuple(
@@ -332,7 +318,6 @@ def test_clauses_without_event_species_name_their_witness_in_book_order():
     )
 
 
-@pytest.mark.subject("supporting_finding_participation_distinction")
 def test_supporting_finding_does_not_establish_participation_by_identity():
     grammar = json.loads(GRAMMAR.read_text(encoding="utf-8"))
     clause = grammar["clauses"]["08.Authority.B"]
@@ -347,7 +332,6 @@ def test_supporting_finding_does_not_establish_participation_by_identity():
     )
 
 
-@pytest.mark.subject("public_export_standing_distinction")
 def test_public_export_does_not_establish_standing():
     grammar = json.loads(GRAMMAR.read_text(encoding="utf-8"))
 
@@ -356,7 +340,6 @@ def test_public_export_does_not_establish_standing():
     )
 
 
-@pytest.mark.subject("applicability_usefulness_agreement_availability_distinction")
 def test_applicability_requires_more_than_usefulness_agreement_or_availability():
     grammar = json.loads(GRAMMAR.read_text(encoding="utf-8"))
     clause = grammar["clauses"]["01.Standing.E.1"]
@@ -368,7 +351,6 @@ def test_applicability_requires_more_than_usefulness_agreement_or_availability()
     ]
 
 
-@pytest.mark.subject("applicability_responsibility")
 def test_applicability_responsibility_is_exact_act_or_assigned_occurrence():
     grammar = json.loads(GRAMMAR.read_text(encoding="utf-8"))
 
@@ -376,3 +358,51 @@ def test_applicability_responsibility_is_exact_act_or_assigned_occurrence():
         "default": "exact_Act_Responsibility",
         "override": "assigned_responsible_occurrence",
     }
+
+
+FIDELITY_SUBJECTS = {
+    "standing_responsibility_path": (
+        test_machine_readable_grammar_traverses_responsibility_from_standing,
+    ),
+    "public_export_standing_distinction": (
+        test_public_export_does_not_establish_standing,
+    ),
+    "applicability_responsibility": (
+        test_applicability_responsibility_is_exact_act_or_assigned_occurrence,
+    ),
+    "machine_clause_witness_responsibility": (
+        test_machine_clauses_name_one_book_witness_or_responsibility,
+    ),
+    "yield_relation_identity": (
+        test_machine_yield_relation_preserves_occurrence_and_result_identity,
+    ),
+    "relation_book_clause_reference": (
+        test_machine_relations_name_one_book_clause,
+        test_missing_relation_clause_is_detected,
+    ),
+    "supporting_finding_participation_distinction": (
+        test_supporting_finding_does_not_establish_participation_by_identity,
+    ),
+    "applicability_usefulness_agreement_availability_distinction": (
+        test_applicability_requires_more_than_usefulness_agreement_or_availability,
+    ),
+    "content_locality_occurrence_distinction": (
+        test_machine_witness_discriminates_content_locality_and_occurrence,
+    ),
+    "this_machine_root_reference": (test_this_occurs_only_as_exact_machine_roots,),
+    "machine_root_reference_order": (
+        test_machine_root_references_remain_distinct_and_in_declared_order,
+    ),
+    "machine_grammar_represents_book": (
+        test_machine_grammar_represents_the_book_without_identity_equality,
+    ),
+    "unestablished_clause_witness_order": (
+        test_clauses_without_event_species_name_their_witness_in_book_order,
+    ),
+    "machine_clause_book_material_reference": (
+        test_machine_clauses_address_their_exact_book_material,
+    ),
+    "book_machine_clause_identity_equality": (
+        test_book_and_machine_grammar_have_the_same_clauses,
+    ),
+}

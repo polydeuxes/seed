@@ -16,8 +16,6 @@ import json
 from pathlib import Path
 import re
 
-import pytest
-
 from seed_runtime.events import EventLedger
 from seed_runtime.operator_checkpoint import (
     record_standing_boundary_reference_responsibility_assignment,
@@ -56,7 +54,6 @@ def _runtime_imports(tree: ast.Module) -> set[str]:
     return imported
 
 
-@pytest.mark.subject("live_seed_function_path")
 def test_each_runtime_module_participates_in_live_process_imports():
     imports = {
         path.stem: _runtime_imports(tree)
@@ -590,7 +587,6 @@ def _unresolved_dict_spreads(value, *, line, named, functions):
         )
 
 
-@pytest.mark.subject("unresolved_event_material_visibility")
 def test_unresolved_event_material_expansion_remains_visible():
     tree = ast.parse('{"identity": result_identity, **supplied_material}')
     material = tree.body[0].value
@@ -605,7 +601,6 @@ def test_unresolved_event_material_expansion_remains_visible():
     ) == [1]
 
 
-@pytest.mark.subject("event_kind_grammar_responsibility")
 def test_every_runtime_event_kind_declares_its_machine_grammar_responsibility():
     """A new event species cannot gain constitutional force from its name."""
 
@@ -619,7 +614,6 @@ def test_every_runtime_event_kind_declares_its_machine_grammar_responsibility():
     )
 
 
-@pytest.mark.subject("event_kind_responsibility_clause")
 def test_each_event_kind_responsibility_names_one_machine_grammar_clause():
     grammar = json.loads(GRAMMAR.read_text(encoding="utf-8"))
     accounted = _runtime_event_kind_responsibilities()
@@ -636,7 +630,6 @@ def test_each_event_kind_responsibility_names_one_machine_grammar_clause():
     assert unknown == {}, f"event species name absent grammar clauses: {unknown}"
 
 
-@pytest.mark.subject("assertion_responsibility_clause_declarations")
 def test_each_live_assertion_responsibility_has_one_clause_declaration():
     live = _runtime_assertion_responsibilities()
     accounted = _runtime_assertion_responsibility_clauses()
@@ -663,7 +656,6 @@ def test_each_live_assertion_responsibility_has_one_clause_declaration():
     )
 
 
-@pytest.mark.subject("assertion_responsibility_machine_clause")
 def test_each_assertion_responsibility_names_one_machine_grammar_clause():
     machine_clauses = {
         identity.decode("ascii")
@@ -683,7 +675,6 @@ def test_each_assertion_responsibility_names_one_machine_grammar_clause():
     assert unknown == {}, f"nested Assertion names absent grammar clauses: {unknown}"
 
 
-@pytest.mark.subject("assertion_responsibility_subject_distinction")
 def test_nested_assertion_responsibility_discovery_does_not_depend_on_its_name():
     tree = ast.parse(
         """
@@ -700,7 +691,6 @@ material = {
     }
 
 
-@pytest.mark.subject("assertion_responsibility_coordinate_resolution")
 def test_nested_assertion_responsibility_discovery_refuses_an_opaque_coordinate():
     tree = ast.parse(
         """
@@ -718,7 +708,6 @@ material = {
     ) == [("adversary.py", 4)]
 
 
-@pytest.mark.subject("assertion_responsibility_duplicate_declarations")
 def test_nested_assertion_clause_declarations_preserve_duplicates():
     tree = ast.parse(
         """
@@ -736,7 +725,6 @@ ASSERTION_RESPONSIBILITIES = {RESPONSIBILITY: "02.Acts.A"}
     }
 
 
-@pytest.mark.subject("assertion_event_responsibility_distinction")
 def test_nested_assertion_clause_is_not_an_event_kind_responsibility():
     event_clauses = {
         clause
@@ -753,7 +741,6 @@ def test_nested_assertion_clause_is_not_an_event_kind_responsibility():
     assert "01.Standing.D.1" in assertion_clauses
 
 
-@pytest.mark.subject("witness_machine_clause_distinction")
 def test_witness_and_machine_grammar_account_for_the_same_clauses():
     event_clauses = {
         values[0][1]
@@ -778,7 +765,6 @@ def test_witness_and_machine_grammar_account_for_the_same_clauses():
     assert machine_clauses - implemented_clauses == declared_without_event_species
 
 
-@pytest.mark.subject("event_record_coordinate_vocabulary_admission")
 def test_runtime_record_vocabulary_has_constitutional_admission():
     """Event species and record coordinates require lexical admission."""
 
@@ -819,7 +805,6 @@ def _unadmitted_authored_event_material(path: Path, tree: ast.Module):
     return sorted(violations)
 
 
-@pytest.mark.subject("seed_event_material_vocabulary_admission")
 def test_seed_authored_event_material_values_have_lexical_admission():
     violations = []
     for path, tree in _runtime_trees():
@@ -857,12 +842,10 @@ def _runtime_record_words() -> set[str]:
     return found
 
 
-@pytest.mark.subject("event_record_machine_grammar_vocabulary")
 def test_runtime_record_words_are_machine_grammar_words():
     assert _runtime_record_words() <= machine_grammar_words()
 
 
-@pytest.mark.subject("event_material_vocabulary_admission")
 def test_authored_value_admission_catches_an_unadmitted_word_without_naming_it():
     tree = ast.parse(
         'ledger.append(SOME_KIND, {"standing": "invented"})'
@@ -872,7 +855,6 @@ def test_authored_value_admission_catches_an_unadmitted_word_without_naming_it()
     ]
 
 
-@pytest.mark.subject("event_material_vocabulary_admission")
 def test_authored_value_admission_crosses_a_local_material_function():
     tree = ast.parse(
         'def material():\n    return {"standing": "invented"}\n'
@@ -883,7 +865,6 @@ def test_authored_value_admission_crosses_a_local_material_function():
     ]
 
 
-@pytest.mark.subject("event_material_vocabulary_admission")
 def test_authored_value_admission_binds_local_material_function_arguments():
     tree = ast.parse(
         'def material(*, standing):\n    return {"standing": standing}\n'
@@ -894,7 +875,6 @@ def test_authored_value_admission_binds_local_material_function_arguments():
     ]
 
 
-@pytest.mark.subject("supplied_material_seed_vocabulary_distinction")
 def test_opaque_supplied_material_is_not_seed_authored_language():
     tree = ast.parse(
         'ledger.append(SOME_KIND, {"standing": operator_material})'
@@ -902,7 +882,6 @@ def test_opaque_supplied_material_is_not_seed_authored_language():
     assert _unadmitted_authored_event_material(Path("fixture.py"), tree) == []
 
 
-@pytest.mark.subject("coordinate_reference_distinction")
 def test_runtime_coordinates_do_not_substitute_one_reference_for_several_coordinates():
     substitutions = []
     for path, tree in _runtime_trees():
@@ -913,7 +892,6 @@ def test_runtime_coordinates_do_not_substitute_one_reference_for_several_coordin
     )
 
 
-@pytest.mark.subject("coordinate_reference_distinction")
 def test_coordinate_substitution_siren_detects_one_shared_reference():
     tree = ast.parse(
         'dimensions = {"identity": result_identity, "content": result_identity}'
@@ -1026,12 +1004,10 @@ def _unread_event_materials():
                     yield path.name, call.lineno, value
 
 
-@pytest.mark.subject("event_occurrence_material_inspection")
 def test_every_declared_event_occurrence_carries_its_material_to_the_sirens():
     assert list(_unread_event_materials()) == []
 
 
-@pytest.mark.subject("event_record_relation_admission")
 def test_every_relation_shaped_runtime_record_is_an_admitted_relation():
     admitted = set()
     for _path, tree in _runtime_trees():
@@ -1057,7 +1033,6 @@ def test_every_relation_shaped_runtime_record_is_an_admitted_relation():
     )
 
 
-@pytest.mark.subject("machine_relation_declarations")
 def test_machine_grammar_declares_the_four_exact_relations():
     grammar_relations = set(
         json.loads(GRAMMAR.read_text(encoding="utf-8"))["relations"]
@@ -1071,7 +1046,6 @@ def test_machine_grammar_declares_the_four_exact_relations():
     }
 
 
-@pytest.mark.subject("yield_result_occurrence_evidence")
 def test_every_recorded_yield_result_names_its_occurrence_and_exact_evidence():
     required = {
         "responsible_act_evidence_identity",
@@ -1098,7 +1072,6 @@ def test_every_recorded_yield_result_names_its_occurrence_and_exact_evidence():
     )
 
 
-@pytest.mark.subject("act_evidence_responsibility_boundary_occurrence_authority_scope")
 def test_every_act_evidence_occurrence_names_responsibility_boundary_act_occurrence_authority_and_evidence_scope():
     required = {
         "responsibility",
@@ -1132,7 +1105,6 @@ def test_every_act_evidence_occurrence_names_responsibility_boundary_act_occurre
     )
 
 
-@pytest.mark.subject("representation_exact_evidence_references")
 def test_recorded_representation_declares_each_exact_evidence_pointer():
     required = {
         "result_identity",
@@ -1182,7 +1154,6 @@ def _standing_values(node) -> list[str]:
     return found
 
 
-@pytest.mark.subject("event_standing_grammar_responsibility")
 def test_every_event_standing_claim_has_a_declared_grammar_responsibility():
     accounted = set(_runtime_event_kind_responsibilities())
     unaccounted = []
@@ -1222,7 +1193,6 @@ def test_every_event_standing_claim_has_a_declared_grammar_responsibility():
     )
 
 
-@pytest.mark.subject("operator_request_write_exclusion")
 def test_command_handler_receives_no_constitutional_write_capability():
     """The slash-command boundary may not hand a handler the ledger."""
 
@@ -1236,7 +1206,6 @@ def test_command_handler_receives_no_constitutional_write_capability():
     }
 
 
-@pytest.mark.subject("standing_boundary_reference_representation_emission_distinction")
 def test_checkpoint_names_the_representation_it_addresses_not_an_emission():
     wording = inspect.getdoc(
         record_standing_boundary_reference_responsibility_assignment
@@ -1244,3 +1213,88 @@ def test_checkpoint_names_the_representation_it_addresses_not_an_emission():
 
     assert "exact addressed Representation" in wording
     assert "exact addressed emission" not in wording
+
+
+FIDELITY_SUBJECTS = {
+    "event_standing_grammar_responsibility": (
+        test_every_event_standing_claim_has_a_declared_grammar_responsibility,
+    ),
+    "event_kind_grammar_responsibility": (
+        test_every_runtime_event_kind_declares_its_machine_grammar_responsibility,
+    ),
+    "event_kind_responsibility_clause": (
+        test_each_event_kind_responsibility_names_one_machine_grammar_clause,
+    ),
+    "assertion_responsibility_clause_declarations": (
+        test_each_live_assertion_responsibility_has_one_clause_declaration,
+    ),
+    "assertion_responsibility_machine_clause": (
+        test_each_assertion_responsibility_names_one_machine_grammar_clause,
+    ),
+    "assertion_responsibility_subject_distinction": (
+        test_nested_assertion_responsibility_discovery_does_not_depend_on_its_name,
+    ),
+    "assertion_responsibility_coordinate_resolution": (
+        test_nested_assertion_responsibility_discovery_refuses_an_opaque_coordinate,
+    ),
+    "assertion_responsibility_duplicate_declarations": (
+        test_nested_assertion_clause_declarations_preserve_duplicates,
+    ),
+    "assertion_event_responsibility_distinction": (
+        test_nested_assertion_clause_is_not_an_event_kind_responsibility,
+    ),
+    "act_evidence_responsibility_boundary_occurrence_authority_scope": (
+        test_every_act_evidence_occurrence_names_responsibility_boundary_act_occurrence_authority_and_evidence_scope,
+    ),
+    "yield_result_occurrence_evidence": (
+        test_every_recorded_yield_result_names_its_occurrence_and_exact_evidence,
+    ),
+    "event_record_relation_admission": (
+        test_every_relation_shaped_runtime_record_is_an_admitted_relation,
+    ),
+    "machine_relation_declarations": (
+        test_machine_grammar_declares_the_four_exact_relations,
+    ),
+    "standing_boundary_reference_representation_emission_distinction": (
+        test_checkpoint_names_the_representation_it_addresses_not_an_emission,
+    ),
+    "representation_exact_evidence_references": (
+        test_recorded_representation_declares_each_exact_evidence_pointer,
+    ),
+    "live_seed_function_path": (
+        test_each_runtime_module_participates_in_live_process_imports,
+    ),
+    "unresolved_event_material_visibility": (
+        test_unresolved_event_material_expansion_remains_visible,
+    ),
+    "event_record_coordinate_vocabulary_admission": (
+        test_runtime_record_vocabulary_has_constitutional_admission,
+    ),
+    "seed_event_material_vocabulary_admission": (
+        test_seed_authored_event_material_values_have_lexical_admission,
+    ),
+    "event_record_machine_grammar_vocabulary": (
+        test_runtime_record_words_are_machine_grammar_words,
+    ),
+    "event_material_vocabulary_admission": (
+        test_authored_value_admission_catches_an_unadmitted_word_without_naming_it,
+        test_authored_value_admission_crosses_a_local_material_function,
+        test_authored_value_admission_binds_local_material_function_arguments,
+    ),
+    "supplied_material_seed_vocabulary_distinction": (
+        test_opaque_supplied_material_is_not_seed_authored_language,
+    ),
+    "coordinate_reference_distinction": (
+        test_runtime_coordinates_do_not_substitute_one_reference_for_several_coordinates,
+        test_coordinate_substitution_siren_detects_one_shared_reference,
+    ),
+    "event_occurrence_material_inspection": (
+        test_every_declared_event_occurrence_carries_its_material_to_the_sirens,
+    ),
+    "operator_request_write_exclusion": (
+        test_command_handler_receives_no_constitutional_write_capability,
+    ),
+    "witness_machine_clause_distinction": (
+        test_witness_and_machine_grammar_account_for_the_same_clauses,
+    ),
+}
