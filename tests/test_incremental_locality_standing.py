@@ -19,7 +19,7 @@ cannot be softened by accident.
 from __future__ import annotations
 
 from tests.binary_input import binary_input
-from io import StringIO
+from io import BytesIO, StringIO
 
 import pytest
 
@@ -256,7 +256,111 @@ def test_each_advance_reads_only_what_an_act_just_recorded(monkeypatch):
 
     monkeypatch.setattr(operator_console, "advance_operator_locality_standing", record)
     _console("alpha\nbeta\ngamma\ndelta\n")
-    assert set(sizes) <= {1, 3}, sizes
+    # One identity for Ingest, three for each Measurement, and all ten exact
+    # identities for a successful Representation lifecycle. No call grows
+    # with the ledger.
+    assert set(sizes) <= {1, 3, 10}, sizes
+
+
+@pytest.mark.parametrize(
+    ("material", "emit_initial", "raw", "existing_locality"),
+    (
+        (b"", False, False, False),
+        (b"", True, False, False),
+        (b"exact text road\n", False, False, False),
+        (b"\x00\xff raw road\n", False, True, False),
+        (b"/locality list\n", False, False, False),
+        (b"/locality\n", False, False, False),
+        (b"/checkpoint\n", False, False, False),
+        (b"/material exact/path\n", False, False, False),
+        (b"/locality existing\n", False, False, True),
+    ),
+)
+def test_each_console_road_leaves_incremental_standing_equal_to_replay(
+    monkeypatch, material, emit_initial, raw, existing_locality
+):
+    from seed_runtime import operator_console
+
+    ledger = EventLedger()
+    if existing_locality:
+        ledger.append(
+            MATERIAL_INGEST_OCCURRED_KIND,
+            {
+                "dimensions": {
+                    "identity": "existing-material",
+                    "authority": "unestablished",
+                },
+                "source_role": "operator",
+                "unknowns": [],
+            },
+            locality_identity="existing",
+        )
+
+    observed = {}
+    original = operator_console._advance_over_representation
+
+    def record(ledger, standing, representation):
+        advanced = original(ledger, standing, representation)
+        observed[representation["locality_identity"]] = advanced
+        return advanced
+
+    monkeypatch.setattr(operator_console, "_advance_over_representation", record)
+    run_persistent_operator_console(
+        ledger=ledger,
+        locality_identity="s",
+        input_stream=binary_input(material),
+        output_stream=StringIO(),
+        emit_initial_representation=emit_initial,
+        raw_output_stream=BytesIO() if raw else None,
+    )
+
+    assert observed
+    for locality_identity, incremental in observed.items():
+        assert incremental == read_operator_locality_standing(
+            ledger, locality_identity=locality_identity
+        )
+
+
+@pytest.mark.parametrize("failure", ("write", "flush"))
+def test_a_failed_console_emission_advances_every_recorded_occurrence(
+    monkeypatch, failure
+):
+    from seed_runtime import operator_console
+
+    class FailedBoundary(StringIO):
+        def write(self, value):
+            if failure == "write":
+                super().write(value[:-1])
+                return len(value) - 1
+            return super().write(value)
+
+        def flush(self):
+            if failure == "flush":
+                raise OSError("flush failed")
+            return super().flush()
+
+    ledger = EventLedger()
+    observed = []
+    original = operator_console._advance_over_representation
+
+    def record(ledger, standing, representation):
+        advanced = original(ledger, standing, representation)
+        observed.append(advanced)
+        return advanced
+
+    monkeypatch.setattr(operator_console, "_advance_over_representation", record)
+    error = ValueError if failure == "write" else OSError
+    with pytest.raises(error):
+        run_persistent_operator_console(
+            ledger=ledger,
+            locality_identity="s",
+            input_stream=binary_input(b""),
+            output_stream=FailedBoundary(),
+        )
+
+    assert observed[-1] == read_operator_locality_standing(
+        ledger, locality_identity="s"
+    )
 
 
 # --------------------------------------------------------------------------

@@ -234,8 +234,19 @@ def record_operator_representation(
         "yield_evidence_identity": yield_evidence.identity,
         "locality_evidence_identity": locality_evidence.identity,
         "representation_event_identity": representation_event.identity,
+        "event_identities_in_append_order": (
+            responsible_act_evidence.identity,
+            yield_evidence.identity,
+            locality_evidence.identity,
+            representation_event.identity,
+        ),
         "emission_attempt_event_identity": None,
         "emission_attempt_locality_evidence_identity": None,
+        "emission_act_evidence_identity": None,
+        "emission_locality_evidence_identity": None,
+        "emission_yield_evidence_identity": None,
+        "emission_failure_act_evidence_identity": None,
+        "emission_failure_yield_evidence_identity": None,
         "emission_failure_event_identity": None,
         "emitted_event_identity": None,
         "locality_standing_as_of_event_identity": locality_standing["as_of_event_identity"],
@@ -371,6 +382,12 @@ def read_operator_representation(
         "yield_evidence_identity": yield_evidence_identity,
         "locality_evidence_identity": locality_evidence.identity,
         "representation_event_identity": event.identity,
+        "event_identities_in_append_order": (
+            act_evidence.identity,
+            yield_evidence_identity,
+            locality_evidence.identity,
+            event.identity,
+        ),
         "emission_text": material["emission_text"],
         "source_event_identity": source_event_identity,
         "exact_material": event.exact_material,
@@ -419,6 +436,11 @@ def emit_operator_representation(
                 "the supplied Representation disagrees with its recorded occurrence"
             )
     emitted_representation = recorded["emission_text"]
+    # This exact sequence comes from the recorded relation, not from caller
+    # supplied chronology. Each event appended below extends it at that point.
+    representation["event_identities_in_append_order"] = recorded[
+        "event_identities_in_append_order"
+    ]
     emission_act_identity = new_identity("operator_representation_emission_act")
     scope = f"locality:{representation['locality_identity']}"
     attempt_event = ledger.append(
@@ -454,6 +476,7 @@ def emit_operator_representation(
         locality_identity=representation["locality_identity"],
     )
     representation["emission_attempt_event_identity"] = attempt_event.identity
+    representation["event_identities_in_append_order"] += (attempt_event.identity,)
     attempt_locality_evidence = ledger.append(
         REPRESENTATION_EMISSION_ATTEMPT_LOCALITY_EVIDENCE_KIND,
         {
@@ -470,6 +493,9 @@ def emit_operator_representation(
     )
     representation["emission_attempt_locality_evidence_identity"] = (
         attempt_locality_evidence.identity
+    )
+    representation["event_identities_in_append_order"] += (
+        attempt_locality_evidence.identity,
     )
 
     # The attempt is durable before the output boundary sees anything. A
@@ -618,7 +644,18 @@ def emit_operator_representation(
         },
         locality_identity=representation["locality_identity"],
     )
+    representation["emission_act_evidence_identity"] = (
+        responsible_act_evidence.identity
+    )
+    representation["emission_locality_evidence_identity"] = locality_evidence.identity
+    representation["emission_yield_evidence_identity"] = yield_evidence.identity
     representation["emitted_event_identity"] = emitted_event.identity
+    representation["event_identities_in_append_order"] += (
+        responsible_act_evidence.identity,
+        locality_evidence.identity,
+        yield_evidence.identity,
+        emitted_event.identity,
+    )
     try:
         output_stream.flush()
     except Exception as error:
@@ -726,7 +763,7 @@ def _record_emission_failure(
         responsible_boundary="this Seed",
         recorded_result_coordinates={key: (key,) for key in result_material},
     )
-    return ledger.append(
+    failed_event = ledger.append(
         REPRESENTATION_EMISSION_FAILURE_KIND,
         {
             **result_material,
@@ -735,3 +772,12 @@ def _record_emission_failure(
         },
         locality_identity=representation["locality_identity"],
     )
+    representation["emission_failure_act_evidence_identity"] = act_evidence.identity
+    representation["emission_failure_yield_evidence_identity"] = yield_evidence.identity
+    representation["emission_failure_event_identity"] = failed_event.identity
+    representation["event_identities_in_append_order"] += (
+        act_evidence.identity,
+        yield_evidence.identity,
+        failed_event.identity,
+    )
+    return failed_event

@@ -127,17 +127,15 @@ def test_representation_reader_reads_the_exact_recorded_representation():
             "locality_evidence_identity"
         ],
         "representation_event_identity": representation["representation_event_identity"],
+        "event_identities_in_append_order": representation[
+            "event_identities_in_append_order"
+        ],
         "emission_text": representation["emission_text"],
         "source_event_identity": None,
         "exact_material": None,
     }
     assert ledger.occurrences_in_append_order(
-        (
-            recorded["responsible_act_evidence_identity"],
-            recorded["yield_evidence_identity"],
-            recorded["locality_evidence_identity"],
-            recorded["representation_event_identity"],
-        ),
+        recorded["event_identities_in_append_order"],
         locality_identity="s",
     )
 
@@ -1079,6 +1077,15 @@ def test_partial_output_write_preserves_attempt_and_failed_occurrences():
     assert failure.material["error"] is None
     assert failure.material["emitted_event_identity"] is None
     assert representation["emitted_event_identity"] is None
+    assert representation["event_identities_in_append_order"] == tuple(
+        event.identity for event in ledger.list()
+    )
+    assert representation["emission_failure_act_evidence_identity"] == ledger.get(
+        representation["emission_failure_event_identity"]
+    ).material["responsible_act_evidence_identity"]
+    assert representation["emission_failure_yield_evidence_identity"] == ledger.get(
+        representation["emission_failure_event_identity"]
+    ).material["yield_evidence_identity"]
 
 
 def test_write_exception_preserves_unknown_boundary_acceptance():
@@ -1147,6 +1154,44 @@ def test_flush_failure_does_not_erase_the_completed_text_stream_write():
     assert failure.material["write_count"] == len(representation["emission_text"])
     assert failure.material["emitted_event_identity"] == emitted.identity
     assert failure.material["error"] == "OSError('flush failed')"
+    assert representation["event_identities_in_append_order"] == tuple(
+        event.identity for event in ledger.list()
+    )
+
+
+def test_successful_emission_returns_every_exact_identity_in_append_order():
+    ledger = EventLedger()
+    representation = _record_and_emit(ledger)
+    emitted = ledger.get(representation["emitted_event_identity"])
+
+    assert representation["event_identities_in_append_order"] == tuple(
+        event.identity for event in ledger.list()
+    )
+    assert representation["emission_act_evidence_identity"] == emitted.material[
+        "responsible_act_evidence_identity"
+    ]
+    assert representation["emission_locality_evidence_identity"] == emitted.material[
+        "locality_evidence_identity"
+    ]
+    assert representation["emission_yield_evidence_identity"] == emitted.material[
+        "yield_evidence_identity"
+    ]
+
+
+def test_emission_does_not_accept_caller_supplied_occurrence_order():
+    ledger = EventLedger()
+    representation, _ = _recorded_representation(ledger)
+    representation["event_identities_in_append_order"] = tuple(
+        reversed(representation["event_identities_in_append_order"])
+    )
+
+    emit_operator_representation(
+        ledger, representation=representation, output_stream=StringIO()
+    )
+
+    assert representation["event_identities_in_append_order"] == tuple(
+        event.identity for event in ledger.list()
+    )
 
 
 def test_process_death_after_attempt_leaves_boundary_acceptance_unknown():
@@ -1180,3 +1225,6 @@ def test_process_death_after_attempt_leaves_boundary_acceptance_unknown():
     assert read["emission_attempt_locality_evidence_identity"] is not None
     assert read["emission_failure_event_identity"] is None
     assert read["emitted_event_identity"] is None
+    assert representation["event_identities_in_append_order"] == tuple(
+        event.identity for event in ledger.list()
+    )
