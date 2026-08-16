@@ -13,7 +13,7 @@ from seed_runtime.material_ingest import (
     ingested_material_bytes,
 )
 from seed_runtime.operator_console import run_persistent_operator_console
-from seed_runtime.yield_evidence import read_yield_relation_requirements
+from seed_runtime.evidence_of_yield_relation import read_requirements_of_yield_relation
 from tests.binary_input import binary_input
 
 
@@ -77,13 +77,13 @@ def test_each_ingest_preserves_exact_bytes(ledger):
     assert (E3 + "\n").encode() not in exact
 
 
-def test_each_ingest_binds_its_exact_act_and_result_evidence(ledger):
+def test_each_ingest_binds_its_exact_act_and_evidence_of_yield_relation(ledger):
     for ingest in _ingests(ledger):
         assert all(
-            read_yield_relation_requirements(
+            read_requirements_of_yield_relation(
                 ledger,
                 recorded_result_event_identity=ingest.identity,
-                result_evidence_event_identity=ingest.material["yield_evidence_identity"],
+                evidence_of_yield_relation_event_identity=ingest.material["evidence_of_yield_relation_identity"],
                 responsible_act_evidence_event_identity=ingest.material[
                     "responsible_act_evidence_identity"
                 ],
@@ -111,7 +111,7 @@ def test_ingest_evidence_is_inspectable():
     assert MATERIAL_INGEST_OCCURRED_KIND in represented
     assert all(type(event.exact_material) is bytes for event in ingests)
     assert "responsible_act_evidence_identity" in represented
-    assert "yield_evidence_identity" in represented
+    assert "evidence_of_yield_relation_identity" in represented
 
 
 if __name__ == "__main__":  # pragma: no cover

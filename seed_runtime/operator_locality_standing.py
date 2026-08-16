@@ -21,6 +21,11 @@ from seed_runtime.occurrence_position_measurement import (
     OCCURRENCE_POSITION_RECORDED_KIND,
     get_recorded_occurrence_position_measurement,
 )
+from seed_runtime.measurement_of_recurrent_byte_pair_occurrence_position import (
+    RECORDED_EVIDENCE_OF_ACT_OCCURRENCE_OF_MEASUREMENT_OF_RECURRENT_BYTE_PAIR_OCCURRENCE_POSITION_KIND,
+    RECORDING_OCCURRENCE_OF_RESULT_OF_MEASUREMENT_OF_RECURRENT_BYTE_PAIR_OCCURRENCE_POSITION_KIND,
+    get_recorded_result_of_measurement_of_recurrent_byte_pair_occurrence_position,
+)
 from seed_runtime.operator_standing_continuation import (
     STANDING_LOCALITY_CONTINUATION_ACT_EVIDENCE_KIND,
     STANDING_LOCALITY_CONTINUATION_RECORDED_KIND,
@@ -52,7 +57,7 @@ from seed_runtime.operator_material_acquisition import (
     get_operator_material_acquire_responsibility_assignment,
     get_recorded_operator_material_acquire,
 )
-from seed_runtime.yield_evidence import read_yield_relation_requirements
+from seed_runtime.evidence_of_yield_relation import read_requirements_of_yield_relation
 
 # The writer of these occurrences declares their kinds. A reader declaring its
 # own copy would be a second contract, free to drift from the first.
@@ -75,11 +80,13 @@ _SUBJECT_BY_KIND = {
 _MEASUREMENT_ACT_EVIDENCE_KINDS = {
     BYTE_MEASUREMENT_RESPONSIBLE_ACT_EVIDENCE_KIND,
     OCCURRENCE_POSITION_ACT_EVIDENCE_KIND,
+    RECORDED_EVIDENCE_OF_ACT_OCCURRENCE_OF_MEASUREMENT_OF_RECURRENT_BYTE_PAIR_OCCURRENCE_POSITION_KIND,
 }
 _MEASUREMENT_RECORDED_KINDS = {
     BYTE_MEASUREMENT_RECORDED_KIND,
     BYTE_PAIR_MEASUREMENT_RECORDED_KIND,
     OCCURRENCE_POSITION_RECORDED_KIND,
+    RECORDING_OCCURRENCE_OF_RESULT_OF_MEASUREMENT_OF_RECURRENT_BYTE_PAIR_OCCURRENCE_POSITION_KIND,
 }
 _STANDING_LOCALITY_CONTINUATION_KINDS = {
     STANDING_LOCALITY_CONTINUATION_RESPONSIBILITY_ASSIGNMENT_RECORDED_KIND,
@@ -145,7 +152,7 @@ def _measurement_occurrence_coordinates(event) -> dict[str, str]:
         "responsible_act_evidence_identity": event.material[
             "responsible_act_evidence_identity"
         ],
-        "yield_evidence_identity": event.material["yield_evidence_identity"],
+        "evidence_of_yield_relation_identity": event.material["evidence_of_yield_relation_identity"],
     }
 
 
@@ -157,11 +164,11 @@ def _carries_exact_result(ledger: EventLedger, event) -> bool:
         or ledger.integrity_of(event.identity) == CORRUPTED
     ):
         return False
-    requirements = read_yield_relation_requirements(
+    requirements = read_requirements_of_yield_relation(
         ledger,
         recorded_result_event_identity=event.identity,
-        result_evidence_event_identity=event.material.get(
-            "yield_evidence_identity"
+        evidence_of_yield_relation_event_identity=event.material.get(
+            "evidence_of_yield_relation_identity"
         ),
         responsible_act_evidence_event_identity=event.material.get(
             "responsible_act_evidence_identity"
@@ -616,6 +623,12 @@ def advance_operator_locality_standing(
             continue
         if event.kind == OCCURRENCE_POSITION_RECORDED_KIND:
             get_recorded_occurrence_position_measurement(ledger, event.identity)
+            measurement_occurrences[event.identity] = (
+                _measurement_occurrence_coordinates(event)
+            )
+            continue
+        if event.kind == RECORDING_OCCURRENCE_OF_RESULT_OF_MEASUREMENT_OF_RECURRENT_BYTE_PAIR_OCCURRENCE_POSITION_KIND:
+            get_recorded_result_of_measurement_of_recurrent_byte_pair_occurrence_position(ledger, event.identity)
             measurement_occurrences[event.identity] = (
                 _measurement_occurrence_coordinates(event)
             )

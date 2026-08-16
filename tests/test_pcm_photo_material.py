@@ -230,7 +230,7 @@ def test_each_supplied_material_has_a_fresh_locality_and_exact_ingest_result(
     assert len({reference.result_identity for reference in references}) == len(
         references
     )
-    assert len({reference.yield_evidence_identity for reference in references}) == len(
+    assert len({reference.evidence_of_yield_relation_identity for reference in references}) == len(
         references
     )
     assert tuple(reference.exact_material for reference in references) == tuple(
@@ -414,7 +414,7 @@ def test_invocation_occurrence_refuses_material_different_from_its_ingest_result
         locality_identity="locality",
         act_occurrence_identity="act-occurrence",
         result_identity="result",
-        yield_evidence_identity="yield-evidence",
+        evidence_of_yield_relation_identity="yield-evidence",
         exact_material=b"a",
     )
 

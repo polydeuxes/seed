@@ -25,7 +25,7 @@ from seed_runtime.supplied_invocation_material import (
     SuppliedSystemMaterialOccurrence,
     ingest_supplied_invocation_occurrence,
 )
-from seed_runtime.yield_evidence import read_yield_relation_requirements
+from seed_runtime.evidence_of_yield_relation import read_requirements_of_yield_relation
 
 
 def _supplied(
@@ -473,18 +473,18 @@ def test_supplied_yield_cannot_be_replaced_by_another_occurrence():
         for supplied in _supplied()
     )
 
-    exact = read_yield_relation_requirements(
+    exact = read_requirements_of_yield_relation(
         ledger,
         recorded_result_event_identity=output.identity,
-        result_evidence_event_identity=output.material["yield_evidence_identity"],
+        evidence_of_yield_relation_event_identity=output.material["evidence_of_yield_relation_identity"],
         responsible_act_evidence_event_identity=output.material[
             "responsible_act_evidence_identity"
         ],
     )
-    substituted = read_yield_relation_requirements(
+    substituted = read_requirements_of_yield_relation(
         ledger,
         recorded_result_event_identity=output.identity,
-        result_evidence_event_identity=error.material["yield_evidence_identity"],
+        evidence_of_yield_relation_event_identity=error.material["evidence_of_yield_relation_identity"],
         responsible_act_evidence_event_identity=output.material[
             "responsible_act_evidence_identity"
         ],
@@ -497,10 +497,10 @@ def test_supplied_yield_cannot_be_replaced_by_another_occurrence():
     output.material["provenance_occurrence_references"] = [
         another_command.identity
     ]
-    crossed = read_yield_relation_requirements(
+    crossed = read_requirements_of_yield_relation(
         ledger,
         recorded_result_event_identity=output.identity,
-        result_evidence_event_identity=output.material["yield_evidence_identity"],
+        evidence_of_yield_relation_event_identity=output.material["evidence_of_yield_relation_identity"],
         responsible_act_evidence_event_identity=output.material[
             "responsible_act_evidence_identity"
         ],

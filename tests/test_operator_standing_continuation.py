@@ -22,7 +22,7 @@ from seed_runtime.operator_standing_continuation import (
     record_standing_locality_continuation_responsible_act_evidence,
     record_standing_locality_continuation_result,
 )
-from seed_runtime.yield_evidence import read_yield_relation_requirements
+from seed_runtime.evidence_of_yield_relation import read_requirements_of_yield_relation
 
 
 def _source_representation(
@@ -188,10 +188,10 @@ def test_three_stage_continuation_records_exact_direct_relation_without_copying_
     assert recorded["responsibility_assignment_reference"] == assignment_reference
     assert "applicability" not in recorded
     assert "priority" not in recorded
-    assert read_yield_relation_requirements(
+    assert read_requirements_of_yield_relation(
         ledger,
         recorded_result_event_identity=result.identity,
-        result_evidence_event_identity=result.material["yield_evidence_identity"],
+        evidence_of_yield_relation_event_identity=result.material["evidence_of_yield_relation_identity"],
         responsible_act_evidence_event_identity=act_evidence.identity,
     ) == {
         "exact_relation": True,
@@ -201,7 +201,7 @@ def test_three_stage_continuation_records_exact_direct_relation_without_copying_
 
     incremental = advance_operator_locality_standing(
         ledger,
-        (result.material["yield_evidence_identity"], result.identity),
+        (result.material["evidence_of_yield_relation_identity"], result.identity),
         locality_identity=destination,
         prior=after_act,
     )
@@ -467,7 +467,7 @@ def test_missing_crossed_or_changed_source_coordinates_are_refused():
         "locality_relation_occurrence_identity",
         "responsibility_assignment_reference",
         "responsible_act_evidence_identity",
-        "yield_evidence_identity",
+        "evidence_of_yield_relation_identity",
     ),
 )
 def test_changed_result_coordinates_are_refused(coordinate):
@@ -506,8 +506,8 @@ def test_equal_source_cuts_keep_distinct_occurrences_and_destinations():
         "locality_relation_occurrence_identity"
     ]
     assert first.material["result_identity"] != second.material["result_identity"]
-    assert first.material["yield_evidence_identity"] != second.material[
-        "yield_evidence_identity"
+    assert first.material["evidence_of_yield_relation_identity"] != second.material[
+        "evidence_of_yield_relation_identity"
     ]
 
 

@@ -23,27 +23,27 @@ from seed_runtime.occurrence_position_measurement import (
     record_occurrence_position_measurement_responsible_act_evidence,
     record_occurrence_position_measurement_result,
 )
-from seed_runtime.yield_evidence import read_yield_relation_requirements
+from seed_runtime.evidence_of_yield_relation import read_requirements_of_yield_relation
 from seed_runtime.operator_console import run_persistent_operator_console
 
 _INGEST_KINDS = (
     "material.ingest.act_evidenced",
-    "operator.yield.evidence_recorded",
+    "operator.evidence_of_yield_relation_recorded",
     "material.ingest.occurred",
 )
 _BYTE_MEASUREMENT_KINDS = (
     "operator.measurement.byte_responsible_act_evidenced",
-    "operator.yield.evidence_recorded",
+    "operator.evidence_of_yield_relation_recorded",
     "operator.measurement.byte_counts_recorded",
 )
 _OCCURRENCE_POSITION_MEASUREMENT_KINDS = (
     "operator.measurement.locality_occurrence_position_act_evidenced",
-    "operator.yield.evidence_recorded",
+    "operator.evidence_of_yield_relation_recorded",
     "operator.measurement.locality_occurrence_position_recorded",
 )
 _REPRESENTATION_RELATION_EVIDENCE_KINDS = (
     "operator.representation.act_evidenced",
-    "operator.yield.evidence_recorded",
+    "operator.evidence_of_yield_relation_recorded",
     "operator.representation.locality_evidenced",
 )
 _OPERATOR_MATERIAL_ACQUIRE_BEGIN_KINDS = (
@@ -51,7 +51,7 @@ _OPERATOR_MATERIAL_ACQUIRE_BEGIN_KINDS = (
     "operator.material.acquire_act_evidenced",
 )
 _OPERATOR_MATERIAL_ACQUIRE_RESULT_KINDS = (
-    "operator.yield.evidence_recorded",
+    "operator.evidence_of_yield_relation_recorded",
     "operator.material.acquire_recorded",
 )
 
@@ -169,7 +169,7 @@ def test_representation_reader_reads_the_exact_recorded_representation():
         "responsible_act_evidence_identity": representation[
             "responsible_act_evidence_identity"
         ],
-        "yield_evidence_identity": representation["yield_evidence_identity"],
+        "evidence_of_yield_relation_identity": representation["evidence_of_yield_relation_identity"],
         "locality_evidence_identity": representation[
             "locality_evidence_identity"
         ],
@@ -202,7 +202,7 @@ def test_representation_carries_exact_material_without_claiming_meaning():
         source_occurrence_reference=source.identity,
     )
     event = ledger.get(representation["representation_event_identity"])
-    evidence = ledger.get(event.material["yield_evidence_identity"])
+    evidence = ledger.get(event.material["evidence_of_yield_relation_identity"])
 
     assert event.exact_material == b"hello"
     assert evidence.exact_material == b"hello"
@@ -223,7 +223,7 @@ def test_representation_addresses_one_exact_carried_measurement_result():
 
     event = ledger.get(representation["representation_event_identity"])
     locality_evidence = ledger.get(representation["locality_evidence_identity"])
-    yield_evidence = ledger.get(representation["yield_evidence_identity"])
+    evidence_of_yield_relation = ledger.get(representation["evidence_of_yield_relation_identity"])
     expected_reference = {
         "recorded_occurrence_identity": measurement.identity,
         "result_identity": measurement.material["result_identity"],
@@ -231,7 +231,7 @@ def test_representation_addresses_one_exact_carried_measurement_result():
         "responsible_act_evidence_identity": measurement.material[
             "responsible_act_evidence_identity"
         ],
-        "yield_evidence_identity": measurement.material["yield_evidence_identity"],
+        "evidence_of_yield_relation_identity": measurement.material["evidence_of_yield_relation_identity"],
     }
     assert standing["measurement_occurrences"] == {
         measurement.identity: expected_reference
@@ -242,20 +242,20 @@ def test_representation_addresses_one_exact_carried_measurement_result():
         == measurement.identity
     )
     assert (
-        yield_evidence.material["result"]["source_occurrence_reference"]
+        evidence_of_yield_relation.material["result"]["source_occurrence_reference"]
         == measurement.identity
     )
     for material in (
         event.material,
         locality_evidence.material["carried_content"],
-        yield_evidence.material["result"],
+        evidence_of_yield_relation.material["result"],
     ):
         assert "assertions" not in material
         assert "measurement_rule" not in material
         assert "occurrence_preservation" not in material
     assert event.exact_material is None
     assert locality_evidence.exact_material is None
-    assert yield_evidence.exact_material is None
+    assert evidence_of_yield_relation.exact_material is None
     assert read_operator_representation(ledger, event.identity)[
         "source_occurrence_reference"
     ] == measurement.identity
@@ -304,7 +304,7 @@ def test_representation_addresses_each_structured_measurement_family(
         "result_identity",
         "act_occurrence_identity",
         "responsible_act_evidence_identity",
-        "yield_evidence_identity",
+        "evidence_of_yield_relation_identity",
     ),
 )
 def test_representation_rejects_each_wrong_carried_measurement_coordinate(
@@ -394,7 +394,7 @@ def test_representation_rejects_corrupted_measurement_yield(monkeypatch):
     ledger = EventLedger()
     measurement = _byte_measurement(ledger)
     standing = _standing(ledger)
-    yield_identity = measurement.material["yield_evidence_identity"]
+    yield_identity = measurement.material["evidence_of_yield_relation_identity"]
     integrity_of = ledger.integrity_of
     monkeypatch.setattr(
         ledger,
@@ -505,7 +505,7 @@ def test_representation_consumes_an_exact_yielded_representation_result():
     assert second_event.material["source_occurrence_reference"] == first_event.identity
     assert second_event.exact_material == b"\x00\xffresult"
     assert ledger.get(
-        second_event.material["yield_evidence_identity"]
+        second_event.material["evidence_of_yield_relation_identity"]
     ).exact_material == b"\x00\xffresult"
 
 
@@ -521,7 +521,7 @@ def test_representation_refuses_a_raw_carrier_without_exact_yield():
     unrelated = ledger.append(
         "unrelated.result",
         {
-            "yield_evidence_identity": source.material["yield_evidence_identity"],
+            "evidence_of_yield_relation_identity": source.material["evidence_of_yield_relation_identity"],
             "responsible_act_evidence_identity": source.material[
                 "responsible_act_evidence_identity"
             ],
@@ -744,7 +744,7 @@ def test_exact_egress_reads_the_recorded_representation_material():
     locality_evidence = ledger.get(
         representation["emission_locality_evidence_identity"]
     )
-    yield_evidence = ledger.get(representation["emission_yield_evidence_identity"])
+    evidence_of_yield_relation = ledger.get(representation["emission_evidence_of_yield_relation_identity"])
 
     assert representation["recorded_occurrence_references"] == tuple(
         occurrence.identity for occurrence in ledger.list()
@@ -754,7 +754,7 @@ def test_exact_egress_reads_the_recorded_representation_material():
         == attempt_locality.exact_material
         == event.exact_material
         == locality_evidence.exact_material
-        == yield_evidence.exact_material
+        == evidence_of_yield_relation.exact_material
         == b"hello"
     )
     assert attempt_locality.material["attempt_event_identity"] == attempt.identity
@@ -767,10 +767,10 @@ def test_exact_egress_reads_the_recorded_representation_material():
         "act_occurrence_identity"
     ]
     assert all(
-        read_yield_relation_requirements(
+        read_requirements_of_yield_relation(
             ledger,
             recorded_result_event_identity=event.identity,
-            result_evidence_event_identity=yield_evidence.identity,
+            evidence_of_yield_relation_event_identity=evidence_of_yield_relation.identity,
             responsible_act_evidence_event_identity=act_evidence.identity,
         ).values()
     )
@@ -792,7 +792,7 @@ def test_exact_egress_reads_the_recorded_representation_material():
         attempt_locality,
         act_evidence,
         locality_evidence,
-        yield_evidence,
+        evidence_of_yield_relation,
         event,
     ):
         assert forbidden.isdisjoint(occurrence.material)
@@ -804,7 +804,7 @@ def test_exact_egress_reads_the_recorded_representation_material():
                 attempt_locality,
                 act_evidence,
                 locality_evidence,
-                yield_evidence,
+                evidence_of_yield_relation,
                 event,
             )
         ]
@@ -877,8 +877,8 @@ def test_exact_material_emission_preserves_each_bounded_failure_result(
     act_evidence = ledger.get(
         representation["emission_failure_act_evidence_identity"]
     )
-    yield_evidence = ledger.get(
-        representation["emission_failure_yield_evidence_identity"]
+    evidence_of_yield_relation = ledger.get(
+        representation["emission_failure_evidence_of_yield_relation_identity"]
     )
     assert attempt.exact_material == b"hello"
     assert failure.exact_material is None
@@ -890,10 +890,10 @@ def test_exact_material_emission_preserves_each_bounded_failure_result(
         occurrence.identity for occurrence in ledger.list()
     )[-len(representation["recorded_occurrence_references"]):]
     assert all(
-        read_yield_relation_requirements(
+        read_requirements_of_yield_relation(
             ledger,
             recorded_result_event_identity=failure.identity,
-            result_evidence_event_identity=yield_evidence.identity,
+            evidence_of_yield_relation_event_identity=evidence_of_yield_relation.identity,
             responsible_act_evidence_event_identity=act_evidence.identity,
         ).values()
     )
@@ -1014,7 +1014,7 @@ def test_raw_console_does_not_select_operator_input_for_egress():
 
 @pytest.mark.parametrize(
     "coordinate",
-    ("responsible_act_evidence_identity", "locality_evidence_identity", "yield_evidence_identity"),
+    ("responsible_act_evidence_identity", "locality_evidence_identity", "evidence_of_yield_relation_identity"),
 )
 def test_representation_reader_refuses_each_missing_evidence_pointer(coordinate):
     ledger = EventLedger()
@@ -1455,7 +1455,7 @@ def test_representation_act_is_recorded_without_manufacturing_emission():
     act_evidence = ledger.get(
         representation_event.material["responsible_act_evidence_identity"]
     )
-    yield_evidence = ledger.get(representation_event.material["yield_evidence_identity"])
+    evidence_of_yield_relation = ledger.get(representation_event.material["evidence_of_yield_relation_identity"])
     locality_evidence = ledger.get(
         representation_event.material["locality_evidence_identity"]
     )
@@ -1465,7 +1465,7 @@ def test_representation_act_is_recorded_without_manufacturing_emission():
     assert representation["act_occurrence_identity"] == act_evidence.material[
         "act_occurrence_identity"
     ]
-    assert representation["act_occurrence_identity"] == yield_evidence.material[
+    assert representation["act_occurrence_identity"] == evidence_of_yield_relation.material[
         "dimensions"
     ]["act_occurrence_identity"]
     assert representation["act_occurrence_identity"] == locality_evidence.material[

@@ -116,7 +116,7 @@ def _measurement_coordinates(event):
         "responsible_act_evidence_identity": event.material[
             "responsible_act_evidence_identity"
         ],
-        "yield_evidence_identity": event.material["yield_evidence_identity"],
+        "evidence_of_yield_relation_identity": event.material["evidence_of_yield_relation_identity"],
     }
 
 
@@ -179,7 +179,7 @@ def test_locality_standing_carries_exact_measurement_identities_in_append_order(
             "result_identity",
             "act_occurrence_identity",
             "responsible_act_evidence_identity",
-            "yield_evidence_identity",
+            "evidence_of_yield_relation_identity",
         }
         for occurrence in standing["measurement_occurrences"].values()
     )
@@ -258,8 +258,8 @@ def test_locality_standing_refuses_raw_result_with_missing_or_crossed_yield():
         source_role="operator",
         source_boundary="test boundary",
     )
-    source.material["yield_evidence_identity"] = other.material[
-        "yield_evidence_identity"
+    source.material["evidence_of_yield_relation_identity"] = other.material[
+        "evidence_of_yield_relation_identity"
     ]
 
     standing = _standing(ledger)
@@ -291,9 +291,9 @@ def test_locality_standing_refuses_corrupted_raw_result(monkeypatch):
 
 @pytest.mark.parametrize(
     "evidence_coordinate",
-    ("responsible_act_evidence_identity", "yield_evidence_identity"),
+    ("responsible_act_evidence_identity", "evidence_of_yield_relation_identity"),
 )
-def test_locality_standing_refuses_corrupted_raw_result_evidence(
+def test_locality_standing_refuses_corrupted_raw_evidence_of_yield_relation(
     monkeypatch, evidence_coordinate
 ):
     ledger = EventLedger()
@@ -365,7 +365,7 @@ def test_locality_standing_refuses_measurement_with_missing_yield(
 ):
     ledger = _measurement_ledger()
     measurement = _record_measurement(ledger, measurement_kind)
-    measurement.material["yield_evidence_identity"] = None
+    measurement.material["evidence_of_yield_relation_identity"] = None
 
     with pytest.raises(error_type, match="Yield|yield"):
         _standing(ledger)
@@ -385,8 +385,8 @@ def test_locality_standing_refuses_yield_from_another_measurement_occurrence(
     ledger = _measurement_ledger()
     measurement = _record_measurement(ledger, measurement_kind)
     other = _record_measurement(ledger, measurement_kind)
-    measurement.material["yield_evidence_identity"] = other.material[
-        "yield_evidence_identity"
+    measurement.material["evidence_of_yield_relation_identity"] = other.material[
+        "evidence_of_yield_relation_identity"
     ]
 
     with pytest.raises(error_type, match="Yield|yield"):
@@ -406,7 +406,7 @@ def test_locality_standing_refuses_corrupted_measurement_yield(
 ):
     ledger = _measurement_ledger()
     measurement = _record_measurement(ledger, measurement_kind)
-    yield_identity = measurement.material["yield_evidence_identity"]
+    yield_identity = measurement.material["evidence_of_yield_relation_identity"]
     integrity_of = ledger.integrity_of
     monkeypatch.setattr(
         ledger,

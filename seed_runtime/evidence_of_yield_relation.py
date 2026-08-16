@@ -20,11 +20,11 @@ from typing import Any
 from seed_runtime.event import Event
 from seed_runtime.events import CORRUPTED, EventLedger
 
-YIELD_EVIDENCE_KIND = "operator.yield.evidence_recorded"
+RECORDED_EVIDENCE_OF_YIELD_RELATION_KIND = "operator.evidence_of_yield_relation_recorded"
 EVENT_KIND_RESPONSIBILITIES = {
-    YIELD_EVIDENCE_KIND: "02.Acts.A",
+    RECORDED_EVIDENCE_OF_YIELD_RELATION_KIND: "02.Acts.A",
 }
-YIELD_LIVE_BOUNDARIES = frozenset(
+LIVE_BOUNDARIES_OF_YIELD_RELATION = frozenset(
     {
         "assertion_locality_movement",
         "failed_emission",
@@ -33,6 +33,7 @@ YIELD_LIVE_BOUNDARIES = frozenset(
         "byte_pair_measurement",
         "material_ingest",
         "occurrence_position_measurement",
+        "measurement_of_recurrent_byte_pair_occurrence_position",
         "operator_material_acquire",
         "representation_result",
         "recorded_standing_boundary_locality_relation",
@@ -41,11 +42,99 @@ YIELD_LIVE_BOUNDARIES = frozenset(
         "successful_emission",
     }
 )
-def read_yield_relation_requirements(
+def read_requirements_of_evidence_carried_by_result_occurrence(
     ledger: EventLedger,
     *,
     recorded_result_event_identity: str,
-    result_evidence_event_identity: str | None,
+    evidence_of_yield_relation_event_identity: str | None,
+    recorded_result_occurrence_coordinate: str = "act_occurrence_identity",
+) -> dict[str, bool]:
+    """Read Evidence carried by a result occurrence separately from the Yield relation.
+
+    The recording occurrence carries the exact Evidence occurrence by identity.
+    The Evidence occurrence in turn names the Act occurrence whose result is
+    recorded.  Neither equal result content nor endpoint presence substitutes
+    for this carried relation.
+    """
+
+    if not isinstance(ledger, EventLedger):
+        raise TypeError("an Evidence-carried-by-result-occurrence read requires one EventLedger")
+    if (
+        type(recorded_result_event_identity) is not str
+        or not recorded_result_event_identity
+    ):
+        raise TypeError("an Evidence-carried-by-result-occurrence read requires one result occurrence")
+    if (
+        type(evidence_of_yield_relation_event_identity) is not str
+        or not evidence_of_yield_relation_event_identity
+    ):
+        return {
+            "exact_relation": False,
+            "occurrence_witness": False,
+            "intact_evidence": False,
+        }
+    if (
+        type(recorded_result_occurrence_coordinate) is not str
+        or not recorded_result_occurrence_coordinate
+    ):
+        raise TypeError("the carried result occurrence coordinate must be exact")
+
+    recorded_result_event = ledger.get(recorded_result_event_identity)
+    evidence_of_yield_relation = ledger.get(
+        evidence_of_yield_relation_event_identity
+    )
+    if recorded_result_event is None or evidence_of_yield_relation is None:
+        return {
+            "exact_relation": False,
+            "occurrence_witness": False,
+            "intact_evidence": False,
+        }
+
+    exact_relation = (
+        recorded_result_event.material.get(
+            "evidence_of_yield_relation_identity"
+        )
+        == evidence_of_yield_relation.identity
+        and evidence_of_yield_relation.kind
+        == RECORDED_EVIDENCE_OF_YIELD_RELATION_KIND
+    )
+    occurrence_witness = (
+        recorded_result_event.locality_identity
+        == evidence_of_yield_relation.locality_identity
+        and recorded_result_event.material.get(
+            recorded_result_occurrence_coordinate
+        )
+        == evidence_of_yield_relation.material.get("dimensions", {}).get(
+            "act_occurrence_identity"
+        )
+    )
+    if occurrence_witness:
+        try:
+            ledger.occurrences_in_append_order(
+                (
+                    evidence_of_yield_relation.identity,
+                    recorded_result_event.identity,
+                ),
+                locality_identity=recorded_result_event.locality_identity,
+            )
+        except (TypeError, ValueError):
+            occurrence_witness = False
+
+    return {
+        "exact_relation": exact_relation,
+        "occurrence_witness": occurrence_witness,
+        "intact_evidence": (
+            ledger.integrity_of(evidence_of_yield_relation.identity)
+            != CORRUPTED
+        ),
+    }
+
+
+def read_requirements_of_yield_relation(
+    ledger: EventLedger,
+    *,
+    recorded_result_event_identity: str,
+    evidence_of_yield_relation_event_identity: str | None,
     responsible_act_evidence_event_identity: str | None,
     recorded_result_occurrence_coordinate: str = "act_occurrence_identity",
     responsible_act_occurrence_coordinate: str = "act_occurrence_identity",
@@ -60,9 +149,9 @@ def read_yield_relation_requirements(
     """
 
     if not isinstance(ledger, EventLedger):
-        raise TypeError("a Yield-relation read requires one EventLedger")
+        raise TypeError("a Yield relation read requires one EventLedger")
     if not isinstance(recorded_result_event_identity, str) or not recorded_result_event_identity:
-        raise TypeError("a Yield-relation read requires one event occurrence")
+        raise TypeError("a Yield relation read requires one event occurrence")
     recorded_result_event = ledger.get(recorded_result_event_identity)
     if recorded_result_event is None:
         return {
@@ -70,9 +159,9 @@ def read_yield_relation_requirements(
             "occurrence_witness": False,
             "intact_evidence": False,
         }
-    result_evidence = (
-        ledger.get(result_evidence_event_identity)
-        if isinstance(result_evidence_event_identity, str)
+    evidence_of_yield_relation = (
+        ledger.get(evidence_of_yield_relation_event_identity)
+        if isinstance(evidence_of_yield_relation_event_identity, str)
         else None
     )
     responsible_act_evidence = (
@@ -80,7 +169,7 @@ def read_yield_relation_requirements(
         if isinstance(responsible_act_evidence_event_identity, str)
         else None
     )
-    if result_evidence is None:
+    if evidence_of_yield_relation is None:
         return {
             "exact_relation": False,
             "occurrence_witness": False,
@@ -95,15 +184,15 @@ def read_yield_relation_requirements(
     ):
         raise TypeError("the responsible-Act occurrence coordinate must be exact")
 
-    result_occurrence = recorded_result_event.material.get(
+    act_occurrence_identity_of_recorded_result = recorded_result_event.material.get(
         recorded_result_occurrence_coordinate
     )
-    evidence_dimensions = result_evidence.material.get("dimensions", {})
-    same_occurrence = result_occurrence == evidence_dimensions.get(
+    evidence_dimensions = evidence_of_yield_relation.material.get("dimensions", {})
+    same_occurrence = act_occurrence_identity_of_recorded_result == evidence_dimensions.get(
         "act_occurrence_identity"
     )
     if responsible_act_evidence is not None:
-        same_occurrence = same_occurrence and result_occurrence == (
+        same_occurrence = same_occurrence and act_occurrence_identity_of_recorded_result == (
             responsible_act_evidence.material.get(
                 responsible_act_occurrence_coordinate
             )
@@ -112,27 +201,27 @@ def read_yield_relation_requirements(
         same_occurrence = False
 
     evidence_is_carried = (
-        recorded_result_event.material.get("yield_evidence_identity") == result_evidence.identity
-        and result_evidence.kind == YIELD_EVIDENCE_KIND
+        recorded_result_event.material.get("evidence_of_yield_relation_identity") == evidence_of_yield_relation.identity
+        and evidence_of_yield_relation.kind == RECORDED_EVIDENCE_OF_YIELD_RELATION_KIND
     )
     evidence_is_carried = evidence_is_carried and (
-        recorded_result_event.exact_material == result_evidence.exact_material
+        recorded_result_event.exact_material == evidence_of_yield_relation.exact_material
     )
-    result = result_evidence.material.get("result")
-    result_identity = result_evidence.material.get("result_identity")
-    yield_coordinates = result_evidence.material.get("yield_coordinates")
-    recorded_result_coordinates = result_evidence.material.get("recorded_result_coordinates")
+    result = evidence_of_yield_relation.material.get("result")
+    result_identity = evidence_of_yield_relation.material.get("result_identity")
+    coordinates_of_carried_result = evidence_of_yield_relation.material.get("coordinates_of_carried_result")
+    coordinates_of_recorded_result = evidence_of_yield_relation.material.get("coordinates_of_recorded_result")
     exact_carried_result = False
     if (
         type(result) is dict
-        and type(yield_coordinates) is list
-        and type(recorded_result_coordinates) is dict
-        and yield_coordinates == sorted(result)
-        and set(recorded_result_coordinates) == set(result)
+        and type(coordinates_of_carried_result) is list
+        and type(coordinates_of_recorded_result) is dict
+        and coordinates_of_carried_result == sorted(result)
+        and set(coordinates_of_recorded_result) == set(result)
     ):
         carried_result = {}
-        for coordinate in yield_coordinates:
-            carried_at = recorded_result_coordinates.get(coordinate)
+        for coordinate in coordinates_of_carried_result:
+            carried_at = coordinates_of_recorded_result.get(coordinate)
             if type(carried_at) is not list or not carried_at or not all(
                 type(part) is str and part for part in carried_at
             ):
@@ -169,7 +258,7 @@ def read_yield_relation_requirements(
         evidence_is_carried = evidence_is_carried and (
             recorded_result_event.material.get("responsible_act_evidence_identity")
             == responsible_act_evidence.identity
-            and result_evidence.material.get("responsible_act_evidence_identity")
+            and evidence_of_yield_relation.material.get("responsible_act_evidence_identity")
             == responsible_act_evidence.identity
             and exact_act_evidence
         )
@@ -180,7 +269,7 @@ def read_yield_relation_requirements(
         "exact_relation": evidence_is_carried,
         "occurrence_witness": same_occurrence,
         "intact_evidence": (
-            ledger.integrity_of(result_evidence.identity) != CORRUPTED
+            ledger.integrity_of(evidence_of_yield_relation.identity) != CORRUPTED
             and (
                 responsible_act_evidence is not None
                 and ledger.integrity_of(responsible_act_evidence.identity) != CORRUPTED
@@ -189,7 +278,7 @@ def read_yield_relation_requirements(
     }
 
 
-def _record_yield_evidence(
+def _record_evidence_of_yield_relation(
     ledger: EventLedger,
     *,
     locality_identity: str | None,
@@ -203,23 +292,23 @@ def _record_yield_evidence(
     live_boundary: str,
     responsible_boundary: str = "unestablished",
     responsible_act_occurrence_coordinate: str = "act_occurrence_identity",
-    recorded_result_coordinates: dict[str, tuple[str, ...]] | None = None,
+    coordinates_of_recorded_result: dict[str, tuple[str, ...]] | None = None,
     result_exact_material: bytes | None = None,
 ) -> Event:
     """Preserve Evidence from inside an act for its already-fixed result."""
 
     if not isinstance(act_occurrence_identity, str) or not act_occurrence_identity:
-        raise ValueError("Yield Evidence requires one exact Act occurrence identity")
+        raise ValueError("Evidence of Yield relation requires one exact Act occurrence identity")
     if (
         not isinstance(responsible_act_evidence_identity, str)
         or not responsible_act_evidence_identity
     ):
-        raise ValueError("Yield Evidence requires exact responsible Act Evidence")
+        raise ValueError("Evidence of Yield relation requires exact responsible Act Evidence")
     if (
         not isinstance(responsible_act_occurrence_coordinate, str)
         or not responsible_act_occurrence_coordinate
     ):
-        raise ValueError("Yield Evidence requires one exact Act occurrence coordinate")
+        raise ValueError("Evidence of Yield relation requires one exact Act occurrence coordinate")
     responsible_act_evidence = ledger.get(responsible_act_evidence_identity)
     if (
         responsible_act_evidence is None
@@ -232,31 +321,31 @@ def _record_yield_evidence(
         or ledger.integrity_of(responsible_act_evidence_identity) == CORRUPTED
     ):
         raise ValueError(
-            "Yield Evidence requires intact responsible Act Evidence for its occurrence"
+            "Evidence of Yield relation requires intact responsible Act Evidence for its occurrence"
         )
-    if live_boundary not in YIELD_LIVE_BOUNDARIES:
-        raise ValueError("Yield Evidence requires one declared live boundary")
+    if live_boundary not in LIVE_BOUNDARIES_OF_YIELD_RELATION:
+        raise ValueError("Evidence of Yield relation requires one declared live boundary")
     if type(result_content) is not dict:
-        raise TypeError("Yield Evidence requires one exact result")
+        raise TypeError("Evidence of Yield relation requires one exact result")
     if not isinstance(result_identity, str) or not result_identity:
-        raise TypeError("Yield Evidence requires one exact result identity")
+        raise TypeError("Evidence of Yield relation requires one exact result identity")
     if result_content.get("result_identity") != result_identity:
-        raise ValueError("Yield Evidence result identity must be carried by its result")
+        raise ValueError("Evidence of Yield relation result identity must be carried by its result")
     if result_exact_material is not None and type(result_exact_material) is not bytes:
-        raise TypeError("Yield Evidence exact material must be exact bytes or absent")
-    declared_recorded_result_coordinates = (
+        raise TypeError("Evidence of Yield relation exact material must be exact bytes or absent")
+    declared_coordinates_of_recorded_result = (
         {coordinate: (coordinate,) for coordinate in result_content}
-        if recorded_result_coordinates is None
-        else recorded_result_coordinates
+        if coordinates_of_recorded_result is None
+        else coordinates_of_recorded_result
     )
-    if type(declared_recorded_result_coordinates) is not dict or set(
-        declared_recorded_result_coordinates
+    if type(declared_coordinates_of_recorded_result) is not dict or set(
+        declared_coordinates_of_recorded_result
     ) != set(result_content):
         raise ValueError(
-            "Yield Evidence requires one carried coordinate for every result coordinate"
+            "Evidence of Yield relation requires one carried coordinate for every result coordinate"
         )
-    preserved_recorded_result_coordinates = {}
-    for coordinate, carried_at in declared_recorded_result_coordinates.items():
+    preserved_coordinates_of_recorded_result = {}
+    for coordinate, carried_at in declared_coordinates_of_recorded_result.items():
         if type(coordinate) is not str or not coordinate:
             raise TypeError("a result coordinate must be one exact representation")
         if type(carried_at) is not tuple or not carried_at or not all(
@@ -265,10 +354,10 @@ def _record_yield_evidence(
             raise TypeError(
                 "a carried coordinate must be one nonempty tuple of exact representations"
             )
-        preserved_recorded_result_coordinates[coordinate] = list(carried_at)
+        preserved_coordinates_of_recorded_result[coordinate] = list(carried_at)
 
     return ledger.append(
-        YIELD_EVIDENCE_KIND,
+        RECORDED_EVIDENCE_OF_YIELD_RELATION_KIND,
         {
             "responsible_act_evidence_identity": responsible_act_evidence_identity,
             "result_identity": result_identity,
@@ -282,9 +371,9 @@ def _record_yield_evidence(
                 "responsible_boundary": responsible_boundary,
                 "authority": "unestablished",
             },
-            "yield_coordinates": sorted(result_content),
+            "coordinates_of_carried_result": sorted(result_content),
             "result": deepcopy(result_content),
-            "recorded_result_coordinates": preserved_recorded_result_coordinates,
+            "coordinates_of_recorded_result": preserved_coordinates_of_recorded_result,
             "result_kind": result_kind,
             "live_boundary": live_boundary,
         },

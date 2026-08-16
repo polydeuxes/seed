@@ -391,7 +391,7 @@ def test_recurrent_book_pairs_keep_identity_in_fresh_operator_material():
             "meaning",
             "reference",
             "standing",
-            "yield_evidence_identity",
+            "evidence_of_yield_relation_identity",
         )
     )
 

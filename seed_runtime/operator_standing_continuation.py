@@ -15,10 +15,10 @@ from seed_runtime.event import Event
 from seed_runtime.events import CORRUPTED, EventLedger
 from seed_runtime.identities import new_identity
 from seed_runtime.operator_representation import read_operator_representation
-from seed_runtime.yield_evidence import (
-    YIELD_EVIDENCE_KIND,
-    _record_yield_evidence,
-    read_yield_relation_requirements,
+from seed_runtime.evidence_of_yield_relation import (
+    RECORDED_EVIDENCE_OF_YIELD_RELATION_KIND,
+    _record_evidence_of_yield_relation,
+    read_requirements_of_yield_relation,
 )
 
 
@@ -301,7 +301,7 @@ def _recorded_result_material(
     result_material: dict[str, Any],
     *,
     responsible_act_evidence_identity: str,
-    yield_evidence_identity: str,
+    evidence_of_yield_relation_identity: str,
 ) -> dict[str, Any]:
     """Carry every result coordinate at one literal durable address."""
 
@@ -333,7 +333,7 @@ def _recorded_result_material(
         "unknowns": result_material["unknowns"],
         "limits": result_material["limits"],
         "responsible_act_evidence_identity": responsible_act_evidence_identity,
-        "yield_evidence_identity": yield_evidence_identity,
+        "evidence_of_yield_relation_identity": evidence_of_yield_relation_identity,
     }
 
 
@@ -573,7 +573,7 @@ def record_standing_locality_continuation_result(
     locality_identity = act_evidence.locality_identity
     act_occurrence_identity = material["act_occurrence_identity"]
     for prior_yield in ledger.iter_locality_kind(
-        locality_identity, YIELD_EVIDENCE_KIND
+        locality_identity, RECORDED_EVIDENCE_OF_YIELD_RELATION_KIND
     ):
         dimensions = prior_yield.material.get("dimensions")
         if (
@@ -617,7 +617,7 @@ def record_standing_locality_continuation_result(
         source_standing_reference=material["source_standing_reference"],
         destination_locality_identity=locality_identity,
     )
-    yield_evidence = _record_yield_evidence(
+    evidence_of_yield_relation = _record_evidence_of_yield_relation(
         ledger,
         locality_identity=locality_identity,
         exact_act=STANDING_LOCALITY_CONTINUATION_ACT,
@@ -635,7 +635,7 @@ def record_standing_locality_continuation_result(
         _recorded_result_material(
             result_material,
             responsible_act_evidence_identity=act_evidence.identity,
-            yield_evidence_identity=yield_evidence.identity,
+            evidence_of_yield_relation_identity=evidence_of_yield_relation.identity,
         ),
         locality_identity=locality_identity,
     )
@@ -686,7 +686,7 @@ def get_recorded_standing_locality_continuation(
     expected_event_material = _recorded_result_material(
         expected,
         responsible_act_evidence_identity=act_evidence.identity,
-        yield_evidence_identity=event.material.get("yield_evidence_identity"),
+        evidence_of_yield_relation_identity=event.material.get("evidence_of_yield_relation_identity"),
     )
     if (
         type(result_identity) is not str
@@ -697,15 +697,15 @@ def get_recorded_standing_locality_continuation(
         raise StandingLocalityContinuationError(
             "the Standing Locality continuation result coordinates are not exact"
         )
-    requirements = read_yield_relation_requirements(
+    requirements = read_requirements_of_yield_relation(
         ledger,
         recorded_result_event_identity=event.identity,
-        result_evidence_event_identity=event.material["yield_evidence_identity"],
+        evidence_of_yield_relation_event_identity=event.material["evidence_of_yield_relation_identity"],
         responsible_act_evidence_event_identity=act_evidence.identity,
     )
     if not all(requirements.values()):
         raise StandingLocalityContinuationError(
-            "the Standing Locality continuation carries no exact Yield Evidence"
+            "the Standing Locality continuation carries no exact Evidence of Yield relation"
         )
     return deepcopy(event.material)
 

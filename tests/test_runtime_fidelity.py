@@ -1016,7 +1016,7 @@ def test_every_relation_shaped_runtime_record_is_an_admitted_relation():
                 for family in (
                     "LOCALITY_EVIDENCE_KIND",
                     "PARTICIPATION_EVIDENCE_KIND",
-                    "YIELD_EVIDENCE_KIND",
+                    "RECORDED_EVIDENCE_OF_YIELD_RELATION_KIND",
                 )
             ) or name == "ASSERTION_LOCALITY_MOVEMENT_KIND":
                 admitted.add(value)
@@ -1029,7 +1029,12 @@ def test_every_relation_shaped_runtime_record_is_an_admitted_relation():
     grammar_relations = set(
         json.loads(GRAMMAR.read_text(encoding="utf-8"))["relations"]
     )
-    assert grammar_relations == {"participation", "yield", "locality"}
+    assert grammar_relations == {
+        "participation",
+        "yield",
+        "locality",
+        "carried_by",
+    }
     assert relation_shaped <= admitted, (
         "\nRuntime records assert a relation without an admitted relation witness:"
         f"\n  {sorted(relation_shaped - admitted)}"
@@ -1039,11 +1044,11 @@ def test_every_relation_shaped_runtime_record_is_an_admitted_relation():
 def test_every_recorded_yield_result_names_its_occurrence_and_exact_evidence():
     required = {
         "responsible_act_evidence_identity",
-        "yield_evidence_identity",
+        "evidence_of_yield_relation_identity",
     }
     incomplete = []
     for path, line, _name, value, keys in _event_materials():
-        if "yield_evidence_identity" not in keys:
+        if "evidence_of_yield_relation_identity" not in keys:
             continue
         occurrence_identities = {
             key
@@ -1102,7 +1107,7 @@ def test_recorded_representation_declares_each_exact_evidence_pointer():
         "act_occurrence_identity",
         "responsible_act_evidence_identity",
         "locality_evidence_identity",
-        "yield_evidence_identity",
+        "evidence_of_yield_relation_identity",
     }
     records = [
         (path.name, line, keys)

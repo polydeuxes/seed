@@ -1,0 +1,355 @@
+from __future__ import annotations
+
+import json
+
+import pytest
+
+from seed_runtime.byte_measurement import (
+    assertions_of_recorded_byte_position_pair_measurement,
+    record_byte_measurement_responsible_act_evidence,
+    record_byte_measurement_result,
+    record_byte_position_pair_count_layer,
+)
+from seed_runtime.events import EventLedger
+from seed_runtime.material_ingest import ingest_material
+from seed_runtime.measurement_of_recurrent_byte_pair_occurrence_position import (
+    RECORDED_EVIDENCE_OF_ACT_OCCURRENCE_OF_MEASUREMENT_OF_RECURRENT_BYTE_PAIR_OCCURRENCE_POSITION_KIND,
+    RECORDING_OCCURRENCE_OF_RESULT_OF_MEASUREMENT_OF_RECURRENT_BYTE_PAIR_OCCURRENCE_POSITION_KIND,
+    get_recorded_result_of_measurement_of_recurrent_byte_pair_occurrence_position,
+    measure_positions_of_recurrent_byte_pair_occurrences,
+    record_evidence_of_act_occurrence_for_measurement_of_recurrent_byte_pair_occurrence_position,
+    record_result_of_measurement_of_recurrent_byte_pair_occurrence_position,
+)
+from seed_runtime.operator_locality_standing import (
+    read_operator_locality_standing,
+)
+from seed_runtime.operator_representation import (
+    emit_operator_representation_material,
+    read_operator_representation,
+    record_operator_representation,
+)
+from seed_runtime.evidence_of_yield_relation import read_requirements_of_yield_relation
+
+
+def _fixture(*, current: bytes = b"ba---ab"):
+    ledger = EventLedger()
+    locality = "pair-occurrence-measurement"
+    ingest_material(
+        ledger,
+        locality_identity=locality,
+        exact_bytes=b"abxxab",
+        source_role="premise material",
+        source_boundary="exact premise boundary",
+    )
+    byte_act = record_byte_measurement_responsible_act_evidence(
+        ledger,
+        source_localities=(locality,),
+        recording_locality_identity=locality,
+    )
+    byte = record_byte_measurement_result(
+        ledger,
+        responsible_act_evidence_event_identity=byte_act.identity,
+    )
+    pair = record_byte_position_pair_count_layer(
+        ledger,
+        source_measurement_event_identity=byte.identity,
+        recording_locality_identity=locality,
+    )
+    pair_assertions = assertions_of_recorded_byte_position_pair_measurement(
+        ledger, pair.identity
+    )
+    recurrence = next(
+        assertion
+        for assertion in pair_assertions or ()
+        if assertion.result == "recurrence"
+        and assertion.representation == (ord("a"), ord("b"))
+    )
+    source = ingest_material(
+        ledger,
+        locality_identity=locality,
+        exact_bytes=current,
+        source_role="operator material",
+        source_boundary="later exact material boundary",
+    )
+    finding = measure_positions_of_recurrent_byte_pair_occurrences(
+        ledger,
+        pair_measurement_occurrence_identity=pair.identity,
+        recurrence_assertion_identity=recurrence.assertion_identity,
+        source_ingest_occurrence_identity=source.identity,
+        occurrence_limit=16,
+    )
+    return ledger, locality, pair, recurrence, source, finding
+
+
+def _record(ledger, locality, finding):
+    act = record_evidence_of_act_occurrence_for_measurement_of_recurrent_byte_pair_occurrence_position(
+        ledger,
+        finding=finding,
+        recording_locality_identity=locality,
+    )
+    result = record_result_of_measurement_of_recurrent_byte_pair_occurrence_position(
+        ledger,
+        responsible_act_evidence_event_identity=act.identity,
+    )
+    return act, result
+
+
+def test_pair_occurrence_measurement_yields_exact_positions_without_a_sign():
+    ledger, locality, _pair, _recurrence, _source, finding = _fixture()
+
+    assert finding.occurrences == ((1, 0), (1, 6), (5, 0), (5, 6))
+    assert finding.available_occurrence_count == 4
+    assert {
+        "before" if second < first else "after"
+        for first, second in finding.occurrences
+    } == {"before", "after"}
+    assert {abs(second - first) for first, second in finding.occurrences} == {
+        1,
+        5,
+    }
+
+    act, result = _record(ledger, locality, finding)
+    read = get_recorded_result_of_measurement_of_recurrent_byte_pair_occurrence_position(ledger, result.identity)
+
+    assert act.kind == RECORDED_EVIDENCE_OF_ACT_OCCURRENCE_OF_MEASUREMENT_OF_RECURRENT_BYTE_PAIR_OCCURRENCE_POSITION_KIND
+    assert result.kind == RECORDING_OCCURRENCE_OF_RESULT_OF_MEASUREMENT_OF_RECURRENT_BYTE_PAIR_OCCURRENCE_POSITION_KIND
+    assert read == finding
+    assert result.exact_material is None
+    requirements = read_requirements_of_yield_relation(
+        ledger,
+        recorded_result_event_identity=result.identity,
+        evidence_of_yield_relation_event_identity=result.material["evidence_of_yield_relation_identity"],
+        responsible_act_evidence_event_identity=act.identity,
+    )
+    assert requirements == {
+        "exact_relation": True,
+        "occurrence_witness": True,
+        "intact_evidence": True,
+    }
+    assert all(
+        set(assertion["dimensions"]["content"])
+        == {"first_position", "second_position", "completeness_boundary"}
+        for assertion in result.material["assertions"]
+    )
+    serialized = json.dumps(result.material).lower()
+    assert "direction" not in serialized
+    assert "displacement" not in serialized
+
+
+def test_act_evidence_has_inputs_and_responsibility_but_no_result_finding():
+    ledger, locality, _pair, _recurrence, _source, finding = _fixture()
+    act = record_evidence_of_act_occurrence_for_measurement_of_recurrent_byte_pair_occurrence_position(
+        ledger,
+        finding=finding,
+        recording_locality_identity=locality,
+    )
+
+    assert {
+        item["role"] for item in act.material["participation"]
+    } == {
+        "Yield-carried recurrent byte-pair subject",
+        "exact material result input",
+    }
+    assert not {
+        "assertions",
+        "available_occurrence_count",
+        "known_loss",
+        "result_identity",
+    } & set(act.material)
+
+
+def test_occurrence_limit_is_explicit_and_preserves_exact_known_loss():
+    ledger, locality, pair, recurrence, source, _finding = _fixture()
+    finding = measure_positions_of_recurrent_byte_pair_occurrences(
+        ledger,
+        pair_measurement_occurrence_identity=pair.identity,
+        recurrence_assertion_identity=recurrence.assertion_identity,
+        source_ingest_occurrence_identity=source.identity,
+        occurrence_limit=2,
+    )
+    _act, result = _record(ledger, locality, finding)
+
+    assert finding.occurrences == ((1, 0), (1, 6))
+    assert finding.available_occurrence_count == 4
+    assert result.material["occurrence_limit"] == 2
+    assert result.material["known_loss"] == [
+        "pair occurrences beyond the exact occurrence limit are not carried"
+    ]
+
+
+def test_measurement_result_does_not_promote_across_the_three_later_crossings():
+    ledger, locality, _pair, _recurrence, _source, finding = _fixture()
+    _act, result = _record(ledger, locality, finding)
+
+    serialized = json.dumps(result.material).lower()
+    assert all(
+        word not in serialized
+        for word in (
+            "candidate",
+            "admitted_material",
+            "admission_result",
+            "standing_movement",
+            "represented_relation",
+        )
+    )
+    assert result.identity not in read_operator_locality_standing(
+        ledger, locality_identity=locality
+    )["exact_result_occurrences"]
+
+
+def test_pair_occurrence_result_enters_standing_as_one_exact_measurement_reference():
+    ledger, locality, _pair, _recurrence, _source, finding = _fixture()
+    act, result = _record(ledger, locality, finding)
+    standing = read_operator_locality_standing(
+        ledger, locality_identity=locality
+    )
+
+    assert standing["measurement_occurrences"][result.identity] == {
+        "recorded_occurrence_identity": result.identity,
+        "result_identity": result.material["result_identity"],
+        "act_occurrence_identity": result.material["act_occurrence_identity"],
+        "responsible_act_evidence_identity": act.identity,
+        "evidence_of_yield_relation_identity": result.material["evidence_of_yield_relation_identity"],
+    }
+    representation = record_operator_representation(
+        ledger,
+        locality_identity=locality,
+        locality_standing=standing,
+        source_occurrence_reference=result.identity,
+    )
+    assert read_operator_representation(
+        ledger, representation["representation_event_identity"]
+    )["source_occurrence_reference"] == result.identity
+    with pytest.raises(ValueError, match="carries no exact material"):
+        emit_operator_representation_material(
+            ledger,
+            representation=representation,
+            output_stream=object(),
+        )
+
+
+def test_same_bytes_cannot_substitute_another_ingest_occurrence():
+    ledger, locality, _pair, _recurrence, _source, finding = _fixture()
+    substitute = ingest_material(
+        ledger,
+        locality_identity=locality,
+        exact_bytes=b"ba---ab",
+        source_role="same bytes at another occurrence",
+        source_boundary="another exact boundary",
+    )
+    crossed = finding._replace(
+        source_ingest_occurrence_identity=substitute.identity
+    )
+
+    with pytest.raises(ValueError, match="outside its exact boundary"):
+        record_evidence_of_act_occurrence_for_measurement_of_recurrent_byte_pair_occurrence_position(
+            ledger,
+            finding=crossed,
+            recording_locality_identity=locality,
+        )
+
+
+def test_crossed_locality_and_pre_source_boundary_are_refused():
+    ledger, _locality, pair, recurrence, source, _finding = _fixture()
+    other = ingest_material(
+        ledger,
+        locality_identity="other-locality",
+        exact_bytes=b"ba---ab",
+        source_role="other",
+        source_boundary="other",
+    )
+    with pytest.raises(ValueError, match="crossed Localities"):
+        measure_positions_of_recurrent_byte_pair_occurrences(
+            ledger,
+            pair_measurement_occurrence_identity=pair.identity,
+            recurrence_assertion_identity=recurrence.assertion_identity,
+            source_ingest_occurrence_identity=other.identity,
+            occurrence_limit=16,
+        )
+    boundary_before_source = ledger.append_boundary_through_occurrence(pair.identity)
+    with pytest.raises(ValueError, match="outside its exact boundary"):
+        measure_positions_of_recurrent_byte_pair_occurrences(
+            ledger,
+            pair_measurement_occurrence_identity=pair.identity,
+            recurrence_assertion_identity=recurrence.assertion_identity,
+            source_ingest_occurrence_identity=source.identity,
+            occurrence_limit=16,
+            through=boundary_before_source,
+        )
+
+
+def test_count_assertion_cannot_impersonate_recurrence_and_result_is_single_use():
+    ledger, locality, pair, recurrence, source, finding = _fixture()
+    count_identity = recurrence.support_assertion_references[0][
+        "assertion_identity"
+    ]
+    with pytest.raises(ValueError, match="does not establish recurrence"):
+        measure_positions_of_recurrent_byte_pair_occurrences(
+            ledger,
+            pair_measurement_occurrence_identity=pair.identity,
+            recurrence_assertion_identity=count_identity,
+            source_ingest_occurrence_identity=source.identity,
+            occurrence_limit=16,
+        )
+    act, _result = _record(ledger, locality, finding)
+    with pytest.raises(ValueError, match="already has a result"):
+        record_result_of_measurement_of_recurrent_byte_pair_occurrence_position(
+            ledger,
+            responsible_act_evidence_event_identity=act.identity,
+        )
+
+
+def test_unrelated_later_material_does_not_move_the_measured_boundary():
+    ledger, locality, _pair, _recurrence, _source, finding = _fixture()
+    ingest_material(
+        ledger,
+        locality_identity=locality,
+        exact_bytes=b"abababab",
+        source_role="later unrelated material",
+        source_boundary="later boundary",
+    )
+    _act, result = _record(ledger, locality, finding)
+
+    assert get_recorded_result_of_measurement_of_recurrent_byte_pair_occurrence_position(ledger, result.identity) == finding
+
+
+def test_occurrence_position_yield_cannot_impersonate_measurement_of_pair_occurrence_position_yield():
+    ledger, locality, _pair, _recurrence, _source, finding = _fixture()
+    _act, result = _record(ledger, locality, finding)
+    evidence = ledger.get(result.material["evidence_of_yield_relation_identity"])
+    evidence.material["live_boundary"] = "occurrence_position_measurement"
+
+    with pytest.raises(ValueError, match="no exact Evidence of Yield relation"):
+        get_recorded_result_of_measurement_of_recurrent_byte_pair_occurrence_position(
+            ledger, result.identity
+        )
+
+
+@pytest.mark.parametrize(
+    "crossing",
+    ("act_evidence", "evidence_of_yield_relation", "recorded_result", "pair_subject"),
+)
+def test_each_measurement_of_pair_occurrence_position_crossing_refuses_its_own_corruption(
+    crossing,
+):
+    ledger, locality, pair, _recurrence, _source, finding = _fixture()
+    act, result = _record(ledger, locality, finding)
+
+    if crossing == "act_evidence":
+        act.material["occurrence_limit"] += 1
+    elif crossing == "evidence_of_yield_relation":
+        evidence = ledger.get(result.material["evidence_of_yield_relation_identity"])
+        evidence.material["result"]["occurrence_limit"] += 1
+    elif crossing == "recorded_result":
+        result.material["assertions"][0]["dimensions"]["content"][
+            "first_position"
+        ] += 1
+    else:
+        pair.material["assertions"][0]["dimensions"]["content"] = {
+            "crossed": True
+        }
+
+    with pytest.raises(ValueError):
+        get_recorded_result_of_measurement_of_recurrent_byte_pair_occurrence_position(
+            ledger, result.identity
+        )

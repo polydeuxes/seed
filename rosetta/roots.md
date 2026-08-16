@@ -24,6 +24,7 @@ Relations recur across live implementation roads:
 content ── Locality → occurrence
 subject ── Participation(role) → Act occurrence
 Act occurrence ── Yield → result
+Evidence of Yield relation ── Carried_by(evidence_of_yield_relation_identity) → recording occurrence of result
 first subject ── Locality → second subject
 ```
 
@@ -44,8 +45,8 @@ Measurement Responsibility / Act / occurrence / Assertions
     seed_runtime.byte_measurement::record_byte_measurement_result
     seed_runtime.byte_measurement::record_byte_position_pair_count_layer
 
-Yield Evidence
-    seed_runtime.yield_evidence::_record_yield_evidence
+Evidence of Yield relation
+    seed_runtime.evidence_of_yield_relation::_record_evidence_of_yield_relation
 
 Assertion addressability and locality movement
     seed_runtime.byte_measurement::assertions_of_recorded_byte_measurement

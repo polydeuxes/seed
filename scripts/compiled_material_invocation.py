@@ -12,7 +12,7 @@ import time
 
 from seed_runtime.events import EventLedger
 from seed_runtime.material_ingest import MATERIAL_INGEST_OCCURRED_KIND
-from seed_runtime.yield_evidence import read_yield_relation_requirements
+from seed_runtime.evidence_of_yield_relation import read_requirements_of_yield_relation
 
 from material_admission import (
     AdmissionOccurrence,
@@ -69,7 +69,7 @@ class IngestResultReference:
     locality_identity: str
     act_occurrence_identity: str
     result_identity: str
-    yield_evidence_identity: str
+    evidence_of_yield_relation_identity: str
     exact_material: bytes
 
     def __post_init__(self) -> None:
@@ -78,7 +78,7 @@ class IngestResultReference:
             self.locality_identity,
             self.act_occurrence_identity,
             self.result_identity,
-            self.yield_evidence_identity,
+            self.evidence_of_yield_relation_identity,
         )
         if any(
             type(coordinate) is not str or not coordinate
@@ -836,22 +836,22 @@ def ingest_result_reference(
     event = ledger.get(recorded_occurrence_identity)
     if event is None or event.kind != MATERIAL_INGEST_OCCURRED_KIND:
         raise ValueError("Ingest result reference requires one Ingest occurrence")
-    requirements = read_yield_relation_requirements(
+    requirements = read_requirements_of_yield_relation(
         ledger,
         recorded_result_event_identity=event.identity,
-        result_evidence_event_identity=event.material.get("yield_evidence_identity"),
+        evidence_of_yield_relation_event_identity=event.material.get("evidence_of_yield_relation_identity"),
         responsible_act_evidence_event_identity=event.material.get(
             "responsible_act_evidence_identity"
         ),
     )
     if not all(requirements.values()):
-        raise ValueError("Ingest result reference requires its exact Yield Evidence")
+        raise ValueError("Ingest result reference requires its exact Evidence of Yield relation")
     return IngestResultReference(
         recorded_occurrence_identity=event.identity,
         locality_identity=event.locality_identity,
         act_occurrence_identity=event.material["act_occurrence_identity"],
         result_identity=event.material["result_identity"],
-        yield_evidence_identity=event.material["yield_evidence_identity"],
+        evidence_of_yield_relation_identity=event.material["evidence_of_yield_relation_identity"],
         exact_material=event.exact_material,
     )
 

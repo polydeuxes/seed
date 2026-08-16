@@ -16,9 +16,9 @@ from seed_runtime.occurrence_position_measurement import (
     record_occurrence_position_measurement_responsible_act_evidence,
     record_occurrence_position_measurement_result,
 )
-from seed_runtime.yield_evidence import (
-    YIELD_EVIDENCE_KIND,
-    read_yield_relation_requirements,
+from seed_runtime.evidence_of_yield_relation import (
+    RECORDED_EVIDENCE_OF_YIELD_RELATION_KIND,
+    read_requirements_of_yield_relation,
 )
 
 
@@ -183,10 +183,10 @@ def test_corrupted_source_cannot_enter_act_evidence_after_measurement():
         )
 
 
-def test_recorded_position_measurement_has_exact_act_and_yield_evidence():
+def test_recorded_position_measurement_has_exact_act_and_evidence_of_yield_relation():
     ledger, _occurrences, _boundary, finding, recorded = recorded_road()
     act_evidence = ledger.get(recorded.material["responsible_act_evidence_identity"])
-    yield_evidence = ledger.get(recorded.material["yield_evidence_identity"])
+    evidence_of_yield_relation = ledger.get(recorded.material["evidence_of_yield_relation_identity"])
 
     assert recorded.kind == OCCURRENCE_POSITION_RECORDED_KIND
     assert act_evidence.kind == OCCURRENCE_POSITION_ACT_EVIDENCE_KIND
@@ -197,10 +197,10 @@ def test_recorded_position_measurement_has_exact_act_and_yield_evidence():
         recorded.material["responsibility_assignment_evidence"]
     )
     assert act_evidence.material["authority"] == "bounded repository authority"
-    assert read_yield_relation_requirements(
+    assert read_requirements_of_yield_relation(
         ledger,
         recorded_result_event_identity=recorded.identity,
-        result_evidence_event_identity=yield_evidence.identity,
+        evidence_of_yield_relation_event_identity=evidence_of_yield_relation.identity,
         responsible_act_evidence_event_identity=act_evidence.identity,
     ) == {
         "exact_relation": True,
@@ -256,7 +256,7 @@ def test_recording_and_reading_do_not_reconstruct_complete_result_material(
         finding=finding,
         responsible_act_evidence_event_identity=act_evidence.identity,
     )
-    yielded = ledger.get(recorded.material["yield_evidence_identity"])
+    yielded = ledger.get(recorded.material["evidence_of_yield_relation_identity"])
     assert get_recorded_occurrence_position_measurement(
         ledger,
         recorded.identity,
@@ -326,7 +326,7 @@ def test_act_evidence_is_observed_before_yield_without_reconstructing_finding(
     assert [event.kind for event in events] == [
         OCCURRENCE_POSITION_ACT_EVIDENCE_KIND,
         observed.kind,
-        YIELD_EVIDENCE_KIND,
+        RECORDED_EVIDENCE_OF_YIELD_RELATION_KIND,
         OCCURRENCE_POSITION_RECORDED_KIND,
     ]
     assert recorded.material["responsible_act_evidence_identity"] == (
@@ -485,7 +485,7 @@ def test_result_carries_one_ordered_assertion_per_exact_position():
 
     assert set(recorded.material) == OCCURRENCE_POSITION_RESULT_COORDINATES | {
         "responsible_act_evidence_identity",
-        "yield_evidence_identity",
+        "evidence_of_yield_relation_identity",
     }
     assert recorded.material["measurement_rule"] == (
         OCCURRENCE_POSITION_MEASUREMENT_RULE
@@ -556,11 +556,11 @@ def test_wrong_result_boundary_coordinates_are_refused(coordinate, value):
         get_recorded_occurrence_position_measurement(ledger, recorded.identity)
 
 
-def test_corrupted_input_act_or_yield_evidence_is_refused():
+def test_corrupted_input_act_or_evidence_of_yield_relation_is_refused():
     for coordinate in (
         "input",
         "responsible_act_evidence_identity",
-        "yield_evidence_identity",
+        "evidence_of_yield_relation_identity",
     ):
         ledger, occurrences, _boundary, _finding, recorded = recorded_road()
         corrupted_identity = (

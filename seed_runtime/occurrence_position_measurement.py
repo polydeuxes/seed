@@ -8,10 +8,10 @@ from typing import Any
 from seed_runtime.event import Event
 from seed_runtime.events import CORRUPTED, EventLedger, EventLedgerBoundary
 from seed_runtime.identities import new_identity
-from seed_runtime.yield_evidence import (
-    YIELD_EVIDENCE_KIND,
-    _record_yield_evidence,
-    read_yield_relation_requirements,
+from seed_runtime.evidence_of_yield_relation import (
+    RECORDED_EVIDENCE_OF_YIELD_RELATION_KIND,
+    _record_evidence_of_yield_relation,
+    read_requirements_of_yield_relation,
 )
 
 OCCURRENCE_POSITION_RECORDED_KIND = (
@@ -412,7 +412,7 @@ def record_occurrence_position_measurement_result(
         )
     for prior_yield in ledger.iter_locality_kind(
         act_evidence.locality_identity,
-        YIELD_EVIDENCE_KIND,
+        RECORDED_EVIDENCE_OF_YIELD_RELATION_KIND,
     ):
         dimensions = prior_yield.material.get("dimensions")
         if (
@@ -450,7 +450,7 @@ def record_occurrence_position_measurement_result(
         act_occurrence_identity=act_occurrence_identity,
         assertions=assertions,
     )
-    yield_evidence = _record_yield_evidence(
+    evidence_of_yield_relation = _record_evidence_of_yield_relation(
         ledger,
         locality_identity=act_evidence.locality_identity,
         exact_act=OCCURRENCE_POSITION_ACT,
@@ -478,7 +478,7 @@ def record_occurrence_position_measurement_result(
         "completeness_boundary": result_material["completeness_boundary"],
         "assertions": result_material["assertions"],
         "responsible_act_evidence_identity": act_evidence.identity,
-        "yield_evidence_identity": yield_evidence.identity,
+        "evidence_of_yield_relation_identity": evidence_of_yield_relation.identity,
     }
     return ledger.append(
         OCCURRENCE_POSITION_RECORDED_KIND,
@@ -505,7 +505,7 @@ def get_recorded_occurrence_position_measurement(
     material = event.material
     if set(material) != OCCURRENCE_POSITION_RESULT_COORDINATES | {
         "responsible_act_evidence_identity",
-        "yield_evidence_identity",
+        "evidence_of_yield_relation_identity",
     }:
         raise ValueError(
             "the occurrence position Measurement carries malformed coordinates"
@@ -556,7 +556,7 @@ def get_recorded_occurrence_position_measurement(
         )
 
     act_evidence_identity = material.get("responsible_act_evidence_identity")
-    yield_evidence_identity = material.get("yield_evidence_identity")
+    evidence_of_yield_relation_identity = material.get("evidence_of_yield_relation_identity")
     act_evidence = (
         ledger.get(act_evidence_identity)
         if isinstance(act_evidence_identity, str)
@@ -592,19 +592,19 @@ def get_recorded_occurrence_position_measurement(
         raise ValueError(
             "the occurrence position Measurement carries no exact Act Evidence"
         )
-    requirements = read_yield_relation_requirements(
+    requirements = read_requirements_of_yield_relation(
         ledger,
         recorded_result_event_identity=event.identity,
-        result_evidence_event_identity=(
-            yield_evidence_identity
-            if isinstance(yield_evidence_identity, str)
+        evidence_of_yield_relation_event_identity=(
+            evidence_of_yield_relation_identity
+            if isinstance(evidence_of_yield_relation_identity, str)
             else None
         ),
         responsible_act_evidence_event_identity=act_evidence.identity,
     )
     if not all(requirements.values()):
         raise ValueError(
-            "the occurrence position Measurement carries no exact Yield Evidence"
+            "the occurrence position Measurement carries no exact Evidence of Yield relation"
         )
     carried = {
         key: value
@@ -612,7 +612,7 @@ def get_recorded_occurrence_position_measurement(
         if key
         not in {
             "responsible_act_evidence_identity",
-            "yield_evidence_identity",
+            "evidence_of_yield_relation_identity",
         }
     }
     if carried != result_material:

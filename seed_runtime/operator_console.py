@@ -119,7 +119,7 @@ def _record_acquisition_measurements(ledger, standing, *, locality_identity):
         ledger,
         standing,
         (
-            measurement.material["yield_evidence_identity"],
+            measurement.material["evidence_of_yield_relation_identity"],
             measurement.identity,
         ),
         locality_identity=locality_identity,
@@ -152,7 +152,7 @@ def _record_acquisition_measurements(ledger, standing, *, locality_identity):
         ledger,
         standing,
         (
-            position_measurement.material["yield_evidence_identity"],
+            position_measurement.material["evidence_of_yield_relation_identity"],
             position_measurement.identity,
         ),
         locality_identity=locality_identity,
@@ -235,7 +235,7 @@ def run_persistent_operator_console(
             ledger,
             locality_standing,
             (
-                acquired_material.material["yield_evidence_identity"],
+                acquired_material.material["evidence_of_yield_relation_identity"],
                 acquired_material.identity,
             ),
             locality_identity=locality_identity,
@@ -444,7 +444,7 @@ def run_persistent_operator_console(
                     ledger,
                     locality_standing,
                     (
-                        continuation.material["yield_evidence_identity"],
+                        continuation.material["evidence_of_yield_relation_identity"],
                         continuation.identity,
                     ),
                     locality_identity=locality_identity,
@@ -509,7 +509,7 @@ def run_persistent_operator_console(
                     ledger,
                     locality_standing,
                     (
-                        checkpoint.material["yield_evidence_identity"],
+                        checkpoint.material["evidence_of_yield_relation_identity"],
                         checkpoint.identity,
                     ),
                     locality_identity=locality_identity,
@@ -571,7 +571,7 @@ def run_persistent_operator_console(
                     ledger,
                     locality_standing,
                     (
-                        relation.material["yield_evidence_identity"],
+                        relation.material["evidence_of_yield_relation_identity"],
                         relation.identity,
                     ),
                     locality_identity=locality_identity,

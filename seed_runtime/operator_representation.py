@@ -16,13 +16,17 @@ from seed_runtime.occurrence_position_measurement import (
     OCCURRENCE_POSITION_RECORDED_KIND,
     get_recorded_occurrence_position_measurement,
 )
+from seed_runtime.measurement_of_recurrent_byte_pair_occurrence_position import (
+    RECORDING_OCCURRENCE_OF_RESULT_OF_MEASUREMENT_OF_RECURRENT_BYTE_PAIR_OCCURRENCE_POSITION_KIND,
+    get_recorded_result_of_measurement_of_recurrent_byte_pair_occurrence_position,
+)
 from seed_runtime.operator_egress import (
     ExactMaterialEgressFailure,
     emit_exact_material,
 )
-from seed_runtime.yield_evidence import (
-    _record_yield_evidence,
-    read_yield_relation_requirements,
+from seed_runtime.evidence_of_yield_relation import (
+    _record_evidence_of_yield_relation,
+    read_requirements_of_yield_relation,
 )
 
 REPRESENTATION_RECORDED_KIND = "operator.representation.recorded"
@@ -77,6 +81,9 @@ _MEASUREMENT_READERS = {
         assertions_of_recorded_byte_position_pair_measurement
     ),
     OCCURRENCE_POSITION_RECORDED_KIND: get_recorded_occurrence_position_measurement,
+    RECORDING_OCCURRENCE_OF_RESULT_OF_MEASUREMENT_OF_RECURRENT_BYTE_PAIR_OCCURRENCE_POSITION_KIND: (
+        get_recorded_result_of_measurement_of_recurrent_byte_pair_occurrence_position
+    ),
 }
 
 
@@ -205,7 +212,7 @@ def record_operator_representation(
         },
         locality_identity=locality_identity,
     )
-    yield_evidence = _record_yield_evidence(
+    evidence_of_yield_relation = _record_evidence_of_yield_relation(
         ledger,
         locality_identity=locality_identity,
         exact_act="bounded Representation Act",
@@ -251,7 +258,7 @@ def record_operator_representation(
                 occurrence=occurrence,
             ),
             "responsible_act_evidence_identity": responsible_act_evidence.identity,
-            "yield_evidence_identity": yield_evidence.identity,
+            "evidence_of_yield_relation_identity": evidence_of_yield_relation.identity,
             "locality_evidence_identity": locality_evidence.identity,
         },
         exact_material=exact_material,
@@ -264,13 +271,13 @@ def record_operator_representation(
         "locality_identity": locality_identity,
         "representation_result": representation_result,
         "responsible_act_evidence_identity": responsible_act_evidence.identity,
-        "yield_evidence_identity": yield_evidence.identity,
+        "evidence_of_yield_relation_identity": evidence_of_yield_relation.identity,
         "locality_evidence_identity": locality_evidence.identity,
         "representation_event_identity": representation_event.identity,
         "source_occurrence_reference": source_occurrence_reference,
         "recorded_occurrence_references": (
             responsible_act_evidence.identity,
-            yield_evidence.identity,
+            evidence_of_yield_relation.identity,
             locality_evidence.identity,
             representation_event.identity,
         ),
@@ -278,9 +285,9 @@ def record_operator_representation(
         "emission_attempt_locality_evidence_identity": None,
         "emission_act_evidence_identity": None,
         "emission_locality_evidence_identity": None,
-        "emission_yield_evidence_identity": None,
+        "emission_evidence_of_yield_relation_identity": None,
         "emission_failure_act_evidence_identity": None,
-        "emission_failure_yield_evidence_identity": None,
+        "emission_failure_evidence_of_yield_relation_identity": None,
         "emission_failure_event_identity": None,
         "emitted_event_identity": None,
         "locality_standing_as_of_event_identity": as_of_event_identity,
@@ -326,8 +333,8 @@ def _exact_source_material(
             "responsible_act_evidence_identity": source.material.get(
                 "responsible_act_evidence_identity"
             ),
-            "yield_evidence_identity": source.material.get(
-                "yield_evidence_identity"
+            "evidence_of_yield_relation_identity": source.material.get(
+                "evidence_of_yield_relation_identity"
             ),
         }
         if (
@@ -343,11 +350,11 @@ def _exact_source_material(
         finding = reader(ledger, source.identity)
         if finding is None:
             raise ValueError("Representation source Measurement is missing")
-        requirements = read_yield_relation_requirements(
+        requirements = read_requirements_of_yield_relation(
             ledger,
             recorded_result_event_identity=source.identity,
-            result_evidence_event_identity=expected_reference[
-                "yield_evidence_identity"
+            evidence_of_yield_relation_event_identity=expected_reference[
+                "evidence_of_yield_relation_identity"
             ],
             responsible_act_evidence_event_identity=expected_reference[
                 "responsible_act_evidence_identity"
@@ -360,10 +367,10 @@ def _exact_source_material(
         raise ValueError("Representation source Measurement is not carried by Standing")
     if source.identity not in exact_result_occurrences:
         raise ValueError("Representation source occurrence is not carried by Standing")
-    requirements = read_yield_relation_requirements(
+    requirements = read_requirements_of_yield_relation(
         ledger,
         recorded_result_event_identity=source.identity,
-        result_evidence_event_identity=source.material.get("yield_evidence_identity"),
+        evidence_of_yield_relation_event_identity=source.material.get("evidence_of_yield_relation_identity"),
         responsible_act_evidence_event_identity=source.material.get(
             "responsible_act_evidence_identity"
         ),
@@ -382,7 +389,7 @@ def read_operator_representation(
     material = event.material
     act_evidence = ledger.get(material.get("responsible_act_evidence_identity"))
     locality_evidence = ledger.get(material.get("locality_evidence_identity"))
-    yield_evidence_identity = material.get("yield_evidence_identity")
+    evidence_of_yield_relation_identity = material.get("evidence_of_yield_relation_identity")
     if (
         ledger.integrity_of(event.identity) == CORRUPTED
         or act_evidence is None
@@ -392,10 +399,10 @@ def read_operator_representation(
         or ledger.integrity_of(locality_evidence.identity) == CORRUPTED
     ):
         raise ValueError("the recorded Representation Evidence is not exact")
-    requirements = read_yield_relation_requirements(
+    requirements = read_requirements_of_yield_relation(
         ledger,
         recorded_result_event_identity=event.identity,
-        result_evidence_event_identity=yield_evidence_identity,
+        evidence_of_yield_relation_event_identity=evidence_of_yield_relation_identity,
         responsible_act_evidence_event_identity=act_evidence.identity,
     )
     if not all(requirements.values()):
@@ -430,17 +437,17 @@ def read_operator_representation(
             or source.exact_material != event.exact_material
         ):
             raise ValueError("the recorded Representation source is not exact")
-        source_requirements = read_yield_relation_requirements(
+        source_requirements = read_requirements_of_yield_relation(
             ledger,
             recorded_result_event_identity=source.identity,
-            result_evidence_event_identity=source.material.get("yield_evidence_identity"),
+            evidence_of_yield_relation_event_identity=source.material.get("evidence_of_yield_relation_identity"),
             responsible_act_evidence_event_identity=source.material.get(
                 "responsible_act_evidence_identity"
             ),
         )
         if not all(source_requirements.values()):
             raise ValueError("the recorded Representation source Yield is not exact")
-    exact_result = ledger.get(yield_evidence_identity).material.get("result")
+    exact_result = ledger.get(evidence_of_yield_relation_identity).material.get("result")
     if (
         type(exact_result) is not dict
         or locality_evidence.material.get("carried_content") != exact_result
@@ -461,12 +468,12 @@ def read_operator_representation(
         "locality_identity": event.locality_identity,
         "representation_result": material["representation_result"],
         "responsible_act_evidence_identity": act_evidence.identity,
-        "yield_evidence_identity": yield_evidence_identity,
+        "evidence_of_yield_relation_identity": evidence_of_yield_relation_identity,
         "locality_evidence_identity": locality_evidence.identity,
         "representation_event_identity": event.identity,
         "recorded_occurrence_references": (
             act_evidence.identity,
-            yield_evidence_identity,
+            evidence_of_yield_relation_identity,
             locality_evidence.identity,
             event.identity,
         ),
@@ -658,7 +665,7 @@ def emit_operator_representation_material(
         exact_material=exact_material,
         locality_identity=representation["locality_identity"],
     )
-    yield_evidence = _record_yield_evidence(
+    evidence_of_yield_relation = _record_evidence_of_yield_relation(
         ledger,
         locality_identity=representation["locality_identity"],
         exact_act="exact bounded Representation emission",
@@ -692,7 +699,7 @@ def emit_operator_representation_material(
             ),
             "responsible_act_evidence_identity": responsible_act_evidence.identity,
             "locality_evidence_identity": locality_evidence.identity,
-            "yield_evidence_identity": yield_evidence.identity,
+            "evidence_of_yield_relation_identity": evidence_of_yield_relation.identity,
             "known_loss": [],
             "unknowns": [],
             "conflicts": [],
@@ -708,12 +715,12 @@ def emit_operator_representation_material(
         responsible_act_evidence.identity
     )
     representation["emission_locality_evidence_identity"] = locality_evidence.identity
-    representation["emission_yield_evidence_identity"] = yield_evidence.identity
+    representation["emission_evidence_of_yield_relation_identity"] = evidence_of_yield_relation.identity
     representation["emitted_event_identity"] = emitted_event.identity
     representation["recorded_occurrence_references"] += (
         responsible_act_evidence.identity,
         locality_evidence.identity,
-        yield_evidence.identity,
+        evidence_of_yield_relation.identity,
         emitted_event.identity,
     )
     return representation
@@ -787,7 +794,7 @@ def _record_exact_material_emission_failure(
         },
         locality_identity=representation["locality_identity"],
     )
-    yield_evidence = _record_yield_evidence(
+    evidence_of_yield_relation = _record_evidence_of_yield_relation(
         ledger,
         locality_identity=representation["locality_identity"],
         exact_act="Representation emission failure at declared boundary",
@@ -799,23 +806,23 @@ def _record_exact_material_emission_failure(
         responsibility=REPRESENTATION_EMISSION_FAILURE_RESPONSIBILITY,
         live_boundary="failed_emission",
         responsible_boundary="this Seed",
-        recorded_result_coordinates={key: (key,) for key in result_material},
+        coordinates_of_recorded_result={key: (key,) for key in result_material},
     )
     failed_event = ledger.append(
         REPRESENTATION_EMISSION_FAILURE_KIND,
         {
             **result_material,
             "responsible_act_evidence_identity": act_evidence.identity,
-            "yield_evidence_identity": yield_evidence.identity,
+            "evidence_of_yield_relation_identity": evidence_of_yield_relation.identity,
         },
         locality_identity=representation["locality_identity"],
     )
     representation["emission_failure_act_evidence_identity"] = act_evidence.identity
-    representation["emission_failure_yield_evidence_identity"] = yield_evidence.identity
+    representation["emission_failure_evidence_of_yield_relation_identity"] = evidence_of_yield_relation.identity
     representation["emission_failure_event_identity"] = failed_event.identity
     representation["recorded_occurrence_references"] += (
         act_evidence.identity,
-        yield_evidence.identity,
+        evidence_of_yield_relation.identity,
         failed_event.identity,
     )
     return failed_event

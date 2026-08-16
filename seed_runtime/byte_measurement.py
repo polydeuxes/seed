@@ -22,10 +22,10 @@ from typing import Any, Iterable
 
 from seed_runtime.events import CORRUPTED, EventLedger, EventLedgerBoundary
 from seed_runtime.identities import new_identity
-from seed_runtime.yield_evidence import (
-    YIELD_EVIDENCE_KIND,
-    _record_yield_evidence,
-    read_yield_relation_requirements,
+from seed_runtime.evidence_of_yield_relation import (
+    RECORDED_EVIDENCE_OF_YIELD_RELATION_KIND,
+    _record_evidence_of_yield_relation,
+    read_requirements_of_yield_relation,
 )
 from seed_runtime.material_ingest import (
     MATERIAL_INGEST_OCCURRED_KIND,
@@ -645,7 +645,7 @@ def _move_byte_assertion_to_locality(
         },
         locality_identity=destination_locality,
     )
-    yield_evidence = _record_yield_evidence(
+    evidence_of_yield_relation = _record_evidence_of_yield_relation(
         ledger,
         locality_identity=destination_locality,
         exact_act="Assertion Locality movement",
@@ -658,14 +658,14 @@ def _move_byte_assertion_to_locality(
         live_boundary="assertion_locality_movement",
         responsible_boundary=SEED_NATIVE_MEASUREMENT_RESPONSIBLE_BOUNDARY,
         responsible_act_occurrence_coordinate="movement_act_occurrence_identity",
-        recorded_result_coordinates={key: (key,) for key in result_material},
+        coordinates_of_recorded_result={key: (key,) for key in result_material},
     )
     movement = ledger.append(
         ASSERTION_LOCALITY_MOVEMENT_KIND,
         {
             **result_material,
             "responsible_act_evidence_identity": act_evidence.identity,
-            "yield_evidence_identity": yield_evidence.identity,
+            "evidence_of_yield_relation_identity": evidence_of_yield_relation.identity,
         },
         locality_identity=destination_locality,
     )
@@ -798,10 +798,10 @@ def _validate_moved_byte_assertion(
         or act_evidence.material != expected_evidence
     ):
         raise ByteMeasurementError("Assertion movement Act Evidence is not exact")
-    requirements = read_yield_relation_requirements(
+    requirements = read_requirements_of_yield_relation(
         ledger,
         recorded_result_event_identity=movement.identity,
-        result_evidence_event_identity=movement.material.get("yield_evidence_identity"),
+        evidence_of_yield_relation_event_identity=movement.material.get("evidence_of_yield_relation_identity"),
         responsible_act_evidence_event_identity=movement.material.get(
             "responsible_act_evidence_identity"
         ),
@@ -809,11 +809,11 @@ def _validate_moved_byte_assertion(
         responsible_act_occurrence_coordinate="movement_act_occurrence_identity",
     )
     if not all(requirements.values()):
-        raise ByteMeasurementError("Assertion movement Yield Evidence is not exact")
+        raise ByteMeasurementError("Assertion movement Evidence of Yield relation is not exact")
     expected = {
         **expected_result,
         "responsible_act_evidence_identity": act_evidence.identity,
-        "yield_evidence_identity": movement.material.get("yield_evidence_identity"),
+        "evidence_of_yield_relation_identity": movement.material.get("evidence_of_yield_relation_identity"),
     }
     if movement.material != expected:
         raise ByteMeasurementError("Assertion locality movement is not exact")
@@ -1179,7 +1179,7 @@ def record_byte_measurement_result(
         raise ByteMeasurementError(
             "byte Measurement Yield requires one exact responsible Act Evidence occurrence"
         )
-    for kind in (YIELD_EVIDENCE_KIND, BYTE_MEASUREMENT_RECORDED_KIND):
+    for kind in (RECORDED_EVIDENCE_OF_YIELD_RELATION_KIND, BYTE_MEASUREMENT_RECORDED_KIND):
         for event in ledger.iter_locality_kind(supplied.locality_identity, kind):
             if (
                 event.material.get("responsible_act_evidence_identity")
@@ -1225,7 +1225,7 @@ def record_byte_measurement_result(
         },
         "assertions": _assertions(measured),
     }
-    evidence = _record_yield_evidence(
+    evidence = _record_evidence_of_yield_relation(
         ledger,
         locality_identity=responsible_act_evidence.locality_identity,
         exact_act="declared exact-byte Measurement",
@@ -1244,7 +1244,7 @@ def record_byte_measurement_result(
         BYTE_MEASUREMENT_RECORDED_KIND,
         {
             **result_material,
-            "yield_evidence_identity": evidence.identity,
+            "evidence_of_yield_relation_identity": evidence.identity,
             "responsible_act_evidence_identity": responsible_act_evidence.identity,
             "occurrence_preservation": BYTE_OCCURRENCE_PRESERVATION,
         },
@@ -1266,7 +1266,7 @@ def assertions_of_recorded_byte_measurement(
         raise ByteMeasurementError("a corrupted occurrence cannot return byte results")
     material = event.material
     if set(material) != BYTE_RESULT_COORDINATES | {
-        "yield_evidence_identity",
+        "evidence_of_yield_relation_identity",
         "responsible_act_evidence_identity",
         "occurrence_preservation",
     }:
@@ -1302,15 +1302,15 @@ def assertions_of_recorded_byte_measurement(
             f"{event_identity} does not preserve its exact Measurement and "
             "recording-occurrence Evidence"
         )
-    evidence_identity = material.get("yield_evidence_identity")
+    evidence_identity = material.get("evidence_of_yield_relation_identity")
     evidence = ledger.get(evidence_identity) if isinstance(evidence_identity, str) else None
     if (
         evidence is None
-        or evidence.kind != YIELD_EVIDENCE_KIND
+        or evidence.kind != RECORDED_EVIDENCE_OF_YIELD_RELATION_KIND
         or ledger.integrity_of(evidence.identity) == CORRUPTED
         or evidence.material.get("result_kind")
         != BYTE_MEASUREMENT_RESULT_KIND
-        or evidence.material.get("yield_coordinates")
+        or evidence.material.get("coordinates_of_carried_result")
         != sorted(BYTE_RESULT_COORDINATES)
         or evidence.material.get("dimensions", {}).get("responsibility")
         != BYTE_MEASUREMENT_RESPONSIBILITY
@@ -1572,7 +1572,7 @@ def _record_pair_input_applicability(
         },
         locality_identity=recording_locality_identity,
     )
-    evidence = _record_yield_evidence(
+    evidence = _record_evidence_of_yield_relation(
         ledger,
         locality_identity=recording_locality_identity,
         exact_act="input Applicability determination",
@@ -1590,7 +1590,7 @@ def _record_pair_input_applicability(
         BYTE_PAIR_APPLICABILITY_RECORDED_KIND,
         {
             **result_material,
-            "yield_evidence_identity": evidence.identity,
+            "evidence_of_yield_relation_identity": evidence.identity,
             "responsible_act_evidence_identity": applicability_act_evidence.identity,
         },
         locality_identity=recording_locality_identity,
@@ -1610,10 +1610,10 @@ def get_recorded_pair_input_applicability(
     if ledger.integrity_of(event.identity) == CORRUPTED:
         raise ByteMeasurementError("corrupted Applicability cannot be read")
     material = event.material
-    evidence_identity = material.get("yield_evidence_identity")
+    evidence_identity = material.get("evidence_of_yield_relation_identity")
     evidence = ledger.get(evidence_identity) if isinstance(evidence_identity, str) else None
     if set(material) != BYTE_PAIR_APPLICABILITY_RESULT_COORDINATES | {
-        "yield_evidence_identity",
+        "evidence_of_yield_relation_identity",
         "responsible_act_evidence_identity",
     }:
         raise ByteMeasurementError(
@@ -1624,12 +1624,12 @@ def get_recorded_pair_input_applicability(
     }
     if (
         evidence is None
-        or evidence.kind != YIELD_EVIDENCE_KIND
+        or evidence.kind != RECORDED_EVIDENCE_OF_YIELD_RELATION_KIND
         or evidence.locality_identity != event.locality_identity
         or ledger.integrity_of(evidence.identity) == CORRUPTED
         or evidence.material.get("result_kind")
         != BYTE_PAIR_APPLICABILITY_RESULT_KIND
-        or evidence.material.get("yield_coordinates") != sorted(result_coordinates)
+        or evidence.material.get("coordinates_of_carried_result") != sorted(result_coordinates)
         or evidence.material.get("dimensions", {}).get("responsibility")
         != BYTE_PAIR_INPUT_APPLICABILITY_RESPONSIBILITY
         or evidence.material.get("dimensions", {}).get("responsible_boundary")
@@ -1814,7 +1814,7 @@ def record_byte_position_pair_count_layer(
         recording_locality_identity=recording_locality_identity,
         result_content=result_material,
     )
-    evidence = _record_yield_evidence(
+    evidence = _record_evidence_of_yield_relation(
         ledger,
         locality_identity=recording_locality_identity,
         exact_act="declared byte-position-pair Measurement",
@@ -1831,7 +1831,7 @@ def record_byte_position_pair_count_layer(
         BYTE_PAIR_MEASUREMENT_RECORDED_KIND,
         {
             **result_material,
-            "yield_evidence_identity": evidence.identity,
+            "evidence_of_yield_relation_identity": evidence.identity,
             "responsible_act_evidence_identity": responsible_act_evidence.identity,
             "occurrence_preservation": BYTE_PAIR_OCCURRENCE_PRESERVATION,
         },
@@ -1952,7 +1952,7 @@ def assertions_of_recorded_byte_position_pair_measurement(
         raise ByteMeasurementError("a corrupted occurrence cannot return pair results")
     material = event.material
     exact_surface = BYTE_PAIR_RESULT_COORDINATES | {
-        "yield_evidence_identity",
+        "evidence_of_yield_relation_identity",
         "responsible_act_evidence_identity",
         "occurrence_preservation",
     }
@@ -1985,15 +1985,15 @@ def assertions_of_recorded_byte_position_pair_measurement(
         raise ByteMeasurementError(
             f"{event_identity} does not preserve its exact pair Measurement Assertion"
         )
-    evidence_identity = material.get("yield_evidence_identity")
+    evidence_identity = material.get("evidence_of_yield_relation_identity")
     evidence = ledger.get(evidence_identity) if isinstance(evidence_identity, str) else None
     if (
         evidence is None
-        or evidence.kind != YIELD_EVIDENCE_KIND
+        or evidence.kind != RECORDED_EVIDENCE_OF_YIELD_RELATION_KIND
         or ledger.integrity_of(evidence.identity) == CORRUPTED
         or evidence.material.get("result_kind")
         != BYTE_PAIR_MEASUREMENT_RESULT_KIND
-        or evidence.material.get("yield_coordinates")
+        or evidence.material.get("coordinates_of_carried_result")
         != sorted(BYTE_PAIR_RESULT_COORDINATES)
         or evidence.material.get("dimensions", {}).get("responsibility")
         != BYTE_PAIR_MEASUREMENT_RESPONSIBILITY

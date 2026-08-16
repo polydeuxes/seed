@@ -11,10 +11,10 @@ from seed_runtime.identities import new_identity
 from seed_runtime.material_ingest import MATERIAL_RESULT_UNKNOWNS
 from seed_runtime.operator_material_boundary import OperatorBoundaryMaterial
 from seed_runtime.operator_representation import read_operator_representation
-from seed_runtime.yield_evidence import (
-    YIELD_EVIDENCE_KIND,
-    _record_yield_evidence,
-    read_yield_relation_requirements,
+from seed_runtime.evidence_of_yield_relation import (
+    RECORDED_EVIDENCE_OF_YIELD_RELATION_KIND,
+    _record_evidence_of_yield_relation,
+    read_requirements_of_yield_relation,
 )
 
 
@@ -254,7 +254,7 @@ def _recorded_result_material(
     result_material: dict[str, Any],
     *,
     responsible_act_evidence_identity: str,
-    yield_evidence_identity: str,
+    evidence_of_yield_relation_identity: str,
 ) -> dict[str, Any]:
     return {
         "result_identity": result_material["result_identity"],
@@ -277,7 +277,7 @@ def _recorded_result_material(
         "limits": result_material["limits"],
         "unknowns": result_material["unknowns"],
         "responsible_act_evidence_identity": responsible_act_evidence_identity,
-        "yield_evidence_identity": yield_evidence_identity,
+        "evidence_of_yield_relation_identity": evidence_of_yield_relation_identity,
     }
 
 
@@ -500,7 +500,7 @@ def record_operator_material_acquire_result(
     )
     act_occurrence_identity = act_evidence.material["act_occurrence_identity"]
     for prior_yield in ledger.iter_locality_kind(
-        act_evidence.locality_identity, YIELD_EVIDENCE_KIND
+        act_evidence.locality_identity, RECORDED_EVIDENCE_OF_YIELD_RELATION_KIND
     ):
         if (
             prior_yield.material.get("responsible_act_evidence_identity")
@@ -516,7 +516,7 @@ def record_operator_material_acquire_result(
     result_material = _result_material(
         act_evidence, boundary_material=boundary_material
     )
-    yield_evidence = _record_yield_evidence(
+    evidence_of_yield_relation = _record_evidence_of_yield_relation(
         ledger,
         locality_identity=act_evidence.locality_identity,
         exact_act=OPERATOR_MATERIAL_ACQUIRE_ACT,
@@ -535,7 +535,7 @@ def record_operator_material_acquire_result(
         _recorded_result_material(
             result_material,
             responsible_act_evidence_identity=act_evidence.identity,
-            yield_evidence_identity=yield_evidence.identity,
+            evidence_of_yield_relation_identity=evidence_of_yield_relation.identity,
         ),
         exact_material=boundary_material.exact_bytes,
         locality_identity=act_evidence.locality_identity,
@@ -577,7 +577,7 @@ def get_recorded_operator_material_acquire(
     expected = _recorded_result_material(
         expected_result,
         responsible_act_evidence_identity=act_evidence.identity,
-        yield_evidence_identity=result.material.get("yield_evidence_identity"),
+        evidence_of_yield_relation_identity=result.material.get("evidence_of_yield_relation_identity"),
     )
     if (
         result.locality_identity != act_evidence.locality_identity
@@ -586,14 +586,14 @@ def get_recorded_operator_material_acquire(
         raise OperatorMaterialAcquireError(
             "operator material acquire result coordinates are not exact"
         )
-    requirements = read_yield_relation_requirements(
+    requirements = read_requirements_of_yield_relation(
         ledger,
         recorded_result_event_identity=result.identity,
-        result_evidence_event_identity=result.material["yield_evidence_identity"],
+        evidence_of_yield_relation_event_identity=result.material["evidence_of_yield_relation_identity"],
         responsible_act_evidence_event_identity=act_evidence.identity,
     )
     if not all(requirements.values()):
         raise OperatorMaterialAcquireError(
-            "operator material acquire carries no exact Yield Evidence"
+            "operator material acquire carries no exact Evidence of Yield relation"
         )
     return deepcopy(result.material)

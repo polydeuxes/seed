@@ -31,7 +31,7 @@ from seed_runtime.standing_boundary_locality import (
     record_recorded_standing_boundary_locality_responsible_act_evidence,
     record_recorded_standing_boundary_locality_result,
 )
-from seed_runtime.yield_evidence import read_yield_relation_requirements
+from seed_runtime.evidence_of_yield_relation import read_requirements_of_yield_relation
 
 
 def _command(exact_bytes=b"/checkout\n", arguments=b""):
@@ -153,13 +153,13 @@ def test_three_stage_relation_uses_one_anchor_and_one_fresh_locality():
             assignment.material["scope"]["scope_identity"],
             act.identity,
             result.identity,
-            result.material["yield_evidence_identity"],
+            result.material["evidence_of_yield_relation_identity"],
         }
     ) == 11
-    assert read_yield_relation_requirements(
+    assert read_requirements_of_yield_relation(
         ledger,
         recorded_result_event_identity=result.identity,
-        result_evidence_event_identity=result.material["yield_evidence_identity"],
+        evidence_of_yield_relation_event_identity=result.material["evidence_of_yield_relation_identity"],
         responsible_act_evidence_event_identity=act.identity,
     ) == {
         "exact_relation": True,
@@ -168,7 +168,7 @@ def test_three_stage_relation_uses_one_anchor_and_one_fresh_locality():
     }
     incremental = advance_operator_locality_standing(
         ledger,
-        (result.material["yield_evidence_identity"], result.identity),
+        (result.material["evidence_of_yield_relation_identity"], result.identity),
         locality_identity=destination,
         prior=before_result,
     )
@@ -285,7 +285,7 @@ def test_one_relation_act_cannot_yield_twice():
         "authority",
         "limits",
         "unknowns",
-        "yield_evidence_identity",
+        "evidence_of_yield_relation_identity",
     ),
 )
 def test_changed_relation_result_coordinates_are_refused(coordinate):

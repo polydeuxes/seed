@@ -24,7 +24,7 @@ from seed_runtime.operator_material_acquisition import (
 )
 from seed_runtime.operator_material_boundary import OperatorBoundaryMaterial
 from seed_runtime.operator_representation import record_operator_representation
-from seed_runtime.yield_evidence import read_yield_relation_requirements
+from seed_runtime.evidence_of_yield_relation import read_requirements_of_yield_relation
 
 
 def _context(ledger, locality_identity="source"):
@@ -120,10 +120,10 @@ def test_one_read_records_distinct_assignment_act_yield_and_exact_raw_result():
         ],
     }
     assert recorded["scope"] == assignment.material["scope"]
-    assert read_yield_relation_requirements(
+    assert read_requirements_of_yield_relation(
         ledger,
         recorded_result_event_identity=result.identity,
-        result_evidence_event_identity=result.material["yield_evidence_identity"],
+        evidence_of_yield_relation_event_identity=result.material["evidence_of_yield_relation_identity"],
         responsible_act_evidence_event_identity=act_evidence.identity,
     ) == {
         "exact_relation": True,
@@ -141,13 +141,13 @@ def test_one_read_records_distinct_assignment_act_yield_and_exact_raw_result():
             assignment.material["result_boundary_identity"],
             act_evidence.identity,
             result.identity,
-            result.material["yield_evidence_identity"],
+            result.material["evidence_of_yield_relation_identity"],
         }
     ) == 10
 
     incremental = advance_operator_locality_standing(
         ledger,
-        (result.material["yield_evidence_identity"], result.identity),
+        (result.material["evidence_of_yield_relation_identity"], result.identity),
         locality_identity="source",
         prior=before_result,
     )
@@ -450,7 +450,7 @@ def test_changed_assignment_coordinates_are_refused(coordinate):
         "limits",
         "unknowns",
         "responsible_act_evidence_identity",
-        "yield_evidence_identity",
+        "evidence_of_yield_relation_identity",
     ),
 )
 def test_changed_result_coordinates_are_refused(coordinate):

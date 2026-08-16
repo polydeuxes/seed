@@ -28,7 +28,7 @@ def _source(identity: str, exact: bytes, *, locality: str = "pair-locality"):
         locality_identity=locality,
         act_occurrence_identity=f"{identity}-act",
         result_identity=f"{identity}-result",
-        yield_evidence_identity=f"{identity}-yield",
+        evidence_of_yield_relation_identity=f"{identity}-yield",
         exact_material=exact,
     )
 
@@ -154,7 +154,7 @@ def test_compare_reports_only_the_ordered_coordinate_distinction(exact_pair):
             "meaning",
             "reference",
             "standing",
-            "yield_evidence_identity",
+            "evidence_of_yield_relation_identity",
         )
     )
 

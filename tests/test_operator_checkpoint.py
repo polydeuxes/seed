@@ -27,7 +27,7 @@ from seed_runtime.operator_locality_standing import (
 )
 from seed_runtime.operator_material_boundary import OperatorBoundaryMaterial
 from seed_runtime.operator_representation import record_operator_representation
-from seed_runtime.yield_evidence import read_yield_relation_requirements
+from seed_runtime.evidence_of_yield_relation import read_requirements_of_yield_relation
 
 
 def _command(locality_identity: str, representation: dict) -> AddressedOperatorCommand:
@@ -126,13 +126,13 @@ def test_three_stages_record_one_exact_bounded_reference_without_movement():
             assignment.material["scope"]["scope_identity"],
             act.identity,
             result.identity,
-            result.material["yield_evidence_identity"],
+            result.material["evidence_of_yield_relation_identity"],
         }
     ) == 10
-    assert read_yield_relation_requirements(
+    assert read_requirements_of_yield_relation(
         ledger,
         recorded_result_event_identity=result.identity,
-        result_evidence_event_identity=result.material["yield_evidence_identity"],
+        evidence_of_yield_relation_event_identity=result.material["evidence_of_yield_relation_identity"],
         responsible_act_evidence_event_identity=act.identity,
     ) == {
         "exact_relation": True,
@@ -141,7 +141,7 @@ def test_three_stages_record_one_exact_bounded_reference_without_movement():
     }
     incremental = advance_operator_locality_standing(
         ledger,
-        (result.material["yield_evidence_identity"], result.identity),
+        (result.material["evidence_of_yield_relation_identity"], result.identity),
         locality_identity="source",
         prior=before_result,
     )
@@ -319,7 +319,7 @@ def test_durable_values_do_not_import_operator_shorthand():
             if event.identity in {
                 result.identity,
                 result.material["responsible_act_evidence_identity"],
-                result.material["yield_evidence_identity"],
+                result.material["evidence_of_yield_relation_identity"],
             }
             or "standing_boundary_reference" in event.kind
         ]

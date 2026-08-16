@@ -11,10 +11,10 @@ from seed_runtime.events import CORRUPTED, EventLedger
 from seed_runtime.identities import new_identity
 from seed_runtime.operator_command import AddressedOperatorCommand
 from seed_runtime.operator_representation import read_operator_representation
-from seed_runtime.yield_evidence import (
-    YIELD_EVIDENCE_KIND,
-    _record_yield_evidence,
-    read_yield_relation_requirements,
+from seed_runtime.evidence_of_yield_relation import (
+    RECORDED_EVIDENCE_OF_YIELD_RELATION_KIND,
+    _record_evidence_of_yield_relation,
+    read_requirements_of_yield_relation,
 )
 
 
@@ -249,7 +249,7 @@ def _recorded_result_material(
     result_material: dict[str, Any],
     *,
     responsible_act_evidence_identity: str,
-    yield_evidence_identity: str,
+    evidence_of_yield_relation_identity: str,
 ) -> dict[str, Any]:
     return {
         "result_identity": result_material["result_identity"],
@@ -268,7 +268,7 @@ def _recorded_result_material(
         "limits": list(result_material["limits"]),
         "unknowns": list(result_material["unknowns"]),
         "responsible_act_evidence_identity": responsible_act_evidence_identity,
-        "yield_evidence_identity": yield_evidence_identity,
+        "evidence_of_yield_relation_identity": evidence_of_yield_relation_identity,
     }
 
 
@@ -465,12 +465,12 @@ def record_standing_boundary_reference_result(
         ledger, responsible_act_evidence_event_identity
     )
     for evidence in ledger.iter_locality_kind(
-        act_evidence.locality_identity, YIELD_EVIDENCE_KIND
+        act_evidence.locality_identity, RECORDED_EVIDENCE_OF_YIELD_RELATION_KIND
     ):
         if evidence.material.get("responsible_act_evidence_identity") == act_evidence.identity:
             raise OperatorCheckpointError("checkpoint Act already carries a Yield")
     result_material = _result_material(act_evidence)
-    evidence = _record_yield_evidence(
+    evidence = _record_evidence_of_yield_relation(
         ledger,
         locality_identity=act_evidence.locality_identity,
         exact_act=STANDING_BOUNDARY_REFERENCE_ACT,
@@ -488,7 +488,7 @@ def record_standing_boundary_reference_result(
         _recorded_result_material(
             result_material,
             responsible_act_evidence_identity=act_evidence.identity,
-            yield_evidence_identity=evidence.identity,
+            evidence_of_yield_relation_identity=evidence.identity,
         ),
         locality_identity=act_evidence.locality_identity,
     )
@@ -513,14 +513,14 @@ def get_recorded_standing_boundary_reference(
     expected = _recorded_result_material(
         expected_result,
         responsible_act_evidence_identity=act.identity,
-        yield_evidence_identity=event.material.get("yield_evidence_identity"),
+        evidence_of_yield_relation_identity=event.material.get("evidence_of_yield_relation_identity"),
     )
     if event.locality_identity != act.locality_identity or event.material != expected:
         raise OperatorCheckpointError("checkpoint record coordinates are not exact")
-    requirements = read_yield_relation_requirements(
+    requirements = read_requirements_of_yield_relation(
         ledger,
         recorded_result_event_identity=event.identity,
-        result_evidence_event_identity=event.material["yield_evidence_identity"],
+        evidence_of_yield_relation_event_identity=event.material["evidence_of_yield_relation_identity"],
         responsible_act_evidence_event_identity=act.identity,
     )
     if not all(requirements.values()):

@@ -101,7 +101,7 @@ def test_rosetta_implementation_references_resolve():
 
 def test_rosetta_missing_implementation_reference_is_detected():
     try:
-        _assert_live_reference("seed_runtime.yield_evidence::_missing")
+        _assert_live_reference("seed_runtime.evidence_of_yield_relation::_missing")
     except AssertionError:
         pass
     else:

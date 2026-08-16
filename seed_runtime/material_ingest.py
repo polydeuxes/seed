@@ -5,7 +5,7 @@ from __future__ import annotations
 from seed_runtime.event import Event
 from seed_runtime.events import CORRUPTED, EventLedger
 from seed_runtime.identities import new_identity
-from seed_runtime.yield_evidence import _record_yield_evidence
+from seed_runtime.evidence_of_yield_relation import _record_evidence_of_yield_relation
 
 
 MATERIAL_INGEST_OCCURRED_KIND = "material.ingest.occurred"
@@ -95,7 +95,7 @@ def ingest_material(
         },
         locality_identity=locality_identity,
     )
-    yield_evidence = _record_yield_evidence(
+    evidence_of_yield_relation = _record_evidence_of_yield_relation(
         ledger,
         locality_identity=locality_identity,
         exact_act="Ingest exact material",
@@ -107,7 +107,7 @@ def ingest_material(
         responsibility=MATERIAL_INGEST_RESPONSIBILITY,
         live_boundary="material_ingest",
         responsible_boundary="this Seed",
-        recorded_result_coordinates={key: (key,) for key in result},
+        coordinates_of_recorded_result={key: (key,) for key in result},
         result_exact_material=exact_bytes,
     )
     material: dict[str, object] = {
@@ -125,7 +125,7 @@ def ingest_material(
             "occurrence_preservation": "exact Ingest material occurrence recorded",
         },
         "responsible_act_evidence_identity": responsible_act_evidence.identity,
-        "yield_evidence_identity": yield_evidence.identity,
+        "evidence_of_yield_relation_identity": evidence_of_yield_relation.identity,
     }
 
     return ledger.append(

@@ -32,7 +32,7 @@ from seed_runtime.byte_measurement import (
 from seed_runtime.events import CORRUPTED, EventLedger, SQLiteEventLedger
 from seed_runtime.event import Event
 from seed_runtime.operator_console import run_persistent_operator_console
-from seed_runtime.yield_evidence import YIELD_EVIDENCE_KIND
+from seed_runtime.evidence_of_yield_relation import RECORDED_EVIDENCE_OF_YIELD_RELATION_KIND
 from seed_runtime.material_ingest import (
     MATERIAL_INGEST_OCCURRED_KIND,
     ingest_material,
@@ -108,11 +108,11 @@ def test_responsible_act_evidence_is_observable_before_yield_and_result():
     events = ledger.list_locality("measurement")
     assert [event.kind for event in events] == [
         BYTE_MEASUREMENT_RESPONSIBLE_ACT_EVIDENCE_KIND,
-        YIELD_EVIDENCE_KIND,
+        RECORDED_EVIDENCE_OF_YIELD_RELATION_KIND,
         BYTE_MEASUREMENT_RECORDED_KIND,
     ]
     assert result.material["responsible_act_evidence_identity"] == act_evidence.identity
-    assert result.material["yield_evidence_identity"] == events[1].identity
+    assert result.material["evidence_of_yield_relation_identity"] == events[1].identity
     assert ledger.occurrences_in_append_order(
         (act_evidence.identity, events[1].identity, result.identity),
         locality_identity="measurement",
@@ -427,12 +427,12 @@ def test_recorded_results_replay_the_complete_bounded_source_read():
     read = assertions_of_recorded_byte_measurement(ledger, event.identity)
     assert read
     assert all(item.recorded_occurrence_identity == event.identity for item in read)
-    evidence = ledger.get(event.material["yield_evidence_identity"])
-    assert evidence.kind == YIELD_EVIDENCE_KIND
+    evidence = ledger.get(event.material["evidence_of_yield_relation_identity"])
+    assert evidence.kind == RECORDED_EVIDENCE_OF_YIELD_RELATION_KIND
     assert evidence.material["dimensions"]["act_occurrence_identity"] == event.material[
         "act_occurrence_identity"
     ]
-    assert "occurrence_preservation" not in evidence.material["yield_coordinates"]
+    assert "occurrence_preservation" not in evidence.material["coordinates_of_carried_result"]
 
     count = next(
         item
@@ -491,7 +491,7 @@ def test_a_self_consistent_truncated_source_assertion_is_refused():
     source["dimensions"]["content"]["source_material"] = source["dimensions"][
         "content"
     ]["source_material"][:1]
-    evidence = ledger.get(event.material["yield_evidence_identity"])
+    evidence = ledger.get(event.material["evidence_of_yield_relation_identity"])
     evidence.material["result"] = {
         name: event.material[name] for name in BYTE_RESULT_COORDINATES
     }
@@ -725,7 +725,7 @@ def test_pair_validation_refuses_a_self_consistent_truncated_result_inputs():
         recording_locality_identity="measurement",
     )
     event.material["assertions"] = event.material["assertions"][:-1]
-    evidence = ledger.get(event.material["yield_evidence_identity"])
+    evidence = ledger.get(event.material["evidence_of_yield_relation_identity"])
     evidence.material["result"] = {
         name: event.material[name] for name in BYTE_PAIR_RESULT_COORDINATES
     }
@@ -762,7 +762,7 @@ def test_pair_validation_requires_one_exact_ordered_representation(representatio
         scope=assertion["assertion_scope"],
         content=assertion["dimensions"]["content"],
     )
-    ledger.get(event.material["yield_evidence_identity"]).material["result"] = {
+    ledger.get(event.material["evidence_of_yield_relation_identity"]).material["result"] = {
         name: event.material[name] for name in BYTE_PAIR_RESULT_COORDINATES
     }
 
@@ -801,7 +801,7 @@ def test_pair_validation_refuses_unsupported_input_applicability():
         recording_locality_identity="measurement",
     )
     event.material["input_applicability"]["result_boundary"] = "some other use"
-    evidence = ledger.get(event.material["yield_evidence_identity"])
+    evidence = ledger.get(event.material["evidence_of_yield_relation_identity"])
     evidence.material["result"] = {
         name: event.material[name] for name in BYTE_PAIR_RESULT_COORDINATES
     }
@@ -948,8 +948,8 @@ def test_seed_native_responsibility_is_earned_from_preserved_occurrences():
     assert assignment["completeness_boundary"] == source.material[
         "completeness_boundary"
     ]["identity"]
-    yield_evidence = ledger.get(source.material["yield_evidence_identity"])
-    assert yield_evidence.material["dimensions"]["responsible_boundary"] == (
+    evidence_of_yield_relation = ledger.get(source.material["evidence_of_yield_relation_identity"])
+    assert evidence_of_yield_relation.material["dimensions"]["responsible_boundary"] == (
         "this Seed"
     )
 
@@ -1015,7 +1015,7 @@ def test_pair_validation_refuses_more_carrying_occurrences_than_total_pairs():
         scope=count["assertion_scope"],
         content=count["dimensions"]["content"],
     )
-    ledger.get(event.material["yield_evidence_identity"]).material["result"] = {
+    ledger.get(event.material["evidence_of_yield_relation_identity"]).material["result"] = {
         name: event.material[name] for name in BYTE_PAIR_RESULT_COORDINATES
     }
 
