@@ -66,6 +66,21 @@ def test_machine_readable_grammar_traverses_responsibility_from_standing():
             "result_Standing_revision",
         ],
     }
+    assert grammar["this"] == {
+        "kind": "bounded_address",
+        "coordinates": ["subject", "locality", "occurrence"],
+        "non_equivalence": [
+            ["subject", "locality"],
+            ["subject", "occurrence"],
+            ["locality", "occurrence"],
+        ],
+        "requires": [
+            "exact_addressed_subject",
+            "exact_Locality",
+            "exact_occurrence_boundary",
+        ],
+        "does_not_establish": ["currentness", "identity"],
+    }
     assert grammar["implementation_witness"]["discriminators"] == [
         "content",
         "locality",
