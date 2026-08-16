@@ -1603,6 +1603,17 @@ def test_removal_recurrence_precedes_a_later_invocation(
     assert found is not None
     removal, source, coordinate = found
     assert coordinate in (True, False)
+    for index, comparison in enumerate(comparisons):
+        conflicted = replace(
+            comparison, result_returned=not comparison.result_returned
+        )
+        altered = (*comparisons[:index], conflicted, *comparisons[index + 1 :])
+        if recurring_removed_returned_coordinate(
+            altered, removals, removal, source
+        ) is None:
+            break
+    else:
+        raise AssertionError("removal recurrence accepted every conflict")
 
 
 def test_removal_compare_refuses_a_result_without_its_act_occurrence():
