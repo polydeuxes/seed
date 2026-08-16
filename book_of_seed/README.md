@@ -240,7 +240,7 @@ same occurrence != same Assertion
 ## Maintenance rule
 
 > Maintain the constitutional grammar.  
-> Let this Seed inspect this Witness and emit only bounded results supported by that inspection's Evidence.
+> This Seed may inspect this Witness. Any result emitted by this Seed requires Evidence of that inspection and remains bounded by it.
 
 Revise the Book when constitutional grammar, a durable distinction, or the status of an unresolved constitutional distinction is different. Function movement, added fields, different relations, or a new diagnostic Representation of the same grammar do not require revision.
 

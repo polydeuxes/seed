@@ -250,3 +250,17 @@ def test_clauses_without_event_species_name_their_witness_in_book_order():
         "responsibility" not in grammar["clauses"][identity]
         for identity, _witness in declarations
     )
+
+
+def test_supporting_finding_does_not_establish_participation_by_identity():
+    grammar = json.loads(GRAMMAR.read_text(encoding="utf-8"))
+    clause = grammar["clauses"]["08.Authority.B"]
+
+    assert clause["supporting_findings"] == [
+        "established_support_relation",
+        "Applicability",
+        "Admission",
+    ]
+    assert clause["does_not_establish"][0] == (
+        "Participation_relation_by_supporting_finding_identity"
+    )
