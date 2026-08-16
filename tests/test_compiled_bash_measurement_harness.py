@@ -7,10 +7,8 @@ import sys
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "scripts"))
 
-from compiled_bash_measurement_harness import (  # noqa: E402
-    implementation_functions,
-    measured_bash_material,
-)
+from book_material_measurement import measured_book_material  # noqa: E402
+from compiled_bash_measurement_harness import implementation_functions  # noqa: E402
 from compiled_material_measurement_harness import (  # noqa: E402
     measure_added_material,
     measure_functions,
@@ -21,7 +19,7 @@ from compiled_material_invocation import (  # noqa: E402
 
 
 def test_bash_syntax_and_dungeon_receive_the_same_exact_material():
-    _, pair_references, byte_references = measured_bash_material()
+    _, pair_references, byte_references = measured_book_material()
     functions = implementation_functions()
 
     occurrences, admission = measure_functions(

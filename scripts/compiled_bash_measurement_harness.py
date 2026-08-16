@@ -10,7 +10,6 @@ sys.path.insert(0, str(SCRIPT_DIRECTORY))
 sys.path.insert(0, str(SCRIPT_DIRECTORY.parent))
 
 from compiled_material_invocation import MaterialImplementationFunction
-from compiled_stream_measurement_harness import measured_material
 
 
 def implementation_functions() -> tuple[MaterialImplementationFunction, ...]:
@@ -68,7 +67,3 @@ def implementation_functions() -> tuple[MaterialImplementationFunction, ...]:
             ),
         ),
     )
-
-
-def measured_bash_material():
-    return measured_material()

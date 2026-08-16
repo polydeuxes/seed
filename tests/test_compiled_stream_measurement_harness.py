@@ -9,10 +9,8 @@ import pytest
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "scripts"))
 
-from compiled_stream_measurement_harness import (  # noqa: E402
-    implementation_functions,
-    measured_material,
-)
+from book_material_measurement import measured_book_material  # noqa: E402
+from compiled_stream_measurement_harness import implementation_functions  # noqa: E402
 from compiled_material_invocation import (  # noqa: E402
     admit_invocation_rows,
     compare_added_material_invocations,
@@ -24,7 +22,7 @@ from compiled_material_measurement_harness import (  # noqa: E402
 
 
 def test_stream_functions_admit_the_same_exact_material_together():
-    _, references, byte_references = measured_material()
+    _, references, byte_references = measured_book_material()
     functions = implementation_functions()
 
     assert len({function.identity for function in functions}) == len(functions) == 5
