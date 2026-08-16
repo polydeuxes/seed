@@ -127,6 +127,112 @@ def _runtime_event_kind_responsibilities() -> dict[str, list[tuple[str, str]]]:
     return found
 
 
+def _dict_value(node: ast.Dict, coordinate: str) -> ast.expr | None:
+    for key, value in zip(node.keys, node.values):
+        if isinstance(key, ast.Constant) and key.value == coordinate:
+            return value
+    return None
+
+
+def _resolved_string(value, constants: dict[str, str]) -> str | None:
+    if isinstance(value, ast.Name):
+        return constants.get(value.id)
+    if isinstance(value, ast.Constant) and isinstance(value.value, str):
+        return value.value
+    return None
+
+
+def _assertion_responsibilities(
+    path: Path, tree: ast.Module
+) -> dict[str, list[tuple[str, int]]]:
+    constants = _module_strings(tree)
+    found: dict[str, list[tuple[str, int]]] = {}
+    for node in ast.walk(tree):
+        if not isinstance(node, ast.Dict):
+            continue
+        subject_kind = _dict_value(node, "subject_kind")
+        if _resolved_string(subject_kind, constants) != "assertion":
+            continue
+        dimensions = _dict_value(node, "dimensions")
+        if not isinstance(dimensions, ast.Dict):
+            continue
+        responsibility = _dict_value(dimensions, "responsibility")
+        value = _resolved_string(responsibility, constants)
+        if value is not None:
+            found.setdefault(value, []).append((path.name, node.lineno))
+    return found
+
+
+def _runtime_assertion_responsibilities() -> dict[str, list[tuple[str, int]]]:
+    found: dict[str, list[tuple[str, int]]] = {}
+    for path, tree in _runtime_trees():
+        for responsibility, locations in _assertion_responsibilities(
+            path, tree
+        ).items():
+            found.setdefault(responsibility, []).extend(locations)
+    return found
+
+
+def _unresolved_assertion_responsibilities(
+    path: Path, tree: ast.Module
+) -> list[tuple[str, int]]:
+    constants = _module_strings(tree)
+    found = []
+    for node in ast.walk(tree):
+        if not isinstance(node, ast.Dict):
+            continue
+        subject_kind = _dict_value(node, "subject_kind")
+        resolved_kind = _resolved_string(subject_kind, constants)
+        if subject_kind is not None and resolved_kind is None:
+            found.append((path.name, node.lineno))
+            continue
+        if resolved_kind != "assertion":
+            continue
+        dimensions = _dict_value(node, "dimensions")
+        responsibility = (
+            _dict_value(dimensions, "responsibility")
+            if isinstance(dimensions, ast.Dict)
+            else None
+        )
+        if _resolved_string(responsibility, constants) is None:
+            found.append((path.name, node.lineno))
+    return found
+
+
+def _assertion_responsibility_clauses(
+    path: Path, tree: ast.Module
+) -> dict[str, list[tuple[str, str]]]:
+    found: dict[str, list[tuple[str, str]]] = {}
+    constants = _module_strings(tree)
+    for node in tree.body:
+        if not isinstance(node, ast.Assign) or not isinstance(node.value, ast.Dict):
+            continue
+        if not any(
+            isinstance(name, ast.Name)
+            and name.id == "ASSERTION_RESPONSIBILITIES"
+            for name in node.targets
+        ):
+            continue
+        for key, value in zip(node.value.keys, node.value.values):
+            responsibility = _resolved_string(key, constants)
+            clause = _resolved_string(value, constants)
+            if responsibility is not None and clause is not None:
+                found.setdefault(responsibility, []).append((path.name, clause))
+    return found
+
+
+def _runtime_assertion_responsibility_clauses() -> dict[
+    str, list[tuple[str, str]]
+]:
+    found: dict[str, list[tuple[str, str]]] = {}
+    for path, tree in _runtime_trees():
+        for responsibility, declarations in _assertion_responsibility_clauses(
+            path, tree
+        ).items():
+            found.setdefault(responsibility, []).extend(declarations)
+    return found
+
+
 def _literal_dict_keys(tree: ast.Module):
     for node in ast.walk(tree):
         if not isinstance(node, ast.Dict):
@@ -523,10 +629,126 @@ def test_each_event_kind_responsibility_names_one_machine_grammar_clause():
     assert unknown == {}, f"event species name absent grammar clauses: {unknown}"
 
 
+def test_each_live_assertion_responsibility_has_one_clause_declaration():
+    live = _runtime_assertion_responsibilities()
+    accounted = _runtime_assertion_responsibility_clauses()
+    unresolved = [
+        location
+        for path, tree in _runtime_trees()
+        for location in _unresolved_assertion_responsibilities(path, tree)
+    ]
+
+    assert unresolved == [], f"unresolved nested Assertion responsibility: {unresolved}"
+    assert set(live) == set(accounted), (
+        "\nLive nested Assertion responsibilities and clause declarations disagree."
+        f"\n  only live: {sorted(set(live) - set(accounted))}"
+        f"\n  only declaration: {sorted(set(accounted) - set(live))}"
+    )
+    duplicate = {
+        responsibility: values
+        for responsibility, values in accounted.items()
+        if len(values) != 1
+    }
+    assert duplicate == {}, (
+        "nested Assertion responsibilities name several clauses: "
+        f"{duplicate}"
+    )
+
+
+def test_each_assertion_responsibility_names_one_machine_grammar_clause():
+    machine_clauses = {
+        identity.decode("ascii")
+        for identity in re.findall(
+            rb'^    "([0-9]+\.[A-Za-z]+\.[A-Za-z0-9.]+)": \{$',
+            GRAMMAR.read_bytes(),
+            re.M,
+        )
+    }
+    accounted = _runtime_assertion_responsibility_clauses()
+    unknown = {
+        responsibility: values[0]
+        for responsibility, values in accounted.items()
+        if len(values) == 1 and values[0][1] not in machine_clauses
+    }
+
+    assert unknown == {}, f"nested Assertion names absent grammar clauses: {unknown}"
+
+
+def test_nested_assertion_responsibility_discovery_does_not_depend_on_its_name():
+    tree = ast.parse(
+        """
+UNEXPECTED = "a responsibility not known to the siren"
+material = {
+    "dimensions": {"responsibility": UNEXPECTED},
+    "subject_kind": "assertion",
+}
+"""
+    )
+
+    assert _assertion_responsibilities(Path("adversary.py"), tree) == {
+        "a responsibility not known to the siren": [("adversary.py", 3)]
+    }
+
+
+def test_nested_assertion_responsibility_discovery_refuses_an_opaque_coordinate():
+    tree = ast.parse(
+        """
+def supplied():
+    return "not statically established"
+material = {
+    "dimensions": {"responsibility": supplied()},
+    "subject_kind": "assertion",
+}
+"""
+    )
+
+    assert _unresolved_assertion_responsibilities(
+        Path("adversary.py"), tree
+    ) == [("adversary.py", 4)]
+
+
+def test_nested_assertion_clause_declarations_preserve_duplicates():
+    tree = ast.parse(
+        """
+RESPONSIBILITY = "one exact responsibility"
+ASSERTION_RESPONSIBILITIES = {RESPONSIBILITY: "01.Standing.D.1"}
+ASSERTION_RESPONSIBILITIES = {RESPONSIBILITY: "02.Acts.A"}
+"""
+    )
+
+    assert _assertion_responsibility_clauses(Path("adversary.py"), tree) == {
+        "one exact responsibility": [
+            ("adversary.py", "01.Standing.D.1"),
+            ("adversary.py", "02.Acts.A"),
+        ]
+    }
+
+
+def test_nested_assertion_clause_is_not_an_event_kind_responsibility():
+    event_clauses = {
+        clause
+        for declarations in _runtime_event_kind_responsibilities().values()
+        for _path, clause in declarations
+    }
+    assertion_clauses = {
+        clause
+        for declarations in _runtime_assertion_responsibility_clauses().values()
+        for _path, clause in declarations
+    }
+
+    assert "01.Standing.D.1" not in event_clauses
+    assert "01.Standing.D.1" in assertion_clauses
+
+
 def test_implementation_and_machine_grammar_have_the_same_clauses():
-    implementation_clauses = {
+    event_clauses = {
         values[0][1]
         for values in _runtime_event_kind_responsibilities().values()
+        if len(values) == 1
+    }
+    assertion_clauses = {
+        values[0][1]
+        for values in _runtime_assertion_responsibility_clauses().values()
         if len(values) == 1
     }
     machine_clauses = {
@@ -538,7 +760,7 @@ def test_implementation_and_machine_grammar_have_the_same_clauses():
         )
     }
 
-    assert implementation_clauses == machine_clauses
+    assert event_clauses | assertion_clauses == machine_clauses
 
 
 def test_runtime_record_vocabulary_has_constitutional_admission():

@@ -175,6 +175,9 @@ BYTE_PAIR_LIMITS = (
 MEASURED_ASSERTION_RESPONSIBILITY = (
     "preserve this measured Assertion's carried Standing coordinates"
 )
+ASSERTION_RESPONSIBILITIES = {
+    MEASURED_ASSERTION_RESPONSIBILITY: "01.Standing.D.1",
+}
 
 
 class ByteMeasurementError(ValueError):
