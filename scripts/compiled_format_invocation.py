@@ -96,21 +96,33 @@ class ExactPositionMaterialReference:
     def occurrence_identity(self):
         return (self.source_reference, self.position)
 
+    @property
+    def first_position(self) -> int:
+        return self.position
+
+    @property
+    def last_position(self) -> int:
+        return self.position
+
 
 @dataclass(frozen=True, slots=True)
 class ExactPositionPairMaterialReference:
-    first_reference: ExactPositionMaterialReference
-    second_reference: ExactPositionMaterialReference
+    first_reference: ExactPositionMaterialReference | ExactPositionPairMaterialReference
+    second_reference: ExactPositionMaterialReference | ExactPositionPairMaterialReference
     exact_material: bytes
 
     def __post_init__(self) -> None:
         if not isinstance(
-            self.first_reference, ExactPositionMaterialReference
-        ) or not isinstance(self.second_reference, ExactPositionMaterialReference):
+            self.first_reference,
+            (ExactPositionMaterialReference, ExactPositionPairMaterialReference),
+        ) or not isinstance(
+            self.second_reference,
+            (ExactPositionMaterialReference, ExactPositionPairMaterialReference),
+        ):
             raise TypeError("position pair requires exact position material")
         if self.first_reference.source_reference != self.second_reference.source_reference:
             raise ValueError("position pair cannot cross source material")
-        if self.second_reference.position != self.first_reference.position + 1:
+        if self.second_reference.first_position != self.first_reference.last_position + 1:
             raise ValueError("position pair does not preserve exact source order")
         if self.exact_material != (
             self.first_reference.exact_material + self.second_reference.exact_material
@@ -126,11 +138,19 @@ class ExactPositionPairMaterialReference:
         return self.first_reference.locality_identity
 
     @property
+    def first_position(self) -> int:
+        return self.first_reference.first_position
+
+    @property
+    def last_position(self) -> int:
+        return self.second_reference.last_position
+
+    @property
     def occurrence_identity(self):
         return (
             self.source_reference,
-            self.first_reference.position,
-            self.second_reference.position,
+            self.first_position,
+            self.last_position,
         )
 
 
@@ -152,20 +172,30 @@ def exact_position_material_references(
 
 
 def exact_position_pair_material_references(
-    position_references: tuple[ExactPositionMaterialReference, ...],
+    position_references: tuple[
+        ExactPositionMaterialReference | ExactPositionPairMaterialReference, ...
+    ],
 ) -> tuple[ExactPositionPairMaterialReference, ...]:
     if type(position_references) is not tuple or any(
-        not isinstance(reference, ExactPositionMaterialReference)
+        not isinstance(
+            reference,
+            (ExactPositionMaterialReference, ExactPositionPairMaterialReference),
+        )
         for reference in position_references
     ):
         raise TypeError("position pairs require exact position material")
+    by_first_position = {}
+    for reference in position_references:
+        by_first_position.setdefault(reference.first_position, []).append(reference)
     return tuple(
         ExactPositionPairMaterialReference(
             first_reference=first,
             second_reference=second,
             exact_material=first.exact_material + second.exact_material,
         )
-        for first, second in zip(position_references, position_references[1:])
+        for first in position_references
+        for second in by_first_position.get(first.last_position + 1, ())
+        if first.source_reference == second.source_reference
     )
 
 

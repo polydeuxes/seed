@@ -57,6 +57,29 @@ def test_equal_material_at_different_positions_keeps_each_occurrence():
     }
 
 
+def test_exact_position_pairs_pair_again_at_the_exact_next_position():
+    ledger = EventLedger()
+    source = _source(ledger, "position-source", b"abcde")
+    positions = exact_position_material_references(source)
+    pairs = exact_position_pair_material_references(positions)
+    paired_pairs = exact_position_pair_material_references(pairs)
+
+    assert tuple(reference.exact_material for reference in pairs) == (
+        b"ab",
+        b"bc",
+        b"cd",
+        b"de",
+    )
+    assert tuple(reference.exact_material for reference in paired_pairs) == (
+        b"abcd",
+        b"bcde",
+    )
+    assert tuple(reference.first_position for reference in paired_pairs) == (0, 1)
+    assert tuple(reference.last_position for reference in paired_pairs) == (3, 4)
+    assert len({reference.occurrence_identity for reference in paired_pairs}) == 2
+    assert all(reference.source_reference == source for reference in paired_pairs)
+
+
 def test_position_pair_refuses_reordered_or_cross_locality_material():
     ledger = EventLedger()
     first_source = _source(ledger, "position-source-a", b"aaa")
