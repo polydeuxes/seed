@@ -102,6 +102,18 @@ def test_egress_preserves_the_full_reported_count_across_a_flush_exception():
     assert raised.value.__cause__ is error
 
 
+def test_egress_does_not_recast_process_death_as_a_boundary_result():
+    class ProcessDeath(BaseException):
+        pass
+
+    class DyingBoundary:
+        def write(self, material):
+            raise ProcessDeath()
+
+    with pytest.raises(ProcessDeath):
+        emit_exact_material(DyingBoundary(), b"hello")
+
+
 def test_egress_carries_exact_bytes_to_a_socket_like_boundary():
     class SocketBoundary:
         def __init__(self):

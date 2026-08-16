@@ -13,7 +13,7 @@ class ExactMaterialEgressFailure(Exception):
         message: str,
         *,
         reported_count: int | None,
-        error: BaseException | None,
+        error: Exception | None,
     ) -> None:
         super().__init__(message)
         self.reported_count = reported_count
@@ -31,7 +31,7 @@ def emit_exact_material(output_stream: BinaryIO, exact_material: bytes) -> int:
     if sendall is not None:
         try:
             sendall(exact_material)
-        except BaseException as error:
+        except Exception as error:
             raise ExactMaterialEgressFailure(
                 "egress boundary raised before reporting exact completion",
                 reported_count=None,
@@ -41,7 +41,7 @@ def emit_exact_material(output_stream: BinaryIO, exact_material: bytes) -> int:
     else:
         try:
             written = write(exact_material)
-        except BaseException as error:
+        except Exception as error:
             raise ExactMaterialEgressFailure(
                 "egress boundary raised before reporting exact completion",
                 reported_count=None,
@@ -57,7 +57,7 @@ def emit_exact_material(output_stream: BinaryIO, exact_material: bytes) -> int:
     if flush is not None:
         try:
             flush()
-        except BaseException as error:
+        except Exception as error:
             raise ExactMaterialEgressFailure(
                 "egress boundary raised after reporting the exact material count",
                 reported_count=written,
