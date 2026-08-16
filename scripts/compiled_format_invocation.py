@@ -1960,6 +1960,12 @@ def first_recurring_added_compare_across(
         {function.identity for function in functions}
     ) != len(functions):
         raise ValueError("joint recurrence requires distinct implementation functions")
+    source_coordinates = tuple(
+        tuple(invocation.source_coordinate for invocation in row)
+        for row in source_invocation_rows
+    )
+    if any(row != source_coordinates[0] for row in source_coordinates[1:]):
+        raise ValueError("joint recurrence requires one exact source sequence")
     results = tuple(
         first_recurring_added_compare(
             additions,
@@ -2217,6 +2223,12 @@ def first_recurring_removed_compare_across(
         {function.identity for function in functions}
     ) != len(functions):
         raise ValueError("joint recurrence requires distinct implementation functions")
+    source_coordinates = tuple(
+        tuple(invocation.source_coordinate for invocation in row)
+        for row in source_invocation_rows
+    )
+    if any(row != source_coordinates[0] for row in source_coordinates[1:]):
+        raise ValueError("joint recurrence requires one exact source sequence")
     results = tuple(
         first_recurring_removed_compare(
             removals,
