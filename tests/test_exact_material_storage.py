@@ -87,7 +87,7 @@ def test_absent_empty_and_distinct_exact_material_have_distinct_storage(tmp_path
     ledger.close()
 
 
-def test_an_exact_material_identity_collision_is_refused_atomically(
+def test_an_exact_material_identity_collision_does_not_move_the_ledger_boundary(
     monkeypatch, tmp_path
 ):
     ledger = SQLiteEventLedger(tmp_path / "material.db")
@@ -192,3 +192,28 @@ def test_missing_exact_material_cannot_be_rehydrated_and_is_corrupted(tmp_path):
 
     with pytest.raises(InvalidStoredMaterial, match="not available"):
         SQLiteEventLedger(path)
+
+
+FIDELITY_SUBJECTS = {
+    "exact_material_occurrence_reference_distinction": (
+        test_equal_material_has_one_physical_reference_and_distinct_occurrences,
+    ),
+    "exact_material_reference_distinction": (
+        test_absent_empty_and_distinct_exact_material_have_distinct_storage,
+    ),
+    "exact_material_identity_distinction": (
+        test_an_exact_material_identity_collision_does_not_move_the_ledger_boundary,
+    ),
+    "exact_material_reference_preservation": (
+        test_exact_material_storage_refuses_revision_and_removal,
+    ),
+    "exact_material_reference_validation": (
+        test_changed_exact_material_is_detected_through_every_reference,
+    ),
+    "event_exact_material_reference_distinction": (
+        test_changed_event_pointer_is_not_a_changed_occurrence_material,
+    ),
+    "exact_material_reference_availability": (
+        test_missing_exact_material_cannot_be_rehydrated_and_is_corrupted,
+    ),
+}

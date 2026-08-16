@@ -88,7 +88,7 @@ from tests.test_book_admission import (  # noqa: E402
 THIS_BOOK_MATERIAL_ACQUISITION_WITNESS = (
     "this_book_material_acquisition_witness"
 )
-pytestmark = pytest.mark.subject(THIS_BOOK_MATERIAL_ACQUISITION_WITNESS)
+FIDELITY_SUBJECT = THIS_BOOK_MATERIAL_ACQUISITION_WITNESS
 
 
 def test_book_material_acquisition_witness_has_one_admitted_subject():
@@ -102,14 +102,21 @@ def test_book_material_acquisition_witness_has_one_admitted_subject():
         )
     )
 
-    assert grammar["clauses"]["01.Source.C"]["test_subjects"] == [
-        {
-            "subject": THIS_BOOK_MATERIAL_ACQUISITION_WITNESS,
-            "material_reference": "this_Book",
-            "witness_for": "this_Fidelity",
-            "distinct_from": "this_Witness",
-        }
-    ]
+    fidelity = grammar["clauses"]["01.Source.C"]
+
+    assert fidelity["test_subject_relation"] == {
+        "first_subject": "test_subject",
+        "relation": "witness_for",
+        "second_subject": "this_Fidelity",
+        "first_subject_distinct_from": "this_Witness",
+    }
+    assert {
+        coordinates["subject"]: coordinates
+        for coordinates in fidelity["test_subjects"]
+    }[THIS_BOOK_MATERIAL_ACQUISITION_WITNESS] == {
+        "subject": THIS_BOOK_MATERIAL_ACQUISITION_WITNESS,
+        "material_reference": "this_Book",
+    }
     assert subject_words <= book_admission()
 
 

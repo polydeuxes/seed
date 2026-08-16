@@ -40,6 +40,7 @@ _enclosing_measurement_coordinates: list[
     tuple[dict[str, list[int]], int, int]
 ] = []
 _pytest_occurrences: list[dict[str, object]] = []
+_PYTEST_SUBJECT_COORDINATES = pytest.StashKey[dict[str, str]]()
 _active_sql_invocations = threading.local()
 
 
@@ -563,21 +564,42 @@ def pytest_sessionstart(session: object) -> None:
     begin()
 
 
-def _pytest_subject(item: object) -> str | None:
-    markers = tuple(item.iter_markers(name="subject"))
-    if not markers:
-        return None
-    if len(markers) != 1:
-        raise ValueError("one exact test subject is required")
-    marker = markers[0]
-    if marker.kwargs or len(marker.args) != 1 or type(marker.args[0]) is not str:
-        raise TypeError("one exact test subject reference is required")
-    subject = marker.args[0]
-    subject_words = tuple(
-        word.lower() for word in re.findall(r"[A-Za-z]+", subject)
+def _fidelity_test_subjects() -> dict[str, dict[str, str]]:
+    grammar = json.loads(
+        (ROOT / "book_of_seed" / "grammar.json").read_text(encoding="utf-8")
     )
-    if not subject_words:
-        raise ValueError("one nonempty exact test subject is required")
+    fidelity = grammar["clauses"]["01.Source.C"]
+    relation = fidelity["test_subject_relation"]
+    if relation != {
+        "first_subject": "test_subject",
+        "relation": "witness_for",
+        "second_subject": "this_Fidelity",
+        "first_subject_distinct_from": "this_Witness",
+    }:
+        raise ValueError("exact Fidelity test-subject relation is required")
+    test_subjects = fidelity["test_subjects"]
+    if type(test_subjects) is not list or not test_subjects:
+        raise TypeError("exact Fidelity test subjects are required")
+    declared: dict[str, dict[str, str]] = {}
+    for coordinates in test_subjects:
+        if type(coordinates) is not dict:
+            raise TypeError("exact Fidelity test subject coordinates are required")
+        subject = coordinates.get("subject")
+        if type(subject) is not str or not subject:
+            raise TypeError("one exact Fidelity test subject is required")
+        if subject in declared:
+            raise ValueError("Fidelity test subject entered the grammar twice")
+        if any(
+            type(name) is not str or type(value) is not str
+            for name, value in coordinates.items()
+        ):
+            raise TypeError("exact Fidelity test subject coordinates are required")
+        declared[subject] = {
+            **coordinates,
+            "witness_for": relation["second_subject"],
+            "distinct_from": relation["first_subject_distinct_from"],
+        }
+
     admission = {
         line.split("#", 1)[0].strip()
         for line in (ROOT / "book_of_seed" / "book_admission.txt")
@@ -585,16 +607,75 @@ def _pytest_subject(item: object) -> str | None:
         .splitlines()
         if line.split("#", 1)[0].strip()
     }
-    if any(word not in admission for word in subject_words):
-        raise ValueError("test subject carries words absent from Book admission")
-    return subject
+    for subject in declared:
+        subject_words = tuple(
+            word.lower() for word in re.findall(r"[A-Za-z]+", subject)
+        )
+        if not subject_words or any(word not in admission for word in subject_words):
+            raise ValueError("test subject carries words absent from Book admission")
+    return declared
+
+
+def _pytest_subject(
+    module: object,
+    function_under_test: object,
+    declared: dict[str, dict[str, str]],
+) -> dict[str, str]:
+    uniform = getattr(module, "FIDELITY_SUBJECT", None)
+    families = getattr(module, "FIDELITY_SUBJECTS", None)
+    if uniform is not None and families is not None:
+        raise ValueError("test module carries two Fidelity subject boundaries")
+    if uniform is not None:
+        if type(uniform) is not str:
+            raise TypeError("one exact test subject reference is required")
+        subject = uniform
+    else:
+        if families is None:
+            raise ValueError("one exact test subject is required")
+        if type(families) is not dict:
+            raise TypeError("exact Fidelity subject families are required")
+        if not families:
+            raise ValueError("one exact test subject is required")
+        matches: list[str] = []
+        entered_functions: set[object] = set()
+        for family_subject, functions in families.items():
+            if type(family_subject) is not str or type(functions) is not tuple:
+                raise TypeError("exact Fidelity subject families are required")
+            for function in functions:
+                if not callable(function):
+                    raise TypeError("exact Fidelity subject functions are required")
+                if function in entered_functions:
+                    raise ValueError("test function entered Fidelity subjects twice")
+                entered_functions.add(function)
+                if function is function_under_test:
+                    matches.append(family_subject)
+        if len(matches) != 1:
+            raise ValueError("one exact test subject is required")
+        subject = matches[0]
+    try:
+        return declared[subject]
+    except KeyError as error:
+        raise ValueError("test subject is absent from machine grammar") from error
+
+
+@pytest.hookimpl(trylast=True)
+def pytest_collection_modifyitems(
+    session: object, config: object, items: list[object]
+) -> None:
+    del session, config
+    declared = _fidelity_test_subjects()
+    resolved = tuple(
+        _pytest_subject(item.module, item.function, declared) for item in items
+    )
+    for item, coordinates in zip(items, resolved):
+        item.stash[_PYTEST_SUBJECT_COORDINATES] = coordinates
 
 
 @pytest.hookimpl(hookwrapper=True)
 def pytest_runtest_protocol(item: object, nextitem: object):
     del nextitem
     occurrence_position = len(_pytest_occurrences)
-    subject = _pytest_subject(item)
+    subject_coordinates = item.stash[_PYTEST_SUBJECT_COORDINATES]
     begin()
     (
         _,
@@ -610,8 +691,7 @@ def pytest_runtest_protocol(item: object, nextitem: object):
         {
             "occurrence_position": occurrence_position,
             "pytest_identity": item.nodeid,
-            **({"subject": subject} if subject is not None else {}),
-            **({"witness_for": "this_Fidelity"} if subject is not None else {}),
+            **subject_coordinates,
             "first_sql_occurrence_position": sql_occurrence_position,
             "sql_occurrence_count": len(_sql_occurrences) - sql_occurrence_position,
             "first_sql_invocation_occurrence_position": (

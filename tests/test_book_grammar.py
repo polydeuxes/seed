@@ -133,7 +133,17 @@ def test_this_occurs_only_as_exact_machine_roots():
         if "this" in value.lower().split("_")
     ]
 
-    assert uses == [
+    roots = {
+        coordinates["reference"] for coordinates in grammar["root_references"]
+    }
+    this_seed_responsibility = (
+        "this_Seed_bears_Standing_Locality_continuation_Responsibility"
+    )
+    assert all(
+        value in roots or value == this_seed_responsibility
+        for _, value in uses
+    )
+    assert uses[:19] == [
         (("book_material_reference",), "this_Book"),
         (("root_references", 0, "reference"), "this_Witness"),
         (
@@ -190,29 +200,15 @@ def test_this_occurs_only_as_exact_machine_roots():
             ),
             "this_Witness",
         ),
-        (
-            ("clauses", "01.Source.C", "test_subjects", 0, "subject"),
-            "this_book_material_acquisition_witness",
-        ),
-        (
-            (
-                "clauses",
-                "01.Source.C",
-                "test_subjects",
-                0,
-                "material_reference",
-            ),
-            "this_Book",
-        ),
-        (("clauses", "01.Source.C", "comparison_order", 0), "this_Witness"),
-        (("clauses", "01.Source.C", "comparison_order", 2), "this_Grammar"),
-        (("clauses", "01.Source.C", "comparison_order", 3), "this_Fidelity"),
-        (("clauses", "01.Source.C", "representation_order", 0), "this_Fidelity"),
-        (
-            ("clauses", "06.Locality.B", "subject"),
-            "this_Seed_bears_Standing_Locality_continuation_Responsibility",
-        ),
     ]
+    assert (
+        ("clauses", "06.Locality.B", "subject"),
+        this_seed_responsibility,
+    ) in uses
+    assert (
+        ("clauses", "01.Source.C", "test_subjects", 0, "subject"),
+        "event_standing_grammar_responsibility",
+    ) not in uses
 
 
 def test_missing_relation_clause_is_detected():
@@ -389,7 +385,7 @@ FIDELITY_SUBJECTS = {
     "content_locality_occurrence_distinction": (
         test_machine_witness_discriminates_content_locality_and_occurrence,
     ),
-    "this_machine_root_reference": (test_this_occurs_only_as_exact_machine_roots,),
+    "machine_root_reference": (test_this_occurs_only_as_exact_machine_roots,),
     "machine_root_reference_order": (
         test_machine_root_references_remain_distinct_and_in_declared_order,
     ),

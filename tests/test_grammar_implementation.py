@@ -2585,7 +2585,8 @@ def test_witness_discriminates_content_locality_and_occurrence():
 
 
 def _assert_ordered_fidelity_representation(fidelity: dict) -> None:
-    assert fidelity == {
+    test_subjects = fidelity["test_subjects"]
+    assert {**fidelity, "test_subjects": "declared_test_subjects"} == {
         "subject": "this_Fidelity",
         "book_material_reference": "01.Source.C",
         "witness": "unestablished",
@@ -2603,12 +2604,7 @@ def _assert_ordered_fidelity_representation(fidelity: dict) -> None:
             "second_subject": "this_Fidelity",
             "first_subject_distinct_from": "this_Witness",
         },
-        "test_subjects": [
-            {
-                "subject": "this_book_material_acquisition_witness",
-                "material_reference": "this_Book",
-            }
-        ],
+        "test_subjects": "declared_test_subjects",
         "preserves": [
             "Evidence",
             "provenance",
@@ -2636,6 +2632,30 @@ def _assert_ordered_fidelity_representation(fidelity: dict) -> None:
             "global_certification",
             "correction_Authority",
         ],
+    }
+    assert len(test_subjects) == 220
+    assert len({coordinates["subject"] for coordinates in test_subjects}) == 220
+    assert test_subjects[0] == {
+        "subject": "event_standing_grammar_responsibility"
+    }
+    assert test_subjects[-1] == {
+        "subject": "fidelity_witness_subject_completeness"
+    }
+    by_subject = {
+        coordinates["subject"]: coordinates for coordinates in test_subjects
+    }
+    assert by_subject["this_book_material_acquisition_witness"] == {
+        "subject": "this_book_material_acquisition_witness",
+        "material_reference": "this_Book",
+    }
+    assert by_subject["rosetta_relation_order"] == {
+        "subject": "rosetta_relation_order",
+        "material_reference": "this_Rosetta",
+    }
+    assert by_subject["book_rosetta_admission_distinction"] == {
+        "subject": "book_rosetta_admission_distinction",
+        "first_material_reference": "this_Book",
+        "second_material_reference": "this_Rosetta",
     }
     assert fidelity["comparison"]["first_subject"] != fidelity["comparison"][
         "second_subject"
