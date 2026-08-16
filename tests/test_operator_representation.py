@@ -899,7 +899,7 @@ def test_exact_material_emission_recovers_recorded_order_and_refuses_wrong_occur
         )
 
 
-def test_raw_console_egress_uses_its_recorded_representation_result():
+def test_raw_console_does_not_select_operator_input_for_egress():
     ledger = EventLedger()
     raw_output = BytesIO()
 
@@ -911,16 +911,11 @@ def test_raw_console_egress_uses_its_recorded_representation_result():
         raw_output_stream=raw_output,
     )
 
-    representation_event = next(
-        event
+    assert raw_output.getvalue() == b""
+    assert not any(
+        event.kind == "operator.representation.emission.attempted"
         for event in ledger.list()
-        if event.kind == "operator.representation.recorded"
-        and event.exact_material is not None
     )
-    source_event = ledger.get(representation_event.material["source_occurrence_reference"])
-    assert source_event is not None
-    assert source_event.exact_material == representation_event.exact_material == b"hello\n"
-    assert raw_output.getvalue() == representation_event.exact_material
 
 
 @pytest.mark.parametrize(

@@ -527,26 +527,6 @@ def run_persistent_operator_console(
                 locality_standing,
                 locality_identity=locality_identity,
             )
-            if raw_output_stream is not None:
-                representation = record_operator_representation(
-                    ledger,
-                    locality_identity=locality_identity,
-                    locality_standing=locality_standing,
-                    source_occurrence_reference=ingest_occurrence[
-                        "evidence_event_identity"
-                    ],
-                )
-                try:
-                    emit_operator_representation_material(
-                        ledger,
-                        representation=representation,
-                        output_stream=raw_output_stream,
-                    )
-                finally:
-                    locality_standing = _advance_over_representation(
-                        ledger, locality_standing, representation
-                    )
-                continue
             representation = record_operator_representation(
                 ledger,
                 locality_identity=locality_identity,

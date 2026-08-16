@@ -85,6 +85,19 @@ def test_live_entry_accepts_the_database_coordinate(monkeypatch, tmp_path):
         ledger.close()
 
 
+def test_live_entry_does_not_emit_operator_material_back_to_stdout(
+    monkeypatch, tmp_path
+):
+    output = _LiveOutput()
+    monkeypatch.setattr("sys.stdin", BytesIO(b"hello\n"))
+    monkeypatch.setattr("sys.stdout", output)
+
+    assert process_entry.main(["--db", str(tmp_path / "seed.db")]) == 0
+
+    assert output.buffer.getvalue() == b""
+    assert output.getvalue() == ""
+
+
 @pytest.mark.parametrize("frame", (b"/", b"/\n", b"/\r\n"))
 def test_primordial_slash_frame_is_the_existing_eof_boundary(
     monkeypatch, tmp_path, frame
