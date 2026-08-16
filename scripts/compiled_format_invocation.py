@@ -197,7 +197,12 @@ def exact_position_pair_material_references(
     ):
         raise TypeError("position pairs require exact position material")
     by_first_position = {}
+    supplied = {}
     for reference in position_references:
+        identity = reference.occurrence_identity
+        if identity in supplied:
+            raise ValueError("one exact position material entered composition twice")
+        supplied[identity] = reference
         by_first_position.setdefault(reference.first_position, []).append(reference)
     found = {}
     for first in position_references:
@@ -209,6 +214,8 @@ def exact_position_pair_material_references(
                 second_reference=second,
                 exact_material=first.exact_material + second.exact_material,
             )
+            if reference.occurrence_identity in supplied:
+                continue
             prior = found.get(reference.occurrence_identity)
             if prior is not None and prior.exact_material != reference.exact_material:
                 raise ValueError("one exact position material has different references")

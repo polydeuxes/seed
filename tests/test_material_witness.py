@@ -1310,15 +1310,17 @@ def test_exact_position_material_returns_once_through_its_original_order():
         (reference.first_position, reference.last_position, reference.exact_material)
         for reference in through_three
     ) == (
-        (0, 1, b"ab"),
         (0, 2, b"aba"),
-        (1, 2, b"ba"),
     )
     assert through_three == exact_position_pair_material_references(
         tuple(reversed((*one, *two)))
     )
     assert one[0].exact_material == one[2].exact_material
     assert one[0].occurrence_identity != one[2].occurrence_identity
+    assert exact_position_pair_material_references((*one, *two, *through_three)) == ()
+
+    with pytest.raises(ValueError, match="entered composition twice"):
+        exact_position_pair_material_references((*one, one[0]))
 
 
 def test_missing_position_cannot_return_the_complete_exact_material():
