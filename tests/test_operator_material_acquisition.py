@@ -5,7 +5,7 @@ from io import BytesIO, StringIO
 
 import pytest
 
-from seed_runtime.events import EventLedger, SQLiteEventLedger
+from seed_runtime.events import CORRUPTED, EventLedger, SQLiteEventLedger
 from seed_runtime.operator_console import run_persistent_operator_console
 from seed_runtime.operator_locality_standing import (
     advance_operator_locality_standing,
@@ -322,6 +322,65 @@ def test_assignment_refuses_crossed_locality_and_changed_cut():
     changed["as_of_event_identity"] = "missing"
     with pytest.raises(OperatorMaterialAcquireError, match="current Standing"):
         _assignment(ledger, changed, representation)
+
+
+def test_assignment_refuses_cross_locality_and_reversed_standing_boundaries():
+    ledger = EventLedger()
+    standing, representation = _context(ledger)
+
+    crossed = dict(standing)
+    crossed["as_of_event_identity"] = ledger.append(
+        "other.locality.occurrence", locality_identity="elsewhere"
+    ).identity
+    with pytest.raises(OperatorMaterialAcquireError, match="current Standing"):
+        _assignment(ledger, crossed, representation)
+
+    representation_identity = representation["representation_event_identity"]
+    earlier = next(
+        event
+        for event in ledger.list_locality("source")
+        if event.identity != representation_identity
+    )
+    reversed_boundary = dict(standing)
+    reversed_boundary["as_of_event_identity"] = earlier.identity
+    with pytest.raises(OperatorMaterialAcquireError, match="current Standing"):
+        _assignment(ledger, reversed_boundary, representation)
+
+
+def test_assignment_refuses_a_corrupted_standing_boundary(monkeypatch):
+    ledger = EventLedger()
+    standing, representation = _context(ledger)
+    boundary_identity = ledger.append(
+        "standing.boundary.fixture", locality_identity="source"
+    ).identity
+    changed = dict(standing)
+    changed["as_of_event_identity"] = boundary_identity
+    integrity_of = ledger.integrity_of
+    monkeypatch.setattr(
+        ledger,
+        "integrity_of",
+        lambda identity: (
+            CORRUPTED if identity == boundary_identity else integrity_of(identity)
+        ),
+    )
+
+    with pytest.raises(OperatorMaterialAcquireError, match="current Standing"):
+        _assignment(ledger, changed, representation)
+
+
+def test_addressed_representation_can_be_the_exact_standing_boundary():
+    ledger = EventLedger()
+    standing, representation = _context(ledger)
+    same_boundary = dict(standing)
+    same_boundary["as_of_event_identity"] = representation[
+        "representation_event_identity"
+    ]
+
+    assignment = _assignment(ledger, same_boundary, representation)
+
+    assert assignment.material["source_standing_reference"][
+        "locality_standing_as_of_event_identity"
+    ] == representation["representation_event_identity"]
 
 
 def test_act_refuses_assignment_not_carried_by_supplied_standing():

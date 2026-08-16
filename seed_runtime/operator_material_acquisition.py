@@ -89,18 +89,21 @@ def _source_standing_reference(
         raise OperatorMaterialAcquireError(
             "operator material acquire crossed its addressed Representation Locality"
         )
-    occurrences = ledger.list_locality(locality_identity)
-    positions = {event.identity: index for index, event in enumerate(occurrences)}
-    representation_position = positions.get(addressed_representation_event_identity)
-    boundary_position = positions.get(standing_boundary)
-    boundary_event = ledger.get(standing_boundary)
-    if (
-        representation_position is None
-        or boundary_position is None
-        or boundary_position < representation_position
-        or boundary_event is None
-        or ledger.integrity_of(boundary_event.identity) == CORRUPTED
-    ):
+    ordered_identities = (
+        (addressed_representation_event_identity,)
+        if addressed_representation_event_identity == standing_boundary
+        else (addressed_representation_event_identity, standing_boundary)
+    )
+    try:
+        boundary_event = ledger.occurrences_in_append_order(
+            ordered_identities,
+            locality_identity=locality_identity,
+        )[-1]
+    except ValueError as error:
+        raise OperatorMaterialAcquireError(
+            "operator material acquire requires its exact current Standing boundary"
+        ) from error
+    if ledger.integrity_of(boundary_event.identity) == CORRUPTED:
         raise OperatorMaterialAcquireError(
             "operator material acquire requires its exact current Standing boundary"
         )
