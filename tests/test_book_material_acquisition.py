@@ -31,6 +31,7 @@ from compiled_format_invocation import (  # noqa: E402
     moved_exact_byte_material_references,
 )
 from compiled_material_invocation import ingest_result_reference  # noqa: E402
+from material_admission import compare_admission_result_pairs  # noqa: E402
 
 
 @pytest.fixture(scope="module")
@@ -211,6 +212,49 @@ def complete_book_admission_acts(acquired_book_material):
         additions,
         result_invocation_rows,
         comparisons,
+    )
+
+
+@pytest.fixture(scope="module")
+def later_book_material_acquisition(acquired_book_material):
+    ledger, paths, _, earlier_boundary, earlier_references, _, earlier_admission = (
+        acquired_book_material
+    )
+    later_ingests = tuple(
+        ingest_material(
+            ledger,
+            locality_identity="book-material-acquisition-later",
+            exact_bytes=path.read_bytes(),
+            source_role="fixture material",
+            source_boundary=str(path.relative_to(ROOT)),
+        )
+        for path in paths
+    )
+    later_boundary = ledger.append_boundary()
+    later_references = tuple(
+        ingest_result_reference(ledger, occurrence.identity)
+        for occurrence in later_ingests
+    )
+    later_invocation_rows = compiled_reference_invocations(
+        later_references,
+        boundary_identity="book-material-acquisition-later-invocation",
+        implementation_functions=COMPILED_IMPLEMENTATION_FUNCTIONS,
+    )
+    later_admission = admit_compiled_invocation_rows(
+        later_invocation_rows,
+        boundary_identity="book-material-acquisition-later-admission",
+    )
+    return (
+        ledger,
+        paths,
+        earlier_boundary,
+        earlier_references,
+        earlier_admission,
+        later_ingests,
+        later_boundary,
+        later_references,
+        later_invocation_rows,
+        later_admission,
     )
 
 
@@ -521,6 +565,67 @@ def test_complete_book_compare_refuses_a_mismatched_act_result_occurrence(
         replace(
             result_invocation_rows[0][0],
             source_coordinate=different,
+        )
+
+
+def test_earlier_and_later_book_admissions_keep_distinct_occurrence_sets(
+    later_book_material_acquisition,
+):
+    (
+        ledger,
+        paths,
+        earlier_boundary,
+        earlier_references,
+        earlier_admission,
+        later_ingests,
+        later_boundary,
+        later_references,
+        later_invocation_rows,
+        later_admission,
+    ) = later_book_material_acquisition
+
+    assert tuple(reference.exact_material for reference in earlier_references) == tuple(
+        reference.exact_material for reference in later_references
+    ) == tuple(path.read_bytes() for path in paths)
+    assert all(
+        earlier.recorded_occurrence_identity != later.recorded_occurrence_identity
+        and earlier.act_occurrence_identity != later.act_occurrence_identity
+        and earlier.result_identity != later.result_identity
+        for earlier, later in zip(earlier_references, later_references)
+    )
+    assert all(
+        reference.locality_identity == "book-material-acquisition-later"
+        for reference in later_references
+    )
+    assert tuple(
+        occurrence
+        for occurrence in ledger.list_locality(
+            "book-material-acquisition-later", through=later_boundary
+        )
+        if occurrence.kind == MATERIAL_INGEST_OCCURRED_KIND
+    ) == later_ingests
+    assert all(
+        occurrence not in ledger.list(through=earlier_boundary)
+        for occurrence in later_ingests
+    )
+    assert tuple(
+        tuple(occurrence.returned for occurrence in row)
+        for row in later_invocation_rows
+    ) == tuple(
+        tuple(
+            reference.invocation_occurrence.returned
+            for reference in earlier_admission.invocation_result_references
+            if reference.invocation_occurrence.implementation_function_identity
+            == row[0].implementation_function_identity
+        )
+        for row in later_invocation_rows
+    )
+    assert earlier_admission.source_material == earlier_references
+    assert later_admission.source_material == later_references
+    with pytest.raises(ValueError, match="same exact material occurrences"):
+        compare_admission_result_pairs(
+            (earlier_admission.result_reference, later_admission.result_reference),
+            boundary_identity="book-material-acquisition-through-time-compare",
         )
 
 
