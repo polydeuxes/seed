@@ -1059,6 +1059,12 @@ def compiled_invocation(
     *,
     boundary_identity: str,
     invocation_position: int = 0,
+    source_coordinate: (
+        ExactMaterialCoordinates
+        | AddedPositionOccurrence
+        | RemovedPositionOccurrence
+        | None
+    ) = None,
 ) -> CompiledInvocationOccurrence:
     if type(exact_material) is not bytes:
         raise TypeError("implementation function material must be exact bytes")
@@ -1080,6 +1086,7 @@ def compiled_invocation(
         exact_material=exact_material,
         implementation_function=implementation_function,
         returned=returned,
+        source_coordinate=source_coordinate,
     )
 
 
@@ -1697,6 +1704,175 @@ def compare_added_position_invocations(
             comparison_position += 1
         compared.append(tuple(row))
     return tuple(compared)
+
+
+def recurring_added_returned_coordinate(
+    comparisons: tuple[AddedPositionCompareOccurrence, ...],
+    additions: tuple[AddedPositionOccurrence, ...],
+    addition: AddedPositionOccurrence,
+    source_invocation: CompiledInvocationOccurrence,
+) -> bool | None:
+    if (
+        type(comparisons) is not tuple
+        or len(comparisons) < 2
+        or any(
+            not isinstance(comparison, AddedPositionCompareOccurrence)
+            for comparison in comparisons
+        )
+    ):
+        raise TypeError("recurrence requires exact Compare occurrences")
+    if type(additions) is not tuple or any(
+        not isinstance(found, AddedPositionOccurrence) for found in additions
+    ):
+        raise TypeError("recurrence requires exact addition Act occurrences")
+    if not isinstance(addition, AddedPositionOccurrence) or not isinstance(
+        source_invocation, CompiledInvocationOccurrence
+    ):
+        raise TypeError("recurrence requires one exact addition and source invocation")
+    if (
+        addition.source_admission_result_reference is None
+        or addition.added_admission_result_reference is None
+    ):
+        return None
+    if source_invocation.source_coordinate != addition.source_reference:
+        raise ValueError("source invocation differs from the addition Act")
+    addition_by_identity = {
+        found.act_occurrence_identity: found for found in additions
+    }
+    if len(addition_by_identity) != len(additions):
+        raise ValueError("addition Act occurrence entered recurrence twice")
+
+    addition_coordinates = (
+        addition.source_admission_result_reference.result_identity,
+        addition.source_admitted_material_position,
+        addition.added_admission_result_reference.result_identity,
+        addition.added_admitted_material_position,
+        addition.position,
+        len(addition.source_material),
+        len(addition.added_material),
+    )
+    found = []
+    occurrence_identities = set()
+    for comparison in comparisons:
+        prior = addition_by_identity.get(
+            comparison.added_position_act_occurrence_identity
+        )
+        if prior is None:
+            raise ValueError("Compare occurrence has no exact addition Act occurrence")
+        if (
+            prior.source_admission_result_reference is None
+            or prior.added_admission_result_reference is None
+        ):
+            continue
+        prior_coordinates = (
+            prior.source_admission_result_reference.result_identity,
+            prior.source_admitted_material_position,
+            prior.added_admission_result_reference.result_identity,
+            prior.added_admitted_material_position,
+            prior.position,
+            len(prior.source_material),
+            len(prior.added_material),
+        )
+        if (
+            prior_coordinates == addition_coordinates
+            and comparison.implementation_function_identity
+            == source_invocation.implementation_function_identity
+            and comparison.source_returned == source_invocation.returned
+            and prior.act_occurrence_identity != addition.act_occurrence_identity
+            and prior.result_material != addition.result_material
+        ):
+            found.append(comparison.result_returned)
+            occurrence_identities.add(comparison.occurrence_identity)
+    if len(occurrence_identities) < 2 or len(set(found)) != 1:
+        return None
+    return found[0]
+
+
+def first_recurring_added_compare(
+    additions: tuple[AddedPositionOccurrence, ...],
+    source_invocations: tuple[CompiledInvocationOccurrence, ...],
+    implementation_function: CompiledImplementationFunction,
+    *,
+    boundary_identity: str,
+    act_occurrence_count_limit: int,
+) -> tuple[
+    tuple[AddedPositionCompareOccurrence, ...],
+    bool | None,
+    AddedPositionCompareOccurrence | None,
+]:
+    if type(additions) is not tuple or not additions or any(
+        not isinstance(addition, AddedPositionOccurrence) for addition in additions
+    ):
+        raise TypeError("recurrence requires exact addition Act occurrences")
+    if type(source_invocations) is not tuple or not source_invocations or any(
+        not isinstance(invocation, CompiledInvocationOccurrence)
+        for invocation in source_invocations
+    ):
+        raise TypeError("recurrence requires exact source invocation occurrences")
+    if not isinstance(implementation_function, CompiledImplementationFunction):
+        raise TypeError("recurrence requires one exact implementation function")
+    if type(boundary_identity) is not str or not boundary_identity:
+        raise TypeError("one exact boundary identity is required")
+    if (
+        type(act_occurrence_count_limit) is not int
+        or act_occurrence_count_limit < 1
+    ):
+        raise TypeError("one exact positive Act occurrence count limit is required")
+    source_by_reference = {
+        invocation.source_coordinate: invocation for invocation in source_invocations
+    }
+    if len(source_by_reference) != len(source_invocations) or any(
+        invocation.implementation_function != implementation_function
+        for invocation in source_invocations
+    ):
+        raise ValueError("recurrence source invocations must be exact and distinct")
+    if len({invocation.returned for invocation in source_invocations}) < 2:
+        return (), None, None
+
+    comparisons = []
+    for addition in additions[:act_occurrence_count_limit]:
+        source_invocation = source_by_reference.get(addition.source_reference)
+        if source_invocation is None:
+            raise ValueError("recurrence requires each exact source invocation")
+        coordinate = (
+            recurring_added_returned_coordinate(
+                tuple(comparisons),
+                additions,
+                addition,
+                source_invocation,
+            )
+            if len(comparisons) >= 2
+            else None
+        )
+        result_invocation = compiled_invocation(
+            addition.result_material,
+            implementation_function,
+            boundary_identity=f"{boundary_identity}-invocation",
+            invocation_position=len(comparisons),
+            source_coordinate=addition,
+        )
+        comparison = AddedPositionCompareOccurrence(
+            boundary_identity=f"{boundary_identity}-compare",
+            occurrence_position=len(comparisons),
+            implementation_function_identity=(
+                implementation_function.identity
+            ),
+            added_position_act_occurrence_identity=(
+                addition.act_occurrence_identity
+            ),
+            source_invocation_occurrence_identity=(
+                source_invocation.occurrence_identity
+            ),
+            result_invocation_occurrence_identity=(
+                result_invocation.occurrence_identity
+            ),
+            source_returned=source_invocation.returned,
+            result_returned=result_invocation.returned,
+        )
+        if coordinate is not None:
+            return tuple(comparisons), coordinate, comparison
+        comparisons.append(comparison)
+    return tuple(comparisons), None, None
 
 
 def compare_removed_position_invocations(

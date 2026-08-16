@@ -42,6 +42,7 @@ from compiled_format_invocation import (  # noqa: E402
     compiled_reference_invocations,
     added_position_invocations,
     removed_position_invocations,
+    first_recurring_added_compare,
     removed_position_occurrences,
     exact_byte_material_references,
     exact_byte_pair_material_references,
@@ -1826,6 +1827,75 @@ def test_recurring_result_coordinates_precede_one_later_invocation(monkeypatch):
         act_occurrence_count_limit=len(all_additions),
     ) == ((), None, None)
     assert supplied == []
+
+
+def test_format_recurrence_precedes_one_later_invocation():
+    supplied = []
+
+    def formatting(material):
+        supplied.append(material)
+        if material == b"c":
+            raise ValueError("refused")
+
+    references = tuple(
+        ExactMaterialReference(
+            f"format-source-{position}",
+            f"format-assertion-{position}",
+            "format-recurrence-locality",
+            material,
+        )
+        for position, material in enumerate((b"a", b"b", b"c"))
+    )
+    admission = admission_occurrence(
+        (references,),
+        boundary_identity="format-recurrence-admission",
+        source_material=references,
+    )
+    additions = tuple(
+        addition
+        for addition in admission_added_position_occurrences(
+            admission.result_reference,
+            boundary_identity="format-recurrence-addition",
+            admitted_material_act_occurrence_count_limit=18,
+        )
+        if addition.position == 0 and addition.source_reference == references[0]
+    )
+    function = CompiledImplementationFunction(
+        identity="format-compiled-0",
+        invocation=formatting,
+    )
+    source_invocations = tuple(
+        compiled_invocation(
+            reference.exact_material,
+            function,
+            boundary_identity="format-recurrence-source",
+            invocation_position=position,
+            source_coordinate=reference,
+        )
+        for position, reference in enumerate(references)
+    )
+    supplied.clear()
+
+    earlier, coordinate, later = first_recurring_added_compare(
+        additions,
+        source_invocations,
+        function,
+        boundary_identity="format-recurrence-later",
+        act_occurrence_count_limit=len(additions),
+    )
+
+    assert later is not None
+    assert coordinate is True
+    assert later.result_returned is True
+    additions_by_identity = {
+        addition.act_occurrence_identity: addition for addition in additions
+    }
+    assert tuple(supplied) == tuple(
+        additions_by_identity[
+            comparison.added_position_act_occurrence_identity
+        ].result_material
+        for comparison in earlier
+    ) + (additions_by_identity[later.added_position_act_occurrence_identity].result_material,)
 
 
 def test_time_limit_preserves_an_invocation_that_did_not_return(monkeypatch):
