@@ -27,3 +27,18 @@ def test_egress_refuses_a_short_write():
 
     with pytest.raises(ValueError, match="did not preserve"):
         emit_exact_material(ShortBoundary(), b"hello")
+
+
+def test_egress_carries_exact_bytes_to_a_socket_like_boundary():
+    class SocketBoundary:
+        def __init__(self):
+            self.material = None
+
+        def sendall(self, material):
+            self.material = material
+
+    output = SocketBoundary()
+    material = b"\x00video-like-bytes"
+
+    assert emit_exact_material(output, material) == len(material)
+    assert output.material == material
