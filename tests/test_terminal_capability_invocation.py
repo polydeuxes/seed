@@ -9,6 +9,9 @@ sys.path.insert(0, str(ROOT / "scripts"))
 from terminal_capability_invocation import terminal_capability_occurrences  # noqa: E402
 
 
+FIDELITY_SUBJECT = "exact_invocation_coordinates"
+
+
 def test_terminal_capabilities_remain_raw_invocation_coordinates():
     occurrences = terminal_capability_occurrences(
         boundary_identity="terminal-capability-test"

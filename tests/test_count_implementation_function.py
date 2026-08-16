@@ -24,7 +24,7 @@ def test_absent_material_returns_zero_without_entering_returned_material():
     assert occurrence.coordinates == (0, b"a")
 
 
-def test_one_added_position_changes_both_returned_coordinates():
+def _one_added_position_occurrences():
     source = ExactMaterialReference(
         "source-occurrence", "source-assertion", "fixture-locality", b"a"
     )
@@ -38,6 +38,11 @@ def test_one_added_position_changes_both_returned_coordinates():
         count_invocation(occurrence.result_material, b"b")
         for occurrence in added_occurrences
     )
+    return source, added_occurrences, occurrences
+
+
+def test_one_added_position_preserves_exact_material_order():
+    source, added_occurrences, _ = _one_added_position_occurrences()
 
     assert tuple(occurrence.result_material for occurrence in added_occurrences) == (
         b"ba",
@@ -51,6 +56,11 @@ def test_one_added_position_changes_both_returned_coordinates():
         )
         for occurrence in added_occurrences
     )
+
+
+def test_one_added_position_changes_both_returned_count_coordinates():
+    _, _, occurrences = _one_added_position_occurrences()
+
     assert tuple(occurrence.coordinates for occurrence in occurrences) == (
         (1, b"ba"),
         (1, b"ab"),
@@ -89,3 +99,21 @@ def test_non_byte_coordinates_are_refused_before_invocation():
         assert str(error) == "addressed material must be one byte"
     else:
         raise AssertionError("non-byte addressed material was not refused")
+
+
+FIDELITY_SUBJECTS = {
+    "count_result_coordinates": (
+        test_absent_material_returns_zero_without_entering_returned_material,
+        test_one_added_position_changes_both_returned_count_coordinates,
+    ),
+    "added_position_material_order": (
+        test_one_added_position_preserves_exact_material_order,
+    ),
+    "count_result_admission": (test_exact_returned_coordinates_perform_admission,),
+    "count_recurrence_result_distinction": (
+        test_recurrence_changes_count_without_repeating_returned_material,
+    ),
+    "count_invocation_coordinate_boundary": (
+        test_non_byte_coordinates_are_refused_before_invocation,
+    ),
+}

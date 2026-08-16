@@ -66,6 +66,11 @@ def test_one_ingest_occurs_for_each_delivered_line(ledger):
     ingests = _ingests(ledger)
 
     assert len(ingests) == 2 + len(E3.split("\n"))
+
+
+def test_each_ingest_carries_the_operator_role(ledger):
+    ingests = _ingests(ledger)
+
     assert all(event.material["source_role"] == "operator" for event in ingests)
 
 
@@ -102,16 +107,39 @@ def test_ingest_does_not_assert_a_represented_relation(ledger):
 
 def test_ingest_evidence_is_inspectable():
     represented = represent_null_start_evidence()
+
+    assert MATERIAL_INGEST_OCCURRED_KIND in represented
+    assert "responsible_act_evidence_identity" in represented
+    assert "evidence_of_yield_relation_identity" in represented
+
+
+def test_ingest_exact_material_is_inspectable():
     ingests = [
         event
         for event in run_null_start()
         if event.kind == MATERIAL_INGEST_OCCURRED_KIND
     ]
 
-    assert MATERIAL_INGEST_OCCURRED_KIND in represented
     assert all(type(event.exact_material) is bytes for event in ingests)
-    assert "responsible_act_evidence_identity" in represented
-    assert "evidence_of_yield_relation_identity" in represented
+
+
+FIDELITY_SUBJECTS = {
+    "operator_material_ingest_occurrence": (
+        test_one_ingest_occurs_for_each_delivered_line,
+    ),
+    "operator_material_ingest_role": (test_each_ingest_carries_the_operator_role,),
+    "material_ingest_exact_material": (test_each_ingest_preserves_exact_bytes,),
+    "material_ingest_act_yield_relation": (
+        test_each_ingest_binds_its_exact_act_and_evidence_of_yield_relation,
+    ),
+    "material_ingest_representation_distinction": (
+        test_ingest_does_not_assert_a_represented_relation,
+    ),
+    "material_ingest_evidence_visibility": (test_ingest_evidence_is_inspectable,),
+    "material_ingest_exact_material_visibility": (
+        test_ingest_exact_material_is_inspectable,
+    ),
+}
 
 
 if __name__ == "__main__":  # pragma: no cover

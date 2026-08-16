@@ -78,3 +78,22 @@ def test_an_implementation_function_that_accepts_every_byte_alone_has_one_result
 
     assert len(read) == 1
     assert next(iter(read)) == (1, None)
+
+
+FIDELITY_SUBJECTS = {
+    "measurement_result_as_input": (
+        test_the_second_measurement_takes_the_first_as_input_rather_than_repeating_it,
+    ),
+    "pair_measurement_additional_distinction": (
+        test_complete_pairs_name_a_distinction_the_first_admission_did_not,
+    ),
+    "material_function_measurement_results": (
+        test_every_implementation_function_returns_both_admissions,
+    ),
+    "material_function_boundary_distinction": (
+        test_implementation_functions_disagree_about_the_boundaries,
+    ),
+    "single_byte_admission_result": (
+        test_an_implementation_function_that_accepts_every_byte_alone_has_one_result_coordinate,
+    ),
+}

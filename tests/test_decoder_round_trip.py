@@ -77,3 +77,19 @@ def test_the_disagreement_is_a_minority_and_is_exact():
     assert 5 < len(uneven) < 20
     assert "mac_arabic" in uneven
     assert "ascii" not in uneven
+
+
+FIDELITY_SUBJECTS = {
+    "read_refusal_boundary": (test_bytes_the_decoder_refuses_are_not_asked_about,),
+    "read_write_exact_material_equality": (
+        test_named_decoders_write_back_what_they_read,
+    ),
+    "read_material_multiplicity": (test_several_byte_sequences_may_read_as_one_thing,),
+    "read_write_refusal_distinction": (
+        test_a_decoder_may_read_what_it_will_not_write,
+    ),
+    "read_write_difference": (test_a_decoder_may_never_write_back_what_it_read,),
+    "read_write_difference_count": (
+        test_the_disagreement_is_a_minority_and_is_exact,
+    ),
+}

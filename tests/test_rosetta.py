@@ -117,6 +117,11 @@ def test_rosetta_book_decompresses_to_language_clauses_and_lexicon():
         "Book           this constitutional language + ordered clause "
         "coordinates + this Book's admitted lexicon; Book != lexicon by identity"
     ) in rosetta
+
+
+def test_rosetta_admission_does_not_establish_a_clause():
+    rosetta = ROSETTA_ROOTS.read_text(encoding="utf-8")
+
     assert (
         "Lexicon        admitted words only; admission of a word establishes "
         "no clause, coordinate, relation, or Standing"
@@ -149,3 +154,28 @@ def test_rosetta_prose_has_lexical_admission():
 
 def test_rosetta_admission_detects_an_unadmitted_word_without_naming_it():
     assert _unadmitted_rosetta_words("unadmittedword") == {"unadmittedword"}
+
+
+FIDELITY_SUBJECTS = {
+    "rosetta_participation_relation": (
+        test_rosetta_participant_decompresses_to_the_participation_relation,
+    ),
+    "rosetta_relation_order": (
+        test_rosetta_follows_machine_grammar_relation_order,
+        test_rosetta_reversed_relation_is_detected,
+    ),
+    "rosetta_function_reference_resolution": (
+        test_rosetta_implementation_references_resolve,
+        test_rosetta_missing_implementation_reference_is_detected,
+    ),
+    "rosetta_book_reference": (
+        test_rosetta_book_decompresses_to_language_clauses_and_lexicon,
+    ),
+    "rosetta_admission_clause_distinction": (
+        test_rosetta_admission_does_not_establish_a_clause,
+    ),
+    "rosetta_vocabulary_admission": (
+        test_rosetta_prose_has_lexical_admission,
+        test_rosetta_admission_detects_an_unadmitted_word_without_naming_it,
+    ),
+}
