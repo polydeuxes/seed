@@ -107,7 +107,10 @@ def test_durable_ingest_preserves_raw_material_and_yield_evidence(tmp_path):
 
     connection = sqlite3.connect(path)
     carried = connection.execute(
-        "SELECT exact_material, typeof(exact_material) FROM events WHERE identity = ?",
+        "SELECT event_exact_materials.exact_material, "
+        "typeof(event_exact_materials.exact_material) FROM events "
+        "JOIN event_exact_materials ON event_exact_materials.material_identity = "
+        "events.exact_material_identity WHERE events.identity = ?",
         (occurred_identity,),
     ).fetchone()
     connection.close()

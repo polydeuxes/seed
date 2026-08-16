@@ -46,6 +46,18 @@ def _raw(path):
     return con
 
 
+def _semantic_row(connection, event_identity):
+    return dict(
+        connection.execute(
+            "SELECT events.*, event_exact_materials.exact_material AS exact_material "
+            "FROM events LEFT JOIN event_exact_materials ON "
+            "event_exact_materials.material_identity = "
+            "events.exact_material_identity WHERE events.identity = ?",
+            (event_identity,),
+        ).fetchone()
+    )
+
+
 # --------------------------------------------------------------------------
 # Refused by default.
 # --------------------------------------------------------------------------
@@ -126,8 +138,7 @@ def test_moving_an_occurrence_between_sessions_is_detected(ledger, path):
 @pytest.mark.parametrize(
     "column,value",
     [("identity", "evt_999999"), ("kind", "other"),
-     ("timestamp", "1999-01-01T00:00:00"),
-     ("exact_material", b"altered")],
+     ("timestamp", "1999-01-01T00:00:00")],
 )
 def test_every_persisted_field_is_covered(ledger, path, column, value):
     event = ledger.append("k", {"a": 1}, locality_identity="s")
@@ -145,10 +156,11 @@ def test_every_persisted_field_is_covered(ledger, path, column, value):
 def test_exact_material_stored_as_text_is_detected(ledger, path):
     event = ledger.append("k", exact_material=b"material")
     con = _raw(path)
-    con.execute("DROP TRIGGER events_refuse_update")
+    con.execute("DROP TRIGGER event_exact_materials_refuse_update")
     con.execute(
-        "UPDATE events SET exact_material = ? WHERE identity = ?",
-        ("material", event.identity),
+        "UPDATE event_exact_materials SET exact_material = ? "
+        "WHERE material_identity = ?",
+        ("material", ledger._exact_material_reference(event.identity)),
     )
     con.commit()
     con.close()
@@ -173,7 +185,7 @@ def test_rewriting_the_row_and_its_material_identity_together_is_not_detected(le
     event = ledger.append("k", {"a": 1}, locality_identity="s")
     con = _raw(path)
     con.execute("DROP TRIGGER events_refuse_update")
-    row = dict(con.execute("SELECT * FROM events WHERE identity = ?", (event.identity,)).fetchone())
+    row = _semantic_row(con, event.identity)
     row["material"] = '{"a": 999}'
     con.execute("UPDATE events SET material = ?, occurrence_material_identity = ? WHERE identity = ?",
                 (row["material"], _occurrence_material_identity(row), event.identity))
@@ -194,7 +206,7 @@ def test_verified_durable_rehydration_still_rejects_nested_secret_fields(path):
 
     con = _raw(path)
     con.execute("DROP TRIGGER events_refuse_update")
-    row = dict(con.execute("SELECT * FROM events WHERE identity = ?", (event.identity,)).fetchone())
+    row = _semantic_row(con, event.identity)
     row["material"] = '{"outer":[[{"token":"not-accepted"}]]}'
     con.execute(
         "UPDATE events SET material = ?, occurrence_material_identity = ? WHERE identity = ?",
@@ -221,7 +233,7 @@ def test_screened_durable_rehydration_still_runs_event_validation(path):
 
     con = _raw(path)
     con.execute("DROP TRIGGER events_refuse_update")
-    row = dict(con.execute("SELECT * FROM events WHERE identity = ?", (event.identity,)).fetchone())
+    row = _semantic_row(con, event.identity)
     row["material"] = "[]"
     con.execute(
         "UPDATE events SET material = ?, occurrence_material_identity = ? WHERE identity = ?",
@@ -274,7 +286,8 @@ def test_a_nullable_occurrence_material_identity_is_refused(path):
     con = sqlite3.connect(path)
     con.execute(
         "CREATE TABLE events (identity TEXT PRIMARY KEY, kind TEXT NOT NULL, "
-        "timestamp TEXT NOT NULL, material TEXT NOT NULL, exact_material BLOB, "
+        "timestamp TEXT NOT NULL, material TEXT NOT NULL, "
+        "exact_material_identity TEXT, "
         "locality_identity TEXT, "
         "occurrence_material_identity TEXT)"
     )
@@ -347,7 +360,8 @@ def test_a_nullable_occurrence_material_identity_is_refused_when_populated(path)
     con = sqlite3.connect(path)
     con.execute(
         "CREATE TABLE events (identity TEXT PRIMARY KEY, kind TEXT NOT NULL, "
-        "timestamp TEXT NOT NULL, material TEXT NOT NULL, exact_material BLOB, "
+        "timestamp TEXT NOT NULL, material TEXT NOT NULL, "
+        "exact_material_identity TEXT, "
         "locality_identity TEXT, "
         "occurrence_material_identity TEXT)"
     )
@@ -357,13 +371,14 @@ def test_a_nullable_occurrence_material_identity_is_refused_when_populated(path)
         "timestamp": "2026-01-01T00:00:00",
         "material": "{}",
         "exact_material": None,
+        "exact_material_identity": None,
         "locality_identity": "s",
     }
     con.execute(
         "INSERT INTO events VALUES (?,?,?,?,?,?,?)",
         (
             row["identity"], row["kind"], row["timestamp"], row["material"],
-            row["exact_material"], row["locality_identity"],
+            row["exact_material_identity"], row["locality_identity"],
             _occurrence_material_identity(row),
         ),
     )

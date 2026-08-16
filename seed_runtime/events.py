@@ -62,6 +62,10 @@ _OCCURRENCE_FIELDS = (
     "identity", "kind", "timestamp", "material", "exact_material",
     "locality_identity",
 )
+_STORED_OCCURRENCE_FIELDS = (
+    "identity", "kind", "timestamp", "material", "exact_material_identity",
+    "locality_identity",
+)
 
 
 # Material storage, below the integrity boundary.
@@ -79,6 +83,21 @@ _MATERIAL_COMPRESSION_LEVEL = 1
 
 
 _EVENT_IDENTITY = re.compile(r"^evt_\d+$")
+_EVENT_ROW_COLUMNS = (
+    "events.*, event_exact_materials.exact_material AS exact_material"
+)
+_EVENT_ROW_SOURCE = (
+    "events LEFT JOIN event_exact_materials ON "
+    "event_exact_materials.material_identity = events.exact_material_identity"
+)
+
+
+def _exact_material_identity(exact_material: bytes) -> str:
+    """The storage identity of one exact immutable byte sequence."""
+
+    if type(exact_material) is not bytes:
+        raise LedgerIntegrityError("exact material identity requires exact bytes")
+    return hashlib.sha256(exact_material).hexdigest()
 
 
 def _material_references(
@@ -164,6 +183,22 @@ def _stored_occurrence_material(row: "sqlite3.Row") -> dict:
 
     values = dict(row)
     values["material"] = _serialized_material(values["material"])
+    reference = values.get("exact_material_identity")
+    exact_material = values.get("exact_material")
+    if reference is None:
+        if exact_material is not None:
+            raise LedgerIntegrityError(
+                "an absent exact-material reference carries exact bytes"
+            )
+    elif (
+        type(reference) is not str
+        or not reference
+        or type(exact_material) is not bytes
+        or _exact_material_identity(exact_material) != reference
+    ):
+        raise LedgerIntegrityError(
+            "an exact-material reference does not carry its exact bytes"
+        )
     return values
 
 
@@ -522,6 +557,7 @@ class SQLiteEventLedger(EventLedger):
         self._batch_depth = 0
         self._connection = sqlite3.connect(database_path)
         self._connection.row_factory = sqlite3.Row
+        self._connection.execute("PRAGMA foreign_keys = ON")
         # A durable prefix chain has to be extended by every writer. Older
         # writers do not register this connection-local function, so the
         # durable trigger installed below refuses their inserts instead of
@@ -530,14 +566,22 @@ class SQLiteEventLedger(EventLedger):
             "seed_prefix_writer", 0, lambda: 1, deterministic=True
         )
         self._connection.execute("""
+            CREATE TABLE IF NOT EXISTS event_exact_materials (
+                material_identity TEXT PRIMARY KEY,
+                exact_material BLOB NOT NULL
+            ) WITHOUT ROWID
+            """)
+        self._connection.execute("""
             CREATE TABLE IF NOT EXISTS events (
                 identity TEXT PRIMARY KEY,
                 kind TEXT NOT NULL,
                 timestamp TEXT NOT NULL,
                 material TEXT NOT NULL,
-                exact_material BLOB,
+                exact_material_identity TEXT,
                 locality_identity TEXT,
-                occurrence_material_identity TEXT NOT NULL
+                occurrence_material_identity TEXT NOT NULL,
+                FOREIGN KEY (exact_material_identity)
+                    REFERENCES event_exact_materials(material_identity)
             )
             """)
         # The references occurrences already carry, lifted out of the material
@@ -585,7 +629,9 @@ class SQLiteEventLedger(EventLedger):
             row["name"]: row
             for row in self._connection.execute("PRAGMA table_info(events)")
         }
-        expected_columns = set(_OCCURRENCE_FIELDS) | {"occurrence_material_identity"}
+        expected_columns = set(_STORED_OCCURRENCE_FIELDS) | {
+            "occurrence_material_identity"
+        }
         if set(columns) != expected_columns:
             raise LedgerIntegrityError(
                 f"{database_path} does not carry the current occurrence fields"
@@ -602,6 +648,18 @@ class SQLiteEventLedger(EventLedger):
                 f"{database_path} declares occurrence_material_identity nullable, so it was not "
                 "born with the current integrity schema"
             )
+        exact_material_columns = {
+            row["name"]: row
+            for row in self._connection.execute(
+                "PRAGMA table_info(event_exact_materials)"
+            )
+        }
+        if set(exact_material_columns) != {
+            "material_identity", "exact_material"
+        } or not exact_material_columns["exact_material"]["notnull"]:
+            raise LedgerIntegrityError(
+                f"{database_path} does not carry the current exact-material store"
+            )
         # Refuse the mutation the API never performs, so that code outside the
         # API cannot perform it either. A `DROP TRIGGER` removes this; that is
         # what keeps the Assertion at "refused by default" rather than "immutable".
@@ -614,6 +672,16 @@ class SQLiteEventLedger(EventLedger):
             CREATE TRIGGER IF NOT EXISTS events_refuse_delete
             BEFORE DELETE ON events
             BEGIN SELECT RAISE(ABORT, 'recorded occurrences are not removed'); END
+            """)
+        self._connection.execute("""
+            CREATE TRIGGER IF NOT EXISTS event_exact_materials_refuse_update
+            BEFORE UPDATE ON event_exact_materials
+            BEGIN SELECT RAISE(ABORT, 'exact material does not revision'); END
+            """)
+        self._connection.execute("""
+            CREATE TRIGGER IF NOT EXISTS event_exact_materials_refuse_delete
+            BEFORE DELETE ON event_exact_materials
+            BEGIN SELECT RAISE(ABORT, 'exact material is not removed'); END
             """)
         # The boundary Localities are actually selected by. Without it the
         # Locality read returns one Locality after scanning every row, which is
@@ -680,7 +748,8 @@ class SQLiteEventLedger(EventLedger):
 
     def get(self, event_identity: str) -> Event | None:
         row = self._connection.execute(
-            "SELECT * FROM events WHERE identity = ?",
+            f"SELECT {_EVENT_ROW_COLUMNS} FROM {_EVENT_ROW_SOURCE} "
+            "WHERE events.identity = ?",
             (event_identity,),
         ).fetchone()
         return self._row_to_event(row) if row is not None else None
@@ -700,7 +769,8 @@ class SQLiteEventLedger(EventLedger):
         prior_rowid = 0
         for event_identity in identities:
             row = self._connection.execute(
-                "SELECT rowid, * FROM events WHERE identity = ?",
+                f"SELECT events.rowid, {_EVENT_ROW_COLUMNS} "
+                f"FROM {_EVENT_ROW_SOURCE} WHERE events.identity = ?",
                 (event_identity,),
             ).fetchone()
             if row is None or row["locality_identity"] != locality_identity:
@@ -744,10 +814,11 @@ class SQLiteEventLedger(EventLedger):
         through: EventLedgerBoundary | None = None,
     ) -> list[Event]:
         rowid = self._rowid_through(through)
-        boundary_sql = "" if rowid is None else " WHERE rowid <= ?"
+        boundary_sql = "" if rowid is None else " WHERE events.rowid <= ?"
         boundary_args: tuple[Any, ...] = () if rowid is None else (rowid,)
         rows = self._connection.execute(
-            f"SELECT * FROM events{boundary_sql} ORDER BY rowid",
+            f"SELECT {_EVENT_ROW_COLUMNS} FROM {_EVENT_ROW_SOURCE}"
+            f"{boundary_sql} ORDER BY events.rowid",
             boundary_args,
         ).fetchall()
         return [self._row_to_event(row) for row in rows]
@@ -766,12 +837,13 @@ class SQLiteEventLedger(EventLedger):
         through: EventLedgerBoundary | None = None,
     ) -> list[Event]:
         rowid = self._rowid_through(through)
-        boundary = "" if rowid is None else "AND rowid <= ? "
+        boundary = "" if rowid is None else "AND events.rowid <= ? "
         args: tuple[Any, ...] = (locality_identity,) if rowid is None else (locality_identity, rowid)
         rows = self._connection.execute(
-            "SELECT * FROM events WHERE locality_identity = ? "
+            f"SELECT {_EVENT_ROW_COLUMNS} FROM {_EVENT_ROW_SOURCE} "
+            "WHERE events.locality_identity = ? "
             + boundary
-            + "ORDER BY rowid",
+            + "ORDER BY events.rowid",
             args,
         ).fetchall()
         return [self._row_to_event(row) for row in rows]
@@ -783,7 +855,7 @@ class SQLiteEventLedger(EventLedger):
         through: EventLedgerBoundary | None = None,
     ) -> bool:
         rowid = self._rowid_through(through)
-        boundary = "" if rowid is None else "AND rowid <= ? "
+        boundary = "" if rowid is None else "AND events.rowid <= ? "
         args: tuple[Any, ...] = (locality_identity,) if rowid is None else (locality_identity, rowid)
         row = self._connection.execute(
             "SELECT 1 FROM events WHERE locality_identity = ? "
@@ -801,13 +873,14 @@ class SQLiteEventLedger(EventLedger):
         through: EventLedgerBoundary | None = None,
     ) -> Iterator[Event]:
         rowid = self._rowid_through(through)
-        boundary = "" if rowid is None else "AND rowid <= ? "
+        boundary = "" if rowid is None else "AND events.rowid <= ? "
         args: tuple[Any, ...] = (
             (locality_identity, kind) if rowid is None else (locality_identity, kind, rowid)
         )
         rows = self._connection.execute(
-            "SELECT * FROM events WHERE locality_identity = ? "
-            "AND kind = ? " + boundary + "ORDER BY rowid",
+            f"SELECT {_EVENT_ROW_COLUMNS} FROM {_EVENT_ROW_SOURCE} "
+            "WHERE events.locality_identity = ? "
+            "AND events.kind = ? " + boundary + "ORDER BY events.rowid",
             args,
         )
         for row in rows:
@@ -859,7 +932,9 @@ class SQLiteEventLedger(EventLedger):
         carries.
         """
         row = self._connection.execute(
-            "SELECT * FROM events WHERE identity = ?", (event_identity,)
+            f"SELECT {_EVENT_ROW_COLUMNS} FROM {_EVENT_ROW_SOURCE} "
+            "WHERE events.identity = ?",
+            (event_identity,),
         ).fetchone()
         if row is None:
             # Nothing is stored, so there is nothing to have diverged. This is
@@ -968,7 +1043,8 @@ class SQLiteEventLedger(EventLedger):
                 previous = _EMPTY_PREFIX_IDENTITY
                 position = 0
                 for row in self._connection.execute(
-                    "SELECT rowid AS event_rowid, * FROM events ORDER BY rowid"
+                    f"SELECT events.rowid AS event_rowid, {_EVENT_ROW_COLUMNS} "
+                    f"FROM {_EVENT_ROW_SOURCE} ORDER BY events.rowid"
                 ):
                     position += 1
                     event = self._row_to_event(row)
@@ -1018,15 +1094,18 @@ class SQLiteEventLedger(EventLedger):
         )
 
     def _insert_without_commit(self, event: Event) -> int:
+        exact_material_identity = self._store_exact_material_without_commit(
+            event.exact_material
+        )
         cursor = self._connection.execute(
             """
             INSERT INTO events (
-                identity, kind, timestamp, material, exact_material,
+                identity, kind, timestamp, material, exact_material_identity,
                 locality_identity, occurrence_material_identity
             )
             VALUES (?, ?, ?, ?, ?, ?, ?)
             """,
-            self._row_values(event),
+            self._row_values(event, exact_material_identity),
         )
         self._insert_references_without_commit(event)
         return int(cursor.lastrowid)
@@ -1092,20 +1171,69 @@ class SQLiteEventLedger(EventLedger):
             )
         ]
 
+    def _exact_material_reference(self, event_identity: str) -> str | None:
+        """Read one durable storage reference without making it Event material."""
+
+        row = self._connection.execute(
+            "SELECT exact_material_identity FROM events WHERE identity = ?",
+            (event_identity,),
+        ).fetchone()
+        return None if row is None else row["exact_material_identity"]
+
+    def _read_exact_material_reference(
+        self, material_identity: str
+    ) -> bytes | None:
+        """Read storage bytes addressed by a private exact-material reference."""
+
+        row = self._connection.execute(
+            "SELECT exact_material FROM event_exact_materials "
+            "WHERE material_identity = ?",
+            (material_identity,),
+        ).fetchone()
+        return None if row is None else row["exact_material"]
+
+    def _store_exact_material_without_commit(
+        self, exact_material: bytes | None
+    ) -> str | None:
+        if exact_material is None:
+            return None
+        material_identity = _exact_material_identity(exact_material)
+        stored = self._connection.execute(
+            "SELECT exact_material FROM event_exact_materials "
+            "WHERE material_identity = ?",
+            (material_identity,),
+        ).fetchone()
+        if stored is None:
+            self._connection.execute(
+                "INSERT INTO event_exact_materials "
+                "(material_identity, exact_material) VALUES (?, ?)",
+                (material_identity, exact_material),
+            )
+        elif type(stored["exact_material"]) is not bytes or (
+            stored["exact_material"] != exact_material
+        ):
+            raise LedgerIntegrityError(
+                "one exact-material identity cannot address different bytes"
+            )
+        return material_identity
+
     @staticmethod
-    def _row_values(event: Event) -> tuple:
+    def _row_values(event: Event, exact_material_identity: str | None) -> tuple:
         row = {
             "identity": event.identity,
             "kind": event.kind,
             "timestamp": event.timestamp.isoformat(),
             "material": json.dumps(event.material),
             "exact_material": event.exact_material,
+            "exact_material_identity": exact_material_identity,
             "locality_identity": event.locality_identity,
         }
         # Storage form does not participate in the occurrence material identity.
         material_identity = _occurrence_material_identity(row)
         row["material"] = _stored_material(row["material"])
-        return tuple(row[f] for f in _OCCURRENCE_FIELDS) + (material_identity,)
+        return tuple(row[f] for f in _STORED_OCCURRENCE_FIELDS) + (
+            material_identity,
+        )
 
     def _validate_sqlite_batch(self, events: list[Event]) -> None:
         seen: set[str] = set()
@@ -1115,6 +1243,13 @@ class SQLiteEventLedger(EventLedger):
             seen.add(event.identity)
 
     def _row_to_event(self, row: sqlite3.Row) -> Event:
+        if (
+            row["exact_material_identity"] is not None
+            and row["exact_material"] is None
+        ):
+            raise InvalidStoredMaterial(
+                "an event exact-material reference is not available"
+            )
         try:
             material = _decode_screened_event_material(_serialized_material(row["material"]))
         except json.JSONDecodeError as exc:
