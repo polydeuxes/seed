@@ -657,6 +657,30 @@ def test_pair_and_byte_admissions_require_every_compiled_function(
         )
 
 
+def test_format_recurrence_precedes_later_moved_material(
+    book_pair_format_occurrences,
+    book_three_byte_format_occurrences,
+):
+    additions = book_three_byte_format_occurrences[1]
+    found = None
+    for position, source_invocations in enumerate(book_pair_format_occurrences):
+        earlier, coordinate, later = first_recurring_added_compare(
+            additions,
+            source_invocations,
+            source_invocations[0].implementation_function,
+            boundary_identity=f"book-moved-recurrence-{position}",
+            act_occurrence_count_limit=len(additions),
+        )
+        if later is None:
+            continue
+        assert coordinate == later.result_returned
+        assert len(earlier) + 1 < len(additions)
+        found = (earlier, later)
+        break
+
+    assert found is not None
+
+
 def test_compiled_format_implementation_functions_admit_the_same_material_differently(
     book_pair_format_occurrences,
 ):
