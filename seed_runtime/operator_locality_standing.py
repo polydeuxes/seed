@@ -25,6 +25,14 @@ from seed_runtime.operator_standing_continuation import (
     get_recorded_standing_locality_continuation,
     get_standing_locality_continuation_responsibility_assignment,
 )
+from seed_runtime.operator_material_acquisition import (
+    OPERATOR_MATERIAL_ACQUIRE_ACT_EVIDENCE_KIND,
+    OPERATOR_MATERIAL_ACQUIRE_RECORDED_KIND,
+    OPERATOR_MATERIAL_ACQUIRE_RESPONSIBILITY_ASSIGNMENT_RECORDED_KIND,
+    get_operator_material_acquire_act_evidence,
+    get_operator_material_acquire_responsibility_assignment,
+    get_recorded_operator_material_acquire,
+)
 from seed_runtime.yield_evidence import read_yield_relation_requirements
 
 # The writer of these occurrences declares their kinds. A reader declaring its
@@ -58,11 +66,17 @@ _STANDING_LOCALITY_CONTINUATION_KINDS = {
     STANDING_LOCALITY_CONTINUATION_ACT_EVIDENCE_KIND,
     STANDING_LOCALITY_CONTINUATION_RECORDED_KIND,
 }
+_OPERATOR_MATERIAL_ACQUIRE_KINDS = {
+    OPERATOR_MATERIAL_ACQUIRE_RESPONSIBILITY_ASSIGNMENT_RECORDED_KIND,
+    OPERATOR_MATERIAL_ACQUIRE_ACT_EVIDENCE_KIND,
+    OPERATOR_MATERIAL_ACQUIRE_RECORDED_KIND,
+}
 _SUPPORTED_KINDS = {
     *_SUBJECT_BY_KIND,
     *_MEASUREMENT_ACT_EVIDENCE_KINDS,
     *_MEASUREMENT_RECORDED_KINDS,
     *_STANDING_LOCALITY_CONTINUATION_KINDS,
+    *_OPERATOR_MATERIAL_ACQUIRE_KINDS,
     _REPRESENTATION_RECORDED_KIND,
     _REPRESENTATION_ACT_EVIDENCE_KIND,
     _REPRESENTATION_LOCALITY_EVIDENCE_KIND,
@@ -198,6 +212,7 @@ def advance_operator_locality_standing(
     representations: dict[str, dict[str, Any]] = {}
     recorded_relation_standings: dict[str, None] = {}
     responsibility_assignment_occurrences: dict[str, None] = {}
+    operator_material_acquire_act_occurrences: dict[str, None] = {}
     # Kept sorted and distinct in place rather than as a set sorted on return.
     # A set would have to be rebuilt from the prior list and re-sorted on every
     # advance, which costs the accumulated size each time.  These coordinates
@@ -234,6 +249,13 @@ def advance_operator_locality_standing(
             raise ValueError(
                 "prior Locality Standing requires exact Responsibility assignment occurrences"
             )
+        operator_material_acquire_act_occurrences = prior[
+            "operator_material_acquire_act_occurrences"
+        ]
+        if type(operator_material_acquire_act_occurrences) is not dict:
+            raise ValueError(
+                "prior Locality Standing requires exact operator material acquire Act occurrences"
+            )
         known_loss = prior["known_loss"]
         unknowns = prior["unknowns"]
         conflicts = prior["conflicts"]
@@ -249,6 +271,7 @@ def advance_operator_locality_standing(
             or event.kind in _MEASUREMENT_ACT_EVIDENCE_KINDS
             or event.kind in _MEASUREMENT_RECORDED_KINDS
             or event.kind in _STANDING_LOCALITY_CONTINUATION_KINDS
+            or event.kind in _OPERATOR_MATERIAL_ACQUIRE_KINDS
         ):
             continue
         if event.kind not in _SUPPORTED_KINDS:
@@ -265,6 +288,22 @@ def advance_operator_locality_standing(
         if _carries_exact_result(ledger, event):
             exact_result_occurrences[event.identity] = None
         if event.kind in _MEASUREMENT_ACT_EVIDENCE_KINDS:
+            continue
+        if (
+            event.kind
+            == OPERATOR_MATERIAL_ACQUIRE_RESPONSIBILITY_ASSIGNMENT_RECORDED_KIND
+        ):
+            get_operator_material_acquire_responsibility_assignment(
+                ledger, event.identity
+            )
+            responsibility_assignment_occurrences[event.identity] = None
+            continue
+        if event.kind == OPERATOR_MATERIAL_ACQUIRE_ACT_EVIDENCE_KIND:
+            get_operator_material_acquire_act_evidence(ledger, event.identity)
+            operator_material_acquire_act_occurrences[event.identity] = None
+            continue
+        if event.kind == OPERATOR_MATERIAL_ACQUIRE_RECORDED_KIND:
+            get_recorded_operator_material_acquire(ledger, event.identity)
             continue
         if (
             event.kind
@@ -430,6 +469,9 @@ def advance_operator_locality_standing(
         "recorded_relation_standings": recorded_relation_standings,
         "responsibility_assignment_occurrences": (
             responsibility_assignment_occurrences
+        ),
+        "operator_material_acquire_act_occurrences": (
+            operator_material_acquire_act_occurrences
         ),
         "known_loss": known_loss,
         "unknowns": unknowns,

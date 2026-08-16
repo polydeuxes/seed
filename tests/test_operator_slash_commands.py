@@ -7,6 +7,9 @@ from io import BytesIO, StringIO
 from seed_runtime.events import EventLedger
 from seed_runtime.operator_checkpoint import ADDRESSED_REPRESENTATION_LOCALITY_EVIDENCE_KIND
 from seed_runtime.operator_console import run_persistent_operator_console
+from seed_runtime.operator_material_acquisition import (
+    OPERATOR_MATERIAL_ACQUIRE_RECORDED_KIND,
+)
 from seed_runtime.material_ingest import (
     MATERIAL_INGEST_OCCURRED_KIND,
     ingested_material_bytes,
@@ -33,10 +36,19 @@ def _raw_bytes(ledger: EventLedger) -> list[bytes]:
     ]
 
 
+def _acquired_bytes(ledger: EventLedger) -> list[bytes]:
+    return [
+        event.exact_material
+        for event in ledger.list()
+        if event.kind == OPERATOR_MATERIAL_ACQUIRE_RECORDED_KIND
+    ]
+
+
 def test_non_slash_frames_are_raw_data_and_eof_ends_the_loop():
     ledger = _run(b"exit\n\xff\x00\n")
 
     assert _raw_bytes(ledger) == [b"exit\n", b"\xff\x00\n"]
+    assert _acquired_bytes(ledger) == [b"exit\n", b"\xff\x00\n"]
     assert not [event for event in ledger.list() if event.kind.startswith("operator.command.")]
 
 
@@ -176,6 +188,7 @@ def test_exit_is_material_and_does_not_establish_stop():
     ledger = _run(b"/exit\nafter\n")
 
     assert _raw_bytes(ledger) == [b"/exit\n", b"after\n"]
+    assert _acquired_bytes(ledger) == [b"/exit\n", b"after\n"]
     assert not [
         event for event in ledger.list() if event.kind.startswith("operator.command.")
     ]

@@ -11,6 +11,11 @@ from seed_runtime.byte_measurement import (
 from seed_runtime.events import EventLedger
 from seed_runtime.operator_ingest import run_operator_ingest
 from seed_runtime.operator_material_boundary import operator_boundary_material
+from seed_runtime.operator_material_acquisition import (
+    record_operator_material_acquire_responsibility_assignment,
+    record_operator_material_acquire_responsible_act_evidence,
+    record_operator_material_acquire_result,
+)
 from seed_runtime.operator_command import (
     OperatorCommandHandler,
     is_slash_command,
@@ -174,9 +179,71 @@ def run_persistent_operator_console(
         ledger, locality_standing, representation
     )
     while True:
+        acquire_assignment = (
+            record_operator_material_acquire_responsibility_assignment(
+                ledger,
+                locality_identity=locality_identity,
+                addressed_representation_event_identity=representation[
+                    "representation_event_identity"
+                ],
+                locality_standing=locality_standing,
+            )
+        )
+        locality_standing = _advance_over(
+            ledger,
+            locality_standing,
+            (acquire_assignment.identity,),
+            locality_identity=locality_identity,
+        )
+        acquire_act_evidence = (
+            record_operator_material_acquire_responsible_act_evidence(
+                ledger,
+                responsibility_assignment_event_identity=(
+                    acquire_assignment.identity
+                ),
+                responsibility_assignment_standing=locality_standing,
+            )
+        )
+        locality_standing = _advance_over(
+            ledger,
+            locality_standing,
+            (acquire_act_evidence.identity,),
+            locality_identity=locality_identity,
+        )
+        representation = record_operator_representation(
+            ledger,
+            locality_identity=locality_identity,
+            locality_standing=locality_standing,
+        )
+        locality_standing = _advance_over_representation(
+            ledger, locality_standing, representation
+        )
         boundary_material = operator_boundary_material(input_stream)
         if boundary_material.eof:
             return
+        acquired_material = record_operator_material_acquire_result(
+            ledger,
+            responsible_act_evidence_event_identity=acquire_act_evidence.identity,
+            boundary_material=boundary_material,
+        )
+        locality_standing = _advance_over(
+            ledger,
+            locality_standing,
+            (
+                acquired_material.material["yield_evidence_identity"],
+                acquired_material.identity,
+            ),
+            locality_identity=locality_identity,
+        )
+        representation = record_operator_representation(
+            ledger,
+            locality_identity=locality_identity,
+            locality_standing=locality_standing,
+            source_occurrence_reference=acquired_material.identity,
+        )
+        locality_standing = _advance_over_representation(
+            ledger, locality_standing, representation
+        )
         if (
             host_invocation_provider is not None
             and boundary_material.exact_bytes.startswith(b"!")

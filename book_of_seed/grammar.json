@@ -133,6 +133,49 @@
         ]
       ]
     },
+    "01.Source.G": {
+      "subject": "one_exact_operator_material_boundary_occurrence",
+      "responsibility": {
+        "kind": "operator_material_boundary_result_preservation",
+        "coordinates": [
+          "Responsibility_assignment_subject",
+          "responsible_boundary",
+          "exact_Act",
+          "Act_occurrence",
+          "result_boundary",
+          "addressed_Representation_occurrence",
+          "current_Locality_Standing_boundary",
+          "Locality",
+          "Scope",
+          "Evidence_occurrence",
+          "Authority",
+          "limits",
+          "Unknowns",
+          "Standing"
+        ]
+      },
+      "authority": "active_Book_for_exact_byte_preservation_only",
+      "no_material_boundary": {
+        "result": false,
+        "Yield": false,
+        "completion": false
+      },
+      "does_not_establish": [
+        "represented_relation",
+        "Applicability",
+        "Participation",
+        "Authority_for_another_Act",
+        "recurrence",
+        "completion",
+        "Authority_for_another_occurrence"
+      ],
+      "distinct_from": [
+        ["Responsibility_assignment", "exact_Act"],
+        ["exact_Act", "Act_occurrence"],
+        ["Act_occurrence", "material_result"],
+        ["equal_exact_material", "equal_result_identity"]
+      ]
+    },
     "01.Standing.D.1": {
       "subject": "Assertion",
       "identity": ["result", "subject", "Scope", "content"],

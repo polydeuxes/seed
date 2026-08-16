@@ -47,6 +47,16 @@ from seed_runtime.operator_representation import (
     emit_operator_representation_material,
     record_operator_representation,
 )
+from seed_runtime.operator_material_acquisition import (
+    EVENT_KIND_RESPONSIBILITIES as ACQUIRE_EVENT_KIND_RESPONSIBILITIES,
+    OPERATOR_MATERIAL_ACQUIRE_ACT_EVIDENCE_KIND,
+    OPERATOR_MATERIAL_ACQUIRE_RECORDED_KIND,
+    OPERATOR_MATERIAL_ACQUIRE_RESPONSIBILITY_ASSIGNMENT_RECORDED_KIND,
+    record_operator_material_acquire_responsibility_assignment,
+    record_operator_material_acquire_responsible_act_evidence,
+    record_operator_material_acquire_result,
+)
+from seed_runtime.operator_material_boundary import OperatorBoundaryMaterial
 from seed_runtime.operator_standing_continuation import (
     EVENT_KIND_RESPONSIBILITIES as CONTINUATION_EVENT_KIND_RESPONSIBILITIES,
     STANDING_LOCALITY_CONTINUATION_ACT_EVIDENCE_KIND,
@@ -506,6 +516,49 @@ def _standing_locality_continuation_yield_witness() -> dict:
     event = record_standing_locality_continuation_result(
         ledger,
         responsible_act_evidence_event_identity=act_evidence.identity,
+    )
+    return _yield_bundle(ledger, event)
+
+
+def _operator_material_acquire_yield_witness() -> dict:
+    ledger = _IntegrityAdversaryLedger()
+    locality_identity = "operator-material-acquire"
+    standing = read_operator_locality_standing(
+        ledger, locality_identity=locality_identity
+    )
+    representation = record_operator_representation(
+        ledger,
+        locality_identity=locality_identity,
+        locality_standing=standing,
+    )
+    standing = read_operator_locality_standing(
+        ledger, locality_identity=locality_identity
+    )
+    assignment = record_operator_material_acquire_responsibility_assignment(
+        ledger,
+        locality_identity=locality_identity,
+        addressed_representation_event_identity=representation[
+            "representation_event_identity"
+        ],
+        locality_standing=standing,
+    )
+    assignment_standing = read_operator_locality_standing(
+        ledger, locality_identity=locality_identity
+    )
+    act_evidence = record_operator_material_acquire_responsible_act_evidence(
+        ledger,
+        responsibility_assignment_event_identity=assignment.identity,
+        responsibility_assignment_standing=assignment_standing,
+    )
+    event = record_operator_material_acquire_result(
+        ledger,
+        responsible_act_evidence_event_identity=act_evidence.identity,
+        boundary_material=OperatorBoundaryMaterial(
+            exact_bytes=b"\x00\xffoperator material",
+            eof=False,
+            material_boundary="fixture byte boundary",
+            known_loss=("earlier material is not available",),
+        ),
     )
     return _yield_bundle(ledger, event)
 
@@ -1338,6 +1391,7 @@ def _remaining_yield_requirement_bundles() -> dict[str, dict[str, dict]]:
         "occurrence_position_measurement": _occurrence_position_yield_witness,
         "failed_emission": _failed_emission_yield_witness,
         "material_ingest": _material_ingest_yield_witness,
+        "operator_material_acquire": _operator_material_acquire_yield_witness,
         "standing_locality_continuation": (
             _standing_locality_continuation_yield_witness
         ),
@@ -3073,6 +3127,7 @@ def test_unrelated_yield_occurrences_do_not_share_result_identity():
         "occurrence_position_measurement": _occurrence_position_yield_witness,
         "failed_emission": _failed_emission_yield_witness,
         "material_ingest": _material_ingest_yield_witness,
+        "operator_material_acquire": _operator_material_acquire_yield_witness,
         "standing_locality_continuation": (
             _standing_locality_continuation_yield_witness
         ),
@@ -3155,6 +3210,18 @@ def test_standing_locality_continuation_stages_keep_distinct_machine_clauses():
     assert CONTINUATION_EVENT_KIND_RESPONSIBILITIES[
         STANDING_LOCALITY_CONTINUATION_RECORDED_KIND
     ] == "06.Locality.A"
+
+
+def test_operator_material_acquire_stages_keep_distinct_machine_clauses():
+    assert ACQUIRE_EVENT_KIND_RESPONSIBILITIES[
+        OPERATOR_MATERIAL_ACQUIRE_RESPONSIBILITY_ASSIGNMENT_RECORDED_KIND
+    ] == "01.Source.G"
+    assert ACQUIRE_EVENT_KIND_RESPONSIBILITIES[
+        OPERATOR_MATERIAL_ACQUIRE_ACT_EVIDENCE_KIND
+    ] == "02.Acts.A"
+    assert ACQUIRE_EVENT_KIND_RESPONSIBILITIES[
+        OPERATOR_MATERIAL_ACQUIRE_RECORDED_KIND
+    ] == "01.Source.G"
 
 
 def test_representation_source_act_and_locality_witnesses_do_not_absorb_each_other():

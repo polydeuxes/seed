@@ -46,6 +46,14 @@ A candidate preserves every applicable source role, representation Act occurrenc
 
 Supplied material may assert that X represents or identifies Y. The responsible representation Act occurrence preserves source identity or role, source occurrence where evidenced, Scope, provenance, Authority limits, known loss, conflicts, and Unknowns. Locality, labels, reference resolution, shape, or repetition do not support either the source relation or represented relation. Each requires a responsible occurrence.
 
+### 01.Source.G — One exact operator material boundary occurrence
+
+Within the exact Scope of an intact addressed Representation, current Locality Standing boundary, and one result boundary, active Book assigns this Seed the Responsibility only to preserve one exact material result supplied at one operator boundary. The assignment preserves its own subject, responsible boundary, exact Act, Act occurrence, result boundary, Locality, Scope, Evidence occurrence, Authority, limits, Unknowns, and Standing.
+
+The assignment, exact Act, Act occurrence, Yield, and material result remain distinct by identity. Equal exact material under another occurrence does not identify either result or occurrence. Active Book Authority is bounded to preserving the exact supplied material at that one boundary. It establishes no represented relation, Applicability, Participation, Authority for another Act, recurrence, completion, or Authority for another occurrence.
+
+When the boundary supplies no material, this Seed establishes no material result, Yield, or completion. Another operator material boundary occurrence requires another exact assignment and Act occurrence.
+
 ## Important distinctions
 
 - supplied material != Seed representation
@@ -54,6 +62,8 @@ Supplied material may assert that X represents or identifies Y. The responsible 
 - carried relation Assertion != established relation
 - equal content != equal identity or Standing
 - Measurement != represented relation
+- operator material boundary occurrence != another boundary occurrence
+- no supplied material != completion
 
 ## Related chapters
 

@@ -88,6 +88,20 @@ def test_warrant_admission_is_broad_in_rosetta_and_singular_in_book():
     assert rosetta_warrant == {"warrant", "warranted", "warranting", "warrants"}
 
 
+def test_clause_coordinate_tokens_require_explicit_curation():
+    assert "g" in admitted_lexicon()
+    assert "g" in _lexicon_entries(ROSETTA_LEXICON)
+
+    uncurated_coordinate_words = set(
+        re.findall(
+            r"[A-Za-z]+",
+            scan_active_line("01.Source.Uncuratedcoordinate").lower(),
+        )
+    ) - admitted_lexicon()
+
+    assert uncurated_coordinate_words == {"uncuratedcoordinate"}
+
+
 def test_warrant_remains_lowercase_and_bounded_to_the_three_standing_sentences():
     chapter = (BOOK / "chapters" / "02-constitutional-standing.md").read_text(
         encoding="utf-8"

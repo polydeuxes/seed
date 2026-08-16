@@ -43,6 +43,35 @@ _REPRESENTATION_RELATION_EVIDENCE_KINDS = (
     "operator.yield.evidence_recorded",
     "operator.representation.locality_evidenced",
 )
+_OPERATOR_MATERIAL_ACQUIRE_BEGIN_KINDS = (
+    "operator.material.acquire_responsibility_assignment_recorded",
+    "operator.material.acquire_act_evidenced",
+)
+_OPERATOR_MATERIAL_ACQUIRE_RESULT_KINDS = (
+    "operator.yield.evidence_recorded",
+    "operator.material.acquire_recorded",
+)
+
+
+def _one_material_console_kinds():
+    return [
+        *_REPRESENTATION_RELATION_EVIDENCE_KINDS,
+        "operator.representation.recorded",
+        *_OPERATOR_MATERIAL_ACQUIRE_BEGIN_KINDS,
+        *_REPRESENTATION_RELATION_EVIDENCE_KINDS,
+        "operator.representation.recorded",
+        *_OPERATOR_MATERIAL_ACQUIRE_RESULT_KINDS,
+        *_REPRESENTATION_RELATION_EVIDENCE_KINDS,
+        "operator.representation.recorded",
+        *_INGEST_KINDS,
+        *_BYTE_MEASUREMENT_KINDS,
+        *_OCCURRENCE_POSITION_MEASUREMENT_KINDS,
+        *_REPRESENTATION_RELATION_EVIDENCE_KINDS,
+        "operator.representation.recorded",
+        *_OPERATOR_MATERIAL_ACQUIRE_BEGIN_KINDS,
+        *_REPRESENTATION_RELATION_EVIDENCE_KINDS,
+        "operator.representation.recorded",
+    ]
 
 
 class DictSubclass(dict):
@@ -971,15 +1000,7 @@ def test_console_forms_c0_before_first_ingress_and_preserves_provenance_only():
     # occurrence and its exact Yield relation are preserved; no Compare or
     # Identification follows.
     kinds = [event.kind for event in ledger.list()]
-    assert kinds == [
-        *_REPRESENTATION_RELATION_EVIDENCE_KINDS,
-        "operator.representation.recorded",
-        *_INGEST_KINDS,
-        *_BYTE_MEASUREMENT_KINDS,
-        *_OCCURRENCE_POSITION_MEASUREMENT_KINDS,
-        *_REPRESENTATION_RELATION_EVIDENCE_KINDS,
-        "operator.representation.recorded",
-    ]
+    assert kinds == _one_material_console_kinds()
     c0_formed = next(
         event
         for event in ledger.list()
@@ -1103,15 +1124,7 @@ def test_console_presents_standing_only_across_an_ingest():
     ledger, _ = _run_console("hello\n")
 
     kinds = [event.kind for event in ledger.list()]
-    assert kinds == [
-        *_REPRESENTATION_RELATION_EVIDENCE_KINDS,
-        "operator.representation.recorded",
-        *_INGEST_KINDS,
-        *_BYTE_MEASUREMENT_KINDS,
-        *_OCCURRENCE_POSITION_MEASUREMENT_KINDS,
-        *_REPRESENTATION_RELATION_EVIDENCE_KINDS,
-        "operator.representation.recorded",
-    ]
+    assert kinds == _one_material_console_kinds()
     # No relation or result-Standing occurrence follows by identity.
     assert not any(k.startswith("operator.interaction.") for k in kinds)
 
@@ -1119,7 +1132,8 @@ def test_console_presents_standing_only_across_an_ingest():
     representations = [
         event for event in events if event.kind == "operator.representation.recorded"
     ]
-    c0, c1 = representations
+    c0 = representations[0]
+    c1 = representations[-2]
     ingest = next(
         event for event in events if event.kind == "material.ingest.occurred"
     )
@@ -1160,7 +1174,7 @@ def test_c0_and_c1_are_recorded_in_order_without_authored_output():
         i for i, event in enumerate(events)
         if event.kind == "operator.representation.recorded"
     ]
-    assert recorded[0] < ingest_index < recorded[1]
+    assert recorded[0] < ingest_index < recorded[-2]
     assert output == ""
     assert not any(
         event.kind == "operator.representation.emitted" for event in events
@@ -1270,12 +1284,11 @@ def test_next_console_iteration_validates_c1_and_forms_c2():
     # C1 and represents C2.
     console_ledger, output = _run_console("first\nsecond\n")
     standing = _standing(console_ledger)
-    assert len(standing["representations"]) == 3
+    assert len(standing["representations"]) == 8
     assert output == ""
-    _, second_identity, third_identity = list(standing["representations"])
-    assert list(standing["representations"])[-1] == third_identity
-    c1 = standing["representations"][second_identity]
-    c2 = standing["representations"][third_identity]
+    representation_identities = list(standing["representations"])
+    c1 = standing["representations"][representation_identities[3]]
+    c2 = standing["representations"][representation_identities[6]]
     # C2's Standing boundary stands after C1's Representation Act.
     positions = {
         event.identity: index for index, event in enumerate(console_ledger.list())
@@ -1303,6 +1316,8 @@ def test_first_interaction_attaches_no_representation_to_the_ingest():
         *_INGEST_KINDS,
         *_BYTE_MEASUREMENT_KINDS,
         *_OCCURRENCE_POSITION_MEASUREMENT_KINDS,
+        *_OPERATOR_MATERIAL_ACQUIRE_BEGIN_KINDS,
+        "operator.material.acquire_recorded",
         "operator.representation.act_evidenced",
         "operator.representation.locality_evidenced",
         "operator.representation.recorded",

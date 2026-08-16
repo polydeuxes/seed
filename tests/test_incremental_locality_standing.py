@@ -406,6 +406,7 @@ def test_every_growable_accumulator_participates_without_copying():
         "ingest_occurrences",
         "measurement_occurrences",
         "exact_result_occurrences",
+        "operator_material_acquire_act_occurrences",
         "known_loss",
         "unknowns",
         "conflicts",
@@ -466,6 +467,6 @@ def test_the_locality_records_the_same_occurrences_it_always_did():
     ledger, output = _console("alpha\nbeta\n")
     kinds = [event.kind for event in ledger.list()]
     assert kinds.count(MATERIAL_INGEST_OCCURRED_KIND) == 2
-    assert kinds.count("operator.representation.recorded") == 3
+    assert kinds.count("operator.representation.recorded") == 8
     assert kinds.count("operator.representation.emitted") == 0
     assert output == ""
