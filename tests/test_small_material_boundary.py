@@ -14,6 +14,8 @@ from seed_runtime.material_ingest import ingest_material
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "scripts"))
 
+import compiled_material_invocation  # noqa: E402
+
 from compiled_format_invocation import (  # noqa: E402
     COMPILED_IMPLEMENTATION_FUNCTIONS,
     CompiledImplementationFunction,
@@ -26,12 +28,16 @@ from compiled_format_invocation import (  # noqa: E402
     compiled_reference_invocations,
 )
 from compiled_material_invocation import (  # noqa: E402
+    IngestResultReference,
     MATERIAL_IMPLEMENTATION_FUNCTIONS,
     MaterialAdmissionOccurrence,
     MaterialAddedCompareOccurrence,
+    MaterialFunctionsAdmissionOccurrence,
     MaterialImplementationFunction,
+    MaterialInvocationOccurrence,
     MaterialRemovedCompareOccurrence,
     admit_invocation_occurrences,
+    admit_invocation_rows,
     compare_added_material_invocations,
     compare_removed_material_invocations,
     ingest_result_reference,
@@ -45,6 +51,112 @@ COMPILED_MATERIAL = (
     Path.home() / ".local" / "share" / "piper-voices" / "en_US-lessac-medium.onnx"
 )
 COMPILED_FUNCTION_AVAILABLE = COMPILED_EXECUTABLE.is_file() and COMPILED_MATERIAL.is_file()
+
+
+def test_material_function_admission_reads_exact_invocation_rows_once(monkeypatch):
+    references = tuple(
+        IngestResultReference(
+            recorded_occurrence_identity=f"one-reading-ingest-{position}",
+            locality_identity="one-reading-locality",
+            act_occurrence_identity=f"one-reading-act-{position}",
+            result_identity=f"one-reading-result-{position}",
+            yield_evidence_identity=f"one-reading-yield-{position}",
+            exact_material=bytes((position,)),
+        )
+        for position in range(8)
+    )
+    functions = tuple(
+        MaterialImplementationFunction(
+            identity=f"one-reading-function-{position}",
+            invocation=(f"one-reading-invocation-{position}",),
+        )
+        for position in range(3)
+    )
+    rows = tuple(
+        tuple(
+            MaterialInvocationOccurrence(
+                boundary_identity="one-reading-invocations",
+                invocation_position=position,
+                exact_material=reference.exact_material,
+                implementation_function=function,
+                returned=True,
+                returncode=0,
+                stdout_bytes=bytes((function_position, position % 2)),
+                stderr_bytes=b"",
+                source_reference=reference,
+            )
+            for position, reference in enumerate(references)
+        )
+        for function_position, function in enumerate(functions)
+    )
+    readings = []
+    coordinate_reads = []
+    original_reading = (
+        compiled_material_invocation._material_functions_admission_reading
+    )
+    original_coordinates = MaterialInvocationOccurrence.coordinates.fget
+
+    def measured_reading(occurrence_rows):
+        readings.append(occurrence_rows)
+        return original_reading(occurrence_rows)
+
+    def measured_coordinates(occurrence):
+        coordinate_reads.append(occurrence)
+        return original_coordinates(occurrence)
+
+    monkeypatch.setattr(
+        compiled_material_invocation,
+        "_material_functions_admission_reading",
+        measured_reading,
+    )
+    monkeypatch.setattr(
+        MaterialInvocationOccurrence,
+        "coordinates",
+        property(measured_coordinates),
+    )
+
+    admission = admit_invocation_rows(
+        rows,
+        boundary_identity="one-reading-admission",
+    )
+
+    assert readings == [rows]
+    assert len(coordinate_reads) == len(functions) * len(references)
+    assert admission.source_material == references
+    assert tuple(
+        reference.invocation_occurrence
+        for reference in admission.invocation_result_references
+    ) == tuple(occurrence for row in rows for occurrence in row)
+
+    reconstructed = replace(admission)
+    assert reconstructed == admission
+    assert readings == [rows, rows]
+    assert len(coordinate_reads) == 2 * len(functions) * len(references)
+
+    changed = replace(rows[0][0], stdout_bytes=b"changed")
+    with pytest.raises(ValueError, match="differs from its invocation results"):
+        MaterialFunctionsAdmissionOccurrence(
+            admission_occurrence=admission.admission_occurrence,
+            invocation_result_references=(
+                changed.result_reference,
+                *admission.invocation_result_references[1:],
+            ),
+        )
+
+    with pytest.raises(TypeError, match="reading must be exact"):
+        MaterialFunctionsAdmissionOccurrence(
+            admission_occurrence=admission.admission_occurrence,
+            invocation_result_references=admission.invocation_result_references,
+            _reading=object(),
+        )
+
+    different_reading = original_reading((rows[0],))
+    with pytest.raises(ValueError, match="reading differs"):
+        MaterialFunctionsAdmissionOccurrence(
+            admission_occurrence=admission.admission_occurrence,
+            invocation_result_references=admission.invocation_result_references,
+            _reading=different_reading,
+        )
 
 
 def _codec_functions() -> tuple[CompiledImplementationFunction, ...]:

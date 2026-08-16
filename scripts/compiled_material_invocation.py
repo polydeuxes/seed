@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from concurrent.futures import ThreadPoolExecutor
-from dataclasses import dataclass
+from dataclasses import InitVar, dataclass, field
 from typing import Hashable
 import os
 import selectors
@@ -477,11 +477,101 @@ class MaterialAdmissionOccurrence:
 
 
 @dataclass(frozen=True, slots=True)
+class _MaterialFunctionsAdmissionReading:
+    occurrence_rows: tuple[tuple[MaterialInvocationOccurrence, ...], ...]
+    source_material: tuple[Hashable, ...] = field(init=False)
+    admitted_material: tuple[tuple[Hashable, ...], ...] = field(init=False)
+    invocation_result_references: tuple[
+        MaterialInvocationResultReference, ...
+    ] = field(init=False)
+
+    def __post_init__(self) -> None:
+        if type(self.occurrence_rows) is not tuple or not self.occurrence_rows:
+            raise TypeError(
+                "material functions Admission requires exact invocation tuples"
+            )
+        if any(
+            type(row) is not tuple
+            or not row
+            or any(
+                not isinstance(occurrence, MaterialInvocationOccurrence)
+                for occurrence in row
+            )
+            for row in self.occurrence_rows
+        ):
+            raise TypeError(
+                "material functions Admission requires exact invocation tuples"
+            )
+        identities = tuple(
+            row[0].implementation_function_identity for row in self.occurrence_rows
+        )
+        if len(set(identities)) != len(identities) or any(
+            any(
+                occurrence.implementation_function_identity != identity
+                for occurrence in row
+            )
+            for identity, row in zip(identities, self.occurrence_rows)
+        ):
+            raise ValueError(
+                "each material functions tuple requires one exact function"
+            )
+        for row in self.occurrence_rows:
+            implementation_function = row[0].implementation_function
+            if any(
+                occurrence.implementation_function != implementation_function
+                for occurrence in row[1:]
+            ):
+                raise ValueError(
+                    "one implementation identity names different functions"
+                )
+        source_rows = tuple(
+            tuple(occurrence.source_reference for occurrence in row)
+            for row in self.occurrence_rows
+        )
+        if any(source is None for row in source_rows for source in row):
+            raise ValueError("material functions Admission requires exact source references")
+        source_material = source_rows[0]
+        if any(row != source_material for row in source_rows[1:]):
+            raise ValueError("material functions require the same exact material")
+        same_coordinates = {}
+        for position, source in enumerate(source_material):
+            coordinates = tuple(
+                (identity, row[position].coordinates)
+                for identity, row in zip(identities, self.occurrence_rows)
+            )
+            same_coordinates.setdefault(coordinates, []).append(source)
+        admitted_material = tuple(
+            tuple(material) for material in same_coordinates.values()
+        )
+        object.__setattr__(self, "source_material", source_material)
+        object.__setattr__(self, "admitted_material", admitted_material)
+        object.__setattr__(
+            self,
+            "invocation_result_references",
+            tuple(
+                occurrence.result_reference
+                for row in self.occurrence_rows
+                for occurrence in row
+            ),
+        )
+
+
+def _material_functions_admission_reading(
+    occurrence_rows: tuple[tuple[MaterialInvocationOccurrence, ...], ...],
+) -> _MaterialFunctionsAdmissionReading:
+    return _MaterialFunctionsAdmissionReading(occurrence_rows)
+
+
+@dataclass(frozen=True, slots=True)
 class MaterialFunctionsAdmissionOccurrence:
     admission_occurrence: AdmissionOccurrence
     invocation_result_references: tuple[MaterialInvocationResultReference, ...]
+    _reading: InitVar[_MaterialFunctionsAdmissionReading | None] = None
 
-    def __post_init__(self) -> None:
+    def __post_init__(
+        self,
+        _reading: _MaterialFunctionsAdmissionReading | None,
+    ) -> None:
         if not isinstance(self.admission_occurrence, AdmissionOccurrence):
             raise TypeError("material functions Admission requires its exact Act occurrence")
         if (
@@ -493,38 +583,30 @@ class MaterialFunctionsAdmissionOccurrence:
             )
         ):
             raise TypeError("material functions Admission requires exact invocation results")
-        rows = {}
-        functions = {}
-        for reference in self.invocation_result_references:
-            occurrence = reference.invocation_occurrence
-            identity = occurrence.implementation_function_identity
-            function = functions.setdefault(identity, occurrence.implementation_function)
-            if function != occurrence.implementation_function:
-                raise ValueError("one implementation identity names different functions")
-            rows.setdefault(identity, []).append(occurrence)
-        source_rows = tuple(
-            tuple(occurrence.source_reference for occurrence in row)
-            for row in rows.values()
-        )
-        if any(source is None for row in source_rows for source in row):
-            raise ValueError("material functions Admission requires exact source references")
-        source_material = source_rows[0]
-        if any(row != source_material for row in source_rows[1:]):
-            raise ValueError("material functions require the same exact material")
-        if source_material != self.admission_occurrence.source_material:
-            raise ValueError("material functions Admission source differs from its invocations")
-        identities = tuple(rows)
-        same_coordinates = {}
-        for position, source in enumerate(source_material):
-            coordinates = tuple(
-                (identity, rows[identity][position].coordinates)
-                for identity in identities
+        if _reading is None:
+            rows = {}
+            for reference in self.invocation_result_references:
+                occurrence = reference.invocation_occurrence
+                rows.setdefault(
+                    occurrence.implementation_function_identity,
+                    [],
+                ).append(occurrence)
+            reading = _material_functions_admission_reading(
+                tuple(tuple(row) for row in rows.values())
             )
-            same_coordinates.setdefault(coordinates, []).append(source)
-        admitted_material = tuple(
-            tuple(material) for material in same_coordinates.values()
-        )
-        if admitted_material != self.admission_occurrence.admitted_material:
+        elif type(_reading) is not _MaterialFunctionsAdmissionReading:
+            raise TypeError(
+                "material functions Admission reading must be exact"
+            )
+        else:
+            reading = _reading
+        if reading.invocation_result_references != self.invocation_result_references:
+            raise ValueError(
+                "material functions Admission reading differs from its invocation results"
+            )
+        if reading.source_material != self.admission_occurrence.source_material:
+            raise ValueError("material functions Admission source differs from its invocations")
+        if reading.admitted_material != self.admission_occurrence.admitted_material:
             raise ValueError("material functions Admission differs from its invocation results")
 
     @property
@@ -981,59 +1063,17 @@ def admit_invocation_rows(
     boundary_identity: str,
     occurrence_position: int = 0,
 ) -> MaterialFunctionsAdmissionOccurrence:
-    if type(occurrence_rows) is not tuple or not occurrence_rows:
-        raise TypeError("material functions Admission requires exact invocation tuples")
-    if any(
-        type(row) is not tuple
-        or not row
-        or any(
-            not isinstance(occurrence, MaterialInvocationOccurrence)
-            for occurrence in row
-        )
-        for row in occurrence_rows
-    ):
-        raise TypeError("material functions Admission requires exact invocation tuples")
-    identities = tuple(
-        row[0].implementation_function_identity for row in occurrence_rows
-    )
-    if len(set(identities)) != len(identities) or any(
-        any(
-            occurrence.implementation_function_identity != identity
-            for occurrence in row
-        )
-        for identity, row in zip(identities, occurrence_rows)
-    ):
-        raise ValueError("each material functions tuple requires one exact function")
-    source_rows = tuple(
-        tuple(occurrence.source_reference for occurrence in row)
-        for row in occurrence_rows
-    )
-    if any(source is None for row in source_rows for source in row):
-        raise ValueError("material functions Admission requires exact source references")
-    source_material = source_rows[0]
-    if any(row != source_material for row in source_rows[1:]):
-        raise ValueError("material functions require the same exact material")
-    same_coordinates = {}
-    for position, source in enumerate(source_material):
-        coordinates = tuple(
-            (identity, row[position].coordinates)
-            for identity, row in zip(identities, occurrence_rows)
-        )
-        same_coordinates.setdefault(coordinates, []).append(source)
-    flattened = tuple(
-        occurrence for row in occurrence_rows for occurrence in row
-    )
+    reading = _material_functions_admission_reading(occurrence_rows)
     admission = admission_occurrence(
-        tuple(tuple(material) for material in same_coordinates.values()),
+        reading.admitted_material,
         boundary_identity=boundary_identity,
         occurrence_position=occurrence_position,
-        source_material=source_material,
+        source_material=reading.source_material,
     )
     return MaterialFunctionsAdmissionOccurrence(
         admission_occurrence=admission,
-        invocation_result_references=tuple(
-            occurrence.result_reference for occurrence in flattened
-        ),
+        invocation_result_references=reading.invocation_result_references,
+        _reading=reading,
     )
 
 
