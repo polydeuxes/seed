@@ -2078,3 +2078,75 @@ def recurring_removed_returned_coordinate(
     if len(occurrence_identities) < 2 or len(set(found)) != 1:
         return None
     return found[0]
+
+
+def first_recurring_removed_compare(
+    removals: tuple[RemovedPositionOccurrence, ...],
+    source_invocations: tuple[CompiledInvocationOccurrence, ...],
+    implementation_function: CompiledImplementationFunction,
+    *,
+    boundary_identity: str,
+    act_occurrence_count_limit: int,
+) -> tuple[
+    tuple[RemovedPositionCompareOccurrence, ...],
+    bool | None,
+    RemovedPositionCompareOccurrence | None,
+]:
+    if type(removals) is not tuple or not removals or any(
+        not isinstance(removal, RemovedPositionOccurrence) for removal in removals
+    ):
+        raise TypeError("recurrence requires exact removal Act occurrences")
+    if type(source_invocations) is not tuple or not source_invocations or any(
+        not isinstance(invocation, CompiledInvocationOccurrence)
+        for invocation in source_invocations
+    ):
+        raise TypeError("recurrence requires exact source invocation occurrences")
+    if not isinstance(implementation_function, CompiledImplementationFunction):
+        raise TypeError("recurrence requires one exact implementation function")
+    if type(boundary_identity) is not str or not boundary_identity:
+        raise TypeError("one exact boundary identity is required")
+    if type(act_occurrence_count_limit) is not int or act_occurrence_count_limit < 1:
+        raise TypeError("one exact positive Act occurrence count limit is required")
+    source_by_reference = {
+        invocation.source_coordinate: invocation for invocation in source_invocations
+    }
+    if len(source_by_reference) != len(source_invocations) or any(
+        invocation.implementation_function != implementation_function
+        for invocation in source_invocations
+    ):
+        raise ValueError("recurrence source invocations must be exact and distinct")
+    if len({invocation.returned for invocation in source_invocations}) < 2:
+        return (), None, None
+    comparisons = []
+    for removal in removals[:act_occurrence_count_limit]:
+        source_invocation = source_by_reference.get(removal.source_reference)
+        if source_invocation is None:
+            raise ValueError("recurrence requires each exact source invocation")
+        coordinate = (
+            recurring_removed_returned_coordinate(
+                tuple(comparisons), removals, removal, source_invocation
+            )
+            if len(comparisons) >= 2
+            else None
+        )
+        result_invocation = compiled_invocation(
+            removal.result_material,
+            implementation_function,
+            boundary_identity=f"{boundary_identity}-invocation",
+            invocation_position=len(comparisons),
+            source_coordinate=removal,
+        )
+        comparison = RemovedPositionCompareOccurrence(
+            boundary_identity=f"{boundary_identity}-compare",
+            occurrence_position=len(comparisons),
+            implementation_function_identity=implementation_function.identity,
+            removed_position_act_occurrence_identity=removal.act_occurrence_identity,
+            source_invocation_occurrence_identity=source_invocation.occurrence_identity,
+            result_invocation_occurrence_identity=result_invocation.occurrence_identity,
+            source_returned=source_invocation.returned,
+            result_returned=result_invocation.returned,
+        )
+        if coordinate is not None:
+            return tuple(comparisons), coordinate, comparison
+        comparisons.append(comparison)
+    return tuple(comparisons), None, None

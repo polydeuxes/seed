@@ -45,6 +45,7 @@ from compiled_format_invocation import (  # noqa: E402
     first_recurring_added_compare,
     recurring_added_returned_coordinate,
     recurring_removed_returned_coordinate,
+    first_recurring_removed_compare,
     removed_position_occurrences,
     exact_byte_material_references,
     exact_byte_pair_material_references,
@@ -1614,6 +1615,28 @@ def test_removal_recurrence_precedes_a_later_invocation(
             break
     else:
         raise AssertionError("removal recurrence accepted every conflict")
+
+
+def test_removal_recurrence_is_recovered_before_later_compare(
+    book_removed_position_invocation_occurrences,
+    book_pair_format_occurrences,
+):
+    removals, _ = book_removed_position_invocation_occurrences
+    source_invocations = book_pair_format_occurrences[0]
+    earlier, coordinate, later = first_recurring_removed_compare(
+        removals,
+        source_invocations,
+        source_invocations[0].implementation_function,
+        boundary_identity="book-removal-recurrence-later",
+        act_occurrence_count_limit=len(removals),
+    )
+    assert later is not None
+    assert coordinate == later.result_returned
+    assert len(earlier) + 1 < len(removals)
+    assert later.removed_position_act_occurrence_identity not in {
+        comparison.removed_position_act_occurrence_identity
+        for comparison in earlier
+    }
 
 
 def test_removal_compare_refuses_a_result_without_its_act_occurrence():
