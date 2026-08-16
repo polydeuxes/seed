@@ -771,7 +771,7 @@ def test_format_recurrence_accepts_a_matching_full_function_vector(
     assert len(earlier) == 2
 
 
-def test_recurrence_preflight_returns_no_later_compare(
+def test_recurrence_returns_coordinate_before_later_compare(
     book_three_byte_format_occurrences,
     book_pair_format_occurrences,
 ):
@@ -779,7 +779,7 @@ def test_recurrence_preflight_returns_no_later_compare(
         book_three_byte_format_occurrences[1],
         book_pair_format_occurrences[0],
         book_pair_format_occurrences[0][0].implementation_function,
-        boundary_identity="book-recurrence-preflight",
+        boundary_identity="book-recurrence-before-later",
         act_occurrence_count_limit=len(book_three_byte_format_occurrences[1]),
         invoke_later=False,
     )
@@ -788,7 +788,7 @@ def test_recurrence_preflight_returns_no_later_compare(
     assert later is None
 
 
-def test_removal_recurrence_preflight_returns_no_later_compare(
+def test_removal_recurrence_returns_coordinate_before_later_compare(
     book_removed_position_invocation_occurrences,
     book_pair_format_occurrences,
 ):
@@ -797,7 +797,7 @@ def test_removal_recurrence_preflight_returns_no_later_compare(
         removals,
         book_pair_format_occurrences[0],
         book_pair_format_occurrences[0][0].implementation_function,
-        boundary_identity="book-removal-recurrence-preflight",
+        boundary_identity="book-removal-recurrence-before-later",
         act_occurrence_count_limit=len(removals),
         invoke_later=False,
     )
@@ -806,13 +806,13 @@ def test_removal_recurrence_preflight_returns_no_later_compare(
     assert later is None
 
 
-def test_recurrence_preflight_refuses_wrong_function_identity(
+def test_recurrence_before_later_refuses_wrong_function_identity(
     book_three_byte_format_occurrences,
     book_pair_format_occurrences,
 ):
     row = book_pair_format_occurrences[0]
     wrong = CompiledImplementationFunction(
-        identity="compiled-wrong-preflight",
+        identity="compiled-wrong-before-later",
         invocation=row[0].implementation_function.invocation,
     )
     with pytest.raises(ValueError, match="exact and distinct"):
@@ -820,10 +820,12 @@ def test_recurrence_preflight_refuses_wrong_function_identity(
             book_three_byte_format_occurrences[1],
             row,
             wrong,
-            boundary_identity="wrong-preflight-function",
+            boundary_identity="wrong-before-later-function",
             act_occurrence_count_limit=10,
             invoke_later=False,
         )
+
+
 
 
 def test_joint_recurrence_refuses_reordered_source_occurrences(
