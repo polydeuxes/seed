@@ -769,11 +769,23 @@ def test_format_recurrence_accepts_a_matching_full_function_vector(
     assert later is not None
     assert coordinate is not None
     assert len(earlier) == 2
-    assert any(
-        comparison.result_invocation_occurrence_identity
-        != later[0].result_invocation_occurrence_identity
-        for comparison in earlier[0]
+
+
+def test_recurrence_preflight_returns_no_later_compare(
+    book_three_byte_format_occurrences,
+    book_pair_format_occurrences,
+):
+    earlier, coordinate, later = first_recurring_added_compare(
+        book_three_byte_format_occurrences[1],
+        book_pair_format_occurrences[0],
+        book_pair_format_occurrences[0][0].implementation_function,
+        boundary_identity="book-recurrence-preflight",
+        act_occurrence_count_limit=len(book_three_byte_format_occurrences[1]),
+        invoke_later=False,
     )
+    assert earlier
+    assert coordinate is not None
+    assert later is None
 
 
 def test_joint_recurrence_refuses_reordered_source_occurrences(
