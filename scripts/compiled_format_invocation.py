@@ -2185,26 +2185,11 @@ def added_position_invocations(
         raise TypeError("one exact boundary identity is required")
     exact_material = []
     for occurrence_position, occurrence in enumerate(occurrences):
-        if not isinstance(occurrence, AddedPositionOccurrence):
+        if type(occurrence) is not AddedPositionOccurrence:
             raise TypeError("added-position material requires its exact Act occurrence")
-        source = occurrence.source_material
-        position = occurrence.position
-        added = occurrence.added_material
-        material = occurrence.result_material
-        if (
-            occurrence.occurrence_position != occurrence_position
-            or type(added) is not bytes
-            or len(added) != 1
-            or type(material) is not bytes
-            or not preserves_original_order(
-                source_material=source,
-                result_material=material,
-                added_position=position,
-            )
-            or material[position : position + 1] != added
-        ):
-            raise ValueError("result material does not preserve its exact source order")
-        exact_material.append(material)
+        if occurrence.occurrence_position != occurrence_position:
+            raise ValueError("added-position Act occurrence positions must remain exact")
+        exact_material.append(occurrence.result_material)
     if type(implementation_functions) is not tuple or not implementation_functions:
         raise TypeError("compiled implementation functions must be one nonempty tuple")
     if not all(

@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from dataclasses import replace
+from dataclasses import fields, replace
 from pathlib import Path
 import shutil
 import subprocess
@@ -1683,6 +1683,73 @@ def test_equal_result_material_keeps_each_exact_added_position_occurrence():
     )
     with pytest.raises(ValueError, match="crossed Localities"):
         replace(added_occurrences[0], locality_identity="other-locality")
+
+
+def test_added_position_invocation_does_not_rescan_a_validated_exact_act(
+    monkeypatch,
+):
+    source = ExactMaterialReference(
+        "validated-source", "validated-source-assertion", "validated-locality", b"ab"
+    )
+    added = ExactMaterialReference(
+        "validated-added", "validated-added-assertion", "validated-locality", b"x"
+    )
+    additions = added_position_occurrences(
+        (source,),
+        (added,),
+        boundary_identity="validated-addition",
+    )
+    supplied = []
+    implementation_function = CompiledImplementationFunction(
+        identity="validated-function",
+        invocation=lambda material: supplied.append(material),
+    )
+    rescans = []
+    original = compiled_format_invocation.preserves_original_order
+
+    def measured_preservation(**coordinates):
+        rescans.append(coordinates)
+        return original(**coordinates)
+
+    monkeypatch.setattr(
+        compiled_format_invocation,
+        "preserves_original_order",
+        measured_preservation,
+    )
+    invocations = added_position_invocations(
+        additions,
+        boundary_identity="validated-addition-invocation",
+        implementation_functions=(implementation_function,),
+    )
+
+    assert rescans == []
+    assert supplied == [addition.result_material for addition in additions]
+    assert tuple(
+        occurrence.source_coordinate for occurrence in invocations[0]
+    ) == additions
+
+    with pytest.raises(ValueError, match="positions must remain exact"):
+        added_position_invocations(
+            tuple(reversed(additions)),
+            boundary_identity="reordered-validated-addition-invocation",
+            implementation_functions=(implementation_function,),
+        )
+
+    class AddedPositionSubclass(AddedPositionOccurrence):
+        pass
+
+    subclass = AddedPositionSubclass(
+        **{
+            coordinate.name: getattr(additions[0], coordinate.name)
+            for coordinate in fields(AddedPositionOccurrence)
+        }
+    )
+    with pytest.raises(TypeError, match="exact Act occurrence"):
+        added_position_invocations(
+            (subclass,),
+            boundary_identity="subclass-validated-addition-invocation",
+            implementation_functions=(implementation_function,),
+        )
 
 
 def test_a_different_source_order_is_refused_before_the_implementation_function():
