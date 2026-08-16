@@ -50,7 +50,8 @@ from seed_runtime.operator_representation import (
 )
 from seed_runtime.occurrence_position_measurement import (
     measure_occurrence_position,
-    record_occurrence_position_measurement,
+    record_occurrence_position_measurement_responsible_act_evidence,
+    record_occurrence_position_measurement_result,
 )
 from seed_runtime.yield_evidence import YIELD_LIVE_BOUNDARIES
 from seed_runtime.yield_evidence import read_yield_relation_requirements
@@ -429,10 +430,15 @@ def _occurrence_position_yield_witness() -> dict:
         ledger,
         source_locality_identity="source",
     )
-    event = record_occurrence_position_measurement(
+    act_evidence = record_occurrence_position_measurement_responsible_act_evidence(
         ledger,
         recording_locality_identity="measurement",
         finding=finding,
+    )
+    event = record_occurrence_position_measurement_result(
+        ledger,
+        finding=finding,
+        responsible_act_evidence_event_identity=act_evidence.identity,
     )
     return _yield_bundle(ledger, event)
 

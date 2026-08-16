@@ -40,7 +40,8 @@ from seed_runtime.operator_locality_standing import (
 )
 from seed_runtime.occurrence_position_measurement import (
     measure_occurrence_position,
-    record_occurrence_position_measurement,
+    record_occurrence_position_measurement_responsible_act_evidence,
+    record_occurrence_position_measurement_result,
 )
 
 
@@ -223,21 +224,34 @@ def run_persistent_operator_console(
                 ),
                 locality_identity=locality_identity,
             )
-            position_measurement = record_occurrence_position_measurement(
+            position_finding = measure_occurrence_position(
                 ledger,
-                recording_locality_identity=locality_identity,
-                finding=measure_occurrence_position(
+                source_locality_identity=locality_identity,
+            )
+            position_measurement_act_evidence = (
+                record_occurrence_position_measurement_responsible_act_evidence(
                     ledger,
-                    source_locality_identity=locality_identity,
+                    recording_locality_identity=locality_identity,
+                    finding=position_finding,
+                )
+            )
+            locality_standing = _advance_over(
+                ledger,
+                locality_standing,
+                (position_measurement_act_evidence.identity,),
+                locality_identity=locality_identity,
+            )
+            position_measurement = record_occurrence_position_measurement_result(
+                ledger,
+                finding=position_finding,
+                responsible_act_evidence_event_identity=(
+                    position_measurement_act_evidence.identity
                 ),
             )
             locality_standing = _advance_over(
                 ledger,
                 locality_standing,
                 (
-                    position_measurement.material[
-                        "responsible_act_evidence_identity"
-                    ],
                     position_measurement.material["yield_evidence_identity"],
                     position_measurement.identity,
                 ),

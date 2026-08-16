@@ -2,6 +2,7 @@ from copy import deepcopy
 
 import pytest
 
+import seed_runtime.occurrence_position_measurement as position_measurement
 from seed_runtime.events import CORRUPTED, EventLedger, SQLiteEventLedger
 from seed_runtime.occurrence_position_measurement import (
     OCCURRENCE_POSITION_ACT_EVIDENCE_KIND,
@@ -9,9 +10,13 @@ from seed_runtime.occurrence_position_measurement import (
     OccurrencePositionFinding,
     get_recorded_occurrence_position_measurement,
     measure_occurrence_position,
-    record_occurrence_position_measurement,
+    record_occurrence_position_measurement_responsible_act_evidence,
+    record_occurrence_position_measurement_result,
 )
-from seed_runtime.yield_evidence import read_yield_relation_requirements
+from seed_runtime.yield_evidence import (
+    YIELD_EVIDENCE_KIND,
+    read_yield_relation_requirements,
+)
 
 
 class IntegrityLedger(EventLedger):
@@ -23,6 +28,10 @@ class IntegrityLedger(EventLedger):
         if event_identity in self.corrupted:
             return CORRUPTED
         return super().integrity_of(event_identity)
+
+
+class StringSubclass(str):
+    pass
 
 
 def occurrence_road():
@@ -42,10 +51,15 @@ def recorded_road():
         source_locality_identity="a",
         through=boundary,
     )
-    recorded = record_occurrence_position_measurement(
+    act_evidence = record_occurrence_position_measurement_responsible_act_evidence(
         ledger,
         recording_locality_identity="measurement",
         finding=finding,
+    )
+    recorded = record_occurrence_position_measurement_result(
+        ledger,
+        finding=finding,
+        responsible_act_evidence_event_identity=act_evidence.identity,
     )
     return ledger, occurrences, boundary, finding, recorded
 
@@ -119,7 +133,7 @@ def test_supplied_reversal_cannot_replace_the_ledger_measurement():
         ValueError,
         match="differs from the exact boundary",
     ):
-        record_occurrence_position_measurement(
+        record_occurrence_position_measurement_responsible_act_evidence(
             ledger,
             recording_locality_identity="measurement",
             finding=reversed_finding,
@@ -154,6 +168,185 @@ def test_recorded_position_measurement_has_exact_act_and_yield_evidence():
         ledger,
         recorded.identity,
     ) == finding
+
+
+def test_act_evidence_can_be_observed_before_yield_and_result_are_recorded(
+    monkeypatch,
+):
+    ledger, _occurrences, boundary = occurrence_road()
+    finding = measure_occurrence_position(
+        ledger,
+        source_locality_identity="a",
+        through=boundary,
+    )
+    exact_measure = position_measurement.measure_occurrence_position
+    measurements = []
+
+    def counted_measure(*args, **kwargs):
+        measurements.append((args, kwargs))
+        return exact_measure(*args, **kwargs)
+
+    monkeypatch.setattr(
+        position_measurement,
+        "measure_occurrence_position",
+        counted_measure,
+    )
+
+    act_evidence = record_occurrence_position_measurement_responsible_act_evidence(
+        ledger,
+        recording_locality_identity="measurement",
+        finding=finding,
+    )
+
+    assert [
+        event.kind for event in ledger.list_locality("measurement")
+    ] == [OCCURRENCE_POSITION_ACT_EVIDENCE_KIND]
+    assert "result_identity" not in act_evidence.material
+    assert "occurrences" not in act_evidence.material
+    assert all(
+        "position" not in item
+        for item in act_evidence.material["participation"]
+    )
+    observed = ledger.append(
+        "test.act_evidence_observed",
+        {"act_evidence_identity": act_evidence.identity},
+        locality_identity="measurement",
+    )
+
+    recorded = record_occurrence_position_measurement_result(
+        ledger,
+        finding=finding,
+        responsible_act_evidence_event_identity=act_evidence.identity,
+    )
+
+    events = ledger.list_locality("measurement")
+    assert [event.kind for event in events] == [
+        OCCURRENCE_POSITION_ACT_EVIDENCE_KIND,
+        observed.kind,
+        YIELD_EVIDENCE_KIND,
+        OCCURRENCE_POSITION_RECORDED_KIND,
+    ]
+    assert recorded.material["responsible_act_evidence_identity"] == (
+        act_evidence.identity
+    )
+    assert len(measurements) == 1
+
+
+@pytest.mark.parametrize(
+    "act_evidence_identity",
+    (None, "", "absent_act_evidence", StringSubclass("absent_act_evidence")),
+)
+def test_result_refuses_arbitrary_act_evidence_identity_without_appending(
+    act_evidence_identity,
+):
+    ledger, _occurrences, boundary = occurrence_road()
+    finding = measure_occurrence_position(
+        ledger,
+        source_locality_identity="a",
+        through=boundary,
+    )
+    before = ledger.append_boundary()
+
+    with pytest.raises(ValueError, match="Act Evidence"):
+        record_occurrence_position_measurement_result(
+            ledger,
+            finding=finding,
+            responsible_act_evidence_event_identity=act_evidence_identity,
+        )
+
+    assert ledger.append_boundary() == before
+
+
+def test_result_refuses_crossed_finding_without_appending_yield():
+    ledger, _occurrences, boundary = occurrence_road()
+    finding = measure_occurrence_position(
+        ledger,
+        source_locality_identity="a",
+        through=boundary,
+    )
+    other_finding = measure_occurrence_position(
+        ledger,
+        source_locality_identity="b",
+        through=boundary,
+    )
+    act_evidence = record_occurrence_position_measurement_responsible_act_evidence(
+        ledger,
+        recording_locality_identity="measurement",
+        finding=finding,
+    )
+    before = ledger.append_boundary()
+
+    with pytest.raises(ValueError, match="exact intact Act Evidence"):
+        record_occurrence_position_measurement_result(
+            ledger,
+            finding=other_finding,
+            responsible_act_evidence_event_identity=act_evidence.identity,
+        )
+
+    assert ledger.append_boundary() == before
+
+
+def test_result_refuses_wrong_kind_and_corrupted_act_evidence():
+    ledger, _occurrences, boundary = occurrence_road()
+    finding = measure_occurrence_position(
+        ledger,
+        source_locality_identity="a",
+        through=boundary,
+    )
+    wrong_kind = ledger.append(
+        "test.not_act_evidence",
+        {},
+        locality_identity="measurement",
+    )
+    act_evidence = record_occurrence_position_measurement_responsible_act_evidence(
+        ledger,
+        recording_locality_identity="measurement",
+        finding=finding,
+    )
+
+    with pytest.raises(ValueError, match="exact intact Act Evidence"):
+        record_occurrence_position_measurement_result(
+            ledger,
+            finding=finding,
+            responsible_act_evidence_event_identity=wrong_kind.identity,
+        )
+
+    ledger.corrupted.add(act_evidence.identity)
+    with pytest.raises(ValueError, match="exact intact Act Evidence"):
+        record_occurrence_position_measurement_result(
+            ledger,
+            finding=finding,
+            responsible_act_evidence_event_identity=act_evidence.identity,
+        )
+
+
+def test_one_measurement_act_cannot_yield_two_results():
+    ledger, _occurrences, boundary = occurrence_road()
+    finding = measure_occurrence_position(
+        ledger,
+        source_locality_identity="a",
+        through=boundary,
+    )
+    act_evidence = record_occurrence_position_measurement_responsible_act_evidence(
+        ledger,
+        recording_locality_identity="measurement",
+        finding=finding,
+    )
+    record_occurrence_position_measurement_result(
+        ledger,
+        finding=finding,
+        responsible_act_evidence_event_identity=act_evidence.identity,
+    )
+    before = ledger.append_boundary()
+
+    with pytest.raises(ValueError, match="already carries a Yield"):
+        record_occurrence_position_measurement_result(
+            ledger,
+            finding=finding,
+            responsible_act_evidence_event_identity=act_evidence.identity,
+        )
+
+    assert ledger.append_boundary() == before
 
 
 def test_position_finding_establishes_no_stronger_relation():
@@ -211,10 +404,15 @@ def test_durable_locality_positions_read_through_their_exact_yield(tmp_path):
         ledger,
         source_locality_identity="a",
     )
-    recorded = record_occurrence_position_measurement(
+    act_evidence = record_occurrence_position_measurement_responsible_act_evidence(
         ledger,
         recording_locality_identity="measurement",
         finding=finding,
+    )
+    recorded = record_occurrence_position_measurement_result(
+        ledger,
+        finding=finding,
+        responsible_act_evidence_event_identity=act_evidence.identity,
     )
 
     assert finding.occurrences == (
@@ -233,13 +431,19 @@ def test_durable_position_identities_are_not_reissued_after_reopen(tmp_path):
     path = tmp_path / "occurrence-position.sqlite"
     ledger = SQLiteEventLedger(path)
     ledger.append("test.occurrence", {"material": "a"}, locality_identity="a")
-    recorded = record_occurrence_position_measurement(
+    finding = measure_occurrence_position(
+        ledger,
+        source_locality_identity="a",
+    )
+    act_evidence = record_occurrence_position_measurement_responsible_act_evidence(
         ledger,
         recording_locality_identity="measurement",
-        finding=measure_occurrence_position(
-            ledger,
-            source_locality_identity="a",
-        ),
+        finding=finding,
+    )
+    recorded = record_occurrence_position_measurement_result(
+        ledger,
+        finding=finding,
+        responsible_act_evidence_event_identity=act_evidence.identity,
     )
     carried = {
         "occurrence_position_measurement_act": recorded.material[

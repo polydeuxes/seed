@@ -11,7 +11,8 @@ from seed_runtime.material_ingest import ingest_material
 from seed_runtime.occurrence_position_measurement import (
     get_recorded_occurrence_position_measurement,
     measure_occurrence_position,
-    record_occurrence_position_measurement,
+    record_occurrence_position_measurement_responsible_act_evidence,
+    record_occurrence_position_measurement_result,
 )
 
 
@@ -66,10 +67,17 @@ def acquired_story_material():
         source_locality_identity="supplied-story-material",
         through=boundary,
     )
-    position_result = record_occurrence_position_measurement(
+    position_act_evidence = (
+        record_occurrence_position_measurement_responsible_act_evidence(
+            ledger,
+            recording_locality_identity="supplied-story-material",
+            finding=positions,
+        )
+    )
+    position_result = record_occurrence_position_measurement_result(
         ledger,
-        recording_locality_identity="supplied-story-material",
         finding=positions,
+        responsible_act_evidence_event_identity=position_act_evidence.identity,
     )
     return (
         exact_material,

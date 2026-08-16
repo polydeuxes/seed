@@ -15,7 +15,8 @@ from seed_runtime.material_ingest import ingest_material
 from seed_runtime.occurrence_position_measurement import (
     OCCURRENCE_POSITION_RECORDED_KIND,
     measure_occurrence_position,
-    record_occurrence_position_measurement,
+    record_occurrence_position_measurement_responsible_act_evidence,
+    record_occurrence_position_measurement_result,
 )
 from seed_runtime.operator_ingest import run_operator_ingest
 from seed_runtime.operator_material_boundary import operator_boundary_material
@@ -59,13 +60,19 @@ def _record_measurement(ledger, measurement_kind):
             source_localities=("s",),
             recording_locality_identity="s",
         )
-    return record_occurrence_position_measurement(
+    finding = measure_occurrence_position(
+        ledger,
+        source_locality_identity="s",
+    )
+    act_evidence = record_occurrence_position_measurement_responsible_act_evidence(
         ledger,
         recording_locality_identity="s",
-        finding=measure_occurrence_position(
-            ledger,
-            source_locality_identity="s",
-        ),
+        finding=finding,
+    )
+    return record_occurrence_position_measurement_result(
+        ledger,
+        finding=finding,
+        responsible_act_evidence_event_identity=act_evidence.identity,
     )
 
 
