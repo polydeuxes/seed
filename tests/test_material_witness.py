@@ -146,18 +146,14 @@ def measured_book_pairs():
         ledger, byte_measurement.identity
     )
     pairs = tuple(
-        sorted(
-            bytes(assertion.representation)
-            for assertion in assertions or ()
-            if assertion.result == "count" and assertion.representation is not None
-        )
+        bytes(assertion.representation)
+        for assertion in assertions or ()
+        if assertion.result == "count" and assertion.representation is not None
     )
     byte_values = tuple(
-        sorted(
-            assertion.representation
-            for assertion in byte_assertions or ()
-            if assertion.result == "count" and assertion.representation is not None
-        )
+        assertion.representation
+        for assertion in byte_assertions or ()
+        if assertion.result == "count" and assertion.representation is not None
     )
     pair_material = exact_byte_pair_material_references(
         ledger, pair_measurement.identity
@@ -516,11 +512,9 @@ def test_every_supplied_material_has_its_own_ingest(measured_book_pairs):
 def test_pair_material_comes_from_the_complete_recorded_measurement(measured_book_pairs):
     _, _, assertions, pairs, _, _, pair_material, _ = measured_book_pairs
     recorded = tuple(
-        sorted(
-            bytes(assertion.representation)
-            for assertion in assertions or ()
-            if assertion.result == "count" and assertion.representation is not None
-        )
+        bytes(assertion.representation)
+        for assertion in assertions or ()
+        if assertion.result == "count" and assertion.representation is not None
     )
 
     assert pairs
@@ -536,11 +530,9 @@ def test_pair_material_comes_from_the_complete_recorded_measurement(measured_boo
 def test_byte_material_comes_from_the_complete_recorded_measurement(measured_book_pairs):
     _, _, _, _, assertions, material, _, byte_material = measured_book_pairs
     recorded = tuple(
-        sorted(
-            assertion.representation
-            for assertion in assertions or ()
-            if assertion.result == "count" and assertion.representation is not None
-        )
+        assertion.representation
+        for assertion in assertions or ()
+        if assertion.result == "count" and assertion.representation is not None
     )
 
     assert material
@@ -719,11 +711,15 @@ def test_bash_admission_additions_reach_one_later_compare(
             returncode=1 - earlier[-1].result_invocation.returncode,
         ),
     )
-    assert recurring_added_result_coordinates(
+    conflicting_coordinates = recurring_added_result_coordinates(
         (*earlier[:-1], conflicting),
         later.addition_occurrence,
         later.source_invocation,
-    ) is None
+    )
+    assert conflicting_coordinates == tuple(
+        None if position == 1 else coordinate
+        for position, coordinate in enumerate(coordinates)
+    )
 
 
 def test_every_measured_pair_reaches_every_compiled_format_implementation_function(
