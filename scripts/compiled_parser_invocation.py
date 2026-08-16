@@ -197,24 +197,6 @@ def python_parser_invocation(
     )
 
 
-def first_probe_family() -> tuple[bytes, ...]:
-    """The first small exact family, without names for its distinctions."""
-
-    return (
-        b"x",
-        b"x=",
-        b"x=1",
-        b"x=1\n",
-        b"def",
-        b"def ",
-        b"def x",
-        b"def x(",
-        b"def x():",
-        b"def x():\n",
-        b"def x():\n pass",
-    )
-
-
 def one_byte_substitutions(exact_material: bytes) -> tuple[bytes, ...]:
     """Every distinct material with the same byte count differing at exactly one byte."""
 

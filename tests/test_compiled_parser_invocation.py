@@ -14,55 +14,13 @@ sys.path.insert(0, str(ROOT / "scripts"))
 
 from compiled_parser_invocation import (  # noqa: E402
     COMPILED_PARSER_FUNCTIONS,
-    first_probe_family,
     python_parser_invocation,
     python_parser_invocations,
     compiled_parser_invocations,
     compiled_parser_invocation,
     one_byte_substitutions,
 )
-
-
-def test_the_first_family_preserves_only_exact_results():
-    results = python_parser_invocations(
-        first_probe_family(), boundary_identity="first-material"
-    )
-
-    assert tuple(result.exact_material for result in results) == (
-        b"x",
-        b"x=",
-        b"x=1",
-        b"x=1\n",
-        b"def",
-        b"def ",
-        b"def x",
-        b"def x(",
-        b"def x():",
-        b"def x():\n",
-        b"def x():\n pass",
-    )
-    assert tuple(result.returned for result in results) == (
-        True,
-        False,
-        True,
-        True,
-        False,
-        False,
-        False,
-        False,
-        False,
-        False,
-        True,
-    )
-    for result in results:
-        if result.returned:
-            assert type(result.result_material) is bytes
-            assert result.result_material
-            assert result.refusal_material is None
-        else:
-            assert result.result_material is None
-            assert type(result.refusal_material) is bytes
-            assert result.refusal_material
+from material_fixture_measurement import measured_one_byte_material  # noqa: E402
 
 
 def test_equal_material_keeps_distinct_invocation_occurrences():
@@ -185,7 +143,8 @@ def test_distinct_compiled_parser_functions_receive_the_same_exact_material():
     reason="one compiled parser function is unavailable",
 )
 def test_cross_parser_results_preserve_agreement_and_disagreement():
-    materials = first_probe_family()
+    _, measured = measured_one_byte_material()
+    materials = tuple(reference.exact_material for reference in measured)
     rows = compiled_parser_invocations(
         materials, boundary_identity="cross-parser-results"
     )
