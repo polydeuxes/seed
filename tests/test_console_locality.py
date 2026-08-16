@@ -141,8 +141,8 @@ def test_a_reopened_console_does_not_continue_the_prior_standing(two_lifetimes):
         two_lifetimes, locality_identity=second
     )
 
-    assert len(prior["representations"]) == 8
-    assert len(later["representations"]) == 5
+    assert len(prior["representations"]) == 5
+    assert len(later["representations"]) == 3
     assert set(later["representations"]).isdisjoint(prior["representations"])
 
 
@@ -152,7 +152,7 @@ def test_the_earlier_lifetime_remains_projectable(two_lifetimes):
     standing = read_operator_locality_standing(
         two_lifetimes, locality_identity=first
     )
-    assert len(standing["representations"]) == 8
+    assert len(standing["representations"]) == 5
 
 
 # --------------------------------------------------------------------------

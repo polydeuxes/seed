@@ -57,8 +57,6 @@ def _one_material_console_kinds():
         *_REPRESENTATION_RELATION_EVIDENCE_KINDS,
         "operator.representation.recorded",
         *_OPERATOR_MATERIAL_ACQUIRE_BEGIN_KINDS,
-        *_REPRESENTATION_RELATION_EVIDENCE_KINDS,
-        "operator.representation.recorded",
         *_OPERATOR_MATERIAL_ACQUIRE_RESULT_KINDS,
         *_REPRESENTATION_RELATION_EVIDENCE_KINDS,
         "operator.representation.recorded",
@@ -68,8 +66,6 @@ def _one_material_console_kinds():
         *_REPRESENTATION_RELATION_EVIDENCE_KINDS,
         "operator.representation.recorded",
         *_OPERATOR_MATERIAL_ACQUIRE_BEGIN_KINDS,
-        *_REPRESENTATION_RELATION_EVIDENCE_KINDS,
-        "operator.representation.recorded",
     ]
 
 
@@ -1148,7 +1144,7 @@ def test_console_presents_standing_only_across_an_ingest():
         event for event in events if event.kind == "operator.representation.recorded"
     ]
     c0 = representations[0]
-    c1 = representations[-2]
+    c1 = representations[-1]
     ingest = next(
         event for event in events if event.kind == "material.ingest.occurred"
     )
@@ -1188,7 +1184,7 @@ def test_c0_and_c1_are_recorded_in_order_without_authored_output():
         i for i, event in enumerate(events)
         if event.kind == "operator.representation.recorded"
     ]
-    assert recorded[0] < ingest_index < recorded[-2]
+    assert recorded[0] < ingest_index < recorded[-1]
     assert output == ""
     assert not any(
         event.kind == "operator.representation.emitted" for event in events
@@ -1231,11 +1227,11 @@ def test_next_console_iteration_validates_c1_and_forms_c2():
     # C1 and represents C2.
     console_ledger, output = _run_console("first\nsecond\n")
     standing = _standing(console_ledger)
-    assert len(standing["representations"]) == 8
+    assert len(standing["representations"]) == 5
     assert output == ""
     representation_identities = list(standing["representations"])
-    c1 = standing["representations"][representation_identities[3]]
-    c2 = standing["representations"][representation_identities[6]]
+    c1 = standing["representations"][representation_identities[2]]
+    c2 = standing["representations"][representation_identities[4]]
     # C2's Standing boundary stands after C1's Representation Act.
     positions = {
         event.identity: index for index, event in enumerate(console_ledger.list())
@@ -1244,6 +1240,37 @@ def test_next_console_iteration_validates_c1_and_forms_c2():
     assert positions[c1["representation_event_identity"]] < boundary
     assert c1["emitted_event_identity"] is None
     assert c1["representation_identity"] != c2["representation_identity"]
+
+
+def test_acquisition_act_and_eof_do_not_manufacture_representation_results():
+    ledger, _ = _run_console("first\n")
+    events = ledger.list()
+    acquire_acts = [
+        (position, event)
+        for position, event in enumerate(events)
+        if event.kind == "operator.material.acquire_act_evidenced"
+    ]
+    acquire_results = [
+        (position, event)
+        for position, event in enumerate(events)
+        if event.kind == "operator.material.acquire_recorded"
+    ]
+
+    assert len(acquire_acts) == 2
+    assert len(acquire_results) == 1
+    first_act_position = acquire_acts[0][0]
+    result_position = acquire_results[0][0]
+    assert not [
+        event
+        for event in events[first_act_position + 1 : result_position]
+        if event.kind == "operator.representation.recorded"
+    ]
+    eof_act_position = acquire_acts[1][0]
+    assert not [
+        event
+        for event in events[eof_act_position + 1 :]
+        if event.kind == "operator.representation.recorded"
+    ]
 
 
 def test_first_interaction_attaches_no_representation_to_the_ingest():

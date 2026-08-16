@@ -222,14 +222,6 @@ def run_persistent_operator_console(
             (acquire_act_evidence.identity,),
             locality_identity=locality_identity,
         )
-        representation = record_operator_representation(
-            ledger,
-            locality_identity=locality_identity,
-            locality_standing=locality_standing,
-        )
-        locality_standing = _advance_over_representation(
-            ledger, locality_standing, representation
-        )
         boundary_material = operator_boundary_material(input_stream)
         if boundary_material.eof:
             return

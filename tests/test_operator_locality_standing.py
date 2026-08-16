@@ -464,7 +464,7 @@ def test_unknown_conflict_and_absence_remain_distinct():
     assert next_attempt["locality_standing"]["recorded_relation_standings"] == {}
 
 
-def test_one_attempt_behavior_unchanged_without_earlier_locality_history():
+def test_one_attempt_records_only_responsible_representation_results():
     baseline_ledger = EventLedger()
     baseline = _attempt(baseline_ledger, "solo material\n")
     assert "locality_standing" not in baseline
@@ -481,7 +481,7 @@ def test_one_attempt_behavior_unchanged_without_earlier_locality_history():
         output_stream=output_stream,
     )
     assert output_stream.getvalue() == ""
-    assert len(_standing(console_ledger)["representations"]) == 5
+    assert len(_standing(console_ledger)["representations"]) == 3
 
 
 def test_console_supplies_prior_locality_standing_to_later_interactions():
@@ -498,7 +498,7 @@ def test_console_supplies_prior_locality_standing_to_later_interactions():
 
     assert output_stream.getvalue() == ""
     standing = _standing(ledger)
-    assert len(standing["representations"]) == 8
+    assert len(standing["representations"]) == 5
     representation_identities = list(standing["representations"])
     first_identity = representation_identities[0]
     last_identity = representation_identities[-1]

@@ -301,14 +301,19 @@ def test_each_console_road_leaves_incremental_standing_equal_to_replay(
         )
 
     observed = {}
-    original = operator_console._advance_over_representation
+    original = operator_console._advance_over
 
-    def record(ledger, standing, representation):
-        advanced = original(ledger, standing, representation)
-        observed[representation["locality_identity"]] = advanced
+    def record(ledger, standing, event_identities, *, locality_identity):
+        advanced = original(
+            ledger,
+            standing,
+            event_identities,
+            locality_identity=locality_identity,
+        )
+        observed[locality_identity] = advanced
         return advanced
 
-    monkeypatch.setattr(operator_console, "_advance_over_representation", record)
+    monkeypatch.setattr(operator_console, "_advance_over", record)
     run_persistent_operator_console(
         ledger=ledger,
         locality_identity="s",
@@ -477,10 +482,10 @@ def test_c0_still_forms_from_empty_standing():
     assert supplied.material["locality_standing_as_of_event_identity"] is None
 
 
-def test_the_locality_records_the_same_occurrences_it_always_did():
+def test_the_locality_records_only_responsible_representation_occurrences():
     ledger, output = _console("alpha\nbeta\n")
     kinds = [event.kind for event in ledger.list()]
     assert kinds.count(MATERIAL_INGEST_OCCURRED_KIND) == 2
-    assert kinds.count("operator.representation.recorded") == 8
+    assert kinds.count("operator.representation.recorded") == 5
     assert kinds.count("operator.representation.emitted") == 0
     assert output == ""

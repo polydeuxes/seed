@@ -19,7 +19,6 @@ from seed_runtime.operator_locality_standing import (
     read_operator_locality_standing,
 )
 from seed_runtime.operator_material_acquisition import (
-    OPERATOR_MATERIAL_ACQUIRE_ACT_EVIDENCE_KIND,
     OPERATOR_MATERIAL_ACQUIRE_RECORDED_KIND,
 )
 from seed_runtime.supplied_invocation_material import (
@@ -89,7 +88,6 @@ def _represented_boundary_kinds(ledger):
 
 _COMPLETE_COMMAND_REPRESENTED_BOUNDARIES = (
     (None, None),
-    (OPERATOR_MATERIAL_ACQUIRE_ACT_EVIDENCE_KIND, None),
     (
         OPERATOR_MATERIAL_ACQUIRE_RECORDED_KIND,
         OPERATOR_MATERIAL_ACQUIRE_RECORDED_KIND,
