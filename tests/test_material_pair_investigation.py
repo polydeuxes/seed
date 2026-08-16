@@ -12,13 +12,13 @@ sys.path.insert(0, str(ROOT / "scripts"))
 
 from compiled_material_invocation import IngestResultReference  # noqa: E402
 from material_pair_investigation import (  # noqa: E402
-    ExactMaterialPairCandidate,
     ExactMaterialPairCompareOccurrence,
     ExactMaterialPairOccurrence,
+    ExactRecurrentMaterialPairSubject,
     ExactRecurrentMaterialPairReference,
     compare_pair_occurrences,
     exact_pair_occurrences,
-    recurrent_adjacent_pair_candidates,
+    recurrent_adjacent_pair_subjects,
 )
 
 
@@ -53,18 +53,18 @@ def _pair(
 
 @pytest.fixture
 def exact_pair():
-    candidates = recurrent_adjacent_pair_candidates(
+    subjects = recurrent_adjacent_pair_subjects(
         (_source("premise", b"abxxab"),), (_pair("ab", b"ab"),)
     )
-    assert len(candidates) == 1
-    return candidates[0]
+    assert len(subjects) == 1
+    return subjects[0]
 
 
-def test_recurrence_not_adjacency_alone_warrants_one_pair_candidate():
+def test_recurrence_not_adjacency_alone_warrants_one_pair_subject():
     one = _source("one", b"ab")
     two = _source("two", b"abxxab")
 
-    assert recurrent_adjacent_pair_candidates(
+    assert recurrent_adjacent_pair_subjects(
         (one,),
         (
             _pair(
@@ -79,16 +79,16 @@ def test_recurrence_not_adjacency_alone_warrants_one_pair_candidate():
         b"ab",
         sources=(two.recorded_occurrence_identity,),
     )
-    candidates = recurrent_adjacent_pair_candidates(
+    subjects = recurrent_adjacent_pair_subjects(
         (two,), (pair,)
     )
 
-    assert len(candidates) == 1
-    candidate = candidates[0]
-    assert candidate.pair_reference == pair
-    assert len(candidate.premise_occurrences) == 2
+    assert len(subjects) == 1
+    subject = subjects[0]
+    assert subject.pair_reference == pair
+    assert len(subject.premise_occurrences) == 2
     assert {
-        occurrence.exact_material for occurrence in candidate.premise_occurrences
+        occurrence.exact_material for occurrence in subject.premise_occurrences
     } == {b"ab"}
 
 
@@ -106,11 +106,11 @@ def test_source_order_does_not_select_which_pair_identities_exist():
         ),
     )
 
-    forward = recurrent_adjacent_pair_candidates((first, second), pairs)
-    reverse = recurrent_adjacent_pair_candidates((second, first), pairs)
+    forward = recurrent_adjacent_pair_subjects((first, second), pairs)
+    reverse = recurrent_adjacent_pair_subjects((second, first), pairs)
 
-    assert tuple(candidate.pair_identity for candidate in forward) == tuple(
-        candidate.pair_identity for candidate in reverse
+    assert tuple(subject.pair_identity for subject in forward) == tuple(
+        subject.pair_identity for subject in reverse
     )
 
 
@@ -172,19 +172,19 @@ def test_pair_coordinates_refuse_compression_crossing_and_substitution(exact_pai
             exact_pair, _source("crossed", b"ab", locality="other-locality")
         )
     with pytest.raises(ValueError, match="yielded source occurrences"):
-        recurrent_adjacent_pair_candidates(
+        recurrent_adjacent_pair_subjects(
             (_source("unrelated", b"abxxab"),),
             (exact_pair.pair_reference,),
         )
-    crossed_candidate = ExactMaterialPairCandidate(
+    crossed_subject = ExactRecurrentMaterialPairSubject(
         pair_reference=_pair("xy", b"xy", sources=("xy-recorded",)),
-        premise_occurrences=recurrent_adjacent_pair_candidates(
+        premise_occurrences=recurrent_adjacent_pair_subjects(
             (_source("xy", b"xyxy"),),
             (_pair("xy", b"xy", sources=("xy-recorded",)),),
         )[0].premise_occurrences,
     )
     crossed = exact_pair_occurrences(
-        crossed_candidate, _source("current-xy", b"xy")
+        crossed_subject, _source("current-xy", b"xy")
     )[0]
     with pytest.raises(ValueError, match="cannot cross pair identities"):
         ExactMaterialPairCompareOccurrence(
@@ -196,12 +196,12 @@ def test_pair_coordinates_refuse_compression_crossing_and_substitution(exact_pai
 
 
 def test_pair_and_compare_carriers_require_exact_types(exact_pair):
-    class CandidateSubclass(ExactMaterialPairCandidate):
+    class SubjectSubclass(ExactRecurrentMaterialPairSubject):
         pass
 
-    with pytest.raises(TypeError, match="exact candidate"):
+    with pytest.raises(TypeError, match="exact subject"):
         exact_pair_occurrences(
-            CandidateSubclass(
+            SubjectSubclass(
                 exact_pair.pair_reference,
                 exact_pair.premise_occurrences,
             ),

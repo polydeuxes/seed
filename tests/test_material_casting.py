@@ -50,7 +50,7 @@ from material_pair_investigation import (  # noqa: E402
     compare_pair_occurrences,
     exact_recurrent_material_pair_references,
     exact_pair_occurrences,
-    recurrent_adjacent_pair_candidates,
+    recurrent_adjacent_pair_subjects,
 )
 
 
@@ -331,7 +331,7 @@ def test_recurrent_book_pairs_keep_identity_in_fresh_operator_material():
     pair_references = exact_recurrent_material_pair_references(
         ledger, pair_measurement.identity
     )
-    candidates = recurrent_adjacent_pair_candidates(
+    pair_subjects = recurrent_adjacent_pair_subjects(
         (corpus_reference,), pair_references
     )
 
@@ -344,24 +344,24 @@ def test_recurrent_book_pairs_keep_identity_in_fresh_operator_material():
         material for material, count in expected_counts.items() if count >= 2
     }
     assert {
-        candidate.pair_reference.exact_material
-        for candidate in candidates
+        subject.pair_reference.exact_material
+        for subject in pair_subjects
     } == expected_materials
 
     operator_reference = ingest_result_reference(ledger, operator.identity)
     surviving = []
     comparisons = []
-    for candidate_position, candidate in enumerate(candidates):
-        occurrences = exact_pair_occurrences(candidate, operator_reference)
+    for subject_position, subject in enumerate(pair_subjects):
+        occurrences = exact_pair_occurrences(subject, operator_reference)
         if not occurrences:
             continue
-        surviving.append((candidate, occurrences))
+        surviving.append((subject, occurrences))
         comparisons.extend(
             compare_pair_occurrences(
-                candidate,
+                subject,
                 occurrences,
                 boundary_identity=(
-                    f"checkpointed-operator-pair-{candidate_position}"
+                    f"checkpointed-operator-pair-{subject_position}"
                 ),
             )
         )
@@ -371,7 +371,7 @@ def test_recurrent_book_pairs_keep_identity_in_fresh_operator_material():
     assert any(
         {occurrence.direction for occurrence in occurrences}
         == {"before", "after"}
-        for _candidate, occurrences in surviving
+        for _subject, occurrences in surviving
     )
     assert any(comparison.distinction for comparison in comparisons)
     assert any(not comparison.distinction for comparison in comparisons)
