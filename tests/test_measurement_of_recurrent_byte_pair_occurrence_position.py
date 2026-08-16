@@ -4,19 +4,21 @@ import json
 
 import pytest
 
+import seed_runtime.measurement_of_recurrent_byte_pair_occurrence_position as pair_occurrence_measurement
 from seed_runtime.byte_measurement import (
     assertions_of_recorded_byte_position_pair_measurement,
     record_byte_measurement_responsible_act_evidence,
     record_byte_measurement_result,
     record_byte_position_pair_count_layer,
 )
-from seed_runtime.events import EventLedger
+from seed_runtime.events import EventLedger, EventLedgerBoundary
 from seed_runtime.material_ingest import ingest_material
 from seed_runtime.measurement_of_recurrent_byte_pair_occurrence_position import (
     RECORDED_EVIDENCE_OF_ACT_OCCURRENCE_OF_MEASUREMENT_OF_RECURRENT_BYTE_PAIR_OCCURRENCE_POSITION_KIND,
     RECORDING_OCCURRENCE_OF_RESULT_OF_MEASUREMENT_OF_RECURRENT_BYTE_PAIR_OCCURRENCE_POSITION_KIND,
     get_recorded_result_of_measurement_of_recurrent_byte_pair_occurrence_position,
     measure_positions_of_recurrent_byte_pair_occurrences,
+    measure_positions_for_recurrent_byte_pair_assertions,
     record_evidence_of_act_occurrence_for_measurement_of_recurrent_byte_pair_occurrence_position,
     record_result_of_measurement_of_recurrent_byte_pair_occurrence_position,
 )
@@ -31,13 +33,13 @@ from seed_runtime.operator_representation import (
 from seed_runtime.evidence_of_yield_relation import read_requirements_of_yield_relation
 
 
-def _fixture(*, current: bytes = b"ba---ab"):
+def _fixture(*, current: bytes = b"ba---ab", premise: bytes = b"abxxab"):
     ledger = EventLedger()
     locality = "pair-occurrence-measurement"
     ingest_material(
         ledger,
         locality_identity=locality,
-        exact_bytes=b"abxxab",
+        exact_bytes=premise,
         source_role="premise material",
         source_boundary="exact premise boundary",
     )
@@ -134,6 +136,172 @@ def test_pair_occurrence_measurement_yields_exact_positions_without_a_sign():
     serialized = json.dumps(result.material).lower()
     assert "direction" not in serialized
     assert "displacement" not in serialized
+
+
+def test_same_boundary_pair_fan_out_reads_the_pair_result_once(monkeypatch):
+    ledger, _locality, pair, _recurrence, source, _finding = _fixture(
+        premise=b"abxxabyybayyba",
+        current=b"ba---abxx--yy",
+    )
+    pair_assertions = assertions_of_recorded_byte_position_pair_measurement(
+        ledger, pair.identity
+    )
+    recurrence_identities = tuple(
+        assertion.assertion_identity
+        for assertion in pair_assertions or ()
+        if assertion.result == "recurrence"
+    )
+    assert len(recurrence_identities) > 1
+    through = ledger.append_boundary()
+    expected = tuple(
+        measure_positions_of_recurrent_byte_pair_occurrences(
+            ledger,
+            pair_measurement_occurrence_identity=pair.identity,
+            recurrence_assertion_identity=identity,
+            source_ingest_occurrence_identity=source.identity,
+            occurrence_limit=16,
+            through=through,
+        )
+        for identity in recurrence_identities
+    )
+    calls = 0
+    reader = pair_occurrence_measurement.assertions_of_recorded_byte_position_pair_measurement
+
+    def counted_reader(ledger, event_identity):
+        nonlocal calls
+        calls += 1
+        return reader(ledger, event_identity)
+
+    monkeypatch.setattr(
+        pair_occurrence_measurement,
+        "assertions_of_recorded_byte_position_pair_measurement",
+        counted_reader,
+    )
+    measured = measure_positions_for_recurrent_byte_pair_assertions(
+        ledger,
+        pair_measurement_occurrence_identity=pair.identity,
+        recurrence_assertion_identities=recurrence_identities,
+        source_ingest_occurrence_identity=source.identity,
+        occurrence_limit=16,
+        through=through,
+    )
+
+    assert measured == expected
+    assert calls == 1
+    assert tuple(
+        finding.pair_reference.recurrence_assertion_identity
+        for finding in measured
+    ) == recurrence_identities
+    assert {
+        (
+            finding.source_ingest_occurrence_identity,
+            finding.source_locality_identity,
+            finding.completeness_boundary.identity,
+            finding.occurrence_limit,
+        )
+        for finding in measured
+    } == {(source.identity, source.locality_identity, through.identity, 16)}
+
+
+def test_same_boundary_pair_fan_out_requires_exact_distinct_recurrence_subjects():
+    ledger, _locality, pair, recurrence, source, _finding = _fixture()
+    through = ledger.append_boundary()
+
+    class TupleSubclass(tuple):
+        pass
+
+    class BoundarySubclass(EventLedgerBoundary):
+        pass
+
+    for supplied in ([recurrence.assertion_identity], TupleSubclass((recurrence.assertion_identity,))):
+        with pytest.raises(ValueError, match="exact occurrence identities"):
+            measure_positions_for_recurrent_byte_pair_assertions(
+                ledger,
+                pair_measurement_occurrence_identity=pair.identity,
+                recurrence_assertion_identities=supplied,
+                source_ingest_occurrence_identity=source.identity,
+                occurrence_limit=16,
+                through=through,
+            )
+    with pytest.raises(ValueError, match="entered one result twice"):
+        measure_positions_for_recurrent_byte_pair_assertions(
+            ledger,
+            pair_measurement_occurrence_identity=pair.identity,
+            recurrence_assertion_identities=(
+                recurrence.assertion_identity,
+                recurrence.assertion_identity,
+            ),
+            source_ingest_occurrence_identity=source.identity,
+            occurrence_limit=16,
+            through=through,
+        )
+    count_identity = recurrence.support_assertion_references[0][
+        "assertion_identity"
+    ]
+    with pytest.raises(ValueError, match="does not establish recurrence"):
+        measure_positions_for_recurrent_byte_pair_assertions(
+            ledger,
+            pair_measurement_occurrence_identity=pair.identity,
+            recurrence_assertion_identities=(count_identity,),
+            source_ingest_occurrence_identity=source.identity,
+            occurrence_limit=16,
+            through=through,
+        )
+    with pytest.raises(TypeError, match="one exact boundary"):
+        measure_positions_for_recurrent_byte_pair_assertions(
+            ledger,
+            pair_measurement_occurrence_identity=pair.identity,
+            recurrence_assertion_identities=(recurrence.assertion_identity,),
+            source_ingest_occurrence_identity=source.identity,
+            occurrence_limit=16,
+            through=BoundarySubclass(through.identity),
+        )
+    with pytest.raises(ValueError, match="outside its exact boundary"):
+        measure_positions_for_recurrent_byte_pair_assertions(
+            ledger,
+            pair_measurement_occurrence_identity=pair.identity,
+            recurrence_assertion_identities=(recurrence.assertion_identity,),
+            source_ingest_occurrence_identity=source.identity,
+            occurrence_limit=16,
+            through=ledger.append_boundary_through_occurrence(pair.identity),
+        )
+
+
+def test_same_boundary_pair_fan_out_keeps_each_result_evidence_independent():
+    ledger, locality, pair, _recurrence, source, _finding = _fixture(
+        premise=b"abxxabyybayyba",
+        current=b"ba---abxx--yy",
+    )
+    recurrence_identities = tuple(
+        assertion.assertion_identity
+        for assertion in assertions_of_recorded_byte_position_pair_measurement(
+            ledger, pair.identity
+        ) or ()
+        if assertion.result == "recurrence"
+    )
+    findings = measure_positions_for_recurrent_byte_pair_assertions(
+        ledger,
+        pair_measurement_occurrence_identity=pair.identity,
+        recurrence_assertion_identities=recurrence_identities,
+        source_ingest_occurrence_identity=source.identity,
+        occurrence_limit=16,
+        through=ledger.append_boundary(),
+    )
+    results = tuple(_record(ledger, locality, finding)[1] for finding in findings)
+
+    results[-1].material["assertions"][0]["dimensions"]["content"][
+        "first_position"
+    ] += 1
+    assert (
+        get_recorded_result_of_measurement_of_recurrent_byte_pair_occurrence_position(
+            ledger, results[0].identity
+        )
+        == findings[0]
+    )
+    with pytest.raises(ValueError):
+        get_recorded_result_of_measurement_of_recurrent_byte_pair_occurrence_position(
+            ledger, results[-1].identity
+        )
 
 
 def test_act_evidence_has_inputs_and_responsibility_but_no_result_finding():

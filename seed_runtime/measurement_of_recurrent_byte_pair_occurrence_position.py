@@ -194,15 +194,38 @@ def reference_to_recorded_recurrent_byte_pair(
 ) -> ReferenceToRecordedRecurrentBytePair:
     """Resolve one recurrence Assertion through its exact Measurement Yield."""
 
+    return _references_to_recorded_recurrent_byte_pairs(
+        ledger,
+        measurement_occurrence_identity=measurement_occurrence_identity,
+        recurrence_assertion_identities=(recurrence_assertion_identity,),
+    )[0]
+
+
+def _references_to_recorded_recurrent_byte_pairs(
+    ledger: EventLedger,
+    *,
+    measurement_occurrence_identity: str,
+    recurrence_assertion_identities: tuple[str, ...],
+) -> tuple[ReferenceToRecordedRecurrentBytePair, ...]:
+    """Resolve several subjects from one independently validated result read."""
+
     if not isinstance(ledger, EventLedger):
         raise TypeError("recurrent pair reference requires one EventLedger")
     if (
         type(measurement_occurrence_identity) is not str
         or not measurement_occurrence_identity
-        or type(recurrence_assertion_identity) is not str
-        or not recurrence_assertion_identity
+        or type(recurrence_assertion_identities) is not tuple
+        or not recurrence_assertion_identities
+        or any(
+            type(identity) is not str or not identity
+            for identity in recurrence_assertion_identities
+        )
     ):
         raise ValueError("recurrent pair reference requires exact occurrence identities")
+    if len(set(recurrence_assertion_identities)) != len(
+        recurrence_assertion_identities
+    ):
+        raise ValueError("recurrent pair Assertion entered one result twice")
     event = ledger.get(measurement_occurrence_identity)
     if (
         event is None
@@ -215,37 +238,9 @@ def reference_to_recorded_recurrent_byte_pair(
     assertions = assertions_of_recorded_byte_position_pair_measurement(
         ledger, event.identity
     )
-    recurrence = next(
-        (
-            assertion
-            for assertion in assertions or ()
-            if assertion.assertion_identity == recurrence_assertion_identity
-            and assertion.result == "recurrence"
-        ),
-        None,
-    )
-    if recurrence is None or recurrence.representation is None:
-        raise ValueError("the addressed pair Assertion does not establish recurrence")
-    support = recurrence.support_assertion_references
-    if (
-        len(support) != 1
-        or support[0].get("recorded_occurrence_identity") != event.identity
-        or type(support[0].get("assertion_identity")) is not str
-    ):
-        raise ValueError("the recurrent pair carries no exact count Assertion support")
-    count_identity = support[0]["assertion_identity"]
-    count = next(
-        (
-            assertion
-            for assertion in assertions or ()
-            if assertion.assertion_identity == count_identity
-            and assertion.result == "count"
-            and assertion.representation == recurrence.representation
-        ),
-        None,
-    )
-    if count is None:
-        raise ValueError("the recurrent pair carries crossed count support")
+    assertions_by_identity = {
+        assertion.assertion_identity: assertion for assertion in assertions or ()
+    }
     assignment = event.material.get("responsibility_assignment_evidence")
     sources = (
         assignment.get("source_occurrence_references")
@@ -269,19 +264,48 @@ def reference_to_recorded_recurrent_byte_pair(
         or not boundary["identity"]
     ):
         raise ValueError("the recurrent pair carries no exact source boundary")
-    reference = ReferenceToRecordedRecurrentBytePair(
-        recorded_occurrence_identity=event.identity,
-        recurrence_assertion_identity=recurrence.assertion_identity,
-        count_assertion_identity=count.assertion_identity,
-        locality_identity=event.locality_identity,
-        source_occurrence_identities=tuple(
-            reference["ingest_occurrence_identity"] for reference in sources
-        ),
-        completeness_boundary_identity=boundary["identity"],
-        exact_material=bytes(recurrence.representation),
+    source_occurrence_identities = tuple(
+        reference["ingest_occurrence_identity"] for reference in sources
     )
-    _validate_pair_reference(reference)
-    return reference
+    found = []
+    for recurrence_assertion_identity in recurrence_assertion_identities:
+        recurrence = assertions_by_identity.get(recurrence_assertion_identity)
+        if (
+            recurrence is None
+            or recurrence.result != "recurrence"
+            or recurrence.representation is None
+        ):
+            raise ValueError(
+                "the addressed pair Assertion does not establish recurrence"
+            )
+        support = recurrence.support_assertion_references
+        if (
+            len(support) != 1
+            or support[0].get("recorded_occurrence_identity") != event.identity
+            or type(support[0].get("assertion_identity")) is not str
+        ):
+            raise ValueError(
+                "the recurrent pair carries no exact count Assertion support"
+            )
+        count = assertions_by_identity.get(support[0]["assertion_identity"])
+        if (
+            count is None
+            or count.result != "count"
+            or count.representation != recurrence.representation
+        ):
+            raise ValueError("the recurrent pair carries crossed count support")
+        reference = ReferenceToRecordedRecurrentBytePair(
+            recorded_occurrence_identity=event.identity,
+            recurrence_assertion_identity=recurrence.assertion_identity,
+            count_assertion_identity=count.assertion_identity,
+            locality_identity=event.locality_identity,
+            source_occurrence_identities=source_occurrence_identities,
+            completeness_boundary_identity=boundary["identity"],
+            exact_material=bytes(recurrence.representation),
+        )
+        _validate_pair_reference(reference)
+        found.append(reference)
+    return tuple(found)
 
 
 def _exact_ingest_event(ledger: EventLedger, event_identity: str) -> Event:
@@ -392,6 +416,38 @@ def measure_positions_of_recurrent_byte_pair_occurrences(
         source_ingest_occurrence_identity=source_ingest_occurrence_identity,
         boundary=through or ledger.append_boundary(),
         occurrence_limit=occurrence_limit,
+    )
+
+
+def measure_positions_for_recurrent_byte_pair_assertions(
+    ledger: EventLedger,
+    *,
+    pair_measurement_occurrence_identity: str,
+    recurrence_assertion_identities: tuple[str, ...],
+    source_ingest_occurrence_identity: str,
+    occurrence_limit: int,
+    through: EventLedgerBoundary,
+) -> tuple[FindingOfRecurrentBytePairOccurrencePositions, ...]:
+    """Measure a same-boundary fan-out after one exact pair-result read."""
+
+    if type(through) is not EventLedgerBoundary:
+        raise TypeError("pair occurrence fan-out requires one exact boundary")
+    if type(occurrence_limit) is not int or occurrence_limit <= 0:
+        raise ValueError("pair occurrence Measurement requires a positive exact limit")
+    references = _references_to_recorded_recurrent_byte_pairs(
+        ledger,
+        measurement_occurrence_identity=pair_measurement_occurrence_identity,
+        recurrence_assertion_identities=recurrence_assertion_identities,
+    )
+    return tuple(
+        _measure_through(
+            ledger,
+            pair_reference=reference,
+            source_ingest_occurrence_identity=source_ingest_occurrence_identity,
+            boundary=through,
+            occurrence_limit=occurrence_limit,
+        )
+        for reference in references
     )
 
 
