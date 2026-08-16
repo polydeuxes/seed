@@ -25,6 +25,7 @@ from compiled_format_invocation import (  # noqa: E402
     admit_compiled_invocation_rows,
     compare_added_position_invocations,
     compiled_reference_invocations,
+    exact_byte_material_references,
     exact_byte_pair_material_references,
     first_recurring_added_compare_across,
     moved_exact_byte_material_references,
@@ -161,6 +162,55 @@ def acquired_book_relations(acquired_book_material):
         result_invocation_rows,
         comparisons,
         addition_admission,
+    )
+
+
+@pytest.fixture(scope="module")
+def complete_book_admission_acts(acquired_book_material):
+    ledger, _, _, _, _, book_invocation_rows, book_admission = acquired_book_material
+    byte_measurement = record_byte_count_layer(
+        ledger,
+        source_localities=("book-material-acquisition",),
+        recording_locality_identity="book-material-acquisition",
+    )
+    byte_references = exact_byte_material_references(
+        ledger, byte_measurement.identity
+    )
+    byte_invocation_rows = compiled_reference_invocations(
+        byte_references,
+        boundary_identity="complete-book-byte-invocation",
+        implementation_functions=COMPILED_IMPLEMENTATION_FUNCTIONS,
+    )
+    byte_admission = admit_compiled_invocation_rows(
+        byte_invocation_rows,
+        boundary_identity="complete-book-byte-admission",
+    )
+    additions = admission_result_added_position_occurrences(
+        book_admission.result_reference,
+        byte_admission.result_reference,
+        boundary_identity="complete-book-admission-addition",
+        admitted_material_act_occurrence_count_limit=22_000,
+    )
+    result_invocation_rows = added_position_invocations(
+        additions,
+        boundary_identity="complete-book-admission-addition-invocation",
+        implementation_functions=COMPILED_IMPLEMENTATION_FUNCTIONS,
+    )
+    comparisons = compare_added_position_invocations(
+        book_invocation_rows,
+        result_invocation_rows,
+        boundary_identity="complete-book-admission-addition-compare",
+    )
+    return (
+        book_admission,
+        book_invocation_rows,
+        byte_measurement,
+        byte_references,
+        byte_invocation_rows,
+        byte_admission,
+        additions,
+        result_invocation_rows,
+        comparisons,
     )
 
 
@@ -384,6 +434,94 @@ def test_book_relations_freeze_one_distinct_function_vector_before_later_invocat
             for comparison in later_comparisons
         }
     ) == len(COMPILED_IMPLEMENTATION_FUNCTIONS)
+
+
+def test_complete_book_admission_drives_later_exact_material_acts(
+    complete_book_admission_acts,
+):
+    (
+        book_admission,
+        _,
+        _,
+        _,
+        _,
+        byte_admission,
+        additions,
+        result_invocation_rows,
+        comparisons,
+    ) = complete_book_admission_acts
+
+    assert additions
+    assert all(
+        addition.source_admission_result_reference == book_admission.result_reference
+        and addition.added_admission_result_reference
+        == byte_admission.result_reference
+        for addition in additions
+    )
+    assert all(
+        addition.source_reference
+        in book_admission.admitted_material[
+            addition.source_admitted_material_position
+        ]
+        and addition.added_reference
+        in byte_admission.admitted_material[
+            addition.added_admitted_material_position
+        ]
+        for addition in additions
+    )
+    assert all(len(row) == len(additions) for row in result_invocation_rows)
+    assert all(len(row) == len(additions) for row in comparisons)
+    assert any(
+        comparison.distinction
+        for row in comparisons
+        for comparison in row
+    )
+
+
+def test_complete_book_later_acts_refuse_broken_admission_lineage(
+    complete_book_admission_acts,
+):
+    book_admission, _, _, _, _, byte_admission, additions, _, _ = (
+        complete_book_admission_acts
+    )
+    addition = additions[0]
+
+    with pytest.raises(ValueError, match="differs from its Admissions"):
+        replace(
+            addition,
+            source_admission_result_reference=byte_admission.result_reference,
+        )
+    with pytest.raises(ValueError, match="differs from its Admissions"):
+        replace(
+            addition,
+            added_admission_result_reference=book_admission.result_reference,
+        )
+
+
+def test_complete_book_compare_refuses_a_mismatched_act_result_occurrence(
+    complete_book_admission_acts,
+):
+    (
+        _,
+        _,
+        _,
+        _,
+        _,
+        _,
+        additions,
+        result_invocation_rows,
+        _,
+    ) = complete_book_admission_acts
+    different = next(
+        addition
+        for addition in additions[1:]
+        if addition.result_material != additions[0].result_material
+    )
+    with pytest.raises(ValueError, match="differs from its exact source"):
+        replace(
+            result_invocation_rows[0][0],
+            source_coordinate=different,
+        )
 
 
 def test_later_material_does_not_enter_the_book_completeness_boundary(
