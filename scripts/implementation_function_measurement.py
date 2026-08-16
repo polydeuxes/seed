@@ -3,10 +3,13 @@
 from __future__ import annotations
 
 import cProfile
+import dis
+from functools import lru_cache
 import json
 import os
 from pathlib import Path
 import sqlite3
+import sys
 import threading
 from types import CodeType
 from typing import Callable
@@ -17,15 +20,22 @@ import pytest
 ROOT = Path(__file__).resolve().parents[1]
 OUTPUT_ENVIRONMENT_COORDINATE = "SEED_IMPLEMENTATION_FUNCTION_MEASUREMENT"
 SOURCE_DIRECTORIES = ("seed_runtime", "scripts")
+SQL_INVOCATION_NAMES = frozenset(("execute", "executemany", "executescript"))
 
 _python: dict[str, list[int]] = {}
 _sql: dict[str, int] = {}
 _sql_occurrences: list[str] = []
+_sql_invocations: dict[str, int] = {}
+_sql_invocation_occurrences: list[str | None] = []
+_sql_statement_invocations: list[int | None] = []
 _sqlite_connect = sqlite3.connect
 _lock = threading.Lock()
 _profiler: cProfile.Profile | None = None
-_baselines: list[tuple[dict[str, list[int]], int]] = []
+_enclosing_measurement_coordinates: list[
+    tuple[dict[str, list[int]], int, int]
+] = []
 _pytest_occurrences: list[dict[str, object]] = []
+_active_sql_invocations = threading.local()
 
 
 def _identity(path: Path, line: int, name: str) -> str:
@@ -51,12 +61,109 @@ def _source_identity(code: CodeType) -> str | None:
 
 
 def _measure_sql(statement: str) -> None:
+    active = getattr(_active_sql_invocations, "positions", ())
     with _lock:
         _sql[statement] = _sql.get(statement, 0) + 1
         _sql_occurrences.append(statement)
+        _sql_statement_invocations.append(active[-1] if active else None)
+
+
+def _begin_sql_invocation(frame: object, name: str) -> int:
+    identity = _frame_sql_invocation_identity(frame, name)
+    with _lock:
+        position = len(_sql_invocation_occurrences)
+        _sql_invocation_occurrences.append(identity)
+        if identity is not None:
+            _sql_invocations[identity] = _sql_invocations.get(identity, 0) + 1
+    positions = getattr(_active_sql_invocations, "positions", None)
+    if positions is None:
+        positions = []
+        _active_sql_invocations.positions = positions
+    positions.append(position)
+    return position
+
+
+def _finish_sql_invocation(position: int) -> None:
+    positions = _active_sql_invocations.positions
+    if not positions or positions.pop() != position:
+        raise RuntimeError("SQL invocation occurrence order changed")
+
+
+def _invoke_sql(
+    invocation: Callable[..., object],
+    frame: object,
+    name: str,
+    arguments: tuple[object, ...],
+    coordinates: dict[str, object],
+) -> object:
+    position = _begin_sql_invocation(frame, name)
+    try:
+        return invocation(*arguments, **coordinates)
+    finally:
+        _finish_sql_invocation(position)
+
+
+class MeasuredCursor(sqlite3.Cursor):
+    def execute(self, *arguments: object, **coordinates: object):
+        return _invoke_sql(
+            getattr(super(), "execute"),
+            sys._getframe(1),
+            "execute",
+            arguments,
+            coordinates,
+        )
+
+    def executemany(self, *arguments: object, **coordinates: object):
+        return _invoke_sql(
+            getattr(super(), "executemany"),
+            sys._getframe(1),
+            "executemany",
+            arguments,
+            coordinates,
+        )
+
+    def executescript(self, *arguments: object, **coordinates: object):
+        return _invoke_sql(
+            getattr(super(), "executescript"),
+            sys._getframe(1),
+            "executescript",
+            arguments,
+            coordinates,
+        )
 
 
 class MeasuredConnection(sqlite3.Connection):
+    def cursor(self, *arguments: object, **coordinates: object):
+        coordinates.setdefault("factory", MeasuredCursor)
+        return super().cursor(*arguments, **coordinates)
+
+    def execute(self, *arguments: object, **coordinates: object):
+        return _invoke_sql(
+            getattr(super(), "execute"),
+            sys._getframe(1),
+            "execute",
+            arguments,
+            coordinates,
+        )
+
+    def executemany(self, *arguments: object, **coordinates: object):
+        return _invoke_sql(
+            getattr(super(), "executemany"),
+            sys._getframe(1),
+            "executemany",
+            arguments,
+            coordinates,
+        )
+
+    def executescript(self, *arguments: object, **coordinates: object):
+        return _invoke_sql(
+            getattr(super(), "executescript"),
+            sys._getframe(1),
+            "executescript",
+            arguments,
+            coordinates,
+        )
+
     def set_trace_callback(
         self, callback: Callable[[str], object] | None
     ) -> None:
@@ -104,6 +211,82 @@ def implementation_function_identities() -> tuple[str, ...]:
     )
 
 
+def _sql_invocation_identity(
+    path: Path,
+    code: CodeType,
+    instruction: dis.Instruction,
+) -> str | None:
+    positions = instruction.positions
+    line = positions.lineno
+    column = positions.col_offset
+    if line is None or column is None:
+        return None
+    return f"{_identity(path, line, code.co_qualname)}:{column}:{instruction.argval}"
+
+
+def _compiled_sql_invocation_identities(path: Path) -> tuple[str, ...]:
+    try:
+        compiled = compile(path.read_bytes(), str(path), "exec")
+    except (OSError, SyntaxError, ValueError):
+        return ()
+    found = []
+    pending = [compiled]
+    while pending:
+        code = pending.pop()
+        for material in code.co_consts:
+            if isinstance(material, CodeType):
+                pending.append(material)
+        for instruction in dis.get_instructions(code):
+            if (
+                instruction.opname in {"LOAD_METHOD", "LOAD_ATTR"}
+                and instruction.argval in SQL_INVOCATION_NAMES
+            ):
+                identity = _sql_invocation_identity(path.resolve(), code, instruction)
+                if identity is not None:
+                    found.append(identity)
+    return tuple(found)
+
+
+def implementation_sql_invocation_identities() -> tuple[str, ...]:
+    return tuple(
+        sorted(
+            identity
+            for directory in SOURCE_DIRECTORIES
+            for path in (ROOT / directory).rglob("*.py")
+            for identity in _compiled_sql_invocation_identities(path)
+        )
+    )
+
+
+@lru_cache(maxsize=None)
+def _code_sql_invocation_identities(
+    code: CodeType, name: str
+) -> tuple[tuple[int, str], ...]:
+    if _source_identity(code) is None:
+        return ()
+    path = Path(code.co_filename).resolve()
+    return tuple(
+        (instruction.offset, identity)
+        for instruction in dis.get_instructions(code)
+        if instruction.opname in {"LOAD_METHOD", "LOAD_ATTR"}
+        and instruction.argval == name
+        and (identity := _sql_invocation_identity(path, code, instruction)) is not None
+    )
+
+
+def _frame_sql_invocation_identity(frame: object, name: str) -> str | None:
+    return next(
+        (
+            identity
+            for offset, identity in reversed(
+                _code_sql_invocation_identities(frame.f_code, name)
+            )
+            if offset <= frame.f_lasti
+        ),
+        None,
+    )
+
+
 def _profile_coordinates(profiler: cProfile.Profile) -> dict[str, list[int]]:
     found: dict[str, list[int]] = {}
     for entry in profiler.getstats():
@@ -139,8 +322,18 @@ def _sql_since(occurrence_position: int) -> dict[str, int]:
     return found
 
 
+def _sql_invocations_since(occurrence_position: int) -> dict[str, int]:
+    found: dict[str, int] = {}
+    for identity in _sql_invocation_occurrences[occurrence_position:]:
+        if identity is not None:
+            found[identity] = found.get(identity, 0) + 1
+    return found
+
+
 def _measurement(
-    python_coordinates: dict[str, list[int]], sql_coordinates: dict[str, int]
+    python_coordinates: dict[str, list[int]],
+    sql_coordinates: dict[str, int],
+    sql_invocation_coordinates: dict[str, int] | None = None,
 ) -> dict[str, object]:
     identities = implementation_function_identities()
     python = {
@@ -156,12 +349,21 @@ def _measurement(
         for identity, coordinates in python.items()
         if identity.startswith("scripts/reference_pair_comparison.py:")
     }
+    sql_invocations = {
+        identity: {
+            "occurrence_count": (
+                _sql_invocations
+                if sql_invocation_coordinates is None
+                else sql_invocation_coordinates
+            ).get(identity, 0)
+        }
+        for identity in implementation_sql_invocation_identities()
+    }
     return {
         "python": python,
         "sql": dict(sorted(sql_coordinates.items())),
-        "sql_occurrences": tuple(_sql_occurrences),
+        "sql_invocations": sql_invocations,
         "reference_pair": reference_pair,
-        "pytest": tuple(_pytest_occurrences),
     }
 
 
@@ -183,7 +385,16 @@ def _observed_measurement(
 
 
 def measurement() -> dict[str, object]:
-    return _measurement(_python, _sql)
+    found = _measurement(_python, _sql)
+    found.update(
+        {
+            "sql_occurrences": tuple(_sql_occurrences),
+            "sql_invocation_occurrences": tuple(_sql_invocation_occurrences),
+            "sql_statement_invocations": tuple(_sql_statement_invocations),
+            "pytest": tuple(_pytest_occurrences),
+        }
+    )
+    return found
 
 
 def _output_measurement(found: dict[str, object]) -> dict[str, object]:
@@ -194,6 +405,11 @@ def _output_measurement(found: dict[str, object]) -> dict[str, object]:
     sql_material = tuple(found["sql"])
     sql_positions = {
         material: position for position, material in enumerate(sql_material)
+    }
+    sql_invocation_identities = tuple(found["sql_invocations"])
+    sql_invocation_positions = {
+        identity: position
+        for position, identity in enumerate(sql_invocation_identities)
     }
     return {
         "python": tuple(
@@ -210,6 +426,19 @@ def _output_measurement(found: dict[str, object]) -> dict[str, object]:
         "sql_occurrences": tuple(
             sql_positions[material] for material in found["sql_occurrences"]
         ),
+        "sql_invocations": tuple(
+            {"identity": identity, **found["sql_invocations"][identity]}
+            for identity in sql_invocation_identities
+        ),
+        "sql_invocation_occurrences": tuple(
+            (
+                None
+                if identity is None
+                else sql_invocation_positions[identity]
+            )
+            for identity in found["sql_invocation_occurrences"]
+        ),
+        "sql_statement_invocations": found["sql_statement_invocations"],
         "reference_pair": tuple(
             python_positions[identity] for identity in found["reference_pair"]
         ),
@@ -235,17 +464,37 @@ def _output_measurement(found: dict[str, object]) -> dict[str, object]:
     }
 
 
+def _json_material(found: dict[str, object]) -> bytes:
+    represented = json.dumps(
+        _output_measurement(found),
+        ensure_ascii=True,
+        sort_keys=True,
+        separators=(",", ":"),
+    )
+    return bytes(ord(unit) for unit in represented)
+
+
 def begin() -> None:
     global _profiler
     if _profiler is not None:
         _profiler.disable()
-        _baselines.append((_profile_coordinates(_profiler), len(_sql_occurrences)))
+        _enclosing_measurement_coordinates.append(
+            (
+                _profile_coordinates(_profiler),
+                len(_sql_occurrences),
+                len(_sql_invocation_occurrences),
+            )
+        )
         _profiler.enable()
         return
     _python.clear()
     _sql.clear()
     _sql_occurrences.clear()
-    _baselines.clear()
+    _sql_invocations.clear()
+    _sql_invocation_occurrences.clear()
+    _sql_statement_invocations.clear()
+    _active_sql_invocations.positions = []
+    _enclosing_measurement_coordinates.clear()
     _pytest_occurrences.clear()
     sqlite3.connect = _connect
     _profiler = cProfile.Profile()
@@ -258,11 +507,14 @@ def finish() -> dict[str, object]:
         return measurement()
     _profiler.disable()
     current_python = _profile_coordinates(_profiler)
-    if _baselines:
-        prior_python, prior_sql_position = _baselines.pop()
+    if _enclosing_measurement_coordinates:
+        prior_python, prior_sql_position, prior_sql_invocation_position = (
+            _enclosing_measurement_coordinates.pop()
+        )
         found = _measurement(
             _coordinate_difference(current_python, prior_python),
             _sql_since(prior_sql_position),
+            _sql_invocations_since(prior_sql_invocation_position),
         )
         _profiler.enable()
         return found
@@ -275,11 +527,11 @@ def finish() -> dict[str, object]:
 
 def _finish_observed() -> dict[str, object]:
     global _profiler
-    if _profiler is None or not _baselines:
+    if _profiler is None or not _enclosing_measurement_coordinates:
         raise RuntimeError("one enclosing implementation measurement is required")
     _profiler.disable()
     current_python = _profile_coordinates(_profiler)
-    prior_python, prior_sql_position = _baselines.pop()
+    prior_python, prior_sql_position, _ = _enclosing_measurement_coordinates.pop()
     found = _observed_measurement(
         _coordinate_difference(current_python, prior_python),
         _sql_since(prior_sql_position),
@@ -298,7 +550,11 @@ def pytest_runtest_protocol(item: object, nextitem: object):
     del nextitem
     occurrence_position = len(_pytest_occurrences)
     begin()
-    sql_occurrence_position = _baselines[-1][1]
+    (
+        _,
+        sql_occurrence_position,
+        sql_invocation_occurrence_position,
+    ) = _enclosing_measurement_coordinates[-1]
     try:
         yield
     finally:
@@ -310,6 +566,13 @@ def pytest_runtest_protocol(item: object, nextitem: object):
             "pytest_identity": item.nodeid,
             "first_sql_occurrence_position": sql_occurrence_position,
             "sql_occurrence_count": len(_sql_occurrences) - sql_occurrence_position,
+            "first_sql_invocation_occurrence_position": (
+                sql_invocation_occurrence_position
+            ),
+            "sql_invocation_occurrence_count": (
+                len(_sql_invocation_occurrences)
+                - sql_invocation_occurrence_position
+            ),
             **found,
         }
     )
@@ -320,11 +583,4 @@ def pytest_sessionfinish(session: object, exitstatus: int) -> None:
     found = finish()
     output = os.environ.get(OUTPUT_ENVIRONMENT_COORDINATE)
     if output:
-        Path(output).write_text(
-            json.dumps(
-                _output_measurement(found),
-                sort_keys=True,
-                separators=(",", ":"),
-            ),
-            encoding="utf-8",
-        )
+        Path(output).write_bytes(_json_material(found))

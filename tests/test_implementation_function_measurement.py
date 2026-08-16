@@ -11,6 +11,7 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "scripts"))
 
 import implementation_function_measurement as measured  # noqa: E402
+from reference_pair_comparison import ReferencePairComparison  # noqa: E402
 
 
 def test_compiled_code_supplies_identities_without_ast_taxonomy(tmp_path):
@@ -123,6 +124,8 @@ def test_one_pytest_occurrence_keeps_its_exact_implementation_measurement():
         {"exact_material": "SELECT 9", "occurrence_count": 1},
     )
     assert output["sql_occurrences"] == (0,)
+    assert output["sql_invocation_occurrences"] == (None,)
+    assert output["sql_statement_invocations"] == (0,)
     output_occurrence = output["pytest"][0]
     output_coordinate = next(
         coordinate
@@ -132,6 +135,7 @@ def test_one_pytest_occurrence_keeps_its_exact_implementation_measurement():
         ].endswith(":_identity")
     )
     assert output_coordinate["occurrence_count"] == 1
+    assert all(unit < 128 for unit in measured._json_material(result))
 
 
 def test_reference_pair_measurement_contains_each_surviving_function():
@@ -177,3 +181,28 @@ def test_existing_sql_trace_callback_receives_the_same_statement():
 
     assert carried == ["SELECT 1"]
     assert result["sql"]["SELECT 1"] == 1
+
+
+def test_compiled_sql_invocation_locations_keep_observed_and_unobserved_counts():
+    measured.begin()
+    try:
+        ReferencePairComparison()
+    finally:
+        result = measured.finish()
+
+    observed = {
+        identity
+        for identity, coordinates in result["sql_invocations"].items()
+        if coordinates["occurrence_count"] > 0
+    }
+    assert observed == {
+        "scripts/reference_pair_comparison.py:11:"
+        "ReferencePairComparison.__init__:8:executescript"
+    }
+    assert any(
+        identity.endswith("ReferencePairComparison.load:12:execute")
+        and coordinates["occurrence_count"] == 0
+        for identity, coordinates in result["sql_invocations"].items()
+    )
+    assert result["sql_invocation_occurrences"] == tuple(observed)
+    assert result["sql_statement_invocations"] == (0, 0, 0, 0)
