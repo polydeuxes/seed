@@ -62,7 +62,7 @@
     ]
   },
   "implementation_witness": {
-    "discriminators": ["content", "locality"],
+    "discriminators": ["content", "locality", "occurrence"],
     "relations": {
       "locality_relation": ["first_subject", "second_subject"]
     },
@@ -83,7 +83,9 @@
       "unrelated_occurrence": "exact"
     },
     "non_equivalence": [
-      ["content", "locality"]
+      ["content", "locality"],
+      ["content", "occurrence"],
+      ["locality", "occurrence"]
     ]
   },
   "clauses": {

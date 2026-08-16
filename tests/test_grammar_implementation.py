@@ -2302,7 +2302,7 @@ def _participation_requirements(bundle: dict, *, role: str) -> dict[str, bool]:
     }
 
 
-def test_implementation_witness_discriminates_content_and_locality():
+def test_implementation_witness_discriminates_content_locality_and_occurrence():
     grammar = _witness_grammar()
     ledger = EventLedger()
     content = {"a": 1, "b": 2}
@@ -2315,12 +2315,20 @@ def test_implementation_witness_discriminates_content_and_locality():
     changed_content = ledger.append(
         "test.locality", {"a": 1, "b": 3}, locality_identity="s"
     )
+    repeated = ledger.append("test.locality", dict(content), locality_identity="s")
     assert first.material != changed_content.material
     assert first.locality_identity == changed_content.locality_identity
+    assert first.identity != changed_content.identity
 
-    assert grammar["discriminators"] == ["content", "locality"]
+    assert first.material == repeated.material
+    assert first.locality_identity == repeated.locality_identity
+    assert first.identity != repeated.identity
+
+    assert grammar["discriminators"] == ["content", "locality", "occurrence"]
     assert grammar["non_equivalence"] == [
         ["content", "locality"],
+        ["content", "occurrence"],
+        ["locality", "occurrence"],
     ]
 
 

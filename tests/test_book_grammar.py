@@ -69,6 +69,7 @@ def test_machine_readable_grammar_traverses_responsibility_from_standing():
     assert grammar["implementation_witness"]["discriminators"] == [
         "content",
         "locality",
+        "occurrence",
     ]
     assert grammar["relations"]["yield"]["preserves"] == [
         "Act_occurrence_identity",
