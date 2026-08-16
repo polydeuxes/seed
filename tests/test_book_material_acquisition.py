@@ -84,7 +84,7 @@ def acquired_book_material():
     ledger = EventLedger()
     paths = tuple(
         path
-        for path in sorted((ROOT / "book_of_seed").rglob("*"))
+        for path in (ROOT / "book_of_seed").rglob("*")
         if path.is_file()
     )
     ingests = tuple(
@@ -335,7 +335,7 @@ def test_every_current_book_file_has_one_exact_ingest_result(
 
     assert paths == tuple(
         path
-        for path in sorted((ROOT / "book_of_seed").rglob("*"))
+        for path in (ROOT / "book_of_seed").rglob("*")
         if path.is_file()
     )
     assert bounded_ingests == ingests

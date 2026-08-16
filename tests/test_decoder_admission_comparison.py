@@ -46,7 +46,7 @@ def test_the_decoder_functions_do_not_share_one_admission():
 
 def test_the_relation_over_results_is_itself_admitted():
     found = admissions()
-    keys = sorted(found, key=len)
+    keys = tuple(found)
 
     found_admissions = material_admission.admit(
         material_admission.admission_by(len, keys), preserves

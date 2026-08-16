@@ -26,7 +26,7 @@ def measured_book_material():
     ledger = EventLedger()
     paths = tuple(
         path
-        for path in sorted((SCRIPT_DIRECTORY.parent / "book_of_seed").rglob("*"))
+        for path in (SCRIPT_DIRECTORY.parent / "book_of_seed").rglob("*")
         if path.is_file()
     )
     for path in paths:

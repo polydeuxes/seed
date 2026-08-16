@@ -1409,6 +1409,24 @@ def test_missing_position_cannot_return_the_complete_exact_material():
     assert found == ()
 
 
+def test_position_pair_composition_preserves_supplied_position_order():
+    source = ExactMaterialReference(
+        "position-order-source",
+        "position-order-assertion",
+        "position-order-locality",
+        b"abcd",
+    )
+    one = exact_position_material_references(source)
+
+    found = exact_position_pair_material_references(
+        (one[2], one[3], one[0], one[1])
+    )
+
+    assert tuple(
+        (reference.first_position, reference.last_position) for reference in found
+    ) == ((2, 3), (0, 1), (1, 2))
+
+
 @pytest.mark.parametrize(
     ("material", "same"),
     ((b"abxabxabx", True), (b"abxabxaby", False)),

@@ -20,9 +20,23 @@ def test_compiled_code_supplies_identities_without_ast_taxonomy(tmp_path):
 
     identities = measured._compiled_identities(source)
 
-    assert len(identities) == 2
-    assert any(identity.endswith(":1:a") for identity in identities)
-    assert any(identity.endswith(":4:b") for identity in identities)
+    assert tuple(tuple(identity.rsplit(":", 2)[1:]) for identity in identities) == (
+        ("1", "a"),
+        ("4", "b"),
+    )
+
+
+def test_observed_measurement_preserves_observation_order_without_sorting():
+    observed = measured._observed_measurement(
+        {
+            "implementation-z": [1, 2, 3],
+            "implementation-a": [4, 5, 6],
+        },
+        {"SELECT z": 1, "SELECT a": 2},
+    )
+
+    assert tuple(observed["python"]) == ("implementation-z", "implementation-a")
+    assert tuple(observed["sql"]) == ("SELECT z", "SELECT a")
 
 
 def test_python_invocation_occurrence_is_measured():
@@ -38,7 +52,8 @@ def test_python_invocation_occurrence_is_measured():
     identity, coordinates = next(
         (identity, coordinates)
         for identity, coordinates in result["python"].items()
-        if identity.endswith(":_identity")
+        if identity.startswith("scripts/implementation_function_measurement.py:")
+        and identity.endswith(":_identity")
     )
     assert identity.startswith("scripts/implementation_function_measurement.py:")
     assert coordinates["occurrence_count"] == 1
@@ -81,7 +96,10 @@ def test_one_measurement_does_not_replace_an_active_measurement():
         complete = measured.finish()
 
     identity = next(
-        identity for identity in complete["python"] if identity.endswith(":_identity")
+        identity
+        for identity in complete["python"]
+        if identity.startswith("scripts/implementation_function_measurement.py:")
+        and identity.endswith(":_identity")
     )
     assert inside["python"][identity]["occurrence_count"] == 1
     assert complete["python"][identity]["occurrence_count"] == 3

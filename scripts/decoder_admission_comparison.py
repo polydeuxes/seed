@@ -94,7 +94,7 @@ def main() -> int:
         f"  ({counted['preservation_pairs'] / counted['pair_count'] * 100:.0f}%)"
     )
 
-    keys = sorted(found, key=len)
+    keys = tuple(found)
     admissions = material_admission.admit(
         material_admission.admission_by(len, keys), preserves
     )

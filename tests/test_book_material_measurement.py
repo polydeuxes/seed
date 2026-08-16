@@ -23,7 +23,7 @@ def test_book_ingest_and_measurement_references_keep_their_exact_lineage():
     ledger, pair_references, byte_references = measured_book_material()
     paths = tuple(
         path
-        for path in sorted((ROOT / "book_of_seed").rglob("*"))
+        for path in (ROOT / "book_of_seed").rglob("*")
         if path.is_file()
     )
     ingests = tuple(

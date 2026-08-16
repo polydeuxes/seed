@@ -191,7 +191,7 @@ def decoding_implementation_functions() -> list[str]:
         except Exception:
             continue
         found.append(module.name)
-    return sorted(found)
+    return found
 
 
 def survey() -> list[tuple[str, int, int, int]]:
@@ -223,7 +223,7 @@ def main() -> int:
             admission_counts[many] = admission_counts.get(many, 0) + 1
         print(f"  {len(rows)} implementation functions")
         print(f"  {'count':>6}{'functions':>11}   example, first Admission to last")
-        for admission_count, many in sorted(admission_counts.items()):
+        for admission_count, many in admission_counts.items():
             name, first, last, _ = next(
                 row for row in rows if row[3] == admission_count
             )
@@ -236,9 +236,7 @@ def main() -> int:
     print(f"  implementation function: the codec named {args.codec!r}")
     print(f"  {'bytes':14}{'count':>7}{'shortest accepted':>19}   followers")
     total = 0
-    for (byte_count, followers), material in sorted(
-        admitted.items(), key=lambda item: (item[0][0] is None, item[0][0])
-    ):
+    for (byte_count, followers), material in admitted.items():
         total += len(material)
         span = (
             f"{material[0]:#04x}-{material[-1]:#04x}"

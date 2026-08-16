@@ -300,15 +300,7 @@ def exact_position_pair_material_references(
                 - prior.first_reference.first_position
             ):
                 found[reference.occurrence_identity] = reference
-    return tuple(
-        sorted(
-            found.values(),
-            key=lambda reference: (
-                reference.first_position,
-                reference.last_position,
-            ),
-        )
-    )
+    return tuple(found.values())
 
 
 def recurring_position_material(

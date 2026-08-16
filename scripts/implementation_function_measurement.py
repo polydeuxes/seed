@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import cProfile
+from collections import deque
 import dis
 from functools import lru_cache
 import json
@@ -191,9 +192,9 @@ def _compiled_identities(path: Path) -> tuple[str, ...]:
     except (OSError, SyntaxError, ValueError):
         return ()
     found: list[str] = []
-    pending = [compiled]
+    pending = deque((compiled,))
     while pending:
-        code = pending.pop()
+        code = pending.popleft()
         for material in code.co_consts:
             if isinstance(material, CodeType):
                 found.append(
@@ -205,12 +206,10 @@ def _compiled_identities(path: Path) -> tuple[str, ...]:
 
 def implementation_function_identities() -> tuple[str, ...]:
     return tuple(
-        sorted(
-            identity
-            for directory in SOURCE_DIRECTORIES
-            for path in (ROOT / directory).rglob("*.py")
-            for identity in _compiled_identities(path)
-        )
+        identity
+        for directory in SOURCE_DIRECTORIES
+        for path in (ROOT / directory).rglob("*.py")
+        for identity in _compiled_identities(path)
     )
 
 
@@ -233,9 +232,9 @@ def _compiled_sql_invocation_identities(path: Path) -> tuple[str, ...]:
     except (OSError, SyntaxError, ValueError):
         return ()
     found = []
-    pending = [compiled]
+    pending = deque((compiled,))
     while pending:
-        code = pending.pop()
+        code = pending.popleft()
         for material in code.co_consts:
             if isinstance(material, CodeType):
                 pending.append(material)
@@ -252,12 +251,10 @@ def _compiled_sql_invocation_identities(path: Path) -> tuple[str, ...]:
 
 def implementation_sql_invocation_identities() -> tuple[str, ...]:
     return tuple(
-        sorted(
-            identity
-            for directory in SOURCE_DIRECTORIES
-            for path in (ROOT / directory).rglob("*.py")
-            for identity in _compiled_sql_invocation_identities(path)
-        )
+        identity
+        for directory in SOURCE_DIRECTORIES
+        for path in (ROOT / directory).rglob("*.py")
+        for identity in _compiled_sql_invocation_identities(path)
     )
 
 
@@ -364,7 +361,7 @@ def _measurement(
     }
     return {
         "python": python,
-        "sql": dict(sorted(sql_coordinates.items())),
+        "sql": dict(sql_coordinates.items()),
         "sql_invocations": sql_invocations,
         "reference_pair": reference_pair,
     }
@@ -380,10 +377,10 @@ def _observed_measurement(
                 "elapsed_nanoseconds": coordinates[1],
                 "self_elapsed_nanoseconds": coordinates[2],
             }
-            for identity, coordinates in sorted(python_coordinates.items())
+            for identity, coordinates in python_coordinates.items()
             if any(coordinates)
         },
-        "sql": dict(sorted(sql_coordinates.items())),
+        "sql": dict(sql_coordinates.items()),
     }
 
 
