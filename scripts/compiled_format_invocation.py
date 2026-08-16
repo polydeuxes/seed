@@ -2118,7 +2118,7 @@ def first_recurring_added_compare_across(
     act_occurrence_count_limit: int,
 ) -> tuple[
     tuple[tuple[AddedPositionCompareOccurrence, ...], ...],
-    tuple[bool, ...] | None,
+    tuple[bool | None, ...] | None,
     tuple[AddedPositionCompareOccurrence, ...] | None,
 ]:
     if type(source_invocation_rows) is not tuple or not source_invocation_rows:
@@ -2148,12 +2148,17 @@ def first_recurring_added_compare_across(
         )
         for row, function in zip(source_invocation_rows, functions)
     )
-    if any(coordinate is None for _, coordinate, _ in results):
+    coordinates = tuple(coordinate for _, coordinate, _ in results)
+    if all(coordinate is None for coordinate in coordinates):
         return tuple(earlier for earlier, _, _ in results), None, None
-    earlier_counts = {len(earlier) for earlier, _, _ in results}
+    earlier_counts = {
+        len(earlier)
+        for earlier, coordinate, _ in results
+        if coordinate is not None
+    }
     if len(earlier_counts) != 1:
         return tuple(earlier for earlier, _, _ in results), None, None
-    occurrence_position = len(results[0][0])
+    occurrence_position = next(iter(earlier_counts))
     if occurrence_position >= min(len(additions), act_occurrence_count_limit):
         return tuple(earlier for earlier, _, _ in results), None, None
     addition = additions[occurrence_position]
@@ -2190,7 +2195,6 @@ def first_recurring_added_compare_across(
                 result_returned=result_invocation.returned,
             )
         )
-    coordinates = tuple(coordinate for _, coordinate, _ in results)
     return (
         tuple(earlier for earlier, _, _ in results),
         coordinates,

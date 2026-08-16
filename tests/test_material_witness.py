@@ -791,7 +791,7 @@ def test_format_recurrence_precedes_later_moved_material(
     assert found is not None
 
 
-def test_format_recurrence_refuses_without_full_function_vector(
+def test_format_recurrence_preserves_unknown_function_coordinates(
     book_three_byte_format_occurrences,
     book_pair_format_occurrences,
 ):
@@ -802,8 +802,14 @@ def test_format_recurrence_refuses_without_full_function_vector(
         boundary_identity="book-full-function-format-recurrence",
         act_occurrence_count_limit=len(additions),
     )
-    assert later is None
-    assert coordinate is None
+    assert later is not None
+    assert coordinate is not None
+    assert any(found is None for found in coordinate)
+    assert any(found is not None for found in coordinate)
+    assert all(
+        found is None or comparison.result_returned == found
+        for found, comparison in zip(coordinate, later)
+    )
     assert len(earlier) == len(book_pair_format_occurrences)
 
 
@@ -1061,6 +1067,71 @@ def test_full_function_coordinates_precede_every_added_material_invocation():
         ("first", b"ba"),
         ("second", b"aa"),
         ("second", b"ba"),
+        ("first", b"ca"),
+        ("second", b"ca"),
+    ]
+
+
+def test_unknown_function_coordinate_does_not_erase_or_skip_the_later_invocation():
+    supplied = []
+
+    def first(material):
+        supplied.append(("first", material))
+        if material == b"c":
+            raise ValueError("refused")
+
+    def second(material):
+        supplied.append(("second", material))
+
+    references = tuple(
+        ExactMaterialReference(
+            f"source-{position}",
+            f"assertion-{position}",
+            "unknown-function-locality",
+            material,
+        )
+        for position, material in enumerate((b"a", b"b", b"c"))
+    )
+    admission = admission_occurrence(
+        (references,),
+        boundary_identity="unknown-function-admission",
+        source_material=references,
+    )
+    additions = tuple(
+        addition
+        for addition in admission_added_position_occurrences(
+            admission.result_reference,
+            boundary_identity="unknown-function-addition",
+            admitted_material_act_occurrence_count_limit=18,
+        )
+        if addition.position == 0
+        and addition.source_reference == references[0]
+    )
+    functions = (
+        CompiledImplementationFunction("compiled-first", first),
+        CompiledImplementationFunction("compiled-second", second),
+    )
+    source_rows = compiled_reference_invocations(
+        references,
+        boundary_identity="unknown-function-source",
+        implementation_functions=functions,
+    )
+    supplied.clear()
+
+    earlier, coordinates, later = first_recurring_added_compare_across(
+        additions,
+        source_rows,
+        boundary_identity="unknown-function-prospective",
+        act_occurrence_count_limit=len(additions),
+    )
+
+    assert tuple(len(row) for row in earlier) == (2, 0)
+    assert coordinates == (True, None)
+    assert later is not None
+    assert tuple(comparison.result_returned for comparison in later) == (True, True)
+    assert supplied == [
+        ("first", b"aa"),
+        ("first", b"ba"),
         ("first", b"ca"),
         ("second", b"ca"),
     ]
@@ -2386,7 +2457,11 @@ def test_removal_result_admission_reaches_later_addition_compare(
     assert recurring
     assert all(len(coordinates) == 2 for _, coordinates, _ in recurring)
     assert all(
-        tuple(comparison.result_returned for comparison in later) == coordinates
+        any(coordinate is not None for coordinate in coordinates)
+        and all(
+            coordinate is None or comparison.result_returned == coordinate
+            for coordinate, comparison in zip(coordinates, later)
+        )
         for _, coordinates, later in recurring
     )
     assert all(

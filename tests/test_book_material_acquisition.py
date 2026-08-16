@@ -26,6 +26,7 @@ from compiled_format_invocation import (  # noqa: E402
     compare_added_position_invocations,
     compiled_reference_invocations,
     exact_byte_pair_material_references,
+    first_recurring_added_compare_across,
     moved_exact_byte_material_references,
 )
 from compiled_material_invocation import ingest_result_reference  # noqa: E402
@@ -119,6 +120,14 @@ def acquired_book_relations(acquired_book_material):
         boundary_identity="book-acquired-addition",
         admitted_material_act_occurrence_count_limit=4096,
     )
+    earlier_comparisons, prospective_coordinates, later_comparisons = (
+        first_recurring_added_compare_across(
+            additions,
+            pair_invocation_rows,
+            boundary_identity="book-acquired-addition-prospective",
+            act_occurrence_count_limit=len(additions),
+        )
+    )
     result_invocation_rows = added_position_invocations(
         additions,
         boundary_identity="book-acquired-addition-invocation",
@@ -146,6 +155,9 @@ def acquired_book_relations(acquired_book_material):
         pair_admission,
         byte_admission,
         additions,
+        earlier_comparisons,
+        prospective_coordinates,
+        later_comparisons,
         result_invocation_rows,
         comparisons,
         addition_admission,
@@ -297,6 +309,9 @@ def test_complete_book_admission_reaches_recurring_addition_relations(
         pair_admission,
         byte_admission,
         additions,
+        earlier_comparisons,
+        prospective_coordinates,
+        later_comparisons,
         result_invocation_rows,
         comparisons,
         addition_admission,
@@ -321,6 +336,54 @@ def test_complete_book_admission_reaches_recurring_addition_relations(
         for same_coordinates in addition_admission.admitted_material
         for occurrence in same_coordinates
     } == set(additions)
+
+
+def test_book_relations_freeze_one_distinct_function_vector_before_later_invocation(
+    acquired_book_relations,
+):
+    (
+        _,
+        _,
+        _,
+        _,
+        _,
+        _,
+        _,
+        _,
+        _,
+        _,
+        _,
+        earlier_comparisons,
+        prospective_coordinates,
+        later_comparisons,
+        _,
+        _,
+        _,
+    ) = acquired_book_relations
+
+    assert prospective_coordinates is not None
+    assert later_comparisons is not None
+    assert len(prospective_coordinates) == len(COMPILED_IMPLEMENTATION_FUNCTIONS)
+    assert any(coordinate is None for coordinate in prospective_coordinates)
+    assert any(coordinate is not None for coordinate in prospective_coordinates)
+    assert all(
+        coordinate is None or comparison.result_returned == coordinate
+        for coordinate, comparison in zip(
+            prospective_coordinates, later_comparisons
+        )
+    )
+    later_act = later_comparisons[0].added_position_act_occurrence_identity
+    assert all(
+        comparison.added_position_act_occurrence_identity != later_act
+        for row in earlier_comparisons
+        for comparison in row
+    )
+    assert len(
+        {
+            comparison.implementation_function_identity
+            for comparison in later_comparisons
+        }
+    ) == len(COMPILED_IMPLEMENTATION_FUNCTIONS)
 
 
 def test_later_material_does_not_enter_the_book_completeness_boundary(
