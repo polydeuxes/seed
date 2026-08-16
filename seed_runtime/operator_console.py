@@ -54,6 +54,7 @@ def run_persistent_operator_console(
     input_stream: BinaryIO | TextIO,
     output_stream: TextIO,
     command_handlers: Mapping[bytes, OperatorCommandHandler] | None = None,
+    emit_initial_representation: bool = True,
 ) -> None:
     """Repeat exact-byte Ingest and slash-command occurrences."""
     handlers = dict(command_handlers or {})
@@ -70,19 +71,20 @@ def run_persistent_operator_console(
         locality_identity=locality_identity,
         locality_standing=locality_standing,
     )
-    representation = emit_operator_representation(
-        ledger, representation=representation, output_stream=output_stream
-    )
-    locality_standing = _advance_over(
-        ledger,
-        locality_standing,
-        (
-            representation["representation_event_identity"],
-            representation["emission_attempt_event_identity"],
-            representation["emitted_event_identity"],
-        ),
-        locality_identity=locality_identity,
-    )
+    if emit_initial_representation:
+        representation = emit_operator_representation(
+            ledger, representation=representation, output_stream=output_stream
+        )
+        locality_standing = _advance_over(
+            ledger,
+            locality_standing,
+            (
+                representation["representation_event_identity"],
+                representation["emission_attempt_event_identity"],
+                representation["emitted_event_identity"],
+            ),
+            locality_identity=locality_identity,
+        )
     while True:
         boundary_material = operator_boundary_material(input_stream)
         if boundary_material.eof:
