@@ -351,7 +351,7 @@ def test_pair_count_and_recurrence_are_separate_results():
 
     assert [item["result"] for item in by_pair[(116, 97)]] == ["count", "recurrence"]
     assert [item["result"] for item in by_pair[(97, 10)]] == ["count"]
-    assert by_pair[(116, 97)][1]["input_support"]["local_assertion_identities"] == [
+    assert by_pair[(116, 97)][1]["input_support"]["local_assertion_references"] == [
         by_pair[(116, 97)][0]["dimensions"]["identity"]
     ]
     moved_reference = by_pair[(116, 97)][0]["input_support"]["assertion_references"][0]

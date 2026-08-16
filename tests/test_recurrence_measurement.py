@@ -249,7 +249,7 @@ def test_validation_refuses_non_assertion_and_unresolved_local_support(compared)
         )
     )
     _assertions_by_result(event)["count"]["input_support"][
-        "local_assertion_identities"
+        "local_assertion_references"
     ] = ["absent-assertion"]
     with pytest.raises(RecurrenceMeasurementError, match="unresolved local"):
         assertions_of_recorded_measurement(event)
@@ -365,7 +365,7 @@ def test_assertion_compare_records_different_support_without_strengthening_it(co
         for assertion in altered_material["assertions"]
         if assertion["result"] == "measured_in"
     )
-    altered_measured_in["input_support"]["event_identities"].append(
+    altered_measured_in["input_support"]["occurrence_references"].append(
         "additional-applicable-evidence"
     )
     second = compared.append(
@@ -794,19 +794,19 @@ def test_exact_sets_keep_completeness_separate_from_support(compared):
         assert encoded["completeness_scope"]["locality_identities"] == list(DECLARED)
         assert encoded["completeness_scope"]["requires_locality_existence"] is True
         assert finding.input_ledger_boundary.identity not in (
-            encoded["input_support"]["event_identities"]
-            + encoded["input_support"]["local_assertion_identities"]
+            encoded["input_support"]["occurrence_references"]
+            + encoded["input_support"]["local_assertion_references"]
         )
 
-    assert assertions["measured_in"].support_event_identities
+    assert assertions["measured_in"].support_occurrence_references
     assert assertions["measured_in"].completeness_occurrence_kinds == (
         MEASUREMENT_RECORDED_KIND,
     )
-    assert assertions["measured_without_distinction"].support_event_identities
+    assert assertions["measured_without_distinction"].support_occurrence_references
     assert assertions[
         "measured_without_distinction"
     ].completeness_occurrence_kinds == (MEASUREMENT_RECORDED_KIND,)
-    assert assertions["coordinate_not_measured"].support_event_identities == ()
+    assert assertions["coordinate_not_measured"].support_occurrence_references == ()
     assert assertions["coordinate_not_measured"].completeness_occurrence_kinds == (
         MEASUREMENT_RECORDED_KIND,
     )
@@ -816,13 +816,13 @@ def test_count_and_recurrence_stand_on_assertions_not_raw_events(compared):
     assertions = assertions_from_measured_count(_by_representation(compared)["word"])
     by_result = {assertion.result: assertion for assertion in assertions}
 
-    assert by_result["count"].support_event_identities == ()
-    assert by_result["count"].support_assertion_identities == (
+    assert by_result["count"].support_occurrence_references == ()
+    assert by_result["count"].support_assertion_references == (
         by_result["measured_in"].identity,
     )
     assert by_result["count"].completeness_boundary is None
-    assert by_result["recurrence"].support_event_identities == ()
-    assert by_result["recurrence"].support_assertion_identities == (
+    assert by_result["recurrence"].support_occurrence_references == ()
+    assert by_result["recurrence"].support_assertion_references == (
         by_result["count"].identity,
     )
     assert by_result["recurrence"].completeness_boundary is None

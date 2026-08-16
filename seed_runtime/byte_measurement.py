@@ -945,11 +945,11 @@ def _assertions(measured: MeasuredByteInputs) -> list[dict[str, Any]]:
             "assertion_subject": source_subject,
             "assertion_scope": scope,
             "input_support": {
-                "event_identities": [
+                "occurrence_references": [
                     item["ingest_occurrence_identity"]
                     for item in measured.source_material
                 ],
-                "local_assertion_identities": [],
+                "local_assertion_references": [],
             },
             "conflicts": "Unknown",
             "unknowns": ["what the exact source bytes represent remains Unknown"],
@@ -989,8 +989,8 @@ def _assertions(measured: MeasuredByteInputs) -> list[dict[str, Any]]:
             "assertion_subject": subject,
             "assertion_scope": scope,
             "input_support": {
-                "event_identities": [],
-                "local_assertion_identities": local_support_identities,
+                "occurrence_references": [],
+                "local_assertion_references": local_support_identities,
             },
             "conflicts": "Unknown",
             "unknowns": ["what this byte participates in or represents remains Unknown"],
@@ -1249,7 +1249,7 @@ def assertions_of_recorded_byte_measurement(
         )
     read = []
     for assertion in expected:
-        local_identities = assertion["input_support"]["local_assertion_identities"]
+        local_identities = assertion["input_support"]["local_assertion_references"]
         read.append(
             RecordedByteAssertion(
                 assertion_identity=assertion["dimensions"]["identity"],
@@ -1308,7 +1308,7 @@ def _pair_assertions(measured: MeasuredBytePairInputs) -> list[dict[str, Any]]:
             "assertion_scope": scope,
             "input_support": {
                 "assertion_references": source_support_references,
-                "local_assertion_identities": local_support_identities,
+                "local_assertion_references": local_support_identities,
             },
             "conflicts": "Unknown",
             "unknowns": list(BYTE_PAIR_UNKNOWNS),
@@ -2087,7 +2087,7 @@ def assertions_of_recorded_byte_position_pair_measurement(
             or count_content["occurrences_carrying"] > count_content["input_count"]
             or count_content["occurrences_carrying"] > count_content["count"]
             or count["input_support"]
-            != {"assertion_references": [source_reference], "local_assertion_identities": []}
+            != {"assertion_references": [source_reference], "local_assertion_references": []}
             or count["dimensions"]["source_provenance"]
             != "the exact source-material-set Assertion referenced here"
         ):
@@ -2102,7 +2102,7 @@ def assertions_of_recorded_byte_position_pair_measurement(
             or recurrence["input_support"]
             != {
                 "assertion_references": [],
-                "local_assertion_identities": [count["dimensions"]["identity"]],
+                "local_assertion_references": [count["dimensions"]["identity"]],
             }
         ):
             raise ByteMeasurementError(f"{event_identity} carries unlawful recurrence support")
@@ -2115,7 +2115,7 @@ def assertions_of_recorded_byte_position_pair_measurement(
                 "recorded_occurrence_identity": event.identity,
                 "assertion_identity": local_identity,
             }
-            for local_identity in support["local_assertion_identities"]
+            for local_identity in support["local_assertion_references"]
         )
         validated_results.append(RecordedBytePairAssertion(
             assertion_identity=assertion["dimensions"]["identity"],

@@ -193,8 +193,8 @@ class MeasuredCountFinding:
     input_occurrences: tuple[str, ...]
     input_ledger_boundary: EventLedgerBoundary
     bounded_localities: tuple[str, ...]
-    measured_in_support_event_identities: tuple[str, ...] = ()
-    measured_without_distinction_support_event_identities: tuple[str, ...] = ()
+    measured_in_support_occurrence_references: tuple[str, ...] = ()
+    measured_without_distinction_support_occurrence_references: tuple[str, ...] = ()
 
     @property
     def locality_count(self) -> int:
@@ -234,8 +234,8 @@ class MeasuredAssertion:
     subject: dict[str, Any]
     content: dict[str, Any]
     scope: dict[str, Any]
-    support_event_identities: tuple[str, ...] = ()
-    support_assertion_identities: tuple[str, ...] = ()
+    support_occurrence_references: tuple[str, ...] = ()
+    support_assertion_references: tuple[str, ...] = ()
     completeness_boundary: EventLedgerBoundary | None = None
     completeness_occurrence_kinds: tuple[str, ...] = ()
 
@@ -266,11 +266,11 @@ class MeasuredAssertion:
             "assertion_subject": dict(self.subject),
             "assertion_scope": dict(self.scope),
             "input_support": {
-                "event_identities": list(self.support_event_identities),
+                "occurrence_references": list(self.support_occurrence_references),
                 # These dependencies are local to the same yielding
                 # occurrence. Each remains bound to that occurrence's identity
                 # before making it available to a downstream Act.
-                "local_assertion_identities": list(self.support_assertion_identities),
+                "local_assertion_references": list(self.support_assertion_references),
             },
             "completeness_boundary": (
                 {"identity": self.completeness_boundary.identity}
@@ -402,7 +402,7 @@ def assertions_of_recorded_measurement(event: Event) -> tuple[RecordedMeasuredAs
     bound = []
     for assertion in read:
         support = assertion.material.get("input_support")
-        local_identities = support.get("local_assertion_identities") if isinstance(support, dict) else None
+        local_identities = support.get("local_assertion_references") if isinstance(support, dict) else None
         if not isinstance(local_identities, list) or not all(
             isinstance(value, str) for value in local_identities
         ):
@@ -609,10 +609,10 @@ def measure_locality_counts(
                 input_occurrences=tuple(sorted(evidence)),
                 input_ledger_boundary=input_ledger_boundary,
                 bounded_localities=declared_localities,
-                measured_in_support_event_identities=tuple(
+                measured_in_support_occurrence_references=tuple(
                     sorted(measured_in_evidence)
                 ),
-                measured_without_distinction_support_event_identities=tuple(
+                measured_without_distinction_support_occurrence_references=tuple(
                     sorted(measured_without_evidence)
                 ),
             )
@@ -700,7 +700,7 @@ def assertions_from_measured_count(
             subject=subject,
             content=content,
             scope=scope,
-            support_event_identities=support,
+            support_occurrence_references=support,
             completeness_boundary=finding.input_ledger_boundary,
             completeness_occurrence_kinds=occurrence_kinds,
         )
@@ -708,13 +708,13 @@ def assertions_from_measured_count(
     measured_in = exact_set(
         "measured_in",
         finding.measured_in,
-        finding.measured_in_support_event_identities,
+        finding.measured_in_support_occurrence_references,
         (MEASUREMENT_RECORDED_KIND,),
     )
     measured_without = exact_set(
         "measured_without_distinction",
         finding.measured_without_distinction,
-        finding.measured_without_distinction_support_event_identities,
+        finding.measured_without_distinction_support_occurrence_references,
         (MEASUREMENT_RECORDED_KIND,),
     )
     coordinate_not_measured = exact_set(
@@ -731,7 +731,7 @@ def assertions_from_measured_count(
         subject=subject,
         content=count_content,
         scope=scope,
-        support_assertion_identities=(measured_in.identity,),
+        support_assertion_references=(measured_in.identity,),
     )
     assertions = [
         measured_in,
@@ -750,7 +750,7 @@ def assertions_from_measured_count(
                 subject=subject,
                 content=recurrence_content,
                 scope=scope,
-                support_assertion_identities=(count.identity,),
+                support_assertion_references=(count.identity,),
             )
         )
     return tuple(assertions)
