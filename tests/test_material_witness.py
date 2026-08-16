@@ -776,6 +776,29 @@ def test_format_recurrence_accepts_a_matching_full_function_vector(
     )
 
 
+def test_joint_recurrence_refuses_reordered_source_occurrences(
+    book_three_byte_format_occurrences,
+    book_pair_format_occurrences,
+):
+    first_row = book_pair_format_occurrences[0]
+    clone = CompiledImplementationFunction(
+        identity="compiled-reordered-clone",
+        invocation=first_row[0].implementation_function.invocation,
+    )
+    reordered = compiled_reference_invocations(
+        tuple(invocation.source_coordinate for invocation in reversed(first_row)),
+        boundary_identity="book-reordered-source",
+        implementation_functions=(clone,),
+    )[0]
+    with pytest.raises(ValueError, match="one exact source sequence"):
+        first_recurring_added_compare_across(
+            book_three_byte_format_occurrences[1],
+            (first_row, reordered),
+            boundary_identity="book-reordered-joint-recurrence",
+            act_occurrence_count_limit=len(book_three_byte_format_occurrences[1]),
+        )
+
+
 def test_compiled_format_implementation_functions_admit_the_same_material_differently(
     book_pair_format_occurrences,
 ):
