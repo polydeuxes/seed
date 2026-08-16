@@ -1960,6 +1960,9 @@ def first_recurring_added_compare_across(
 ]:
     if type(source_invocation_rows) is not tuple or not source_invocation_rows:
         raise TypeError("joint recurrence requires exact invocation rows")
+    row_lengths = {len(row) for row in source_invocation_rows}
+    if len(row_lengths) != 1:
+        raise ValueError("joint recurrence requires one exact source sequence")
     functions = tuple(row[0].implementation_function for row in source_invocation_rows if row)
     if len(functions) != len(source_invocation_rows) or len(
         {function.identity for function in functions}
@@ -2222,6 +2225,9 @@ def first_recurring_removed_compare_across(
 ]:
     if type(source_invocation_rows) is not tuple or not source_invocation_rows:
         raise TypeError("joint recurrence requires exact invocation rows")
+    row_lengths = {len(row) for row in source_invocation_rows}
+    if len(row_lengths) != 1:
+        raise ValueError("joint recurrence requires one exact source sequence")
     functions = tuple(
         row[0].implementation_function
         for row in source_invocation_rows

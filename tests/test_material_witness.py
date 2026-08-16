@@ -987,6 +987,47 @@ def test_joint_removal_recurrence_refuses_duplicate_function_identity(
         )
 
 
+def test_joint_addition_recurrence_refuses_different_row_lengths(
+    book_three_byte_format_occurrences,
+    book_pair_format_occurrences,
+):
+    with pytest.raises(ValueError, match="one exact source sequence"):
+        first_recurring_added_compare_across(
+            book_three_byte_format_occurrences[1],
+            (book_pair_format_occurrences[0], book_pair_format_occurrences[0][:-1]),
+            boundary_identity="short-joint-addition-row",
+            act_occurrence_count_limit=10,
+        )
+
+
+def test_joint_removal_recurrence_refuses_different_row_lengths(
+    book_removed_position_invocation_occurrences,
+    book_pair_format_occurrences,
+):
+    removals, _ = book_removed_position_invocation_occurrences
+    with pytest.raises(ValueError, match="one exact source sequence"):
+        first_recurring_removed_compare_across(
+            removals,
+            (book_pair_format_occurrences[0], book_pair_format_occurrences[0][:-1]),
+            boundary_identity="short-joint-removal-row",
+            act_occurrence_count_limit=10,
+        )
+
+
+def test_joint_removal_recurrence_refuses_nonpositive_limit(
+    book_removed_position_invocation_occurrences,
+    book_pair_format_occurrences,
+):
+    removals, _ = book_removed_position_invocation_occurrences
+    with pytest.raises(TypeError, match="positive Act occurrence count"):
+        first_recurring_removed_compare_across(
+            removals,
+            (book_pair_format_occurrences[0],),
+            boundary_identity="invalid-joint-removal-limit",
+            act_occurrence_count_limit=0,
+        )
+
+
 def test_compiled_format_implementation_functions_admit_the_same_material_differently(
     book_pair_format_occurrences,
 ):
