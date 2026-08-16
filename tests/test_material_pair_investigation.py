@@ -284,6 +284,8 @@ def test_compare_reports_only_the_ordered_coordinate_distinction(exact_pair):
         for comparison in comparisons
         for coordinate in (
             "candidate",
+            "participant",
+            "participation",
             "admitted_material",
             "admission",
             "applicability",
@@ -298,6 +300,8 @@ def test_compare_reports_only_the_ordered_coordinate_distinction(exact_pair):
         for comparison in comparisons
         for coordinate in (
             "candidate",
+            "participant",
+            "participation",
             "admitted_material",
             "admission",
             "applicability",

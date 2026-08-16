@@ -101,11 +101,48 @@
     "preserves_subject_identity": true,
     "distinct_from": [
       "subject",
+      "candidate",
       "locality",
       "Applicability",
       "Admission",
       "participation",
       "input_to_result_support"
+    ]
+  },
+  "role_distinctions": {
+    "distinct_coordinates": [
+      "subject",
+      "candidate",
+      "Participation_relation"
+    ],
+    "ordered_coordinate_pairs": [
+      ["subject", "candidate"],
+      ["candidate", "subject"],
+      ["subject", "Participation_relation"],
+      ["Participation_relation", "subject"],
+      ["candidate", "Participation_relation"],
+      ["Participation_relation", "candidate"]
+    ],
+    "ordered_coordinate_pairs_establish_relation": false,
+    "candidate_coordinates": [
+      "source_role",
+      "Representation_Act_occurrence",
+      "Scope",
+      "Authority",
+      "provenance",
+      "Unknowns"
+    ],
+    "Participation_relation_coordinates": {
+      "book_clause": "01.Standing.E.1",
+      "from": "subject",
+      "to": "Act_occurrence",
+      "coordinate": "role",
+      "requires": ["exact_relation", "occurrence_witness", "intact_evidence"]
+    },
+    "does_not_establish": [
+      "candidate_by_subject_identity",
+      "Participation_relation_by_subject_identity",
+      "Participation_by_candidate_identity"
     ]
   },
   "implementation_witness": {

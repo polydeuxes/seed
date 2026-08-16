@@ -354,6 +354,7 @@ def test_measurement_result_does_not_promote_across_the_three_later_crossings():
         word not in serialized
         for word in (
             "candidate",
+            "participant",
             "admitted_material",
             "admission_result",
             "standing_movement",

@@ -77,6 +77,7 @@ about Seed:
 ```text
 Producer       Act occurrence + Yield + result
 Consumer       subject + role + Applicability + Participation
+Participant    subject + exact Participation relation to one Act occurrence under one role; not Candidate by identity
 Consumption    Participation in an exact Act occurrence
 Uptake         availability + Applicability + Participation
 Handoff        movement, or an exact Responsibility/Authority change

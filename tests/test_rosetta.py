@@ -99,6 +99,16 @@ def test_rosetta_implementation_references_resolve():
         _assert_live_reference(reference)
 
 
+def test_rosetta_participant_decompresses_to_the_participation_relation():
+    rosetta = ROSETTA_ROOTS.read_text(encoding="utf-8")
+
+    assert "participant" in _rosetta_admission()
+    assert (
+        "Participant    subject + exact Participation relation to one Act "
+        "occurrence under one role; not Candidate by identity"
+    ) in rosetta
+
+
 def test_rosetta_missing_implementation_reference_is_detected():
     try:
         _assert_live_reference("seed_runtime.evidence_of_yield_relation::_missing")

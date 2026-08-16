@@ -3308,6 +3308,7 @@ def test_input_is_an_open_act_local_role_before_participation():
         "preserves_subject_identity": True,
         "distinct_from": [
             "subject",
+            "candidate",
             "locality",
             "Applicability",
             "Admission",
@@ -3317,6 +3318,105 @@ def test_input_is_an_open_act_local_role_before_participation():
     }
     assert applicability["input_role"] == BYTE_PAIR_INPUT_ROLE
     assert applicability["downstream_act_occurrence_identity"] is None
+
+
+def _assert_role_distinctions(distinctions: dict) -> None:
+    assert distinctions == {
+        "distinct_coordinates": [
+            "subject",
+            "candidate",
+            "Participation_relation",
+        ],
+        "ordered_coordinate_pairs": [
+            ["subject", "candidate"],
+            ["candidate", "subject"],
+            ["subject", "Participation_relation"],
+            ["Participation_relation", "subject"],
+            ["candidate", "Participation_relation"],
+            ["Participation_relation", "candidate"],
+        ],
+        "ordered_coordinate_pairs_establish_relation": False,
+        "candidate_coordinates": [
+            "source_role",
+            "Representation_Act_occurrence",
+            "Scope",
+            "Authority",
+            "provenance",
+            "Unknowns",
+        ],
+        "Participation_relation_coordinates": {
+            "book_clause": "01.Standing.E.1",
+            "from": "subject",
+            "to": "Act_occurrence",
+            "coordinate": "role",
+            "requires": [
+                "exact_relation",
+                "occurrence_witness",
+                "intact_evidence",
+            ],
+        },
+        "does_not_establish": [
+            "candidate_by_subject_identity",
+            "Participation_relation_by_subject_identity",
+            "Participation_by_candidate_identity",
+        ],
+    }
+    assert len(distinctions["ordered_coordinate_pairs"]) == 6
+    assert {
+        tuple(reversed(pair))
+        for pair in distinctions["ordered_coordinate_pairs"]
+    } == {
+        tuple(pair) for pair in distinctions["ordered_coordinate_pairs"]
+    }
+    assert all(
+        first != second
+        for first, second in distinctions["ordered_coordinate_pairs"]
+    )
+    assert distinctions["ordered_coordinate_pairs_establish_relation"] is False
+
+
+def test_subject_candidate_and_participation_relation_are_distinguished_in_both_directions():
+    grammar = json.loads(GRAMMAR.read_text(encoding="utf-8"))
+    distinctions = grammar["role_distinctions"]
+
+    _assert_role_distinctions(distinctions)
+    assert distinctions["Participation_relation_coordinates"] == grammar[
+        "relations"
+    ]["participation"]
+
+
+def test_role_distinctions_refuse_direction_collapse_and_identity_promotion():
+    distinctions = json.loads(GRAMMAR.read_text(encoding="utf-8"))[
+        "role_distinctions"
+    ]
+
+    collapsed_direction = deepcopy(distinctions)
+    collapsed_direction["ordered_coordinate_pairs"][1] = list(
+        collapsed_direction["ordered_coordinate_pairs"][0]
+    )
+
+    def assert_refused(changed: dict) -> None:
+        try:
+            _assert_role_distinctions(changed)
+        except AssertionError:
+            return
+        raise AssertionError("compressed role distinction escaped comparison")
+
+    assert_refused(collapsed_direction)
+
+    missing_comparison = deepcopy(distinctions)
+    missing_comparison["ordered_coordinate_pairs"].pop()
+    assert_refused(missing_comparison)
+
+    promoted_by_identity = deepcopy(distinctions)
+    promoted_by_identity["ordered_coordinate_pairs_establish_relation"] = True
+    assert_refused(promoted_by_identity)
+
+    compressed_coordinates = deepcopy(distinctions)
+    compressed_coordinates["candidate_coordinates"] = list(
+        compressed_coordinates["Participation_relation_coordinates"]
+    )
+    assert_refused(compressed_coordinates)
 
 
 def test_participation_requires_exact_subject_role_and_act_occurrence():
