@@ -851,6 +851,89 @@ def test_joint_recurrence_refuses_reordered_source_occurrences(
         )
 
 
+def test_removal_joint_recurrence_refuses_reordered_source_occurrences(
+    book_removed_position_invocation_occurrences,
+    book_pair_format_occurrences,
+):
+    removals, _ = book_removed_position_invocation_occurrences
+    first_row = book_pair_format_occurrences[0]
+    clone = CompiledImplementationFunction(
+        identity="compiled-reordered-removal-clone",
+        invocation=first_row[0].implementation_function.invocation,
+    )
+    reordered = compiled_reference_invocations(
+        tuple(invocation.source_coordinate for invocation in reversed(first_row)),
+        boundary_identity="book-reordered-removal-source",
+        implementation_functions=(clone,),
+    )[0]
+    with pytest.raises(ValueError, match="one exact source sequence"):
+        first_recurring_removed_compare_across(
+            removals,
+            (first_row, reordered),
+            boundary_identity="book-reordered-removal-joint",
+            act_occurrence_count_limit=len(removals),
+        )
+
+
+def test_recurrence_before_later_requires_a_boolean_control(
+    book_three_byte_format_occurrences,
+    book_removed_position_invocation_occurrences,
+    book_pair_format_occurrences,
+):
+    row = book_pair_format_occurrences[0]
+    with pytest.raises(TypeError, match="later invocation control"):
+        first_recurring_added_compare(
+            book_three_byte_format_occurrences[1], row,
+            row[0].implementation_function,
+            boundary_identity="bad-control-addition",
+            act_occurrence_count_limit=10,
+            invoke_later=None,
+        )
+    removals, _ = book_removed_position_invocation_occurrences
+    with pytest.raises(TypeError, match="later invocation control"):
+        first_recurring_removed_compare(
+            removals, row, row[0].implementation_function,
+            boundary_identity="bad-control-removal",
+            act_occurrence_count_limit=10,
+            invoke_later=None,
+        )
+
+
+def test_joint_recurrence_preserves_heterogeneous_coordinates(
+    book_three_byte_format_occurrences,
+    book_pair_format_occurrences,
+):
+    row = book_pair_format_occurrences[0]
+    original = row[0].implementation_function.invocation
+
+    def inverse(material):
+        try:
+            original(material)
+        except Exception:
+            return None
+        raise ValueError("inverse refusal")
+
+    clone = CompiledImplementationFunction(
+        identity="compiled-inverse-recurrence",
+        invocation=inverse,
+    )
+    clone_row = compiled_reference_invocations(
+        tuple(invocation.source_coordinate for invocation in row),
+        boundary_identity="book-inverse-source",
+        implementation_functions=(clone,),
+    )[0]
+    _, coordinates, later = first_recurring_added_compare_across(
+        book_three_byte_format_occurrences[1],
+        (row, clone_row),
+        boundary_identity="book-heterogeneous-joint",
+        act_occurrence_count_limit=len(book_three_byte_format_occurrences[1]),
+    )
+    assert later is not None
+    assert coordinates is not None
+    assert len(coordinates) == 2
+    assert len(set(coordinates)) == 2
+
+
 def test_compiled_format_implementation_functions_admit_the_same_material_differently(
     book_pair_format_occurrences,
 ):
