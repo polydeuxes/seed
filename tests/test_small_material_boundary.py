@@ -18,6 +18,9 @@ import compiled_material_invocation  # noqa: E402
 import compiled_format_invocation  # noqa: E402
 
 from compiled_format_invocation import (  # noqa: E402
+    AddedPositionCompareOccurrence,
+    AddedPositionOccurrence,
+    AddedPositionResultAdmissionOccurrence,
     COMPILED_IMPLEMENTATION_FUNCTIONS,
     CompiledImplementationFunction,
     ExactMaterialReference,
@@ -30,6 +33,7 @@ from compiled_format_invocation import (  # noqa: E402
     added_position_admission_occurrences,
     added_position_invocations,
     added_position_occurrences,
+    added_position_result_admission_occurrence,
     compare_added_position_invocations,
     compiled_reference_invocations,
     removed_position_result_admission_occurrence,
@@ -273,6 +277,124 @@ def test_removal_result_admission_reads_exact_comparison_matrix_once(monkeypatch
         RemovedPositionResultAdmissionOccurrence(
             admission_occurrence=admission.admission_occurrence,
             removal_occurrences=removals,
+            comparison_occurrences=comparisons,
+            _reading=different_reading,
+        )
+
+
+def test_added_result_admission_constructs_each_exact_result_reference_once(
+    monkeypatch,
+):
+    source = ExactMaterialReference(
+        "addition-reading-source",
+        "addition-reading-source-assertion",
+        "addition-reading-locality",
+        b"",
+    )
+    added = ExactMaterialReference(
+        "addition-reading-added",
+        "addition-reading-added-assertion",
+        "addition-reading-locality",
+        b"x",
+    )
+    additions = tuple(
+        AddedPositionOccurrence(
+            boundary_identity="addition-reading-act",
+            locality_identity=source.locality_identity,
+            occurrence_position=position,
+            source_reference=source,
+            position=0,
+            added_reference=added,
+            result_material=b"x",
+        )
+        for position in range(8)
+    )
+    comparisons = tuple(
+        tuple(
+            AddedPositionCompareOccurrence(
+                boundary_identity="addition-reading-compare",
+                occurrence_position=(function_position * len(additions) + position),
+                implementation_function_identity=f"addition-function-{function_position}",
+                added_position_act_occurrence_identity=addition.act_occurrence_identity,
+                source_invocation_occurrence_identity=(
+                    "addition-source-invocation",
+                    f"addition-function-{function_position}",
+                    position,
+                ),
+                result_invocation_occurrence_identity=(
+                    "addition-result-invocation",
+                    f"addition-function-{function_position}",
+                    position,
+                ),
+                source_returned=True,
+                result_returned=(position + function_position) % 2 == 0,
+            )
+            for position, addition in enumerate(additions)
+        )
+        for function_position in range(3)
+    )
+    reference_reads = []
+    original_result_reference = AddedPositionOccurrence.result_reference.fget
+    original_reading = (
+        compiled_format_invocation._added_position_result_admission_reading
+    )
+
+    def measured_result_reference(addition):
+        reference_reads.append(addition)
+        return original_result_reference(addition)
+
+    monkeypatch.setattr(
+        AddedPositionOccurrence,
+        "result_reference",
+        property(measured_result_reference),
+    )
+
+    admission = added_position_result_admission_occurrence(
+        additions,
+        comparisons,
+        boundary_identity="addition-reading-admission",
+    )
+
+    assert reference_reads == list(additions)
+    assert admission.source_material == tuple(
+        addition.result_reference for addition in additions
+    )
+    reference_reads.clear()
+
+    reconstructed = replace(admission)
+    assert reconstructed == admission
+    assert reference_reads == list(additions)
+
+    changed = replace(
+        comparisons[0][-1],
+        source_returned=not comparisons[0][-1].source_returned,
+    )
+    with pytest.raises(ValueError, match="differs from its Compare"):
+        AddedPositionResultAdmissionOccurrence(
+            admission_occurrence=admission.admission_occurrence,
+            addition_occurrences=additions,
+            comparison_occurrences=(
+                (*comparisons[0][:-1], changed),
+                *comparisons[1:],
+            ),
+        )
+
+    with pytest.raises(TypeError, match="reading must be exact"):
+        AddedPositionResultAdmissionOccurrence(
+            admission_occurrence=admission.admission_occurrence,
+            addition_occurrences=additions,
+            comparison_occurrences=comparisons,
+            _reading=object(),
+        )
+
+    different_reading = original_reading(
+        additions[:-1],
+        tuple(row[:-1] for row in comparisons),
+    )
+    with pytest.raises(ValueError, match="reading differs"):
+        AddedPositionResultAdmissionOccurrence(
+            admission_occurrence=admission.admission_occurrence,
+            addition_occurrences=additions,
             comparison_occurrences=comparisons,
             _reading=different_reading,
         )

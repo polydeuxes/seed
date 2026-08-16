@@ -1114,42 +1114,89 @@ class AddedPositionAdmissionOccurrence:
 
 
 @dataclass(frozen=True, slots=True)
+class _AddedPositionResultAdmissionReading:
+    addition_reading: _AddedPositionAdmissionReading
+    source_material: tuple[ExactMaterialResultReference, ...] = field(init=False)
+    admitted_material: tuple[tuple[ExactMaterialResultReference, ...], ...] = field(
+        init=False
+    )
+
+    def __post_init__(self) -> None:
+        if type(self.addition_reading) is not _AddedPositionAdmissionReading:
+            raise TypeError("addition result Admission reading must be exact")
+        references_by_occurrence = {
+            occurrence.act_occurrence_identity: occurrence.result_reference
+            for occurrence in self.addition_reading.addition_occurrences
+        }
+        object.__setattr__(
+            self,
+            "source_material",
+            tuple(
+                references_by_occurrence[occurrence.act_occurrence_identity]
+                for occurrence in self.addition_reading.addition_occurrences
+            ),
+        )
+        object.__setattr__(
+            self,
+            "admitted_material",
+            tuple(
+                tuple(
+                    references_by_occurrence[occurrence.act_occurrence_identity]
+                    for occurrence in admitted
+                )
+                for admitted in self.addition_reading.admitted_material
+            ),
+        )
+
+
+def _added_position_result_admission_reading(
+    addition_occurrences: tuple[AddedPositionOccurrence, ...],
+    comparison_occurrences: tuple[tuple[object, ...], ...],
+) -> _AddedPositionResultAdmissionReading:
+    return _AddedPositionResultAdmissionReading(
+        _AddedPositionAdmissionReading(
+            addition_occurrences,
+            comparison_occurrences,
+        )
+    )
+
+
+@dataclass(frozen=True, slots=True)
 class AddedPositionResultAdmissionOccurrence:
     admission_occurrence: AdmissionOccurrence
     addition_occurrences: tuple[AddedPositionOccurrence, ...]
     comparison_occurrences: tuple[tuple[object, ...], ...]
-    _reading: InitVar[_AddedPositionAdmissionReading | None] = None
+    _reading: InitVar[_AddedPositionResultAdmissionReading | None] = None
 
     def __post_init__(
         self,
-        _reading: _AddedPositionAdmissionReading | None,
+        _reading: _AddedPositionResultAdmissionReading | None,
     ) -> None:
         if not isinstance(self.admission_occurrence, AdmissionOccurrence):
             raise TypeError("addition result Admission requires its exact Act occurrence")
-        reading = (
-            _AddedPositionAdmissionReading(
+        if _reading is None:
+            reading = _added_position_result_admission_reading(
                 self.addition_occurrences,
                 self.comparison_occurrences,
             )
-            if _reading is None
-            else _reading
-        )
+        elif type(_reading) is not _AddedPositionResultAdmissionReading:
+            raise TypeError("addition result Admission reading must be exact")
+        else:
+            reading = _reading
         if (
-            reading.addition_occurrences != self.addition_occurrences
-            or reading.comparison_occurrences != self.comparison_occurrences
+            reading.addition_reading.addition_occurrences
+            != self.addition_occurrences
+            or reading.addition_reading.comparison_occurrences
+            != self.comparison_occurrences
         ):
             raise ValueError(
                 "addition result Admission reading differs from its occurrences"
             )
-        admitted = _added_position_result_material(reading.admitted_material)
-        source_material = tuple(
-            occurrence.result_reference for occurrence in self.addition_occurrences
-        )
-        if self.admission_occurrence.source_material != source_material:
+        if self.admission_occurrence.source_material != reading.source_material:
             raise ValueError(
                 "addition result Admission source differs from its Act results"
             )
-        if self.admission_occurrence.admitted_material != admitted:
+        if self.admission_occurrence.admitted_material != reading.admitted_material:
             raise ValueError(
                 "addition result Admission differs from its Compare occurrences"
             )
@@ -1537,24 +1584,15 @@ def added_position_admission_occurrence(
     )
 
 
-def _added_position_result_material(
-    admitted_occurrences: tuple[tuple[AddedPositionOccurrence, ...], ...],
-) -> tuple[tuple[ExactMaterialResultReference, ...], ...]:
-    return tuple(
-        tuple(occurrence.result_reference for occurrence in admitted)
-        for admitted in admitted_occurrences
-    )
-
-
 def admit_added_position_results(
     occurrences: tuple[AddedPositionOccurrence, ...],
     comparisons: tuple[tuple[object, ...], ...],
 ) -> tuple[tuple[ExactMaterialResultReference, ...], ...]:
-    reading = _AddedPositionAdmissionReading(
+    reading = _added_position_result_admission_reading(
         occurrences,
         comparisons,
     )
-    return _added_position_result_material(reading.admitted_material)
+    return reading.admitted_material
 
 
 def added_position_result_admission_occurrence(
@@ -1564,14 +1602,12 @@ def added_position_result_admission_occurrence(
     boundary_identity: str,
     occurrence_position: int = 0,
 ) -> AddedPositionResultAdmissionOccurrence:
-    reading = _AddedPositionAdmissionReading(occurrences, comparisons)
-    admitted = _added_position_result_material(reading.admitted_material)
-    source_material = tuple(occurrence.result_reference for occurrence in occurrences)
+    reading = _added_position_result_admission_reading(occurrences, comparisons)
     admission = admission_occurrence(
-        admitted,
+        reading.admitted_material,
         boundary_identity=boundary_identity,
         occurrence_position=occurrence_position,
-        source_material=source_material,
+        source_material=reading.source_material,
     )
     return AddedPositionResultAdmissionOccurrence(
         admission_occurrence=admission,
