@@ -97,6 +97,8 @@ def test_one_pytest_occurrence_keeps_its_exact_implementation_measurement():
     try:
         next(protocol)
         measured._identity(ROOT, 7, "inside-pytest-occurrence")
+        connection = sqlite3.connect(":memory:")
+        connection.execute("SELECT 9").fetchone()
         with pytest.raises(StopIteration):
             next(protocol)
     finally:
@@ -106,12 +108,30 @@ def test_one_pytest_occurrence_keeps_its_exact_implementation_measurement():
     occurrence = result["pytest"][0]
     assert occurrence["occurrence_position"] == 0
     assert occurrence["pytest_identity"] == Item.nodeid
+    assert occurrence["first_sql_occurrence_position"] == 0
+    assert occurrence["sql_occurrence_count"] == 1
+    assert result["sql_occurrences"] == ("SELECT 9",)
     identity = next(
         identity
         for identity in occurrence["python"]
         if identity.endswith(":_identity")
     )
     assert occurrence["python"][identity]["occurrence_count"] == 1
+
+    output = measured._output_measurement(result)
+    assert output["sql"] == (
+        {"exact_material": "SELECT 9", "occurrence_count": 1},
+    )
+    assert output["sql_occurrences"] == (0,)
+    output_occurrence = output["pytest"][0]
+    output_coordinate = next(
+        coordinate
+        for coordinate in output_occurrence["python"]
+        if output["python"][coordinate["implementation_function_position"]][
+            "identity"
+        ].endswith(":_identity")
+    )
+    assert output_coordinate["occurrence_count"] == 1
 
 
 def test_reference_pair_measurement_contains_each_surviving_function():

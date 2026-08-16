@@ -159,6 +159,7 @@ def _measurement(
     return {
         "python": python,
         "sql": dict(sorted(sql_coordinates.items())),
+        "sql_occurrences": tuple(_sql_occurrences),
         "reference_pair": reference_pair,
         "pytest": tuple(_pytest_occurrences),
     }
@@ -183,6 +184,55 @@ def _observed_measurement(
 
 def measurement() -> dict[str, object]:
     return _measurement(_python, _sql)
+
+
+def _output_measurement(found: dict[str, object]) -> dict[str, object]:
+    python_identities = tuple(found["python"])
+    python_positions = {
+        identity: position for position, identity in enumerate(python_identities)
+    }
+    sql_material = tuple(found["sql"])
+    sql_positions = {
+        material: position for position, material in enumerate(sql_material)
+    }
+    return {
+        "python": tuple(
+            {"identity": identity, **found["python"][identity]}
+            for identity in python_identities
+        ),
+        "sql": tuple(
+            {
+                "exact_material": material,
+                "occurrence_count": found["sql"][material],
+            }
+            for material in sql_material
+        ),
+        "sql_occurrences": tuple(
+            sql_positions[material] for material in found["sql_occurrences"]
+        ),
+        "reference_pair": tuple(
+            python_positions[identity] for identity in found["reference_pair"]
+        ),
+        "pytest": tuple(
+            {
+                **{
+                    name: value
+                    for name, value in occurrence.items()
+                    if name != "python"
+                },
+                "python": tuple(
+                    {
+                        "implementation_function_position": python_positions[
+                            identity
+                        ],
+                        **coordinates,
+                    }
+                    for identity, coordinates in occurrence["python"].items()
+                ),
+            }
+            for occurrence in found["pytest"]
+        ),
+    }
 
 
 def begin() -> None:
@@ -248,14 +298,18 @@ def pytest_runtest_protocol(item: object, nextitem: object):
     del nextitem
     occurrence_position = len(_pytest_occurrences)
     begin()
+    sql_occurrence_position = _baselines[-1][1]
     try:
         yield
     finally:
         found = _finish_observed()
+    found.pop("sql")
     _pytest_occurrences.append(
         {
             "occurrence_position": occurrence_position,
             "pytest_identity": item.nodeid,
+            "first_sql_occurrence_position": sql_occurrence_position,
+            "sql_occurrence_count": len(_sql_occurrences) - sql_occurrence_position,
             **found,
         }
     )
@@ -267,6 +321,10 @@ def pytest_sessionfinish(session: object, exitstatus: int) -> None:
     output = os.environ.get(OUTPUT_ENVIRONMENT_COORDINATE)
     if output:
         Path(output).write_text(
-            json.dumps(found, sort_keys=True, separators=(",", ":")),
+            json.dumps(
+                _output_measurement(found),
+                sort_keys=True,
+                separators=(",", ":"),
+            ),
             encoding="utf-8",
         )
