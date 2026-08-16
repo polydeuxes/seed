@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from typing import BinaryIO, Mapping, TextIO
 
+from seed_runtime.byte_measurement import record_byte_count_layer
 from seed_runtime.events import EventLedger
 from seed_runtime.operator_ingest import run_operator_ingest
 from seed_runtime.operator_material_boundary import operator_boundary_material
@@ -160,8 +161,6 @@ def run_persistent_operator_console(
                 )
             continue
         with ledger.batched():
-            # No Representation is attached to this Ingest. Selecting one by
-            # recency would assert a relation no occurrence determined.
             attempt_record = run_operator_ingest(
                 ledger=ledger,
                 locality_identity=locality_identity,
@@ -170,49 +169,62 @@ def run_persistent_operator_console(
                     locality_standing if locality_standing["event_count"] else None
                 ),
             )
+            ingest_occurrence = attempt_record["current_standing"][
+                "ingest_occurrence"
+            ]
+            if ingest_occurrence is None:
+                continue
+            locality_standing = _advance_over(
+                ledger,
+                locality_standing,
+                (ingest_occurrence["evidence_event_identity"],),
+                locality_identity=locality_identity,
+            )
+            measurement = record_byte_count_layer(
+                ledger,
+                source_localities=(locality_identity,),
+                recording_locality_identity=locality_identity,
+            )
             locality_standing = _advance_over(
                 ledger,
                 locality_standing,
                 (
-                    attempt_record["current_standing"]["ingest_occurrence"][
-                        "evidence_event_identity"
-                    ],
+                    measurement.material["responsible_act_evidence_identity"],
+                    measurement.material["yield_evidence_identity"],
+                    measurement.identity,
                 ),
                 locality_identity=locality_identity,
             )
-            if attempt_record["current_standing"]["ingest_occurrence"] is not None:
-                if raw_output_stream is not None:
-                    representation = record_operator_representation(
-                        ledger,
-                        locality_identity=locality_identity,
-                        locality_standing=locality_standing,
-                        source_event_identity=attempt_record["current_standing"][
-                            "ingest_occurrence"
-                        ]["evidence_event_identity"],
-                    )
-                    emit_operator_representation_material(
-                        ledger,
-                        representation=representation,
-                        output_stream=raw_output_stream,
-                    )
-                    continue
-                # The Representation result and Yield Evidence retain distinct identities. No Compare
-                # or Identification is inferred merely from temporal proximity.
+            if raw_output_stream is not None:
                 representation = record_operator_representation(
                     ledger,
                     locality_identity=locality_identity,
                     locality_standing=locality_standing,
+                    source_event_identity=ingest_occurrence[
+                        "evidence_event_identity"
+                    ],
                 )
-                representation = emit_operator_representation(
-                    ledger, representation=representation, output_stream=output_stream
-                )
-                locality_standing = _advance_over(
+                emit_operator_representation_material(
                     ledger,
-                    locality_standing,
-                    (
-                        representation["representation_event_identity"],
-                        representation["emission_attempt_event_identity"],
-                        representation["emitted_event_identity"],
-                    ),
-                    locality_identity=locality_identity,
+                    representation=representation,
+                    output_stream=raw_output_stream,
                 )
+                continue
+            representation = record_operator_representation(
+                ledger,
+                locality_identity=locality_identity,
+                locality_standing=locality_standing,
+            )
+            representation = emit_operator_representation(
+                ledger, representation=representation, output_stream=output_stream
+            )
+            locality_standing = _advance_over(
+                ledger,
+                locality_standing,
+                (
+                    representation["representation_event_identity"],
+                    representation["emission_attempt_event_identity"],
+                    representation["emitted_event_identity"],
+                ),
+                locality_identity=locality_identity,
+            )
