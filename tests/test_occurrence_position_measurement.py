@@ -3,11 +3,11 @@ from copy import deepcopy
 import pytest
 
 from seed_runtime.events import CORRUPTED, EventLedger, SQLiteEventLedger
-from seed_runtime.recurrence_measurement import (
+from seed_runtime.occurrence_position_measurement import (
     OCCURRENCE_POSITION_ACT_EVIDENCE_KIND,
     OCCURRENCE_POSITION_RECORDED_KIND,
     OccurrencePositionFinding,
-    RecurrenceMeasurementError,
+    OccurrencePositionMeasurementError,
     get_recorded_occurrence_position_measurement,
     measure_occurrence_position,
     record_occurrence_position_measurement,
@@ -117,7 +117,7 @@ def test_supplied_reversal_cannot_replace_the_ledger_measurement():
     )
 
     with pytest.raises(
-        RecurrenceMeasurementError,
+        OccurrencePositionMeasurementError,
         match="differs from the exact boundary",
     ):
         record_occurrence_position_measurement(
@@ -171,7 +171,7 @@ def test_changed_position_is_not_certified_by_unchanged_evidence():
     ledger, _occurrences, _boundary, _finding, recorded = recorded_road()
     recorded.material["occurrences"][0]["position"] = 1
 
-    with pytest.raises(RecurrenceMeasurementError):
+    with pytest.raises(OccurrencePositionMeasurementError):
         get_recorded_occurrence_position_measurement(ledger, recorded.identity)
 
 
@@ -189,7 +189,7 @@ def test_corrupted_input_act_or_yield_evidence_is_refused():
         )
         ledger.corrupted.add(corrupted_identity)
 
-        with pytest.raises(RecurrenceMeasurementError):
+        with pytest.raises(OccurrencePositionMeasurementError):
             get_recorded_occurrence_position_measurement(ledger, recorded.identity)
 
 
@@ -199,7 +199,7 @@ def test_wrong_boundary_is_refused_without_reconstructing_positions():
     changed["identity"] = "not-a-boundary"
     recorded.material["completeness_boundary"] = changed
 
-    with pytest.raises(RecurrenceMeasurementError):
+    with pytest.raises(OccurrencePositionMeasurementError):
         get_recorded_occurrence_position_measurement(ledger, recorded.identity)
 
 

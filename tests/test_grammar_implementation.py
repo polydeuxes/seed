@@ -55,11 +55,13 @@ from seed_runtime.bounded_assertion_comparison import (
     compare_preserved_findings,
     record_comparison_finding,
 )
+from seed_runtime.occurrence_position_measurement import (
+    measure_occurrence_position,
+    record_occurrence_position_measurement,
+)
 from seed_runtime.recurrence_measurement import (
     assertions_of_recorded_measurement,
     measure_locality_counts,
-    measure_occurrence_position,
-    record_occurrence_position_measurement,
     record_measured_count,
 )
 from seed_runtime.yield_evidence import YIELD_LIVE_BOUNDARIES
