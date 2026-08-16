@@ -16,10 +16,14 @@ from seed_runtime.material_ingest import ingest_material
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "scripts"))
 
-from compiled_format_invocation import ExactMaterialReference  # noqa: E402
+from compiled_format_invocation import (  # noqa: E402
+    AddedPositionOccurrence,
+    ExactMaterialReference,
+)
 from compiled_material_invocation import (  # noqa: E402
     MaterialImplementationFunction,
     admit_invocation_occurrences,
+    compare_added_material_invocations,
     ingest_result_reference,
     reference_occurrences_across,
 )
@@ -41,19 +45,13 @@ def _measured_material():
     )
     assertions = assertions_of_recorded_byte_measurement(ledger, measurement.identity)
     references = tuple(
-        sorted(
-            (
-                ExactMaterialReference(
-                    recorded_occurrence_identity=assertion.recorded_occurrence_identity,
-                    assertion_identity=assertion.assertion_identity,
-                    exact_material=bytes((assertion.representation,)),
-                )
-                for assertion in assertions or ()
-                if assertion.result == "count"
-                and assertion.representation is not None
-            ),
-            key=lambda reference: reference.exact_material,
+        ExactMaterialReference(
+            recorded_occurrence_identity=assertion.recorded_occurrence_identity,
+            assertion_identity=assertion.assertion_identity,
+            exact_material=bytes((assertion.representation,)),
         )
+        for assertion in assertions or ()
+        if assertion.result == "count" and assertion.representation is not None
     )
     return ledger, references
 
@@ -75,6 +73,37 @@ def material_invocations():
         implementation_functions=(function,),
     )[0]
     return ledger, references, occurrences
+
+
+@pytest.fixture(scope="module")
+def material_pair_invocations(material_invocations):
+    ledger, references, source_occurrences = material_invocations
+    additions = tuple(
+        AddedPositionOccurrence(
+            boundary_identity="one-byte-pair-addition",
+            occurrence_position=position,
+            source_reference=source,
+            position=1,
+            added_reference=added,
+            result_material=source.exact_material + added.exact_material,
+        )
+        for position, (source, added) in enumerate(
+            zip(references, references[1:])
+        )
+    )
+    implementation_function = source_occurrences[0].implementation_function
+    result_occurrences = reference_occurrences_across(
+        tuple(addition.result_reference for addition in additions),
+        boundary_identity="one-byte-pair-compiled-material",
+        implementation_functions=(implementation_function,),
+    )[0]
+    comparisons = compare_added_material_invocations(
+        additions,
+        (source_occurrences,),
+        (result_occurrences,),
+        boundary_identity="one-byte-pair-compare",
+    )[0]
+    return ledger, references, additions, result_occurrences, comparisons
 
 
 def test_every_measured_byte_reaches_the_compiled_function(material_invocations):
@@ -139,3 +168,72 @@ def test_each_returned_material_enters_a_fresh_locality(material_invocations):
     assert len({reference.result_identity for reference in references}) == len(
         references
     )
+
+
+def test_each_ordered_material_pair_has_one_exact_addition_occurrence(
+    material_pair_invocations,
+):
+    _, references, additions, _, _ = material_pair_invocations
+
+    assert len(additions) == len(references) - 1
+    assert tuple(addition.source_reference for addition in additions) == references[:-1]
+    assert tuple(addition.added_reference for addition in additions) == references[1:]
+    assert tuple(addition.position for addition in additions) == (1,) * len(additions)
+    assert tuple(addition.result_material for addition in additions) == tuple(
+        first.exact_material + second.exact_material
+        for first, second in zip(references, references[1:])
+    )
+    assert len({addition.act_occurrence_identity for addition in additions}) == len(
+        additions
+    )
+    assert len({addition.result_identity for addition in additions}) == len(additions)
+
+
+def test_each_added_result_reaches_the_same_compiled_function(
+    material_pair_invocations,
+):
+    _, _, additions, occurrences, _ = material_pair_invocations
+
+    assert len(occurrences) == len(additions)
+    assert tuple(occurrence.source_reference for occurrence in occurrences) == tuple(
+        addition.result_reference for addition in additions
+    )
+    assert tuple(occurrence.exact_material for occurrence in occurrences) == tuple(
+        addition.result_material for addition in additions
+    )
+    assert len({occurrence.occurrence_identity for occurrence in occurrences}) == len(
+        occurrences
+    )
+
+
+def test_exact_addition_occurrence_binds_source_and_result_invocations(
+    material_pair_invocations,
+):
+    _, _, additions, result_occurrences, comparisons = material_pair_invocations
+
+    assert len(comparisons) == len(additions) == len(result_occurrences)
+    assert tuple(
+        comparison.added_position_act_occurrence_identity
+        for comparison in comparisons
+    ) == tuple(addition.act_occurrence_identity for addition in additions)
+    assert tuple(
+        comparison.result_invocation.occurrence_identity
+        for comparison in comparisons
+    ) == tuple(occurrence.occurrence_identity for occurrence in result_occurrences)
+    assert any(comparison.distinction for comparison in comparisons)
+    assert any(not comparison.distinction for comparison in comparisons)
+
+
+def test_added_result_coordinates_establish_more_than_one_admission(
+    material_pair_invocations,
+):
+    _, _, additions, occurrences, _ = material_pair_invocations
+    admission = admit_invocation_occurrences(
+        occurrences,
+        boundary_identity="one-byte-pair-compiled-material-admission",
+    )
+
+    assert admission.source_material == tuple(
+        addition.result_reference for addition in additions
+    )
+    assert len(admission.admitted_material) > 1
