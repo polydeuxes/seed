@@ -160,6 +160,20 @@ addition Act occurrence
 A connective composite receives no Act, relation, Evidence, Authority, or
 Standing by identity.
 
+`Grammar distinctions` are bounded discriminators:
+
+```text
+exact material result reference
+    + implementation function invocation occurrence
+    + complete result coordinates
+    + Admission occurrence
+```
+
+Same result coordinates do not establish same material, occurrence, identity,
+grammar, or Standing. Different result coordinates establish only the bounded
+distinction. Neither result establishes what either material represents, and
+Admission grouping does not establish language or a represented relation.
+
 ## This
 
 `This` is not discarded as connective material and does not establish
