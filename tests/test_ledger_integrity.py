@@ -14,6 +14,7 @@ from __future__ import annotations
 import json
 import random
 import sqlite3
+from datetime import datetime
 
 import pytest
 
@@ -120,7 +121,7 @@ def test_a_rewrite_that_drops_the_guard_is_detected(ledger, path):
     con.commit()
     con.close()
 
-    assert SQLiteEventLedger(path).integrity_of(event.identity) == CORRUPTED
+    assert ledger.integrity_of(event.identity) == CORRUPTED
 
 
 def test_moving_an_occurrence_between_sessions_is_detected(ledger, path):
@@ -132,7 +133,7 @@ def test_moving_an_occurrence_between_sessions_is_detected(ledger, path):
     con.commit()
     con.close()
 
-    assert SQLiteEventLedger(path).integrity_of(event.identity) == CORRUPTED
+    assert ledger.integrity_of(event.identity) == CORRUPTED
 
 
 @pytest.mark.parametrize(
@@ -148,9 +149,10 @@ def test_every_persisted_field_is_covered(ledger, path, column, value):
     con.commit()
     con.close()
 
-    reopened = SQLiteEventLedger(path)
     # An altered `identity` is looked up under the value now stored.
-    assert reopened.integrity_of(value if column == "identity" else event.identity) == CORRUPTED
+    assert ledger.integrity_of(
+        value if column == "identity" else event.identity
+    ) == CORRUPTED
 
 
 def test_exact_material_stored_as_text_is_detected(ledger, path):
@@ -165,7 +167,8 @@ def test_exact_material_stored_as_text_is_detected(ledger, path):
     con.commit()
     con.close()
 
-    assert SQLiteEventLedger(path).integrity_of(event.identity) == CORRUPTED
+    with pytest.raises((LedgerIntegrityError, ValueError)):
+        SQLiteEventLedger(path)
 
 
 # --------------------------------------------------------------------------
@@ -173,14 +176,18 @@ def test_exact_material_stored_as_text_is_detected(ledger, path):
 # --------------------------------------------------------------------------
 
 
-def test_rewriting_the_row_and_its_material_identity_together_is_not_detected(ledger, path):
+def test_rewriting_the_row_and_both_internal_identities_is_not_detected(ledger, path):
     """Stated as a test so the limit cannot be forgotten.
 
-    Someone able to write arbitrary SQL can drop the guard, rewrite the row,
-    and recompute the material identity. Detecting that needs an integrity root outside
+    Someone able to write arbitrary SQL can drop both guards, rewrite the row,
+    and recompute both identities. Detecting that needs an integrity root outside
     the mutable database, which this does not have and does not Assertion.
     """
-    from seed_runtime.events import _occurrence_material_identity
+    from seed_runtime.events import (
+        _EMPTY_PREFIX_IDENTITY,
+        _next_prefix_identity,
+        _occurrence_material_identity,
+    )
 
     event = ledger.append("k", {"a": 1}, locality_identity="s")
     con = _raw(path)
@@ -189,11 +196,29 @@ def test_rewriting_the_row_and_its_material_identity_together_is_not_detected(le
     row["material"] = '{"a": 999}'
     con.execute("UPDATE events SET material = ?, occurrence_material_identity = ? WHERE identity = ?",
                 (row["material"], _occurrence_material_identity(row), event.identity))
+    rewritten = Event(
+        identity=row["identity"],
+        kind=row["kind"],
+        timestamp=datetime.fromisoformat(row["timestamp"]),
+        material={"a": 999},
+        exact_material=row["exact_material"],
+        locality_identity=row["locality_identity"],
+    )
+    con.execute("DROP TRIGGER prefix_identities_refuse_update")
+    con.execute(
+        "UPDATE event_prefix_identities SET identity = ? WHERE event_identity = ?",
+        (
+            _next_prefix_identity(_EMPTY_PREFIX_IDENTITY, rewritten),
+            event.identity,
+        ),
+    )
     con.commit()
     con.close()
 
-    assert SQLiteEventLedger(path).integrity_of(event.identity) == VERIFIED
-    assert SQLiteEventLedger(path).get(event.identity).material == {"a": 999}
+    reopened = SQLiteEventLedger(path)
+    assert reopened.integrity_of(event.identity) == VERIFIED
+    assert reopened.get(event.identity).material == {"a": 999}
+    reopened.close()
 
 
 def test_verified_durable_rehydration_still_rejects_nested_secret_fields(path):
@@ -215,13 +240,8 @@ def test_verified_durable_rehydration_still_rejects_nested_secret_fields(path):
     con.commit()
     con.close()
 
-    reopened = SQLiteEventLedger(path)
-    try:
-        assert reopened.integrity_of(event.identity) == VERIFIED
-        with pytest.raises(ValueError, match="secret field"):
-            reopened.get(event.identity)
-    finally:
-        reopened.close()
+    with pytest.raises(ValueError, match="secret field"):
+        SQLiteEventLedger(path)
 
 
 def test_screened_durable_rehydration_still_runs_event_validation(path):
@@ -242,13 +262,8 @@ def test_screened_durable_rehydration_still_runs_event_validation(path):
     con.commit()
     con.close()
 
-    reopened = SQLiteEventLedger(path)
-    try:
-        assert reopened.integrity_of(event.identity) == VERIFIED
-        with pytest.raises(ValueError, match="material"):
-            reopened.get(event.identity)
-    finally:
-        reopened.close()
+    with pytest.raises(ValueError, match="material"):
+        SQLiteEventLedger(path)
 
 
 def _incomplete_store(path, rows=1):
@@ -717,16 +732,8 @@ def test_damaged_compressed_storage_is_corruption_not_a_compressor_error(tmp_pat
         connection.commit()
         connection.close()
 
-        ledger = SQLiteEventLedger(path)
-        try:
-            # Reported, never raised through the caller.
-            assert ledger.integrity_of(event.identity) == CORRUPTED, label
-            # And a read refuses as a ledger integrity failure rather than
-            # preserving the compressor.
-            with pytest.raises(InvalidStoredMaterial):
-                ledger.get(event.identity)
-        finally:
-            ledger.close()
+        with pytest.raises(InvalidStoredMaterial):
+            SQLiteEventLedger(path)
 
 
 def test_a_compressed_material_altered_to_other_valid_content_is_corrupted(tmp_path):
@@ -750,11 +757,8 @@ def test_a_compressed_material_altered_to_other_valid_content_is_corrupted(tmp_p
     connection.commit()
     connection.close()
 
-    ledger = SQLiteEventLedger(path)
-    try:
-        assert ledger.integrity_of(event.identity) == CORRUPTED
-    finally:
-        ledger.close()
+    with pytest.raises(LedgerIntegrityError, match="append-prefix identity"):
+        SQLiteEventLedger(path)
 
 
 def test_a_stored_material_that_is_not_an_occurrence_is_refused(tmp_path):
@@ -792,10 +796,5 @@ def test_a_stored_material_that_is_not_an_occurrence_is_refused(tmp_path):
         connection.commit()
         connection.close()
 
-        ledger = SQLiteEventLedger(path)
-        try:
-            assert ledger.integrity_of(event.identity) == CORRUPTED, label
-            with pytest.raises(InvalidStoredMaterial):
-                ledger.get(event.identity)
-        finally:
-            ledger.close()
+        with pytest.raises(InvalidStoredMaterial):
+            SQLiteEventLedger(path)

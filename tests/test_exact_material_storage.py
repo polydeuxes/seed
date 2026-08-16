@@ -7,7 +7,6 @@ import pytest
 
 import seed_runtime.events as events
 from seed_runtime.events import (
-    CORRUPTED,
     VERIFIED,
     InvalidStoredMaterial,
     LedgerIntegrityError,
@@ -148,12 +147,8 @@ def test_changed_exact_material_is_detected_through_every_reference(tmp_path):
     connection.commit()
     connection.close()
 
-    reopened = SQLiteEventLedger(path)
-    try:
-        assert reopened.integrity_of(first.identity) == CORRUPTED
-        assert reopened.integrity_of(second.identity) == CORRUPTED
-    finally:
-        reopened.close()
+    with pytest.raises(LedgerIntegrityError, match="append-prefix identity"):
+        SQLiteEventLedger(path)
 
 
 def test_changed_event_pointer_is_not_a_changed_occurrence_material(tmp_path):
@@ -174,14 +169,9 @@ def test_changed_event_pointer_is_not_a_changed_occurrence_material(tmp_path):
     connection.commit()
     connection.close()
 
-    reopened = SQLiteEventLedger(path)
-    try:
-        assert first_reference != second_reference
-        assert reopened._exact_material_reference(first.identity) == second_reference
-        assert reopened.get(first.identity).exact_material == b"second"
-        assert reopened.integrity_of(first.identity) == CORRUPTED
-    finally:
-        reopened.close()
+    assert first_reference != second_reference
+    with pytest.raises(LedgerIntegrityError, match="append-prefix identity"):
+        SQLiteEventLedger(path)
 
 
 def test_missing_exact_material_cannot_be_rehydrated_and_is_corrupted(tmp_path):
@@ -200,10 +190,5 @@ def test_missing_exact_material_cannot_be_rehydrated_and_is_corrupted(tmp_path):
     connection.commit()
     connection.close()
 
-    reopened = SQLiteEventLedger(path)
-    try:
-        assert reopened.integrity_of(event.identity) == CORRUPTED
-        with pytest.raises(InvalidStoredMaterial, match="not available"):
-            reopened.get(event.identity)
-    finally:
-        reopened.close()
+    with pytest.raises(InvalidStoredMaterial, match="not available"):
+        SQLiteEventLedger(path)

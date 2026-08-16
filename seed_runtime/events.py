@@ -784,6 +784,7 @@ class SQLiteEventLedger(EventLedger):
 
     def append_boundary(self) -> EventLedgerBoundary:
         """Capture the exact identity of the current durable append prefix."""
+        self._validate_prefix_identities_after_external_commit()
         row = self._connection.execute(
             "SELECT identity FROM event_prefix_identities "
             "ORDER BY position DESC LIMIT 1"
@@ -795,6 +796,7 @@ class SQLiteEventLedger(EventLedger):
     def _rowid_through(self, through: EventLedgerBoundary | None) -> int | None:
         if through is None:
             return None
+        self._validate_prefix_identities_after_external_commit()
         if through.identity == _EMPTY_PREFIX_IDENTITY:
             return 0
         row = self._connection.execute(
@@ -1075,6 +1077,58 @@ class SQLiteEventLedger(EventLedger):
             raise LedgerIntegrityError(
                 "append-prefix identity mechanics are incomplete"
             )
+        self._validate_prefix_identities()
+
+    def _prefix_data_version(self) -> int:
+        return int(self._connection.execute("PRAGMA data_version").fetchone()[0])
+
+    def _validate_prefix_identities_after_external_commit(self) -> None:
+        data_version = self._prefix_data_version()
+        if getattr(self, "_validated_prefix_data_version", None) != data_version:
+            self._validate_prefix_identities()
+
+    def _validate_prefix_identities(self) -> None:
+        while True:
+            data_version = self._prefix_data_version()
+            event_rows = iter(
+                self._connection.execute(
+                    f"SELECT events.rowid AS event_rowid, {_EVENT_ROW_COLUMNS} "
+                    f"FROM {_EVENT_ROW_SOURCE} ORDER BY events.rowid"
+                )
+            )
+            prefix_rows = iter(
+                self._connection.execute(
+                    "SELECT position, event_rowid, event_identity, identity "
+                    "FROM event_prefix_identities ORDER BY position"
+                )
+            )
+            previous = _EMPTY_PREFIX_IDENTITY
+            position = 0
+            while True:
+                event_row = next(event_rows, None)
+                prefix_row = next(prefix_rows, None)
+                if event_row is None or prefix_row is None:
+                    if event_row is not None or prefix_row is not None:
+                        raise LedgerIntegrityError(
+                            "append-prefix identity mechanics are incomplete"
+                        )
+                    break
+                position += 1
+                event = self._row_to_event(event_row)
+                previous = _next_prefix_identity(previous, event)
+                if (
+                    prefix_row["position"] != position
+                    or prefix_row["event_rowid"] != event_row["event_rowid"]
+                    or prefix_row["event_identity"] != event.identity
+                    or prefix_row["identity"] != previous
+                ):
+                    raise LedgerIntegrityError(
+                        "append-prefix identity mechanics are incomplete"
+                    )
+            current_data_version = self._prefix_data_version()
+            if current_data_version == data_version:
+                self._validated_prefix_data_version = current_data_version
+                return
 
     def _insert_prefix_identity(
         self, event: Event, event_rowid: int

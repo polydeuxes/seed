@@ -2,7 +2,10 @@
 
 from __future__ import annotations
 
+from concurrent.futures import ThreadPoolExecutor
+import json
 import sqlite3
+from threading import Event as ThreadEvent
 
 import pytest
 
@@ -12,6 +15,7 @@ from seed_runtime.events import (
     InvalidLedgerBoundary,
     LedgerIntegrityError,
     SQLiteEventLedger,
+    _occurrence_material_identity,
 )
 from seed_runtime.event import Event
 
@@ -219,6 +223,166 @@ def test_partial_durable_mechanics_are_refused(tmp_path):
 
     with pytest.raises(LedgerIntegrityError, match="incomplete"):
         SQLiteEventLedger(path)
+
+
+def _rewrite_event_material_beneath_its_prefix(
+    path: str, event_identity: str, material: dict
+) -> None:
+    connection = sqlite3.connect(path)
+    connection.row_factory = sqlite3.Row
+    connection.execute("DROP TRIGGER events_refuse_update")
+    row = dict(
+        connection.execute(
+            "SELECT events.*, event_exact_materials.exact_material AS exact_material "
+            "FROM events LEFT JOIN event_exact_materials ON "
+            "event_exact_materials.material_identity = events.exact_material_identity "
+            "WHERE events.identity = ?",
+            (event_identity,),
+        ).fetchone()
+    )
+    row["material"] = json.dumps(material)
+    connection.execute(
+        "UPDATE events SET material = ?, occurrence_material_identity = ? "
+        "WHERE identity = ?",
+        (
+            row["material"],
+            _occurrence_material_identity(row),
+            event_identity,
+        ),
+    )
+    connection.commit()
+    connection.close()
+
+
+def test_reopen_refuses_a_stale_prefix_chain_over_reidentified_material(tmp_path):
+    path = str(tmp_path / "ledger.db")
+    ledger = SQLiteEventLedger(path)
+    events = [ledger.append("k", {"n": n}) for n in range(3)]
+    ledger.close()
+
+    _rewrite_event_material_beneath_its_prefix(
+        path, events[1].identity, {"n": "changed"}
+    )
+
+    with pytest.raises(LedgerIntegrityError, match="append-prefix identity"):
+        SQLiteEventLedger(path)
+
+
+def test_boundary_resolution_refuses_an_externally_staled_prefix_chain(tmp_path):
+    path = str(tmp_path / "ledger.db")
+    ledger = SQLiteEventLedger(path)
+    events = [ledger.append("k", {"n": n}) for n in range(3)]
+    boundary = ledger.append_boundary()
+
+    _rewrite_event_material_beneath_its_prefix(
+        path, events[1].identity, {"n": "changed while open"}
+    )
+
+    with pytest.raises(LedgerIntegrityError, match="append-prefix identity"):
+        ledger.list(through=boundary)
+    ledger.close()
+
+
+def test_forgetting_prefix_validation_recomputes_the_same_boundary(
+    tmp_path, monkeypatch
+):
+    ledger = SQLiteEventLedger(str(tmp_path / "ledger.db"))
+    ledger.append_many(
+        [
+            Event(identity="e1", kind="first", material={"n": 1}),
+            Event(identity="e2", kind="second", material={"n": 2}),
+        ]
+    )
+    boundary = ledger.append_boundary()
+    validations = 0
+    validate = ledger._validate_prefix_identities
+
+    def observed_validation():
+        nonlocal validations
+        validations += 1
+        validate()
+
+    monkeypatch.setattr(ledger, "_validate_prefix_identities", observed_validation)
+    del ledger._validated_prefix_data_version
+
+    assert ledger.append_boundary() == boundary
+    assert validations == 1
+    ledger.close()
+
+
+def _worker_read_through(path: str, boundary: EventLedgerBoundary) -> list[str]:
+    ledger = SQLiteEventLedger(path)
+    try:
+        return [event.identity for event in ledger.list(through=boundary)]
+    finally:
+        ledger.close()
+
+
+def test_a_separate_connection_worker_reads_exactly_one_committed_cut(tmp_path):
+    path = str(tmp_path / "ledger.db")
+    writer = SQLiteEventLedger(path)
+    first = writer.append("k", {"n": 1})
+    boundary = writer.append_boundary()
+    writer.append("k", {"n": 2})
+
+    with ThreadPoolExecutor(max_workers=4) as workers:
+        reads = [
+            workers.submit(_worker_read_through, path, boundary)
+            for _ in range(4)
+        ]
+        assert [read.result() for read in reads] == [[first.identity]] * 4
+    writer.close()
+
+
+def test_a_separate_connection_worker_refuses_an_uncommitted_cut_until_flush(
+    tmp_path,
+):
+    path = str(tmp_path / "ledger.db")
+    writer = SQLiteEventLedger(path)
+    writer.append("k", {"n": "before"})
+    worker_open = ThreadEvent()
+    read = ThreadEvent()
+    held_boundary: list[EventLedgerBoundary] = []
+
+    def waiting_worker() -> list[str]:
+        ledger = SQLiteEventLedger(path)
+        worker_open.set()
+        read.wait()
+        try:
+            return [event.identity for event in ledger.list(through=held_boundary[0])]
+        finally:
+            ledger.close()
+
+    with ThreadPoolExecutor(max_workers=1) as workers:
+        waiting = workers.submit(waiting_worker)
+        assert worker_open.wait(timeout=5)
+        with writer.batched():
+            uncommitted = writer.append("k", {"n": "uncommitted"})
+            held_boundary.append(writer.append_boundary())
+            read.set()
+            with pytest.raises(InvalidLedgerBoundary):
+                waiting.result()
+
+            writer.flush()
+            assert workers.submit(
+                _worker_read_through, path, held_boundary[0]
+            ).result() == [writer.list()[0].identity, uncommitted.identity]
+    writer.close()
+
+
+def test_a_separate_connection_worker_refuses_another_ledgers_cut(tmp_path):
+    path = str(tmp_path / "ledger.db")
+    writer = SQLiteEventLedger(path)
+    writer.append("k", {"side": "this"})
+    other = SQLiteEventLedger(str(tmp_path / "other.db"))
+    other.append("k", {"side": "other"})
+    mixed_boundary = other.append_boundary()
+
+    with ThreadPoolExecutor(max_workers=1) as workers:
+        with pytest.raises(InvalidLedgerBoundary):
+            workers.submit(_worker_read_through, path, mixed_boundary).result()
+    other.close()
+    writer.close()
 
 
 def test_a_writer_without_prefix_maintenance_is_refused(tmp_path):
