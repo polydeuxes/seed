@@ -81,6 +81,48 @@ def test_empty_boundary_excludes_later_occurrences():
     assert ledger.list(through=boundary) == []
 
 
+@pytest.mark.parametrize("durable", (False, True))
+def test_one_occurrence_resolves_its_existing_append_boundary(tmp_path, durable):
+    ledger = (
+        SQLiteEventLedger(str(tmp_path / "ledger.db"))
+        if durable
+        else EventLedger()
+    )
+    try:
+        first = ledger.append("first", locality_identity="source")
+        expected = ledger.append_boundary()
+        ledger.append("later", locality_identity="source")
+
+        boundary = ledger.append_boundary_through_occurrence(first.identity)
+
+        assert boundary == expected
+        assert [event.identity for event in ledger.list(through=boundary)] == [
+            first.identity
+        ]
+    finally:
+        if durable:
+            ledger.close()
+
+
+@pytest.mark.parametrize("durable", (False, True))
+@pytest.mark.parametrize("identity", ("", "missing"))
+def test_absent_occurrence_cannot_become_an_append_boundary(
+    tmp_path, durable, identity
+):
+    ledger = (
+        SQLiteEventLedger(str(tmp_path / "ledger.db"))
+        if durable
+        else EventLedger()
+    )
+    try:
+        ledger.append("present")
+        with pytest.raises(InvalidLedgerBoundary):
+            ledger.append_boundary_through_occurrence(identity)
+    finally:
+        if durable:
+            ledger.close()
+
+
 def test_equal_prefixes_share_a_boundary_and_later_divergence_does_not_break_it():
     events = [
         Event(identity="e1", kind="first", material={"n": 1}),

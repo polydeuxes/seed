@@ -265,6 +265,9 @@ class EventLedger:
         self._by_locality: dict[str | None, list[Event]] = defaultdict(list)
         self._by_identity_position: dict[str, int] = {}
         self._latest_prefix_identity = _EMPTY_PREFIX_IDENTITY
+        self._prefix_identities_by_position: list[str] = [
+            _EMPTY_PREFIX_IDENTITY
+        ]
         self._boundary_positions: dict[str, int] = {
             _EMPTY_PREFIX_IDENTITY: 0
         }
@@ -340,6 +343,27 @@ class EventLedger:
     def append_boundary(self) -> EventLedgerBoundary:
         """Capture the exact identity of the current append prefix."""
         return EventLedgerBoundary(self._latest_prefix_identity)
+
+    def append_boundary_through_occurrence(
+        self, event_identity: str
+    ) -> EventLedgerBoundary:
+        """Resolve the existing append boundary ending at one occurrence.
+
+        The occurrence identity remains the caller's address.  This returns
+        the ledger's already-derived prefix identity at that exact occurrence;
+        it does not mint another boundary or consult the moving tip.
+        """
+
+        if type(event_identity) is not str or not event_identity:
+            raise InvalidLedgerBoundary(
+                "append boundary requires one exact occurrence identity"
+            )
+        position = self._by_identity_position.get(event_identity)
+        if position is None:
+            raise InvalidLedgerBoundary(
+                "occurrence does not belong to this append sequence"
+            )
+        return EventLedgerBoundary(self._prefix_identities_by_position[position])
 
     def _position_through(self, through: EventLedgerBoundary | None) -> int:
         if through is None:
@@ -455,6 +479,7 @@ class EventLedger:
         self._by_identity[event.identity] = event
         self._by_locality[event.locality_identity].append(event)
         self._latest_prefix_identity = identity
+        self._prefix_identities_by_position.append(identity)
         self._boundary_positions[identity] = position
         self._by_identity_position[event.identity] = position
 
@@ -757,6 +782,27 @@ class SQLiteEventLedger(EventLedger):
         return EventLedgerBoundary(
             row["identity"] if row is not None else _EMPTY_PREFIX_IDENTITY
         )
+
+    def append_boundary_through_occurrence(
+        self, event_identity: str
+    ) -> EventLedgerBoundary:
+        """Resolve the existing append boundary ending at one occurrence."""
+
+        if type(event_identity) is not str or not event_identity:
+            raise InvalidLedgerBoundary(
+                "append boundary requires one exact occurrence identity"
+            )
+        self._validate_prefix_identities_after_external_commit()
+        row = self._connection.execute(
+            "SELECT identity FROM event_prefix_identities "
+            "WHERE event_identity = ?",
+            (event_identity,),
+        ).fetchone()
+        if row is None:
+            raise InvalidLedgerBoundary(
+                "occurrence does not belong to this append sequence"
+            )
+        return EventLedgerBoundary(row["identity"])
 
     def _rowid_through(self, through: EventLedgerBoundary | None) -> int | None:
         if through is None:

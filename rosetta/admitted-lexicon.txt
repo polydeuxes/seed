@@ -172,6 +172,7 @@ compare
 compared
 comparing
 comparison
+point
 composite
 composites
 compatibility
@@ -950,6 +951,7 @@ transferability
 transferable
 transit
 transition
+transient
 transport
 travels
 treating
