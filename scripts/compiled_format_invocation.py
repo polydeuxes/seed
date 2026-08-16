@@ -1862,6 +1862,7 @@ def first_recurring_added_compare(
     *,
     boundary_identity: str,
     act_occurrence_count_limit: int,
+    invoke_later: bool = True,
 ) -> tuple[
     tuple[AddedPositionCompareOccurrence, ...],
     bool | None,
@@ -1911,6 +1912,8 @@ def first_recurring_added_compare(
             if len(comparisons) >= 2
             else None
         )
+        if coordinate is not None and not invoke_later:
+            return tuple(comparisons), coordinate, None
         result_invocation = compiled_invocation(
             addition.result_material,
             implementation_function,
@@ -2134,6 +2137,7 @@ def first_recurring_removed_compare(
     *,
     boundary_identity: str,
     act_occurrence_count_limit: int,
+    invoke_later: bool = True,
 ) -> tuple[
     tuple[RemovedPositionCompareOccurrence, ...],
     bool | None,
@@ -2154,6 +2158,8 @@ def first_recurring_removed_compare(
         raise TypeError("one exact boundary identity is required")
     if type(act_occurrence_count_limit) is not int or act_occurrence_count_limit < 1:
         raise TypeError("one exact positive Act occurrence count limit is required")
+    if type(invoke_later) is not bool:
+        raise TypeError("later invocation control must be exact")
     source_by_reference = {
         invocation.source_coordinate: invocation for invocation in source_invocations
     }
@@ -2176,6 +2182,8 @@ def first_recurring_removed_compare(
             if len(comparisons) >= 2
             else None
         )
+        if coordinate is not None and not invoke_later:
+            return tuple(comparisons), coordinate, None
         result_invocation = compiled_invocation(
             removal.result_material,
             implementation_function,
