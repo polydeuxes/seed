@@ -11,6 +11,12 @@ import tomllib
 from typing import Callable, Hashable, Protocol, runtime_checkable
 import xml.etree.ElementTree
 
+from seed_runtime.byte_measurement import (
+    assertions_of_recorded_byte_measurement,
+    assertions_of_recorded_byte_position_pair_measurement,
+)
+from seed_runtime.events import EventLedger
+
 from material_admission import (
     AdmissionOccurrence,
     AdmissionResultReference,
@@ -39,6 +45,7 @@ class ExactMaterialCoordinates(Protocol):
 class ExactMaterialReference:
     recorded_occurrence_identity: str
     assertion_identity: str
+    locality_identity: str
     exact_material: bytes
 
     def __post_init__(self) -> None:
@@ -47,9 +54,57 @@ class ExactMaterialReference:
             or not self.recorded_occurrence_identity
             or type(self.assertion_identity) is not str
             or not self.assertion_identity
+            or type(self.locality_identity) is not str
+            or not self.locality_identity
             or type(self.exact_material) is not bytes
         ):
             raise TypeError("exact material requires its occurrence-bound Assertion reference")
+
+
+def exact_byte_material_references(
+    ledger: EventLedger, measurement_occurrence_identity: str
+) -> tuple[ExactMaterialReference, ...]:
+    if not isinstance(ledger, EventLedger):
+        raise TypeError("exact byte material references require one EventLedger")
+    event = ledger.get(measurement_occurrence_identity)
+    if event is None:
+        raise ValueError("exact byte material references require one Measurement occurrence")
+    assertions = assertions_of_recorded_byte_measurement(
+        ledger, measurement_occurrence_identity
+    )
+    return tuple(
+        ExactMaterialReference(
+            recorded_occurrence_identity=assertion.recorded_occurrence_identity,
+            assertion_identity=assertion.assertion_identity,
+            locality_identity=event.locality_identity,
+            exact_material=bytes((assertion.representation,)),
+        )
+        for assertion in assertions or ()
+        if assertion.result == "count" and assertion.representation is not None
+    )
+
+
+def exact_byte_pair_material_references(
+    ledger: EventLedger, measurement_occurrence_identity: str
+) -> tuple[ExactMaterialReference, ...]:
+    if not isinstance(ledger, EventLedger):
+        raise TypeError("exact byte-pair material references require one EventLedger")
+    event = ledger.get(measurement_occurrence_identity)
+    if event is None:
+        raise ValueError("exact byte-pair material references require one Measurement occurrence")
+    assertions = assertions_of_recorded_byte_position_pair_measurement(
+        ledger, measurement_occurrence_identity
+    )
+    return tuple(
+        ExactMaterialReference(
+            recorded_occurrence_identity=assertion.recorded_occurrence_identity,
+            assertion_identity=assertion.assertion_identity,
+            locality_identity=event.locality_identity,
+            exact_material=bytes(assertion.representation),
+        )
+        for assertion in assertions or ()
+        if assertion.result == "count" and assertion.representation is not None
+    )
 
 
 @dataclass(frozen=True, slots=True)
@@ -1042,6 +1097,14 @@ def admission_added_position_occurrences(
             for material in admitted_material
         ):
             raise TypeError("addition Acts require exact one-byte admitted material")
+        locality_identities = {
+            getattr(material, "locality_identity", None)
+            for material in admitted_material
+        }
+        if None in locality_identities:
+            raise TypeError("addition Acts require exact material Localities")
+        if len(locality_identities) != 1:
+            raise ValueError("one admitted material tuple crossed Localities")
         occurrence_count = sum(
             (len(source.exact_material) + 1) * len(admitted_material)
             for source in admitted_material

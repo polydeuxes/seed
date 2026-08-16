@@ -25,8 +25,12 @@ def test_absent_material_returns_zero_without_entering_returned_material():
 
 
 def test_one_added_position_changes_both_returned_coordinates():
-    source = ExactMaterialReference("source-occurrence", "source-assertion", b"a")
-    added = ExactMaterialReference("added-occurrence", "added-assertion", b"b")
+    source = ExactMaterialReference(
+        "source-occurrence", "source-assertion", "fixture-locality", b"a"
+    )
+    added = ExactMaterialReference(
+        "added-occurrence", "added-assertion", "fixture-locality", b"b"
+    )
     added_occurrences = added_position_occurrences(
         (source,), (added,), boundary_identity="count-addition"
     )

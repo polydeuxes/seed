@@ -29,6 +29,7 @@ from compiled_format_invocation import (  # noqa: E402
     admit_added_position_occurrences,
     added_position_admission_occurrence,
     added_position_admission_occurrences,
+    admission_added_position_occurrences,
     added_position_occurrences,
     compare_added_position_invocations,
     compare_added_position_pairs,
@@ -39,6 +40,8 @@ from compiled_format_invocation import (  # noqa: E402
     added_position_invocations,
     removed_position_invocations,
     removed_position_occurrences,
+    exact_byte_material_references,
+    exact_byte_pair_material_references,
     preserves_original_order,
 )
 from compiled_material_invocation import (  # noqa: E402
@@ -49,7 +52,11 @@ from compiled_material_invocation import (  # noqa: E402
     invocation_occurrence,
     reference_occurrences_across,
 )
-from material_admission import compare_admission_result_pairs, preserves  # noqa: E402
+from material_admission import (  # noqa: E402
+    admission_occurrence,
+    compare_admission_result_pairs,
+    preserves,
+)
 
 
 def _implementation_functions_available():
@@ -111,33 +118,11 @@ def measured_book_pairs():
             if assertion.result == "count" and assertion.representation is not None
         )
     )
-    pair_material = tuple(
-        sorted(
-            (
-                ExactMaterialReference(
-                    recorded_occurrence_identity=assertion.recorded_occurrence_identity,
-                    assertion_identity=assertion.assertion_identity,
-                    exact_material=bytes(assertion.representation),
-                )
-                for assertion in assertions or ()
-                if assertion.result == "count" and assertion.representation is not None
-            ),
-            key=lambda material: material.exact_material,
-        )
+    pair_material = exact_byte_pair_material_references(
+        ledger, pair_measurement.identity
     )
-    byte_material = tuple(
-        sorted(
-            (
-                ExactMaterialReference(
-                    recorded_occurrence_identity=assertion.recorded_occurrence_identity,
-                    assertion_identity=assertion.assertion_identity,
-                    exact_material=bytes((assertion.representation,)),
-                )
-                for assertion in byte_assertions or ()
-                if assertion.result == "count" and assertion.representation is not None
-            ),
-            key=lambda material: material.exact_material,
-        )
+    byte_material = exact_byte_material_references(
+        ledger, byte_measurement.identity
     )
     return (
         paths,
@@ -423,7 +408,7 @@ def test_every_current_book_material_has_its_own_ingest(measured_book_pairs):
 
 
 def test_pair_material_comes_from_the_complete_recorded_measurement(measured_book_pairs):
-    _, _, assertions, pairs, *_ = measured_book_pairs
+    _, _, assertions, pairs, _, _, pair_material, _ = measured_book_pairs
     recorded = tuple(
         sorted(
             bytes(assertion.representation)
@@ -436,10 +421,14 @@ def test_pair_material_comes_from_the_complete_recorded_measurement(measured_boo
     assert pairs == recorded
     assert len(pairs) == len(set(pairs))
     assert all(len(pair) == 2 for pair in pairs)
+    assert tuple(reference.exact_material for reference in pair_material) == pairs
+    assert {reference.locality_identity for reference in pair_material} == {
+        "book-pair-measurement"
+    }
 
 
 def test_byte_material_comes_from_the_complete_recorded_measurement(measured_book_pairs):
-    _, _, _, _, assertions, material, *_ = measured_book_pairs
+    _, _, _, _, assertions, material, _, byte_material = measured_book_pairs
     recorded = tuple(
         sorted(
             assertion.representation
@@ -451,6 +440,12 @@ def test_byte_material_comes_from_the_complete_recorded_measurement(measured_boo
     assert material
     assert material == recorded
     assert len(material) == len(set(material))
+    assert tuple(reference.exact_material for reference in byte_material) == tuple(
+        bytes((value,)) for value in material
+    )
+    assert {reference.locality_identity for reference in byte_material} == {
+        "book-byte-measurement"
+    }
 
 
 @pytest.mark.skipif(
@@ -749,8 +744,12 @@ def test_added_position_refuses_a_different_source_order():
 
 
 def test_equal_result_material_keeps_each_exact_added_position_occurrence():
-    source = ExactMaterialReference("source-occurrence", "source-assertion", b"aa")
-    added = ExactMaterialReference("added-occurrence", "added-assertion", b"a")
+    source = ExactMaterialReference(
+        "source-occurrence", "source-assertion", "fixture-locality", b"aa"
+    )
+    added = ExactMaterialReference(
+        "added-occurrence", "added-assertion", "fixture-locality", b"a"
+    )
     added_occurrences = added_position_occurrences(
         (source,), (added,), boundary_identity="equal-material-addition"
     )
@@ -796,8 +795,12 @@ def test_equal_result_material_keeps_each_exact_added_position_occurrence():
 
 def test_a_different_source_order_is_refused_before_the_implementation_function():
     supplied = []
-    source = ExactMaterialReference("source-occurrence", "source-assertion", b"ab")
-    added = ExactMaterialReference("added-occurrence", "added-assertion", b"x")
+    source = ExactMaterialReference(
+        "source-occurrence", "source-assertion", "fixture-locality", b"ab"
+    )
+    added = ExactMaterialReference(
+        "added-occurrence", "added-assertion", "fixture-locality", b"x"
+    )
     implementation_function = CompiledImplementationFunction(
         identity="fixture",
         invocation=lambda material: supplied.append(material),
@@ -817,9 +820,15 @@ def test_a_different_source_order_is_refused_before_the_implementation_function(
 
 
 def test_equal_source_material_keeps_distinct_source_assertion_references():
-    first = ExactMaterialReference("source-a", "assertion-a", b"aa")
-    second = ExactMaterialReference("source-b", "assertion-b", b"aa")
-    added = ExactMaterialReference("added", "added-assertion", b"a")
+    first = ExactMaterialReference(
+        "source-a", "assertion-a", "fixture-locality", b"aa"
+    )
+    second = ExactMaterialReference(
+        "source-b", "assertion-b", "fixture-locality", b"aa"
+    )
+    added = ExactMaterialReference(
+        "added", "added-assertion", "fixture-locality", b"a"
+    )
 
     occurrences = added_position_occurrences(
         (first, second), (added,), boundary_identity="equal-source-addition"
@@ -832,6 +841,27 @@ def test_equal_source_material_keeps_distinct_source_assertion_references():
     }
     assert len({occurrence.act_occurrence_identity for occurrence in occurrences}) == 6
     assert len({occurrence.result_identity for occurrence in occurrences}) == 6
+
+
+def test_admitted_material_addition_refuses_cross_locality_material():
+    first = ExactMaterialReference(
+        "source-a", "assertion-a", "fixture-locality-a", b"a"
+    )
+    second = ExactMaterialReference(
+        "source-b", "assertion-b", "fixture-locality-b", b"b"
+    )
+    admission = admission_occurrence(
+        ((first, second),),
+        boundary_identity="cross-locality-admission",
+        source_material=(first, second),
+    )
+
+    with pytest.raises(ValueError, match="crossed Localities"):
+        admission_added_position_occurrences(
+            admission.result_reference,
+            boundary_identity="cross-locality-addition",
+            admitted_material_act_occurrence_count_limit=8,
+        )
 
 
 def test_every_three_byte_result_reaches_every_compiled_implementation_function(
@@ -972,8 +1002,12 @@ def test_addition_admission_refuses_incomplete_compare_coverage(
 
 
 def test_equal_result_material_keeps_distinct_occurrences_in_one_admission():
-    source = ExactMaterialReference("source", "source-assertion", b"aa")
-    added = ExactMaterialReference("added", "added-assertion", b"a")
+    source = ExactMaterialReference(
+        "source", "source-assertion", "fixture-locality", b"aa"
+    )
+    added = ExactMaterialReference(
+        "added", "added-assertion", "fixture-locality", b"a"
+    )
     implementation_function = CompiledImplementationFunction(
         identity="fixture", invocation=lambda material: material
     )
@@ -1243,9 +1277,15 @@ def test_added_position_pairs_find_same_and_different_complete_coordinates(
 
 
 def test_addition_compare_refuses_a_missing_source_reference():
-    first = ExactMaterialReference("source-a", "assertion-a", b"a")
-    second = ExactMaterialReference("source-b", "assertion-b", b"b")
-    added = ExactMaterialReference("added", "added-assertion", b"b")
+    first = ExactMaterialReference(
+        "source-a", "assertion-a", "fixture-locality", b"a"
+    )
+    second = ExactMaterialReference(
+        "source-b", "assertion-b", "fixture-locality", b"b"
+    )
+    added = ExactMaterialReference(
+        "added", "added-assertion", "fixture-locality", b"b"
+    )
     implementation_function = CompiledImplementationFunction(
         identity="fixture", invocation=lambda material: material
     )
@@ -1272,7 +1312,9 @@ def test_addition_compare_refuses_a_missing_source_reference():
 
 
 def test_addition_compare_refuses_a_result_without_its_act_occurrence():
-    source = ExactMaterialReference("source", "source-assertion", b"a")
+    source = ExactMaterialReference(
+        "source", "source-assertion", "fixture-locality", b"a"
+    )
     implementation_function = CompiledImplementationFunction(
         identity="fixture", invocation=lambda material: material
     )
@@ -1377,7 +1419,9 @@ def test_removal_compare_finds_same_and_different_return_coordinates(
 
 
 def test_removal_compare_refuses_a_result_without_its_act_occurrence():
-    source = ExactMaterialReference("source", "source-assertion", b"ab")
+    source = ExactMaterialReference(
+        "source", "source-assertion", "fixture-locality", b"ab"
+    )
     implementation_function = CompiledImplementationFunction(
         identity="fixture", invocation=lambda material: material
     )

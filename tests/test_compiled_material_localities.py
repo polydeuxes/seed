@@ -7,7 +7,6 @@ import sys
 import pytest
 
 from seed_runtime.byte_measurement import (
-    assertions_of_recorded_byte_measurement,
     record_byte_count_layer,
 )
 from seed_runtime.events import EventLedger
@@ -18,14 +17,15 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "scripts"))
 
 from compiled_format_invocation import (  # noqa: E402
-    ExactMaterialReference,
     admission_added_position_occurrences,
+    exact_byte_material_references,
 )
 from compiled_material_invocation import (  # noqa: E402
     MaterialImplementationFunction,
     admit_invocation_occurrences,
     compare_added_material_invocations,
     ingest_result_reference,
+    material_locality_admission_occurrences,
     reference_occurrences_across,
 )
 
@@ -44,16 +44,7 @@ def _measured_material():
         source_locality_identities=("one-byte-material",),
         recording_locality_identity="one-byte-measurement",
     )
-    assertions = assertions_of_recorded_byte_measurement(ledger, measurement.identity)
-    references = tuple(
-        ExactMaterialReference(
-            recorded_occurrence_identity=assertion.recorded_occurrence_identity,
-            assertion_identity=assertion.assertion_identity,
-            exact_material=bytes((assertion.representation,)),
-        )
-        for assertion in assertions or ()
-        if assertion.result == "count" and assertion.representation is not None
-    )
+    references = exact_byte_material_references(ledger, measurement.identity)
     return ledger, references
 
 
@@ -79,10 +70,13 @@ def material_invocations():
 @pytest.fixture(scope="module")
 def material_pair_invocations(material_invocations):
     ledger, references, source_occurrences = material_invocations
-    admission = admit_invocation_occurrences(
+    locality_admissions = material_locality_admission_occurrences(
         source_occurrences,
         boundary_identity="one-byte-compiled-material-admission",
     )
+    if len(locality_admissions) != 1:
+        raise ValueError("one exact material Locality is required")
+    admission = locality_admissions[0].material_admission
     additions = admission_added_position_occurrences(
         admission.result_reference,
         boundary_identity="one-byte-pair-addition",
@@ -117,6 +111,9 @@ def test_every_measured_byte_reaches_the_compiled_function(material_invocations)
     assert tuple(reference.exact_material for reference in references) == tuple(
         bytes((value,)) for value in range(256)
     )
+    assert {reference.locality_identity for reference in references} == {
+        "one-byte-measurement"
+    }
     assert tuple(occurrence.source_reference for occurrence in occurrences) == references
     assert len({occurrence.occurrence_identity for occurrence in occurrences}) == 256
     assert all(occurrence.returned for occurrence in occurrences)
