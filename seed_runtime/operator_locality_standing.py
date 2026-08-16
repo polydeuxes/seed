@@ -12,7 +12,9 @@ from seed_runtime.material_ingest import MATERIAL_INGEST_OCCURRED_KIND
 from seed_runtime.byte_measurement import (
     BYTE_MEASUREMENT_RECORDED_KIND,
     BYTE_MEASUREMENT_RESPONSIBLE_ACT_EVIDENCE_KIND,
+    BYTE_PAIR_MEASUREMENT_RECORDED_KIND,
     assertions_of_recorded_byte_measurement,
+    assertions_of_recorded_byte_position_pair_measurement,
 )
 from seed_runtime.occurrence_position_measurement import (
     OCCURRENCE_POSITION_ACT_EVIDENCE_KIND,
@@ -76,6 +78,7 @@ _MEASUREMENT_ACT_EVIDENCE_KINDS = {
 }
 _MEASUREMENT_RECORDED_KINDS = {
     BYTE_MEASUREMENT_RECORDED_KIND,
+    BYTE_PAIR_MEASUREMENT_RECORDED_KIND,
     OCCURRENCE_POSITION_RECORDED_KIND,
 }
 _STANDING_LOCALITY_CONTINUATION_KINDS = {
@@ -599,6 +602,14 @@ def advance_operator_locality_standing(
             continue
         if event.kind == BYTE_MEASUREMENT_RECORDED_KIND:
             assertions_of_recorded_byte_measurement(ledger, event.identity)
+            measurement_occurrences[event.identity] = (
+                _measurement_occurrence_coordinates(event)
+            )
+            continue
+        if event.kind == BYTE_PAIR_MEASUREMENT_RECORDED_KIND:
+            assertions_of_recorded_byte_position_pair_measurement(
+                ledger, event.identity
+            )
             measurement_occurrences[event.identity] = (
                 _measurement_occurrence_coordinates(event)
             )

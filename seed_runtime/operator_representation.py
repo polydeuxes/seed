@@ -6,7 +6,9 @@ from typing import Any
 
 from seed_runtime.byte_measurement import (
     BYTE_MEASUREMENT_RECORDED_KIND,
+    BYTE_PAIR_MEASUREMENT_RECORDED_KIND,
     assertions_of_recorded_byte_measurement,
+    assertions_of_recorded_byte_position_pair_measurement,
 )
 from seed_runtime.events import CORRUPTED, EventLedger
 from seed_runtime.identities import new_identity
@@ -68,6 +70,15 @@ EVENT_KIND_RESPONSIBILITIES = {
     REPRESENTATION_EMISSION_FAILURE_KIND: "02.Acts.A",
     REPRESENTATION_EMISSION_FAILURE_ACT_EVIDENCE_KIND: "02.Acts.A",
 }
+
+_MEASUREMENT_READERS = {
+    BYTE_MEASUREMENT_RECORDED_KIND: assertions_of_recorded_byte_measurement,
+    BYTE_PAIR_MEASUREMENT_RECORDED_KIND: (
+        assertions_of_recorded_byte_position_pair_measurement
+    ),
+    OCCURRENCE_POSITION_RECORDED_KIND: get_recorded_occurrence_position_measurement,
+}
+
 
 def _dimensions(
     *, identity, content, source, responsibility, authority, scope, occurrence,
@@ -324,16 +335,12 @@ def _exact_source_material(
             or measurement_reference != expected_reference
         ):
             raise ValueError("Representation source Measurement is not exact")
-        if source.kind == BYTE_MEASUREMENT_RECORDED_KIND:
-            finding = assertions_of_recorded_byte_measurement(ledger, source.identity)
-        elif source.kind == OCCURRENCE_POSITION_RECORDED_KIND:
-            finding = get_recorded_occurrence_position_measurement(
-                ledger, source.identity
-            )
-        else:
+        reader = _MEASUREMENT_READERS.get(source.kind)
+        if reader is None:
             raise ValueError(
                 "Representation source is not a declared Measurement result"
             )
+        finding = reader(ledger, source.identity)
         if finding is None:
             raise ValueError("Representation source Measurement is missing")
         requirements = read_yield_relation_requirements(
@@ -349,10 +356,7 @@ def _exact_source_material(
         if not all(requirements.values()) or source.exact_material is not None:
             raise ValueError("Representation source Measurement Yield is not exact")
         return None
-    if source.kind in {
-        BYTE_MEASUREMENT_RECORDED_KIND,
-        OCCURRENCE_POSITION_RECORDED_KIND,
-    }:
+    if source.kind in _MEASUREMENT_READERS:
         raise ValueError("Representation source Measurement is not carried by Standing")
     if source.identity not in exact_result_occurrences:
         raise ValueError("Representation source occurrence is not carried by Standing")
@@ -414,16 +418,10 @@ def read_operator_representation(
             or ledger.integrity_of(source.identity) == CORRUPTED
         ):
             raise ValueError("the recorded Representation source is not exact")
-        if source.kind == BYTE_MEASUREMENT_RECORDED_KIND:
-            source_finding = assertions_of_recorded_byte_measurement(
-                ledger, source.identity
-            )
-        elif source.kind == OCCURRENCE_POSITION_RECORDED_KIND:
-            source_finding = get_recorded_occurrence_position_measurement(
-                ledger, source.identity
-            )
-        else:
-            source_finding = None
+        reader = _MEASUREMENT_READERS.get(source.kind)
+        source_finding = (
+            reader(ledger, source.identity) if reader is not None else None
+        )
         if source_finding is not None:
             if event.exact_material is not None or source.exact_material is not None:
                 raise ValueError("the recorded Representation source is not exact")

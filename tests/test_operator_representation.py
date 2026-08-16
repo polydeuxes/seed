@@ -7,6 +7,7 @@ from seed_runtime.byte_measurement import (
     assertions_of_recorded_byte_measurement,
     record_byte_measurement_responsible_act_evidence,
     record_byte_measurement_result,
+    record_byte_position_pair_count_layer,
 )
 from seed_runtime.events import CORRUPTED, EventLedger
 from seed_runtime.operator_representation import (
@@ -18,6 +19,9 @@ from seed_runtime.material_ingest import ingest_material
 from seed_runtime.operator_locality_standing import read_operator_locality_standing
 from seed_runtime.occurrence_position_measurement import (
     get_recorded_occurrence_position_measurement,
+    measure_occurrence_position,
+    record_occurrence_position_measurement_responsible_act_evidence,
+    record_occurrence_position_measurement_result,
 )
 from seed_runtime.yield_evidence import read_yield_relation_requirements
 from seed_runtime.operator_console import run_persistent_operator_console
@@ -107,6 +111,29 @@ def _byte_measurement(ledger, *, locality="s"):
     return record_byte_measurement_result(
         ledger,
         responsible_act_evidence_event_identity=responsible_act_evidence.identity,
+    )
+
+
+def _structured_measurement(ledger, kind, *, locality="s"):
+    byte = _byte_measurement(ledger, locality=locality)
+    if kind == "pair":
+        return record_byte_position_pair_count_layer(
+            ledger,
+            source_measurement_event_identity=byte.identity,
+            recording_locality_identity=locality,
+        )
+    finding = measure_occurrence_position(
+        ledger, source_locality_identity=locality
+    )
+    act_evidence = record_occurrence_position_measurement_responsible_act_evidence(
+        ledger,
+        recording_locality_identity=locality,
+        finding=finding,
+    )
+    return record_occurrence_position_measurement_result(
+        ledger,
+        finding=finding,
+        responsible_act_evidence_event_identity=act_evidence.identity,
     )
 
 
@@ -233,6 +260,35 @@ def test_representation_addresses_one_exact_carried_measurement_result():
         "source_occurrence_reference"
     ] == measurement.identity
 
+    with pytest.raises(ValueError, match="carries no exact material"):
+        emit_operator_representation_material(
+            ledger,
+            representation=representation,
+            output_stream=BytesIO(),
+        )
+
+
+@pytest.mark.parametrize("measurement_kind", ("pair", "position"))
+def test_representation_addresses_each_structured_measurement_family(
+    measurement_kind,
+):
+    ledger = EventLedger()
+    measurement = _structured_measurement(ledger, measurement_kind)
+    standing = _standing(ledger)
+
+    representation = record_operator_representation(
+        ledger,
+        locality_identity="s",
+        locality_standing=standing,
+        source_occurrence_reference=measurement.identity,
+    )
+    event = ledger.get(representation["representation_event_identity"])
+
+    assert measurement.identity in standing["measurement_occurrences"]
+    assert event.exact_material is None
+    assert read_operator_representation(ledger, event.identity)[
+        "source_occurrence_reference"
+    ] == measurement.identity
     with pytest.raises(ValueError, match="carries no exact material"):
         emit_operator_representation_material(
             ledger,
