@@ -40,7 +40,7 @@ def test_each_supplied_material_carries_the_same_line_count(
     )
 
 
-def test_supplied_order_survives_distinct_localities_and_compiled_invocations(
+def test_one_drop_locality_preserves_each_supplied_occurrence_through_compiled_invocations(
     supplied_material_in_order,
 ):
     executable = shutil.which("cat")
@@ -50,12 +50,12 @@ def test_supplied_order_survives_distinct_localities_and_compiled_invocations(
     ingests = tuple(
         ingest_material(
             ledger,
-            locality_identity=f"supplied-material-{position}",
+            locality_identity="supplied-material",
             exact_bytes=material,
             source_role="fixture material",
-            source_boundary=f"fixture-{position}",
+            source_boundary="fixture",
         )
-        for position, material in enumerate(supplied_material_in_order)
+        for material in supplied_material_in_order
     )
     references = tuple(
         ingest_result_reference(ledger, event.identity) for event in ingests
@@ -72,9 +72,13 @@ def test_supplied_order_survives_distinct_localities_and_compiled_invocations(
         time_limit_second_count=31.0,
     )[0]
 
-    assert len({event.locality_identity for event in ingests}) == len(ingests)
-    assert tuple(reference.locality_identity for reference in references) == tuple(
-        event.locality_identity for event in ingests
+    assert {event.locality_identity for event in ingests} == {"supplied-material"}
+    assert {reference.locality_identity for reference in references} == {
+        "supplied-material"
+    }
+    assert len({event.identity for event in ingests}) == len(ingests)
+    assert len({reference.result_identity for reference in references}) == len(
+        references
     )
     assert tuple(occurrence.invocation_position for occurrence in occurrences) == tuple(
         range(len(references))
@@ -97,17 +101,13 @@ def test_supplied_order_survives_distinct_localities_and_compiled_invocations(
         occurrences,
         boundary_identity="supplied-material-locality-admission",
     )
-    assert tuple(admission.locality_identity for admission in admissions) == tuple(
-        reference.locality_identity for reference in references
-    )
-    assert tuple(admission.source_material for admission in admissions) == tuple(
-        (reference,) for reference in references
-    )
-    assert len({admission.act_occurrence_identity for admission in admissions}) == len(
-        admissions
-    )
+    assert len(admissions) == 1
+    assert admissions[0].locality_identity == "supplied-material"
+    assert admissions[0].source_material == references
+    assert len(admissions[0].admitted_material) == len(references)
+    assert all(len(material) == 1 for material in admissions[0].admitted_material)
     with pytest.raises(ValueError, match="crossed Localities"):
         replace(
             admissions[0],
-            locality_identity=admissions[1].locality_identity,
+            locality_identity="another-locality",
         )
