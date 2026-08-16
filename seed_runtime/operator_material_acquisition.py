@@ -8,6 +8,7 @@ from typing import Any
 from seed_runtime.event import Event
 from seed_runtime.events import CORRUPTED, EventLedger
 from seed_runtime.identities import new_identity
+from seed_runtime.material_ingest import MATERIAL_RESULT_UNKNOWNS
 from seed_runtime.operator_material_boundary import OperatorBoundaryMaterial
 from seed_runtime.operator_representation import read_operator_representation
 from seed_runtime.yield_evidence import (
@@ -245,10 +246,7 @@ def _result_material(
             "exact material establishes no represented relation",
             "this result establishes no other boundary occurrence",
         ],
-        "unknowns": [
-            "what this material represents remains Unknown",
-            "the asserted source relation remains Unknown",
-        ],
+        "unknowns": list(MATERIAL_RESULT_UNKNOWNS),
     }
 
 

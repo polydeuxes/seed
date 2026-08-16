@@ -17,6 +17,7 @@ EVENT_KIND_RESPONSIBILITIES = {
 MATERIAL_INGEST_RESPONSIBILITY = (
     "preserve exact material supplied at one source boundary"
 )
+MATERIAL_RESULT_UNKNOWNS = ("represented_relation", "source_relation")
 
 
 class MaterialIngestError(ValueError):
@@ -73,10 +74,7 @@ def ingest_material(
         "source_role": source_role,
         "source_boundary": source_boundary,
         "known_loss": list(known_loss),
-        "unknowns": [
-            "what this material represents remains Unknown",
-            "the asserted source relation remains Unknown",
-        ],
+        "unknowns": list(MATERIAL_RESULT_UNKNOWNS),
         "provenance_occurrence_references": list(
             provenance_occurrence_references
         ),
