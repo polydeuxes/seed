@@ -106,6 +106,7 @@ branches
 broad
 but
 by
+byte
 c
 callable
 calling
