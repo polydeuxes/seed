@@ -9,7 +9,11 @@ SCRIPT_DIRECTORY = Path(__file__).resolve().parent
 sys.path.insert(0, str(SCRIPT_DIRECTORY))
 sys.path.insert(0, str(SCRIPT_DIRECTORY.parent))
 
-from compiled_material_invocation import MaterialImplementationFunction
+from compiled_material_invocation import (
+    MaterialImplementationFunction,
+    admit_invocation_rows,
+    reference_occurrences_across,
+)
 from compiled_material_measurement_harness import measure
 from compiled_format_invocation import exact_byte_pair_material_references
 from seed_runtime.byte_measurement import (
@@ -90,6 +94,28 @@ def measured_material():
         ledger,
         exact_byte_pair_material_references(ledger, pair_occurrence.identity),
     )
+
+
+def measure_functions(
+    functions: tuple[MaterialImplementationFunction, ...],
+    references,
+    *,
+    time_limit_second_count: float,
+    max_workers: int,
+):
+    occurrences = reference_occurrences_across(
+        references,
+        boundary_identity="compiled-stream-invocation",
+        implementation_functions=functions,
+        max_workers=max_workers,
+        time_limit_second_count=time_limit_second_count,
+        material_byte_count_limit=65536,
+    )
+    admission = admit_invocation_rows(
+        occurrences,
+        boundary_identity="compiled-stream-admission",
+    )
+    return occurrences, admission
 def main() -> int:
     if not EXECUTABLE.is_file():
         return 2

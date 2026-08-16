@@ -3,18 +3,21 @@ from __future__ import annotations
 from pathlib import Path
 import sys
 
+import pytest
+
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "scripts"))
 
 from compiled_stream_measurement_harness import (  # noqa: E402
     implementation_functions,
+    measure_functions,
     measured_material,
 )
-from compiled_material_measurement_harness import measure  # noqa: E402
+from compiled_material_invocation import admit_invocation_rows  # noqa: E402
 
 
-def test_each_stream_function_preserves_one_exact_invocation_occurrence():
+def test_stream_functions_admit_the_same_exact_material_together():
     _, references = measured_material()
     functions = implementation_functions()
 
@@ -26,14 +29,33 @@ def test_each_stream_function_preserves_one_exact_invocation_occurrence():
         == "pipe,data"
         for function in functions[:4]
     )
-    for function in functions:
-        occurrences, exact, returned = measure(
-            function,
-            references[:1],
-            time_limit_second_count=5.0,
-            max_workers=1,
+    occurrences, admission = measure_functions(
+        functions,
+        references[:4],
+        time_limit_second_count=5.0,
+        max_workers=8,
+    )
+
+    assert len(occurrences) == len(functions)
+    assert all(
+        tuple(occurrence.source_reference for occurrence in row) == references[:4]
+        for row in occurrences
+    )
+    assert all(
+        tuple(occurrence.exact_material for occurrence in row)
+        == tuple(reference.exact_material for reference in references[:4])
+        for row in occurrences
+    )
+    assert admission.source_material == references[:4]
+    assert len(admission.invocation_result_references) == len(functions) * 4
+
+    with pytest.raises(ValueError, match="one exact function"):
+        admit_invocation_rows(
+            (occurrences[0], occurrences[0]),
+            boundary_identity="duplicate-stream-function",
         )
-        assert len(occurrences) == 1
-        assert len(occurrences[0].exact_material) == 2
-        assert occurrences[0].source_reference == references[0]
-        assert exact.source_material == returned.source_material == references[:1]
+    with pytest.raises(ValueError, match="same exact material"):
+        admit_invocation_rows(
+            (occurrences[0], tuple(reversed(occurrences[1]))),
+            boundary_identity="reordered-stream-material",
+        )

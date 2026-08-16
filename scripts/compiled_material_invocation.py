@@ -397,6 +397,78 @@ class MaterialAdmissionOccurrence:
 
 
 @dataclass(frozen=True, slots=True)
+class MaterialFunctionsAdmissionOccurrence:
+    admission_occurrence: AdmissionOccurrence
+    invocation_result_references: tuple[MaterialInvocationResultReference, ...]
+
+    def __post_init__(self) -> None:
+        if not isinstance(self.admission_occurrence, AdmissionOccurrence):
+            raise TypeError("material functions Admission requires its exact Act occurrence")
+        if (
+            type(self.invocation_result_references) is not tuple
+            or not self.invocation_result_references
+            or any(
+                not isinstance(reference, MaterialInvocationResultReference)
+                for reference in self.invocation_result_references
+            )
+        ):
+            raise TypeError("material functions Admission requires exact invocation results")
+        rows = {}
+        functions = {}
+        for reference in self.invocation_result_references:
+            occurrence = reference.invocation_occurrence
+            identity = occurrence.implementation_function_identity
+            function = functions.setdefault(identity, occurrence.implementation_function)
+            if function != occurrence.implementation_function:
+                raise ValueError("one implementation identity names different functions")
+            rows.setdefault(identity, []).append(occurrence)
+        source_rows = tuple(
+            tuple(occurrence.source_reference for occurrence in row)
+            for row in rows.values()
+        )
+        if any(source is None for row in source_rows for source in row):
+            raise ValueError("material functions Admission requires exact source references")
+        source_material = source_rows[0]
+        if any(row != source_material for row in source_rows[1:]):
+            raise ValueError("material functions require the same exact material")
+        if source_material != self.admission_occurrence.source_material:
+            raise ValueError("material functions Admission source differs from its invocations")
+        identities = tuple(rows)
+        same_coordinates = {}
+        for position, source in enumerate(source_material):
+            coordinates = tuple(
+                (identity, rows[identity][position].coordinates)
+                for identity in identities
+            )
+            same_coordinates.setdefault(coordinates, []).append(source)
+        admitted_material = tuple(
+            tuple(material) for material in same_coordinates.values()
+        )
+        if admitted_material != self.admission_occurrence.admitted_material:
+            raise ValueError("material functions Admission differs from its invocation results")
+
+    @property
+    def source_material(self):
+        return self.admission_occurrence.source_material
+
+    @property
+    def admitted_material(self):
+        return self.admission_occurrence.admitted_material
+
+    @property
+    def act_occurrence_identity(self) -> tuple[str, int]:
+        return self.admission_occurrence.act_occurrence_identity
+
+    @property
+    def result_identity(self) -> tuple[str, int, str]:
+        return self.admission_occurrence.result_identity
+
+    @property
+    def result_reference(self) -> AdmissionResultReference:
+        return AdmissionResultReference(admission_occurrence=self)
+
+
+@dataclass(frozen=True, slots=True)
 class MaterialReturnAdmissionOccurrence:
     admission_occurrence: AdmissionOccurrence
     invocation_result_references: tuple[MaterialInvocationResultReference, ...]
@@ -819,6 +891,68 @@ def admit_invocation_occurrences(
         admission_occurrence=admission,
         invocation_result_references=tuple(
             occurrence.result_reference for occurrence in occurrences
+        ),
+    )
+
+
+def admit_invocation_rows(
+    occurrence_rows: tuple[tuple[MaterialInvocationOccurrence, ...], ...],
+    *,
+    boundary_identity: str,
+    occurrence_position: int = 0,
+) -> MaterialFunctionsAdmissionOccurrence:
+    if type(occurrence_rows) is not tuple or not occurrence_rows:
+        raise TypeError("material functions Admission requires exact invocation tuples")
+    if any(
+        type(row) is not tuple
+        or not row
+        or any(
+            not isinstance(occurrence, MaterialInvocationOccurrence)
+            for occurrence in row
+        )
+        for row in occurrence_rows
+    ):
+        raise TypeError("material functions Admission requires exact invocation tuples")
+    identities = tuple(
+        row[0].implementation_function_identity for row in occurrence_rows
+    )
+    if len(set(identities)) != len(identities) or any(
+        any(
+            occurrence.implementation_function_identity != identity
+            for occurrence in row
+        )
+        for identity, row in zip(identities, occurrence_rows)
+    ):
+        raise ValueError("each material functions tuple requires one exact function")
+    source_rows = tuple(
+        tuple(occurrence.source_reference for occurrence in row)
+        for row in occurrence_rows
+    )
+    if any(source is None for row in source_rows for source in row):
+        raise ValueError("material functions Admission requires exact source references")
+    source_material = source_rows[0]
+    if any(row != source_material for row in source_rows[1:]):
+        raise ValueError("material functions require the same exact material")
+    same_coordinates = {}
+    for position, source in enumerate(source_material):
+        coordinates = tuple(
+            (identity, row[position].coordinates)
+            for identity, row in zip(identities, occurrence_rows)
+        )
+        same_coordinates.setdefault(coordinates, []).append(source)
+    flattened = tuple(
+        occurrence for row in occurrence_rows for occurrence in row
+    )
+    admission = admission_occurrence(
+        tuple(tuple(material) for material in same_coordinates.values()),
+        boundary_identity=boundary_identity,
+        occurrence_position=occurrence_position,
+        source_material=source_material,
+    )
+    return MaterialFunctionsAdmissionOccurrence(
+        admission_occurrence=admission,
+        invocation_result_references=tuple(
+            occurrence.result_reference for occurrence in flattened
         ),
     )
 
