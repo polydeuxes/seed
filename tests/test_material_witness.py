@@ -1696,7 +1696,7 @@ def test_equal_result_material_keeps_each_exact_added_position_occurrence():
         )
         for occurrence in added_occurrences
     )
-    with pytest.raises(ValueError, match="crossed Localities"):
+    with pytest.raises(ValueError, match="distinct Localities"):
         replace(added_occurrences[0], locality_identity="other-locality")
 
 
@@ -1831,7 +1831,7 @@ def test_admitted_material_addition_refuses_cross_locality_material():
         source_material=(first, second),
     )
 
-    with pytest.raises(ValueError, match="crossed Localities"):
+    with pytest.raises(ValueError, match="distinct Localities"):
         admission_added_position_occurrences(
             admission.result_reference,
             boundary_identity="cross-locality-addition",

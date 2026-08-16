@@ -88,7 +88,7 @@ def _source_standing_reference(
         ) from error
     if representation["locality_identity"] != source_locality_identity:
         raise StandingLocalityContinuationError(
-            "Standing Locality continuation crossed its source Locality"
+            "Standing Locality continuation has a different source Locality"
         )
 
     representation_event = ledger.get(addressed_representation_event_identity)

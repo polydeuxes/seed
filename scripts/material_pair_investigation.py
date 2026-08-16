@@ -18,7 +18,7 @@ from seed_runtime.events import EventLedger
 
 
 @dataclass(frozen=True, slots=True)
-class ExactRecurrentMaterialPairReference:
+class ExactReferenceToRecurrentMaterialPair:
     recorded_occurrence_identity: str
     recurrence_assertion_identity: str
     count_assertion_identity: str
@@ -63,10 +63,10 @@ class ExactRecurrentMaterialPairReference:
         )
 
 
-def exact_recurrent_material_pair_references(
+def exact_references_to_recurrent_material_pairs(
     ledger: EventLedger,
     measurement_occurrence_identity: str,
-) -> tuple[ExactRecurrentMaterialPairReference, ...]:
+) -> tuple[ExactReferenceToRecurrentMaterialPair, ...]:
     """Read pair subjects whose exact Measurement established recurrence."""
 
     if not isinstance(ledger, EventLedger):
@@ -97,7 +97,7 @@ def exact_recurrent_material_pair_references(
         ):
             raise ValueError("recurrent pair carries no exact count Assertion support")
         found.append(
-            ExactRecurrentMaterialPairReference(
+            ExactReferenceToRecurrentMaterialPair(
                 recorded_occurrence_identity=event.identity,
                 recurrence_assertion_identity=assertion.assertion_identity,
                 count_assertion_identity=support[0]["assertion_identity"],
@@ -111,47 +111,52 @@ def exact_recurrent_material_pair_references(
 
 
 @dataclass(frozen=True, slots=True)
-class ExactRecurrentMaterialPairSubject:
-    pair_reference: ExactRecurrentMaterialPairReference
-    premise_occurrences: tuple[ExactPositionPairMaterialReference, ...]
+class ExactSubjectOfRecurrentMaterialPair:
+    reference_to_recurrent_material_pair: ExactReferenceToRecurrentMaterialPair
+    premise_occurrences_of_material_pair: tuple[ExactPositionPairMaterialReference, ...]
 
     def __post_init__(self) -> None:
         if (
-            type(self.pair_reference) is not ExactRecurrentMaterialPairReference
-            or type(self.premise_occurrences) is not tuple
-            or len(self.premise_occurrences) < 2
+            type(self.reference_to_recurrent_material_pair)
+            is not ExactReferenceToRecurrentMaterialPair
+            or type(self.premise_occurrences_of_material_pair) is not tuple
+            or len(self.premise_occurrences_of_material_pair) < 2
             or any(
                 type(occurrence) is not ExactPositionPairMaterialReference
-                for occurrence in self.premise_occurrences
+                for occurrence in self.premise_occurrences_of_material_pair
             )
         ):
             raise TypeError("pair subject requires one exact reference and occurrences")
         if len(
-            {occurrence.occurrence_identity for occurrence in self.premise_occurrences}
-        ) != len(self.premise_occurrences):
+            {
+                occurrence.occurrence_identity
+                for occurrence in self.premise_occurrences_of_material_pair
+            }
+        ) != len(self.premise_occurrences_of_material_pair):
             raise ValueError("pair premise occurrence entered twice")
-        expected = self.pair_reference.exact_material
+        expected = self.reference_to_recurrent_material_pair.exact_material
         if any(
-            occurrence.locality_identity != self.pair_reference.locality_identity
+            occurrence.locality_identity
+            != self.reference_to_recurrent_material_pair.locality_identity
             or occurrence.exact_material != expected
-            for occurrence in self.premise_occurrences
+            for occurrence in self.premise_occurrences_of_material_pair
         ):
             raise ValueError("pair premise differs from its exact yielded subject")
 
     @property
     def pair_identity(self) -> tuple[str, str]:
-        return self.pair_reference.pair_identity
+        return self.reference_to_recurrent_material_pair.pair_identity
 
 
 @dataclass(frozen=True, slots=True)
-class ExactMaterialPairOccurrence:
-    pair_subject: ExactRecurrentMaterialPairSubject
+class ExactOccurrenceOfMaterialPair:
+    subject_of_recurrent_material_pair: ExactSubjectOfRecurrentMaterialPair
     first_occurrence_reference: ExactPositionMaterialReference
     second_occurrence_reference: ExactPositionMaterialReference
 
     def __post_init__(self) -> None:
         if (
-            type(self.pair_subject) is not ExactRecurrentMaterialPairSubject
+            type(self.subject_of_recurrent_material_pair) is not ExactSubjectOfRecurrentMaterialPair
             or type(self.first_occurrence_reference)
             is not ExactPositionMaterialReference
             or type(self.second_occurrence_reference)
@@ -165,11 +170,14 @@ class ExactMaterialPairOccurrence:
         if (
             first.source_reference != second.source_reference
             or first.locality_identity
-            != self.pair_subject.pair_reference.locality_identity
+            != self.subject_of_recurrent_material_pair
+            .reference_to_recurrent_material_pair.locality_identity
             or first.exact_material
-            != self.pair_subject.pair_reference.exact_material[:1]
+            != self.subject_of_recurrent_material_pair
+            .reference_to_recurrent_material_pair.exact_material[:1]
             or second.exact_material
-            != self.pair_subject.pair_reference.exact_material[1:]
+            != self.subject_of_recurrent_material_pair
+            .reference_to_recurrent_material_pair.exact_material[1:]
         ):
             raise ValueError("pair occurrence differs from its exact participants")
         if first.position == second.position:
@@ -177,7 +185,7 @@ class ExactMaterialPairOccurrence:
 
     @property
     def pair_identity(self):
-        return self.pair_subject.pair_identity
+        return self.subject_of_recurrent_material_pair.pair_identity
 
     @property
     def locality_identity(self) -> str:
@@ -209,66 +217,75 @@ class ExactMaterialPairOccurrence:
 
 
 @dataclass(frozen=True, slots=True)
-class ExactRecurrentMaterialPairPositionPremise:
+class ExactPositionPremiseOfRecurrentMaterialPair:
     boundary_identity: str
-    pair_subject: ExactRecurrentMaterialPairSubject
-    supporting_occurrences: tuple[ExactMaterialPairOccurrence, ...]
+    subject_of_recurrent_material_pair: ExactSubjectOfRecurrentMaterialPair
+    occurrences_supporting_position_premise: tuple[ExactOccurrenceOfMaterialPair, ...]
 
     def __post_init__(self) -> None:
         if (
             type(self.boundary_identity) is not str
             or not self.boundary_identity
-            or type(self.pair_subject) is not ExactRecurrentMaterialPairSubject
-            or type(self.supporting_occurrences) is not tuple
-            or len(self.supporting_occurrences) < 2
+            or type(self.subject_of_recurrent_material_pair)
+            is not ExactSubjectOfRecurrentMaterialPair
+            or type(self.occurrences_supporting_position_premise) is not tuple
+            or len(self.occurrences_supporting_position_premise) < 2
             or any(
-                type(occurrence) is not ExactMaterialPairOccurrence
-                for occurrence in self.supporting_occurrences
+                type(occurrence) is not ExactOccurrenceOfMaterialPair
+                for occurrence in self.occurrences_supporting_position_premise
             )
         ):
             raise TypeError(
-                "pair position premise requires exact supporting occurrences"
+                "position premise of pair requires exact supporting occurrences"
             )
         if any(
-            occurrence.pair_subject != self.pair_subject
-            for occurrence in self.supporting_occurrences
+            occurrence.subject_of_recurrent_material_pair != self.subject_of_recurrent_material_pair
+            for occurrence in self.occurrences_supporting_position_premise
         ):
-            raise ValueError("pair position premise has a different exact subject")
+            raise ValueError(
+                "position premise of pair has a different exact subject"
+            )
         if len(
             {
                 occurrence.occurrence_identity
-                for occurrence in self.supporting_occurrences
+                for occurrence in self.occurrences_supporting_position_premise
             }
-        ) != len(self.supporting_occurrences):
+        ) != len(self.occurrences_supporting_position_premise):
             raise ValueError("pair occurrence entered position premise twice")
         expected = tuple(
             (
                 occurrence.first_occurrence_reference,
                 occurrence.second_occurrence_reference,
             )
-            for occurrence in self.supporting_occurrences
+            for occurrence in self.occurrences_supporting_position_premise
         )
         carried = tuple(
             (reference.first_reference, reference.second_reference)
-            for reference in self.pair_subject.premise_occurrences
+            for reference in (
+                self.subject_of_recurrent_material_pair
+                .premise_occurrences_of_material_pair
+            )
         )
         if expected != carried:
             raise ValueError(
-                "pair position premise differs from its exact occurrence support"
+                "position premise of pair differs from its exact occurrence support"
             )
 
     @property
     def pair_identity(self):
-        return self.pair_subject.pair_identity
+        return self.subject_of_recurrent_material_pair.pair_identity
 
     @property
     def locality_identity(self) -> str:
-        return self.pair_subject.pair_reference.locality_identity
+        return (
+            self.subject_of_recurrent_material_pair
+            .reference_to_recurrent_material_pair.locality_identity
+        )
 
     @property
-    def position_relations(self) -> tuple[tuple[str, int], ...]:
+    def relations_of_positions(self) -> tuple[tuple[str, int], ...]:
         found = []
-        for occurrence in self.supporting_occurrences:
+        for occurrence in self.occurrences_supporting_position_premise:
             relation = (occurrence.direction, occurrence.displacement)
             if relation not in found:
                 found.append(relation)
@@ -276,11 +293,13 @@ class ExactRecurrentMaterialPairPositionPremise:
 
 
 @dataclass(frozen=True, slots=True)
-class ExactMaterialPairCompareOccurrence:
+class ExactCompareOccurrenceOfMaterialPair:
     boundary_identity: str
     occurrence_position: int
-    position_premise: ExactRecurrentMaterialPairPositionPremise
-    current_occurrence: ExactMaterialPairOccurrence
+    position_premise_of_recurrent_material_pair: (
+        ExactPositionPremiseOfRecurrentMaterialPair
+    )
+    current_occurrence_of_material_pair: ExactOccurrenceOfMaterialPair
 
     def __post_init__(self) -> None:
         if (
@@ -288,31 +307,35 @@ class ExactMaterialPairCompareOccurrence:
             or not self.boundary_identity
             or type(self.occurrence_position) is not int
             or self.occurrence_position < 0
-            or type(self.position_premise)
-            is not ExactRecurrentMaterialPairPositionPremise
-            or type(self.current_occurrence) is not ExactMaterialPairOccurrence
+            or type(self.position_premise_of_recurrent_material_pair)
+            is not ExactPositionPremiseOfRecurrentMaterialPair
+            or type(self.current_occurrence_of_material_pair) is not ExactOccurrenceOfMaterialPair
         ):
             raise TypeError("Compare requires exact pair occurrences and boundary")
         if (
-            self.position_premise.pair_identity
-            != self.current_occurrence.pair_identity
-            or self.position_premise.locality_identity
-            != self.current_occurrence.locality_identity
+            self.position_premise_of_recurrent_material_pair.pair_identity
+            != self.current_occurrence_of_material_pair.pair_identity
+            or self.position_premise_of_recurrent_material_pair.locality_identity
+            != self.current_occurrence_of_material_pair.locality_identity
         ):
             raise ValueError("Compare cannot cross pair identities or Localities")
         current_source_identity = (
-            self.current_occurrence.first_occurrence_reference.source_reference
+            self.current_occurrence_of_material_pair.first_occurrence_reference.source_reference
             .recorded_occurrence_identity
         )
         premise_source_identities = (
-            self.position_premise.pair_subject.pair_reference
+            self.position_premise_of_recurrent_material_pair
+            .subject_of_recurrent_material_pair.reference_to_recurrent_material_pair
             .source_occurrence_identities
         )
         if current_source_identity in premise_source_identities:
             raise ValueError(
                 "Compare requires material outside position premise support"
             )
-        if self.boundary_identity == self.position_premise.boundary_identity:
+        if (
+            self.boundary_identity
+            == self.position_premise_of_recurrent_material_pair.boundary_identity
+        ):
             raise ValueError("position premise and Compare require distinct boundaries")
 
     @property
@@ -322,31 +345,37 @@ class ExactMaterialPairCompareOccurrence:
     @property
     def distinction(self) -> bool:
         return (
-            self.current_occurrence.direction,
-            self.current_occurrence.displacement,
-        ) not in self.position_premise.position_relations
+            self.current_occurrence_of_material_pair.direction,
+            self.current_occurrence_of_material_pair.displacement,
+        ) not in (
+            self.position_premise_of_recurrent_material_pair
+            .relations_of_positions
+        )
 
     @property
     def matching_support_occurrence_identities(
         self,
     ) -> tuple[tuple[IngestResultReference, int, int], ...]:
         current_relation = (
-            self.current_occurrence.direction,
-            self.current_occurrence.displacement,
+            self.current_occurrence_of_material_pair.direction,
+            self.current_occurrence_of_material_pair.displacement,
         )
         return tuple(
             occurrence.occurrence_identity
-            for occurrence in self.position_premise.supporting_occurrences
+            for occurrence in (
+                self.position_premise_of_recurrent_material_pair
+                .occurrences_supporting_position_premise
+            )
             if (occurrence.direction, occurrence.displacement) == current_relation
         )
 
 
-def recurrent_adjacent_pair_subjects(
+def exact_subjects_of_recurrent_adjacent_material_pairs(
     source_references: tuple[
         IngestResultReference, ...
     ],
-    pair_references: tuple[ExactRecurrentMaterialPairReference, ...],
-) -> tuple[ExactRecurrentMaterialPairSubject, ...]:
+    pair_references: tuple[ExactReferenceToRecurrentMaterialPair, ...],
+) -> tuple[ExactSubjectOfRecurrentMaterialPair, ...]:
     """Return yielded pair subjects with two resolved premise occurrences."""
 
     if (
@@ -364,7 +393,7 @@ def recurrent_adjacent_pair_subjects(
         type(pair_references) is not tuple
         or not pair_references
         or any(
-            type(reference) is not ExactRecurrentMaterialPairReference
+            type(reference) is not ExactReferenceToRecurrentMaterialPair
             for reference in pair_references
         )
     ):
@@ -402,33 +431,37 @@ def recurrent_adjacent_pair_subjects(
             second = ExactPositionMaterialReference(source, position + 1, material[1:])
             found.append(ExactPositionPairMaterialReference(first, second, material))
     return tuple(
-        ExactRecurrentMaterialPairSubject(
-            pair_reference=by_material[material],
-            premise_occurrences=tuple(found),
+        ExactSubjectOfRecurrentMaterialPair(
+            reference_to_recurrent_material_pair=by_material[material],
+            premise_occurrences_of_material_pair=tuple(found),
         )
         for material, found in sorted(premises.items())
         if len(found) >= 2
     )
 
 
-def exact_pair_occurrences(
-    pair_subject: ExactRecurrentMaterialPairSubject,
+def exact_occurrences_of_material_pair(
+    subject_of_recurrent_material_pair: ExactSubjectOfRecurrentMaterialPair,
     source_reference: IngestResultReference,
-) -> tuple[ExactMaterialPairOccurrence, ...]:
+) -> tuple[ExactOccurrenceOfMaterialPair, ...]:
     """Enumerate every ordered occurrence of one evidenced pair in one source."""
 
-    if type(pair_subject) is not ExactRecurrentMaterialPairSubject:
+    if type(subject_of_recurrent_material_pair) is not ExactSubjectOfRecurrentMaterialPair:
         raise TypeError("pair occurrences require one exact subject")
     if type(source_reference) is not IngestResultReference:
         raise TypeError("pair occurrences require one exact source reference")
     exact = source_reference.exact_material
     if (
         source_reference.locality_identity
-        != pair_subject.pair_reference.locality_identity
+        != subject_of_recurrent_material_pair.reference_to_recurrent_material_pair.locality_identity
     ):
         raise ValueError("pair occurrence source has a different Locality")
-    first_material = pair_subject.pair_reference.exact_material[:1]
-    second_material = pair_subject.pair_reference.exact_material[1:]
+    exact_pair_material = (
+        subject_of_recurrent_material_pair
+        .reference_to_recurrent_material_pair.exact_material
+    )
+    first_material = exact_pair_material[:1]
+    second_material = exact_pair_material[1:]
     first_positions = tuple(
         position
         for position, material in enumerate(exact)
@@ -445,8 +478,8 @@ def exact_pair_occurrences(
             if first_position == second_position:
                 continue
             found.append(
-                ExactMaterialPairOccurrence(
-                    pair_subject=pair_subject,
+                ExactOccurrenceOfMaterialPair(
+                    subject_of_recurrent_material_pair=subject_of_recurrent_material_pair,
                     first_occurrence_reference=ExactPositionMaterialReference(
                         source_reference, first_position, first_material
                     ),
@@ -458,54 +491,59 @@ def exact_pair_occurrences(
     return tuple(found)
 
 
-def exact_pair_position_premise(
-    pair_subject: ExactRecurrentMaterialPairSubject,
+def exact_position_premise_of_recurrent_material_pair(
+    subject_of_recurrent_material_pair: ExactSubjectOfRecurrentMaterialPair,
     *,
     boundary_identity: str,
-) -> ExactRecurrentMaterialPairPositionPremise:
+) -> ExactPositionPremiseOfRecurrentMaterialPair:
     """Carry exact recurrent-pair position support at one boundary."""
 
-    if type(pair_subject) is not ExactRecurrentMaterialPairSubject:
-        raise TypeError("pair position premise requires one exact subject")
-    supporting_occurrences = tuple(
-        ExactMaterialPairOccurrence(
-            pair_subject=pair_subject,
+    if type(subject_of_recurrent_material_pair) is not ExactSubjectOfRecurrentMaterialPair:
+        raise TypeError("position premise of pair requires one exact subject")
+    occurrences_supporting_position_premise = tuple(
+        ExactOccurrenceOfMaterialPair(
+            subject_of_recurrent_material_pair=subject_of_recurrent_material_pair,
             first_occurrence_reference=reference.first_reference,
             second_occurrence_reference=reference.second_reference,
         )
-        for reference in pair_subject.premise_occurrences
+        for reference in subject_of_recurrent_material_pair.premise_occurrences_of_material_pair
     )
-    return ExactRecurrentMaterialPairPositionPremise(
+    return ExactPositionPremiseOfRecurrentMaterialPair(
         boundary_identity=boundary_identity,
-        pair_subject=pair_subject,
-        supporting_occurrences=supporting_occurrences,
+        subject_of_recurrent_material_pair=subject_of_recurrent_material_pair,
+        occurrences_supporting_position_premise=occurrences_supporting_position_premise,
     )
 
 
-def compare_pair_occurrences(
-    position_premise: ExactRecurrentMaterialPairPositionPremise,
-    current_occurrences: tuple[ExactMaterialPairOccurrence, ...],
+def compare_occurrences_of_material_pair(
+    position_premise_of_recurrent_material_pair: (
+        ExactPositionPremiseOfRecurrentMaterialPair
+    ),
+    current_occurrences: tuple[ExactOccurrenceOfMaterialPair, ...],
     *,
     boundary_identity: str,
-) -> tuple[ExactMaterialPairCompareOccurrence, ...]:
+) -> tuple[ExactCompareOccurrenceOfMaterialPair, ...]:
     """Compare current coordinates with one exact bounded position premise."""
 
     if (
-        type(position_premise) is not ExactRecurrentMaterialPairPositionPremise
+        type(position_premise_of_recurrent_material_pair)
+        is not ExactPositionPremiseOfRecurrentMaterialPair
         or type(current_occurrences) is not tuple
         or not current_occurrences
         or any(
-            type(occurrence) is not ExactMaterialPairOccurrence
+            type(occurrence) is not ExactOccurrenceOfMaterialPair
             for occurrence in current_occurrences
         )
     ):
         raise TypeError("Compare requires exact pair occurrences")
     return tuple(
-        ExactMaterialPairCompareOccurrence(
+        ExactCompareOccurrenceOfMaterialPair(
             boundary_identity=boundary_identity,
             occurrence_position=position,
-            position_premise=position_premise,
-            current_occurrence=current,
+            position_premise_of_recurrent_material_pair=(
+                position_premise_of_recurrent_material_pair
+            ),
+            current_occurrence_of_material_pair=current,
         )
         for position, current in enumerate(current_occurrences)
     )

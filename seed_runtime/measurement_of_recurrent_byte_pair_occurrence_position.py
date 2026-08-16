@@ -293,7 +293,9 @@ def _references_to_recorded_recurrent_byte_pairs(
             or count.result != "count"
             or count.representation != recurrence.representation
         ):
-            raise ValueError("the recurrent pair carries crossed count support")
+            raise ValueError(
+                "the recurrent pair count support identifies a different Assertion"
+            )
         reference = ReferenceToRecordedRecurrentBytePair(
             recorded_occurrence_identity=event.identity,
             recurrence_assertion_identity=recurrence.assertion_identity,
@@ -342,7 +344,7 @@ def _measure_through(
 ) -> FindingOfRecurrentBytePairOccurrencePositions:
     source = _exact_ingest_event(ledger, source_ingest_occurrence_identity)
     if source.locality_identity != pair_reference.locality_identity:
-        raise ValueError("pair subject and measured source crossed Localities")
+        raise ValueError("pair subject and measured source have distinct Localities")
     ledger.occurrences_in_append_order(
         (pair_reference.recorded_occurrence_identity, source.identity),
         locality_identity=source.locality_identity,
@@ -620,7 +622,9 @@ def _finding_of_measurement_from_evidence_of_act_occurrence(
         through=EventLedgerBoundary(boundary["identity"]),
     )
     if finding.source_locality_identity != source_localities[0]:
-        raise ValueError("pair occurrence Act Evidence crossed source Localities")
+        raise ValueError(
+            "pair occurrence Act Evidence names a different source Locality"
+        )
     return finding
 
 
@@ -783,7 +787,9 @@ def record_result_of_measurement_of_recurrent_byte_pair_occurrence_position(
         act_occurrence_identity=act_evidence.material.get("act_occurrence_identity"),
     )
     if act_evidence.material != expected_act:
-        raise ValueError("pair occurrence result crossed its exact Act Evidence")
+        raise ValueError(
+            "pair occurrence result differs from its exact Act Evidence"
+        )
     act_occurrence_identity = act_evidence.material["act_occurrence_identity"]
     for event in ledger.list_locality(act_evidence.locality_identity):
         if event.kind in {
@@ -892,7 +898,9 @@ def get_recorded_result_of_measurement_of_recurrent_byte_pair_occurrence_positio
         act_occurrence_identity=material.get("act_occurrence_identity"),
     )
     if act_evidence.material != expected_act:
-        raise ValueError("pair occurrence result crossed its exact Act Evidence")
+        raise ValueError(
+            "pair occurrence result differs from its exact Act Evidence"
+        )
     result = _material_of_result_of_measurement(
         finding,
         result_identity=material.get("result_identity"),

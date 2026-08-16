@@ -313,7 +313,7 @@ def _exact_source_material(
     if source is None:
         raise ValueError("Representation source occurrence is missing")
     if source.locality_identity != locality_identity:
-        raise ValueError("Representation source occurrence crossed Localities")
+        raise ValueError("Representation source occurrence has a distinct Locality")
     exact_result_occurrences = locality_standing.get("exact_result_occurrences", {})
     if type(exact_result_occurrences) is not dict:
         raise ValueError("Representation requires exact carried result occurrences")

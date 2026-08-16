@@ -356,7 +356,7 @@ def test_memory_availability_does_not_move_source_material_into_the_destination(
         "evidence_event_identity"
     ]
 
-    with pytest.raises(ValueError, match="crossed Localities"):
+    with pytest.raises(ValueError, match="distinct Locality"):
         record_operator_representation(
             ledger,
             locality_identity=continuation.locality_identity,

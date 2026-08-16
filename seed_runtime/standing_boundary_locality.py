@@ -104,7 +104,7 @@ def _resolve_one_carried_anchor(
     event = ledger.get(event_identity)
     if event is None or event.locality_identity != source_locality:
         raise RecordedStandingBoundaryLocalityError(
-            "recorded Standing boundary Locality crossed its carried occurrence"
+            "recorded Standing boundary Locality names a different carried occurrence"
         )
     if kind == "anchor":
         return _anchor_reference(ledger, event_identity)

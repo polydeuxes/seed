@@ -242,14 +242,14 @@ def test_no_anchor_and_several_anchors_both_refuse_selection():
         _assignment(ledger, ambiguous)
 
 
-def test_crossed_or_corrupted_anchor_refuses_before_a_destination_is_written():
+def test_different_locality_or_corrupted_anchor_refuses_before_destination_write():
     ledger = _IntegrityAdversaryLedger()
     anchor, standing = _standing_with_recorded_boundary_reference(ledger)
-    crossed = deepcopy(standing)
-    crossed["locality_identity"] = "elsewhere"
+    different_locality = deepcopy(standing)
+    different_locality["locality_identity"] = "elsewhere"
     before = tuple(ledger.list())
-    with pytest.raises(RecordedStandingBoundaryLocalityError, match="crossed"):
-        _assignment(ledger, crossed)
+    with pytest.raises(RecordedStandingBoundaryLocalityError, match="different"):
+        _assignment(ledger, different_locality)
     assert tuple(ledger.list()) == before
 
     ledger.corrupted.add(anchor.identity)

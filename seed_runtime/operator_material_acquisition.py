@@ -71,7 +71,7 @@ def _source_standing_reference(
         )
     if locality_standing.get("locality_identity") != locality_identity:
         raise OperatorMaterialAcquireError(
-            "operator material acquire crossed its Locality Standing"
+            "operator material acquire has a different Standing Locality"
         )
     standing_boundary = locality_standing.get("as_of_event_identity")
     _require_identity(
@@ -88,7 +88,7 @@ def _source_standing_reference(
         ) from error
     if representation["locality_identity"] != locality_identity:
         raise OperatorMaterialAcquireError(
-            "operator material acquire crossed its addressed Representation Locality"
+            "operator material acquire has a different Representation Locality"
         )
     ordered_identities = (
         (addressed_representation_event_identity,)

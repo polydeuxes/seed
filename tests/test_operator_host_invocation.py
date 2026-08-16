@@ -243,7 +243,7 @@ def test_system_material_is_durable_and_emitted_before_the_provider_resumes():
     ]
 
 
-def test_crossed_system_boundary_is_refused_before_a_second_ingest_or_egress():
+def test_reused_system_boundary_is_refused_before_second_ingest_or_egress():
     ledger = EventLedger()
     raw_output = BytesIO()
 
@@ -497,7 +497,7 @@ def test_supplied_yield_cannot_be_replaced_by_another_occurrence():
     output.material["provenance_occurrence_references"] = [
         another_command.identity
     ]
-    crossed = read_requirements_of_yield_relation(
+    different_command = read_requirements_of_yield_relation(
         ledger,
         recorded_result_event_identity=output.identity,
         evidence_of_yield_relation_event_identity=output.material["evidence_of_yield_relation_identity"],
@@ -505,10 +505,10 @@ def test_supplied_yield_cannot_be_replaced_by_another_occurrence():
             "responsible_act_evidence_identity"
         ],
     )
-    assert not all(crossed.values())
+    assert not all(different_command.values())
 
 
-def test_supplied_result_refuses_missing_crossed_or_corrupted_command():
+def test_supplied_result_refuses_missing_different_or_corrupted_command():
     ledger = EventLedger()
     other_locality = _command(ledger, locality="other")
 

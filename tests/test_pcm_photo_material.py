@@ -451,7 +451,7 @@ def test_material_admission_refuses_a_result_from_another_function(
     media_admissions, media_invocations
 ):
     admission = media_admissions[0]
-    crossed = (
+    substituted = (
         *admission.invocation_result_references[:-1],
         media_invocations[1][-1].result_reference,
     )
@@ -459,5 +459,5 @@ def test_material_admission_refuses_a_result_from_another_function(
     with pytest.raises(ValueError, match="cannot cross implementation functions"):
         MaterialAdmissionOccurrence(
             admission_occurrence=admission.admission_occurrence,
-            invocation_result_references=crossed,
+            invocation_result_references=substituted,
         )

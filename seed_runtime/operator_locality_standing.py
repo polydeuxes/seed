@@ -227,7 +227,7 @@ def read_operator_locality_standing_as_of(
             or ledger.integrity_of(as_of_event_identity) == CORRUPTED
         ):
             raise ValueError(
-                "Standing read crossed or lost its exact as-of occurrence"
+                "Standing as-of occurrence is absent, corrupted, or in another Locality"
             )
         boundary = ledger.append_boundary_through_occurrence(
             as_of_event_identity
@@ -292,7 +292,7 @@ def _source_reference_from_checkout(
     )
     if anchor.get("result_identity") != recorded["result_identity"]:
         raise CarriedRecordedStandingError(
-            "recorded Standing Locality relation crossed its boundary result"
+            "recorded Standing Locality relation names a different boundary result"
         )
     return _source_reference_from_checkpoint(ledger, anchor_occurrence_identity)
 
@@ -350,7 +350,7 @@ def read_carried_recorded_standing(
     event = ledger.get(recorded_occurrence_identity)
     if event is None or event.locality_identity != locality_identity:
         raise CarriedRecordedStandingError(
-            "recorded Standing occurrence crossed its carrying Locality"
+            "recorded Standing occurrence has a different carrying Locality"
         )
 
     if matches[0] == "checkpoint":

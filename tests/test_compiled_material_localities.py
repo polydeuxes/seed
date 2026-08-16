@@ -450,7 +450,7 @@ def test_distinct_admission_results_do_not_cross_localities_or_split_a_tuple():
         source_material=(added,),
     )
 
-    with pytest.raises(ValueError, match="crossed Localities"):
+    with pytest.raises(ValueError, match="distinct Localities"):
         admission_result_added_position_occurrences(
             source_admission.result_reference,
             added_admission.result_reference,

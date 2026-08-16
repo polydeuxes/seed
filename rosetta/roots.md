@@ -86,7 +86,7 @@ Pointers       one preserved thing + many exact references to it + no identity c
 Lineage        ordered source and occurrence references beneath Provenance
 Artifact       exact representation, record, Assertion, or result
 Projection     exact Act occurrence + representation + its carried coordinates
-Material-reference comparison exact selected material-result references + one implementation-function coordinate tuple + bounded Compare occurrences; no Applicability or Admission by identity
+Comparison of material-result references exact selected material-result references + one implementation-function coordinate tuple + bounded Compare occurrences; no Applicability or Admission by identity
 Comparison point carried recorded-reference occurrence + source Locality identity + exact Standing boundary occurrence + addressed Representation; transient read only; no Standing copy; availability != Applicability
 View           exact Act occurrence + representation + its carried coordinates
 Formation      exact Act occurrence + Yield + representation
@@ -97,6 +97,7 @@ Claim          asserted content
 Fact           Assertion described through its bounded Standing
 Testimony      asserted content with carried source coordinates
 Attribution    Assertion concerning a source relation
+Adversarial test exact missing, wrong-occurrence, corrupted-Evidence, or unrelated-occurrence pressure + bounded refusal; test posture != occurrence coordinate
 Purpose        the exact Act's other carried coordinates
 Meaning        Assertion concerning an exact represented relation
 Capability     exact Act / Authority / Constraints / Evidence

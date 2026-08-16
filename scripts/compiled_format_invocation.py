@@ -683,7 +683,7 @@ class AddedPositionOccurrence:
             source_locality != self.locality_identity
             or added_locality != self.locality_identity
         ):
-            raise ValueError("addition Act material crossed Localities")
+            raise ValueError("addition Act materials have distinct Localities")
         if len(self.added_reference.exact_material) != 1:
             raise ValueError("added material must be exactly one byte")
         if not preserves_original_order(
@@ -831,7 +831,7 @@ class RemovedPositionOccurrence:
             or getattr(self.removed_reference, "locality_identity", None)
             != self.locality_identity
         ):
-            raise ValueError("removal Act material crossed Localities")
+            raise ValueError("removal Act materials have distinct Localities")
         if len(self.removed_reference.exact_material) != 1:
             raise ValueError("removed material must be exactly one byte")
         if (
@@ -1063,7 +1063,7 @@ class CompiledReferenceCompareOccurrence:
                 None,
             )
         ):
-            raise ValueError("Compare material crossed Localities")
+            raise ValueError("Compare materials have distinct Localities")
 
     @property
     def implementation_function_identity(self) -> str:
@@ -1649,7 +1649,9 @@ def _added_position_comparisons_by_occurrence(
                 comparison.implementation_function_identity
                 != implementation_function_identity
             ):
-                raise ValueError("one Compare tuple crossed implementation functions")
+                raise ValueError(
+                    "one Compare tuple has distinct implementation functions"
+                )
             identity = comparison.added_position_act_occurrence_identity
             if identity in comparison_by_identity:
                 raise ValueError("addition Act occurrence entered one Compare tuple twice")
@@ -1826,7 +1828,9 @@ def _removed_position_comparisons_by_occurrence(
                 comparison.implementation_function_identity
                 != implementation_function_identity
             ):
-                raise ValueError("one Compare tuple crossed implementation functions")
+                raise ValueError(
+                    "one Compare tuple has distinct implementation functions"
+                )
             if comparison.occurrence_identity in comparison_occurrence_identities:
                 raise ValueError("Compare occurrence entered Admission twice")
             comparison_occurrence_identities.add(comparison.occurrence_identity)
@@ -2134,7 +2138,7 @@ def compare_compiled_reference_invocations(
         raise ValueError("Compare requires exact source references")
     sources = source_rows[0]
     if any(row != sources for row in source_rows[1:]):
-        raise ValueError("Compare invocation tuples crossed their sources")
+        raise ValueError("Compare invocation tuples have distinct sources")
     by_source_position = {source: position for position, source in enumerate(sources)}
     if len(by_source_position) != len(sources):
         raise ValueError("one exact material reference entered invocation twice")
@@ -2150,7 +2154,7 @@ def compare_compiled_reference_invocations(
             occurrence.implementation_function != implementation_function
             for occurrence in row
         ):
-            raise ValueError("Compare tuple crossed implementation functions")
+            raise ValueError("Compare tuple has distinct implementation functions")
         found.append(
             tuple(
                 CompiledReferenceCompareOccurrence(
@@ -2355,7 +2359,7 @@ def admission_added_position_occurrences(
         if None in locality_identities:
             raise TypeError("addition Acts require exact material Localities")
         if len(locality_identities) != 1:
-            raise ValueError("one admitted material tuple crossed Localities")
+            raise ValueError("one admitted material tuple has distinct Localities")
         occurrence_count = sum(
             (len(source.exact_material) + 1) * len(admitted_material)
             for source in admitted_material
@@ -2434,7 +2438,9 @@ def admission_result_added_position_occurrences(
         if None in source_localities:
             raise TypeError("addition Acts require exact source material Localities")
         if len(source_localities) != 1:
-            raise ValueError("one admitted source material tuple crossed Localities")
+            raise ValueError(
+                "one admitted source material tuple has distinct Localities"
+            )
         for added_admitted_position, added_admitted_material in enumerate(
             added_admission_result_reference.admitted_material
         ):
@@ -2455,9 +2461,11 @@ def admission_result_added_position_occurrences(
                     "addition Acts require exact added material Localities"
                 )
             if len(added_locality_identities) != 1:
-                raise ValueError("one admitted added material tuple crossed Localities")
+                raise ValueError(
+                    "one admitted added material tuple has distinct Localities"
+                )
             if source_localities != added_locality_identities:
-                raise ValueError("addition Act Admissions crossed Localities")
+                raise ValueError("addition Act Admissions have distinct Localities")
             occurrence_count = sum(
                 (len(source.exact_material) + 1) * len(added_admitted_material)
                 for source in source_admitted_material
@@ -2621,7 +2629,9 @@ def admission_removed_position_occurrences(
         if None in locality_identities:
             raise TypeError("removal Acts require exact source material Localities")
         if len(locality_identities) != 1:
-            raise ValueError("one admitted source material tuple crossed Localities")
+            raise ValueError(
+                "one admitted source material tuple has distinct Localities"
+            )
         occurrence_count = sum(
             len(source.exact_material) for source in admitted_material
         )

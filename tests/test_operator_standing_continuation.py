@@ -423,12 +423,12 @@ def test_one_continuation_act_cannot_yield_or_record_twice():
         )
 
 
-def test_missing_crossed_or_changed_source_coordinates_are_refused():
+def test_missing_different_or_changed_source_coordinates_are_refused():
     ledger = EventLedger()
     _source, representation = _source_representation(ledger)
 
     with pytest.raises(
-        StandingLocalityContinuationError, match="crossed its source Locality"
+        StandingLocalityContinuationError, match="different source Locality"
     ):
         _act(ledger, representation, source_locality_identity="other")
     with pytest.raises(

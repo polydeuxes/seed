@@ -364,7 +364,7 @@ def test_result_refuses_arbitrary_act_evidence_identity_without_appending(
     assert ledger.append_boundary() == before
 
 
-def test_result_refuses_crossed_finding_without_appending_yield():
+def test_result_refuses_substituted_finding_without_appending_yield():
     ledger, _occurrences, boundary = occurrence_road()
     finding = measure_occurrence_position(
         ledger,
@@ -525,14 +525,14 @@ def test_result_carries_one_ordered_assertion_per_exact_position():
         lambda assertions: assertions.reverse(),
         lambda assertions: assertions.__setitem__(1, deepcopy(assertions[0])),
         lambda assertions: assertions[1]["assertion_subject"].__setitem__(
-            "occurrence_identity", "crossed-occurrence"
+            "occurrence_identity", "substituted-occurrence"
         ),
         lambda assertions: assertions[1]["dimensions"]["content"].__setitem__(
             "position", 0
         ),
     ),
 )
-def test_missing_reordered_duplicated_or_crossed_assertions_are_refused(mutate):
+def test_missing_reordered_duplicated_or_substituted_assertions_are_refused(mutate):
     ledger, _occurrences, _boundary, _finding, recorded = recorded_road()
     mutate(recorded.material["assertions"])
 

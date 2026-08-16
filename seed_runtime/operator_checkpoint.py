@@ -92,7 +92,7 @@ def _source_reference(
         "checkpoint requires one addressed Representation",
     )
     if locality_standing.get("locality_identity") != locality_identity:
-        raise OperatorCheckpointError("checkpoint crossed its Locality Standing")
+        raise OperatorCheckpointError("checkpoint has a different Standing Locality")
     if locality_standing.get("as_of_event_identity") != representation_identity:
         raise OperatorCheckpointError(
             "checkpoint requires the exact addressed Representation Standing"
@@ -114,7 +114,7 @@ def _source_reference(
         not in representation_event.material
     ):
         raise OperatorCheckpointError(
-            "checkpoint crossed its addressed Representation Locality"
+            "checkpoint has a different Representation Locality"
         )
     boundary = representation_event.material[
         "locality_standing_as_of_event_identity"

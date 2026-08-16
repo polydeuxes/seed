@@ -442,7 +442,7 @@ class MaterialReferenceCompareOccurrence:
                 None,
             )
         ):
-            raise ValueError("Compare material crossed Localities")
+            raise ValueError("Compare materials have distinct Localities")
 
     @property
     def implementation_function_identity(self) -> str:
@@ -781,7 +781,7 @@ class MaterialLocalityAdmissionOccurrence:
             getattr(material, "locality_identity", None) != self.locality_identity
             for material in self.material_admission.source_material
         ):
-            raise ValueError("material Admission crossed Localities")
+            raise ValueError("Admission materials have distinct Localities")
 
     @property
     def act_occurrence_identity(self) -> tuple[str, int]:
@@ -1139,7 +1139,7 @@ def compare_material_reference_invocations(
         raise ValueError("Compare requires exact source references")
     sources = source_rows[0]
     if any(row != sources for row in source_rows[1:]):
-        raise ValueError("Compare invocation tuples crossed their sources")
+        raise ValueError("Compare invocation tuples have distinct sources")
     by_source_position = {source: position for position, source in enumerate(sources)}
     if len(by_source_position) != len(sources):
         raise ValueError("one exact material reference entered invocation twice")
@@ -1155,7 +1155,7 @@ def compare_material_reference_invocations(
             occurrence.implementation_function != implementation_function
             for occurrence in row
         ):
-            raise ValueError("Compare tuple crossed implementation functions")
+            raise ValueError("Compare tuple has distinct implementation functions")
         found.append(
             tuple(
                 MaterialReferenceCompareOccurrence(

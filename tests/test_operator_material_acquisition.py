@@ -310,13 +310,13 @@ def test_one_acquire_act_cannot_yield_twice():
         )
 
 
-def test_assignment_refuses_crossed_locality_and_changed_cut():
+def test_assignment_refuses_different_locality_and_changed_cut():
     ledger = EventLedger()
     standing, representation = _context(ledger)
-    crossed = dict(standing)
-    crossed["locality_identity"] = "elsewhere"
-    with pytest.raises(OperatorMaterialAcquireError, match="crossed"):
-        _assignment(ledger, crossed, representation)
+    different_locality = dict(standing)
+    different_locality["locality_identity"] = "elsewhere"
+    with pytest.raises(OperatorMaterialAcquireError, match="different"):
+        _assignment(ledger, different_locality, representation)
 
     changed = dict(standing)
     changed["as_of_event_identity"] = "missing"
@@ -328,12 +328,12 @@ def test_assignment_refuses_cross_locality_and_reversed_standing_boundaries():
     ledger = EventLedger()
     standing, representation = _context(ledger)
 
-    crossed = dict(standing)
-    crossed["as_of_event_identity"] = ledger.append(
+    changed_cut = dict(standing)
+    changed_cut["as_of_event_identity"] = ledger.append(
         "other.locality.occurrence", locality_identity="elsewhere"
     ).identity
     with pytest.raises(OperatorMaterialAcquireError, match="current Standing"):
-        _assignment(ledger, crossed, representation)
+        _assignment(ledger, changed_cut, representation)
 
     representation_identity = representation["representation_event_identity"]
     earlier = next(

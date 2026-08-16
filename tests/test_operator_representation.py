@@ -594,7 +594,7 @@ def test_representation_refuses_a_source_from_another_locality():
         source_boundary="fixture boundary",
     )
 
-    with pytest.raises(ValueError, match="crossed Localities"):
+    with pytest.raises(ValueError, match="distinct Locality"):
         record_operator_representation(
             ledger,
             locality_identity="second",

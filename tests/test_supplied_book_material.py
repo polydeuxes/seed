@@ -106,7 +106,7 @@ def test_one_drop_locality_preserves_each_supplied_occurrence_through_compiled_i
     assert admissions[0].source_material == references
     assert len(admissions[0].admitted_material) == len(references)
     assert all(len(material) == 1 for material in admissions[0].admitted_material)
-    with pytest.raises(ValueError, match="crossed Localities"):
+    with pytest.raises(ValueError, match="distinct Localities"):
         replace(
             admissions[0],
             locality_identity="another-locality",

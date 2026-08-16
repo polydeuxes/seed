@@ -405,19 +405,19 @@ def test_same_bytes_cannot_substitute_another_ingest_occurrence():
         source_role="same bytes at another occurrence",
         source_boundary="another exact boundary",
     )
-    crossed = finding._replace(
+    substituted = finding._replace(
         source_ingest_occurrence_identity=substitute.identity
     )
 
     with pytest.raises(ValueError, match="outside its exact boundary"):
         record_evidence_of_act_occurrence_for_measurement_of_recurrent_byte_pair_occurrence_position(
             ledger,
-            finding=crossed,
+            finding=substituted,
             recording_locality_identity=locality,
         )
 
 
-def test_crossed_locality_and_pre_source_boundary_are_refused():
+def test_distinct_locality_and_pre_source_boundary_are_refused():
     ledger, _locality, pair, recurrence, source, _finding = _fixture()
     other = ingest_material(
         ledger,
@@ -426,7 +426,7 @@ def test_crossed_locality_and_pre_source_boundary_are_refused():
         source_role="other",
         source_boundary="other",
     )
-    with pytest.raises(ValueError, match="crossed Localities"):
+    with pytest.raises(ValueError, match="distinct Localities"):
         measure_positions_of_recurrent_byte_pair_occurrences(
             ledger,
             pair_measurement_occurrence_identity=pair.identity,
@@ -514,7 +514,7 @@ def test_each_measurement_of_pair_occurrence_position_crossing_refuses_its_own_c
         ] += 1
     else:
         pair.material["assertions"][0]["dimensions"]["content"] = {
-            "crossed": True
+            "substituted": True
         }
 
     with pytest.raises(ValueError):

@@ -242,7 +242,7 @@ def test_locality_standing_carries_only_exact_yielded_result_identities():
     assert measurement.identity not in standing["exact_result_occurrences"]
 
 
-def test_locality_standing_refuses_raw_result_with_missing_or_crossed_yield():
+def test_locality_standing_refuses_raw_result_with_missing_or_substituted_yield():
     ledger = EventLedger()
     source = ingest_material(
         ledger,
