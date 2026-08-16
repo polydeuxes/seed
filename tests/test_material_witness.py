@@ -46,6 +46,7 @@ from compiled_format_invocation import (  # noqa: E402
     removed_position_occurrences,
     exact_byte_material_references,
     exact_byte_pair_material_references,
+    moved_exact_byte_material_references,
     preserves_original_order,
 )
 from compiled_material_invocation import (  # noqa: E402
@@ -102,7 +103,7 @@ def measured_book_pairs():
     pair_measurement = record_byte_position_pair_count_layer(
         ledger,
         source_measurement_event_identity=byte_measurement.identity,
-        recording_locality_identity="book-material-measurement",
+        recording_locality_identity="book-material-pairs",
     )
     assertions = assertions_of_recorded_byte_position_pair_measurement(
         ledger, pair_measurement.identity
@@ -127,8 +128,10 @@ def measured_book_pairs():
     pair_material = exact_byte_pair_material_references(
         ledger, pair_measurement.identity
     )
-    byte_material = exact_byte_material_references(
-        ledger, byte_measurement.identity
+    byte_material = moved_exact_byte_material_references(
+        ledger,
+        byte_measurement.identity,
+        destination_locality="book-material-pairs",
     )
     return (
         supplied_material,
@@ -443,7 +446,7 @@ def test_pair_material_comes_from_the_complete_recorded_measurement(measured_boo
     assert all(len(pair) == 2 for pair in pairs)
     assert tuple(reference.exact_material for reference in pair_material) == pairs
     assert {reference.locality_identity for reference in pair_material} == {
-        "book-material-measurement"
+        "book-material-pairs"
     }
 
 
@@ -464,7 +467,7 @@ def test_byte_material_comes_from_the_complete_recorded_measurement(measured_boo
         bytes((value,)) for value in material
     )
     assert {reference.locality_identity for reference in byte_material} == {
-        "book-material-measurement"
+        "book-material-pairs"
     }
 
 
