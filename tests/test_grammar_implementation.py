@@ -2586,27 +2586,17 @@ def test_implementation_witness_discriminates_content_locality_and_occurrence():
 
 def _assert_ordered_fidelity_representation(fidelity: dict) -> None:
     assert fidelity == {
-        "subject": "this_Seed",
+        "subject": "this_Fidelity",
         "book_material_reference": "01.Source.C",
-        "implementation_witness": "deterministic_tests",
-        "subjects": [
-            "machine_grammar",
-            "live_implementation",
-            "deterministic_tests",
-        ],
-        "ordered_subject_relations": [
-            ["machine_grammar", "live_implementation"],
-            ["live_implementation", "machine_grammar"],
-            ["machine_grammar", "deterministic_tests"],
-            ["deterministic_tests", "machine_grammar"],
-            ["live_implementation", "deterministic_tests"],
-            ["deterministic_tests", "live_implementation"],
-        ],
-        "ordered_subject_relations_established": False,
-        "grammar": "machine_grammar",
-        "comparison": "deterministic_tests",
-        "witness": "live_implementation",
-        "result": "bounded_Fidelity_finding",
+        "implementation_witness": "unestablished",
+        "comparison": {
+            "first_subject": "this_Witness",
+            "relation": "comparison",
+            "second_subject": "this_Book",
+            "addressed_subject": "this_Seed",
+            "boundary": "deterministic_tests",
+            "result": "this_Fidelity",
+        },
         "preserves": [
             "Evidence",
             "provenance",
@@ -2620,13 +2610,13 @@ def _assert_ordered_fidelity_representation(fidelity: dict) -> None:
             "Authority_relocation",
         ],
         "comparison_order": [
-            "live_implementation",
+            "this_Witness",
             "deterministic_tests",
-            "machine_grammar",
-            "bounded_Fidelity_finding",
+            "this_Book",
+            "this_Fidelity",
         ],
         "representation_order": [
-            "bounded_Fidelity_finding",
+            "this_Fidelity",
             "exact_relation",
             "supporting_measurements",
         ],
@@ -2635,19 +2625,15 @@ def _assert_ordered_fidelity_representation(fidelity: dict) -> None:
             "correction_Authority",
         ],
     }
-    assert len(fidelity["ordered_subject_relations"]) == 6
-    assert {
-        tuple(reversed(relation))
-        for relation in fidelity["ordered_subject_relations"]
-    } == {
-        tuple(relation)
-        for relation in fidelity["ordered_subject_relations"]
+    assert fidelity["comparison"]["first_subject"] != fidelity["comparison"][
+        "second_subject"
+    ]
+    assert fidelity["comparison"]["boundary"] not in {
+        fidelity["comparison"]["first_subject"],
+        fidelity["comparison"]["second_subject"],
+        fidelity["comparison"]["addressed_subject"],
+        fidelity["comparison"]["result"],
     }
-    assert all(
-        first != second
-        for first, second in fidelity["ordered_subject_relations"]
-    )
-    assert fidelity["ordered_subject_relations_established"] is False
     assert fidelity["comparison_order"] != fidelity["representation_order"]
 
 
@@ -2657,15 +2643,15 @@ def test_fidelity_is_this_seeds_bounded_machine_comparison():
     _assert_ordered_fidelity_representation(grammar["clauses"]["01.Source.C"])
 
 
-def test_fidelity_refuses_collapsed_direction_and_inverted_representation_order():
+def test_fidelity_refuses_collapsed_subjects_tests_as_subject_and_inverted_order():
     fidelity = json.loads(GRAMMAR.read_text(encoding="utf-8"))["clauses"][
         "01.Source.C"
     ]
 
     collapsed_direction = deepcopy(fidelity)
-    collapsed_direction["ordered_subject_relations"][1] = list(
-        collapsed_direction["ordered_subject_relations"][0]
-    )
+    collapsed_direction["comparison"]["second_subject"] = collapsed_direction[
+        "comparison"
+    ]["first_subject"]
     try:
         _assert_ordered_fidelity_representation(collapsed_direction)
     except AssertionError:
@@ -2673,11 +2659,20 @@ def test_fidelity_refuses_collapsed_direction_and_inverted_representation_order(
     else:
         raise AssertionError("collapsed Fidelity direction escaped comparison")
 
+    tests_as_subject = deepcopy(fidelity)
+    tests_as_subject["comparison"]["first_subject"] = "deterministic_tests"
+    try:
+        _assert_ordered_fidelity_representation(tests_as_subject)
+    except AssertionError:
+        pass
+    else:
+        raise AssertionError("Fidelity tests escaped as a compared subject")
+
     measurements_first = deepcopy(fidelity)
     measurements_first["representation_order"] = [
         "supporting_measurements",
         "exact_relation",
-        "bounded_Fidelity_finding",
+        "this_Fidelity",
     ]
     try:
         _assert_ordered_fidelity_representation(measurements_first)

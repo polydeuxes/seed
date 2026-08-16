@@ -1,5 +1,27 @@
 {
   "book_material_reference": "this_Book",
+  "root_references": [
+    {
+      "reference": "this_Witness",
+      "coordinate": "implementation_witness"
+    },
+    {
+      "reference": "this_Book",
+      "coordinate": "book_material"
+    },
+    {
+      "reference": "this_Seed",
+      "coordinate": "seed_subject"
+    },
+    {
+      "reference": "this_Rosetta",
+      "coordinate": "rosetta_reference"
+    },
+    {
+      "reference": "this_Fidelity",
+      "coordinate": "bounded_Fidelity_finding"
+    }
+  ],
   "composite": {
     "material_order": "preserved",
     "equal_material_in_different_order_establishes_same_composite": false,
@@ -197,27 +219,17 @@
       "does_not_establish": ["Authority_relocation"]
     },
     "01.Source.C": {
-      "subject": "this_Seed",
+      "subject": "this_Fidelity",
       "book_material_reference": "01.Source.C",
-      "implementation_witness": "deterministic_tests",
-      "subjects": [
-        "machine_grammar",
-        "live_implementation",
-        "deterministic_tests"
-      ],
-      "ordered_subject_relations": [
-        ["machine_grammar", "live_implementation"],
-        ["live_implementation", "machine_grammar"],
-        ["machine_grammar", "deterministic_tests"],
-        ["deterministic_tests", "machine_grammar"],
-        ["live_implementation", "deterministic_tests"],
-        ["deterministic_tests", "live_implementation"]
-      ],
-      "ordered_subject_relations_established": false,
-      "grammar": "machine_grammar",
-      "comparison": "deterministic_tests",
-      "witness": "live_implementation",
-      "result": "bounded_Fidelity_finding",
+      "implementation_witness": "unestablished",
+      "comparison": {
+        "first_subject": "this_Witness",
+        "relation": "comparison",
+        "second_subject": "this_Book",
+        "addressed_subject": "this_Seed",
+        "boundary": "deterministic_tests",
+        "result": "this_Fidelity"
+      },
       "preserves": [
         "Evidence",
         "provenance",
@@ -231,13 +243,13 @@
         "Authority_relocation"
       ],
       "comparison_order": [
-        "live_implementation",
+        "this_Witness",
         "deterministic_tests",
-        "machine_grammar",
-        "bounded_Fidelity_finding"
+        "this_Book",
+        "this_Fidelity"
       ],
       "representation_order": [
-        "bounded_Fidelity_finding",
+        "this_Fidelity",
         "exact_relation",
         "supporting_measurements"
       ],

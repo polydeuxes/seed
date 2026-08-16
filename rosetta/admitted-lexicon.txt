@@ -831,6 +831,7 @@ roadmaps
 role
 roles
 root
+rosetta
 route
 rule
 rules

@@ -114,7 +114,32 @@ def test_this_occurs_only_as_exact_machine_roots():
 
     assert uses == [
         (("book_material_reference",), "this_Book"),
-        (("clauses", "01.Source.C", "subject"), "this_Seed"),
+        (("root_references", 0, "reference"), "this_Witness"),
+        (("root_references", 1, "reference"), "this_Book"),
+        (("root_references", 2, "reference"), "this_Seed"),
+        (("root_references", 3, "reference"), "this_Rosetta"),
+        (("root_references", 4, "reference"), "this_Fidelity"),
+        (("clauses", "01.Source.C", "subject"), "this_Fidelity"),
+        (
+            ("clauses", "01.Source.C", "comparison", "first_subject"),
+            "this_Witness",
+        ),
+        (
+            ("clauses", "01.Source.C", "comparison", "second_subject"),
+            "this_Book",
+        ),
+        (
+            ("clauses", "01.Source.C", "comparison", "addressed_subject"),
+            "this_Seed",
+        ),
+        (
+            ("clauses", "01.Source.C", "comparison", "result"),
+            "this_Fidelity",
+        ),
+        (("clauses", "01.Source.C", "comparison_order", 0), "this_Witness"),
+        (("clauses", "01.Source.C", "comparison_order", 2), "this_Book"),
+        (("clauses", "01.Source.C", "comparison_order", 3), "this_Fidelity"),
+        (("clauses", "01.Source.C", "representation_order", 0), "this_Fidelity"),
         (
             ("clauses", "06.Locality.B", "subject"),
             "this_Seed_bears_Standing_Locality_continuation_Responsibility",
@@ -152,6 +177,24 @@ def test_machine_clauses_address_their_exact_book_material():
     ) == tuple((identity, identity) for identity in grammar["clauses"])
 
 
+def test_machine_root_references_remain_distinct_and_in_declared_order():
+    grammar = json.loads(GRAMMAR.read_text(encoding="utf-8"))
+
+    assert grammar["root_references"] == [
+        {
+            "reference": "this_Witness",
+            "coordinate": "implementation_witness",
+        },
+        {"reference": "this_Book", "coordinate": "book_material"},
+        {"reference": "this_Seed", "coordinate": "seed_subject"},
+        {"reference": "this_Rosetta", "coordinate": "rosetta_reference"},
+        {
+            "reference": "this_Fidelity",
+            "coordinate": "bounded_Fidelity_finding",
+        },
+    ]
+
+
 def test_clauses_without_event_species_name_their_witness_in_book_order():
     grammar = json.loads(GRAMMAR.read_text(encoding="utf-8"))
     declarations = tuple(
@@ -162,7 +205,7 @@ def test_clauses_without_event_species_name_their_witness_in_book_order():
 
     assert declarations == (
         ("01.Source.B", "unestablished"),
-        ("01.Source.C", "deterministic_tests"),
+        ("01.Source.C", "unestablished"),
         ("01.Source.D.1", "unestablished"),
         ("01.Source.E", "unestablished"),
         ("01.Source.F", "unestablished"),
