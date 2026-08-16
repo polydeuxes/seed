@@ -57,7 +57,7 @@ Seed need not preserve every implementation measurement. A measurement is preser
 - local record != cross-restart persistent record
 
 ## Counterexamples or failure modes
-- Assuming all ledger payloads acquire established Standing during replay.
+- Assuming all ledger payloads acquire established Standing during a read of recorded occurrences.
 - Attaching diagnostic-only output directly to hosts or other boundaries.
 
 ## Related chapters
