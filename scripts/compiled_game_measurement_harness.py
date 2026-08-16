@@ -18,6 +18,7 @@ from compiled_material_invocation import (
     admit_invocation_occurrences,
     admit_invocation_return_occurrences,
     compare_added_material_invocations,
+    compare_added_material_return_invocations,
     reference_occurrences_across,
 )
 from compiled_material_measurement_harness import measured_material
@@ -141,10 +142,21 @@ def measure_added_material(
         result_occurrences,
         boundary_identity="game-added-material-compare",
     )
+    return_comparisons = compare_added_material_return_invocations(
+        additions,
+        source_occurrences,
+        result_occurrences,
+        boundary_identity="game-added-material-return-compare",
+    )
     addition_admissions = added_position_admission_occurrences(
         additions,
         comparisons,
         boundary_identity="game-added-material-admission",
+    )
+    return_addition_admissions = added_position_admission_occurrences(
+        additions,
+        return_comparisons,
+        boundary_identity="game-added-material-return-admission",
     )
     exact_compares = compare_admission_result_pairs(
         tuple(admission.result_reference for admission in result_exact),
@@ -160,7 +172,9 @@ def measure_added_material(
         result_exact,
         result_returned,
         comparisons,
+        return_comparisons,
         addition_admissions,
+        return_addition_admissions,
         exact_compares,
         return_compares,
     )
@@ -173,28 +187,49 @@ def main() -> int:
         if not Path(implementation_function.invocation[0]).is_file():
             return 2
     occurrences, exact, returned, _, _ = measure_material(functions, references)
-    additions, _, _, result_returned, _, _, _, _ = measure_added_material(
+    (
+        additions,
+        _,
+        _,
+        result_returned,
+        _,
+        _,
+        _,
+        return_addition_admissions,
+        _,
+        _,
+    ) = measure_added_material(
         functions,
         references,
         occurrences,
         returned,
     )
     print(
-        tuple(
-            (
-                function.identity,
-                len(occurrences[position]),
-                tuple(len(material) for material in exact[position].admitted_material),
-                tuple(
-                    len(material) for material in returned[position].admitted_material
-                ),
-                len(additions),
-                tuple(
-                    len(material)
-                    for material in result_returned[position].admitted_material
-                ),
-            )
-            for position, function in enumerate(functions)
+        (
+            tuple(
+                (
+                    function.identity,
+                    len(occurrences[position]),
+                    tuple(
+                        len(material)
+                        for material in exact[position].admitted_material
+                    ),
+                    tuple(
+                        len(material)
+                        for material in returned[position].admitted_material
+                    ),
+                    len(additions),
+                    tuple(
+                        len(material)
+                        for material in result_returned[position].admitted_material
+                    ),
+                )
+                for position, function in enumerate(functions)
+            ),
+            tuple(
+                len(material)
+                for material in return_addition_admissions[-1].admitted_material
+            ),
         )
     )
     return 0

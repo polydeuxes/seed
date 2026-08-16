@@ -49,7 +49,9 @@ def test_each_game_function_receives_every_exact_one_byte_material():
         result_exact,
         result_returned,
         comparisons,
+        return_comparisons,
         addition_admissions,
+        return_addition_admissions,
         result_exact_compares,
         result_return_compares,
     ) = measure_added_material(functions, references, occurrences, returned)
@@ -60,9 +62,22 @@ def test_each_game_function_receives_every_exact_one_byte_material():
     assert {
         addition.source_admission_result_reference for addition in additions
     } == {admission.result_reference for admission in returned}
-    assert len(result_occurrences) == len(comparisons) == len(functions)
+    assert (
+        len(result_occurrences)
+        == len(comparisons)
+        == len(return_comparisons)
+        == len(functions)
+    )
     for position in range(len(functions)):
         assert len(comparisons[position]) == len(additions)
+        assert len(return_comparisons[position]) == len(additions)
+        assert all(
+            comparison.source_coordinates
+            == comparison.source_invocation.return_coordinates
+            and comparison.result_coordinates
+            == comparison.result_invocation.return_coordinates
+            for comparison in return_comparisons[position]
+        )
         assert tuple(
             occurrence.source_reference
             for occurrence in result_occurrences[position]
@@ -75,5 +90,9 @@ def test_each_game_function_receives_every_exact_one_byte_material():
             == tuple(addition.result_reference for addition in additions)
         )
     assert len(addition_admissions) == len(functions) + 1
+    assert len(return_addition_admissions) == len(functions) + 1
     assert len(addition_admissions[-1].comparison_occurrences) == len(functions)
+    assert len(return_addition_admissions[-1].comparison_occurrences) == len(
+        functions
+    )
     assert len(result_exact_compares) == len(result_return_compares) == 20

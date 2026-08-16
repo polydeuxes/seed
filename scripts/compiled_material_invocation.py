@@ -156,6 +156,17 @@ class MaterialAddedCompareOccurrence:
 
 
 @dataclass(frozen=True, slots=True)
+class MaterialAddedReturnCompareOccurrence(MaterialAddedCompareOccurrence):
+    @property
+    def source_coordinates(self) -> tuple[float, bool, int | None]:
+        return self.source_invocation.return_coordinates
+
+    @property
+    def result_coordinates(self) -> tuple[float, bool, int | None]:
+        return self.result_invocation.return_coordinates
+
+
+@dataclass(frozen=True, slots=True)
 class MaterialInvocationOccurrence:
     boundary_identity: str
     invocation_position: int
@@ -761,6 +772,39 @@ def compare_added_material_invocations(
     *,
     boundary_identity: str,
 ) -> tuple[tuple[MaterialAddedCompareOccurrence, ...], ...]:
+    return _compare_added_material_invocations(
+        additions,
+        source_invocations,
+        result_invocations,
+        boundary_identity=boundary_identity,
+        compare_occurrence=MaterialAddedCompareOccurrence,
+    )
+
+
+def compare_added_material_return_invocations(
+    additions: tuple[AddedPositionOccurrence, ...],
+    source_invocations: tuple[tuple[MaterialInvocationOccurrence, ...], ...],
+    result_invocations: tuple[tuple[MaterialInvocationOccurrence, ...], ...],
+    *,
+    boundary_identity: str,
+) -> tuple[tuple[MaterialAddedReturnCompareOccurrence, ...], ...]:
+    return _compare_added_material_invocations(
+        additions,
+        source_invocations,
+        result_invocations,
+        boundary_identity=boundary_identity,
+        compare_occurrence=MaterialAddedReturnCompareOccurrence,
+    )
+
+
+def _compare_added_material_invocations(
+    additions,
+    source_invocations,
+    result_invocations,
+    *,
+    boundary_identity,
+    compare_occurrence,
+):
     if type(additions) is not tuple or not additions:
         raise TypeError("Compare requires exact addition Act occurrences")
     if len(source_invocations) != len(result_invocations):
@@ -785,7 +829,7 @@ def compare_added_material_invocations(
             if source is None or result is None:
                 raise ValueError("Compare requires each exact source and result invocation")
             row.append(
-                MaterialAddedCompareOccurrence(
+                compare_occurrence(
                     boundary_identity=boundary_identity,
                     occurrence_position=position,
                     addition_occurrence=addition,

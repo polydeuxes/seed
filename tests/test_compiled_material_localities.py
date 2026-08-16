@@ -24,6 +24,7 @@ from compiled_material_invocation import (  # noqa: E402
     admit_invocation_occurrences,
     admit_invocation_return_occurrences,
     compare_added_material_invocations,
+    compare_added_material_return_invocations,
     ingest_result_reference,
     material_locality_admission_occurrences,
     reference_occurrences_across,
@@ -412,6 +413,48 @@ def test_exact_addition_occurrence_binds_source_and_result_invocations(
     ) == tuple(occurrence.occurrence_identity for occurrence in result_occurrences)
     assert any(comparison.distinction for comparison in comparisons)
     assert any(not comparison.distinction for comparison in comparisons)
+
+
+def test_return_compare_does_not_inherit_provider_material_distinctions(
+    material_invocations,
+    material_pair_invocations,
+):
+    _, _, source_occurrences = material_invocations
+    _, _, _, additions, result_occurrences, _ = material_pair_invocations
+    source_by_reference = {
+        occurrence.source_reference: occurrence for occurrence in source_occurrences
+    }
+    position = next(
+        position
+        for position, (addition, result) in enumerate(
+            zip(additions, result_occurrences)
+        )
+        if source_by_reference[addition.source_reference].return_coordinates
+        == result.return_coordinates
+    )
+    changed_results = tuple(
+        replace(result, stdout_bytes=b"different provider material")
+        if result_position == position
+        else result
+        for result_position, result in enumerate(result_occurrences)
+    )
+    exact = compare_added_material_invocations(
+        additions,
+        (source_occurrences,),
+        (changed_results,),
+        boundary_identity="provider-material-compare",
+    )[0][position]
+    returned = compare_added_material_return_invocations(
+        additions,
+        (source_occurrences,),
+        (changed_results,),
+        boundary_identity="return-coordinate-compare",
+    )[0][position]
+
+    assert exact.distinction
+    assert not returned.distinction
+    assert exact.source_coordinates != exact.result_coordinates
+    assert returned.source_coordinates == returned.result_coordinates
 
 
 def test_added_result_coordinates_establish_more_than_one_admission(
