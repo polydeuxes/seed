@@ -199,15 +199,34 @@ def exact_position_pair_material_references(
     by_first_position = {}
     for reference in position_references:
         by_first_position.setdefault(reference.first_position, []).append(reference)
+    found = {}
+    for first in position_references:
+        for second in by_first_position.get(first.last_position + 1, ()):
+            if first.source_reference != second.source_reference:
+                continue
+            reference = ExactPositionPairMaterialReference(
+                first_reference=first,
+                second_reference=second,
+                exact_material=first.exact_material + second.exact_material,
+            )
+            prior = found.get(reference.occurrence_identity)
+            if prior is not None and prior.exact_material != reference.exact_material:
+                raise ValueError("one exact position material has different references")
+            if prior is None or (
+                reference.first_reference.last_position
+                - reference.first_reference.first_position
+                < prior.first_reference.last_position
+                - prior.first_reference.first_position
+            ):
+                found[reference.occurrence_identity] = reference
     return tuple(
-        ExactPositionPairMaterialReference(
-            first_reference=first,
-            second_reference=second,
-            exact_material=first.exact_material + second.exact_material,
+        sorted(
+            found.values(),
+            key=lambda reference: (
+                reference.first_position,
+                reference.last_position,
+            ),
         )
-        for first in position_references
-        for second in by_first_position.get(first.last_position + 1, ())
-        if first.source_reference == second.source_reference
     )
 
 

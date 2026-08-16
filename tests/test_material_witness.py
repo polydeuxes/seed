@@ -57,6 +57,8 @@ from compiled_format_invocation import (  # noqa: E402
     removed_position_result_admission_occurrence,
     exact_byte_material_references,
     exact_byte_pair_material_references,
+    exact_position_material_references,
+    exact_position_pair_material_references,
     moved_exact_byte_material_references,
     preserves_original_order,
 )
@@ -1291,6 +1293,45 @@ def test_compiled_format_implementation_functions_admit_the_same_material_differ
         any(len(material) > 1 for material in admission)
         for admission in return_admissions
     )
+
+
+def test_exact_position_material_returns_once_through_its_original_order():
+    source = ExactMaterialReference(
+        "position-source",
+        "position-assertion",
+        "position-locality",
+        b"aba",
+    )
+    one = exact_position_material_references(source)
+    two = exact_position_pair_material_references(one)
+    through_three = exact_position_pair_material_references((*one, *two))
+
+    assert tuple(
+        (reference.first_position, reference.last_position, reference.exact_material)
+        for reference in through_three
+    ) == (
+        (0, 1, b"ab"),
+        (0, 2, b"aba"),
+        (1, 2, b"ba"),
+    )
+    assert through_three == exact_position_pair_material_references(
+        tuple(reversed((*one, *two)))
+    )
+    assert one[0].exact_material == one[2].exact_material
+    assert one[0].occurrence_identity != one[2].occurrence_identity
+
+
+def test_missing_position_cannot_return_the_complete_exact_material():
+    source = ExactMaterialReference(
+        "missing-position-source",
+        "missing-position-assertion",
+        "missing-position-locality",
+        b"aba",
+    )
+    one = exact_position_material_references(source)
+    found = exact_position_pair_material_references((one[0], one[2]))
+
+    assert found == ()
 
 
 def test_one_byte_differences_establish_compiled_invocation_boundaries(
