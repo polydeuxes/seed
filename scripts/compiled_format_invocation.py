@@ -2469,6 +2469,12 @@ def first_recurring_removed_compare_across(
     tuple[bool | None, ...] | None,
     tuple[RemovedPositionCompareOccurrence, ...] | None,
 ]:
+    if type(removals) is not tuple or not removals or any(
+        not isinstance(removal, RemovedPositionOccurrence) for removal in removals
+    ):
+        raise TypeError("recurrence requires exact removal Act occurrences")
+    if type(act_occurrence_count_limit) is not int or act_occurrence_count_limit < 1:
+        raise TypeError("one exact positive Act occurrence count limit is required")
     if type(source_invocation_rows) is not tuple or not source_invocation_rows:
         raise TypeError("full-function recurrence requires exact invocation rows")
     row_lengths = {len(row) for row in source_invocation_rows}
@@ -2483,6 +2489,15 @@ def first_recurring_removed_compare_across(
         {function.identity for function in functions}
     ) != len(functions):
         raise ValueError("full-function recurrence requires different implementation functions")
+    if any(
+        any(
+            not isinstance(invocation, CompiledInvocationOccurrence)
+            or invocation.implementation_function != function
+            for invocation in row
+        )
+        for row, function in zip(source_invocation_rows, functions)
+    ):
+        raise ValueError("full-function recurrence requires exact source invocations")
     source_coordinates = tuple(
         tuple(invocation.source_coordinate for invocation in row)
         for row in source_invocation_rows
