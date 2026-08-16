@@ -4,7 +4,10 @@ from io import BytesIO
 
 import pytest
 
-from seed_runtime.operator_egress import emit_exact_material
+from seed_runtime.operator_egress import (
+    ExactMaterialEgressFailure,
+    emit_exact_material,
+)
 
 
 def test_egress_writes_exact_bytes_without_decoding():
@@ -25,8 +28,78 @@ def test_egress_refuses_a_short_write():
         def write(self, material):
             return len(material) - 1
 
-    with pytest.raises(ValueError, match="did not preserve"):
+    with pytest.raises(
+        ExactMaterialEgressFailure, match="did not preserve"
+    ) as raised:
         emit_exact_material(ShortBoundary(), b"hello")
+
+    assert raised.value.reported_count == 4
+    assert raised.value.error is None
+
+
+def test_egress_does_not_infer_a_count_from_a_write_returning_none():
+    class UnreportedBoundary:
+        def __init__(self):
+            self.material = None
+
+        def write(self, material):
+            self.material = material
+            return None
+
+    output = UnreportedBoundary()
+
+    with pytest.raises(
+        ExactMaterialEgressFailure, match="did not preserve"
+    ) as raised:
+        emit_exact_material(output, b"hello")
+
+    assert output.material == b"hello"
+    assert raised.value.reported_count is None
+    assert raised.value.error is None
+
+
+def test_egress_preserves_a_write_exception_without_inventing_a_count():
+    error = OSError("write failed")
+
+    class FailedBoundary:
+        def write(self, material):
+            raise error
+
+    with pytest.raises(
+        ExactMaterialEgressFailure, match="before reporting"
+    ) as raised:
+        emit_exact_material(FailedBoundary(), b"hello")
+
+    assert raised.value.reported_count is None
+    assert raised.value.error is error
+    assert raised.value.__cause__ is error
+
+
+def test_egress_preserves_the_full_reported_count_across_a_flush_exception():
+    error = OSError("flush failed")
+
+    class FlushFailure:
+        def __init__(self):
+            self.material = None
+
+        def write(self, material):
+            self.material = material
+            return len(material)
+
+        def flush(self):
+            raise error
+
+    output = FlushFailure()
+
+    with pytest.raises(
+        ExactMaterialEgressFailure, match="after reporting"
+    ) as raised:
+        emit_exact_material(output, b"hello")
+
+    assert output.material == b"hello"
+    assert raised.value.reported_count == 5
+    assert raised.value.error is error
+    assert raised.value.__cause__ is error
 
 
 def test_egress_carries_exact_bytes_to_a_socket_like_boundary():
