@@ -1,5 +1,6 @@
 import json
 from pathlib import Path
+import re
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -10,6 +11,16 @@ CHAPTERS = ROOT / "book_of_seed/chapters"
 def _active_book() -> str:
     return "\n".join(
         path.read_text(encoding="utf-8") for path in sorted(CHAPTERS.glob("*.md"))
+    )
+
+
+def _book_clause_identities() -> set[str]:
+    return set(
+        re.findall(
+            r"^### ([0-9]+\.[A-Za-z]+\.[A-Za-z0-9.]+) ",
+            _active_book(),
+            re.M,
+        )
     )
 
 
@@ -81,6 +92,11 @@ def test_missing_relation_clause_is_detected():
         pass
     else:
         raise AssertionError("missing Locality clause escaped the grammar audit")
+
+
+def test_book_and_machine_grammar_have_the_same_clauses():
+    grammar = json.loads(GRAMMAR.read_text(encoding="utf-8"))
+    assert _book_clause_identities() == set(grammar["clauses"])
 
 
 def test_ingest_occurrence_and_yield_identity_remain_distinct():
