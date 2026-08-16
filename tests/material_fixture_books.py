@@ -23,12 +23,16 @@ MATERIAL_WINDOWS = (
 )
 
 
+def supplied_material(root: Path, name: str, first_line: int) -> bytes:
+    lines = (root / "corpus" / name).read_bytes().splitlines(keepends=True)
+    material = lines[first_line : first_line + 300]
+    if len(material) != 300:
+        raise ValueError("fixture material does not carry 300 lines")
+    return b"".join(material)
+
+
 def supplied_book_material(root: Path) -> tuple[bytes, ...]:
-    found = []
-    for name, first_line in MATERIAL_WINDOWS:
-        lines = (root / "corpus" / name).read_bytes().splitlines(keepends=True)
-        material = lines[first_line : first_line + 300]
-        if len(material) != 300:
-            raise ValueError("fixture material does not carry 300 lines")
-        found.append(b"".join(material))
-    return tuple(found)
+    return tuple(
+        supplied_material(root, name, first_line)
+        for name, first_line in MATERIAL_WINDOWS
+    )

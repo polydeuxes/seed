@@ -7,6 +7,7 @@ import sys
 import pytest
 
 from seed_runtime.events import EventLedger
+from seed_runtime.byte_measurement import record_byte_count_layer
 from seed_runtime.material_ingest import ingest_material
 
 
@@ -15,10 +16,10 @@ sys.path.insert(0, str(ROOT / "scripts"))
 
 from compiled_material_invocation import (  # noqa: E402
     MaterialAdmissionOccurrence,
-    ingest_result_reference,
 )
 from compiled_format_invocation import (  # noqa: E402
     admission_removed_position_occurrences,
+    exact_byte_material_references,
 )
 from compiled_piper_measurement import (  # noqa: E402
     piper_implementation_function,
@@ -26,7 +27,7 @@ from compiled_piper_measurement import (  # noqa: E402
 )
 from material_fixture_books import (  # noqa: E402
     MATERIAL_WINDOWS,
-    supplied_book_material,
+    supplied_material,
 )
 
 
@@ -40,22 +41,24 @@ COMPILED_MATERIAL = (
 def supplied_piper_material():
     if not COMPILED_EXECUTABLE.is_file() or not COMPILED_MATERIAL.is_file():
         pytest.skip("compiled implementation function is unavailable")
-    exact_material = supplied_book_material(ROOT)
+    supplied_path = ROOT / "corpus" / MATERIAL_WINDOWS[0][0]
+    if not supplied_path.is_file():
+        pytest.skip("supplied fixture material is unavailable")
+    exact_material = supplied_material(ROOT, *MATERIAL_WINDOWS[0])
     ledger = EventLedger()
-    ingests = tuple(
-        ingest_material(
-            ledger,
-            locality_identity="supplied-piper-material",
-            exact_bytes=material,
-            source_role="fixture material",
-            source_boundary=f"fixture-{position}",
-        )
-        for position, material in enumerate(exact_material)
+    ingest = ingest_material(
+        ledger,
+        locality_identity="supplied-piper-material",
+        exact_bytes=exact_material,
+        source_role="fixture material",
+        source_boundary="fixture-0",
     )
-    references = tuple(
-        ingest_result_reference(ledger, occurrence.identity)
-        for occurrence in ingests
+    measurement = record_byte_count_layer(
+        ledger,
+        source_localities=("supplied-piper-material",),
+        recording_locality_identity="supplied-piper-byte-measurement",
     )
+    references = exact_byte_material_references(ledger, measurement.identity)
     implementation_function = piper_implementation_function(
         COMPILED_EXECUTABLE,
         COMPILED_MATERIAL,
@@ -69,21 +72,44 @@ def supplied_piper_material():
         material_byte_count_limit=65536,
         max_workers=2,
     )
-    return exact_material, references, implementation_function, occurrences, admission
+    return (
+        exact_material,
+        ingest,
+        measurement,
+        references,
+        implementation_function,
+        occurrences,
+        admission,
+    )
 
 
-def test_each_supplied_material_reaches_one_exact_piper_invocation(
+def test_each_measured_material_from_one_supplied_work_reaches_piper(
     supplied_piper_material,
 ):
-    exact_material, references, implementation_function, occurrences, _ = (
+    (
+        exact_material,
+        ingest,
+        measurement,
+        references,
+        implementation_function,
+        occurrences,
+        _,
+    ) = (
         supplied_piper_material
     )
 
-    assert len(exact_material) == len(references) == len(occurrences) == len(
-        MATERIAL_WINDOWS
+    assert ingest.exact_material == exact_material
+    assert {reference.recorded_occurrence_identity for reference in references} == {
+        measurement.identity
+    }
+    assert tuple(reference.exact_material for reference in references) == tuple(
+        bytes((value,)) for value in sorted(set(exact_material))
     )
+    assert len(references) == len(occurrences)
     assert tuple(occurrence.source_reference for occurrence in occurrences) == references
-    assert tuple(occurrence.exact_material for occurrence in occurrences) == exact_material
+    assert tuple(occurrence.exact_material for occurrence in occurrences) == tuple(
+        reference.exact_material for reference in references
+    )
     assert all(
         occurrence.implementation_function == implementation_function
         for occurrence in occurrences
@@ -97,7 +123,7 @@ def test_each_supplied_material_reaches_one_exact_piper_invocation(
 
 
 def test_piper_preserves_every_exact_raw_result_coordinate(supplied_piper_material):
-    occurrences = supplied_piper_material[3]
+    occurrences = supplied_piper_material[5]
 
     assert all(occurrence.stdout_bytes is not None for occurrence in occurrences)
     assert all(occurrence.stderr_bytes is not None for occurrence in occurrences)
@@ -116,39 +142,34 @@ def test_piper_preserves_every_exact_raw_result_coordinate(supplied_piper_materi
 
 
 def test_piper_admission_keeps_every_invocation_result(supplied_piper_material):
-    references = supplied_piper_material[1]
-    occurrences = supplied_piper_material[3]
-    admission = supplied_piper_material[4]
+    references = supplied_piper_material[3]
+    occurrences = supplied_piper_material[5]
+    admission = supplied_piper_material[6]
 
     assert admission.source_material == references
     assert admission.invocation_result_references == tuple(
         occurrence.result_reference for occurrence in occurrences
     )
     assert {
-        material.result_identity
+        material
         for same_coordinates in admission.admitted_material
         for material in same_coordinates
-    } == {reference.result_identity for reference in references}
+    } == set(references)
+    assert len(admission.admitted_material) > 1
+    assert any(
+        len(same_coordinates) > 1
+        for same_coordinates in admission.admitted_material
+    )
 
 
 def test_piper_admission_refuses_different_invocation_coordinates(
     supplied_piper_material,
 ):
-    occurrences = supplied_piper_material[3]
-    admission = supplied_piper_material[4]
+    occurrences = supplied_piper_material[5]
+    admission = supplied_piper_material[6]
     changed = replace(
         occurrences[0],
-        returned=occurrences[1].returned,
-        returncode=occurrences[1].returncode,
-        stdout_bytes=occurrences[1].stdout_bytes,
-        stderr_bytes=occurrences[1].stderr_bytes,
-        time_limit_reached=occurrences[1].time_limit_reached,
-        stdout_byte_count_limit_reached=(
-            occurrences[1].stdout_byte_count_limit_reached
-        ),
-        stderr_byte_count_limit_reached=(
-            occurrences[1].stderr_byte_count_limit_reached
-        ),
+        stdout_bytes=occurrences[0].stdout_bytes + b"\x00",
     )
 
     with pytest.raises(ValueError, match="differs from its invocation results"):
@@ -164,8 +185,8 @@ def test_piper_admission_refuses_different_invocation_coordinates(
 def test_full_piper_admission_drives_whole_exact_removal_tuples(
     supplied_piper_material,
 ):
-    references = supplied_piper_material[1]
-    admission = supplied_piper_material[4]
+    references = supplied_piper_material[3]
+    admission = supplied_piper_material[6]
     act_occurrence_count_limit = min(
         len(reference.exact_material) for reference in references
     )
