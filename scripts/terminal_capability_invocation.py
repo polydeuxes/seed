@@ -55,6 +55,60 @@ TERMINAL_CAPABILITY_FUNCTIONS = (
             "bind -v",
         ),
     ),
+    MaterialImplementationFunction(
+        identity="terminal-alsa-material",
+        invocation=(
+            "/usr/bin/arecord",
+            "-q",
+            "-d",
+            "1",
+            "-t",
+            "raw",
+            "-f",
+            "S16_LE",
+            "-r",
+            "16000",
+            "-c",
+            "1",
+            "-",
+        ),
+    ),
+    MaterialImplementationFunction(
+        identity="terminal-pipewire-material",
+        invocation=(
+            "/usr/bin/pw-record",
+            "--rate",
+            "16000",
+            "--channels",
+            "1",
+            "--format",
+            "s16",
+            "-",
+        ),
+    ),
+    MaterialImplementationFunction(
+        identity="terminal-ffmpeg-audio-material",
+        invocation=(
+            "/usr/bin/ffmpeg",
+            "-nostdin",
+            "-hide_banner",
+            "-loglevel",
+            "error",
+            "-f",
+            "pulse",
+            "-i",
+            "default",
+            "-t",
+            "1",
+            "-f",
+            "s16le",
+            "-ac",
+            "1",
+            "-ar",
+            "16000",
+            "pipe:1",
+        ),
+    ),
 )
 
 
@@ -65,6 +119,8 @@ def terminal_capability_occurrences(*, boundary_identity: str):
             function,
             boundary_identity=boundary_identity,
             invocation_position=position,
+            time_limit_second_count=2.0,
+            material_byte_count_limit=65536,
         )
         for position, function in enumerate(TERMINAL_CAPABILITY_FUNCTIONS)
     )

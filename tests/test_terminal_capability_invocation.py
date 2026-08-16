@@ -14,7 +14,7 @@ def test_terminal_capabilities_remain_raw_invocation_coordinates():
         boundary_identity="terminal-capability-test"
     )
 
-    assert len(occurrences) == 7
+    assert len(occurrences) == 10
     assert {occurrence.implementation_function_identity for occurrence in occurrences} == {
         "terminal-text",
         "terminal-identity",
@@ -23,6 +23,15 @@ def test_terminal_capabilities_remain_raw_invocation_coordinates():
         "terminal-caca-frame",
         "terminal-termios",
         "terminal-readline",
+        "terminal-alsa-material",
+        "terminal-pipewire-material",
+        "terminal-ffmpeg-audio-material",
     }
-    assert all(type(occurrence.stdout_bytes) is bytes for occurrence in occurrences)
-    assert all(type(occurrence.stderr_bytes) is bytes for occurrence in occurrences)
+    assert all(
+        occurrence.stdout_bytes is None or type(occurrence.stdout_bytes) is bytes
+        for occurrence in occurrences
+    )
+    assert all(
+        occurrence.stderr_bytes is None or type(occurrence.stderr_bytes) is bytes
+        for occurrence in occurrences
+    )
