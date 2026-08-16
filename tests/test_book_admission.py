@@ -65,6 +65,37 @@ def test_book_proper_scope_excludes_rosetta():
     assert not any("/rosetta/" in path or path.startswith("rosetta/") for path in files)
 
 
+def test_book_and_rosetta_file_addresses_use_underscores_not_hyphens():
+    roots = (BOOK, ROOT / "rosetta")
+    hyphenated = {
+        path.relative_to(ROOT).as_posix()
+        for root in roots
+        for path in root.rglob("*")
+        if path.is_file() and "-" in path.name
+    }
+
+    assert hyphenated == set()
+
+
+def test_book_and_rosetta_relative_markdown_links_resolve():
+    markdown = tuple(
+        path
+        for root in (BOOK, ROOT / "rosetta")
+        for path in root.rglob("*.md")
+    )
+    missing: list[tuple[str, str]] = []
+    for path in markdown:
+        for target in re.findall(
+            r"\]\(([^)#]+)(?:#[^)]+)?\)", path.read_text(encoding="utf-8")
+        ):
+            if "://" in target:
+                continue
+            if not (path.parent / target).is_file():
+                missing.append((path.relative_to(ROOT).as_posix(), target))
+
+    assert missing == []
+
+
 def test_book_has_its_own_admission_and_points_to_rosetta():
     assert BOOK_ADMISSION == ROOT / "book_of_seed" / "book_admission.txt"
     assert ROSETTA_ADMISSION != BOOK_ADMISSION
@@ -109,7 +140,7 @@ def test_clause_coordinate_tokens_require_explicit_curation():
 
 
 def test_warrant_remains_lowercase_and_bounded_to_the_three_standing_sentences():
-    chapter = (BOOK / "chapters" / "02-constitutional-standing.md").read_text(
+    chapter = (BOOK / "chapters" / "02_constitutional_standing.md").read_text(
         encoding="utf-8"
     )
     paragraph = next(

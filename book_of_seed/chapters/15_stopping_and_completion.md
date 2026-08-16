@@ -25,8 +25,8 @@ Where a bounded Stop is established, the stopping occurrence preserves the exact
 - Continuing movement after the bounded result has satisfied Standing.
 
 ## Related chapters
-- [Movement coordinates](06-movement-coordinates.md)
-- [Result boundaries and movement](07-result-boundaries-and-movement.md)
+- [Movement coordinates](06_movement_coordinates.md)
+- [Result boundaries and movement](07_result_boundaries_and_movement.md)
 
 ## Constrained movement stopping correction 001
 

@@ -39,6 +39,6 @@ Material movement does not move Authority.
 - operator material != Seed truth
 
 ## Related chapters
-- [Constitutional standing](02-constitutional-standing.md)
-- [Authority scope](13-authority-scope.md)
-- [Locality relations](12-locality-relations.md)
+- [Constitutional standing](02_constitutional_standing.md)
+- [Authority scope](13_authority_scope.md)
+- [Locality relations](12_locality_relations.md)

@@ -35,7 +35,7 @@ Seed may analyze source packets, support paths, source roles, boundary mismatche
 - Treating a recorded approval identifier as transferable authority.
 
 ## Related chapters
-- [Representation, emission, and exact Act boundaries](14-representation-emission-and-locality.md)
+- [Representation, emission, and exact Act boundaries](14_representation_emission_and_locality.md)
 
 ## Authorization boundary correction 001
 

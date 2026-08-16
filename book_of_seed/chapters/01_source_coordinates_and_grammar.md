@@ -67,5 +67,5 @@ When the boundary supplies no material, this Seed establishes no material result
 
 ## Related chapters
 
-- [Constitutional Standing](02-constitutional-standing.md)
-- [Assertion Source Coordinates](09-assertion-source-coordinates.md)
+- [Constitutional Standing](02_constitutional_standing.md)
+- [Assertion Source Coordinates](09_assertion_source_coordinates.md)

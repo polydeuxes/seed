@@ -3507,7 +3507,7 @@ def test_live_participation_is_not_source_b_by_relation_identity():
 def test_candidate_coordinate_order_is_the_exact_book_order():
     clause = _clause("01.Source.E")
     source_book = (
-        GRAMMAR.parent / "chapters" / "01-source-coordinates-and-grammar.md"
+        GRAMMAR.parent / "chapters" / "01_source_coordinates_and_grammar.md"
     ).read_text(encoding="utf-8")
     sentence = next(
         line

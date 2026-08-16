@@ -68,6 +68,6 @@ The assignment, recording Act, Act occurrence, Yield, and recorded result remain
 - Attaching output admitted to a diagnostic Act directly to hosts or other boundaries.
 
 ## Related chapters
-- [Assertion Source Coordinates](09-assertion-source-coordinates.md)
-- [Locality relations](12-locality-relations.md)
-- [Acts and occurrences](03-acts-and-occurrences.md)
+- [Assertion Source Coordinates](09_assertion_source_coordinates.md)
+- [Locality relations](12_locality_relations.md)
+- [Acts and occurrences](03_acts_and_occurrences.md)

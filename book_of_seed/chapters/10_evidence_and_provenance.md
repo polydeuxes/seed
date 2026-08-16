@@ -29,5 +29,5 @@ A Representation may carry Evidence, provenance, conflicts, and reasons already 
 
 ## Related chapters
 
-- [Assertion Source Coordinates](09-assertion-source-coordinates.md)
-- [Recording and preserved Assertions](11-recording-and-preserved-assertions.md)
+- [Assertion Source Coordinates](09_assertion_source_coordinates.md)
+- [Recording and preserved Assertions](11_recording_and_preserved_assertions.md)

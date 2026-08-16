@@ -122,5 +122,5 @@ Acts and relations are distinct from dimensions. They may operate over or connec
 - Inferring Standing from a public export without Evidence of the responsible occurrence, Authority, Scope, and limits.
 
 ## Related chapters
-- [Authority Scope](13-authority-scope.md)
-- [Recording and preserved Assertions](11-recording-and-preserved-assertions.md)
+- [Authority Scope](13_authority_scope.md)
+- [Recording and preserved Assertions](11_recording_and_preserved_assertions.md)

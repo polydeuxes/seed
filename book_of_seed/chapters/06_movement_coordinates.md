@@ -27,5 +27,5 @@ later movement by identity.
 
 ## Related chapters
 
-- [Result boundaries and movement](07-result-boundaries-and-movement.md)
-- [Stopping and completion](15-stopping-and-completion.md)
+- [Result boundaries and movement](07_result_boundaries_and_movement.md)
+- [Stopping and completion](15_stopping_and_completion.md)

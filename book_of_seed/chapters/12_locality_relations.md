@@ -42,5 +42,5 @@ The assignment, exact Act, Act occurrence, Locality relation, Yield, and result 
 
 ## Related chapters
 
-- [Recording and preserved Assertions](11-recording-and-preserved-assertions.md)
-- [Assertion Source Coordinates](09-assertion-source-coordinates.md)
+- [Recording and preserved Assertions](11_recording_and_preserved_assertions.md)
+- [Assertion Source Coordinates](09_assertion_source_coordinates.md)

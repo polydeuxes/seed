@@ -34,5 +34,5 @@ Neither a result Assertion nor a bounded distinction requires another Act. Autho
 
 ## Related chapters
 
-- [Movement coordinates](06-movement-coordinates.md)
-- [Stopping and completion](15-stopping-and-completion.md)
+- [Movement coordinates](06_movement_coordinates.md)
+- [Stopping and completion](15_stopping_and_completion.md)
