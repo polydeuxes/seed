@@ -24,11 +24,13 @@ sys.path.insert(0, str(ROOT / "scripts"))
 from compiled_format_invocation import (  # noqa: E402
     AddedPositionOccurrence,
     AddedPositionAdmissionOccurrence,
+    RemovedPositionResultAdmissionOccurrence,
     COMPILED_IMPLEMENTATION_FUNCTIONS,
     CompiledImplementationFunction,
     ExactMaterialReference,
     admit_compiled_invocation_rows,
     admit_added_position_occurrences,
+    admit_removed_position_results,
     added_position_admission_occurrence,
     added_position_admission_occurrences,
     admission_added_position_occurrences,
@@ -49,6 +51,7 @@ from compiled_format_invocation import (  # noqa: E402
     first_recurring_removed_compare,
     first_recurring_removed_compare_across,
     removed_position_occurrences,
+    removed_position_result_admission_occurrence,
     exact_byte_material_references,
     exact_byte_pair_material_references,
     moved_exact_byte_material_references,
@@ -353,32 +356,26 @@ def book_removed_position_comparisons(
 
 @pytest.fixture(scope="module")
 def book_removal_result_additions(
-    measured_book_pairs,
     book_removed_position_invocation_occurrences,
     book_removed_position_comparisons,
+    book_format_admissions,
 ):
-    admitted_removal_identities = {
-        comparison.removed_position_act_occurrence_identity
-        for row in book_removed_position_comparisons
-        for comparison in row
-        if comparison.distinction
-    }
-    admitted_removals = tuple(
-        removal
-        for removal in book_removed_position_invocation_occurrences[0]
-        if removal.act_occurrence_identity in admitted_removal_identities
+    removals = book_removed_position_invocation_occurrences[0]
+    removal_admission = removed_position_result_admission_occurrence(
+        removals,
+        book_removed_position_comparisons,
+        boundary_identity="book-removal-result-admission",
     )
-    source_references = tuple(
-        removal.result_reference for removal in admitted_removals
-    )
+    source_references = removal_admission.source_material
     source_invocations = compiled_reference_invocations(
         source_references,
         boundary_identity="book-removal-result-format",
     )
-    additions = added_position_occurrences(
-        source_references,
-        measured_book_pairs[7],
+    additions = admission_result_added_position_occurrences(
+        removal_admission.result_reference,
+        book_format_admissions[1].result_reference,
         boundary_identity="book-removal-result-addition",
+        admitted_material_act_occurrence_count_limit=4096,
     )
     result_invocations = added_position_invocations(
         additions,
@@ -390,9 +387,9 @@ def book_removal_result_additions(
         boundary_identity="book-removal-result-addition-compare",
     )
     return (
-        admitted_removal_identities,
-        admitted_removals,
+        removal_admission,
         source_references,
+        source_invocations,
         additions,
         comparisons,
     )
@@ -2219,30 +2216,121 @@ def test_removal_result_admission_comes_from_exact_compare_distinctions(
     book_removal_result_additions,
     book_removed_position_comparisons,
 ):
-    admitted_identities, admitted_removals, source_references, _, _ = (
-        book_removal_result_additions
-    )
-    observed = {
-        comparison.removed_position_act_occurrence_identity
-        for row in book_removed_position_comparisons
-        for comparison in row
-        if comparison.distinction
-    }
+    admission, source_references, _, _, _ = book_removal_result_additions
+    removals = admission.removal_occurrences
 
-    assert admitted_identities == observed
-    assert admitted_identities
-    assert {
-        removal.act_occurrence_identity for removal in admitted_removals
-    } == admitted_identities
-    assert tuple(removal.result_reference for removal in admitted_removals) == (
-        source_references
+    assert admission.admitted_material == admit_removed_position_results(
+        removals,
+        book_removed_position_comparisons,
     )
+    assert source_references == tuple(
+        removal.result_reference for removal in removals
+    )
+    assert {
+        reference
+        for same_coordinates in admission.admitted_material
+        for reference in same_coordinates
+    } == set(source_references)
+
+
+def test_removal_results_enter_admission_through_every_exact_compare():
+    source_references = tuple(
+        ExactMaterialReference(
+            f"removal-admission-source-{position}",
+            f"removal-admission-assertion-{position}",
+            "removal-admission-locality",
+            material,
+        )
+        for position, material in enumerate((b"ab", b"ac"))
+    )
+    removed_reference = ExactMaterialReference(
+        "removal-admission-removed",
+        "removal-admission-removed-assertion",
+        "removal-admission-locality",
+        b"a",
+    )
+    removals = removed_position_occurrences(
+        source_references,
+        (removed_reference,),
+        boundary_identity="removal-admission-act",
+    )
+
+    def first(material):
+        if material == b"ac":
+            raise ValueError("refused")
+
+    functions = (
+        CompiledImplementationFunction("removal-admission-first", first),
+        CompiledImplementationFunction(
+            "removal-admission-second", lambda material: None
+        ),
+    )
+    source_invocations = compiled_reference_invocations(
+        source_references,
+        boundary_identity="removal-admission-source-invocation",
+        implementation_functions=functions,
+    )
+    result_invocations = removed_position_invocations(
+        removals,
+        boundary_identity="removal-admission-result-invocation",
+        implementation_functions=functions,
+    )
+    comparisons = compare_removed_position_invocations(
+        source_invocations,
+        result_invocations,
+        boundary_identity="removal-admission-compare",
+    )
+
+    admission = removed_position_result_admission_occurrence(
+        removals,
+        comparisons,
+        boundary_identity="removal-result-admission",
+    )
+
+    result_references = tuple(removal.result_reference for removal in removals)
+    assert admission.source_material == result_references
+    assert {
+        reference
+        for same_coordinates in admission.admitted_material
+        for reference in same_coordinates
+    } == set(result_references)
+    assert len(admission.admitted_material) == 2
+    assert admit_removed_position_results(removals, comparisons) == (
+        admission.admitted_material
+    )
+
+    with pytest.raises(ValueError, match="every removal Act occurrence"):
+        admit_removed_position_results(
+            removals,
+            (comparisons[0], comparisons[1][:-1]),
+        )
+    with pytest.raises(ValueError, match="implementation function entered"):
+        admit_removed_position_results(
+            removals,
+            (comparisons[0], comparisons[0]),
+        )
+
+    changed = replace(
+        comparisons[0][-1],
+        source_returned=comparisons[0][0].source_returned,
+    )
+    with pytest.raises(ValueError, match="differs from its Compare"):
+        RemovedPositionResultAdmissionOccurrence(
+            admission_occurrence=admission.admission_occurrence,
+            removal_occurrences=removals,
+            comparison_occurrences=(
+                (*comparisons[0][:-1], changed),
+                comparisons[1],
+            ),
+        )
 
 
 def test_addition_uses_exact_removal_results_as_its_source(
     book_removal_result_additions,
 ):
-    _, _, source_references, additions, comparisons = book_removal_result_additions
+    removal_admission, source_references, _, additions, comparisons = (
+        book_removal_result_additions
+    )
     exact_sources = set(source_references)
     addition_occurrence_identities = {
         addition.act_occurrence_identity for addition in additions
@@ -2250,6 +2338,11 @@ def test_addition_uses_exact_removal_results_as_its_source(
 
     assert additions
     assert all(addition.source_reference in exact_sources for addition in additions)
+    assert all(
+        addition.source_admission_result_reference
+        == removal_admission.result_reference
+        for addition in additions
+    )
     assert len({addition.act_occurrence_identity for addition in additions}) == len(
         additions
     )
@@ -2262,6 +2355,46 @@ def test_addition_uses_exact_removal_results_as_its_source(
     )
     assert len(tuple(comparison for row in comparisons for comparison in row)) == (
         len(COMPILED_IMPLEMENTATION_FUNCTIONS) * len(additions)
+    )
+
+
+def test_removal_result_admission_reaches_later_addition_compare(
+    book_removal_result_additions,
+):
+    _, _, source_invocations, additions, _ = book_removal_result_additions
+
+    measured = tuple(
+        first_recurring_added_compare_across(
+            additions,
+            (first, second),
+            boundary_identity=(
+                "book-removal-result-addition-recurrence-"
+                f"{first_position}-{second_position}"
+            ),
+            act_occurrence_count_limit=len(additions),
+        )
+        for first_position, first in enumerate(source_invocations)
+        for second_position, second in enumerate(source_invocations)
+        if first_position < second_position
+    )
+    recurring = tuple(
+        (earlier, coordinates, later)
+        for earlier, coordinates, later in measured
+        if coordinates is not None and later is not None
+    )
+
+    assert recurring
+    assert all(len(coordinates) == 2 for _, coordinates, _ in recurring)
+    assert all(
+        tuple(comparison.result_returned for comparison in later) == coordinates
+        for _, coordinates, later in recurring
+    )
+    assert all(
+        comparison.added_position_act_occurrence_identity
+        != later[0].added_position_act_occurrence_identity
+        for earlier, _, later in recurring
+        for row in earlier
+        for comparison in row
     )
 
 

@@ -816,6 +816,52 @@ class AddedPositionAdmissionOccurrence:
 
 
 @dataclass(frozen=True, slots=True)
+class RemovedPositionResultAdmissionOccurrence:
+    admission_occurrence: AdmissionOccurrence
+    removal_occurrences: tuple[RemovedPositionOccurrence, ...]
+    comparison_occurrences: tuple[tuple[RemovedPositionCompareOccurrence, ...], ...]
+
+    def __post_init__(self) -> None:
+        if not isinstance(self.admission_occurrence, AdmissionOccurrence):
+            raise TypeError("removal result Admission requires its exact Act occurrence")
+        admitted = admit_removed_position_results(
+            self.removal_occurrences,
+            self.comparison_occurrences,
+        )
+        source_material = tuple(
+            occurrence.result_reference for occurrence in self.removal_occurrences
+        )
+        if self.admission_occurrence.source_material != source_material:
+            raise ValueError(
+                "removal result Admission source differs from its Act results"
+            )
+        if self.admission_occurrence.admitted_material != admitted:
+            raise ValueError(
+                "removal result Admission differs from its Compare occurrences"
+            )
+
+    @property
+    def source_material(self):
+        return self.admission_occurrence.source_material
+
+    @property
+    def admitted_material(self):
+        return self.admission_occurrence.admitted_material
+
+    @property
+    def act_occurrence_identity(self) -> tuple[str, int]:
+        return self.admission_occurrence.act_occurrence_identity
+
+    @property
+    def result_identity(self) -> tuple[str, int, str]:
+        return self.admission_occurrence.result_identity
+
+    @property
+    def result_reference(self) -> AdmissionResultReference:
+        return AdmissionResultReference(admission_occurrence=self)
+
+
+@dataclass(frozen=True, slots=True)
 class CompiledAdmissionOccurrence:
     admission_occurrence: AdmissionOccurrence
     invocation_result_references: tuple[CompiledInvocationResultReference, ...]
@@ -1021,6 +1067,118 @@ def added_position_admission_occurrences(
             occurrence_position=position,
         )
         for position, comparison_set in enumerate(comparison_sets)
+    )
+
+
+def _removed_position_comparisons_by_occurrence(
+    occurrences: tuple[RemovedPositionOccurrence, ...],
+    comparisons: tuple[tuple[RemovedPositionCompareOccurrence, ...], ...],
+) -> tuple[
+    dict[tuple[str, int], RemovedPositionOccurrence],
+    dict[tuple[str, int], tuple[RemovedPositionCompareOccurrence, ...]],
+]:
+    if type(occurrences) is not tuple or not occurrences or any(
+        not isinstance(occurrence, RemovedPositionOccurrence)
+        for occurrence in occurrences
+    ):
+        raise TypeError("Admission requires exact removal Act occurrences")
+    if type(comparisons) is not tuple or not comparisons or any(
+        type(row) is not tuple
+        or not row
+        or any(
+            not isinstance(comparison, RemovedPositionCompareOccurrence)
+            for comparison in row
+        )
+        for row in comparisons
+    ):
+        raise TypeError("Admission requires exact removal Compare tuples")
+    occurrence_by_identity = {}
+    for occurrence in occurrences:
+        identity = occurrence.act_occurrence_identity
+        if identity in occurrence_by_identity:
+            raise ValueError("removal Act occurrence entered Admission twice")
+        occurrence_by_identity[identity] = occurrence
+    expected_identities = frozenset(occurrence_by_identity)
+    comparisons_by_occurrence = {
+        identity: [] for identity in occurrence_by_identity
+    }
+    implementation_function_identities = set()
+    comparison_occurrence_identities = set()
+    for row in comparisons:
+        implementation_function_identity = row[0].implementation_function_identity
+        if implementation_function_identity in implementation_function_identities:
+            raise ValueError("implementation function entered Admission twice")
+        implementation_function_identities.add(implementation_function_identity)
+        comparison_by_identity = {}
+        for comparison in row:
+            if (
+                comparison.implementation_function_identity
+                != implementation_function_identity
+            ):
+                raise ValueError("one Compare tuple crossed implementation functions")
+            if comparison.occurrence_identity in comparison_occurrence_identities:
+                raise ValueError("Compare occurrence entered Admission twice")
+            comparison_occurrence_identities.add(comparison.occurrence_identity)
+            identity = comparison.removed_position_act_occurrence_identity
+            if identity in comparison_by_identity:
+                raise ValueError("removal Act occurrence entered one Compare tuple twice")
+            comparison_by_identity[identity] = comparison
+        if frozenset(comparison_by_identity) != expected_identities:
+            raise ValueError("Compare tuple does not carry every removal Act occurrence")
+        for identity in occurrence_by_identity:
+            comparisons_by_occurrence[identity].append(
+                comparison_by_identity[identity]
+            )
+    return occurrence_by_identity, {
+        identity: tuple(found)
+        for identity, found in comparisons_by_occurrence.items()
+    }
+
+
+def admit_removed_position_results(
+    occurrences: tuple[RemovedPositionOccurrence, ...],
+    comparisons: tuple[tuple[RemovedPositionCompareOccurrence, ...], ...],
+) -> tuple[tuple[ExactMaterialResultReference, ...], ...]:
+    occurrence_by_identity, comparisons_by_occurrence = (
+        _removed_position_comparisons_by_occurrence(occurrences, comparisons)
+    )
+    same_coordinates = {}
+    for identity, occurrence in occurrence_by_identity.items():
+        coordinates = tuple(
+            (
+                comparison.implementation_function_identity,
+                comparison.source_returned,
+                comparison.result_returned,
+            )
+            for comparison in comparisons_by_occurrence[identity]
+        )
+        same_coordinates.setdefault(coordinates, []).append(
+            occurrence.result_reference
+        )
+    return tuple(tuple(found) for found in same_coordinates.values())
+
+
+def removed_position_result_admission_occurrence(
+    occurrences: tuple[RemovedPositionOccurrence, ...],
+    comparisons: tuple[tuple[RemovedPositionCompareOccurrence, ...], ...],
+    *,
+    boundary_identity: str,
+    occurrence_position: int = 0,
+) -> RemovedPositionResultAdmissionOccurrence:
+    admitted = admit_removed_position_results(occurrences, comparisons)
+    source_material = tuple(
+        occurrence.result_reference for occurrence in occurrences
+    )
+    admission = admission_occurrence(
+        admitted,
+        boundary_identity=boundary_identity,
+        occurrence_position=occurrence_position,
+        source_material=source_material,
+    )
+    return RemovedPositionResultAdmissionOccurrence(
+        admission_occurrence=admission,
+        removal_occurrences=occurrences,
+        comparison_occurrences=comparisons,
     )
 
 
