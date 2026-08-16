@@ -744,6 +744,33 @@ def test_format_recurrence_refuses_without_full_function_vector(
     assert len(earlier) == len(book_pair_format_occurrences)
 
 
+def test_format_recurrence_accepts_a_matching_full_function_vector(
+    book_three_byte_format_occurrences,
+    book_pair_format_occurrences,
+):
+    additions = book_three_byte_format_occurrences[1]
+    first_row = book_pair_format_occurrences[0]
+    clone = CompiledImplementationFunction(
+        identity="compiled-clone",
+        invocation=first_row[0].implementation_function.invocation,
+    )
+    references = tuple(invocation.source_coordinate for invocation in first_row)
+    clone_row = compiled_reference_invocations(
+        references,
+        boundary_identity="book-clone-source",
+        implementation_functions=(clone,),
+    )[0]
+    earlier, coordinate, later = first_recurring_added_compare_across(
+        additions,
+        (first_row, clone_row),
+        boundary_identity="book-matching-joint-format-recurrence",
+        act_occurrence_count_limit=len(additions),
+    )
+    assert later is not None
+    assert coordinate is not None
+    assert len(earlier) == 2
+
+
 def test_compiled_format_implementation_functions_admit_the_same_material_differently(
     book_pair_format_occurrences,
 ):
