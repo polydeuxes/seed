@@ -7,13 +7,15 @@ from seed_runtime.operator_command import AddressedOperatorCommand
 
 @dataclass(frozen=True)
 class OperatorLocalityRequest:
-    locality_identity: str
+    locality_identity: str | None
 
 
 def request_operator_locality(command: AddressedOperatorCommand) -> OperatorLocalityRequest:
     argument = command.frame.arguments
     if not argument:
-        raise ValueError("/locality requires one exact Locality identity")
+        raise ValueError("/locality requires one identity or list")
+    if argument == b"list":
+        return OperatorLocalityRequest(locality_identity=None)
     try:
         locality_identity = argument.decode("ascii")
     except UnicodeDecodeError as error:

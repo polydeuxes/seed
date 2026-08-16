@@ -23,6 +23,10 @@ def test_locality_command_preserves_one_exact_identity():
     assert request.locality_identity == "session_123"
 
 
+def test_locality_list_is_a_separate_command_result():
+    assert request_operator_locality(_command(b"list")).locality_identity is None
+
+
 @pytest.mark.parametrize("arguments", (b"", b"a b", b"\xff"))
 def test_locality_command_refuses_non_exact_identity(arguments):
     with pytest.raises(ValueError):

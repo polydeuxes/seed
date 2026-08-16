@@ -107,6 +107,17 @@ def run_persistent_operator_console(
             )
             request = command_run.implementation_result
             if isinstance(request, OperatorLocalityRequest):
+                if request.locality_identity is None:
+                    output_stream.write(
+                        "\n".join(
+                            event.locality_identity
+                            for event in ledger.list()
+                            if event.locality_identity is not None
+                        )
+                        + "\n"
+                    )
+                    output_stream.flush()
+                    continue
                 if not ledger.has_locality(request.locality_identity):
                     raise ValueError("/locality requires an existing Locality")
                 locality_identity = request.locality_identity
