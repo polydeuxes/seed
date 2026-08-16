@@ -149,6 +149,7 @@ chapter
 chapters
 characterization
 checked
+checkout
 choose
 chooses
 chronology
@@ -526,6 +527,7 @@ maintenance
 make
 makes
 mandatory
+many
 markdown
 matches
 matching
@@ -659,6 +661,8 @@ pipeline
 place
 plausible
 plus
+pointer
+pointers
 policy
 poor
 populated
@@ -933,6 +937,7 @@ this
 those
 though
 threshold
+thing
 through
 time
 timestamp

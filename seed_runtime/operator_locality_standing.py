@@ -33,6 +33,14 @@ from seed_runtime.operator_checkpoint import (
     get_standing_boundary_reference_act_evidence,
     get_standing_boundary_reference_responsibility_assignment,
 )
+from seed_runtime.standing_boundary_locality import (
+    RECORDED_STANDING_BOUNDARY_LOCALITY_ACT_EVIDENCE_KIND,
+    RECORDED_STANDING_BOUNDARY_LOCALITY_RECORDED_KIND,
+    RECORDED_STANDING_BOUNDARY_LOCALITY_RESPONSIBILITY_ASSIGNMENT_RECORDED_KIND,
+    get_recorded_standing_boundary_locality,
+    get_recorded_standing_boundary_locality_act_evidence,
+    get_recorded_standing_boundary_locality_responsibility_assignment,
+)
 from seed_runtime.operator_material_acquisition import (
     OPERATOR_MATERIAL_ACQUIRE_ACT_EVIDENCE_KIND,
     OPERATOR_MATERIAL_ACQUIRE_RECORDED_KIND,
@@ -79,6 +87,11 @@ _STANDING_BOUNDARY_REFERENCE_KINDS = {
     STANDING_BOUNDARY_REFERENCE_ACT_EVIDENCE_KIND,
     STANDING_BOUNDARY_REFERENCE_RECORDED_KIND,
 }
+_RECORDED_STANDING_BOUNDARY_LOCALITY_KINDS = {
+    RECORDED_STANDING_BOUNDARY_LOCALITY_RESPONSIBILITY_ASSIGNMENT_RECORDED_KIND,
+    RECORDED_STANDING_BOUNDARY_LOCALITY_ACT_EVIDENCE_KIND,
+    RECORDED_STANDING_BOUNDARY_LOCALITY_RECORDED_KIND,
+}
 _OPERATOR_MATERIAL_ACQUIRE_KINDS = {
     OPERATOR_MATERIAL_ACQUIRE_RESPONSIBILITY_ASSIGNMENT_RECORDED_KIND,
     OPERATOR_MATERIAL_ACQUIRE_ACT_EVIDENCE_KIND,
@@ -90,6 +103,7 @@ _SUPPORTED_KINDS = {
     *_MEASUREMENT_RECORDED_KINDS,
     *_STANDING_LOCALITY_CONTINUATION_KINDS,
     *_STANDING_BOUNDARY_REFERENCE_KINDS,
+    *_RECORDED_STANDING_BOUNDARY_LOCALITY_KINDS,
     *_OPERATOR_MATERIAL_ACQUIRE_KINDS,
     _REPRESENTATION_RECORDED_KIND,
     _REPRESENTATION_ACT_EVIDENCE_KIND,
@@ -226,6 +240,7 @@ def advance_operator_locality_standing(
     representations: dict[str, dict[str, Any]] = {}
     recorded_relation_standings: dict[str, None] = {}
     recorded_standing_boundary_references: dict[str, None] = {}
+    recorded_standing_boundary_locality_relations: dict[str, None] = {}
     responsibility_assignment_occurrences: dict[str, None] = {}
     operator_material_acquire_act_occurrences: dict[str, None] = {}
     # Kept sorted and distinct in place rather than as a set sorted on return.
@@ -264,6 +279,13 @@ def advance_operator_locality_standing(
             raise ValueError(
                 "prior Locality Standing requires exact recorded Standing boundary references"
             )
+        recorded_standing_boundary_locality_relations = prior[
+            "recorded_standing_boundary_locality_relations"
+        ]
+        if type(recorded_standing_boundary_locality_relations) is not dict:
+            raise ValueError(
+                "prior Locality Standing requires exact recorded Standing boundary Locality relations"
+            )
         responsibility_assignment_occurrences = prior[
             "responsibility_assignment_occurrences"
         ]
@@ -294,6 +316,7 @@ def advance_operator_locality_standing(
             or event.kind in _MEASUREMENT_RECORDED_KINDS
             or event.kind in _STANDING_LOCALITY_CONTINUATION_KINDS
             or event.kind in _STANDING_BOUNDARY_REFERENCE_KINDS
+            or event.kind in _RECORDED_STANDING_BOUNDARY_LOCALITY_KINDS
             or event.kind in _OPERATOR_MATERIAL_ACQUIRE_KINDS
         ):
             continue
@@ -327,6 +350,24 @@ def advance_operator_locality_standing(
         if event.kind == STANDING_BOUNDARY_REFERENCE_RECORDED_KIND:
             get_recorded_standing_boundary_reference(ledger, event.identity)
             recorded_standing_boundary_references[event.identity] = None
+            continue
+        if (
+            event.kind
+            == RECORDED_STANDING_BOUNDARY_LOCALITY_RESPONSIBILITY_ASSIGNMENT_RECORDED_KIND
+        ):
+            get_recorded_standing_boundary_locality_responsibility_assignment(
+                ledger, event.identity
+            )
+            responsibility_assignment_occurrences[event.identity] = None
+            continue
+        if event.kind == RECORDED_STANDING_BOUNDARY_LOCALITY_ACT_EVIDENCE_KIND:
+            get_recorded_standing_boundary_locality_act_evidence(
+                ledger, event.identity
+            )
+            continue
+        if event.kind == RECORDED_STANDING_BOUNDARY_LOCALITY_RECORDED_KIND:
+            get_recorded_standing_boundary_locality(ledger, event.identity)
+            recorded_standing_boundary_locality_relations[event.identity] = None
             continue
         if (
             event.kind
@@ -508,6 +549,9 @@ def advance_operator_locality_standing(
         "recorded_relation_standings": recorded_relation_standings,
         "recorded_standing_boundary_references": (
             recorded_standing_boundary_references
+        ),
+        "recorded_standing_boundary_locality_relations": (
+            recorded_standing_boundary_locality_relations
         ),
         "responsibility_assignment_occurrences": (
             responsibility_assignment_occurrences

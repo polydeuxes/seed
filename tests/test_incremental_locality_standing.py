@@ -420,6 +420,7 @@ def test_every_growable_accumulator_participates_without_copying():
         "exact_result_occurrences",
         "operator_material_acquire_act_occurrences",
         "recorded_standing_boundary_references",
+        "recorded_standing_boundary_locality_relations",
         "known_loss",
         "unknowns",
         "conflicts",

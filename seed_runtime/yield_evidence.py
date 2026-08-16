@@ -35,6 +35,7 @@ YIELD_LIVE_BOUNDARIES = frozenset(
         "occurrence_position_measurement",
         "operator_material_acquire",
         "representation_result",
+        "recorded_standing_boundary_locality_relation",
         "standing_boundary_reference",
         "standing_locality_continuation",
         "successful_emission",

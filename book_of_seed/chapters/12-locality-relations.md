@@ -24,6 +24,12 @@ This assignment is its own bounded subject and Standing. It is not the continuat
 
 Active Book Authority is bounded to this direct occurrence and result boundary. The assignment establishes no Applicability, Participation, copying, revision, hierarchy, global Standing, other Locality relation, or continuation from another continuation by identity.
 
+### 06.Locality.C — Recorded Standing boundary Locality Responsibility
+
+When one current Locality Standing carries exactly one intact recorded Standing boundary reference or one direct relation preserving that exact reference, active Book assigns this Seed the Responsibility only to establish one direct Locality relation from that recorded result to one new Locality. The assignment preserves its own subject, the exact recorded result reference, responsible boundary, exact Act, Act occurrence, relation occurrence, destination Locality, Evidence occurrence, Authority, Scope, limits, Unknowns, and Standing.
+
+The assignment, exact Act, Act occurrence, Locality relation, Yield, and result remain distinct by identity. The relation preserves only the exact recorded result reference and new destination identity. It does not copy the addressed Standing, carry another relation by identity, carry branch Standing, revise the recorded boundary, establish Applicability or Participation, or perform Compare. Absence or several carried recorded references do not establish one exact reference.
+
 ## Important distinctions
 
 - locality subjects != locality relation
@@ -31,6 +37,8 @@ Active Book Authority is bounded to this direct occurrence and result boundary. 
 - movement != copying or revision
 - availability != Applicability
 - Responsibility assignment != continuation Act or Locality relation
+- recorded Standing boundary reference != its Locality relation
+- one direct recorded boundary relation != another direct relation
 
 ## Related chapters
 

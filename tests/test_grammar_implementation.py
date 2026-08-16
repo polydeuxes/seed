@@ -71,6 +71,15 @@ from seed_runtime.operator_standing_continuation import (
     record_standing_locality_continuation_responsible_act_evidence,
     record_standing_locality_continuation_result,
 )
+from seed_runtime.standing_boundary_locality import (
+    EVENT_KIND_RESPONSIBILITIES as BOUNDARY_LOCALITY_EVENT_KIND_RESPONSIBILITIES,
+    RECORDED_STANDING_BOUNDARY_LOCALITY_ACT_EVIDENCE_KIND,
+    RECORDED_STANDING_BOUNDARY_LOCALITY_RECORDED_KIND,
+    RECORDED_STANDING_BOUNDARY_LOCALITY_RESPONSIBILITY_ASSIGNMENT_RECORDED_KIND,
+    record_recorded_standing_boundary_locality_responsibility_assignment,
+    record_recorded_standing_boundary_locality_responsible_act_evidence,
+    record_recorded_standing_boundary_locality_result,
+)
 from seed_runtime.occurrence_position_measurement import (
     EVENT_KIND_RESPONSIBILITIES as POSITION_EVENT_KIND_RESPONSIBILITIES,
     MEASURED_ASSERTION_RESPONSIBILITY as POSITION_ASSERTION_RESPONSIBILITY,
@@ -615,6 +624,71 @@ def _standing_boundary_reference_yield_witness() -> dict:
     )
     event = record_standing_boundary_reference_result(
         ledger, responsible_act_evidence_event_identity=act.identity
+    )
+    return _yield_bundle(ledger, event)
+
+
+def _recorded_standing_boundary_locality_yield_witness() -> dict:
+    ledger = _IntegrityAdversaryLedger()
+    locality_identity = "recorded-standing-boundary-locality"
+    standing = read_operator_locality_standing(
+        ledger, locality_identity=locality_identity
+    )
+    representation = record_operator_representation(
+        ledger,
+        locality_identity=locality_identity,
+        locality_standing=standing,
+    )
+    standing = read_operator_locality_standing(
+        ledger, locality_identity=locality_identity
+    )
+    addressed = AddressedOperatorCommand(
+        command_identity=new_identity("operator_command"),
+        locality_identity=locality_identity,
+        addressed_at_representation_event_identity=representation[
+            "representation_event_identity"
+        ],
+        frame=OperatorCommandFrame(
+            exact_bytes=b"/checkpoint\n",
+            name=b"checkpoint",
+            arguments=b"",
+        ),
+    )
+    anchor_assignment = record_standing_boundary_reference_responsibility_assignment(
+        ledger,
+        addressed_command=addressed,
+        locality_standing=standing,
+    )
+    anchor_act = record_standing_boundary_reference_responsible_act_evidence(
+        ledger,
+        responsibility_assignment_event_identity=anchor_assignment.identity,
+        responsibility_assignment_standing=read_operator_locality_standing(
+            ledger, locality_identity=locality_identity
+        ),
+    )
+    record_standing_boundary_reference_result(
+        ledger, responsible_act_evidence_event_identity=anchor_act.identity
+    )
+    relation_assignment = (
+        record_recorded_standing_boundary_locality_responsibility_assignment(
+            ledger,
+            source_locality_standing=read_operator_locality_standing(
+                ledger, locality_identity=locality_identity
+            ),
+        )
+    )
+    relation_act = (
+        record_recorded_standing_boundary_locality_responsible_act_evidence(
+            ledger,
+            responsibility_assignment_event_identity=relation_assignment.identity,
+            responsibility_assignment_standing=read_operator_locality_standing(
+                ledger, locality_identity=relation_assignment.locality_identity
+            ),
+        )
+    )
+    event = record_recorded_standing_boundary_locality_result(
+        ledger,
+        responsible_act_evidence_event_identity=relation_act.identity,
     )
     return _yield_bundle(ledger, event)
 
@@ -1348,6 +1422,9 @@ def _remaining_yield_requirement_bundles() -> dict[str, dict[str, dict]]:
         "material_ingest": _material_ingest_yield_witness,
         "operator_material_acquire": _operator_material_acquire_yield_witness,
         "standing_boundary_reference": _standing_boundary_reference_yield_witness,
+        "recorded_standing_boundary_locality_relation": (
+            _recorded_standing_boundary_locality_yield_witness
+        ),
         "standing_locality_continuation": (
             _standing_locality_continuation_yield_witness
         ),
@@ -3134,6 +3211,9 @@ def test_unrelated_yield_occurrences_do_not_share_result_identity():
         "material_ingest": _material_ingest_yield_witness,
         "operator_material_acquire": _operator_material_acquire_yield_witness,
         "standing_boundary_reference": _standing_boundary_reference_yield_witness,
+        "recorded_standing_boundary_locality_relation": (
+            _recorded_standing_boundary_locality_yield_witness
+        ),
         "standing_locality_continuation": (
             _standing_locality_continuation_yield_witness
         ),
@@ -3240,6 +3320,18 @@ def test_standing_boundary_reference_stages_keep_distinct_machine_clauses():
     assert CHECKPOINT_EVENT_KIND_RESPONSIBILITIES[
         STANDING_BOUNDARY_REFERENCE_RECORDED_KIND
     ] == "05.Recording.D"
+
+
+def test_recorded_boundary_locality_stages_keep_distinct_machine_clauses():
+    assert BOUNDARY_LOCALITY_EVENT_KIND_RESPONSIBILITIES[
+        RECORDED_STANDING_BOUNDARY_LOCALITY_RESPONSIBILITY_ASSIGNMENT_RECORDED_KIND
+    ] == "06.Locality.C"
+    assert BOUNDARY_LOCALITY_EVENT_KIND_RESPONSIBILITIES[
+        RECORDED_STANDING_BOUNDARY_LOCALITY_ACT_EVIDENCE_KIND
+    ] == "02.Acts.A"
+    assert BOUNDARY_LOCALITY_EVENT_KIND_RESPONSIBILITIES[
+        RECORDED_STANDING_BOUNDARY_LOCALITY_RECORDED_KIND
+    ] == "06.Locality.A"
 
 
 def test_representation_source_act_and_locality_witnesses_do_not_absorb_each_other():

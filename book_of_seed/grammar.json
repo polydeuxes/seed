@@ -426,6 +426,57 @@
         ["Responsibility_assignment", "Locality_relation"],
         ["Responsibility_assignment", "result"]
       ]
+    },
+    "06.Locality.C": {
+      "subject": "one_direct_recorded_Standing_boundary_Locality_relation",
+      "responsibility": {
+        "kind": "recorded_Standing_boundary_Locality_assignment",
+        "coordinates": [
+          "Responsibility_assignment_subject",
+          "recorded_result_reference",
+          "responsible_boundary",
+          "exact_Act",
+          "Act_occurrence",
+          "relation_occurrence",
+          "destination_Locality",
+          "Evidence_occurrence",
+          "Authority",
+          "Scope",
+          "limits",
+          "Unknowns",
+          "Standing"
+        ]
+      },
+      "authority": "active_Book_within_exact_Scope",
+      "requires": [
+        "exactly_one_carried_recorded_Standing_boundary_reference",
+        "intact_recorded_result",
+        "new_destination_Locality",
+        "intact_Evidence_occurrence"
+      ],
+      "preserves": [
+        "recorded_result_reference",
+        "destination_Locality",
+        "relation_occurrence",
+        "limits",
+        "Unknowns"
+      ],
+      "does_not_establish": [
+        "Standing_copy",
+        "other_Locality_relation",
+        "other_relation_by_identity",
+        "branch_Standing",
+        "recorded_boundary_revision",
+        "Applicability",
+        "Participation",
+        "Compare"
+      ],
+      "distinct_from": [
+        ["Responsibility_assignment", "exact_Act"],
+        ["exact_Act", "Act_occurrence"],
+        ["Act_occurrence", "Locality_relation"],
+        ["recorded_Standing_boundary_reference", "Locality_relation"]
+      ]
     }
   }
 }
