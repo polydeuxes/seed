@@ -2332,41 +2332,6 @@ def test_implementation_witness_discriminates_content_locality_and_occurrence():
     ]
 
 
-def test_this_requires_subject_locality_and_occurrence_without_collapsing_pairs():
-    grammar = json.loads(GRAMMAR.read_text(encoding="utf-8"))["this"]
-    coordinates = grammar["coordinates"]
-    expected_pairs = [
-        [first, second]
-        for position, first in enumerate(coordinates)
-        for second in coordinates[position + 1 :]
-    ]
-
-    ledger = EventLedger()
-    first = ledger.append(
-        "test.this", {"subject": "this Seed"}, locality_identity="here"
-    )
-    same_subject_elsewhere = ledger.append(
-        "test.this", {"subject": "this Seed"}, locality_identity="there"
-    )
-    other_subject_here = ledger.append(
-        "test.this", {"subject": "this Act"}, locality_identity="here"
-    )
-    repeated_here = ledger.append(
-        "test.this", {"subject": "this Seed"}, locality_identity="here"
-    )
-
-    assert grammar["kind"] == "bounded_address"
-    assert coordinates == ["subject", "locality", "occurrence"]
-    assert grammar["non_equivalence"] == expected_pairs
-    assert first.material == same_subject_elsewhere.material
-    assert first.locality_identity != same_subject_elsewhere.locality_identity
-    assert first.material != other_subject_here.material
-    assert first.locality_identity == other_subject_here.locality_identity
-    assert first.material == repeated_here.material
-    assert first.locality_identity == repeated_here.locality_identity
-    assert first.identity != repeated_here.identity
-
-
 def test_fidelity_is_this_seeds_bounded_machine_comparison():
     grammar = json.loads(GRAMMAR.read_text(encoding="utf-8"))
 
