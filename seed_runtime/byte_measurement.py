@@ -14,6 +14,7 @@ relation.
 from __future__ import annotations
 
 
+from collections import Counter
 from dataclasses import dataclass
 import hashlib
 import json
@@ -504,11 +505,9 @@ def _measure_byte_counts_through(
                 )
             seen_material.add(ingest.identity)
             source_material.append({"ingest_occurrence_identity": ingest.identity})
-            seen = set(exact)
-            for value in seen:
+            for value, count in Counter(exact).items():
                 carrying[value] += 1
-            for value in exact:
-                totals[value] += 1
+                totals[value] += count
     if not source_material:
         raise ByteMeasurementError(
             "declared source Localities contain no ingest through the Measurement boundary"

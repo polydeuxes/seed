@@ -1,4 +1,5 @@
 from tests.binary_input import binary_input
+from collections import Counter as ExactCounter
 from io import StringIO
 import hashlib
 import json
@@ -133,6 +134,56 @@ def test_two_stages_traverse_byte_counts_once(monkeypatch):
             "completeness_boundary"
         ]
     ]
+
+
+def test_each_exact_ingest_is_counted_once_without_losing_zero_occurrence_material(
+    monkeypatch,
+):
+    from seed_runtime import byte_measurement
+
+    ledger = EventLedger()
+    materials = (
+        b'{"function":"unobserved","occurrence_count":0}',
+        b'{"function":"observed","occurrence_count":2}',
+    )
+    ingests = tuple(
+        ingest_material(
+            ledger,
+            locality_identity="measurement-sidecar",
+            exact_bytes=material,
+            source_role="implementation function Measurement",
+            source_boundary=f"sidecar-{position}",
+        )
+        for position, material in enumerate(materials)
+    )
+    counted_material = []
+
+    def counted(exact):
+        counted_material.append(exact)
+        return ExactCounter(exact)
+
+    monkeypatch.setattr(byte_measurement, "Counter", counted)
+
+    measured = measure_byte_counts(
+        ledger,
+        source_localities=("measurement-sidecar",),
+    )
+
+    assert counted_material == list(materials)
+    assert tuple(ingest.exact_material for ingest in ingests) == materials
+    assert b'"occurrence_count":0' in ingests[0].exact_material
+    expected_totals = ExactCounter(b"".join(materials))
+    expected_carrying = {
+        value: sum(value in material for material in materials)
+        for value in expected_totals
+    }
+    assert {
+        item.representation: (item.occurrences_carrying, item.count)
+        for item in measured.counts
+    } == {
+        value: (expected_carrying[value], count)
+        for value, count in expected_totals.items()
+    }
 
 
 def test_yield_resolves_the_exact_act_evidence_after_reopen(tmp_path):
