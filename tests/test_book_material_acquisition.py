@@ -29,6 +29,33 @@ def _record_byte_measurement(
     )
 
 
+def _complete_admitted_pair_occurrence_counts(
+    source_admission_result_reference,
+    added_admission_result_reference,
+):
+    return tuple(
+        (
+            source_admitted_position,
+            added_admitted_position,
+            sum(
+                (len(source.exact_material) + 1)
+                * len(added_admitted_material)
+                for source in source_admitted_material
+            ),
+        )
+        for source_admitted_position, source_admitted_material in enumerate(
+            source_admission_result_reference.admitted_material
+        )
+        for added_admitted_position, added_admitted_material in enumerate(
+            added_admission_result_reference.admitted_material
+        )
+        if {
+            source.locality_identity for source in source_admitted_material
+        }
+        == {added.locality_identity for added in added_admitted_material}
+    )
+
+
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "scripts"))
 
@@ -204,11 +231,18 @@ def complete_book_admission_acts(acquired_book_material):
         byte_invocation_rows,
         boundary_identity="complete-book-byte-admission",
     )
+    act_occurrence_count_limit = min(
+        count
+        for _, _, count in _complete_admitted_pair_occurrence_counts(
+            book_admission.result_reference,
+            byte_admission.result_reference,
+        )
+    )
     additions = admission_result_added_position_occurrences(
         book_admission.result_reference,
         byte_admission.result_reference,
         boundary_identity="complete-book-admission-addition",
-        admitted_material_act_occurrence_count_limit=22_000,
+        admitted_material_act_occurrence_count_limit=act_occurrence_count_limit,
     )
     earlier_comparisons, prospective_coordinates, later_comparisons = (
         first_recurring_added_compare_across(
@@ -545,6 +579,35 @@ def test_complete_book_admission_drives_later_exact_material_acts(
         ]
         for addition in additions
     )
+    complete_pair_occurrence_counts = _complete_admitted_pair_occurrence_counts(
+        book_admission.result_reference,
+        byte_admission.result_reference,
+    )
+    least_complete_pair_occurrence_count = min(
+        count for _, _, count in complete_pair_occurrence_counts
+    )
+    assert len(additions) == least_complete_pair_occurrence_count
+    assert {
+        (
+            addition.source_admitted_material_position,
+            addition.added_admitted_material_position,
+        )
+        for addition in additions
+    } == {
+        (source_position, added_position)
+        for source_position, added_position, count in (
+            complete_pair_occurrence_counts
+        )
+        if count == least_complete_pair_occurrence_count
+    }
+    assert admission_result_added_position_occurrences(
+        book_admission.result_reference,
+        byte_admission.result_reference,
+        boundary_identity="incomplete-book-admission-addition",
+        admitted_material_act_occurrence_count_limit=(
+            least_complete_pair_occurrence_count - 1
+        ),
+    ) == ()
     assert all(len(row) == len(additions) for row in result_invocation_rows)
     assert all(len(row) == len(additions) for row in comparisons)
     assert any(
