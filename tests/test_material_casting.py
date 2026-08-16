@@ -7,6 +7,11 @@ import sys
 import pytest
 
 from seed_runtime.events import EventLedger
+from seed_runtime.byte_measurement import (
+    record_byte_measurement_responsible_act_evidence,
+    record_byte_measurement_result,
+    record_byte_position_pair_count_layer,
+)
 from seed_runtime.material_ingest import ingest_material
 from seed_runtime.operator_checkpoint import (
     record_standing_boundary_reference_responsibility_assignment,
@@ -40,6 +45,12 @@ from compiled_material_invocation import (  # noqa: E402
 from material_fixture_books import (  # noqa: E402
     MATERIAL_WINDOWS,
     supplied_book_material,
+)
+from material_pair_investigation import (  # noqa: E402
+    compare_pair_occurrences,
+    exact_recurrent_material_pair_references,
+    exact_pair_occurrences,
+    recurrent_adjacent_pair_candidates,
 )
 
 
@@ -260,6 +271,124 @@ def test_operator_material_casts_against_exact_corpus_checkpoint_standing(
         and not hasattr(comparison, "admitted_material")
         for row in comparisons
         for comparison in row
+    )
+
+
+def test_recurrent_book_pairs_keep_identity_in_fresh_operator_material():
+    paths = tuple(ROOT / "corpus" / name for name, _ in MATERIAL_WINDOWS)
+    if any(not path.is_file() for path in paths):
+        pytest.skip("supplied fixture material is unavailable")
+    books = supplied_book_material(ROOT)
+    locality_identity = "checkpointed-pair-casting-locality"
+    ledger = EventLedger()
+    corpus = ingest_material(
+        ledger,
+        locality_identity=locality_identity,
+        exact_bytes=b"".join(books),
+        source_role="fixture material",
+        source_boundary="sixteen supplied books",
+    )
+    measurement_act = record_byte_measurement_responsible_act_evidence(
+        ledger,
+        source_localities=(locality_identity,),
+        recording_locality_identity=locality_identity,
+    )
+    measurement = record_byte_measurement_result(
+        ledger,
+        responsible_act_evidence_event_identity=measurement_act.identity,
+    )
+    pair_measurement = record_byte_position_pair_count_layer(
+        ledger,
+        source_measurement_event_identity=measurement.identity,
+        recording_locality_identity=locality_identity,
+    )
+    checkpoint = _record_checkpoint(ledger, locality_identity=locality_identity)
+    operator = ingest_material(
+        ledger,
+        locality_identity=locality_identity,
+        exact_bytes=b"what does this exact material distinguish?\n",
+        source_role="operator material",
+        source_boundary="operator material",
+    )
+
+    point = read_carried_recorded_standing(
+        ledger,
+        locality_identity=locality_identity,
+        recorded_occurrence_identity=checkpoint.identity,
+    )
+    assert [
+        occurrence["evidence_event_identity"]
+        for occurrence in point["standing"]["ingest_occurrences"]
+    ] == [corpus.identity]
+    assert measurement.identity in point["standing"]["measurement_occurrences"]
+    assert pair_measurement.identity in point["standing"]["measurement_occurrences"]
+    assert operator.identity not in {
+        occurrence["evidence_event_identity"]
+        for occurrence in point["standing"]["ingest_occurrences"]
+    }
+
+    corpus_reference = ingest_result_reference(ledger, corpus.identity)
+    pair_references = exact_recurrent_material_pair_references(
+        ledger, pair_measurement.identity
+    )
+    candidates = recurrent_adjacent_pair_candidates(
+        (corpus_reference,), pair_references
+    )
+
+    expected_counts: dict[bytes, int] = {}
+    corpus_material = b"".join(books)
+    for position in range(len(corpus_material) - 1):
+        material = corpus_material[position : position + 2]
+        expected_counts[material] = expected_counts.get(material, 0) + 1
+    expected_materials = {
+        material for material, count in expected_counts.items() if count >= 2
+    }
+    assert {
+        candidate.pair_reference.exact_material
+        for candidate in candidates
+    } == expected_materials
+
+    operator_reference = ingest_result_reference(ledger, operator.identity)
+    surviving = []
+    comparisons = []
+    for candidate_position, candidate in enumerate(candidates):
+        occurrences = exact_pair_occurrences(candidate, operator_reference)
+        if not occurrences:
+            continue
+        surviving.append((candidate, occurrences))
+        comparisons.extend(
+            compare_pair_occurrences(
+                candidate,
+                occurrences,
+                boundary_identity=(
+                    f"checkpointed-operator-pair-{candidate_position}"
+                ),
+            )
+        )
+
+    assert surviving
+    assert comparisons
+    assert any(
+        {occurrence.direction for occurrence in occurrences}
+        == {"before", "after"}
+        for _candidate, occurrences in surviving
+    )
+    assert any(comparison.distinction for comparison in comparisons)
+    assert any(not comparison.distinction for comparison in comparisons)
+    assert all(
+        comparison.premise_occurrence.pair_identity
+        == comparison.current_occurrence.pair_identity
+        for comparison in comparisons
+    )
+    assert all(
+        not hasattr(comparison, coordinate)
+        for comparison in comparisons
+        for coordinate in (
+            "admitted_material",
+            "applicability",
+            "meaning",
+            "reference",
+        )
     )
 
 
