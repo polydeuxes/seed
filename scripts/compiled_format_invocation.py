@@ -57,6 +57,9 @@ class ExactMaterialResultReference:
     act_occurrence_identity: tuple[str, int]
     result_identity: tuple[str, int, str]
     exact_material: bytes
+    admission_result_reference: AdmissionResultReference | None = None
+    admitted_material_position: int | None = None
+    admitted_material_act_occurrence_count_limit: int | None = None
 
     def __post_init__(self) -> None:
         if (
@@ -71,6 +74,28 @@ class ExactMaterialResultReference:
             or type(self.exact_material) is not bytes
         ):
             raise TypeError("exact material result requires its Act occurrence and result identity")
+        admission_coordinates = (
+            self.admission_result_reference,
+            self.admitted_material_position,
+            self.admitted_material_act_occurrence_count_limit,
+        )
+        if any(coordinate is not None for coordinate in admission_coordinates):
+            if not isinstance(
+                self.admission_result_reference, AdmissionResultReference
+            ):
+                raise TypeError("material result requires its exact Admission result")
+            if (
+                type(self.admitted_material_position) is not int
+                or self.admitted_material_position < 0
+                or self.admitted_material_position
+                >= len(self.admission_result_reference.admitted_material)
+            ):
+                raise TypeError("material result requires its exact admitted position")
+            if (
+                type(self.admitted_material_act_occurrence_count_limit) is not int
+                or self.admitted_material_act_occurrence_count_limit < 1
+            ):
+                raise TypeError("material result requires its exact Act occurrence count limit")
 
 
 def _is_exact_material_coordinates(material: object) -> bool:
@@ -115,6 +140,9 @@ class AddedPositionOccurrence:
     position: int
     added_reference: ExactMaterialCoordinates
     result_material: bytes
+    admission_result_reference: AdmissionResultReference | None = None
+    admitted_material_position: int | None = None
+    admitted_material_act_occurrence_count_limit: int | None = None
 
     def __post_init__(self) -> None:
         if type(self.boundary_identity) is not str or not self.boundary_identity:
@@ -135,6 +163,36 @@ class AddedPositionOccurrence:
             raise ValueError("result material does not preserve its exact source order")
         if self.result_material[self.position : self.position + 1] != self.added_material:
             raise ValueError("result material does not carry the exact added material")
+        admission_coordinates = (
+            self.admission_result_reference,
+            self.admitted_material_position,
+            self.admitted_material_act_occurrence_count_limit,
+        )
+        if any(coordinate is not None for coordinate in admission_coordinates):
+            if not isinstance(
+                self.admission_result_reference, AdmissionResultReference
+            ):
+                raise TypeError("addition Act requires its exact Admission result")
+            if (
+                type(self.admitted_material_position) is not int
+                or self.admitted_material_position < 0
+                or self.admitted_material_position
+                >= len(self.admission_result_reference.admitted_material)
+            ):
+                raise TypeError("addition Act requires its exact admitted position")
+            if (
+                type(self.admitted_material_act_occurrence_count_limit) is not int
+                or self.admitted_material_act_occurrence_count_limit < 1
+            ):
+                raise TypeError("addition Act requires its exact occurrence count limit")
+            admitted_material = self.admission_result_reference.admitted_material[
+                self.admitted_material_position
+            ]
+            if (
+                self.source_reference not in admitted_material
+                or self.added_reference not in admitted_material
+            ):
+                raise ValueError("addition Act material differs from its Admission")
 
     @property
     def act_identity(self) -> tuple[str, str]:
@@ -154,6 +212,11 @@ class AddedPositionOccurrence:
             act_occurrence_identity=self.act_occurrence_identity,
             result_identity=self.result_identity,
             exact_material=self.result_material,
+            admission_result_reference=self.admission_result_reference,
+            admitted_material_position=self.admitted_material_position,
+            admitted_material_act_occurrence_count_limit=(
+                self.admitted_material_act_occurrence_count_limit
+            ),
         )
 
     @property
@@ -952,6 +1015,62 @@ def added_position_occurrences(
             for added in added_material
         )
     )
+
+
+def admission_added_position_occurrences(
+    admission_result_reference: AdmissionResultReference,
+    *,
+    boundary_identity: str,
+    admitted_material_act_occurrence_count_limit: int,
+) -> tuple[AddedPositionOccurrence, ...]:
+    if not isinstance(admission_result_reference, AdmissionResultReference):
+        raise TypeError("addition Acts require one exact Admission result")
+    if type(boundary_identity) is not str or not boundary_identity:
+        raise TypeError("one exact boundary identity is required")
+    if (
+        type(admitted_material_act_occurrence_count_limit) is not int
+        or admitted_material_act_occurrence_count_limit < 1
+    ):
+        raise TypeError("one exact positive Act occurrence count limit is required")
+    found = []
+    for admitted_position, admitted_material in enumerate(
+        admission_result_reference.admitted_material
+    ):
+        if any(
+            not _is_exact_material_coordinates(material)
+            or len(material.exact_material) != 1
+            for material in admitted_material
+        ):
+            raise TypeError("addition Acts require exact one-byte admitted material")
+        occurrence_count = sum(
+            (len(source.exact_material) + 1) * len(admitted_material)
+            for source in admitted_material
+        )
+        if occurrence_count > admitted_material_act_occurrence_count_limit:
+            continue
+        for source in admitted_material:
+            for position in range(len(source.exact_material) + 1):
+                for added in admitted_material:
+                    found.append(
+                        AddedPositionOccurrence(
+                            boundary_identity=boundary_identity,
+                            occurrence_position=len(found),
+                            source_reference=source,
+                            position=position,
+                            added_reference=added,
+                            result_material=(
+                                source.exact_material[:position]
+                                + added.exact_material
+                                + source.exact_material[position:]
+                            ),
+                            admission_result_reference=admission_result_reference,
+                            admitted_material_position=admitted_position,
+                            admitted_material_act_occurrence_count_limit=(
+                                admitted_material_act_occurrence_count_limit
+                            ),
+                        )
+                    )
+    return tuple(found)
 
 
 def added_position_invocations(

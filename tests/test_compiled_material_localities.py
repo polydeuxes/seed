@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from dataclasses import replace
 from pathlib import Path
 import sys
 
@@ -17,8 +18,8 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "scripts"))
 
 from compiled_format_invocation import (  # noqa: E402
-    AddedPositionOccurrence,
     ExactMaterialReference,
+    admission_added_position_occurrences,
 )
 from compiled_material_invocation import (  # noqa: E402
     MaterialImplementationFunction,
@@ -82,29 +83,10 @@ def material_pair_invocations(material_invocations):
         source_occurrences,
         boundary_identity="one-byte-compiled-material-admission",
     )
-    smallest_count = min(len(material) for material in admission.admitted_material)
-    smallest_material = tuple(
-        material
-        for material in admission.admitted_material
-        if len(material) == smallest_count
-    )
-    if len(smallest_material) != 1:
-        raise ValueError("one exact bounded Admission is required")
-    bounded_material = smallest_material[0]
-    additions = tuple(
-        AddedPositionOccurrence(
-            boundary_identity="one-byte-pair-addition",
-            occurrence_position=position,
-            source_reference=source,
-            position=1,
-            added_reference=added,
-            result_material=source.exact_material + added.exact_material,
-        )
-        for position, (source, added) in enumerate(
-            (source, added)
-            for source in bounded_material
-            for added in bounded_material
-        )
+    additions = admission_added_position_occurrences(
+        admission.result_reference,
+        boundary_identity="one-byte-pair-addition",
+        admitted_material_act_occurrence_count_limit=len(references) ** 2,
     )
     implementation_function = source_occurrences[0].implementation_function
     result_occurrences = reference_occurrences_across(
@@ -121,7 +103,7 @@ def material_pair_invocations(material_invocations):
     return (
         ledger,
         references,
-        bounded_material,
+        admission,
         additions,
         result_occurrences,
         comparisons,
@@ -195,30 +177,99 @@ def test_each_returned_material_enters_a_fresh_locality(material_invocations):
 def test_each_ordered_material_pair_has_one_exact_addition_occurrence(
     material_pair_invocations,
 ):
-    _, references, bounded_material, additions, _, _ = material_pair_invocations
+    _, references, admission, additions, _, _ = material_pair_invocations
+    admitted_positions = {
+        addition.admitted_material_position for addition in additions
+    }
+    assert len(admitted_positions) == 1
+    bounded_material = admission.admitted_material[admitted_positions.pop()]
     exact_pairs = tuple(
-        (source, added)
+        (source, position, added)
         for source in bounded_material
+        for position in range(len(source.exact_material) + 1)
         for added in bounded_material
     )
 
     assert 1 < len(bounded_material) < len(references)
-    assert len(additions) == len(bounded_material) ** 2
+    assert len(additions) == len(bounded_material) ** 2 * 2
     assert tuple(addition.source_reference for addition in additions) == tuple(
-        source for source, _ in exact_pairs
+        source for source, _, _ in exact_pairs
     )
     assert tuple(addition.added_reference for addition in additions) == tuple(
-        added for _, added in exact_pairs
+        added for _, _, added in exact_pairs
     )
-    assert tuple(addition.position for addition in additions) == (1,) * len(additions)
+    assert tuple(addition.position for addition in additions) == tuple(
+        position for _, position, _ in exact_pairs
+    )
     assert tuple(addition.result_material for addition in additions) == tuple(
-        source.exact_material + added.exact_material
-        for source, added in exact_pairs
+        source.exact_material[:position]
+        + added.exact_material
+        + source.exact_material[position:]
+        for source, position, added in exact_pairs
+    )
+    assert all(
+        addition.admission_result_reference == admission.result_reference
+        for addition in additions
+    )
+    assert all(
+        addition.admitted_material_act_occurrence_count_limit
+        == len(references) ** 2
+        for addition in additions
     )
     assert len({addition.act_occurrence_identity for addition in additions}) == len(
         additions
     )
     assert len({addition.result_identity for addition in additions}) == len(additions)
+
+
+def test_act_occurrence_limit_never_splits_admitted_material(
+    material_pair_invocations,
+):
+    _, references, admission, additions, _, _ = material_pair_invocations
+    limit = len(references) ** 2
+
+    for admitted_position, admitted_material in enumerate(
+        admission.admitted_material
+    ):
+        expected_count = sum(
+            (len(source.exact_material) + 1) * len(admitted_material)
+            for source in admitted_material
+        )
+        found = tuple(
+            addition
+            for addition in additions
+            if addition.admitted_material_position == admitted_position
+        )
+        if expected_count <= limit:
+            assert len(found) == expected_count
+        else:
+            assert found == ()
+
+
+def test_addition_cannot_cross_its_exact_admitted_material(
+    material_pair_invocations,
+):
+    _, references, _, additions, _, _ = material_pair_invocations
+    addition = additions[0]
+    other = next(
+        reference
+        for reference in references
+        if reference
+        not in addition.admission_result_reference.admitted_material[
+            addition.admitted_material_position
+        ]
+    )
+
+    with pytest.raises(ValueError, match="differs from its Admission"):
+        replace(
+            addition,
+            added_reference=other,
+            result_material=(
+                addition.source_material[: addition.position]
+                + other.exact_material
+                + addition.source_material[addition.position :]
+            ),
+        )
 
 
 def test_each_added_result_reaches_the_same_compiled_function(
