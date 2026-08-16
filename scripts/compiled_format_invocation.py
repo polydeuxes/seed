@@ -2015,3 +2015,66 @@ def compare_removed_position_invocations(
             comparison_position += 1
         compared.append(tuple(row))
     return tuple(compared)
+
+
+def recurring_removed_returned_coordinate(
+    comparisons: tuple[RemovedPositionCompareOccurrence, ...],
+    removals: tuple[RemovedPositionOccurrence, ...],
+    removal: RemovedPositionOccurrence,
+    source_invocation: CompiledInvocationOccurrence,
+) -> bool | None:
+    if type(comparisons) is not tuple or len(comparisons) < 2 or any(
+        not isinstance(comparison, RemovedPositionCompareOccurrence)
+        for comparison in comparisons
+    ):
+        raise TypeError("recurrence requires exact Compare occurrences")
+    if type(removals) is not tuple or any(
+        not isinstance(found, RemovedPositionOccurrence) for found in removals
+    ):
+        raise TypeError("recurrence requires exact removal Act occurrences")
+    if not isinstance(removal, RemovedPositionOccurrence) or not isinstance(
+        source_invocation, CompiledInvocationOccurrence
+    ):
+        raise TypeError("recurrence requires one exact removal and source invocation")
+    if source_invocation.source_coordinate != removal.source_reference:
+        raise ValueError("source invocation differs from the removal Act")
+    removal_by_identity = {
+        found.act_occurrence_identity: found for found in removals
+    }
+    if len(removal_by_identity) != len(removals):
+        raise ValueError("removal Act occurrence entered recurrence twice")
+    coordinates = (
+        len(removal.source_material),
+        removal.removed_material,
+        removal.position,
+        len(removal.source_material),
+        len(removal.removed_material),
+    )
+    found = []
+    occurrence_identities = set()
+    for comparison in comparisons:
+        prior = removal_by_identity.get(
+            comparison.removed_position_act_occurrence_identity
+        )
+        if prior is None:
+            raise ValueError("Compare occurrence has no exact removal Act occurrence")
+        prior_coordinates = (
+            len(prior.source_material),
+            prior.removed_material,
+            prior.position,
+            len(prior.source_material),
+            len(prior.removed_material),
+        )
+        if (
+            prior_coordinates == coordinates
+            and comparison.implementation_function_identity
+            == source_invocation.implementation_function_identity
+            and comparison.source_returned == source_invocation.returned
+            and prior.act_occurrence_identity != removal.act_occurrence_identity
+            and prior.result_material != removal.result_material
+        ):
+            found.append(comparison.result_returned)
+            occurrence_identities.add(comparison.occurrence_identity)
+    if len(occurrence_identities) < 2 or len(set(found)) != 1:
+        return None
+    return found[0]

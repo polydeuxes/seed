@@ -44,6 +44,7 @@ from compiled_format_invocation import (  # noqa: E402
     removed_position_invocations,
     first_recurring_added_compare,
     recurring_added_returned_coordinate,
+    recurring_removed_returned_coordinate,
     removed_position_occurrences,
     exact_byte_material_references,
     exact_byte_pair_material_references,
@@ -1575,6 +1576,33 @@ def test_removal_compare_finds_same_and_different_return_coordinates(
 
     assert any(distinctions)
     assert any(not distinction for distinction in distinctions)
+
+
+def test_removal_recurrence_precedes_a_later_invocation(
+    book_removed_position_invocation_occurrences,
+    book_removed_position_comparisons,
+    book_pair_format_occurrences,
+):
+    removals, _ = book_removed_position_invocation_occurrences
+    source_invocations = book_pair_format_occurrences[0]
+    comparisons = tuple(book_removed_position_comparisons[0])
+    source_by_reference = {
+        invocation.source_coordinate: invocation
+        for invocation in source_invocations
+    }
+    found = None
+    for removal in removals:
+        source = source_by_reference[removal.source_reference]
+        coordinate = recurring_removed_returned_coordinate(
+            comparisons, removals, removal, source
+        )
+        if coordinate is None:
+            continue
+        found = (removal, source, coordinate)
+        break
+    assert found is not None
+    removal, source, coordinate = found
+    assert coordinate in (True, False)
 
 
 def test_removal_compare_refuses_a_result_without_its_act_occurrence():
