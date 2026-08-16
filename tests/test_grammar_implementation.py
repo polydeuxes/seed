@@ -18,7 +18,7 @@ from seed_runtime.byte_measurement import (
     BYTE_PAIR_MEASUREMENT_RULE,
     MEASURED_ASSERTION_RESPONSIBILITY,
     SEED_NATIVE_MEASUREMENT_RESPONSIBLE_BOUNDARY,
-    EVENT_KIND_RESPONSIBILITIES,
+    EVENT_KIND_RESPONSIBILITIES as BYTE_EVENT_KIND_RESPONSIBILITIES,
     _identity,
     _validate_moved_byte_assertion,
     assertions_of_recorded_byte_measurement,
@@ -37,7 +37,12 @@ from seed_runtime.operator_checkpoint import (
 )
 from tests.material_fixture_console import run_material_fixture_console
 from seed_runtime.operator_representation import (
+    EVENT_KIND_RESPONSIBILITIES as REPRESENTATION_EVENT_KIND_RESPONSIBILITIES,
+    REPRESENTATION_ACT_EVIDENCE_KIND,
     REPRESENTATION_EMISSION_INPUT_ROLE,
+    REPRESENTATION_LOCALITY_EVIDENCE_KIND,
+    REPRESENTATION_RECORDED_KIND,
+    REPRESENTATION_RESPONSIBILITY,
     emit_operator_representation,
     record_operator_representation,
 )
@@ -47,6 +52,7 @@ from seed_runtime.occurrence_position_measurement import (
 )
 from seed_runtime.yield_evidence import YIELD_LIVE_BOUNDARIES
 from seed_runtime.yield_evidence import read_yield_relation_requirements
+from tests.bounded_alternative_fixture import BOUNDED_ALTERNATIVE_FIXTURE_SOURCES
 
 
 GRAMMAR = Path(__file__).resolve().parents[1] / "book_of_seed/grammar.json"
@@ -338,6 +344,38 @@ def _representation_witness() -> dict:
     event = ledger.get(representation["representation_event_identity"])
     return {
         "ledger": ledger,
+        "event": event,
+        "act_evidence": ledger.get(event.material["responsible_act_evidence_identity"]),
+        "locality_evidence": ledger.get(event.material["locality_evidence_identity"]),
+        "content_evidence": ledger.get(event.material["yield_evidence_identity"]),
+    }
+
+
+def _sourced_representation_witness() -> dict:
+    ledger = _IntegrityAdversaryLedger()
+    source = ingest_material(
+        ledger,
+        locality_identity="representation-source",
+        exact_bytes=b"source material",
+        source_role="operator",
+        source_boundary="exact source boundary",
+    )
+    representation = record_operator_representation(
+        ledger,
+        locality_identity="representation-source",
+        locality_standing={
+            "as_of_event_identity": source.identity,
+            "ingest_occurrences": [
+                {"evidence_event_identity": source.identity}
+            ],
+        },
+        alternative_sources=BOUNDED_ALTERNATIVE_FIXTURE_SOURCES,
+        source_event_identity=source.identity,
+    )
+    event = ledger.get(representation["representation_event_identity"])
+    return {
+        "ledger": ledger,
+        "source": source,
         "event": event,
         "act_evidence": ledger.get(event.material["responsible_act_evidence_identity"]),
         "locality_evidence": ledger.get(event.material["locality_evidence_identity"]),
@@ -1666,6 +1704,120 @@ def _measurement_result_distinctions(bundle: dict) -> dict[tuple[str, str], bool
     }
 
 
+def _representation_source_witness(bundle: dict) -> dict[str, str]:
+    event = bundle["event"]
+    material = event.material
+    dimensions = material.get("dimensions")
+    dimensions = dimensions if isinstance(dimensions, dict) else {}
+    source_reference = material.get("attempt_reference")
+    source = (
+        bundle["ledger"].get(source_reference)
+        if isinstance(source_reference, str)
+        else None
+    )
+    alternatives = material.get("alternative_material")
+    alternatives_are_exact = bool(
+        isinstance(alternatives, list)
+        and alternatives
+        and all(
+            isinstance(alternative, dict)
+            and isinstance(alternative.get("role"), str)
+            and alternative["role"]
+            and isinstance(alternative.get("represented_source"), dict)
+            and isinstance(alternative.get("representation"), dict)
+            and alternative["representation"].get("scope")
+            == dimensions.get("scope_locality")
+            and alternative["representation"].get("provenance")
+            == alternative["represented_source"].get("reference")
+            and isinstance(alternative["representation"].get("known_loss"), list)
+            and isinstance(alternative["representation"].get("conflicts"), list)
+            and isinstance(alternative["representation"].get("unknowns"), list)
+            for alternative in alternatives
+        )
+    )
+    return {
+        "responsibility": (
+            EXACT
+            if dimensions.get("responsibility") == REPRESENTATION_RESPONSIBILITY
+            else MISSING
+        ),
+        "attempt_reference": (
+            EXACT
+            if source is not None
+            and bundle["ledger"].integrity_of(source.identity) != CORRUPTED
+            and source.locality_identity == event.locality_identity
+            and source.exact_material == event.exact_material
+            else MISSING
+        ),
+        "locality_standing_as_of_event_identity": (
+            EXACT
+            if material.get("locality_standing_as_of_event_identity")
+            == source_reference
+            else MISSING
+        ),
+        "source_provenance": (
+            EXACT
+            if dimensions.get("source_provenance")
+            == material.get("locality_standing_as_of_event_identity")
+            else MISSING
+        ),
+        "scope_locality": (
+            EXACT
+            if dimensions.get("scope_locality")
+            == f"locality:{event.locality_identity}"
+            else MISSING
+        ),
+        "authority": (
+            EXACT if dimensions.get("authority") == "unestablished" else MISSING
+        ),
+        "alternative_material": EXACT if alternatives_are_exact else MISSING,
+        "known_loss": (
+            EXACT if isinstance(material.get("known_loss"), list) else MISSING
+        ),
+        "conflicts": (
+            EXACT if isinstance(material.get("conflicts"), list) else MISSING
+        ),
+        "unknowns": (
+            EXACT if isinstance(material.get("unknowns"), list) else MISSING
+        ),
+    }
+
+
+def _representation_source_distinctions(
+    bundle: dict,
+) -> dict[tuple[str, str], bool]:
+    event = bundle["event"]
+    material = event.material
+    return {
+        ("Representation_result", "exact_Act_occurrence"): (
+            material.get("result_identity")
+            != material.get("act_occurrence_identity")
+        ),
+        ("Representation_source_coordinates", "Locality_relation"): (
+            material.get("attempt_reference")
+            != material.get("locality_evidence_identity")
+        ),
+    }
+
+
+def _representation_act_evidence_witness(bundle: dict) -> bool:
+    event = bundle["event"]
+    evidence = bundle["act_evidence"]
+    return bool(
+        evidence is not None
+        and evidence.kind == REPRESENTATION_ACT_EVIDENCE_KIND
+        and bundle["ledger"].integrity_of(evidence.identity) != CORRUPTED
+        and event.material.get("responsible_act_evidence_identity") == evidence.identity
+        and event.material.get("representation_act_identity")
+        == evidence.material.get("representation_act_identity")
+        and event.material.get("act_occurrence_identity")
+        == evidence.material.get("act_occurrence_identity")
+        and event.material.get("dimensions", {}).get("responsibility")
+        == evidence.material.get("responsibility")
+        == REPRESENTATION_RESPONSIBILITY
+    )
+
+
 def _locality_requirements(bundle: dict) -> dict[str, bool]:
     ledger = bundle["ledger"]
     movement = bundle["movement"]
@@ -2876,6 +3028,116 @@ def test_exact_act_clause_is_checked_against_live_byte_measurement():
     assert _occurrence_result_witness(bundle) == EXACT
 
 
+def test_representation_source_clause_is_checked_against_one_live_result():
+    clause = _clause("01.Source.A")
+    bundle = _sourced_representation_witness()
+    witness = _representation_source_witness(bundle)
+    distinctions = _representation_source_distinctions(bundle)
+
+    assert set(witness) == set(clause["responsibility"]["coordinates"])
+    assert set(witness.values()) == {EXACT}
+    assert list(distinctions) == [
+        tuple(distinction) for distinction in clause["distinct_from"]
+    ]
+    assert set(distinctions.values()) == {True}
+
+
+def test_representation_result_act_and_locality_species_keep_their_clauses():
+    assert REPRESENTATION_EVENT_KIND_RESPONSIBILITIES[
+        REPRESENTATION_RECORDED_KIND
+    ] == "01.Source.A"
+    assert REPRESENTATION_EVENT_KIND_RESPONSIBILITIES[
+        REPRESENTATION_ACT_EVIDENCE_KIND
+    ] == "02.Acts.A"
+    assert REPRESENTATION_EVENT_KIND_RESPONSIBILITIES[
+        REPRESENTATION_LOCALITY_EVIDENCE_KIND
+    ] == "06.Locality.A"
+
+
+def test_representation_source_act_and_locality_witnesses_do_not_absorb_each_other():
+    source_missing = _sourced_representation_witness()
+    source_missing["event"].material["attempt_reference"] = None
+
+    source_witness = _representation_source_witness(source_missing)
+    assert source_witness["attempt_reference"] == MISSING
+    assert source_witness["locality_standing_as_of_event_identity"] == MISSING
+    assert _representation_act_evidence_witness(source_missing)
+    assert _representation_locality_witness(source_missing) == EXACT
+
+    act_missing = _sourced_representation_witness()
+    act_missing["act_evidence"] = None
+
+    assert set(_representation_source_witness(act_missing).values()) == {EXACT}
+    assert not _representation_act_evidence_witness(act_missing)
+    assert _representation_locality_witness(act_missing) == EXACT
+
+    locality_missing = _sourced_representation_witness()
+    locality_missing["locality_evidence"] = None
+
+    assert set(_representation_source_witness(locality_missing).values()) == {EXACT}
+    assert _representation_act_evidence_witness(locality_missing)
+    assert _representation_locality_witness(locality_missing) == MISSING
+
+
+def test_representation_source_distinction_adversaries_collapse_one_boundary_each():
+    result_is_act = _sourced_representation_witness()
+    result_is_act["event"].material["result_identity"] = result_is_act[
+        "event"
+    ].material["act_occurrence_identity"]
+    assert _representation_source_distinctions(result_is_act) == {
+        ("Representation_result", "exact_Act_occurrence"): False,
+        ("Representation_source_coordinates", "Locality_relation"): True,
+    }
+
+    source_is_locality = _sourced_representation_witness()
+    source_is_locality["event"].material["locality_evidence_identity"] = (
+        source_is_locality["event"].material["attempt_reference"]
+    )
+    assert _representation_source_distinctions(source_is_locality) == {
+        ("Representation_result", "exact_Act_occurrence"): True,
+        ("Representation_source_coordinates", "Locality_relation"): False,
+    }
+
+
+def test_representation_source_coordinate_adversaries_preserve_exact_dependencies():
+    mutations = {
+        "responsibility": lambda material: material["dimensions"].__setitem__(
+            "responsibility", REPRESENTATION_EMISSION_INPUT_ROLE
+        ),
+        "source_provenance": lambda material: material["dimensions"].__setitem__(
+            "source_provenance", "different provenance"
+        ),
+        "scope_locality": lambda material: material["dimensions"].__setitem__(
+            "scope_locality", "different locality"
+        ),
+        "authority": lambda material: material["dimensions"].__setitem__(
+            "authority", "different authority"
+        ),
+        "alternative_material": lambda material: material["alternative_material"][
+            0
+        ].__setitem__("role", ""),
+        "known_loss": lambda material: material.__setitem__("known_loss", None),
+        "conflicts": lambda material: material.__setitem__("conflicts", None),
+        "unknowns": lambda material: material.__setitem__("unknowns", None),
+    }
+
+    for changed, mutate in mutations.items():
+        bundle = _sourced_representation_witness()
+        mutate(bundle["event"].material)
+        witness = _representation_source_witness(bundle)
+        expected_missing = (
+            {"scope_locality", "alternative_material"}
+            if changed == "scope_locality"
+            else {changed}
+        )
+
+        assert {
+            coordinate
+            for coordinate, standing in witness.items()
+            if standing == MISSING
+        } == expected_missing
+
+
 def test_measurement_result_clause_is_checked_against_live_byte_and_pair_results():
     clause = _clause("01.Source.D")
     byte = _byte_measurement_witness()
@@ -2897,14 +3159,14 @@ def test_measurement_result_clause_is_checked_against_live_byte_and_pair_results
 
 def test_measurement_result_carriers_and_responsible_act_evidence_name_their_own_clauses():
     assert {
-        EVENT_KIND_RESPONSIBILITIES[BYTE_MEASUREMENT_RECORDED_KIND],
-        EVENT_KIND_RESPONSIBILITIES[BYTE_PAIR_MEASUREMENT_RECORDED_KIND],
+        BYTE_EVENT_KIND_RESPONSIBILITIES[BYTE_MEASUREMENT_RECORDED_KIND],
+        BYTE_EVENT_KIND_RESPONSIBILITIES[BYTE_PAIR_MEASUREMENT_RECORDED_KIND],
     } == {"01.Source.D"}
     assert {
-        EVENT_KIND_RESPONSIBILITIES[
+        BYTE_EVENT_KIND_RESPONSIBILITIES[
             BYTE_MEASUREMENT_RESPONSIBLE_ACT_EVIDENCE_KIND
         ],
-        EVENT_KIND_RESPONSIBILITIES[
+        BYTE_EVENT_KIND_RESPONSIBILITIES[
             BYTE_PAIR_RESPONSIBLE_ACT_EVIDENCE_KIND
         ],
     } == {"02.Acts.A"}

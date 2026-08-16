@@ -87,6 +87,28 @@
     ]
   },
   "clauses": {
+    "01.Source.A": {
+      "subject": "Representation_source_coordinates",
+      "responsibility": {
+        "kind": "source_coordinate_preservation",
+        "coordinates": [
+          "responsibility",
+          "attempt_reference",
+          "locality_standing_as_of_event_identity",
+          "source_provenance",
+          "scope_locality",
+          "authority",
+          "alternative_material",
+          "known_loss",
+          "conflicts",
+          "unknowns"
+        ]
+      },
+      "distinct_from": [
+        ["Representation_result", "exact_Act_occurrence"],
+        ["Representation_source_coordinates", "Locality_relation"]
+      ]
+    },
     "01.Source.D": {
       "subject": "declared_Measurement_result",
       "responsibility": {
