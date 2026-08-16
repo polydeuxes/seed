@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 import re
 from pathlib import Path
 
@@ -65,21 +66,33 @@ def test_book_proper_scope_excludes_rosetta():
     assert not any("/rosetta/" in path or path.startswith("rosetta/") for path in files)
 
 
-def test_book_and_rosetta_relative_markdown_links_resolve():
-    markdown = tuple(
-        path
-        for root in (BOOK, ROOT / "rosetta")
-        for path in root.rglob("*.md")
+def test_admitted_material_reference_subjects_resolve_relative_markdown_links():
+    grammar = json.loads((BOOK / "grammar.json").read_text(encoding="utf-8"))
+    declared_references = {
+        (reference["reference"], reference["coordinate"])
+        for reference in grammar["root_references"]
+    }
+    subjects = (
+        (BOOK, "this_Book", "book_material"),
+        (ROOT / "rosetta", "this_Rosetta", "rosetta_reference"),
     )
-    missing: list[tuple[str, str]] = []
-    for path in markdown:
-        for target in re.findall(
-            r"\]\(([^)#]+)(?:#[^)]+)?\)", path.read_text(encoding="utf-8")
-        ):
-            if "://" in target:
-                continue
-            if not (path.parent / target).is_file():
-                missing.append((path.relative_to(ROOT).as_posix(), target))
+    missing: list[tuple[str, str, str]] = []
+    for root, subject, coordinate in subjects:
+        subject_words = set(
+            re.findall(r"[A-Za-z]+", scan_active_line(subject).lower())
+        )
+        assert (subject, coordinate) in declared_references
+        assert subject_words <= book_admission()
+        for path in root.rglob("*.md"):
+            for target in re.findall(
+                r"\]\(([^)#]+)(?:#[^)]+)?\)", path.read_text(encoding="utf-8")
+            ):
+                if "://" in target:
+                    continue
+                if not (path.parent / target).is_file():
+                    missing.append(
+                        (subject, path.relative_to(ROOT).as_posix(), target)
+                    )
 
     assert missing == []
 
