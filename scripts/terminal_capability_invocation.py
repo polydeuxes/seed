@@ -31,6 +31,16 @@ TERMINAL_CAPABILITY_FUNCTIONS = (
         identity="terminal-video",
         invocation=("/bin/sh", "-c", "command -v mpv || command -v ffplay || false"),
     ),
+    MaterialImplementationFunction(
+        identity="terminal-caca-frame",
+        invocation=(
+            "/bin/sh",
+            "-c",
+            "/usr/bin/ffmpeg -hide_banner -loglevel error "
+            "-f lavfi -i color=c=red:s=2x2:d=0.1 -vf format=rgb24 "
+            "-frames:v 1 -f caca - | head -c 2048",
+        ),
+    ),
 )
 
 
