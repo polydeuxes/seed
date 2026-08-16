@@ -106,6 +106,45 @@ def implementation_functions() -> tuple[MaterialImplementationFunction, ...]:
             identity="compiled-14",
             invocation=("/usr/bin/env", "-i", "/usr/bin/bc", "-q"),
         ),
+        MaterialImplementationFunction(
+            identity="compiled-15",
+            invocation=("/usr/bin/env", "-i", "/usr/games/nbcheckers"),
+        ),
+        MaterialImplementationFunction(
+            identity="compiled-16",
+            invocation=(
+                "/usr/bin/env",
+                "-i",
+                "/usr/bin/script",
+                "-qefc",
+                "/usr/games/nbcheckers",
+                "/dev/null",
+            ),
+        ),
+        MaterialImplementationFunction(
+            identity="compiled-17",
+            invocation=(
+                "/usr/bin/env",
+                "-i",
+                "TERM=dumb",
+                "/usr/bin/script",
+                "-qefc",
+                "/usr/games/nbcheckers",
+                "/dev/null",
+            ),
+        ),
+        MaterialImplementationFunction(
+            identity="compiled-18",
+            invocation=(
+                "/usr/bin/env",
+                "-i",
+                "TERM=xterm",
+                "/usr/bin/script",
+                "-qefc",
+                "/usr/games/nbcheckers",
+                "/dev/null",
+            ),
+        ),
     )
 
 
