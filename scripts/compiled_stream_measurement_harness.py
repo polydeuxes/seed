@@ -33,7 +33,7 @@ def implementation_functions() -> tuple[MaterialImplementationFunction, ...]:
         "-protocol_whitelist",
         "pipe,data",
     )
-    return tuple(
+    stream_functions = tuple(
         MaterialImplementationFunction(
             identity=f"compiled-{position}",
             invocation=(
@@ -48,6 +48,17 @@ def implementation_functions() -> tuple[MaterialImplementationFunction, ...]:
         )
         for position, material_kind in enumerate((None, "mpegts", "hls", "dash"))
     )
+    caca = MaterialImplementationFunction(
+        identity=f"compiled-{len(stream_functions)}",
+        invocation=(
+            "/bin/sh",
+            "-c",
+            "/usr/bin/ffmpeg -nostdin -hide_banner -loglevel error "
+            "-protocol_whitelist pipe,data -i pipe:0 -vf format=rgb24 "
+            "-frames:v 1 -f caca - | head -c 2048",
+        ),
+    )
+    return (*stream_functions, caca)
 
 
 def measured_material():

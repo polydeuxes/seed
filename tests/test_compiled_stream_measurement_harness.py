@@ -18,13 +18,13 @@ def test_each_stream_function_preserves_one_exact_invocation_occurrence():
     _, references = measured_material()
     functions = implementation_functions()
 
-    assert len({function.identity for function in functions}) == len(functions) == 4
+    assert len({function.identity for function in functions}) == len(functions) == 5
     assert all(
         function.invocation[
             function.invocation.index("-protocol_whitelist") + 1
         ]
         == "pipe,data"
-        for function in functions
+        for function in functions[:4]
     )
     for function in functions:
         occurrences, exact, returned = measure(

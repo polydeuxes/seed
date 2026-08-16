@@ -41,6 +41,20 @@ TERMINAL_CAPABILITY_FUNCTIONS = (
             "-frames:v 1 -f caca - | head -c 2048",
         ),
     ),
+    MaterialImplementationFunction(
+        identity="terminal-termios",
+        invocation=("/usr/bin/stty", "-a"),
+    ),
+    MaterialImplementationFunction(
+        identity="terminal-readline",
+        invocation=(
+            "/bin/bash",
+            "--noprofile",
+            "--norc",
+            "-c",
+            "bind -v",
+        ),
+    ),
 )
 
 
