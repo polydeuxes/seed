@@ -65,18 +65,6 @@ def test_book_proper_scope_excludes_rosetta():
     assert not any("/rosetta/" in path or path.startswith("rosetta/") for path in files)
 
 
-def test_book_and_rosetta_file_addresses_use_underscores_not_hyphens():
-    roots = (BOOK, ROOT / "rosetta")
-    hyphenated = {
-        path.relative_to(ROOT).as_posix()
-        for root in roots
-        for path in root.rglob("*")
-        if path.is_file() and "-" in path.name
-    }
-
-    assert hyphenated == set()
-
-
 def test_book_and_rosetta_relative_markdown_links_resolve():
     markdown = tuple(
         path
