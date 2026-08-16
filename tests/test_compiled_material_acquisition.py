@@ -17,6 +17,9 @@ from compiled_material_acquisition import (  # noqa: E402
 )
 from material_fixture_measurement import measured_one_byte_material  # noqa: E402
 from material_admission import admission_occurrence  # noqa: E402
+from compiled_material_invocation import (  # noqa: E402
+    first_recurring_added_return_compare,
+)
 
 
 def test_material_climb_refuses_the_collective_act_occurrence_count():
@@ -240,3 +243,29 @@ def test_each_compiled_function_receives_every_exact_one_byte_material():
     assert len(all_exact_compares) == len(all_return_compares) == (
         result_comparison_count
     )
+
+    later = None
+    for function_position, function in enumerate(functions):
+        earlier, coordinates, later_compare = (
+            first_recurring_added_return_compare(
+                additions,
+                occurrences[function_position],
+                function,
+                boundary_identity=(
+                    f"compiled-material-recurrence-{function_position}"
+                ),
+                act_occurrence_count_limit=len(additions),
+            )
+        )
+        if later_compare is None:
+            continue
+        assert all(
+            comparison.addition_occurrence.act_occurrence_identity
+            != later_compare.addition_occurrence.act_occurrence_identity
+            for comparison in earlier
+        )
+        assert len(earlier) + 1 < len(additions)
+        later = (coordinates, later_compare.result_coordinates)
+        break
+    assert later is not None
+    assert later[0] == later[1]

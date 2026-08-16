@@ -1006,6 +1006,161 @@ def compare_added_material_return_invocations(
     )
 
 
+def recurring_added_result_coordinates(
+    comparisons: tuple[MaterialAddedCompareOccurrence, ...],
+    addition: AddedPositionOccurrence,
+    source_invocation: MaterialInvocationOccurrence,
+) -> MaterialInvocationCoordinates | MaterialInvocationReturnCoordinates | None:
+    if (
+        type(comparisons) is not tuple
+        or len(comparisons) < 2
+        or any(
+            not isinstance(comparison, MaterialAddedCompareOccurrence)
+            for comparison in comparisons
+        )
+    ):
+        raise TypeError("recurrence requires exact Compare occurrences")
+    if not isinstance(addition, AddedPositionOccurrence) or not isinstance(
+        source_invocation, MaterialInvocationOccurrence
+    ):
+        raise TypeError("recurrence requires one exact addition and source invocation")
+    comparison_type = type(comparisons[0])
+    if any(type(comparison) is not comparison_type for comparison in comparisons):
+        raise TypeError("recurrence cannot cross Compare coordinates")
+    if (
+        addition.source_admission_result_reference is None
+        or addition.added_admission_result_reference is None
+    ):
+        return None
+    if source_invocation.source_reference != addition.source_reference:
+        raise ValueError("source invocation differs from the addition Act")
+
+    addition_coordinates = (
+        addition.source_admission_result_reference.result_identity,
+        addition.source_admitted_material_position,
+        addition.added_admission_result_reference.result_identity,
+        addition.added_admitted_material_position,
+        addition.position,
+        len(addition.source_material),
+        len(addition.added_material),
+    )
+    source_coordinates = (
+        source_invocation.return_coordinates
+        if comparison_type is MaterialAddedReturnCompareOccurrence
+        else source_invocation.coordinates
+    )
+    found = []
+    occurrence_identities = set()
+    for comparison in comparisons:
+        prior = comparison.addition_occurrence
+        if (
+            prior.source_admission_result_reference is None
+            or prior.added_admission_result_reference is None
+        ):
+            continue
+        prior_coordinates = (
+            prior.source_admission_result_reference.result_identity,
+            prior.source_admitted_material_position,
+            prior.added_admission_result_reference.result_identity,
+            prior.added_admitted_material_position,
+            prior.position,
+            len(prior.source_material),
+            len(prior.added_material),
+        )
+        if (
+            prior_coordinates == addition_coordinates
+            and comparison.implementation_function_identity
+            == source_invocation.implementation_function_identity
+            and comparison.source_coordinates == source_coordinates
+            and prior.act_occurrence_identity != addition.act_occurrence_identity
+            and prior.result_material != addition.result_material
+        ):
+            found.append(comparison.result_coordinates)
+            occurrence_identities.add(comparison.occurrence_identity)
+    if len(occurrence_identities) < 2 or len(set(found)) != 1:
+        return None
+    return found[0]
+
+
+def first_recurring_added_return_compare(
+    additions: tuple[AddedPositionOccurrence, ...],
+    source_invocations: tuple[MaterialInvocationOccurrence, ...],
+    implementation_function: MaterialImplementationFunction,
+    *,
+    boundary_identity: str,
+    act_occurrence_count_limit: int,
+) -> tuple[
+    tuple[MaterialAddedReturnCompareOccurrence, ...],
+    MaterialInvocationReturnCoordinates | None,
+    MaterialAddedReturnCompareOccurrence | None,
+]:
+    if type(additions) is not tuple or not additions or any(
+        not isinstance(addition, AddedPositionOccurrence) for addition in additions
+    ):
+        raise TypeError("recurrence requires exact addition Act occurrences")
+    if type(source_invocations) is not tuple or not source_invocations or any(
+        not isinstance(invocation, MaterialInvocationOccurrence)
+        for invocation in source_invocations
+    ):
+        raise TypeError("recurrence requires exact source invocation occurrences")
+    if not isinstance(implementation_function, MaterialImplementationFunction):
+        raise TypeError("recurrence requires one exact implementation function")
+    if type(boundary_identity) is not str or not boundary_identity:
+        raise TypeError("one exact boundary identity is required")
+    if (
+        type(act_occurrence_count_limit) is not int
+        or act_occurrence_count_limit < 1
+    ):
+        raise TypeError("one exact positive Act occurrence count limit is required")
+    source_by_reference = {
+        invocation.source_reference: invocation for invocation in source_invocations
+    }
+    if len(source_by_reference) != len(source_invocations) or any(
+        invocation.implementation_function != implementation_function
+        for invocation in source_invocations
+    ):
+        raise ValueError("recurrence source invocations must be exact and distinct")
+    if len(
+        {invocation.return_coordinates for invocation in source_invocations}
+    ) < 2:
+        return (), None, None
+
+    comparisons = []
+    for addition in additions[:act_occurrence_count_limit]:
+        source_invocation = source_by_reference.get(addition.source_reference)
+        if source_invocation is None:
+            raise ValueError("recurrence requires each exact source invocation")
+        coordinates = (
+            recurring_added_result_coordinates(
+                tuple(comparisons),
+                addition,
+                source_invocation,
+            )
+            if len(comparisons) >= 2
+            else None
+        )
+        result_invocation = invocation_occurrence(
+            addition.result_material,
+            implementation_function,
+            boundary_identity=f"{boundary_identity}-invocation",
+            invocation_position=len(comparisons),
+            source_reference=addition.result_reference,
+            time_limit_second_count=source_invocation.time_limit_second_count,
+            material_byte_count_limit=source_invocation.material_byte_count_limit,
+        )
+        comparison = MaterialAddedReturnCompareOccurrence(
+            boundary_identity=f"{boundary_identity}-compare",
+            occurrence_position=len(comparisons),
+            addition_occurrence=addition,
+            source_invocation=source_invocation,
+            result_invocation=result_invocation,
+        )
+        if coordinates is not None:
+            return tuple(comparisons), coordinates, comparison
+        comparisons.append(comparison)
+    return tuple(comparisons), None, None
+
+
 def _compare_added_material_invocations(
     additions,
     source_invocations,
