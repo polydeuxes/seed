@@ -65,12 +65,16 @@ def test_uninvoked_compiled_identity_remains_unobserved():
 def test_one_measurement_does_not_replace_an_active_measurement():
     measured.begin()
     try:
+        connection = sqlite3.connect(":memory:")
+        connection.execute("SELECT 1").fetchone()
         measured._identity(ROOT, 1, "before")
         measured.begin()
         try:
+            connection.execute("SELECT 2").fetchone()
             measured._identity(ROOT, 2, "inside")
         finally:
             inside = measured.finish()
+        connection.execute("SELECT 3").fetchone()
         measured._identity(ROOT, 3, "after")
     finally:
         complete = measured.finish()
@@ -80,6 +84,8 @@ def test_one_measurement_does_not_replace_an_active_measurement():
     )
     assert inside["python"][identity]["occurrence_count"] == 1
     assert complete["python"][identity]["occurrence_count"] == 3
+    assert inside["sql"] == {"SELECT 2": 1}
+    assert complete["sql"] == {"SELECT 1": 1, "SELECT 2": 1, "SELECT 3": 1}
 
 
 def test_one_pytest_occurrence_keeps_its_exact_implementation_measurement():

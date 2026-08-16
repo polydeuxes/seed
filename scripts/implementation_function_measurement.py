@@ -20,10 +20,11 @@ SOURCE_DIRECTORIES = ("seed_runtime", "scripts")
 
 _python: dict[str, list[int]] = {}
 _sql: dict[str, int] = {}
+_sql_occurrences: list[str] = []
 _sqlite_connect = sqlite3.connect
 _lock = threading.Lock()
 _profiler: cProfile.Profile | None = None
-_baselines: list[tuple[dict[str, list[int]], dict[str, int]]] = []
+_baselines: list[tuple[dict[str, list[int]], int]] = []
 _pytest_occurrences: list[dict[str, object]] = []
 
 
@@ -52,6 +53,7 @@ def _source_identity(code: CodeType) -> str | None:
 def _measure_sql(statement: str) -> None:
     with _lock:
         _sql[statement] = _sql.get(statement, 0) + 1
+        _sql_occurrences.append(statement)
 
 
 class MeasuredConnection(sqlite3.Connection):
@@ -130,12 +132,11 @@ def _coordinate_difference(
     }
 
 
-def _sql_difference(current: dict[str, int], prior: dict[str, int]) -> dict[str, int]:
-    return {
-        statement: current.get(statement, 0) - prior.get(statement, 0)
-        for statement in current.keys() | prior.keys()
-        if current.get(statement, 0) != prior.get(statement, 0)
-    }
+def _sql_since(occurrence_position: int) -> dict[str, int]:
+    found: dict[str, int] = {}
+    for statement in _sql_occurrences[occurrence_position:]:
+        found[statement] = found.get(statement, 0) + 1
+    return found
 
 
 def _measurement(
@@ -188,11 +189,12 @@ def begin() -> None:
     global _profiler
     if _profiler is not None:
         _profiler.disable()
-        _baselines.append((_profile_coordinates(_profiler), dict(_sql)))
+        _baselines.append((_profile_coordinates(_profiler), len(_sql_occurrences)))
         _profiler.enable()
         return
     _python.clear()
     _sql.clear()
+    _sql_occurrences.clear()
     _baselines.clear()
     _pytest_occurrences.clear()
     sqlite3.connect = _connect
@@ -207,10 +209,10 @@ def finish() -> dict[str, object]:
     _profiler.disable()
     current_python = _profile_coordinates(_profiler)
     if _baselines:
-        prior_python, prior_sql = _baselines.pop()
+        prior_python, prior_sql_position = _baselines.pop()
         found = _measurement(
             _coordinate_difference(current_python, prior_python),
-            _sql_difference(_sql, prior_sql),
+            _sql_since(prior_sql_position),
         )
         _profiler.enable()
         return found
@@ -227,10 +229,10 @@ def _finish_observed() -> dict[str, object]:
         raise RuntimeError("one enclosing implementation measurement is required")
     _profiler.disable()
     current_python = _profile_coordinates(_profiler)
-    prior_python, prior_sql = _baselines.pop()
+    prior_python, prior_sql_position = _baselines.pop()
     found = _observed_measurement(
         _coordinate_difference(current_python, prior_python),
-        _sql_difference(_sql, prior_sql),
+        _sql_since(prior_sql_position),
     )
     _profiler.enable()
     return found
