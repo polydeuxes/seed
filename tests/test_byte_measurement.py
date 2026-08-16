@@ -29,7 +29,7 @@ from seed_runtime.byte_measurement import (
     record_byte_measurement_result,
     record_byte_position_pair_count_layer,
 )
-from seed_runtime.events import EventLedger, SQLiteEventLedger
+from seed_runtime.events import CORRUPTED, EventLedger, SQLiteEventLedger
 from seed_runtime.event import Event
 from seed_runtime.operator_console import run_persistent_operator_console
 from seed_runtime.yield_evidence import YIELD_EVIDENCE_KIND
@@ -51,6 +51,19 @@ def _record_byte_measurement(
         ledger,
         responsible_act_evidence_event_identity=act_evidence.identity,
     )
+
+
+class IntegrityCountingLedger(EventLedger):
+    def __init__(self):
+        super().__init__()
+        self.integrity_calls = ExactCounter()
+        self.corrupted = set()
+
+    def integrity_of(self, event_identity):
+        self.integrity_calls[event_identity] += 1
+        if event_identity in self.corrupted:
+            return CORRUPTED
+        return super().integrity_of(event_identity)
 
 
 def _ledger(text="猫\n狗\n"):
@@ -184,6 +197,45 @@ def test_each_exact_ingest_is_counted_once_without_losing_zero_occurrence_materi
         value: (expected_carrying[value], count)
         for value, count in expected_totals.items()
     }
+
+
+def test_each_replay_validates_each_exact_ingest_once_and_reads_independently():
+    ledger = IntegrityCountingLedger()
+    materials = (
+        b'{"function":"unobserved","occurrence_count":0}',
+        b'{"function":"observed","occurrence_count":2}',
+    )
+    ingests = tuple(
+        ingest_material(
+            ledger,
+            locality_identity="measurement-sidecar",
+            exact_bytes=material,
+            source_role="implementation function Measurement",
+            source_boundary=f"sidecar-{position}",
+        )
+        for position, material in enumerate(materials)
+    )
+    act_evidence = record_byte_measurement_responsible_act_evidence(
+        ledger,
+        source_localities=("measurement-sidecar",),
+        recording_locality_identity="measurement-sidecar",
+    )
+    ledger.integrity_calls.clear()
+
+    result = record_byte_measurement_result(
+        ledger,
+        responsible_act_evidence_event_identity=act_evidence.identity,
+    )
+
+    assert [ledger.integrity_calls[ingest.identity] for ingest in ingests] == [1, 1]
+    assert tuple(ingest.exact_material for ingest in ingests) == materials
+
+    assert assertions_of_recorded_byte_measurement(ledger, result.identity)
+    assert [ledger.integrity_calls[ingest.identity] for ingest in ingests] == [2, 2]
+
+    ledger.corrupted.add(ingests[0].identity)
+    with pytest.raises(ByteMeasurementError, match="not an intact Ingest"):
+        assertions_of_recorded_byte_measurement(ledger, result.identity)
 
 
 def test_yield_resolves_the_exact_act_evidence_after_reopen(tmp_path):

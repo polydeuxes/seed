@@ -494,10 +494,6 @@ def _measure_byte_counts_through(
         for ingest in ledger.iter_locality_kind(
             locality, INGEST_OCCURRED_KIND, through=boundary
         ):
-            if ledger.integrity_of(ingest.identity) == CORRUPTED:
-                raise ByteMeasurementError(
-                    "corrupted ingest cannot participate in byte Measurement"
-                )
             exact = _ingested_bytes(ledger, ingest)
             if ingest.identity in seen_material:
                 raise ByteMeasurementError(
