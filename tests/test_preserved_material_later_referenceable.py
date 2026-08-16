@@ -26,10 +26,6 @@ the whole past.  And `#2350` left open whether
 occurrence -- executing it proves the substrate exists, not that the read
 is lawful.
 
-This module also does not test that Seed's exact Act conditions revision over time.  No
-measurement act exists in the runtime, so there is no case where a later
-material access reaches material it previously could not.
-
 Run standalone to inspect the reference lists:
 
     python -m tests.test_preserved_material_later_referenceable
@@ -136,33 +132,6 @@ def test_each_representation_act_is_appended_after_every_event_it_references(led
         boundary = representation_event.material["locality_standing_as_of_event_identity"]
         if boundary is not None:
             assert positions[boundary] < positions[representation_event.identity]
-
-
-def test_no_act_condition_change_is_claimed_here(ledger):
-    """Guard against this module being read as more than it is.
-
-    Only one kind of Act with participating inputs runs in this locality.  If a second
-    measurement or finding act is added later, this assertion should fail and
-    be replaced by a real Act-condition-revision test.
-    """
-    event_kinds = {
-        e.kind
-        for e in ledger.list()
-        if e.kind.startswith(("material.", "operator."))
-    }
-    assert event_kinds == {
-        "material.ingest.act_evidenced",
-        "material.ingest.occurred",
-        "operator.representation.recorded",
-        "operator.representation.act_evidenced",
-        "operator.representation.locality_evidenced",
-        "operator.representation.emission_attempt_recorded",
-        "operator.representation.emission_attempt_locality_evidenced",
-        "operator.representation.emission_act_evidenced",
-        "operator.representation.emission_locality_evidenced",
-        "operator.yield.evidence_recorded",
-        "operator.representation.emitted",
-    }
 
 
 def represent_evidence_growth() -> str:

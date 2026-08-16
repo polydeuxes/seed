@@ -32,7 +32,10 @@ from material_fixture_story import (  # noqa: E402
 
 @pytest.fixture(scope="module")
 def acquired_story_material():
-    exact_material = supplied_story_material(ROOT)
+    try:
+        exact_material = supplied_story_material(ROOT)
+    except FileNotFoundError as error:
+        pytest.skip(str(error))
     ledger = EventLedger()
     ingests = tuple(
         ingest_material(
