@@ -163,19 +163,25 @@ def test_repeated_checkpoints_preserve_one_exact_checkpoint_chain():
     }
 
 
-def test_unregistered_slash_name_is_not_silently_treated_as_data():
+def test_unregistered_slash_name_reaches_the_exact_ingress_road():
     ledger = _run(b"/unregistered\nafter\n")
 
-    assert _raw_bytes(ledger) == [b"after\n"]
+    assert _raw_bytes(ledger) == [b"/unregistered\n", b"after\n"]
     assert not [
         event for event in ledger.list() if event.kind.startswith("operator.command.")
     ]
 
 
-def test_exit_has_no_console_wrapper():
+def test_exit_is_material_and_does_not_establish_stop():
     ledger = _run(b"/exit\nafter\n")
 
-    assert _raw_bytes(ledger) == [b"after\n"]
+    assert _raw_bytes(ledger) == [b"/exit\n", b"after\n"]
     assert not [
         event for event in ledger.list() if event.kind.startswith("operator.command.")
     ]
+
+
+def test_unregistered_binary_slash_material_is_preserved_exactly():
+    ledger = _run(b"/\xff\x00 material\n")
+
+    assert _raw_bytes(ledger) == [b"/\xff\x00 material\n"]

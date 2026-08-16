@@ -6,7 +6,7 @@ import sqlite3
 import pytest
 
 from seed_runtime.event import Event
-from seed_runtime.events import EventLedger, SQLiteEventLedger
+from seed_runtime.events import CORRUPTED, EventLedger, SQLiteEventLedger
 from seed_runtime.material_ingest import (
     MATERIAL_INGEST_OCCURRED_KIND,
     MaterialIngestError,
@@ -55,6 +55,45 @@ def test_system_material_preserves_exact_raw_bytes():
         "scope_locality",
         "occurrence_preservation",
     }
+
+
+def test_ingest_preserves_only_exact_intact_provenance_occurrence_references():
+    class CorruptedReferenceLedger(EventLedger):
+        corrupted = None
+
+        def integrity_of(self, event_identity):
+            if event_identity == self.corrupted:
+                return CORRUPTED
+            return super().integrity_of(event_identity)
+
+    ledger = CorruptedReferenceLedger()
+    source = _preserve(ledger, b"source")
+    occurred = _preserve(
+        ledger,
+        b"result",
+        provenance_occurrence_references=(source.identity,),
+    )
+
+    assert occurred.material["provenance_occurrence_references"] == [
+        source.identity
+    ]
+
+    before = len(ledger.list())
+    with pytest.raises(MaterialIngestError, match="exact intact occurrence"):
+        _preserve(
+            ledger,
+            b"missing",
+            provenance_occurrence_references=("missing",),
+        )
+    assert len(ledger.list()) == before
+
+    ledger.corrupted = source.identity
+    with pytest.raises(MaterialIngestError, match="exact intact occurrence"):
+        _preserve(
+            ledger,
+            b"corrupted",
+            provenance_occurrence_references=(source.identity,),
+        )
 
 
 def test_durable_ingest_preserves_raw_material_and_yield_evidence(tmp_path):

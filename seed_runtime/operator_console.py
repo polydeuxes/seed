@@ -47,6 +47,10 @@ from seed_runtime.occurrence_position_measurement import (
     record_occurrence_position_measurement_responsible_act_evidence,
     record_occurrence_position_measurement_result,
 )
+from seed_runtime.supplied_invocation_material import (
+    SuppliedInvocationProvider,
+    ingest_supplied_invocation_material,
+)
 
 
 def _advance_over(ledger, standing, event_identities, *, locality_identity):
@@ -76,6 +80,68 @@ def _advance_over_representation(ledger, standing, representation):
     )
 
 
+def _record_acquisition_measurements(ledger, standing, *, locality_identity):
+    """Record the live Measurements over the current exact Locality boundary."""
+
+    measurement_act_evidence = record_byte_measurement_responsible_act_evidence(
+        ledger,
+        source_localities=(locality_identity,),
+        recording_locality_identity=locality_identity,
+    )
+    standing = _advance_over(
+        ledger,
+        standing,
+        (measurement_act_evidence.identity,),
+        locality_identity=locality_identity,
+    )
+    measurement = record_byte_measurement_result(
+        ledger,
+        responsible_act_evidence_event_identity=measurement_act_evidence.identity,
+    )
+    standing = _advance_over(
+        ledger,
+        standing,
+        (
+            measurement.material["yield_evidence_identity"],
+            measurement.identity,
+        ),
+        locality_identity=locality_identity,
+    )
+    position_finding = measure_occurrence_position(
+        ledger,
+        source_locality_identity=locality_identity,
+    )
+    position_measurement_act_evidence = (
+        record_occurrence_position_measurement_responsible_act_evidence(
+            ledger,
+            recording_locality_identity=locality_identity,
+            finding=position_finding,
+        )
+    )
+    standing = _advance_over(
+        ledger,
+        standing,
+        (position_measurement_act_evidence.identity,),
+        locality_identity=locality_identity,
+    )
+    position_measurement = record_occurrence_position_measurement_result(
+        ledger,
+        finding=position_finding,
+        responsible_act_evidence_event_identity=(
+            position_measurement_act_evidence.identity
+        ),
+    )
+    return _advance_over(
+        ledger,
+        standing,
+        (
+            position_measurement.material["yield_evidence_identity"],
+            position_measurement.identity,
+        ),
+        locality_identity=locality_identity,
+    )
+
+
 def run_persistent_operator_console(
     *,
     ledger: EventLedger,
@@ -84,8 +150,11 @@ def run_persistent_operator_console(
     output_stream: TextIO,
     command_handlers: Mapping[bytes, OperatorCommandHandler] | None = None,
     raw_output_stream: BinaryIO | None = None,
+    host_invocation_provider: SuppliedInvocationProvider | None = None,
 ) -> None:
     """Repeat exact-byte Ingest and slash-command occurrences."""
+    if host_invocation_provider is not None and raw_output_stream is None:
+        raise ValueError("exact output boundary required")
     handlers = dict(command_handlers or {})
     handlers[b"checkpoint"] = request_operator_checkpoint
     handlers[b"memory"] = request_operator_memory
@@ -108,6 +177,85 @@ def run_persistent_operator_console(
         boundary_material = operator_boundary_material(input_stream)
         if boundary_material.eof:
             return
+        if (
+            host_invocation_provider is not None
+            and boundary_material.exact_bytes.startswith(b"!")
+        ):
+            with ledger.batched():
+                command_record = run_operator_ingest(
+                    ledger=ledger,
+                    locality_identity=locality_identity,
+                    boundary_material=boundary_material,
+                    locality_standing=(
+                        locality_standing
+                        if locality_standing["event_count"]
+                        else None
+                    ),
+                )
+                command_occurrence = command_record["current_standing"][
+                    "ingest_occurrence"
+                ]
+                locality_standing = _advance_over(
+                    ledger,
+                    locality_standing,
+                    (command_occurrence["evidence_event_identity"],),
+                    locality_identity=locality_identity,
+                )
+                locality_standing = _record_acquisition_measurements(
+                    ledger,
+                    locality_standing,
+                    locality_identity=locality_identity,
+                )
+                representation = record_operator_representation(
+                    ledger,
+                    locality_identity=locality_identity,
+                    locality_standing=locality_standing,
+                )
+                locality_standing = _advance_over_representation(
+                    ledger, locality_standing, representation
+                )
+            supplied = host_invocation_provider(boundary_material.exact_bytes)
+            with ledger.batched():
+                supplied_occurrences = ingest_supplied_invocation_material(
+                    ledger,
+                    locality_identity=locality_identity,
+                    command_occurrence_reference=command_occurrence[
+                        "evidence_event_identity"
+                    ],
+                    supplied=supplied,
+                )
+                locality_standing = _advance_over(
+                    ledger,
+                    locality_standing,
+                    tuple(
+                        occurrence.identity
+                        for occurrence in supplied_occurrences
+                    ),
+                    locality_identity=locality_identity,
+                )
+                locality_standing = _record_acquisition_measurements(
+                    ledger,
+                    locality_standing,
+                    locality_identity=locality_identity,
+                )
+                for supplied_occurrence in supplied_occurrences[:2]:
+                    representation = record_operator_representation(
+                        ledger,
+                        locality_identity=locality_identity,
+                        locality_standing=locality_standing,
+                        source_occurrence_reference=supplied_occurrence.identity,
+                    )
+                    try:
+                        emit_operator_representation_material(
+                            ledger,
+                            representation=representation,
+                            output_stream=raw_output_stream,
+                        )
+                    finally:
+                        locality_standing = _advance_over_representation(
+                            ledger, locality_standing, representation
+                        )
+            continue
         if is_slash_command(boundary_material):
             command_run = run_operator_command(
                 locality_identity=locality_identity,
@@ -228,7 +376,8 @@ def run_persistent_operator_console(
                 locality_standing = _advance_over_representation(
                     ledger, locality_standing, representation
                 )
-            continue
+            if request is not None or command_run.addressed.frame.name in handlers:
+                continue
         with ledger.batched():
             attempt_record = run_operator_ingest(
                 ledger=ledger,
@@ -249,65 +398,9 @@ def run_persistent_operator_console(
                 (ingest_occurrence["evidence_event_identity"],),
                 locality_identity=locality_identity,
             )
-            measurement_act_evidence = (
-                record_byte_measurement_responsible_act_evidence(
-                    ledger,
-                    source_localities=(locality_identity,),
-                    recording_locality_identity=locality_identity,
-                )
-            )
-            locality_standing = _advance_over(
+            locality_standing = _record_acquisition_measurements(
                 ledger,
                 locality_standing,
-                (measurement_act_evidence.identity,),
-                locality_identity=locality_identity,
-            )
-            measurement = record_byte_measurement_result(
-                ledger,
-                responsible_act_evidence_event_identity=(
-                    measurement_act_evidence.identity
-                ),
-            )
-            locality_standing = _advance_over(
-                ledger,
-                locality_standing,
-                (
-                    measurement.material["yield_evidence_identity"],
-                    measurement.identity,
-                ),
-                locality_identity=locality_identity,
-            )
-            position_finding = measure_occurrence_position(
-                ledger,
-                source_locality_identity=locality_identity,
-            )
-            position_measurement_act_evidence = (
-                record_occurrence_position_measurement_responsible_act_evidence(
-                    ledger,
-                    recording_locality_identity=locality_identity,
-                    finding=position_finding,
-                )
-            )
-            locality_standing = _advance_over(
-                ledger,
-                locality_standing,
-                (position_measurement_act_evidence.identity,),
-                locality_identity=locality_identity,
-            )
-            position_measurement = record_occurrence_position_measurement_result(
-                ledger,
-                finding=position_finding,
-                responsible_act_evidence_event_identity=(
-                    position_measurement_act_evidence.identity
-                ),
-            )
-            locality_standing = _advance_over(
-                ledger,
-                locality_standing,
-                (
-                    position_measurement.material["yield_evidence_identity"],
-                    position_measurement.identity,
-                ),
                 locality_identity=locality_identity,
             )
             if raw_output_stream is not None:

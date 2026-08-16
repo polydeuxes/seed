@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from seed_runtime.event import Event
-from seed_runtime.events import EventLedger
+from seed_runtime.events import CORRUPTED, EventLedger
 from seed_runtime.identities import new_identity
 from seed_runtime.yield_evidence import _record_yield_evidence
 
@@ -32,6 +32,7 @@ def ingest_material(
     source_boundary: str,
     represented_material: str | None = None,
     known_loss: tuple[str, ...] = (),
+    provenance_occurrence_references: tuple[str, ...] = (),
 ) -> Event:
     if type(exact_bytes) is not bytes:
         raise MaterialIngestError("Ingest requires exact bytes")
@@ -46,6 +47,21 @@ def ingest_material(
         raise MaterialIngestError("represented material must be exact material")
     if type(known_loss) is not tuple or any(type(item) is not str for item in known_loss):
         raise MaterialIngestError("known loss must be an exact tuple of material")
+    if (
+        type(provenance_occurrence_references) is not tuple
+        or len(set(provenance_occurrence_references))
+        != len(provenance_occurrence_references)
+        or any(
+            type(reference) is not str
+            or not reference
+            or ledger.get(reference) is None
+            or ledger.integrity_of(reference) == CORRUPTED
+            for reference in provenance_occurrence_references
+        )
+    ):
+        raise MaterialIngestError(
+            "provenance requires exact intact occurrence references"
+        )
 
     ingest_act_identity = new_identity("material_ingest_act")
     act_occurrence_identity = new_identity("material_ingest_act_occurrence")
@@ -61,7 +77,9 @@ def ingest_material(
             "what this material represents remains Unknown",
             "the asserted source relation remains Unknown",
         ],
-        "provenance_occurrence_references": [],
+        "provenance_occurrence_references": list(
+            provenance_occurrence_references
+        ),
     }
     if represented_material is not None:
         result["represented_material"] = represented_material

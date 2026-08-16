@@ -2,8 +2,11 @@ from __future__ import annotations
 
 from io import BytesIO, StringIO
 from pathlib import Path
+import os
 import subprocess
 import sys
+
+import pytest
 
 from seed_runtime import process_entry
 from seed_runtime.events import SQLiteEventLedger
@@ -78,6 +81,35 @@ def test_reopened_live_process_allocates_a_new_locality(tmp_path):
         ledger.close()
     assert None not in Localities
     assert len(Localities) == 2
+
+
+@pytest.mark.parametrize("name", ("ls", "cat"))
+def test_live_process_composes_the_bounded_host_provider(tmp_path, name):
+    directory = tmp_path / "source"
+    directory.mkdir()
+    material = b"\x00\xffhost material\n"
+    path = directory / "one"
+    path.write_bytes(material)
+    addressed = directory if name == "ls" else path
+    expected = b"one\n" if name == "ls" else material
+
+    result = subprocess.run(
+        [
+            sys.executable,
+            "-m",
+            "seed_runtime.process_entry",
+            "--db",
+            str(tmp_path / f"{name}.db"),
+        ],
+        input=b"!" + name.encode("ascii") + b" " + os.fsencode(addressed) + b"\n",
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        check=False,
+        cwd=str(Path(__file__).resolve().parent.parent),
+    )
+
+    assert result.returncode == 0, result.stderr
+    assert result.stdout == expected
 
 
 def test_live_entry_has_only_help_and_database_flags():
