@@ -1,4 +1,4 @@
-"""Relate one exact recorded Standing-boundary result to one fresh Locality."""
+"""Preserve one exact recorded Standing-boundary result at one new Locality."""
 
 from __future__ import annotations
 
@@ -29,11 +29,11 @@ RECORDED_STANDING_BOUNDARY_LOCALITY_RESULT_KIND = (
     "recorded Standing boundary Locality relation result"
 )
 RECORDED_STANDING_BOUNDARY_LOCALITY_ACT = (
-    "Relate one exact recorded Standing boundary result to one fresh Locality"
+    "Preserve one exact recorded Standing boundary result at one new Locality"
 )
 RECORDED_STANDING_BOUNDARY_LOCALITY_RESPONSIBILITY = (
     "preserve one direct Locality relation from one exact recorded Standing "
-    "boundary result to one fresh Locality"
+    "boundary result at one new Locality"
 )
 RECORDED_STANDING_BOUNDARY_LOCALITY_BOOK_CLAUSE = "06.Locality.C"
 EVENT_KIND_RESPONSIBILITIES = {
@@ -159,7 +159,7 @@ def _assignment_material(
         "standing": "assigned",
         "limits": [
             "this assignment is bounded to one direct Locality relation",
-            "the relation copies no addressed Standing",
+            "the relation carries no addressed Standing",
         ],
         "unknowns": [
             "Applicability of the recorded boundary to another Act remains Unknown"
@@ -248,7 +248,7 @@ def _result_material(act: Event) -> dict[str, Any]:
         "standing": "preserved",
         "limits": [
             "this direct Locality relation carries no other Locality relation",
-            "the relation copies no addressed Standing",
+            "the relation carries no addressed Standing",
             "the relation establishes no Compare",
         ],
         "unknowns": [
@@ -263,7 +263,31 @@ def _recorded_result_material(
     yield_evidence_identity: str,
 ) -> dict[str, Any]:
     return {
-        **result_material,
+        "result_identity": result_material["result_identity"],
+        "locality_act_identity": result_material["locality_act_identity"],
+        "act_occurrence_identity": result_material["act_occurrence_identity"],
+        "locality_relation_occurrence_identity": result_material[
+            "locality_relation_occurrence_identity"
+        ],
+        "exact_act": result_material["exact_act"],
+        "responsibility": result_material["responsibility"],
+        "responsible_boundary": result_material["responsible_boundary"],
+        "responsibility_assignment_reference": deepcopy(
+            result_material["responsibility_assignment_reference"]
+        ),
+        "standing_boundary_reference": deepcopy(
+            result_material["standing_boundary_reference"]
+        ),
+        "destination_locality_identity": result_material[
+            "destination_locality_identity"
+        ],
+        "scope": deepcopy(result_material["scope"]),
+        "participation": deepcopy(result_material["participation"]),
+        "locality_relation": deepcopy(result_material["locality_relation"]),
+        "authority": deepcopy(result_material["authority"]),
+        "standing": result_material["standing"],
+        "limits": list(result_material["limits"]),
+        "unknowns": list(result_material["unknowns"]),
         "responsible_act_evidence_identity": responsible_act_evidence_identity,
         "yield_evidence_identity": yield_evidence_identity,
     }
