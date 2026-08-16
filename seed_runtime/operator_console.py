@@ -29,6 +29,7 @@ from seed_runtime.operator_locality_standing import (
     advance_operator_locality_standing,
     read_operator_locality_standing,
 )
+from seed_runtime.operator_egress import emit_exact_material
 
 
 def _advance_over(ledger, standing, event_identities, *, locality_identity):
@@ -55,6 +56,7 @@ def run_persistent_operator_console(
     output_stream: TextIO,
     command_handlers: Mapping[bytes, OperatorCommandHandler] | None = None,
     emit_initial_representation: bool = True,
+    raw_output_stream: BinaryIO | None = None,
 ) -> None:
     """Repeat exact-byte Ingest and slash-command occurrences."""
     handlers = dict(command_handlers or {})
@@ -148,6 +150,9 @@ def run_persistent_operator_console(
                 locality_identity=locality_identity,
             )
             if attempt_record["current_standing"]["ingest_occurrence"] is not None:
+                if raw_output_stream is not None:
+                    emit_exact_material(raw_output_stream, boundary_material.exact_bytes)
+                    continue
                 # The Representation result and Yield Evidence retain distinct identities. No Compare
                 # or Identification is inferred merely from temporal proximity.
                 representation = record_operator_representation(

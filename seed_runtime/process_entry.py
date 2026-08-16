@@ -27,6 +27,7 @@ def main(argv: Sequence[str] | None = None) -> int:
             input_stream=getattr(sys.stdin, "buffer", sys.stdin),
             output_stream=sys.stdout,
             emit_initial_representation=False,
+            raw_output_stream=getattr(sys.stdout, "buffer", None),
         )
         return 0
     finally:
