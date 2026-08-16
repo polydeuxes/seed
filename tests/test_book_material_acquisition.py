@@ -27,8 +27,10 @@ from compiled_format_invocation import (  # noqa: E402
     compiled_reference_invocations,
     exact_byte_material_references,
     exact_byte_pair_material_references,
+    exact_position_material_references,
     first_recurring_added_compare_across,
     recurring_added_compares_across,
+    recurring_position_materials,
     moved_exact_byte_material_references,
 )
 from compiled_material_invocation import ingest_result_reference  # noqa: E402
@@ -676,6 +678,57 @@ def test_complete_book_recurrence_continues_after_one_prospective_conflict(
         for row, comparison in zip(comparisons, first_later)
     )
     assert occurrence_positions[1] > occurrence_positions[0]
+
+
+def test_book_and_supplied_material_have_later_position_recurrence(
+    acquired_book_material,
+):
+    ledger, _, _, _, book_references, _, _ = acquired_book_material
+    supplied_path = ROOT / "corpus" / "english_grimm_fairy_tales.txt"
+    if not supplied_path.is_file():
+        pytest.skip("supplied fixture material is unavailable")
+    supplied_material = b"".join(
+        supplied_path.read_bytes().splitlines(keepends=True)[:300]
+    )
+    supplied_ingest = ingest_material(
+        ledger,
+        locality_identity="supplied-position-material",
+        exact_bytes=supplied_material,
+        source_role="fixture material",
+        source_boundary="corpus/english_grimm_fairy_tales.txt:first-300-lines",
+    )
+    supplied_reference = ingest_result_reference(ledger, supplied_ingest.identity)
+
+    book_recurring = tuple(
+        found
+        for reference in book_references
+        for found in recurring_position_materials(
+            exact_position_material_references(reference),
+            material_count=24,
+        )
+    )
+    supplied_recurring = recurring_position_materials(
+        exact_position_material_references(supplied_reference),
+        material_count=24,
+    )
+
+    for recurring in (book_recurring, supplied_recurring):
+        assert recurring
+        assert any(
+            exact_material == current.exact_material
+            for _, exact_material, current in recurring
+        )
+        assert any(
+            exact_material != current.exact_material
+            for _, exact_material, current in recurring
+        )
+        assert all(
+            first.position < current.position
+            and second.position < current.position
+            and first.source_reference == second.source_reference
+            == current.source_reference
+            for (first, second), _, current in recurring
+        )
 
 
 def test_earlier_and_later_book_admissions_keep_distinct_occurrence_sets(

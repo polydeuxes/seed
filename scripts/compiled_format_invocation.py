@@ -237,6 +237,111 @@ def exact_position_pair_material_references(
     )
 
 
+def recurring_position_material(
+    earlier_references: tuple[ExactPositionMaterialReference, ...],
+    current_earlier_references: tuple[ExactPositionMaterialReference, ...],
+) -> tuple[tuple[ExactPositionMaterialReference, ...], bytes] | None:
+    if (
+        type(earlier_references) is not tuple
+        or type(current_earlier_references) is not tuple
+        or not current_earlier_references
+        or any(
+            not isinstance(reference, ExactPositionMaterialReference)
+            for reference in (*earlier_references, *current_earlier_references)
+        )
+    ):
+        raise TypeError("recurrence requires exact position material")
+    if len(earlier_references) <= len(current_earlier_references) or (
+        earlier_references[-len(current_earlier_references) :]
+        != current_earlier_references
+    ):
+        raise ValueError("current earlier material must be the exact available suffix")
+    source_reference = earlier_references[0].source_reference
+    if any(
+        reference.source_reference != source_reference
+        or reference.position != position
+        for position, reference in enumerate(earlier_references)
+    ):
+        raise ValueError("recurrence requires one exact ordered source occurrence")
+    material_count = len(current_earlier_references)
+    current_material = b"".join(
+        reference.exact_material for reference in current_earlier_references
+    )
+    following = tuple(
+        earlier_references[first_position + material_count]
+        for first_position in range(
+            len(earlier_references) - material_count
+        )
+        if b"".join(
+            reference.exact_material
+            for reference in earlier_references[
+                first_position : first_position + material_count
+            ]
+        )
+        == current_material
+    )
+    if len(following) < 2 or len(
+        {reference.exact_material for reference in following}
+    ) != 1:
+        return None
+    return following, following[0].exact_material
+
+
+def recurring_position_materials(
+    position_references: tuple[ExactPositionMaterialReference, ...],
+    *,
+    material_count: int,
+) -> tuple[
+    tuple[
+        tuple[ExactPositionMaterialReference, ExactPositionMaterialReference],
+        bytes,
+        ExactPositionMaterialReference,
+    ],
+    ...,
+]:
+    if (
+        type(position_references) is not tuple
+        or not position_references
+        or any(
+            not isinstance(reference, ExactPositionMaterialReference)
+            for reference in position_references
+        )
+    ):
+        raise TypeError("recurrence requires exact position material")
+    if type(material_count) is not int or material_count < 1:
+        raise TypeError("one exact positive material count is required")
+    source_reference = position_references[0].source_reference
+    if any(
+        reference.source_reference != source_reference
+        or reference.position != position
+        for position, reference in enumerate(position_references)
+    ):
+        raise ValueError("recurrence requires one exact ordered source occurrence")
+    following_by_material = {}
+    recurring = []
+    for position in range(material_count, len(position_references)):
+        earlier = b"".join(
+            reference.exact_material
+            for reference in position_references[position - material_count : position]
+        )
+        following = following_by_material.get(earlier, {})
+        following_count = sum(len(found) for found in following.values())
+        if following_count >= 2 and len(following) == 1:
+            exact_material, supporting = next(iter(following.items()))
+            recurring.append(
+                (
+                    (supporting[0], supporting[1]),
+                    exact_material,
+                    position_references[position],
+                )
+            )
+        following.setdefault(position_references[position].exact_material, []).append(
+            position_references[position]
+        )
+        following_by_material[earlier] = following
+    return tuple(recurring)
+
+
 def exact_byte_material_references(
     ledger: EventLedger, measurement_occurrence_identity: str
 ) -> tuple[ExactMaterialReference, ...]:

@@ -59,6 +59,8 @@ from compiled_format_invocation import (  # noqa: E402
     exact_byte_pair_material_references,
     exact_position_material_references,
     exact_position_pair_material_references,
+    recurring_position_material,
+    recurring_position_materials,
     moved_exact_byte_material_references,
     preserves_original_order,
 )
@@ -1334,6 +1336,82 @@ def test_missing_position_cannot_return_the_complete_exact_material():
     found = exact_position_pair_material_references((one[0], one[2]))
 
     assert found == ()
+
+
+@pytest.mark.parametrize(
+    ("material", "same"),
+    ((b"abxabxabx", True), (b"abxabxaby", False)),
+)
+def test_exact_earlier_positions_commit_before_one_later_material(material, same):
+    source = ExactMaterialReference(
+        "recurrence-position-source",
+        "recurrence-position-assertion",
+        "recurrence-position-locality",
+        material,
+    )
+    positions = exact_position_material_references(source)
+    earlier = positions[:-1]
+
+    recurring = recurring_position_material(earlier, earlier[-2:])
+
+    assert recurring is not None
+    supporting, exact_material = recurring
+    assert tuple(reference.position for reference in supporting) == (2, 5)
+    assert exact_material == b"x"
+    assert (exact_material == positions[-1].exact_material) is same
+
+
+def test_position_recurrence_refuses_reordered_or_non_suffix_material():
+    source = ExactMaterialReference(
+        "recurrence-refusal-source",
+        "recurrence-refusal-assertion",
+        "recurrence-refusal-locality",
+        b"abxabxabx",
+    )
+    positions = exact_position_material_references(source)
+
+    with pytest.raises(ValueError, match="ordered source occurrence"):
+        recurring_position_material(
+            (*positions[:3], positions[4], positions[3], *positions[5:-1]),
+            positions[-3:-1],
+        )
+    with pytest.raises(ValueError, match="exact available suffix"):
+        recurring_position_material(positions[:-1], positions[:2])
+
+
+def test_position_recurrence_keeps_later_match_and_conflict_in_order():
+    source = ExactMaterialReference(
+        "position-recurrence-source",
+        "position-recurrence-assertion",
+        "position-recurrence-locality",
+        b"abxabxabxaby",
+    )
+    positions = exact_position_material_references(source)
+
+    recurring = recurring_position_materials(positions, material_count=2)
+
+    assert tuple(
+        (
+            tuple(reference.position for reference in supporting),
+            exact_material,
+            current.position,
+            exact_material == current.exact_material,
+        )
+        for supporting, exact_material, current in recurring
+    ) == (
+        ((2, 5), b"x", 8, True),
+        ((3, 6), b"a", 9, True),
+        ((4, 7), b"b", 10, True),
+        ((2, 5), b"x", 11, False),
+    )
+    for supporting, exact_material, current in recurring:
+        separately = recurring_position_material(
+            positions[: current.position],
+            positions[current.position - 2 : current.position],
+        )
+        assert separately is not None
+        assert separately[0][:2] == supporting
+        assert separately[1] == exact_material
 
 
 def test_one_byte_differences_establish_compiled_invocation_boundaries(
