@@ -12,8 +12,8 @@ import tempfile
 import time
 
 from seed_runtime.supplied_invocation_material import (
-    SuppliedInvocationMaterial,
-    SuppliedMaterialOccurrence,
+    SuppliedSystemMaterialConsumer,
+    SuppliedSystemMaterialOccurrence,
 )
 
 
@@ -92,9 +92,10 @@ def _invocation_argv(exact_command: bytes) -> tuple[bytes, ...]:
 def _bounded_invocation(
     argv: tuple[bytes, ...],
     *,
+    supply: SuppliedSystemMaterialConsumer,
     environment: dict[str, str] | None = None,
     working_directory: Path | None = None,
-) -> tuple[bytes, bytes, bool, bool, bool]:
+) -> tuple[bool, bool, bool]:
     coordinates = {
         "stdin": subprocess.DEVNULL,
         "stdout": subprocess.PIPE,
@@ -113,8 +114,8 @@ def _bounded_invocation(
         raise OperatorHostProviderError("exact supplied material required")
 
     streams = selectors.DefaultSelector()
-    output = bytearray()
-    error = bytearray()
+    supplied_counts = {"output": 0, "error": 0}
+    supplied_positions = {"output": 0, "error": 0}
     time_limit_reached = False
     output_limit_reached = False
     error_limit_reached = False
@@ -149,9 +150,21 @@ def _bounded_invocation(
                     streams.unregister(stream)
                     stream.close()
                     continue
-                material = output if key.data == "output" else error
-                available = MATERIAL_BYTE_LIMIT - len(material)
-                material.extend(found[:available])
+                available = MATERIAL_BYTE_LIMIT - supplied_counts[key.data]
+                exact = found[:available]
+                if exact:
+                    supply(
+                        SuppliedSystemMaterialOccurrence(
+                            exact_bytes=exact,
+                            source_boundary=(
+                                f"invocation {key.data} occurrence "
+                                f"{supplied_positions[key.data]}"
+                            ),
+                            egress=True,
+                        )
+                    )
+                    supplied_counts[key.data] += len(exact)
+                    supplied_positions[key.data] += 1
                 if len(found) > available:
                     if key.data == "output":
                         output_limit_reached = True
@@ -167,13 +180,16 @@ def _bounded_invocation(
             if not stream.closed:
                 stream.close()
         process.wait()
-    return (
-        bytes(output),
-        bytes(error),
-        time_limit_reached,
-        output_limit_reached,
-        error_limit_reached,
-    )
+    for role in ("output", "error"):
+        if supplied_positions[role] == 0:
+            supply(
+                SuppliedSystemMaterialOccurrence(
+                    exact_bytes=b"",
+                    source_boundary=f"invocation {role} occurrence 0",
+                    egress=True,
+                )
+            )
+    return time_limit_reached, output_limit_reached, error_limit_reached
 
 
 def _bounded_artifact(
@@ -194,71 +210,62 @@ def _bounded_artifact(
     )
 
 
-def _supplied_invocation(
-    output: bytes,
-    error: bytes,
+def _supply_completion(
+    supply: SuppliedSystemMaterialConsumer,
     *,
     timed_out: bool,
     output_limited: bool,
     error_limited: bool,
-    additional_occurrences: tuple[SuppliedMaterialOccurrence, ...] = (),
-) -> SuppliedInvocationMaterial:
+) -> None:
     invocation_loss = (
         _LIMIT_LOSS
         if timed_out or output_limited or error_limited
         else ()
     )
-    return SuppliedInvocationMaterial(
-        occurrences=(
-            SuppliedMaterialOccurrence(
-                exact_bytes=output,
-                source_boundary="invocation output",
-                known_loss=invocation_loss,
-            ),
-            SuppliedMaterialOccurrence(
-                exact_bytes=error,
-                source_boundary="invocation error",
-                known_loss=invocation_loss,
-            ),
-            *additional_occurrences,
-            SuppliedMaterialOccurrence(
-                exact_bytes=b"",
-                source_boundary="invocation end",
-            ),
-        ),
-        egress_occurrence_positions=(0, 1),
+    supply(
+        SuppliedSystemMaterialOccurrence(
+            exact_bytes=b"",
+            source_boundary="invocation completion",
+            egress=False,
+            known_loss=invocation_loss,
+        )
     )
 
 
-def invoke_operator_host(exact_command: bytes) -> SuppliedInvocationMaterial:
+def invoke_operator_host(
+    exact_command: bytes,
+    supply: SuppliedSystemMaterialConsumer,
+) -> None:
+    if not callable(supply):
+        raise TypeError("exact supplied material consumer required")
     argv = _invocation_argv(exact_command)
     if argv[: len(_PYTEST_INVOCATION)] != _PYTEST_INVOCATION:
-        output, error, timed_out, output_limited, error_limited = (
-            _bounded_invocation(argv)
+        timed_out, output_limited, error_limited = _bounded_invocation(
+            argv,
+            supply=supply,
         )
-        return _supplied_invocation(
-            output,
-            error,
+        _supply_completion(
+            supply,
             timed_out=timed_out,
             output_limited=output_limited,
             error_limited=error_limited,
         )
+        return
     with tempfile.TemporaryDirectory(prefix="seed-pytest-measurement-") as directory:
         artifact_path = Path(directory) / "implementation-measurement"
         catalog_path = Path(directory) / "implementation-catalog"
-        output, error, timed_out, output_limited, error_limited = (
-            _bounded_invocation(
-                argv,
-                environment={
-                    "PYTEST_DISABLE_PLUGIN_AUTOLOAD": "1",
-                    "PYTHONDONTWRITEBYTECODE": "1",
-                    _PYTEST_MEASUREMENT_ENVIRONMENT_COORDINATE: str(
-                        artifact_path
-                    ),
-                    _PYTEST_CATALOG_ENVIRONMENT_COORDINATE: str(catalog_path),
-                },
-                working_directory=_ROOT,
-            )
+        timed_out, output_limited, error_limited = _bounded_invocation(
+            argv,
+            supply=supply,
+            environment={
+                "PYTEST_DISABLE_PLUGIN_AUTOLOAD": "1",
+                "PYTHONDONTWRITEBYTECODE": "1",
+                _PYTEST_MEASUREMENT_ENVIRONMENT_COORDINATE: str(
+                    artifact_path
+                ),
+                _PYTEST_CATALOG_ENVIRONMENT_COORDINATE: str(catalog_path),
+            },
+            working_directory=_ROOT,
         )
         artifact, artifact_limited = _bounded_artifact(
             artifact_path,
@@ -272,36 +279,39 @@ def invoke_operator_host(exact_command: bytes) -> SuppliedInvocationMaterial:
                 timed_out or output_limited or error_limited
             ),
         )
-    return _supplied_invocation(
-        output,
-        error,
+    supply(
+        SuppliedSystemMaterialOccurrence(
+            exact_bytes=catalog,
+            source_boundary="implementation function catalog",
+            egress=False,
+            known_loss=(
+                _LIMIT_LOSS
+                if catalog_limited
+                or timed_out
+                or output_limited
+                or error_limited
+                else ()
+            ),
+        )
+    )
+    supply(
+        SuppliedSystemMaterialOccurrence(
+            exact_bytes=artifact,
+            source_boundary="implementation function measurement",
+            egress=False,
+            known_loss=(
+                _LIMIT_LOSS
+                if artifact_limited
+                or timed_out
+                or output_limited
+                or error_limited
+                else ()
+            ),
+        )
+    )
+    _supply_completion(
+        supply,
         timed_out=timed_out,
         output_limited=output_limited,
         error_limited=error_limited,
-        additional_occurrences=(
-            SuppliedMaterialOccurrence(
-                exact_bytes=catalog,
-                source_boundary="implementation function catalog",
-                known_loss=(
-                    _LIMIT_LOSS
-                    if catalog_limited
-                    or timed_out
-                    or output_limited
-                    or error_limited
-                    else ()
-                ),
-            ),
-            SuppliedMaterialOccurrence(
-                exact_bytes=artifact,
-                source_boundary="implementation function measurement",
-                known_loss=(
-                    _LIMIT_LOSS
-                    if artifact_limited
-                    or timed_out
-                    or output_limited
-                    or error_limited
-                    else ()
-                ),
-            ),
-        ),
     )

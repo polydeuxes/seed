@@ -64,8 +64,9 @@ from seed_runtime.occurrence_position_measurement import (
     record_occurrence_position_measurement_result,
 )
 from seed_runtime.supplied_invocation_material import (
-    SuppliedInvocationProvider,
-    ingest_supplied_invocation_material,
+    OperatorInvocationProvider,
+    SuppliedSystemMaterialOccurrence,
+    ingest_supplied_invocation_occurrence,
 )
 
 
@@ -166,10 +167,10 @@ def run_persistent_operator_console(
     output_stream: TextIO,
     command_handlers: Mapping[bytes, OperatorCommandHandler] | None = None,
     raw_output_stream: BinaryIO | None = None,
-    host_invocation_provider: SuppliedInvocationProvider | None = None,
+    operator_invocation_provider: OperatorInvocationProvider | None = None,
 ) -> None:
     """Repeat exact-byte Ingest and slash-command occurrences."""
-    if host_invocation_provider is not None and raw_output_stream is None:
+    if operator_invocation_provider is not None and raw_output_stream is None:
         raise ValueError("exact output boundary required")
     handlers = dict(command_handlers or {})
     handlers[b"checkpoint"] = request_operator_checkpoint
@@ -249,7 +250,7 @@ def run_persistent_operator_console(
             ledger, locality_standing, representation
         )
         if (
-            host_invocation_provider is not None
+            operator_invocation_provider is not None
             and boundary_material.exact_bytes.startswith(b"!")
         ):
             with ledger.batched():
@@ -285,9 +286,18 @@ def run_persistent_operator_console(
                 locality_standing = _advance_over_representation(
                     ledger, locality_standing, representation
                 )
-            supplied = host_invocation_provider(boundary_material.exact_bytes)
-            with ledger.batched():
-                supplied_occurrences = ingest_supplied_invocation_material(
+            supplied_boundaries: set[str] = set()
+            supplied_occurrence_count = 0
+
+            def acquire_system_material(supplied) -> None:
+                nonlocal locality_standing, representation
+                nonlocal supplied_occurrence_count
+                if type(supplied) is not SuppliedSystemMaterialOccurrence:
+                    raise TypeError("exact supplied material required")
+                if supplied.source_boundary in supplied_boundaries:
+                    raise ValueError("distinct source boundary required")
+                supplied_boundaries.add(supplied.source_boundary)
+                supplied_occurrence = ingest_supplied_invocation_occurrence(
                     ledger,
                     locality_identity=locality_identity,
                     command_occurrence_reference=command_occurrence[
@@ -295,42 +305,52 @@ def run_persistent_operator_console(
                     ],
                     supplied=supplied,
                 )
+                supplied_occurrence_count += 1
                 locality_standing = _advance_over(
                     ledger,
                     locality_standing,
-                    tuple(
-                        occurrence.identity
-                        for occurrence in supplied_occurrences
-                    ),
+                    (supplied_occurrence.identity,),
                     locality_identity=locality_identity,
                 )
+                if not supplied.egress:
+                    return
+                representation = record_operator_representation(
+                    ledger,
+                    locality_identity=locality_identity,
+                    locality_standing=locality_standing,
+                    source_occurrence_reference=supplied_occurrence.identity,
+                )
+                try:
+                    emit_operator_representation_material(
+                        ledger,
+                        representation=representation,
+                        output_stream=raw_output_stream,
+                    )
+                finally:
+                    locality_standing = _advance_over_representation(
+                        ledger, locality_standing, representation
+                    )
+
+            provider_result = operator_invocation_provider(
+                boundary_material.exact_bytes,
+                acquire_system_material,
+            )
+            if provider_result is not None or not supplied_occurrence_count:
+                raise TypeError("exact supplied material required")
+            with ledger.batched():
                 locality_standing = _record_acquisition_measurements(
                     ledger,
                     locality_standing,
                     locality_identity=locality_identity,
                 )
-                for egress_occurrence_position in (
-                    supplied.egress_occurrence_positions
-                ):
-                    supplied_occurrence = supplied_occurrences[
-                        egress_occurrence_position
-                    ]
-                    representation = record_operator_representation(
-                        ledger,
-                        locality_identity=locality_identity,
-                        locality_standing=locality_standing,
-                        source_occurrence_reference=supplied_occurrence.identity,
-                    )
-                    try:
-                        emit_operator_representation_material(
-                            ledger,
-                            representation=representation,
-                            output_stream=raw_output_stream,
-                        )
-                    finally:
-                        locality_standing = _advance_over_representation(
-                            ledger, locality_standing, representation
-                        )
+                representation = record_operator_representation(
+                    ledger,
+                    locality_identity=locality_identity,
+                    locality_standing=locality_standing,
+                )
+                locality_standing = _advance_over_representation(
+                    ledger, locality_standing, representation
+                )
             continue
         if is_slash_command(boundary_material):
             command_run = run_operator_command(

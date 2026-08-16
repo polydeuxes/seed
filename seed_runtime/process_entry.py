@@ -32,7 +32,7 @@ def main(argv: Sequence[str] | None = None) -> int:
             input_stream=primordial_host_input(raw_input_stream),
             output_stream=sys.stdout,
             raw_output_stream=raw_output_stream,
-            host_invocation_provider=(
+            operator_invocation_provider=(
                 invoke_operator_host if raw_output_stream is not None else None
             ),
         )

@@ -22,24 +22,28 @@ from seed_runtime.operator_material_acquisition import (
     OPERATOR_MATERIAL_ACQUIRE_RECORDED_KIND,
 )
 from seed_runtime.supplied_invocation_material import (
-    SuppliedInvocationMaterial,
-    SuppliedMaterialOccurrence,
-    ingest_supplied_invocation_material,
+    SuppliedSystemMaterialOccurrence,
+    ingest_supplied_invocation_occurrence,
 )
 from seed_runtime.yield_evidence import read_yield_relation_requirements
 
 
 def _supplied(
     *, output=b"\x00\xffout", error=b"same", end=b""
-) -> SuppliedInvocationMaterial:
-    return SuppliedInvocationMaterial(
-        occurrences=(
-            SuppliedMaterialOccurrence(output, "provider:0"),
-            SuppliedMaterialOccurrence(error, "provider:1"),
-            SuppliedMaterialOccurrence(end, "provider:2"),
-        ),
-        egress_occurrence_positions=(0, 1),
+) -> tuple[SuppliedSystemMaterialOccurrence, ...]:
+    return (
+        SuppliedSystemMaterialOccurrence(output, "provider:0", True),
+        SuppliedSystemMaterialOccurrence(error, "provider:1", True),
+        SuppliedSystemMaterialOccurrence(end, "provider:2", False),
     )
+
+
+def _provider(*occurrences):
+    def provide(_exact_command, supply):
+        for occurrence in occurrences:
+            supply(occurrence)
+
+    return provide
 
 
 def _ingests(ledger):
@@ -101,7 +105,7 @@ def test_host_provider_receives_an_acquired_exact_command_before_it_occurs():
     seen = []
     raw_output = BytesIO()
 
-    def provider(exact_command):
+    def provider(exact_command, supply):
         seen.append(exact_command)
         assert [ingested_material_bytes(event) for event in _ingests(ledger)] == [
             b"!ls \xff\x00\n"
@@ -124,7 +128,8 @@ def test_host_provider_receives_an_acquired_exact_command_before_it_occurs():
             _represented_boundary_kinds(ledger)
             == _COMPLETE_COMMAND_REPRESENTED_BOUNDARIES
         )
-        return _supplied()
+        for occurrence in _supplied():
+            supply(occurrence)
 
     run_persistent_operator_console(
         ledger=ledger,
@@ -132,7 +137,7 @@ def test_host_provider_receives_an_acquired_exact_command_before_it_occurs():
         input_stream=BytesIO(b"!ls \xff\x00\n"),
         output_stream=StringIO(),
         raw_output_stream=raw_output,
-        host_invocation_provider=provider,
+        operator_invocation_provider=provider,
     )
 
     assert seen == [b"!ls \xff\x00\n"]
@@ -194,10 +199,79 @@ def test_host_provider_receives_an_acquired_exact_command_before_it_occurs():
     ] == [event.identity for event in ingests]
 
 
+def test_system_material_is_durable_and_emitted_before_the_provider_resumes():
+    ledger = EventLedger()
+    raw_output = BytesIO()
+    observed = []
+
+    def provider(_exact_command, supply):
+        for occurrence in (
+            SuppliedSystemMaterialOccurrence(
+                b"lower-0", "provider:output:0", True
+            ),
+            SuppliedSystemMaterialOccurrence(
+                b"lower-1", "provider:output:1", True
+            ),
+            SuppliedSystemMaterialOccurrence(
+                b"", "provider:completion", False
+            ),
+        ):
+            supply(occurrence)
+            observed.append(
+                (
+                    raw_output.getvalue(),
+                    tuple(event.exact_material for event in _ingests(ledger)),
+                )
+            )
+
+    run_persistent_operator_console(
+        ledger=ledger,
+        locality_identity="locality",
+        input_stream=BytesIO(b"!ls\n"),
+        output_stream=StringIO(),
+        raw_output_stream=raw_output,
+        operator_invocation_provider=provider,
+    )
+
+    assert observed == [
+        (b"lower-0", (b"!ls\n", b"lower-0")),
+        (b"lower-0lower-1", (b"!ls\n", b"lower-0", b"lower-1")),
+        (
+            b"lower-0lower-1",
+            (b"!ls\n", b"lower-0", b"lower-1", b""),
+        ),
+    ]
+
+
+def test_crossed_system_boundary_is_refused_before_a_second_ingest_or_egress():
+    ledger = EventLedger()
+    raw_output = BytesIO()
+
+    def provider(_exact_command, supply):
+        supply(SuppliedSystemMaterialOccurrence(b"first", "same", True))
+        supply(SuppliedSystemMaterialOccurrence(b"second", "same", True))
+
+    with pytest.raises(ValueError, match="distinct source boundary required"):
+        run_persistent_operator_console(
+            ledger=ledger,
+            locality_identity="locality",
+            input_stream=BytesIO(b"!ls\n"),
+            output_stream=StringIO(),
+            raw_output_stream=raw_output,
+            operator_invocation_provider=provider,
+        )
+
+    assert [event.exact_material for event in _ingests(ledger)] == [
+        b"!ls\n",
+        b"first",
+    ]
+    assert raw_output.getvalue() == b"first"
+
+
 def test_provider_death_leaves_the_complete_command_acquisition():
     ledger = EventLedger()
 
-    def die(_exact_command):
+    def die(_exact_command, _supply):
         raise KeyboardInterrupt
 
     with pytest.raises(KeyboardInterrupt):
@@ -207,7 +281,7 @@ def test_provider_death_leaves_the_complete_command_acquisition():
             input_stream=BytesIO(b"!cat path\n"),
             output_stream=StringIO(),
             raw_output_stream=BytesIO(),
-            host_invocation_provider=die,
+            operator_invocation_provider=die,
         )
 
     assert [ingested_material_bytes(event) for event in _ingests(ledger)] == [
@@ -226,17 +300,45 @@ def test_provider_death_leaves_the_complete_command_acquisition():
     )
 
 
+def test_provider_death_preserves_each_already_supplied_system_occurrence():
+    ledger = EventLedger()
+    raw_output = BytesIO()
+
+    def die(_exact_command, supply):
+        supply(
+            SuppliedSystemMaterialOccurrence(
+                b"partial", "provider:output:0", True
+            )
+        )
+        raise KeyboardInterrupt
+
+    with pytest.raises(KeyboardInterrupt):
+        run_persistent_operator_console(
+            ledger=ledger,
+            locality_identity="locality",
+            input_stream=BytesIO(b"!cat path\n"),
+            output_stream=StringIO(),
+            raw_output_stream=raw_output,
+            operator_invocation_provider=die,
+        )
+
+    assert [event.exact_material for event in _ingests(ledger)] == [
+        b"!cat path\n",
+        b"partial",
+    ]
+    assert raw_output.getvalue() == b"partial"
+
+
 def test_provider_declares_exact_egress_order_without_egressing_other_results():
     ledger = EventLedger()
     raw_output = BytesIO()
-    supplied = SuppliedInvocationMaterial(
-        occurrences=(
-            SuppliedMaterialOccurrence(b"output", "provider:output"),
-            SuppliedMaterialOccurrence(b"error", "provider:error"),
-            SuppliedMaterialOccurrence(b"artifact", "provider:artifact"),
-            SuppliedMaterialOccurrence(b"end", "provider:end"),
+    supplied = (
+        SuppliedSystemMaterialOccurrence(b"error", "provider:error", True),
+        SuppliedSystemMaterialOccurrence(b"output", "provider:output", True),
+        SuppliedSystemMaterialOccurrence(
+            b"artifact", "provider:artifact", False
         ),
-        egress_occurrence_positions=(1, 0),
+        SuppliedSystemMaterialOccurrence(b"end", "provider:end", False),
     )
 
     run_persistent_operator_console(
@@ -245,14 +347,14 @@ def test_provider_declares_exact_egress_order_without_egressing_other_results():
         input_stream=BytesIO(b"!ls\n"),
         output_stream=StringIO(),
         raw_output_stream=raw_output,
-        host_invocation_provider=lambda _exact: supplied,
+        operator_invocation_provider=_provider(*supplied),
     )
 
     ingests = _ingests(ledger)
     supplied_ingests = ingests[1:]
     assert [event.exact_material for event in supplied_ingests] == [
-        b"output",
         b"error",
+        b"output",
         b"artifact",
         b"end",
     ]
@@ -268,7 +370,7 @@ def test_provider_declares_exact_egress_order_without_egressing_other_results():
         if event.kind == "operator.representation.recorded"
         and event.material["source_occurrence_reference"]
         in supplied_identities
-    ] == [supplied_ingests[1].identity, supplied_ingests[0].identity]
+    ] == [supplied_ingests[0].identity, supplied_ingests[1].identity]
     standing = read_operator_locality_standing(
         ledger, locality_identity="locality"
     )
@@ -288,7 +390,7 @@ def test_missing_supplied_result_is_refused_after_command_acquisition():
             input_stream=BytesIO(b"!ls\n"),
             output_stream=StringIO(),
             raw_output_stream=BytesIO(),
-            host_invocation_provider=lambda _exact: None,
+            operator_invocation_provider=lambda _exact, _supply: None,
         )
 
     assert [ingested_material_bytes(event) for event in _ingests(ledger)] == [
@@ -299,11 +401,14 @@ def test_missing_supplied_result_is_refused_after_command_acquisition():
 def test_equal_empty_supplied_material_remains_three_exact_occurrences():
     ledger = EventLedger()
     command = _command(ledger)
-    events = ingest_supplied_invocation_material(
-        ledger,
-        locality_identity="locality",
-        command_occurrence_reference=command.identity,
-        supplied=_supplied(output=b"", error=b"", end=b""),
+    events = tuple(
+        ingest_supplied_invocation_occurrence(
+            ledger,
+            locality_identity="locality",
+            command_occurrence_reference=command.identity,
+            supplied=supplied,
+        )
+        for supplied in _supplied(output=b"", error=b"", end=b"")
     )
 
     assert len(events) == 3
@@ -318,86 +423,54 @@ def test_host_provider_requires_an_exact_output_boundary():
             locality_identity="locality",
             input_stream=BytesIO(b""),
             output_stream=StringIO(),
-            host_invocation_provider=lambda _exact: _supplied(),
+            operator_invocation_provider=_provider(*_supplied()),
         )
 
 
-def test_supplied_boundaries_and_carrier_require_exact_types():
-    class OtherOccurrence(SuppliedMaterialOccurrence):
-        pass
-
-    with pytest.raises(ValueError, match="distinct source boundary required"):
-        SuppliedInvocationMaterial(
-            occurrences=(
-                SuppliedMaterialOccurrence(b"", "same"),
-                SuppliedMaterialOccurrence(b"", "same"),
-                SuppliedMaterialOccurrence(b"", "end"),
-            ),
-            egress_occurrence_positions=(0, 1),
-        )
-    with pytest.raises(TypeError, match="exact supplied material required"):
-        SuppliedInvocationMaterial(
-            occurrences=(
-                OtherOccurrence(b"", "output"),
-                SuppliedMaterialOccurrence(b"", "error"),
-                SuppliedMaterialOccurrence(b"", "end"),
-            ),
-            egress_occurrence_positions=(0, 1),
-        )
-
-    class OtherMaterial(SuppliedInvocationMaterial):
+def test_supplied_occurrence_requires_exact_types():
+    class OtherOccurrence(SuppliedSystemMaterialOccurrence):
         pass
 
     ledger = EventLedger()
     command = _command(ledger)
     with pytest.raises(TypeError, match="exact supplied material required"):
-        ingest_supplied_invocation_material(
+        ingest_supplied_invocation_occurrence(
             ledger,
             locality_identity="locality",
             command_occurrence_reference=command.identity,
-            supplied=OtherMaterial(
-                occurrences=(
-                    SuppliedMaterialOccurrence(b"", "output"),
-                    SuppliedMaterialOccurrence(b"", "error"),
-                    SuppliedMaterialOccurrence(b"", "end"),
-                ),
-                egress_occurrence_positions=(0, 1),
-            ),
+            supplied=OtherOccurrence(b"", "output", True),
         )
 
 
 @pytest.mark.parametrize(
-    ("positions", "error_type"),
+    "egress",
     (
-        ([0], TypeError),
-        ((0, 0), ValueError),
-        ((3,), TypeError),
-        ((-1,), TypeError),
-        ((True,), TypeError),
+        0,
+        1,
+        None,
+        "yes",
     ),
 )
-def test_supplied_egress_positions_are_exact_distinct_and_bounded(
-    positions, error_type
-):
-    with pytest.raises(error_type, match="egress occurrence positions"):
-        SuppliedInvocationMaterial(
-            occurrences=(
-                SuppliedMaterialOccurrence(b"", "output"),
-                SuppliedMaterialOccurrence(b"", "error"),
-                SuppliedMaterialOccurrence(b"", "end"),
-            ),
-            egress_occurrence_positions=positions,
+def test_supplied_occurrence_requires_an_exact_egress_distinction(egress):
+    with pytest.raises(TypeError, match="exact egress distinction required"):
+        SuppliedSystemMaterialOccurrence(
+            exact_bytes=b"",
+            source_boundary="output",
+            egress=egress,
         )
 
 
 def test_supplied_yield_cannot_be_replaced_by_another_occurrence():
     ledger = EventLedger()
     command = _command(ledger)
-    output, error, _end = ingest_supplied_invocation_material(
-        ledger,
-        locality_identity="locality",
-        command_occurrence_reference=command.identity,
-        supplied=_supplied(),
+    output, error, _end = tuple(
+        ingest_supplied_invocation_occurrence(
+            ledger,
+            locality_identity="locality",
+            command_occurrence_reference=command.identity,
+            supplied=supplied,
+        )
+        for supplied in _supplied()
     )
 
     exact = read_yield_relation_requirements(
@@ -441,19 +514,19 @@ def test_supplied_result_refuses_missing_crossed_or_corrupted_command():
 
     for reference in ("missing", other_locality.identity):
         with pytest.raises(ValueError, match="exact operator occurrence required"):
-            ingest_supplied_invocation_material(
+            ingest_supplied_invocation_occurrence(
                 ledger,
                 locality_identity="locality",
                 command_occurrence_reference=reference,
-                supplied=_supplied(),
+                supplied=_supplied()[0],
             )
 
     command = _command(ledger)
     command.material["source_role"] = "system"
     with pytest.raises(ValueError, match="exact operator occurrence required"):
-        ingest_supplied_invocation_material(
+        ingest_supplied_invocation_occurrence(
             ledger,
             locality_identity="locality",
             command_occurrence_reference=command.identity,
-            supplied=_supplied(),
+            supplied=_supplied()[0],
         )

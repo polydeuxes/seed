@@ -106,7 +106,7 @@ def test_primordial_slash_frame_is_the_existing_eof_boundary(
     eof_database = tmp_path / "eof.db"
     provider_calls = []
 
-    def provider(material):
+    def provider(material, _supply):
         provider_calls.append(material)
         raise AssertionError("primordial slash reached the host provider")
 
@@ -287,27 +287,47 @@ def test_live_process_ingests_pytest_measurement_without_egressing_it(tmp_path):
         ]
     finally:
         ledger.close()
-    assert len(ingests) == 6
-    assert [event.material["source_boundary"] for event in ingests[-5:]] == [
-        "invocation output",
-        "invocation error",
+    assert len(ingests) >= 6
+    supplied = ingests[1:]
+    supplied_by_boundary = {
+        event.material["source_boundary"]: event for event in supplied
+    }
+    assert {
         "implementation function catalog",
         "implementation function measurement",
-        "invocation end",
-    ]
+        "invocation completion",
+    } <= set(supplied_by_boundary)
+    assert all(
+        event.material["source_boundary"].startswith(
+            ("invocation output occurrence ", "invocation error occurrence ")
+        )
+        or event.material["source_boundary"] in {
+            "implementation function catalog",
+            "implementation function measurement",
+            "invocation completion",
+        }
+        for event in supplied
+    )
     assert [
         event.material["provenance_occurrence_references"]
-        for event in ingests[-5:]
-    ] == [[ingests[0].identity]] * 5
-    assert result.stdout == (
-        ingests[-5].exact_material + ingests[-4].exact_material
+        for event in supplied
+    ] == [[ingests[0].identity]] * len(supplied)
+    assert result.stdout == b"".join(
+        event.exact_material
+        for event in supplied
+        if event.material["source_boundary"].startswith(
+            ("invocation output occurrence ", "invocation error occurrence ")
+        )
     )
     assert result.stderr == b""
-    assert ingests[-3].exact_material
-    assert ingests[-3].exact_material not in result.stdout
-    assert ingests[-2].exact_material
-    assert ingests[-2].exact_material not in result.stdout
-    assert ingests[-1].exact_material == b""
+    catalog = supplied_by_boundary["implementation function catalog"]
+    measurement = supplied_by_boundary["implementation function measurement"]
+    completion = supplied_by_boundary["invocation completion"]
+    assert catalog.exact_material
+    assert catalog.exact_material not in result.stdout
+    assert measurement.exact_material
+    assert measurement.exact_material not in result.stdout
+    assert completion.exact_material == b""
 
 
 def test_live_entry_has_only_help_and_database_flags():

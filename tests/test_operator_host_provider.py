@@ -8,10 +8,22 @@ import subprocess
 import pytest
 
 from scripts import operator_host_provider
+from seed_runtime.supplied_invocation_material import (
+    SuppliedSystemMaterialOccurrence,
+)
 
 
 class _PopenReached(Exception):
     pass
+
+
+def _invoke(command):
+    supplied = []
+    result = operator_host_provider.invoke_operator_host(
+        command, supplied.append
+    )
+    assert result is None
+    return tuple(supplied)
 
 
 @pytest.mark.parametrize(
@@ -43,7 +55,7 @@ def test_host_provider_uses_only_fixed_argv_without_a_shell(
 
     monkeypatch.setattr(subprocess, "Popen", reached)
     with pytest.raises(_PopenReached):
-        operator_host_provider.invoke_operator_host(command)
+        operator_host_provider.invoke_operator_host(command, lambda _item: None)
 
     assert calls[0][0] == argv
     assert calls[0][1]["shell"] is False
@@ -63,7 +75,8 @@ def test_pytest_provider_has_one_exact_argument_and_a_clean_environment(
     monkeypatch.setattr(subprocess, "Popen", reached)
     with pytest.raises(_PopenReached):
         operator_host_provider.invoke_operator_host(
-            b"!pytest tests/path with spaces.py::test_one\n"
+            b"!pytest tests/path with spaces.py::test_one\n",
+            lambda _item: None,
         )
 
     argv, coordinates = calls[0]
@@ -98,7 +111,7 @@ def test_unknown_or_unrepresentable_host_invocation_is_refused_before_process(
         lambda *args, **kwargs: pytest.fail((args, kwargs)),
     )
     with pytest.raises(operator_host_provider.OperatorHostProviderError):
-        operator_host_provider.invoke_operator_host(command)
+        operator_host_provider.invoke_operator_host(command, lambda _item: None)
 
 
 def test_cat_preserves_exact_posix_path_and_material(tmp_path):
@@ -111,19 +124,19 @@ def test_cat_preserves_exact_posix_path_and_material(tmp_path):
     finally:
         os.close(descriptor)
 
-    supplied = operator_host_provider.invoke_operator_host(
-        b"!cat " + path + b"\n"
-    )
+    supplied = _invoke(b"!cat " + path + b"\n")
 
-    assert tuple(occurrence.exact_bytes for occurrence in supplied.occurrences) == (
+    assert tuple(occurrence.exact_bytes for occurrence in supplied) == (
         exact,
         b"",
         b"",
     )
-    assert len(
-        {occurrence.source_boundary for occurrence in supplied.occurrences}
-    ) == 3
-    assert supplied.egress_occurrence_positions == (0, 1)
+    assert len({occurrence.source_boundary for occurrence in supplied}) == 3
+    assert tuple(occurrence.egress for occurrence in supplied) == (
+        True,
+        True,
+        False,
+    )
 
 
 def test_ls_preserves_a_non_utf8_posix_path(tmp_path):
@@ -133,11 +146,9 @@ def test_ls_preserves_a_non_utf8_posix_path(tmp_path):
     descriptor = os.open(path, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600)
     os.close(descriptor)
 
-    supplied = operator_host_provider.invoke_operator_host(
-        b"!ls " + directory + b"\n"
-    )
+    supplied = _invoke(b"!ls " + directory + b"\n")
 
-    assert tuple(occurrence.exact_bytes for occurrence in supplied.occurrences) == (
+    assert tuple(occurrence.exact_bytes for occurrence in supplied) == (
         name + b"\n",
         b"",
         b"",
@@ -145,13 +156,14 @@ def test_ls_preserves_a_non_utf8_posix_path(tmp_path):
 
 
 def test_host_output_is_bounded_without_returncode_material():
-    supplied = operator_host_provider.invoke_operator_host(b"!cat /dev/zero\n")
+    supplied = _invoke(b"!cat /dev/zero\n")
 
-    assert len(supplied.occurrences[0].exact_bytes) == (
+    assert len(supplied[0].exact_bytes) == (
         operator_host_provider.MATERIAL_BYTE_LIMIT
     )
-    assert supplied.occurrences[0].known_loss
-    assert supplied.occurrences[-1].exact_bytes == b""
+    assert supplied[0].known_loss == ()
+    assert supplied[-1].exact_bytes == b""
+    assert supplied[-1].known_loss
 
 
 def test_pytest_provider_supplies_a_distinct_exact_measurement_artifact():
@@ -160,24 +172,35 @@ def test_pytest_provider_supplies_a_distinct_exact_measurement_artifact():
         b"test_compiled_code_supplies_identities_without_ast_taxonomy"
     )
 
-    supplied = operator_host_provider.invoke_operator_host(
-        b"!pytest " + nodeid + b"\n"
-    )
+    supplied = _invoke(b"!pytest " + nodeid + b"\n")
 
-    assert supplied.egress_occurrence_positions == (0, 1)
-    assert tuple(
-        occurrence.source_boundary for occurrence in supplied.occurrences
-    ) == (
-        "invocation output",
-        "invocation error",
+    egress = tuple(occurrence for occurrence in supplied if occurrence.egress)
+    retained = {
+        occurrence.source_boundary: occurrence
+        for occurrence in supplied
+        if not occurrence.egress
+    }
+    assert egress
+    assert all(
+        occurrence.source_boundary.startswith(
+            ("invocation output occurrence ", "invocation error occurrence ")
+        )
+        for occurrence in egress
+    )
+    assert set(retained) == {
         "implementation function catalog",
         "implementation function measurement",
-        "invocation end",
+        "invocation completion",
+    }
+    assert any(
+        occurrence.exact_bytes
+        for occurrence in egress
+        if occurrence.source_boundary.startswith("invocation output occurrence ")
     )
-    assert supplied.occurrences[0].exact_bytes
-    assert supplied.occurrences[1].exact_bytes == b""
-    catalog = json.loads(supplied.occurrences[2].exact_bytes)
-    artifact = json.loads(supplied.occurrences[3].exact_bytes)
+    catalog_occurrence = retained["implementation function catalog"]
+    artifact_occurrence = retained["implementation function measurement"]
+    catalog = json.loads(catalog_occurrence.exact_bytes)
+    artifact = json.loads(artifact_occurrence.exact_bytes)
     assert [occurrence["pytest_identity"] for occurrence in artifact["pytest"]] == [
         nodeid.decode("ascii")
     ]
@@ -190,10 +213,10 @@ def test_pytest_provider_supplies_a_distinct_exact_measurement_artifact():
         position < len(catalog["python"])
         for position in implementation_positions
     )
-    assert supplied.occurrences[2].known_loss == ()
-    assert supplied.occurrences[3].known_loss == ()
-    assert len(supplied.occurrences[3].exact_bytes) < 5000
-    assert supplied.occurrences[4].exact_bytes == b""
+    assert catalog_occurrence.known_loss == ()
+    assert artifact_occurrence.known_loss == ()
+    assert len(artifact_occurrence.exact_bytes) < 5000
+    assert retained["invocation completion"].exact_bytes == b""
 
 
 def test_repeated_pytest_reuses_one_exact_catalog_and_keeps_observation_sparse():
@@ -202,27 +225,39 @@ def test_repeated_pytest_reuses_one_exact_catalog_and_keeps_observation_sparse()
         b"test_compiled_code_supplies_identities_without_ast_taxonomy\n"
     )
 
-    first = operator_host_provider.invoke_operator_host(command)
-    second = operator_host_provider.invoke_operator_host(command)
+    first = _invoke(command)
+    second = _invoke(command)
 
-    assert first.occurrences[2].exact_bytes == second.occurrences[2].exact_bytes
-    assert first.occurrences[2] is not second.occurrences[2]
-    assert len(first.occurrences[3].exact_bytes) < 5000
-    assert len(second.occurrences[3].exact_bytes) < 5000
+    first_by_boundary = {
+        occurrence.source_boundary: occurrence for occurrence in first
+    }
+    second_by_boundary = {
+        occurrence.source_boundary: occurrence for occurrence in second
+    }
+    first_catalog = first_by_boundary["implementation function catalog"]
+    second_catalog = second_by_boundary["implementation function catalog"]
+    assert first_catalog.exact_bytes == second_catalog.exact_bytes
+    assert first_catalog is not second_catalog
+    assert len(
+        first_by_boundary["implementation function measurement"].exact_bytes
+    ) < 5000
+    assert len(
+        second_by_boundary["implementation function measurement"].exact_bytes
+    ) < 5000
 
 
 def test_missing_pytest_measurement_artifact_is_refused(monkeypatch):
     monkeypatch.setattr(
         operator_host_provider,
         "_bounded_invocation",
-        lambda *args, **kwargs: (b"out", b"error", False, False, False),
+        lambda *args, **kwargs: (False, False, False),
     )
 
     with pytest.raises(
         operator_host_provider.OperatorHostProviderError,
         match="exact implementation measurement material required",
     ):
-        operator_host_provider.invoke_operator_host(b"!pytest tests/exact.py\n")
+        _invoke(b"!pytest tests/exact.py\n")
 
 
 @pytest.mark.parametrize(
@@ -236,33 +271,41 @@ def test_missing_pytest_measurement_artifact_is_refused(monkeypatch):
 def test_bounded_pytest_preserves_partial_results_and_known_artifact_loss(
     monkeypatch, timed_out, output_limited, error_limited
 ):
+    def bounded(*args, supply, **kwargs):
+        supply(
+            SuppliedSystemMaterialOccurrence(
+                b"partial out",
+                "invocation output occurrence 0",
+                True,
+            )
+        )
+        supply(
+            SuppliedSystemMaterialOccurrence(
+                b"partial error",
+                "invocation error occurrence 0",
+                True,
+            )
+        )
+        return timed_out, output_limited, error_limited
+
     monkeypatch.setattr(
         operator_host_provider,
         "_bounded_invocation",
-        lambda *args, **kwargs: (
-            b"partial out",
-            b"partial error",
-            timed_out,
-            output_limited,
-            error_limited,
-        ),
+        bounded,
     )
 
-    supplied = operator_host_provider.invoke_operator_host(
-        b"!pytest tests/exact.py\n"
-    )
+    supplied = _invoke(b"!pytest tests/exact.py\n")
 
-    assert tuple(occurrence.exact_bytes for occurrence in supplied.occurrences) == (
+    assert tuple(occurrence.exact_bytes for occurrence in supplied) == (
         b"partial out",
         b"partial error",
         b"",
         b"",
         b"",
     )
-    assert all(
-        supplied.occurrences[position].known_loss for position in (0, 1, 2, 3)
-    )
-    assert supplied.occurrences[4].known_loss == ()
+    assert supplied[0].known_loss == ()
+    assert supplied[1].known_loss == ()
+    assert all(supplied[position].known_loss for position in (2, 3, 4))
 
 
 def test_pytest_measurement_artifact_is_bounded(tmp_path):
@@ -283,4 +326,4 @@ def test_pytest_provider_death_is_not_replaced_by_supplied_results(monkeypatch):
     monkeypatch.setattr(operator_host_provider, "_bounded_invocation", die)
 
     with pytest.raises(KeyboardInterrupt):
-        operator_host_provider.invoke_operator_host(b"!pytest tests/exact.py\n")
+        _invoke(b"!pytest tests/exact.py\n")

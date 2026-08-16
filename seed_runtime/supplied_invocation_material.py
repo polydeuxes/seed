@@ -1,4 +1,4 @@
-"""Exact material supplied by one invocation boundary."""
+"""Exact system-attributed material supplied by one operator invocation."""
 
 from __future__ import annotations
 
@@ -14,9 +14,10 @@ from seed_runtime.material_ingest import (
 
 
 @dataclass(frozen=True, slots=True)
-class SuppliedMaterialOccurrence:
+class SuppliedSystemMaterialOccurrence:
     exact_bytes: bytes
     source_boundary: str
+    egress: bool
     known_loss: tuple[str, ...] = ()
 
     def __post_init__(self) -> None:
@@ -24,61 +25,32 @@ class SuppliedMaterialOccurrence:
             raise TypeError("exact material required")
         if type(self.source_boundary) is not str or not self.source_boundary:
             raise TypeError("exact source boundary required")
+        if type(self.egress) is not bool:
+            raise TypeError("exact egress distinction required")
         if type(self.known_loss) is not tuple or any(
             type(item) is not str for item in self.known_loss
         ):
             raise TypeError("exact known loss required")
 
 
-@dataclass(frozen=True, slots=True)
-class SuppliedInvocationMaterial:
-    occurrences: tuple[SuppliedMaterialOccurrence, ...]
-    egress_occurrence_positions: tuple[int, ...]
-
-    def __post_init__(self) -> None:
-        if (
-            type(self.occurrences) is not tuple
-            or not self.occurrences
-            or any(
-                type(occurrence) is not SuppliedMaterialOccurrence
-                for occurrence in self.occurrences
-            )
-        ):
-            raise TypeError("exact supplied material required")
-        boundaries = tuple(
-            occurrence.source_boundary for occurrence in self.occurrences
-        )
-        if len(set(boundaries)) != len(boundaries):
-            raise ValueError("distinct source boundary required")
-        if (
-            type(self.egress_occurrence_positions) is not tuple
-            or any(
-                type(position) is not int
-                or position < 0
-                or position >= len(self.occurrences)
-                for position in self.egress_occurrence_positions
-            )
-        ):
-            raise TypeError("exact egress occurrence positions required")
-        if len(set(self.egress_occurrence_positions)) != len(
-            self.egress_occurrence_positions
-        ):
-            raise ValueError("distinct egress occurrence positions required")
+SuppliedSystemMaterialConsumer = Callable[
+    [SuppliedSystemMaterialOccurrence], None
+]
+OperatorInvocationProvider = Callable[
+    [bytes, SuppliedSystemMaterialConsumer], None
+]
 
 
-SuppliedInvocationProvider = Callable[[bytes], SuppliedInvocationMaterial]
-
-
-def ingest_supplied_invocation_material(
+def ingest_supplied_invocation_occurrence(
     ledger: EventLedger,
     *,
     locality_identity: str,
     command_occurrence_reference: str,
-    supplied: SuppliedInvocationMaterial,
-) -> tuple[Event, ...]:
-    """Ingest one ordered tuple of exact supplied material occurrences."""
+    supplied: SuppliedSystemMaterialOccurrence,
+) -> Event:
+    """Ingest one exact system-attributed material occurrence."""
 
-    if type(supplied) is not SuppliedInvocationMaterial:
+    if type(supplied) is not SuppliedSystemMaterialOccurrence:
         raise TypeError("exact supplied material required")
     command_occurrence = (
         ledger.get(command_occurrence_reference)
@@ -95,15 +67,12 @@ def ingest_supplied_invocation_material(
         or ledger.integrity_of(command_occurrence.identity) == CORRUPTED
     ):
         raise ValueError("exact operator occurrence required")
-    return tuple(
-        ingest_material(
-            ledger,
-            locality_identity=locality_identity,
-            exact_bytes=occurrence.exact_bytes,
-            source_role="system",
-            source_boundary=occurrence.source_boundary,
-            known_loss=occurrence.known_loss,
-            provenance_occurrence_references=(command_occurrence.identity,),
-        )
-        for occurrence in supplied.occurrences
+    return ingest_material(
+        ledger,
+        locality_identity=locality_identity,
+        exact_bytes=supplied.exact_bytes,
+        source_role="system",
+        source_boundary=supplied.source_boundary,
+        known_loss=supplied.known_loss,
+        provenance_occurrence_references=(command_occurrence.identity,),
     )
