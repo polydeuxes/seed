@@ -3,6 +3,7 @@ from __future__ import annotations
 from dataclasses import replace
 from pathlib import Path
 import sys
+from unittest.mock import patch
 
 import pytest
 
@@ -41,6 +42,8 @@ COMPILED_MATERIAL = (
 def supplied_piper_material():
     if not COMPILED_EXECUTABLE.is_file() or not COMPILED_MATERIAL.is_file():
         pytest.skip("compiled implementation function is unavailable")
+    from piper import PiperVoice
+
     supplied_path = ROOT / "corpus" / MATERIAL_WINDOWS[0][0]
     if not supplied_path.is_file():
         pytest.skip("supplied fixture material is unavailable")
@@ -64,14 +67,16 @@ def supplied_piper_material():
         COMPILED_MATERIAL,
         identity="compiled-0",
     )
-    occurrences, admission = piper_material_occurrences(
-        references,
-        implementation_function,
-        boundary_identity="supplied-piper-material",
-        time_limit_second_count=12.0,
-        material_byte_count_limit=65536,
-        max_workers=2,
-    )
+    with patch.object(PiperVoice, "load", wraps=PiperVoice.load) as load_voice:
+        occurrences, admission = piper_material_occurrences(
+            references,
+            implementation_function,
+            boundary_identity="supplied-piper-material",
+            time_limit_second_count=12.0,
+            material_byte_count_limit=65536,
+            max_workers=2,
+        )
+        model_load_count = load_voice.call_count
     return (
         exact_material,
         ingest,
@@ -80,7 +85,12 @@ def supplied_piper_material():
         implementation_function,
         occurrences,
         admission,
+        model_load_count,
     )
+
+
+def test_piper_loads_provider_model_once_for_the_work(supplied_piper_material):
+    assert supplied_piper_material[7] == 1
 
 
 def test_each_measured_material_from_one_supplied_work_reaches_piper(
@@ -93,6 +103,7 @@ def test_each_measured_material_from_one_supplied_work_reaches_piper(
         references,
         implementation_function,
         occurrences,
+        _,
         _,
     ) = (
         supplied_piper_material
@@ -120,6 +131,27 @@ def test_each_measured_material_from_one_supplied_work_reaches_piper(
     assert len({occurrence.result_identity for occurrence in occurrences}) == len(
         occurrences
     )
+
+
+def test_piper_resident_boundary_refuses_unpreserved_invocation_options(
+    supplied_piper_material,
+):
+    references = supplied_piper_material[3]
+    implementation_function = supplied_piper_material[4]
+    changed = replace(
+        implementation_function,
+        invocation=(*implementation_function.invocation, "--debug"),
+    )
+
+    with pytest.raises(ValueError, match="exact supported shape"):
+        piper_material_occurrences(
+            references[:1],
+            changed,
+            boundary_identity="unsupported-piper-material",
+            time_limit_second_count=12.0,
+            material_byte_count_limit=65536,
+            max_workers=1,
+        )
 
 
 def test_piper_preserves_every_exact_raw_result_coordinate(supplied_piper_material):
