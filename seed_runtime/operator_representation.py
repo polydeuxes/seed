@@ -6,7 +6,10 @@ from typing import Any, TextIO
 
 from seed_runtime.events import CORRUPTED, EventLedger
 from seed_runtime.identities import new_identity
-from seed_runtime.operator_egress import emit_exact_material
+from seed_runtime.operator_egress import (
+    ExactMaterialEgressFailure,
+    emit_exact_material,
+)
 from seed_runtime.yield_evidence import (
     _record_yield_evidence,
     read_yield_relation_requirements,
@@ -40,6 +43,10 @@ REPRESENTATION_EMISSION_INPUT_ROLE = "exact bounded Representation"
 REPRESENTATION_EMISSION_RESPONSIBILITY = (
     "write one exact Representation to its declared text-stream boundary"
 )
+REPRESENTATION_EXACT_MATERIAL_EMISSION_RESPONSIBILITY = (
+    "emit one exact Representation result"
+)
+REPRESENTATION_EMISSION_RESULT_KIND = "Representation emission boundary result"
 REPRESENTATION_EMISSION_FAILURE_RESULT_KIND = "Representation emission boundary failure result"
 REPRESENTATION_EMISSION_FAILURE_RESPONSIBILITY = (
     "preserve one exact Representation emission failure occurrence"
@@ -399,16 +406,345 @@ def emit_operator_representation_material(
     *,
     representation: dict[str, Any],
     output_stream,
-) -> int:
+) -> dict[str, Any]:
+    """Emit one recorded exact result without selecting a material species."""
+
     recorded = read_operator_representation(
         ledger, representation.get("representation_event_identity")
     )
     exact_material = recorded["exact_material"]
     if type(exact_material) is not bytes:
         raise ValueError("the recorded Representation carries no exact material")
-    if representation.get("exact_material") != exact_material:
-        raise ValueError("the supplied Representation differs from its recorded material")
-    return emit_exact_material(output_stream, exact_material)
+    for coordinate in (
+        "representation_identity",
+        "representation_event_identity",
+        "locality_identity",
+        "exact_material",
+    ):
+        if representation.get(coordinate) != recorded[coordinate]:
+            raise ValueError(
+                "the supplied Representation differs from its recorded material"
+            )
+    representation["event_identities_in_append_order"] = recorded[
+        "event_identities_in_append_order"
+    ]
+    emission_act_identity = new_identity("operator_representation_emission_act")
+    scope = f"locality:{representation['locality_identity']}"
+    attempt_event = ledger.append(
+        REPRESENTATION_EMISSION_ATTEMPT_KIND,
+        {
+            "representation_reference": representation["representation_identity"],
+            "representation_event_identity": representation[
+                "representation_event_identity"
+            ],
+            "emission_act_identity": emission_act_identity,
+            "dimensions": _dimensions(
+                identity=f"emission-attempt:{representation['representation_identity']}",
+                content="exact Representation for the declared emission boundary",
+                source=representation["representation_event_identity"],
+                responsibility=REPRESENTATION_EXACT_MATERIAL_EMISSION_RESPONSIBILITY,
+                authority="unestablished",
+                evidence_scope=(
+                    "attempt occurrence only; establishes no output-boundary "
+                    "acceptance or downstream effect"
+                ),
+                scope=scope,
+                occurrence="emission attempt occurrence recorded before output",
+            ),
+            "known_loss": [],
+            "unknowns": [
+                "output-boundary acceptance remains Unknown until Evidence establishes it",
+                "effects beyond the output boundary remain Unknown",
+            ],
+            "conflicts": [],
+            "provenance_occurrence_references": [
+                representation["representation_event_identity"]
+            ],
+        },
+        exact_material=exact_material,
+        locality_identity=representation["locality_identity"],
+    )
+    representation["emission_attempt_event_identity"] = attempt_event.identity
+    representation["event_identities_in_append_order"] += (attempt_event.identity,)
+    attempt_locality_evidence = ledger.append(
+        REPRESENTATION_EMISSION_ATTEMPT_LOCALITY_EVIDENCE_KIND,
+        {
+            "representation_reference": representation["representation_identity"],
+            "attempt_event_identity": attempt_event.identity,
+            "authority": "unestablished",
+            "evidence_scope": (
+                "Evidence only for the exact Representation-to-emission-attempt Locality"
+            ),
+        },
+        exact_material=exact_material,
+        locality_identity=representation["locality_identity"],
+    )
+    representation["emission_attempt_locality_evidence_identity"] = (
+        attempt_locality_evidence.identity
+    )
+    representation["event_identities_in_append_order"] += (
+        attempt_locality_evidence.identity,
+    )
+
+    # The exact attempt and its Locality Evidence are durable before bytes can
+    # leave Seed. Process death after this flush remains an attempt with an
+    # Unknown boundary result; it is not manufactured into a failure result.
+    ledger.flush()
+
+    try:
+        written = emit_exact_material(output_stream, exact_material)
+    except ExactMaterialEgressFailure as failure:
+        _record_exact_material_emission_failure(
+            ledger,
+            representation=representation,
+            attempt_event_identity=attempt_event.identity,
+            scope=scope,
+            reported_count=failure.reported_count,
+            error=failure.error,
+        )
+        if failure.error is not None:
+            raise failure.error from failure
+        raise ValueError(
+            "output boundary did not accept the exact representation"
+        ) from failure
+    except Exception as error:
+        _record_exact_material_emission_failure(
+            ledger,
+            representation=representation,
+            attempt_event_identity=attempt_event.identity,
+            scope=scope,
+            reported_count=None,
+            error=error,
+        )
+        raise
+
+    act_occurrence_identity = new_identity(
+        "operator_representation_emission_occurrence"
+    )
+    locality_relation = {
+        "first_subject": representation["representation_identity"],
+        "second_subject": act_occurrence_identity,
+        "relation_occurrence_identity": new_identity(
+            "operator_representation_emission_locality_occurrence"
+        ),
+    }
+    boundary_result = {"accepted_count": written}
+    result_identity = f"emission-boundary-result:{act_occurrence_identity}"
+    result_content = {
+        "result_identity": result_identity,
+        "result": boundary_result,
+    }
+    result_material = {
+        "emission_act_identity": emission_act_identity,
+        "act_occurrence_identity": act_occurrence_identity,
+        "representation_reference": representation["representation_identity"],
+        "representation_event_identity": representation[
+            "representation_event_identity"
+        ],
+        "input_role": REPRESENTATION_EMISSION_INPUT_ROLE,
+        "locality_relation": locality_relation,
+        "boundary_result": boundary_result,
+        **result_content,
+    }
+    responsible_act_evidence = ledger.append(
+        REPRESENTATION_EMISSION_ACT_EVIDENCE_KIND,
+        {
+            "emission_act_identity": emission_act_identity,
+            "act_occurrence_identity": act_occurrence_identity,
+            "act": "exact bounded Representation emission",
+            "responsibility": REPRESENTATION_EXACT_MATERIAL_EMISSION_RESPONSIBILITY,
+            "responsible_boundary": "this Seed",
+            "representation_reference": representation["representation_identity"],
+            "representation_event_identity": representation[
+                "representation_event_identity"
+            ],
+            "input_role": REPRESENTATION_EMISSION_INPUT_ROLE,
+            "authority": "unestablished",
+            "evidence_scope": (
+                "Evidence for this exact emission Act occurrence and "
+                "the Representation participating in its exact input role only"
+            ),
+        },
+        locality_identity=representation["locality_identity"],
+    )
+    locality_evidence = ledger.append(
+        REPRESENTATION_EMISSION_LOCALITY_EVIDENCE_KIND,
+        {
+            "act_occurrence_identity": act_occurrence_identity,
+            "representation_reference": representation["representation_identity"],
+            "representation_event_identity": representation[
+                "representation_event_identity"
+            ],
+            "locality_relation": locality_relation,
+            "authority": "unestablished",
+            "evidence_scope": (
+                "Evidence only for the exact Representation-to-emission-occurrence Locality"
+            ),
+        },
+        exact_material=exact_material,
+        locality_identity=representation["locality_identity"],
+    )
+    yield_evidence = _record_yield_evidence(
+        ledger,
+        locality_identity=representation["locality_identity"],
+        exact_act="exact bounded Representation emission",
+        act_occurrence_identity=act_occurrence_identity,
+        responsible_act_evidence_identity=responsible_act_evidence.identity,
+        result_kind=REPRESENTATION_EMISSION_RESULT_KIND,
+        result_identity=result_identity,
+        result_content=result_content,
+        result_exact_material=exact_material,
+        responsibility=REPRESENTATION_EXACT_MATERIAL_EMISSION_RESPONSIBILITY,
+        live_boundary="successful_emission",
+        responsible_boundary="this Seed",
+    )
+    emitted_event = ledger.append(
+        REPRESENTATION_EMITTED_KIND,
+        {
+            "attempt_reference": attempt_event.identity,
+            **result_material,
+            "dimensions": _dimensions(
+                identity=act_occurrence_identity,
+                content="exact Representation emitted at the declared boundary",
+                source=representation["representation_event_identity"],
+                responsibility=REPRESENTATION_EXACT_MATERIAL_EMISSION_RESPONSIBILITY,
+                authority="unestablished",
+                evidence_scope=(
+                    "emission occurrence only; effects beyond the output "
+                    "boundary require separate Evidence"
+                ),
+                scope=scope,
+                occurrence="emission occurrence recorded",
+            ),
+            "responsible_act_evidence_identity": responsible_act_evidence.identity,
+            "locality_evidence_identity": locality_evidence.identity,
+            "yield_evidence_identity": yield_evidence.identity,
+            "known_loss": [],
+            "unknowns": [],
+            "conflicts": [],
+            "provenance_occurrence_references": [
+                representation["representation_event_identity"],
+                attempt_event.identity,
+            ],
+        },
+        exact_material=exact_material,
+        locality_identity=representation["locality_identity"],
+    )
+    representation["emission_act_evidence_identity"] = (
+        responsible_act_evidence.identity
+    )
+    representation["emission_locality_evidence_identity"] = locality_evidence.identity
+    representation["emission_yield_evidence_identity"] = yield_evidence.identity
+    representation["emitted_event_identity"] = emitted_event.identity
+    representation["event_identities_in_append_order"] += (
+        responsible_act_evidence.identity,
+        locality_evidence.identity,
+        yield_evidence.identity,
+        emitted_event.identity,
+    )
+    return representation
+
+
+def _record_exact_material_emission_failure(
+    ledger: EventLedger,
+    *,
+    representation: dict[str, Any],
+    attempt_event_identity: str,
+    scope: str,
+    reported_count: int | None,
+    error: Exception | None,
+):
+    """Preserve only the exact result reported by a failed byte egress."""
+
+    unknowns = [
+        "output-boundary result remains Unknown",
+        "effects beyond the output boundary remain Unknown",
+    ]
+    act_identity = new_identity("operator_representation_emission_failure_act")
+    act_occurrence_identity = new_identity(
+        "operator_representation_emission_failure_act_occurrence"
+    )
+    result_identity = new_identity("operator_representation_emission_failure_result")
+    result_material = {
+        "result_identity": result_identity,
+        "downstream_act_identity": act_identity,
+        "act_occurrence_identity": act_occurrence_identity,
+        "attempt_reference": attempt_event_identity,
+        "representation_reference": representation["representation_identity"],
+        "representation_event_identity": representation[
+            "representation_event_identity"
+        ],
+        "emitted_event_identity": None,
+        "dimensions": _dimensions(
+            identity=f"emission-failure:{attempt_event_identity}",
+            content="Representation emission failure occurrence",
+            source=attempt_event_identity,
+            responsibility=REPRESENTATION_EXACT_MATERIAL_EMISSION_RESPONSIBILITY,
+            authority="unestablished",
+            evidence_scope=(
+                "failure occurrence only; establishes no downstream effect "
+                "and no acceptance beyond the reported result"
+            ),
+            scope=scope,
+            occurrence="emission failure occurrence recorded",
+        ),
+        "reported_count": reported_count,
+        "error": repr(error) if error is not None else None,
+        "known_loss": [],
+        "unknowns": unknowns,
+        "conflicts": [],
+        "provenance_occurrence_references": [
+            representation["representation_event_identity"],
+            attempt_event_identity,
+        ],
+    }
+    act_evidence = ledger.append(
+        REPRESENTATION_EMISSION_FAILURE_ACT_EVIDENCE_KIND,
+        {
+            "downstream_act_identity": act_identity,
+            "act_occurrence_identity": act_occurrence_identity,
+            "act": "Representation emission failure at declared boundary",
+            "responsibility": REPRESENTATION_EMISSION_FAILURE_RESPONSIBILITY,
+            "responsible_boundary": "this Seed",
+            "authority": "unestablished",
+            "evidence_scope": (
+                "this exact Representation emission failure occurrence only"
+            ),
+        },
+        locality_identity=representation["locality_identity"],
+    )
+    yield_evidence = _record_yield_evidence(
+        ledger,
+        locality_identity=representation["locality_identity"],
+        exact_act="Representation emission failure at declared boundary",
+        act_occurrence_identity=act_occurrence_identity,
+        responsible_act_evidence_identity=act_evidence.identity,
+        result_kind=REPRESENTATION_EMISSION_FAILURE_RESULT_KIND,
+        result_identity=result_identity,
+        result_content=result_material,
+        responsibility=REPRESENTATION_EMISSION_FAILURE_RESPONSIBILITY,
+        live_boundary="failed_emission",
+        responsible_boundary="this Seed",
+        recorded_result_coordinates={key: (key,) for key in result_material},
+    )
+    failed_event = ledger.append(
+        REPRESENTATION_EMISSION_FAILURE_KIND,
+        {
+            **result_material,
+            "responsible_act_evidence_identity": act_evidence.identity,
+            "yield_evidence_identity": yield_evidence.identity,
+        },
+        locality_identity=representation["locality_identity"],
+    )
+    representation["emission_failure_act_evidence_identity"] = act_evidence.identity
+    representation["emission_failure_yield_evidence_identity"] = yield_evidence.identity
+    representation["emission_failure_event_identity"] = failed_event.identity
+    representation["event_identities_in_append_order"] += (
+        act_evidence.identity,
+        yield_evidence.identity,
+        failed_event.identity,
+    )
+    return failed_event
 
 
 def emit_operator_representation(

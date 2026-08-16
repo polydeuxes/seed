@@ -247,3 +247,60 @@ def test_the_emission_attempt_is_durable_before_the_output_boundary(tmp_path):
     # [1, 1, 2, 3]: every write but the first reaches the boundary while its
     # own attempt is still uncommitted.
     assert seen == list(range(1, len(seen) + 1)), seen
+
+
+def test_the_exact_material_attempt_is_durable_before_raw_egress(tmp_path):
+    """The byte road exposes no material before its exact attempt is durable."""
+
+    from io import BytesIO
+
+    from seed_runtime.material_ingest import ingest_material
+    from seed_runtime.operator_locality_standing import (
+        read_operator_locality_standing,
+    )
+    from seed_runtime.operator_representation import (
+        emit_operator_representation_material,
+        record_operator_representation,
+    )
+
+    path = tmp_path / "raw.sqlite"
+    ledger = SQLiteEventLedger(str(path))
+    source = ingest_material(
+        ledger,
+        locality_identity="s1",
+        exact_bytes=b"\x00\xffexact",
+        source_role="fixture material",
+        source_boundary="fixture boundary",
+    )
+    standing = read_operator_locality_standing(
+        ledger, locality_identity="s1"
+    )
+    representation = record_operator_representation(
+        ledger,
+        locality_identity="s1",
+        locality_standing=standing,
+        source_event_identity=source.identity,
+    )
+    seen: list[int] = []
+
+    class _Watching(BytesIO):
+        def write(self, value: bytes) -> int:
+            reader = sqlite3.connect(str(path))
+            seen.append(
+                reader.execute(
+                    "SELECT COUNT(*) FROM events WHERE kind = ?",
+                    ("operator.representation.emission_attempt_recorded",),
+                ).fetchone()[0]
+            )
+            reader.close()
+            return super().write(value)
+
+    output = _Watching()
+    emit_operator_representation_material(
+        ledger,
+        representation=representation,
+        output_stream=output,
+    )
+
+    assert seen == [1]
+    assert output.getvalue() == source.exact_material
