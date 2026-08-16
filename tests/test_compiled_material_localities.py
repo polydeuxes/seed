@@ -6,9 +6,6 @@ import sys
 
 import pytest
 
-from seed_runtime.byte_measurement import (
-    record_byte_count_layer,
-)
 from seed_runtime.events import EventLedger
 from seed_runtime.material_ingest import ingest_material
 
@@ -28,29 +25,12 @@ from compiled_material_invocation import (  # noqa: E402
     material_locality_admission_occurrences,
     reference_occurrences_across,
 )
-
-
-def _measured_material():
-    ledger = EventLedger()
-    ingest_material(
-        ledger,
-        locality_identity="one-byte-material",
-        exact_bytes=bytes(range(256)),
-        source_role="fixture material",
-        source_boundary="fixture-0",
-    )
-    measurement = record_byte_count_layer(
-        ledger,
-        source_locality_identities=("one-byte-material",),
-        recording_locality_identity="one-byte-measurement",
-    )
-    references = exact_byte_material_references(ledger, measurement.identity)
-    return ledger, references
+from material_fixture_measurement import measured_one_byte_material  # noqa: E402
 
 
 @pytest.fixture(scope="module")
 def material_invocations():
-    ledger, references = _measured_material()
+    ledger, references = measured_one_byte_material()
     function = MaterialImplementationFunction(
         identity="compiled-0",
         invocation=(
