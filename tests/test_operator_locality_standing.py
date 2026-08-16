@@ -143,6 +143,105 @@ def test_locality_standing_carries_no_measurement_without_a_recorded_result():
     assert _standing(ledger)["measurement_occurrences"] == []
 
 
+def test_locality_standing_carries_only_exact_yielded_result_identities():
+    ledger = EventLedger()
+    source = ingest_material(
+        ledger,
+        locality_identity="s",
+        exact_bytes=b"raw result",
+        source_role="operator",
+        source_boundary="test boundary",
+    )
+    measurement = record_byte_count_layer(
+        ledger,
+        source_localities=("s",),
+        recording_locality_identity="s",
+    )
+
+    standing = _standing(ledger)
+
+    assert standing["exact_result_occurrences"] == {source.identity: None}
+    assert all(
+        type(identity) is str for identity in standing["exact_result_occurrences"]
+    )
+    assert measurement.identity not in standing["exact_result_occurrences"]
+
+
+def test_locality_standing_refuses_raw_result_with_missing_or_crossed_yield():
+    ledger = EventLedger()
+    source = ingest_material(
+        ledger,
+        locality_identity="s",
+        exact_bytes=b"raw result",
+        source_role="operator",
+        source_boundary="test boundary",
+    )
+    other = ingest_material(
+        ledger,
+        locality_identity="s",
+        exact_bytes=b"other result",
+        source_role="operator",
+        source_boundary="test boundary",
+    )
+    source.material["yield_evidence_identity"] = other.material[
+        "yield_evidence_identity"
+    ]
+
+    standing = _standing(ledger)
+
+    assert source.identity not in standing["exact_result_occurrences"]
+    assert standing["exact_result_occurrences"] == {other.identity: None}
+
+
+def test_locality_standing_refuses_corrupted_raw_result(monkeypatch):
+    ledger = EventLedger()
+    source = ingest_material(
+        ledger,
+        locality_identity="s",
+        exact_bytes=b"raw result",
+        source_role="operator",
+        source_boundary="test boundary",
+    )
+    integrity_of = ledger.integrity_of
+    monkeypatch.setattr(
+        ledger,
+        "integrity_of",
+        lambda identity: (
+            CORRUPTED if identity == source.identity else integrity_of(identity)
+        ),
+    )
+
+    assert _standing(ledger)["exact_result_occurrences"] == {}
+
+
+@pytest.mark.parametrize(
+    "evidence_coordinate",
+    ("responsible_act_evidence_identity", "yield_evidence_identity"),
+)
+def test_locality_standing_refuses_corrupted_raw_result_evidence(
+    monkeypatch, evidence_coordinate
+):
+    ledger = EventLedger()
+    source = ingest_material(
+        ledger,
+        locality_identity="s",
+        exact_bytes=b"raw result",
+        source_role="operator",
+        source_boundary="test boundary",
+    )
+    corrupted_identity = source.material[evidence_coordinate]
+    integrity_of = ledger.integrity_of
+    monkeypatch.setattr(
+        ledger,
+        "integrity_of",
+        lambda identity: (
+            CORRUPTED if identity == corrupted_identity else integrity_of(identity)
+        ),
+    )
+
+    assert _standing(ledger)["exact_result_occurrences"] == {}
+
+
 @pytest.mark.parametrize(
     ("measurement_kind", "error_type"),
     (

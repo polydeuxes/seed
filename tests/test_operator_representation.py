@@ -119,11 +119,27 @@ def test_representation_reader_reads_the_exact_recorded_representation():
         "representation_result": representation["representation_result"],
         "alternative_material": representation["alternative_material"],
         "coordinate_binding": representation["coordinate_binding"],
+        "responsible_act_evidence_identity": representation[
+            "responsible_act_evidence_identity"
+        ],
+        "yield_evidence_identity": representation["yield_evidence_identity"],
+        "locality_evidence_identity": representation[
+            "locality_evidence_identity"
+        ],
         "representation_event_identity": representation["representation_event_identity"],
         "emission_text": representation["emission_text"],
         "source_event_identity": None,
         "exact_material": None,
     }
+    assert ledger.occurrences_in_append_order(
+        (
+            recorded["responsible_act_evidence_identity"],
+            recorded["yield_evidence_identity"],
+            recorded["locality_evidence_identity"],
+            recorded["representation_event_identity"],
+        ),
+        locality_identity="s",
+    )
 
 
 def test_representation_carries_exact_material_without_claiming_meaning():
@@ -147,6 +163,96 @@ def test_representation_carries_exact_material_without_claiming_meaning():
     assert event.exact_material == b"hello"
     assert evidence.exact_material == b"hello"
     assert event.material["attempt_reference"] == source.identity
+
+
+def test_representation_consumes_an_exact_yielded_representation_result():
+    ledger = EventLedger()
+    source = ingest_material(
+        ledger,
+        locality_identity="s",
+        exact_bytes=b"\x00\xffresult",
+        source_role="operator",
+        source_boundary="fixture boundary",
+    )
+    first = record_operator_representation(
+        ledger,
+        locality_identity="s",
+        locality_standing=_standing(ledger),
+        source_event_identity=source.identity,
+    )
+    first_event = ledger.get(first["representation_event_identity"])
+    standing = _standing(ledger)
+
+    second = record_operator_representation(
+        ledger,
+        locality_identity="s",
+        locality_standing=standing,
+        source_event_identity=first_event.identity,
+    )
+    second_event = ledger.get(second["representation_event_identity"])
+
+    assert standing["exact_result_occurrences"] == {
+        source.identity: None,
+        first_event.identity: None,
+    }
+    assert second_event.material["attempt_reference"] == first_event.identity
+    assert second_event.exact_material == b"\x00\xffresult"
+    assert ledger.get(
+        second_event.material["yield_evidence_identity"]
+    ).exact_material == b"\x00\xffresult"
+
+
+def test_representation_refuses_a_raw_carrier_without_exact_yield():
+    ledger = EventLedger()
+    source = ingest_material(
+        ledger,
+        locality_identity="s",
+        exact_bytes=b"result",
+        source_role="operator",
+        source_boundary="fixture boundary",
+    )
+    unrelated = ledger.append(
+        "unrelated.result",
+        {
+            "yield_evidence_identity": source.material["yield_evidence_identity"],
+            "responsible_act_evidence_identity": source.material[
+                "responsible_act_evidence_identity"
+            ],
+        },
+        exact_material=b"result",
+        locality_identity="s",
+    )
+    standing = _standing(ledger)
+    standing["exact_result_occurrences"][unrelated.identity] = None
+
+    with pytest.raises(ValueError, match="Yield is not exact"):
+        record_operator_representation(
+            ledger,
+            locality_identity="s",
+            locality_standing=standing,
+            source_event_identity=unrelated.identity,
+        )
+
+
+def test_representation_refuses_a_nonidentity_result_carrier():
+    ledger = EventLedger()
+    source = ingest_material(
+        ledger,
+        locality_identity="s",
+        exact_bytes=b"result",
+        source_role="operator",
+        source_boundary="fixture boundary",
+    )
+    standing = _standing(ledger)
+    standing["exact_result_occurrences"] = [source.identity]
+
+    with pytest.raises(ValueError, match="exact carried result occurrences"):
+        record_operator_representation(
+            ledger,
+            locality_identity="s",
+            locality_standing=standing,
+            source_event_identity=source.identity,
+        )
 
 
 def test_representation_does_not_accept_developer_supplied_exact_material():

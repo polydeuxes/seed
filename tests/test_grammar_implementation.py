@@ -30,6 +30,7 @@ from seed_runtime.events import CORRUPTED, EventLedger
 from seed_runtime.identities import new_identity
 from seed_runtime.material_ingest import ingest_material
 from seed_runtime.operator_console import run_persistent_operator_console
+from seed_runtime.operator_locality_standing import read_operator_locality_standing
 from seed_runtime.operator_command import AddressedOperatorCommand, OperatorCommandFrame
 from seed_runtime.operator_checkpoint import (
     ADDRESSED_REPRESENTATION_LOCALITY_EVIDENCE_KIND,
@@ -363,12 +364,9 @@ def _sourced_representation_witness() -> dict:
     representation = record_operator_representation(
         ledger,
         locality_identity="representation-source",
-        locality_standing={
-            "as_of_event_identity": source.identity,
-            "ingest_occurrences": [
-                {"evidence_event_identity": source.identity}
-            ],
-        },
+        locality_standing=read_operator_locality_standing(
+            ledger, locality_identity="representation-source"
+        ),
         alternative_sources=BOUNDED_ALTERNATIVE_FIXTURE_SOURCES,
         source_event_identity=source.identity,
     )

@@ -230,6 +230,9 @@ def record_operator_representation(
         "representation_result": representation_result,
         "alternative_material": alternative_material,
         "coordinate_binding": coordinate_binding,
+        "responsible_act_evidence_identity": responsible_act_evidence.identity,
+        "yield_evidence_identity": yield_evidence.identity,
+        "locality_evidence_identity": locality_evidence.identity,
         "representation_event_identity": representation_event.identity,
         "emission_attempt_event_identity": None,
         "emission_attempt_locality_evidence_identity": None,
@@ -275,10 +278,9 @@ def _exact_source_material(
         raise ValueError("Representation source occurrence is missing")
     if source.locality_identity != locality_identity:
         raise ValueError("Representation source occurrence crossed Localities")
-    carried = {
-        occurrence.get("evidence_event_identity")
-        for occurrence in locality_standing.get("ingest_occurrences", ())
-    }
+    carried = locality_standing.get("exact_result_occurrences", {})
+    if type(carried) is not dict:
+        raise ValueError("Representation requires exact carried result occurrences")
     if source.identity not in carried:
         raise ValueError("Representation source occurrence is not carried by Standing")
     if ledger.integrity_of(source.identity) == CORRUPTED:
@@ -365,6 +367,9 @@ def read_operator_representation(
         "representation_result": material["representation_result"],
         "alternative_material": material["alternative_material"],
         "coordinate_binding": material["coordinate_binding"],
+        "responsible_act_evidence_identity": act_evidence.identity,
+        "yield_evidence_identity": yield_evidence_identity,
+        "locality_evidence_identity": locality_evidence.identity,
         "representation_event_identity": event.identity,
         "emission_text": material["emission_text"],
         "source_event_identity": source_event_identity,

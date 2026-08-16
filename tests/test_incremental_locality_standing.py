@@ -301,6 +301,7 @@ def test_every_growable_accumulator_participates_without_copying():
         "representations",
         "ingest_occurrences",
         "measurement_occurrences",
+        "exact_result_occurrences",
         "known_loss",
         "unknowns",
         "conflicts",

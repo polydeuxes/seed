@@ -6,7 +6,7 @@ from __future__ import annotations
 from bisect import bisect_left
 from typing import Any, Iterable
 
-from seed_runtime.events import EventLedger
+from seed_runtime.events import CORRUPTED, EventLedger
 from seed_runtime.material_ingest import MATERIAL_INGEST_OCCURRED_KIND
 from seed_runtime.byte_measurement import (
     BYTE_MEASUREMENT_RECORDED_KIND,
@@ -18,6 +18,7 @@ from seed_runtime.occurrence_position_measurement import (
     OCCURRENCE_POSITION_RECORDED_KIND,
     get_recorded_occurrence_position_measurement,
 )
+from seed_runtime.yield_evidence import read_yield_relation_requirements
 
 # The writer of these occurrences declares their kinds. A reader declaring its
 # own copy would be a second contract, free to drift from the first.
@@ -85,6 +86,27 @@ def _measurement_occurrence_coordinates(event) -> dict[str, str]:
         ],
         "yield_evidence_identity": event.material["yield_evidence_identity"],
     }
+
+
+def _carries_exact_result(ledger: EventLedger, event) -> bool:
+    """Whether this exact occurrence's intact Yield carries raw result bytes."""
+
+    if (
+        type(event.exact_material) is not bytes
+        or ledger.integrity_of(event.identity) == CORRUPTED
+    ):
+        return False
+    requirements = read_yield_relation_requirements(
+        ledger,
+        recorded_result_event_identity=event.identity,
+        result_evidence_event_identity=event.material.get(
+            "yield_evidence_identity"
+        ),
+        responsible_act_evidence_event_identity=event.material.get(
+            "responsible_act_evidence_identity"
+        ),
+    )
+    return all(requirements.values())
 
 
 def read_operator_locality_standing(
@@ -157,6 +179,7 @@ def advance_operator_locality_standing(
     scope = f"locality:{locality_identity}"
     ingest_occurrences: list[dict[str, Any]] = []
     measurement_occurrences: list[dict[str, str]] = []
+    exact_result_occurrences: dict[str, None] = {}
     representations: dict[str, dict[str, Any]] = {}
     # Kept sorted and distinct in place rather than as a set sorted on return.
     # A set would have to be rebuilt from the prior list and re-sorted on every
@@ -176,6 +199,7 @@ def advance_operator_locality_standing(
         # see the shared-accumulator note above.
         ingest_occurrences = prior["ingest_occurrences"]
         measurement_occurrences = prior["measurement_occurrences"]
+        exact_result_occurrences = prior["exact_result_occurrences"]
         representations = prior["representations"]
         known_loss = prior["known_loss"]
         unknowns = prior["unknowns"]
@@ -204,6 +228,8 @@ def advance_operator_locality_standing(
         ):
             for value in event.material.get(key, ()):
                 _record_distinct(collected, value)
+        if _carries_exact_result(ledger, event):
+            exact_result_occurrences[event.identity] = None
         if event.kind in _MEASUREMENT_ACT_EVIDENCE_KINDS:
             continue
         if event.kind == BYTE_MEASUREMENT_RECORDED_KIND:
@@ -344,6 +370,7 @@ def advance_operator_locality_standing(
         "event_count": event_count,
         "ingest_occurrences": ingest_occurrences,
         "measurement_occurrences": measurement_occurrences,
+        "exact_result_occurrences": exact_result_occurrences,
         "representations": representations,
         # No "current" Representation is projected.  Emission order is
         # preserved in `representations`, which retains representation Act and
