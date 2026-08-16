@@ -1986,19 +1986,57 @@ def first_recurring_added_compare_across(
             function,
             boundary_identity=f"{boundary_identity}-{function.identity}",
             act_occurrence_count_limit=act_occurrence_count_limit,
+            invoke_later=False,
         )
         for row, function in zip(source_invocation_rows, functions)
     )
-    if any(later is None for _, _, later in results):
+    if any(coordinate is None for _, coordinate, _ in results):
         return tuple(earlier for earlier, _, _ in results), None, None
-    later_occurrences = tuple(later for _, _, later in results)
-    if len({later.added_position_act_occurrence_identity for later in later_occurrences}) != 1:
+    earlier_counts = {len(earlier) for earlier, _, _ in results}
+    if len(earlier_counts) != 1:
         return tuple(earlier for earlier, _, _ in results), None, None
+    occurrence_position = len(results[0][0])
+    if occurrence_position >= min(len(additions), act_occurrence_count_limit):
+        return tuple(earlier for earlier, _, _ in results), None, None
+    addition = additions[occurrence_position]
+    later_occurrences = []
+    for row, function in zip(source_invocation_rows, functions):
+        source_by_reference = {
+            invocation.source_coordinate: invocation for invocation in row
+        }
+        source_invocation = source_by_reference.get(addition.source_reference)
+        if source_invocation is None:
+            raise ValueError("recurrence requires each exact source invocation")
+        result_invocation = compiled_invocation(
+            addition.result_material,
+            function,
+            boundary_identity=f"{boundary_identity}-{function.identity}-invocation",
+            invocation_position=occurrence_position,
+            source_coordinate=addition,
+        )
+        later_occurrences.append(
+            AddedPositionCompareOccurrence(
+                boundary_identity=f"{boundary_identity}-{function.identity}-compare",
+                occurrence_position=occurrence_position,
+                implementation_function_identity=function.identity,
+                added_position_act_occurrence_identity=(
+                    addition.act_occurrence_identity
+                ),
+                source_invocation_occurrence_identity=(
+                    source_invocation.occurrence_identity
+                ),
+                result_invocation_occurrence_identity=(
+                    result_invocation.occurrence_identity
+                ),
+                source_returned=source_invocation.returned,
+                result_returned=result_invocation.returned,
+            )
+        )
     coordinates = tuple(coordinate for _, coordinate, _ in results)
     return (
         tuple(earlier for earlier, _, _ in results),
         coordinates,
-        later_occurrences,
+        tuple(later_occurrences),
     )
 
 
@@ -2263,17 +2301,55 @@ def first_recurring_removed_compare_across(
             function,
             boundary_identity=f"{boundary_identity}-{function.identity}",
             act_occurrence_count_limit=act_occurrence_count_limit,
+            invoke_later=False,
         )
         for row, function in zip(source_invocation_rows, functions)
     )
-    if any(later is None for _, _, later in results):
+    if any(coordinate is None for _, coordinate, _ in results):
         return tuple(earlier for earlier, _, _ in results), None, None
-    later_occurrences = tuple(later for _, _, later in results)
-    if len({later.removed_position_act_occurrence_identity for later in later_occurrences}) != 1:
+    earlier_counts = {len(earlier) for earlier, _, _ in results}
+    if len(earlier_counts) != 1:
         return tuple(earlier for earlier, _, _ in results), None, None
+    occurrence_position = len(results[0][0])
+    if occurrence_position >= min(len(removals), act_occurrence_count_limit):
+        return tuple(earlier for earlier, _, _ in results), None, None
+    removal = removals[occurrence_position]
+    later_occurrences = []
+    for row, function in zip(source_invocation_rows, functions):
+        source_by_reference = {
+            invocation.source_coordinate: invocation for invocation in row
+        }
+        source_invocation = source_by_reference.get(removal.source_reference)
+        if source_invocation is None:
+            raise ValueError("recurrence requires each exact source invocation")
+        result_invocation = compiled_invocation(
+            removal.result_material,
+            function,
+            boundary_identity=f"{boundary_identity}-{function.identity}-invocation",
+            invocation_position=occurrence_position,
+            source_coordinate=removal,
+        )
+        later_occurrences.append(
+            RemovedPositionCompareOccurrence(
+                boundary_identity=f"{boundary_identity}-{function.identity}-compare",
+                occurrence_position=occurrence_position,
+                implementation_function_identity=function.identity,
+                removed_position_act_occurrence_identity=(
+                    removal.act_occurrence_identity
+                ),
+                source_invocation_occurrence_identity=(
+                    source_invocation.occurrence_identity
+                ),
+                result_invocation_occurrence_identity=(
+                    result_invocation.occurrence_identity
+                ),
+                source_returned=source_invocation.returned,
+                result_returned=result_invocation.returned,
+            )
+        )
     coordinates = tuple(coordinate for _, coordinate, _ in results)
     return (
         tuple(earlier for earlier, _, _ in results),
         coordinates,
-        later_occurrences,
+        tuple(later_occurrences),
     )

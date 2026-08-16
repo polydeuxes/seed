@@ -1000,6 +1000,75 @@ def test_full_function_recurrence_preserves_heterogeneous_coordinates(
     assert len(set(coordinates)) == 2
 
 
+def test_full_function_coordinates_precede_every_added_material_invocation():
+    supplied = []
+
+    def first(material):
+        supplied.append(("first", material))
+        if material == b"c":
+            raise ValueError("refused")
+
+    def second(material):
+        supplied.append(("second", material))
+        if material != b"c":
+            raise ValueError("refused")
+
+    references = tuple(
+        ExactMaterialReference(
+            f"source-{position}",
+            f"assertion-{position}",
+            "full-function-locality",
+            material,
+        )
+        for position, material in enumerate((b"a", b"b", b"c"))
+    )
+    admission = admission_occurrence(
+        (references,),
+        boundary_identity="full-function-admission",
+        source_material=references,
+    )
+    additions = tuple(
+        addition
+        for addition in admission_added_position_occurrences(
+            admission.result_reference,
+            boundary_identity="full-function-addition",
+            admitted_material_act_occurrence_count_limit=18,
+        )
+        if addition.position == 0
+        and addition.source_reference == references[0]
+    )
+    functions = (
+        CompiledImplementationFunction("compiled-first", first),
+        CompiledImplementationFunction("compiled-second", second),
+    )
+    source_rows = compiled_reference_invocations(
+        references,
+        boundary_identity="full-function-source",
+        implementation_functions=functions,
+    )
+    supplied.clear()
+
+    earlier, coordinates, later = first_recurring_added_compare_across(
+        additions,
+        source_rows,
+        boundary_identity="full-function-prospective",
+        act_occurrence_count_limit=len(additions),
+    )
+
+    assert tuple(len(row) for row in earlier) == (2, 2)
+    assert coordinates == (True, False)
+    assert later is not None
+    assert tuple(comparison.result_returned for comparison in later) == coordinates
+    assert supplied == [
+        ("first", b"aa"),
+        ("first", b"ba"),
+        ("second", b"aa"),
+        ("second", b"ba"),
+        ("first", b"ca"),
+        ("second", b"ca"),
+    ]
+
+
 def test_full_function_recurrence_refuses_duplicate_function_identity(
     book_three_byte_format_occurrences,
     book_pair_format_occurrences,
@@ -2053,6 +2122,71 @@ def test_removal_recurrence_accepts_a_matching_full_function_vector(
         != later[0].result_invocation_occurrence_identity
         for comparison in earlier[0]
     )
+
+
+def test_full_function_coordinates_precede_every_removed_material_invocation():
+    supplied = []
+
+    def first(material):
+        supplied.append(("first", material))
+        if material == b"dx":
+            raise ValueError("refused")
+
+    def second(material):
+        supplied.append(("second", material))
+        if material != b"dx":
+            raise ValueError("refused")
+
+    source_references = tuple(
+        ExactMaterialReference(
+            f"removal-source-{position}",
+            f"removal-assertion-{position}",
+            "full-function-removal-locality",
+            material,
+        )
+        for position, material in enumerate((b"ax", b"bx", b"cx", b"dx"))
+    )
+    removed_reference = ExactMaterialReference(
+        "removed-source",
+        "removed-assertion",
+        "full-function-removal-locality",
+        b"x",
+    )
+    removals = removed_position_occurrences(
+        source_references,
+        (removed_reference,),
+        boundary_identity="full-function-removal",
+    )
+    functions = (
+        CompiledImplementationFunction("compiled-removal-first", first),
+        CompiledImplementationFunction("compiled-removal-second", second),
+    )
+    source_rows = compiled_reference_invocations(
+        source_references,
+        boundary_identity="full-function-removal-source",
+        implementation_functions=functions,
+    )
+    supplied.clear()
+
+    earlier, coordinates, later = first_recurring_removed_compare_across(
+        removals,
+        source_rows,
+        boundary_identity="full-function-removal-prospective",
+        act_occurrence_count_limit=len(removals),
+    )
+
+    assert tuple(len(row) for row in earlier) == (2, 2)
+    assert coordinates == (True, False)
+    assert later is not None
+    assert tuple(comparison.result_returned for comparison in later) == coordinates
+    assert supplied == [
+        ("first", b"a"),
+        ("first", b"b"),
+        ("second", b"a"),
+        ("second", b"b"),
+        ("first", b"c"),
+        ("second", b"c"),
+    ]
 
 
 def test_removal_compare_refuses_a_result_without_its_act_occurrence():
