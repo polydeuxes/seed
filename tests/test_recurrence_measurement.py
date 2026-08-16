@@ -768,7 +768,7 @@ def test_recorded_assertion_stream_obeys_sessions_and_boundary(compared):
     read = list(
         iter_recorded_measured_assertions(
             compared,
-            locality_identities=("s1",),
+            localities=("s1",),
             through=boundary,
         )
     )
@@ -791,7 +791,7 @@ def test_exact_sets_keep_completeness_separate_from_support(compared):
     ):
         encoded = assertions[result].to_json_dict()
         assert encoded["completeness_boundary"] == boundary
-        assert encoded["completeness_scope"]["locality_identities"] == list(DECLARED)
+        assert encoded["completeness_scope"]["localities"] == list(DECLARED)
         assert encoded["completeness_scope"]["requires_locality_existence"] is True
         assert finding.input_ledger_boundary.identity not in (
             encoded["input_support"]["occurrence_references"]
@@ -1402,7 +1402,7 @@ def test_a_durable_yielding_occurrence_is_identifiable_and_verifies(tmp_path):
         read = list(
             iter_recorded_measured_assertions(
                 reopened,
-                locality_identities=("s1",),
+                localities=("s1",),
                 through=boundary,
             )
         )

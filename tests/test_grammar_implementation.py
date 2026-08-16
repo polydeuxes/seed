@@ -895,7 +895,7 @@ def _position_measurement_yield_witness(*, compare: bool = False) -> dict:
     event = record_position_pair_measurement_compare(
         ledger,
         locality_identity="position-measurement-yield",
-        measurement_event_identities=(first.identity, second.identity),
+        measurement_occurrence_references=(first.identity, second.identity),
     )
     return _yield_bundle(ledger, event)
 

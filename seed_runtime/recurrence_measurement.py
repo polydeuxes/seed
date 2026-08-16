@@ -279,7 +279,7 @@ class MeasuredAssertion:
             ),
             "completeness_scope": (
                 {
-                    "locality_identities": list(self.scope["bounded_localities"]),
+                    "localities": list(self.scope["bounded_localities"]),
                     "occurrence_kinds": list(self.completeness_occurrence_kinds),
                     "requires_locality_existence": True,
                 }
@@ -452,12 +452,12 @@ def assertions_of_recorded_measurement(event: Event) -> tuple[RecordedMeasuredAs
 def iter_recorded_measured_assertions(
     ledger: EventLedger,
     *,
-    locality_identities: Iterable[str],
+    localities: Iterable[str],
     through: EventLedgerBoundary | None = None,
 ) -> Iterator[RecordedMeasuredAssertion]:
     """Stream Assertions from exact declared Localities through one boundary."""
 
-    for locality_identity in tuple(dict.fromkeys(locality_identities)):
+    for locality_identity in tuple(dict.fromkeys(localities)):
         for event in ledger.iter_locality_kind(
             locality_identity,
             LOCALITY_COUNT_RECORDED_KIND,

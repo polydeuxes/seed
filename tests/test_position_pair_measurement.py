@@ -203,7 +203,7 @@ def test_every_exact_pair_occurrence_preserves_its_position_pair_measurement_and
         assert measurement.evidence == {
             "source_occurrence_identity": source.identity,
             "position_pair_evidence_event_identity": pair_finding.identity,
-            "evidence_occurrence_identities": [
+            "evidence_occurrence_references": [
                 pair_finding.identity,
                 source.identity,
             ],
@@ -600,7 +600,7 @@ def test_position_pair_measurement_read_refuses_self_consistent_counterfeit_sour
         "position_pair_evidence_event_identity": recorded.material[
             "position_pair_evidence_event_identity"
         ],
-        "source_occurrence_identities": recorded.material["source_occurrence_identities"],
+        "source_occurrence_references": recorded.material["source_occurrence_references"],
         "measurements": json.loads(json.dumps(recorded.material["measurements"])),
     }
     altered_result["measurements"][0]["evidence"]["exact_representation"] = (
@@ -736,7 +736,7 @@ def test_emitted_representation_position_pair_requires_exact_locality():
     recorded_compare = record_position_pair_measurement_compare(
         ledger,
         locality_identity="emission-measurement",
-        measurement_event_identities=(
+        measurement_occurrence_references=(
             recorded_measurements.identity,
             repeated_measurements.identity,
         ),

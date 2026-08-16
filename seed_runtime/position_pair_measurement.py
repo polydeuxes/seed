@@ -187,7 +187,7 @@ class PositionPairMeasurement:
             )
         evidence = self.evidence
         finding_identity = evidence.get("position_pair_evidence_event_identity")
-        evidence_identities = evidence.get("evidence_occurrence_identities")
+        evidence_identities = evidence.get("evidence_occurrence_references")
         text = evidence.get("exact_representation")
         if (
             evidence.get("source_occurrence_identity") != source_identity
@@ -392,7 +392,7 @@ def _measure_position_pair_measurements(
                         evidence={
                             "source_occurrence_identity": source.identity,
                             "position_pair_evidence_event_identity": position_pair_evidence_event_identity,
-                            "evidence_occurrence_identities": [
+                            "evidence_occurrence_references": [
                                 position_pair_evidence_event_identity,
                                 source.identity,
                             ],
@@ -714,7 +714,7 @@ def _record_position_pair_measurement_result(
     result_material = {
         "result_identity": result_identity,
         "position_pair_evidence_event_identity": position_pair_evidence_event_identity,
-        "source_occurrence_identities": list(source_identities),
+        "source_occurrence_references": list(source_identities),
         "measurements": [
             _position_pair_measurement_material(measurement)
             for measurement in measurements
@@ -961,7 +961,7 @@ def get_recorded_position_pair_measurements(
             "the position-pair measurement result event is absent or corrupted"
         )
     position_pair_evidence_identity = event.material.get("position_pair_evidence_event_identity")
-    source_identities = event.material.get("source_occurrence_identities")
+    source_identities = event.material.get("source_occurrence_references")
     carried_measurements = event.material.get("measurements")
     if (
         not isinstance(position_pair_evidence_identity, str)
@@ -976,7 +976,7 @@ def get_recorded_position_pair_measurements(
     result_material = {
         "result_identity": event.material.get("result_identity"),
         "position_pair_evidence_event_identity": position_pair_evidence_identity,
-        "source_occurrence_identities": source_identities,
+        "source_occurrence_references": source_identities,
         "measurements": carried_measurements,
     }
     act_evidence_identity = event.material.get("responsible_act_evidence_identity")
@@ -1141,11 +1141,11 @@ def record_position_pair_measurement_compare(
     ledger: EventLedger,
     *,
     locality_identity: str,
-    measurement_event_identities: Iterable[str],
+    measurement_occurrence_references: Iterable[str],
 ) -> Event:
     """Compare exact durable measurement results and preserve the bounded result."""
 
-    input_identities = tuple(measurement_event_identities)
+    input_identities = tuple(measurement_occurrence_references)
     if (
         len(input_identities) < 2
         or any(not isinstance(value, str) or not value for value in input_identities)
@@ -1173,7 +1173,7 @@ def record_position_pair_measurement_compare(
     result_identity = f"position-pair-measurement-compare:{act_occurrence_identity}"
     result_material = {
         "result_identity": result_identity,
-        "measurement_event_identities": list(input_identities),
+        "measurement_occurrence_references": list(input_identities),
         "comparison": compared,
     }
     participation = [
@@ -1258,7 +1258,7 @@ def get_recorded_position_pair_measurement_compare(
         raise PreservedMaterialMeasurementError(
             "the recorded measurement Compare is absent or corrupted"
         )
-    input_identities = event.material.get("measurement_event_identities")
+    input_identities = event.material.get("measurement_occurrence_references")
     compared = event.material.get("comparison")
     if (
         not isinstance(input_identities, list)
@@ -1272,7 +1272,7 @@ def get_recorded_position_pair_measurement_compare(
         )
     result_material = {
         "result_identity": event.material.get("result_identity"),
-        "measurement_event_identities": input_identities,
+        "measurement_occurrence_references": input_identities,
         "comparison": compared,
     }
     act_evidence = ledger.get(event.material.get("responsible_act_evidence_identity"))
