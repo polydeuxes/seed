@@ -10,7 +10,6 @@ from dataclasses import dataclass
 from datetime import datetime
 import hashlib
 import json
-import re
 import sqlite3
 import zlib
 from typing import Any, Iterable, Iterator
@@ -82,7 +81,6 @@ _STORED_OCCURRENCE_FIELDS = (
 _MATERIAL_COMPRESSION_LEVEL = 1
 
 
-_EVENT_IDENTITY = re.compile(r"^evt_\d+$")
 _EVENT_ROW_COLUMNS = (
     "events.*, event_exact_materials.exact_material AS exact_material"
 )
@@ -98,23 +96,6 @@ def _exact_material_identity(exact_material: bytes) -> str:
     if type(exact_material) is not bytes:
         raise LedgerIntegrityError("exact material identity requires exact bytes")
     return hashlib.sha256(exact_material).hexdigest()
-
-
-def _material_references(
-    material: Any, relation: str = "", ordinal: int = 0
-) -> list[tuple[str, str, int]]:
-    """Every occurrence identity this material holds, with the field that held it."""
-
-    found: list[tuple[str, str, int]] = []
-    if isinstance(material, dict):
-        for key, nested in material.items():
-            found.extend(_material_references(nested, key, 0))
-    elif isinstance(material, list):
-        for position, nested in enumerate(material):
-            found.extend(_material_references(nested, relation, position))
-    elif isinstance(material, str) and _EVENT_IDENTITY.match(material):
-        found.append((relation, material, ordinal))
-    return found
 
 
 def _stored_material(serialized: str) -> str | bytes:
@@ -565,6 +546,13 @@ class SQLiteEventLedger(EventLedger):
         self._connection.create_function(
             "seed_prefix_writer", 0, lambda: 1, deterministic=True
         )
+        if self._connection.execute(
+            "SELECT 1 FROM sqlite_master WHERE type = 'table' "
+            "AND name = 'event_references'"
+        ).fetchone() is not None:
+            raise LedgerIntegrityError(
+                f"{database_path} carries the withdrawn runtime occurrence-reference index"
+            )
         self._connection.execute("""
             CREATE TABLE IF NOT EXISTS event_exact_materials (
                 material_identity TEXT PRIMARY KEY,
@@ -583,29 +571,6 @@ class SQLiteEventLedger(EventLedger):
                 FOREIGN KEY (exact_material_identity)
                     REFERENCES event_exact_materials(material_identity)
             )
-            """)
-        # The references occurrences already carry, lifted out of the material
-        # so they can be read in both directions.
-        #
-        # Not an occurrence. It records no Assertion and establishes no
-        # Standing: every row restates a reference the material holds, the
-        # material stays the authority, and rebuilding from the materials gives
-        # the same rows.
-        self._connection.execute("""
-            CREATE TABLE IF NOT EXISTS event_references (
-                source_identity TEXT NOT NULL,
-                relation TEXT NOT NULL,
-                destination_identity TEXT NOT NULL,
-                ordinal INTEGER NOT NULL
-            )
-            """)
-        self._connection.execute("""
-            CREATE INDEX IF NOT EXISTS idx_event_references_destination_covering
-            ON event_references (destination_identity, relation, source_identity)
-            """)
-        self._connection.execute("""
-            CREATE INDEX IF NOT EXISTS idx_event_references_source_covering
-            ON event_references (source_identity, relation, ordinal, destination_identity)
             """)
         # Minted identity counters, kept durably instead of read.
         #
@@ -1161,69 +1126,7 @@ class SQLiteEventLedger(EventLedger):
             """,
             self._row_values(event, exact_material_identity),
         )
-        self._insert_references_without_commit(event)
         return int(cursor.lastrowid)
-
-    def _insert_references_without_commit(self, event: Event) -> None:
-        """Index the occurrence references this material already carries.
-
-        A reference pair is indexed where the material holds the exact identity of an
-        occurrence already in this ledger. The field name that held it is preserved.
-        """
-
-        # One reference held twice under one field is one relation.
-        references = list(dict.fromkeys(_material_references(event.material)))
-        if not references:
-            return
-        known = {
-            row[0]
-            for row in self._connection.execute(
-                "SELECT identity FROM events WHERE identity IN (%s)"
-                % ",".join("?" * len(references)),
-                tuple(destination for _, destination, _ in references),
-            )
-        }
-        self._connection.executemany(
-            "INSERT INTO event_references"
-            " (source_identity, relation, destination_identity, ordinal) VALUES (?, ?, ?, ?)",
-            [
-                (event.identity, relation, destination, ordinal)
-                for relation, destination, ordinal in references
-                if destination in known
-            ],
-        )
-
-    def references_to(self, event_identity: str) -> list[tuple[str, str]]:
-        """Which occurrences reference this one, and under what relation.
-
-        A `LIKE` over stored JSON reads every material and grows with both the
-        occurrence count and the material size. This reads an index.
-        """
-
-        cursor = self._connection.cursor()
-        cursor.row_factory = None
-        return [
-            (relation, source)
-            for source, relation in cursor.execute(
-                "SELECT source_identity, relation FROM event_references"
-                " WHERE destination_identity = ? ORDER BY relation, source_identity",
-                (event_identity,),
-            )
-        ]
-
-    def references_from(self, event_identity: str) -> list[tuple[str, str]]:
-        """Which occurrences this one references, and under what relation."""
-
-        cursor = self._connection.cursor()
-        cursor.row_factory = None
-        return [
-            (relation, destination)
-            for relation, destination in cursor.execute(
-                "SELECT relation, destination_identity FROM event_references"
-                " WHERE source_identity = ? ORDER BY relation, ordinal",
-                (event_identity,),
-            )
-        ]
 
     def _exact_material_reference(self, event_identity: str) -> str | None:
         """Read one durable storage reference without making it Event material."""

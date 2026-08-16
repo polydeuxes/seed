@@ -215,7 +215,7 @@ def test_compiled_sql_invocation_locations_keep_observed_and_unobserved_counts()
         if coordinates["occurrence_count"] > 0
     }
     assert observed == {
-        "scripts/reference_pair_comparison.py:11:"
+        "scripts/reference_pair_comparison.py:13:"
         "ReferencePairComparison.__init__:8:executescript"
     }
     assert any(
@@ -224,4 +224,4 @@ def test_compiled_sql_invocation_locations_keep_observed_and_unobserved_counts()
         for identity, coordinates in result["sql_invocations"].items()
     )
     assert result["sql_invocation_occurrences"] == tuple(observed)
-    assert result["sql_statement_invocations"] == (0, 0, 0, 0)
+    assert result["sql_statement_invocations"] == (0, 0, 0, 0, 0)

@@ -411,6 +411,21 @@ def test_a_nullable_occurrence_material_identity_is_refused_when_populated(path)
         SQLiteEventLedger(path)
 
 
+def test_a_store_with_the_withdrawn_runtime_reference_index_is_refused(path):
+    ledger = SQLiteEventLedger(path)
+    ledger.close()
+    connection = sqlite3.connect(path)
+    connection.execute(
+        "CREATE TABLE event_references ("
+        "source_identity TEXT, relation TEXT, destination_identity TEXT, ordinal INTEGER)"
+    )
+    connection.commit()
+    connection.close()
+
+    with pytest.raises(LedgerIntegrityError, match="withdrawn runtime"):
+        SQLiteEventLedger(path)
+
+
 # --------------------------------------------------------------------------
 # Identity counters are kept, not validated.
 # --------------------------------------------------------------------------

@@ -2,7 +2,9 @@ from __future__ import annotations
 
 import json
 import sqlite3
-from typing import Any, Iterable
+from typing import Any
+
+from seed_runtime.events import EventLedger, EventLedgerBoundary
 
 
 class ReferencePairComparison:
@@ -10,6 +12,10 @@ class ReferencePairComparison:
         self._connection = sqlite3.connect(path)
         self._connection.executescript(
             """
+            CREATE TABLE IF NOT EXISTS collection_boundary (
+                singleton INTEGER PRIMARY KEY CHECK (singleton = 1),
+                identity TEXT NOT NULL
+            );
             CREATE TABLE IF NOT EXISTS occurrences (
                 identity TEXT PRIMARY KEY,
                 kind TEXT NOT NULL,
@@ -29,28 +35,64 @@ class ReferencePairComparison:
             """
         )
 
-    def load(self, events: Iterable[Any]) -> int:
+    def load(
+        self,
+        ledger: EventLedger,
+        *,
+        through: EventLedgerBoundary,
+    ) -> int:
+        if not isinstance(ledger, EventLedger):
+            raise TypeError("reference-pair collection requires one EventLedger")
+        if type(through) is not EventLedgerBoundary:
+            raise TypeError("reference-pair collection requires one exact boundary")
+        events = ledger.list(through=through)
+        existing_boundary = self._connection.execute(
+            "SELECT identity FROM collection_boundary WHERE singleton = 1"
+        ).fetchone()
+        if existing_boundary is not None:
+            if existing_boundary[0] != through.identity:
+                raise ValueError(
+                    "reference-pair collections from different boundaries do not mix"
+                )
+            return int(
+                self._connection.execute(
+                    "SELECT COUNT(*) FROM reference_pairs"
+                ).fetchone()[0]
+            )
+        for table in ("occurrences", "reference_pairs"):
+            if self._connection.execute(
+                f"SELECT 1 FROM {table} LIMIT 1"
+            ).fetchone() is not None:
+                raise ValueError(
+                    "reference pairs without their exact collection boundary are refused"
+                )
         pair_count = 0
         earlier_identities: set[str] = set()
-        for event in events:
+        with self._connection:
             self._connection.execute(
-                "INSERT OR REPLACE INTO occurrences VALUES (?, ?, ?, ?)",
-                (
-                    event.identity,
-                    event.kind,
-                    getattr(event, "locality_identity", None),
-                    json.dumps(event.material, default=str),
-                ),
+                "INSERT INTO collection_boundary VALUES (1, ?)",
+                (through.identity,),
             )
-            references = dict.fromkeys(_references(event.material, earlier_identities))
-            for relation, destination, position in references:
+            for event in events:
                 self._connection.execute(
-                    "INSERT INTO reference_pairs VALUES (?, ?, ?, ?)",
-                    (event.identity, relation, destination, position),
+                    "INSERT INTO occurrences VALUES (?, ?, ?, ?)",
+                    (
+                        event.identity,
+                        event.kind,
+                        getattr(event, "locality_identity", None),
+                        json.dumps(event.material, default=str),
+                    ),
                 )
-                pair_count += 1
-            earlier_identities.add(event.identity)
-        self._connection.commit()
+                references = dict.fromkeys(
+                    _references(event.material, earlier_identities)
+                )
+                for relation, destination, position in references:
+                    self._connection.execute(
+                        "INSERT INTO reference_pairs VALUES (?, ?, ?, ?)",
+                        (event.identity, relation, destination, position),
+                    )
+                    pair_count += 1
+                earlier_identities.add(event.identity)
         return pair_count
 
     def references_from(self, occurrence_identity: str) -> list[tuple[str, str]]:
