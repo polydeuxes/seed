@@ -61,6 +61,10 @@ from material_admission import (  # noqa: E402
     compare_admission_result_pairs,
     preserves,
 )
+from material_fixture_books import (  # noqa: E402
+    MATERIAL_WINDOWS,
+    supplied_book_material,
+)
 
 
 def _implementation_functions_available():
@@ -70,27 +74,22 @@ def _implementation_functions_available():
     )
 
 
-def _book_paths() -> tuple[Path, ...]:
-    return tuple(
-        path
-        for path in sorted((ROOT / "book_of_seed").rglob("*"))
-        if path.is_file()
-    )
-
-
 @pytest.fixture(scope="module")
 def measured_book_pairs():
     ledger = EventLedger()
-    paths = _book_paths()
+    paths = tuple(ROOT / "corpus" / name for name, _ in MATERIAL_WINDOWS)
+    if any(not path.is_file() for path in paths):
+        pytest.skip("supplied fixture material is unavailable")
+    supplied_material = supplied_book_material(ROOT)
     ingests = tuple(
         ingest_material(
             ledger,
             locality_identity="book-material",
-            exact_bytes=path.read_bytes(),
+            exact_bytes=material,
             source_role="fixture material",
-            source_boundary=str(path.relative_to(ROOT)),
+            source_boundary="fixture",
         )
-        for path in paths
+        for material in supplied_material
     )
     byte_measurement = record_byte_count_layer(
         ledger,
@@ -129,7 +128,7 @@ def measured_book_pairs():
         ledger, byte_measurement.identity
     )
     return (
-        paths,
+        supplied_material,
         ingests,
         assertions,
         pairs,
@@ -401,14 +400,13 @@ def _return_boundaries(occurrences):
 IMPLEMENTATION_FUNCTIONS_AVAILABLE = _implementation_functions_available()
 
 
-def test_every_current_book_material_has_its_own_ingest(measured_book_pairs):
-    paths, ingests, *_ = measured_book_pairs
+def test_every_supplied_material_has_its_own_ingest(measured_book_pairs):
+    supplied_material, ingests, *_ = measured_book_pairs
 
-    assert len(paths) == len(ingests)
-    assert len({ingest.identity for ingest in ingests}) == len(paths)
-    assert tuple(ingest.exact_material for ingest in ingests) == tuple(
-        path.read_bytes() for path in paths
-    )
+    assert len(supplied_material) == len(ingests) == 16
+    assert {ingest.locality_identity for ingest in ingests} == {"book-material"}
+    assert len({ingest.identity for ingest in ingests}) == len(supplied_material)
+    assert tuple(ingest.exact_material for ingest in ingests) == supplied_material
 
 
 def test_pair_material_comes_from_the_complete_recorded_measurement(measured_book_pairs):
