@@ -51,6 +51,14 @@ def book_proper_words() -> dict[str, list[tuple[str, int]]]:
     return found
 
 
+def machine_grammar_words() -> set[str]:
+    return {
+        word
+        for line in (BOOK / "grammar.json").read_text().split("\n")
+        for word in re.findall(r"[A-Za-z]+", scan_active_line(line).lower())
+    }
+
+
 def test_book_proper_scope_excludes_rosetta():
     files = {path.relative_to(ROOT).as_posix() for path in book_proper_files()}
     assert any(path.startswith("book_of_seed/chapters/") for path in files)
@@ -136,3 +144,7 @@ def test_lexicon_carries_no_unused_admissions():
         "\nThe lexicon admits words active law no longer carries: "
         + ", ".join(unused)
     )
+
+
+def test_admission_and_machine_grammar_match():
+    assert admitted_lexicon() == machine_grammar_words()
