@@ -145,6 +145,39 @@ def implementation_functions() -> tuple[MaterialImplementationFunction, ...]:
                 "/dev/null",
             ),
         ),
+        MaterialImplementationFunction(
+            identity="compiled-19",
+            invocation=(
+                "/usr/bin/env",
+                "-i",
+                "/usr/bin/script",
+                "-qefc",
+                "/usr/games/cribbage",
+                "/dev/null",
+            ),
+        ),
+        MaterialImplementationFunction(
+            identity="compiled-20",
+            invocation=(
+                "/usr/bin/env",
+                "-i",
+                "/usr/bin/script",
+                "-qefc",
+                "/usr/games/canfield",
+                "/dev/null",
+            ),
+        ),
+        MaterialImplementationFunction(
+            identity="compiled-21",
+            invocation=(
+                "/usr/bin/env",
+                "-i",
+                "/usr/bin/script",
+                "-qefc",
+                "/usr/games/sol",
+                "/dev/null",
+            ),
+        ),
     )
 
 
