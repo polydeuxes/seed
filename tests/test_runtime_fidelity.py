@@ -523,6 +523,24 @@ def test_each_event_kind_responsibility_names_one_machine_grammar_clause():
     assert unknown == {}, f"event species name absent grammar clauses: {unknown}"
 
 
+def test_implementation_and_machine_grammar_have_the_same_clauses():
+    implementation_clauses = {
+        values[0][1]
+        for values in _runtime_event_kind_responsibilities().values()
+        if len(values) == 1
+    }
+    machine_clauses = {
+        identity.decode("ascii")
+        for identity in re.findall(
+            rb'^    "([0-9]+\.[A-Za-z]+\.[A-Za-z0-9.]+)": \{$',
+            GRAMMAR.read_bytes(),
+            re.M,
+        )
+    }
+
+    assert implementation_clauses == machine_clauses
+
+
 def test_runtime_record_vocabulary_has_constitutional_admission():
     """Event species and record coordinates require lexical admission."""
 
