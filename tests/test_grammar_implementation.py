@@ -3342,7 +3342,7 @@ def _assert_role_distinctions(distinctions: dict) -> None:
             "Scope",
             "Authority",
             "provenance",
-            "Unknowns",
+            "Unknown",
         ],
         "Participation_relation_coordinates": {
             "book_clause": "01.Standing.E.1",
@@ -3431,7 +3431,7 @@ def test_candidate_clause_preserves_coordinates_without_promoting_the_subject():
             "Scope",
             "Authority",
             "provenance",
-            "Unknowns",
+            "Unknown",
         ],
         "does_not_establish": [
             "Act_occurrence_by_candidate_identity",
@@ -3442,6 +3442,73 @@ def test_candidate_clause_preserves_coordinates_without_promoting_the_subject():
     assert grammar["role_distinctions"]["candidate_coordinates"] == clause[
         "preserves"
     ]
+
+
+def test_cross_boundary_participation_preserves_scope_and_limits():
+    clause = _clause("01.Source.B")
+    grammar = json.loads(GRAMMAR.read_text(encoding="utf-8"))
+
+    assert clause == {
+        "subject": "supplied_material_as_input_to_exact_Act",
+        "coordinates": [
+            "supplied_material",
+            "input_role",
+            "exact_Act",
+            "Act_occurrence",
+            "Participation_relation",
+            "carried_Scope",
+            "surviving_limits",
+        ],
+        "preserves": ["carried_Scope", "surviving_limits"],
+        "does_not_erase": [
+            "summarizing",
+            "indexing",
+            "citing",
+            "comparing",
+            "representing",
+            "attaching",
+        ],
+        "does_not_establish": ["Authority_relocation"],
+    }
+    assert clause["preserves"] == clause["coordinates"][-2:]
+    assert grammar["relations"]["participation"] == grammar[
+        "role_distinctions"
+    ]["Participation_relation_coordinates"]
+
+
+def test_live_participation_is_not_source_b_by_relation_identity():
+    clause = _clause("01.Source.B")
+    emission = _emission_witness()
+
+    assert _emission_participation_witness(emission) == EXACT
+    assert not set(clause["preserves"]) <= set(emission["act_evidence"].material)
+    assert "01.Source.B" not in REPRESENTATION_EVENT_KIND_RESPONSIBILITIES.values()
+
+
+def test_candidate_coordinate_order_is_the_exact_book_order():
+    clause = _clause("01.Source.E")
+    source_book = (
+        GRAMMAR.parent / "chapters" / "01-source-coordinates-and-grammar.md"
+    ).read_text(encoding="utf-8")
+    sentence = next(
+        line
+        for line in source_book.splitlines()
+        if line.startswith("A candidate preserves every applicable source role")
+    ).lower()
+    phrases = tuple(
+        coordinate.replace("_", " ").lower()
+        for coordinate in clause["preserves"]
+    )
+    positions = tuple(sentence.index(phrase) for phrase in phrases)
+    pairs_of_adjacent_positions = tuple(
+        (positions[position], positions[position + 1])
+        for position in range(len(positions) - 1)
+    )
+
+    assert all(
+        first_position < second_position
+        for first_position, second_position in pairs_of_adjacent_positions
+    )
 
 
 def test_participation_requires_exact_subject_role_and_act_occurrence():
