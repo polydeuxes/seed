@@ -6,6 +6,7 @@ from typing import Any, TextIO
 
 from seed_runtime.events import CORRUPTED, EventLedger
 from seed_runtime.identities import new_identity
+from seed_runtime.operator_egress import emit_exact_material
 from seed_runtime.yield_evidence import (
     _record_yield_evidence,
     read_yield_relation_requirements,
@@ -80,10 +81,15 @@ def record_operator_representation(
     locality_identity: str,
     locality_standing: dict[str, Any],
     alternative_sources: tuple[dict[str, Any], ...] = (),
-    exact_material: bytes | None = None,
     source_event_identity: str | None = None,
 ) -> dict[str, Any]:
     """Record one exact bounded Representation and its Act occurrence."""
+    exact_material = _exact_source_material(
+        ledger,
+        locality_identity=locality_identity,
+        locality_standing=locality_standing,
+        source_event_identity=source_event_identity,
+    )
     representation_identity = new_identity("operator_representation")
     representation_act_identity = new_identity("operator_representation_act")
     act_occurrence_identity = new_identity("operator_representation_act_occurrence")
@@ -253,6 +259,43 @@ def _emission_text(representation: dict[str, Any]) -> str:
     return "\n".join(lines) + "\n"
 
 
+def _exact_source_material(
+    ledger: EventLedger,
+    *,
+    locality_identity: str,
+    locality_standing: dict[str, Any],
+    source_event_identity: str | None,
+) -> bytes | None:
+    if source_event_identity is None:
+        return None
+    if type(source_event_identity) is not str or not source_event_identity:
+        raise ValueError("Representation requires one exact source occurrence")
+    source = ledger.get(source_event_identity)
+    if source is None:
+        raise ValueError("Representation source occurrence is missing")
+    if source.locality_identity != locality_identity:
+        raise ValueError("Representation source occurrence crossed Localities")
+    carried = {
+        occurrence.get("evidence_event_identity")
+        for occurrence in locality_standing.get("ingest_occurrences", ())
+    }
+    if source.identity not in carried:
+        raise ValueError("Representation source occurrence is not carried by Standing")
+    if ledger.integrity_of(source.identity) == CORRUPTED:
+        raise ValueError("Representation source occurrence is corrupted")
+    requirements = read_yield_relation_requirements(
+        ledger,
+        recorded_result_event_identity=source.identity,
+        result_evidence_event_identity=source.material.get("yield_evidence_identity"),
+        responsible_act_evidence_event_identity=source.material.get(
+            "responsible_act_evidence_identity"
+        ),
+    )
+    if not all(requirements.values()) or type(source.exact_material) is not bytes:
+        raise ValueError("Representation source Yield is not exact")
+    return source.exact_material
+
+
 def read_operator_representation(
     ledger: EventLedger, representation_event_identity: str
 ) -> dict[str, Any]:
@@ -280,6 +323,26 @@ def read_operator_representation(
     )
     if not all(requirements.values()):
         raise ValueError("the recorded Representation Yield is not exact")
+    source_event_identity = material.get("attempt_reference")
+    if source_event_identity is not None:
+        source = ledger.get(source_event_identity)
+        if (
+            source is None
+            or source.locality_identity != event.locality_identity
+            or ledger.integrity_of(source.identity) == CORRUPTED
+            or source.exact_material != event.exact_material
+        ):
+            raise ValueError("the recorded Representation source is not exact")
+        source_requirements = read_yield_relation_requirements(
+            ledger,
+            recorded_result_event_identity=source.identity,
+            result_evidence_event_identity=source.material.get("yield_evidence_identity"),
+            responsible_act_evidence_event_identity=source.material.get(
+                "responsible_act_evidence_identity"
+            ),
+        )
+        if not all(source_requirements.values()):
+            raise ValueError("the recorded Representation source Yield is not exact")
     exact_result = ledger.get(yield_evidence_identity).material.get("result")
     if (
         type(exact_result) is not dict
@@ -304,7 +367,26 @@ def read_operator_representation(
         "coordinate_binding": material["coordinate_binding"],
         "representation_event_identity": event.identity,
         "emission_text": material["emission_text"],
+        "source_event_identity": source_event_identity,
+        "exact_material": event.exact_material,
     }
+
+
+def emit_operator_representation_material(
+    ledger: EventLedger,
+    *,
+    representation: dict[str, Any],
+    output_stream,
+) -> int:
+    recorded = read_operator_representation(
+        ledger, representation.get("representation_event_identity")
+    )
+    exact_material = recorded["exact_material"]
+    if type(exact_material) is not bytes:
+        raise ValueError("the recorded Representation carries no exact material")
+    if representation.get("exact_material") != exact_material:
+        raise ValueError("the supplied Representation differs from its recorded material")
+    return emit_exact_material(output_stream, exact_material)
 
 
 def emit_operator_representation(

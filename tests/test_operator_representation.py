@@ -1,14 +1,16 @@
 from tests.binary_input import binary_input
-from io import StringIO
+from io import BytesIO, StringIO
 
 import pytest
 
 from seed_runtime.events import EventLedger
 from seed_runtime.operator_representation import (
+    emit_operator_representation_material,
     emit_operator_representation,
     read_operator_representation,
     record_operator_representation,
 )
+from seed_runtime.material_ingest import ingest_material
 from seed_runtime.operator_locality_standing import read_operator_locality_standing
 from tests.bounded_alternative_fixture import BOUNDED_ALTERNATIVE_FIXTURE_SOURCES
 from seed_runtime.operator_console import run_persistent_operator_console
@@ -105,24 +107,180 @@ def test_representation_reader_reads_the_exact_recorded_representation():
         "coordinate_binding": representation["coordinate_binding"],
         "representation_event_identity": representation["representation_event_identity"],
         "emission_text": representation["emission_text"],
+        "source_event_identity": None,
+        "exact_material": None,
     }
 
 
 def test_representation_carries_exact_material_without_claiming_meaning():
     ledger = EventLedger()
+    source = ingest_material(
+        ledger,
+        locality_identity="s",
+        exact_bytes=b"hello",
+        source_role="operator",
+        source_boundary="fixture boundary",
+    )
     representation = record_operator_representation(
         ledger,
         locality_identity="s",
-        locality_standing={"as_of_event_identity": None},
-        exact_material=b"hello",
-        source_event_identity="ingest-occurrence",
+        locality_standing=_standing(ledger),
+        source_event_identity=source.identity,
     )
     event = ledger.get(representation["representation_event_identity"])
     evidence = ledger.get(event.material["yield_evidence_identity"])
 
     assert event.exact_material == b"hello"
     assert evidence.exact_material == b"hello"
-    assert event.material["attempt_reference"] == "ingest-occurrence"
+    assert event.material["attempt_reference"] == source.identity
+
+
+def test_representation_does_not_accept_developer_supplied_exact_material():
+    with pytest.raises(TypeError, match="exact_material"):
+        record_operator_representation(
+            EventLedger(),
+            locality_identity="s",
+            locality_standing={"as_of_event_identity": None},
+            exact_material=b"hello",
+        )
+
+
+def test_representation_refuses_a_missing_source_occurrence():
+    ledger = EventLedger()
+
+    with pytest.raises(ValueError, match="missing"):
+        record_operator_representation(
+            ledger,
+            locality_identity="s",
+            locality_standing=_standing(ledger),
+            source_event_identity="missing-source",
+        )
+
+
+def test_representation_refuses_a_source_from_another_locality():
+    ledger = EventLedger()
+    source = ingest_material(
+        ledger,
+        locality_identity="first",
+        exact_bytes=b"hello",
+        source_role="operator",
+        source_boundary="fixture boundary",
+    )
+
+    with pytest.raises(ValueError, match="crossed Localities"):
+        record_operator_representation(
+            ledger,
+            locality_identity="second",
+            locality_standing=_standing(ledger, locality="second"),
+            source_event_identity=source.identity,
+        )
+
+
+def test_representation_refuses_corrupted_source_material():
+    ledger = EventLedger()
+    source = ingest_material(
+        ledger,
+        locality_identity="s",
+        exact_bytes=b"hello",
+        source_role="operator",
+        source_boundary="fixture boundary",
+    )
+    standing = _standing(ledger)
+    object.__setattr__(source, "exact_material", b"goodbye")
+
+    with pytest.raises(ValueError, match="not exact"):
+        record_operator_representation(
+            ledger,
+            locality_identity="s",
+            locality_standing=standing,
+            source_event_identity=source.identity,
+        )
+
+
+def test_representation_reader_and_egress_refuse_changed_material():
+    ledger = EventLedger()
+    source = ingest_material(
+        ledger,
+        locality_identity="s",
+        exact_bytes=b"hello",
+        source_role="operator",
+        source_boundary="fixture boundary",
+    )
+    representation = record_operator_representation(
+        ledger,
+        locality_identity="s",
+        locality_standing=_standing(ledger),
+        source_event_identity=source.identity,
+    )
+    event = ledger.get(representation["representation_event_identity"])
+    object.__setattr__(event, "exact_material", b"goodbye")
+
+    with pytest.raises(ValueError, match="not exact"):
+        read_operator_representation(ledger, event.identity)
+    with pytest.raises(ValueError, match="not exact"):
+        emit_operator_representation_material(
+            ledger,
+            representation=representation,
+            output_stream=BytesIO(),
+        )
+
+
+def test_exact_egress_reads_the_recorded_representation_material():
+    ledger = EventLedger()
+    source = ingest_material(
+        ledger,
+        locality_identity="s",
+        exact_bytes=b"hello",
+        source_role="operator",
+        source_boundary="fixture boundary",
+    )
+    representation = record_operator_representation(
+        ledger,
+        locality_identity="s",
+        locality_standing=_standing(ledger),
+        source_event_identity=source.identity,
+    )
+    output = BytesIO()
+
+    assert emit_operator_representation_material(
+        ledger,
+        representation=representation,
+        output_stream=output,
+    ) == 5
+    assert output.getvalue() == b"hello"
+
+    representation["exact_material"] = b"goodbye"
+    with pytest.raises(ValueError, match="differs"):
+        emit_operator_representation_material(
+            ledger,
+            representation=representation,
+            output_stream=BytesIO(),
+        )
+
+
+def test_raw_console_egress_uses_its_recorded_representation_result():
+    ledger = EventLedger()
+    raw_output = BytesIO()
+
+    run_persistent_operator_console(
+        ledger=ledger,
+        locality_identity="s",
+        input_stream=binary_input(b"hello\n"),
+        output_stream=StringIO(),
+        emit_initial_representation=False,
+        raw_output_stream=raw_output,
+    )
+
+    representation_event = next(
+        event
+        for event in ledger.list()
+        if event.kind == "operator.representation.recorded"
+        and event.exact_material is not None
+    )
+    source_event = ledger.get(representation_event.material["attempt_reference"])
+    assert source_event is not None
+    assert source_event.exact_material == representation_event.exact_material == b"hello\n"
+    assert raw_output.getvalue() == representation_event.exact_material
 
 
 @pytest.mark.parametrize(

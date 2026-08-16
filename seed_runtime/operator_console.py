@@ -26,6 +26,7 @@ from seed_runtime.operator_locality_command import (
     request_operator_locality,
 )
 from seed_runtime.operator_representation import (
+    emit_operator_representation_material,
     emit_operator_representation,
     record_operator_representation,
 )
@@ -33,7 +34,6 @@ from seed_runtime.operator_locality_standing import (
     advance_operator_locality_standing,
     read_operator_locality_standing,
 )
-from seed_runtime.operator_egress import emit_exact_material
 
 
 def _advance_over(ledger, standing, event_identities, *, locality_identity):
@@ -186,12 +186,15 @@ def run_persistent_operator_console(
                         ledger,
                         locality_identity=locality_identity,
                         locality_standing=locality_standing,
-                        exact_material=boundary_material.exact_bytes,
                         source_event_identity=attempt_record["current_standing"][
                             "ingest_occurrence"
                         ]["evidence_event_identity"],
                     )
-                    emit_exact_material(raw_output_stream, boundary_material.exact_bytes)
+                    emit_operator_representation_material(
+                        ledger,
+                        representation=representation,
+                        output_stream=raw_output_stream,
+                    )
                     continue
                 # The Representation result and Yield Evidence retain distinct identities. No Compare
                 # or Identification is inferred merely from temporal proximity.
