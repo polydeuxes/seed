@@ -675,6 +675,15 @@ def test_format_recurrence_precedes_later_moved_material(
         if later is None:
             continue
         assert coordinate == later.result_returned
+        assert later.result_invocation_occurrence_identity[0] == (
+            f"book-moved-recurrence-{position}-invocation"
+        )
+        assert later.result_invocation_occurrence_identity != (
+            later.source_invocation_occurrence_identity
+        )
+        assert coordinate == later.result_coordinates
+        assert (None == coordinate) is False
+        assert (not coordinate) != coordinate
         assert len(earlier) + 1 < len(additions)
         found = (earlier, later)
         additions_by_identity = {
