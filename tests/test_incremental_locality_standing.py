@@ -30,6 +30,10 @@ from seed_runtime.operator_locality_standing import (
 )
 from seed_runtime.operator_console import run_persistent_operator_console
 from seed_runtime.material_ingest import MATERIAL_INGEST_OCCURRED_KIND
+from seed_runtime.supplied_invocation_material import (
+    SuppliedInvocationMaterial,
+    SuppliedMaterialOccurrence,
+)
 
 MATERIALS = (
     "alpha\nbeta\ngamma\n",
@@ -353,9 +357,17 @@ def test_a_failed_console_emission_advances_every_recorded_occurrence(
         run_persistent_operator_console(
             ledger=ledger,
             locality_identity="s",
-            input_stream=binary_input(b"exact raw material\n"),
+            input_stream=binary_input(b"!ls\n"),
             output_stream=StringIO(),
             raw_output_stream=FailedBoundary(),
+            host_invocation_provider=lambda _command: SuppliedInvocationMaterial(
+                occurrences=(
+                    SuppliedMaterialOccurrence(
+                        b"exact raw material\n", "invocation output"
+                    ),
+                ),
+                egress_occurrence_positions=(0,),
+            ),
         )
 
     assert observed[-1] == read_operator_locality_standing(
