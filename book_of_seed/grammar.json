@@ -1,4 +1,5 @@
 {
+  "book_material_reference": "this_Book",
   "composite": {
     "material_order": "preserved",
     "equal_material_in_different_order_establishes_same_composite": false,
@@ -142,6 +143,7 @@
   "clauses": {
     "01.Source.A": {
       "subject": "Representation_source_coordinates",
+      "book_material_reference": "01.Source.A",
       "implementation_coordinates": [
         "representations",
         "emission_attempt",
@@ -172,6 +174,7 @@
     },
     "01.Source.B": {
       "subject": "supplied_material_as_input_to_exact_Act",
+      "book_material_reference": "01.Source.B",
       "implementation_witness": "unestablished",
       "coordinates": [
         "supplied_material",
@@ -195,6 +198,7 @@
     },
     "01.Source.C": {
       "subject": "this_Seed",
+      "book_material_reference": "01.Source.C",
       "implementation_witness": "deterministic_tests",
       "subjects": [
         "machine_grammar",
@@ -244,6 +248,7 @@
     },
     "01.Source.D": {
       "subject": "declared_Measurement_result",
+      "book_material_reference": "01.Source.D",
       "implementation_relations": [
         "Measurement_counts_exact_occurrences",
         "the_measured_result_carries_what_the_declared_rule_determines",
@@ -357,6 +362,7 @@
     },
     "01.Source.D.1": {
       "subject": "counted_occurrence",
+      "book_material_reference": "01.Source.D.1",
       "implementation_witness": "unestablished",
       "coordinates": [
         "exact_occurrence_identity",
@@ -370,6 +376,7 @@
     },
     "01.Source.E": {
       "subject": "candidate",
+      "book_material_reference": "01.Source.E",
       "implementation_witness": "unestablished",
       "preserves": [
         "applicable_source_role",
@@ -387,6 +394,7 @@
     },
     "01.Source.F": {
       "subject": "represented_relation",
+      "book_material_reference": "01.Source.F",
       "implementation_witness": "unestablished",
       "assertion": {
         "first_subject": "X",
@@ -422,6 +430,7 @@
     },
     "01.Source.G": {
       "subject": "one_exact_operator_material_boundary_occurrence",
+      "book_material_reference": "01.Source.G",
       "implementation_relation": "acquire_what_the_operator_boundary_supplies",
       "responsibility": {
         "kind": "operator_material_boundary_result_preservation",
@@ -466,6 +475,7 @@
     },
     "01.Standing.A": {
       "subject": "preserved_material",
+      "book_material_reference": "01.Standing.A",
       "implementation_witness": "unestablished",
       "may_have": ["exact_identity", "Locality", "representations"],
       "does_not_establish": [
@@ -480,6 +490,7 @@
     },
     "01.Standing.B": {
       "subject": "bounded_named_distinction",
+      "book_material_reference": "01.Standing.B",
       "implementation_witness": "unestablished",
       "names": [
         "kind_label",
@@ -506,6 +517,7 @@
     },
     "01.Standing.C": {
       "subject": "implementation_boundary_witness",
+      "book_material_reference": "01.Standing.C",
       "implementation_witness": "unestablished",
       "witnesses": [
         "compiled_behavior",
@@ -533,6 +545,7 @@
     },
     "01.Standing.D": {
       "subject": "multiplicity",
+      "book_material_reference": "01.Standing.D",
       "implementation_witness": "unestablished",
       "does_not_establish": [
         "relation",
@@ -548,6 +561,7 @@
     },
     "01.Standing.D.1": {
       "subject": "Assertion",
+      "book_material_reference": "01.Standing.D.1",
       "identity": ["result", "subject", "Scope", "content"],
       "responsibility": {
         "kind": "Standing_coordinate_preservation",
@@ -584,6 +598,7 @@
     },
     "01.Standing.D.2": {
       "subject": "later_Assertion_with_current_Standing",
+      "book_material_reference": "01.Standing.D.2",
       "implementation_witness": "unestablished",
       "Applicability_considered_with_respect_to": "current_Standing_for_same_subject",
       "earlier_Assertions": {
@@ -617,6 +632,7 @@
     },
     "01.Standing.E": {
       "subject": "bounded_relation_Assertion",
+      "book_material_reference": "01.Standing.E",
       "implementation_witness": "unestablished",
       "preserves": [
         "participants_and_roles",
@@ -661,6 +677,7 @@
     },
     "01.Standing.E.1": {
       "subject": "input_to_exact_Act_relation",
+      "book_material_reference": "01.Standing.E.1",
       "implementation_relations": [
         "responsible_boundary_may_determine_whether_an_exact_proposed_input_may_participate_before_the_Act_occurrence",
         "the_resulting_Standing_determines_the_participating_input"
@@ -715,6 +732,7 @@
     },
     "01.Standing.F": {
       "subject": "dimensional_characterization",
+      "book_material_reference": "01.Standing.F",
       "implementation_witness": "unestablished",
       "macro_dimensional_families": [
         ["subject", "identity"],
@@ -767,6 +785,7 @@
     },
     "02.Acts.A": {
       "subject": "exact_Act_occurrence",
+      "book_material_reference": "02.Acts.A",
       "identity": ["exact_Act", "Act_occurrence"],
       "implementation_relations": [
         "the_exact_Act_occurred_at_the_boundary",
@@ -813,6 +832,7 @@
     },
     "03.Movement.A": {
       "subject": "one_exact_movement_Assertion",
+      "book_material_reference": "03.Movement.A",
       "implementation_relation": "make_one_exact_preserved_Assertion_available_in_another_Locality_and_preserve_its_identity_Standing_and_carried_limits",
       "responsibility": {
         "kind": "exact_transition_preservation",
@@ -845,6 +865,7 @@
     },
     "05.Recording.A": {
       "subject": "retrievable_record_of_Assertion",
+      "book_material_reference": "05.Recording.A",
       "implementation_witness": "unestablished",
       "recording_boundary_may_establish": [
         "retrievable_record_exists",
@@ -861,6 +882,7 @@
     },
     "05.Recording.B": {
       "subject": "diagnostic_run_scoped_recording",
+      "book_material_reference": "05.Recording.B",
       "implementation_witness": "unestablished",
       "requires": [
         "recorded_material_admitted_only_to_diagnostic_Act",
@@ -875,6 +897,7 @@
     },
     "05.Recording.C": {
       "subject": "implementation_measurement_preservation_decision",
+      "book_material_reference": "05.Recording.C",
       "implementation_witness": "unestablished",
       "preservation_required_when_discarding_would_erase": [
         "material_Evidence",
@@ -892,6 +915,7 @@
     },
     "05.Recording.D": {
       "subject": "one_exact_recorded_Standing_boundary_reference",
+      "book_material_reference": "05.Recording.D",
       "record_kind": "durable_bounded_reference",
       "responsibility": {
         "kind": "exact_Standing_boundary_reference_recording",
@@ -936,6 +960,7 @@
     },
     "05.Source.A": {
       "subject": "recorded_material_participation",
+      "book_material_reference": "05.Source.A",
       "implementation_witness": "unestablished",
       "subjects_that_may_participate": [
         "recorded_Assertion",
@@ -954,6 +979,7 @@
     },
     "06.Locality.A": {
       "subject": "Locality_relation",
+      "book_material_reference": "06.Locality.A",
       "identity": [
         "first_subject",
         "second_subject",
@@ -998,6 +1024,7 @@
     },
     "06.Locality.B": {
       "subject": "this_Seed_bears_Standing_Locality_continuation_Responsibility",
+      "book_material_reference": "06.Locality.B",
       "responsibility": {
         "kind": "Standing_Locality_continuation_assignment",
         "coordinates": [
@@ -1043,6 +1070,7 @@
     },
     "06.Locality.C": {
       "subject": "one_direct_recorded_Standing_boundary_Locality_relation",
+      "book_material_reference": "06.Locality.C",
       "responsibility": {
         "kind": "recorded_Standing_boundary_Locality_assignment",
         "coordinates": [
@@ -1094,6 +1122,7 @@
     },
     "08.Authority.A": {
       "subject": "bounded_input_support",
+      "book_material_reference": "08.Authority.A",
       "implementation_witness": "unestablished",
       "downstream_Act_may_stand_on_established_content_only_for": [
         "exact_role",
@@ -1117,6 +1146,7 @@
     },
     "08.Authority.B": {
       "subject": "bounded_participation_not_ratification",
+      "book_material_reference": "08.Authority.B",
       "implementation_witness": "unestablished",
       "supporting_findings": [
         "established_support_relation",
@@ -1142,6 +1172,7 @@
     },
     "08.Authority.C": {
       "subject": "analytical_competence",
+      "book_material_reference": "08.Authority.C",
       "implementation_witness": "unestablished",
       "may_analyze_under_bounded_repository_Authority": [
         "source_packets",

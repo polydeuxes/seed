@@ -2587,6 +2587,7 @@ def test_implementation_witness_discriminates_content_locality_and_occurrence():
 def _assert_ordered_fidelity_representation(fidelity: dict) -> None:
     assert fidelity == {
         "subject": "this_Seed",
+        "book_material_reference": "01.Source.C",
         "implementation_witness": "deterministic_tests",
         "subjects": [
             "machine_grammar",
@@ -3444,6 +3445,7 @@ def test_candidate_clause_preserves_coordinates_without_promoting_the_subject():
 
     assert clause == {
         "subject": "candidate",
+        "book_material_reference": "01.Source.E",
         "implementation_witness": "unestablished",
         "preserves": [
             "applicable_source_role",
@@ -3470,6 +3472,7 @@ def test_cross_boundary_participation_preserves_scope_and_limits():
 
     assert clause == {
         "subject": "supplied_material_as_input_to_exact_Act",
+        "book_material_reference": "01.Source.B",
         "implementation_witness": "unestablished",
         "coordinates": [
             "supplied_material",

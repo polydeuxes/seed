@@ -104,7 +104,7 @@ def test_machine_readable_grammar_traverses_responsibility_from_standing():
         assert active_book.count(f"### {clause_identity} ") == 1
 
 
-def test_this_occurs_only_as_the_root_of_this_seed_subject():
+def test_this_occurs_only_as_exact_machine_roots():
     grammar = json.loads(GRAMMAR.read_text(encoding="utf-8"))
     uses = [
         (path, value)
@@ -112,9 +112,14 @@ def test_this_occurs_only_as_the_root_of_this_seed_subject():
         if "this" in value.lower().split("_")
     ]
 
-    assert uses
-    assert all(path[-1] == "subject" for path, _value in uses)
-    assert all(value.startswith("this_Seed") for _path, value in uses)
+    assert uses == [
+        (("book_material_reference",), "this_Book"),
+        (("clauses", "01.Source.C", "subject"), "this_Seed"),
+        (
+            ("clauses", "06.Locality.B", "subject"),
+            "this_Seed_bears_Standing_Locality_continuation_Responsibility",
+        ),
+    ]
 
 
 def test_missing_relation_clause_is_detected():
@@ -135,6 +140,16 @@ def test_missing_relation_clause_is_detected():
 
 def test_book_and_machine_grammar_have_the_same_clauses():
     assert _book_clause_identities() == _machine_clause_identities()
+
+
+def test_machine_clauses_address_their_exact_book_material():
+    grammar = json.loads(GRAMMAR.read_text(encoding="utf-8"))
+
+    assert grammar["book_material_reference"] == "this_Book"
+    assert tuple(
+        (identity, clause["book_material_reference"])
+        for identity, clause in grammar["clauses"].items()
+    ) == tuple((identity, identity) for identity in grammar["clauses"])
 
 
 def test_clauses_without_event_species_name_their_witness_in_book_order():
