@@ -107,7 +107,7 @@ def exact_references_to_recurrent_material_pairs(
                 exact_material=bytes(assertion.representation),
             )
         )
-    return tuple(sorted(found, key=lambda reference: reference.exact_material))
+    return tuple(found)
 
 
 @dataclass(frozen=True, slots=True)
@@ -435,7 +435,7 @@ def exact_subjects_of_recurrent_adjacent_material_pairs(
             reference_to_recurrent_material_pair=by_material[material],
             premise_occurrences_of_material_pair=tuple(found),
         )
-        for material, found in sorted(premises.items())
+        for material, found in premises.items()
         if len(found) >= 2
     )
 

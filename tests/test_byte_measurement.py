@@ -432,6 +432,20 @@ def test_recorded_results_replay_the_complete_bounded_source_read():
     assert evidence.material["dimensions"]["act_occurrence_identity"] == event.material[
         "act_occurrence_identity"
     ]
+    assert evidence.material["coordinates_of_carried_result"] == [
+        "result_identity",
+        "dimensions",
+        "exact_act",
+        "downstream_act_identity",
+        "act_occurrence_identity",
+        "responsibility",
+        "responsible_boundary",
+        "responsibility_assignment_evidence",
+        "measurement_rule",
+        "source_localities",
+        "completeness_boundary",
+        "assertions",
+    ]
     assert "occurrence_preservation" not in evidence.material["coordinates_of_carried_result"]
 
     count = next(
@@ -585,6 +599,22 @@ def test_every_overlapping_byte_position_pair_is_measured():
     assert counts[(97, 10)]["count"] == 1
 
 
+def test_byte_position_pair_results_follow_first_observed_pair_positions():
+    ledger = _ledger("tatatata\n")
+    source = _byte_source(ledger)
+    event = record_byte_position_pair_count_layer(
+        ledger,
+        source_measurement_event_identity=source.identity,
+        recording_locality_identity="measurement",
+    )
+
+    assert [
+        tuple(assertion["assertion_subject"]["representation"])
+        for assertion in event.material["assertions"]
+        if assertion["result"] == "count"
+    ] == [(116, 97), (97, 116), (97, 10)]
+
+
 def test_position_pairs_never_cross_ingest_boundaries():
     ledger = _ledger("a\nb\n")
     source = _byte_source(ledger)
@@ -724,10 +754,22 @@ def test_pair_validation_refuses_a_self_consistent_truncated_result_inputs():
         source_measurement_event_identity=source.identity,
         recording_locality_identity="measurement",
     )
-    event.material["assertions"] = event.material["assertions"][:-1]
+    recurrence = next(
+        assertion
+        for assertion in event.material["assertions"]
+        if assertion["result"] == "recurrence"
+    )
+    event.material["assertions"] = [
+        assertion
+        for assertion in event.material["assertions"]
+        if assertion["dimensions"]["identity"]
+        != recurrence["dimensions"]["identity"]
+    ]
     evidence = ledger.get(event.material["evidence_of_yield_relation_identity"])
     evidence.material["result"] = {
-        name: event.material[name] for name in BYTE_PAIR_RESULT_COORDINATES
+        name: value
+        for name, value in event.material.items()
+        if name in BYTE_PAIR_RESULT_COORDINATES
     }
 
     with pytest.raises(ByteMeasurementError, match="recurrence boundary"):

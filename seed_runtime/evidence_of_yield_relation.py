@@ -216,7 +216,7 @@ def read_requirements_of_yield_relation(
         type(result) is dict
         and type(coordinates_of_carried_result) is list
         and type(coordinates_of_recorded_result) is dict
-        and coordinates_of_carried_result == sorted(result)
+        and coordinates_of_carried_result == list(result)
         and set(coordinates_of_recorded_result) == set(result)
     ):
         carried_result = {}
@@ -371,7 +371,7 @@ def _record_evidence_of_yield_relation(
                 "responsible_boundary": responsible_boundary,
                 "authority": "unestablished",
             },
-            "coordinates_of_carried_result": sorted(result_content),
+            "coordinates_of_carried_result": list(result_content),
             "result": deepcopy(result_content),
             "coordinates_of_recorded_result": preserved_coordinates_of_recorded_result,
             "result_kind": result_kind,

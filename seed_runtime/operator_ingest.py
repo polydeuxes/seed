@@ -47,9 +47,9 @@ def update_operator_ingest_standing(attempts, event) -> None:
     }
     standing["last_event_kind"] = event.kind
     for key in ("known_loss", "unknowns", "conflicts"):
-        standing[key] = sorted(
-            set((*standing[key], *event.material.get(key, ())))
-        )
+        for value in event.material.get(key, ()):
+            if value not in standing[key]:
+                standing[key].append(value)
 
 
 def _ingest_standing(*, event):

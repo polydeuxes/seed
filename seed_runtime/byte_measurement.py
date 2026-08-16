@@ -886,7 +886,7 @@ def _measure_byte_position_pair_counts_through(
             occurrences_carrying=carrying[pair],
             count=totals[pair],
         )
-        for pair in sorted(totals)
+        for pair in totals
     )
     return MeasuredBytePairInputs(
         source_localities=localities,
@@ -1311,7 +1311,7 @@ def assertions_of_recorded_byte_measurement(
         or evidence.material.get("result_kind")
         != BYTE_MEASUREMENT_RESULT_KIND
         or evidence.material.get("coordinates_of_carried_result")
-        != sorted(BYTE_RESULT_COORDINATES)
+        != [coordinate for coordinate in material if coordinate in BYTE_RESULT_COORDINATES]
         or evidence.material.get("dimensions", {}).get("responsibility")
         != BYTE_MEASUREMENT_RESPONSIBILITY
         or evidence.material.get("dimensions", {}).get("responsible_boundary")
@@ -1620,7 +1620,9 @@ def get_recorded_pair_input_applicability(
             f"{event_identity} does not carry the exact Applicability result surface"
         )
     result_coordinates = {
-        key: material[key] for key in BYTE_PAIR_APPLICABILITY_RESULT_COORDINATES
+        key: value
+        for key, value in material.items()
+        if key in BYTE_PAIR_APPLICABILITY_RESULT_COORDINATES
     }
     if (
         evidence is None
@@ -1629,7 +1631,7 @@ def get_recorded_pair_input_applicability(
         or ledger.integrity_of(evidence.identity) == CORRUPTED
         or evidence.material.get("result_kind")
         != BYTE_PAIR_APPLICABILITY_RESULT_KIND
-        or evidence.material.get("coordinates_of_carried_result") != sorted(result_coordinates)
+        or evidence.material.get("coordinates_of_carried_result") != list(result_coordinates)
         or evidence.material.get("dimensions", {}).get("responsibility")
         != BYTE_PAIR_INPUT_APPLICABILITY_RESPONSIBILITY
         or evidence.material.get("dimensions", {}).get("responsible_boundary")
@@ -1994,7 +1996,11 @@ def assertions_of_recorded_byte_position_pair_measurement(
         or evidence.material.get("result_kind")
         != BYTE_PAIR_MEASUREMENT_RESULT_KIND
         or evidence.material.get("coordinates_of_carried_result")
-        != sorted(BYTE_PAIR_RESULT_COORDINATES)
+        != [
+            coordinate
+            for coordinate in material
+            if coordinate in BYTE_PAIR_RESULT_COORDINATES
+        ]
         or evidence.material.get("dimensions", {}).get("responsibility")
         != BYTE_PAIR_MEASUREMENT_RESPONSIBILITY
         or evidence.material.get("dimensions", {}).get("responsible_boundary")

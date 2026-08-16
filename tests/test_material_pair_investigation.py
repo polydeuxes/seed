@@ -116,6 +116,31 @@ def test_source_order_does_not_select_which_pair_identities_exist():
     )
 
 
+def test_pair_subject_order_follows_first_exact_material_positions():
+    source = _source("source", b"ba--ba--ab--ab")
+    pairs = (
+        _pair(
+            "ab",
+            b"ab",
+            sources=(source.recorded_occurrence_identity,),
+        ),
+        _pair(
+            "ba",
+            b"ba",
+            sources=(source.recorded_occurrence_identity,),
+        ),
+    )
+
+    subjects = exact_subjects_of_recurrent_adjacent_material_pairs(
+        (source,), pairs
+    )
+
+    assert tuple(
+        subject.reference_to_recurrent_material_pair.exact_material
+        for subject in subjects
+    ) == (b"ba", b"ab")
+
+
 def test_one_pair_identity_survives_before_and_after_displacement(exact_pair):
     current = exact_occurrences_of_material_pair(
         exact_pair, _source("current", b"ba---ab")

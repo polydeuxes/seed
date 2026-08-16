@@ -5,7 +5,10 @@ from __future__ import annotations
 from io import BytesIO
 
 from seed_runtime.events import EventLedger
-from seed_runtime.operator_ingest import run_operator_ingest
+from seed_runtime.operator_ingest import (
+    run_operator_ingest,
+    update_operator_ingest_standing,
+)
 from seed_runtime.operator_material_boundary import operator_boundary_material
 from seed_runtime.material_ingest import (
     MATERIAL_INGEST_OCCURRED_KIND,
@@ -51,3 +54,38 @@ def test_empty_line_is_material_but_eof_is_not_an_attempt():
     _, standing = _run(b"\n")
 
     assert standing["current_standing"]["ingest_occurrence"] is not None
+
+
+def test_ingest_standing_preserves_first_occurrence_order_without_sorting():
+    ledger = EventLedger()
+    attempts = {}
+    first = ledger.append(
+        MATERIAL_INGEST_OCCURRED_KIND,
+        {
+            "source_role": "operator",
+            "dimensions": {"identity": "operator-result"},
+            "known_loss": ["later", "earlier"],
+            "unknowns": ["second", "first"],
+            "conflicts": ["right", "left"],
+        },
+        locality_identity="s",
+    )
+    second = ledger.append(
+        MATERIAL_INGEST_OCCURRED_KIND,
+        {
+            "source_role": "operator",
+            "dimensions": {"identity": "operator-result"},
+            "known_loss": ["third", "later"],
+            "unknowns": ["third", "second"],
+            "conflicts": ["middle", "right"],
+        },
+        locality_identity="s",
+    )
+
+    update_operator_ingest_standing(attempts, first)
+    update_operator_ingest_standing(attempts, second)
+
+    standing = attempts["operator-result"]
+    assert standing["known_loss"] == ["later", "earlier", "third"]
+    assert standing["unknowns"] == ["second", "first", "third"]
+    assert standing["conflicts"] == ["right", "left", "middle"]
