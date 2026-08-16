@@ -3133,6 +3133,70 @@ def test_compiled_implementation_function_receives_the_exact_material():
     assert occurrence.returned is True
 
 
+def test_compiled_invocation_validates_each_source_once_before_function_fan_out(
+    monkeypatch,
+):
+    references = tuple(
+        ExactMaterialReference(
+            f"validated-fan-out-occurrence-{position}",
+            f"validated-fan-out-assertion-{position}",
+            "validated-fan-out-locality",
+            bytes((position,)),
+        )
+        for position in range(8)
+    )
+    functions = tuple(
+        CompiledImplementationFunction(
+            identity=f"validated-fan-out-function-{position}",
+            invocation=lambda material: material,
+        )
+        for position in range(3)
+    )
+    validations = []
+    original = compiled_format_invocation._compiled_invocation_source_material
+
+    def measured_source_material(source_coordinate):
+        validations.append(source_coordinate)
+        return original(source_coordinate)
+
+    monkeypatch.setattr(
+        compiled_format_invocation,
+        "_compiled_invocation_source_material",
+        measured_source_material,
+    )
+    rows = compiled_reference_invocations(
+        references,
+        boundary_identity="validated-fan-out-invocation",
+        implementation_functions=functions,
+    )
+
+    assert validations == list(references)
+    assert tuple(
+        occurrence.source_coordinate for row in rows for occurrence in row
+    ) == references * len(functions)
+
+    with pytest.raises(TypeError, match="validation proof must be exact"):
+        replace(rows[0][0], _source_validation=object())
+    with pytest.raises(ValueError, match="differs from its exact source"):
+        replace(rows[0][0], exact_material=b"different")
+
+    class ExactMaterialSubclass(ExactMaterialReference):
+        pass
+
+    subclass = ExactMaterialSubclass(
+        **{
+            coordinate.name: getattr(references[0], coordinate.name)
+            for coordinate in fields(ExactMaterialReference)
+        }
+    )
+    with pytest.raises(TypeError, match="carry exact references"):
+        compiled_reference_invocations(
+            (subclass,),
+            boundary_identity="subclass-fan-out-invocation",
+            implementation_functions=functions,
+        )
+
+
 def test_equal_material_at_distinct_coordinates_reaches_the_implementation_function_each_time():
     supplied = []
     material = (b"aa", b"aa", b"ab")

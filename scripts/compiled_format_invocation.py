@@ -544,15 +544,12 @@ class ExactMaterialResultReference:
 def _is_exact_material_coordinates(material: object) -> bool:
     from compiled_material_invocation import IngestResultReference
 
-    return isinstance(
-        material,
-        (
-            ExactMaterialReference,
-            ExactMaterialResultReference,
-            ExactPositionMaterialReference,
-            ExactPositionPairMaterialReference,
-            IngestResultReference,
-        ),
+    return type(material) in (
+        ExactMaterialReference,
+        ExactMaterialResultReference,
+        ExactPositionMaterialReference,
+        ExactPositionPairMaterialReference,
+        IngestResultReference,
     )
 
 
@@ -848,6 +845,20 @@ class RemovedPositionOccurrence:
         return self.removed_reference.exact_material
 
 
+_COMPILED_INVOCATION_SOURCE_VALIDATED = object()
+
+
+def _compiled_invocation_source_material(source_coordinate: object) -> bytes:
+    if _is_exact_material_coordinates(source_coordinate):
+        return source_coordinate.exact_material
+    if type(source_coordinate) in (
+        AddedPositionOccurrence,
+        RemovedPositionOccurrence,
+    ):
+        return source_coordinate.result_material
+    raise TypeError("source material requires its exact reference")
+
+
 @dataclass(frozen=True, slots=True)
 class CompiledInvocationOccurrence:
     boundary_identity: str
@@ -861,8 +872,12 @@ class CompiledInvocationOccurrence:
         | RemovedPositionOccurrence
         | None
     ) = None
+    _source_validation: InitVar[object | None] = None
 
-    def __post_init__(self) -> None:
+    def __post_init__(
+        self,
+        _source_validation: object | None,
+    ) -> None:
         if type(self.boundary_identity) is not str or not self.boundary_identity:
             raise TypeError("one exact boundary identity is required")
         if type(self.invocation_position) is not int or self.invocation_position < 0:
@@ -875,18 +890,18 @@ class CompiledInvocationOccurrence:
             raise TypeError("one exact compiled implementation function is required")
         if type(self.returned) is not bool:
             raise TypeError("returned coordinate must be exact")
-        if self.source_coordinate is not None:
-            if _is_exact_material_coordinates(self.source_coordinate):
-                source_material = self.source_coordinate.exact_material
-            elif isinstance(
-                self.source_coordinate,
-                (AddedPositionOccurrence, RemovedPositionOccurrence),
-            ):
-                source_material = self.source_coordinate.result_material
-            else:
-                raise TypeError("source material requires its exact reference")
+        if self.source_coordinate is None:
+            if _source_validation is not None:
+                raise ValueError("source validation requires its exact source coordinate")
+            return
+        if _source_validation is None:
+            source_material = _compiled_invocation_source_material(
+                self.source_coordinate
+            )
             if source_material != self.exact_material:
                 raise ValueError("invocation material differs from its exact source")
+        elif _source_validation is not _COMPILED_INVOCATION_SOURCE_VALIDATED:
+            raise TypeError("invocation source validation proof must be exact")
 
     @property
     def implementation_function_identity(self) -> str:
@@ -1858,6 +1873,13 @@ def _compiled_invocations(
     )
     if len(set(identities)) != len(identities):
         raise ValueError("implementation function identities must be distinct")
+    if source_coordinates is not None:
+        for position, material in enumerate(exact_materials):
+            if (
+                _compiled_invocation_source_material(source_coordinates[position])
+                != material
+            ):
+                raise ValueError("invocation material differs from its exact source")
     found = []
     for implementation_function in implementation_functions:
         occurrences = []
@@ -1877,6 +1899,11 @@ def _compiled_invocations(
                     returned=returned,
                     source_coordinate=(
                         source_coordinates[invocation_position]
+                        if source_coordinates is not None
+                        else None
+                    ),
+                    _source_validation=(
+                        _COMPILED_INVOCATION_SOURCE_VALIDATED
                         if source_coordinates is not None
                         else None
                     ),
