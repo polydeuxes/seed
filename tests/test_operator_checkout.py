@@ -58,7 +58,7 @@ class _IntegrityAdversaryLedger(EventLedger):
         return super().integrity_of(event_identity)
 
 
-def _checkpointed(ledger, *, locality="source"):
+def _standing_with_recorded_boundary_reference(ledger, *, locality="source"):
     run_persistent_operator_console(
         ledger=ledger,
         locality_identity=locality,
@@ -105,7 +105,7 @@ def test_checkout_request_refuses_payload(exact):
 
 def test_three_stage_relation_uses_one_anchor_and_one_fresh_locality():
     ledger = EventLedger()
-    anchor, source_standing = _checkpointed(ledger)
+    anchor, source_standing = _standing_with_recorded_boundary_reference(ledger)
     assignment = _assignment(ledger, source_standing)
     destination = assignment.locality_identity
     after_assignment = read_operator_locality_standing(
@@ -244,7 +244,7 @@ def test_no_anchor_and_several_anchors_both_refuse_selection():
 
 def test_crossed_or_corrupted_anchor_refuses_before_a_destination_is_written():
     ledger = _IntegrityAdversaryLedger()
-    anchor, standing = _checkpointed(ledger)
+    anchor, standing = _standing_with_recorded_boundary_reference(ledger)
     crossed = deepcopy(standing)
     crossed["locality_identity"] = "elsewhere"
     before = tuple(ledger.list())
@@ -260,7 +260,7 @@ def test_crossed_or_corrupted_anchor_refuses_before_a_destination_is_written():
 
 def test_one_relation_act_cannot_yield_twice():
     ledger = EventLedger()
-    _anchor, standing = _checkpointed(ledger)
+    _anchor, standing = _standing_with_recorded_boundary_reference(ledger)
     act = _act(ledger, _assignment(ledger, standing))
     record_recorded_standing_boundary_locality_result(
         ledger, responsible_act_evidence_event_identity=act.identity
@@ -290,7 +290,7 @@ def test_one_relation_act_cannot_yield_twice():
 )
 def test_changed_relation_result_coordinates_are_refused(coordinate):
     ledger = EventLedger()
-    _anchor, standing = _checkpointed(ledger)
+    _anchor, standing = _standing_with_recorded_boundary_reference(ledger)
     act = _act(ledger, _assignment(ledger, standing))
     result = record_recorded_standing_boundary_locality_result(
         ledger, responsible_act_evidence_event_identity=act.identity
@@ -303,7 +303,7 @@ def test_changed_relation_result_coordinates_are_refused(coordinate):
 def test_anchor_and_relation_survive_restart_without_copying_source_history(tmp_path):
     path = tmp_path / "checkout.sqlite"
     ledger = SQLiteEventLedger(str(path))
-    anchor, standing = _checkpointed(ledger)
+    anchor, standing = _standing_with_recorded_boundary_reference(ledger)
     first = record_recorded_standing_boundary_locality_result(
         ledger,
         responsible_act_evidence_event_identity=_act(
@@ -340,7 +340,7 @@ def test_anchor_and_relation_survive_restart_without_copying_source_history(tmp_
 
 def test_durable_native_values_do_not_import_operator_or_memory_shorthand():
     ledger = EventLedger()
-    _anchor, standing = _checkpointed(ledger)
+    _anchor, standing = _standing_with_recorded_boundary_reference(ledger)
     result = record_recorded_standing_boundary_locality_result(
         ledger,
         responsible_act_evidence_event_identity=_act(
@@ -380,7 +380,7 @@ def test_rosetta_keeps_checkout_and_pointers_as_translation_only():
 
 def test_relation_establishes_no_cross_examination_occurrence():
     ledger = EventLedger()
-    _anchor, standing = _checkpointed(ledger)
+    _anchor, standing = _standing_with_recorded_boundary_reference(ledger)
     result = record_recorded_standing_boundary_locality_result(
         ledger,
         responsible_act_evidence_event_identity=_act(
@@ -395,7 +395,7 @@ def test_relation_establishes_no_cross_examination_occurrence():
 
 def test_prior_relation_carrier_must_remain_an_identity_dictionary():
     ledger = EventLedger()
-    _anchor, standing = _checkpointed(ledger)
+    _anchor, standing = _standing_with_recorded_boundary_reference(ledger)
     result = record_recorded_standing_boundary_locality_result(
         ledger,
         responsible_act_evidence_event_identity=_act(
