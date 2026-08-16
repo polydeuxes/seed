@@ -74,7 +74,6 @@ def supplied_piper_material():
             boundary_identity="supplied-piper-material",
             time_limit_second_count=12.0,
             material_byte_count_limit=65536,
-            max_workers=2,
         )
         model_load_count = load_voice.call_count
     return (
@@ -150,7 +149,6 @@ def test_piper_resident_boundary_refuses_unpreserved_invocation_options(
             boundary_identity="unsupported-piper-material",
             time_limit_second_count=12.0,
             material_byte_count_limit=65536,
-            max_workers=1,
         )
 
 

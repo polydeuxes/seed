@@ -44,7 +44,6 @@ def piper_material_occurrences(
     boundary_identity: str,
     time_limit_second_count: float,
     material_byte_count_limit: int,
-    max_workers: int,
 ) -> tuple[
     tuple[MaterialInvocationOccurrence, ...],
     MaterialAdmissionOccurrence,
@@ -55,7 +54,6 @@ def piper_material_occurrences(
         boundary_identity=f"{boundary_identity}-invocation",
         time_limit_second_count=time_limit_second_count,
         material_byte_count_limit=material_byte_count_limit,
-        max_workers=max_workers,
     )
     admission = admit_invocation_occurrences(
         occurrences,
@@ -71,7 +69,6 @@ def _piper_reference_occurrences(
     boundary_identity: str,
     time_limit_second_count: float,
     material_byte_count_limit: int,
-    max_workers: int,
 ) -> tuple[MaterialInvocationOccurrence, ...]:
     if type(references) is not tuple or any(
         type(getattr(reference, "exact_material", None)) is not bytes
@@ -92,8 +89,6 @@ def _piper_reference_occurrences(
         or material_byte_count_limit < 1
     ):
         raise TypeError("one exact positive material byte count limit is required")
-    if type(max_workers) is not int or max_workers < 1:
-        raise TypeError("invocation count must be one positive integer")
     if not references:
         return ()
 
