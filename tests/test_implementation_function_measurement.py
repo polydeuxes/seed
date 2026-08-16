@@ -119,23 +119,42 @@ def test_one_pytest_occurrence_keeps_its_exact_implementation_measurement():
     )
     assert occurrence["python"][identity]["occurrence_count"] == 1
 
-    output = measured._output_measurement(result)
-    assert output["sql"] == (
+    catalog, observation = measured._output_materials(result)
+    assert observation["sql"] == (
         {"exact_material": "SELECT 9", "occurrence_count": 1},
     )
-    assert output["sql_occurrences"] == (0,)
-    assert output["sql_invocation_occurrences"] == (None,)
-    assert output["sql_statement_invocations"] == (0,)
-    output_occurrence = output["pytest"][0]
+    assert observation["sql_occurrences"] == (0,)
+    assert observation["sql_invocation_occurrences"] == (None,)
+    assert observation["sql_statement_invocations"] == (0,)
+    output_occurrence = observation["pytest"][0]
     output_coordinate = next(
         coordinate
         for coordinate in output_occurrence["python"]
-        if output["python"][coordinate["implementation_function_position"]][
-            "identity"
+        if catalog["python"][
+            coordinate["implementation_function_position"]
         ].endswith(":_identity")
     )
     assert output_coordinate["occurrence_count"] == 1
-    assert all(unit < 128 for unit in measured._json_material(result))
+    assert all(unit < 128 for unit in measured._json_material(catalog))
+    assert all(unit < 128 for unit in measured._json_material(observation))
+
+
+def test_stable_catalog_is_separate_from_sparse_observation():
+    measured.begin()
+    try:
+        measured._identity(ROOT, 7, "one-observed-function")
+    finally:
+        result = measured.finish()
+
+    catalog, observation = measured._output_materials(result)
+
+    assert len(catalog["python"]) > len(observation["python"])
+    assert all(type(identity) is str for identity in catalog["python"])
+    assert all("identity" not in coordinate for coordinate in observation["python"])
+    assert all(
+        coordinate["implementation_function_position"] < len(catalog["python"])
+        for coordinate in observation["python"]
+    )
 
 
 def test_reference_pair_measurement_contains_each_surviving_function():

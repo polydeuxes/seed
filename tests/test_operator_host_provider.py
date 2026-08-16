@@ -74,6 +74,9 @@ def test_pytest_provider_has_one_exact_argument_and_a_clean_environment(
     assert coordinates["env"] == {
         "PYTEST_DISABLE_PLUGIN_AUTOLOAD": "1",
         "PYTHONDONTWRITEBYTECODE": "1",
+        "SEED_IMPLEMENTATION_FUNCTION_CATALOG": coordinates["env"][
+            "SEED_IMPLEMENTATION_FUNCTION_CATALOG"
+        ],
         "SEED_IMPLEMENTATION_FUNCTION_MEASUREMENT": coordinates["env"][
             "SEED_IMPLEMENTATION_FUNCTION_MEASUREMENT"
         ],
@@ -167,12 +170,14 @@ def test_pytest_provider_supplies_a_distinct_exact_measurement_artifact():
     ) == (
         "invocation output",
         "invocation error",
+        "implementation function catalog",
         "implementation function measurement",
         "invocation end",
     )
     assert supplied.occurrences[0].exact_bytes
     assert supplied.occurrences[1].exact_bytes == b""
-    artifact = json.loads(supplied.occurrences[2].exact_bytes)
+    catalog = json.loads(supplied.occurrences[2].exact_bytes)
+    artifact = json.loads(supplied.occurrences[3].exact_bytes)
     assert [occurrence["pytest_identity"] for occurrence in artifact["pytest"]] == [
         nodeid.decode("ascii")
     ]
@@ -182,11 +187,28 @@ def test_pytest_provider_supplies_a_distinct_exact_measurement_artifact():
     }
     assert implementation_positions
     assert all(
-        position < len(artifact["python"])
+        position < len(catalog["python"])
         for position in implementation_positions
     )
     assert supplied.occurrences[2].known_loss == ()
-    assert supplied.occurrences[3].exact_bytes == b""
+    assert supplied.occurrences[3].known_loss == ()
+    assert len(supplied.occurrences[3].exact_bytes) < 5000
+    assert supplied.occurrences[4].exact_bytes == b""
+
+
+def test_repeated_pytest_reuses_one_exact_catalog_and_keeps_observation_sparse():
+    command = (
+        b"!pytest tests/test_implementation_function_measurement.py::"
+        b"test_compiled_code_supplies_identities_without_ast_taxonomy\n"
+    )
+
+    first = operator_host_provider.invoke_operator_host(command)
+    second = operator_host_provider.invoke_operator_host(command)
+
+    assert first.occurrences[2].exact_bytes == second.occurrences[2].exact_bytes
+    assert first.occurrences[2] is not second.occurrences[2]
+    assert len(first.occurrences[3].exact_bytes) < 5000
+    assert len(second.occurrences[3].exact_bytes) < 5000
 
 
 def test_missing_pytest_measurement_artifact_is_refused(monkeypatch):
@@ -235,11 +257,12 @@ def test_bounded_pytest_preserves_partial_results_and_known_artifact_loss(
         b"partial error",
         b"",
         b"",
+        b"",
     )
     assert all(
-        supplied.occurrences[position].known_loss for position in (0, 1, 2)
+        supplied.occurrences[position].known_loss for position in (0, 1, 2, 3)
     )
-    assert supplied.occurrences[3].known_loss == ()
+    assert supplied.occurrences[4].known_loss == ()
 
 
 def test_pytest_measurement_artifact_is_bounded(tmp_path):

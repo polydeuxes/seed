@@ -19,6 +19,9 @@ import pytest
 
 ROOT = Path(__file__).resolve().parents[1]
 OUTPUT_ENVIRONMENT_COORDINATE = "SEED_IMPLEMENTATION_FUNCTION_MEASUREMENT"
+CATALOG_OUTPUT_ENVIRONMENT_COORDINATE = (
+    "SEED_IMPLEMENTATION_FUNCTION_CATALOG"
+)
 SOURCE_DIRECTORIES = ("seed_runtime", "scripts")
 SQL_INVOCATION_NAMES = frozenset(("execute", "executemany", "executescript"))
 
@@ -397,7 +400,9 @@ def measurement() -> dict[str, object]:
     return found
 
 
-def _output_measurement(found: dict[str, object]) -> dict[str, object]:
+def _output_materials(
+    found: dict[str, object],
+) -> tuple[dict[str, object], dict[str, object]]:
     python_identities = tuple(found["python"])
     python_positions = {
         identity: position for position, identity in enumerate(python_identities)
@@ -411,10 +416,21 @@ def _output_measurement(found: dict[str, object]) -> dict[str, object]:
         identity: position
         for position, identity in enumerate(sql_invocation_identities)
     }
-    return {
+    catalog = {
+        "python": python_identities,
+        "sql_invocations": sql_invocation_identities,
+        "reference_pair": tuple(
+            python_positions[identity] for identity in found["reference_pair"]
+        ),
+    }
+    observation = {
         "python": tuple(
-            {"identity": identity, **found["python"][identity]}
+            {
+                "implementation_function_position": python_positions[identity],
+                **found["python"][identity],
+            }
             for identity in python_identities
+            if any(found["python"][identity].values())
         ),
         "sql": tuple(
             {
@@ -427,8 +443,14 @@ def _output_measurement(found: dict[str, object]) -> dict[str, object]:
             sql_positions[material] for material in found["sql_occurrences"]
         ),
         "sql_invocations": tuple(
-            {"identity": identity, **found["sql_invocations"][identity]}
+            {
+                "implementation_function_position": sql_invocation_positions[
+                    identity
+                ],
+                **found["sql_invocations"][identity],
+            }
             for identity in sql_invocation_identities
+            if any(found["sql_invocations"][identity].values())
         ),
         "sql_invocation_occurrences": tuple(
             (
@@ -439,9 +461,6 @@ def _output_measurement(found: dict[str, object]) -> dict[str, object]:
             for identity in found["sql_invocation_occurrences"]
         ),
         "sql_statement_invocations": found["sql_statement_invocations"],
-        "reference_pair": tuple(
-            python_positions[identity] for identity in found["reference_pair"]
-        ),
         "pytest": tuple(
             {
                 **{
@@ -462,11 +481,12 @@ def _output_measurement(found: dict[str, object]) -> dict[str, object]:
             for occurrence in found["pytest"]
         ),
     }
+    return catalog, observation
 
 
 def _json_material(found: dict[str, object]) -> bytes:
     represented = json.dumps(
-        _output_measurement(found),
+        found,
         ensure_ascii=True,
         sort_keys=True,
         separators=(",", ":"),
@@ -582,5 +602,8 @@ def pytest_sessionfinish(session: object, exitstatus: int) -> None:
     del session, exitstatus
     found = finish()
     output = os.environ.get(OUTPUT_ENVIRONMENT_COORDINATE)
-    if output:
-        Path(output).write_bytes(_json_material(found))
+    catalog_output = os.environ.get(CATALOG_OUTPUT_ENVIRONMENT_COORDINATE)
+    if output and catalog_output:
+        catalog, observation = _output_materials(found)
+        Path(catalog_output).write_bytes(_json_material(catalog))
+        Path(output).write_bytes(_json_material(observation))

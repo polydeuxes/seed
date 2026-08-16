@@ -274,21 +274,24 @@ def test_live_process_ingests_pytest_measurement_without_egressing_it(tmp_path):
         ]
     finally:
         ledger.close()
-    assert len(ingests) == 5
-    assert [event.material["source_boundary"] for event in ingests[-4:]] == [
+    assert len(ingests) == 6
+    assert [event.material["source_boundary"] for event in ingests[-5:]] == [
         "invocation output",
         "invocation error",
+        "implementation function catalog",
         "implementation function measurement",
         "invocation end",
     ]
     assert [
         event.material["provenance_occurrence_references"]
-        for event in ingests[-4:]
-    ] == [[ingests[0].identity]] * 4
+        for event in ingests[-5:]
+    ] == [[ingests[0].identity]] * 5
     assert result.stdout == (
-        ingests[-4].exact_material + ingests[-3].exact_material
+        ingests[-5].exact_material + ingests[-4].exact_material
     )
     assert result.stderr == b""
+    assert ingests[-3].exact_material
+    assert ingests[-3].exact_material not in result.stdout
     assert ingests[-2].exact_material
     assert ingests[-2].exact_material not in result.stdout
     assert ingests[-1].exact_material == b""

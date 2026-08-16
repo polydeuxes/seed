@@ -36,6 +36,9 @@ _PYTEST_INVOCATION = (
 _PYTEST_MEASUREMENT_ENVIRONMENT_COORDINATE = (
     "SEED_IMPLEMENTATION_FUNCTION_MEASUREMENT"
 )
+_PYTEST_CATALOG_ENVIRONMENT_COORDINATE = (
+    "SEED_IMPLEMENTATION_FUNCTION_CATALOG"
+)
 _ROOT = Path(__file__).resolve().parents[1]
 _LIMIT_LOSS = (
     "material beyond the supplied boundary is not available",
@@ -242,6 +245,7 @@ def invoke_operator_host(exact_command: bytes) -> SuppliedInvocationMaterial:
         )
     with tempfile.TemporaryDirectory(prefix="seed-pytest-measurement-") as directory:
         artifact_path = Path(directory) / "implementation-measurement"
+        catalog_path = Path(directory) / "implementation-catalog"
         output, error, timed_out, output_limited, error_limited = (
             _bounded_invocation(
                 argv,
@@ -251,12 +255,19 @@ def invoke_operator_host(exact_command: bytes) -> SuppliedInvocationMaterial:
                     _PYTEST_MEASUREMENT_ENVIRONMENT_COORDINATE: str(
                         artifact_path
                     ),
+                    _PYTEST_CATALOG_ENVIRONMENT_COORDINATE: str(catalog_path),
                 },
                 working_directory=_ROOT,
             )
         )
         artifact, artifact_limited = _bounded_artifact(
             artifact_path,
+            missing_is_known_loss=(
+                timed_out or output_limited or error_limited
+            ),
+        )
+        catalog, catalog_limited = _bounded_artifact(
+            catalog_path,
             missing_is_known_loss=(
                 timed_out or output_limited or error_limited
             ),
@@ -268,6 +279,18 @@ def invoke_operator_host(exact_command: bytes) -> SuppliedInvocationMaterial:
         output_limited=output_limited,
         error_limited=error_limited,
         additional_occurrences=(
+            SuppliedMaterialOccurrence(
+                exact_bytes=catalog,
+                source_boundary="implementation function catalog",
+                known_loss=(
+                    _LIMIT_LOSS
+                    if catalog_limited
+                    or timed_out
+                    or output_limited
+                    or error_limited
+                    else ()
+                ),
+            ),
             SuppliedMaterialOccurrence(
                 exact_bytes=artifact,
                 source_boundary="implementation function measurement",
