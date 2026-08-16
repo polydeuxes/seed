@@ -286,6 +286,30 @@ def test_admission_compare_refuses_a_changed_result():
         )
 
 
+def test_admission_compare_refuses_coordinates_from_another_result():
+    fine = material_admission.admission_occurrence(
+        (("a",), ("b",)),
+        boundary_identity="fine-admission",
+    )
+    broad = material_admission.admission_occurrence(
+        (("a", "b"),),
+        boundary_identity="broad-admission",
+    )
+    wrong = material_admission._AdmissionMaterialPositions(
+        fine.result_reference.admitted_material
+    )
+
+    with pytest.raises(ValueError, match="coordinates differ"):
+        material_admission.AdmissionCompareOccurrence(
+            boundary_identity="compare",
+            occurrence_position=0,
+            first_reference=fine.result_reference,
+            second_reference=broad.result_reference,
+            result=True,
+            _second_material_positions=wrong,
+        )
+
+
 def test_every_ordered_admission_result_pair_has_one_compare_occurrence():
     admissions = tuple(
         material_admission.admission_occurrence(
@@ -320,6 +344,41 @@ def test_every_ordered_admission_result_pair_has_one_compare_occurrence():
     assert len({comparison.act_occurrence_identity for comparison in comparisons}) == len(
         comparisons
     )
+
+
+def test_admission_result_pairs_read_each_second_admission_once(monkeypatch):
+    admissions = tuple(
+        material_admission.admission_occurrence(
+            admission,
+            boundary_identity="read-once-admission",
+            occurrence_position=position,
+        )
+        for position, admission in enumerate(
+            (
+                (("a", "b", "c"),),
+                (("a",), ("b", "c")),
+                (("a",), ("b",), ("c",)),
+            )
+        )
+    )
+    original = material_admission._AdmissionMaterialPositions
+    read_material = []
+
+    def measured(admitted_material):
+        read_material.append(admitted_material)
+        return original(admitted_material)
+
+    monkeypatch.setattr(material_admission, "_AdmissionMaterialPositions", measured)
+
+    comparisons = material_admission.compare_admission_result_pairs(
+        tuple(admission.result_reference for admission in admissions),
+        boundary_identity="read-once-pairs",
+    )
+
+    assert len(comparisons) == 6
+    assert read_material == [
+        admission.result_reference.admitted_material for admission in admissions
+    ]
 
 
 def test_admission_result_pair_compare_refuses_one_result_twice():

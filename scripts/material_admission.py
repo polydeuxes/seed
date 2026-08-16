@@ -3,8 +3,9 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass
-from typing import Callable, Hashable, Iterable, Protocol, Sequence, runtime_checkable
+from dataclasses import InitVar, dataclass, field
+from types import MappingProxyType
+from typing import Callable, Hashable, Iterable, Mapping, Protocol, Sequence, runtime_checkable
 
 Material = Hashable
 Admission = list[tuple[Material, ...]]
@@ -141,14 +142,39 @@ class AdmissionCompareResultReference:
 
 
 @dataclass(frozen=True, slots=True)
+class _AdmissionMaterialPositions:
+    admitted_material: tuple[tuple[Material, ...], ...]
+    positions_by_material: Mapping[Material, frozenset[int]] = field(init=False)
+
+    def __post_init__(self) -> None:
+        exact_material = tuple(tuple(material) for material in self.admitted_material)
+        positions: dict[Material, set[int]] = {}
+        for position, material in enumerate(exact_material):
+            for item in material:
+                positions.setdefault(item, set()).add(position)
+        object.__setattr__(self, "admitted_material", exact_material)
+        object.__setattr__(
+            self,
+            "positions_by_material",
+            MappingProxyType(
+                {item: frozenset(found) for item, found in positions.items()}
+            ),
+        )
+
+
+@dataclass(frozen=True, slots=True)
 class AdmissionCompareOccurrence:
     boundary_identity: str
     occurrence_position: int
     first_reference: AdmissionResultReference
     second_reference: AdmissionResultReference
     result: bool
+    _second_material_positions: InitVar[_AdmissionMaterialPositions | None] = None
 
-    def __post_init__(self) -> None:
+    def __post_init__(
+        self,
+        _second_material_positions: _AdmissionMaterialPositions | None,
+    ) -> None:
         if type(self.boundary_identity) is not str or not self.boundary_identity:
             raise TypeError("one exact boundary identity is required")
         if type(self.occurrence_position) is not int or self.occurrence_position < 0:
@@ -164,9 +190,19 @@ class AdmissionCompareOccurrence:
             != self.second_reference.source_material
         ):
             raise ValueError("Compare requires the same exact material occurrences")
-        if type(self.result) is not bool or self.result != preserves(
+        second_material_positions = (
+            _AdmissionMaterialPositions(self.second_reference.admitted_material)
+            if _second_material_positions is None
+            else _second_material_positions
+        )
+        if (
+            second_material_positions.admitted_material
+            != self.second_reference.admitted_material
+        ):
+            raise ValueError("Compare coordinates differ from the second Admission result")
+        if type(self.result) is not bool or self.result != _preserves_positions(
             self.first_reference.admitted_material,
-            self.second_reference.admitted_material,
+            second_material_positions,
         ):
             raise ValueError("Compare result differs from its exact Admission results")
 
@@ -239,16 +275,25 @@ def not_distinguished(admissions: Sequence[Admission]) -> list[tuple[Material, .
 def preserves(
     first: Iterable[Iterable[Material]], second: Iterable[Iterable[Material]]
 ) -> bool:
-    second_coordinates = tuple(tuple(material) for material in second)
-    coordinates_by_material: dict[Material, set[int]] = {}
-    for coordinate, material in enumerate(second_coordinates):
-        for item in material:
-            coordinates_by_material.setdefault(item, set()).add(coordinate)
+    return _preserves_positions(
+        first,
+        _AdmissionMaterialPositions(
+            tuple(tuple(material) for material in second)
+        ),
+    )
+
+
+def _preserves_positions(
+    first: Iterable[Iterable[Material]],
+    second_material_positions: _AdmissionMaterialPositions,
+) -> bool:
+    second_coordinates = second_material_positions.admitted_material
+    positions_by_material = second_material_positions.positions_by_material
 
     for material in first:
         possible: set[int] | None = None
         for item in material:
-            item_coordinates = coordinates_by_material.get(item)
+            item_coordinates = positions_by_material.get(item)
             if not item_coordinates:
                 return False
             if possible is None:
@@ -289,15 +334,19 @@ def compare_admission_results(
     boundary_identity: str,
     occurrence_position: int = 0,
 ) -> AdmissionCompareOccurrence:
+    second_material_positions = _AdmissionMaterialPositions(
+        second_reference.admitted_material
+    )
     return AdmissionCompareOccurrence(
         boundary_identity=boundary_identity,
         occurrence_position=occurrence_position,
         first_reference=first_reference,
         second_reference=second_reference,
-        result=preserves(
+        result=_preserves_positions(
             first_reference.admitted_material,
-            second_reference.admitted_material,
+            second_material_positions,
         ),
+        _second_material_positions=second_material_positions,
     )
 
 
@@ -315,12 +364,23 @@ def compare_admission_result_pairs(
     result_identities = tuple(reference.result_identity for reference in references)
     if len(set(result_identities)) != len(result_identities):
         raise ValueError("one Admission result entered Compare twice")
+    material_positions = {
+        reference.result_identity: _AdmissionMaterialPositions(
+            reference.admitted_material
+        )
+        for reference in references
+    }
     return tuple(
-        compare_admission_results(
-            first,
-            second,
+        AdmissionCompareOccurrence(
             boundary_identity=boundary_identity,
             occurrence_position=position,
+            first_reference=first,
+            second_reference=second,
+            result=_preserves_positions(
+                first.admitted_material,
+                material_positions[second.result_identity],
+            ),
+            _second_material_positions=material_positions[second.result_identity],
         )
         for position, (first, second) in enumerate(
             (first, second)
