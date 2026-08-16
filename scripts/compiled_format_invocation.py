@@ -1982,8 +1982,6 @@ def first_recurring_added_compare_across(
     if len({later.added_position_act_occurrence_identity for later in later_occurrences}) != 1:
         return tuple(earlier for earlier, _, _ in results), None, None
     coordinates = tuple(coordinate for _, coordinate, _ in results)
-    if len(set(coordinates)) != 1:
-        return tuple(earlier for earlier, _, _ in results), None, None
     return (
         tuple(earlier for earlier, _, _ in results),
         coordinates,
@@ -2245,8 +2243,6 @@ def first_recurring_removed_compare_across(
     if len({later.removed_position_act_occurrence_identity for later in later_occurrences}) != 1:
         return tuple(earlier for earlier, _, _ in results), None, None
     coordinates = tuple(coordinate for _, coordinate, _ in results)
-    if len(set(coordinates)) != 1:
-        return tuple(earlier for earlier, _, _ in results), None, None
     return (
         tuple(earlier for earlier, _, _ in results),
         coordinates,
