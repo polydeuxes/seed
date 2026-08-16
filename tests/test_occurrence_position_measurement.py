@@ -170,6 +170,69 @@ def test_recorded_position_measurement_has_exact_act_and_yield_evidence():
     ) == finding
 
 
+def test_recording_and_reading_do_not_reconstruct_complete_result_material(
+    monkeypatch,
+):
+    ledger, _occurrences, boundary = occurrence_road()
+    finding = measure_occurrence_position(
+        ledger,
+        source_locality_identity="a",
+        through=boundary,
+    )
+    participation = position_measurement._occurrence_position_participation
+    to_json_dict = OccurrencePositionFinding.to_json_dict
+    participation_calls = []
+    occurrence_calls = []
+
+    def counted_participation(*args, **kwargs):
+        participation_calls.append(None)
+        return participation(*args, **kwargs)
+
+    def counted_to_json_dict(self):
+        occurrence_calls.append(None)
+        return to_json_dict(self)
+
+    monkeypatch.setattr(
+        position_measurement,
+        "_occurrence_position_participation",
+        counted_participation,
+    )
+    monkeypatch.setattr(
+        OccurrencePositionFinding,
+        "to_json_dict",
+        counted_to_json_dict,
+    )
+
+    act_evidence = record_occurrence_position_measurement_responsible_act_evidence(
+        ledger,
+        recording_locality_identity="measurement",
+        finding=finding,
+    )
+    recorded = record_occurrence_position_measurement_result(
+        ledger,
+        finding=finding,
+        responsible_act_evidence_event_identity=act_evidence.identity,
+    )
+    yielded = ledger.get(recorded.material["yield_evidence_identity"])
+    assert get_recorded_occurrence_position_measurement(
+        ledger,
+        recorded.identity,
+    ) == finding
+
+    assert len(participation_calls) == 3
+    assert len(occurrence_calls) == 1
+    assert act_evidence.material["participation"] == recorded.material["participation"]
+    assert act_evidence.material["participation"] is not recorded.material[
+        "participation"
+    ]
+    assert yielded.material["result"]["participation"] == recorded.material[
+        "participation"
+    ]
+    assert yielded.material["result"]["participation"] is not recorded.material[
+        "participation"
+    ]
+
+
 def test_act_evidence_can_be_observed_before_yield_and_result_are_recorded(
     monkeypatch,
 ):

@@ -120,6 +120,8 @@ def _occurrence_position_result_material(
     result_identity: str,
     act_identity: str,
     act_occurrence_identity: str,
+    participation: list[dict[str, str]],
+    occurrences: list[dict[str, Any]],
 ) -> dict[str, Any]:
     return {
         "result_identity": result_identity,
@@ -130,11 +132,12 @@ def _occurrence_position_result_material(
         "responsible_boundary": "this Seed",
         "responsibility_assignment_evidence": _responsibility_assignment(finding),
         "authority": OCCURRENCE_POSITION_AUTHORITY,
-        "participation": _occurrence_position_participation(
-            finding,
-            act_occurrence_identity=act_occurrence_identity,
-        ),
-        **finding.to_json_dict(),
+        "participation": participation,
+        "source_locality_identity": finding.source_locality_identity,
+        "completeness_boundary": {
+            "identity": finding.completeness_boundary.identity,
+        },
+        "occurrences": occurrences,
         "limits": [
             "occurrence position does not establish causation or another relation",
         ],
@@ -191,6 +194,7 @@ def _occurrence_position_act_evidence_material(
     *,
     act_identity: str,
     act_occurrence_identity: str,
+    participation: list[dict[str, str]],
 ) -> dict[str, Any]:
     return {
         "downstream_act_identity": act_identity,
@@ -205,10 +209,7 @@ def _occurrence_position_act_evidence_material(
             "occurrence only"
         ),
         "source_locality_identity": finding.source_locality_identity,
-        "participation": _occurrence_position_participation(
-            finding,
-            act_occurrence_identity=act_occurrence_identity,
-        ),
+        "participation": participation,
     }
 
 
@@ -228,12 +229,17 @@ def record_occurrence_position_measurement_responsible_act_evidence(
     act_occurrence_identity = new_identity(
         "occurrence_position_measurement_occurrence"
     )
+    participation = _occurrence_position_participation(
+        finding,
+        act_occurrence_identity=act_occurrence_identity,
+    )
     return ledger.append(
         OCCURRENCE_POSITION_ACT_EVIDENCE_KIND,
         _occurrence_position_act_evidence_material(
             finding,
             act_identity=act_identity,
             act_occurrence_identity=act_occurrence_identity,
+            participation=participation,
         ),
         locality_identity=recording_locality_identity,
     )
@@ -277,12 +283,19 @@ def record_occurrence_position_measurement_result(
         or type(act_occurrence_identity) is not str
         or not act_occurrence_identity
         or act_identity == act_occurrence_identity
-        or act_evidence.material
-        != _occurrence_position_act_evidence_material(
-            finding,
-            act_identity=act_identity,
-            act_occurrence_identity=act_occurrence_identity,
+    ):
+        raise ValueError(
+            "occurrence position result requires its exact intact Act Evidence"
         )
+    participation = _occurrence_position_participation(
+        finding,
+        act_occurrence_identity=act_occurrence_identity,
+    )
+    if act_evidence.material != _occurrence_position_act_evidence_material(
+        finding,
+        act_identity=act_identity,
+        act_occurrence_identity=act_occurrence_identity,
+        participation=participation,
     ):
         raise ValueError(
             "occurrence position result requires its exact intact Act Evidence"
@@ -324,6 +337,8 @@ def record_occurrence_position_measurement_result(
         result_identity=result_identity,
         act_identity=act_identity,
         act_occurrence_identity=act_occurrence_identity,
+        participation=participation,
+        occurrences=finding.to_json_dict()["occurrences"],
     )
     yield_evidence = _record_yield_evidence(
         ledger,
@@ -420,16 +435,26 @@ def get_recorded_occurrence_position_measurement(
         if isinstance(act_evidence_identity, str)
         else None
     )
+    result_identity = material.get("result_identity")
+    act_identity = material.get("downstream_act_identity")
+    act_occurrence_identity = material.get("act_occurrence_identity")
+    participation = _occurrence_position_participation(
+        finding,
+        act_occurrence_identity=act_occurrence_identity,
+    )
     result_material = _occurrence_position_result_material(
         finding,
-        result_identity=material.get("result_identity"),
-        act_identity=material.get("downstream_act_identity"),
-        act_occurrence_identity=material.get("act_occurrence_identity"),
+        result_identity=result_identity,
+        act_identity=act_identity,
+        act_occurrence_identity=act_occurrence_identity,
+        participation=participation,
+        occurrences=occurrences,
     )
     expected_act_evidence = _occurrence_position_act_evidence_material(
         finding,
-        act_identity=material.get("downstream_act_identity"),
-        act_occurrence_identity=material.get("act_occurrence_identity"),
+        act_identity=act_identity,
+        act_occurrence_identity=act_occurrence_identity,
+        participation=participation,
     )
     if (
         act_evidence is None
