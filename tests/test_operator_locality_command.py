@@ -27,7 +27,13 @@ def test_locality_list_is_a_separate_command_result():
     assert request_operator_locality(_command(b"list")).locality_identity is None
 
 
-@pytest.mark.parametrize("arguments", (b"", b"a b", b"\xff"))
+def test_locality_without_an_argument_creates_one():
+    request = request_operator_locality(_command(b""))
+    assert request.create_new
+    assert request.locality_identity.startswith("locality_")
+
+
+@pytest.mark.parametrize("arguments", (b"a b", b"\xff"))
 def test_locality_command_refuses_non_exact_identity(arguments):
     with pytest.raises(ValueError):
         request_operator_locality(_command(arguments))
