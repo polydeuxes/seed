@@ -7,6 +7,8 @@ import sys
 
 import pytest
 
+pytestmark = pytest.mark.subject("supplied_material_invocation_witness")
+
 from seed_runtime.events import EventLedger
 from seed_runtime.material_ingest import ingest_material
 

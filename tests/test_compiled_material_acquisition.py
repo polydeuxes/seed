@@ -6,6 +6,9 @@ import sys
 import pytest
 
 
+pytestmark = pytest.mark.subject("compiled_material_invocation_witness")
+
+
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "scripts"))
 

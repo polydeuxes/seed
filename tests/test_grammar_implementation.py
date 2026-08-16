@@ -7,6 +7,8 @@ from tests.binary_input import binary_input
 from io import BytesIO, StringIO
 from pathlib import Path
 
+import pytest
+
 from seed_runtime.byte_measurement import (
     BYTE_MEASUREMENT_RECORDED_KIND,
     BYTE_MEASUREMENT_RESPONSIBLE_ACT_EVIDENCE_KIND,
@@ -156,6 +158,7 @@ def _witness_grammar() -> dict:
     return json.loads(GRAMMAR.read_text(encoding="utf-8"))["witness"]
 
 
+@pytest.mark.subject("composite_material_order")
 def test_every_grammar_representation_composite_preserves_material_order():
     grammar = json.loads(GRAMMAR.read_text(encoding="utf-8"))
     assert grammar["composite"] == {
@@ -1832,6 +1835,7 @@ def _live_relation_fidelity_cases() -> dict[
     return registered
 
 
+@pytest.mark.subject("relation_occurrence_boundary")
 def test_primary_relation_measurements_preserve_their_live_boundaries():
     registered = _live_relation_fidelity_cases()
 
@@ -2554,6 +2558,7 @@ def _participation_requirements(bundle: dict, *, role: str) -> dict[str, bool]:
     }
 
 
+@pytest.mark.subject("content_locality_occurrence_distinction")
 def test_witness_discriminates_content_locality_and_occurrence():
     grammar = _witness_grammar()
     ledger = EventLedger()
@@ -2597,12 +2602,16 @@ def _assert_ordered_fidelity_representation(fidelity: dict) -> None:
             "boundary": "deterministic_tests",
             "result": "this_Fidelity",
         },
+        "test_subject_relation": {
+            "first_subject": "test_subject",
+            "relation": "witness_for",
+            "second_subject": "this_Fidelity",
+            "first_subject_distinct_from": "this_Witness",
+        },
         "test_subjects": [
             {
                 "subject": "this_book_material_acquisition_witness",
                 "material_reference": "this_Book",
-                "witness_for": "this_Fidelity",
-                "distinct_from": "this_Witness",
             }
         ],
         "preserves": [
@@ -2645,12 +2654,14 @@ def _assert_ordered_fidelity_representation(fidelity: dict) -> None:
     assert fidelity["comparison_order"] != fidelity["representation_order"]
 
 
+@pytest.mark.subject("bounded_fidelity_comparison")
 def test_fidelity_is_bounded_witness_grammar_comparison_for_this_seed():
     grammar = json.loads(GRAMMAR.read_text(encoding="utf-8"))
 
     _assert_ordered_fidelity_representation(grammar["clauses"]["01.Source.C"])
 
 
+@pytest.mark.subject("bounded_fidelity_comparison")
 def test_fidelity_refuses_collapsed_subjects_tests_as_subject_and_inverted_order():
     fidelity = json.loads(GRAMMAR.read_text(encoding="utf-8"))["clauses"][
         "01.Source.C"
@@ -2690,6 +2701,7 @@ def test_fidelity_refuses_collapsed_subjects_tests_as_subject_and_inverted_order
         raise AssertionError("inverted Fidelity Representation order escaped")
 
 
+@pytest.mark.subject("relation_fidelity_cases")
 def test_every_relation_has_live_fidelity_cases():
     grammar = json.loads(GRAMMAR.read_text(encoding="utf-8"))
     cases = _relation_fidelity_cases()
@@ -2707,6 +2719,7 @@ def test_every_relation_has_live_fidelity_cases():
             assert cases[relation][adversary] == MISSING
 
 
+@pytest.mark.subject("emission_relation_instantiation")
 def test_emission_instantiates_each_relation_it_carries_at_its_boundary():
     grammar = json.loads(GRAMMAR.read_text(encoding="utf-8"))
     cases = _emission_relation_fidelity_cases()
@@ -2717,6 +2730,7 @@ def test_emission_instantiates_each_relation_it_carries_at_its_boundary():
     assert cases == {relation: expected for relation in cases}
 
 
+@pytest.mark.subject("live_relation_fidelity_cases")
 def test_every_registered_live_relation_instantiation_obeys_the_full_fidelity_matrix():
     grammar = json.loads(GRAMMAR.read_text(encoding="utf-8"))
     expected = grammar["witness"]["fidelity_cases"]
@@ -2734,6 +2748,7 @@ def test_every_registered_live_relation_instantiation_obeys_the_full_fidelity_ma
     } == set(LIVE_BOUNDARIES_OF_YIELD_RELATION)
 
 
+@pytest.mark.subject("evidence_of_yield_relation_boundary")
 def test_every_evidence_of_yield_relation_site_declares_its_live_boundary():
     declared: list[str] = []
     for path in sorted(RUNTIME.glob("*.py")):
@@ -2770,6 +2785,7 @@ def test_every_evidence_of_yield_relation_site_declares_its_live_boundary():
     assert set(declared) == set(LIVE_BOUNDARIES_OF_YIELD_RELATION)
 
 
+@pytest.mark.subject("yield_relation_required_coordinates")
 def test_byte_pair_yield_adversaries_change_one_requirement_each():
     expected = {
         "exact": (True, True, True),
@@ -2789,6 +2805,7 @@ def test_byte_pair_yield_adversaries_change_one_requirement_each():
     } == {boundary: expected for boundary in boundaries}
 
 
+@pytest.mark.subject("yield_relation_required_coordinates")
 def test_remaining_yield_adversaries_change_one_requirement_each():
     expected = {
         "exact": (True, True, True),
@@ -2808,6 +2825,7 @@ def test_remaining_yield_adversaries_change_one_requirement_each():
     } == {boundary: expected for boundary in boundaries}
 
 
+@pytest.mark.subject("emission_attempt_locality_relation")
 def test_emission_attempt_locality_adversaries_change_one_requirement_each():
     exact, alternate = _repeated_emission_attempt_witness()
     wrong_occurrence = dict(exact)
@@ -2860,6 +2878,7 @@ def test_emission_attempt_locality_adversaries_change_one_requirement_each():
     }
 
 
+@pytest.mark.subject("successful_emission_relation")
 def test_successful_emission_adversaries_change_one_requirement_each():
     bundles = _successful_emission_requirement_bundles()
     requirement_witnesses = {
@@ -2905,6 +2924,7 @@ def test_successful_emission_adversaries_change_one_requirement_each():
     } == {relation: expected for relation in bundles}
 
 
+@pytest.mark.subject("representation_result_relation")
 def test_representation_result_adversaries_change_one_requirement_each():
     exact, alternate = _repeated_representation_witness()
 
@@ -2997,6 +3017,7 @@ def test_representation_result_adversaries_change_one_requirement_each():
     } == {relation: expected for relation in bundles}
 
 
+@pytest.mark.subject("byte_measurement_relation")
 def test_byte_measurement_adversaries_change_one_requirement_each():
     locality = _byte_measurement_witness()
     alternate_locality = _byte_measurement_witness()
@@ -3117,6 +3138,7 @@ def test_byte_measurement_adversaries_change_one_requirement_each():
     } == {relation: expected for relation in actual}
 
 
+@pytest.mark.subject("emission_locality_distinction")
 def test_attempt_and_success_have_distinct_locality_relations_for_exact_material():
     emission = _emission_witness()
     alternate = _emission_witness()
@@ -3138,6 +3160,7 @@ def test_attempt_and_success_have_distinct_locality_relations_for_exact_material
     )
 
 
+@pytest.mark.subject("successful_emission_locality_relation")
 def test_successful_emission_locality_binds_the_exact_representation():
     exact = _emission_witness()
     different = dict(exact)
@@ -3160,6 +3183,7 @@ def test_successful_emission_locality_binds_the_exact_representation():
     }
 
 
+@pytest.mark.subject("representation_yield_participation_distinction")
 def test_representation_act_has_an_exact_yield_relation_without_asserting_participation():
     representation = _representation_witness()
     alternate = _representation_witness()
@@ -3181,6 +3205,7 @@ def test_representation_act_has_an_exact_yield_relation_without_asserting_partic
     assert "input_role" not in representation["event"].material
 
 
+@pytest.mark.subject("relation_required_coordinates")
 def test_changed_relation_anatomy_is_detected():
     grammar = json.loads(GRAMMAR.read_text(encoding="utf-8"))
     grammar["relations"]["yield"]["from"] = "result"
@@ -3195,6 +3220,7 @@ def test_changed_relation_anatomy_is_detected():
         raise AssertionError("reversed Yield anatomy escaped witness Fidelity")
 
 
+@pytest.mark.subject("locality_endpoint_relation_distinction")
 def test_content_and_locality_endpoints_do_not_establish_locality_relation():
     ledger = EventLedger()
     content = {"subject": "x", "standing": "Unknown"}
@@ -3222,6 +3248,7 @@ def test_content_and_locality_endpoints_do_not_establish_locality_relation():
     )
 
 
+@pytest.mark.subject("assertion_standing_coordinates")
 def test_assertion_clause_is_checked_against_a_live_byte_assertion():
     clause = _clause("01.Standing.D.1")
     witness = _assertion_witness(_byte_measurement_witness())
@@ -3240,6 +3267,7 @@ def test_assertion_clause_is_checked_against_a_live_byte_assertion():
     }
 
 
+@pytest.mark.subject("asserted_content_scope_locality_distinction")
 def test_asserted_content_identity_includes_scope_but_not_locality():
     ledger = EventLedger()
     for locality_identity in ("source-one", "source-two"):
@@ -3295,6 +3323,7 @@ def test_asserted_content_identity_includes_scope_but_not_locality():
     ]["identity"]
 
 
+@pytest.mark.subject("applicability_determination")
 def test_applicability_clause_is_checked_against_a_live_pair_determination():
     clause = _clause("01.Standing.E.1")
     witness = _applicability_witness(_recorded_applicability())
@@ -3321,6 +3350,7 @@ def test_applicability_clause_is_checked_against_a_live_pair_determination():
     }
 
 
+@pytest.mark.subject("input_role_participation_distinction")
 def test_input_is_an_open_act_local_role_before_participation():
     grammar = json.loads(GRAMMAR.read_text(encoding="utf-8"))
     bundle = _recorded_applicability()
@@ -3398,6 +3428,7 @@ def _assert_role_distinctions(distinctions: dict) -> None:
     assert distinctions["ordered_coordinate_pair_establishes_relation"] is False
 
 
+@pytest.mark.subject("candidate_participation_distinction")
 def test_subject_candidate_and_participation_relation_are_distinguished_in_both_directions():
     grammar = json.loads(GRAMMAR.read_text(encoding="utf-8"))
     distinctions = grammar["role_distinctions"]
@@ -3408,6 +3439,7 @@ def test_subject_candidate_and_participation_relation_are_distinguished_in_both_
     ]["participation"]
 
 
+@pytest.mark.subject("candidate_role_distinction")
 def test_role_distinctions_refuse_direction_collapse_and_identity_promotion():
     distinctions = json.loads(GRAMMAR.read_text(encoding="utf-8"))[
         "role_distinctions"
@@ -3442,6 +3474,7 @@ def test_role_distinctions_refuse_direction_collapse_and_identity_promotion():
     assert_refused(compressed_coordinates)
 
 
+@pytest.mark.subject("candidate_source_coordinates")
 def test_candidate_clause_preserves_coordinates_without_promoting_the_subject():
     clause = _clause("01.Source.E")
     grammar = json.loads(GRAMMAR.read_text(encoding="utf-8"))
@@ -3469,9 +3502,9 @@ def test_candidate_clause_preserves_coordinates_without_promoting_the_subject():
     ]
 
 
+@pytest.mark.subject("cross_boundary_participation_scope_limits")
 def test_cross_boundary_participation_preserves_scope_and_limits():
     clause = _clause("01.Source.B")
-    grammar = json.loads(GRAMMAR.read_text(encoding="utf-8"))
 
     assert clause == {
         "subject": "supplied_material_as_input_to_exact_Act",
@@ -3498,11 +3531,18 @@ def test_cross_boundary_participation_preserves_scope_and_limits():
         "does_not_establish": ["Authority_relocation"],
     }
     assert clause["preserves"] == clause["coordinates"][-2:]
+
+
+@pytest.mark.subject("participation_relation_coordinates")
+def test_participation_relation_coordinates_match_the_role_distinction():
+    grammar = json.loads(GRAMMAR.read_text(encoding="utf-8"))
+
     assert grammar["relations"]["participation"] == grammar[
         "role_distinctions"
     ]["Participation_relation_coordinates"]
 
 
+@pytest.mark.subject("participation_source_boundary_distinction")
 def test_live_participation_is_not_source_b_by_relation_identity():
     clause = _clause("01.Source.B")
     emission = _emission_witness()
@@ -3512,6 +3552,7 @@ def test_live_participation_is_not_source_b_by_relation_identity():
     assert "01.Source.B" not in REPRESENTATION_EVENT_KIND_RESPONSIBILITIES.values()
 
 
+@pytest.mark.subject("candidate_coordinate_order")
 def test_candidate_coordinate_order_is_the_exact_book_order():
     clause = _clause("01.Source.E")
     source_book = (
@@ -3538,6 +3579,7 @@ def test_candidate_coordinate_order_is_the_exact_book_order():
     )
 
 
+@pytest.mark.subject("participation_relation_coordinates")
 def test_participation_requires_exact_subject_role_and_act_occurrence():
     grammar = json.loads(GRAMMAR.read_text(encoding="utf-8"))
     bundle = _recorded_applicability()
@@ -3558,6 +3600,7 @@ def test_participation_requires_exact_subject_role_and_act_occurrence():
     assert _participation_witness(bundle, role=BYTE_PAIR_INPUT_ROLE) == MISSING
 
 
+@pytest.mark.subject("input_act_relation_occurrence")
 def test_unjoined_endpoints_do_not_witness_an_input_to_act_relation():
     grammar = _witness_grammar()
     bundle = _recorded_applicability()
@@ -3594,6 +3637,7 @@ def test_unjoined_endpoints_do_not_witness_an_input_to_act_relation():
     assert witness["occurrence_identity"] == MISSING
 
 
+@pytest.mark.subject("locality_relation_coordinates")
 def test_locality_relation_clause_is_checked_against_the_live_pair_witness():
     clause = _clause("06.Locality.A")
     bundle = _recorded_applicability()
@@ -3614,6 +3658,7 @@ def test_locality_relation_clause_is_checked_against_the_live_pair_witness():
     assert _locality_witness(bundle) == EXACT
 
 
+@pytest.mark.subject("locality_relation_distinctions")
 def test_locality_fans_out_orthogonal_adversaries_for_each_live_witness():
     exact = _recorded_applicability()
 
@@ -3671,6 +3716,7 @@ def test_locality_fans_out_orthogonal_adversaries_for_each_live_witness():
     }
 
 
+@pytest.mark.subject("yield_endpoint_relation_distinction")
 def test_occurrence_and_result_endpoints_do_not_establish_their_relation():
     bundle = _byte_measurement_witness()
     assert _occurrence_result_witness(bundle) == EXACT
@@ -3682,6 +3728,7 @@ def test_occurrence_and_result_endpoints_do_not_establish_their_relation():
     assert _occurrence_result_witness(bundle) == MISSING
 
 
+@pytest.mark.subject("yield_relation_result_identity")
 def test_yield_relation_read_has_no_result_reencoding_surface():
     bundle = _byte_measurement_witness()
     import seed_runtime.evidence_of_yield_relation as yield_module
@@ -3763,6 +3810,7 @@ def _change_one_carried_yield_coordinate(bundle: dict) -> dict:
     raise AssertionError("the Yield result has no non-occurrence coordinate")
 
 
+@pytest.mark.subject("yield_relation_exact_evidence_result")
 def test_every_live_recorded_yield_result_is_bound_to_its_exact_evidence_result():
     for boundary, exact in _live_yield_exact_bundles().items():
         assert _occurrence_result_requirements(exact) == {
@@ -3898,6 +3946,7 @@ def test_every_live_recorded_yield_result_is_bound_to_its_exact_evidence_result(
         }, boundary
 
 
+@pytest.mark.subject("unrelated_yield_result_identity")
 def test_unrelated_yield_occurrences_do_not_share_result_identity():
     factories = {
         "byte_measurement": _byte_measurement_witness,
@@ -3946,6 +3995,7 @@ def test_unrelated_yield_occurrences_do_not_share_result_identity():
         ].material["result_identity"], boundary
 
 
+@pytest.mark.subject("exact_act_occurrence")
 def test_exact_act_clause_is_checked_against_live_byte_measurement():
     clause = _clause("02.Acts.A")
     bundle = _byte_measurement_witness()
@@ -3959,6 +4009,7 @@ def test_exact_act_clause_is_checked_against_live_byte_measurement():
     assert _occurrence_result_witness(bundle) == EXACT
 
 
+@pytest.mark.subject("representation_source_coordinates")
 def test_representation_source_clause_is_checked_against_one_live_result():
     clause = _clause("01.Source.A")
     bundle = _sourced_representation_witness()
@@ -3973,6 +4024,7 @@ def test_representation_source_clause_is_checked_against_one_live_result():
     assert set(distinctions.values()) == {True}
 
 
+@pytest.mark.subject("representation_source_standing_boundary_distinction")
 def test_representation_source_and_standing_boundary_remain_distinct_coordinates():
     ledger = _IntegrityAdversaryLedger()
     source = ingest_material(
@@ -4016,6 +4068,7 @@ def test_representation_source_and_standing_boundary_remain_distinct_coordinates
     assert set(_representation_source_witness(bundle).values()) == {EXACT}
 
 
+@pytest.mark.subject("representation_result_act_locality_clause_distinction")
 def test_representation_result_act_and_locality_species_keep_their_clauses():
     assert REPRESENTATION_EVENT_KIND_RESPONSIBILITIES[
         REPRESENTATION_RECORDED_KIND
@@ -4028,6 +4081,7 @@ def test_representation_result_act_and_locality_species_keep_their_clauses():
     ] == "06.Locality.A"
 
 
+@pytest.mark.subject("one_exact_movement_assertion")
 def test_assertion_movement_result_names_and_witnesses_its_machine_clause():
     clause = _clause("03.Movement.A")
     bundle = _recorded_applicability()
@@ -4043,6 +4097,7 @@ def test_assertion_movement_result_names_and_witnesses_its_machine_clause():
     ]
 
 
+@pytest.mark.subject("movement_coordinate_distinction")
 def test_assertion_movement_coordinates_refuse_crossing_or_loss():
     adversaries = {
         "subject": lambda bundle: bundle["movement"].material.__setitem__(
@@ -4087,6 +4142,7 @@ def test_assertion_movement_coordinates_refuse_crossing_or_loss():
         assert _movement_coordinate_witness(bundle)[coordinate] == MISSING
 
 
+@pytest.mark.subject("standing_locality_continuation_responsibility_clauses")
 def test_standing_locality_continuation_stages_keep_distinct_machine_clauses():
     assert CONTINUATION_EVENT_KIND_RESPONSIBILITIES[
         STANDING_LOCALITY_CONTINUATION_RESPONSIBILITY_ASSIGNMENT_RECORDED_KIND
@@ -4099,6 +4155,7 @@ def test_standing_locality_continuation_stages_keep_distinct_machine_clauses():
     ] == "06.Locality.A"
 
 
+@pytest.mark.subject("operator_material_acquisition_responsibility_clauses")
 def test_operator_material_acquire_stages_keep_distinct_machine_clauses():
     assert ACQUIRE_EVENT_KIND_RESPONSIBILITIES[
         OPERATOR_MATERIAL_ACQUIRE_RESPONSIBILITY_ASSIGNMENT_RECORDED_KIND
@@ -4111,6 +4168,7 @@ def test_operator_material_acquire_stages_keep_distinct_machine_clauses():
     ] == "01.Source.G"
 
 
+@pytest.mark.subject("standing_boundary_reference_responsibility_clauses")
 def test_standing_boundary_reference_stages_keep_distinct_machine_clauses():
     assert CHECKPOINT_EVENT_KIND_RESPONSIBILITIES[
         STANDING_BOUNDARY_REFERENCE_RESPONSIBILITY_ASSIGNMENT_RECORDED_KIND
@@ -4123,6 +4181,7 @@ def test_standing_boundary_reference_stages_keep_distinct_machine_clauses():
     ] == "05.Recording.D"
 
 
+@pytest.mark.subject("recorded_boundary_locality_responsibility_clauses")
 def test_recorded_boundary_locality_stages_keep_distinct_machine_clauses():
     assert BOUNDARY_LOCALITY_EVENT_KIND_RESPONSIBILITIES[
         RECORDED_STANDING_BOUNDARY_LOCALITY_RESPONSIBILITY_ASSIGNMENT_RECORDED_KIND
@@ -4135,6 +4194,7 @@ def test_recorded_boundary_locality_stages_keep_distinct_machine_clauses():
     ] == "06.Locality.A"
 
 
+@pytest.mark.subject("representation_source_act_locality_distinction")
 def test_representation_source_act_and_locality_witnesses_do_not_absorb_each_other():
     source_missing = _sourced_representation_witness()
     for material in (
@@ -4165,6 +4225,7 @@ def test_representation_source_act_and_locality_witnesses_do_not_absorb_each_oth
     assert _representation_locality_witness(locality_missing) == MISSING
 
 
+@pytest.mark.subject("representation_source_act_locality_distinction")
 def test_representation_source_distinction_adversaries_collapse_one_boundary_each():
     result_is_act = _sourced_representation_witness()
     result_is_act["event"].material["result_identity"] = result_is_act[
@@ -4185,6 +4246,7 @@ def test_representation_source_distinction_adversaries_collapse_one_boundary_eac
     }
 
 
+@pytest.mark.subject("representation_source_coordinates")
 def test_representation_source_coordinate_adversaries_preserve_exact_dependencies():
     mutations = {
         "responsibility": lambda material: material["dimensions"].__setitem__(
@@ -4217,6 +4279,7 @@ def test_representation_source_coordinate_adversaries_preserve_exact_dependencie
         } == expected_missing
 
 
+@pytest.mark.subject("declared_measurement_result")
 def test_measurement_result_clause_is_checked_against_live_byte_pair_and_position_results():
     clause = _clause("01.Source.D")
     byte = _byte_measurement_witness()
@@ -4238,6 +4301,7 @@ def test_measurement_result_clause_is_checked_against_live_byte_pair_and_positio
         assert set(distinctions.values()) == {True}
 
 
+@pytest.mark.subject("it_result_relation")
 def test_measurement_result_pronoun_reference_does_not_compress_the_relation():
     assert _clause("01.Source.D")["result_carries"] == {
         "first_subject": "result",
@@ -4252,6 +4316,7 @@ def test_measurement_result_pronoun_reference_does_not_compress_the_relation():
     }
 
 
+@pytest.mark.subject("recurrent_byte_pair_occurrence_position_measurement")
 def test_pair_occurrence_measurement_is_structured_in_the_grammar_representation():
     declared = _clause("01.Source.D")["declared_measurements"][
         "measurement_of_recurrent_byte_pair_occurrence_position"
@@ -4396,6 +4461,7 @@ def test_pair_occurrence_measurement_is_structured_in_the_grammar_representation
     } & set(material)
 
 
+@pytest.mark.subject("measurement_result_act_evidence_clause_distinction")
 def test_measurement_result_carriers_and_responsible_act_evidence_name_their_own_clauses():
     assert {
         BYTE_EVENT_KIND_RESPONSIBILITIES[BYTE_MEASUREMENT_RECORDED_KIND],
@@ -4421,6 +4487,7 @@ def test_measurement_result_carriers_and_responsible_act_evidence_name_their_own
     } == {"02.Acts.A"}
 
 
+@pytest.mark.subject("position_result_act_assertion_responsibility_distinction")
 def test_position_result_act_and_assertion_responsibilities_do_not_absorb_each_other():
     act_without_result = _occurrence_position_yield_witness()
     act_evidence_material = deepcopy(act_without_result["act_evidence"].material)
@@ -4450,6 +4517,7 @@ def test_position_result_act_and_assertion_responsibilities_do_not_absorb_each_o
     ] == "01.Source.D"
 
 
+@pytest.mark.subject("measurement_result_exact_act_clause_distinction")
 def test_measurement_result_and_exact_act_clauses_do_not_absorb_each_other():
     act_without_result = _byte_measurement_witness()
     act_without_result["event"].material["assertions"] = []
@@ -4477,6 +4545,7 @@ def test_measurement_result_and_exact_act_clauses_do_not_absorb_each_other():
     assert act_witness["Evidence_of_Act_occurrence"] == MISSING
 
 
+@pytest.mark.subject("measurement_result_distinctions")
 def test_measurement_result_distinction_adversaries_collapse_one_boundary_each():
     mutations = {
         ("Measurement_result", "exact_Act_occurrence"): lambda bundle: bundle[
@@ -4516,6 +4585,7 @@ def test_measurement_result_distinction_adversaries_collapse_one_boundary_each()
         )
 
 
+@pytest.mark.subject("measurement_result_coordinates")
 def test_measurement_result_adversaries_change_the_declared_coordinate_only():
     mutations = {
         "responsibility": lambda material: material.__setitem__(
@@ -4551,6 +4621,7 @@ def test_measurement_result_adversaries_change_the_declared_coordinate_only():
         )
 
 
+@pytest.mark.subject("exact_act_occurrence_relation")
 def test_act_and_occurrence_identities_do_not_establish_their_relation():
     bundle = _byte_measurement_witness()
     event = bundle["event"]
@@ -4564,6 +4635,7 @@ def test_act_and_occurrence_identities_do_not_establish_their_relation():
     assert witness["Evidence_of_Act_occurrence"] == MISSING
 
 
+@pytest.mark.subject("responsibility_assignment_standing_distinction")
 def test_responsibility_coordinates_do_not_establish_assignment_standing():
     bundle = _byte_measurement_witness()
     assignment = dict(
@@ -4581,6 +4653,7 @@ def test_responsibility_coordinates_do_not_establish_assignment_standing():
     assert witness["Responsibility_assignment_Standing"] == MISSING
 
 
+@pytest.mark.subject("authority_evidence_scope_distinction")
 def test_runtime_authority_does_not_carry_evidence_scope_prose():
     contaminated = {}
     pattern = re.compile(
@@ -4596,6 +4669,7 @@ def test_runtime_authority_does_not_carry_evidence_scope_prose():
     assert contaminated == {}
 
 
+@pytest.mark.subject("authority_evidence_scope_distinction")
 def test_each_dimensions_call_separates_authority_from_its_evidence_scope():
     """Every call through the shared dimensions bottleneck is checked."""
 
@@ -4661,6 +4735,7 @@ def _declared_kind_constants(family: str) -> dict[str, list[str]]:
     return found
 
 
+@pytest.mark.subject("locality_relation_occurrence_evidence")
 def test_every_locality_evidence_kind_is_declared_once_and_registered():
     """The Yield discovery pattern, applied to the second relation."""
 
@@ -4697,6 +4772,7 @@ def test_every_locality_evidence_kind_is_declared_once_and_registered():
 SCOPE_LOCALITY_COMPOUND_SITES = 21
 
 
+@pytest.mark.subject("scope_locality_distinction")
 def test_no_new_site_compounds_scope_with_locality():
     """The count of sites compounding Scope with locality may fall, never rise."""
 
@@ -4796,6 +4872,7 @@ def _relation_coordinates_from_live_witnesses() -> dict[str, dict[str, bool]]:
     }
 
 
+@pytest.mark.subject("relation_witness_evidence")
 def test_every_live_relation_witness_names_its_relation_and_its_evidence():
     """Runtime discovery equated with the registry, for every relation."""
 
@@ -4811,6 +4888,7 @@ def test_every_live_relation_witness_names_its_relation_and_its_evidence():
         assert evidence, witness
 
 
+@pytest.mark.subject("relation_live_witness")
 def test_each_relation_has_a_live_witness():
     """Each relation grammar.json declares has a live witness."""
 
@@ -4819,6 +4897,7 @@ def test_each_relation_has_a_live_witness():
     assert witnessed == set(relations)
 
 
+@pytest.mark.subject("relation_witness_required_coordinates")
 def test_every_live_relation_witness_returns_its_relation_required_coordinates():
     """The vector each witness reports is the one its relation declares."""
 

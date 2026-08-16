@@ -6,6 +6,8 @@ import sys
 
 import pytest
 
+pytestmark = pytest.mark.subject("material_reference_comparison_witness")
+
 from seed_runtime.events import EventLedger
 from seed_runtime.byte_measurement import (
     record_byte_measurement_responsible_act_evidence,

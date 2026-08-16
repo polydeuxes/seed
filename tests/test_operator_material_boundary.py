@@ -6,6 +6,8 @@ from io import BytesIO, StringIO
 
 import pytest
 
+pytestmark = pytest.mark.subject("operator_material_acquisition_witness")
+
 from seed_runtime.operator_material_boundary import (
     OperatorMaterialBoundaryError,
     operator_boundary_material,

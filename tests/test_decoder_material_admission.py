@@ -5,6 +5,11 @@ from __future__ import annotations
 import sys
 from pathlib import Path
 
+import pytest
+
+
+pytestmark = pytest.mark.subject("material_admission_witness")
+
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts"))
 
 from decoder_measurement import (  # noqa: E402

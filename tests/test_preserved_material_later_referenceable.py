@@ -39,6 +39,8 @@ from io import StringIO
 
 import pytest
 
+pytestmark = pytest.mark.subject("exact_material_preservation_witness")
+
 from seed_runtime.events import EventLedger
 from seed_runtime.operator_locality_standing import (
     read_operator_locality_standing,

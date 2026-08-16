@@ -3,6 +3,8 @@ from __future__ import annotations
 from pathlib import Path
 import sys
 
+import pytest
+
 from seed_runtime.byte_measurement import (
     BYTE_MEASUREMENT_RECORDED_KIND,
     BYTE_PAIR_MEASUREMENT_RECORDED_KIND,
@@ -11,6 +13,9 @@ from seed_runtime.material_ingest import (
     MATERIAL_INGEST_OCCURRED_KIND,
     ingested_material_bytes,
 )
+
+
+pytestmark = pytest.mark.subject("material_measurement_witness")
 
 
 ROOT = Path(__file__).resolve().parents[1]
