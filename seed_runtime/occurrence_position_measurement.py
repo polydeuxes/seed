@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+import hashlib
+import json
 from typing import Any
 
 from seed_runtime.event import Event
@@ -23,9 +25,31 @@ OCCURRENCE_POSITION_ACT = "occurrence position Measurement"
 OCCURRENCE_POSITION_RESPONSIBILITY = (
     "establish each occurrence position within one exact Locality and boundary"
 )
+OCCURRENCE_POSITION_MEASUREMENT_RULE = (
+    "each exact occurrence in one exact Locality; position equal to its order "
+    "through one completeness boundary"
+)
 OCCURRENCE_POSITION_AUTHORITY = "bounded repository authority"
+MEASURED_ASSERTION_RESPONSIBILITY = (
+    "preserve this measured Assertion's carried Standing coordinates"
+)
+OCCURRENCE_POSITION_RESULT_COORDINATES = frozenset(
+    {
+        "result_identity",
+        "downstream_act_identity",
+        "act_occurrence_identity",
+        "exact_act",
+        "responsibility",
+        "responsible_boundary",
+        "responsibility_assignment_evidence",
+        "measurement_rule",
+        "source_localities",
+        "completeness_boundary",
+        "assertions",
+    }
+)
 EVENT_KIND_RESPONSIBILITIES = {
-    OCCURRENCE_POSITION_RECORDED_KIND: "02.Acts.A",
+    OCCURRENCE_POSITION_RECORDED_KIND: "01.Source.D",
     OCCURRENCE_POSITION_ACT_EVIDENCE_KIND: "02.Acts.A",
 }
 
@@ -68,19 +92,6 @@ class OccurrencePositionFinding:
                 "one occurrence cannot occupy more than one measured position"
             )
 
-    def to_json_dict(self) -> dict[str, Any]:
-        return {
-            "source_locality_identity": self.source_locality_identity,
-            "completeness_boundary": {
-                "identity": self.completeness_boundary.identity,
-            },
-            "occurrences": [
-                {"identity": identity, "position": position}
-                for identity, position in self.occurrences
-            ],
-        }
-
-
 def measure_occurrence_position(
     ledger: EventLedger,
     *,
@@ -96,6 +107,19 @@ def measure_occurrence_position(
             "one exact source Locality is required"
         )
     boundary = through or ledger.append_boundary()
+    return _measure_occurrence_position_through(
+        ledger,
+        source_locality_identity=source_locality_identity,
+        boundary=boundary,
+    )
+
+
+def _measure_occurrence_position_through(
+    ledger: EventLedger,
+    *,
+    source_locality_identity: str,
+    boundary: EventLedgerBoundary,
+) -> OccurrencePositionFinding:
     occurrences = ledger.list_locality(
         source_locality_identity,
         through=boundary,
@@ -120,8 +144,7 @@ def _occurrence_position_result_material(
     result_identity: str,
     act_identity: str,
     act_occurrence_identity: str,
-    participation: list[dict[str, str]],
-    occurrences: list[dict[str, Any]],
+    assertions: list[dict[str, Any]],
 ) -> dict[str, Any]:
     return {
         "result_identity": result_identity,
@@ -131,28 +154,105 @@ def _occurrence_position_result_material(
         "responsibility": OCCURRENCE_POSITION_RESPONSIBILITY,
         "responsible_boundary": "this Seed",
         "responsibility_assignment_evidence": _responsibility_assignment(finding),
-        "authority": OCCURRENCE_POSITION_AUTHORITY,
-        "participation": participation,
-        "source_locality_identity": finding.source_locality_identity,
+        "measurement_rule": OCCURRENCE_POSITION_MEASUREMENT_RULE,
+        "source_localities": [finding.source_locality_identity],
         "completeness_boundary": {
             "identity": finding.completeness_boundary.identity,
         },
-        "occurrences": occurrences,
-        "limits": [
-            "occurrence position does not establish causation or another relation",
-        ],
+        "assertions": assertions,
     }
 
 
 def _responsibility_assignment(
     finding: OccurrencePositionFinding,
-) -> dict[str, str]:
+) -> dict[str, Any]:
     return {
         "standing": "assigned",
-        "responsibility": OCCURRENCE_POSITION_RESPONSIBILITY,
         "responsible_boundary": "this Seed",
+        "source_occurrence_references": [
+            {"occurrence_identity": identity}
+            for identity, _position in finding.occurrences
+        ],
         "completeness_boundary": finding.completeness_boundary.identity,
+        "determination": OCCURRENCE_POSITION_MEASUREMENT_RULE,
     }
+
+
+def _canonical(value: Any) -> str:
+    return json.dumps(value, sort_keys=True, separators=(",", ":"))
+
+
+def _position_assertion_identity(
+    *,
+    subject: dict[str, Any],
+    scope: dict[str, Any],
+    content: dict[str, Any],
+) -> str:
+    coordinates = {
+        "result": "position",
+        "subject": subject,
+        "scope": scope,
+        "content": content,
+    }
+    return "assertion_" + hashlib.sha256(
+        _canonical(coordinates).encode("utf-8")
+    ).hexdigest()
+
+
+def _position_assertions(
+    finding: OccurrencePositionFinding,
+) -> list[dict[str, Any]]:
+    assertions = []
+    for occurrence_identity, position in finding.occurrences:
+        scope = {"source_localities": [finding.source_locality_identity]}
+        boundary = {"identity": finding.completeness_boundary.identity}
+        subject = {
+            "occurrence_identity": occurrence_identity,
+            "measurement_rule": OCCURRENCE_POSITION_MEASUREMENT_RULE,
+        }
+        content = {
+            "position": position,
+            "completeness_boundary": boundary,
+        }
+        assertions.append(
+            {
+                "dimensions": {
+                    "identity": _position_assertion_identity(
+                        subject=subject,
+                        scope=scope,
+                        content=content,
+                    ),
+                    "content": content,
+                    "standing": "measured",
+                    "source_provenance": (
+                        "complete exact Locality through one boundary"
+                    ),
+                    "responsibility": MEASURED_ASSERTION_RESPONSIBILITY,
+                    "authority": "unestablished",
+                    "evidence_scope": (
+                        "exact occurrence position Measurement Evidence"
+                    ),
+                },
+                "subject_kind": "assertion",
+                "responsible_boundary": "this recorded assertion",
+                "result": "position",
+                "assertion_subject": subject,
+                "assertion_scope": scope,
+                "input_support": {
+                    "occurrence_references": [occurrence_identity],
+                    "local_assertion_references": [],
+                },
+                "conflicts": "Unknown",
+                "unknowns": [
+                    "what this occurrence participates in or represents remains Unknown"
+                ],
+                "limits": [
+                    "exact occurrence position bounded by source Locality and "
+                    "completeness boundary"
+                ],
+            }
+        )
+    return assertions
 
 
 def _occurrence_position_participation(
@@ -342,13 +442,13 @@ def record_occurrence_position_measurement_result(
             )
 
     result_identity = new_identity("occurrence_position_measurement_result")
+    assertions = _position_assertions(finding)
     result_material = _occurrence_position_result_material(
         finding,
         result_identity=result_identity,
         act_identity=act_identity,
         act_occurrence_identity=act_occurrence_identity,
-        participation=participation,
-        occurrences=finding.to_json_dict()["occurrences"],
+        assertions=assertions,
     )
     yield_evidence = _record_yield_evidence(
         ledger,
@@ -373,12 +473,10 @@ def record_occurrence_position_measurement_result(
         "responsibility_assignment_evidence": result_material[
             "responsibility_assignment_evidence"
         ],
-        "authority": result_material["authority"],
-        "participation": result_material["participation"],
-        "source_locality_identity": result_material["source_locality_identity"],
+        "measurement_rule": result_material["measurement_rule"],
+        "source_localities": result_material["source_localities"],
         "completeness_boundary": result_material["completeness_boundary"],
-        "occurrences": result_material["occurrences"],
-        "limits": result_material["limits"],
+        "assertions": result_material["assertions"],
         "responsible_act_evidence_identity": act_evidence.identity,
         "yield_evidence_identity": yield_evidence.identity,
     }
@@ -405,37 +503,56 @@ def get_recorded_occurrence_position_measurement(
             "the occurrence position Measurement result is absent or corrupted"
         )
     material = event.material
-    source_locality_identity = material.get("source_locality_identity")
+    if set(material) != OCCURRENCE_POSITION_RESULT_COORDINATES | {
+        "responsible_act_evidence_identity",
+        "yield_evidence_identity",
+    }:
+        raise ValueError(
+            "the occurrence position Measurement carries malformed coordinates"
+        )
+    source_localities = material.get("source_localities")
     boundary = material.get("completeness_boundary")
-    occurrences = material.get("occurrences")
     if (
-        not isinstance(source_locality_identity, str)
-        or not source_locality_identity
+        material.get("exact_act") != OCCURRENCE_POSITION_ACT
+        or material.get("responsibility") != OCCURRENCE_POSITION_RESPONSIBILITY
+        or material.get("responsible_boundary") != "this Seed"
+        or material.get("measurement_rule")
+        != OCCURRENCE_POSITION_MEASUREMENT_RULE
+        or type(source_localities) is not list
+        or len(source_localities) != 1
+        or type(source_localities[0]) is not str
+        or not source_localities[0]
         or type(boundary) is not dict
         or set(boundary) != {"identity"}
-        or not isinstance(boundary["identity"], str)
-        or type(occurrences) is not list
+        or type(boundary["identity"]) is not str
+        or not boundary["identity"]
+        or type(material.get("assertions")) is not list
+        or type(material.get("result_identity")) is not str
+        or not material["result_identity"]
+        or type(material.get("downstream_act_identity")) is not str
+        or not material["downstream_act_identity"]
+        or type(material.get("act_occurrence_identity")) is not str
+        or not material["act_occurrence_identity"]
+        or material["downstream_act_identity"]
+        == material["act_occurrence_identity"]
     ):
         raise ValueError(
             "the occurrence position Measurement carries malformed coordinates"
         )
     try:
-        finding = OccurrencePositionFinding(
-            source_locality_identity=source_locality_identity,
-            completeness_boundary=EventLedgerBoundary(boundary["identity"]),
-            occurrences=tuple(
-                (item["identity"], item["position"])
-                for item in occurrences
-                if type(item) is dict and set(item) == {"identity", "position"}
-            ),
+        finding = _measure_occurrence_position_through(
+            ledger,
+            source_locality_identity=source_localities[0],
+            boundary=EventLedgerBoundary(boundary["identity"]),
         )
-    except (KeyError, TypeError, ValueError) as error:
+    except (TypeError, ValueError) as error:
         raise ValueError(
-            "the occurrence position Measurement carries malformed occurrences"
+            "the occurrence position Measurement carries malformed coordinates"
         ) from error
-    if len(finding.occurrences) != len(occurrences):
+    assertions = _position_assertions(finding)
+    if material["assertions"] != assertions:
         raise ValueError(
-            "the occurrence position Measurement carries malformed occurrences"
+            "the occurrence position Measurement carries malformed Assertions"
         )
 
     act_evidence_identity = material.get("responsible_act_evidence_identity")
@@ -457,8 +574,7 @@ def get_recorded_occurrence_position_measurement(
         result_identity=result_identity,
         act_identity=act_identity,
         act_occurrence_identity=act_occurrence_identity,
-        participation=participation,
-        occurrences=occurrences,
+        assertions=assertions,
     )
     expected_act_evidence = _occurrence_position_act_evidence_material(
         finding,
@@ -503,5 +619,4 @@ def get_recorded_occurrence_position_measurement(
         raise ValueError(
             "the occurrence position Measurement result differs from its coordinates"
         )
-    _exact_occurrence_position_finding(ledger, finding)
     return finding

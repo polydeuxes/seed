@@ -6,7 +6,10 @@ import seed_runtime.occurrence_position_measurement as position_measurement
 from seed_runtime.events import CORRUPTED, EventLedger, SQLiteEventLedger
 from seed_runtime.occurrence_position_measurement import (
     OCCURRENCE_POSITION_ACT_EVIDENCE_KIND,
+    OCCURRENCE_POSITION_MEASUREMENT_RULE,
     OCCURRENCE_POSITION_RECORDED_KIND,
+    OCCURRENCE_POSITION_RESULT_COORDINATES,
+    MEASURED_ASSERTION_RESPONSIBILITY,
     OccurrencePositionFinding,
     get_recorded_occurrence_position_measurement,
     measure_occurrence_position,
@@ -220,17 +223,17 @@ def test_recording_and_reading_do_not_reconstruct_complete_result_material(
         through=boundary,
     )
     participation = position_measurement._occurrence_position_participation
-    to_json_dict = OccurrencePositionFinding.to_json_dict
+    position_assertions = position_measurement._position_assertions
     participation_calls = []
-    occurrence_calls = []
+    assertion_calls = []
 
     def counted_participation(*args, **kwargs):
         participation_calls.append(None)
         return participation(*args, **kwargs)
 
-    def counted_to_json_dict(self):
-        occurrence_calls.append(None)
-        return to_json_dict(self)
+    def counted_position_assertions(*args, **kwargs):
+        assertion_calls.append(None)
+        return position_assertions(*args, **kwargs)
 
     monkeypatch.setattr(
         position_measurement,
@@ -238,9 +241,9 @@ def test_recording_and_reading_do_not_reconstruct_complete_result_material(
         counted_participation,
     )
     monkeypatch.setattr(
-        OccurrencePositionFinding,
-        "to_json_dict",
-        counted_to_json_dict,
+        position_measurement,
+        "_position_assertions",
+        counted_position_assertions,
     )
 
     act_evidence = record_occurrence_position_measurement_responsible_act_evidence(
@@ -260,16 +263,14 @@ def test_recording_and_reading_do_not_reconstruct_complete_result_material(
     ) == finding
 
     assert len(participation_calls) == 3
-    assert len(occurrence_calls) == 1
-    assert act_evidence.material["participation"] == recorded.material["participation"]
-    assert act_evidence.material["participation"] is not recorded.material[
-        "participation"
+    assert len(assertion_calls) == 2
+    assert act_evidence.material["participation"]
+    assert "participation" not in recorded.material
+    assert yielded.material["result"]["assertions"] == recorded.material[
+        "assertions"
     ]
-    assert yielded.material["result"]["participation"] == recorded.material[
-        "participation"
-    ]
-    assert yielded.material["result"]["participation"] is not recorded.material[
-        "participation"
+    assert yielded.material["result"]["assertions"] is not recorded.material[
+        "assertions"
     ]
 
 
@@ -460,14 +461,96 @@ def test_position_finding_establishes_no_stronger_relation():
 
     assert "first_subject" not in recorded.material
     assert "second_subject" not in recorded.material
-    assert recorded.material["limits"] == [
-        "occurrence position does not establish causation or another relation"
-    ]
+    assert "causation" not in recorded.material
+    assert all(
+        assertion["limits"]
+        == [
+            "exact occurrence position bounded by source Locality and "
+            "completeness boundary"
+        ]
+        for assertion in recorded.material["assertions"]
+    )
 
 
 def test_changed_position_is_not_certified_by_unchanged_evidence():
     ledger, _occurrences, _boundary, _finding, recorded = recorded_road()
-    recorded.material["occurrences"][0]["position"] = 1
+    recorded.material["assertions"][0]["dimensions"]["content"]["position"] = 1
+
+    with pytest.raises(ValueError):
+        get_recorded_occurrence_position_measurement(ledger, recorded.identity)
+
+
+def test_result_carries_one_ordered_assertion_per_exact_position():
+    _ledger, occurrences, boundary, _finding, recorded = recorded_road()
+
+    assert set(recorded.material) == OCCURRENCE_POSITION_RESULT_COORDINATES | {
+        "responsible_act_evidence_identity",
+        "yield_evidence_identity",
+    }
+    assert recorded.material["measurement_rule"] == (
+        OCCURRENCE_POSITION_MEASUREMENT_RULE
+    )
+    assert recorded.material["source_localities"] == ["a"]
+    assert recorded.material["completeness_boundary"] == {
+        "identity": boundary.identity
+    }
+    assertions = recorded.material["assertions"]
+    assert len(assertions) == len(occurrences)
+    assert [
+        (
+            item["assertion_subject"]["occurrence_identity"],
+            item["dimensions"]["content"]["position"],
+        )
+        for item in assertions
+    ] == [(event.identity, position) for position, event in enumerate(occurrences)]
+    assert len({item["dimensions"]["identity"] for item in assertions}) == len(
+        assertions
+    )
+    assert {
+        item["dimensions"]["responsibility"] for item in assertions
+    } == {MEASURED_ASSERTION_RESPONSIBILITY}
+    assert all(
+        item["assertion_scope"] == {"source_localities": ["a"]}
+        and item["result"] == "position"
+        and item["assertion_subject"]["measurement_rule"]
+        == OCCURRENCE_POSITION_MEASUREMENT_RULE
+        for item in assertions
+    )
+
+
+@pytest.mark.parametrize(
+    "mutate",
+    (
+        lambda assertions: assertions.pop(1),
+        lambda assertions: assertions.reverse(),
+        lambda assertions: assertions.__setitem__(1, deepcopy(assertions[0])),
+        lambda assertions: assertions[1]["assertion_subject"].__setitem__(
+            "occurrence_identity", "crossed-occurrence"
+        ),
+        lambda assertions: assertions[1]["dimensions"]["content"].__setitem__(
+            "position", 0
+        ),
+    ),
+)
+def test_missing_reordered_duplicated_or_crossed_assertions_are_refused(mutate):
+    ledger, _occurrences, _boundary, _finding, recorded = recorded_road()
+    mutate(recorded.material["assertions"])
+
+    with pytest.raises(ValueError, match="malformed Assertions"):
+        get_recorded_occurrence_position_measurement(ledger, recorded.identity)
+
+
+@pytest.mark.parametrize(
+    "coordinate, value",
+    (
+        ("measurement_rule", "another Measurement rule"),
+        ("source_localities", ["b"]),
+        ("completeness_boundary", {"identity": "another-boundary"}),
+    ),
+)
+def test_wrong_result_boundary_coordinates_are_refused(coordinate, value):
+    ledger, _occurrences, _boundary, _finding, recorded = recorded_road()
+    recorded.material[coordinate] = value
 
     with pytest.raises(ValueError):
         get_recorded_occurrence_position_measurement(ledger, recorded.identity)

@@ -123,7 +123,7 @@
           "assertions"
         ]
       },
-      "findings": ["count", "recurrence"],
+      "findings": ["count", "recurrence", "position"],
       "distinct_from": [
         ["Measurement_result", "exact_Act_occurrence"],
         ["Measurement_occurrence", "recording_occurrence"],

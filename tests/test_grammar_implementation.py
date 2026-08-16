@@ -72,6 +72,12 @@ from seed_runtime.operator_standing_continuation import (
     record_standing_locality_continuation_result,
 )
 from seed_runtime.occurrence_position_measurement import (
+    EVENT_KIND_RESPONSIBILITIES as POSITION_EVENT_KIND_RESPONSIBILITIES,
+    MEASURED_ASSERTION_RESPONSIBILITY as POSITION_ASSERTION_RESPONSIBILITY,
+    OCCURRENCE_POSITION_ACT_EVIDENCE_KIND,
+    OCCURRENCE_POSITION_MEASUREMENT_RULE,
+    OCCURRENCE_POSITION_RECORDED_KIND,
+    OCCURRENCE_POSITION_RESPONSIBILITY,
     measure_occurrence_position,
     record_occurrence_position_measurement_responsible_act_evidence,
     record_occurrence_position_measurement_result,
@@ -1647,11 +1653,22 @@ def _measurement_result_witness(bundle: dict) -> dict[str, str]:
             BYTE_MEASUREMENT_RESPONSIBILITY,
             BYTE_MEASUREMENT_RULE,
             True,
+            {"exact_source_material_set", "count", "recurrence"},
+            "ingest_occurrence_identity",
         ),
         BYTE_PAIR_MEASUREMENT_RECORDED_KIND: (
             BYTE_PAIR_MEASUREMENT_RESPONSIBILITY,
             BYTE_PAIR_MEASUREMENT_RULE,
             False,
+            {"count", "recurrence"},
+            "ingest_occurrence_identity",
+        ),
+        OCCURRENCE_POSITION_RECORDED_KIND: (
+            OCCURRENCE_POSITION_RESPONSIBILITY,
+            OCCURRENCE_POSITION_MEASUREMENT_RULE,
+            False,
+            {"position"},
+            "occurrence_identity",
         ),
     }.get(event.kind)
     if expected is None:
@@ -1661,7 +1678,13 @@ def _measurement_result_witness(bundle: dict) -> dict[str, str]:
                 "coordinates"
             ]
         }
-    expected_responsibility, expected_rule, carries_source_set = expected
+    (
+        expected_responsibility,
+        expected_rule,
+        carries_source_set,
+        allowed_results,
+        source_reference_coordinate,
+    ) = expected
     assignment = material.get("responsibility_assignment_evidence")
     localities = material.get("source_localities")
     boundary = material.get("completeness_boundary")
@@ -1677,8 +1700,32 @@ def _measurement_result_witness(bundle: dict) -> dict[str, str]:
         and all(isinstance(item, dict) for item in assertions)
         else None
     )
+    position_assertions_are_exact = bool(
+        event.kind != OCCURRENCE_POSITION_RECORDED_KIND
+        or (
+            isinstance(assertions, list)
+            and all(
+                item.get("result") == "position"
+                and item.get("input_support", {}).get(
+                    "occurrence_references"
+                )
+                == [
+                    item.get("assertion_subject", {}).get(
+                        "occurrence_identity"
+                    )
+                ]
+                and item.get("dimensions", {}).get("content")
+                == {
+                    "position": position,
+                    "completeness_boundary": boundary,
+                }
+                for position, item in enumerate(assertions)
+            )
+        )
+    )
     carried_assertions_are_exact = bool(
         assertion_results is not None
+        and position_assertions_are_exact
         and all(
             item.get("assertion_subject", {}).get("measurement_rule")
             == expected_rule
@@ -1687,12 +1734,7 @@ def _measurement_result_witness(bundle: dict) -> dict[str, str]:
             == MEASURED_ASSERTION_RESPONSIBILITY
             for item in assertions
         )
-        and set(assertion_results)
-        <= (
-            {"exact_source_material_set", "count", "recurrence"}
-            if carries_source_set
-            else {"count", "recurrence"}
-        )
+        and set(assertion_results) <= allowed_results
         and (
             assertion_results[:1] == ["exact_source_material_set"]
             if carries_source_set
@@ -1716,13 +1758,29 @@ def _measurement_result_witness(bundle: dict) -> dict[str, str]:
         and assignment["source_occurrence_references"]
         and all(
             isinstance(reference, dict)
-            and set(reference) == {"ingest_occurrence_identity"}
-            and isinstance(reference["ingest_occurrence_identity"], str)
-            and reference["ingest_occurrence_identity"]
+            and set(reference) == {source_reference_coordinate}
+            and isinstance(reference[source_reference_coordinate], str)
+            and reference[source_reference_coordinate]
             for reference in assignment["source_occurrence_references"]
         )
         and isinstance(assignment["determination"], str)
         and assignment["determination"]
+        and (
+            event.kind != OCCURRENCE_POSITION_RECORDED_KIND
+            or (
+                isinstance(assertions, list)
+                and assignment["source_occurrence_references"]
+                == [
+                    {
+                        "occurrence_identity": item.get(
+                            "assertion_subject", {}
+                        ).get("occurrence_identity")
+                    }
+                    for item in assertions
+                    if isinstance(item, dict)
+                ]
+            )
+        )
     )
     return {
         "responsibility": (
@@ -3273,14 +3331,15 @@ def test_representation_source_coordinate_adversaries_preserve_exact_dependencie
         } == expected_missing
 
 
-def test_measurement_result_clause_is_checked_against_live_byte_and_pair_results():
+def test_measurement_result_clause_is_checked_against_live_byte_pair_and_position_results():
     clause = _clause("01.Source.D")
     byte = _byte_measurement_witness()
     pair_bundle = _recorded_applicability()
     pair = {"event": pair_bundle["pair_event"]}
+    position = _occurrence_position_yield_witness()
 
-    assert clause["findings"] == ["count", "recurrence"]
-    for bundle in (byte, pair):
+    assert clause["findings"] == ["count", "recurrence", "position"]
+    for bundle in (byte, pair, position):
         witness = _measurement_result_witness(bundle)
         distinctions = _measurement_result_distinctions(bundle)
 
@@ -3296,6 +3355,7 @@ def test_measurement_result_carriers_and_responsible_act_evidence_name_their_own
     assert {
         BYTE_EVENT_KIND_RESPONSIBILITIES[BYTE_MEASUREMENT_RECORDED_KIND],
         BYTE_EVENT_KIND_RESPONSIBILITIES[BYTE_PAIR_MEASUREMENT_RECORDED_KIND],
+        POSITION_EVENT_KIND_RESPONSIBILITIES[OCCURRENCE_POSITION_RECORDED_KIND],
     } == {"01.Source.D"}
     assert {
         BYTE_EVENT_KIND_RESPONSIBILITIES[
@@ -3304,7 +3364,39 @@ def test_measurement_result_carriers_and_responsible_act_evidence_name_their_own
         BYTE_EVENT_KIND_RESPONSIBILITIES[
             BYTE_PAIR_RESPONSIBLE_ACT_EVIDENCE_KIND
         ],
+        POSITION_EVENT_KIND_RESPONSIBILITIES[
+            OCCURRENCE_POSITION_ACT_EVIDENCE_KIND
+        ],
     } == {"02.Acts.A"}
+
+
+def test_position_result_act_and_assertion_responsibilities_do_not_absorb_each_other():
+    act_without_result = _occurrence_position_yield_witness()
+    act_evidence_material = deepcopy(act_without_result["act_evidence"].material)
+    assert {
+        item["dimensions"]["responsibility"]
+        for item in act_without_result["event"].material["assertions"]
+    } == {POSITION_ASSERTION_RESPONSIBILITY}
+    assert (
+        act_without_result["event"].material["responsibility"]
+        != POSITION_ASSERTION_RESPONSIBILITY
+    )
+    act_without_result["event"].material["assertions"][0]["dimensions"][
+        "responsibility"
+    ] = OCCURRENCE_POSITION_RESPONSIBILITY
+
+    assert act_without_result["act_evidence"].material == act_evidence_material
+    assert POSITION_EVENT_KIND_RESPONSIBILITIES[
+        OCCURRENCE_POSITION_ACT_EVIDENCE_KIND
+    ] == "02.Acts.A"
+    assert _measurement_result_witness(act_without_result)["assertions"] == MISSING
+
+    result_without_act = _occurrence_position_yield_witness()
+    result_without_act["act_evidence"] = None
+    assert set(_measurement_result_witness(result_without_act).values()) == {EXACT}
+    assert POSITION_EVENT_KIND_RESPONSIBILITIES[
+        OCCURRENCE_POSITION_RECORDED_KIND
+    ] == "01.Source.D"
 
 
 def test_measurement_result_and_exact_act_clauses_do_not_absorb_each_other():
