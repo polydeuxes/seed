@@ -147,10 +147,14 @@ def test_compare_reports_only_the_ordered_coordinate_distinction(exact_pair):
         not hasattr(comparison, coordinate)
         for comparison in comparisons
         for coordinate in (
+            "candidate",
             "admitted_material",
+            "admission",
             "applicability",
             "meaning",
             "reference",
+            "standing",
+            "yield_evidence_identity",
         )
     )
 

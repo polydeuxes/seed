@@ -384,10 +384,14 @@ def test_recurrent_book_pairs_keep_identity_in_fresh_operator_material():
         not hasattr(comparison, coordinate)
         for comparison in comparisons
         for coordinate in (
+            "candidate",
             "admitted_material",
+            "admission",
             "applicability",
             "meaning",
             "reference",
+            "standing",
+            "yield_evidence_identity",
         )
     )
 
