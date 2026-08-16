@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from pathlib import Path
 import shutil
+import subprocess
 import sys
 
 import pytest
@@ -42,6 +43,7 @@ from compiled_format_invocation import (  # noqa: E402
 )
 from compiled_material_invocation import (  # noqa: E402
     MATERIAL_IMPLEMENTATION_FUNCTIONS,
+    MaterialImplementationFunction,
     occurrences_across,
     invocation_occurrence,
 )
@@ -1461,3 +1463,35 @@ def test_exact_bytes_reach_the_implementation_function_without_prior_decoding(mo
     assert supplied == [b"\xff\x00"]
     assert found.exact_material == b"\xff\x00"
     assert found.stdout_bytes == b"implementation function material"
+
+
+def test_wait_boundary_preserves_an_invocation_that_did_not_return(monkeypatch):
+    function = MaterialImplementationFunction(
+        identity="compiled-0",
+        invocation=("compiled-0",),
+    )
+
+    def did_not_return(*args, **kwargs):
+        assert kwargs["timeout"] == 0.25
+        raise subprocess.TimeoutExpired(
+            args[0],
+            kwargs["timeout"],
+            output=b"available output",
+            stderr=None,
+        )
+
+    monkeypatch.setattr("compiled_material_invocation.subprocess.run", did_not_return)
+
+    occurrence = invocation_occurrence(
+        b"material",
+        function,
+        boundary_identity="wait-boundary",
+        wait_seconds=0.25,
+    )
+
+    assert occurrence.returned is False
+    assert occurrence.returncode is None
+    assert occurrence.stdout_bytes == b"available output"
+    assert occurrence.stderr_bytes is None
+    assert occurrence.wait_seconds == 0.25
+    assert occurrence.coordinates == (0.25, False, None, b"available output", None)

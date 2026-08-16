@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from dataclasses import replace
 from pathlib import Path
 import sys
 from types import SimpleNamespace
@@ -370,4 +371,19 @@ def test_compare_refuses_a_result_from_another_addition(small_boundary_material)
             addition_occurrence=additions[0],
             source_invocation=source,
             result_invocation=results[1],
+        )
+
+
+def test_compare_refuses_different_wait_boundaries(small_boundary_material):
+    addition = small_boundary_material[3][0]
+    source = small_boundary_material[5][0][0]
+    result = replace(small_boundary_material[6][0][0], wait_seconds=31.0)
+
+    with pytest.raises(ValueError, match="cannot cross wait boundaries"):
+        MaterialAddedCompareOccurrence(
+            boundary_identity="changed-wait-compare",
+            occurrence_position=0,
+            addition_occurrence=addition,
+            source_invocation=source,
+            result_invocation=result,
         )

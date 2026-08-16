@@ -426,6 +426,7 @@ def test_invocation_occurrence_refuses_material_different_from_its_ingest_result
             implementation_function=MaterialImplementationFunction(
                 "compiled-0", ("file", "-b", "-")
             ),
+            returned=True,
             returncode=0,
             stdout_bytes=b"",
             stderr_bytes=b"",
