@@ -2146,7 +2146,7 @@ def test_removal_recurrence_is_recovered_before_later_compare(
     }
 
 
-def test_removal_recurrence_does_not_claim_coordinates_without_one_later_act(
+def test_removal_recurrence_freezes_known_coordinates_before_one_later_act(
     book_removed_position_invocation_occurrences,
     book_pair_format_occurrences,
 ):
@@ -2157,8 +2157,19 @@ def test_removal_recurrence_does_not_claim_coordinates_without_one_later_act(
         boundary_identity="book-removal-full-function-recurrence",
         act_occurrence_count_limit=len(removals),
     )
-    assert later is None
-    assert coordinates is None
+    assert later is not None
+    assert coordinates is not None
+    assert any(coordinate is not None for coordinate in coordinates)
+    later_act = later[0].removed_position_act_occurrence_identity
+    assert all(
+        comparison.removed_position_act_occurrence_identity != later_act
+        for row in earlier
+        for comparison in row
+    )
+    assert all(
+        comparison.removed_position_act_occurrence_identity == later_act
+        for comparison in later
+    )
     assert len(earlier) == len(book_pair_format_occurrences)
 
 
@@ -2251,8 +2262,8 @@ def test_full_function_coordinates_precede_every_removed_material_invocation():
     assert tuple(comparison.result_returned for comparison in later) == coordinates
     assert supplied == [
         ("first", b"a"),
-        ("first", b"b"),
         ("second", b"a"),
+        ("first", b"b"),
         ("second", b"b"),
         ("first", b"c"),
         ("second", b"c"),
@@ -2308,13 +2319,15 @@ def test_unknown_removal_function_coordinate_does_not_erase_the_known_coordinate
         act_occurrence_count_limit=len(removals),
     )
 
-    assert tuple(len(row) for row in earlier) == (2, 0)
+    assert tuple(len(row) for row in earlier) == (2, 2)
     assert coordinates == (True, None)
     assert later is not None
     assert tuple(comparison.result_returned for comparison in later) == (True, True)
     assert supplied == [
         ("first", b"a"),
+        ("second", b"a"),
         ("first", b"b"),
+        ("second", b"b"),
         ("first", b"c"),
         ("second", b"c"),
     ]
