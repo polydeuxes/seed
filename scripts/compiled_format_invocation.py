@@ -1959,21 +1959,21 @@ def first_recurring_added_compare_across(
     tuple[AddedPositionCompareOccurrence, ...] | None,
 ]:
     if type(source_invocation_rows) is not tuple or not source_invocation_rows:
-        raise TypeError("joint recurrence requires exact invocation rows")
+        raise TypeError("full-function recurrence requires exact invocation rows")
     row_lengths = {len(row) for row in source_invocation_rows}
     if len(row_lengths) != 1:
-        raise ValueError("joint recurrence requires one exact source sequence")
+        raise ValueError("full-function recurrence requires one exact source sequence")
     functions = tuple(row[0].implementation_function for row in source_invocation_rows if row)
     if len(functions) != len(source_invocation_rows) or len(
         {function.identity for function in functions}
     ) != len(functions):
-        raise ValueError("joint recurrence requires different implementation functions")
+        raise ValueError("full-function recurrence requires different implementation functions")
     source_coordinates = tuple(
         tuple(invocation.source_coordinate for invocation in row)
         for row in source_invocation_rows
     )
     if any(row != source_coordinates[0] for row in source_coordinates[1:]):
-        raise ValueError("joint recurrence requires one exact source sequence")
+        raise ValueError("full-function recurrence requires one exact source sequence")
     results = tuple(
         first_recurring_added_compare(
             additions,
@@ -2224,10 +2224,10 @@ def first_recurring_removed_compare_across(
     tuple[RemovedPositionCompareOccurrence, ...] | None,
 ]:
     if type(source_invocation_rows) is not tuple or not source_invocation_rows:
-        raise TypeError("joint recurrence requires exact invocation rows")
+        raise TypeError("full-function recurrence requires exact invocation rows")
     row_lengths = {len(row) for row in source_invocation_rows}
     if len(row_lengths) != 1:
-        raise ValueError("joint recurrence requires one exact source sequence")
+        raise ValueError("full-function recurrence requires one exact source sequence")
     functions = tuple(
         row[0].implementation_function
         for row in source_invocation_rows
@@ -2236,13 +2236,13 @@ def first_recurring_removed_compare_across(
     if len(functions) != len(source_invocation_rows) or len(
         {function.identity for function in functions}
     ) != len(functions):
-        raise ValueError("joint recurrence requires different implementation functions")
+        raise ValueError("full-function recurrence requires different implementation functions")
     source_coordinates = tuple(
         tuple(invocation.source_coordinate for invocation in row)
         for row in source_invocation_rows
     )
     if any(row != source_coordinates[0] for row in source_coordinates[1:]):
-        raise ValueError("joint recurrence requires one exact source sequence")
+        raise ValueError("full-function recurrence requires one exact source sequence")
     results = tuple(
         first_recurring_removed_compare(
             removals,

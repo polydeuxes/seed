@@ -736,7 +736,7 @@ def test_format_recurrence_refuses_without_full_function_vector(
     earlier, coordinate, later = first_recurring_added_compare_across(
         additions,
         book_pair_format_occurrences,
-        boundary_identity="book-joint-format-recurrence",
+        boundary_identity="book-full-function-format-recurrence",
         act_occurrence_count_limit=len(additions),
     )
     assert later is None
@@ -763,7 +763,7 @@ def test_format_recurrence_accepts_a_matching_full_function_vector(
     earlier, coordinate, later = first_recurring_added_compare_across(
         additions,
         (first_row, clone_row),
-        boundary_identity="book-matching-joint-format-recurrence",
+        boundary_identity="book-matching-full-function-format-recurrence",
         act_occurrence_count_limit=len(additions),
     )
     assert later is not None
@@ -828,7 +828,7 @@ def test_recurrence_before_later_refuses_wrong_function_identity(
 
 
 
-def test_joint_recurrence_refuses_reordered_source_occurrences(
+def test_full_function_recurrence_refuses_reordered_source_occurrences(
     book_three_byte_format_occurrences,
     book_pair_format_occurrences,
 ):
@@ -846,12 +846,12 @@ def test_joint_recurrence_refuses_reordered_source_occurrences(
         first_recurring_added_compare_across(
             book_three_byte_format_occurrences[1],
             (first_row, reordered),
-            boundary_identity="book-reordered-joint-recurrence",
+            boundary_identity="book-reordered-full-function-recurrence",
             act_occurrence_count_limit=len(book_three_byte_format_occurrences[1]),
         )
 
 
-def test_removal_joint_recurrence_refuses_reordered_source_occurrences(
+def test_removal_full_function_recurrence_refuses_reordered_source_occurrences(
     book_removed_position_invocation_occurrences,
     book_pair_format_occurrences,
 ):
@@ -870,7 +870,7 @@ def test_removal_joint_recurrence_refuses_reordered_source_occurrences(
         first_recurring_removed_compare_across(
             removals,
             (first_row, reordered),
-            boundary_identity="book-reordered-removal-joint",
+            boundary_identity="book-reordered-removal-full-function",
             act_occurrence_count_limit=len(removals),
         )
 
@@ -899,7 +899,7 @@ def test_recurrence_before_later_requires_a_boolean_control(
         )
 
 
-def test_joint_recurrence_preserves_heterogeneous_coordinates(
+def test_full_function_recurrence_preserves_heterogeneous_coordinates(
     book_three_byte_format_occurrences,
     book_pair_format_occurrences,
 ):
@@ -925,7 +925,7 @@ def test_joint_recurrence_preserves_heterogeneous_coordinates(
     _, coordinates, later = first_recurring_added_compare_across(
         book_three_byte_format_occurrences[1],
         (row, clone_row),
-        boundary_identity="book-heterogeneous-joint",
+        boundary_identity="book-heterogeneous-full-function",
         act_occurrence_count_limit=len(book_three_byte_format_occurrences[1]),
     )
     assert later is not None
@@ -934,7 +934,7 @@ def test_joint_recurrence_preserves_heterogeneous_coordinates(
     assert len(set(coordinates)) == 2
 
 
-def test_joint_recurrence_refuses_duplicate_function_identity(
+def test_full_function_recurrence_refuses_duplicate_function_identity(
     book_three_byte_format_occurrences,
     book_pair_format_occurrences,
 ):
@@ -942,25 +942,25 @@ def test_joint_recurrence_refuses_duplicate_function_identity(
         first_recurring_added_compare_across(
             book_three_byte_format_occurrences[1],
             (book_pair_format_occurrences[0], book_pair_format_occurrences[0]),
-            boundary_identity="duplicate-joint-function",
+            boundary_identity="duplicate-full-function",
             act_occurrence_count_limit=10,
         )
 
 
-def test_joint_recurrence_refuses_an_empty_function_row(
+def test_full_function_recurrence_refuses_an_empty_function_row(
     book_three_byte_format_occurrences,
     book_pair_format_occurrences,
 ):
-    with pytest.raises(ValueError, match="different implementation functions"):
+    with pytest.raises(ValueError, match="one exact source sequence"):
         first_recurring_added_compare_across(
             book_three_byte_format_occurrences[1],
             (book_pair_format_occurrences[0], ()),
-            boundary_identity="empty-joint-function",
+            boundary_identity="empty-full-function",
             act_occurrence_count_limit=10,
         )
 
 
-def test_joint_recurrence_refuses_a_nonpositive_limit(
+def test_full_function_recurrence_refuses_a_nonpositive_limit(
     book_three_byte_format_occurrences,
     book_pair_format_occurrences,
 ):
@@ -968,12 +968,12 @@ def test_joint_recurrence_refuses_a_nonpositive_limit(
         first_recurring_added_compare_across(
             book_three_byte_format_occurrences[1],
             (book_pair_format_occurrences[0],),
-            boundary_identity="invalid-joint-limit",
+            boundary_identity="invalid-full-function-limit",
             act_occurrence_count_limit=0,
         )
 
 
-def test_joint_removal_recurrence_refuses_duplicate_function_identity(
+def test_full_function_removal_recurrence_refuses_duplicate_function_identity(
     book_removed_position_invocation_occurrences,
     book_pair_format_occurrences,
 ):
@@ -982,12 +982,12 @@ def test_joint_removal_recurrence_refuses_duplicate_function_identity(
         first_recurring_removed_compare_across(
             removals,
             (book_pair_format_occurrences[0], book_pair_format_occurrences[0]),
-            boundary_identity="duplicate-joint-removal-function",
+            boundary_identity="duplicate-full-function-removal",
             act_occurrence_count_limit=10,
         )
 
 
-def test_joint_addition_recurrence_refuses_different_row_lengths(
+def test_full_function_addition_recurrence_refuses_different_row_lengths(
     book_three_byte_format_occurrences,
     book_pair_format_occurrences,
 ):
@@ -995,12 +995,12 @@ def test_joint_addition_recurrence_refuses_different_row_lengths(
         first_recurring_added_compare_across(
             book_three_byte_format_occurrences[1],
             (book_pair_format_occurrences[0], book_pair_format_occurrences[0][:-1]),
-            boundary_identity="short-joint-addition-row",
+            boundary_identity="short-full-function-addition-row",
             act_occurrence_count_limit=10,
         )
 
 
-def test_joint_removal_recurrence_refuses_different_row_lengths(
+def test_full_function_removal_recurrence_refuses_different_row_lengths(
     book_removed_position_invocation_occurrences,
     book_pair_format_occurrences,
 ):
@@ -1009,12 +1009,12 @@ def test_joint_removal_recurrence_refuses_different_row_lengths(
         first_recurring_removed_compare_across(
             removals,
             (book_pair_format_occurrences[0], book_pair_format_occurrences[0][:-1]),
-            boundary_identity="short-joint-removal-row",
+            boundary_identity="short-full-function-removal-row",
             act_occurrence_count_limit=10,
         )
 
 
-def test_joint_removal_recurrence_refuses_nonpositive_limit(
+def test_full_function_removal_recurrence_refuses_nonpositive_limit(
     book_removed_position_invocation_occurrences,
     book_pair_format_occurrences,
 ):
@@ -1023,7 +1023,7 @@ def test_joint_removal_recurrence_refuses_nonpositive_limit(
         first_recurring_removed_compare_across(
             removals,
             (book_pair_format_occurrences[0],),
-            boundary_identity="invalid-joint-removal-limit",
+            boundary_identity="invalid-full-function-removal-limit",
             act_occurrence_count_limit=0,
         )
 
@@ -1949,7 +1949,7 @@ def test_removal_recurrence_refuses_without_full_function_vector(
     earlier, coordinates, later = first_recurring_removed_compare_across(
         removals,
         book_pair_format_occurrences,
-        boundary_identity="book-removal-joint-recurrence",
+        boundary_identity="book-removal-full-function-recurrence",
         act_occurrence_count_limit=len(removals),
     )
     assert later is None
@@ -1976,7 +1976,7 @@ def test_removal_recurrence_accepts_a_matching_full_function_vector(
     earlier, coordinate, later = first_recurring_removed_compare_across(
         removals,
         (first_row, clone_row),
-        boundary_identity="book-matching-joint-removal-recurrence",
+        boundary_identity="book-matching-full-function-removal-recurrence",
         act_occurrence_count_limit=len(removals),
     )
     assert later is not None
