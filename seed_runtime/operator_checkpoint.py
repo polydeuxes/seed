@@ -252,7 +252,21 @@ def _recorded_result_material(
     yield_evidence_identity: str,
 ) -> dict[str, Any]:
     return {
-        **result_material,
+        "result_identity": result_material["result_identity"],
+        "recording_act_identity": result_material["recording_act_identity"],
+        "act_occurrence_identity": result_material["act_occurrence_identity"],
+        "exact_act": result_material["exact_act"],
+        "responsibility": result_material["responsibility"],
+        "responsible_boundary": result_material["responsible_boundary"],
+        "responsibility_assignment_reference": deepcopy(
+            result_material["responsibility_assignment_reference"]
+        ),
+        "source_reference": deepcopy(result_material["source_reference"]),
+        "scope": deepcopy(result_material["scope"]),
+        "authority": deepcopy(result_material["authority"]),
+        "standing": result_material["standing"],
+        "limits": list(result_material["limits"]),
+        "unknowns": list(result_material["unknowns"]),
         "responsible_act_evidence_identity": responsible_act_evidence_identity,
         "yield_evidence_identity": yield_evidence_identity,
     }
