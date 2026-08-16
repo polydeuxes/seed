@@ -488,7 +488,7 @@ class SQLiteEventLedger(EventLedger):
         "material_ingest_act", "material_ingest_act_occurrence",
         "material_ingest_result",
         "operator_material", "operator_command", "checkpoint_locality", "locality",
-        "represented_alternative", "byte_position_pair_measurement_act",
+        "byte_position_pair_measurement_act",
         "byte_position_pair_measurement_occurrence",
         "byte_position_pair_measurement_result", "byte_measurement_act",
         "byte_measurement_occurrence", "byte_measurement_result",

@@ -20,7 +20,6 @@ from seed_runtime.occurrence_position_measurement import (
     get_recorded_occurrence_position_measurement,
 )
 from seed_runtime.yield_evidence import read_yield_relation_requirements
-from tests.bounded_alternative_fixture import BOUNDED_ALTERNATIVE_FIXTURE_SOURCES
 from seed_runtime.operator_console import run_persistent_operator_console
 
 _INGEST_KINDS = (
@@ -90,17 +89,6 @@ def _run_console(text, *, locality="s"):
     return ledger, output.getvalue()
 
 
-def _fixture_representation(ledger, *, locality="s"):
-    """Record one bounded-alternative Representation from the explicit fixture."""
-    representation = record_operator_representation(
-        ledger,
-        locality_identity=locality,
-        locality_standing=_standing(ledger, locality=locality),
-        alternative_sources=BOUNDED_ALTERNATIVE_FIXTURE_SOURCES,
-    )
-    return representation
-
-
 def _standing(ledger, *, locality="s"):
     return read_operator_locality_standing(
         ledger, locality_identity=locality
@@ -131,7 +119,6 @@ def _record_fixture_representation(ledger, *, locality="s"):
         ledger,
         locality_identity=locality,
         locality_standing=_standing(ledger, locality=locality),
-        alternative_sources=BOUNDED_ALTERNATIVE_FIXTURE_SOURCES,
     )
 
 
@@ -140,7 +127,6 @@ def _recorded_representation(ledger, *, locality="s"):
         ledger,
         locality_identity=locality,
         locality_standing=_standing(ledger, locality=locality),
-        alternative_sources=BOUNDED_ALTERNATIVE_FIXTURE_SOURCES,
     )
     return representation, ledger.get(representation["representation_event_identity"])
 
@@ -157,8 +143,6 @@ def test_representation_reader_reads_the_exact_recorded_representation():
         "act_occurrence_identity": representation["act_occurrence_identity"],
         "locality_identity": representation["locality_identity"],
         "representation_result": representation["representation_result"],
-        "alternative_material": representation["alternative_material"],
-        "coordinate_binding": representation["coordinate_binding"],
         "responsible_act_evidence_identity": representation[
             "responsible_act_evidence_identity"
         ],
@@ -1057,9 +1041,7 @@ def test_c0_presents_standing_with_no_developer_semantics():
     assert material["unknowns"] == []
     assert material["conflicts"] == []
 
-    # No developer-supplied alternative_material, sources, represented relations, or treatment.
-    assert material["alternative_material"] == []
-    assert material["coordinate_binding"] == {}
+    # No developer-supplied sources, represented relations, or treatment.
     flattened = str(material)
     for injected in (
         "Establish richer shared grammar",
@@ -1089,31 +1071,11 @@ def test_representation_act_dimensions_record_only_coordinates_that_exist():
     for forbidden_text in (
         "bounded-alternative",
         "bounded alternative",
-        "alternative_material",
         "role-tagged",
         "bindings",
         "represented-source",
     ):
         assert forbidden_text not in flattened, forbidden_text
-
-    explicit = record_operator_representation(
-        ledger,
-        locality_identity="s",
-        locality_standing=standing,
-        alternative_sources=BOUNDED_ALTERNATIVE_FIXTURE_SOURCES,
-    )
-    dimensions = ledger.get(explicit["representation_event_identity"]).material["dimensions"]
-    assert dimensions["content"] == (
-        "bounded Representation of current Locality Standing with "
-        "alternative material count 3"
-    )
-    assert dimensions["occurrence_preservation"] == (
-        "alternative material count 3; roles, response-coordinate binding, "
-        "and represented provenance occurrences recorded"
-    )
-    assert "bounded-alternative" not in str(dimensions).lower()
-    assert "bounded alternative" not in str(dimensions).lower()
-
 
 def test_console_presents_standing_only_across_an_ingest():
     ledger, _ = _run_console("hello\n")
@@ -1149,7 +1111,6 @@ def test_console_presents_standing_only_across_an_ingest():
             positions.identity,
         ).occurrences
     )
-    assert c0.material["alternative_material"] == [] and c1.material["alternative_material"] == []
     # No developer result semantics anywhere in the locality.
     locality = str([e.material for e in ledger.list()])
     assert "developer-supplied" not in locality
@@ -1173,71 +1134,6 @@ def test_c0_and_c1_are_recorded_in_order_without_authored_output():
     assert output == ""
     assert not any(
         event.kind == "operator.representation.emitted" for event in events
-    )
-
-
-def test_alternatives_carry_complete_coordinates_and_provenance_evidence():
-    ledger = EventLedger()
-    _fixture_representation(ledger)
-
-    standing = _standing(ledger)
-    representation_record = list(standing["representations"].values())[-1]
-    assert representation_record is not None
-    assert representation_record["representation_result"]
-    assert representation_record["scope"] == "locality:s"
-    # provenance is the input Standing's as-of boundary; None here is the
-    # recorded absence of prior locality events, not a fabricated Unknown.
-    assert "provenance" in representation_record
-    assert representation_record["known_loss"] == [
-        "label compresses represented candidate relation"
-    ]
-    # No response occurrence exists at representation Act; that is absence, not
-    # Unknown, so the supplied Representation carries no Unknowns.
-    assert representation_record["unknowns"] == []
-    assert representation_record["conflicts"] == []
-    # Absent for a representation Act from empty Standing: recorded absence of a prior
-    # input occurrence, not absence of participation.
-    assert representation_record["locality_standing_as_of_event_identity"] is None
-    assert len(representation_record["alternative_material"]) == 3
-    representation_results = set()
-    for alternative in representation_record["alternative_material"]:
-        assert alternative["alternative_identity"]
-        assert alternative["role"] == "representation-navigation"
-        assert alternative["response_coordinate"]
-        assert alternative["label"]
-        source = alternative["represented_source"]
-        assert source["identity"].startswith("source:")
-        assert source["identity"] != source["represented_result"]
-        assert source["kind"]
-        assert source["source_role"] == "developer-supplied"
-        assert source["represented_result"]
-        assert source["reference"]
-        relation_coordinates = alternative["representation"]
-        assert relation_coordinates["representation_result"]
-        representation_results.add(relation_coordinates["representation_result"])
-        assert relation_coordinates["scope"] == "locality:s"
-        assert relation_coordinates["provenance"] == source["reference"]
-        assert "evidence_event_identities" not in relation_coordinates
-        assert relation_coordinates["known_loss"]
-        assert relation_coordinates["unknowns"] == []
-        assert relation_coordinates["conflicts"] == []
-        assert (
-            representation_record["coordinate_binding"][alternative["response_coordinate"]]
-            == alternative["alternative_identity"]
-        )
-    # The three representation relations carry distinct representation Act results.
-    assert len(representation_results) == 3
-
-
-def test_no_new_represented_relation_candidate_is_supplied():
-    ledger = EventLedger()
-    _fixture_representation(ledger)
-
-    representation = list(_standing(ledger)["representations"].values())[-1]
-    assert len(representation["alternative_material"]) == 3
-    assert all(
-        alternative["represented_source"]["source_role"] == "developer-supplied"
-        for alternative in representation["alternative_material"]
     )
 
 
@@ -1265,14 +1161,12 @@ def test_representation_representation_is_deterministic_under_unrelated_events()
 
 
 def test_next_console_iteration_validates_c1_and_forms_c2():
-    # Direct read: after C1 is recorded, the read side returns its
-    # complete alternative_material and bindings.
+    # Direct read: after C1 is recorded, the read side returns its exact
+    # Representation coordinates.
     ledger = EventLedger()
     c1 = _record_fixture_representation(ledger)
     read = list(_standing(ledger)["representations"].values())[-1]
     assert read["representation_identity"] == c1["representation_identity"]
-    assert read["alternative_material"] == c1["alternative_material"]
-    assert read["coordinate_binding"] == c1["coordinate_binding"]
     assert read["emitted_event_identity"] == c1["emitted_event_identity"]
 
     # Through the console: the second iteration has as input Standing containing
@@ -1291,13 +1185,7 @@ def test_next_console_iteration_validates_c1_and_forms_c2():
     boundary = positions[c2["locality_standing_as_of_event_identity"]]
     assert positions[c1["representation_event_identity"]] < boundary
     assert c1["emitted_event_identity"] is None
-    # The represented source candidates keep stable exact identities
-    # across representation Acts.
-    identities = lambda representation: [
-        alternative["represented_source"]["identity"]
-        for alternative in representation["alternative_material"]
-    ]
-    assert identities(c1) == identities(c2)
+    assert c1["representation_identity"] != c2["representation_identity"]
 
 
 def test_first_interaction_attaches_no_representation_to_the_ingest():
@@ -1415,7 +1303,6 @@ def test_representation_act_is_recorded_without_manufacturing_emission():
         ledger,
         locality_identity="s",
         locality_standing=_standing(ledger),
-        alternative_sources=BOUNDED_ALTERNATIVE_FIXTURE_SOURCES,
     )
     assert representation["emitted_event_identity"] is None
     # Representation Act is read; no emission occurrence is manufactured.

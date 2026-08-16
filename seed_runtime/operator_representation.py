@@ -92,7 +92,6 @@ def record_operator_representation(
     *,
     locality_identity: str,
     locality_standing: dict[str, Any],
-    alternative_sources: tuple[dict[str, Any], ...] = (),
     source_occurrence_reference: str | None = None,
 ) -> dict[str, Any]:
     """Record one exact bounded Representation and its Act occurrence."""
@@ -106,61 +105,16 @@ def record_operator_representation(
     representation_act_identity = new_identity("operator_representation_act")
     act_occurrence_identity = new_identity("operator_representation_act_occurrence")
     scope = f"locality:{locality_identity}"
-    alternative_material = []
-    coordinate_binding: dict[str, str] = {}
-    for position, source in enumerate(alternative_sources, start=1):
-        alternative_identity = new_identity("represented_alternative")
-        coordinate = str(position)
-        alternative_material.append(
-            {
-                "alternative_identity": alternative_identity,
-                "role": source["role"],
-                "response_coordinate": coordinate,
-                "label": source["label"],
-                "represented_source": dict(source["represented_source"]),
-                # Each A-to-G representation relation preserves its own
-                # boundary; Representation-level coordinates do not transfer
-                # to it by identity.
-                "representation": {
-                    "representation_result": source["representation_result_boundary"],
-                    "scope": scope,
-                    "provenance": source["represented_source"]["reference"],
-                    "known_loss": [
-                        "label compresses represented candidate "
-                        "represented relation"
-                    ],
-                    "unknowns": [],
-                    "conflicts": [],
-                },
-            }
-        )
-        coordinate_binding[coordinate] = alternative_identity
     representation_result = "bounded representation of current Locality Standing"
     content = "bounded Representation of current Locality Standing"
     occurrence = "Representation Act occurrence recorded"
     known_loss: list[str] = []
-    if alternative_material:
-        content = (
-            "bounded Representation of current Locality Standing with "
-            f"alternative material count {len(alternative_material)}"
-        )
-        occurrence = (
-            f"alternative material count {len(alternative_material)}; roles, "
-            "response-coordinate binding, and represented provenance occurrences "
-            "recorded"
-        )
-        representation_result += " with bounded alternative material and preserved source roles"
-        known_loss.append(
-            "label compresses represented candidate relation"
-        )
     result_material = {
         "result_identity": representation_identity,
         "representation_act_identity": representation_act_identity,
         "act_occurrence_identity": act_occurrence_identity,
         "source_occurrence_reference": source_occurrence_reference,
         "representation_result": representation_result,
-        "alternative_material": alternative_material,
-        "coordinate_binding": coordinate_binding,
         "locality_standing_as_of_event_identity": locality_standing["as_of_event_identity"],
         "known_loss": known_loss,
         "unknowns": [],
@@ -239,8 +193,6 @@ def record_operator_representation(
         "act_occurrence_identity": act_occurrence_identity,
         "locality_identity": locality_identity,
         "representation_result": representation_result,
-        "alternative_material": alternative_material,
-        "coordinate_binding": coordinate_binding,
         "responsible_act_evidence_identity": responsible_act_evidence.identity,
         "yield_evidence_identity": yield_evidence.identity,
         "locality_evidence_identity": locality_evidence.identity,
@@ -441,8 +393,6 @@ def read_operator_representation(
         "act_occurrence_identity": material["act_occurrence_identity"],
         "locality_identity": event.locality_identity,
         "representation_result": material["representation_result"],
-        "alternative_material": material["alternative_material"],
-        "coordinate_binding": material["coordinate_binding"],
         "responsible_act_evidence_identity": act_evidence.identity,
         "yield_evidence_identity": yield_evidence_identity,
         "locality_evidence_identity": locality_evidence.identity,

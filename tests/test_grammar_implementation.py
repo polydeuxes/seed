@@ -93,7 +93,6 @@ from seed_runtime.occurrence_position_measurement import (
 )
 from seed_runtime.yield_evidence import YIELD_LIVE_BOUNDARIES
 from seed_runtime.yield_evidence import read_yield_relation_requirements
-from tests.bounded_alternative_fixture import BOUNDED_ALTERNATIVE_FIXTURE_SOURCES
 
 
 def _record_byte_measurement(
@@ -451,7 +450,6 @@ def _sourced_representation_witness() -> dict:
         locality_standing=read_operator_locality_standing(
             ledger, locality_identity="representation-source"
         ),
-        alternative_sources=BOUNDED_ALTERNATIVE_FIXTURE_SOURCES,
         source_occurrence_reference=source.identity,
     )
     event = ledger.get(representation["representation_event_identity"])
@@ -1942,26 +1940,6 @@ def _representation_source_witness(bundle: dict) -> dict[str, str]:
         if isinstance(source_reference, str)
         else None
     )
-    alternatives = material.get("alternative_material")
-    alternatives_are_exact = bool(
-        isinstance(alternatives, list)
-        and alternatives
-        and all(
-            isinstance(alternative, dict)
-            and isinstance(alternative.get("role"), str)
-            and alternative["role"]
-            and isinstance(alternative.get("represented_source"), dict)
-            and isinstance(alternative.get("representation"), dict)
-            and alternative["representation"].get("scope")
-            == dimensions.get("scope_locality")
-            and alternative["representation"].get("provenance")
-            == alternative["represented_source"].get("reference")
-            and isinstance(alternative["representation"].get("known_loss"), list)
-            and isinstance(alternative["representation"].get("conflicts"), list)
-            and isinstance(alternative["representation"].get("unknowns"), list)
-            for alternative in alternatives
-        )
-    )
     return {
         "responsibility": (
             EXACT
@@ -1997,7 +1975,6 @@ def _representation_source_witness(bundle: dict) -> dict[str, str]:
         "authority": (
             EXACT if dimensions.get("authority") == "unestablished" else MISSING
         ),
-        "alternative_material": EXACT if alternatives_are_exact else MISSING,
         "known_loss": (
             EXACT if isinstance(material.get("known_loss"), list) else MISSING
         ),
@@ -3601,9 +3578,6 @@ def test_representation_source_coordinate_adversaries_preserve_exact_dependencie
         "authority": lambda material: material["dimensions"].__setitem__(
             "authority", "different authority"
         ),
-        "alternative_material": lambda material: material["alternative_material"][
-            0
-        ].__setitem__("role", ""),
         "known_loss": lambda material: material.__setitem__("known_loss", None),
         "conflicts": lambda material: material.__setitem__("conflicts", None),
         "unknowns": lambda material: material.__setitem__("unknowns", None),
@@ -3613,11 +3587,7 @@ def test_representation_source_coordinate_adversaries_preserve_exact_dependencie
         bundle = _sourced_representation_witness()
         mutate(bundle["event"].material)
         witness = _representation_source_witness(bundle)
-        expected_missing = (
-            {"scope_locality", "alternative_material"}
-            if changed == "scope_locality"
-            else {changed}
-        )
+        expected_missing = {changed}
 
         assert {
             coordinate
