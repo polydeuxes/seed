@@ -108,6 +108,23 @@ def test_representation_reader_reads_the_exact_recorded_representation():
     }
 
 
+def test_representation_carries_exact_material_without_claiming_meaning():
+    ledger = EventLedger()
+    representation = record_operator_representation(
+        ledger,
+        locality_identity="s",
+        locality_standing={"as_of_event_identity": None},
+        exact_material=b"hello",
+        source_event_identity="ingest-occurrence",
+    )
+    event = ledger.get(representation["representation_event_identity"])
+    evidence = ledger.get(event.material["yield_evidence_identity"])
+
+    assert event.exact_material == b"hello"
+    assert evidence.exact_material == b"hello"
+    assert event.material["attempt_reference"] == "ingest-occurrence"
+
+
 @pytest.mark.parametrize(
     "coordinate",
     ("responsible_act_evidence_identity", "locality_evidence_identity", "yield_evidence_identity"),

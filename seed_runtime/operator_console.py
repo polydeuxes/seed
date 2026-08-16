@@ -182,6 +182,15 @@ def run_persistent_operator_console(
             )
             if attempt_record["current_standing"]["ingest_occurrence"] is not None:
                 if raw_output_stream is not None:
+                    representation = record_operator_representation(
+                        ledger,
+                        locality_identity=locality_identity,
+                        locality_standing=locality_standing,
+                        exact_material=boundary_material.exact_bytes,
+                        source_event_identity=attempt_record["current_standing"][
+                            "ingest_occurrence"
+                        ]["evidence_event_identity"],
+                    )
                     emit_exact_material(raw_output_stream, boundary_material.exact_bytes)
                     continue
                 # The Representation result and Yield Evidence retain distinct identities. No Compare

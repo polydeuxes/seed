@@ -80,6 +80,8 @@ def record_operator_representation(
     locality_identity: str,
     locality_standing: dict[str, Any],
     alternative_sources: tuple[dict[str, Any], ...] = (),
+    exact_material: bytes | None = None,
+    source_event_identity: str | None = None,
 ) -> dict[str, Any]:
     """Record one exact bounded Representation and its Act occurrence."""
     representation_identity = new_identity("operator_representation")
@@ -173,6 +175,7 @@ def record_operator_representation(
         responsibility=REPRESENTATION_RESPONSIBILITY,
         live_boundary="representation_result",
         responsible_boundary="this Seed",
+        result_exact_material=exact_material,
     )
     locality_evidence = ledger.append(
         REPRESENTATION_LOCALITY_EVIDENCE_KIND,
@@ -185,12 +188,13 @@ def record_operator_representation(
                 "Evidence only for this exact Representation-to-occurrence Locality"
             ),
         },
+        exact_material=exact_material,
         locality_identity=locality_identity,
     )
     representation_event = ledger.append(
         REPRESENTATION_RECORDED_KIND,
         {
-            "attempt_reference": None,
+            "attempt_reference": source_event_identity,
             **result_material,
             "dimensions": _dimensions(
                 identity=act_occurrence_identity,
@@ -209,6 +213,7 @@ def record_operator_representation(
             "yield_evidence_identity": yield_evidence.identity,
             "locality_evidence_identity": locality_evidence.identity,
         },
+        exact_material=exact_material,
         locality_identity=locality_identity,
     )
     return {
@@ -226,6 +231,7 @@ def record_operator_representation(
         "emitted_event_identity": None,
         "locality_standing_as_of_event_identity": locality_standing["as_of_event_identity"],
         "emission_text": result_material["emission_text"],
+        "exact_material": exact_material,
         "known_loss": known_loss,
         "unknowns": [],
         "conflicts": [],
