@@ -116,8 +116,8 @@ def test_warrant_remains_lowercase_and_bounded_to_the_three_standing_sentences()
     assert paragraph == (
         "Preserved material does not warrant an Assertion it carries. "
         "This use of warrant is a composite. "
-        "This Seed carries only Standing it can warrant through its Evidence, "
-        "Authority, Scope, and preserved limits."
+            "Standing carried by this Seed requires warrant through its Evidence, "
+            "Authority, Scope, and preserved limits."
     )
 
 

@@ -91,7 +91,7 @@ def ingest_material(
             "responsibility": MATERIAL_INGEST_RESPONSIBILITY,
             "responsible_boundary": "this Seed",
             "authority": "unestablished",
-            "evidence_scope": "Evidence for this exact Ingest occurrence only",
+            "evidence_scope": "Evidence bounded to this exact Ingest occurrence",
         },
         locality_identity=locality_identity,
     )
@@ -118,7 +118,7 @@ def ingest_material(
             "responsibility": MATERIAL_INGEST_RESPONSIBILITY,
             "authority": "unestablished",
             "evidence_scope": (
-                "this exact Ingest occurrence and exact material result only; "
+                "bounded to this exact Ingest occurrence and exact material result; "
                 "represented relation Unknown"
             ),
             "scope_locality": f"locality:{locality_identity}",

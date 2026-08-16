@@ -119,7 +119,7 @@ def _authority() -> dict[str, str]:
         "source": "active Book",
         "book_clause_identity": RECORDED_STANDING_BOUNDARY_LOCALITY_BOOK_CLAUSE,
         "standing": "bounded",
-        "limit": "this exact direct Locality relation only",
+        "limit": "bounded to this exact direct Locality relation",
     }
 
 
@@ -212,7 +212,7 @@ def _act_material(assignment: Event) -> dict[str, Any]:
             material["act_occurrence_identity"],
         ),
         "authority": _authority(),
-        "evidence_scope": "Evidence for this exact direct Locality relation only",
+        "evidence_scope": "Evidence bounded to this exact direct Locality relation",
     }
 
 

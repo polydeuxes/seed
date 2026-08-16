@@ -17,7 +17,7 @@ same clause coordinates. Neither Representation is the Book by identity.
 
 ## Standing
 
-Standing is the Book's root. Seed may read an exact Responsibility assignment only through current Standing whose subject is the Assertion that the exact responsible boundary bears that Responsibility. Standing does not create, perform, or become the Responsibility by identity.
+Standing is the Book's root. Current Standing whose subject is the Assertion that the exact responsible boundary bears an exact Responsibility is required for Seed to read that Responsibility assignment. Standing does not create, perform, or become the Responsibility by identity.
 
 ```text
 Standing
@@ -193,7 +193,7 @@ Standing occurrence
 
 ### Preservation, standing, and neighboring branches
 
-These branches occur only where the exact responsibility instantiates them. Some may precede the act, govern it, preserve its occurrence, or belong to a later exact Act. Each retains its exact constitutional grammar.
+Each branch occurs where the exact responsibility instantiates it. Some may precede the act, govern it, preserve its occurrence, or belong to a later exact Act. Each retains its exact constitutional grammar.
 
 #### Preservation record
 

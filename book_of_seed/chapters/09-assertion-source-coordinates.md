@@ -16,7 +16,7 @@ An exact Representation Act may represent asserted content and source coordinate
 
 ### 05.Source.A — Later participation preserves source coordinates
 
-A recorded Assertion, diagnostic finding, or Evidence record may participate only through the exact Act's Applicability boundary. Participation preserves every carried source coordinate and limit; it does not establish the asserted content or its source relation.
+Participation of a recorded Assertion, diagnostic finding, or Evidence record requires the exact Act's Applicability boundary. Participation preserves every carried source coordinate and limit; it does not establish the asserted content or its source relation.
 
 ## Temporal coordinates
 

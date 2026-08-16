@@ -12,7 +12,7 @@ Unknown, and Standing.
 
 ### 03.Movement.A — Movement is not mutation
 
-The movement occurrence carries only the exact transition in its Assertion. A
+The movement occurrence carries the exact transition in its Assertion and no other transition. A
 write, recorded Event, route revision, represented Assertion revision,
 recorded-material revision, or displayed label does not supply movement by identity.
 

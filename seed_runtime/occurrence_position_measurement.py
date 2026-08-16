@@ -315,8 +315,8 @@ def _occurrence_position_act_evidence_material(
         "responsibility_assignment_evidence": _responsibility_assignment(finding),
         "authority": OCCURRENCE_POSITION_AUTHORITY,
         "evidence_scope": (
-            "Evidence for this exact occurrence position Measurement "
-            "occurrence only"
+            "Evidence bounded to this exact occurrence position Measurement "
+            "occurrence"
         ),
         "source_locality_identity": finding.source_locality_identity,
         "participation": participation,

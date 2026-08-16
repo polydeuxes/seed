@@ -524,7 +524,7 @@ def _material_of_evidence_of_act_occurrence(
         ),
         "authority": AUTHORITY_OF_RECURRENT_BYTE_PAIR_OCCURRENCE_POSITION_MEASUREMENT,
         "evidence_scope": (
-            "Evidence for this exact bounded pair occurrence Measurement only"
+            "Evidence bounded to this exact pair occurrence Measurement"
         ),
     }
 

@@ -2449,7 +2449,7 @@ def _movement_coordinate_witness(bundle: dict) -> dict[str, str]:
             and isinstance(source_material.get("assertion_scope"), dict)
             and movement.material.get("movement_scope")
             == (
-                "Locality movement of this exact Assertion only; establishes no "
+                "Locality movement bounded to this exact Assertion; establishes no "
                 "different identity or Standing"
             )
             else MISSING

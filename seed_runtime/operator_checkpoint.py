@@ -149,7 +149,7 @@ def _authority() -> dict[str, str]:
         "source": "active Book",
         "book_clause_identity": STANDING_BOUNDARY_REFERENCE_BOOK_CLAUSE,
         "standing": "bounded",
-        "limit": "this exact bounded record only",
+        "limit": "bounded to this exact record",
     }
 
 
@@ -216,7 +216,7 @@ def _act_material(assignment: Event) -> dict[str, Any]:
         "scope": deepcopy(assignment.material["scope"]),
         "result_identity": assignment.material["result_identity"],
         "authority": _authority(),
-        "evidence_scope": "Evidence for this exact bounded record occurrence only",
+        "evidence_scope": "Evidence bounded to this exact record occurrence",
     }
 
 

@@ -472,7 +472,6 @@ of
 omission
 on
 one
-only
 ontology
 open
 operate

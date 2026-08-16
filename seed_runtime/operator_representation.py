@@ -207,7 +207,7 @@ def record_operator_representation(
             "responsible_boundary": "this Seed",
             "authority": "unestablished",
             "evidence_scope": (
-                "Evidence for this exact Representation Act occurrence only"
+                "Evidence bounded to this exact Representation Act occurrence"
             ),
         },
         locality_identity=locality_identity,
@@ -234,7 +234,7 @@ def record_operator_representation(
             "carried_content": result_material,
             "authority": "unestablished",
             "evidence_scope": (
-                "Evidence only for this exact Representation-to-occurrence Locality"
+                "Evidence bounded to this exact Representation-to-occurrence Locality"
             ),
         },
         exact_material=exact_material,
@@ -251,7 +251,7 @@ def record_operator_representation(
                 responsibility=REPRESENTATION_RESPONSIBILITY,
                 authority="unestablished",
                 evidence_scope=(
-                    "representation Act occurrence only; establishes no input "
+                    "bounded to this Representation Act occurrence; establishes no input "
                     "support or response treatment"
                 ),
                 scope=scope,
@@ -526,7 +526,7 @@ def emit_operator_representation_material(
                 responsibility=REPRESENTATION_EXACT_MATERIAL_EMISSION_RESPONSIBILITY,
                 authority="unestablished",
                 evidence_scope=(
-                    "attempt occurrence only; establishes no output-boundary "
+                    "bounded to this attempt occurrence; establishes no output-boundary "
                     "acceptance or downstream effect"
                 ),
                 scope=scope,
@@ -554,7 +554,7 @@ def emit_operator_representation_material(
             "attempt_event_identity": attempt_event.identity,
             "authority": "unestablished",
             "evidence_scope": (
-                "Evidence only for the exact Representation-to-emission-attempt Locality"
+                "Evidence bounded to the exact Representation-to-emission-attempt Locality"
             ),
         },
         exact_material=exact_material,
@@ -642,8 +642,8 @@ def emit_operator_representation_material(
             "input_role": REPRESENTATION_EMISSION_INPUT_ROLE,
             "authority": "unestablished",
             "evidence_scope": (
-                "Evidence for this exact emission Act occurrence and "
-                "the Representation participating in its exact input role only"
+                "Evidence bounded to this exact emission Act occurrence and "
+                "the Representation participating in its exact input role; establishes no other role"
             ),
         },
         locality_identity=representation["locality_identity"],
@@ -659,7 +659,7 @@ def emit_operator_representation_material(
             "locality_relation": locality_relation,
             "authority": "unestablished",
             "evidence_scope": (
-                "Evidence only for the exact Representation-to-emission-occurrence Locality"
+                "Evidence bounded to the exact Representation-to-emission-occurrence Locality"
             ),
         },
         exact_material=exact_material,
@@ -691,7 +691,7 @@ def emit_operator_representation_material(
                 responsibility=REPRESENTATION_EXACT_MATERIAL_EMISSION_RESPONSIBILITY,
                 authority="unestablished",
                 evidence_scope=(
-                    "emission occurrence only; effects beyond the output "
+                    "bounded to this emission occurrence; effects beyond the output "
                     "boundary require separate Evidence"
                 ),
                 scope=scope,
@@ -763,7 +763,7 @@ def _record_exact_material_emission_failure(
             responsibility=REPRESENTATION_EXACT_MATERIAL_EMISSION_RESPONSIBILITY,
             authority="unestablished",
             evidence_scope=(
-                "failure occurrence only; establishes no downstream effect "
+                "bounded to this failure occurrence; establishes no downstream effect "
                 "and no acceptance beyond the reported result"
             ),
             scope=scope,
@@ -789,7 +789,7 @@ def _record_exact_material_emission_failure(
             "responsible_boundary": "this Seed",
             "authority": "unestablished",
             "evidence_scope": (
-                "this exact Representation emission failure occurrence only"
+                "bounded to this exact Representation emission failure occurrence"
             ),
         },
         locality_identity=representation["locality_identity"],

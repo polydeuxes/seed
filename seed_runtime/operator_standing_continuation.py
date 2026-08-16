@@ -244,8 +244,8 @@ def _act_evidence_material(
         ),
         "authority": "unestablished",
         "evidence_scope": (
-            "Evidence for this exact direct Standing Locality continuation "
-            "occurrence only"
+            "Evidence bounded to this exact direct Standing Locality continuation "
+            "occurrence"
         ),
     }
 

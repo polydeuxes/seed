@@ -164,7 +164,8 @@ BYTE_PAIR_INPUT_APPLICABILITY_RESPONSIBILITY = (
 )
 BYTE_PAIR_APPLICABILITY_AUTHORITY = (
     "determine Applicability of this exact proposed input to this exact downstream "
-    "Act only; the resulting Standing, not this authority, determines participation"
+    "Act; establishes no Applicability for another Act; the resulting Standing, "
+    "not this authority, determines participation"
 )
 BYTE_PAIR_UNKNOWN = (
     "what this ordered byte position pair participates in or represents remains Unknown",
@@ -619,7 +620,7 @@ def _move_byte_assertion_to_locality(
         ],
         "authority": "unestablished",
         "movement_scope": (
-            "Locality movement of this exact Assertion only; establishes no "
+            "Locality movement bounded to this exact Assertion; establishes no "
             "different identity or Standing"
         ),
     }
@@ -758,7 +759,7 @@ def _validate_moved_byte_assertion(
         ],
         "authority": "unestablished",
         "movement_scope": (
-            "Locality movement of this exact Assertion only; establishes no "
+            "Locality movement bounded to this exact Assertion; establishes no "
             "different identity or Standing"
         ),
     }
@@ -1087,8 +1088,8 @@ def record_byte_measurement_responsible_act_evidence(
             "source_localities": list(localities),
             "authority": "unestablished",
             "evidence_scope": (
-                "Evidence for this exact bounded responsible Measurement "
-                "occurrence only; establishes no responsibility"
+                "Evidence bounded to this exact responsible Measurement "
+                "occurrence; establishes no responsibility"
             ),
         },
         locality_identity=recording_locality_identity,
@@ -1145,8 +1146,8 @@ def _measurement_of_responsible_act_evidence(
         "source_localities": list(measured.source_localities),
         "authority": "unestablished",
         "evidence_scope": (
-            "Evidence for this exact bounded responsible Measurement "
-            "occurrence only; establishes no responsibility"
+            "Evidence bounded to this exact responsible Measurement "
+            "occurrence; establishes no responsibility"
         ),
     }
     if (
@@ -1336,8 +1337,8 @@ def assertions_of_recorded_byte_measurement(
         "source_localities": material["source_localities"],
         "authority": "unestablished",
         "evidence_scope": (
-            "Evidence for this exact bounded responsible Measurement "
-            "occurrence only; establishes no responsibility"
+            "Evidence bounded to this exact responsible Measurement "
+            "occurrence; establishes no responsibility"
         ),
     }
     if (
@@ -1506,8 +1507,8 @@ def _record_pair_responsible_act_evidence(
             "input_role": BYTE_PAIR_INPUT_ROLE,
             "authority": "unestablished",
             "evidence_scope": (
-                "Evidence for this exact bounded responsible Measurement "
-                "occurrence only; establishes no responsibility or authority "
+                "Evidence bounded to this exact responsible Measurement "
+                "occurrence; establishes no responsibility or authority "
                 "for another Act"
             ),
         },
@@ -2041,8 +2042,8 @@ def assertions_of_recorded_byte_position_pair_measurement(
         "input_role": material["input_role"],
         "authority": "unestablished",
         "evidence_scope": (
-            "Evidence for this exact bounded responsible Measurement "
-            "occurrence only; establishes no responsibility or authority "
+            "Evidence bounded to this exact responsible Measurement "
+            "occurrence; establishes no responsibility or authority "
             "for another Act"
         ),
     }

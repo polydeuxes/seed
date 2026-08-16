@@ -477,7 +477,7 @@
           "Standing"
         ]
       },
-      "authority": "active_Book_for_exact_byte_preservation_only",
+      "authority": "active_Book_bounded_to_exact_byte_preservation",
       "no_material_boundary": {
         "result": false,
         "Yield": false,
@@ -645,7 +645,7 @@
         "participation_in_another_Act": "unestablished"
       },
       "movement_preserves": [
-        "only_established_movement",
+        "established_movement",
         "previously_established_coordinates",
         "Unknown_coordinates",
         "same_subject"
@@ -851,7 +851,7 @@
         "public_code",
         "direct_instantiation",
         "equal_shape",
-        "read_only_behavior"
+        "behavior_without_mutation"
       ],
       "distinct_from": [
         ["Responsibility", "exact_Act"],
@@ -915,7 +915,7 @@
       "book_material_reference": "05.Recording.B",
       "witness": "unestablished",
       "requires": [
-        "recorded_material_admitted_only_to_diagnostic_Act",
+        "recorded_material_admitted_to_exact_diagnostic_Act",
         "separate_responsible_occurrence_for_additional_Standing"
       ],
       "preserves": "scoped_subject_of_recording",
@@ -1154,7 +1154,7 @@
       "subject": "bounded_input_support",
       "book_material_reference": "08.Authority.A",
       "witness": "unestablished",
-      "downstream_Act_may_stand_on_established_content_only_for": [
+      "downstream_Act_may_stand_on_established_content_bounded_by": [
         "exact_role",
         "addressed_subject",
         "result_boundary",

@@ -122,7 +122,7 @@ def _authority() -> dict[str, str]:
         "source": "active Book",
         "book_clause_identity": OPERATOR_MATERIAL_ACQUIRE_BOOK_CLAUSE,
         "standing": "bounded",
-        "limit": "preservation of this exact boundary result only",
+        "limit": "preservation bounded to this exact boundary result",
     }
 
 
@@ -213,7 +213,7 @@ def _act_evidence_material(assignment: Event) -> dict[str, Any]:
         "result_boundary_identity": material["result_boundary_identity"],
         "authority": _authority(),
         "evidence_scope": (
-            "Evidence for this exact operator material boundary occurrence only"
+            "Evidence bounded to this exact operator material boundary occurrence"
         ),
     }
 
