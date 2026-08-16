@@ -27,10 +27,12 @@ from compiled_format_invocation import (  # noqa: E402
     COMPILED_IMPLEMENTATION_FUNCTIONS,
     CompiledImplementationFunction,
     ExactMaterialReference,
+    admit_compiled_invocation_rows,
     admit_added_position_occurrences,
     added_position_admission_occurrence,
     added_position_admission_occurrences,
     admission_added_position_occurrences,
+    admission_result_added_position_occurrences,
     added_position_occurrences,
     compare_added_position_invocations,
     compare_added_position_pairs,
@@ -171,6 +173,30 @@ def book_pair_format_occurrences(measured_book_pairs):
 
 
 @pytest.fixture(scope="module")
+def book_byte_format_occurrences(measured_book_pairs):
+    return compiled_reference_invocations(
+        measured_book_pairs[7], boundary_identity="book-byte-format-invocation"
+    )
+
+
+@pytest.fixture(scope="module")
+def book_format_admissions(
+    book_pair_format_occurrences,
+    book_byte_format_occurrences,
+):
+    return (
+        admit_compiled_invocation_rows(
+            book_pair_format_occurrences,
+            boundary_identity="book-pair-format-admission",
+        ),
+        admit_compiled_invocation_rows(
+            book_byte_format_occurrences,
+            boundary_identity="book-byte-format-admission",
+        ),
+    )
+
+
+@pytest.fixture(scope="module")
 def book_byte_format_comparisons(measured_book_pairs):
     material = measured_book_pairs[5]
     pairs = tuple(bytes((first, second)) for first in material for second in material)
@@ -203,25 +229,16 @@ def book_byte_format_comparisons(measured_book_pairs):
 
 @pytest.fixture(scope="module")
 def book_three_byte_format_occurrences(
-    measured_book_pairs, book_byte_format_comparisons
+    book_format_admissions,
 ):
-    material = measured_book_pairs[5]
-    returned_pairs = frozenset(
-        bytes(pair)
-        for _, pair_returned, _ in book_byte_format_comparisons
-        for pair, returned in pair_returned.items()
-        if returned
-    )
-    occurrences = added_position_occurrences(
-        tuple(
-            reference
-            for reference in measured_book_pairs[6]
-            if reference.exact_material in returned_pairs
-        ),
-        measured_book_pairs[7],
+    pair_admission, byte_admission = book_format_admissions
+    occurrences = admission_result_added_position_occurrences(
+        pair_admission.result_reference,
+        byte_admission.result_reference,
         boundary_identity="book-three-byte-addition",
+        admitted_material_act_occurrence_count_limit=4096,
     )
-    return returned_pairs, occurrences, added_position_invocations(
+    return pair_admission, occurrences, added_position_invocations(
         occurrences, boundary_identity="book-three-byte-format"
     )
 
@@ -589,6 +606,53 @@ def test_every_measured_pair_reaches_every_compiled_format_implementation_functi
     )
 
 
+def test_pair_and_byte_admissions_require_every_compiled_function(
+    book_pair_format_occurrences,
+    book_byte_format_occurrences,
+    book_format_admissions,
+    measured_book_pairs,
+):
+    pair_admission, byte_admission = book_format_admissions
+
+    assert pair_admission.source_material == measured_book_pairs[6]
+    assert byte_admission.source_material == measured_book_pairs[7]
+    assert len(pair_admission.invocation_result_references) == (
+        len(COMPILED_IMPLEMENTATION_FUNCTIONS) * len(measured_book_pairs[6])
+    )
+    assert len(byte_admission.invocation_result_references) == (
+        len(COMPILED_IMPLEMENTATION_FUNCTIONS) * len(measured_book_pairs[7])
+    )
+    assert {
+        reference
+        for admitted in pair_admission.admitted_material
+        for reference in admitted
+    } == set(measured_book_pairs[6])
+    assert {
+        reference
+        for admitted in byte_admission.admitted_material
+        for reference in admitted
+    } == set(measured_book_pairs[7])
+    assert len(pair_admission.admitted_material) > 1
+    assert len(byte_admission.admitted_material) > 1
+
+    with pytest.raises(ValueError, match="same exact material"):
+        admit_compiled_invocation_rows(
+            (
+                book_pair_format_occurrences[0],
+                book_pair_format_occurrences[1][:-1],
+            ),
+            boundary_identity="missing-pair-format-invocation",
+        )
+    with pytest.raises(ValueError, match="one exact function"):
+        admit_compiled_invocation_rows(
+            (
+                book_byte_format_occurrences[0],
+                book_byte_format_occurrences[0],
+            ),
+            boundary_identity="repeated-byte-format-function",
+        )
+
+
 def test_compiled_format_implementation_functions_admit_the_same_material_differently(
     book_pair_format_occurrences,
 ):
@@ -662,8 +726,13 @@ def test_compiled_functions_establish_different_pairwise_distinctions(
 def test_three_byte_results_keep_their_measured_material_references(
     book_three_byte_format_occurrences, measured_book_pairs
 ):
-    returned_pairs, occurrences, _ = book_three_byte_format_occurrences
+    pair_admission, occurrences, _ = book_three_byte_format_occurrences
     material = set(measured_book_pairs[5])
+    admitted_pairs = {
+        reference
+        for admitted in pair_admission.admitted_material
+        for reference in admitted
+    }
     source_references = {
         (
             reference.recorded_occurrence_identity,
@@ -679,10 +748,10 @@ def test_three_byte_results_keep_their_measured_material_references(
         for reference in measured_book_pairs[7]
     }
 
-    assert returned_pairs
+    assert pair_admission.admitted_material
     assert occurrences
     assert all(
-        occurrence.source_material in returned_pairs
+        occurrence.source_reference in admitted_pairs
         and occurrence.added_material in {
             bytes((item,)) for item in material
         }
@@ -692,6 +761,11 @@ def test_three_byte_results_keep_their_measured_material_references(
             result_material=occurrence.result_material,
             added_position=occurrence.position,
         )
+        for occurrence in occurrences
+    )
+    assert all(
+        occurrence.source_admission_result_reference
+        == pair_admission.result_reference
         for occurrence in occurrences
     )
     assert all(

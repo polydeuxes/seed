@@ -769,18 +769,32 @@ class CompiledAdmissionOccurrence:
             reference.invocation_occurrence
             for reference in self.invocation_result_references
         )
-        if len({invocation.implementation_function for invocation in invocations}) != 1:
-            raise ValueError("one compiled Admission cannot cross implementation functions")
-        source_material = tuple(invocation.source_coordinate for invocation in invocations)
-        if any(source is None for source in source_material):
+        rows = {}
+        functions = {}
+        for invocation in invocations:
+            identity = invocation.implementation_function_identity
+            function = functions.setdefault(identity, invocation.implementation_function)
+            if function != invocation.implementation_function:
+                raise ValueError("one implementation identity names different functions")
+            rows.setdefault(identity, []).append(invocation)
+        source_rows = tuple(
+            tuple(invocation.source_coordinate for invocation in row)
+            for row in rows.values()
+        )
+        if any(source is None for row in source_rows for source in row):
             raise ValueError("compiled Admission requires exact source references")
+        source_material = source_rows[0]
+        if any(row != source_material for row in source_rows[1:]):
+            raise ValueError("compiled Admission rows require the same exact material")
         if source_material != self.admission_occurrence.source_material:
             raise ValueError("compiled Admission source differs from its invocations")
         same_coordinates = {}
-        for invocation in invocations:
-            same_coordinates.setdefault(invocation.returned, []).append(
-                invocation.source_coordinate
+        for position, source in enumerate(source_material):
+            coordinates = tuple(
+                (identity, row[position].returned)
+                for identity, row in rows.items()
             )
+            same_coordinates.setdefault(coordinates, []).append(source)
         admitted = tuple(tuple(material) for material in same_coordinates.values())
         if admitted != self.admission_occurrence.admitted_material:
             raise ValueError("compiled Admission differs from its invocation results")
@@ -1176,30 +1190,71 @@ def admit_compiled_invocation_occurrences(
     boundary_identity: str,
     occurrence_position: int = 0,
 ) -> CompiledAdmissionOccurrence:
-    if type(occurrences) is not tuple or not occurrences or any(
-        not isinstance(occurrence, CompiledInvocationOccurrence)
-        for occurrence in occurrences
-    ):
-        raise TypeError("compiled Admission requires exact invocation occurrences")
-    same_coordinates = {}
-    for occurrence in occurrences:
-        if occurrence.source_coordinate is None:
-            raise ValueError("compiled Admission requires exact source references")
-        same_coordinates.setdefault(occurrence.returned, []).append(
-            occurrence.source_coordinate
+    return admit_compiled_invocation_rows(
+        (occurrences,),
+        boundary_identity=boundary_identity,
+        occurrence_position=occurrence_position,
+    )
+
+
+def admit_compiled_invocation_rows(
+    occurrence_rows: tuple[tuple[CompiledInvocationOccurrence, ...], ...],
+    *,
+    boundary_identity: str,
+    occurrence_position: int = 0,
+) -> CompiledAdmissionOccurrence:
+    if type(occurrence_rows) is not tuple or not occurrence_rows:
+        raise TypeError("compiled Admission requires exact invocation tuples")
+    if any(
+        type(row) is not tuple
+        or not row
+        or any(
+            not isinstance(occurrence, CompiledInvocationOccurrence)
+            for occurrence in row
         )
+        for row in occurrence_rows
+    ):
+        raise TypeError("compiled Admission requires exact invocation tuples")
+    identities = tuple(
+        row[0].implementation_function_identity for row in occurrence_rows
+    )
+    if len(set(identities)) != len(identities) or any(
+        any(
+            occurrence.implementation_function_identity != identity
+            for occurrence in row
+        )
+        for identity, row in zip(identities, occurrence_rows)
+    ):
+        raise ValueError("each compiled Admission tuple requires one exact function")
+    source_rows = tuple(
+        tuple(occurrence.source_coordinate for occurrence in row)
+        for row in occurrence_rows
+    )
+    if any(source is None for row in source_rows for source in row):
+        raise ValueError("compiled Admission requires exact source references")
+    source_material = source_rows[0]
+    if any(row != source_material for row in source_rows[1:]):
+        raise ValueError("compiled Admission tuples require the same exact material")
+    same_coordinates = {}
+    for position, source in enumerate(source_material):
+        coordinates = tuple(
+            (identity, row[position].returned)
+            for identity, row in zip(identities, occurrence_rows)
+        )
+        same_coordinates.setdefault(coordinates, []).append(source)
+    flattened = tuple(
+        occurrence for row in occurrence_rows for occurrence in row
+    )
     admission = admission_occurrence(
         tuple(tuple(material) for material in same_coordinates.values()),
         boundary_identity=boundary_identity,
         occurrence_position=occurrence_position,
-        source_material=tuple(
-            occurrence.source_coordinate for occurrence in occurrences
-        ),
+        source_material=source_material,
     )
     return CompiledAdmissionOccurrence(
         admission_occurrence=admission,
         invocation_result_references=tuple(
-            occurrence.result_reference for occurrence in occurrences
+            occurrence.result_reference for occurrence in flattened
         ),
     )
 
