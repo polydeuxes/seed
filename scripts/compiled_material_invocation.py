@@ -1223,6 +1223,7 @@ def first_recurring_added_return_compare(
     *,
     boundary_identity: str,
     act_occurrence_count_limit: int,
+    invoke_later: bool = True,
 ) -> tuple[
     tuple[MaterialAddedReturnCompareOccurrence, ...],
     MaterialInvocationReturnCoordinates | None,
@@ -1246,6 +1247,8 @@ def first_recurring_added_return_compare(
         or act_occurrence_count_limit < 1
     ):
         raise TypeError("one exact positive Act occurrence count limit is required")
+    if type(invoke_later) is not bool:
+        raise TypeError("later invocation control must be exact")
     source_by_reference = {
         invocation.source_reference: invocation for invocation in source_invocations
     }
@@ -1273,6 +1276,8 @@ def first_recurring_added_return_compare(
             if len(comparisons) >= 2
             else None
         )
+        if coordinates is not None and not invoke_later:
+            return tuple(comparisons), coordinates, None
         result_invocation = invocation_occurrence(
             addition.result_material,
             implementation_function,
@@ -1293,6 +1298,164 @@ def first_recurring_added_return_compare(
             return tuple(comparisons), coordinates, comparison
         comparisons.append(comparison)
     return tuple(comparisons), None, None
+
+
+def recurring_added_result_coordinates_across(
+    comparison_rows: tuple[tuple[MaterialAddedReturnCompareOccurrence, ...], ...],
+    addition: AddedPositionOccurrence,
+    source_invocations: tuple[MaterialInvocationOccurrence, ...],
+) -> tuple[MaterialInvocationReturnCoordinates, ...] | None:
+    if type(comparison_rows) is not tuple or len(comparison_rows) < 2 or any(
+        type(row) is not tuple
+        or len(row) < 2
+        or any(
+            not isinstance(comparison, MaterialAddedReturnCompareOccurrence)
+            for comparison in row
+        )
+        for row in comparison_rows
+    ):
+        raise TypeError("full-function recurrence requires exact Compare tuples")
+    if not isinstance(addition, AddedPositionOccurrence):
+        raise TypeError("full-function recurrence requires one exact addition")
+    if (
+        type(source_invocations) is not tuple
+        or len(source_invocations) != len(comparison_rows)
+        or any(
+            not isinstance(invocation, MaterialInvocationOccurrence)
+            for invocation in source_invocations
+        )
+    ):
+        raise TypeError("full-function recurrence requires exact source invocations")
+    comparison_act_identities = tuple(
+        tuple(
+            comparison.addition_occurrence.act_occurrence_identity
+            for comparison in row
+        )
+        for row in comparison_rows
+    )
+    if any(
+        row != comparison_act_identities[0]
+        for row in comparison_act_identities[1:]
+    ):
+        raise ValueError("full-function recurrence requires the same exact Acts")
+    comparison_function_identities = tuple(
+        row[0].implementation_function_identity for row in comparison_rows
+    )
+    source_function_identities = tuple(
+        invocation.implementation_function_identity
+        for invocation in source_invocations
+    )
+    if (
+        len(set(comparison_function_identities)) != len(comparison_rows)
+        or comparison_function_identities != source_function_identities
+        or any(
+            any(
+                comparison.implementation_function_identity != identity
+                for comparison in row
+            )
+            for identity, row in zip(comparison_function_identities, comparison_rows)
+        )
+    ):
+        raise ValueError(
+            "full-function recurrence requires different exact implementation functions"
+        )
+    if any(
+        invocation.source_reference != addition.source_reference
+        for invocation in source_invocations
+    ):
+        raise ValueError("full-function recurrence requires the exact source material")
+    coordinates = tuple(
+        recurring_added_result_coordinates(row, addition, source_invocation)
+        for row, source_invocation in zip(comparison_rows, source_invocations)
+    )
+    if any(coordinate is None for coordinate in coordinates):
+        return None
+    return coordinates
+
+
+def first_recurring_added_return_compare_across(
+    additions: tuple[AddedPositionOccurrence, ...],
+    source_invocation_rows: tuple[tuple[MaterialInvocationOccurrence, ...], ...],
+    *,
+    boundary_identity: str,
+    act_occurrence_count_limit: int,
+) -> tuple[
+    tuple[tuple[MaterialAddedReturnCompareOccurrence, ...], ...],
+    tuple[MaterialInvocationReturnCoordinates, ...] | None,
+    tuple[MaterialAddedReturnCompareOccurrence, ...] | None,
+]:
+    if type(source_invocation_rows) is not tuple or len(source_invocation_rows) < 2:
+        raise TypeError("full-function recurrence requires exact invocation tuples")
+    row_lengths = {len(row) for row in source_invocation_rows}
+    if len(row_lengths) != 1:
+        raise ValueError("full-function recurrence requires one exact source sequence")
+    functions = tuple(
+        row[0].implementation_function for row in source_invocation_rows if row
+    )
+    if len(functions) != len(source_invocation_rows) or len(
+        {function.identity for function in functions}
+    ) != len(functions):
+        raise ValueError(
+            "full-function recurrence requires different implementation functions"
+        )
+    source_references = tuple(
+        tuple(invocation.source_reference for invocation in row)
+        for row in source_invocation_rows
+    )
+    if any(row != source_references[0] for row in source_references[1:]):
+        raise ValueError("full-function recurrence requires one exact source sequence")
+    source_by_function = tuple(
+        {
+            invocation.source_reference: invocation for invocation in row
+        }
+        for row in source_invocation_rows
+    )
+    if any(len(found) != len(row) for found, row in zip(source_by_function, source_invocation_rows)):
+        raise ValueError("full-function recurrence requires distinct source occurrences")
+    comparisons = tuple([] for _ in functions)
+    for occurrence_position, addition in enumerate(
+        additions[:act_occurrence_count_limit]
+    ):
+        source_invocations = tuple(
+            found.get(addition.source_reference) for found in source_by_function
+        )
+        if any(invocation is None for invocation in source_invocations):
+            raise ValueError("recurrence requires each exact source invocation")
+        coordinates = (
+            recurring_added_result_coordinates_across(
+                tuple(tuple(row) for row in comparisons),
+                addition,
+                source_invocations,
+            )
+            if occurrence_position >= 2
+            else None
+        )
+        later = []
+        for row, function, source_invocation in zip(
+            comparisons, functions, source_invocations
+        ):
+            result_invocation = invocation_occurrence(
+                addition.result_material,
+                function,
+                boundary_identity=f"{boundary_identity}-{function.identity}-invocation",
+                invocation_position=occurrence_position,
+                source_reference=addition.result_reference,
+                time_limit_second_count=source_invocation.time_limit_second_count,
+                material_byte_count_limit=source_invocation.material_byte_count_limit,
+            )
+            comparison = MaterialAddedReturnCompareOccurrence(
+                boundary_identity=f"{boundary_identity}-{function.identity}-compare",
+                occurrence_position=occurrence_position,
+                addition_occurrence=addition,
+                source_invocation=source_invocation,
+                result_invocation=result_invocation,
+            )
+            later.append(comparison)
+            if coordinates is None:
+                row.append(comparison)
+        if coordinates is not None:
+            return tuple(tuple(row) for row in comparisons), coordinates, tuple(later)
+    return tuple(tuple(row) for row in comparisons), None, None
 
 
 def _compare_added_material_invocations(

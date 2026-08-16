@@ -62,7 +62,9 @@ from compiled_material_invocation import (  # noqa: E402
     occurrences_across,
     invocation_occurrence,
     first_recurring_added_return_compare,
+    first_recurring_added_return_compare_across,
     recurring_added_result_coordinates,
+    recurring_added_result_coordinates_across,
     reference_occurrences_across,
 )
 from material_admission import (  # noqa: E402
@@ -2373,6 +2375,144 @@ def test_recurring_result_coordinates_precede_one_later_invocation(monkeypatch):
         act_occurrence_count_limit=len(all_additions),
     ) == ((), None, None)
     assert supplied == []
+
+
+def test_distinct_function_coordinates_precede_every_later_invocation(monkeypatch):
+    supplied = []
+
+    class Completed:
+        stderr = b""
+
+        def __init__(self, function_identity, material):
+            self.stdout = material
+            base = 0 if function_identity == "compiled-0" else 3
+            self.returncode = base + int(material == b"c")
+
+    def compiled_occurrence(invocation, **kwargs):
+        function_identity = invocation[0]
+        material = kwargs["input"]
+        supplied.append((function_identity, material))
+        return Completed(function_identity, material)
+
+    monkeypatch.setattr(
+        "compiled_material_invocation.subprocess.run", compiled_occurrence
+    )
+    references = tuple(
+        ExactMaterialReference(
+            f"source-{position}",
+            f"assertion-{position}",
+            "distinct-function-locality",
+            material,
+        )
+        for position, material in enumerate((b"a", b"b", b"c"))
+    )
+    admission = admission_occurrence(
+        (references,),
+        boundary_identity="distinct-function-admission",
+        source_material=references,
+    )
+    additions = tuple(
+        addition
+        for addition in admission_added_position_occurrences(
+            admission.result_reference,
+            boundary_identity="distinct-function-addition",
+            admitted_material_act_occurrence_count_limit=18,
+        )
+        if addition.position == 0
+        and addition.source_reference == references[0]
+    )
+    functions = tuple(
+        MaterialImplementationFunction(
+            identity=f"compiled-{position}",
+            invocation=(f"compiled-{position}",),
+        )
+        for position in range(2)
+    )
+    source_rows = tuple(
+        tuple(
+            invocation_occurrence(
+                reference.exact_material,
+                function,
+                boundary_identity=f"distinct-function-source-{function.identity}",
+                invocation_position=position,
+                source_reference=reference,
+            )
+            for position, reference in enumerate(references)
+        )
+        for function in functions
+    )
+    supplied.clear()
+
+    earlier, coordinates, later = first_recurring_added_return_compare_across(
+        additions,
+        source_rows,
+        boundary_identity="distinct-function-recurrence",
+        act_occurrence_count_limit=len(additions),
+    )
+
+    assert tuple(len(row) for row in earlier) == (2, 2)
+    assert coordinates is not None
+    assert len(set(coordinates)) == 2
+    assert later is not None
+    assert tuple(compare.result_coordinates for compare in later) == coordinates
+    assert supplied == (
+        [("compiled-0", b"aa"), ("compiled-1", b"aa")]
+        + [("compiled-0", b"ba"), ("compiled-1", b"ba")]
+        + [("compiled-0", b"ca"), ("compiled-1", b"ca")]
+    )
+
+    later_addition = later[0].addition_occurrence
+    later_sources = tuple(compare.source_invocation for compare in later)
+    assert recurring_added_result_coordinates_across(
+        earlier,
+        later_addition,
+        later_sources,
+    ) == coordinates
+
+    changed = replace(
+        earlier[1][-1],
+        result_invocation=replace(
+            earlier[1][-1].result_invocation,
+            returncode=earlier[1][-1].result_invocation.returncode + 1,
+        ),
+    )
+    assert recurring_added_result_coordinates_across(
+        (earlier[0], (*earlier[1][:-1], changed)),
+        later_addition,
+        later_sources,
+    ) is None
+
+    unrelated = replace(
+        earlier[1][-1],
+        result_invocation=replace(
+            earlier[1][-1].result_invocation,
+            stdout_bytes=b"unrelated material",
+        ),
+    )
+    assert recurring_added_result_coordinates_across(
+        (earlier[0], (*earlier[1][:-1], unrelated)),
+        later_addition,
+        later_sources,
+    ) == coordinates
+
+    with pytest.raises(ValueError, match="same exact Acts"):
+        recurring_added_result_coordinates_across(
+            (earlier[0], tuple(reversed(earlier[1]))),
+            later_addition,
+            later_sources,
+        )
+    with pytest.raises(ValueError, match="different exact implementation functions"):
+        recurring_added_result_coordinates_across(
+            (earlier[0], earlier[0]),
+            later_addition,
+            (later_sources[0], later_sources[0]),
+        )
+    with pytest.raises(TypeError, match="exact Compare tuples"):
+        recurring_added_result_coordinates_across(
+            (earlier[0],),
+            later_addition,
+            (later_sources[0],),
+        )
 
 
 def test_format_recurrence_precedes_one_later_invocation():
