@@ -229,6 +229,14 @@ class MaterialInvocationOccurrence:
         )
 
     @property
+    def return_coordinates(self) -> tuple[float, bool, int | None]:
+        return (
+            self.time_limit_second_count,
+            self.returned,
+            self.returncode,
+        )
+
+    @property
     def result_identity(self) -> tuple[str, str, int, str]:
         return (*self.occurrence_identity, "result")
 
@@ -287,6 +295,73 @@ class MaterialAdmissionOccurrence:
         )
         if admitted_material != self.admission_occurrence.admitted_material:
             raise ValueError("material Admission differs from its invocation results")
+
+    @property
+    def source_material(self):
+        return self.admission_occurrence.source_material
+
+    @property
+    def admitted_material(self):
+        return self.admission_occurrence.admitted_material
+
+    @property
+    def act_occurrence_identity(self) -> tuple[str, int]:
+        return self.admission_occurrence.act_occurrence_identity
+
+    @property
+    def result_identity(self) -> tuple[str, int, str]:
+        return self.admission_occurrence.result_identity
+
+    @property
+    def result_reference(self) -> AdmissionResultReference:
+        return AdmissionResultReference(admission_occurrence=self)
+
+
+@dataclass(frozen=True, slots=True)
+class MaterialReturnAdmissionOccurrence:
+    admission_occurrence: AdmissionOccurrence
+    invocation_result_references: tuple[MaterialInvocationResultReference, ...]
+
+    def __post_init__(self) -> None:
+        if not isinstance(self.admission_occurrence, AdmissionOccurrence):
+            raise TypeError("return Admission requires its exact Act occurrence")
+        if (
+            type(self.invocation_result_references) is not tuple
+            or not self.invocation_result_references
+            or any(
+                not isinstance(reference, MaterialInvocationResultReference)
+                for reference in self.invocation_result_references
+            )
+        ):
+            raise TypeError("return Admission requires exact invocation results")
+        invocation_occurrences = tuple(
+            reference.invocation_occurrence
+            for reference in self.invocation_result_references
+        )
+        if len(
+            {
+                occurrence.implementation_function
+                for occurrence in invocation_occurrences
+            }
+        ) != 1:
+            raise ValueError("one return Admission cannot cross implementation functions")
+        source_material = tuple(
+            occurrence.source_reference for occurrence in invocation_occurrences
+        )
+        if any(source is None for source in source_material):
+            raise ValueError("return Admission requires exact source references")
+        if source_material != self.admission_occurrence.source_material:
+            raise ValueError("return Admission source differs from its invocations")
+        same_coordinates = {}
+        for occurrence in invocation_occurrences:
+            same_coordinates.setdefault(occurrence.return_coordinates, []).append(
+                occurrence.source_reference
+            )
+        admitted_material = tuple(
+            tuple(material) for material in same_coordinates.values()
+        )
+        if admitted_material != self.admission_occurrence.admitted_material:
+            raise ValueError("return Admission differs from its invocation results")
 
     @property
     def source_material(self):
@@ -523,6 +598,42 @@ def admit_invocation_occurrences(
         ),
     )
     return MaterialAdmissionOccurrence(
+        admission_occurrence=admission,
+        invocation_result_references=tuple(
+            occurrence.result_reference for occurrence in occurrences
+        ),
+    )
+
+
+def admit_invocation_return_occurrences(
+    occurrences: tuple[MaterialInvocationOccurrence, ...],
+    *,
+    boundary_identity: str,
+    occurrence_position: int = 0,
+) -> MaterialReturnAdmissionOccurrence:
+    if type(occurrences) is not tuple or not occurrences:
+        raise TypeError("return Admission requires exact invocation occurrences")
+    if any(
+        not isinstance(occurrence, MaterialInvocationOccurrence)
+        for occurrence in occurrences
+    ):
+        raise TypeError("return Admission requires exact invocation occurrences")
+    same_coordinates = {}
+    for occurrence in occurrences:
+        if occurrence.source_reference is None:
+            raise ValueError("return Admission requires exact source references")
+        same_coordinates.setdefault(occurrence.return_coordinates, []).append(
+            occurrence.source_reference
+        )
+    admission = admission_occurrence(
+        tuple(tuple(material) for material in same_coordinates.values()),
+        boundary_identity=boundary_identity,
+        occurrence_position=occurrence_position,
+        source_material=tuple(
+            occurrence.source_reference for occurrence in occurrences
+        ),
+    )
+    return MaterialReturnAdmissionOccurrence(
         admission_occurrence=admission,
         invocation_result_references=tuple(
             occurrence.result_reference for occurrence in occurrences

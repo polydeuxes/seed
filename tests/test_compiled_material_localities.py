@@ -20,12 +20,14 @@ from compiled_format_invocation import (  # noqa: E402
 from compiled_material_invocation import (  # noqa: E402
     MaterialImplementationFunction,
     admit_invocation_occurrences,
+    admit_invocation_return_occurrences,
     compare_added_material_invocations,
     ingest_result_reference,
     material_locality_admission_occurrences,
     reference_occurrences_across,
 )
 from material_fixture_measurement import measured_one_byte_material  # noqa: E402
+from material_admission import admission_occurrence  # noqa: E402
 
 
 @pytest.fixture(scope="module")
@@ -111,6 +113,37 @@ def test_compiled_function_establishes_distinct_raw_coordinates(
     assert admission.source_material == references
     assert len({occurrence.returncode for occurrence in occurrences}) > 1
     assert len(admission.admitted_material) > 1
+
+
+def test_return_admission_does_not_replace_exact_result_material(
+    material_invocations,
+):
+    _, _, occurrences = material_invocations
+    changed = (
+        replace(occurrences[0], stdout_bytes=b"provider material"),
+        *occurrences[1:],
+    )
+    exact = admit_invocation_occurrences(
+        changed,
+        boundary_identity="one-byte-exact-material-admission",
+    )
+    returned = admit_invocation_return_occurrences(
+        changed,
+        boundary_identity="one-byte-return-admission",
+    )
+
+    assert len(exact.admitted_material) > len(returned.admitted_material)
+    assert returned.source_material == exact.source_material
+    assert returned.invocation_result_references[0].coordinates[-2] == (
+        b"provider material"
+    )
+    wrong = admission_occurrence(
+        (returned.source_material,),
+        boundary_identity="wrong-return-admission",
+        source_material=returned.source_material,
+    )
+    with pytest.raises(ValueError, match="differs from its invocation results"):
+        replace(returned, admission_occurrence=wrong)
 
 
 def test_one_byte_material_crosses_the_return_code_boundary(material_invocations):
