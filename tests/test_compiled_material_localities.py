@@ -276,6 +276,24 @@ def test_each_ordered_material_pair_has_one_exact_addition_occurrence(
         for addition in additions
     )
     assert all(
+        addition.source_reference
+        == admission.admitted_material[
+            addition.source_admitted_material_position
+        ][addition.source_admitted_reference_position]
+        and addition.added_reference
+        == admission.admitted_material[
+            addition.added_admitted_material_position
+        ][addition.added_admitted_reference_position]
+        for addition in additions
+    )
+    assert all(
+        addition.result_reference.source_admitted_reference_position
+        == addition.source_admitted_reference_position
+        and addition.result_reference.added_admitted_reference_position
+        == addition.added_admitted_reference_position
+        for addition in additions
+    )
+    assert all(
         addition.admitted_material_act_occurrence_count_limit
         == len(references) ** 2
         for addition in additions
@@ -336,6 +354,27 @@ def test_addition_cannot_cross_its_exact_admitted_material(
         )
 
 
+def test_addition_refuses_another_admitted_reference_position(
+    material_pair_invocations,
+):
+    _, _, _, additions, _, _ = material_pair_invocations
+    addition = additions[0]
+    admitted_material = addition.added_admission_result_reference.admitted_material[
+        addition.added_admitted_material_position
+    ]
+    wrong_position = next(
+        position
+        for position, reference in enumerate(admitted_material)
+        if reference != addition.added_reference
+    )
+
+    with pytest.raises(ValueError, match="differs from its Admissions"):
+        replace(
+            addition,
+            added_admitted_reference_position=wrong_position,
+        )
+
+
 def test_distinct_admission_results_bind_each_addition_input():
     sources = (
         ExactMaterialReference("source-0", "assertion-0", "bounded-material", b"\x00\x00"),
@@ -371,6 +410,10 @@ def test_distinct_admission_results_bind_each_addition_input():
         == added_admission.result_reference
         and addition.source_admitted_material_position == 0
         and addition.added_admitted_material_position == 0
+        and sources[addition.source_admitted_reference_position]
+        == addition.source_reference
+        and added[addition.added_admitted_reference_position]
+        == addition.added_reference
         for addition in additions
     )
     assert tuple(addition.source_reference for addition in additions) == tuple(
@@ -381,6 +424,10 @@ def test_distinct_admission_results_bind_each_addition_input():
         == source_admission.result_reference
         and addition.result_reference.added_admission_result_reference
         == added_admission.result_reference
+        and addition.result_reference.source_admitted_reference_position
+        == addition.source_admitted_reference_position
+        and addition.result_reference.added_admitted_reference_position
+        == addition.added_admitted_reference_position
         for addition in additions
     )
 

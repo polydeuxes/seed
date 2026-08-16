@@ -451,8 +451,10 @@ class ExactMaterialResultReference:
     exact_material: bytes
     source_admission_result_reference: AdmissionResultReference | None = None
     source_admitted_material_position: int | None = None
+    source_admitted_reference_position: int | None = None
     added_admission_result_reference: AdmissionResultReference | None = None
     added_admitted_material_position: int | None = None
+    added_admitted_reference_position: int | None = None
     admitted_material_act_occurrence_count_limit: int | None = None
 
     def __post_init__(self) -> None:
@@ -473,8 +475,10 @@ class ExactMaterialResultReference:
         admission_coordinates = (
             self.source_admission_result_reference,
             self.source_admitted_material_position,
+            self.source_admitted_reference_position,
             self.added_admission_result_reference,
             self.added_admitted_material_position,
+            self.added_admitted_reference_position,
             self.admitted_material_act_occurrence_count_limit,
         )
         if any(coordinate is not None for coordinate in admission_coordinates):
@@ -489,10 +493,26 @@ class ExactMaterialResultReference:
                 or self.source_admitted_material_position < 0
                 or self.source_admitted_material_position
                 >= len(self.source_admission_result_reference.admitted_material)
+                or type(self.source_admitted_reference_position) is not int
+                or self.source_admitted_reference_position < 0
+                or self.source_admitted_reference_position
+                >= len(
+                    self.source_admission_result_reference.admitted_material[
+                        self.source_admitted_material_position
+                    ]
+                )
                 or type(self.added_admitted_material_position) is not int
                 or self.added_admitted_material_position < 0
                 or self.added_admitted_material_position
                 >= len(self.added_admission_result_reference.admitted_material)
+                or type(self.added_admitted_reference_position) is not int
+                or self.added_admitted_reference_position < 0
+                or self.added_admitted_reference_position
+                >= len(
+                    self.added_admission_result_reference.admitted_material[
+                        self.added_admitted_material_position
+                    ]
+                )
             ):
                 raise TypeError("material result requires its exact admitted positions")
             if (
@@ -552,8 +572,10 @@ class AddedPositionOccurrence:
     result_material: bytes
     source_admission_result_reference: AdmissionResultReference | None = None
     source_admitted_material_position: int | None = None
+    source_admitted_reference_position: int | None = None
     added_admission_result_reference: AdmissionResultReference | None = None
     added_admitted_material_position: int | None = None
+    added_admitted_reference_position: int | None = None
     admitted_material_act_occurrence_count_limit: int | None = None
 
     def __post_init__(self) -> None:
@@ -587,8 +609,10 @@ class AddedPositionOccurrence:
         admission_coordinates = (
             self.source_admission_result_reference,
             self.source_admitted_material_position,
+            self.source_admitted_reference_position,
             self.added_admission_result_reference,
             self.added_admitted_material_position,
+            self.added_admitted_reference_position,
             self.admitted_material_act_occurrence_count_limit,
         )
         if any(coordinate is not None for coordinate in admission_coordinates):
@@ -603,10 +627,26 @@ class AddedPositionOccurrence:
                 or self.source_admitted_material_position < 0
                 or self.source_admitted_material_position
                 >= len(self.source_admission_result_reference.admitted_material)
+                or type(self.source_admitted_reference_position) is not int
+                or self.source_admitted_reference_position < 0
+                or self.source_admitted_reference_position
+                >= len(
+                    self.source_admission_result_reference.admitted_material[
+                        self.source_admitted_material_position
+                    ]
+                )
                 or type(self.added_admitted_material_position) is not int
                 or self.added_admitted_material_position < 0
                 or self.added_admitted_material_position
                 >= len(self.added_admission_result_reference.admitted_material)
+                or type(self.added_admitted_reference_position) is not int
+                or self.added_admitted_reference_position < 0
+                or self.added_admitted_reference_position
+                >= len(
+                    self.added_admission_result_reference.admitted_material[
+                        self.added_admitted_material_position
+                    ]
+                )
             ):
                 raise TypeError("addition Act requires its exact admitted positions")
             if (
@@ -614,19 +654,19 @@ class AddedPositionOccurrence:
                 or self.admitted_material_act_occurrence_count_limit < 1
             ):
                 raise TypeError("addition Act requires its exact occurrence count limit")
-            source_admitted_material = (
+            source_admitted_reference = (
                 self.source_admission_result_reference.admitted_material[
                     self.source_admitted_material_position
-                ]
+                ][self.source_admitted_reference_position]
             )
-            added_admitted_material = (
+            added_admitted_reference = (
                 self.added_admission_result_reference.admitted_material[
                     self.added_admitted_material_position
-                ]
+                ][self.added_admitted_reference_position]
             )
             if (
-                self.source_reference not in source_admitted_material
-                or self.added_reference not in added_admitted_material
+                self.source_reference != source_admitted_reference
+                or self.added_reference != added_admitted_reference
             ):
                 raise ValueError("addition Act material differs from its Admissions")
 
@@ -654,8 +694,10 @@ class AddedPositionOccurrence:
             exact_material=self.result_material,
             source_admission_result_reference=self.source_admission_result_reference,
             source_admitted_material_position=self.source_admitted_material_position,
+            source_admitted_reference_position=self.source_admitted_reference_position,
             added_admission_result_reference=self.added_admission_result_reference,
             added_admitted_material_position=self.added_admitted_material_position,
+            added_admitted_reference_position=self.added_admitted_reference_position,
             admitted_material_act_occurrence_count_limit=(
                 self.admitted_material_act_occurrence_count_limit
             ),
@@ -1810,9 +1852,9 @@ def admission_added_position_occurrences(
         )
         if occurrence_count > admitted_material_act_occurrence_count_limit:
             continue
-        for source in admitted_material:
+        for source_reference_position, source in enumerate(admitted_material):
             for position in range(len(source.exact_material) + 1):
-                for added in admitted_material:
+                for added_reference_position, added in enumerate(admitted_material):
                     found.append(
                         AddedPositionOccurrence(
                             boundary_identity=boundary_identity,
@@ -1830,10 +1872,16 @@ def admission_added_position_occurrences(
                                 admission_result_reference
                             ),
                             source_admitted_material_position=admitted_position,
+                            source_admitted_reference_position=(
+                                source_reference_position
+                            ),
                             added_admission_result_reference=(
                                 admission_result_reference
                             ),
                             added_admitted_material_position=admitted_position,
+                            added_admitted_reference_position=(
+                                added_reference_position
+                            ),
                             admitted_material_act_occurrence_count_limit=(
                                 admitted_material_act_occurrence_count_limit
                             ),
@@ -1906,9 +1954,13 @@ def admission_result_added_position_occurrences(
             )
             if occurrence_count > admitted_material_act_occurrence_count_limit:
                 continue
-            for source in source_admitted_material:
+            for source_reference_position, source in enumerate(
+                source_admitted_material
+            ):
                 for position in range(len(source.exact_material) + 1):
-                    for added in added_admitted_material:
+                    for added_reference_position, added in enumerate(
+                        added_admitted_material
+                    ):
                         found.append(
                             AddedPositionOccurrence(
                                 boundary_identity=boundary_identity,
@@ -1928,11 +1980,17 @@ def admission_result_added_position_occurrences(
                                 source_admitted_material_position=(
                                     source_admitted_position
                                 ),
+                                source_admitted_reference_position=(
+                                    source_reference_position
+                                ),
                                 added_admission_result_reference=(
                                     added_admission_result_reference
                                 ),
                                 added_admitted_material_position=(
                                     added_admitted_position
+                                ),
+                                added_admitted_reference_position=(
+                                    added_reference_position
                                 ),
                                 admitted_material_act_occurrence_count_limit=(
                                     admitted_material_act_occurrence_count_limit
