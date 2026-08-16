@@ -34,6 +34,10 @@ class StringSubclass(str):
     pass
 
 
+class OccurrencePositionFindingSubclass(OccurrencePositionFinding):
+    pass
+
+
 def occurrence_road():
     ledger = IntegrityLedger()
     first = ledger.append("test.occurrence", {"material": "a"}, locality_identity="a")
@@ -140,6 +144,42 @@ def test_supplied_reversal_cannot_replace_the_ledger_measurement():
         )
 
 
+def test_subclass_finding_cannot_replace_the_exact_measurement_type():
+    ledger, occurrences, boundary = occurrence_road()
+    subclass_finding = OccurrencePositionFindingSubclass(
+        source_locality_identity="a",
+        completeness_boundary=boundary,
+        occurrences=tuple(
+            (event.identity, position)
+            for position, event in enumerate(occurrences)
+        ),
+    )
+
+    with pytest.raises(TypeError, match="one exact finding"):
+        record_occurrence_position_measurement_responsible_act_evidence(
+            ledger,
+            recording_locality_identity="measurement",
+            finding=subclass_finding,
+        )
+
+
+def test_corrupted_source_cannot_enter_act_evidence_after_measurement():
+    ledger, occurrences, boundary = occurrence_road()
+    finding = measure_occurrence_position(
+        ledger,
+        source_locality_identity="a",
+        through=boundary,
+    )
+    ledger.corrupted.add(occurrences[1].identity)
+
+    with pytest.raises(ValueError, match="requires intact occurrences"):
+        record_occurrence_position_measurement_responsible_act_evidence(
+            ledger,
+            recording_locality_identity="measurement",
+            finding=finding,
+        )
+
+
 def test_recorded_position_measurement_has_exact_act_and_yield_evidence():
     ledger, _occurrences, _boundary, finding, recorded = recorded_road()
     act_evidence = ledger.get(recorded.material["responsible_act_evidence_identity"])
@@ -233,7 +273,7 @@ def test_recording_and_reading_do_not_reconstruct_complete_result_material(
     ]
 
 
-def test_act_evidence_can_be_observed_before_yield_and_result_are_recorded(
+def test_act_evidence_is_observed_before_yield_without_reconstructing_finding(
     monkeypatch,
 ):
     ledger, _occurrences, boundary = occurrence_road()
@@ -242,12 +282,11 @@ def test_act_evidence_can_be_observed_before_yield_and_result_are_recorded(
         source_locality_identity="a",
         through=boundary,
     )
-    exact_measure = position_measurement.measure_occurrence_position
     measurements = []
 
     def counted_measure(*args, **kwargs):
         measurements.append((args, kwargs))
-        return exact_measure(*args, **kwargs)
+        raise AssertionError("an exact finding must not be reconstructed")
 
     monkeypatch.setattr(
         position_measurement,
@@ -292,7 +331,11 @@ def test_act_evidence_can_be_observed_before_yield_and_result_are_recorded(
     assert recorded.material["responsible_act_evidence_identity"] == (
         act_evidence.identity
     )
-    assert len(measurements) == 1
+    assert get_recorded_occurrence_position_measurement(
+        ledger,
+        recorded.identity,
+    ) == finding
+    assert measurements == []
 
 
 @pytest.mark.parametrize(

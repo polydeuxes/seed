@@ -174,19 +174,29 @@ def _exact_occurrence_position_finding(
     ledger: EventLedger,
     finding: OccurrencePositionFinding,
 ) -> None:
+    if not isinstance(ledger, EventLedger):
+        raise TypeError("occurrence position Measurement requires one EventLedger")
     if type(finding) is not OccurrencePositionFinding:
         raise TypeError(
             "occurrence position recording requires one exact finding"
         )
-    exact = measure_occurrence_position(
-        ledger,
-        source_locality_identity=finding.source_locality_identity,
+    source_occurrences = ledger.list_locality(
+        finding.source_locality_identity,
         through=finding.completeness_boundary,
     )
-    if finding != exact:
+    if len(source_occurrences) != len(finding.occurrences):
         raise ValueError(
             "the supplied occurrence position finding differs from the exact boundary"
         )
+    for position, occurrence in enumerate(source_occurrences):
+        if ledger.integrity_of(occurrence.identity) == CORRUPTED:
+            raise ValueError(
+                "occurrence position Measurement requires intact occurrences"
+            )
+        if finding.occurrences[position] != (occurrence.identity, position):
+            raise ValueError(
+                "the supplied occurrence position finding differs from the exact boundary"
+            )
 
 
 def _occurrence_position_act_evidence_material(
@@ -493,13 +503,5 @@ def get_recorded_occurrence_position_measurement(
         raise ValueError(
             "the occurrence position Measurement result differs from its coordinates"
         )
-    exact = measure_occurrence_position(
-        ledger,
-        source_locality_identity=finding.source_locality_identity,
-        through=finding.completeness_boundary,
-    )
-    if finding != exact:
-        raise ValueError(
-            "the occurrence position Measurement differs from its exact boundary"
-        )
+    _exact_occurrence_position_finding(ledger, finding)
     return finding
