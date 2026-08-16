@@ -934,6 +934,59 @@ def test_joint_recurrence_preserves_heterogeneous_coordinates(
     assert len(set(coordinates)) == 2
 
 
+def test_joint_recurrence_refuses_duplicate_function_identity(
+    book_three_byte_format_occurrences,
+    book_pair_format_occurrences,
+):
+    with pytest.raises(ValueError, match="different implementation functions"):
+        first_recurring_added_compare_across(
+            book_three_byte_format_occurrences[1],
+            (book_pair_format_occurrences[0], book_pair_format_occurrences[0]),
+            boundary_identity="duplicate-joint-function",
+            act_occurrence_count_limit=10,
+        )
+
+
+def test_joint_recurrence_refuses_an_empty_function_row(
+    book_three_byte_format_occurrences,
+    book_pair_format_occurrences,
+):
+    with pytest.raises(ValueError, match="different implementation functions"):
+        first_recurring_added_compare_across(
+            book_three_byte_format_occurrences[1],
+            (book_pair_format_occurrences[0], ()),
+            boundary_identity="empty-joint-function",
+            act_occurrence_count_limit=10,
+        )
+
+
+def test_joint_recurrence_refuses_a_nonpositive_limit(
+    book_three_byte_format_occurrences,
+    book_pair_format_occurrences,
+):
+    with pytest.raises(TypeError, match="positive Act occurrence count"):
+        first_recurring_added_compare_across(
+            book_three_byte_format_occurrences[1],
+            (book_pair_format_occurrences[0],),
+            boundary_identity="invalid-joint-limit",
+            act_occurrence_count_limit=0,
+        )
+
+
+def test_joint_removal_recurrence_refuses_duplicate_function_identity(
+    book_removed_position_invocation_occurrences,
+    book_pair_format_occurrences,
+):
+    removals, _ = book_removed_position_invocation_occurrences
+    with pytest.raises(ValueError, match="different implementation functions"):
+        first_recurring_removed_compare_across(
+            removals,
+            (book_pair_format_occurrences[0], book_pair_format_occurrences[0]),
+            boundary_identity="duplicate-joint-removal-function",
+            act_occurrence_count_limit=10,
+        )
+
+
 def test_compiled_format_implementation_functions_admit_the_same_material_differently(
     book_pair_format_occurrences,
 ):

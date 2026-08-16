@@ -1964,7 +1964,7 @@ def first_recurring_added_compare_across(
     if len(functions) != len(source_invocation_rows) or len(
         {function.identity for function in functions}
     ) != len(functions):
-        raise ValueError("joint recurrence requires distinct implementation functions")
+        raise ValueError("joint recurrence requires different implementation functions")
     source_coordinates = tuple(
         tuple(invocation.source_coordinate for invocation in row)
         for row in source_invocation_rows
@@ -2230,7 +2230,7 @@ def first_recurring_removed_compare_across(
     if len(functions) != len(source_invocation_rows) or len(
         {function.identity for function in functions}
     ) != len(functions):
-        raise ValueError("joint recurrence requires distinct implementation functions")
+        raise ValueError("joint recurrence requires different implementation functions")
     source_coordinates = tuple(
         tuple(invocation.source_coordinate for invocation in row)
         for row in source_invocation_rows
