@@ -43,6 +43,17 @@ def _assert_relation_clauses(grammar: dict, active_book: str) -> None:
         assert active_book.count(f"### {clause} ") == 1
 
 
+def _machine_strings(value, path=()):
+    if isinstance(value, dict):
+        for key, nested in value.items():
+            yield from _machine_strings(nested, (*path, key))
+    elif isinstance(value, list):
+        for position, nested in enumerate(value):
+            yield from _machine_strings(nested, (*path, position))
+    elif isinstance(value, str):
+        yield path, value
+
+
 def test_machine_readable_grammar_traverses_responsibility_from_standing():
     grammar = json.loads(GRAMMAR.read_text(encoding="utf-8"))
 
@@ -89,6 +100,19 @@ def test_machine_readable_grammar_traverses_responsibility_from_standing():
         assert clause["subject"]
         assert clause["responsibility"]
         assert active_book.count(f"### {clause_identity} ") == 1
+
+
+def test_this_occurs_only_as_the_root_of_this_seed_subject():
+    grammar = json.loads(GRAMMAR.read_text(encoding="utf-8"))
+    uses = [
+        (path, value)
+        for path, value in _machine_strings(grammar)
+        if "this" in value.lower().split("_")
+    ]
+
+    assert uses
+    assert all(path[-1] == "subject" for path, _value in uses)
+    assert all(value.startswith("this_Seed") for _path, value in uses)
 
 
 def test_missing_relation_clause_is_detected():
