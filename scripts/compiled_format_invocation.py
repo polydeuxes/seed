@@ -1176,26 +1176,77 @@ class AddedPositionResultAdmissionOccurrence:
 
 
 @dataclass(frozen=True, slots=True)
+class _RemovedPositionAdmissionReading:
+    removal_occurrences: tuple[RemovedPositionOccurrence, ...]
+    comparison_occurrences: tuple[tuple[RemovedPositionCompareOccurrence, ...], ...]
+    source_material: tuple[ExactMaterialResultReference, ...] = field(init=False)
+    admitted_material: tuple[tuple[ExactMaterialResultReference, ...], ...] = field(
+        init=False
+    )
+
+    def __post_init__(self) -> None:
+        object.__setattr__(
+            self,
+            "source_material",
+            tuple(
+                occurrence.result_reference
+                for occurrence in self.removal_occurrences
+            ),
+        )
+        object.__setattr__(
+            self,
+            "admitted_material",
+            admit_removed_position_results(
+                self.removal_occurrences,
+                self.comparison_occurrences,
+            ),
+        )
+
+
+def _removed_position_admission_reading(
+    removal_occurrences: tuple[RemovedPositionOccurrence, ...],
+    comparison_occurrences: tuple[tuple[RemovedPositionCompareOccurrence, ...], ...],
+) -> _RemovedPositionAdmissionReading:
+    return _RemovedPositionAdmissionReading(
+        removal_occurrences,
+        comparison_occurrences,
+    )
+
+
+@dataclass(frozen=True, slots=True)
 class RemovedPositionResultAdmissionOccurrence:
     admission_occurrence: AdmissionOccurrence
     removal_occurrences: tuple[RemovedPositionOccurrence, ...]
     comparison_occurrences: tuple[tuple[RemovedPositionCompareOccurrence, ...], ...]
+    _reading: InitVar[_RemovedPositionAdmissionReading | None] = None
 
-    def __post_init__(self) -> None:
+    def __post_init__(
+        self,
+        _reading: _RemovedPositionAdmissionReading | None,
+    ) -> None:
         if not isinstance(self.admission_occurrence, AdmissionOccurrence):
             raise TypeError("removal result Admission requires its exact Act occurrence")
-        admitted = admit_removed_position_results(
-            self.removal_occurrences,
-            self.comparison_occurrences,
-        )
-        source_material = tuple(
-            occurrence.result_reference for occurrence in self.removal_occurrences
-        )
-        if self.admission_occurrence.source_material != source_material:
+        if _reading is None:
+            reading = _removed_position_admission_reading(
+                self.removal_occurrences,
+                self.comparison_occurrences,
+            )
+        elif type(_reading) is not _RemovedPositionAdmissionReading:
+            raise TypeError("removal result Admission reading must be exact")
+        else:
+            reading = _reading
+        if (
+            reading.removal_occurrences != self.removal_occurrences
+            or reading.comparison_occurrences != self.comparison_occurrences
+        ):
+            raise ValueError(
+                "removal result Admission reading differs from its occurrences"
+            )
+        if self.admission_occurrence.source_material != reading.source_material:
             raise ValueError(
                 "removal result Admission source differs from its Act results"
             )
-        if self.admission_occurrence.admitted_material != admitted:
+        if self.admission_occurrence.admitted_material != reading.admitted_material:
             raise ValueError(
                 "removal result Admission differs from its Compare occurrences"
             )
@@ -1650,20 +1701,21 @@ def removed_position_result_admission_occurrence(
     boundary_identity: str,
     occurrence_position: int = 0,
 ) -> RemovedPositionResultAdmissionOccurrence:
-    admitted = admit_removed_position_results(occurrences, comparisons)
-    source_material = tuple(
-        occurrence.result_reference for occurrence in occurrences
+    reading = _removed_position_admission_reading(
+        occurrences,
+        comparisons,
     )
     admission = admission_occurrence(
-        admitted,
+        reading.admitted_material,
         boundary_identity=boundary_identity,
         occurrence_position=occurrence_position,
-        source_material=source_material,
+        source_material=reading.source_material,
     )
     return RemovedPositionResultAdmissionOccurrence(
         admission_occurrence=admission,
         removal_occurrences=occurrences,
         comparison_occurrences=comparisons,
+        _reading=reading,
     )
 
 

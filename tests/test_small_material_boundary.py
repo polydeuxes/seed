@@ -15,10 +15,16 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "scripts"))
 
 import compiled_material_invocation  # noqa: E402
+import compiled_format_invocation  # noqa: E402
 
 from compiled_format_invocation import (  # noqa: E402
     COMPILED_IMPLEMENTATION_FUNCTIONS,
     CompiledImplementationFunction,
+    ExactMaterialReference,
+    ExactPositionMaterialReference,
+    RemovedPositionCompareOccurrence,
+    RemovedPositionOccurrence,
+    RemovedPositionResultAdmissionOccurrence,
     admission_removed_position_occurrences,
     added_position_admission_occurrence,
     added_position_admission_occurrences,
@@ -26,6 +32,7 @@ from compiled_format_invocation import (  # noqa: E402
     added_position_occurrences,
     compare_added_position_invocations,
     compiled_reference_invocations,
+    removed_position_result_admission_occurrence,
 )
 from compiled_material_invocation import (  # noqa: E402
     IngestResultReference,
@@ -155,6 +162,118 @@ def test_material_function_admission_reads_exact_invocation_rows_once(monkeypatc
         MaterialFunctionsAdmissionOccurrence(
             admission_occurrence=admission.admission_occurrence,
             invocation_result_references=admission.invocation_result_references,
+            _reading=different_reading,
+        )
+
+
+def test_removal_result_admission_reads_exact_comparison_matrix_once(monkeypatch):
+    sources = tuple(
+        ExactMaterialReference(
+            recorded_occurrence_identity=f"removal-reading-source-{position}",
+            assertion_identity=f"removal-reading-assertion-{position}",
+            locality_identity="removal-reading-locality",
+            exact_material=b"x",
+        )
+        for position in range(8)
+    )
+    removals = tuple(
+        RemovedPositionOccurrence(
+            boundary_identity="removal-reading-act",
+            locality_identity=source.locality_identity,
+            occurrence_position=position,
+            source_reference=source,
+            position=0,
+            removed_reference=ExactPositionMaterialReference(source, 0, b"x"),
+            result_material=b"",
+        )
+        for position, source in enumerate(sources)
+    )
+    comparisons = tuple(
+        tuple(
+            RemovedPositionCompareOccurrence(
+                boundary_identity="removal-reading-compare",
+                occurrence_position=(function_position * len(removals) + position),
+                implementation_function_identity=f"removal-function-{function_position}",
+                removed_position_act_occurrence_identity=(
+                    removal.act_occurrence_identity
+                ),
+                removed_position_result_reference=removal.result_reference,
+                source_invocation_occurrence_identity=(
+                    "removal-source-invocation",
+                    f"removal-function-{function_position}",
+                    position,
+                ),
+                result_invocation_occurrence_identity=(
+                    "removal-result-invocation",
+                    f"removal-function-{function_position}",
+                    position,
+                ),
+                source_returned=True,
+                result_returned=(position + function_position) % 2 == 0,
+            )
+            for position, removal in enumerate(removals)
+        )
+        for function_position in range(3)
+    )
+    readings = []
+    original_reading = compiled_format_invocation._removed_position_admission_reading
+
+    def measured_reading(removal_occurrences, comparison_occurrences):
+        readings.append((removal_occurrences, comparison_occurrences))
+        return original_reading(removal_occurrences, comparison_occurrences)
+
+    monkeypatch.setattr(
+        compiled_format_invocation,
+        "_removed_position_admission_reading",
+        measured_reading,
+    )
+
+    admission = removed_position_result_admission_occurrence(
+        removals,
+        comparisons,
+        boundary_identity="removal-reading-admission",
+    )
+
+    assert readings == [(removals, comparisons)]
+    assert admission.source_material == tuple(
+        removal.result_reference for removal in removals
+    )
+
+    reconstructed = replace(admission)
+    assert reconstructed == admission
+    assert readings == [(removals, comparisons), (removals, comparisons)]
+
+    changed = replace(
+        comparisons[0][-1],
+        source_returned=not comparisons[0][-1].source_returned,
+    )
+    with pytest.raises(ValueError, match="differs from its Compare"):
+        RemovedPositionResultAdmissionOccurrence(
+            admission_occurrence=admission.admission_occurrence,
+            removal_occurrences=removals,
+            comparison_occurrences=(
+                (*comparisons[0][:-1], changed),
+                *comparisons[1:],
+            ),
+        )
+
+    with pytest.raises(TypeError, match="reading must be exact"):
+        RemovedPositionResultAdmissionOccurrence(
+            admission_occurrence=admission.admission_occurrence,
+            removal_occurrences=removals,
+            comparison_occurrences=comparisons,
+            _reading=object(),
+        )
+
+    different_reading = original_reading(
+        removals[:-1],
+        tuple(row[:-1] for row in comparisons),
+    )
+    with pytest.raises(ValueError, match="reading differs"):
+        RemovedPositionResultAdmissionOccurrence(
+            admission_occurrence=admission.admission_occurrence,
+            removal_occurrences=removals,
+            comparison_occurrences=comparisons,
             _reading=different_reading,
         )
 
