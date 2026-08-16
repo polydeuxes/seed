@@ -29,7 +29,7 @@ class AdmissionOccurrenceCoordinates(Protocol):
 
 def _exact_admitted_material(
     admitted_material: tuple[tuple[Material, ...], ...],
-) -> tuple[Material, ...]:
+) -> frozenset[Material]:
     if (
         type(admitted_material) is not tuple
         or not admitted_material
@@ -40,9 +40,10 @@ def _exact_admitted_material(
     ):
         raise TypeError("Admission result requires exact admitted material tuples")
     material = tuple(item for admitted in admitted_material for item in admitted)
-    if len(set(material)) != len(material):
+    material_set = frozenset(material)
+    if len(material_set) != len(material):
         raise ValueError("one material occurrence entered Admission more than once")
-    return material
+    return material_set
 
 
 @dataclass(frozen=True, slots=True)
@@ -87,11 +88,15 @@ class AdmissionOccurrence:
             raise TypeError("one exact boundary identity is required")
         if type(self.occurrence_position) is not int or self.occurrence_position < 0:
             raise TypeError("one exact Admission occurrence position is required")
-        admitted = _exact_admitted_material(self.admitted_material)
+        admitted_material = _exact_admitted_material(self.admitted_material)
+        if type(self.source_material) is not tuple:
+            raise ValueError(
+                "Admission result differs from its exact source material"
+            )
+        source_material = frozenset(self.source_material)
         if (
-            type(self.source_material) is not tuple
-            or len(set(self.source_material)) != len(self.source_material)
-            or frozenset(admitted) != frozenset(self.source_material)
+            len(source_material) != len(self.source_material)
+            or admitted_material != source_material
         ):
             raise ValueError("Admission result differs from its exact source material")
 
@@ -322,7 +327,7 @@ def admission_occurrence(
         source_material=(
             source_material
             if source_material is not None
-            else _exact_admitted_material(admitted_material)
+            else tuple(item for material in admitted_material for item in material)
         ),
         admitted_material=admitted_material,
     )

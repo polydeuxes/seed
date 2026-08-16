@@ -121,6 +121,54 @@ def test_admission_result_hash_uses_its_exact_result_identity():
     assert ExactMaterial.hash_count == 0
 
 
+def test_admission_validates_each_exact_material_set_once():
+    class ExactMaterial:
+        hash_count = 0
+
+        def __hash__(self):
+            type(self).hash_count += 1
+            return id(self)
+
+    material = tuple(ExactMaterial() for _ in range(8))
+
+    admission = material_admission.admission_occurrence(
+        (material,),
+        boundary_identity="one-validation-admission",
+    )
+
+    assert admission.source_material == material
+    assert ExactMaterial.hash_count == 2 * len(material)
+
+
+def test_admission_direct_construction_retains_exact_tuple_and_uniqueness_checks():
+    class TupleSubclass(tuple):
+        pass
+
+    with pytest.raises(TypeError, match="exact admitted material tuples"):
+        material_admission.AdmissionOccurrence(
+            boundary_identity="subclass-admitted-material",
+            occurrence_position=0,
+            source_material=("a",),
+            admitted_material=TupleSubclass((("a",),)),
+        )
+
+    with pytest.raises(ValueError, match="differs from its exact source"):
+        material_admission.AdmissionOccurrence(
+            boundary_identity="subclass-source-material",
+            occurrence_position=0,
+            source_material=TupleSubclass(("a",)),
+            admitted_material=(("a",),),
+        )
+
+    with pytest.raises(ValueError, match="more than once"):
+        material_admission.AdmissionOccurrence(
+            boundary_identity="duplicate-admitted-material",
+            occurrence_position=0,
+            source_material=("a",),
+            admitted_material=(("a", "a"),),
+        )
+
+
 def test_admission_compare_preserves_both_results_and_its_exact_result():
     fine = material_admission.admission_occurrence(
         (("a",), ("b",)),
