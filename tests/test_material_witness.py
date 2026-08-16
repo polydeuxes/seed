@@ -1064,8 +1064,8 @@ def test_full_function_coordinates_precede_every_added_material_invocation():
     assert tuple(comparison.result_returned for comparison in later) == coordinates
     assert supplied == [
         ("first", b"aa"),
-        ("first", b"ba"),
         ("second", b"aa"),
+        ("first", b"ba"),
         ("second", b"ba"),
         ("first", b"ca"),
         ("second", b"ca"),
@@ -1125,13 +1125,15 @@ def test_unknown_function_coordinate_does_not_erase_or_skip_the_later_invocation
         act_occurrence_count_limit=len(additions),
     )
 
-    assert tuple(len(row) for row in earlier) == (2, 0)
+    assert tuple(len(row) for row in earlier) == (2, 2)
     assert coordinates == (True, None)
     assert later is not None
     assert tuple(comparison.result_returned for comparison in later) == (True, True)
     assert supplied == [
         ("first", b"aa"),
+        ("second", b"aa"),
         ("first", b"ba"),
+        ("second", b"ba"),
         ("first", b"ca"),
         ("second", b"ca"),
     ]
