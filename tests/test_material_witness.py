@@ -43,6 +43,7 @@ from compiled_format_invocation import (  # noqa: E402
     added_position_invocations,
     removed_position_invocations,
     first_recurring_added_compare,
+    recurring_added_returned_coordinate,
     removed_position_occurrences,
     exact_byte_material_references,
     exact_byte_pair_material_references,
@@ -676,6 +677,29 @@ def test_format_recurrence_precedes_later_moved_material(
         assert coordinate == later.result_returned
         assert len(earlier) + 1 < len(additions)
         found = (earlier, later)
+        additions_by_identity = {
+            addition.act_occurrence_identity: addition for addition in additions
+        }
+        later_addition = additions_by_identity[
+            later.added_position_act_occurrence_identity
+        ]
+        later_source = next(
+            invocation
+            for invocation in source_invocations
+            if invocation.source_coordinate == later_addition.source_reference
+        )
+        conflicting = replace(
+            earlier[-1], result_returned=not earlier[-1].result_returned
+        )
+        assert (
+            recurring_added_returned_coordinate(
+                (*earlier[:-1], conflicting),
+                additions,
+                later_addition,
+                later_source,
+            )
+            is None
+        )
         break
 
     assert found is not None
