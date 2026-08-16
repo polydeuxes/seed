@@ -272,3 +272,13 @@ def test_public_export_does_not_establish_standing():
     assert grammar["clauses"]["01.Standing.C"]["does_not_establish"][-1] == (
         "Standing_by_public_export"
     )
+
+
+def test_applicability_requires_more_than_usefulness_agreement_or_availability():
+    grammar = json.loads(GRAMMAR.read_text(encoding="utf-8"))
+
+    assert grammar["clauses"]["01.Standing.E.1"]["does_not_establish"] == [
+        "Applicability_by_usefulness",
+        "Applicability_by_agreement",
+        "Applicability_by_availability",
+    ]

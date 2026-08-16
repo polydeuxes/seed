@@ -734,6 +734,11 @@
         "negative_Authority"
       ],
       "standings": ["applicable", "inapplicable", "conflicting", "Unknown"],
+      "does_not_establish": [
+        "Applicability_by_usefulness",
+        "Applicability_by_agreement",
+        "Applicability_by_availability"
+      ],
       "excluded_input": {
         "may_participate": false,
         "may_support_result": false,
