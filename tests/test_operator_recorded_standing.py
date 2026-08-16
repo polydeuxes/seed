@@ -25,7 +25,10 @@ from seed_runtime.operator_locality_standing import (
     read_carried_recorded_standing,
     read_operator_locality_standing,
 )
-from seed_runtime.operator_representation import record_operator_representation
+from seed_runtime.operator_representation import (
+    emit_operator_representation_material,
+    record_operator_representation,
+)
 from seed_runtime.operator_standing_continuation import (
     STANDING_LOCALITY_CONTINUATION_RECORDED_KIND,
 )
@@ -284,3 +287,65 @@ def test_recorded_standing_reference_survives_durable_reopen(tmp_path):
         ]
     finally:
         reopened.close()
+
+
+def test_one_exact_result_at_the_recorded_boundary_can_be_represented_and_emitted():
+    ledger = _run(b"book material\n/checkpoint\nlater source material\n")
+    checkpoint = next(
+        event
+        for event in ledger.list_locality("source")
+        if event.kind == STANDING_BOUNDARY_REFERENCE_RECORDED_KIND
+    )
+    point = read_carried_recorded_standing(
+        ledger,
+        locality_identity="source",
+        recorded_occurrence_identity=checkpoint.identity,
+    )
+    source_occurrence_identity = point["standing"]["ingest_occurrences"][0][
+        "evidence_event_identity"
+    ]
+    representation = record_operator_representation(
+        ledger,
+        locality_identity="source",
+        locality_standing=point["standing"],
+        source_occurrence_reference=source_occurrence_identity,
+    )
+    output = BytesIO()
+
+    emit_operator_representation_material(
+        ledger, representation=representation, output_stream=output
+    )
+
+    assert representation["locality_standing_as_of_event_identity"] == point[
+        "source_standing_reference"
+    ]["source_standing_as_of_event_identity"]
+    assert (
+        representation["source_occurrence_reference"]
+        == source_occurrence_identity
+    )
+    assert output.getvalue() == b"book material\n"
+
+
+def test_memory_availability_does_not_move_source_material_into_the_destination():
+    ledger = _run(b"book material\n/memory\n")
+    continuation = next(
+        event
+        for event in ledger.list()
+        if event.kind == STANDING_LOCALITY_CONTINUATION_RECORDED_KIND
+    )
+    point = read_carried_recorded_standing(
+        ledger,
+        locality_identity=continuation.locality_identity,
+        recorded_occurrence_identity=continuation.identity,
+    )
+    source_occurrence_identity = point["standing"]["ingest_occurrences"][0][
+        "evidence_event_identity"
+    ]
+
+    with pytest.raises(ValueError, match="crossed Localities"):
+        record_operator_representation(
+            ledger,
+            locality_identity=continuation.locality_identity,
+            locality_standing=point["standing"],
+            source_occurrence_reference=source_occurrence_identity,
+        )

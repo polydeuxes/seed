@@ -105,8 +105,10 @@ def record_operator_representation(
     representation_act_identity = new_identity("operator_representation_act")
     act_occurrence_identity = new_identity("operator_representation_act_occurrence")
     scope = f"locality:{locality_identity}"
-    representation_result = "bounded representation of current Locality Standing"
-    content = "bounded Representation of current Locality Standing"
+    representation_result = (
+        "bounded representation of one exact Locality Standing boundary"
+    )
+    content = "bounded Representation of one exact Locality Standing boundary"
     occurrence = "Representation Act occurrence recorded"
     known_loss: list[str] = []
     result_material = {
@@ -197,6 +199,7 @@ def record_operator_representation(
         "yield_evidence_identity": yield_evidence.identity,
         "locality_evidence_identity": locality_evidence.identity,
         "representation_event_identity": representation_event.identity,
+        "source_occurrence_reference": source_occurrence_reference,
         "recorded_occurrence_references": (
             responsible_act_evidence.identity,
             yield_evidence.identity,

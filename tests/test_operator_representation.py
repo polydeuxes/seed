@@ -1061,7 +1061,7 @@ def test_representation_act_dimensions_record_only_coordinates_that_exist():
     )
     dimensions = ledger.get(zero["representation_event_identity"]).material["dimensions"]
     assert dimensions["content"] == (
-        "bounded Representation of current Locality Standing"
+        "bounded Representation of one exact Locality Standing boundary"
     )
     assert dimensions["occurrence_preservation"] == (
         "Representation Act occurrence recorded"
