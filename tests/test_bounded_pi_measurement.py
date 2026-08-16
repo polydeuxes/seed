@@ -29,7 +29,7 @@ def _supply(ledger: EventLedger, locality: str, material: str) -> None:
 def _measure(ledger: EventLedger, source: str, result: str):
     byte_event = record_byte_count_layer(
         ledger,
-        source_locality_identities=(source,),
+        source_localities=(source,),
         recording_locality_identity=f"{result}-bytes",
     )
     pair_event = record_byte_position_pair_count_layer(

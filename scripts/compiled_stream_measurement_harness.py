@@ -85,7 +85,7 @@ def measured_material():
         )
     byte_occurrence = record_byte_count_layer(
         ledger,
-        source_locality_identities=("book-material",),
+        source_localities=("book-material",),
         recording_locality_identity="book-byte-measurement",
     )
     pair_occurrence = record_byte_position_pair_count_layer(

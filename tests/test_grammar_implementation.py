@@ -155,7 +155,7 @@ def _byte_measurement_witness() -> dict:
     )
     measurement = record_byte_count_layer(
         ledger,
-        source_locality_identities=("source",),
+        source_localities=("source",),
         recording_locality_identity="byte-measurement",
     )
     assertion = next(
@@ -184,7 +184,7 @@ def _recorded_applicability() -> dict:
     )
     byte_measurement = record_byte_count_layer(
         ledger,
-        source_locality_identities=("source",),
+        source_localities=("source",),
         recording_locality_identity="byte-measurement",
     )
     pair_measurement = record_byte_position_pair_count_layer(
@@ -2699,17 +2699,17 @@ def test_asserted_content_identity_includes_scope_but_not_locality():
 
     first = record_byte_count_layer(
         ledger,
-        source_locality_identities=("source-one",),
+        source_localities=("source-one",),
         recording_locality_identity="measurement-one",
     )
     repeated = record_byte_count_layer(
         ledger,
-        source_locality_identities=("source-one",),
+        source_localities=("source-one",),
         recording_locality_identity="measurement-two",
     )
     other_scope = record_byte_count_layer(
         ledger,
-        source_locality_identities=("source-two",),
+        source_localities=("source-two",),
         recording_locality_identity="measurement-three",
     )
 

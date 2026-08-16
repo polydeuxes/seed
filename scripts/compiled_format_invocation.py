@@ -1656,13 +1656,13 @@ def admission_result_added_position_occurrences(
             for material in source_admitted_material
         ):
             raise TypeError("addition Acts require exact admitted source material")
-        source_locality_identities = {
+        source_localities = {
             getattr(material, "locality_identity", None)
             for material in source_admitted_material
         }
-        if None in source_locality_identities:
+        if None in source_localities:
             raise TypeError("addition Acts require exact source material Localities")
-        if len(source_locality_identities) != 1:
+        if len(source_localities) != 1:
             raise ValueError("one admitted source material tuple crossed Localities")
         for added_admitted_position, added_admitted_material in enumerate(
             added_admission_result_reference.admitted_material
@@ -1685,7 +1685,7 @@ def admission_result_added_position_occurrences(
                 )
             if len(added_locality_identities) != 1:
                 raise ValueError("one admitted added material tuple crossed Localities")
-            if source_locality_identities != added_locality_identities:
+            if source_localities != added_locality_identities:
                 raise ValueError("addition Act Admissions crossed Localities")
             occurrence_count = sum(
                 (len(source.exact_material) + 1) * len(added_admitted_material)

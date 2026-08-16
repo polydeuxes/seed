@@ -58,7 +58,7 @@ BYTE_RESULT_COORDINATES = frozenset(
         "responsible_boundary",
         "responsibility_assignment_evidence",
         "measurement_rule",
-        "source_locality_identities",
+        "source_localities",
         "completeness_boundary",
         "assertions",
     }
@@ -195,7 +195,7 @@ class MeasuredByteCount:
 
 @dataclass(frozen=True)
 class MeasuredByteInputs:
-    source_locality_identities: tuple[str, ...]
+    source_localities: tuple[str, ...]
     completeness_boundary: EventLedgerBoundary
     source_material: tuple[dict[str, str], ...]
     counts: tuple[MeasuredByteCount, ...]
@@ -210,7 +210,7 @@ class MeasuredBytePairCount:
 
 @dataclass(frozen=True)
 class MeasuredBytePairInputs:
-    source_locality_identities: tuple[str, ...]
+    source_localities: tuple[str, ...]
     completeness_boundary: EventLedgerBoundary
     source_material: tuple[dict[str, str], ...]
     source_assertion_reference: dict[str, str]
@@ -454,11 +454,11 @@ def _ingested_bytes(ledger: EventLedger, occurrence) -> bytes:
 def measure_byte_counts(
     ledger: EventLedger,
     *,
-    source_locality_identities: Iterable[str],
+    source_localities: Iterable[str],
 ) -> MeasuredByteInputs:
     """Count every exact byte in every declared Locality through one boundary."""
 
-    localities = tuple(dict.fromkeys(source_locality_identities))
+    localities = tuple(dict.fromkeys(source_localities))
     if not localities or any(not isinstance(item, str) or not item for item in localities):
         raise ByteMeasurementError(
             "byte Measurement requires exact declared source Localities"
@@ -526,7 +526,7 @@ def _measure_byte_counts_through(
         if totals[value] > 0
     )
     return MeasuredByteInputs(
-        source_locality_identities=localities,
+        source_localities=localities,
         completeness_boundary=boundary,
         source_material=tuple(source_material),
         counts=counts,
@@ -897,7 +897,7 @@ def _measure_byte_position_pair_counts_through(
         for pair in sorted(totals)
     )
     return MeasuredBytePairInputs(
-        source_locality_identities=localities,
+        source_localities=localities,
         completeness_boundary=boundary,
         source_material=tuple(source_material),
         source_assertion_reference=source_assertion_reference,
@@ -911,7 +911,7 @@ def _measure_byte_position_pair_counts_through(
 
 def _assertions(measured: MeasuredByteInputs) -> list[dict[str, Any]]:
     scope = {
-        "source_locality_identities": list(measured.source_locality_identities),
+        "source_localities": list(measured.source_localities),
     }
     source_subject = {"measurement_rule": BYTE_MEASUREMENT_RULE}
     source_content = {
@@ -1030,7 +1030,7 @@ def _assertions(measured: MeasuredByteInputs) -> list[dict[str, Any]]:
 def record_byte_count_layer(
     ledger: EventLedger,
     *,
-    source_locality_identities: Iterable[str],
+    source_localities: Iterable[str],
     recording_locality_identity: str,
 ):
     """Record one bounded Measurement occurrence with distinct byte results."""
@@ -1043,7 +1043,7 @@ def record_byte_count_layer(
     act_occurrence_identity = new_identity("byte_measurement_occurrence")
     result_identity = new_identity("byte_measurement_result")
     measured = measure_byte_counts(
-        ledger, source_locality_identities=source_locality_identities
+        ledger, source_localities=source_localities
     )
     result_material = {
         "result_identity": result_identity,
@@ -1067,7 +1067,7 @@ def record_byte_count_layer(
             measured
         ),
         "measurement_rule": BYTE_MEASUREMENT_RULE,
-        "source_locality_identities": list(measured.source_locality_identities),
+        "source_localities": list(measured.source_localities),
         "completeness_boundary": {
             "identity": measured.completeness_boundary.identity
         },
@@ -1216,7 +1216,7 @@ def assertions_of_recorded_byte_measurement(
             f"{event_identity} names no exact responsible byte Measurement occurrence Evidence"
         )
     boundary_value = material.get("completeness_boundary")
-    localities_value = material.get("source_locality_identities")
+    localities_value = material.get("source_localities")
     if (
         material.get("measurement_rule") != BYTE_MEASUREMENT_RULE
         or not isinstance(boundary_value, dict)
@@ -1273,7 +1273,7 @@ def assertions_of_recorded_byte_measurement(
 
 def _pair_assertions(measured: MeasuredBytePairInputs) -> list[dict[str, Any]]:
     scope = {
-        "source_locality_identities": list(measured.source_locality_identities),
+        "source_localities": list(measured.source_localities),
     }
     results: list[dict[str, Any]] = []
 
@@ -1632,7 +1632,7 @@ def record_byte_position_pair_count_layer(
     act_occurrence_identity = new_identity("byte_position_pair_measurement_occurrence")
     measured = _measure_byte_position_pair_counts_through(
         ledger,
-        localities=tuple(scope["source_locality_identities"]),
+        localities=tuple(scope["source_localities"]),
         boundary=EventLedgerBoundary(content["completeness_boundary"]["identity"]),
         source_assertion_reference=source.reference,
         source_movement_event_identity=source.locality_movement_event_identity,
@@ -1667,7 +1667,7 @@ def record_byte_position_pair_count_layer(
         "input_role": BYTE_PAIR_INPUT_ROLE,
         "input_applicability": measured.input_applicability,
         "input_applicability_event_identity": applicability_event.identity,
-        "source_locality_identities": list(measured.source_locality_identities),
+        "source_localities": list(measured.source_localities),
         "completeness_boundary": {
             "identity": measured.completeness_boundary.identity
         },
@@ -1916,7 +1916,7 @@ def assertions_of_recorded_byte_position_pair_measurement(
             f"{event_identity} names no exact responsible pair Measurement occurrence Evidence"
         )
     boundary_value = material.get("completeness_boundary")
-    localities_value = material.get("source_locality_identities")
+    localities_value = material.get("source_localities")
     if (
         not isinstance(boundary_value, dict)
         or set(boundary_value) != {"identity"}
@@ -1975,7 +1975,7 @@ def assertions_of_recorded_byte_position_pair_measurement(
         ),
     }
     if (
-        localities_value != source_scope["source_locality_identities"]
+        localities_value != source_scope["source_localities"]
         or boundary_value != source_content["completeness_boundary"]
         or material.get("responsibility_assignment_evidence")
         != expected_assignment_evidence
@@ -2000,7 +2000,7 @@ def assertions_of_recorded_byte_position_pair_measurement(
             f"{event_identity} does not name its exact recorded input Applicability"
         )
     expected_scope = {
-        "source_locality_identities": localities_value,
+        "source_localities": localities_value,
     }
     assertions = material.get("assertions")
     if not isinstance(assertions, list):

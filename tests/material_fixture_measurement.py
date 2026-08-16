@@ -25,7 +25,7 @@ def measured_one_byte_material():
     )
     measurement = record_byte_count_layer(
         ledger,
-        source_locality_identities=("one-byte-material",),
+        source_localities=("one-byte-material",),
         recording_locality_identity="one-byte-measurement",
     )
     return ledger, exact_byte_material_references(ledger, measurement.identity)

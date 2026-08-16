@@ -50,14 +50,14 @@ def _ledger(text="猫\n狗\n"):
 def _byte_source(ledger):
     return record_byte_count_layer(
         ledger,
-        source_locality_identities=("source",),
+        source_localities=("source",),
         recording_locality_identity="byte-measurement",
     )
 
 
 def test_exact_bytes_supply_the_measured_subjects_without_whitespace():
     measured = measure_byte_counts(
-        _ledger(), source_locality_identities=("source",)
+        _ledger(), source_localities=("source",)
     )
     counts = {item.representation: item for item in measured.counts}
 
@@ -74,7 +74,7 @@ def test_exact_bytes_supply_the_measured_subjects_without_whitespace():
 
 def test_the_complete_declared_localities_supply_the_inputs():
     measured = measure_byte_counts(
-        _ledger("a\nb\n"), source_locality_identities=("source",)
+        _ledger("a\nb\n"), source_localities=("source",)
     )
     assert len(measured.source_material) == 2
     assert all(
@@ -87,7 +87,7 @@ def test_the_complete_declared_localities_supply_the_inputs():
 def test_count_and_recurrence_are_distinct_results():
     event = record_byte_count_layer(
         _ledger("ab\n"),
-        source_locality_identities=("source",),
+        source_localities=("source",),
         recording_locality_identity="measurement",
     )
     by_byte = {}
@@ -105,7 +105,7 @@ def test_count_and_recurrence_are_distinct_results():
 def test_recurrence_exists_only_above_one():
     event = record_byte_count_layer(
         _ledger("aa\n"),
-        source_locality_identities=("source",),
+        source_localities=("source",),
         recording_locality_identity="measurement",
     )
     results = [
@@ -119,7 +119,7 @@ def test_recurrence_exists_only_above_one():
 def test_the_rule_is_mechanics_not_an_unchecked_callable():
     event = record_byte_count_layer(
         _ledger("the cat\n"),
-        source_locality_identities=("source",),
+        source_localities=("source",),
         recording_locality_identity="measurement",
     )
     assert event.material["measurement_rule"] == BYTE_MEASUREMENT_RULE
@@ -131,7 +131,7 @@ def test_recorded_results_replay_the_complete_bounded_source_read():
     ledger = _ledger("猫\n狗\n")
     event = record_byte_count_layer(
         ledger,
-        source_locality_identities=("source",),
+        source_localities=("source",),
         recording_locality_identity="measurement",
     )
     read = assertions_of_recorded_byte_measurement(ledger, event.identity)
@@ -155,7 +155,7 @@ def test_recorded_results_replay_the_complete_bounded_source_read():
         "count": 2,
     }
     assert count.material["assertion_scope"] == {
-        "source_locality_identities": ["source"],
+        "source_localities": ["source"],
     }
     assert count.material["dimensions"]["source_provenance"]
     assert count.material["dimensions"]["authority"] == "unestablished"
@@ -186,14 +186,14 @@ def test_recorded_results_replay_the_complete_bounded_source_read():
         material=count.material,
     )
     assert type(represented.material) is dict
-    assert type(represented.material["assertion_scope"]["source_locality_identities"]) is list
+    assert type(represented.material["assertion_scope"]["source_localities"]) is list
 
 
 def test_a_self_consistent_truncated_source_assertion_is_refused():
     ledger = _ledger("a\nb\n")
     event = record_byte_count_layer(
         ledger,
-        source_locality_identities=("source",),
+        source_localities=("source",),
         recording_locality_identity="measurement",
     )
     assertions = event.material["assertions"]
@@ -213,7 +213,7 @@ def test_recording_occurrence_evidence_is_validated_exactly():
     ledger = _ledger("a\n")
     event = record_byte_count_layer(
         ledger,
-        source_locality_identities=("source",),
+        source_localities=("source",),
         recording_locality_identity="measurement",
     )
     event.material["occurrence_preservation"] = "something else"
@@ -249,7 +249,7 @@ def test_ingest_after_the_measurement_boundary_cannot_enter_the_measurement():
 def test_a_missing_declared_locality_is_refused():
     with pytest.raises(ByteMeasurementError, match="absent"):
         measure_byte_counts(
-            _ledger(), source_locality_identities=("missing",)
+            _ledger(), source_localities=("missing",)
         )
 
 
@@ -261,17 +261,17 @@ def test_ingest_must_match_its_exact_byte_coordinates():
     object.__setattr__(ingest, "exact_material", None)
     with pytest.raises(ByteMeasurementError, match="carries no exact bytes"):
         measure_byte_counts(
-            ledger, source_locality_identities=("source",)
+            ledger, source_localities=("source",)
         )
 
 
 def test_repeated_locality_coordinate_does_not_repeat_one_ingest():
     ledger = _ledger("a\n")
     once = measure_byte_counts(
-        ledger, source_locality_identities=("source",)
+        ledger, source_localities=("source",)
     )
     repeated = measure_byte_counts(
-        ledger, source_locality_identities=("source", "source")
+        ledger, source_localities=("source", "source")
     )
     assert repeated == once
 

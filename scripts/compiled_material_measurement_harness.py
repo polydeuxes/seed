@@ -45,7 +45,7 @@ def measured_material():
     )
     occurrence = record_byte_count_layer(
         ledger,
-        source_locality_identities=("compiled-material-source",),
+        source_localities=("compiled-material-source",),
         recording_locality_identity="compiled-material-measurement",
     )
     return ledger, exact_byte_material_references(ledger, occurrence.identity)

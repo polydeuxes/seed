@@ -107,7 +107,7 @@ def measured_book_pairs():
     )
     byte_measurement = record_byte_count_layer(
         ledger,
-        source_locality_identities=("book-material",),
+        source_localities=("book-material",),
         recording_locality_identity="book-material-measurement",
     )
     pair_measurement = record_byte_position_pair_count_layer(
