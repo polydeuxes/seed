@@ -17,6 +17,7 @@ sys.path.insert(0, str(ROOT / "scripts"))
 from compiled_format_invocation import (  # noqa: E402
     COMPILED_IMPLEMENTATION_FUNCTIONS,
     CompiledImplementationFunction,
+    admission_removed_position_occurrences,
     added_position_admission_occurrence,
     added_position_admission_occurrences,
     added_position_invocations,
@@ -26,9 +27,13 @@ from compiled_format_invocation import (  # noqa: E402
 )
 from compiled_material_invocation import (  # noqa: E402
     MATERIAL_IMPLEMENTATION_FUNCTIONS,
+    MaterialAdmissionOccurrence,
     MaterialAddedCompareOccurrence,
     MaterialImplementationFunction,
+    MaterialRemovedCompareOccurrence,
+    admit_invocation_occurrences,
     compare_added_material_invocations,
+    compare_removed_material_invocations,
     ingest_result_reference,
     reference_occurrences_across,
 )
@@ -151,6 +156,48 @@ def small_boundary_material():
         source_invocations,
         result_invocations,
         comparisons,
+    )
+
+
+@pytest.fixture(scope="module")
+def small_boundary_removal_material(small_boundary_material):
+    source_reference = small_boundary_material[1]
+    implementation = small_boundary_material[4]
+    source_invocations = small_boundary_material[5]
+    source_admission = admit_invocation_occurrences(
+        source_invocations[0],
+        boundary_identity="small-boundary-removal-source-admission",
+    )
+    removals = admission_removed_position_occurrences(
+        source_admission.result_reference,
+        boundary_identity="small-boundary-removal-act",
+        admitted_material_act_occurrence_count_limit=len(
+            source_reference.exact_material
+        ),
+    )
+    result_invocations = reference_occurrences_across(
+        tuple(removal.result_reference for removal in removals),
+        implementation_functions=(implementation,),
+        boundary_identity="small-boundary-removal-result-invocation",
+        max_workers=1,
+    )
+    comparisons = compare_removed_material_invocations(
+        removals,
+        source_invocations,
+        result_invocations,
+        boundary_identity="small-boundary-removal-compare",
+    )
+    result_admission = admit_invocation_occurrences(
+        result_invocations[0],
+        boundary_identity="small-boundary-removal-result-admission",
+    )
+    return (
+        source_admission,
+        removals,
+        source_invocations,
+        result_invocations,
+        comparisons,
+        result_admission,
     )
 
 
@@ -403,4 +450,139 @@ def test_compare_refuses_different_time_limits(small_boundary_material):
             addition_occurrence=addition,
             source_invocation=source,
             result_invocation=result,
+        )
+
+
+def test_removal_compare_preserves_exact_admission_and_raw_coordinates(
+    small_boundary_removal_material,
+):
+    (
+        source_admission,
+        removals,
+        source_rows,
+        result_rows,
+        comparison_rows,
+        result_admission,
+    ) = small_boundary_removal_material
+    comparisons = comparison_rows[0]
+
+    assert len(removals) == len(comparisons) == 4
+    assert tuple(removal.position for removal in removals) == (0, 1, 2, 3)
+    assert all(
+        removal.source_admission_result_reference
+        == source_admission.result_reference
+        and removal.result_reference.source_admission_result_reference
+        == source_admission.result_reference
+        for removal in removals
+    )
+    assert tuple(comparison.removal_occurrence for comparison in comparisons) == (
+        removals
+    )
+    assert all(
+        comparison.source_invocation == source_rows[0][0]
+        and comparison.source_coordinates
+        == comparison.source_invocation.coordinates
+        and comparison.result_coordinates
+        == comparison.result_invocation.coordinates
+        and comparison.removed_position_result_reference
+        == comparison.removal_occurrence.result_reference
+        for comparison in comparisons
+    )
+    assert tuple(
+        comparison.result_invocation for comparison in comparisons
+    ) == result_rows[0]
+    assert result_admission.source_material == tuple(
+        removal.result_reference for removal in removals
+    )
+    assert {
+        reference
+        for admitted in result_admission.admitted_material
+        for reference in admitted
+    } == set(result_admission.source_material)
+
+
+def test_removal_compare_refuses_missing_and_unrelated_invocations(
+    small_boundary_removal_material,
+):
+    _, removals, source_rows, result_rows, _, _ = small_boundary_removal_material
+
+    with pytest.raises(ValueError, match="each exact removal source and result"):
+        compare_removed_material_invocations(
+            removals,
+            source_rows,
+            (result_rows[0][:-1],),
+            boundary_identity="missing-removal-result-compare",
+        )
+    with pytest.raises(ValueError, match="each exact removal source and result"):
+        compare_removed_material_invocations(
+            removals,
+            (result_rows[0],),
+            result_rows,
+            boundary_identity="unrelated-removal-source-compare",
+        )
+
+
+def test_removal_compare_refuses_wrong_or_mismatched_occurrences(
+    small_boundary_removal_material,
+):
+    _, removals, source_rows, result_rows, _, _ = small_boundary_removal_material
+    source = source_rows[0][0]
+
+    with pytest.raises(ValueError, match="result differs from its removal Act"):
+        MaterialRemovedCompareOccurrence(
+            boundary_identity="wrong-removal-result-compare",
+            occurrence_position=0,
+            removal_occurrence=removals[0],
+            source_invocation=source,
+            result_invocation=result_rows[0][1],
+        )
+    with pytest.raises(ValueError, match="source differs from its removal Act"):
+        MaterialRemovedCompareOccurrence(
+            boundary_identity="wrong-removal-source-compare",
+            occurrence_position=0,
+            removal_occurrence=removals[1],
+            source_invocation=result_rows[0][0],
+            result_invocation=result_rows[0][1],
+        )
+    with pytest.raises(ValueError, match="material byte-count limits"):
+        MaterialRemovedCompareOccurrence(
+            boundary_identity="mismatched-removal-limit-compare",
+            occurrence_position=0,
+            removal_occurrence=removals[0],
+            source_invocation=source,
+            result_invocation=replace(
+                result_rows[0][0],
+                material_byte_count_limit=1,
+            ),
+        )
+    with pytest.raises(ValueError, match="differs from its exact source"):
+        replace(
+            result_rows[0][0],
+            exact_material=b"corrupted removal result",
+        )
+
+
+def test_removal_result_admission_refuses_corrupted_raw_coordinates(
+    small_boundary_removal_material,
+):
+    _, _, _, result_rows, _, result_admission = small_boundary_removal_material
+    other = result_rows[0][1]
+    changed = replace(
+        result_rows[0][0],
+        returned=other.returned,
+        returncode=other.returncode,
+        stdout_bytes=other.stdout_bytes,
+        stderr_bytes=other.stderr_bytes,
+        time_limit_reached=other.time_limit_reached,
+        stdout_byte_count_limit_reached=other.stdout_byte_count_limit_reached,
+        stderr_byte_count_limit_reached=other.stderr_byte_count_limit_reached,
+    )
+
+    with pytest.raises(ValueError, match="differs from its invocation results"):
+        MaterialAdmissionOccurrence(
+            admission_occurrence=result_admission.admission_occurrence,
+            invocation_result_references=(
+                changed.result_reference,
+                *result_admission.invocation_result_references[1:],
+            ),
         )

@@ -40,7 +40,11 @@ MaterialInvocationReturnCoordinates = tuple[
     bool,
     int | None,
 ]
-from compiled_format_invocation import AddedPositionOccurrence
+from compiled_format_invocation import (
+    AddedPositionOccurrence,
+    ExactMaterialResultReference,
+    RemovedPositionOccurrence,
+)
 
 
 @dataclass(frozen=True, slots=True)
@@ -188,6 +192,82 @@ class MaterialAddedReturnCompareOccurrence(MaterialAddedCompareOccurrence):
     @property
     def result_coordinates(self) -> MaterialInvocationReturnCoordinates:
         return self.result_invocation.return_coordinates
+
+
+@dataclass(frozen=True, slots=True)
+class MaterialRemovedCompareOccurrence:
+    boundary_identity: str
+    occurrence_position: int
+    removal_occurrence: RemovedPositionOccurrence
+    source_invocation: "MaterialInvocationOccurrence"
+    result_invocation: "MaterialInvocationOccurrence"
+
+    def __post_init__(self) -> None:
+        if type(self.boundary_identity) is not str or not self.boundary_identity:
+            raise TypeError("one exact boundary identity is required")
+        if type(self.occurrence_position) is not int or self.occurrence_position < 0:
+            raise TypeError("one exact Compare occurrence position is required")
+        if not isinstance(self.removal_occurrence, RemovedPositionOccurrence):
+            raise TypeError("Compare requires one exact removal Act occurrence")
+        if not isinstance(
+            self.source_invocation, MaterialInvocationOccurrence
+        ) or not isinstance(self.result_invocation, MaterialInvocationOccurrence):
+            raise TypeError("Compare requires exact invocation occurrences")
+        if (
+            self.source_invocation.implementation_function
+            != self.result_invocation.implementation_function
+        ):
+            raise ValueError("Compare cannot cross implementation functions")
+        if (
+            self.source_invocation.time_limit_second_count
+            != self.result_invocation.time_limit_second_count
+        ):
+            raise ValueError("Compare cannot cross time limits")
+        if (
+            self.source_invocation.material_byte_count_limit
+            != self.result_invocation.material_byte_count_limit
+        ):
+            raise ValueError("Compare cannot cross material byte-count limits")
+        if self.source_invocation.source_reference != (
+            self.removal_occurrence.source_reference
+        ):
+            raise ValueError("Compare source differs from its removal Act")
+        if self.result_invocation.source_reference != (
+            self.removal_occurrence.result_reference
+        ):
+            raise ValueError("Compare result differs from its removal Act")
+
+    @property
+    def occurrence_identity(self) -> tuple[str, str, int]:
+        return (
+            self.boundary_identity,
+            self.source_invocation.implementation_function_identity,
+            self.occurrence_position,
+        )
+
+    @property
+    def implementation_function_identity(self) -> str:
+        return self.source_invocation.implementation_function_identity
+
+    @property
+    def removed_position_act_occurrence_identity(self) -> tuple[str, int]:
+        return self.removal_occurrence.act_occurrence_identity
+
+    @property
+    def removed_position_result_reference(self) -> ExactMaterialResultReference:
+        return self.removal_occurrence.result_reference
+
+    @property
+    def source_coordinates(self) -> MaterialInvocationCoordinates:
+        return self.source_invocation.coordinates
+
+    @property
+    def result_coordinates(self) -> MaterialInvocationCoordinates:
+        return self.result_invocation.coordinates
+
+    @property
+    def distinction(self) -> bool:
+        return self.source_coordinates != self.result_coordinates
 
 
 @dataclass(frozen=True, slots=True)
@@ -1138,6 +1218,80 @@ def compare_added_material_return_invocations(
         boundary_identity=boundary_identity,
         compare_occurrence=MaterialAddedReturnCompareOccurrence,
     )
+
+
+def compare_removed_material_invocations(
+    removals: tuple[RemovedPositionOccurrence, ...],
+    source_invocations: tuple[tuple[MaterialInvocationOccurrence, ...], ...],
+    result_invocations: tuple[tuple[MaterialInvocationOccurrence, ...], ...],
+    *,
+    boundary_identity: str,
+) -> tuple[tuple[MaterialRemovedCompareOccurrence, ...], ...]:
+    if type(removals) is not tuple or not removals or any(
+        not isinstance(removal, RemovedPositionOccurrence) for removal in removals
+    ):
+        raise TypeError("Compare requires exact removal Act occurrences")
+    if (
+        type(source_invocations) is not tuple
+        or type(result_invocations) is not tuple
+    ):
+        raise TypeError("Compare requires exact invocation tuples")
+    if len(source_invocations) != len(result_invocations):
+        raise ValueError("Compare requires the same implementation functions")
+    if type(boundary_identity) is not str or not boundary_identity:
+        raise TypeError("one exact boundary identity is required")
+
+    found = []
+    occurrence_position = 0
+    for source_row, result_row in zip(source_invocations, result_invocations):
+        if (
+            type(source_row) is not tuple
+            or type(result_row) is not tuple
+            or not source_row
+            or not result_row
+            or any(
+                not isinstance(invocation, MaterialInvocationOccurrence)
+                for invocation in (*source_row, *result_row)
+            )
+        ):
+            raise TypeError("Compare requires exact invocation occurrences")
+        implementation_function = source_row[0].implementation_function
+        if any(
+            invocation.implementation_function != implementation_function
+            for invocation in (*source_row, *result_row)
+        ):
+            raise ValueError("Compare cannot cross implementation functions")
+        source_by_reference = {
+            invocation.source_reference: invocation for invocation in source_row
+        }
+        result_by_reference = {
+            invocation.source_reference: invocation for invocation in result_row
+        }
+        if len(source_by_reference) != len(source_row):
+            raise ValueError("source reference entered removal Compare twice")
+        if len(result_by_reference) != len(result_row):
+            raise ValueError("result reference entered removal Compare twice")
+
+        row = []
+        for removal in removals:
+            source = source_by_reference.get(removal.source_reference)
+            result = result_by_reference.get(removal.result_reference)
+            if source is None or result is None:
+                raise ValueError(
+                    "Compare requires each exact removal source and result invocation"
+                )
+            row.append(
+                MaterialRemovedCompareOccurrence(
+                    boundary_identity=boundary_identity,
+                    occurrence_position=occurrence_position,
+                    removal_occurrence=removal,
+                    source_invocation=source,
+                    result_invocation=result,
+                )
+            )
+            occurrence_position += 1
+        found.append(tuple(row))
+    return tuple(found)
 
 
 def recurring_added_result_coordinates(

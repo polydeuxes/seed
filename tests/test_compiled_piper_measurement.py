@@ -17,6 +17,9 @@ from compiled_material_invocation import (  # noqa: E402
     MaterialAdmissionOccurrence,
     ingest_result_reference,
 )
+from compiled_format_invocation import (  # noqa: E402
+    admission_removed_position_occurrences,
+)
 from compiled_piper_measurement import (  # noqa: E402
     piper_implementation_function,
     piper_material_occurrences,
@@ -156,3 +159,63 @@ def test_piper_admission_refuses_different_invocation_coordinates(
                 *admission.invocation_result_references[1:],
             ),
         )
+
+
+def test_full_piper_admission_drives_whole_exact_removal_tuples(
+    supplied_piper_material,
+):
+    references = supplied_piper_material[1]
+    admission = supplied_piper_material[4]
+    act_occurrence_count_limit = min(
+        len(reference.exact_material) for reference in references
+    )
+
+    removals = admission_removed_position_occurrences(
+        admission.result_reference,
+        boundary_identity="supplied-piper-material-removal",
+        admitted_material_act_occurrence_count_limit=(
+            act_occurrence_count_limit
+        ),
+    )
+    eligible_admitted_material = tuple(
+        admitted
+        for admitted in admission.admitted_material
+        if sum(len(reference.exact_material) for reference in admitted)
+        <= act_occurrence_count_limit
+    )
+    eligible_references = tuple(
+        reference
+        for admitted in eligible_admitted_material
+        for reference in admitted
+    )
+
+    assert eligible_references
+    assert len(removals) == sum(
+        len(reference.exact_material) for reference in eligible_references
+    )
+    assert {removal.source_reference for removal in removals} == set(
+        eligible_references
+    )
+    assert all(
+        removal.source_admission_result_reference == admission.result_reference
+        and removal.source_reference
+        == admission.admitted_material[
+            removal.source_admitted_material_position
+        ][removal.source_admitted_reference_position]
+        and removal.result_reference.source_admission_result_reference
+        == admission.result_reference
+        and removal.result_reference.source_admitted_material_position
+        == removal.source_admitted_material_position
+        and removal.result_reference.source_admitted_reference_position
+        == removal.source_admitted_reference_position
+        for removal in removals
+    )
+    assert all(
+        tuple(
+            removal.position
+            for removal in removals
+            if removal.source_reference == reference
+        )
+        == tuple(range(len(reference.exact_material)))
+        for reference in eligible_references
+    )
