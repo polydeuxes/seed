@@ -156,6 +156,26 @@ def test_equal_admission_results_keep_distinct_act_occurrences():
     )
 
 
+def test_admission_result_hash_uses_its_exact_result_identity():
+    class ExactMaterial:
+        hash_count = 0
+
+        def __hash__(self):
+            type(self).hash_count += 1
+            return id(self)
+
+    first_material = ExactMaterial()
+    second_material = ExactMaterial()
+    admission = material_admission.admission_occurrence(
+        ((first_material,), (second_material,)),
+        boundary_identity="hash-admission",
+    )
+    ExactMaterial.hash_count = 0
+
+    assert hash(admission.result_reference) == hash(admission.result_identity)
+    assert ExactMaterial.hash_count == 0
+
+
 def test_admission_compare_preserves_both_results_and_its_exact_result():
     fine = material_admission.admission_occurrence(
         (("a",), ("b",)),

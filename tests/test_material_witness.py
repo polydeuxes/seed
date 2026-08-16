@@ -785,6 +785,11 @@ def test_equal_result_material_keeps_each_exact_added_position_occurrence():
     ) == ((b"aa", 0, b"a"), (b"aa", 1, b"a"), (b"aa", 2, b"a"))
     assert len({occurrence.occurrence_identity for occurrence in occurrences}) == 3
     assert all(
+        hash(occurrence) == hash(occurrence.act_occurrence_identity)
+        and hash(occurrence.result_reference) == hash(occurrence.result_identity)
+        for occurrence in added_occurrences
+    )
+    assert all(
         occurrence.source_coordinate is added_occurrence
         for occurrence, added_occurrence in zip(occurrences, added_occurrences)
     )
@@ -1632,4 +1637,70 @@ def test_time_limit_preserves_an_invocation_that_did_not_return(monkeypatch):
     assert occurrence.stdout_bytes == b"available output"
     assert occurrence.stderr_bytes is None
     assert occurrence.time_limit_second_count == 0.25
-    assert occurrence.coordinates == (0.25, False, None, b"available output", None)
+    assert occurrence.time_limit_reached
+    assert occurrence.coordinates == (
+        0.25,
+        None,
+        False,
+        True,
+        False,
+        False,
+        None,
+        b"available output",
+        None,
+    )
+
+
+def test_material_byte_count_limit_preserves_the_exact_available_prefix():
+    occurrence = invocation_occurrence(
+        b"",
+        MaterialImplementationFunction(
+            identity="compiled-0",
+            invocation=(
+                "/bin/sh",
+                "-c",
+                "while :; do printf 0123456789; done",
+            ),
+        ),
+        boundary_identity="material-byte-count-limit",
+        time_limit_second_count=1.0,
+        material_byte_count_limit=127,
+    )
+
+    assert not occurrence.returned
+    assert occurrence.returncode is None
+    assert not occurrence.time_limit_reached
+    assert occurrence.stdout_byte_count_limit_reached
+    assert not occurrence.stderr_byte_count_limit_reached
+    assert occurrence.stdout_bytes == (b"0123456789" * 13)[:127]
+    assert occurrence.stderr_bytes == b""
+    assert occurrence.return_coordinates == (
+        1.0,
+        127,
+        False,
+        False,
+        True,
+        False,
+        None,
+    )
+
+
+def test_exact_material_at_the_byte_count_limit_can_return():
+    occurrence = invocation_occurrence(
+        b"abc",
+        MaterialImplementationFunction(
+            identity="compiled-0",
+            invocation=("/bin/cat",),
+        ),
+        boundary_identity="exact-material-byte-count-limit",
+        time_limit_second_count=1.0,
+        material_byte_count_limit=3,
+    )
+
+    assert occurrence.returned
+    assert occurrence.returncode == 0
+    assert occurrence.stdout_bytes == b"abc"
+    assert occurrence.stderr_bytes == b""
+    assert not occurrence.time_limit_reached
+    assert not occurrence.stdout_byte_count_limit_reached
+    assert not occurrence.stderr_byte_count_limit_reached

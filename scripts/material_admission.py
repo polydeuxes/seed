@@ -54,6 +54,9 @@ class AdmissionResultReference:
         ):
             raise TypeError("Admission result requires its exact Act occurrence")
 
+    def __hash__(self) -> int:
+        return hash(self.result_identity)
+
     @property
     def act_occurrence_identity(self) -> tuple[str, int]:
         return self.admission_occurrence.act_occurrence_identity

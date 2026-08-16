@@ -5,7 +5,10 @@ from __future__ import annotations
 from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass
 from typing import Hashable
+import os
+import selectors
 import subprocess
+import time
 
 from seed_runtime.events import EventLedger
 from seed_runtime.material_ingest import MATERIAL_INGEST_OCCURRED_KIND
@@ -16,6 +19,27 @@ from material_admission import (
     AdmissionResultReference,
     admission_occurrence,
 )
+
+MaterialInvocationCoordinates = tuple[
+    float,
+    int | None,
+    bool,
+    bool,
+    bool,
+    bool,
+    int | None,
+    bytes | None,
+    bytes | None,
+]
+MaterialInvocationReturnCoordinates = tuple[
+    float,
+    int | None,
+    bool,
+    bool,
+    bool,
+    bool,
+    int | None,
+]
 from compiled_format_invocation import AddedPositionOccurrence
 
 
@@ -80,7 +104,7 @@ class MaterialInvocationResultReference:
     @property
     def coordinates(
         self,
-    ) -> tuple[float, bool, int | None, bytes | None, bytes | None]:
+    ) -> MaterialInvocationCoordinates:
         return self.invocation_occurrence.coordinates
 
 
@@ -141,13 +165,13 @@ class MaterialAddedCompareOccurrence:
     @property
     def source_coordinates(
         self,
-    ) -> tuple[float, bool, int | None, bytes | None, bytes | None]:
+    ) -> MaterialInvocationCoordinates:
         return self.source_invocation.coordinates
 
     @property
     def result_coordinates(
         self,
-    ) -> tuple[float, bool, int | None, bytes | None, bytes | None]:
+    ) -> MaterialInvocationCoordinates:
         return self.result_invocation.coordinates
 
     @property
@@ -158,11 +182,11 @@ class MaterialAddedCompareOccurrence:
 @dataclass(frozen=True, slots=True)
 class MaterialAddedReturnCompareOccurrence(MaterialAddedCompareOccurrence):
     @property
-    def source_coordinates(self) -> tuple[float, bool, int | None]:
+    def source_coordinates(self) -> MaterialInvocationReturnCoordinates:
         return self.source_invocation.return_coordinates
 
     @property
-    def result_coordinates(self) -> tuple[float, bool, int | None]:
+    def result_coordinates(self) -> MaterialInvocationReturnCoordinates:
         return self.result_invocation.return_coordinates
 
 
@@ -178,6 +202,10 @@ class MaterialInvocationOccurrence:
     stderr_bytes: bytes | None
     source_reference: Hashable | None = None
     time_limit_second_count: float = 30.0
+    material_byte_count_limit: int | None = None
+    time_limit_reached: bool = False
+    stdout_byte_count_limit_reached: bool = False
+    stderr_byte_count_limit_reached: bool = False
 
     def __post_init__(self) -> None:
         if type(self.boundary_identity) is not str or not self.boundary_identity:
@@ -197,6 +225,38 @@ class MaterialInvocationOccurrence:
             or self.time_limit_second_count <= 0
         ):
             raise TypeError("one exact positive time limit second count is required")
+        if self.material_byte_count_limit is not None and (
+            type(self.material_byte_count_limit) is not int
+            or self.material_byte_count_limit < 1
+        ):
+            raise TypeError("one exact positive material byte count limit is required")
+        limit_coordinates = (
+            self.time_limit_reached,
+            self.stdout_byte_count_limit_reached,
+            self.stderr_byte_count_limit_reached,
+        )
+        if any(type(coordinate) is not bool for coordinate in limit_coordinates):
+            raise TypeError("invocation limit coordinates must be exact")
+        if (
+            self.material_byte_count_limit is None
+            and (
+                self.stdout_byte_count_limit_reached
+                or self.stderr_byte_count_limit_reached
+            )
+        ):
+            raise ValueError("material limit cannot be reached without its exact count")
+        if self.returned and any(limit_coordinates):
+            raise ValueError("a returned invocation cannot have reached a limit")
+        if self.stdout_byte_count_limit_reached and (
+            type(self.stdout_bytes) is not bytes
+            or len(self.stdout_bytes) != self.material_byte_count_limit
+        ):
+            raise ValueError("stdout material does not preserve its exact bounded prefix")
+        if self.stderr_byte_count_limit_reached and (
+            type(self.stderr_bytes) is not bytes
+            or len(self.stderr_bytes) != self.material_byte_count_limit
+        ):
+            raise ValueError("stderr material does not preserve its exact bounded prefix")
         if self.returned:
             if type(self.returncode) is not int:
                 raise TypeError("a returned invocation requires its exact return code")
@@ -230,20 +290,28 @@ class MaterialInvocationOccurrence:
     @property
     def coordinates(
         self,
-    ) -> tuple[float, bool, int | None, bytes | None, bytes | None]:
+    ) -> MaterialInvocationCoordinates:
         return (
             self.time_limit_second_count,
+            self.material_byte_count_limit,
             self.returned,
+            self.time_limit_reached,
+            self.stdout_byte_count_limit_reached,
+            self.stderr_byte_count_limit_reached,
             self.returncode,
             self.stdout_bytes,
             self.stderr_bytes,
         )
 
     @property
-    def return_coordinates(self) -> tuple[float, bool, int | None]:
+    def return_coordinates(self) -> MaterialInvocationReturnCoordinates:
         return (
             self.time_limit_second_count,
+            self.material_byte_count_limit,
             self.returned,
+            self.time_limit_reached,
+            self.stdout_byte_count_limit_reached,
+            self.stderr_byte_count_limit_reached,
             self.returncode,
         )
 
@@ -492,6 +560,7 @@ def invocation_occurrence(
     invocation_position: int = 0,
     source_reference: Hashable | None = None,
     time_limit_second_count: float = 30.0,
+    material_byte_count_limit: int | None = None,
 ) -> MaterialInvocationOccurrence:
     if type(exact_material) is not bytes:
         raise TypeError("implementation function material must be exact bytes")
@@ -502,6 +571,21 @@ def invocation_occurrence(
         or time_limit_second_count <= 0
     ):
         raise TypeError("one exact positive time limit second count is required")
+    if material_byte_count_limit is not None and (
+        type(material_byte_count_limit) is not int
+        or material_byte_count_limit < 1
+    ):
+        raise TypeError("one exact positive material byte count limit is required")
+    if material_byte_count_limit is not None:
+        return _byte_bounded_invocation_occurrence(
+            exact_material,
+            implementation_function,
+            boundary_identity=boundary_identity,
+            invocation_position=invocation_position,
+            source_reference=source_reference,
+            time_limit_second_count=time_limit_second_count,
+            material_byte_count_limit=material_byte_count_limit,
+        )
     try:
         completed = subprocess.run(
             implementation_function.invocation,
@@ -523,6 +607,7 @@ def invocation_occurrence(
             stderr_bytes=occurrence.stderr,
             source_reference=source_reference,
             time_limit_second_count=time_limit_second_count,
+            time_limit_reached=True,
         )
     return MaterialInvocationOccurrence(
         boundary_identity=boundary_identity,
@@ -538,6 +623,124 @@ def invocation_occurrence(
     )
 
 
+def _byte_bounded_invocation_occurrence(
+    exact_material,
+    implementation_function,
+    *,
+    boundary_identity,
+    invocation_position,
+    source_reference,
+    time_limit_second_count,
+    material_byte_count_limit,
+):
+    streams = selectors.DefaultSelector()
+    process = subprocess.Popen(
+        implementation_function.invocation,
+        stdin=subprocess.PIPE,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        bufsize=0,
+    )
+    input_position = 0
+    stdout = bytearray()
+    stderr = bytearray()
+    time_limit_reached = False
+    stdout_limit_reached = False
+    stderr_limit_reached = False
+
+    def end_process() -> None:
+        if process.poll() is None:
+            try:
+                process.kill()
+            except ProcessLookupError:
+                pass
+
+    for stream in (process.stdin, process.stdout, process.stderr):
+        os.set_blocking(stream.fileno(), False)
+    streams.register(process.stdin, selectors.EVENT_WRITE, "stdin")
+    streams.register(process.stdout, selectors.EVENT_READ, "stdout")
+    streams.register(process.stderr, selectors.EVENT_READ, "stderr")
+    deadline = time.monotonic() + time_limit_second_count
+    try:
+        while streams.get_map():
+            remaining = deadline - time.monotonic()
+            if remaining <= 0:
+                time_limit_reached = True
+                end_process()
+                if process.stdin in tuple(
+                    key.fileobj for key in streams.get_map().values()
+                ):
+                    streams.unregister(process.stdin)
+                    process.stdin.close()
+                remaining = 0.05
+            for key, _ in streams.select(min(remaining, 0.05)):
+                stream = key.fileobj
+                if key.data == "stdin":
+                    try:
+                        count = os.write(
+                            stream.fileno(), exact_material[input_position:]
+                        )
+                    except BrokenPipeError:
+                        count = 0
+                        input_position = len(exact_material)
+                    else:
+                        input_position += count
+                    if input_position == len(exact_material):
+                        streams.unregister(stream)
+                        stream.close()
+                    continue
+                try:
+                    found = os.read(stream.fileno(), 65536)
+                except BlockingIOError:
+                    continue
+                if not found:
+                    streams.unregister(stream)
+                    stream.close()
+                    continue
+                material = stdout if key.data == "stdout" else stderr
+                available = material_byte_count_limit - len(material)
+                material.extend(found[:available])
+                if len(found) > available:
+                    if key.data == "stdout":
+                        stdout_limit_reached = True
+                    else:
+                        stderr_limit_reached = True
+                    end_process()
+            if process.poll() is not None and len(streams.get_map()) == 1:
+                remaining_stream = next(iter(streams.get_map().values())).fileobj
+                if remaining_stream is process.stdin:
+                    streams.unregister(remaining_stream)
+                    remaining_stream.close()
+    except BaseException:
+        end_process()
+        raise
+    finally:
+        streams.close()
+        for stream in (process.stdin, process.stdout, process.stderr):
+            if not stream.closed:
+                stream.close()
+        process.wait()
+    returned = not (
+        time_limit_reached or stdout_limit_reached or stderr_limit_reached
+    )
+    return MaterialInvocationOccurrence(
+        boundary_identity=boundary_identity,
+        invocation_position=invocation_position,
+        exact_material=exact_material,
+        implementation_function=implementation_function,
+        returned=returned,
+        returncode=process.returncode if returned else None,
+        stdout_bytes=bytes(stdout),
+        stderr_bytes=bytes(stderr),
+        source_reference=source_reference,
+        time_limit_second_count=time_limit_second_count,
+        material_byte_count_limit=material_byte_count_limit,
+        time_limit_reached=time_limit_reached,
+        stdout_byte_count_limit_reached=stdout_limit_reached,
+        stderr_byte_count_limit_reached=stderr_limit_reached,
+    )
+
+
 def occurrences_across(
     exact_materials: tuple[bytes, ...],
     *,
@@ -546,12 +749,14 @@ def occurrences_across(
         MaterialImplementationFunction, ...
     ] = MATERIAL_IMPLEMENTATION_FUNCTIONS,
     time_limit_second_count: float = 30.0,
+    material_byte_count_limit: int | None = None,
 ) -> tuple[tuple[MaterialInvocationOccurrence, ...], ...]:
     return _occurrences_across(
         exact_materials,
         boundary_identity=boundary_identity,
         implementation_functions=implementation_functions,
         time_limit_second_count=time_limit_second_count,
+        material_byte_count_limit=material_byte_count_limit,
     )
 
 
@@ -564,6 +769,7 @@ def reference_occurrences_across(
     ] = MATERIAL_IMPLEMENTATION_FUNCTIONS,
     max_workers: int = 16,
     time_limit_second_count: float = 30.0,
+    material_byte_count_limit: int | None = None,
 ) -> tuple[tuple[MaterialInvocationOccurrence, ...], ...]:
     if type(references) is not tuple or any(
         type(getattr(reference, "exact_material", None)) is not bytes
@@ -577,6 +783,7 @@ def reference_occurrences_across(
         source_references=references,
         max_workers=max_workers,
         time_limit_second_count=time_limit_second_count,
+        material_byte_count_limit=material_byte_count_limit,
     )
 
 
@@ -697,6 +904,7 @@ def _occurrences_across(
     source_references: tuple[Hashable, ...] | None = None,
     max_workers: int = 16,
     time_limit_second_count: float = 30.0,
+    material_byte_count_limit: int | None = None,
 ) -> tuple[tuple[MaterialInvocationOccurrence, ...], ...]:
     if type(exact_materials) is not tuple or any(
         type(material) is not bytes for material in exact_materials
@@ -754,6 +962,7 @@ def _occurrences_across(
             invocation_position=position,
             source_reference=source_reference,
             time_limit_second_count=time_limit_second_count,
+            material_byte_count_limit=material_byte_count_limit,
         )
 
     with ThreadPoolExecutor(max_workers=min(max_workers, len(calls))) as workers:

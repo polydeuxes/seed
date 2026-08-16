@@ -273,6 +273,9 @@ class ExactMaterialResultReference:
             ):
                 raise TypeError("material result requires its exact Act occurrence count limit")
 
+    def __hash__(self) -> int:
+        return hash(self.result_identity)
+
 
 def _is_exact_material_coordinates(material: object) -> bool:
     from compiled_material_invocation import IngestResultReference
@@ -398,6 +401,9 @@ class AddedPositionOccurrence:
                 or self.added_reference not in added_admitted_material
             ):
                 raise ValueError("addition Act material differs from its Admissions")
+
+    def __hash__(self) -> int:
+        return hash(self.act_occurrence_identity)
 
     @property
     def act_identity(self) -> tuple[str, str]:
