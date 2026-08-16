@@ -20,7 +20,7 @@
   "fidelity": {
     "book_clause": "01.Source.C",
     "subject": "this_Seed",
-    "expectation": "machine_grammar",
+    "grammar": "machine_grammar",
     "comparison": "deterministic_tests",
     "witness": "live_implementation",
     "result": "bounded_Fidelity_finding",
@@ -126,7 +126,7 @@
       "subject": "input_to_exact_Act_relation",
       "responsibility": {
         "default": "exact_Act_Responsibility",
-        "override": "explicitly_assigned_responsible_occurrence"
+        "override": "assigned_responsible_occurrence"
       },
       "must_precede": ["participation"],
       "coordinates": [

@@ -1,7 +1,7 @@
 # Stopping and Completion
 
 ## Constitutional subject
-The grounds for stopping inquiry or movement and the stronger Assertion that a bounded result is complete.
+The bounded Stop or absence of movement and the stronger Assertion that a bounded result is complete.
 
 ## Core distinction
 Which exact evidenced material or Standing can support a bounded responsible exact Act stopping its present act, a responsible stopping occurrence at a competent boundary that establishes a bounded stop, or the stronger completion Assertion for an exact bounded result?
@@ -30,6 +30,6 @@ Where a bounded Stop is established, the stopping occurrence preserves the exact
 
 ## Constrained movement stopping correction 001
 
-An exact Act may respond to an Assertion, Unknown, resource limit, unresolved causation, preservation failure, satisfied Scope, or operator boundary with a Stop, deferral, narrowing, return to inquiry, a Representation carrying material and an unmet requirement Assertion, or a refusal to establish a support relation. None makes the asserted failure or completion by identity. Unknown does not support movement, and an Assertion result does not establish a later stopping occurrence.
+An exact Act may respond to an Assertion, Unknown, resource limit, unresolved causation, preservation failure, satisfied Scope, or operator boundary with a Stop, deferral, narrowing, a Representation carrying material and an unmet requirement Assertion, or a refusal to establish a support relation. None makes the asserted failure or completion by identity. Unknown does not support movement, and an Assertion result does not establish a later stopping occurrence.
 
 Stopping is not failure.

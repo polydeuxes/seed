@@ -22,7 +22,7 @@ An Assertion may acquire another exact locality relation only through a responsi
 
 An exact Act determines Applicability before an Assertion participates under a locality relation. The locality relation does not require an Act and does not establish use.
 
-Authority does not move merely because material moves.
+Material movement does not move Authority.
 
 ## Required distinctions
 - representation != source material

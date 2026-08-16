@@ -1647,7 +1647,7 @@ def test_fidelity_is_this_seeds_bounded_machine_comparison():
     assert grammar["fidelity"] == {
         "book_clause": "01.Source.C",
         "subject": "this_Seed",
-        "expectation": "machine_grammar",
+        "grammar": "machine_grammar",
         "comparison": "deterministic_tests",
         "witness": "live_implementation",
         "result": "bounded_Fidelity_finding",

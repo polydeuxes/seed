@@ -4,17 +4,17 @@
 The binding, Scope, and non-transferability of authority across Seed's boundaries.
 
 ## Core distinction
-What grants authority for a bounded result or act, and how is that authority prevented from expanding in transit?
+What establishes Authority for a bounded result or Act, and what preserves its exact Scope in transit?
 
 ## Bounded resolution
-Operator material and explicit approvals may contribute authority only after exact Authority and Scope binding. Internal representations, records, emissions, or transport material cannot create or enlarge that authority.
+Operator material and approvals may contribute Authority only after exact Authority and Scope binding. Internal Representations, records, emissions, or transport material cannot create or enlarge that Authority.
 
-Policy wording may describe Authority granted for an exact responsible boundary, Act or movement, addressed subject, result boundary, Scope, temporal Standing, negative Authority, and Unknowns. The wording does not create, enlarge, transfer, or renew that Authority.
+A Representation may carry Authority for an exact responsible boundary, Act or movement, addressed subject, result boundary, Scope, temporal Standing, negative Authority, and Unknowns. The Representation does not create, enlarge, transfer, or renew that Authority.
 
 ## Boundaries for bounded input support witnesses
 
-### 08.Authority.A — Bounded input support without standing expansion
-A downstream Act may stand on established content only for its exact role, addressed subject, result boundary, source or provenance, Evidence, Authority, Scope, confidence or uncertainty, and Unknown boundaries. Input support does not strengthen Standing, expand Authority, prove truth, revise a Responsibility assignment, authorize implementation, or erase negative Authority.
+### 08.Authority.A — Bounded input support
+A downstream Act may stand on established content only for its exact role, addressed subject, result boundary, source or provenance, Evidence, Authority, Scope, confidence or uncertainty, and Unknown boundaries. Input support does not establish Standing or Authority beyond those bounds, prove truth, revise a Responsibility assignment, authorize implementation, or erase negative Authority.
 
 
 ### 08.Authority.B — Admission is bounded participation, not ratification
@@ -27,7 +27,7 @@ Seed may analyze source packets, support paths, source roles, boundary mismatche
 ## Important distinctions
 - operator request != unbounded authority
 - scope binding != approval for every act in scope
-- internal recommendation != authority grant
+- internal recommendation != Authority
 - analytical competence != adjudicative authority
 
 ## Counterexamples or failure modes
@@ -39,4 +39,4 @@ Seed may analyze source packets, support paths, source roles, boundary mismatche
 
 ## Authorization boundary correction 001
 
-Authorization is bounded Standing established only by a responsible Authority boundary. The boundary preserves the Authority subject, granting source, responsible boundary, authorized Act or movement, addressed subject, result boundary, Scope, temporal Standing, applicable Assertions, Evidence, occurrence, negative Authority, and Unknowns. Other findings may contribute Evidence only within their own Standing and do not grant Authority by identity.
+Authorization is bounded Standing established only by a responsible Authority boundary. The boundary preserves the Authority subject, source of Authority, responsible boundary, authorized Act or movement, addressed subject, result boundary, Scope, temporal Standing, applicable Assertions, Evidence, occurrence, negative Authority, and Unknowns. Other findings may contribute Evidence only within their own Standing and do not establish Authority by identity.

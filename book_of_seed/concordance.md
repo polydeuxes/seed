@@ -1,6 +1,6 @@
 # Concordance
 
-Navigation only. Entries do not grant constitutional identity or Standing.
+Navigation only. Entries do not establish constitutional identity or Standing.
 
 | Coordinate | Chapter |
 |---|---|

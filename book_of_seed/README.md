@@ -12,9 +12,8 @@ It is not a roadmap, implementation reference, generated topology, or substitute
 
 The [concordance](concordance.md) is a navigation aid, not an ontology.
 
-The machine grammar is the machine representation of clause coordinates used
-by tests. The Markdown chapters are the explanatory representation of the same
-grammar. Neither representation is the Book by identity.
+The machine grammar and Markdown chapters are distinct Representations of the
+same clause coordinates. Neither Representation is the Book by identity.
 
 ## Standing
 
@@ -101,7 +100,7 @@ These branches apply where the exact act occurs, including a failed act occurren
 
 #### Act occurrence
 
-Identifies the responsible occurrence at which the exact act happens. A failed act may still be an act occurrence. No act occurrence exists merely because a later responsibility finds that the proposed act did not occur.
+Identifies the responsible occurrence at which the exact act happens. A failed act may still be an act occurrence. A later responsibility finding that the proposed act did not occur does not establish an act occurrence.
 
 ```text
 act
@@ -210,7 +209,7 @@ Identifies any act-local applicability or admission standing required before mat
 
 #### Lawful Stopping
 
-Where a stopping occurrence carries a lawful Stop result, preserve separately the responsible boundary, stopping Act, stopping occurrence, and bounded Stop result. Identity among those coordinates must not be inferred. It is not a relation merely because it connects a reason-bearing responsibility to the exact Act addressed by the Stop. Absence of movement, unresolved material, negative Standing, or a preventing Assertion does not supply a Stop by identity.
+Where a stopping occurrence carries a lawful Stop result, preserve separately the responsible boundary, stopping Act, stopping occurrence, and bounded Stop result. Identity among those coordinates must not be inferred. A reason-bearing Responsibility and the exact Act addressed by the Stop do not establish a relation by identity. Absence of movement, unresolved material, negative Standing, or a preventing Assertion does not supply a Stop by identity.
 
 ```text
 absence of movement
@@ -243,7 +242,7 @@ same occurrence != same Assertion
 > Maintain the constitutional grammar.  
 > Let Seed inspect the current implementation and emit only bounded results supported by that inspection's Evidence.
 
-Revise the Book when constitutional grammar, a durable distinction, or the status of an unresolved constitutional distinction is different. Do not update it merely because a function moves, a field is added, a relation is different, or a new diagnostic projects the same grammar.
+Revise the Book when constitutional grammar, a durable distinction, or the status of an unresolved constitutional distinction is different. Function movement, added fields, different relations, or a new diagnostic Representation of the same grammar do not require revision.
 
 ## Chapters
 

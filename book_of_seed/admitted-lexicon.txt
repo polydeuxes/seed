@@ -162,7 +162,6 @@ conflicting
 conflicts
 connect
 connective
-connects
 consider
 considered
 constitutional
@@ -203,7 +202,6 @@ decomposed
 dedicated
 default
 deferral
-describe
 described
 describes
 describing
@@ -296,13 +294,6 @@ exist
 existence
 existing
 exists
-expand
-expanding
-expansion
-expectation
-explanatory
-explicit
-explicitly
 export
 extraction
 f
@@ -321,7 +312,6 @@ fill
 final
 finding
 findings
-finds
 first
 fixed
 flush
@@ -338,11 +328,6 @@ global
 govern
 governs
 grammar
-grant
-granted
-granting
-grants
-grounds
 grouping
 happened
 happens
@@ -356,7 +341,6 @@ higher
 historical
 history
 hosts
-how
 identifier
 identifies
 identify
@@ -381,7 +365,6 @@ ingest
 inherited
 input
 inputs
-inquiry
 inspect
 inspection
 instantiate
@@ -445,14 +428,11 @@ measured
 measurement
 measurements
 meets
-mere
-merely
 mismatches
 missing
 modes
 move
 movement
-moves
 multiplicity
 must
 mutating
@@ -481,7 +461,6 @@ nonoccurrence
 nor
 not
 nothing
-novelty
 obligation
 occupied
 occupy
@@ -538,7 +517,6 @@ persists
 personally
 place
 plausible
-policy
 poor
 populated
 position
@@ -558,13 +536,11 @@ preserves
 preserving
 pressure
 prevent
-prevented
 preventing
 previously
 prior
 procedural
 prohibition
-projects
 promotion
 proof
 proposal
@@ -779,10 +755,8 @@ unresolved
 unsupported
 until
 up
-update
 upstream
 use
-used
 usefulness
 uses
 validate

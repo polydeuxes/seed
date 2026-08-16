@@ -24,7 +24,7 @@ An exact Act may accept as input supplied material only within its carried Scope
 
 ### 01.Source.C — Fidelity is bounded comparison
 
-Fidelity is bounded comparison of this Seed's live implementation witness with its machine grammar through deterministic tests. Each test has only its declared distinction as its subject and may carry a bounded Fidelity finding. It preserves its Evidence, provenance, Authority, Scope, conflicts, Unknowns, erasure, unsupported coordinates, mutation, or Authority relocation. A passing test does not certify this Seed beyond that test's boundary or grant correction Authority.
+Fidelity is bounded comparison of this Seed's live implementation witness with its machine grammar through deterministic tests. Each test has only its declared distinction as its subject and may carry a bounded Fidelity finding. It preserves its Evidence, provenance, Authority, Scope, conflicts, Unknowns, erasure, unsupported coordinates, mutation, or Authority relocation. A passing test does not certify this Seed beyond that test's boundary or establish correction Authority.
 
 ### 01.Source.D — Measurement carries only its declared result
 
