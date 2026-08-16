@@ -12,6 +12,9 @@ from typing import Callable, Hashable, Protocol, runtime_checkable
 import xml.etree.ElementTree
 
 from seed_runtime.byte_measurement import (
+    ASSERTION_LOCALITY_MOVEMENT_KIND,
+    BYTE_MEASUREMENT_RECORDED_KIND,
+    BYTE_PAIR_MEASUREMENT_RECORDED_KIND,
     assertions_of_recorded_byte_measurement,
     assertions_of_recorded_byte_position_pair_measurement,
     move_recorded_byte_assertion_to_locality,
@@ -214,7 +217,7 @@ def exact_byte_material_references(
     if not isinstance(ledger, EventLedger):
         raise TypeError("exact byte material references require one EventLedger")
     event = ledger.get(measurement_occurrence_identity)
-    if event is None:
+    if event is None or event.kind != BYTE_MEASUREMENT_RECORDED_KIND:
         raise ValueError("exact byte material references require one Measurement occurrence")
     assertions = assertions_of_recorded_byte_measurement(
         ledger, measurement_occurrence_identity
@@ -242,7 +245,7 @@ def moved_exact_byte_material_references(
     if type(destination_locality) is not str or not destination_locality:
         raise TypeError("moved exact byte references require one destination Locality")
     event = ledger.get(measurement_occurrence_identity)
-    if event is None:
+    if event is None or event.kind != BYTE_MEASUREMENT_RECORDED_KIND:
         raise ValueError("moved exact byte references require one Measurement occurrence")
     assertions = assertions_of_recorded_byte_measurement(
         ledger, measurement_occurrence_identity
@@ -256,6 +259,22 @@ def moved_exact_byte_material_references(
             source=assertion,
             destination_locality=destination_locality,
         )
+        movement_identity = moved.locality_movement_event_identity
+        if event.locality_identity == destination_locality:
+            if movement_identity is not None:
+                raise ValueError("same-Locality material acquired a movement")
+        else:
+            movement = ledger.get(movement_identity)
+            if (
+                movement is None
+                or movement.kind != ASSERTION_LOCALITY_MOVEMENT_KIND
+                or movement.locality_identity != destination_locality
+                or movement.material.get("source_assertion_reference")
+                != moved.reference
+                or movement.material.get("destination_locality")
+                != destination_locality
+            ):
+                raise ValueError("byte material movement is not exact")
         found.append(
             ExactMaterialReference(
                 recorded_occurrence_identity=moved.recorded_occurrence_identity,
@@ -263,7 +282,7 @@ def moved_exact_byte_material_references(
                 locality_identity=destination_locality,
                 exact_material=bytes((moved.representation,)),
                 locality_movement_event_identity=(
-                    moved.locality_movement_event_identity
+                    movement_identity
                 ),
             )
         )
@@ -276,7 +295,7 @@ def exact_byte_pair_material_references(
     if not isinstance(ledger, EventLedger):
         raise TypeError("exact byte-pair material references require one EventLedger")
     event = ledger.get(measurement_occurrence_identity)
-    if event is None:
+    if event is None or event.kind != BYTE_PAIR_MEASUREMENT_RECORDED_KIND:
         raise ValueError("exact byte-pair material references require one Measurement occurrence")
     assertions = assertions_of_recorded_byte_position_pair_measurement(
         ledger, measurement_occurrence_identity
