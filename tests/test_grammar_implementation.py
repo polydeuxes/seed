@@ -2599,8 +2599,9 @@ def _assert_ordered_fidelity_representation(fidelity: dict) -> None:
         },
         "test_subjects": [
             {
-                "subject": "this_material_Witness",
+                "subject": "this_book_material_acquisition_witness",
                 "material_reference": "this_Book",
+                "witness_for": "this_Fidelity",
                 "distinct_from": "this_Witness",
             }
         ],

@@ -611,6 +611,7 @@ def pytest_runtest_protocol(item: object, nextitem: object):
             "occurrence_position": occurrence_position,
             "pytest_identity": item.nodeid,
             **({"subject": subject} if subject is not None else {}),
+            **({"witness_for": "this_Fidelity"} if subject is not None else {}),
             "first_sql_occurrence_position": sql_occurrence_position,
             "sql_occurrence_count": len(_sql_occurrences) - sql_occurrence_position,
             "first_sql_invocation_occurrence_position": (

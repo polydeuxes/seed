@@ -15,6 +15,7 @@ accept
 acceptance
 accepted
 acquire
+acquisition
 across
 act
 action

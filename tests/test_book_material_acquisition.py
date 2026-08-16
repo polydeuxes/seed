@@ -85,25 +85,28 @@ from tests.test_book_admission import (  # noqa: E402
 )
 
 
-THIS_MATERIAL_WITNESS = "this_material_Witness"
-pytestmark = pytest.mark.subject(THIS_MATERIAL_WITNESS)
+THIS_BOOK_MATERIAL_ACQUISITION_WITNESS = (
+    "this_book_material_acquisition_witness"
+)
+pytestmark = pytest.mark.subject(THIS_BOOK_MATERIAL_ACQUISITION_WITNESS)
 
 
-def test_book_material_acquisition_fidelity_has_one_admitted_subject():
+def test_book_material_acquisition_witness_has_one_admitted_subject():
     grammar = json.loads(
         (ROOT / "book_of_seed" / "grammar.json").read_text(encoding="utf-8")
     )
     subject_words = set(
         re.findall(
             r"[A-Za-z]+",
-            scan_active_line(THIS_MATERIAL_WITNESS).lower(),
+            scan_active_line(THIS_BOOK_MATERIAL_ACQUISITION_WITNESS).lower(),
         )
     )
 
     assert grammar["clauses"]["01.Source.C"]["test_subjects"] == [
         {
-            "subject": THIS_MATERIAL_WITNESS,
+            "subject": THIS_BOOK_MATERIAL_ACQUISITION_WITNESS,
             "material_reference": "this_Book",
+            "witness_for": "this_Fidelity",
             "distinct_from": "this_Witness",
         }
     ]

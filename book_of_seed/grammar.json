@@ -6,8 +6,8 @@
       "coordinate": "witness"
     },
     {
-      "reference": "this_material_Witness",
-      "coordinate": "material_witness_subject"
+      "reference": "this_book_material_acquisition_witness",
+      "coordinate": "book_material_acquisition_witness_subject"
     },
     {
       "reference": "this_Grammar",
@@ -251,8 +251,9 @@
       },
       "test_subjects": [
         {
-          "subject": "this_material_Witness",
+          "subject": "this_book_material_acquisition_witness",
           "material_reference": "this_Book",
+          "witness_for": "this_Fidelity",
           "distinct_from": "this_Witness"
         }
       ],

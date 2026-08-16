@@ -116,7 +116,10 @@ def test_this_occurs_only_as_exact_machine_roots():
     assert uses == [
         (("book_material_reference",), "this_Book"),
         (("root_references", 0, "reference"), "this_Witness"),
-        (("root_references", 1, "reference"), "this_material_Witness"),
+        (
+            ("root_references", 1, "reference"),
+            "this_book_material_acquisition_witness",
+        ),
         (("root_references", 2, "reference"), "this_Grammar"),
         (("root_references", 3, "reference"), "this_Book"),
         (("root_references", 4, "reference"), "this_Seed"),
@@ -151,7 +154,7 @@ def test_this_occurs_only_as_exact_machine_roots():
         ),
         (
             ("clauses", "01.Source.C", "test_subjects", 0, "subject"),
-            "this_material_Witness",
+            "this_book_material_acquisition_witness",
         ),
         (
             (
@@ -162,6 +165,10 @@ def test_this_occurs_only_as_exact_machine_roots():
                 "material_reference",
             ),
             "this_Book",
+        ),
+        (
+            ("clauses", "01.Source.C", "test_subjects", 0, "witness_for"),
+            "this_Fidelity",
         ),
         (
             ("clauses", "01.Source.C", "test_subjects", 0, "distinct_from"),
@@ -217,8 +224,8 @@ def test_machine_root_references_remain_distinct_and_in_declared_order():
             "coordinate": "witness",
         },
         {
-            "reference": "this_material_Witness",
-            "coordinate": "material_witness_subject",
+            "reference": "this_book_material_acquisition_witness",
+            "coordinate": "book_material_acquisition_witness_subject",
         },
         {"reference": "this_Grammar", "coordinate": "machine_grammar"},
         {"reference": "this_Book", "coordinate": "book_material"},

@@ -109,7 +109,7 @@ def test_one_measurement_does_not_replace_an_active_measurement():
 
 def test_one_pytest_occurrence_keeps_its_exact_implementation_measurement():
     class Marker:
-        args = ("this_material_Witness",)
+        args = ("this_book_material_acquisition_witness",)
         kwargs = {}
 
     class Item:
@@ -136,7 +136,8 @@ def test_one_pytest_occurrence_keeps_its_exact_implementation_measurement():
     occurrence = result["pytest"][0]
     assert occurrence["occurrence_position"] == 0
     assert occurrence["pytest_identity"] == Item.nodeid
-    assert occurrence["subject"] == "this_material_Witness"
+    assert occurrence["subject"] == "this_book_material_acquisition_witness"
+    assert occurrence["witness_for"] == "this_Fidelity"
     assert occurrence["first_sql_occurrence_position"] == 0
     assert occurrence["sql_occurrence_count"] == 1
     assert result["sql_occurrences"] == ("SELECT 9",)
@@ -183,8 +184,10 @@ def test_pytest_subject_refuses_multiple_malformed_or_unadmitted_references():
 
     assert measured._pytest_subject(Item(())) is None
     assert (
-        measured._pytest_subject(Item((Marker("this_material_Witness"),)))
-        == "this_material_Witness"
+        measured._pytest_subject(
+            Item((Marker("this_book_material_acquisition_witness"),))
+        )
+        == "this_book_material_acquisition_witness"
     )
     with pytest.raises(ValueError, match="one exact test subject"):
         measured._pytest_subject(Item((Marker("this_Book"), Marker("material"))))
