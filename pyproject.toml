@@ -13,7 +13,10 @@ where = ["."]
 include = ["seed_runtime*"]
 
 [tool.pytest.ini_options]
-markers = ["experimental_runtime_loop: quarantined RuntimeLoop coverage; not canonical runtime behavior"]
+markers = [
+    "experimental_runtime_loop: quarantined RuntimeLoop coverage; not canonical runtime behavior",
+    "subject(reference): exact admitted subject of one deterministic test occurrence",
+]
 pythonpath = ["."]
 testpaths = ["tests"]
 # Probing a decoder with bytes it was not built for makes it complain while it

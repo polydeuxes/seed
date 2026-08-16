@@ -108,8 +108,17 @@ def test_one_measurement_does_not_replace_an_active_measurement():
 
 
 def test_one_pytest_occurrence_keeps_its_exact_implementation_measurement():
+    class Marker:
+        args = ("this_material_Witness",)
+        kwargs = {}
+
     class Item:
         nodeid = "tests/exact.py::test_one_occurrence"
+
+        @staticmethod
+        def iter_markers(*, name):
+            assert name == "subject"
+            return (Marker(),)
 
     measured.begin()
     protocol = measured.pytest_runtest_protocol(Item(), None)
@@ -127,6 +136,7 @@ def test_one_pytest_occurrence_keeps_its_exact_implementation_measurement():
     occurrence = result["pytest"][0]
     assert occurrence["occurrence_position"] == 0
     assert occurrence["pytest_identity"] == Item.nodeid
+    assert occurrence["subject"] == "this_material_Witness"
     assert occurrence["first_sql_occurrence_position"] == 0
     assert occurrence["sql_occurrence_count"] == 1
     assert result["sql_occurrences"] == ("SELECT 9",)
@@ -155,6 +165,33 @@ def test_one_pytest_occurrence_keeps_its_exact_implementation_measurement():
     assert output_coordinate["occurrence_count"] == 1
     assert all(unit < 128 for unit in measured._json_material(catalog))
     assert all(unit < 128 for unit in measured._json_material(observation))
+
+
+def test_pytest_subject_refuses_multiple_malformed_or_unadmitted_references():
+    class Marker:
+        def __init__(self, *args, **kwargs):
+            self.args = args
+            self.kwargs = kwargs
+
+    class Item:
+        def __init__(self, markers):
+            self.markers = markers
+
+        def iter_markers(self, *, name):
+            assert name == "subject"
+            return self.markers
+
+    assert measured._pytest_subject(Item(())) is None
+    assert (
+        measured._pytest_subject(Item((Marker("this_material_Witness"),)))
+        == "this_material_Witness"
+    )
+    with pytest.raises(ValueError, match="one exact test subject"):
+        measured._pytest_subject(Item((Marker("this_Book"), Marker("material"))))
+    with pytest.raises(TypeError, match="one exact test subject reference"):
+        measured._pytest_subject(Item((Marker(subject="this_Book"),)))
+    with pytest.raises(ValueError, match="absent from Book admission"):
+        measured._pytest_subject(Item((Marker("uncurated_subject_word"),)))
 
 
 def test_stable_catalog_is_separate_from_sparse_observation():

@@ -2597,6 +2597,13 @@ def _assert_ordered_fidelity_representation(fidelity: dict) -> None:
             "boundary": "deterministic_tests",
             "result": "this_Fidelity",
         },
+        "test_subjects": [
+            {
+                "subject": "this_material_Witness",
+                "material_reference": "this_Book",
+                "distinct_from": "this_Witness",
+            }
+        ],
         "preserves": [
             "Evidence",
             "provenance",

@@ -1,7 +1,9 @@
 from __future__ import annotations
 
 from dataclasses import replace
+import json
 from pathlib import Path
+import re
 import sys
 
 import pytest
@@ -77,6 +79,35 @@ from compiled_format_invocation import (  # noqa: E402
 )
 from compiled_material_invocation import ingest_result_reference  # noqa: E402
 from material_admission import compare_admission_result_pairs  # noqa: E402
+from tests.test_book_admission import (  # noqa: E402
+    book_admission,
+    scan_active_line,
+)
+
+
+THIS_MATERIAL_WITNESS = "this_material_Witness"
+pytestmark = pytest.mark.subject(THIS_MATERIAL_WITNESS)
+
+
+def test_book_material_acquisition_fidelity_has_one_admitted_subject():
+    grammar = json.loads(
+        (ROOT / "book_of_seed" / "grammar.json").read_text(encoding="utf-8")
+    )
+    subject_words = set(
+        re.findall(
+            r"[A-Za-z]+",
+            scan_active_line(THIS_MATERIAL_WITNESS).lower(),
+        )
+    )
+
+    assert grammar["clauses"]["01.Source.C"]["test_subjects"] == [
+        {
+            "subject": THIS_MATERIAL_WITNESS,
+            "material_reference": "this_Book",
+            "distinct_from": "this_Witness",
+        }
+    ]
+    assert subject_words <= book_admission()
 
 
 @pytest.fixture(scope="module")

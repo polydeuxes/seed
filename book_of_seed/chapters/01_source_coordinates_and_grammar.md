@@ -26,6 +26,8 @@ Acceptance of supplied material by an exact Act is bounded by its carried Scope 
 
 Fidelity is bounded comparison of this Seed's witness with its machine grammar through deterministic tests. Each test has its declared distinction as its subject and has no other subject. It may carry a bounded Fidelity finding. It preserves its Evidence, provenance, Authority, Scope, conflicts, Unknown, erasure, unsupported coordinates, mutation, or Authority relocation. A passing test does not certify this Seed beyond that test's boundary or establish correction Authority.
 
+This material witness is one declared distinction carried as the subject of one deterministic test occurrence. Its material reference is this Book. This material witness is not this Witness by identity.
+
 ### 01.Source.D — Measurement carries its declared result
 
 A declared Measurement occurrence may carry bounded exact equality, count, recurrence, prefix occurrence, declared-predicate result, or position findings. Its result carries nothing beyond the exact rule and boundary. Recurrence preserves the representation measured, sameness rule, and Scope.

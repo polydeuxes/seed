@@ -116,11 +116,12 @@ def test_this_occurs_only_as_exact_machine_roots():
     assert uses == [
         (("book_material_reference",), "this_Book"),
         (("root_references", 0, "reference"), "this_Witness"),
-        (("root_references", 1, "reference"), "this_Grammar"),
-        (("root_references", 2, "reference"), "this_Book"),
-        (("root_references", 3, "reference"), "this_Seed"),
-        (("root_references", 4, "reference"), "this_Rosetta"),
-        (("root_references", 5, "reference"), "this_Fidelity"),
+        (("root_references", 1, "reference"), "this_material_Witness"),
+        (("root_references", 2, "reference"), "this_Grammar"),
+        (("root_references", 3, "reference"), "this_Book"),
+        (("root_references", 4, "reference"), "this_Seed"),
+        (("root_references", 5, "reference"), "this_Rosetta"),
+        (("root_references", 6, "reference"), "this_Fidelity"),
         (("machine_grammar", "subject"), "this_Grammar"),
         (("machine_grammar", "book_material_reference"), "this_Book"),
         (
@@ -147,6 +148,24 @@ def test_this_occurs_only_as_exact_machine_roots():
         (
             ("clauses", "01.Source.C", "comparison", "result"),
             "this_Fidelity",
+        ),
+        (
+            ("clauses", "01.Source.C", "test_subjects", 0, "subject"),
+            "this_material_Witness",
+        ),
+        (
+            (
+                "clauses",
+                "01.Source.C",
+                "test_subjects",
+                0,
+                "material_reference",
+            ),
+            "this_Book",
+        ),
+        (
+            ("clauses", "01.Source.C", "test_subjects", 0, "distinct_from"),
+            "this_Witness",
         ),
         (("clauses", "01.Source.C", "comparison_order", 0), "this_Witness"),
         (("clauses", "01.Source.C", "comparison_order", 2), "this_Grammar"),
@@ -196,6 +215,10 @@ def test_machine_root_references_remain_distinct_and_in_declared_order():
         {
             "reference": "this_Witness",
             "coordinate": "witness",
+        },
+        {
+            "reference": "this_material_Witness",
+            "coordinate": "material_witness_subject",
         },
         {"reference": "this_Grammar", "coordinate": "machine_grammar"},
         {"reference": "this_Book", "coordinate": "book_material"},

@@ -9,6 +9,7 @@ from functools import lru_cache
 import json
 import os
 from pathlib import Path
+import re
 import sqlite3
 import sys
 import threading
@@ -562,10 +563,38 @@ def pytest_sessionstart(session: object) -> None:
     begin()
 
 
+def _pytest_subject(item: object) -> str | None:
+    markers = tuple(item.iter_markers(name="subject"))
+    if not markers:
+        return None
+    if len(markers) != 1:
+        raise ValueError("one exact test subject is required")
+    marker = markers[0]
+    if marker.kwargs or len(marker.args) != 1 or type(marker.args[0]) is not str:
+        raise TypeError("one exact test subject reference is required")
+    subject = marker.args[0]
+    subject_words = tuple(
+        word.lower() for word in re.findall(r"[A-Za-z]+", subject)
+    )
+    if not subject_words:
+        raise ValueError("one nonempty exact test subject is required")
+    admission = {
+        line.split("#", 1)[0].strip()
+        for line in (ROOT / "book_of_seed" / "book_admission.txt")
+        .read_text(encoding="utf-8")
+        .splitlines()
+        if line.split("#", 1)[0].strip()
+    }
+    if any(word not in admission for word in subject_words):
+        raise ValueError("test subject carries words absent from Book admission")
+    return subject
+
+
 @pytest.hookimpl(hookwrapper=True)
 def pytest_runtest_protocol(item: object, nextitem: object):
     del nextitem
     occurrence_position = len(_pytest_occurrences)
+    subject = _pytest_subject(item)
     begin()
     (
         _,
@@ -581,6 +610,7 @@ def pytest_runtest_protocol(item: object, nextitem: object):
         {
             "occurrence_position": occurrence_position,
             "pytest_identity": item.nodeid,
+            **({"subject": subject} if subject is not None else {}),
             "first_sql_occurrence_position": sql_occurrence_position,
             "sql_occurrence_count": len(_sql_occurrences) - sql_occurrence_position,
             "first_sql_invocation_occurrence_position": (

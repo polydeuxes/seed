@@ -6,6 +6,10 @@
       "coordinate": "witness"
     },
     {
+      "reference": "this_material_Witness",
+      "coordinate": "material_witness_subject"
+    },
+    {
       "reference": "this_Grammar",
       "coordinate": "machine_grammar"
     },
@@ -245,6 +249,13 @@
         "boundary": "deterministic_tests",
         "result": "this_Fidelity"
       },
+      "test_subjects": [
+        {
+          "subject": "this_material_Witness",
+          "material_reference": "this_Book",
+          "distinct_from": "this_Witness"
+        }
+      ],
       "preserves": [
         "Evidence",
         "provenance",
