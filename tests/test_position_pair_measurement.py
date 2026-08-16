@@ -214,7 +214,7 @@ def test_every_exact_pair_occurrence_preserves_its_position_pair_measurement_and
         assert measurement.pair_occurrence.second.position == (
             measurement.pair_occurrence.first.position + 1
         )
-        assert measurement.fully_bounded_coordinates["identity"] == {
+        assert measurement.complete_coordinates["identity"] == {
             "position_pair_evidence_event_identity": pair_finding.identity,
             "source_occurrence_identity": source.identity,
             "exact_order": list(measurement.exact_order),
@@ -348,7 +348,7 @@ def test_boundary_absence_is_preserved_without_filling_positions():
         (
             measurement.before_occurrence is not None,
             measurement.after_occurrence is not None,
-            measurement.fully_bounded_coordinates is not None,
+            measurement.complete_coordinates is not None,
         )
         for measurement in measurements
     ] == [
@@ -365,7 +365,7 @@ def test_identical_representations_do_not_identify_occurrences():
     )
 
     first, second = (
-        measurement.fully_bounded_coordinates for measurement in measurements
+        measurement.complete_coordinates for measurement in measurements
     )
     assert first["before_occurrence"]["representation"] == second["before_occurrence"][
         "representation"
@@ -393,14 +393,14 @@ def test_compare_reports_only_position_pair_coordinates_that_survive_counterexam
     compared = compare_position_pair_measurements(measurements)
     assert compared == {
         "measurement_count": 4,
-        "fully_bounded_measurement_count": 4,
+        "complete_measurement_count": 4,
         "boundary_measurement_count": 0,
-        "distinct_fully_bounded_occurrences": 4,
-        "distinct_representation_triples": 3,
+        "distinct_complete_occurrence_count": 4,
+        "distinct_representation_coordinate_count": 3,
         "counterexamples": {
-            "representation_triple_groups_with_multiple_occurrences": 1,
-            "ordered_pair_groups_with_multiple_endpoint_representations": 1,
-            "endpoint_groups_with_multiple_ordered_pairs": 1,
+            "equal_representation_coordinates_distinct_occurrence_count": 1,
+            "equal_ordered_pair_distinct_endpoint_representation_count": 1,
+            "equal_endpoint_representations_distinct_ordered_pair_count": 1,
         },
         "distinct_position_pair_coordinates": [
             {
@@ -772,12 +772,12 @@ def test_emitted_representation_position_pair_requires_exact_locality():
     )
     assert compared["measurement_count"] == 2 * len(measurements)
     assert (
-        compared["distinct_fully_bounded_occurrences"]
-        == compared["fully_bounded_measurement_count"]
+        compared["distinct_complete_occurrence_count"]
+        == compared["complete_measurement_count"]
     )
     assert (
         compared["counterexamples"][
-            "representation_triple_groups_with_multiple_occurrences"
+            "equal_representation_coordinates_distinct_occurrence_count"
         ]
         > 0
     )

@@ -231,7 +231,7 @@ class PositionPairMeasurement:
         )
 
     @property
-    def fully_bounded_coordinates(self) -> dict[str, object] | None:
+    def complete_coordinates(self) -> dict[str, object] | None:
         """Return the neutral coordinates only when both outer positions exist."""
 
         if self.before_occurrence is None or self.after_occurrence is None:
@@ -584,26 +584,28 @@ def compare_position_pair_measurements(
     complete = tuple(
         coordinates
         for measurement in bounded
-        if (coordinates := measurement.fully_bounded_coordinates) is not None
+        if (coordinates := measurement.complete_coordinates) is not None
     )
-    representation_groups: dict[
+    representation_coordinates: dict[
         tuple[str, tuple[str, str], str], list[dict[str, object]]
     ] = {}
-    pair_groups: dict[tuple[str, str], list[dict[str, object]]] = {}
-    outer_groups: dict[tuple[str, str], list[dict[str, object]]] = {}
+    pair_coordinates: dict[tuple[str, str], list[dict[str, object]]] = {}
+    endpoint_coordinates: dict[tuple[str, str], list[dict[str, object]]] = {}
     for coordinates in complete:
         before = coordinates["before_occurrence"]["representation"]
         pair = tuple(coordinates["pair_occurrence"]["ordered_pair"])
         after = coordinates["after_occurrence"]["representation"]
-        representation_groups.setdefault((before, pair, after), []).append(coordinates)
-        pair_groups.setdefault(pair, []).append(coordinates)
-        outer_groups.setdefault((before, after), []).append(coordinates)
+        representation_coordinates.setdefault((before, pair, after), []).append(
+            coordinates
+        )
+        pair_coordinates.setdefault(pair, []).append(coordinates)
+        endpoint_coordinates.setdefault((before, after), []).append(coordinates)
 
     return {
         "measurement_count": len(bounded),
-        "fully_bounded_measurement_count": len(complete),
+        "complete_measurement_count": len(complete),
         "boundary_measurement_count": len(bounded) - len(complete),
-        "distinct_fully_bounded_occurrences": len(
+        "distinct_complete_occurrence_count": len(
             {
                 (
                     coordinates["identity"]["position_pair_evidence_event_identity"],
@@ -613,33 +615,34 @@ def compare_position_pair_measurements(
                 for coordinates in complete
             }
         ),
-        "distinct_representation_triples": len(representation_groups),
+        "distinct_representation_coordinate_count": len(representation_coordinates),
         "counterexamples": {
-            "representation_triple_groups_with_multiple_occurrences": sum(
-                len(group) > 1 for group in representation_groups.values()
+            "equal_representation_coordinates_distinct_occurrence_count": sum(
+                len(occurrences) > 1
+                for occurrences in representation_coordinates.values()
             ),
-            "ordered_pair_groups_with_multiple_endpoint_representations": sum(
+            "equal_ordered_pair_distinct_endpoint_representation_count": sum(
                 len(
                     {
                         (
                             coordinates["before_occurrence"]["representation"],
                             coordinates["after_occurrence"]["representation"],
                         )
-                        for coordinates in group
+                        for coordinates in occurrences
                     }
                 )
                 > 1
-                for group in pair_groups.values()
+                for occurrences in pair_coordinates.values()
             ),
-            "endpoint_groups_with_multiple_ordered_pairs": sum(
+            "equal_endpoint_representations_distinct_ordered_pair_count": sum(
                 len(
                     {
                         tuple(coordinates["pair_occurrence"]["ordered_pair"])
-                        for coordinates in group
+                        for coordinates in occurrences
                     }
                 )
                 > 1
-                for group in outer_groups.values()
+                for occurrences in endpoint_coordinates.values()
             ),
         },
         "distinct_position_pair_coordinates": [
