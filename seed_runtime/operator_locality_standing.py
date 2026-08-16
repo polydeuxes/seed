@@ -73,6 +73,20 @@ def _record_distinct(collected: list[str], value: str) -> None:
         collected.insert(index, value)
 
 
+def _measurement_occurrence_coordinates(event) -> dict[str, str]:
+    """Carry only the identities of one already-validated Measurement result."""
+
+    return {
+        "recorded_occurrence_identity": event.identity,
+        "result_identity": event.material["result_identity"],
+        "act_occurrence_identity": event.material["act_occurrence_identity"],
+        "responsible_act_evidence_identity": event.material[
+            "responsible_act_evidence_identity"
+        ],
+        "yield_evidence_identity": event.material["yield_evidence_identity"],
+    }
+
+
 def read_operator_locality_standing(
     ledger: EventLedger, *, locality_identity: str
 ) -> dict[str, Any]:
@@ -142,6 +156,7 @@ def advance_operator_locality_standing(
     )
     scope = f"locality:{locality_identity}"
     ingest_occurrences: list[dict[str, Any]] = []
+    measurement_occurrences: list[dict[str, str]] = []
     representations: dict[str, dict[str, Any]] = {}
     # Kept sorted and distinct in place rather than as a set sorted on return.
     # A set would have to be rebuilt from the prior list and re-sorted on every
@@ -160,6 +175,7 @@ def advance_operator_locality_standing(
         # Standing that already input the earlier occurrences.  Not copied:
         # see the shared-accumulator note above.
         ingest_occurrences = prior["ingest_occurrences"]
+        measurement_occurrences = prior["measurement_occurrences"]
         representations = prior["representations"]
         known_loss = prior["known_loss"]
         unknowns = prior["unknowns"]
@@ -192,9 +208,15 @@ def advance_operator_locality_standing(
             continue
         if event.kind == BYTE_MEASUREMENT_RECORDED_KIND:
             assertions_of_recorded_byte_measurement(ledger, event.identity)
+            measurement_occurrences.append(
+                _measurement_occurrence_coordinates(event)
+            )
             continue
         if event.kind == OCCURRENCE_POSITION_RECORDED_KIND:
             get_recorded_occurrence_position_measurement(ledger, event.identity)
+            measurement_occurrences.append(
+                _measurement_occurrence_coordinates(event)
+            )
             continue
         if event.kind in {
             _REPRESENTATION_ACT_EVIDENCE_KIND,
@@ -321,6 +343,7 @@ def advance_operator_locality_standing(
         "as_of_event_identity": as_of_event_identity,
         "event_count": event_count,
         "ingest_occurrences": ingest_occurrences,
+        "measurement_occurrences": measurement_occurrences,
         "representations": representations,
         # No "current" Representation is projected.  Emission order is
         # preserved in `representations`, which retains representation Act and

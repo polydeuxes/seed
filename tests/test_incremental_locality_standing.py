@@ -300,6 +300,7 @@ def test_every_growable_accumulator_participates_without_copying():
     for coordinate in (
         "representations",
         "ingest_occurrences",
+        "measurement_occurrences",
         "known_loss",
         "unknowns",
         "conflicts",

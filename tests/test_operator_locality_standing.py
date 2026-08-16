@@ -7,10 +7,14 @@ import pytest
 from seed_runtime.byte_measurement import (
     BYTE_MEASUREMENT_RECORDED_KIND,
     ByteMeasurementError,
+    record_byte_count_layer,
 )
 from seed_runtime.events import CORRUPTED, EventLedger
+from seed_runtime.material_ingest import ingest_material
 from seed_runtime.occurrence_position_measurement import (
     OCCURRENCE_POSITION_RECORDED_KIND,
+    measure_occurrence_position,
+    record_occurrence_position_measurement,
 )
 from seed_runtime.operator_ingest import run_operator_ingest
 from seed_runtime.operator_material_boundary import operator_boundary_material
@@ -31,6 +35,47 @@ def _standing(ledger, *, locality="s"):
     return read_operator_locality_standing(
         ledger, locality_identity=locality
     )
+
+
+def _record_measurement(ledger, measurement_kind):
+    if measurement_kind == BYTE_MEASUREMENT_RECORDED_KIND:
+        return record_byte_count_layer(
+            ledger,
+            source_localities=("s",),
+            recording_locality_identity="s",
+        )
+    return record_occurrence_position_measurement(
+        ledger,
+        recording_locality_identity="s",
+        finding=measure_occurrence_position(
+            ledger,
+            source_locality_identity="s",
+        ),
+    )
+
+
+def _measurement_ledger():
+    ledger = EventLedger()
+    ingest_material(
+        ledger,
+        locality_identity="s",
+        exact_bytes=b"material",
+        source_role="operator",
+        source_boundary="test boundary",
+    )
+    return ledger
+
+
+def _measurement_coordinates(event):
+    return {
+        "recorded_occurrence_identity": event.identity,
+        "result_identity": event.material["result_identity"],
+        "act_occurrence_identity": event.material["act_occurrence_identity"],
+        "responsible_act_evidence_identity": event.material[
+            "responsible_act_evidence_identity"
+        ],
+        "yield_evidence_identity": event.material["yield_evidence_identity"],
+    }
 
 
 def test_events_from_different_localities_cannot_influence_one_another():
@@ -60,6 +105,42 @@ def test_events_from_different_localities_cannot_influence_one_another():
         occurrence["evidence_event_identity"]
         for occurrence in standing_two["ingest_occurrences"]
     }
+
+
+def test_locality_standing_carries_exact_measurement_identities_in_append_order():
+    ledger = _measurement_ledger()
+    byte = _record_measurement(ledger, BYTE_MEASUREMENT_RECORDED_KIND)
+    positions = _record_measurement(ledger, OCCURRENCE_POSITION_RECORDED_KIND)
+
+    standing = _standing(ledger)
+
+    assert standing["measurement_occurrences"] == [
+        _measurement_coordinates(byte),
+        _measurement_coordinates(positions),
+    ]
+    assert all(
+        set(occurrence)
+        == {
+            "recorded_occurrence_identity",
+            "result_identity",
+            "act_occurrence_identity",
+            "responsible_act_evidence_identity",
+            "yield_evidence_identity",
+        }
+        for occurrence in standing["measurement_occurrences"]
+    )
+    assert "assertions" not in str(standing["measurement_occurrences"])
+    assert "occurrences" not in {
+        key
+        for occurrence in standing["measurement_occurrences"]
+        for key in occurrence
+    }
+
+
+def test_locality_standing_carries_no_measurement_without_a_recorded_result():
+    ledger = _measurement_ledger()
+
+    assert _standing(ledger)["measurement_occurrences"] == []
 
 
 @pytest.mark.parametrize(
@@ -95,6 +176,94 @@ def test_locality_standing_refuses_a_corrupted_measurement(
 
     with pytest.raises(error_type, match="corrupted"):
         _standing(ledger)
+
+
+@pytest.mark.parametrize(
+    ("measurement_kind", "error_type"),
+    (
+        (BYTE_MEASUREMENT_RECORDED_KIND, ByteMeasurementError),
+        (OCCURRENCE_POSITION_RECORDED_KIND, ValueError),
+    ),
+)
+def test_locality_standing_refuses_measurement_with_missing_yield(
+    measurement_kind, error_type
+):
+    ledger = _measurement_ledger()
+    measurement = _record_measurement(ledger, measurement_kind)
+    measurement.material["yield_evidence_identity"] = None
+
+    with pytest.raises(error_type, match="Yield|yield"):
+        _standing(ledger)
+
+
+@pytest.mark.parametrize(
+    ("measurement_kind", "error_type"),
+    (
+        (BYTE_MEASUREMENT_RECORDED_KIND, ByteMeasurementError),
+        (OCCURRENCE_POSITION_RECORDED_KIND, ValueError),
+    ),
+)
+def test_locality_standing_refuses_yield_from_another_measurement_occurrence(
+    measurement_kind, error_type
+):
+    ledger = _measurement_ledger()
+    measurement = _record_measurement(ledger, measurement_kind)
+    other = _record_measurement(ledger, measurement_kind)
+    measurement.material["yield_evidence_identity"] = other.material[
+        "yield_evidence_identity"
+    ]
+
+    with pytest.raises(error_type, match="Yield|yield"):
+        _standing(ledger)
+
+
+@pytest.mark.parametrize(
+    ("measurement_kind", "error_type"),
+    (
+        (BYTE_MEASUREMENT_RECORDED_KIND, ByteMeasurementError),
+        (OCCURRENCE_POSITION_RECORDED_KIND, ValueError),
+    ),
+)
+def test_locality_standing_refuses_corrupted_measurement_yield(
+    monkeypatch, measurement_kind, error_type
+):
+    ledger = _measurement_ledger()
+    measurement = _record_measurement(ledger, measurement_kind)
+    yield_identity = measurement.material["yield_evidence_identity"]
+    integrity_of = ledger.integrity_of
+    monkeypatch.setattr(
+        ledger,
+        "integrity_of",
+        lambda identity: (
+            CORRUPTED if identity == yield_identity else integrity_of(identity)
+        ),
+    )
+
+    with pytest.raises(error_type, match="Yield|yield"):
+        _standing(ledger)
+
+
+@pytest.mark.parametrize(
+    "measurement_kind",
+    (BYTE_MEASUREMENT_RECORDED_KIND, OCCURRENCE_POSITION_RECORDED_KIND),
+)
+def test_unrelated_event_cannot_enter_measurement_occurrences(measurement_kind):
+    ledger = _measurement_ledger()
+    measurement = _record_measurement(ledger, measurement_kind)
+    before = _standing(ledger)
+    unrelated = ledger.append(
+        "unrelated.measurement",
+        deepcopy(measurement.material),
+        locality_identity="s",
+    )
+
+    after = _standing(ledger)
+
+    assert after == before
+    assert unrelated.identity not in {
+        occurrence["recorded_occurrence_identity"]
+        for occurrence in after["measurement_occurrences"]
+    }
 
 
 def test_next_attempt_reads_standing_from_earlier_same_locality_events():
