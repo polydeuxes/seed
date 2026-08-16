@@ -74,6 +74,80 @@ class ExactMaterialReference:
 
 
 @dataclass(frozen=True, slots=True)
+class ExactBoundedMaterialReference:
+    source_reference: ExactMaterialCoordinates
+    first_position: int
+    last_position: int
+    exact_material: bytes
+
+    def __post_init__(self) -> None:
+        if not _is_exact_material_coordinates(self.source_reference):
+            raise TypeError("bounded material requires one exact source reference")
+        if type(getattr(self.source_reference, "locality_identity", None)) is not str:
+            raise TypeError("bounded material requires its exact source Locality")
+        if (
+            type(self.first_position) is not int
+            or type(self.last_position) is not int
+            or self.first_position < 0
+            or self.last_position < self.first_position
+            or self.last_position >= len(self.source_reference.exact_material)
+        ):
+            raise ValueError("bounded material requires one exact source boundary")
+        if (
+            type(self.exact_material) is not bytes
+            or self.exact_material
+            != self.source_reference.exact_material[
+                self.first_position : self.last_position + 1
+            ]
+        ):
+            raise ValueError("bounded material differs from its exact source")
+
+    @property
+    def locality_identity(self) -> str:
+        return self.source_reference.locality_identity
+
+    @property
+    def occurrence_identity(self):
+        return (
+            self.source_reference,
+            self.first_position,
+            self.last_position,
+        )
+
+
+def exact_material_partition_references(
+    source_reference: ExactMaterialCoordinates,
+    material_byte_counts: tuple[int, ...],
+) -> tuple[ExactBoundedMaterialReference, ...]:
+    if not _is_exact_material_coordinates(source_reference):
+        raise TypeError("material partition requires one exact source reference")
+    if (
+        type(material_byte_counts) is not tuple
+        or not material_byte_counts
+        or any(type(count) is not int or count < 1 for count in material_byte_counts)
+    ):
+        raise TypeError("material partition requires exact positive byte counts")
+    if sum(material_byte_counts) != len(source_reference.exact_material):
+        raise ValueError("material partition differs from its exact source boundary")
+    found = []
+    first_position = 0
+    for material_byte_count in material_byte_counts:
+        last_position = first_position + material_byte_count - 1
+        found.append(
+            ExactBoundedMaterialReference(
+                source_reference=source_reference,
+                first_position=first_position,
+                last_position=last_position,
+                exact_material=source_reference.exact_material[
+                    first_position : last_position + 1
+                ],
+            )
+        )
+        first_position = last_position + 1
+    return tuple(found)
+
+
+@dataclass(frozen=True, slots=True)
 class ExactPositionMaterialReference:
     source_reference: ExactMaterialCoordinates
     position: int
@@ -546,6 +620,7 @@ def _is_exact_material_coordinates(material: object) -> bool:
 
     return type(material) in (
         ExactMaterialReference,
+        ExactBoundedMaterialReference,
         ExactMaterialResultReference,
         ExactPositionMaterialReference,
         ExactPositionPairMaterialReference,
@@ -948,6 +1023,66 @@ class CompiledInvocationOccurrence:
             if isinstance(self.source_coordinate, AddedPositionOccurrence)
             else None
         )
+
+
+@dataclass(frozen=True, slots=True)
+class CompiledReferenceCompareOccurrence:
+    boundary_identity: str
+    occurrence_position: int
+    first_invocation: CompiledInvocationOccurrence
+    second_invocation: CompiledInvocationOccurrence
+
+    def __post_init__(self) -> None:
+        if type(self.boundary_identity) is not str or not self.boundary_identity:
+            raise TypeError("one exact Compare boundary identity is required")
+        if type(self.occurrence_position) is not int or self.occurrence_position < 0:
+            raise TypeError("one exact Compare occurrence position is required")
+        if not isinstance(
+            self.first_invocation, CompiledInvocationOccurrence
+        ) or not isinstance(self.second_invocation, CompiledInvocationOccurrence):
+            raise TypeError("Compare requires exact invocation occurrences")
+        if (
+            self.first_invocation.implementation_function
+            != self.second_invocation.implementation_function
+        ):
+            raise ValueError("Compare cannot cross implementation functions")
+        if self.first_invocation.source_coordinate is None or (
+            self.second_invocation.source_coordinate is None
+        ):
+            raise ValueError("Compare requires exact source references")
+        if (
+            self.first_invocation.source_coordinate
+            == self.second_invocation.source_coordinate
+        ):
+            raise ValueError("one exact material reference cannot compare with itself")
+
+    @property
+    def implementation_function_identity(self) -> str:
+        return self.first_invocation.implementation_function_identity
+
+    @property
+    def first_reference(self):
+        return self.first_invocation.source_coordinate
+
+    @property
+    def second_reference(self):
+        return self.second_invocation.source_coordinate
+
+    @property
+    def occurrence_identity(self) -> tuple[str, str, int]:
+        return (
+            self.boundary_identity,
+            self.implementation_function_identity,
+            self.occurrence_position,
+        )
+
+    @property
+    def result_identity(self) -> tuple[str, str, int, str]:
+        return (*self.occurrence_identity, "result")
+
+    @property
+    def distinction(self) -> bool:
+        return self.first_invocation.returned != self.second_invocation.returned
 
 
 @dataclass(frozen=True, slots=True)
@@ -1941,6 +2076,84 @@ def compiled_reference_invocations(
         implementation_functions=implementation_functions,
         source_coordinates=references,
     )
+
+
+def compare_compiled_reference_invocations(
+    invocation_rows: tuple[tuple[CompiledInvocationOccurrence, ...], ...],
+    reference_pairs: tuple[
+        tuple[ExactMaterialCoordinates, ExactMaterialCoordinates], ...
+    ],
+    *,
+    boundary_identity: str,
+) -> tuple[tuple[CompiledReferenceCompareOccurrence, ...], ...]:
+    if (
+        type(invocation_rows) is not tuple
+        or not invocation_rows
+        or any(
+            type(row) is not tuple
+            or not row
+            or any(
+                not isinstance(occurrence, CompiledInvocationOccurrence)
+                for occurrence in row
+            )
+            for row in invocation_rows
+        )
+    ):
+        raise TypeError("Compare requires exact invocation tuples")
+    if (
+        type(reference_pairs) is not tuple
+        or not reference_pairs
+        or any(
+            type(pair) is not tuple
+            or len(pair) != 2
+            or any(not _is_exact_material_coordinates(reference) for reference in pair)
+            for pair in reference_pairs
+        )
+    ):
+        raise TypeError("Compare requires exact material reference pairs")
+    if type(boundary_identity) is not str or not boundary_identity:
+        raise TypeError("one exact Compare boundary identity is required")
+    if any(first == second for first, second in reference_pairs):
+        raise ValueError("one exact material reference cannot compare with itself")
+    if len(set(reference_pairs)) != len(reference_pairs):
+        raise ValueError("one exact material pair entered Compare twice")
+    source_rows = tuple(
+        tuple(occurrence.source_coordinate for occurrence in row)
+        for row in invocation_rows
+    )
+    if any(source is None for row in source_rows for source in row):
+        raise ValueError("Compare requires exact source references")
+    sources = source_rows[0]
+    if any(row != sources for row in source_rows[1:]):
+        raise ValueError("Compare invocation tuples crossed their sources")
+    by_source_position = {source: position for position, source in enumerate(sources)}
+    if len(by_source_position) != len(sources):
+        raise ValueError("one exact material reference entered invocation twice")
+    if any(
+        first not in by_source_position or second not in by_source_position
+        for first, second in reference_pairs
+    ):
+        raise ValueError("Compare reference is absent from its invocation boundary")
+    found = []
+    for row in invocation_rows:
+        implementation_function = row[0].implementation_function
+        if any(
+            occurrence.implementation_function != implementation_function
+            for occurrence in row
+        ):
+            raise ValueError("Compare tuple crossed implementation functions")
+        found.append(
+            tuple(
+                CompiledReferenceCompareOccurrence(
+                    boundary_identity=boundary_identity,
+                    occurrence_position=position,
+                    first_invocation=row[by_source_position[first]],
+                    second_invocation=row[by_source_position[second]],
+                )
+                for position, (first, second) in enumerate(reference_pairs)
+            )
+        )
+    return tuple(found)
 
 
 def _compiled_invocations(

@@ -85,6 +85,7 @@ Pointers       one preserved thing + many exact references to it + no identity c
 Lineage        ordered source and occurrence references beneath Provenance
 Artifact       exact representation, record, Assertion, or result
 Projection     exact Act occurrence + representation + its carried coordinates
+Casting        exact selected material-reference pairs + one implementation-function coordinate tuple + bounded Compare occurrences; no Applicability or Admission by identity
 View           exact Act occurrence + representation + its carried coordinates
 Formation      exact Act occurrence + Yield + representation
 Constructor    callable implementation mechanism; no Authority by identity
