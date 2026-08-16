@@ -16,10 +16,10 @@ from seed_runtime import process_entry
 from seed_runtime.operator_locality_standing import (
     read_operator_locality_standing,
 )
-from seed_runtime.preserved_material_measurement import (
-    ingest_occurrences,
+from seed_runtime.material_ingest import (
+    MATERIAL_INGEST_OCCURRED_KIND,
+    ingested_material_bytes,
 )
-from seed_runtime.material_ingest import ingested_material_bytes
 
 
 @pytest.fixture
@@ -39,6 +39,15 @@ def _localities(ledger: EventLedger) -> list[str]:
         if event.locality_identity is not None and event.locality_identity not in seen:
             seen.append(event.locality_identity)
     return seen
+
+
+def _ingest_occurrences(ledger, *, locality_identity):
+    return list(
+        ledger.iter_locality_kind(
+            locality_identity,
+            MATERIAL_INGEST_OCCURRED_KIND,
+        )
+    )
 
 
 # --------------------------------------------------------------------------
@@ -109,7 +118,7 @@ def test_each_lifetime_holds_only_its_own_ingress(two_lifetimes):
     def material(locality_identity):
         return [
             ingested_material_bytes(event)
-            for event in ingest_occurrences(
+            for event in _ingest_occurrences(
                 two_lifetimes, locality_identity=locality_identity
             )
         ]
@@ -243,7 +252,7 @@ def test_separate_processes_receive_separate_localities(db):
         held = [
             [
                 ingested_material_bytes(event)
-                for event in ingest_occurrences(
+                for event in _ingest_occurrences(
                     ledger, locality_identity=locality
                 )
             ]

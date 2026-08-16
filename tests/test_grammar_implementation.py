@@ -15,12 +15,6 @@ from seed_runtime.byte_measurement import (
     record_byte_position_pair_count_layer,
     record_byte_count_layer,
 )
-from seed_runtime.position_pair_measurement import (
-    measure_after,
-    record_position_pair_measurement_compare,
-    record_position_pair_measurements,
-    record_emitted_representation_position_pair,
-)
 from seed_runtime.events import CORRUPTED, EventLedger
 from seed_runtime.identities import new_identity
 from seed_runtime.material_ingest import ingest_material
@@ -36,33 +30,9 @@ from seed_runtime.operator_representation import (
     emit_operator_representation,
     record_operator_representation,
 )
-from seed_runtime.preserved_material_measurement import (
-    INGEST_OCCURRED_KIND,
-    DeclaredMeasurement,
-    measure_recurrence,
-    ingest_occurrences,
-    record_measurement_finding,
-)
-from seed_runtime.recorded_finding_yield_comparison import (
-    compare_recorded_finding_yield,
-)
-from seed_runtime.assertion_comparison import (
-    assertions_of_recorded_assertion_comparison,
-    compare_assertion_yields,
-    record_assertion_yield_comparison,
-)
-from seed_runtime.bounded_assertion_comparison import (
-    compare_preserved_findings,
-    record_comparison_finding,
-)
 from seed_runtime.occurrence_position_measurement import (
     measure_occurrence_position,
     record_occurrence_position_measurement,
-)
-from seed_runtime.recurrence_measurement import (
-    assertions_of_recorded_measurement,
-    measure_locality_counts,
-    record_measured_count,
 )
 from seed_runtime.yield_evidence import YIELD_LIVE_BOUNDARIES
 from seed_runtime.yield_evidence import read_yield_relation_requirements
@@ -389,133 +359,6 @@ def _repeated_representation_witness() -> tuple[dict, dict]:
     return record(), record()
 
 
-def _assertion_compare_input_locality_witnesses() -> tuple[dict, dict]:
-    ledger = _IntegrityAdversaryLedger()
-    run_material_fixture_console(
-        ledger=ledger,
-        locality_identity="assertion-compare-source",
-        input_stream=binary_input("a word\n"),
-        output_stream=StringIO(),
-    )
-    sources = ingest_occurrences(
-        ledger,
-        locality_identity="assertion-compare-source",
-    )
-    finding_event = record_measurement_finding(
-        ledger,
-        locality_identity="assertion-compare-source",
-        finding=measure_after(sources, "a", counting_scope="one source"),
-    )
-    counted = measure_locality_counts(
-        ledger,
-        bounded_localities=("assertion-compare-source",),
-    )[0]
-    first = record_measured_count(
-        ledger,
-        locality_identity="assertion-compare-source",
-        finding=counted,
-    )
-    second = record_measured_count(
-        ledger,
-        locality_identity="assertion-compare-source",
-        finding=counted,
-    )
-    first_count = next(
-        item for item in assertions_of_recorded_measurement(first)
-        if item.result == "count"
-    )
-    second_count = next(
-        item for item in assertions_of_recorded_measurement(second)
-        if item.result == "count"
-    )
-    comparison = compare_assertion_yields(
-        ledger, (first_count.reference, second_count.reference)
-    )
-
-    def record() -> dict:
-        event = record_assertion_yield_comparison(
-            ledger,
-            locality_identity="assertion-compare-target",
-            comparison=comparison,
-        )
-        evidence = ledger.get(
-            event.material["participation"][0]["locality_evidence_identity"]
-        )
-        return {
-            "ledger": ledger,
-            "event": event,
-            "act_evidence": ledger.get(
-                event.material["responsible_act_evidence_identity"]
-            ),
-            "content_evidence": ledger.get(event.material["yield_evidence_identity"]),
-            "locality_evidence": evidence,
-        }
-
-    return record(), record()
-
-
-def _assertion_yield_compare_witness() -> dict:
-    return _assertion_compare_input_locality_witnesses()[0]
-
-
-def _bounded_assertion_compare_yield_witness() -> dict:
-    ledger = _IntegrityAdversaryLedger()
-    for locality_identity, material in (("first", "a b\n"), ("second", "a c\n")):
-        run_material_fixture_console(
-            ledger=ledger,
-            locality_identity=locality_identity,
-            input_stream=binary_input(material),
-            output_stream=StringIO(),
-        )
-    findings = []
-    for locality_identity in ("first", "second"):
-        occurrences = ingest_occurrences(ledger, locality_identity=locality_identity)
-        findings.append(
-            record_measurement_finding(
-                ledger,
-                locality_identity=locality_identity,
-                finding=measure_after(
-                    occurrences, "a", counting_scope="one exact locality"
-                ),
-            )
-        )
-    event = record_comparison_finding(
-        ledger,
-        locality_identity="comparison",
-        finding=compare_preserved_findings(
-            ledger, tuple(finding.identity for finding in findings)
-        ),
-    )
-    return _yield_bundle(ledger, event)
-
-
-def _locality_count_yield_witness() -> dict:
-    ledger = _IntegrityAdversaryLedger()
-    run_material_fixture_console(
-        ledger=ledger,
-        locality_identity="count-source",
-        input_stream=binary_input("a b\n"),
-        output_stream=StringIO(),
-    )
-    occurrences = ingest_occurrences(ledger, locality_identity="count-source")
-    record_measurement_finding(
-        ledger,
-        locality_identity="count-source",
-        finding=measure_after(
-            occurrences, "a", counting_scope="one exact locality"
-        ),
-    )
-    finding = measure_locality_counts(
-        ledger, bounded_localities=("count-source",)
-    )[0]
-    event = record_measured_count(
-        ledger,
-        locality_identity="count-result",
-        finding=finding,
-    )
-    return _yield_bundle(ledger, event)
-
-
 def _occurrence_position_yield_witness() -> dict:
     ledger = _IntegrityAdversaryLedger()
     ledger.append("test.occurrence", {"material": "a"}, locality_identity="source")
@@ -530,156 +373,6 @@ def _occurrence_position_yield_witness() -> dict:
         finding=finding,
     )
     return _yield_bundle(ledger, event)
-
-
-def _bounded_compare_input_locality_witnesses() -> tuple[dict, dict]:
-    exact = _bounded_assertion_compare_yield_witness()
-    event = exact["event"]
-    first = {
-        **exact,
-        "locality_evidence": exact["ledger"].get(
-            event.material["participation"][0]["locality_evidence_identity"]
-        ),
-    }
-    alternate = _bounded_assertion_compare_yield_witness()
-    alternate_event = alternate["event"]
-    second = {
-        **alternate,
-        "locality_evidence": alternate["ledger"].get(
-            alternate_event.material["participation"][0]["locality_evidence_identity"]
-        ),
-    }
-    return first, second
-
-
-def _bounded_compare_input_locality_requirements(bundle: dict) -> dict[str, bool]:
-    event = bundle["event"]
-    evidence = bundle["locality_evidence"]
-    if evidence is None:
-        return {
-            "exact_relation": False,
-            "occurrence_witness": False,
-            "intact_evidence": False,
-        }
-    first_subject = evidence.material.get("first_subject")
-    second_subject = evidence.material.get("second_subject")
-    return {
-        "exact_relation": any(
-            isinstance(item, dict)
-            and item.get("subject_reference") == first_subject
-            and item.get("locality_evidence_identity") == evidence.identity
-            for item in event.material.get("participation", [])
-        ),
-        "occurrence_witness": (
-            isinstance(second_subject, dict)
-            and second_subject.get("downstream_act_identity")
-            == event.material.get("downstream_act_identity")
-            and second_subject.get("act_occurrence_identity")
-            == event.material.get("act_occurrence_identity")
-        ),
-        "intact_evidence": (
-            bundle["ledger"].integrity_of(evidence.identity) != CORRUPTED
-        ),
-    }
-
-
-def _bounded_compare_input_locality_cases() -> dict[str, str]:
-    exact, alternate = _bounded_compare_input_locality_witnesses()
-    missing = dict(exact)
-    missing["locality_evidence"] = deepcopy(exact["locality_evidence"])
-    missing["locality_evidence"].material["first_subject"] = "missing-input"
-    wrong_occurrence = dict(exact)
-    wrong_occurrence["locality_evidence"] = alternate["locality_evidence"]
-    corrupted, _ = _bounded_compare_input_locality_witnesses()
-    corrupted["ledger"].mark_corrupted(corrupted["locality_evidence"].identity)
-    unrelated = dict(exact)
-    unrelated["event"] = deepcopy(exact["event"])
-    unrelated["event"].material["limits"] = []
-
-    def witness(bundle: dict) -> str:
-        requirements = _bounded_compare_input_locality_requirements(bundle)
-        return EXACT if all(requirements.values()) else MISSING
-
-    return {
-        "exact": witness(exact),
-        "relation_missing": witness(missing),
-        "wrong_occurrence": witness(wrong_occurrence),
-        "corrupted_evidence": witness(corrupted),
-        "unrelated_occurrence": witness(unrelated),
-    }
-
-
-def _assertion_compare_input_locality_requirements(bundle: dict) -> dict[str, bool]:
-    event = bundle["event"]
-    evidence = bundle["locality_evidence"]
-    if evidence is None:
-        return {
-            "exact_relation": False,
-            "occurrence_witness": False,
-            "intact_evidence": False,
-        }
-    first_subject = evidence.material.get("first_subject")
-    second_subject = evidence.material.get("second_subject")
-    exact_relation = any(
-        isinstance(item, dict)
-        and item.get("subject_reference") == first_subject
-        and item.get("locality_evidence_identity") == evidence.identity
-        for item in event.material.get("participation", [])
-    )
-    exact_occurrence = (
-        isinstance(second_subject, dict)
-        and second_subject.get("downstream_act_identity")
-        == event.material.get("downstream_act_identity")
-        and second_subject.get("act_occurrence_identity")
-        == event.material.get("act_occurrence_identity")
-    )
-    return {
-        "exact_relation": exact_relation,
-        "occurrence_witness": exact_occurrence,
-        "intact_evidence": (
-            bundle["ledger"].integrity_of(evidence.identity) != CORRUPTED
-        ),
-    }
-
-
-def _assertion_compare_input_locality_cases() -> dict[str, str]:
-    exact, alternate = _assertion_compare_input_locality_witnesses()
-    missing = dict(exact)
-    missing_evidence = deepcopy(exact["locality_evidence"])
-    missing_evidence.material["first_subject"] = {
-        "recorded_occurrence_reference": "not-an-input",
-        "assertion_identity": "not-an-input",
-    }
-    missing["locality_evidence"] = missing_evidence
-    wrong_occurrence = dict(exact)
-    wrong_evidence = deepcopy(exact["locality_evidence"])
-    wrong_evidence.material["second_subject"] = dict(
-        alternate["locality_evidence"].material["second_subject"]
-    )
-    wrong_occurrence["locality_evidence"] = wrong_evidence
-    corrupted, _ = _assertion_compare_input_locality_witnesses()
-    corrupted["ledger"].mark_corrupted(corrupted["locality_evidence"].identity)
-    unrelated = dict(exact)
-    unrelated_event = deepcopy(exact["event"])
-    unrelated_event.material["assertions"] = list(
-        reversed(unrelated_event.material["assertions"])
-    )
-    unrelated["event"] = unrelated_event
-
-    def witness(bundle: dict) -> str:
-        return (
-            EXACT
-            if all(_assertion_compare_input_locality_requirements(bundle).values())
-            else MISSING
-        )
-
-    return {
-        "exact": witness(exact),
-        "relation_missing": witness(missing),
-        "wrong_occurrence": witness(wrong_occurrence),
-        "corrupted_evidence": witness(corrupted),
-        "unrelated_occurrence": witness(unrelated),
-    }
 
 
 def _checkpoint_locality_witnesses() -> tuple[dict, dict]:
@@ -801,38 +494,6 @@ def _yield_bundle(ledger, event) -> dict:
     }
 
 
-def _preserved_material_yield_witness() -> dict:
-    ledger = _IntegrityAdversaryLedger()
-    ledger.append(
-        INGEST_OCCURRED_KIND,
-        {"represented_material": "the cat"},
-        locality_identity="preserved-material-yield",
-    )
-    occurrences = ingest_occurrences(
-        ledger, locality_identity="preserved-material-yield"
-    )
-    finding = measure_recurrence(
-        occurrences,
-        declared=DeclaredMeasurement(
-            representation_measured="the",
-            equivalence_rule="exact token equality",
-            counting_scope="this locality",
-        ),
-        occurrences_of=lambda text: text.split().count("the"),
-        yield_in=(ledger, "w", "preserved-material-yield"),
-    )
-    event = record_measurement_finding(
-        ledger,
-        locality_identity="preserved-material-yield",
-        finding=finding,
-    )
-    bundle = _yield_bundle(ledger, event)
-    bundle["yield_coordinate_paths"] = {
-        "material_provenance": ("dimensions", "source_provenance")
-    }
-    return bundle
-
-
 def _material_ingest_yield_witness() -> dict:
     ledger = _IntegrityAdversaryLedger()
     event = ingest_material(
@@ -841,63 +502,6 @@ def _material_ingest_yield_witness() -> dict:
         exact_bytes=b"\x00\xffmaterial\n",
         source_role="system",
         source_boundary="supplied byte boundary",
-    )
-    return _yield_bundle(ledger, event)
-
-
-def _recorded_finding_compare_yield_witness() -> dict:
-    source = _preserved_material_yield_witness()
-    event = compare_recorded_finding_yield(
-        source["ledger"], source["event"].identity
-    )
-    return _yield_bundle(source["ledger"], event)
-
-
-def _position_measurement_yield_witness(*, compare: bool = False) -> dict:
-    ledger = _IntegrityAdversaryLedger()
-    for text in ("L a b R", "X a b Y"):
-        ledger.append(
-            INGEST_OCCURRED_KIND,
-            {"represented_material": text},
-            locality_identity="position-measurement-yield",
-        )
-    occurrences = ingest_occurrences(
-        ledger, locality_identity="position-measurement-yield"
-    )
-    finding = record_measurement_finding(
-        ledger,
-        locality_identity="position-measurement-yield",
-        finding=measure_after(occurrences, "a", counting_scope="exact fixture"),
-    )
-    first = record_position_pair_measurements(
-        ledger,
-        locality_identity="position-measurement-yield",
-        finding_event_identity=finding.identity,
-    )
-    if not compare:
-        return _yield_bundle(ledger, first)
-    representation = record_operator_representation(
-        ledger,
-        locality_identity="position-measurement-yield",
-        locality_standing={"as_of_event_identity": None},
-    )
-    first_emission = emit_operator_representation(
-        ledger, representation=representation, output_stream=StringIO()
-    )
-    first_emission_event_identity = first_emission["emitted_event_identity"]
-    second_emission = emit_operator_representation(
-        ledger, representation=representation, output_stream=StringIO()
-    )
-    first = record_emitted_representation_position_pair(
-        ledger, emission_event_identity=first_emission_event_identity
-    )
-    second = record_emitted_representation_position_pair(
-        ledger, emission_event_identity=second_emission["emitted_event_identity"]
-    )
-    event = record_position_pair_measurement_compare(
-        ledger,
-        locality_identity="position-measurement-yield",
-        measurement_occurrence_references=(first.identity, second.identity),
     )
     return _yield_bundle(ledger, event)
 
@@ -933,8 +537,6 @@ def _assertion_witness(bundle: dict) -> dict[str, str]:
         "identity": (
             EXACT if dimensions.get("identity") == expected_identity else CONTRADICTION
         ),
-        # Evidence remains on the occurrence/result relation. It is read
-        # through the exact locality, not copied from input_support.
         "Evidence": EXACT if evidence_relation else MISSING,
         "provenance": EXACT if dimensions.get("source_provenance") else MISSING,
         "Scope": EXACT if material.get("assertion_scope") else MISSING,
@@ -1595,19 +1197,10 @@ def _byte_pair_yield_requirement_bundles() -> dict[str, dict[str, dict]]:
 
 def _remaining_yield_requirement_bundles() -> dict[str, dict[str, dict]]:
     witnesses = {
-        "position_pair_measurement": _position_measurement_yield_witness,
-        "position_pair_measurement_compare": (
-            lambda: _position_measurement_yield_witness(compare=True)
-        ),
-        "assertion_yield_compare": _assertion_yield_compare_witness,
         "assertion_locality_movement": _assertion_locality_movement_yield_witness,
-        "bounded_assertion_compare": _bounded_assertion_compare_yield_witness,
-        "locality_count_measurement": _locality_count_yield_witness,
         "occurrence_position_measurement": _occurrence_position_yield_witness,
         "failed_emission": _failed_emission_yield_witness,
         "material_ingest": _material_ingest_yield_witness,
-        "preserved_material_measurement": _preserved_material_yield_witness,
-        "recorded_finding_yield_compare": _recorded_finding_compare_yield_witness,
     }
     boundaries = {}
     for boundary, witness in witnesses.items():
@@ -1621,56 +1214,6 @@ def _remaining_yield_requirement_bundles() -> dict[str, dict[str, dict]]:
             unrelated_value=alternate["event"].identity,
         )
     return boundaries
-
-
-def _locality_requirement_bundles(
-    exact: dict, alternate: dict, corrupted: dict
-) -> dict[str, dict]:
-    missing = dict(exact)
-    missing_evidence = deepcopy(exact["locality_evidence"])
-    carried_content = missing_evidence.material["carried_content"]
-    if isinstance(carried_content, dict):
-        missing_evidence.material["carried_content"] = {
-            **carried_content,
-            next(iter(carried_content)): "different-carried-coordinate",
-        }
-    else:
-        missing_evidence.material["carried_content"] = "different-carried-content"
-    missing["locality_evidence"] = missing_evidence
-
-    wrong_occurrence = dict(exact)
-    wrong_evidence = deepcopy(exact["locality_evidence"])
-    wrong_evidence.material["act_occurrence_identity"] = alternate["event"].material[
-        "act_occurrence_identity"
-    ]
-    wrong_occurrence["locality_evidence"] = wrong_evidence
-
-    corrupted["ledger"].mark_corrupted(corrupted["locality_evidence"].identity)
-    unrelated = dict(exact)
-    unrelated["event"] = deepcopy(exact["event"])
-    object.__setattr__(
-        unrelated["event"], "identity", alternate["event"].identity
-    )
-    return {
-        "exact": exact,
-        "relation_missing": missing,
-        "wrong_occurrence": wrong_occurrence,
-        "corrupted_evidence": corrupted,
-        "unrelated_occurrence": unrelated,
-    }
-
-
-def _remaining_locality_requirement_bundles() -> dict[str, dict[str, dict]]:
-    witnesses = {
-        "position_pair_measurement": _position_measurement_yield_witness,
-        "position_pair_measurement_compare": (
-            lambda: _position_measurement_yield_witness(compare=True)
-        ),
-    }
-    return {
-        boundary: _locality_requirement_bundles(witness(), witness(), witness())
-        for boundary, witness in witnesses.items()
-    }
 
 
 def _additional_live_relation_fidelity_cases() -> dict[
@@ -1828,12 +1371,6 @@ def _live_relation_fidelity_cases() -> dict[
     )
     registered.update(_additional_live_relation_fidelity_cases())
     registered[("locality", "assertion_movement")] = _locality_fidelity_cases()
-    registered[("locality", "assertion_compare_input")] = (
-        _assertion_compare_input_locality_cases()
-    )
-    registered[("locality", "bounded_compare_input")] = (
-        _bounded_compare_input_locality_cases()
-    )
     registered[("locality", "operator_checkpoint")] = (
         _checkpoint_locality_cases()
     )
@@ -1853,15 +1390,6 @@ def _live_relation_fidelity_cases() -> dict[
                 for case, bundle in cases.items()
             }
             for boundary, cases in _remaining_yield_requirement_bundles().items()
-        }
-    )
-    registered.update(
-        {
-            ("locality", boundary): {
-                case: _representation_locality_witness(bundle)
-                for case, bundle in cases.items()
-            }
-            for boundary, cases in _remaining_locality_requirement_bundles().items()
         }
     )
     return registered
@@ -2239,24 +1767,6 @@ def test_remaining_yield_adversaries_change_one_requirement_each():
     assert {
         boundary: {
             case: tuple(_occurrence_result_requirements(bundle).values())
-            for case, bundle in cases.items()
-        }
-        for boundary, cases in boundaries.items()
-    } == {boundary: expected for boundary in boundaries}
-
-
-def test_remaining_locality_adversaries_change_one_requirement_each():
-    expected = {
-        "exact": (True, True, True),
-        "relation_missing": (False, True, True),
-        "wrong_occurrence": (True, False, True),
-        "corrupted_evidence": (True, True, False),
-        "unrelated_occurrence": (True, True, True),
-    }
-    boundaries = _remaining_locality_requirement_bundles()
-    assert {
-        boundary: {
-            case: tuple(_representation_locality_requirements(bundle).values())
             for case, bundle in cases.items()
         }
         for boundary, cases in boundaries.items()
@@ -3151,19 +2661,10 @@ def test_unrelated_yield_occurrences_do_not_share_result_identity():
         "byte_measurement": _byte_measurement_witness,
         "representation_result": _representation_witness,
         "successful_emission": _emission_witness,
-        "position_pair_measurement": _position_measurement_yield_witness,
-        "position_pair_measurement_compare": (
-            lambda: _position_measurement_yield_witness(compare=True)
-        ),
-        "assertion_yield_compare": _assertion_yield_compare_witness,
         "assertion_locality_movement": _assertion_locality_movement_yield_witness,
-        "bounded_assertion_compare": _bounded_assertion_compare_yield_witness,
-        "locality_count_measurement": _locality_count_yield_witness,
         "occurrence_position_measurement": _occurrence_position_yield_witness,
         "failed_emission": _failed_emission_yield_witness,
         "material_ingest": _material_ingest_yield_witness,
-        "preserved_material_measurement": _preserved_material_yield_witness,
-        "recorded_finding_yield_compare": _recorded_finding_compare_yield_witness,
     }
     pairs = {
         boundary: (factory(), factory())
@@ -3276,19 +2777,7 @@ def test_each_dimensions_call_separates_authority_from_its_evidence_scope():
 
 
 LOCALITY_BOUNDARY_BY_KIND = {
-    "operator.assertion.compare_input_locality_evidenced": (
-        "assertion_compare_input"
-    ),
-    "operator.measurement.comparison_input_locality_evidenced": (
-        "bounded_compare_input"
-    ),
     "operator.addressed_representation.locality_evidenced": "operator_checkpoint",
-    "operator.measurement.position_pair_measurement_locality_evidenced": (
-        "position_pair_measurement"
-    ),
-    "operator.measurement.position_pair_measurement_compare_locality_evidenced": (
-        "position_pair_measurement_compare"
-    ),
     "operator.representation.locality_evidenced": "representation_result",
     "operator.representation.emission_attempt_locality_evidenced": (
         "emission_attempt"
@@ -3391,14 +2880,6 @@ RELATION_EVIDENCE = {
         "locality",
         "a command-to-checkpoint locality-evidence occurrence",
     ),
-    "_assertion_compare_input_locality_requirements": (
-        "locality",
-        "an Assertion-to-Compare locality-evidence occurrence",
-    ),
-    "_bounded_compare_input_locality_requirements": (
-        "locality",
-        "a finding-to-Compare locality-evidence occurrence",
-    ),
     "_locality_requirements": (
         "locality",
         "the responsible movement Evidence occurrence",
@@ -3443,18 +2924,10 @@ def _relation_coordinates_from_live_witnesses() -> dict[str, dict[str, bool]]:
     representation = _representation_witness()
     applicability = _recorded_applicability()
     checkpoint, _ = _checkpoint_locality_witnesses()
-    assertion_compare, _ = _assertion_compare_input_locality_witnesses()
-    bounded_compare, _ = _bounded_compare_input_locality_witnesses()
 
     return {
         "_checkpoint_locality_requirements": _checkpoint_locality_requirements(
             checkpoint
-        ),
-        "_assertion_compare_input_locality_requirements": (
-            _assertion_compare_input_locality_requirements(assertion_compare)
-        ),
-        "_bounded_compare_input_locality_requirements": (
-            _bounded_compare_input_locality_requirements(bounded_compare)
         ),
         "_locality_requirements": _locality_requirements(applicability),
         "_assertion_locality_requirements": _assertion_locality_requirements(

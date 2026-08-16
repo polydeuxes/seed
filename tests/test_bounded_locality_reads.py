@@ -9,11 +9,10 @@ from io import StringIO
 import pytest
 
 from seed_runtime.events import EventLedger, SQLiteEventLedger
-from seed_runtime.preserved_material_measurement import (
-    INGEST_OCCURRED_KIND,
-    ingest_occurrences,
+from seed_runtime.material_ingest import (
+    MATERIAL_INGEST_OCCURRED_KIND,
+    ingested_material_bytes,
 )
-from seed_runtime.material_ingest import ingested_material_bytes
 from seed_runtime.operator_console import run_persistent_operator_console
 
 BODIES = {
@@ -27,8 +26,18 @@ def _all_locality_occurrences(ledger, *, locality_identity):
     return [
         event
         for event in ledger.list()
-        if event.locality_identity == locality_identity and event.kind == INGEST_OCCURRED_KIND
+        if event.locality_identity == locality_identity
+        and event.kind == MATERIAL_INGEST_OCCURRED_KIND
     ]
+
+
+def _ingest_occurrences(ledger, *, locality_identity):
+    return list(
+        ledger.iter_locality_kind(
+            locality_identity,
+            MATERIAL_INGEST_OCCURRED_KIND,
+        )
+    )
 
 
 def _fill(ledger):
@@ -61,7 +70,7 @@ def durable_ledger(tmp_path):
 
 @pytest.mark.parametrize("locality_identity", sorted(BODIES))
 def test_the_occurrences_are_identical_in_memory(memory_ledger, locality_identity):
-    bounded = ingest_occurrences(
+    bounded = _ingest_occurrences(
         memory_ledger, locality_identity=locality_identity
     )
     whole = _all_locality_occurrences(
@@ -74,7 +83,7 @@ def test_the_occurrences_are_identical_in_memory(memory_ledger, locality_identit
 
 @pytest.mark.parametrize("locality_identity", sorted(BODIES))
 def test_the_occurrences_are_identical_durably(durable_ledger, locality_identity):
-    bounded = ingest_occurrences(
+    bounded = _ingest_occurrences(
         durable_ledger, locality_identity=locality_identity
     )
     whole = _all_locality_occurrences(
@@ -89,7 +98,7 @@ def test_each_body_still_gets_only_its_own_material(durable_ledger):
     held = {
         locality_identity: [
             ingested_material_bytes(event)
-            for event in ingest_occurrences(
+            for event in _ingest_occurrences(
                 durable_ledger, locality_identity=locality_identity
             )
         ]
@@ -103,7 +112,7 @@ def test_each_body_still_gets_only_its_own_material(durable_ledger):
 
 def test_an_unrecorded_locality_reads_empty(durable_ledger):
     assert (
-        ingest_occurrences(
+        _ingest_occurrences(
             durable_ledger, locality_identity="never-recorded"
         )
         == []
@@ -113,13 +122,16 @@ def test_an_unrecorded_locality_reads_empty(durable_ledger):
 @pytest.mark.parametrize("ledger_name", ("memory_ledger", "durable_ledger"))
 def test_one_kind_is_streamed_from_only_one_locality(request, ledger_name):
     ledger = request.getfixturevalue(ledger_name)
-    occurrences = ledger.iter_locality_kind("s1", INGEST_OCCURRED_KIND)
+    occurrences = ledger.iter_locality_kind(
+        "s1",
+        MATERIAL_INGEST_OCCURRED_KIND,
+    )
 
     assert iter(occurrences) is occurrences
     events = list(occurrences)
     assert events
     assert {event.locality_identity for event in events} == {"s1"}
-    assert {event.kind for event in events} == {INGEST_OCCURRED_KIND}
+    assert {event.kind for event in events} == {MATERIAL_INGEST_OCCURRED_KIND}
 
 
 @pytest.mark.parametrize("ledger_name", ("memory_ledger", "durable_ledger"))
@@ -173,7 +185,7 @@ def test_the_kind_stream_seeks_by_locality_and_kind(durable_ledger):
             "EXPLAIN QUERY PLAN "
             "SELECT * FROM events WHERE locality_identity = ? "
             "AND kind = ? ORDER BY rowid",
-            ("s1", INGEST_OCCURRED_KIND),
+            ("s1", MATERIAL_INGEST_OCCURRED_KIND),
         ).fetchall()
     finally:
         connection.close()
