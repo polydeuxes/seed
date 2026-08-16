@@ -666,7 +666,6 @@ silent
 similarity
 similarly
 single
-solely
 some
 source
 stand

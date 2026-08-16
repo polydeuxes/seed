@@ -264,3 +264,11 @@ def test_supporting_finding_does_not_establish_participation_by_identity():
     assert clause["does_not_establish"][0] == (
         "Participation_relation_by_supporting_finding_identity"
     )
+
+
+def test_public_export_does_not_establish_standing():
+    grammar = json.loads(GRAMMAR.read_text(encoding="utf-8"))
+
+    assert grammar["clauses"]["01.Standing.C"]["does_not_establish"][-1] == (
+        "Standing_by_public_export"
+    )

@@ -566,7 +566,8 @@
       "does_not_establish": [
         "Standing_by_name",
         "Standing_by_output_vocabulary",
-        "Standing_by_behavior"
+        "Standing_by_behavior",
+        "Standing_by_public_export"
       ]
     },
     "01.Standing.D": {

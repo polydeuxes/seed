@@ -119,7 +119,7 @@ Acts and relations are distinct from dimensions. They may operate over or connec
 
 ## Counterexamples or failure modes
 - Calling any serialized dictionary a constitutional subject.
-- Inferring standing solely from a public export.
+- Inferring Standing from a public export without Evidence of the responsible occurrence, Authority, Scope, and limits.
 
 ## Related chapters
 - [Authority Scope](13-authority-scope.md)
