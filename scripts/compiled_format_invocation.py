@@ -2218,16 +2218,19 @@ def first_recurring_added_compare(
     return tuple(comparisons), None, None
 
 
-def first_recurring_added_compare_across(
+def _recurring_added_compares_across(
     additions: tuple[AddedPositionOccurrence, ...],
     source_invocation_rows: tuple[tuple[CompiledInvocationOccurrence, ...], ...],
     *,
     boundary_identity: str,
     act_occurrence_count_limit: int,
+    recurrence_count_limit: int | None,
 ) -> tuple[
     tuple[tuple[AddedPositionCompareOccurrence, ...], ...],
-    tuple[bool | None, ...] | None,
-    tuple[AddedPositionCompareOccurrence, ...] | None,
+    tuple[
+        tuple[tuple[bool | None, ...], tuple[AddedPositionCompareOccurrence, ...]],
+        ...,
+    ],
 ]:
     if type(additions) is not tuple or not additions or any(
         not isinstance(addition, AddedPositionOccurrence) for addition in additions
@@ -2238,6 +2241,10 @@ def first_recurring_added_compare_across(
         or act_occurrence_count_limit < 1
     ):
         raise TypeError("one exact positive Act occurrence count limit is required")
+    if recurrence_count_limit is not None and (
+        type(recurrence_count_limit) is not int or recurrence_count_limit < 1
+    ):
+        raise TypeError("recurrence count limit must be exact and positive")
     if type(source_invocation_rows) is not tuple or not source_invocation_rows:
         raise TypeError("full-function recurrence requires exact invocation rows")
     row_lengths = {len(row) for row in source_invocation_rows}
@@ -2282,6 +2289,7 @@ def first_recurring_added_compare_across(
     if len(addition_by_identity) != len(additions):
         raise ValueError("addition Act occurrence entered recurrence twice")
     comparisons = tuple([] for _ in functions)
+    recurring = []
     for occurrence_position, addition in enumerate(
         additions[:act_occurrence_count_limit]
     ):
@@ -2332,15 +2340,66 @@ def first_recurring_added_compare_across(
                 result_returned=result_invocation.returned,
             )
             found.append(comparison)
-            if all(coordinate is None for coordinate in coordinates):
-                row.append(comparison)
+            row.append(comparison)
         if any(coordinate is not None for coordinate in coordinates):
-            return (
-                tuple(tuple(row) for row in comparisons),
-                coordinates,
-                tuple(found),
-            )
-    return tuple(tuple(row) for row in comparisons), None, None
+            recurring.append((coordinates, tuple(found)))
+            if (
+                recurrence_count_limit is not None
+                and len(recurring) >= recurrence_count_limit
+            ):
+                break
+    return tuple(tuple(row) for row in comparisons), tuple(recurring)
+
+
+def recurring_added_compares_across(
+    additions: tuple[AddedPositionOccurrence, ...],
+    source_invocation_rows: tuple[tuple[CompiledInvocationOccurrence, ...], ...],
+    *,
+    boundary_identity: str,
+    act_occurrence_count_limit: int,
+) -> tuple[
+    tuple[tuple[AddedPositionCompareOccurrence, ...], ...],
+    tuple[
+        tuple[tuple[bool | None, ...], tuple[AddedPositionCompareOccurrence, ...]],
+        ...,
+    ],
+]:
+    return _recurring_added_compares_across(
+        additions,
+        source_invocation_rows,
+        boundary_identity=boundary_identity,
+        act_occurrence_count_limit=act_occurrence_count_limit,
+        recurrence_count_limit=None,
+    )
+
+
+def first_recurring_added_compare_across(
+    additions: tuple[AddedPositionOccurrence, ...],
+    source_invocation_rows: tuple[tuple[CompiledInvocationOccurrence, ...], ...],
+    *,
+    boundary_identity: str,
+    act_occurrence_count_limit: int,
+) -> tuple[
+    tuple[tuple[AddedPositionCompareOccurrence, ...], ...],
+    tuple[bool | None, ...] | None,
+    tuple[AddedPositionCompareOccurrence, ...] | None,
+]:
+    comparisons, recurring = _recurring_added_compares_across(
+        additions,
+        source_invocation_rows,
+        boundary_identity=boundary_identity,
+        act_occurrence_count_limit=act_occurrence_count_limit,
+        recurrence_count_limit=1,
+    )
+    if not recurring:
+        return comparisons, None, None
+    coordinates, later = recurring[0]
+    occurrence_position = later[0].occurrence_position
+    return (
+        tuple(row[:occurrence_position] for row in comparisons),
+        coordinates,
+        later,
+    )
 
 
 def compare_removed_position_invocations(

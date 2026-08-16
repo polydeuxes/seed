@@ -28,6 +28,7 @@ from compiled_format_invocation import (  # noqa: E402
     exact_byte_material_references,
     exact_byte_pair_material_references,
     first_recurring_added_compare_across,
+    recurring_added_compares_across,
     moved_exact_byte_material_references,
 )
 from compiled_material_invocation import ingest_result_reference  # noqa: E402
@@ -633,6 +634,48 @@ def test_complete_book_admission_freezes_one_coordinate_before_later_invocation(
         later_addition.source_admission_result_reference
         == book_admission.result_reference
     )
+
+
+def test_complete_book_recurrence_continues_after_one_prospective_conflict(
+    complete_book_admission_acts,
+):
+    (
+        _,
+        book_invocation_rows,
+        _,
+        _,
+        _,
+        _,
+        additions,
+        _,
+        _,
+        _,
+        _,
+        _,
+    ) = complete_book_admission_acts
+
+    comparisons, recurring = recurring_added_compares_across(
+        additions,
+        book_invocation_rows,
+        boundary_identity="complete-book-recurrence-after-conflict",
+        act_occurrence_count_limit=10,
+    )
+
+    assert len(recurring) > 1
+    occurrence_positions = tuple(
+        later[0].occurrence_position for _, later in recurring
+    )
+    assert occurrence_positions == tuple(sorted(occurrence_positions))
+    first_coordinates, first_later = recurring[0]
+    assert any(
+        coordinate is not None and coordinate != comparison.result_returned
+        for coordinate, comparison in zip(first_coordinates, first_later)
+    )
+    assert all(
+        row[occurrence_positions[0]] == comparison
+        for row, comparison in zip(comparisons, first_later)
+    )
+    assert occurrence_positions[1] > occurrence_positions[0]
 
 
 def test_earlier_and_later_book_admissions_keep_distinct_occurrence_sets(
