@@ -1,5 +1,5 @@
-# Rosetta admitted lexicon -- vocabulary available to translation.
-# Book lexicon: ../book_of_seed/admitted-lexicon.txt
+# Rosetta admission -- vocabulary available to translation.
+# Book admission: ../book_of_seed/book_admission.txt
 #
 # Rosetta admission grants no admission to Book proper. The Book keeps its own
 # narrower file and references this one without importing it.

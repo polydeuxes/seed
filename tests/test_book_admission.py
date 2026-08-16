@@ -1,4 +1,4 @@
-"""Book lexical admission."""
+"""Book admission."""
 
 from __future__ import annotations
 
@@ -7,8 +7,8 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 BOOK = ROOT / "book_of_seed"
-LEXICON = BOOK / "admitted-lexicon.txt"
-ROSETTA_LEXICON = ROOT / "rosetta" / "admitted-lexicon.txt"
+BOOK_ADMISSION = BOOK / "book_admission.txt"
+ROSETTA_ADMISSION = ROOT / "rosetta" / "rosetta_admission.txt"
 
 
 def scan_active_line(line: str) -> str:
@@ -25,7 +25,7 @@ def book_proper_files() -> list[Path]:
     return files
 
 
-def _lexicon_entries(path: Path = LEXICON) -> dict[str, str]:
+def _admission_entries(path: Path = BOOK_ADMISSION) -> dict[str, str]:
     entries: dict[str, str] = {}
     for line in path.read_text(encoding="utf-8").split("\n"):
         if not line.strip() or line.lstrip().startswith("#"):
@@ -37,8 +37,8 @@ def _lexicon_entries(path: Path = LEXICON) -> dict[str, str]:
     return entries
 
 
-def admitted_lexicon() -> set[str]:
-    return set(_lexicon_entries())
+def book_admission() -> set[str]:
+    return set(_admission_entries())
 
 
 def book_proper_words() -> dict[str, list[tuple[str, int]]]:
@@ -65,39 +65,45 @@ def test_book_proper_scope_excludes_rosetta():
     assert not any("/rosetta/" in path or path.startswith("rosetta/") for path in files)
 
 
-def test_book_has_its_own_lexicon_and_points_to_rosetta():
-    assert LEXICON == ROOT / "book_of_seed" / "admitted-lexicon.txt"
-    assert ROSETTA_LEXICON != LEXICON
-    assert not LEXICON.is_symlink()
-    assert not ROSETTA_LEXICON.is_symlink()
+def test_book_has_its_own_admission_and_points_to_rosetta():
+    assert BOOK_ADMISSION == ROOT / "book_of_seed" / "book_admission.txt"
+    assert ROSETTA_ADMISSION != BOOK_ADMISSION
+    assert not BOOK_ADMISSION.is_symlink()
+    assert not ROSETTA_ADMISSION.is_symlink()
     assert (
-        "# Rosetta lexicon: ../rosetta/admitted-lexicon.txt"
-        in LEXICON.read_text(encoding="utf-8").splitlines()
+        "# Rosetta admission: ../rosetta/rosetta_admission.txt"
+        in BOOK_ADMISSION.read_text(encoding="utf-8").splitlines()
     )
-    assert set(_lexicon_entries(LEXICON)) < set(_lexicon_entries(ROSETTA_LEXICON))
+    assert set(_admission_entries(BOOK_ADMISSION)) < set(
+        _admission_entries(ROSETTA_ADMISSION)
+    )
 
 
 def test_warrant_admission_is_broad_in_rosetta_and_singular_in_book():
     book_warrant = {
-        word for word in _lexicon_entries(LEXICON) if word.startswith("warrant")
+        word
+        for word in _admission_entries(BOOK_ADMISSION)
+        if word.startswith("warrant")
     }
     rosetta_warrant = {
-        word for word in _lexicon_entries(ROSETTA_LEXICON) if word.startswith("warrant")
+        word
+        for word in _admission_entries(ROSETTA_ADMISSION)
+        if word.startswith("warrant")
     }
     assert book_warrant == {"warrant"}
     assert rosetta_warrant == {"warrant", "warranted", "warranting", "warrants"}
 
 
 def test_clause_coordinate_tokens_require_explicit_curation():
-    assert "g" in admitted_lexicon()
-    assert "g" in _lexicon_entries(ROSETTA_LEXICON)
+    assert "g" in book_admission()
+    assert "g" in _admission_entries(ROSETTA_ADMISSION)
 
     uncurated_coordinate_words = set(
         re.findall(
             r"[A-Za-z]+",
             scan_active_line("01.Source.Uncuratedcoordinate").lower(),
         )
-    ) - admitted_lexicon()
+    ) - book_admission()
 
     assert uncurated_coordinate_words == {"uncuratedcoordinate"}
 
@@ -123,22 +129,24 @@ def test_warrant_remains_lowercase_and_bounded_to_the_three_standing_sentences()
 
 def test_composite_admission_is_broad_in_rosetta_and_singular_in_book():
     book_composite = {
-        word for word in _lexicon_entries(LEXICON) if word.startswith("composite")
+        word
+        for word in _admission_entries(BOOK_ADMISSION)
+        if word.startswith("composite")
     }
     rosetta_composite = {
         word
-        for word in _lexicon_entries(ROSETTA_LEXICON)
+        for word in _admission_entries(ROSETTA_ADMISSION)
         if word.startswith("composite")
     }
     assert book_composite == {"composite"}
     assert rosetta_composite == {"composite", "composites"}
 
 
-def test_book_proper_admits_only_lexicon_words():
+def test_book_proper_is_within_book_admission():
     unadmitted = {
         word: places
         for word, places in book_proper_words().items()
-        if word not in admitted_lexicon()
+        if word not in book_admission()
     }
     report = "\n".join(
         f"  {word} -- {places[0][0]}:{places[0][1]}"
@@ -147,18 +155,18 @@ def test_book_proper_admits_only_lexicon_words():
     )
     assert not unadmitted, (
         "\nActive law carries vocabulary the lexicon does not admit.\n"
-        "Remove it or request curation; automated agents must not amend the lexicon:\n"
+            "Remove it or request curation; automated agents must not amend Book admission:\n"
         + report
     )
 
 
-def test_lexicon_carries_no_unused_admissions():
-    unused = sorted(admitted_lexicon() - set(book_proper_words()))
+def test_book_admission_carries_no_unused_words():
+    unused = sorted(book_admission() - set(book_proper_words()))
     assert not unused, (
-        "\nThe lexicon admits words active law no longer carries: "
+        "\nBook admission carries words active law no longer carries: "
         + ", ".join(unused)
     )
 
 
-def test_admission_and_machine_grammar_match():
-    assert admitted_lexicon() == machine_grammar_words()
+def test_book_admission_and_machine_grammar_match():
+    assert book_admission() == machine_grammar_words()

@@ -22,8 +22,8 @@ from seed_runtime.operator_checkpoint import (
 )
 from seed_runtime.operator_command import AddressedOperatorCommand
 from seed_runtime.operator_console import run_persistent_operator_console
-from tests.test_book_lexical_admission import (
-    admitted_lexicon,
+from tests.test_book_admission import (
+    book_admission,
     machine_grammar_words,
     scan_active_line,
 )
@@ -769,7 +769,7 @@ def test_runtime_record_vocabulary_has_constitutional_admission():
     """Event species and record coordinates require lexical admission."""
 
     violations = []
-    admitted = admitted_lexicon()
+    admitted = book_admission()
     for path, tree in _runtime_trees():
         material = [
             (node.lineno, node.value.value)
@@ -796,7 +796,7 @@ def test_runtime_record_vocabulary_has_constitutional_admission():
 
 
 def _unadmitted_authored_event_material(path: Path, tree: ast.Module):
-    admitted = admitted_lexicon()
+    admitted = book_admission()
     violations = set()
     for source, line, value in _authored_event_material_strings(path, tree):
         for word in re.findall(r"[A-Za-z]+", scan_active_line(value).lower()):

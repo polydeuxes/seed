@@ -93,10 +93,10 @@ to four current terms and to no single one of them.
 ## Files
 
 - [Responsibility spine](roots.md)
-- [Rosetta admitted lexicon](admitted-lexicon.txt)
-- [Book admitted lexicon](../book_of_seed/admitted-lexicon.txt)
+- [Rosetta admission](rosetta_admission.txt)
+- [Book admission](../book_of_seed/book_admission.txt)
 
-Rosetta keeps the translation lexicon. The Book keeps its own narrower file
+Rosetta keeps the translation lexicon. The Book keeps its own narrower admission
 and points here without importing Rosetta admission into active law. In
 particular, Rosetta admits the `warrant` word family while Book proper admits
 only the singular ordinary verb in Seed's Standing declaration.

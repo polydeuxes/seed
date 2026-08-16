@@ -8,13 +8,13 @@ ROOT = Path(__file__).resolve().parents[1]
 GRAMMAR = ROOT / "book_of_seed/grammar.json"
 ROSETTA = ROOT / "rosetta"
 ROSETTA_ROOTS = ROSETTA / "roots.md"
-ROSETTA_LEXICON = ROSETTA / "admitted-lexicon.txt"
+ROSETTA_ADMISSION = ROSETTA / "rosetta_admission.txt"
 
 
 def _rosetta_admission() -> set[str]:
     return {
         line.split("#", 1)[0].strip()
-        for line in ROSETTA_LEXICON.read_text(encoding="utf-8").splitlines()
+        for line in ROSETTA_ADMISSION.read_text(encoding="utf-8").splitlines()
         if line.strip() and not line.lstrip().startswith("#")
     }
 

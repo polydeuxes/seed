@@ -1,5 +1,5 @@
-# Book admitted lexicon -- every word active law may carry.
-# Rosetta lexicon: ../rosetta/admitted-lexicon.txt
+# Book admission -- every word active law may carry.
+# Rosetta admission: ../rosetta/rosetta_admission.txt
 #
 # This file alone governs Book proper. The Rosetta reference does not import
 # Rosetta admission into active law.
