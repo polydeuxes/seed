@@ -295,6 +295,37 @@
         ["occurrence_to_result", "Assertion_truth"]
       ]
     },
+    "03.Movement.A": {
+      "subject": "one_exact_movement_Assertion",
+      "responsibility": {
+        "kind": "exact_transition_preservation",
+        "coordinates": [
+          "subject",
+          "source_coordinates",
+          "destination_coordinates",
+          "exact_Act",
+          "Act_occurrence",
+          "Evidence",
+          "Authority",
+          "Scope",
+          "limits",
+          "Unknowns",
+          "Standing"
+        ]
+      },
+      "does_not_establish": [
+        "movement_by_implementation_write",
+        "movement_by_recorded_Event",
+        "movement_by_route_revision",
+        "movement_by_represented_Assertion_revision",
+        "movement_by_recorded_material_revision",
+        "movement_by_displayed_label",
+        "later_movement_by_different_Standing"
+      ],
+      "distinct_from": [
+        ["movement", "Act_occurrence"]
+      ]
+    },
     "05.Recording.D": {
       "subject": "one_exact_recorded_Standing_boundary_reference",
       "responsibility": {

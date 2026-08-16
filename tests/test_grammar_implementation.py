@@ -2086,6 +2086,142 @@ def _locality_witness(bundle: dict) -> str:
     return EXACT if all(_locality_requirements(bundle).values()) else MISSING
 
 
+def _movement_coordinate_witness(bundle: dict) -> dict[str, str]:
+    ledger = bundle["ledger"]
+    movement = bundle["movement"]
+    act_evidence = bundle["movement_act_evidence"]
+    source_reference = movement.material.get("source_assertion_reference")
+    try:
+        source = _validate_moved_byte_assertion(ledger, movement.identity)
+    except ValueError:
+        source = None
+    source_event = (
+        ledger.get(source.recorded_occurrence_identity)
+        if source is not None
+        else None
+    )
+    source_material = source.material if source is not None else {}
+    source_dimensions = source_material.get("dimensions", {})
+    surviving = movement.material.get("surviving_coordinates")
+    exact_surviving = surviving == [
+        "Evidence",
+        "Authority",
+        "Scope",
+        "Unknowns",
+        "limits",
+        "Standing",
+    ]
+    evidence_requirements = read_yield_relation_requirements(
+        ledger,
+        recorded_result_event_identity=movement.identity,
+        result_evidence_event_identity=movement.material.get(
+            "yield_evidence_identity"
+        ),
+        responsible_act_evidence_event_identity=movement.material.get(
+            "responsible_act_evidence_identity"
+        ),
+        recorded_result_occurrence_coordinate=(
+            "movement_act_occurrence_identity"
+        ),
+        responsible_act_occurrence_coordinate=(
+            "movement_act_occurrence_identity"
+        ),
+    )
+    intact_act_evidence = (
+        act_evidence is not None
+        and ledger.integrity_of(act_evidence.identity) != CORRUPTED
+        and movement.material.get("responsible_act_evidence_identity")
+        == act_evidence.identity
+    )
+    exact_source = (
+        source is not None
+        and movement.material.get("assertion_identity")
+        == source.assertion_identity
+        and source_reference == source.reference
+    )
+    return {
+        "subject": EXACT if exact_source else MISSING,
+        "source_coordinates": (
+            EXACT
+            if exact_source
+            and source_event is not None
+            and movement.material.get("source_locality")
+            == source_event.locality_identity
+            else MISSING
+        ),
+        "destination_coordinates": (
+            EXACT
+            if movement.material.get("destination_locality")
+            == movement.locality_identity
+            and act_evidence is not None
+            and act_evidence.material.get("destination_locality")
+            == movement.locality_identity
+            else MISSING
+        ),
+        "exact_Act": (
+            EXACT
+            if intact_act_evidence
+            and movement.material.get("movement_act_identity")
+            == act_evidence.material.get("movement_act_identity")
+            and movement.material.get("movement_act_identity")
+            != movement.material.get("movement_act_occurrence_identity")
+            else MISSING
+        ),
+        "Act_occurrence": (
+            EXACT
+            if intact_act_evidence
+            and movement.material.get("movement_act_occurrence_identity")
+            == act_evidence.material.get("movement_act_occurrence_identity")
+            == movement.material.get("locality_relation", {}).get(
+                "relation_occurrence_identity"
+            )
+            else MISSING
+        ),
+        "Evidence": (
+            EXACT
+            if intact_act_evidence and all(evidence_requirements.values())
+            else MISSING
+        ),
+        "Authority": (
+            EXACT
+            if exact_surviving
+            and movement.material.get("authority") == "unestablished"
+            and act_evidence is not None
+            and act_evidence.material.get("authority") == "unestablished"
+            and "authority" in source_dimensions
+            else MISSING
+        ),
+        "Scope": (
+            EXACT
+            if exact_surviving
+            and isinstance(source_material.get("assertion_scope"), dict)
+            and movement.material.get("movement_scope")
+            == (
+                "Locality movement of this exact Assertion only; establishes no "
+                "different identity or Standing"
+            )
+            else MISSING
+        ),
+        "limits": (
+            EXACT
+            if exact_surviving and isinstance(source_material.get("limits"), list)
+            else MISSING
+        ),
+        "Unknowns": (
+            EXACT
+            if exact_surviving and isinstance(source_material.get("unknowns"), list)
+            else MISSING
+        ),
+        "Standing": (
+            EXACT
+            if exact_surviving
+            and isinstance(source_dimensions.get("standing"), str)
+            and source_dimensions["standing"]
+            else MISSING
+        ),
+    }
+
+
 def _locality_fidelity_cases() -> dict[str, str]:
     exact = _recorded_applicability()
 
@@ -3284,6 +3420,65 @@ def test_representation_result_act_and_locality_species_keep_their_clauses():
     assert REPRESENTATION_EVENT_KIND_RESPONSIBILITIES[
         REPRESENTATION_LOCALITY_EVIDENCE_KIND
     ] == "06.Locality.A"
+
+
+def test_assertion_movement_result_names_and_witnesses_its_machine_clause():
+    clause = _clause("03.Movement.A")
+    bundle = _recorded_applicability()
+    witness = _movement_coordinate_witness(bundle)
+
+    assert BYTE_EVENT_KIND_RESPONSIBILITIES[
+        bundle["movement"].kind
+    ] == "03.Movement.A"
+    assert set(witness) == set(clause["responsibility"]["coordinates"])
+    assert set(witness.values()) == {EXACT}
+    assert bundle["movement"].identity != bundle["movement"].material[
+        "movement_act_occurrence_identity"
+    ]
+
+
+def test_assertion_movement_coordinates_refuse_crossing_or_loss():
+    adversaries = {
+        "subject": lambda bundle: bundle["movement"].material.__setitem__(
+            "assertion_identity", "another Assertion"
+        ),
+        "source_coordinates": lambda bundle: bundle["movement"].material.__setitem__(
+            "source_locality", "another Locality"
+        ),
+        "destination_coordinates": lambda bundle: bundle[
+            "movement"
+        ].material.__setitem__("destination_locality", "another Locality"),
+        "exact_Act": lambda bundle: bundle["movement"].material.__setitem__(
+            "movement_act_identity",
+            bundle["movement"].material["movement_act_occurrence_identity"],
+        ),
+        "Act_occurrence": lambda bundle: bundle["movement"].material[
+            "locality_relation"
+        ].__setitem__("relation_occurrence_identity", "another occurrence"),
+        "Evidence": lambda bundle: bundle["ledger"].mark_corrupted(
+            bundle["movement_act_evidence"].identity
+        ),
+        "Authority": lambda bundle: bundle["movement"].material.__setitem__(
+            "authority", "another Authority"
+        ),
+        "Scope": lambda bundle: bundle["movement"].material.__setitem__(
+            "movement_scope", "another Scope"
+        ),
+        "limits": lambda bundle: bundle["movement"].material[
+            "surviving_coordinates"
+        ].remove("limits"),
+        "Unknowns": lambda bundle: bundle["movement"].material[
+            "surviving_coordinates"
+        ].remove("Unknowns"),
+        "Standing": lambda bundle: bundle["movement"].material[
+            "surviving_coordinates"
+        ].remove("Standing"),
+    }
+
+    for coordinate, cross in adversaries.items():
+        bundle = _recorded_applicability()
+        cross(bundle)
+        assert _movement_coordinate_witness(bundle)[coordinate] == MISSING
 
 
 def test_standing_locality_continuation_stages_keep_distinct_machine_clauses():
