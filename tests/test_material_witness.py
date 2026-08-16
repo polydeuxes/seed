@@ -700,6 +700,16 @@ def test_format_recurrence_precedes_later_moved_material(
             )
             is None
         )
+        unrelated_source = replace(later_source, returned=not later_source.returned)
+        assert (
+            recurring_added_returned_coordinate(
+                earlier,
+                additions,
+                later_addition,
+                unrelated_source,
+            )
+            is None
+        )
         break
 
     assert found is not None
