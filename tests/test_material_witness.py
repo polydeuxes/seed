@@ -1700,6 +1700,33 @@ def test_removal_recurrence_refuses_without_full_function_vector(
     assert len(earlier) == len(book_pair_format_occurrences)
 
 
+def test_removal_recurrence_accepts_a_matching_full_function_vector(
+    book_removed_position_invocation_occurrences,
+    book_pair_format_occurrences,
+):
+    removals, _ = book_removed_position_invocation_occurrences
+    first_row = book_pair_format_occurrences[0]
+    clone = CompiledImplementationFunction(
+        identity="compiled-removal-clone",
+        invocation=first_row[0].implementation_function.invocation,
+    )
+    references = tuple(invocation.source_coordinate for invocation in first_row)
+    clone_row = compiled_reference_invocations(
+        references,
+        boundary_identity="book-removal-clone-source",
+        implementation_functions=(clone,),
+    )[0]
+    earlier, coordinate, later = first_recurring_removed_compare_across(
+        removals,
+        (first_row, clone_row),
+        boundary_identity="book-matching-joint-removal-recurrence",
+        act_occurrence_count_limit=len(removals),
+    )
+    assert later is not None
+    assert coordinate is not None
+    assert len(earlier) == 2
+
+
 def test_removal_compare_refuses_a_result_without_its_act_occurrence():
     source = ExactMaterialReference(
         "source", "source-assertion", "fixture-locality", b"ab"

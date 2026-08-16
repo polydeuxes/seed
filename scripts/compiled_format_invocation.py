@@ -2230,7 +2230,7 @@ def first_recurring_removed_compare_across(
     if any(later is None for _, _, later in results):
         return tuple(earlier for earlier, _, _ in results), None, None
     later_occurrences = tuple(later for _, _, later in results)
-    if len({later.added_position_act_occurrence_identity for later in later_occurrences}) != 1:
+    if len({later.removed_position_act_occurrence_identity for later in later_occurrences}) != 1:
         return tuple(earlier for earlier, _, _ in results), None, None
     coordinates = tuple(coordinate for _, coordinate, _ in results)
     if len(set(coordinates)) != 1:
