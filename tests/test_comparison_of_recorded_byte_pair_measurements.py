@@ -5,6 +5,7 @@ import pytest
 
 from tests.binary_input import binary_input
 
+import seed_runtime.byte_measurement as byte_measurement_module
 import seed_runtime.comparison_of_recorded_byte_pair_measurements as comparison_module
 from seed_runtime.byte_measurement import (
     record_byte_measurement_responsible_act_evidence,
@@ -373,14 +374,14 @@ def test_corrupted_compare_yield_is_refused():
 
 def test_one_result_read_validates_each_pair_measurement_once(monkeypatch):
     ledger, _first_source, _added, earlier, later, *_middle, result = _comparison()
-    original = comparison_module._measurement_and_assertions
+    original = comparison_module._measurement_and_findings
     calls = []
 
     def counted(ledger, event_identity):
         calls.append(event_identity)
         return original(ledger, event_identity)
 
-    monkeypatch.setattr(comparison_module, "_measurement_and_assertions", counted)
+    monkeypatch.setattr(comparison_module, "_measurement_and_findings", counted)
 
     get_recorded_pair_measurement_comparison(ledger, result.identity)
     assert calls == [earlier.identity, later.identity]
@@ -392,6 +393,34 @@ def test_one_result_read_validates_each_pair_measurement_once(monkeypatch):
         earlier.identity,
         later.identity,
     ]
+
+
+def test_compare_reads_exact_findings_without_rebuilding_full_assertion_carriers(
+    monkeypatch,
+):
+    ledger, *_rest, result = _comparison()
+
+    def full_carrier_is_not_a_compare_input(*args, **kwargs):
+        raise AssertionError("Compare rebuilt one full Assertion carrier")
+
+    monkeypatch.setattr(
+        byte_measurement_module,
+        "RecordedBytePairAssertion",
+        full_carrier_is_not_a_compare_input,
+    )
+
+    recorded = get_recorded_pair_measurement_comparison(ledger, result.identity)
+    assert recorded["findings"]["conflicting_findings"]
+    standing = read_operator_locality_standing(ledger, locality_identity=LOCALITY)
+    representation = record_operator_representation(
+        ledger,
+        locality_identity=LOCALITY,
+        locality_standing=standing,
+        source_occurrence_reference=result.identity,
+    )
+    assert read_operator_representation(
+        ledger, representation["representation_event_identity"]
+    )["source_occurrence_reference"] == result.identity
 
 
 def test_later_result_read_revalidates_changed_pair_measurement_evidence():

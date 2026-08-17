@@ -13,8 +13,8 @@ from seed_runtime.byte_measurement import (
     BYTE_MEASUREMENT_RECORDED_KIND,
     BYTE_MEASUREMENT_RESPONSIBLE_ACT_EVIDENCE_KIND,
     BYTE_PAIR_MEASUREMENT_RECORDED_KIND,
+    _findings_of_recorded_byte_position_pair_measurement,
     assertions_of_recorded_byte_measurement,
-    assertions_of_recorded_byte_position_pair_measurement,
 )
 from seed_runtime.occurrence_position_measurement import (
     OCCURRENCE_POSITION_ACT_EVIDENCE_KIND,
@@ -817,7 +817,7 @@ def advance_operator_locality_standing(
             )
             continue
         if event.kind == BYTE_PAIR_MEASUREMENT_RECORDED_KIND:
-            assertions_of_recorded_byte_position_pair_measurement(
+            _findings_of_recorded_byte_position_pair_measurement(
                 ledger, event.identity
             )
             measurement_occurrences[event.identity] = (

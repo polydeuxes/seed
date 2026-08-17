@@ -7,7 +7,7 @@ from typing import Any
 
 from seed_runtime.byte_measurement import (
     BYTE_PAIR_MEASUREMENT_RECORDED_KIND,
-    assertions_of_recorded_byte_position_pair_measurement,
+    _findings_of_recorded_byte_position_pair_measurement,
 )
 from seed_runtime.event import Event
 from seed_runtime.events import CORRUPTED, EventLedger
@@ -101,7 +101,7 @@ def _measurement_reference(event: Event) -> dict[str, str]:
     }
 
 
-def _measurement_and_assertions(
+def _measurement_and_findings(
     ledger: EventLedger, event_identity: str
 ) -> tuple[Event, tuple[Any, ...]]:
     event_identity = _identity(
@@ -117,18 +117,18 @@ def _measurement_and_assertions(
             "comparison requires one intact recorded byte-position-pair Measurement"
         )
     try:
-        assertions = assertions_of_recorded_byte_position_pair_measurement(
+        findings = _findings_of_recorded_byte_position_pair_measurement(
             ledger, event.identity
         )
     except (TypeError, ValueError) as error:
         raise RecordedPairMeasurementComparisonError(
             "comparison requires one intact recorded byte-position-pair Measurement"
         ) from error
-    if type(assertions) is not tuple or not assertions:
+    if type(findings) is not tuple or not findings:
         raise RecordedPairMeasurementComparisonError(
             "comparison requires exact recorded pair findings"
         )
-    return event, assertions
+    return event, findings
 
 
 def _source_occurrence_references(event: Event) -> tuple[str, ...]:
@@ -162,10 +162,10 @@ def _comparison_inputs(
     earlier_result_event_identity: str,
     later_result_event_identity: str,
 ) -> dict[str, Any]:
-    earlier, earlier_assertions = _measurement_and_assertions(
+    earlier, earlier_findings = _measurement_and_findings(
         ledger, earlier_result_event_identity
     )
-    later, later_assertions = _measurement_and_assertions(
+    later, later_findings = _measurement_and_findings(
         ledger, later_result_event_identity
     )
     if earlier.identity == later.identity or earlier.locality_identity != later.locality_identity:
@@ -327,8 +327,8 @@ def _comparison_inputs(
         "locality_identity": earlier.locality_identity,
         "earlier_event": earlier,
         "later_event": later,
-        "earlier_assertions": earlier_assertions,
-        "later_assertions": later_assertions,
+        "earlier_findings": earlier_findings,
+        "later_findings": later_findings,
         "earlier_source": earlier_sources,
         "later_source": later_sources,
         "added_reference": added_reference,
@@ -1123,21 +1123,20 @@ def get_recorded_pair_measurement_comparison_act_evidence(
     return _comparison_act_reading(ledger, event_identity)[0]
 
 
-def _finding_key(assertion: Any) -> tuple[str, tuple[int, int] | None]:
-    return assertion.result, assertion.representation
+def _finding_key(finding: Any) -> tuple[str, tuple[int, int] | None]:
+    return finding.result, finding.representation
 
 
-def _finding_content(assertion: Any) -> Any:
-    material = assertion.material
-    dimensions = material.get("dimensions")
-    if type(dimensions) is not dict or "content" not in dimensions:
+def _finding_content(finding: Any) -> Any:
+    content = finding.content
+    if type(content) is not dict:
         raise RecordedPairMeasurementComparisonError(
             "comparison input carries no exact finding content"
         )
-    return deepcopy(dimensions["content"])
+    return content
 
 
-def _comparison_findings_of_assertions(
+def _comparison_of_findings(
     earlier: tuple[Any, ...], later: tuple[Any, ...]
 ) -> dict[str, list[dict[str, Any]]]:
     earlier_by_key = {_finding_key(item): item for item in earlier}
@@ -1227,8 +1226,8 @@ def _comparison_result_material(
             act.material["participation_of_input_in_compare"]
         ),
         "comparison_rule": RECORDED_PAIR_MEASUREMENT_COMPARISON_RULE,
-        "findings": _comparison_findings_of_assertions(
-            inputs["earlier_assertions"], inputs["later_assertions"]
+        "findings": _comparison_of_findings(
+            inputs["earlier_findings"], inputs["later_findings"]
         ),
         "scope": deepcopy(act.material["scope"]),
         "authority": _authority(),

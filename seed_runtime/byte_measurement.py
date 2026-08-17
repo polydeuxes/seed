@@ -299,6 +299,33 @@ class RecordedBytePairAssertion:
         }
 
 
+@dataclass(frozen=True)
+class _RecordedBytePairFinding:
+    assertion_identity: str
+    recorded_occurrence_identity: str
+    representation: tuple[int, int]
+    result: str
+    _content_coordinates: tuple[int, int, int] | bool
+
+    @property
+    def content(self) -> dict[str, int | bool]:
+        if self.result == "recurrence":
+            return {"recurrence_established": self._content_coordinates}
+        input_count, occurrences_carrying, count = self._content_coordinates
+        return {
+            "input_count": input_count,
+            "occurrences_carrying": occurrences_carrying,
+            "count": count,
+        }
+
+    @property
+    def reference(self) -> dict[str, str]:
+        return {
+            "recorded_occurrence_identity": self.recorded_occurrence_identity,
+            "assertion_identity": self.assertion_identity,
+        }
+
+
 def _canonical(value: Any) -> str:
     return json.dumps(
         value, ensure_ascii=False, sort_keys=True, separators=(",", ":")
@@ -1977,10 +2004,13 @@ def _validate_recorded_pair_input_applicability(
         )
 
 
-def assertions_of_recorded_byte_position_pair_measurement(
-    ledger: EventLedger, event_identity: str
-) -> tuple[RecordedBytePairAssertion, ...] | None:
-    """Read the exact pair result without performing Measurement again."""
+def _read_recorded_byte_position_pair_measurement(
+    ledger: EventLedger,
+    event_identity: str,
+    *,
+    findings_only: bool,
+) -> tuple[RecordedBytePairAssertion, ...] | tuple[_RecordedBytePairFinding, ...] | None:
+    """Validate one exact pair result and return its requested reading surface."""
 
     event = ledger.get(event_identity)
     if event is None:
@@ -2294,6 +2324,29 @@ def assertions_of_recorded_byte_position_pair_measurement(
             raise ByteMeasurementError(f"{event_identity} carries unlawful recurrence support")
     validated_results = []
     for assertion in assertions:
+        if findings_only:
+            content = assertion["dimensions"]["content"]
+            content_coordinates: tuple[int, int, int] | bool
+            if assertion["result"] == "recurrence":
+                content_coordinates = content["recurrence_established"]
+            else:
+                content_coordinates = (
+                    content["input_count"],
+                    content["occurrences_carrying"],
+                    content["count"],
+                )
+            validated_results.append(
+                _RecordedBytePairFinding(
+                    assertion_identity=assertion["dimensions"]["identity"],
+                    recorded_occurrence_identity=event.identity,
+                    representation=tuple(
+                        assertion["assertion_subject"]["representation"]
+                    ),
+                    result=assertion["result"],
+                    _content_coordinates=content_coordinates,
+                )
+            )
+            continue
         support = assertion["input_support"]
         support_references = list(support["assertion_references"])
         support_references.extend(
@@ -2312,6 +2365,28 @@ def assertions_of_recorded_byte_position_pair_measurement(
             _support_assertion_refs_json=_canonical(support_references),
         ))
     return tuple(validated_results)
+
+
+def assertions_of_recorded_byte_position_pair_measurement(
+    ledger: EventLedger, event_identity: str
+) -> tuple[RecordedBytePairAssertion, ...] | None:
+    """Read the exact pair result without performing Measurement again."""
+
+    reading = _read_recorded_byte_position_pair_measurement(
+        ledger, event_identity, findings_only=False
+    )
+    return reading
+
+
+def _findings_of_recorded_byte_position_pair_measurement(
+    ledger: EventLedger, event_identity: str
+) -> tuple[_RecordedBytePairFinding, ...] | None:
+    """Read only exact finding coordinates after the same full validation."""
+
+    reading = _read_recorded_byte_position_pair_measurement(
+        ledger, event_identity, findings_only=True
+    )
+    return reading
 
 
 def byte_position_pair_measurement_occurrence_references(

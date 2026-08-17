@@ -7,8 +7,8 @@ from typing import Any
 from seed_runtime.byte_measurement import (
     BYTE_MEASUREMENT_RECORDED_KIND,
     BYTE_PAIR_MEASUREMENT_RECORDED_KIND,
+    _findings_of_recorded_byte_position_pair_measurement,
     assertions_of_recorded_byte_measurement,
-    assertions_of_recorded_byte_position_pair_measurement,
 )
 from seed_runtime.events import CORRUPTED, EventLedger
 from seed_runtime.identities import new_identity
@@ -85,7 +85,7 @@ EVENT_KIND_RESPONSIBILITIES = {
 _MEASUREMENT_READERS = {
     BYTE_MEASUREMENT_RECORDED_KIND: assertions_of_recorded_byte_measurement,
     BYTE_PAIR_MEASUREMENT_RECORDED_KIND: (
-        assertions_of_recorded_byte_position_pair_measurement
+        _findings_of_recorded_byte_position_pair_measurement
     ),
     OCCURRENCE_POSITION_RECORDED_KIND: get_recorded_occurrence_position_measurement,
     RECORDING_OCCURRENCE_OF_RESULT_OF_MEASUREMENT_OF_RECURRENT_BYTE_PAIR_OCCURRENCE_POSITION_KIND: (
