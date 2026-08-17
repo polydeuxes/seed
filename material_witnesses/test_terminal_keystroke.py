@@ -9,11 +9,17 @@ from __future__ import annotations
 
 from pathlib import Path
 import sys
+import tempfile
 
 import pytest
 
 from seed_runtime.events import EventLedger
 from seed_runtime.material_ingest import ingest_material
+from seed_runtime.operator_locality_standing import read_operator_locality_standing
+from seed_runtime.operator_representation import (
+    emit_operator_representation_material,
+    record_operator_representation,
+)
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -24,6 +30,7 @@ from compiled_material_invocation import (  # noqa: E402
     ingest_result_reference,
     reference_occurrences_across,
 )
+from tests.representation_admission import admit_representation  # noqa: E402
 
 
 EXACT_MATERIAL = (
@@ -137,3 +144,42 @@ def test_external_results_enter_seed_only_as_exact_provenanced_material(
         occurrence.material["provenance_occurrence_references"]
         for occurrence in result_ingests
     ) == tuple([source.identity] for source in source_ingests)
+
+
+def test_one_exact_witness_result_crosses_the_raw_operator_emission_road(
+    terminal_witness_observation,
+):
+    ledger, _, _, _, result_ingests = terminal_witness_observation
+    source = result_ingests[0]
+    representation = record_operator_representation(
+        ledger,
+        locality_identity=source.locality_identity,
+        locality_standing=read_operator_locality_standing(
+            ledger, locality_identity=source.locality_identity
+        ),
+        source_occurrence_reference=source.identity,
+    )
+
+    with tempfile.TemporaryFile(mode="w+b") as output:
+        admission, applicability, standing, boundary = admit_representation(
+            ledger,
+            representation,
+            boundary_identity="terminal-material-witness-output",
+            operator_locality_identity="terminal-material-witness-operator",
+            output_stream=output,
+        )
+        emitted = emit_operator_representation_material(
+            ledger,
+            representation=representation,
+            admission_result_event_identity=admission.identity,
+            applicability_result_event_identity=applicability.identity,
+            locality_standing=standing,
+            output_boundary=boundary,
+        )
+        output.seek(0)
+        exact_output = output.read()
+
+    assert exact_output == source.exact_material
+    assert ledger.get(emitted["emitted_event_identity"]).exact_material == (
+        source.exact_material
+    )
