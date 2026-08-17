@@ -50,7 +50,7 @@ SILENCE_SECONDS = 0.25
 BASE_FREQUENCY = 60.0
 
 
-def _occurrence(frequency: float) -> bytes:
+def occurrence_material(frequency: float) -> bytes:
     """One occurrence: exact samples, no encoder between them and the file."""
 
     count = int(SAMPLE_RATE * OCCURRENCE_SECONDS)
@@ -79,7 +79,7 @@ def count_ladder(out_dir: Path, counts: list[int]) -> list[Path]:
     """Occurrence count varies. Frequency, and everything else, does not."""
 
     written = []
-    single = _occurrence(BASE_FREQUENCY)
+    single = occurrence_material(BASE_FREQUENCY)
     gap = _silence()
     for count in counts:
         frames = gap.join([single] * count)
@@ -95,7 +95,7 @@ def frequency_ladder(out_dir: Path, frequencies: list[float]) -> list[Path]:
     written = []
     for frequency in frequencies:
         path = out_dir / f"B-1x{frequency:g}hz.wav"
-        write_wave(path, _occurrence(frequency))
+        write_wave(path, occurrence_material(frequency))
         written.append(path)
     return written
 
