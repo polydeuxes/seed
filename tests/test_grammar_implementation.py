@@ -239,7 +239,9 @@ def test_every_grammar_representation_composite_preserves_material_order():
 
     def carries_relation(value, expected):
         if isinstance(value, dict):
-            if value.get("relation") == expected:
+            if "relation" in value and (
+                expected is None or value.get("relation") == expected
+            ):
                 assert value.get("first_subject")
                 assert value.get("second_subject")
                 return True
@@ -248,6 +250,13 @@ def test_every_grammar_representation_composite_preserves_material_order():
             return any(carries_relation(nested, expected) for nested in value)
         return False
 
+    def connective_relation(value):
+        if "_as_of_" in value:
+            return "through"
+        if "_of_" in value:
+            return "of"
+        return None
+
     def visit(value, parent=None):
         if isinstance(value, dict):
             if "relation" in value:
@@ -255,11 +264,8 @@ def test_every_grammar_representation_composite_preserves_material_order():
                 assert value.get("second_subject")
                 structured_relations.append(value)
             for key, carried in value.items():
-                if "_of_" in key:
-                    assert carries_relation(
-                        carried,
-                        "through" if "_as_of_" in key else "of",
-                    )
+                if "_of_" in key or "_as_" in key:
+                    assert carries_relation(carried, connective_relation(key))
                 visit(carried, value)
         elif isinstance(value, list):
             for carried in value:
@@ -269,12 +275,9 @@ def test_every_grammar_representation_composite_preserves_material_order():
             if len(words) > 1:
                 material = frozenset(Counter(words).items())
                 ordered.setdefault(material, set()).add(words)
-            if "_of_" in value:
+            if "_of_" in value or "_as_" in value:
                 assert parent is not None
-                assert carries_relation(
-                    parent,
-                    "through" if "_as_of_" in value else "of",
-                )
+                assert carries_relation(parent, connective_relation(value))
 
     visit(grammar)
     reordered = {
@@ -3977,7 +3980,13 @@ def test_cross_boundary_participation_preserves_scope_and_limits():
     clause = _clause("01.Source.B")
 
     assert clause == {
-        "subject": "supplied_material_as_input_to_exact_Act",
+        "subject": {
+            "identity": "supplied_material_as_input_to_exact_Act",
+            "first_subject": "supplied_material",
+            "relation": "Participation",
+            "second_subject": "exact_Act",
+            "role": "input",
+        },
         "book_material_reference": "01.Source.B",
         "grammar": "established",
         "recorded_occurrence_kind": [],
