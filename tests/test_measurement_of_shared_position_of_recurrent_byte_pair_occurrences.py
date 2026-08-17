@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import pytest
 
+import seed_runtime.measurement_of_shared_position_of_recurrent_byte_pair_occurrences as shared_position_module
 from seed_runtime.byte_measurement import (
     assertions_of_recorded_byte_position_pair_measurement,
     record_byte_measurement_responsible_act_evidence,
@@ -340,6 +341,79 @@ def test_each_new_elevator_crossing_is_read_from_its_exact_occurrences():
         del event.material["changed_after_recording"]
 
 
+def test_each_shared_position_lifecycle_read_validates_inputs_once_without_cache(
+    monkeypatch,
+):
+    ledger, locality, _source, first, second = _fixture()
+    assignment = _assignment(ledger, locality, first, second)
+    applicability_act = record_shared_position_applicability_act_evidence(
+        ledger,
+        assignment_event_identity=assignment.identity,
+        locality_standing=_standing(ledger, locality),
+    )
+    applicability = record_shared_position_applicability_result(
+        ledger,
+        applicability_act_evidence_event_identity=applicability_act.identity,
+    )
+    standing = _standing(ledger, locality)
+    original = shared_position_module._inputs
+    calls = []
+
+    def counted(ledger, **identities):
+        calls.append(tuple(identities.values()))
+        return original(ledger, **identities)
+
+    monkeypatch.setattr(shared_position_module, "_inputs", counted)
+    expected_call = (
+        first.recorded_occurrence_identity,
+        first.assertion_identity,
+        second.recorded_occurrence_identity,
+        second.assertion_identity,
+    )
+
+    measurement_act = record_shared_position_measurement_act_evidence(
+        ledger,
+        applicability_result_event_identity=applicability.identity,
+        locality_standing=standing,
+    )
+    assert calls == [expected_call]
+
+    result = record_shared_position_measurement_result(
+        ledger,
+        measurement_act_evidence_event_identity=measurement_act.identity,
+    )
+    assert calls == [expected_call] * 2
+
+    get_shared_position_measurement_act_evidence(ledger, measurement_act.identity)
+    assert calls == [expected_call] * 3
+
+    get_recorded_shared_position_measurement(ledger, result.identity)
+    assert calls == [expected_call] * 4
+
+    get_recorded_shared_position_measurement(ledger, result.identity)
+    assert calls == [expected_call] * 5
+
+
+def test_corrupted_shared_position_yield_relations_are_refused():
+    ledger, locality, _source, first, second = _fixture()
+    _assignment_event, _applicability_act, applicability, _measurement_act, result = (
+        _record_path(ledger, locality, first, second)
+    )
+    crossings = (
+        (applicability, get_recorded_shared_position_applicability),
+        (result, get_recorded_shared_position_measurement),
+    )
+
+    for event, read in crossings:
+        evidence = ledger.get(event.material["evidence_of_yield_relation_identity"])
+        assert evidence is not None
+        result_identity = evidence.material["result_identity"]
+        evidence.material["result_identity"] = "crossed-result"
+        with pytest.raises(SharedPairPositionError):
+            read(ledger, event.identity)
+        evidence.material["result_identity"] = result_identity
+
+
 def test_shared_position_result_survives_sqlite_restart(tmp_path):
     database = tmp_path / "shared-position.sqlite"
     ledger = SQLiteEventLedger(str(database))
@@ -408,6 +482,8 @@ FIDELITY_SUBJECTS = {
     "yield_result_occurrence_evidence": (
         test_one_act_cannot_yield_two_shared_position_results,
         test_each_new_elevator_crossing_is_read_from_its_exact_occurrences,
+        test_each_shared_position_lifecycle_read_validates_inputs_once_without_cache,
+        test_corrupted_shared_position_yield_relations_are_refused,
     ),
     "declared_measurement_result": (
         test_exact_yielded_pair_relations_compose_at_one_shared_position,

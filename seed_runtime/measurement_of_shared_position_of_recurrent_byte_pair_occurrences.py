@@ -572,7 +572,10 @@ def record_shared_position_applicability_act_evidence(
 
 
 def _read_applicability_act(
-    ledger: EventLedger, event_identity: str
+    ledger: EventLedger,
+    event_identity: str,
+    *,
+    assignment_reading: tuple[Event, SharedPairPositionInputs] | None = None,
 ) -> tuple[Event, Event, SharedPairPositionInputs]:
     event = ledger.get(
         _identity(event_identity, "shared-position Applicability requires Act Evidence")
@@ -587,9 +590,10 @@ def _read_applicability_act(
     assignment_reference = event.material.get("responsibility_assignment_reference")
     if type(assignment_reference) is not dict:
         raise SharedPairPositionError("Applicability Act carries no assignment")
-    assignment, inputs = _read_assignment(
-        ledger, assignment_reference.get("recorded_occurrence_identity")
-    )
+    assignment_identity = assignment_reference.get("recorded_occurrence_identity")
+    if assignment_reading is None:
+        assignment_reading = _read_assignment(ledger, assignment_identity)
+    assignment, inputs = assignment_reading
     boundary = event.material.get("standing_boundary_identity")
     boundary_event = ledger.get(boundary) if type(boundary) is str else None
     expected = _applicability_act_material(
@@ -598,7 +602,8 @@ def _read_applicability_act(
         standing_boundary_identity=boundary,
     )
     if (
-        event.locality_identity != assignment.locality_identity
+        assignment_identity != assignment.identity
+        or event.locality_identity != assignment.locality_identity
         or boundary_event is None
         or boundary_event.locality_identity != event.locality_identity
         or ledger.integrity_of(boundary_event.identity) == CORRUPTED
@@ -839,9 +844,12 @@ def _require_yield(
         raise SharedPairPositionError("result carries no exact Evidence of Yield relation")
 
 
-def get_recorded_shared_position_applicability(
-    ledger: EventLedger, event_identity: str
-) -> dict[str, Any]:
+def _read_applicability_result(
+    ledger: EventLedger,
+    event_identity: str,
+    *,
+    assignment_reading: tuple[Event, SharedPairPositionInputs] | None = None,
+) -> tuple[Event, Event, Event, SharedPairPositionInputs, dict[str, Any]]:
     event = ledger.get(_identity(event_identity, "Applicability requires one result"))
     if (
         event is None
@@ -851,7 +859,9 @@ def get_recorded_shared_position_applicability(
     ):
         raise SharedPairPositionError("shared-position Applicability result is corrupted")
     act_identity = event.material.get("responsible_act_evidence_identity")
-    act, assignment, inputs = _read_applicability_act(ledger, act_identity)
+    act, assignment, inputs = _read_applicability_act(
+        ledger, act_identity, assignment_reading=assignment_reading
+    )
     expected = _applicability_result_material(
         act=act,
         assignment=assignment,
@@ -875,7 +885,15 @@ def get_recorded_shared_position_applicability(
             "applicability_act_occurrence_identity"
         ),
     )
-    return json.loads(json.dumps(carried))
+    return event, act, assignment, inputs, carried
+
+
+def get_recorded_shared_position_applicability(
+    ledger: EventLedger, event_identity: str
+) -> dict[str, Any]:
+    return json.loads(
+        json.dumps(_read_applicability_result(ledger, event_identity)[4])
+    )
 
 
 def _measurement_act_material(
@@ -936,20 +954,15 @@ def record_shared_position_measurement_act_evidence(
     applicability_result_event_identity: str,
     locality_standing: dict[str, Any],
 ) -> Event:
-    applicability_material = get_recorded_shared_position_applicability(
-        ledger, applicability_result_event_identity
+    applicability, _act, assignment, inputs, applicability_material = (
+        _read_applicability_result(
+            ledger, applicability_result_event_identity
+        )
     )
     if applicability_material["applicability"] != "applicable":
         raise SharedPairPositionError(
             "inapplicable pair-position inputs cannot participate"
         )
-    applicability = ledger.get(applicability_result_event_identity)
-    assignment_reference = applicability_material[
-        "responsibility_assignment_reference"
-    ]
-    assignment, inputs = _read_assignment(
-        ledger, assignment_reference["recorded_occurrence_identity"]
-    )
     boundary = _require_standing(
         ledger,
         inputs=inputs,
@@ -988,10 +1001,17 @@ def _read_measurement_act(
         ledger, assignment_reference.get("recorded_occurrence_identity")
     )
     applicability_identity = applicability_reference.get("recorded_occurrence_identity")
-    applicability_material = get_recorded_shared_position_applicability(
-        ledger, applicability_identity
+    (
+        applicability,
+        _act,
+        applicability_assignment,
+        applicability_inputs,
+        applicability_material,
+    ) = _read_applicability_result(
+        ledger,
+        applicability_identity,
+        assignment_reading=(assignment, inputs),
     )
-    applicability = ledger.get(applicability_identity)
     boundary = event.material.get("standing_boundary_identity")
     boundary_event = ledger.get(boundary) if type(boundary) is str else None
     expected = _measurement_act_material(
@@ -1001,7 +1021,9 @@ def _read_measurement_act(
         standing_boundary_identity=boundary,
     )
     if (
-        applicability_material["applicability"] != "applicable"
+        applicability_assignment.identity != assignment.identity
+        or applicability_inputs != inputs
+        or applicability_material["applicability"] != "applicable"
         or event.locality_identity != assignment.locality_identity
         or boundary_event is None
         or boundary_event.locality_identity != event.locality_identity
