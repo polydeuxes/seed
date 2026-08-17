@@ -22,8 +22,10 @@ from seed_runtime.operator_representation import (
 from seed_runtime.material_ingest import ingest_material
 from seed_runtime.operator_locality_standing import read_operator_locality_standing
 from seed_runtime.occurrence_position_measurement import (
+    OCCURRENCE_POSITION_RESPONSIBILITY_ASSIGNMENT_RECORDED_KIND,
     get_recorded_occurrence_position_measurement,
     measure_occurrence_position,
+    record_occurrence_position_measurement_responsibility_assignment,
     record_occurrence_position_measurement_responsible_act_evidence,
     record_occurrence_position_measurement_result,
 )
@@ -42,6 +44,7 @@ _BYTE_MEASUREMENT_KINDS = (
     "operator.measurement.byte_counts_recorded",
 )
 _OCCURRENCE_POSITION_MEASUREMENT_KINDS = (
+    OCCURRENCE_POSITION_RESPONSIBILITY_ASSIGNMENT_RECORDED_KIND,
     "operator.measurement.locality_occurrence_position_act_evidenced",
     "operator.evidence_of_yield_relation_recorded",
     "operator.measurement.locality_occurrence_position_recorded",
@@ -130,14 +133,19 @@ def _structured_measurement(ledger, kind, *, locality="s"):
     finding = measure_occurrence_position(
         ledger, source_locality_identity=locality
     )
-    act_evidence = record_occurrence_position_measurement_responsible_act_evidence(
+    assignment = record_occurrence_position_measurement_responsibility_assignment(
         ledger,
         recording_locality_identity=locality,
         finding=finding,
+        locality_standing=_standing(ledger, locality=locality),
+    )
+    act_evidence = record_occurrence_position_measurement_responsible_act_evidence(
+        ledger,
+        responsibility_assignment_event_identity=assignment.identity,
+        responsibility_assignment_standing=_standing(ledger, locality=locality),
     )
     return record_occurrence_position_measurement_result(
         ledger,
-        finding=finding,
         responsible_act_evidence_event_identity=act_evidence.identity,
     )
 

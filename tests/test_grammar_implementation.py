@@ -73,7 +73,10 @@ from seed_runtime.measurement_of_shared_position_of_recurrent_byte_pair_occurren
     record_shared_position_measurement_result,
 )
 from seed_runtime.operator_console import run_persistent_operator_console
-from seed_runtime.operator_locality_standing import read_operator_locality_standing
+from seed_runtime.operator_locality_standing import (
+    read_operator_locality_standing,
+    read_operator_locality_standing_through,
+)
 from seed_runtime.operator_command import AddressedOperatorCommand, OperatorCommandFrame
 from seed_runtime.operator_checkpoint import (
     EVENT_KIND_RESPONSIBILITIES as CHECKPOINT_EVENT_KIND_RESPONSIBILITIES,
@@ -154,7 +157,9 @@ from seed_runtime.occurrence_position_measurement import (
     OCCURRENCE_POSITION_ACT_EVIDENCE_KIND,
     OCCURRENCE_POSITION_MEASUREMENT_RULE,
     OCCURRENCE_POSITION_RECORDED_KIND,
+    OCCURRENCE_POSITION_RESPONSIBILITY_ASSIGNMENT_RECORDED_KIND,
     OCCURRENCE_POSITION_RESPONSIBILITY,
+    get_occurrence_position_measurement_responsibility_assignment,
     measure_occurrence_position,
     record_occurrence_position_measurement_responsibility_assignment,
     record_occurrence_position_measurement_responsible_act_evidence,
@@ -2466,10 +2471,14 @@ def _act_occurrence_witness(bundle: dict) -> dict[str, str]:
         and assignment
         == act_evidence.material.get("responsibility_assignment_evidence")
     )
+    assignment_standing = bool(
+        joined
+        and _responsibility_assignment_standing_is_exact(bundle)
+    )
     return {
         "Responsibility": EXACT if joined else MISSING,
         "Responsibility_assignment_Standing": (
-            EXACT if joined and assignment.get("standing") == "assigned" else MISSING
+            EXACT if assignment_standing else MISSING
         ),
         "responsible_boundary": EXACT if joined else MISSING,
         "exact_Act": EXACT if joined else MISSING,
@@ -2493,6 +2502,48 @@ def _act_occurrence_witness(bundle: dict) -> dict[str, str]:
             EXACT if event.material["dimensions"].get("authority") else MISSING
         ),
     }
+
+
+def _occurrence_position_assignment_reference_is_exact(bundle: dict) -> bool:
+    event = bundle["event"]
+    reference = event.material.get("responsibility_assignment_reference")
+    if type(reference) is not dict:
+        return False
+    try:
+        assignment = get_occurrence_position_measurement_responsibility_assignment(
+            bundle["ledger"], reference.get("recorded_occurrence_identity")
+        )
+    except (TypeError, ValueError):
+        return False
+    standing = read_operator_locality_standing_through(
+        bundle["ledger"],
+        locality_identity=assignment.locality_identity,
+        through_event_occurrence_identity=assignment.identity,
+    )
+    return bool(
+        assignment.kind
+        == OCCURRENCE_POSITION_RESPONSIBILITY_ASSIGNMENT_RECORDED_KIND
+        and reference
+        == {
+            "recorded_occurrence_identity": assignment.identity,
+            "assignment_identity": assignment.material["assignment_identity"],
+            "assignment_subject_identity": assignment.material[
+                "assignment_subject_identity"
+            ],
+        }
+        and standing.get("responsibility_assignment_occurrences", {}).get(
+            assignment.identity, object()
+        )
+        is None
+    )
+
+
+def _responsibility_assignment_standing_is_exact(bundle: dict) -> bool:
+    event = bundle["event"]
+    assignment = event.material.get("responsibility_assignment_evidence")
+    if event.kind == OCCURRENCE_POSITION_RECORDED_KIND:
+        return _occurrence_position_assignment_reference_is_exact(bundle)
+    return assignment.get("standing") == "assigned"
 
 
 def _measurement_result_witness(bundle: dict) -> dict[str, str]:
@@ -2634,19 +2685,20 @@ def _measurement_result_witness(bundle: dict) -> dict[str, str]:
             else "exact_source_material_set" not in assertion_results
         )
     )
+    expected_assignment_coordinates = {
+        "responsible_boundary",
+        "source_occurrence_references",
+        "completeness_boundary",
+        "determination",
+    }
+    if event.kind != OCCURRENCE_POSITION_RECORDED_KIND:
+        expected_assignment_coordinates.add("standing")
     assignment_is_exact = bool(
         isinstance(assignment, dict)
-        and set(assignment)
-        == {
-            "responsible_boundary",
-            "standing",
-            "source_occurrence_references",
-            "completeness_boundary",
-            "determination",
-        }
+        and set(assignment) == expected_assignment_coordinates
         and assignment["responsible_boundary"]
         == SEED_NATIVE_MEASUREMENT_RESPONSIBLE_BOUNDARY
-        and assignment["standing"] == "assigned"
+        and _responsibility_assignment_standing_is_exact(bundle)
         and isinstance(assignment["source_occurrence_references"], list)
         and assignment["source_occurrence_references"]
         and all(
@@ -5045,7 +5097,7 @@ def test_measurement_result_clause_is_checked_against_live_byte_pair_and_positio
         "position",
         "ordered_relation_path",
     ]
-    for bundle in (byte, pair, position, pair_occurrence, shared_position):
+    for bundle in (byte, pair, position, pair_occurrence):
         witness = _measurement_result_witness(bundle)
         distinctions = _measurement_result_distinctions(bundle)
 
@@ -5055,6 +5107,16 @@ def test_measurement_result_clause_is_checked_against_live_byte_pair_and_positio
             tuple(distinction) for distinction in clause["distinct_from"]
         ]
         assert set(distinctions.values()) == {True}
+
+    shared_witness = _measurement_result_witness(shared_position)
+    assert shared_witness == {
+        coordinate: (
+            MISSING
+            if coordinate == "responsibility_assignment_evidence"
+            else EXACT
+        )
+        for coordinate in clause["responsibility"]["coordinates"]
+    }
 
 
 def test_measurement_result_pronoun_reference_does_not_compress_the_relation():
@@ -5261,6 +5323,9 @@ def test_measurement_result_carriers_and_responsible_act_evidence_name_their_own
     assert {
         BYTE_EVENT_KIND_RESPONSIBILITIES[BYTE_MEASUREMENT_RECORDED_KIND],
         BYTE_EVENT_KIND_RESPONSIBILITIES[BYTE_PAIR_MEASUREMENT_RECORDED_KIND],
+        POSITION_EVENT_KIND_RESPONSIBILITIES[
+            OCCURRENCE_POSITION_RESPONSIBILITY_ASSIGNMENT_RECORDED_KIND
+        ],
         POSITION_EVENT_KIND_RESPONSIBILITIES[OCCURRENCE_POSITION_RECORDED_KIND],
         PAIR_OCCURRENCE_EVENT_KIND_RESPONSIBILITIES[
             RECORDING_OCCURRENCE_OF_RESULT_OF_MEASUREMENT_OF_RECURRENT_BYTE_PAIR_OCCURRENCE_POSITION_KIND

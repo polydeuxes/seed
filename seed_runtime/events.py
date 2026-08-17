@@ -554,6 +554,8 @@ class SQLiteEventLedger(EventLedger):
         "assertion_locality_movement_occurrence",
         "assertion_locality_movement_result",
         "occurrence_position_measurement_act",
+        "occurrence_position_measurement_assignment",
+        "occurrence_position_measurement_assignment_subject",
         "occurrence_position_measurement_occurrence",
         "occurrence_position_measurement_result",
         "act_of_measurement_of_recurrent_byte_pair_occurrence_position",

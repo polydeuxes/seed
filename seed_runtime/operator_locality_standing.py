@@ -19,6 +19,8 @@ from seed_runtime.byte_measurement import (
 from seed_runtime.occurrence_position_measurement import (
     OCCURRENCE_POSITION_ACT_EVIDENCE_KIND,
     OCCURRENCE_POSITION_RECORDED_KIND,
+    OCCURRENCE_POSITION_RESPONSIBILITY_ASSIGNMENT_RECORDED_KIND,
+    get_occurrence_position_measurement_responsibility_assignment,
     get_recorded_occurrence_position_measurement,
 )
 from seed_runtime.measurement_of_recurrent_byte_pair_occurrence_position import (
@@ -146,6 +148,9 @@ _MEASUREMENT_ACT_EVIDENCE_KINDS = {
     OCCURRENCE_POSITION_ACT_EVIDENCE_KIND,
     RECORDED_EVIDENCE_OF_ACT_OCCURRENCE_OF_MEASUREMENT_OF_RECURRENT_BYTE_PAIR_OCCURRENCE_POSITION_KIND,
 }
+_MEASUREMENT_RESPONSIBILITY_ASSIGNMENT_KINDS = {
+    OCCURRENCE_POSITION_RESPONSIBILITY_ASSIGNMENT_RECORDED_KIND,
+}
 _MEASUREMENT_RECORDED_KINDS = {
     BYTE_MEASUREMENT_RECORDED_KIND,
     BYTE_PAIR_MEASUREMENT_RECORDED_KIND,
@@ -214,6 +219,7 @@ _COMPARISON_OF_ORDERED_RELATION_PATH_WITH_RECORDED_PAIR_FINDINGS_KINDS = {
 _SUPPORTED_KINDS = {
     *_SUBJECT_BY_KIND,
     *_MEASUREMENT_ACT_EVIDENCE_KINDS,
+    *_MEASUREMENT_RESPONSIBILITY_ASSIGNMENT_KINDS,
     *_MEASUREMENT_RECORDED_KINDS,
     *_STANDING_LOCALITY_CONTINUATION_KINDS,
     *_STANDING_BOUNDARY_REFERENCE_KINDS,
@@ -663,6 +669,7 @@ def advance_operator_locality_standing(
             event.kind == MATERIAL_INGEST_OCCURRED_KIND
             or event.kind.startswith("operator.representation.")
             or event.kind in _MEASUREMENT_ACT_EVIDENCE_KINDS
+            or event.kind in _MEASUREMENT_RESPONSIBILITY_ASSIGNMENT_KINDS
             or event.kind in _MEASUREMENT_RECORDED_KINDS
             or event.kind in _STANDING_LOCALITY_CONTINUATION_KINDS
             or event.kind in _STANDING_BOUNDARY_REFERENCE_KINDS
@@ -690,6 +697,15 @@ def advance_operator_locality_standing(
         if _carries_exact_result(ledger, event):
             exact_result_occurrences[event.identity] = None
         if event.kind in _MEASUREMENT_ACT_EVIDENCE_KINDS:
+            continue
+        if (
+            event.kind
+            == OCCURRENCE_POSITION_RESPONSIBILITY_ASSIGNMENT_RECORDED_KIND
+        ):
+            get_occurrence_position_measurement_responsibility_assignment(
+                ledger, event.identity
+            )
+            responsibility_assignment_occurrences[event.identity] = None
             continue
         if (
             event.kind

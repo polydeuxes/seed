@@ -95,6 +95,7 @@ from seed_runtime.operator_locality_standing import (
 )
 from seed_runtime.occurrence_position_measurement import (
     measure_occurrence_position,
+    record_occurrence_position_measurement_responsibility_assignment,
     record_occurrence_position_measurement_responsible_act_evidence,
     record_occurrence_position_measurement_result,
 )
@@ -297,11 +298,27 @@ def _record_acquisition_measurements(ledger, standing, *, locality_identity):
         ledger,
         source_locality_identity=locality_identity,
     )
-    position_measurement_act_evidence = (
-        record_occurrence_position_measurement_responsible_act_evidence(
+    position_measurement_assignment = (
+        record_occurrence_position_measurement_responsibility_assignment(
             ledger,
             recording_locality_identity=locality_identity,
             finding=position_finding,
+            locality_standing=standing,
+        )
+    )
+    standing = _advance_over(
+        ledger,
+        standing,
+        (position_measurement_assignment.identity,),
+        locality_identity=locality_identity,
+    )
+    position_measurement_act_evidence = (
+        record_occurrence_position_measurement_responsible_act_evidence(
+            ledger,
+            responsibility_assignment_event_identity=(
+                position_measurement_assignment.identity
+            ),
+            responsibility_assignment_standing=standing,
         )
     )
     standing = _advance_over(
@@ -312,7 +329,6 @@ def _record_acquisition_measurements(ledger, standing, *, locality_identity):
     )
     position_measurement = record_occurrence_position_measurement_result(
         ledger,
-        finding=position_finding,
         responsible_act_evidence_event_identity=(
             position_measurement_act_evidence.identity
         ),

@@ -8,14 +8,18 @@ from seed_runtime.occurrence_position_measurement import (
     OCCURRENCE_POSITION_ACT_EVIDENCE_KIND,
     OCCURRENCE_POSITION_MEASUREMENT_RULE,
     OCCURRENCE_POSITION_RECORDED_KIND,
+    OCCURRENCE_POSITION_RESPONSIBILITY_ASSIGNMENT_RECORDED_KIND,
     OCCURRENCE_POSITION_RESULT_COORDINATES,
     MEASURED_ASSERTION_RESPONSIBILITY,
     OccurrencePositionFinding,
+    get_occurrence_position_measurement_responsibility_assignment,
     get_recorded_occurrence_position_measurement,
     measure_occurrence_position,
+    record_occurrence_position_measurement_responsibility_assignment,
     record_occurrence_position_measurement_responsible_act_evidence,
     record_occurrence_position_measurement_result,
 )
+from seed_runtime.operator_locality_standing import read_operator_locality_standing
 from seed_runtime.evidence_of_yield_relation import (
     RECORDED_EVIDENCE_OF_YIELD_RELATION_KIND,
     read_requirements_of_yield_relation,
@@ -51,6 +55,31 @@ def occurrence_road():
     return ledger, (first, second, third), boundary
 
 
+def _standing(ledger, locality="measurement"):
+    return read_operator_locality_standing(
+        ledger, locality_identity=locality
+    )
+
+
+def _record_assignment(ledger, finding, locality="measurement"):
+    return record_occurrence_position_measurement_responsibility_assignment(
+        ledger,
+        recording_locality_identity=locality,
+        finding=finding,
+        locality_standing=_standing(ledger, locality),
+    )
+
+
+def _record_act(ledger, finding, locality="measurement"):
+    assignment = _record_assignment(ledger, finding, locality)
+    act = record_occurrence_position_measurement_responsible_act_evidence(
+        ledger,
+        responsibility_assignment_event_identity=assignment.identity,
+        responsibility_assignment_standing=_standing(ledger, locality),
+    )
+    return assignment, act
+
+
 def recorded_road():
     ledger, occurrences, boundary = occurrence_road()
     finding = measure_occurrence_position(
@@ -58,14 +87,9 @@ def recorded_road():
         source_locality_identity="a",
         through=boundary,
     )
-    act_evidence = record_occurrence_position_measurement_responsible_act_evidence(
-        ledger,
-        recording_locality_identity="measurement",
-        finding=finding,
-    )
+    _assignment, act_evidence = _record_act(ledger, finding)
     recorded = record_occurrence_position_measurement_result(
         ledger,
-        finding=finding,
         responsible_act_evidence_event_identity=act_evidence.identity,
     )
     return ledger, occurrences, boundary, finding, recorded
@@ -140,10 +164,11 @@ def test_supplied_reversal_cannot_replace_the_ledger_measurement():
         ValueError,
         match="differs from the exact boundary",
     ):
-        record_occurrence_position_measurement_responsible_act_evidence(
+        record_occurrence_position_measurement_responsibility_assignment(
             ledger,
             recording_locality_identity="measurement",
             finding=reversed_finding,
+            locality_standing=_standing(ledger),
         )
 
 
@@ -159,10 +184,11 @@ def test_subclass_finding_cannot_replace_the_exact_measurement_type():
     )
 
     with pytest.raises(TypeError, match="one exact finding"):
-        record_occurrence_position_measurement_responsible_act_evidence(
+        record_occurrence_position_measurement_responsibility_assignment(
             ledger,
             recording_locality_identity="measurement",
             finding=subclass_finding,
+            locality_standing=_standing(ledger),
         )
 
 
@@ -176,10 +202,11 @@ def test_corrupted_source_cannot_enter_act_evidence_after_measurement():
     ledger.corrupted.add(occurrences[1].identity)
 
     with pytest.raises(ValueError, match="requires intact occurrences"):
-        record_occurrence_position_measurement_responsible_act_evidence(
+        record_occurrence_position_measurement_responsibility_assignment(
             ledger,
             recording_locality_identity="measurement",
             finding=finding,
+            locality_standing=_standing(ledger),
         )
 
 
@@ -211,6 +238,113 @@ def test_recorded_position_measurement_has_exact_act_and_evidence_of_yield_relat
         ledger,
         recorded.identity,
     ) == finding
+
+
+def test_assignment_act_yield_and_result_keep_distinct_exact_identities():
+    ledger, _occurrences, _boundary, _finding, recorded = recorded_road()
+    reference = recorded.material["responsibility_assignment_reference"]
+    assignment = get_occurrence_position_measurement_responsibility_assignment(
+        ledger, reference["recorded_occurrence_identity"]
+    )
+    act_evidence = ledger.get(recorded.material["responsible_act_evidence_identity"])
+    yielded = ledger.get(recorded.material["evidence_of_yield_relation_identity"])
+
+    assert assignment.kind == (
+        OCCURRENCE_POSITION_RESPONSIBILITY_ASSIGNMENT_RECORDED_KIND
+    )
+    assert reference == {
+        "recorded_occurrence_identity": assignment.identity,
+        "assignment_identity": assignment.material["assignment_identity"],
+        "assignment_subject_identity": assignment.material[
+            "assignment_subject_identity"
+        ],
+    }
+    assert "standing" not in recorded.material[
+        "responsibility_assignment_evidence"
+    ]
+    assert assignment.identity in _standing(ledger)[
+        "responsibility_assignment_occurrences"
+    ]
+    assert len(
+        {
+            assignment.material["assignment_identity"],
+            assignment.material["assignment_subject_identity"],
+            assignment.material["measurement_act_identity"],
+            assignment.material["act_occurrence_identity"],
+            assignment.material["measurement_result_identity"],
+            assignment.identity,
+            act_evidence.identity,
+            yielded.identity,
+            recorded.identity,
+        }
+    ) == 9
+
+
+def test_act_requires_current_standing_that_carries_its_assignment():
+    ledger, _occurrences, boundary = occurrence_road()
+    finding = measure_occurrence_position(
+        ledger, source_locality_identity="a", through=boundary
+    )
+    before_assignment = _standing(ledger)
+    assignment = record_occurrence_position_measurement_responsibility_assignment(
+        ledger,
+        recording_locality_identity="measurement",
+        finding=finding,
+        locality_standing=before_assignment,
+    )
+    before = ledger.append_boundary()
+
+    with pytest.raises(ValueError, match="exact current Locality Standing"):
+        record_occurrence_position_measurement_responsible_act_evidence(
+            ledger,
+            responsibility_assignment_event_identity=assignment.identity,
+            responsibility_assignment_standing=before_assignment,
+        )
+
+    assert ledger.append_boundary() == before
+    assert record_occurrence_position_measurement_responsible_act_evidence(
+        ledger,
+        responsibility_assignment_event_identity=assignment.identity,
+        responsibility_assignment_standing=_standing(ledger),
+    ).kind == OCCURRENCE_POSITION_ACT_EVIDENCE_KIND
+
+
+def test_assignment_refuses_stale_current_standing_without_appending():
+    ledger, _occurrences, boundary = occurrence_road()
+    finding = measure_occurrence_position(
+        ledger, source_locality_identity="a", through=boundary
+    )
+    stale = _standing(ledger)
+    _record_assignment(ledger, finding)
+    before = ledger.append_boundary()
+
+    with pytest.raises(ValueError, match="exact current Locality Standing"):
+        record_occurrence_position_measurement_responsibility_assignment(
+            ledger,
+            recording_locality_identity="measurement",
+            finding=finding,
+            locality_standing=stale,
+        )
+
+    assert ledger.append_boundary() == before
+
+
+def test_one_assignment_cannot_record_two_act_occurrences():
+    ledger, _occurrences, boundary = occurrence_road()
+    finding = measure_occurrence_position(
+        ledger, source_locality_identity="a", through=boundary
+    )
+    assignment, _act = _record_act(ledger, finding)
+    before = ledger.append_boundary()
+
+    with pytest.raises(ValueError, match="already carries an Act"):
+        record_occurrence_position_measurement_responsible_act_evidence(
+            ledger,
+            responsibility_assignment_event_identity=assignment.identity,
+            responsibility_assignment_standing=_standing(ledger),
+        )
+
+    assert ledger.append_boundary() == before
 
 
 def test_recording_and_reading_do_not_reconstruct_complete_result_material(
@@ -246,14 +380,9 @@ def test_recording_and_reading_do_not_reconstruct_complete_result_material(
         counted_position_assertions,
     )
 
-    act_evidence = record_occurrence_position_measurement_responsible_act_evidence(
-        ledger,
-        recording_locality_identity="measurement",
-        finding=finding,
-    )
+    assignment, act_evidence = _record_act(ledger, finding)
     recorded = record_occurrence_position_measurement_result(
         ledger,
-        finding=finding,
         responsible_act_evidence_event_identity=act_evidence.identity,
     )
     yielded = ledger.get(recorded.material["evidence_of_yield_relation_identity"])
@@ -295,15 +424,14 @@ def test_act_evidence_is_observed_before_yield_without_reconstructing_finding(
         counted_measure,
     )
 
-    act_evidence = record_occurrence_position_measurement_responsible_act_evidence(
-        ledger,
-        recording_locality_identity="measurement",
-        finding=finding,
-    )
+    assignment, act_evidence = _record_act(ledger, finding)
 
     assert [
         event.kind for event in ledger.list_locality("measurement")
-    ] == [OCCURRENCE_POSITION_ACT_EVIDENCE_KIND]
+    ] == [
+        OCCURRENCE_POSITION_RESPONSIBILITY_ASSIGNMENT_RECORDED_KIND,
+        OCCURRENCE_POSITION_ACT_EVIDENCE_KIND,
+    ]
     assert "result_identity" not in act_evidence.material
     assert "occurrences" not in act_evidence.material
     assert all(
@@ -318,12 +446,12 @@ def test_act_evidence_is_observed_before_yield_without_reconstructing_finding(
 
     recorded = record_occurrence_position_measurement_result(
         ledger,
-        finding=finding,
         responsible_act_evidence_event_identity=act_evidence.identity,
     )
 
     events = ledger.list_locality("measurement")
     assert [event.kind for event in events] == [
+        OCCURRENCE_POSITION_RESPONSIBILITY_ASSIGNMENT_RECORDED_KIND,
         OCCURRENCE_POSITION_ACT_EVIDENCE_KIND,
         observed.kind,
         RECORDED_EVIDENCE_OF_YIELD_RELATION_KIND,
@@ -357,36 +485,28 @@ def test_result_refuses_arbitrary_act_evidence_identity_without_appending(
     with pytest.raises(ValueError, match="Act Evidence"):
         record_occurrence_position_measurement_result(
             ledger,
-            finding=finding,
             responsible_act_evidence_event_identity=act_evidence_identity,
         )
 
     assert ledger.append_boundary() == before
 
 
-def test_result_refuses_substituted_finding_without_appending_yield():
+def test_result_refuses_substituted_assignment_without_appending_yield():
     ledger, _occurrences, boundary = occurrence_road()
     finding = measure_occurrence_position(
         ledger,
         source_locality_identity="a",
         through=boundary,
     )
-    other_finding = measure_occurrence_position(
-        ledger,
-        source_locality_identity="b",
-        through=boundary,
-    )
-    act_evidence = record_occurrence_position_measurement_responsible_act_evidence(
-        ledger,
-        recording_locality_identity="measurement",
-        finding=finding,
-    )
+    _assignment, act_evidence = _record_act(ledger, finding)
+    act_evidence.material["responsibility_assignment_reference"][
+        "recorded_occurrence_identity"
+    ] = "substituted-assignment"
     before = ledger.append_boundary()
 
     with pytest.raises(ValueError, match="exact intact Act Evidence"):
         record_occurrence_position_measurement_result(
             ledger,
-            finding=other_finding,
             responsible_act_evidence_event_identity=act_evidence.identity,
         )
 
@@ -405,16 +525,11 @@ def test_result_refuses_wrong_kind_and_corrupted_act_evidence():
         {},
         locality_identity="measurement",
     )
-    act_evidence = record_occurrence_position_measurement_responsible_act_evidence(
-        ledger,
-        recording_locality_identity="measurement",
-        finding=finding,
-    )
+    _assignment, act_evidence = _record_act(ledger, finding)
 
     with pytest.raises(ValueError, match="exact intact Act Evidence"):
         record_occurrence_position_measurement_result(
             ledger,
-            finding=finding,
             responsible_act_evidence_event_identity=wrong_kind.identity,
         )
 
@@ -422,7 +537,6 @@ def test_result_refuses_wrong_kind_and_corrupted_act_evidence():
     with pytest.raises(ValueError, match="exact intact Act Evidence"):
         record_occurrence_position_measurement_result(
             ledger,
-            finding=finding,
             responsible_act_evidence_event_identity=act_evidence.identity,
         )
 
@@ -434,14 +548,9 @@ def test_one_measurement_act_cannot_yield_two_results():
         source_locality_identity="a",
         through=boundary,
     )
-    act_evidence = record_occurrence_position_measurement_responsible_act_evidence(
-        ledger,
-        recording_locality_identity="measurement",
-        finding=finding,
-    )
+    _assignment, act_evidence = _record_act(ledger, finding)
     record_occurrence_position_measurement_result(
         ledger,
-        finding=finding,
         responsible_act_evidence_event_identity=act_evidence.identity,
     )
     before = ledger.append_boundary()
@@ -449,7 +558,6 @@ def test_one_measurement_act_cannot_yield_two_results():
     with pytest.raises(ValueError, match="already carries a Yield"):
         record_occurrence_position_measurement_result(
             ledger,
-            finding=finding,
             responsible_act_evidence_event_identity=act_evidence.identity,
         )
 
@@ -593,14 +701,9 @@ def test_durable_locality_positions_read_through_their_exact_yield(tmp_path):
         ledger,
         source_locality_identity="a",
     )
-    act_evidence = record_occurrence_position_measurement_responsible_act_evidence(
-        ledger,
-        recording_locality_identity="measurement",
-        finding=finding,
-    )
+    _assignment, act_evidence = _record_act(ledger, finding)
     recorded = record_occurrence_position_measurement_result(
         ledger,
-        finding=finding,
         responsible_act_evidence_event_identity=act_evidence.identity,
     )
 
@@ -624,17 +727,18 @@ def test_durable_position_identities_are_not_reissued_after_reopen(tmp_path):
         ledger,
         source_locality_identity="a",
     )
-    act_evidence = record_occurrence_position_measurement_responsible_act_evidence(
-        ledger,
-        recording_locality_identity="measurement",
-        finding=finding,
-    )
+    assignment, act_evidence = _record_act(ledger, finding)
     recorded = record_occurrence_position_measurement_result(
         ledger,
-        finding=finding,
         responsible_act_evidence_event_identity=act_evidence.identity,
     )
     carried = {
+        "occurrence_position_measurement_assignment": assignment.material[
+            "assignment_identity"
+        ],
+        "occurrence_position_measurement_assignment_subject": assignment.material[
+            "assignment_subject_identity"
+        ],
         "occurrence_position_measurement_act": recorded.material[
             "downstream_act_identity"
         ],
@@ -657,8 +761,50 @@ def test_durable_position_identities_are_not_reissued_after_reopen(tmp_path):
         reopened.close()
 
 
+def test_assignment_act_and_result_survive_separate_restarts(tmp_path):
+    path = tmp_path / "occurrence-position-restarts.sqlite"
+    ledger = SQLiteEventLedger(path)
+    first = ledger.append(
+        "test.occurrence", {"material": "a"}, locality_identity="a"
+    )
+    finding = measure_occurrence_position(
+        ledger, source_locality_identity="a"
+    )
+    assignment = _record_assignment(ledger, finding)
+    assignment_identity = assignment.identity
+    ledger.close()
+
+    ledger = SQLiteEventLedger(path)
+    assignment = get_occurrence_position_measurement_responsibility_assignment(
+        ledger, assignment_identity
+    )
+    act_evidence = record_occurrence_position_measurement_responsible_act_evidence(
+        ledger,
+        responsibility_assignment_event_identity=assignment.identity,
+        responsibility_assignment_standing=_standing(ledger),
+    )
+    act_identity = act_evidence.identity
+    ledger.close()
+
+    ledger = SQLiteEventLedger(path)
+    try:
+        recorded = record_occurrence_position_measurement_result(
+            ledger,
+            responsible_act_evidence_event_identity=act_identity,
+        )
+        assert get_recorded_occurrence_position_measurement(
+            ledger, recorded.identity
+        ).occurrences == ((first.identity, 0),)
+    finally:
+        ledger.close()
+
+
 FIDELITY_SUBJECTS = {
     "act_evidence_responsibility_boundary_occurrence_authority_scope": (
+        test_assignment_act_yield_and_result_keep_distinct_exact_identities,
+        test_act_requires_current_standing_that_carries_its_assignment,
+        test_assignment_refuses_stale_current_standing_without_appending,
+        test_one_assignment_cannot_record_two_act_occurrences,
         test_corrupted_source_cannot_enter_act_evidence_after_measurement,
         test_act_evidence_is_observed_before_yield_without_reconstructing_finding,
         test_result_refuses_arbitrary_act_evidence_identity_without_appending,
@@ -666,10 +812,11 @@ FIDELITY_SUBJECTS = {
     ),
     "yield_result_occurrence_evidence": (
         test_recorded_position_measurement_has_exact_act_and_evidence_of_yield_relation,
-        test_result_refuses_substituted_finding_without_appending_yield,
+        test_result_refuses_substituted_assignment_without_appending_yield,
         test_one_measurement_act_cannot_yield_two_results,
         test_corrupted_input_act_or_evidence_of_yield_relation_is_refused,
         test_durable_locality_positions_read_through_their_exact_yield,
+        test_assignment_act_and_result_survive_separate_restarts,
     ),
     "declared_measurement_result": (
         test_a_later_occurrence_does_not_revise_the_bounded_positions,
