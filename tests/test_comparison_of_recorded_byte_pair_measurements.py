@@ -23,7 +23,7 @@ from seed_runtime.comparison_of_recorded_byte_pair_measurements import (
     record_recorded_pair_measurement_comparison_result,
 )
 from seed_runtime.events import EventLedger, SQLiteEventLedger
-from seed_runtime.material_ingest import ingest_material
+from seed_runtime.material_ingest import MATERIAL_INGEST_OCCURRED_KIND, ingest_material
 from seed_runtime.operator_locality_standing import read_operator_locality_standing
 from seed_runtime.operator_console import run_persistent_operator_console
 from seed_runtime.operator_ingest import run_operator_ingest
@@ -116,6 +116,13 @@ def _comparison():
         ledger, responsible_act_evidence_event_identity=compare_act.identity
     )
     return ledger, earlier_source, added, earlier, later, assignment, applicability, result
+
+
+def _findings_by_identity(ledger, measurement_reference):
+    findings = byte_measurement_module._findings_of_recorded_byte_position_pair_measurement(
+        ledger, measurement_reference["recorded_occurrence_identity"]
+    )
+    return {finding.assertion_identity: finding for finding in findings}
 
 
 def _operator_inputs(*, acquisition_before_earlier_measurement=False):
@@ -286,28 +293,40 @@ def test_produced_measurements_enter_one_responsible_compare():
     assert len(recorded["participation_of_input_in_compare"]) == 2
 
     findings = recorded["findings"]
-    count_ab = next(
-        item
-        for item in findings["conflicting_findings"]
-        if item["subject"] == {"result": "count", "representation": [97, 98]}
+    earlier_findings = _findings_by_identity(
+        ledger, recorded["earlier_measurement_reference"]
     )
-    assert count_ab["earlier_content"] == {
+    later_findings = _findings_by_identity(
+        ledger, recorded["later_measurement_reference"]
+    )
+    count_ab = next(
+        identities
+        for identities in findings["conflicting_findings"]
+        if earlier_findings[identities[0]].comparison_subject["representation"]
+        == [97, 98]
+        and earlier_findings[identities[0]].result == "count"
+    )
+    assert earlier_findings[count_ab[0]].content == {
         "input_count": 1,
         "occurrences_carrying": 1,
         "count": 2,
     }
-    assert count_ab["later_content"] == {
+    assert later_findings[count_ab[1]].content == {
         "input_count": 2,
         "occurrences_carrying": 2,
         "count": 3,
     }
     assert any(
-        item["subject"] == {"result": "recurrence", "representation": [97, 98]}
-        for item in findings["equal_findings"]
+        earlier_findings[identities[0]].comparison_subject["representation"]
+        == [97, 98]
+        and earlier_findings[identities[0]].result == "recurrence"
+        for identities in findings["equal_findings"]
     )
     assert any(
-        item["subject"] == {"result": "count", "representation": [97, 99]}
-        for item in findings["findings_of_later_result"]
+        later_findings[identities[0]].comparison_subject["representation"]
+        == [97, 99]
+        and later_findings[identities[0]].result == "count"
+        for identities in findings["findings_of_later_result"]
     )
     assert findings["unknown_findings"] == []
 
@@ -317,14 +336,63 @@ def test_produced_measurements_enter_one_responsible_compare():
 
 def test_equal_finding_labels_do_not_hide_changed_content():
     ledger, *_rest, result = _comparison()
-    findings = get_recorded_pair_measurement_comparison(ledger, result.identity)[
-        "findings"
-    ]
+    recorded = get_recorded_pair_measurement_comparison(ledger, result.identity)
+    earlier = _findings_by_identity(ledger, recorded["earlier_measurement_reference"])
     conflicting_subjects = {
-        (item["subject"]["result"], tuple(item["subject"]["representation"]))
-        for item in findings["conflicting_findings"]
+        (earlier[identities[0]].result, tuple(earlier[identities[0]].representation))
+        for identities in recorded["findings"]["conflicting_findings"]
+        if hasattr(earlier[identities[0]], "representation")
     }
     assert ("count", (97, 98)) in conflicting_subjects
+
+
+def test_compare_includes_paths_of_pair_relations_without_material_slices():
+    ledger, *_rest, result = _comparison()
+    recorded = get_recorded_pair_measurement_comparison(ledger, result.identity)
+    findings = recorded["findings"]
+    earlier = _findings_by_identity(ledger, recorded["earlier_measurement_reference"])
+    later = _findings_by_identity(ledger, recorded["later_measurement_reference"])
+    relation_path_findings = tuple(
+        identities
+        for family in (
+            "equal_findings",
+            "conflicting_findings",
+            "findings_of_earlier_result",
+            "findings_of_later_result",
+        )
+        for identities in findings[family]
+        if (
+            identities[0] in earlier
+            and hasattr(earlier[identities[0]], "first_pair")
+        )
+        or (
+            identities[0] in later
+            and hasattr(later[identities[0]], "first_pair")
+        )
+    )
+    aba_count = next(
+        identities
+        for identities in relation_path_findings
+        if earlier[identities[0]].result == "count"
+        and earlier[identities[0]].first_pair == (97, 98)
+        and earlier[identities[0]].second_pair == (98, 97)
+    )
+
+    assert earlier[aba_count[0]].content == {
+        "input_count": 1,
+        "occurrences_carrying": 1,
+        "count": 1,
+    }
+    assert later[aba_count[1]].content == {
+        "input_count": 2,
+        "occurrences_carrying": 2,
+        "count": 2,
+    }
+    assert earlier[aba_count[0]].comparison_subject["shared_position"] == {
+        "first_pair": "second_position",
+        "second_pair": "first_position",
+    }
+    assert all(type(identities) is list for identities in relation_path_findings)
 
 
 def test_missing_provenance_cannot_supply_the_compare_rung():
@@ -581,6 +649,15 @@ def test_operator_pair_premise_and_compare_survive_reopen(tmp_path):
         input_stream=binary_input(b"abac\n"),
         output_stream=StringIO(),
     )
+    exact_log_before_close = tuple(
+        (event.identity, event.exact_material)
+        for event in ledger.list_locality(LOCALITY)
+        if event.kind == MATERIAL_INGEST_OCCURRED_KIND
+    )
+    assert tuple(material for _identity, material in exact_log_before_close) == (
+        b"abab",
+        b"abac\n",
+    )
     ledger.close()
 
     reopened = SQLiteEventLedger(str(database))
@@ -591,6 +668,20 @@ def test_operator_pair_premise_and_compare_survive_reopen(tmp_path):
     comparison_identity = next(iter(standing["comparison_result_occurrences"]))
     recorded = get_recorded_pair_measurement_comparison(
         reopened, comparison_identity
+    )
+    assert tuple(
+        (event.identity, event.exact_material)
+        for event in reopened.list_locality(LOCALITY)
+        if event.kind == MATERIAL_INGEST_OCCURRED_KIND
+    ) == exact_log_before_close
+    reopened_findings = {
+        **_findings_by_identity(reopened, recorded["earlier_measurement_reference"]),
+        **_findings_by_identity(reopened, recorded["later_measurement_reference"]),
+    }
+    assert any(
+        hasattr(reopened_findings[identities[0]], "first_pair")
+        for family in recorded["findings"].values()
+        for identities in family
     )
     assignment = comparison_module.get_recorded_pair_measurement_comparison_responsibility_assignment(
         reopened,
@@ -669,6 +760,7 @@ FIDELITY_SUBJECTS = {
         test_operator_acquisition_before_the_premise_cannot_supply_compare,
         test_produced_measurements_enter_one_responsible_compare,
         test_equal_finding_labels_do_not_hide_changed_content,
+        test_compare_includes_paths_of_pair_relations_without_material_slices,
         test_missing_provenance_cannot_supply_the_compare_rung,
         test_measurement_availability_without_standing_cannot_supply_compare,
         test_corrupted_compare_yield_is_refused,

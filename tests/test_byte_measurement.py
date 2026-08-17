@@ -15,12 +15,14 @@ from seed_runtime.byte_measurement import (
     BYTE_RESULT_COORDINATES,
     BYTE_MEASUREMENT_RULE,
     BYTE_PAIR_MEASUREMENT_RULE,
+    BYTE_PAIR_RELATION_PATH_MEASUREMENT_RULE,
     ByteMeasurementError,
     RESPONSIBILITY_UNESTABLISHED,
     SEED_NATIVE_MEASUREMENT_RESPONSIBLE_BOUNDARY,
     _measure_byte_counts_through,
     _identity,
     _pair_assertion_identity,
+    _pair_relation_path_assertion_identity,
     _pair_input_applicability,
     get_recorded_pair_input_applicability,
     assertions_of_recorded_byte_measurement,
@@ -78,6 +80,43 @@ def test_fixed_pair_identity_shape_equals_the_general_canonical_identity(
     assert _pair_assertion_identity(
         result=result,
         representation=representation,
+        canonical_scope=json.dumps(
+            scope, ensure_ascii=False, sort_keys=True, separators=(",", ":")
+        ),
+        content=content,
+    ) == _identity(result=result, subject=subject, scope=scope, content=content)
+
+
+@pytest.mark.parametrize(
+    ("result", "content"),
+    (
+        (
+            "count",
+            {"input_count": 17, "occurrences_carrying": 3, "count": 8},
+        ),
+        ("recurrence", {"recurrence_established": True}),
+    ),
+)
+def test_fixed_relation_path_identity_shape_equals_general_canonical_identity(
+    result, content
+):
+    first_pair = (0, 255)
+    second_pair = (255, 7)
+    scope = {"source_localities": ["source-λ", "source-2"]}
+    subject = {
+        "first_pair": list(first_pair),
+        "second_pair": list(second_pair),
+        "shared_position": {
+            "first_pair": "second_position",
+            "second_pair": "first_position",
+        },
+        "measurement_rule": BYTE_PAIR_RELATION_PATH_MEASUREMENT_RULE,
+    }
+
+    assert _pair_relation_path_assertion_identity(
+        result=result,
+        first_pair=first_pair,
+        second_pair=second_pair,
         canonical_scope=json.dumps(
             scope, ensure_ascii=False, sort_keys=True, separators=(",", ":")
         ),
@@ -632,6 +671,48 @@ def test_every_overlapping_byte_position_pair_is_measured():
     assert counts[(97, 10)]["count"] == 1
 
 
+def test_pair_measurement_carries_ordered_paths_of_two_pair_relations():
+    ledger = _ledger("tatatata\n")
+    source = _byte_source(ledger)
+    event = record_byte_position_pair_count_layer(
+        ledger,
+        source_measurement_event_identity=source.identity,
+        recording_locality_identity="measurement",
+    )
+    pair_by_count = {
+        assertion["dimensions"]["identity"]: tuple(
+            assertion["assertion_subject"]["representation"]
+        )
+        for assertion in event.material["assertions"]
+        if assertion["result"] == "count"
+    }
+    paths = {
+        tuple(
+            pair_by_count[reference]
+            for reference in assertion["supporting_assertion_references"]
+        ): assertion
+        for assertion in event.material["relation_path_assertions"]
+        if assertion["result"] == "count"
+    }
+
+    tat = paths[((116, 97), (97, 116))]
+    assert tat["dimensions"]["content"] == {
+        "input_count": 1,
+        "occurrences_carrying": 1,
+        "count": 3,
+    }
+    assert paths[((116, 97), (97, 116))] is tat
+    assert tat["supporting_assertion_references"] == [
+        identity
+        for identity, pair in pair_by_count.items()
+        if pair in ((116, 97), (97, 116))
+    ]
+    assert event.material["relation_path_assertion_coordinates"]["assertion_scope"] == {
+        "source_localities": ["source"]
+    }
+    assert event.material["relation_path_assertions"] != event.material["assertions"]
+
+
 def test_byte_position_pair_results_follow_first_observed_pair_positions():
     ledger = _ledger("tatatata\n")
     source = _byte_source(ledger)
@@ -666,6 +747,55 @@ def test_position_pairs_never_cross_ingest_boundaries():
 
     assert counts == {(97, 10): 1, (98, 10): 1}
     assert (10, 98) not in counts
+    assert event.material["relation_path_assertions"] == []
+
+
+def test_relation_path_refuses_crossed_support_or_shared_position():
+    def measured_path():
+        ledger = _ledger("tat\n")
+        source = _byte_source(ledger)
+        event = record_byte_position_pair_count_layer(
+            ledger,
+            source_measurement_event_identity=source.identity,
+            recording_locality_identity="measurement",
+        )
+        pair_by_count = {
+            assertion["dimensions"]["identity"]: tuple(
+                assertion["assertion_subject"]["representation"]
+            )
+            for assertion in event.material["assertions"]
+            if assertion["result"] == "count"
+        }
+        path = next(
+            assertion
+            for assertion in event.material["relation_path_assertions"]
+            if assertion["result"] == "count"
+            and [
+                pair_by_count[reference]
+                for reference in assertion["supporting_assertion_references"]
+            ]
+            == [(116, 97), (97, 116)]
+        )
+        return ledger, event, path, pair_by_count
+
+    ledger, event, path, _pairs = measured_path()
+    path["supporting_assertion_references"].reverse()
+    with pytest.raises(ByteMeasurementError, match="yield Evidence|Assertion identity"):
+        assertions_of_recorded_byte_position_pair_measurement(
+            ledger, event.identity
+        )
+
+    ledger, event, path, pairs = measured_path()
+    nonshared = next(
+        identity for identity, pair in pairs.items() if pair == (116, 10)
+    )
+    path["supporting_assertion_references"][1] = nonshared
+    with pytest.raises(
+        ByteMeasurementError, match="yield Evidence|relation-path pair support"
+    ):
+        assertions_of_recorded_byte_position_pair_measurement(
+            ledger, event.identity
+        )
 
 
 def test_position_pair_measurement_remains_byte_not_character_based():
@@ -1224,12 +1354,14 @@ FIDELITY_SUBJECTS = {
         test_pair_validation_does_not_perform_the_pair_measurement_again,
         test_zero_measured_pairs_is_a_lawful_exact_result,
         test_pair_validation_refuses_more_carrying_occurrences_than_total_pairs,
+        test_relation_path_refuses_crossed_support_or_shared_position,
         test_byte_result_reader_refuses_changed_yield_result_identity,
         test_pair_result_reader_refuses_changed_yield_result_identity,
     ),
     "measurement_result_distinctions": (
         test_count_and_recurrence_are_distinct_results,
         test_pair_count_and_recurrence_are_separate_results,
+        test_pair_measurement_carries_ordered_paths_of_two_pair_relations,
     ),
     "applicability_determination": (
         test_pair_validation_refuses_unsupported_input_applicability,

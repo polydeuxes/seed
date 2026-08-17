@@ -31,7 +31,7 @@ OCCURRENCE_POSITION_MEASUREMENT_RULE = (
 )
 OCCURRENCE_POSITION_AUTHORITY = "bounded repository authority"
 MEASURED_ASSERTION_RESPONSIBILITY = (
-    "preserve this measured Assertion's carried Standing coordinates"
+    "preserve Standing coordinates carried by this measured Assertion"
 )
 OCCURRENCE_POSITION_RESULT_COORDINATES = frozenset(
     {
