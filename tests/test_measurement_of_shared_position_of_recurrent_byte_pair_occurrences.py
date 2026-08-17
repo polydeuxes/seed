@@ -172,7 +172,7 @@ def _record_path(ledger, locality, first, second):
 
 def test_exact_yielded_pair_relations_compose_at_one_shared_position():
     ledger, locality, source, first, second = _fixture()
-    _assignment_event, _applicability_act, applicability, _measurement_act, result = (
+    assignment, _applicability_act, applicability, _measurement_act, result = (
         _record_path(ledger, locality, first, second)
     )
     applicability_reading = get_recorded_shared_position_applicability(
@@ -189,6 +189,17 @@ def test_exact_yielded_pair_relations_compose_at_one_shared_position():
     reading = get_recorded_shared_position_measurement(ledger, result.identity)
 
     assert result.kind == SHARED_POSITION_MEASUREMENT_RESULT_KIND
+    assert "standing" not in reading["responsibility_assignment_evidence"]
+    assert reading["responsibility_assignment_reference"] == {
+        "recorded_occurrence_identity": assignment.identity,
+        "assignment_identity": assignment.material["assignment_identity"],
+        "assignment_subject_identity": assignment.material[
+            "assignment_subject_identity"
+        ],
+    }
+    assert assignment.identity in _standing(ledger, locality)[
+        "responsibility_assignment_occurrences"
+    ]
     assert len(reading["assertions"]) == 1
     assertion = reading["assertions"][0]
     assert assertion["result"] == "ordered_relation_path"

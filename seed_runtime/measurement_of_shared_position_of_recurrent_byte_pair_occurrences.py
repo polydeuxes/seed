@@ -1126,7 +1126,6 @@ def _measurement_result_material(
         "responsible_boundary": SEED_NATIVE_MEASUREMENT_RESPONSIBLE_BOUNDARY,
         "responsibility_assignment_evidence": {
             "responsible_boundary": SEED_NATIVE_MEASUREMENT_RESPONSIBLE_BOUNDARY,
-            "standing": "assigned",
             "source_occurrence_references": [
                 {
                     "occurrence_identity": (
