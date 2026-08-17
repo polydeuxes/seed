@@ -156,6 +156,7 @@ from seed_runtime.occurrence_position_measurement import (
     OCCURRENCE_POSITION_RECORDED_KIND,
     OCCURRENCE_POSITION_RESPONSIBILITY,
     measure_occurrence_position,
+    record_occurrence_position_measurement_responsibility_assignment,
     record_occurrence_position_measurement_responsible_act_evidence,
     record_occurrence_position_measurement_result,
 )
@@ -912,14 +913,23 @@ def _occurrence_position_yield_witness() -> dict:
         ledger,
         source_locality_identity="source",
     )
-    act_evidence = record_occurrence_position_measurement_responsible_act_evidence(
+    assignment = record_occurrence_position_measurement_responsibility_assignment(
         ledger,
         recording_locality_identity="measurement",
         finding=finding,
+        locality_standing=read_operator_locality_standing(
+            ledger, locality_identity="measurement"
+        ),
+    )
+    act_evidence = record_occurrence_position_measurement_responsible_act_evidence(
+        ledger,
+        responsibility_assignment_event_identity=assignment.identity,
+        responsibility_assignment_standing=read_operator_locality_standing(
+            ledger, locality_identity="measurement"
+        ),
     )
     event = record_occurrence_position_measurement_result(
         ledger,
-        finding=finding,
         responsible_act_evidence_event_identity=act_evidence.identity,
     )
     return _yield_bundle(ledger, event)
@@ -5798,7 +5808,11 @@ FIDELITY_SUBJECTS = {
     "relation_occurrence_boundary": (
         test_primary_relation_measurements_preserve_their_live_boundaries,
     ),
-    "relation_required_coordinates": (test_changed_relation_anatomy_is_detected,),
+    "relation_required_coordinates": (
+        test_changed_relation_anatomy_is_detected,
+        test_explicit_but_wrong_relation_cannot_satisfy_a_structured_grammar_address,
+        test_ordered_relation_path_and_pair_findings_keep_each_responsibility_clause_distinct,
+    ),
     "relation_witness_evidence": (
         test_every_live_relation_witness_names_its_relation_and_its_evidence,
     ),
@@ -5821,9 +5835,6 @@ FIDELITY_SUBJECTS = {
     "applicability_determination": (
         test_applicability_clause_is_checked_against_a_live_pair_determination,
         test_emission_applicability_witnesses_every_declared_coordinate,
-    ),
-    "relation_required_coordinates": (
-        test_ordered_relation_path_and_pair_findings_keep_each_responsibility_clause_distinct,
     ),
     "input_role_participation_distinction": (
         test_input_is_an_open_act_local_role_before_participation,

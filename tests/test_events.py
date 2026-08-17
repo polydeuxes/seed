@@ -149,6 +149,7 @@ FIDELITY_SUBJECTS = {
     ),
     "event_material_validation": (
         test_event_ledger_rejects_secret_fields_in_materials,
+        test_event_secret_rejection_preserves_boundary_normalization,
         test_event_secret_rejection_reaches_every_nested_container,
         test_event_secret_rejection_accepts_large_scalar_lists,
         test_durable_large_scalar_lists_do_not_repeat_material_traversal,
