@@ -18,7 +18,7 @@ from typing import Any, NamedTuple
 from seed_runtime.byte_measurement import (
     BYTE_PAIR_MEASUREMENT_RECORDED_KIND,
     SEED_NATIVE_MEASUREMENT_RESPONSIBLE_BOUNDARY,
-    assertions_of_recorded_byte_position_pair_measurement,
+    _findings_of_recorded_byte_position_pair_measurement,
 )
 from seed_runtime.event import Event
 from seed_runtime.events import CORRUPTED, EventLedger, EventLedgerBoundary
@@ -258,11 +258,11 @@ def _references_to_recorded_recurrent_byte_pairs(
         or ledger.integrity_of(event.identity) == CORRUPTED
     ):
         raise ValueError("recurrent pair reference requires one intact pair Measurement")
-    assertions = assertions_of_recorded_byte_position_pair_measurement(
+    findings = _findings_of_recorded_byte_position_pair_measurement(
         ledger, event.identity
     )
-    assertions_by_identity = {
-        assertion.assertion_identity: assertion for assertion in assertions or ()
+    findings_by_identity = {
+        finding.assertion_identity: finding for finding in findings or ()
     }
     assignment = event.material.get("responsibility_assignment_evidence")
     sources = (
@@ -292,7 +292,7 @@ def _references_to_recorded_recurrent_byte_pairs(
     )
     found = []
     for recurrence_assertion_identity in recurrence_assertion_identities:
-        recurrence = assertions_by_identity.get(recurrence_assertion_identity)
+        recurrence = findings_by_identity.get(recurrence_assertion_identity)
         if (
             recurrence is None
             or recurrence.result != "recurrence"
@@ -301,16 +301,16 @@ def _references_to_recorded_recurrent_byte_pairs(
             raise ValueError(
                 "the addressed pair Assertion does not establish recurrence"
             )
-        support = recurrence.support_assertion_references
+        support = recurrence._local_support_assertion_identities
         if (
             len(support) != 1
-            or support[0].get("recorded_occurrence_identity") != event.identity
-            or type(support[0].get("assertion_identity")) is not str
+            or type(support[0]) is not str
+            or not support[0]
         ):
             raise ValueError(
                 "the recurrent pair carries no exact count Assertion support"
             )
-        count = assertions_by_identity.get(support[0]["assertion_identity"])
+        count = findings_by_identity.get(support[0])
         if (
             count is None
             or count.result != "count"

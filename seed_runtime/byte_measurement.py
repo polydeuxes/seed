@@ -306,6 +306,7 @@ class _RecordedBytePairFinding:
     representation: tuple[int, int]
     result: str
     _content_coordinates: tuple[int, int, int] | bool
+    _local_support_assertion_identities: tuple[str, ...]
 
     @property
     def content(self) -> dict[str, int | bool]:
@@ -2408,6 +2409,11 @@ def _read_recorded_byte_position_pair_measurement(
                     ),
                     result=assertion["result"],
                     _content_coordinates=content_coordinates,
+                    _local_support_assertion_identities=tuple(
+                        assertion["input_support"][
+                            "local_assertion_references"
+                        ]
+                    ),
                 )
             )
             continue

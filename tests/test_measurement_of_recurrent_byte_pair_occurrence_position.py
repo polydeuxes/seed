@@ -228,7 +228,9 @@ def test_same_boundary_pair_subjects_have_one_pair_result_read(monkeypatch):
     source_read_count = 0
     order_read_count = 0
     boundary_read_count = 0
-    pair_result_read = pair_occurrence_measurement.assertions_of_recorded_byte_position_pair_measurement
+    pair_result_read = (
+        pair_occurrence_measurement._findings_of_recorded_byte_position_pair_measurement
+    )
     source_read = pair_occurrence_measurement._exact_ingest_event
     order_read = ledger.occurrences_in_append_order
     boundary_read = ledger.list_locality
@@ -257,7 +259,7 @@ def test_same_boundary_pair_subjects_have_one_pair_result_read(monkeypatch):
 
     monkeypatch.setattr(
         pair_occurrence_measurement,
-        "assertions_of_recorded_byte_position_pair_measurement",
+        "_findings_of_recorded_byte_position_pair_measurement",
         witness_pair_result_read,
     )
     monkeypatch.setattr(
