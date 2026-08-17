@@ -5,6 +5,7 @@ from __future__ import annotations
 from io import BytesIO, StringIO
 
 import pytest
+from tests.representation_admission import admit_representation
 
 FIDELITY_SUBJECT = "one_exact_recorded_Standing_boundary_reference"
 
@@ -297,8 +298,15 @@ def test_recorded_standing_reference_survives_durable_reopen(tmp_path):
             source_occurrence_reference=source_occurrence_identity,
         )
         output = BytesIO()
+        admission, standing, boundary = admit_representation(
+            reopened, representation, output_stream=output
+        )
         emit_operator_representation_material(
-            reopened, representation=representation, output_stream=output
+            reopened,
+            representation=representation,
+            admission_result_event_identity=admission.identity,
+            locality_standing=standing,
+            output_boundary=boundary,
         )
         assert output.getvalue() == b"book material\n"
     finally:
@@ -327,9 +335,16 @@ def test_one_exact_result_at_the_recorded_boundary_can_be_represented_and_emitte
         source_occurrence_reference=source_occurrence_identity,
     )
     output = BytesIO()
+    admission, standing, boundary = admit_representation(
+        ledger, representation, output_stream=output
+    )
 
     emit_operator_representation_material(
-        ledger, representation=representation, output_stream=output
+        ledger,
+        representation=representation,
+        admission_result_event_identity=admission.identity,
+        locality_standing=standing,
+        output_boundary=boundary,
     )
 
     assert representation["locality_standing_as_of_event_identity"] == point[

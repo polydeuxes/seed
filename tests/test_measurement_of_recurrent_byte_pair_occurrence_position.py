@@ -3,6 +3,7 @@ from __future__ import annotations
 import json
 
 import pytest
+from tests.representation_admission import admit_representation
 
 import seed_runtime.measurement_of_recurrent_byte_pair_occurrence_position as pair_occurrence_measurement
 from seed_runtime.byte_measurement import (
@@ -31,6 +32,7 @@ from seed_runtime.operator_representation import (
     record_operator_representation,
 )
 from seed_runtime.evidence_of_yield_relation import read_requirements_of_yield_relation
+from seed_runtime.operator_representation_admission import RepresentationAdmissionError
 
 
 def _fixture(*, current: bytes = b"ba---ab", premise: bytes = b"abxxab"):
@@ -393,12 +395,8 @@ def test_pair_occurrence_result_enters_standing_as_one_exact_measurement_referen
     assert read_operator_representation(
         ledger, representation["representation_event_identity"]
     )["source_occurrence_reference"] == result.identity
-    with pytest.raises(ValueError, match="carries no exact material"):
-        emit_operator_representation_material(
-            ledger,
-            representation=representation,
-            output_stream=object(),
-        )
+    with pytest.raises(RepresentationAdmissionError, match="without exact material"):
+        admit_representation(ledger, representation)
 
 
 def test_same_bytes_cannot_substitute_another_ingest_occurrence():

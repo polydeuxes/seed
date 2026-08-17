@@ -9,7 +9,37 @@ FIDELITY_SUBJECT = "exact_emission_boundary"
 from seed_runtime.operator_egress import (
     ExactMaterialEgressFailure,
     emit_exact_material,
+    operator_emission_boundary,
+    read_operator_emission_boundary,
 )
+
+
+def test_operator_emission_boundary_binds_stream_boundary_and_locality():
+    output = BytesIO()
+    boundary = operator_emission_boundary(
+        output,
+        boundary_identity="terminal-write",
+        locality_identity="operator-terminal",
+    )
+
+    assert read_operator_emission_boundary(boundary) == (
+        output,
+        "terminal-write",
+        "operator-terminal",
+    )
+
+
+@pytest.mark.parametrize(
+    "boundary",
+    (
+        [BytesIO(), "terminal-write", "operator-terminal"],
+        (BytesIO(), "", "operator-terminal"),
+        (BytesIO(), "terminal-write", ""),
+    ),
+)
+def test_operator_emission_boundary_refuses_inferred_or_empty_coordinates(boundary):
+    with pytest.raises(TypeError, match="exact operator boundary"):
+        read_operator_emission_boundary(boundary)
 
 
 def test_egress_writes_exact_bytes_without_decoding():

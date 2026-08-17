@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import BinaryIO
+from typing import Any, BinaryIO
 
 
 class ExactMaterialEgressFailure(Exception):
@@ -18,6 +18,38 @@ class ExactMaterialEgressFailure(Exception):
         super().__init__(message)
         self.reported_count = reported_count
         self.error = error
+
+
+def operator_emission_boundary(
+    output_stream: BinaryIO,
+    *,
+    boundary_identity: str,
+    locality_identity: str,
+) -> tuple[BinaryIO, str, str]:
+    """Bind one host output boundary to its exact operator coordinates."""
+
+    if type(boundary_identity) is not str or not boundary_identity:
+        raise TypeError("egress requires one exact boundary identity")
+    if type(locality_identity) is not str or not locality_identity:
+        raise TypeError("egress requires one exact operator Locality identity")
+    return (output_stream, boundary_identity, locality_identity)
+
+
+def read_operator_emission_boundary(
+    boundary: Any,
+) -> tuple[BinaryIO, str, str]:
+    """Refuse an inferred or mutable output-boundary carrier."""
+
+    if (
+        type(boundary) is not tuple
+        or len(boundary) != 3
+        or type(boundary[1]) is not str
+        or not boundary[1]
+        or type(boundary[2]) is not str
+        or not boundary[2]
+    ):
+        raise TypeError("egress requires one exact operator boundary")
+    return boundary
 
 
 def emit_exact_material(output_stream: BinaryIO, exact_material: bytes) -> int:

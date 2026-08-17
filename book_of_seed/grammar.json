@@ -57,12 +57,12 @@
         "subject": "candidate",
         "grammar": "established",
         "grammar_reference": "01.Source.E",
-        "responsible_boundary": "unestablished",
-        "responsibility_assignment": "unestablished",
-        "Act_Evidence": "unestablished",
-        "Evidence_of_Yield_relation": "unestablished",
-        "result_occurrence": "unestablished",
-        "Standing": "unestablished",
+        "responsible_boundary": "this_Seed",
+        "responsibility_assignment": "this_Book",
+        "Act_Evidence": "candidate_Act_Evidence",
+        "Evidence_of_Yield_relation": "candidate_Evidence_of_Yield_relation",
+        "result_occurrence": "candidate_result_occurrence",
+        "Standing": "candidate_Standing",
         "downstream_Act": "Representation_emission_Act"
       },
       {
@@ -93,12 +93,12 @@
         "subject": "emission_candidate_Admission_to_operator_Locality",
         "grammar": "established",
         "grammar_reference": "01.Standing.E",
-        "responsible_boundary": "Representation_emission_Responsibility",
+        "responsible_boundary": "this_Seed",
         "responsibility_assignment": "this_Book",
-        "Act_Evidence": "unestablished",
-        "Evidence_of_Yield_relation": "unestablished",
-        "result_occurrence": "unestablished",
-        "Standing": "unestablished",
+        "Act_Evidence": "Admission_Act_Evidence",
+        "Evidence_of_Yield_relation": "Admission_Evidence_of_Yield_relation",
+        "result_occurrence": "Admission_result_occurrence",
+        "Standing": "Admission_Standing",
         "downstream_Act": "Representation_emission_Act"
       }
     ]
@@ -424,6 +424,7 @@
         {"subject": "relation_witness_required_coordinates"},
         {"subject": "emission_relation_instantiation"},
         {"subject": "successful_emission_relation"},
+        {"subject": "emission_candidate_Admission_to_operator_Locality"},
         {"subject": "applicability_determination"},
         {"subject": "input_role_participation_distinction"},
         {"subject": "candidate_participation_distinction"},
@@ -741,7 +742,7 @@
       "subject": "candidate",
       "book_material_reference": "01.Source.E",
       "grammar": "established",
-      "recorded_occurrence_kind": [],
+      "recorded_occurrence_kind": ["event_occurrence"],
       "preserves": [
         "applicable_source_role",
         "Representation_Act_occurrence",
@@ -754,6 +755,23 @@
         "Act_occurrence_by_candidate_identity",
         "occurrence_result_relation_by_candidate_identity",
         "Participation_by_candidate_identity"
+      ],
+      "responsibility": {
+        "responsible_boundary": "this_Seed",
+        "assignment": "this_Book",
+        "exact_Act": "preserve_exact_Representation_candidate",
+        "result": "candidate_Standing"
+      },
+      "occurrence_coordinates": [
+        "Representation_occurrence",
+        "Representation_source_Standing_boundary",
+        "assignment_Standing_boundary",
+        "destination_operator_boundary",
+        "destination_operator_Locality",
+        "emission_Act",
+        "Scope",
+        "Authority",
+        "limits"
       ]
     },
     "01.Source.F": {
@@ -1009,7 +1027,13 @@
       "subject": "bounded_relation_Assertion",
       "book_material_reference": "01.Standing.E",
       "grammar": "established",
-      "recorded_occurrence_kind": [],
+      "recorded_occurrence_kind": ["event_occurrence"],
+      "responsibility": {
+        "responsible_boundary": "this_Seed",
+        "assignment": "this_Book",
+        "exact_Act": "determine_Admission_of_exact_Representation_candidate_to_exact_material_operator_Locality",
+        "result": "Admission_Standing"
+      },
       "preserves": [
         "participants_and_roles",
         "relation_Assertion",
@@ -1049,7 +1073,24 @@
         "negation_from_unsupported_Evidence",
         "source_occurrence_from_source_label",
         "represented_relation_from_source_label"
-      ]
+      ],
+      "Admission_occurrence": {
+        "responsible_boundary": "this_Seed",
+        "assignment": "this_Book",
+        "exact_Act": "determine_Admission_of_exact_Representation_candidate_to_exact_material_operator_Locality",
+        "requires": "candidate_Standing",
+        "preserves": [
+          "candidate_result_occurrence",
+          "Representation_occurrence",
+          "destination_operator_boundary",
+          "destination_operator_Locality",
+          "emission_Act",
+          "Scope",
+          "Authority",
+          "limits"
+        ],
+        "result": "Admission_Standing"
+      }
     },
     "01.Standing.E.1": {
       "subject": "input_to_exact_Act_relation",

@@ -42,6 +42,8 @@ Each counted occurrence is distinguished by exact occurrence identity. Repeated 
 
 ### 01.Source.E — Candidates preserve source coordinates
 
+For one explicitly addressed exact Representation, emission Act, and destination operator Locality, this Book assigns this Seed the bounded Responsibility to preserve one candidate.
+
 A candidate preserves every applicable source role, representation Act occurrence, Scope, Authority, provenance, and Unknown. Carrying or comparing candidate material does not establish a missing Act occurrence or occurrence-result relation.
 
 ### 01.Source.F — Supplied material may assert a relation

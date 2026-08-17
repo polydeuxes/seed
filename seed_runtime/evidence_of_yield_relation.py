@@ -36,6 +36,8 @@ LIVE_BOUNDARIES_OF_YIELD_RELATION = frozenset(
         "measurement_of_recurrent_byte_pair_occurrence_position",
         "operator_material_acquire",
         "representation_result",
+        "representation_candidate",
+        "representation_admission",
         "recorded_standing_boundary_locality_relation",
         "standing_boundary_reference",
         "standing_locality_continuation",

@@ -7,6 +7,8 @@ from tests.binary_input import binary_input
 from io import BytesIO, StringIO
 from pathlib import Path
 
+from tests.representation_admission import admit_representation
+
 from seed_runtime.byte_measurement import (
     BYTE_MEASUREMENT_RECORDED_KIND,
     BYTE_MEASUREMENT_RESPONSIBLE_ACT_EVIDENCE_KIND,
@@ -63,6 +65,15 @@ from seed_runtime.operator_representation import (
     REPRESENTATION_RESPONSIBILITY,
     emit_operator_representation_material,
     record_operator_representation,
+)
+from seed_runtime.operator_representation_admission import (
+    EVENT_KIND_RESPONSIBILITIES as REPRESENTATION_ADMISSION_EVENT_KIND_RESPONSIBILITIES,
+    REPRESENTATION_CANDIDATE_RESPONSIBILITY_ASSIGNMENT_RECORDED_KIND,
+    REPRESENTATION_CANDIDATE_ACT_EVIDENCE_KIND,
+    REPRESENTATION_CANDIDATE_RECORDED_KIND,
+    EXACT_MATERIAL_REPRESENTATION_ADMISSION_RESPONSIBILITY_ASSIGNMENT_RECORDED_KIND,
+    EXACT_MATERIAL_REPRESENTATION_ADMISSION_ACT_EVIDENCE_KIND,
+    EXACT_MATERIAL_REPRESENTATION_ADMISSION_RECORDED_KIND,
 )
 from seed_runtime.operator_material_acquisition import (
     EVENT_KIND_RESPONSIBILITIES as ACQUIRE_EVENT_KIND_RESPONSIBILITIES,
@@ -360,10 +371,13 @@ def _emission_witness() -> dict:
         ),
         source_occurrence_reference=source.identity,
     )
+    admission, standing, boundary = admit_representation(ledger, representation)
     emit_operator_representation_material(
         ledger,
         representation=representation,
-        output_stream=BytesIO(),
+        admission_result_event_identity=admission.identity,
+        locality_standing=standing,
+        output_boundary=boundary,
     )
     event = ledger.get(representation["emitted_event_identity"])
     return {
@@ -403,11 +417,17 @@ def _failed_emission_yield_witness() -> dict:
         ),
         source_occurrence_reference=source.identity,
     )
+    partial_output = PartialOutput()
+    admission, standing, boundary = admit_representation(
+        ledger, representation, output_stream=partial_output
+    )
     try:
         emit_operator_representation_material(
             ledger,
             representation=representation,
-            output_stream=PartialOutput(),
+            admission_result_event_identity=admission.identity,
+            locality_standing=standing,
+            output_boundary=boundary,
         )
     except ValueError:
         pass
@@ -432,10 +452,13 @@ def _repeated_emission_attempt_witness() -> tuple[dict, dict]:
         ),
         source_occurrence_reference=source.identity,
     )
+    admission, standing, boundary = admit_representation(ledger, representation)
     emit_operator_representation_material(
         ledger,
         representation=representation,
-        output_stream=BytesIO(),
+        admission_result_event_identity=admission.identity,
+        locality_standing=standing,
+        output_boundary=boundary,
     )
     first_attempt = ledger.get(representation["emission_attempt_event_identity"])
     first_evidence = ledger.get(
@@ -449,10 +472,17 @@ def _repeated_emission_attempt_witness() -> tuple[dict, dict]:
         first_event.material["locality_evidence_identity"]
     )
     first_evidence_of_yield_relation = ledger.get(first_event.material["evidence_of_yield_relation_identity"])
+    admission, standing, second_boundary = admit_representation(
+        ledger,
+        representation,
+        boundary_identity="second-emission-boundary",
+    )
     emit_operator_representation_material(
         ledger,
         representation=representation,
-        output_stream=BytesIO(),
+        admission_result_event_identity=admission.identity,
+        locality_standing=standing,
+        output_boundary=second_boundary,
     )
     second_attempt = ledger.get(representation["emission_attempt_event_identity"])
     second_evidence = ledger.get(
@@ -486,6 +516,45 @@ def _repeated_emission_attempt_witness() -> tuple[dict, dict]:
             "evidence_of_yield_relation": second_evidence_of_yield_relation,
         },
     )
+
+
+def _representation_candidate_admission_yield_witnesses() -> dict[str, dict]:
+    ledger = _IntegrityAdversaryLedger()
+    source = ingest_material(
+        ledger,
+        locality_identity="representation-admission",
+        exact_bytes=b"representation-admission",
+        source_role="operator",
+        source_boundary="exact source boundary",
+    )
+    representation = record_operator_representation(
+        ledger,
+        locality_identity="representation-admission",
+        locality_standing=read_operator_locality_standing(
+            ledger, locality_identity="representation-admission"
+        ),
+        source_occurrence_reference=source.identity,
+    )
+    admission, _standing, _boundary = admit_representation(ledger, representation)
+    candidate = ledger.get(
+        admission.material["candidate_reference"]["recorded_occurrence_identity"]
+    )
+    return {
+        "representation_candidate": _yield_bundle(ledger, candidate),
+        "representation_admission": _yield_bundle(ledger, admission),
+    }
+
+
+def _representation_candidate_yield_witness() -> dict:
+    return _representation_candidate_admission_yield_witnesses()[
+        "representation_candidate"
+    ]
+
+
+def _representation_admission_yield_witness() -> dict:
+    return _representation_candidate_admission_yield_witnesses()[
+        "representation_admission"
+    ]
 
 
 def _representation_witness() -> dict:
@@ -1609,6 +1678,8 @@ def _byte_pair_yield_requirement_bundles() -> dict[str, dict[str, dict]]:
 
 def _remaining_yield_requirement_bundles() -> dict[str, dict[str, dict]]:
     witnesses = {
+        "representation_candidate": _representation_candidate_yield_witness,
+        "representation_admission": _representation_admission_yield_witness,
         "assertion_locality_movement": _assertion_locality_movement_yield_witness,
         "occurrence_position_measurement": _occurrence_position_yield_witness,
         "measurement_of_recurrent_byte_pair_occurrence_position": _pair_occurrence_yield_witness,
@@ -2634,8 +2705,8 @@ def _assert_ordered_fidelity_representation(fidelity: dict) -> None:
             "correction_Authority",
         ],
     }
-    assert len(test_subjects) == 221
-    assert len({coordinates["subject"] for coordinates in test_subjects}) == 221
+    assert len(test_subjects) == 222
+    assert len({coordinates["subject"] for coordinates in test_subjects}) == 222
     assert test_subjects[0] == {
         "subject": "event_standing_grammar_responsibility"
     }
@@ -3475,7 +3546,7 @@ def test_candidate_clause_preserves_coordinates_without_promoting_the_subject():
         "subject": "candidate",
         "book_material_reference": "01.Source.E",
         "grammar": "established",
-        "recorded_occurrence_kind": [],
+        "recorded_occurrence_kind": ["event_occurrence"],
         "preserves": [
             "applicable_source_role",
             "Representation_Act_occurrence",
@@ -3488,6 +3559,23 @@ def test_candidate_clause_preserves_coordinates_without_promoting_the_subject():
             "Act_occurrence_by_candidate_identity",
             "occurrence_result_relation_by_candidate_identity",
             "Participation_by_candidate_identity",
+        ],
+        "responsibility": {
+            "responsible_boundary": "this_Seed",
+            "assignment": "this_Book",
+            "exact_Act": "preserve_exact_Representation_candidate",
+            "result": "candidate_Standing",
+        },
+        "occurrence_coordinates": [
+            "Representation_occurrence",
+            "Representation_source_Standing_boundary",
+            "assignment_Standing_boundary",
+            "destination_operator_boundary",
+            "destination_operator_Locality",
+            "emission_Act",
+            "Scope",
+            "Authority",
+            "limits",
         ],
     }
     assert grammar["role_distinctions"]["candidate_coordinates"] == clause[
@@ -3931,6 +4019,8 @@ def test_every_live_recorded_yield_result_is_bound_to_its_exact_evidence_result(
 
 def test_unrelated_yield_occurrences_do_not_share_result_identity():
     factories = {
+        "representation_candidate": _representation_candidate_yield_witness,
+        "representation_admission": _representation_admission_yield_witness,
         "byte_measurement": _byte_measurement_witness,
         "representation_result": _representation_witness,
         "successful_emission": _emission_witness,
@@ -4057,6 +4147,17 @@ def test_representation_result_act_and_locality_species_keep_their_clauses():
     assert REPRESENTATION_EVENT_KIND_RESPONSIBILITIES[
         REPRESENTATION_LOCALITY_EVIDENCE_KIND
     ] == "06.Locality.A"
+
+
+def test_candidate_and_admission_species_keep_their_distinct_clauses():
+    assert REPRESENTATION_ADMISSION_EVENT_KIND_RESPONSIBILITIES == {
+        REPRESENTATION_CANDIDATE_RESPONSIBILITY_ASSIGNMENT_RECORDED_KIND: "01.Source.E",
+        REPRESENTATION_CANDIDATE_ACT_EVIDENCE_KIND: "02.Acts.A",
+        REPRESENTATION_CANDIDATE_RECORDED_KIND: "01.Source.E",
+        EXACT_MATERIAL_REPRESENTATION_ADMISSION_RESPONSIBILITY_ASSIGNMENT_RECORDED_KIND: "01.Standing.E",
+        EXACT_MATERIAL_REPRESENTATION_ADMISSION_ACT_EVIDENCE_KIND: "02.Acts.A",
+        EXACT_MATERIAL_REPRESENTATION_ADMISSION_RECORDED_KIND: "01.Standing.E",
+    }
 
 
 def test_assertion_movement_result_names_and_witnesses_its_witness_clause():
@@ -5036,6 +5137,7 @@ FIDELITY_SUBJECTS = {
     ),
     "representation_result_act_locality_clause_distinction": (
         test_representation_result_act_and_locality_species_keep_their_clauses,
+        test_candidate_and_admission_species_keep_their_distinct_clauses,
     ),
     "representation_source_act_locality_distinction": (
         test_representation_source_act_and_locality_witnesses_do_not_absorb_each_other,

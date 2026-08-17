@@ -57,6 +57,20 @@ from seed_runtime.operator_material_acquisition import (
     get_operator_material_acquire_responsibility_assignment,
     get_recorded_operator_material_acquire,
 )
+from seed_runtime.operator_representation_admission import (
+    REPRESENTATION_CANDIDATE_RESPONSIBILITY_ASSIGNMENT_RECORDED_KIND,
+    REPRESENTATION_CANDIDATE_ACT_EVIDENCE_KIND,
+    REPRESENTATION_CANDIDATE_RECORDED_KIND,
+    EXACT_MATERIAL_REPRESENTATION_ADMISSION_RESPONSIBILITY_ASSIGNMENT_RECORDED_KIND,
+    EXACT_MATERIAL_REPRESENTATION_ADMISSION_ACT_EVIDENCE_KIND,
+    EXACT_MATERIAL_REPRESENTATION_ADMISSION_RECORDED_KIND,
+    get_representation_candidate_responsibility_assignment,
+    get_representation_candidate_act_evidence,
+    get_recorded_representation_candidate,
+    get_exact_material_representation_admission_responsibility_assignment,
+    get_exact_material_representation_admission_act_evidence,
+    get_recorded_exact_material_representation_admission,
+)
 from seed_runtime.evidence_of_yield_relation import read_requirements_of_yield_relation
 
 # The writer of these occurrences declares their kinds. A reader declaring its
@@ -108,6 +122,14 @@ _OPERATOR_MATERIAL_ACQUIRE_KINDS = {
     OPERATOR_MATERIAL_ACQUIRE_ACT_EVIDENCE_KIND,
     OPERATOR_MATERIAL_ACQUIRE_RECORDED_KIND,
 }
+_REPRESENTATION_CANDIDATE_ADMISSION_KINDS = {
+    REPRESENTATION_CANDIDATE_RESPONSIBILITY_ASSIGNMENT_RECORDED_KIND,
+    REPRESENTATION_CANDIDATE_ACT_EVIDENCE_KIND,
+    REPRESENTATION_CANDIDATE_RECORDED_KIND,
+    EXACT_MATERIAL_REPRESENTATION_ADMISSION_RESPONSIBILITY_ASSIGNMENT_RECORDED_KIND,
+    EXACT_MATERIAL_REPRESENTATION_ADMISSION_ACT_EVIDENCE_KIND,
+    EXACT_MATERIAL_REPRESENTATION_ADMISSION_RECORDED_KIND,
+}
 _SUPPORTED_KINDS = {
     *_SUBJECT_BY_KIND,
     *_MEASUREMENT_ACT_EVIDENCE_KINDS,
@@ -116,6 +138,7 @@ _SUPPORTED_KINDS = {
     *_STANDING_BOUNDARY_REFERENCE_KINDS,
     *_RECORDED_STANDING_BOUNDARY_LOCALITY_KINDS,
     *_OPERATOR_MATERIAL_ACQUIRE_KINDS,
+    *_REPRESENTATION_CANDIDATE_ADMISSION_KINDS,
     _REPRESENTATION_RECORDED_KIND,
     _REPRESENTATION_ACT_EVIDENCE_KIND,
     _REPRESENTATION_LOCALITY_EVIDENCE_KIND,
@@ -450,6 +473,8 @@ def advance_operator_locality_standing(
     recorded_standing_boundary_locality_relations: dict[str, None] = {}
     responsibility_assignment_occurrences: dict[str, None] = {}
     operator_material_acquire_act_occurrences: dict[str, None] = {}
+    candidate_result_occurrences: dict[str, None] = {}
+    admission_result_occurrences: dict[str, None] = {}
     # Kept sorted and distinct in place rather than as a set sorted on return.
     # A set would have to be rebuilt from the prior list and re-sorted on every
     # advance, which costs the accumulated size each time.  These coordinates
@@ -507,6 +532,16 @@ def advance_operator_locality_standing(
             raise ValueError(
                 "prior Locality Standing requires exact operator material acquire Act occurrences"
             )
+        candidate_result_occurrences = prior["candidate_result_occurrences"]
+        if type(candidate_result_occurrences) is not dict:
+            raise ValueError(
+                "prior Locality Standing requires exact Candidate result occurrences"
+            )
+        admission_result_occurrences = prior["admission_result_occurrences"]
+        if type(admission_result_occurrences) is not dict:
+            raise ValueError(
+                "prior Locality Standing requires exact Admission result occurrences"
+            )
         known_loss = prior["known_loss"]
         unknown = prior["unknown"]
         conflicts = prior["conflicts"]
@@ -525,6 +560,7 @@ def advance_operator_locality_standing(
             or event.kind in _STANDING_BOUNDARY_REFERENCE_KINDS
             or event.kind in _RECORDED_STANDING_BOUNDARY_LOCALITY_KINDS
             or event.kind in _OPERATOR_MATERIAL_ACQUIRE_KINDS
+            or event.kind in _REPRESENTATION_CANDIDATE_ADMISSION_KINDS
         ):
             continue
         if event.kind not in _SUPPORTED_KINDS:
@@ -591,6 +627,41 @@ def advance_operator_locality_standing(
             continue
         if event.kind == OPERATOR_MATERIAL_ACQUIRE_RECORDED_KIND:
             get_recorded_operator_material_acquire(ledger, event.identity)
+            continue
+        if event.kind in {
+            REPRESENTATION_CANDIDATE_RESPONSIBILITY_ASSIGNMENT_RECORDED_KIND,
+            EXACT_MATERIAL_REPRESENTATION_ADMISSION_RESPONSIBILITY_ASSIGNMENT_RECORDED_KIND,
+        }:
+            if (
+                event.kind
+                == REPRESENTATION_CANDIDATE_RESPONSIBILITY_ASSIGNMENT_RECORDED_KIND
+            ):
+                get_representation_candidate_responsibility_assignment(
+                    ledger, event.identity
+                )
+            else:
+                get_exact_material_representation_admission_responsibility_assignment(
+                    ledger, event.identity
+                )
+            responsibility_assignment_occurrences[event.identity] = None
+            continue
+        if event.kind == REPRESENTATION_CANDIDATE_ACT_EVIDENCE_KIND:
+            get_representation_candidate_act_evidence(ledger, event.identity)
+            continue
+        if event.kind == REPRESENTATION_CANDIDATE_RECORDED_KIND:
+            get_recorded_representation_candidate(ledger, event.identity)
+            candidate_result_occurrences[event.identity] = None
+            continue
+        if event.kind == EXACT_MATERIAL_REPRESENTATION_ADMISSION_ACT_EVIDENCE_KIND:
+            get_exact_material_representation_admission_act_evidence(
+                ledger, event.identity
+            )
+            continue
+        if event.kind == EXACT_MATERIAL_REPRESENTATION_ADMISSION_RECORDED_KIND:
+            get_recorded_exact_material_representation_admission(
+                ledger, event.identity
+            )
+            admission_result_occurrences[event.identity] = None
             continue
         if (
             event.kind
@@ -778,6 +849,8 @@ def advance_operator_locality_standing(
         "operator_material_acquire_act_occurrences": (
             operator_material_acquire_act_occurrences
         ),
+        "candidate_result_occurrences": candidate_result_occurrences,
+        "admission_result_occurrences": admission_result_occurrences,
         "known_loss": known_loss,
         "unknown": unknown,
         "conflicts": conflicts,

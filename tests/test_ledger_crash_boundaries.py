@@ -216,6 +216,7 @@ def test_the_exact_material_attempt_is_durable_before_raw_egress(tmp_path):
         emit_operator_representation_material,
         record_operator_representation,
     )
+    from tests.representation_admission import admit_representation
 
     path = tmp_path / "raw.sqlite"
     ledger = SQLiteEventLedger(str(path))
@@ -250,10 +251,15 @@ def test_the_exact_material_attempt_is_durable_before_raw_egress(tmp_path):
             return super().write(value)
 
     output = _Watching()
+    admission, standing, boundary = admit_representation(
+        ledger, representation, output_stream=output
+    )
     emit_operator_representation_material(
         ledger,
         representation=representation,
-        output_stream=output,
+        admission_result_event_identity=admission.identity,
+        locality_standing=standing,
+        output_boundary=boundary,
     )
 
     assert seen == [1]

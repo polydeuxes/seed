@@ -301,14 +301,12 @@ def test_clauses_without_recorded_occurrence_kind_remain_absent_in_book_order():
         ("01.Source.B", []),
         ("01.Source.C", []),
         ("01.Source.D.1", []),
-        ("01.Source.E", []),
         ("01.Source.F", []),
         ("01.Standing.A", []),
         ("01.Standing.B", []),
         ("01.Standing.C", []),
         ("01.Standing.D", []),
         ("01.Standing.D.2", []),
-        ("01.Standing.E", []),
         ("01.Standing.F", []),
         ("05.Recording.A", []),
         ("05.Recording.B", []),
@@ -389,14 +387,29 @@ def test_witness_completeness_separates_grammar_from_live_crossing():
         "Standing",
         "downstream_Act",
     ]
+    complete_subjects = set()
+    incomplete_subjects = set()
     for crossing in completeness["required_crossings"]:
         assert tuple(crossing) == ("subject", *required)
         assert crossing["grammar"] == "established"
         assert crossing["grammar_reference"] in grammar["clauses"]
-        assert not _crossing_is_complete(required, crossing)
+        target = (
+            complete_subjects
+            if _crossing_is_complete(required, crossing)
+            else incomplete_subjects
+        )
+        target.add(crossing["subject"])
+    assert complete_subjects == {
+        "candidate",
+        "emission_candidate_Admission_to_operator_Locality",
+    }
+    assert incomplete_subjects == {
+        "Admission",
+        "material_witness_invocation_result",
+    }
 
 
-def test_emission_admission_grammar_is_established_before_its_lifecycle():
+def test_generic_admission_grammar_precedes_each_concrete_lifecycle():
     grammar = json.loads(GRAMMAR.read_text(encoding="utf-8"))
     completeness = grammar["completeness"]
     admission = next(
@@ -416,6 +429,20 @@ def test_emission_admission_grammar_is_established_before_its_lifecycle():
     assert admission["Evidence_of_Yield_relation"] == "unestablished"
     assert admission["result_occurrence"] == "unestablished"
     assert admission["Standing"] == "unestablished"
+
+    concrete = next(
+        crossing
+        for crossing in completeness["required_crossings"]
+        if crossing["subject"]
+        == "emission_candidate_Admission_to_operator_Locality"
+    )
+    assert concrete["responsible_boundary"] == "this_Seed"
+    assert concrete["Act_Evidence"] == "Admission_Act_Evidence"
+    assert concrete["Evidence_of_Yield_relation"] == (
+        "Admission_Evidence_of_Yield_relation"
+    )
+    assert concrete["result_occurrence"] == "Admission_result_occurrence"
+    assert concrete["Standing"] == "Admission_Standing"
 
 
 FIDELITY_SUBJECTS = {
@@ -457,7 +484,7 @@ FIDELITY_SUBJECTS = {
     ),
     "witness_grammar_completeness": (
         test_witness_completeness_separates_grammar_from_live_crossing,
-        test_emission_admission_grammar_is_established_before_its_lifecycle,
+        test_generic_admission_grammar_precedes_each_concrete_lifecycle,
     ),
     "clause_grammar_recorded_occurrence_kind_distinction": (
         test_clauses_without_recorded_occurrence_kind_remain_absent_in_book_order,

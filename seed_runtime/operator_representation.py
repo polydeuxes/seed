@@ -478,6 +478,9 @@ def read_operator_representation(
             event.identity,
         ),
         "source_occurrence_reference": source_occurrence_reference,
+        "locality_standing_as_of_event_identity": material[
+            "locality_standing_as_of_event_identity"
+        ],
         "exact_material": event.exact_material,
     }
 
@@ -486,9 +489,44 @@ def emit_operator_representation_material(
     ledger: EventLedger,
     *,
     representation: dict[str, Any],
-    output_stream,
+    admission_result_event_identity: str,
+    locality_standing: dict[str, Any],
+    output_boundary,
 ) -> dict[str, Any]:
-    """Emit one recorded exact result without selecting a material species."""
+    """Emit one exact Representation admitted to one operator Locality."""
+
+    from seed_runtime.operator_representation_admission import (
+        get_recorded_exact_material_representation_admission,
+        exact_material_representation_admission_occurrence_references,
+    )
+
+    admission = get_recorded_exact_material_representation_admission(
+        ledger, admission_result_event_identity
+    )
+    from seed_runtime.operator_egress import read_operator_emission_boundary
+
+    (
+        output_stream,
+        destination_operator_boundary_identity,
+        destination_operator_locality_identity,
+    ) = read_operator_emission_boundary(output_boundary)
+    carried_admissions = (
+        locality_standing.get("admission_result_occurrences")
+        if type(locality_standing) is dict
+        else None
+    )
+    if (
+        type(carried_admissions) is not dict
+        or carried_admissions.get(admission_result_event_identity, object())
+        is not None
+        or locality_standing.get("locality_identity")
+        != admission["scope"]["source_locality_identity"]
+        or destination_operator_boundary_identity
+        != admission["destination_operator_boundary_identity"]
+        or destination_operator_locality_identity
+        != admission["destination_operator_locality_identity"]
+    ):
+        raise ValueError("emission requires one exact carried Admission and destination")
 
     recorded = read_operator_representation(
         ledger, representation.get("representation_event_identity")
@@ -506,10 +544,32 @@ def emit_operator_representation_material(
             raise ValueError(
                 "the supplied Representation differs from its recorded material"
             )
-    representation["recorded_occurrence_references"] = recorded[
-        "recorded_occurrence_references"
-    ]
-    emission_act_identity = new_identity("operator_representation_emission_act")
+    if (
+        admission["representation_reference"]["representation_event_identity"]
+        != recorded["representation_event_identity"]
+        or admission["representation_reference"]["representation_identity"]
+        != recorded["representation_identity"]
+    ):
+        raise ValueError("Admission addresses another Representation")
+    for prior_attempt in ledger.iter_locality_kind(
+        representation["locality_identity"], REPRESENTATION_EMISSION_ATTEMPT_KIND
+    ):
+        if (
+            prior_attempt.material.get("admission_result_event_identity")
+            == admission_result_event_identity
+            or prior_attempt.material.get("act_occurrence_identity")
+            == admission["emission_act_occurrence_identity"]
+        ):
+            raise ValueError("Admission already participated in an emission attempt")
+    representation["recorded_occurrence_references"] = (
+        *recorded["recorded_occurrence_references"],
+        *exact_material_representation_admission_occurrence_references(
+            ledger, admission_result_event_identity
+        ),
+    )
+    emission_act_identity = admission["emission_act_identity"]
+    act_occurrence_identity = admission["emission_act_occurrence_identity"]
+    result_identity = admission["emission_result_boundary_identity"]
     scope = f"locality:{representation['locality_identity']}"
     attempt_event = ledger.append(
         REPRESENTATION_EMISSION_ATTEMPT_KIND,
@@ -519,6 +579,17 @@ def emit_operator_representation_material(
                 "representation_event_identity"
             ],
             "emission_act_identity": emission_act_identity,
+            "act_occurrence_identity": act_occurrence_identity,
+            "admission_result_event_identity": admission_result_event_identity,
+            "candidate_result_event_identity": admission["candidate_reference"][
+                "recorded_occurrence_identity"
+            ],
+            "destination_operator_boundary_identity": admission[
+                "destination_operator_boundary_identity"
+            ],
+            "destination_operator_locality_identity": admission[
+                "destination_operator_locality_identity"
+            ],
             "dimensions": _dimensions(
                 identity=f"emission-attempt:{representation['representation_identity']}",
                 content="exact Representation for the declared emission boundary",
@@ -599,9 +670,6 @@ def emit_operator_representation_material(
         )
         raise
 
-    act_occurrence_identity = new_identity(
-        "operator_representation_emission_occurrence"
-    )
     locality_relation = {
         "first_subject": representation["representation_identity"],
         "second_subject": act_occurrence_identity,
@@ -610,7 +678,6 @@ def emit_operator_representation_material(
         ),
     }
     boundary_result = {"accepted_count": written}
-    result_identity = f"emission-boundary-result:{act_occurrence_identity}"
     result_content = {
         "result_identity": result_identity,
         "result": boundary_result,
@@ -623,6 +690,16 @@ def emit_operator_representation_material(
             "representation_event_identity"
         ],
         "input_role": REPRESENTATION_EMISSION_INPUT_ROLE,
+        "admission_result_event_identity": admission_result_event_identity,
+        "candidate_result_event_identity": admission["candidate_reference"][
+            "recorded_occurrence_identity"
+        ],
+        "destination_operator_boundary_identity": admission[
+            "destination_operator_boundary_identity"
+        ],
+        "destination_operator_locality_identity": admission[
+            "destination_operator_locality_identity"
+        ],
         "locality_relation": locality_relation,
         "boundary_result": boundary_result,
         **result_content,
@@ -640,6 +717,16 @@ def emit_operator_representation_material(
                 "representation_event_identity"
             ],
             "input_role": REPRESENTATION_EMISSION_INPUT_ROLE,
+            "admission_result_event_identity": admission_result_event_identity,
+            "candidate_result_event_identity": admission["candidate_reference"][
+                "recorded_occurrence_identity"
+            ],
+            "destination_operator_boundary_identity": admission[
+                "destination_operator_boundary_identity"
+            ],
+            "destination_operator_locality_identity": admission[
+                "destination_operator_locality_identity"
+            ],
             "authority": "unestablished",
             "evidence_scope": (
                 "Evidence bounded to this exact emission Act occurrence and "
@@ -705,6 +792,7 @@ def emit_operator_representation_material(
             "conflicts": [],
             "provenance_occurrence_references": [
                 representation["representation_event_identity"],
+                admission_result_event_identity,
                 attempt_event.identity,
             ],
         },

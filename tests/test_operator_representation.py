@@ -2,6 +2,7 @@ from tests.binary_input import binary_input
 from io import BytesIO, StringIO
 
 import pytest
+from tests.representation_admission import admit_representation
 
 FIDELITY_SUBJECT = "exact_Representation_occurrence"
 
@@ -26,6 +27,7 @@ from seed_runtime.occurrence_position_measurement import (
     record_occurrence_position_measurement_result,
 )
 from seed_runtime.evidence_of_yield_relation import read_requirements_of_yield_relation
+from seed_runtime.operator_representation_admission import RepresentationAdmissionError
 from seed_runtime.operator_console import run_persistent_operator_console
 
 _INGEST_KINDS = (
@@ -180,6 +182,7 @@ def test_representation_reader_reads_the_exact_recorded_representation():
             "recorded_occurrence_references"
         ],
         "source_occurrence_reference": None,
+        "locality_standing_as_of_event_identity": None,
         "exact_material": None,
     }
     assert ledger.occurrences_in_append_order(
@@ -262,12 +265,8 @@ def test_representation_addresses_one_exact_carried_measurement_result():
         "source_occurrence_reference"
     ] == measurement.identity
 
-    with pytest.raises(ValueError, match="carries no exact material"):
-        emit_operator_representation_material(
-            ledger,
-            representation=representation,
-            output_stream=BytesIO(),
-        )
+    with pytest.raises(RepresentationAdmissionError, match="without exact material"):
+        admit_representation(ledger, representation)
 
 
 @pytest.mark.parametrize("measurement_kind", ("pair", "position"))
@@ -291,12 +290,8 @@ def test_representation_addresses_each_structured_measurement_family(
     assert read_operator_representation(ledger, event.identity)[
         "source_occurrence_reference"
     ] == measurement.identity
-    with pytest.raises(ValueError, match="carries no exact material"):
-        emit_operator_representation_material(
-            ledger,
-            representation=representation,
-            output_stream=BytesIO(),
-        )
+    with pytest.raises(RepresentationAdmissionError, match="without exact material"):
+        admit_representation(ledger, representation)
 
 
 @pytest.mark.parametrize(
@@ -704,12 +699,8 @@ def test_representation_reader_and_egress_refuse_changed_material():
 
     with pytest.raises(ValueError, match="not exact"):
         read_operator_representation(ledger, event.identity)
-    with pytest.raises(ValueError, match="not exact"):
-        emit_operator_representation_material(
-            ledger,
-            representation=representation,
-            output_stream=BytesIO(),
-        )
+    with pytest.raises(RepresentationAdmissionError, match="intact Representation"):
+        admit_representation(ledger, representation)
 
 
 def test_exact_egress_reads_the_recorded_representation_material():
@@ -728,11 +719,16 @@ def test_exact_egress_reads_the_recorded_representation_material():
         source_occurrence_reference=source.identity,
     )
     output = BytesIO()
+    admission, standing, boundary = admit_representation(
+        ledger, representation, output_stream=output
+    )
 
     emitted = emit_operator_representation_material(
         ledger,
         representation=representation,
-        output_stream=output,
+        admission_result_event_identity=admission.identity,
+        locality_standing=standing,
+        output_boundary=boundary,
     )
     assert output.getvalue() == b"hello"
     assert emitted is representation
@@ -822,7 +818,9 @@ def test_exact_egress_reads_the_recorded_representation_material():
         emit_operator_representation_material(
             ledger,
             representation=representation,
-            output_stream=BytesIO(),
+            admission_result_event_identity=admission.identity,
+            locality_standing=standing,
+            output_boundary=boundary,
         )
 
 
@@ -866,12 +864,18 @@ def test_exact_material_emission_preserves_each_bounded_failure_result(
         locality_standing=_standing(ledger),
         source_occurrence_reference=source.identity,
     )
+    failed_boundary = FailedBoundary()
+    admission, standing, boundary = admit_representation(
+        ledger, representation, output_stream=failed_boundary
+    )
 
     with pytest.raises(error_type):
         emit_operator_representation_material(
             ledger,
             representation=representation,
-            output_stream=FailedBoundary(),
+            admission_result_event_identity=admission.identity,
+            locality_standing=standing,
+            output_boundary=boundary,
         )
 
     attempt = ledger.get(representation["emission_attempt_event_identity"])
@@ -934,12 +938,18 @@ def test_exact_material_process_death_leaves_only_the_durable_attempt():
         locality_standing=_standing(ledger),
         source_occurrence_reference=source.identity,
     )
+    dying_boundary = DyingBoundary()
+    admission, standing, boundary = admit_representation(
+        ledger, representation, output_stream=dying_boundary
+    )
 
     with pytest.raises(ProcessDeath):
         emit_operator_representation_material(
             ledger,
             representation=representation,
-            output_stream=DyingBoundary(),
+            admission_result_event_identity=admission.identity,
+            locality_standing=standing,
+            output_boundary=boundary,
         )
 
     assert representation["emission_attempt_event_identity"] is not None
@@ -969,11 +979,14 @@ def test_exact_material_emission_recovers_recorded_order_and_refuses_wrong_occur
     representation["recorded_occurrence_references"] = tuple(
         reversed(representation["recorded_occurrence_references"])
     )
+    admission, standing, boundary = admit_representation(ledger, representation)
 
     emit_operator_representation_material(
         ledger,
         representation=representation,
-        output_stream=BytesIO(),
+        admission_result_event_identity=admission.identity,
+        locality_standing=standing,
+        output_boundary=boundary,
     )
 
     assert representation["recorded_occurrence_references"] == tuple(
@@ -986,12 +999,17 @@ def test_exact_material_emission_recovers_recorded_order_and_refuses_wrong_occur
         locality_standing=_standing(ledger),
         source_occurrence_reference=source.identity,
     )
+    other_admission, other_standing, other_boundary = admit_representation(
+        ledger, other
+    )
     other["representation_identity"] = representation["representation_identity"]
     with pytest.raises(ValueError, match="differs"):
         emit_operator_representation_material(
             ledger,
             representation=other,
-            output_stream=BytesIO(),
+            admission_result_event_identity=other_admission.identity,
+            locality_standing=other_standing,
+            output_boundary=other_boundary,
         )
 
 
