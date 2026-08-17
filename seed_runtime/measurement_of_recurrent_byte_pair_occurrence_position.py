@@ -357,7 +357,7 @@ def _exact_ingest_event(ledger: EventLedger, event_identity: str) -> Event:
     return event
 
 
-def _measurement_source_positions(
+def _measurement_source_position_coordinates(
     ledger: EventLedger,
     *,
     pair_references: tuple[ReferenceToRecordedRecurrentBytePair, ...],
@@ -391,28 +391,35 @@ def _measurement_source_positions(
     ):
         raise ValueError("pair occurrence source falls outside its exact boundary")
     exact = ingested_material_bytes(source)
-    positions = [[] for _ in range(256)]
+    position_coordinates = [[] for _ in range(256)]
     for position, value in enumerate(exact):
-        positions[value].append(position)
-    return source, tuple(tuple(found) for found in positions)
+        position_coordinates[value].append(position)
+    return source, tuple(
+        tuple(coordinates) for coordinates in position_coordinates
+    )
 
 
-def _finding_from_source_positions(
+def _finding_from_source_position_coordinates(
     *,
     pair_reference: ReferenceToRecordedRecurrentBytePair,
     source: Event,
-    positions: tuple[tuple[int, ...], ...],
+    position_coordinates: tuple[tuple[int, ...], ...],
     boundary: EventLedgerBoundary,
     occurrence_limit: int,
 ) -> FindingOfRecurrentBytePairOccurrencePositions:
     first_byte, second_byte = pair_reference.exact_material
-    first_positions = positions[first_byte]
-    second_positions = positions[second_byte]
-    overlap = len(first_positions) if first_byte == second_byte else 0
-    available = len(first_positions) * len(second_positions) - overlap
+    first_position_coordinates = position_coordinates[first_byte]
+    second_position_coordinates = position_coordinates[second_byte]
+    overlap = (
+        len(first_position_coordinates) if first_byte == second_byte else 0
+    )
+    available = (
+        len(first_position_coordinates) * len(second_position_coordinates)
+        - overlap
+    )
     found = []
-    for first_position in first_positions:
-        for second_position in second_positions:
+    for first_position in first_position_coordinates:
+        for second_position in second_position_coordinates:
             if first_position == second_position:
                 continue
             if len(found) == occurrence_limit:
@@ -441,16 +448,16 @@ def _measure_through(
     boundary: EventLedgerBoundary,
     occurrence_limit: int,
 ) -> FindingOfRecurrentBytePairOccurrencePositions:
-    source, positions = _measurement_source_positions(
+    source, position_coordinates = _measurement_source_position_coordinates(
         ledger,
         pair_references=(pair_reference,),
         source_ingest_occurrence_identity=source_ingest_occurrence_identity,
         boundary=boundary,
     )
-    return _finding_from_source_positions(
+    return _finding_from_source_position_coordinates(
         pair_reference=pair_reference,
         source=source,
-        positions=positions,
+        position_coordinates=position_coordinates,
         boundary=boundary,
         occurrence_limit=occurrence_limit,
     )
@@ -503,17 +510,17 @@ def measure_positions_for_recurrent_byte_pair_assertions(
         measurement_occurrence_identity=pair_measurement_occurrence_identity,
         recurrence_assertion_identities=recurrence_assertion_identities,
     )
-    source, positions = _measurement_source_positions(
+    source, position_coordinates = _measurement_source_position_coordinates(
         ledger,
         pair_references=references,
         source_ingest_occurrence_identity=source_ingest_occurrence_identity,
         boundary=through,
     )
     return tuple(
-        _finding_from_source_positions(
+        _finding_from_source_position_coordinates(
             pair_reference=reference,
             source=source,
-            positions=positions,
+            position_coordinates=position_coordinates,
             boundary=through,
             occurrence_limit=occurrence_limit,
         )

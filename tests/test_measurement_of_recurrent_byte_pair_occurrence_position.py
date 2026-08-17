@@ -224,49 +224,49 @@ def test_same_boundary_pair_fan_out_reads_the_pair_result_once(monkeypatch):
         )
         for identity in recurrence_identities
     )
-    pair_result_reads = 0
-    source_reads = 0
-    order_reads = 0
-    boundary_reads = 0
-    reader = pair_occurrence_measurement.assertions_of_recorded_byte_position_pair_measurement
-    source_reader = pair_occurrence_measurement._exact_ingest_event
-    order_reader = ledger.occurrences_in_append_order
-    boundary_reader = ledger.list_locality
+    pair_result_read_count = 0
+    source_read_count = 0
+    order_read_count = 0
+    boundary_read_count = 0
+    pair_result_read = pair_occurrence_measurement.assertions_of_recorded_byte_position_pair_measurement
+    source_read = pair_occurrence_measurement._exact_ingest_event
+    order_read = ledger.occurrences_in_append_order
+    boundary_read = ledger.list_locality
 
-    def observe_pair_result_read(ledger, event_identity):
-        nonlocal pair_result_reads
-        pair_result_reads += 1
-        return reader(ledger, event_identity)
+    def witness_pair_result_read(ledger, event_identity):
+        nonlocal pair_result_read_count
+        pair_result_read_count += 1
+        return pair_result_read(ledger, event_identity)
 
-    def observe_source_read(ledger, event_identity):
-        nonlocal source_reads
-        source_reads += 1
-        return source_reader(ledger, event_identity)
+    def witness_source_read(ledger, event_identity):
+        nonlocal source_read_count
+        source_read_count += 1
+        return source_read(ledger, event_identity)
 
-    def observe_order_read(event_identities, *, locality_identity):
-        nonlocal order_reads
-        order_reads += 1
-        return order_reader(
+    def witness_order_read(event_identities, *, locality_identity):
+        nonlocal order_read_count
+        order_read_count += 1
+        return order_read(
             event_identities, locality_identity=locality_identity
         )
 
-    def observe_boundary_read(locality_identity, *, through=None):
-        nonlocal boundary_reads
-        boundary_reads += 1
-        return boundary_reader(locality_identity, through=through)
+    def witness_boundary_read(locality_identity, *, through=None):
+        nonlocal boundary_read_count
+        boundary_read_count += 1
+        return boundary_read(locality_identity, through=through)
 
     monkeypatch.setattr(
         pair_occurrence_measurement,
         "assertions_of_recorded_byte_position_pair_measurement",
-        observe_pair_result_read,
+        witness_pair_result_read,
     )
     monkeypatch.setattr(
-        pair_occurrence_measurement, "_exact_ingest_event", observe_source_read
+        pair_occurrence_measurement, "_exact_ingest_event", witness_source_read
     )
     monkeypatch.setattr(
-        ledger, "occurrences_in_append_order", observe_order_read
+        ledger, "occurrences_in_append_order", witness_order_read
     )
-    monkeypatch.setattr(ledger, "list_locality", observe_boundary_read)
+    monkeypatch.setattr(ledger, "list_locality", witness_boundary_read)
     measured = measure_positions_for_recurrent_byte_pair_assertions(
         ledger,
         pair_measurement_occurrence_identity=pair.identity,
@@ -277,10 +277,10 @@ def test_same_boundary_pair_fan_out_reads_the_pair_result_once(monkeypatch):
     )
 
     assert measured == expected
-    assert pair_result_reads == 1
-    assert source_reads == 1
-    assert order_reads == 1
-    assert boundary_reads == 1
+    assert pair_result_read_count == 1
+    assert source_read_count == 1
+    assert order_read_count == 1
+    assert boundary_read_count == 1
     assert tuple(
         finding.pair_reference.recurrence_assertion_identity
         for finding in measured
