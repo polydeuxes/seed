@@ -110,7 +110,9 @@ def test_three_stage_continuation_records_exact_direct_relation_without_copying_
     )
     assert assignment.locality_identity == destination
     assert assignment.material["book_clause_identity"] == "06.Locality.B"
-    assert assignment.material["standing"] == "assigned"
+    assert assignment.identity in after_act[
+        "responsibility_assignment_occurrences"
+    ]
     assert assignment.material["evidence_occurrence_reference"] == representation[
         "representation_event_identity"
     ]

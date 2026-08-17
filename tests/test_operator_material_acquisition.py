@@ -108,7 +108,9 @@ def test_one_read_records_distinct_assignment_act_yield_and_exact_raw_result():
     assert assignment.exact_material is act_evidence.exact_material is None
     assert result.exact_material == b"\x00\xffraw\n"
     assert assignment.material["book_clause_identity"] == "01.Source.G"
-    assert assignment.material["standing"] == "assigned"
+    assert assignment.identity in after_assignment[
+        "responsibility_assignment_occurrences"
+    ]
     assert recorded["result_identity"] == assignment.material[
         "result_boundary_identity"
     ]

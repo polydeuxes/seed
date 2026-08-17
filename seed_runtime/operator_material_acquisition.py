@@ -168,7 +168,6 @@ def _assignment_material(
             "addressed_representation_event_identity"
         ],
         "authority": _authority(),
-        "standing": "assigned",
         "limits": [
             "this assignment is bounded to one exact boundary occurrence",
             (

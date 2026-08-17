@@ -322,7 +322,6 @@ def _assignment_material(
             "standing_boundary_identity": standing_boundary_identity,
         },
         "authority": _authority(),
-        "standing": "assigned",
         "limits": [
             "pair counts establish no shared position",
             "exact source material does not establish relation path",

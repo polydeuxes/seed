@@ -462,7 +462,6 @@ def _assignment_material(
             "standing_boundary_identity": boundary,
         },
         "authority": _authority(),
-        "standing": "assigned",
         "limits": [
             "pair-subject equality establishes no source relation",
             "carried comparison findings remain recorded",
@@ -1049,7 +1048,6 @@ def _comparison_finding(inputs: dict[str, Any]) -> dict[str, Any]:
         + hashlib.sha256(canonical).hexdigest(),
         "subject": subject,
         "relation_findings": roles,
-        "standing": "compared",
         "source_provenance": (
             "exact yielded ordered path and recorded comparison findings"
         ),
@@ -1087,7 +1085,6 @@ def _compare_result_material(
         "finding": _comparison_finding(inputs),
         "scope": deepcopy(assignment.material["scope"]),
         "authority": deepcopy(assignment.material["authority"]),
-        "standing": "compared",
         "limits": list(assignment.material["limits"]),
         "unknown": list(assignment.material["unknown"]),
         "responsible_act_evidence_identity": act.identity,
@@ -1120,7 +1117,6 @@ def _recorded_compare_result_material(
         "finding": deepcopy(result["finding"]),
         "scope": deepcopy(result["scope"]),
         "authority": deepcopy(result["authority"]),
-        "standing": result["standing"],
         "limits": list(result["limits"]),
         "unknown": list(result["unknown"]),
         "responsible_act_evidence_identity": result[

@@ -190,7 +190,6 @@ def _assignment_material(
             "destination_locality_identity": destination_locality_identity,
         },
         "result_boundary_identity": result_boundary_identity,
-        "standing": "assigned",
         "limits": [
             "this assignment is bounded to one direct occurrence and result boundary",
             "availability at this Locality is not Applicability or Participation",

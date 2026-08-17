@@ -359,7 +359,14 @@ def test_changed_input_compare_is_refused_on_later_read():
     _assignment, _applicability, _act, result = _record_comparison(
         ledger, comparison, path
     )
-    comparison.material["standing"] = "changed"
+    count_finding = next(
+        finding
+        for findings in comparison.material["findings"].values()
+        for finding in findings
+        if type(finding.get("later_content")) is dict
+        and "count" in finding["later_content"]
+    )
+    count_finding["later_content"]["count"] += 1
     with pytest.raises(ValueError):
         get_recorded_comparison_of_ordered_relation_path_with_recorded_pair_findings(
             ledger, result.identity
@@ -380,7 +387,7 @@ def test_relation_of_relations_survives_sqlite_restart(tmp_path):
     reading = get_recorded_comparison_of_ordered_relation_path_with_recorded_pair_findings(
         reopened, result_identity
     )
-    assert reading["finding"]["standing"] == "compared"
+    assert reading["finding"]["relation_findings"]
     assert result_identity in _standing(reopened)["comparison_result_occurrences"]
     reopened.close()
 

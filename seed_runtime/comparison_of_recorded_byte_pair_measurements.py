@@ -485,7 +485,6 @@ def _assignment_material(
             ],
         },
         "authority": _authority(),
-        "standing": "assigned",
         "limits": [
             "comparison establishes no source relation",
             "comparison establishes no represented relation",
@@ -1231,7 +1230,6 @@ def _comparison_result_material(
         ),
         "scope": deepcopy(act.material["scope"]),
         "authority": _authority(),
-        "standing": "compared",
         "limits": [
             "matching content establishes no corroboration or truth",
             "difference establishes no causal source relation or meaning",
@@ -1269,7 +1267,6 @@ def _recorded_comparison_result_material(
         "findings": deepcopy(material["findings"]),
         "scope": deepcopy(material["scope"]),
         "authority": deepcopy(material["authority"]),
-        "standing": material["standing"],
         "limits": list(material["limits"]),
         "unknown": list(material["unknown"]),
         "responsible_act_evidence_identity": act_identity,

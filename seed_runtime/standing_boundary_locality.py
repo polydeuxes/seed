@@ -156,7 +156,6 @@ def _assignment_material(
             "recorded_occurrence_identity"
         ],
         "authority": _authority(),
-        "standing": "assigned",
         "limits": [
             "this assignment is bounded to one direct Locality relation",
             "the relation carries no addressed Standing",

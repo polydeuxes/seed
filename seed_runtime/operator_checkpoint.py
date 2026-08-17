@@ -181,7 +181,6 @@ def _assignment_material(
             "addressed_representation_event_identity"
         ],
         "authority": _authority(),
-        "standing": "assigned",
         "limits": [
             "record existence establishes no represented relation or Standing revision",
             "this record establishes no movement or Locality relation",

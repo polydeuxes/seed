@@ -318,7 +318,6 @@ def _candidate_assignment_material(
             REPRESENTATION_CANDIDATE_BOOK_CLAUSE,
             "preservation bounded to this candidate and emission Act",
         ),
-        "standing": "assigned",
         "limits": [
             "candidate identity establishes no Admission",
             "candidate identity establishes no Participation or emission",
@@ -864,7 +863,6 @@ def _admission_assignment_material(
             REPRESENTATION_ADMISSION_BOOK_CLAUSE,
             "Admission bounded to this candidate and destination operator Locality",
         ),
-        "standing": "assigned",
         "limits": [
             "Admission establishes no Participation by identity",
             "Admission to one operator Locality is not Admission to another",
