@@ -78,18 +78,6 @@
         "downstream_Act": "Representation_emission_Act"
       },
       {
-        "subject": "material_witness_invocation_result",
-        "grammar": "established",
-        "grammar_reference": "01.Source.C",
-        "responsible_boundary": "unestablished",
-        "responsibility_assignment": "unestablished",
-        "Act_Evidence": "unestablished",
-        "Evidence_of_Yield_relation": "unestablished",
-        "result_occurrence": "unestablished",
-        "Standing": "unestablished",
-        "downstream_Act": "unestablished"
-      },
-      {
         "subject": "emission_candidate_Admission_to_operator_Locality",
         "grammar": "established",
         "grammar_reference": "01.Standing.E",

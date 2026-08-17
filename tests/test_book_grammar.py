@@ -406,7 +406,9 @@ def test_witness_completeness_separates_grammar_from_live_crossing():
     }
     assert incomplete_subjects == {
         "Admission",
-        "material_witness_invocation_result",
+    }
+    assert "material_witness_invocation_result" not in {
+        crossing["subject"] for crossing in completeness["required_crossings"]
     }
 
 
