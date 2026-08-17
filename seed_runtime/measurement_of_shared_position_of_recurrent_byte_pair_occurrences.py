@@ -381,8 +381,40 @@ def record_shared_position_responsibility_assignment(
         required_occurrences=required,
     )
     identities = {
-        coordinate: new_identity("shared_pair_position_" + coordinate)
-        for coordinate in _IDENTITY_COORDINATES
+        "assignment_identity": new_identity("shared_pair_position_assignment_identity"),
+        "assignment_subject_identity": new_identity(
+            "shared_pair_position_assignment_subject_identity"
+        ),
+        "applicability_act_identity": new_identity(
+            "shared_pair_position_applicability_act_identity"
+        ),
+        "applicability_act_occurrence_identity": new_identity(
+            "shared_pair_position_applicability_act_occurrence_identity"
+        ),
+        "applicability_result_identity": new_identity(
+            "shared_pair_position_applicability_result_identity"
+        ),
+        "measurement_act_identity": new_identity(
+            "shared_pair_position_measurement_act_identity"
+        ),
+        "measurement_act_occurrence_identity": new_identity(
+            "shared_pair_position_measurement_act_occurrence_identity"
+        ),
+        "measurement_result_identity": new_identity(
+            "shared_pair_position_measurement_result_identity"
+        ),
+        "first_input_relation_identity": new_identity(
+            "shared_pair_position_first_input_relation_identity"
+        ),
+        "second_input_relation_identity": new_identity(
+            "shared_pair_position_second_input_relation_identity"
+        ),
+        "first_participation_relation_identity": new_identity(
+            "shared_pair_position_first_participation_relation_identity"
+        ),
+        "second_participation_relation_identity": new_identity(
+            "shared_pair_position_second_participation_relation_identity"
+        ),
     }
     if len(set(identities.values())) != len(identities):
         raise SharedPairPositionError("shared-position lifecycle identities collapsed")

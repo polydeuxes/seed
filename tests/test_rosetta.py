@@ -29,12 +29,21 @@ def _unadmitted_rosetta_words(material: str) -> set[str]:
     return _rosetta_words(material) - _rosetta_admission()
 
 
+def _relation_coordinate_identity(coordinate: object) -> str:
+    if type(coordinate) is str and coordinate:
+        return coordinate
+    if type(coordinate) is dict:
+        identity = coordinate.get("identity")
+        if type(identity) is str and identity:
+            return identity
+    raise TypeError("one exact relation-coordinate identity is required")
+
+
 def _relation_line(name: str, coordinates: dict[str, object]) -> str:
-    source = str(coordinates["from"]).replace("_", " ")
-    target = str(coordinates["to"]).replace("_", " ")
+    source = _relation_coordinate_identity(coordinates["from"]).replace("_", " ")
     relation = name.capitalize()
     if coordinate := coordinates.get("coordinate"):
-        relation = f"{relation}({coordinate})"
+        relation = f"{relation}({_relation_coordinate_identity(coordinate)})"
     return f"{source} ── {relation}"
 
 
@@ -48,7 +57,7 @@ def _assert_rosetta_relation_order(grammar: dict, rosetta: str) -> None:
         ]
         assert len(matching) == 1
         assert matching[0].endswith(
-            f"→ {str(coordinates['to']).replace('_', ' ')}"
+            f"→ {_relation_coordinate_identity(coordinates['to']).replace('_', ' ')}"
         )
 
 
