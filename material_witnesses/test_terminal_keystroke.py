@@ -15,7 +15,10 @@ from io import StringIO
 import pytest
 
 from seed_runtime.events import EventLedger
-from seed_runtime.byte_measurement import BYTE_MEASUREMENT_RECORDED_KIND
+from seed_runtime.byte_measurement import (
+    BYTE_MEASUREMENT_RECORDED_KIND,
+    assertions_of_recorded_byte_measurement,
+)
 from seed_runtime.material_ingest import MATERIAL_INGEST_OCCURRED_KIND, ingest_material
 from seed_runtime.occurrence_position_measurement import (
     OCCURRENCE_POSITION_RECORDED_KIND,
@@ -283,8 +286,21 @@ def test_console_naturally_decomposes_each_supplied_terminal_witness_occurrence(
         event.material["provenance_occurrence_references"][-1]
         for event in ingests[1::2]
     ) == tuple(event.identity for event in ingests[0::2])
-    assert len(measurements) == 1
-    assert len(position_measurements) == 1
+    assert len(measurements) == len(ingests) == 4
+    assert len(position_measurements) == len(ingests) == 4
+    for position, measurement in enumerate(measurements):
+        assertions = assertions_of_recorded_byte_measurement(
+            ledger, measurement.identity
+        )
+        source_set = next(
+            assertion
+            for assertion in assertions
+            if assertion.result == "exact_source_material_set"
+        )
+        assert source_set.material["dimensions"]["content"]["source_material"] == [
+            {"ingest_occurrence_identity": event.identity}
+            for event in ingests[: position + 1]
+        ]
     assert tuple(event.exact_material for event in emissions) == expected_emitted
     assert emitted_material == b"".join(expected_emitted)
 
@@ -292,6 +308,6 @@ def test_console_naturally_decomposes_each_supplied_terminal_witness_occurrence(
         ledger, locality_identity=system_locality
     )
     assert set(standing["measurement_occurrences"]) == {
-        measurements[0].identity,
-        position_measurements[0].identity,
+        *(measurement.identity for measurement in measurements),
+        *(measurement.identity for measurement in position_measurements),
     }

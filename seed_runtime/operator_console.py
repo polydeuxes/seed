@@ -529,6 +529,11 @@ def run_persistent_operator_console(
                     (supplied_occurrence.identity,),
                     locality_identity=system_locality_identity,
                 )
+                system_standing = _record_acquisition_measurements(
+                    ledger,
+                    system_standing,
+                    locality_identity=system_locality_identity,
+                )
                 if not supplied.egress:
                     return
                 system_representation = record_operator_representation(
@@ -603,11 +608,6 @@ def run_persistent_operator_console(
             if provider_result is not None or not supplied_occurrence_count:
                 raise TypeError("exact supplied material required")
             with ledger.batched():
-                system_standing = _record_acquisition_measurements(
-                    ledger,
-                    system_standing,
-                    locality_identity=system_locality_identity,
-                )
                 system_representation = record_operator_representation(
                     ledger,
                     locality_identity=system_locality_identity,

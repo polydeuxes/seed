@@ -331,7 +331,7 @@ def test_host_provider_receives_an_acquired_exact_command_before_it_occurs():
             for event in ledger.list()
             if event.kind == BYTE_MEASUREMENT_RECORDED_KIND
         ]
-    ) == 2
+    ) == 4
     emitted = [
         event
         for event in ledger.list()
@@ -355,7 +355,7 @@ def test_host_provider_receives_an_acquired_exact_command_before_it_occurs():
             for event in ledger.list()
             if event.kind == OCCURRENCE_POSITION_RECORDED_KIND
         ]
-    ) == 2
+    ) == 4
     operator_standing = read_operator_locality_standing(
         ledger, locality_identity="locality"
     )
@@ -558,6 +558,28 @@ def test_provider_death_preserves_each_already_supplied_system_occurrence():
         b"partial",
     ]
     assert raw_output.getvalue() == b"partial"
+    relation = next(
+        event
+        for event in ledger.list()
+        if event.kind == OPERATOR_SYSTEM_LOCALITY_RECORDED_KIND
+    )
+    system_events = ledger.list_locality(
+        relation.material["destination_locality_identity"]
+    )
+    assert len(
+        [
+            event
+            for event in system_events
+            if event.kind == BYTE_MEASUREMENT_RECORDED_KIND
+        ]
+    ) == 1
+    assert len(
+        [
+            event
+            for event in system_events
+            if event.kind == OCCURRENCE_POSITION_RECORDED_KIND
+        ]
+    ) == 1
 
 
 def test_provider_declares_exact_egress_order_without_egressing_other_results():
