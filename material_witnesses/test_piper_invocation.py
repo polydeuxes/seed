@@ -62,13 +62,31 @@ def piper_witness_observation():
         time_limit_second_count=15.0,
         material_byte_count_limit=1048576,
     )[0]
-    return ledger, ingests, references, implementation_function, invocations
+    result_ingests = tuple(
+        ingest_material(
+            ledger,
+            locality_identity="piper-material-witness-result",
+            exact_bytes=occurrence.stdout_bytes or b"",
+            source_role="system",
+            source_boundary=f"external voice stdout occurrence {position}",
+            provenance_occurrence_references=(ingests[position].identity,),
+        )
+        for position, occurrence in enumerate(invocations)
+    )
+    return (
+        ledger,
+        ingests,
+        references,
+        implementation_function,
+        invocations,
+        result_ingests,
+    )
 
 
 def test_exact_prose_reaches_the_external_voice_function_unchanged(
     piper_witness_observation,
 ):
-    _, ingests, references, implementation_function, invocations = (
+    _, ingests, references, implementation_function, invocations, _ = (
         piper_witness_observation
     )
 
@@ -85,7 +103,7 @@ def test_exact_prose_reaches_the_external_voice_function_unchanged(
 def test_external_voice_results_preserve_distinct_opaque_material(
     piper_witness_observation,
 ):
-    _, _, _, _, invocations = piper_witness_observation
+    _, _, _, _, invocations, _ = piper_witness_observation
 
     assert all(occurrence.returned for occurrence in invocations)
     assert all(type(occurrence.stdout_bytes) is bytes for occurrence in invocations)
@@ -95,3 +113,17 @@ def test_external_voice_results_preserve_distinct_opaque_material(
         occurrence.result_reference.coordinates == occurrence.coordinates
         for occurrence in invocations
     )
+
+
+def test_external_voice_results_enter_seed_only_as_exact_provenanced_material(
+    piper_witness_observation,
+):
+    _, source_ingests, _, _, invocations, result_ingests = piper_witness_observation
+
+    assert tuple(occurrence.exact_material for occurrence in result_ingests) == tuple(
+        invocation.stdout_bytes or b"" for invocation in invocations
+    )
+    assert tuple(
+        occurrence.material["provenance_occurrence_references"]
+        for occurrence in result_ingests
+    ) == tuple([source.identity] for source in source_ingests)

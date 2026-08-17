@@ -77,13 +77,24 @@ def terminal_witness_observation():
         time_limit_second_count=2.0,
         material_byte_count_limit=65536,
     )[0]
-    return ledger, ingests, references, invocations
+    result_ingests = tuple(
+        ingest_material(
+            ledger,
+            locality_identity="terminal-material-witness-result",
+            exact_bytes=occurrence.stdout_bytes or b"",
+            source_role="system",
+            source_boundary=f"external PTY stdout occurrence {position}",
+            provenance_occurrence_references=(ingests[position].identity,),
+        )
+        for position, occurrence in enumerate(invocations)
+    )
+    return ledger, ingests, references, invocations, result_ingests
 
 
 def test_exact_material_reaches_the_external_function_unchanged(
     terminal_witness_observation,
 ):
-    _, ingests, references, invocations = terminal_witness_observation
+    _, ingests, references, invocations, _ = terminal_witness_observation
 
     assert tuple(occurrence.exact_material for occurrence in ingests) == EXACT_MATERIAL
     assert tuple(reference.exact_material for reference in references) == EXACT_MATERIAL
@@ -94,7 +105,7 @@ def test_exact_material_reaches_the_external_function_unchanged(
 def test_the_external_result_preserves_every_bounded_process_coordinate(
     terminal_witness_observation,
 ):
-    _, _, _, invocations = terminal_witness_observation
+    _, _, _, invocations, _ = terminal_witness_observation
 
     for occurrence in invocations:
         assert occurrence.result_reference.coordinates == occurrence.coordinates
@@ -105,10 +116,24 @@ def test_the_external_result_preserves_every_bounded_process_coordinate(
 def test_one_exact_del_byte_changes_the_external_result(
     terminal_witness_observation,
 ):
-    _, _, references, invocations = terminal_witness_observation
+    _, _, references, invocations, _ = terminal_witness_observation
 
     assert EXACT_MATERIAL[0] == b"printf 012x" + bytes((127,)) + b"3\rexit\r"
     assert invocations[0].return_coordinates == invocations[1].return_coordinates
     assert invocations[0].stdout_bytes != invocations[1].stdout_bytes
     assert invocations[0].coordinates != invocations[1].coordinates
     assert references[0].result_identity != references[1].result_identity
+
+
+def test_external_results_enter_seed_only_as_exact_provenanced_material(
+    terminal_witness_observation,
+):
+    _, source_ingests, _, invocations, result_ingests = terminal_witness_observation
+
+    assert tuple(occurrence.exact_material for occurrence in result_ingests) == tuple(
+        invocation.stdout_bytes or b"" for invocation in invocations
+    )
+    assert tuple(
+        occurrence.material["provenance_occurrence_references"]
+        for occurrence in result_ingests
+    ) == tuple([source.identity] for source in source_ingests)
