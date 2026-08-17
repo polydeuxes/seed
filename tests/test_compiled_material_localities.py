@@ -361,11 +361,6 @@ def test_addition_cannot_cross_its_exact_admitted_material(
         replace(
             addition,
             added_reference=other,
-            result_material=(
-                addition.source_material[: addition.position]
-                + other.exact_material
-                + addition.source_material[addition.position :]
-            ),
         )
 
 

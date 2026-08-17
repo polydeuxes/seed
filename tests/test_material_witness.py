@@ -1782,7 +1782,7 @@ def test_added_position_invocation_does_not_rescan_a_validated_exact_act(
         )
 
 
-def test_a_different_source_order_is_refused_before_the_implementation_function():
+def test_added_position_derives_source_order_for_the_implementation_function():
     supplied = []
     source = ExactMaterialReference(
         "source-occurrence", "source-assertion", "fixture-locality", b"ab"
@@ -1795,18 +1795,22 @@ def test_a_different_source_order_is_refused_before_the_implementation_function(
         invocation=lambda material: supplied.append(material),
     )
 
-    with pytest.raises(ValueError, match="exact source order"):
-        AddedPositionOccurrence(
-            boundary_identity="different-source-addition",
-            locality_identity="fixture-locality",
-            occurrence_position=0,
-            source_reference=source,
-            position=1,
-            added_reference=added,
-            result_material=b"bxa",
-        )
+    addition = AddedPositionOccurrence(
+        boundary_identity="derived-source-addition",
+        locality_identity="fixture-locality",
+        occurrence_position=0,
+        source_reference=source,
+        position=1,
+        added_reference=added,
+    )
+    added_position_invocations(
+        (addition,),
+        boundary_identity="derived-source-addition-invocation",
+        implementation_functions=(implementation_function,),
+    )
 
-    assert supplied == []
+    assert addition.result_material == b"axb"
+    assert supplied == [b"axb"]
 
 
 def test_equal_source_material_keeps_distinct_source_assertion_references():
@@ -3841,7 +3845,7 @@ FIDELITY_SUBJECTS = {
         test_unknown_function_coordinate_does_not_erase_or_skip_the_later_invocation,
         test_one_byte_differences_establish_compiled_invocation_boundaries,
         test_added_position_invocation_does_not_rescan_a_validated_exact_act,
-        test_a_different_source_order_is_refused_before_the_implementation_function,
+        test_added_position_derives_source_order_for_the_implementation_function,
         test_every_three_byte_result_reaches_every_compiled_implementation_function,
         test_three_byte_results_establish_different_compiled_invocation_boundaries,
         test_compiled_implementation_function_receives_the_exact_material,

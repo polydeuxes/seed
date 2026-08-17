@@ -188,7 +188,6 @@ def test_removal_result_admission_reads_exact_comparison_matrix_once(monkeypatch
             source_reference=source,
             position=0,
             removed_reference=ExactPositionMaterialReference(source, 0, b"x"),
-            result_material=b"",
         )
         for position, source in enumerate(sources)
     )
@@ -305,7 +304,6 @@ def test_added_result_admission_constructs_each_exact_result_reference_once(
             source_reference=source,
             position=0,
             added_reference=added,
-            result_material=b"x",
         )
         for position in range(8)
     )

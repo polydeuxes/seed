@@ -574,7 +574,6 @@ class AddedPositionOccurrence:
     source_reference: ExactMaterialCoordinates
     position: int
     added_reference: ExactMaterialCoordinates
-    result_material: bytes
     source_admission_result_reference: AdmissionResultReference | None = None
     source_admitted_material_position: int | None = None
     source_admitted_reference_position: int | None = None
@@ -603,14 +602,12 @@ class AddedPositionOccurrence:
             raise ValueError("addition Act materials have distinct Localities")
         if len(self.added_reference.exact_material) != 1:
             raise ValueError("added material must be exactly one byte")
-        if not preserves_original_order(
-            source_material=self.source_reference.exact_material,
-            result_material=self.result_material,
-            added_position=self.position,
+        if (
+            type(self.position) is not int
+            or self.position < 0
+            or self.position > len(self.source_reference.exact_material)
         ):
-            raise ValueError("result material does not preserve its exact source order")
-        if self.result_material[self.position : self.position + 1] != self.added_material:
-            raise ValueError("result material does not carry the exact added material")
+            raise ValueError("addition Act requires one exact source position")
         admission_coordinates = (
             self.source_admission_result_reference,
             self.source_admitted_material_position,
@@ -713,6 +710,14 @@ class AddedPositionOccurrence:
         return self.source_reference.exact_material
 
     @property
+    def result_material(self) -> bytes:
+        return (
+            self.source_material[: self.position]
+            + self.added_material
+            + self.source_material[self.position :]
+        )
+
+    @property
     def added_material(self) -> bytes:
         return self.added_reference.exact_material
 
@@ -725,7 +730,6 @@ class RemovedPositionOccurrence:
     source_reference: ExactMaterialCoordinates
     position: int
     removed_reference: ExactMaterialCoordinates
-    result_material: bytes
     source_admission_result_reference: AdmissionResultReference | None = None
     source_admitted_material_position: int | None = None
     source_admitted_reference_position: int | None = None
@@ -757,11 +761,8 @@ class RemovedPositionOccurrence:
             or self.position >= len(self.source_material)
             or self.source_material[self.position : self.position + 1]
             != self.removed_material
-            or self.result_material
-            != self.source_material[: self.position]
-            + self.source_material[self.position + 1 :]
         ):
-            raise ValueError("result material does not preserve the exact removal")
+            raise ValueError("removal Act requires one exact source position")
         admission_coordinates = (
             self.source_admission_result_reference,
             self.source_admitted_material_position,
@@ -831,6 +832,13 @@ class RemovedPositionOccurrence:
     @property
     def source_material(self) -> bytes:
         return self.source_reference.exact_material
+
+    @property
+    def result_material(self) -> bytes:
+        return (
+            self.source_material[: self.position]
+            + self.source_material[self.position + 1 :]
+        )
 
     @property
     def removed_material(self) -> bytes:
@@ -2227,13 +2235,6 @@ def added_position_occurrences(
             source_reference=source,
             position=position,
             added_reference=added,
-            result_material=bytes(
-                (
-                    *source.exact_material[:position],
-                    *added.exact_material,
-                    *source.exact_material[position:],
-                )
-            ),
         )
         for occurrence_position, (source, position, added) in enumerate(
             (source, position, added)
@@ -2294,11 +2295,6 @@ def admission_added_position_occurrences(
                             source_reference=source,
                             position=position,
                             added_reference=added,
-                            result_material=(
-                                source.exact_material[:position]
-                                + added.exact_material
-                                + source.exact_material[position:]
-                            ),
                             source_admission_result_reference=(
                                 admission_result_reference
                             ),
@@ -2404,11 +2400,6 @@ def admission_result_added_position_occurrences(
                                 source_reference=source,
                                 position=position,
                                 added_reference=added,
-                                result_material=(
-                                    source.exact_material[:position]
-                                    + added.exact_material
-                                    + source.exact_material[position:]
-                                ),
                                 source_admission_result_reference=(
                                     source_admission_result_reference
                                 ),
@@ -2501,10 +2492,6 @@ def removed_position_occurrences(
             source_reference=source,
             position=position,
             removed_reference=removed,
-            result_material=(
-                source.exact_material[:position]
-                + source.exact_material[position + 1 :]
-            ),
         )
         for occurrence_position, (source, position, removed) in enumerate(
             exact_coordinates
@@ -2569,10 +2556,6 @@ def admission_removed_position_occurrences(
                         source_reference=source,
                         position=position,
                         removed_reference=removed,
-                        result_material=(
-                            source.exact_material[:position]
-                            + source.exact_material[position + 1 :]
-                        ),
                         source_admission_result_reference=(
                             source_admission_result_reference
                         ),
