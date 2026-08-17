@@ -89,6 +89,15 @@ from seed_runtime.operator_material_acquisition import (
     record_operator_material_acquire_responsible_act_evidence,
     record_operator_material_acquire_result,
 )
+from seed_runtime.operator_system_locality import (
+    EVENT_KIND_RESPONSIBILITIES as SYSTEM_LOCALITY_EVENT_KIND_RESPONSIBILITIES,
+    OPERATOR_SYSTEM_LOCALITY_ACT_EVIDENCE_KIND,
+    OPERATOR_SYSTEM_LOCALITY_RECORDED_KIND,
+    OPERATOR_SYSTEM_LOCALITY_RESPONSIBILITY_ASSIGNMENT_RECORDED_KIND,
+    record_operator_system_locality_responsibility_assignment,
+    record_operator_system_locality_act_evidence,
+    record_operator_system_locality_result,
+)
 from seed_runtime.operator_material_boundary import OperatorBoundaryMaterial
 from seed_runtime.operator_standing_continuation import (
     EVENT_KIND_RESPONSIBILITIES as CONTINUATION_EVENT_KIND_RESPONSIBILITIES,
@@ -837,6 +846,33 @@ def _standing_boundary_reference_yield_witness() -> dict:
         responsibility_assignment_standing=assignment_standing,
     )
     event = record_standing_boundary_reference_result(
+        ledger, responsible_act_evidence_event_identity=act.identity
+    )
+    return _yield_bundle(ledger, event)
+
+
+def _operator_system_locality_yield_witness() -> dict:
+    ledger = _IntegrityAdversaryLedger()
+    locality_identity = "operator-invocation-locality"
+    command = ingest_material(
+        ledger,
+        locality_identity=locality_identity,
+        exact_bytes=b"!pytest\n",
+        source_role="operator",
+        source_boundary="operator boundary",
+    )
+    assignment = record_operator_system_locality_responsibility_assignment(
+        ledger,
+        operator_material_occurrence_reference=command.identity,
+        operator_locality_standing=read_operator_locality_standing(
+            ledger, locality_identity=locality_identity
+        ),
+    )
+    act = record_operator_system_locality_act_evidence(
+        ledger,
+        responsibility_assignment_event_identity=assignment.identity,
+    )
+    event = record_operator_system_locality_result(
         ledger, responsible_act_evidence_event_identity=act.identity
     )
     return _yield_bundle(ledger, event)
@@ -1712,6 +1748,9 @@ def _remaining_yield_requirement_bundles() -> dict[str, dict[str, dict]]:
         "failed_emission": _failed_emission_yield_witness,
         "material_ingest": _material_ingest_yield_witness,
         "operator_material_acquire": _operator_material_acquire_yield_witness,
+        "operator_invocation_locality_relation": (
+            _operator_system_locality_yield_witness
+        ),
         "standing_boundary_reference": _standing_boundary_reference_yield_witness,
         "recorded_standing_boundary_locality_relation": (
             _recorded_standing_boundary_locality_yield_witness
@@ -4059,6 +4098,9 @@ def test_unrelated_yield_occurrences_do_not_share_result_identity():
         "failed_emission": _failed_emission_yield_witness,
         "material_ingest": _material_ingest_yield_witness,
         "operator_material_acquire": _operator_material_acquire_yield_witness,
+        "operator_invocation_locality_relation": (
+            _operator_system_locality_yield_witness
+        ),
         "standing_boundary_reference": _standing_boundary_reference_yield_witness,
         "recorded_standing_boundary_locality_relation": (
             _recorded_standing_boundary_locality_yield_witness
@@ -4352,6 +4394,18 @@ def test_recorded_boundary_locality_stages_keep_distinct_witness_clauses():
     ] == "02.Acts.A"
     assert BOUNDARY_LOCALITY_EVENT_KIND_RESPONSIBILITIES[
         RECORDED_STANDING_BOUNDARY_LOCALITY_RECORDED_KIND
+    ] == "06.Locality.A"
+
+
+def test_operator_system_locality_stages_keep_distinct_witness_clauses():
+    assert SYSTEM_LOCALITY_EVENT_KIND_RESPONSIBILITIES[
+        OPERATOR_SYSTEM_LOCALITY_RESPONSIBILITY_ASSIGNMENT_RECORDED_KIND
+    ] == "06.Locality.D"
+    assert SYSTEM_LOCALITY_EVENT_KIND_RESPONSIBILITIES[
+        OPERATOR_SYSTEM_LOCALITY_ACT_EVIDENCE_KIND
+    ] == "02.Acts.A"
+    assert SYSTEM_LOCALITY_EVENT_KIND_RESPONSIBILITIES[
+        OPERATOR_SYSTEM_LOCALITY_RECORDED_KIND
     ] == "06.Locality.A"
 
 
@@ -5208,6 +5262,9 @@ FIDELITY_SUBJECTS = {
     ),
     "recorded_boundary_locality_responsibility_clauses": (
         test_recorded_boundary_locality_stages_keep_distinct_witness_clauses,
+    ),
+    "operator_system_locality_responsibility_clauses": (
+        test_operator_system_locality_stages_keep_distinct_witness_clauses,
     ),
     "operator_material_acquisition_responsibility_clauses": (
         test_operator_material_acquire_stages_keep_distinct_witness_clauses,

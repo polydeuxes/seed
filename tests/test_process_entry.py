@@ -317,10 +317,19 @@ def test_live_process_ingests_each_supplied_pytest_occurrence(
         }
         for event in supplied
     )
-    assert [
+    provenance = [
         event.material["provenance_occurrence_references"]
         for event in supplied
-    ] == [[ingests[0].identity]] * len(supplied)
+    ]
+    assert all(
+        type(references) is list
+        and len(references) == 2
+        and references[0] == ingests[0].identity
+        for references in provenance
+    )
+    assert len(
+        {references[1] for references in provenance}
+    ) == 1
 
 
 def test_live_process_egresses_only_provider_selected_occurrences(

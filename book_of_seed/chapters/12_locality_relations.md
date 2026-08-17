@@ -30,6 +30,12 @@ When one current Locality Standing carries exactly one intact recorded Standing 
 
 The assignment, exact Act, Act occurrence, Locality relation, Yield, and result remain distinct by identity. The relation preserves the exact recorded result reference and new destination identity; it preserves no other reference or destination. It does not copy the addressed Standing, carry another relation by identity, carry branch Standing, revise the recorded boundary, establish Applicability or Participation, or perform Compare. Absence or several carried recorded references do not establish one exact reference.
 
+### 06.Locality.D — Operator invocation Locality Responsibility
+
+When one current operator Locality Standing carries one exact operator material occurrence beginning an invocation, active Book assigns this Seed a Responsibility bounded to establish one new Locality and one direct Locality relation from the operator Locality to it. The assignment preserves its own subject, the operator material occurrence, source Locality, new Locality, responsible boundary, exact Act, Act occurrence, relation occurrence, Evidence occurrence, Authority, Scope, limits, Unknown, and Standing.
+
+The operator material occurrence carries operator Authority for that exact invocation only. The assignment, exact Act, Act occurrence, Locality relation, Yield, and result remain distinct by identity. Material supplied by the invocation may occur in the new Locality with exact provenance to the operator material occurrence and relation result. The relation does not copy operator Standing, establish enclosure or hierarchy, make supplied material applicable to the operator Locality, select material for Representation, or establish Participation. Each other operator material occurrence requires another assignment and another new Locality.
+
 ## Important distinctions
 
 - locality subjects != locality relation
@@ -39,6 +45,8 @@ The assignment, exact Act, Act occurrence, Locality relation, Yield, and result 
 - Responsibility assignment != continuation Act or Locality relation
 - recorded Standing boundary reference != its Locality relation
 - one direct recorded boundary relation != another direct relation
+- operator material occurrence != supplied material occurrence
+- operator Authority for one invocation != supplied material Applicability
 
 ## Related chapters
 

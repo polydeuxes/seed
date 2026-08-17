@@ -375,8 +375,13 @@ def test_a_failed_console_emission_advances_every_recorded_occurrence(
             ),
         )
 
+    system_locality_identity = next(
+        event.locality_identity
+        for event in ledger.list()
+        if event.kind == "operator.invocation_locality_recorded"
+    )
     assert observed[-1] == read_operator_locality_standing(
-        ledger, locality_identity="s"
+        ledger, locality_identity=system_locality_identity
     )
 
 

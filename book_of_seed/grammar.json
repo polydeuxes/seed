@@ -1607,6 +1607,63 @@
         ["recorded_Standing_boundary_reference", "Locality_relation"]
       ]
     },
+    "06.Locality.D": {
+      "subject": "Responsibility_assignment_of_operator_invocation_Locality_relation",
+      "book_material_reference": "06.Locality.D",
+      "grammar": "established",
+      "recorded_occurrence_kind": ["event_occurrence"],
+      "responsibility": {
+        "kind": "Responsibility_assignment_of_operator_invocation_Locality_relation",
+        "coordinates": [
+          "Responsibility_assignment_subject",
+          "operator_material_occurrence",
+          "source_Locality",
+          "destination_Locality",
+          "responsible_boundary",
+          "exact_Act",
+          "Act_occurrence",
+          "relation_occurrence",
+          "occurrence_of_Evidence_event",
+          "Authority",
+          "Scope",
+          "limits",
+          "Unknown",
+          "Standing"
+        ]
+      },
+      "authority": "operator_Authority_for_one_exact_invocation",
+      "requires": [
+        "one_exact_operator_material_occurrence",
+        "current_operator_Locality_Standing",
+        "new_destination_Locality",
+        "intact_occurrence_of_Evidence_event"
+      ],
+      "preserves": [
+        "operator_material_occurrence",
+        "source_Locality",
+        "destination_Locality",
+        "relation_occurrence",
+        "Authority",
+        "Scope",
+        "limits",
+        "Unknown"
+      ],
+      "does_not_establish": [
+        "operator_Standing_copy",
+        "enclosure",
+        "hierarchy",
+        "supplied_material_Applicability",
+        "represented_relation",
+        "Participation"
+      ],
+      "distinct_from": [
+        ["Responsibility_assignment", "exact_Act"],
+        ["exact_Act", "Act_occurrence"],
+        ["Act_occurrence", "Locality_relation"],
+        ["operator_material_occurrence", "supplied_material_occurrence"],
+        ["operator_Authority", "supplied_material_Applicability"]
+      ]
+    },
     "08.Authority.A": {
       "subject": "bounded_input_support",
       "book_material_reference": "08.Authority.A",

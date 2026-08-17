@@ -11,6 +11,9 @@ from seed_runtime.material_ingest import (
     MATERIAL_INGEST_OCCURRED_KIND,
     ingest_material,
 )
+from seed_runtime.operator_system_locality import (
+    get_recorded_operator_system_locality,
+)
 
 
 @dataclass(frozen=True, slots=True)
@@ -44,14 +47,17 @@ OperatorInvocationProvider = Callable[
 def ingest_supplied_invocation_occurrence(
     ledger: EventLedger,
     *,
-    locality_identity: str,
+    operator_invocation_locality_result_event_identity: str,
     command_occurrence_reference: str,
     supplied: SuppliedSystemMaterialOccurrence,
 ) -> Event:
-    """Ingest one exact system-attributed material occurrence."""
+    """Ingest one exact system occurrence in its invocation Locality."""
 
     if type(supplied) is not SuppliedSystemMaterialOccurrence:
         raise TypeError("exact supplied material required")
+    relation = get_recorded_operator_system_locality(
+        ledger, operator_invocation_locality_result_event_identity
+    )
     command_occurrence = (
         ledger.get(command_occurrence_reference)
         if type(command_occurrence_reference) is str
@@ -60,7 +66,10 @@ def ingest_supplied_invocation_occurrence(
     if (
         command_occurrence is None
         or command_occurrence.kind != MATERIAL_INGEST_OCCURRED_KIND
-        or command_occurrence.locality_identity != locality_identity
+        or command_occurrence.identity
+        != relation["operator_material_occurrence_reference"]
+        or command_occurrence.locality_identity
+        != relation["operator_locality_identity"]
         or command_occurrence.material.get("source_role") != "operator"
         or type(command_occurrence.exact_material) is not bytes
         or not command_occurrence.exact_material.startswith(b"!")
@@ -69,10 +78,13 @@ def ingest_supplied_invocation_occurrence(
         raise ValueError("exact operator occurrence required")
     return ingest_material(
         ledger,
-        locality_identity=locality_identity,
+        locality_identity=relation["destination_locality_identity"],
         exact_bytes=supplied.exact_bytes,
         source_role="system",
         source_boundary=supplied.source_boundary,
         known_loss=supplied.known_loss,
-        provenance_occurrence_references=(command_occurrence.identity,),
+        provenance_occurrence_references=(
+            command_occurrence.identity,
+            operator_invocation_locality_result_event_identity,
+        ),
     )

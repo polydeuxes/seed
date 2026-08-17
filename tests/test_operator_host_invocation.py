@@ -23,6 +23,13 @@ from seed_runtime.operator_locality_standing import (
 from seed_runtime.operator_material_acquisition import (
     OPERATOR_MATERIAL_ACQUIRE_RECORDED_KIND,
 )
+from seed_runtime.operator_system_locality import (
+    OPERATOR_SYSTEM_LOCALITY_RESPONSIBILITY_ASSIGNMENT_RECORDED_KIND,
+    OPERATOR_SYSTEM_LOCALITY_RECORDED_KIND,
+    record_operator_system_locality_responsibility_assignment,
+    record_operator_system_locality_act_evidence,
+    record_operator_system_locality_result,
+)
 from seed_runtime.supplied_invocation_material import (
     SuppliedSystemMaterialOccurrence,
     ingest_supplied_invocation_occurrence,
@@ -51,7 +58,7 @@ def _provider(*occurrences):
 def _ingests(ledger):
     return [
         event
-        for event in ledger.list_locality("locality")
+        for event in ledger.list()
         if event.kind == MATERIAL_INGEST_OCCURRED_KIND
     ]
 
@@ -63,6 +70,23 @@ def _command(ledger, *, locality="locality", exact=b"!ls\n"):
         exact_bytes=exact,
         source_role="operator",
         source_boundary="operator boundary",
+    )
+
+
+def _operator_system_relation(ledger, command):
+    assignment = record_operator_system_locality_responsibility_assignment(
+        ledger,
+        operator_material_occurrence_reference=command.identity,
+        operator_locality_standing=read_operator_locality_standing(
+            ledger, locality_identity=command.locality_identity
+        ),
+    )
+    act = record_operator_system_locality_act_evidence(
+        ledger,
+        responsibility_assignment_event_identity=assignment.identity,
+    )
+    return record_operator_system_locality_result(
+        ledger, responsible_act_evidence_event_identity=act.identity
     )
 
 
@@ -98,7 +122,11 @@ _COMPLETE_COMMAND_REPRESENTED_BOUNDARIES = (
         OPERATOR_MATERIAL_ACQUIRE_RECORDED_KIND,
         OPERATOR_MATERIAL_ACQUIRE_RECORDED_KIND,
     ),
-    (OCCURRENCE_POSITION_RECORDED_KIND, None),
+    (OCCURRENCE_POSITION_RECORDED_KIND, MATERIAL_INGEST_OCCURRED_KIND),
+    (
+        OPERATOR_SYSTEM_LOCALITY_RESPONSIBILITY_ASSIGNMENT_RECORDED_KIND,
+        None,
+    ),
 )
 
 
@@ -162,10 +190,18 @@ def test_host_provider_receives_an_acquired_exact_command_before_it_occurs():
         "provider:1",
         "provider:2",
     ]
+    relation = next(
+        event
+        for event in ledger.list()
+        if event.kind == OPERATOR_SYSTEM_LOCALITY_RECORDED_KIND
+    )
     assert [
         event.material["provenance_occurrence_references"]
         for event in ingests[1:]
-    ] == [[ingests[0].identity]] * 3
+    ] == [[ingests[0].identity, relation.identity]] * 3
+    assert {event.locality_identity for event in ingests[1:]} == {
+        relation.material["destination_locality_identity"]
+    }
     assert all(
         event.material["unknown"] == ["represented_relation", "source_relation"]
         for event in ingests[1:]
@@ -174,19 +210,19 @@ def test_host_provider_receives_an_acquired_exact_command_before_it_occurs():
     assert len(
         [
             event
-            for event in ledger.list_locality("locality")
+            for event in ledger.list()
             if event.kind == BYTE_MEASUREMENT_RECORDED_KIND
         ]
     ) == 2
     emitted = [
         event
-        for event in ledger.list_locality("locality")
+        for event in ledger.list()
         if event.kind == "operator.representation.emitted"
     ]
     assert len(emitted) == 2
     admissions = [
         event
-        for event in ledger.list_locality("locality")
+        for event in ledger.list()
         if event.kind
         == "operator.representation.exact_material_admission_recorded"
     ]
@@ -198,24 +234,32 @@ def test_host_provider_receives_an_acquired_exact_command_before_it_occurs():
     assert len(
         [
             event
-            for event in ledger.list_locality("locality")
+            for event in ledger.list()
             if event.kind == OCCURRENCE_POSITION_RECORDED_KIND
         ]
     ) == 2
-    standing = read_operator_locality_standing(
+    operator_standing = read_operator_locality_standing(
         ledger, locality_identity="locality"
+    )
+    system_standing = read_operator_locality_standing(
+        ledger, locality_identity=relation.material["destination_locality_identity"]
     )
     assert [
         occurrence["evidence_event_identity"]
-        for occurrence in standing["ingest_occurrences"]
-    ] == [event.identity for event in ingests]
-    assert standing["admission_result_occurrences"] == {
+        for occurrence in operator_standing["ingest_occurrences"]
+    ] == [ingests[0].identity]
+    assert [
+        occurrence["evidence_event_identity"]
+        for occurrence in system_standing["ingest_occurrences"]
+    ] == [event.identity for event in ingests[1:]]
+    assert operator_standing["admission_result_occurrences"] == {}
+    assert system_standing["admission_result_occurrences"] == {
         event.identity: None for event in admissions
     }
-    assert len(standing["applicability_result_occurrences"]) == 2
+    assert len(system_standing["applicability_result_occurrences"]) == 2
     assert {
         reference["emitted_event_identity"]
-        for reference in standing["representations"].values()
+        for reference in system_standing["representations"].values()
         if reference["emitted_event_identity"] is not None
     } == {event.identity for event in emitted}
 
@@ -250,8 +294,14 @@ def test_operator_emission_uses_the_current_locality_after_locality_change():
     assert len(admissions) == 1
     admission = admissions[0]
     assert admission.locality_identity != "initial"
+    relation = next(
+        event
+        for event in ledger.list()
+        if event.kind == OPERATOR_SYSTEM_LOCALITY_RECORDED_KIND
+    )
+    assert admission.locality_identity == relation.locality_identity
     assert admission.material["destination_operator_locality_identity"] == (
-        admission.locality_identity
+        relation.material["operator_locality_identity"]
     )
     emitted = [
         event
@@ -421,21 +471,26 @@ def test_provider_declares_exact_egress_order_without_egressing_other_results():
         b"artifact",
         b"end",
     ]
+    relation = next(
+        event
+        for event in ledger.list()
+        if event.kind == OPERATOR_SYSTEM_LOCALITY_RECORDED_KIND
+    )
     assert [
         event.material["provenance_occurrence_references"]
         for event in supplied_ingests
-    ] == [[ingests[0].identity]] * 4
+    ] == [[ingests[0].identity, relation.identity]] * 4
     assert raw_output.getvalue() == b"erroroutput"
     supplied_identities = {event.identity for event in supplied_ingests}
     assert [
         event.material["source_occurrence_reference"]
-        for event in ledger.list_locality("locality")
+        for event in ledger.list()
         if event.kind == "operator.representation.recorded"
         and event.material["source_occurrence_reference"]
         in supplied_identities
     ] == [supplied_ingests[0].identity, supplied_ingests[1].identity]
     standing = read_operator_locality_standing(
-        ledger, locality_identity="locality"
+        ledger, locality_identity=relation.material["destination_locality_identity"]
     )
     assert [
         occurrence["evidence_event_identity"]
@@ -464,10 +519,11 @@ def test_missing_supplied_result_is_refused_after_command_acquisition():
 def test_equal_empty_supplied_material_remains_three_exact_occurrences():
     ledger = EventLedger()
     command = _command(ledger)
+    relation = _operator_system_relation(ledger, command)
     events = tuple(
         ingest_supplied_invocation_occurrence(
             ledger,
-            locality_identity="locality",
+            operator_invocation_locality_result_event_identity=relation.identity,
             command_occurrence_reference=command.identity,
             supplied=supplied,
         )
@@ -496,10 +552,11 @@ def test_supplied_occurrence_requires_exact_types():
 
     ledger = EventLedger()
     command = _command(ledger)
+    relation = _operator_system_relation(ledger, command)
     with pytest.raises(TypeError, match="exact supplied material required"):
         ingest_supplied_invocation_occurrence(
             ledger,
-            locality_identity="locality",
+            operator_invocation_locality_result_event_identity=relation.identity,
             command_occurrence_reference=command.identity,
             supplied=OtherOccurrence(b"", "output", True),
         )
@@ -526,10 +583,11 @@ def test_supplied_occurrence_requires_an_exact_egress_distinction(egress):
 def test_supplied_yield_cannot_be_replaced_by_another_occurrence():
     ledger = EventLedger()
     command = _command(ledger)
+    relation = _operator_system_relation(ledger, command)
     output, error, _end = tuple(
         ingest_supplied_invocation_occurrence(
             ledger,
-            locality_identity="locality",
+            operator_invocation_locality_result_event_identity=relation.identity,
             command_occurrence_reference=command.identity,
             supplied=supplied,
         )
@@ -573,23 +631,24 @@ def test_supplied_yield_cannot_be_replaced_by_another_occurrence():
 
 def test_supplied_result_refuses_missing_different_or_corrupted_command():
     ledger = EventLedger()
+    command = _command(ledger)
+    relation = _operator_system_relation(ledger, command)
     other_locality = _command(ledger, locality="other")
 
     for reference in ("missing", other_locality.identity):
         with pytest.raises(ValueError, match="exact operator occurrence required"):
             ingest_supplied_invocation_occurrence(
                 ledger,
-                locality_identity="locality",
+                operator_invocation_locality_result_event_identity=relation.identity,
                 command_occurrence_reference=reference,
                 supplied=_supplied()[0],
             )
 
-    command = _command(ledger)
     command.material["source_role"] = "system"
-    with pytest.raises(ValueError, match="exact operator occurrence required"):
+    with pytest.raises(ValueError, match="operator material occurrence"):
         ingest_supplied_invocation_occurrence(
             ledger,
-            locality_identity="locality",
+            operator_invocation_locality_result_event_identity=relation.identity,
             command_occurrence_reference=command.identity,
             supplied=_supplied()[0],
         )

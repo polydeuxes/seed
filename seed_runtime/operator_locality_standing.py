@@ -57,6 +57,14 @@ from seed_runtime.operator_material_acquisition import (
     get_operator_material_acquire_responsibility_assignment,
     get_recorded_operator_material_acquire,
 )
+from seed_runtime.operator_system_locality import (
+    OPERATOR_SYSTEM_LOCALITY_RESPONSIBILITY_ASSIGNMENT_RECORDED_KIND,
+    OPERATOR_SYSTEM_LOCALITY_ACT_EVIDENCE_KIND,
+    OPERATOR_SYSTEM_LOCALITY_RECORDED_KIND,
+    get_operator_system_locality_responsibility_assignment,
+    get_operator_system_locality_act_evidence,
+    get_recorded_operator_system_locality,
+)
 from seed_runtime.operator_representation_admission import (
     REPRESENTATION_CANDIDATE_RESPONSIBILITY_ASSIGNMENT_RECORDED_KIND,
     REPRESENTATION_CANDIDATE_ACT_EVIDENCE_KIND,
@@ -128,6 +136,11 @@ _OPERATOR_MATERIAL_ACQUIRE_KINDS = {
     OPERATOR_MATERIAL_ACQUIRE_ACT_EVIDENCE_KIND,
     OPERATOR_MATERIAL_ACQUIRE_RECORDED_KIND,
 }
+_OPERATOR_SYSTEM_LOCALITY_KINDS = {
+    OPERATOR_SYSTEM_LOCALITY_RESPONSIBILITY_ASSIGNMENT_RECORDED_KIND,
+    OPERATOR_SYSTEM_LOCALITY_ACT_EVIDENCE_KIND,
+    OPERATOR_SYSTEM_LOCALITY_RECORDED_KIND,
+}
 _REPRESENTATION_CANDIDATE_ADMISSION_KINDS = {
     REPRESENTATION_CANDIDATE_RESPONSIBILITY_ASSIGNMENT_RECORDED_KIND,
     REPRESENTATION_CANDIDATE_ACT_EVIDENCE_KIND,
@@ -148,6 +161,7 @@ _SUPPORTED_KINDS = {
     *_STANDING_BOUNDARY_REFERENCE_KINDS,
     *_RECORDED_STANDING_BOUNDARY_LOCALITY_KINDS,
     *_OPERATOR_MATERIAL_ACQUIRE_KINDS,
+    *_OPERATOR_SYSTEM_LOCALITY_KINDS,
     *_REPRESENTATION_CANDIDATE_ADMISSION_KINDS,
     *_REPRESENTATION_EMISSION_APPLICABILITY_KINDS,
     _REPRESENTATION_RECORDED_KIND,
@@ -482,6 +496,7 @@ def advance_operator_locality_standing(
     recorded_relation_standings: dict[str, None] = {}
     recorded_standing_boundary_references: dict[str, None] = {}
     recorded_standing_boundary_locality_relations: dict[str, None] = {}
+    operator_invocation_locality_relations: dict[str, None] = {}
     responsibility_assignment_occurrences: dict[str, None] = {}
     operator_material_acquire_act_occurrences: dict[str, None] = {}
     candidate_result_occurrences: dict[str, None] = {}
@@ -529,6 +544,13 @@ def advance_operator_locality_standing(
         if type(recorded_standing_boundary_locality_relations) is not dict:
             raise ValueError(
                 "prior Locality Standing requires exact recorded Standing boundary Locality relations"
+            )
+        operator_invocation_locality_relations = prior[
+            "operator_invocation_locality_relations"
+        ]
+        if type(operator_invocation_locality_relations) is not dict:
+            raise ValueError(
+                "prior Locality Standing requires exact operator invocation Locality relations"
             )
         responsibility_assignment_occurrences = prior[
             "responsibility_assignment_occurrences"
@@ -579,6 +601,7 @@ def advance_operator_locality_standing(
             or event.kind in _STANDING_BOUNDARY_REFERENCE_KINDS
             or event.kind in _RECORDED_STANDING_BOUNDARY_LOCALITY_KINDS
             or event.kind in _OPERATOR_MATERIAL_ACQUIRE_KINDS
+            or event.kind in _OPERATOR_SYSTEM_LOCALITY_KINDS
             or event.kind in _REPRESENTATION_CANDIDATE_ADMISSION_KINDS
             or event.kind in _REPRESENTATION_EMISSION_APPLICABILITY_KINDS
         ):
@@ -647,6 +670,22 @@ def advance_operator_locality_standing(
             continue
         if event.kind == OPERATOR_MATERIAL_ACQUIRE_RECORDED_KIND:
             get_recorded_operator_material_acquire(ledger, event.identity)
+            continue
+        if (
+            event.kind
+            == OPERATOR_SYSTEM_LOCALITY_RESPONSIBILITY_ASSIGNMENT_RECORDED_KIND
+        ):
+            get_operator_system_locality_responsibility_assignment(
+                ledger, event.identity
+            )
+            responsibility_assignment_occurrences[event.identity] = None
+            continue
+        if event.kind == OPERATOR_SYSTEM_LOCALITY_ACT_EVIDENCE_KIND:
+            get_operator_system_locality_act_evidence(ledger, event.identity)
+            continue
+        if event.kind == OPERATOR_SYSTEM_LOCALITY_RECORDED_KIND:
+            get_recorded_operator_system_locality(ledger, event.identity)
+            operator_invocation_locality_relations[event.identity] = None
             continue
         if event.kind in {
             REPRESENTATION_CANDIDATE_RESPONSIBILITY_ASSIGNMENT_RECORDED_KIND,
@@ -873,6 +912,9 @@ def advance_operator_locality_standing(
         ),
         "recorded_standing_boundary_locality_relations": (
             recorded_standing_boundary_locality_relations
+        ),
+        "operator_invocation_locality_relations": (
+            operator_invocation_locality_relations
         ),
         "responsibility_assignment_occurrences": (
             responsibility_assignment_occurrences
