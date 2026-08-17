@@ -210,6 +210,7 @@ def _record_exact_material_representation_admission_and_applicability(
         ledger,
         admission_result_event_identity=admission.identity,
         locality_standing=standing,
+        destination_operator_boundary=destination_operator_boundary,
     )
     standing = _advance_over(
         ledger,

@@ -16,6 +16,7 @@ from seed_runtime.evidence_of_yield_relation import (
 from seed_runtime.operator_representation_admission import (
     get_recorded_exact_material_representation_admission,
 )
+from seed_runtime.operator_egress import read_operator_emission_boundary
 
 
 REPRESENTATION_EMISSION_APPLICABILITY_ACT_EVIDENCE_KIND = (
@@ -177,12 +178,27 @@ def record_representation_emission_applicability_act_evidence(
     *,
     admission_result_event_identity: str,
     locality_standing: dict[str, Any],
+    destination_operator_boundary,
 ) -> Event:
     """Validate no result yet; freeze the exact admitted input relation."""
 
     admission_event, admission = _admission_event_and_material(
         ledger, admission_result_event_identity
     )
+    (
+        _output_stream,
+        destination_operator_boundary_identity,
+        destination_operator_locality_identity,
+    ) = read_operator_emission_boundary(destination_operator_boundary)
+    if (
+        destination_operator_boundary_identity
+        != admission["destination_operator_boundary_identity"]
+        or destination_operator_locality_identity
+        != admission["destination_operator_locality_identity"]
+    ):
+        raise RepresentationApplicabilityError(
+            "Applicability requires its exact admitted destination"
+        )
     standing_boundary_identity = _require_admission_standing(
         ledger,
         admission_event=admission_event,

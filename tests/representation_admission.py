@@ -88,6 +88,7 @@ def admit_representation(
         ledger,
         admission_result_event_identity=admission.identity,
         locality_standing=standing,
+        destination_operator_boundary=boundary,
     )
     applicability = record_representation_emission_applicability_result(
         ledger,

@@ -125,6 +125,36 @@ def test_emitter_refuses_applicability_absent_from_current_standing():
         )
 
 
+def test_applicability_refuses_a_destination_that_lost_write_capability():
+    class ExpiringBoundary:
+        def __init__(self):
+            self.read_count = 0
+
+        @property
+        def write(self):
+            self.read_count += 1
+            if self.read_count < 3:
+                return lambda material: len(material)
+            return None
+
+    ledger = EventLedger()
+    representation = _representation(ledger)
+
+    with pytest.raises(TypeError, match="writable boundary"):
+        admit_representation(
+            ledger,
+            representation,
+            output_stream=ExpiringBoundary(),
+        )
+
+    assert not tuple(
+        ledger.iter_locality_kind(
+            "seed-locality",
+            "operator.representation.emission_applicability_act_evidenced",
+        )
+    )
+
+
 def test_applicability_for_another_admission_cannot_participate():
     ledger = EventLedger()
     first = _representation(ledger, b"first")
