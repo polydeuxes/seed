@@ -14,11 +14,13 @@ from seed_runtime.byte_measurement import (
     BYTE_MEASUREMENT_RESPONSIBLE_ACT_EVIDENCE_KIND,
     BYTE_RESULT_COORDINATES,
     BYTE_MEASUREMENT_RULE,
+    BYTE_PAIR_MEASUREMENT_RULE,
     ByteMeasurementError,
     RESPONSIBILITY_UNESTABLISHED,
     SEED_NATIVE_MEASUREMENT_RESPONSIBLE_BOUNDARY,
     _measure_byte_counts_through,
     _identity,
+    _pair_assertion_identity,
     _pair_input_applicability,
     get_recorded_pair_input_applicability,
     assertions_of_recorded_byte_measurement,
@@ -51,6 +53,36 @@ def _record_byte_measurement(
         ledger,
         responsible_act_evidence_event_identity=act_evidence.identity,
     )
+
+
+@pytest.mark.parametrize(
+    ("result", "content"),
+    (
+        (
+            "count",
+            {"input_count": 17, "occurrences_carrying": 3, "count": 8},
+        ),
+        ("recurrence", {"recurrence_established": True}),
+    ),
+)
+def test_fixed_pair_identity_shape_equals_the_general_canonical_identity(
+    result, content
+):
+    representation = (0, 255)
+    scope = {"source_localities": ["source-λ", "source-2"]}
+    subject = {
+        "representation": list(representation),
+        "measurement_rule": BYTE_PAIR_MEASUREMENT_RULE,
+    }
+
+    assert _pair_assertion_identity(
+        result=result,
+        representation=representation,
+        canonical_scope=json.dumps(
+            scope, ensure_ascii=False, sort_keys=True, separators=(",", ":")
+        ),
+        content=content,
+    ) == _identity(result=result, subject=subject, scope=scope, content=content)
 
 
 class IntegrityCountingLedger(EventLedger):
@@ -1055,6 +1087,36 @@ def test_pair_validation_refuses_more_carrying_occurrences_than_total_pairs():
         "occurrences_carrying": 2,
         "count": 1,
     }
+    count["dimensions"]["identity"] = _identity(
+        result="count",
+        subject=count["assertion_subject"],
+        scope=count["assertion_scope"],
+        content=count["dimensions"]["content"],
+    )
+    evidence = ledger.get(event.material["evidence_of_yield_relation_identity"])
+    evidence.material["result"] = {
+        name: event.material[name]
+        for name in evidence.material["coordinates_of_carried_result"]
+    }
+
+    with pytest.raises(ByteMeasurementError, match="unlawful pair count"):
+        assertions_of_recorded_byte_position_pair_measurement(ledger, event.identity)
+
+
+def test_pair_validation_refuses_missing_count_content_without_leaking_shape_errors():
+    ledger = _ledger("ta\n")
+    source = _byte_source(ledger)
+    event = record_byte_position_pair_count_layer(
+        ledger,
+        source_measurement_event_identity=source.identity,
+        recording_locality_identity="measurement",
+    )
+    count = next(
+        assertion
+        for assertion in event.material["assertions"]
+        if assertion["result"] == "count"
+    )
+    count["dimensions"]["content"].pop("occurrences_carrying")
     count["dimensions"]["identity"] = _identity(
         result="count",
         subject=count["assertion_subject"],

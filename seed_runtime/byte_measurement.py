@@ -332,6 +332,9 @@ def _canonical(value: Any) -> str:
     )
 
 
+_BYTE_PAIR_MEASUREMENT_RULE_JSON = _canonical(BYTE_PAIR_MEASUREMENT_RULE)
+
+
 def _identity(
     *, result: str, subject: dict[str, Any], scope: dict[str, Any], content: Any
 ) -> str:
@@ -339,6 +342,45 @@ def _identity(
     return "byte-measurement:" + hashlib.sha256(
         _canonical(carried).encode("utf-8")
     ).hexdigest()
+
+
+def _pair_assertion_identity(
+    *,
+    result: str,
+    representation: tuple[int, int],
+    canonical_scope: str,
+    content: dict[str, Any],
+) -> str:
+    """Hash the fixed pair-Assertion JSON shape without rebuilding that shape."""
+
+    first, second = representation
+    canonical_subject = (
+        '{"measurement_rule":'
+        + _BYTE_PAIR_MEASUREMENT_RULE_JSON
+        + f',"representation":[{first},{second}]}}'
+    )
+    if result == "recurrence":
+        canonical_content = '{"recurrence_established":true}'
+        canonical_result = '"recurrence"'
+    else:
+        canonical_content = (
+            f'{{"count":{content["count"]},'
+            f'"input_count":{content["input_count"]},'
+            f'"occurrences_carrying":{content["occurrences_carrying"]}}}'
+        )
+        canonical_result = '"count"'
+    carried = (
+        '{"content":'
+        + canonical_content
+        + ',"result":'
+        + canonical_result
+        + ',"scope":'
+        + canonical_scope
+        + ',"subject":'
+        + canonical_subject
+        + "}"
+    )
+    return "byte-measurement:" + hashlib.sha256(carried.encode("utf-8")).hexdigest()
 
 
 def _seed_native_measurement_assignment(
@@ -2234,6 +2276,7 @@ def _read_recorded_byte_position_pair_measurement(
         "unknown",
         "limits",
     }
+    canonical_scope = _canonical(expected_scope)
     for assertion in assertions:
         if not isinstance(assertion, dict) or set(assertion) != exact_keys:
             raise ByteMeasurementError(f"{event_identity} carries a malformed pair Assertion")
@@ -2281,8 +2324,29 @@ def _read_recorded_byte_position_pair_measurement(
         ):
             raise ByteMeasurementError(f"{event_identity} carries an unlawful pair Assertion")
         content = dimensions.get("content")
-        expected_identity = _identity(
-            result=result, subject=subject, scope=expected_scope, content=content
+        fixed_content_shape = (
+            result == "recurrence"
+            and content == {"recurrence_established": True}
+        ) or (
+            result == "count"
+            and type(content) is dict
+            and set(content) == {"input_count", "occurrences_carrying", "count"}
+            and all(type(value) is int for value in content.values())
+        )
+        expected_identity = (
+            _pair_assertion_identity(
+                result=result,
+                representation=tuple(representation),
+                canonical_scope=canonical_scope,
+                content=content,
+            )
+            if fixed_content_shape
+            else _identity(
+                result=result,
+                subject=subject,
+                scope=expected_scope,
+                content=content,
+            )
         )
         if dimensions.get("identity") != expected_identity:
             raise ByteMeasurementError(f"{event_identity} carries a false pair Assertion identity")
