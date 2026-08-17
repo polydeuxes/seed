@@ -186,6 +186,29 @@ class ByteMeasurementError(ValueError):
     """The exact byte Measurement could not be performed as declared."""
 
 
+def _require_exact_result_yield(
+    ledger: EventLedger,
+    event: Any,
+    evidence: Any,
+    act_evidence: Any,
+    *,
+    result_name: str,
+    occurrence_coordinate: str = "act_occurrence_identity",
+) -> None:
+    requirements = read_requirements_of_yield_relation(
+        ledger,
+        recorded_result_event_identity=event.identity,
+        evidence_of_yield_relation_event_identity=evidence.identity,
+        responsible_act_evidence_event_identity=act_evidence.identity,
+        recorded_result_occurrence_coordinate=occurrence_coordinate,
+        responsible_act_occurrence_coordinate=occurrence_coordinate,
+    )
+    if not all(requirements.values()):
+        raise ByteMeasurementError(
+            f"{event.identity} names no exact {result_name} yield Evidence"
+        )
+
+
 @dataclass(frozen=True)
 class MeasuredByteCount:
     representation: int
@@ -1351,6 +1374,13 @@ def assertions_of_recorded_byte_measurement(
         raise ByteMeasurementError(
             f"{event_identity} names no exact responsible byte Measurement occurrence Evidence"
         )
+    _require_exact_result_yield(
+        ledger,
+        event,
+        evidence,
+        act_evidence,
+        result_name="byte Measurement",
+    )
     boundary_value = material.get("completeness_boundary")
     localities_value = material.get("source_localities")
     if (
@@ -1674,6 +1704,14 @@ def get_recorded_pair_input_applicability(
         raise ByteMeasurementError(
             f"{event_identity} names no exact Applicability determination occurrence Evidence"
         )
+    _require_exact_result_yield(
+        ledger,
+        event,
+        evidence,
+        act_evidence,
+        result_name="Applicability",
+        occurrence_coordinate="applicability_act_occurrence_identity",
+    )
     applicability_assertion = material.get("applicability")
     dimensions = applicability_assertion.get("dimensions") if isinstance(applicability_assertion, dict) else None
     standing = dimensions.get("standing") if isinstance(dimensions, dict) else None
@@ -2057,6 +2095,13 @@ def assertions_of_recorded_byte_position_pair_measurement(
         raise ByteMeasurementError(
             f"{event_identity} names no exact responsible pair Measurement occurrence Evidence"
         )
+    _require_exact_result_yield(
+        ledger,
+        event,
+        evidence,
+        act_evidence,
+        result_name="byte-position-pair",
+    )
     boundary_value = material.get("completeness_boundary")
     localities_value = material.get("source_localities")
     if (

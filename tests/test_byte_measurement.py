@@ -507,7 +507,8 @@ def test_a_self_consistent_truncated_source_assertion_is_refused():
     ]["source_material"][:1]
     evidence = ledger.get(event.material["evidence_of_yield_relation_identity"])
     evidence.material["result"] = {
-        name: event.material[name] for name in BYTE_RESULT_COORDINATES
+        name: event.material[name]
+        for name in evidence.material["coordinates_of_carried_result"]
     }
     with pytest.raises(ByteMeasurementError, match="complete bounded source read"):
         assertions_of_recorded_byte_measurement(ledger, event.identity)
@@ -804,8 +805,10 @@ def test_pair_validation_requires_one_exact_ordered_representation(representatio
         scope=assertion["assertion_scope"],
         content=assertion["dimensions"]["content"],
     )
-    ledger.get(event.material["evidence_of_yield_relation_identity"]).material["result"] = {
-        name: event.material[name] for name in BYTE_PAIR_RESULT_COORDINATES
+    evidence = ledger.get(event.material["evidence_of_yield_relation_identity"])
+    evidence.material["result"] = {
+        name: event.material[name]
+        for name in evidence.material["coordinates_of_carried_result"]
     }
 
     with pytest.raises(ByteMeasurementError, match="unlawful pair Assertion"):
@@ -845,7 +848,8 @@ def test_pair_validation_refuses_unsupported_input_applicability():
     event.material["input_applicability"]["result_boundary"] = "some other use"
     evidence = ledger.get(event.material["evidence_of_yield_relation_identity"])
     evidence.material["result"] = {
-        name: event.material[name] for name in BYTE_PAIR_RESULT_COORDINATES
+        name: event.material[name]
+        for name in evidence.material["coordinates_of_carried_result"]
     }
 
     with pytest.raises(ByteMeasurementError, match="historical input Applicability"):
@@ -1057,12 +1061,65 @@ def test_pair_validation_refuses_more_carrying_occurrences_than_total_pairs():
         scope=count["assertion_scope"],
         content=count["dimensions"]["content"],
     )
-    ledger.get(event.material["evidence_of_yield_relation_identity"]).material["result"] = {
-        name: event.material[name] for name in BYTE_PAIR_RESULT_COORDINATES
+    evidence = ledger.get(event.material["evidence_of_yield_relation_identity"])
+    evidence.material["result"] = {
+        name: event.material[name]
+        for name in evidence.material["coordinates_of_carried_result"]
     }
 
     with pytest.raises(ByteMeasurementError, match="unlawful pair count"):
         assertions_of_recorded_byte_position_pair_measurement(ledger, event.identity)
+
+
+def test_byte_result_reader_refuses_changed_yield_result_identity():
+    ledger = _ledger("ta\n")
+    event = _byte_source(ledger)
+    assert assertions_of_recorded_byte_measurement(ledger, event.identity)
+    evidence = ledger.get(event.material["evidence_of_yield_relation_identity"])
+    evidence.material["result_identity"] = "crossed-byte-result"
+
+    with pytest.raises(ByteMeasurementError, match="byte Measurement yield Evidence"):
+        assertions_of_recorded_byte_measurement(ledger, event.identity)
+
+
+def test_pair_applicability_reader_refuses_changed_yield_result_identity():
+    ledger = _ledger("ta\n")
+    source = _byte_source(ledger)
+    pair = record_byte_position_pair_count_layer(
+        ledger,
+        source_measurement_event_identity=source.identity,
+        recording_locality_identity="measurement",
+    )
+    applicability_identity = pair.material["input_applicability_event_identity"]
+    applicability = ledger.get(applicability_identity)
+    assert get_recorded_pair_input_applicability(ledger, applicability.identity)
+    evidence = ledger.get(
+        applicability.material["evidence_of_yield_relation_identity"]
+    )
+    evidence.material["result_identity"] = "crossed-applicability-result"
+
+    with pytest.raises(ByteMeasurementError, match="Applicability yield Evidence"):
+        get_recorded_pair_input_applicability(ledger, applicability.identity)
+
+
+def test_pair_result_reader_refuses_changed_yield_result_identity():
+    ledger = _ledger("ta\n")
+    source = _byte_source(ledger)
+    pair = record_byte_position_pair_count_layer(
+        ledger,
+        source_measurement_event_identity=source.identity,
+        recording_locality_identity="measurement",
+    )
+    assert assertions_of_recorded_byte_position_pair_measurement(
+        ledger, pair.identity
+    )
+    evidence = ledger.get(pair.material["evidence_of_yield_relation_identity"])
+    evidence.material["result_identity"] = "crossed-pair-result"
+
+    with pytest.raises(
+        ByteMeasurementError, match="byte-position-pair yield Evidence"
+    ):
+        assertions_of_recorded_byte_position_pair_measurement(ledger, pair.identity)
 
 
 FIDELITY_SUBJECTS = {
@@ -1105,6 +1162,8 @@ FIDELITY_SUBJECTS = {
         test_pair_validation_does_not_perform_the_pair_measurement_again,
         test_zero_measured_pairs_is_a_lawful_exact_result,
         test_pair_validation_refuses_more_carrying_occurrences_than_total_pairs,
+        test_byte_result_reader_refuses_changed_yield_result_identity,
+        test_pair_result_reader_refuses_changed_yield_result_identity,
     ),
     "measurement_result_distinctions": (
         test_count_and_recurrence_are_distinct_results,
@@ -1114,6 +1173,7 @@ FIDELITY_SUBJECTS = {
         test_pair_validation_refuses_unsupported_input_applicability,
         test_applicability_identity_is_bound_to_one_exact_downstream_act,
         test_pair_applicability_has_unknown_and_conflicting_results,
+        test_pair_applicability_reader_refuses_changed_yield_result_identity,
     ),
     "one_exact_movement_assertion": (
         test_locality_movement_assignment_is_earned_from_the_exact_source,
