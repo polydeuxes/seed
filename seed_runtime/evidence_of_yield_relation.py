@@ -45,6 +45,8 @@ LIVE_BOUNDARIES_OF_YIELD_RELATION = frozenset(
         "recorded_standing_boundary_locality_relation",
         "shared_pair_position_applicability",
         "shared_pair_position_measurement",
+        "comparison_of_ordered_relation_path_with_recorded_pair_findings_applicability",
+        "comparison_of_ordered_relation_path_with_recorded_pair_findings_compare",
         "standing_boundary_reference",
         "standing_locality_continuation",
         "successful_emission",

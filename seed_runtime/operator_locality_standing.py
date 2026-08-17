@@ -109,6 +109,18 @@ from seed_runtime.comparison_of_recorded_byte_pair_measurements import (
     get_recorded_pair_measurement_comparison_act_evidence,
     get_recorded_pair_measurement_comparison,
 )
+from seed_runtime.comparison_of_ordered_relation_path_with_recorded_pair_findings import (
+    COMPARISON_OF_ORDERED_RELATION_PATH_WITH_RECORDED_PAIR_FINDINGS_RESPONSIBILITY_ASSIGNMENT_KIND,
+    COMPARISON_OF_ORDERED_RELATION_PATH_WITH_RECORDED_PAIR_FINDINGS_APPLICABILITY_ACT_EVIDENCE_KIND,
+    COMPARISON_OF_ORDERED_RELATION_PATH_WITH_RECORDED_PAIR_FINDINGS_APPLICABILITY_RESULT_KIND,
+    COMPARISON_OF_ORDERED_RELATION_PATH_WITH_RECORDED_PAIR_FINDINGS_COMPARE_ACT_EVIDENCE_KIND,
+    COMPARISON_OF_ORDERED_RELATION_PATH_WITH_RECORDED_PAIR_FINDINGS_RESULT_KIND,
+    get_comparison_of_ordered_relation_path_with_recorded_pair_findings_responsibility_assignment,
+    get_comparison_of_ordered_relation_path_with_recorded_pair_findings_applicability_act_evidence,
+    get_recorded_comparison_of_ordered_relation_path_with_recorded_pair_findings_applicability,
+    get_comparison_of_ordered_relation_path_with_recorded_pair_findings_act_evidence,
+    get_recorded_comparison_of_ordered_relation_path_with_recorded_pair_findings,
+)
 from seed_runtime.evidence_of_yield_relation import read_requirements_of_yield_relation
 
 # The writer of these occurrences declares their kinds. A reader declaring its
@@ -192,6 +204,13 @@ _SHARED_POSITION_MEASUREMENT_KINDS = {
     SHARED_POSITION_MEASUREMENT_ACT_EVIDENCE_KIND,
     SHARED_POSITION_MEASUREMENT_RESULT_KIND,
 }
+_COMPARISON_OF_ORDERED_RELATION_PATH_WITH_RECORDED_PAIR_FINDINGS_KINDS = {
+    COMPARISON_OF_ORDERED_RELATION_PATH_WITH_RECORDED_PAIR_FINDINGS_RESPONSIBILITY_ASSIGNMENT_KIND,
+    COMPARISON_OF_ORDERED_RELATION_PATH_WITH_RECORDED_PAIR_FINDINGS_APPLICABILITY_ACT_EVIDENCE_KIND,
+    COMPARISON_OF_ORDERED_RELATION_PATH_WITH_RECORDED_PAIR_FINDINGS_APPLICABILITY_RESULT_KIND,
+    COMPARISON_OF_ORDERED_RELATION_PATH_WITH_RECORDED_PAIR_FINDINGS_COMPARE_ACT_EVIDENCE_KIND,
+    COMPARISON_OF_ORDERED_RELATION_PATH_WITH_RECORDED_PAIR_FINDINGS_RESULT_KIND,
+}
 _SUPPORTED_KINDS = {
     *_SUBJECT_BY_KIND,
     *_MEASUREMENT_ACT_EVIDENCE_KINDS,
@@ -205,6 +224,7 @@ _SUPPORTED_KINDS = {
     *_REPRESENTATION_EMISSION_APPLICABILITY_KINDS,
     *_RECORDED_PAIR_MEASUREMENT_COMPARISON_KINDS,
     *_SHARED_POSITION_MEASUREMENT_KINDS,
+    *_COMPARISON_OF_ORDERED_RELATION_PATH_WITH_RECORDED_PAIR_FINDINGS_KINDS,
     _REPRESENTATION_RECORDED_KIND,
     _REPRESENTATION_ACT_EVIDENCE_KIND,
     _REPRESENTATION_LOCALITY_EVIDENCE_KIND,
@@ -653,6 +673,7 @@ def advance_operator_locality_standing(
             or event.kind in _REPRESENTATION_EMISSION_APPLICABILITY_KINDS
             or event.kind in _RECORDED_PAIR_MEASUREMENT_COMPARISON_KINDS
             or event.kind in _SHARED_POSITION_MEASUREMENT_KINDS
+            or event.kind in _COMPARISON_OF_ORDERED_RELATION_PATH_WITH_RECORDED_PAIR_FINDINGS_KINDS
         ):
             continue
         if event.kind not in _SUPPORTED_KINDS:
@@ -835,6 +856,34 @@ def advance_operator_locality_standing(
             continue
         if event.kind == RECORDED_PAIR_MEASUREMENT_COMPARISON_RESULT_KIND:
             get_recorded_pair_measurement_comparison(ledger, event.identity)
+            comparison_result_occurrences[event.identity] = None
+            continue
+        if event.kind == COMPARISON_OF_ORDERED_RELATION_PATH_WITH_RECORDED_PAIR_FINDINGS_RESPONSIBILITY_ASSIGNMENT_KIND:
+            get_comparison_of_ordered_relation_path_with_recorded_pair_findings_responsibility_assignment(
+                ledger, event.identity
+            )
+            responsibility_assignment_occurrences[event.identity] = None
+            continue
+        if event.kind == COMPARISON_OF_ORDERED_RELATION_PATH_WITH_RECORDED_PAIR_FINDINGS_APPLICABILITY_ACT_EVIDENCE_KIND:
+            get_comparison_of_ordered_relation_path_with_recorded_pair_findings_applicability_act_evidence(
+                ledger, event.identity
+            )
+            continue
+        if event.kind == COMPARISON_OF_ORDERED_RELATION_PATH_WITH_RECORDED_PAIR_FINDINGS_APPLICABILITY_RESULT_KIND:
+            get_recorded_comparison_of_ordered_relation_path_with_recorded_pair_findings_applicability(
+                ledger, event.identity
+            )
+            applicability_result_occurrences[event.identity] = None
+            continue
+        if event.kind == COMPARISON_OF_ORDERED_RELATION_PATH_WITH_RECORDED_PAIR_FINDINGS_COMPARE_ACT_EVIDENCE_KIND:
+            get_comparison_of_ordered_relation_path_with_recorded_pair_findings_act_evidence(
+                ledger, event.identity
+            )
+            continue
+        if event.kind == COMPARISON_OF_ORDERED_RELATION_PATH_WITH_RECORDED_PAIR_FINDINGS_RESULT_KIND:
+            get_recorded_comparison_of_ordered_relation_path_with_recorded_pair_findings(
+                ledger, event.identity
+            )
             comparison_result_occurrences[event.identity] = None
             continue
         if (

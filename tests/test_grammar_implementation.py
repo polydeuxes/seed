@@ -39,6 +39,14 @@ from seed_runtime.comparison_of_recorded_byte_pair_measurements import (
     record_recorded_pair_measurement_comparison_act_evidence,
     record_recorded_pair_measurement_comparison_result,
 )
+from seed_runtime.comparison_of_ordered_relation_path_with_recorded_pair_findings import (
+    EVENT_KIND_RESPONSIBILITIES as PATH_FINDING_COMPARISON_EVENT_KIND_RESPONSIBILITIES,
+    COMPARISON_OF_ORDERED_RELATION_PATH_WITH_RECORDED_PAIR_FINDINGS_RESPONSIBILITY_ASSIGNMENT_KIND,
+    COMPARISON_OF_ORDERED_RELATION_PATH_WITH_RECORDED_PAIR_FINDINGS_APPLICABILITY_ACT_EVIDENCE_KIND,
+    COMPARISON_OF_ORDERED_RELATION_PATH_WITH_RECORDED_PAIR_FINDINGS_APPLICABILITY_RESULT_KIND,
+    COMPARISON_OF_ORDERED_RELATION_PATH_WITH_RECORDED_PAIR_FINDINGS_COMPARE_ACT_EVIDENCE_KIND,
+    COMPARISON_OF_ORDERED_RELATION_PATH_WITH_RECORDED_PAIR_FINDINGS_RESULT_KIND,
+)
 from seed_runtime.identities import new_identity
 from seed_runtime.material_ingest import ingest_material
 from seed_runtime.measurement_of_recurrent_byte_pair_occurrence_position import (
@@ -736,6 +744,45 @@ def _recorded_pair_measurement_comparison_applicability_yield_witness() -> dict:
 def _recorded_pair_measurement_comparison_yield_witness() -> dict:
     return _recorded_pair_measurement_comparison_yield_witnesses()[
         "recorded_pair_measurement_comparison"
+    ]
+
+
+def _ordered_relation_path_pair_finding_comparison_yield_witnesses() -> dict[str, dict]:
+    from tests.test_comparison_of_ordered_relation_path_with_recorded_pair_findings import (
+        _inputs,
+        _record_comparison,
+    )
+
+    ledger, _earlier_source, _added, comparison, path = _inputs(
+        ledger=_IntegrityAdversaryLedger()
+    )
+    _assignment, applicability, _act, result = _record_comparison(
+        ledger, comparison, path
+    )
+    applicability_witness = _yield_bundle(ledger, applicability)
+    applicability_witness["recorded_result_occurrence_coordinate"] = (
+        "applicability_act_occurrence_identity"
+    )
+    applicability_witness["act_evidence_occurrence_coordinate"] = (
+        "applicability_act_occurrence_identity"
+    )
+    return {
+        "comparison_of_ordered_relation_path_with_recorded_pair_findings_applicability": applicability_witness,
+        "comparison_of_ordered_relation_path_with_recorded_pair_findings_compare": _yield_bundle(
+            ledger, result
+        ),
+    }
+
+
+def _ordered_relation_path_pair_finding_comparison_applicability_yield_witness() -> dict:
+    return _ordered_relation_path_pair_finding_comparison_yield_witnesses()[
+        "comparison_of_ordered_relation_path_with_recorded_pair_findings_applicability"
+    ]
+
+
+def _ordered_relation_path_pair_finding_comparison_yield_witness() -> dict:
+    return _ordered_relation_path_pair_finding_comparison_yield_witnesses()[
+        "comparison_of_ordered_relation_path_with_recorded_pair_findings_compare"
     ]
 
 
@@ -2034,6 +2081,12 @@ def _remaining_yield_requirement_bundles() -> dict[str, dict[str, dict]]:
         ),
         "recorded_pair_measurement_comparison": (
             _recorded_pair_measurement_comparison_yield_witness
+        ),
+        "comparison_of_ordered_relation_path_with_recorded_pair_findings_applicability": (
+            _ordered_relation_path_pair_finding_comparison_applicability_yield_witness
+        ),
+        "comparison_of_ordered_relation_path_with_recorded_pair_findings_compare": (
+            _ordered_relation_path_pair_finding_comparison_yield_witness
         ),
         "failed_boundary": _failed_boundary_yield_witness,
         "material_ingest": _material_ingest_yield_witness,
@@ -4441,6 +4494,12 @@ def test_unrelated_yield_occurrences_do_not_share_result_identity():
         "recorded_pair_measurement_comparison": (
             _recorded_pair_measurement_comparison_yield_witness
         ),
+        "comparison_of_ordered_relation_path_with_recorded_pair_findings_applicability": (
+            _ordered_relation_path_pair_finding_comparison_applicability_yield_witness
+        ),
+        "comparison_of_ordered_relation_path_with_recorded_pair_findings_compare": (
+            _ordered_relation_path_pair_finding_comparison_yield_witness
+        ),
         "failed_boundary": _failed_boundary_yield_witness,
         "material_ingest": _material_ingest_yield_witness,
         "operator_material_acquire": _operator_material_acquire_yield_witness,
@@ -4471,11 +4530,12 @@ def test_unrelated_yield_occurrences_do_not_share_result_identity():
     for boundary, (first, second) in pairs.items():
         occurrence_coordinate = (
             "applicability_act_occurrence_identity"
-                if boundary in {
-                    "byte_pair_applicability",
-                    "representation_emission_applicability",
-                    "shared_pair_position_applicability",
-                }
+            if boundary in {
+                "byte_pair_applicability",
+                "representation_emission_applicability",
+                "shared_pair_position_applicability",
+                "comparison_of_ordered_relation_path_with_recorded_pair_findings_applicability",
+            }
             else "movement_act_occurrence_identity"
             if boundary == "assertion_locality_movement"
             else "act_occurrence_identity"
@@ -5237,6 +5297,33 @@ def test_shared_position_measurement_decomposes_material_non_establishment():
     }
 
 
+def test_ordered_relation_path_and_pair_findings_keep_each_responsibility_clause_distinct():
+    declared = _clause("04.Compare.B")
+    assert declared["subject"] == {
+        "identity": "bounded_comparison_of_ordered_relation_path_with_recorded_pair_findings",
+        "first_subject": "bounded_comparison",
+        "relation": "of",
+        "second_subject": {
+            "first_subject": "ordered_relation_path",
+            "relation": "with",
+            "second_subject": "recorded_pair_findings",
+        },
+    }
+    assert PATH_FINDING_COMPARISON_EVENT_KIND_RESPONSIBILITIES == {
+        COMPARISON_OF_ORDERED_RELATION_PATH_WITH_RECORDED_PAIR_FINDINGS_RESPONSIBILITY_ASSIGNMENT_KIND: "04.Compare.B",
+        COMPARISON_OF_ORDERED_RELATION_PATH_WITH_RECORDED_PAIR_FINDINGS_APPLICABILITY_ACT_EVIDENCE_KIND: "02.Acts.A",
+        COMPARISON_OF_ORDERED_RELATION_PATH_WITH_RECORDED_PAIR_FINDINGS_APPLICABILITY_RESULT_KIND: "01.Standing.E.1",
+        COMPARISON_OF_ORDERED_RELATION_PATH_WITH_RECORDED_PAIR_FINDINGS_COMPARE_ACT_EVIDENCE_KIND: "02.Acts.A",
+        COMPARISON_OF_ORDERED_RELATION_PATH_WITH_RECORDED_PAIR_FINDINGS_RESULT_KIND: "04.Compare.B",
+    }
+    assert declared["does_not_establish"] == [
+        "source_relation",
+        "recurrence",
+        "represented_relation",
+        "composite_material",
+    ]
+
+
 def test_measurement_result_distinction_adversaries_collapse_one_boundary_each():
     mutations = {
         ("Measurement_result", "exact_Act_occurrence"): lambda bundle: bundle[
@@ -5686,6 +5773,9 @@ FIDELITY_SUBJECTS = {
     "applicability_determination": (
         test_applicability_clause_is_checked_against_a_live_pair_determination,
         test_emission_applicability_witnesses_every_declared_coordinate,
+    ),
+    "relation_required_coordinates": (
+        test_ordered_relation_path_and_pair_findings_keep_each_responsibility_clause_distinct,
     ),
     "input_role_participation_distinction": (
         test_input_is_an_open_act_local_role_before_participation,

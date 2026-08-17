@@ -22,6 +22,12 @@ The exact comparison rule requires Compare of complete measured content under ea
 
 The exact input relation is Evidence for each exact comparison input; it does not establish a source relation from the added occurrence to a measured difference. Equal content establishes no truth, corroboration, Admission, represented relation, or downstream Applicability. A difference establishes no source relation, correction, or movement by identity.
 
+### 04.Compare.B — Comparison of one ordered relation path with recorded pair findings
+
+Where current Standing in one Locality carries one exact ordered relation-path Assertion and one exact recorded pair-finding comparison result, this Book assigns this Seed bounded Responsibility to determine Applicability and Compare them. Applicability requires that the exact source occurrence of the path is the exact added occurrence of the recorded comparison and that each pair subject of the path has complete recorded comparison findings. The assignment, input relations, Applicability, Participation relations, Compare Act occurrence, Evidence of Yield relation, result, and result Standing remain distinct by identity.
+
+The result preserves the exact path Assertion reference, recorded comparison result reference, source occurrence, added occurrence, each ordered path role, each exact pair subject, and each exact reference to complete recorded finding content. The comparison does not revise equal, conflicting, earlier-result, later-result, or Unknown finding Standing. Pair-subject equality establishes no source relation, recurrence, represented relation, or composite material. An inapplicable input does not participate and yields no comparison result.
+
 ## Important distinctions
 
 - result Assertion != current Standing

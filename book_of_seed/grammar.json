@@ -1765,6 +1765,123 @@
         "movement"
       ]
     },
+    "04.Compare.B": {
+      "subject": {
+        "identity": "bounded_comparison_of_ordered_relation_path_with_recorded_pair_findings",
+        "first_subject": "bounded_comparison",
+        "relation": "of",
+        "second_subject": {
+          "first_subject": "ordered_relation_path",
+          "relation": "with",
+          "second_subject": "recorded_pair_findings"
+        }
+      },
+      "book_material_reference": "04.Compare.B",
+      "grammar": "established",
+      "recorded_occurrence_kind": ["event_occurrence"],
+      "responsibility": {
+        "responsible_boundary": "this_Seed",
+        "assignment": "this_Book",
+        "exact_Act": {
+          "first_subject": "Compare",
+          "relation": "of",
+          "second_subject": {
+            "first_subject": {
+              "first_subject": "each_relation",
+              "relation": "of",
+              "second_subject": "one_ordered_path"
+            },
+            "relation": "with",
+            "second_subject": {
+              "first_subject": "complete_recorded_findings",
+              "relation": "of",
+              "second_subject": "same_exact_pair_subject"
+            }
+          }
+        },
+        "requires": [
+          "one_exact_ordered_relation_path_Assertion",
+          "one_exact_recorded_pair_finding_comparison_result",
+          "same_Locality",
+          "current_Standing_carrying_each_result",
+          {
+            "first_subject": {
+              "first_subject": "source_occurrence",
+              "relation": "of",
+              "second_subject": "ordered_relation_path"
+            },
+            "relation": "equal_to",
+            "second_subject": {
+              "first_subject": "added_occurrence",
+              "relation": "of",
+              "second_subject": "recorded_comparison"
+            }
+          },
+          {
+            "first_subject": "Applicability",
+            "relation": "of",
+            "second_subject": "each_input_to_Compare"
+          },
+          {
+            "first_subject": "Participation_relation",
+            "relation": "of",
+            "second_subject": "each_input_in_Compare"
+          },
+          {
+            "first_subject": "Evidence",
+            "relation": "of",
+            "second_subject": "Yield_relation"
+          }
+        ]
+      },
+      "comparison_rule": {
+        "first_subject": {
+          "first_subject": "each_pair_subject",
+          "relation": "of",
+          "second_subject": "ordered_relation_path"
+        },
+        "relation": "carries",
+        "second_subject": "complete_recorded_comparison_findings",
+        "preserves_recorded_findings": [
+          "equal_finding",
+          "conflicting_finding",
+          {
+            "first_subject": "finding",
+            "relation": "of",
+            "second_subject": "earlier_result"
+          },
+          {
+            "first_subject": "finding",
+            "relation": "of",
+            "second_subject": "later_result"
+          },
+          "Unknown_finding"
+        ]
+      },
+      "preserves": [
+        "ordered_relation_path_Assertion_reference",
+        "recorded_pair_comparison_result_reference",
+        "path_source_occurrence_reference",
+        "comparison_added_occurrence_reference",
+        "ordered_path_roles",
+        "exact_pair_subjects",
+        "complete_recorded_finding_references",
+        "Applicability",
+        "Participation_relations",
+        "Scope",
+        "Locality",
+        "Evidence",
+        "Authority",
+        "limits",
+        "Unknown"
+      ],
+      "does_not_establish": [
+        "source_relation",
+        "recurrence",
+        "represented_relation",
+        "composite_material"
+      ]
+    },
     "05.Recording.A": {
       "subject": {
         "first_subject": "retrievable_record",

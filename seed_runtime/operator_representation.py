@@ -28,6 +28,10 @@ from seed_runtime.comparison_of_recorded_byte_pair_measurements import (
     RECORDED_PAIR_MEASUREMENT_COMPARISON_RESULT_KIND,
     get_recorded_pair_measurement_comparison,
 )
+from seed_runtime.comparison_of_ordered_relation_path_with_recorded_pair_findings import (
+    COMPARISON_OF_ORDERED_RELATION_PATH_WITH_RECORDED_PAIR_FINDINGS_RESULT_KIND,
+    get_recorded_comparison_of_ordered_relation_path_with_recorded_pair_findings,
+)
 from seed_runtime.operator_egress import (
     ExactMaterialEgressFailure,
     emit_exact_material,
@@ -103,6 +107,9 @@ _MEASUREMENT_READERS = {
 _STRUCTURED_RESULT_READERS = {
     RECORDED_PAIR_MEASUREMENT_COMPARISON_RESULT_KIND: (
         get_recorded_pair_measurement_comparison
+    ),
+    COMPARISON_OF_ORDERED_RELATION_PATH_WITH_RECORDED_PAIR_FINDINGS_RESULT_KIND: (
+        get_recorded_comparison_of_ordered_relation_path_with_recorded_pair_findings
     ),
 }
 
