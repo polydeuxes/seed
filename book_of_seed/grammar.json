@@ -722,36 +722,6 @@
             "Standing_movement",
             "represented_relation"
           ]
-        },
-        "ordered_path_of_measured_byte_pair_relations": {
-          "measurement": {
-            "subject": "ordered_path_of_measured_byte_pair_relations",
-            "findings": ["count", "recurrence"]
-          },
-          "input_subject": "exact_source_material_set_Assertion",
-          "input_relation": "Applicability_to_declared_byte_position_pair_Measurement",
-          "support": [
-            "first_pair_count_Assertion",
-            "second_pair_count_Assertion",
-            "shared_position_coordinate"
-          ],
-          "result_coordinates": [
-            "relation_path_assertion_coordinates",
-            "relation_path_assertions",
-            "relation_path_measurement_rule"
-          ],
-          "bounded_by": [
-            "Locality",
-            "completeness_boundary",
-            "source_occurrence_references"
-          ],
-          "does_not_establish": [
-            "composite_material",
-            "Candidate",
-            "Admission",
-            "represented_relation",
-            "meaning"
-          ]
         }
       },
       "distinct_from": [
@@ -1422,22 +1392,8 @@
         ]
       },
       "comparison_rule": {
-        "finding_subject": [
-          ["result_kind", "represented_byte_pair"],
-          [
-            "result_kind",
-            "first_represented_byte_pair",
-            "second_represented_byte_pair",
-            "shared_position_coordinate"
-          ]
-        ],
+        "finding_subject": ["result_kind", "represented_byte_pair"],
         "content": "complete_measured_content",
-        "result_carries": [
-          "earlier_Measurement_result_reference",
-          "later_Measurement_result_reference",
-          "ordered_finding_Assertion_identity_pair"
-        ],
-        "does_not_copy": ["finding_subject", "measured_content"],
         "results": [
           "equal_finding",
           "conflicting_finding",

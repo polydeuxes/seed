@@ -64,7 +64,7 @@ MEASUREMENT_OF_RECURRENT_BYTE_PAIR_OCCURRENCE_POSITION_BOUNDARY = (
     "measurement_of_recurrent_byte_pair_occurrence_position"
 )
 RESPONSIBILITY_OF_RECURRENT_BYTE_PAIR_OCCURRENCE_POSITION_ASSERTION = (
-    "preserve Standing coordinates carried by this measured Assertion"
+    "preserve this measured Assertion's carried Standing coordinates"
 )
 RESULT_COORDINATES_OF_RECURRENT_BYTE_PAIR_OCCURRENCE_POSITION_MEASUREMENT = frozenset(
     {

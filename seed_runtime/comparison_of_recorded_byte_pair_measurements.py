@@ -7,7 +7,6 @@ from typing import Any
 
 from seed_runtime.byte_measurement import (
     BYTE_PAIR_MEASUREMENT_RECORDED_KIND,
-    BYTE_PAIR_RELATION_PATH_MEASUREMENT_RULE,
     _findings_of_recorded_byte_position_pair_measurement,
 )
 from seed_runtime.event import Event
@@ -1124,30 +1123,8 @@ def get_recorded_pair_measurement_comparison_act_evidence(
     return _comparison_act_reading(ledger, event_identity)[0]
 
 
-def _finding_key(finding: Any) -> tuple[Any, ...]:
-    representation = getattr(finding, "representation", None)
-    if type(representation) is tuple and len(representation) == 2:
-        return ("pair", finding.result, representation)
-    first_pair = getattr(finding, "first_pair", None)
-    second_pair = getattr(finding, "second_pair", None)
-    if (
-        type(first_pair) is not tuple
-        or len(first_pair) != 2
-        or type(second_pair) is not tuple
-        or len(second_pair) != 2
-    ):
-        raise RecordedPairMeasurementComparisonError(
-            "comparison input carries no exact finding subject"
-        )
-    return (
-        "relation_path",
-        finding.result,
-        first_pair,
-        second_pair,
-        "second_position",
-        "first_position",
-        BYTE_PAIR_RELATION_PATH_MEASUREMENT_RULE,
-    )
+def _finding_key(finding: Any) -> tuple[str, tuple[int, int] | None]:
+    return finding.result, finding.representation
 
 
 def _finding_content(finding: Any) -> Any:
@@ -1161,7 +1138,7 @@ def _finding_content(finding: Any) -> Any:
 
 def _comparison_of_findings(
     earlier: tuple[Any, ...], later: tuple[Any, ...]
-) -> dict[str, list[list[str]]]:
+) -> dict[str, list[dict[str, Any]]]:
     earlier_by_key = {_finding_key(item): item for item in earlier}
     later_by_key = {_finding_key(item): item for item in later}
     if len(earlier_by_key) != len(earlier) or len(later_by_key) != len(later):
@@ -1177,14 +1154,28 @@ def _comparison_of_findings(
     }
     for key, first in earlier_by_key.items():
         second = later_by_key.get(key)
+        subject = {
+            "result": key[0],
+            "representation": list(key[1]) if key[1] is not None else None,
+        }
         first_content = _finding_content(first)
         if second is None:
             findings["findings_of_earlier_result"].append(
-                [first.assertion_identity]
+                {
+                    "subject": subject,
+                    "earlier_assertion_reference": first.reference,
+                    "earlier_content": first_content,
+                }
             )
             continue
         second_content = _finding_content(second)
-        entry = [first.assertion_identity, second.assertion_identity]
+        entry = {
+            "subject": subject,
+            "earlier_assertion_reference": first.reference,
+            "later_assertion_reference": second.reference,
+            "earlier_content": first_content,
+            "later_content": second_content,
+        }
         destination = (
             "equal_findings"
             if first_content == second_content
@@ -1195,7 +1186,14 @@ def _comparison_of_findings(
         if key in earlier_by_key:
             continue
         findings["findings_of_later_result"].append(
-            [second.assertion_identity]
+            {
+                "subject": {
+                    "result": key[0],
+                    "representation": list(key[1]) if key[1] is not None else None,
+                },
+                "later_assertion_reference": second.reference,
+                "later_content": _finding_content(second),
+            }
         )
     return findings
 
@@ -1218,12 +1216,6 @@ def _comparison_result_material(
         "responsibility": RECORDED_PAIR_MEASUREMENT_COMPARISON_RESPONSIBILITY,
         "responsible_boundary": "this Seed",
         "responsibility_assignment_reference": deepcopy(assignment_reference),
-        "earlier_measurement_reference": deepcopy(
-            assignment.material["earlier_measurement_reference"]
-        ),
-        "later_measurement_reference": deepcopy(
-            assignment.material["later_measurement_reference"]
-        ),
         "applicability_result_event_identity": act.material[
             "applicability_result_event_identity"
         ],
@@ -1264,12 +1256,6 @@ def _recorded_comparison_result_material(
         "responsibility_assignment_reference": deepcopy(
             material["responsibility_assignment_reference"]
         ),
-        "earlier_measurement_reference": deepcopy(
-            material["earlier_measurement_reference"]
-        ),
-        "later_measurement_reference": deepcopy(
-            material["later_measurement_reference"]
-        ),
         "applicability_result_event_identity": material[
             "applicability_result_event_identity"
         ],
@@ -1280,11 +1266,7 @@ def _recorded_comparison_result_material(
             material["participation_of_input_in_compare"]
         ),
         "comparison_rule": material["comparison_rule"],
-        # `_comparison_result_material` just built this exact finding tree.
-        # Evidence of Yield copies it into its own occurrence and each ledger
-        # append fixes its own Event material.  Copying the same large tree at
-        # this private assembly boundary adds no independent validation.
-        "findings": material["findings"],
+        "findings": deepcopy(material["findings"]),
         "scope": deepcopy(material["scope"]),
         "authority": deepcopy(material["authority"]),
         "standing": material["standing"],

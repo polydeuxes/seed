@@ -77,9 +77,6 @@ BYTE_PAIR_RESULT_COORDINATES = BYTE_RESULT_COORDINATES | {
     "input_applicability",
     "input_applicability_event_identity",
     "input_role",
-    "relation_path_assertion_coordinates",
-    "relation_path_assertions",
-    "relation_path_measurement_rule",
 }
 BYTE_PAIR_RESPONSIBLE_ACT_EVIDENCE_KIND = (
     "operator.measurement.byte_position_pair_responsible_act_evidenced"
@@ -135,10 +132,6 @@ BYTE_PAIR_MEASUREMENT_RULE = (
     "each ordered byte pair at position coordinates whose difference is one within "
     "one exact recorded Ingest material occurrence; equal under the exact pair and order"
 )
-BYTE_PAIR_RELATION_PATH_MEASUREMENT_RULE = (
-    "each ordered path of a pair of measured byte-pair relations whose second and "
-    "first position coordinates are shared within one exact recorded Ingest material occurrence"
-)
 MEASUREMENT_EVIDENCE_SCOPE = (
     "exact byte-count Measurement Evidence; bounded byte Standing; source "
     "Standing not revised"
@@ -151,9 +144,8 @@ PAIR_MEASUREMENT_EVIDENCE_SCOPE = (
     "measured pair and order; bounded pair Standing; source Standing not revised"
 )
 BYTE_PAIR_RESULT_BOUNDARY = (
-    "establish exact counts of byte pair occurrences and ordered paths of a pair "
-    "of measured pair relations at shared position coordinates within the exact "
-    "bounded source material"
+    "establish exact counts of byte pair occurrences at position coordinates whose difference is one "
+    "within the exact bounded source material"
 )
 BYTE_PAIR_INPUT_ROLE = "exact bounded source material for position-byte Measurement"
 SEED_NATIVE_MEASUREMENT_RESPONSIBLE_BOUNDARY = "this Seed"
@@ -182,15 +174,8 @@ BYTE_PAIR_LIMITS = (
     "an exact byte-position-pair count or recurrence bounded by the exact measured "
     "pair and order",
 )
-BYTE_PAIR_RELATION_PATH_UNKNOWN = (
-    "what this ordered path of measured byte-pair relations represents remains Unknown",
-)
-BYTE_PAIR_RELATION_PATH_LIMITS = (
-    "an exact relation-path count or recurrence bounded by the first and second measured "
-    "byte pair, shared position, exact order, source occurrences, and Measurement rule",
-)
 MEASURED_ASSERTION_RESPONSIBILITY = (
-    "preserve Standing coordinates carried by this measured Assertion"
+    "preserve this measured Assertion's carried Standing coordinates"
 )
 ASSERTION_RESPONSIBILITIES = {
     MEASURED_ASSERTION_RESPONSIBILITY: "01.Standing.D.1",
@@ -247,14 +232,6 @@ class MeasuredBytePairCount:
 
 
 @dataclass(frozen=True)
-class MeasuredBytePairRelationPathCount:
-    first_pair: tuple[int, int]
-    second_pair: tuple[int, int]
-    occurrences_carrying: int
-    count: int
-
-
-@dataclass(frozen=True)
 class MeasuredBytePairInputs:
     source_localities: tuple[str, ...]
     completeness_boundary: EventLedgerBoundary
@@ -265,7 +242,6 @@ class MeasuredBytePairInputs:
     downstream_act_identity: str
     act_occurrence_identity: str
     counts: tuple[MeasuredBytePairCount, ...]
-    relation_path_counts: tuple[MeasuredBytePairRelationPathCount, ...]
 
 
 @dataclass(frozen=True)
@@ -343,53 +319,6 @@ class _RecordedBytePairFinding:
         }
 
     @property
-    def comparison_subject(self) -> dict[str, Any]:
-        return {
-            "representation": list(self.representation),
-            "measurement_rule": BYTE_PAIR_MEASUREMENT_RULE,
-        }
-
-    @property
-    def reference(self) -> dict[str, str]:
-        return {
-            "recorded_occurrence_identity": self.recorded_occurrence_identity,
-            "assertion_identity": self.assertion_identity,
-        }
-
-
-@dataclass(frozen=True)
-class _RecordedBytePairRelationPathFinding:
-    assertion_identity: str
-    recorded_occurrence_identity: str
-    first_pair: tuple[int, int]
-    second_pair: tuple[int, int]
-    result: str
-    _content_coordinates: tuple[int, int, int] | bool
-
-    @property
-    def content(self) -> dict[str, int | bool]:
-        if self.result == "recurrence":
-            return {"recurrence_established": self._content_coordinates}
-        input_count, occurrences_carrying, count = self._content_coordinates
-        return {
-            "input_count": input_count,
-            "occurrences_carrying": occurrences_carrying,
-            "count": count,
-        }
-
-    @property
-    def comparison_subject(self) -> dict[str, Any]:
-        return {
-            "first_pair": list(self.first_pair),
-            "second_pair": list(self.second_pair),
-            "shared_position": {
-                "first_pair": "second_position",
-                "second_pair": "first_position",
-            },
-            "measurement_rule": BYTE_PAIR_RELATION_PATH_MEASUREMENT_RULE,
-        }
-
-    @property
     def reference(self) -> dict[str, str]:
         return {
             "recorded_occurrence_identity": self.recorded_occurrence_identity,
@@ -404,9 +333,6 @@ def _canonical(value: Any) -> str:
 
 
 _BYTE_PAIR_MEASUREMENT_RULE_JSON = _canonical(BYTE_PAIR_MEASUREMENT_RULE)
-_BYTE_PAIR_RELATION_PATH_MEASUREMENT_RULE_JSON = _canonical(
-    BYTE_PAIR_RELATION_PATH_MEASUREMENT_RULE
-)
 
 
 def _identity(
@@ -432,50 +358,6 @@ def _pair_assertion_identity(
         '{"measurement_rule":'
         + _BYTE_PAIR_MEASUREMENT_RULE_JSON
         + f',"representation":[{first},{second}]}}'
-    )
-    if result == "recurrence":
-        canonical_content = '{"recurrence_established":true}'
-        canonical_result = '"recurrence"'
-    else:
-        canonical_content = (
-            f'{{"count":{content["count"]},'
-            f'"input_count":{content["input_count"]},'
-            f'"occurrences_carrying":{content["occurrences_carrying"]}}}'
-        )
-        canonical_result = '"count"'
-    carried = (
-        '{"content":'
-        + canonical_content
-        + ',"result":'
-        + canonical_result
-        + ',"scope":'
-        + canonical_scope
-        + ',"subject":'
-        + canonical_subject
-        + "}"
-    )
-    return "byte-measurement:" + hashlib.sha256(carried.encode("utf-8")).hexdigest()
-
-
-def _pair_relation_path_assertion_identity(
-    *,
-    result: str,
-    first_pair: tuple[int, int],
-    second_pair: tuple[int, int],
-    canonical_scope: str,
-    content: dict[str, Any],
-) -> str:
-    """Hash the fixed relation-path Assertion shape without rebuilding it."""
-
-    first_first, first_second = first_pair
-    second_first, second_second = second_pair
-    canonical_subject = (
-        f'{{"first_pair":[{first_first},{first_second}],'
-        '"measurement_rule":'
-        + _BYTE_PAIR_RELATION_PATH_MEASUREMENT_RULE_JSON
-        + f',"second_pair":[{second_first},{second_second}],'
-        '"shared_position":{"first_pair":"second_position",'
-        '"second_pair":"first_position"}}'
     )
     if result == "recurrence":
         canonical_content = '{"recurrence_established":true}'
@@ -1065,8 +947,6 @@ def _measure_byte_position_pair_counts_through(
     seen_material: set[str] = set()
     totals: dict[bytes, int] = {}
     carrying: dict[bytes, int] = {}
-    relation_path_totals: dict[tuple[bytes, bytes], int] = {}
-    relation_path_carrying: dict[tuple[bytes, bytes], int] = {}
     for locality in localities:
         for ingest in ledger.iter_locality_kind(
             locality, INGEST_OCCURRED_KIND, through=boundary
@@ -1083,23 +963,12 @@ def _measure_byte_position_pair_counts_through(
             seen_material.add(ingest.identity)
             source_material.append({"ingest_occurrence_identity": ingest.identity})
             seen: set[bytes] = set()
-            seen_relation_paths: set[tuple[bytes, bytes]] = set()
             for index in range(len(exact) - 1):
                 pair = exact[index : index + 2]
                 totals[pair] = totals.get(pair, 0) + 1
                 seen.add(pair)
-                if index + 2 < len(exact):
-                    relation_path = (pair, exact[index + 1 : index + 3])
-                    relation_path_totals[relation_path] = (
-                        relation_path_totals.get(relation_path, 0) + 1
-                    )
-                    seen_relation_paths.add(relation_path)
             for pair in seen:
                 carrying[pair] = carrying.get(pair, 0) + 1
-            for relation_path in seen_relation_paths:
-                relation_path_carrying[relation_path] = (
-                    relation_path_carrying.get(relation_path, 0) + 1
-                )
     if not source_material:
         raise ByteMeasurementError(
             "declared source Localities contain no ingest through the Measurement boundary"
@@ -1112,17 +981,6 @@ def _measure_byte_position_pair_counts_through(
         )
         for pair in totals
     )
-    relation_path_counts = tuple(
-        MeasuredBytePairRelationPathCount(
-            first_pair=(first_pair[0], first_pair[1]),
-            second_pair=(second_pair[0], second_pair[1]),
-            occurrences_carrying=relation_path_carrying[
-                (first_pair, second_pair)
-            ],
-            count=relation_path_totals[(first_pair, second_pair)],
-        )
-        for first_pair, second_pair in relation_path_totals
-    )
     return MeasuredBytePairInputs(
         source_localities=localities,
         completeness_boundary=boundary,
@@ -1133,7 +991,6 @@ def _measure_byte_position_pair_counts_through(
         downstream_act_identity=downstream_act_identity,
         act_occurrence_identity=act_occurrence_identity,
         counts=counts,
-        relation_path_counts=relation_path_counts,
     )
 
 
@@ -1721,114 +1578,6 @@ def _pair_assertions(measured: MeasuredBytePairInputs) -> list[dict[str, Any]]:
     return results
 
 
-def _pair_relation_path_assertions(
-    measured: MeasuredBytePairInputs,
-    pair_assertions: list[dict[str, Any]],
-) -> list[dict[str, Any]]:
-    """Carry paths as relations between two exact local pair Assertions."""
-
-    scope = {"source_localities": list(measured.source_localities)}
-    canonical_scope = _canonical(scope)
-    pair_count_identities = {
-        tuple(assertion["assertion_subject"]["representation"]): assertion[
-            "dimensions"
-        ]["identity"]
-        for assertion in pair_assertions
-        if assertion["result"] == "count"
-    }
-    results: list[dict[str, Any]] = []
-
-    def assertion(
-        *,
-        result: str,
-        item: MeasuredBytePairRelationPathCount,
-        content: dict[str, Any],
-        local_support_references: list[str],
-    ) -> dict[str, Any]:
-        identity = _pair_relation_path_assertion_identity(
-            result=result,
-            first_pair=item.first_pair,
-            second_pair=item.second_pair,
-            canonical_scope=canonical_scope,
-            content=content,
-        )
-        return {
-            "dimensions": {
-                "identity": identity,
-                "content": content,
-            },
-            "result": result,
-            "supporting_assertion_references": local_support_references,
-        }
-
-    for item in measured.relation_path_counts:
-        first_count_identity = pair_count_identities.get(item.first_pair)
-        second_count_identity = pair_count_identities.get(item.second_pair)
-        if (
-            first_count_identity is None
-            or second_count_identity is None
-            or item.first_pair[1] != item.second_pair[0]
-        ):
-            raise ByteMeasurementError(
-                "relation path requires two exact pair count Assertions with one shared byte"
-            )
-        count = assertion(
-            result="count",
-            item=item,
-            content={
-                "input_count": len(measured.source_material),
-                "occurrences_carrying": item.occurrences_carrying,
-                "count": item.count,
-            },
-            local_support_references=[
-                first_count_identity,
-                second_count_identity,
-            ],
-        )
-        results.append(count)
-        if item.count > 1:
-            results.append(
-                assertion(
-                    result="recurrence",
-                    item=item,
-                    content={"recurrence_established": True},
-                    local_support_references=[count["dimensions"]["identity"]],
-                )
-            )
-    return results
-
-
-def _pair_relation_path_assertion_coordinates(
-    measured: MeasuredBytePairInputs,
-) -> dict[str, Any]:
-    """Carry shared relation-path Assertion coordinates once per result."""
-
-    return {
-        "subject_kind": "assertion",
-        "responsible_boundary": "this recorded assertion",
-        "assertion_scope": {
-            "source_localities": list(measured.source_localities),
-        },
-        "dimensions": {
-            "standing": "measured",
-            "source_provenance_by_result": {
-                "count": (
-                    "the first and second exact byte-pair count Assertions carried by this result"
-                ),
-                "recurrence": (
-                    "the exact relation-path count Assertion carried by this result"
-                ),
-            },
-            "responsibility": MEASURED_ASSERTION_RESPONSIBILITY,
-            "authority": "unestablished",
-            "evidence_scope": PAIR_MEASUREMENT_EVIDENCE_SCOPE,
-        },
-        "conflicts": "Unknown",
-        "unknown": list(BYTE_PAIR_RELATION_PATH_UNKNOWN),
-        "limits": list(BYTE_PAIR_RELATION_PATH_LIMITS),
-    }
-
-
 def _record_pair_responsible_act_evidence(
     ledger: EventLedger,
     *,
@@ -2137,16 +1886,12 @@ def record_byte_position_pair_count_layer(
         act_occurrence_identity=act_occurrence_identity,
     )
     result_identity = new_identity("byte_position_pair_measurement_result")
-    pair_assertions = _pair_assertions(measured)
-    relation_path_assertions = _pair_relation_path_assertions(
-        measured, pair_assertions
-    )
     result_material = {
         "result_identity": result_identity,
         "dimensions": {
             "identity": "byte-position-pair-count-measurement-occurrence",
             "content": (
-                "byte-position-pair and relation-path count and recurrence Assertions"
+                "byte-position-pair count and recurrence Assertions"
             ),
             "standing": "measured",
             "source_provenance": "the recorded source-material-set Assertion",
@@ -2162,9 +1907,6 @@ def record_byte_position_pair_count_layer(
             measured
         ),
         "measurement_rule": BYTE_PAIR_MEASUREMENT_RULE,
-        "relation_path_measurement_rule": (
-            BYTE_PAIR_RELATION_PATH_MEASUREMENT_RULE
-        ),
         "source_assertion_reference": measured.source_assertion_reference,
         "source_movement_event_identity": measured.source_movement_event_identity,
         "input_role": BYTE_PAIR_INPUT_ROLE,
@@ -2174,11 +1916,7 @@ def record_byte_position_pair_count_layer(
         "completeness_boundary": {
             "identity": measured.completeness_boundary.identity
         },
-        "assertions": pair_assertions,
-        "relation_path_assertion_coordinates": (
-            _pair_relation_path_assertion_coordinates(measured)
-        ),
-        "relation_path_assertions": relation_path_assertions,
+        "assertions": _pair_assertions(measured),
     }
     responsible_act_evidence = _record_pair_responsible_act_evidence(
         ledger,
@@ -2313,11 +2051,7 @@ def _read_recorded_byte_position_pair_measurement(
     event_identity: str,
     *,
     findings_only: bool,
-) -> (
-    tuple[RecordedBytePairAssertion, ...]
-    | tuple[_RecordedBytePairFinding | _RecordedBytePairRelationPathFinding, ...]
-    | None
-):
+) -> tuple[RecordedBytePairAssertion, ...] | tuple[_RecordedBytePairFinding, ...] | None:
     """Validate one exact pair result and return its requested reading surface."""
 
     event = ledger.get(event_identity)
@@ -2342,7 +2076,7 @@ def _read_recorded_byte_position_pair_measurement(
     expected_dimensions = {
         "identity": "byte-position-pair-count-measurement-occurrence",
         "content": (
-            "byte-position-pair and relation-path count and recurrence Assertions"
+            "byte-position-pair count and recurrence Assertions"
         ),
         "standing": "measured",
         "source_provenance": "the recorded source-material-set Assertion",
@@ -2360,8 +2094,6 @@ def _read_recorded_byte_position_pair_measurement(
         or material["downstream_act_identity"] == material["act_occurrence_identity"]
         or material.get("dimensions") != expected_dimensions
         or material.get("measurement_rule") != BYTE_PAIR_MEASUREMENT_RULE
-        or material.get("relation_path_measurement_rule")
-        != BYTE_PAIR_RELATION_PATH_MEASUREMENT_RULE
     ):
         raise ByteMeasurementError(
             f"{event_identity} does not preserve its exact pair Measurement Assertion"
@@ -2654,190 +2386,6 @@ def _read_recorded_byte_position_pair_measurement(
             }
         ):
             raise ByteMeasurementError(f"{event_identity} carries unlawful recurrence support")
-    relation_path_assertions = material.get("relation_path_assertions")
-    if not isinstance(relation_path_assertions, list):
-        raise ByteMeasurementError(
-            f"{event_identity} carries no relation-path result Assertions"
-        )
-    pair_count_identities = {
-        pair: group["count"]["dimensions"]["identity"]
-        for pair, group in by_pair.items()
-    }
-    pair_by_count_identity = {
-        identity: pair for pair, identity in pair_count_identities.items()
-    }
-    expected_path_coordinates = {
-        "subject_kind": "assertion",
-        "responsible_boundary": "this recorded assertion",
-        "assertion_scope": expected_scope,
-        "dimensions": {
-            "standing": "measured",
-            "source_provenance_by_result": {
-                "count": (
-                    "the first and second exact byte-pair count Assertions carried by this result"
-                ),
-                "recurrence": (
-                    "the exact relation-path count Assertion carried by this result"
-                ),
-            },
-            "responsibility": MEASURED_ASSERTION_RESPONSIBILITY,
-            "authority": "unestablished",
-            "evidence_scope": PAIR_MEASUREMENT_EVIDENCE_SCOPE,
-        },
-        "conflicts": "Unknown",
-        "unknown": list(BYTE_PAIR_RELATION_PATH_UNKNOWN),
-        "limits": list(BYTE_PAIR_RELATION_PATH_LIMITS),
-    }
-    if material.get("relation_path_assertion_coordinates") != expected_path_coordinates:
-        raise ByteMeasurementError(
-            f"{event_identity} carries unlawful shared relation-path Assertion coordinates"
-        )
-    by_relation_path: dict[
-        tuple[tuple[int, int], tuple[int, int]],
-        dict[str, dict[str, Any]],
-    ] = {}
-    path_by_count_identity: dict[
-        str, tuple[tuple[int, int], tuple[int, int]]
-    ] = {}
-    path_of_assertion: dict[
-        str, tuple[tuple[int, int], tuple[int, int]]
-    ] = {}
-    validated_path_results: list[_RecordedBytePairRelationPathFinding] = []
-    for assertion in relation_path_assertions:
-        if not isinstance(assertion, dict) or set(assertion) != {
-            "dimensions",
-            "result",
-            "supporting_assertion_references",
-        }:
-            raise ByteMeasurementError(
-                f"{event_identity} carries a malformed relation-path Assertion"
-            )
-        dimensions = assertion.get("dimensions")
-        result = assertion.get("result")
-        support = assertion.get("supporting_assertion_references")
-        if (
-            result not in {"count", "recurrence"}
-            or type(support) is not list
-            or not isinstance(dimensions, dict)
-            or set(dimensions) != {"identity", "content"}
-        ):
-            raise ByteMeasurementError(
-                f"{event_identity} carries an unlawful relation-path Assertion"
-            )
-        content = dimensions.get("content")
-        if result == "count":
-            if len(support) != 2 or any(type(value) is not str for value in support):
-                raise ByteMeasurementError(
-                    f"{event_identity} carries unlawful relation-path pair support"
-                )
-            first_pair = pair_by_count_identity.get(support[0])
-            second_pair = pair_by_count_identity.get(support[1])
-            valid_content = (
-                type(content) is dict
-                and set(content) == {"input_count", "occurrences_carrying", "count"}
-                and all(type(value) is int for value in content.values())
-            )
-            if (
-                first_pair is None
-                or second_pair is None
-                or first_pair[1] != second_pair[0]
-                or not valid_content
-            ):
-                raise ByteMeasurementError(
-                    f"{event_identity} carries unlawful relation-path pair support"
-                )
-            path = (first_pair, second_pair)
-        else:
-            if (
-                len(support) != 1
-                or type(support[0]) is not str
-                or content != {"recurrence_established": True}
-            ):
-                raise ByteMeasurementError(
-                    f"{event_identity} carries unlawful relation-path recurrence support"
-                )
-            path = path_by_count_identity.get(support[0])
-            if path is None:
-                raise ByteMeasurementError(
-                    f"{event_identity} carries recurrence before its relation-path count"
-                )
-            first_pair, second_pair = path
-        expected_identity = _pair_relation_path_assertion_identity(
-            result=result,
-            first_pair=first_pair,
-            second_pair=second_pair,
-            canonical_scope=canonical_scope,
-            content=content,
-        )
-        if dimensions.get("identity") != expected_identity:
-            raise ByteMeasurementError(
-                f"{event_identity} carries a false relation-path Assertion identity"
-            )
-        group = by_relation_path.setdefault(path, {})
-        if result in group:
-            raise ByteMeasurementError(
-                f"{event_identity} duplicates one relation-path result"
-            )
-        group[result] = assertion
-        path_of_assertion[dimensions["identity"]] = path
-        if result == "count":
-            path_by_count_identity[dimensions["identity"]] = path
-    for (first_pair, second_pair), group in by_relation_path.items():
-        count = group.get("count")
-        if count is None:
-            raise ByteMeasurementError(
-                f"{event_identity} carries relation-path recurrence without count"
-            )
-        content = count["dimensions"]["content"]
-        if (
-            any(type(value) is not int or value <= 0 for value in content.values())
-            or content["occurrences_carrying"] > content["input_count"]
-            or content["occurrences_carrying"] > content["count"]
-            or count["supporting_assertion_references"]
-            != [pair_count_identities[first_pair], pair_count_identities[second_pair]]
-        ):
-            raise ByteMeasurementError(
-                f"{event_identity} carries an unlawful relation-path count"
-            )
-        recurrence = group.get("recurrence")
-        if (recurrence is not None) != (content["count"] > 1):
-            raise ByteMeasurementError(
-                f"{event_identity} carries the wrong relation-path recurrence boundary"
-            )
-        if recurrence is not None and (
-            recurrence["dimensions"]["content"]
-            != {"recurrence_established": True}
-            or recurrence["supporting_assertion_references"]
-            != [count["dimensions"]["identity"]]
-        ):
-            raise ByteMeasurementError(
-                f"{event_identity} carries unlawful relation-path recurrence support"
-            )
-    if findings_only:
-        for assertion in relation_path_assertions:
-            content = assertion["dimensions"]["content"]
-            content_coordinates: tuple[int, int, int] | bool
-            if assertion["result"] == "recurrence":
-                content_coordinates = content["recurrence_established"]
-            else:
-                content_coordinates = (
-                    content["input_count"],
-                    content["occurrences_carrying"],
-                    content["count"],
-                )
-            first_pair, second_pair = path_of_assertion[
-                assertion["dimensions"]["identity"]
-            ]
-            validated_path_results.append(
-                _RecordedBytePairRelationPathFinding(
-                    assertion_identity=assertion["dimensions"]["identity"],
-                    recorded_occurrence_identity=event.identity,
-                    first_pair=first_pair,
-                    second_pair=second_pair,
-                    result=assertion["result"],
-                    _content_coordinates=content_coordinates,
-                )
-            )
     validated_results = []
     for assertion in assertions:
         if findings_only:
@@ -2880,7 +2428,7 @@ def _read_recorded_byte_position_pair_measurement(
             _material_json=_canonical(assertion),
             _support_assertion_refs_json=_canonical(support_references),
         ))
-    return tuple((*validated_results, *validated_path_results))
+    return tuple(validated_results)
 
 
 def assertions_of_recorded_byte_position_pair_measurement(
@@ -2896,9 +2444,7 @@ def assertions_of_recorded_byte_position_pair_measurement(
 
 def _findings_of_recorded_byte_position_pair_measurement(
     ledger: EventLedger, event_identity: str
-) -> tuple[
-    _RecordedBytePairFinding | _RecordedBytePairRelationPathFinding, ...
-] | None:
+) -> tuple[_RecordedBytePairFinding, ...] | None:
     """Read only exact finding coordinates after the same full validation."""
 
     reading = _read_recorded_byte_position_pair_measurement(

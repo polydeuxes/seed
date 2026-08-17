@@ -19,7 +19,6 @@ from seed_runtime.byte_measurement import (
     BYTE_PAIR_RESPONSIBLE_ACT_EVIDENCE_KIND,
     BYTE_PAIR_MEASUREMENT_RESPONSIBILITY,
     BYTE_PAIR_MEASUREMENT_RULE,
-    BYTE_PAIR_RELATION_PATH_MEASUREMENT_RULE,
     MEASURED_ASSERTION_RESPONSIBILITY,
     SEED_NATIVE_MEASUREMENT_RESPONSIBLE_BOUNDARY,
     EVENT_KIND_RESPONSIBILITIES as BYTE_EVENT_KIND_RESPONSIBILITIES,
@@ -4855,72 +4854,6 @@ def test_pair_occurrence_measurement_is_structured_in_the_grammar_representation
     } & set(material)
 
 
-def test_ordered_pair_relation_path_is_structured_in_the_grammar_representation():
-    declared = _clause("01.Source.D")["declared_measurements"][
-        "ordered_path_of_measured_byte_pair_relations"
-    ]
-    event = _recorded_applicability()["pair_event"]
-    material = event.material
-
-    assert declared == {
-        "measurement": {
-            "subject": "ordered_path_of_measured_byte_pair_relations",
-            "findings": ["count", "recurrence"],
-        },
-        "input_subject": "exact_source_material_set_Assertion",
-        "input_relation": (
-            "Applicability_to_declared_byte_position_pair_Measurement"
-        ),
-        "support": [
-            "first_pair_count_Assertion",
-            "second_pair_count_Assertion",
-            "shared_position_coordinate",
-        ],
-        "result_coordinates": [
-            "relation_path_assertion_coordinates",
-            "relation_path_assertions",
-            "relation_path_measurement_rule",
-        ],
-        "bounded_by": [
-            "Locality",
-            "completeness_boundary",
-            "source_occurrence_references",
-        ],
-        "does_not_establish": [
-            "composite_material",
-            "Candidate",
-            "Admission",
-            "represented_relation",
-            "meaning",
-        ],
-    }
-    assert material["relation_path_measurement_rule"] == (
-        BYTE_PAIR_RELATION_PATH_MEASUREMENT_RULE
-    )
-    pair_by_count_identity = {
-        assertion["dimensions"]["identity"]: tuple(
-            assertion["assertion_subject"]["representation"]
-        )
-        for assertion in material["assertions"]
-        if assertion["result"] == "count"
-    }
-    for assertion in material["relation_path_assertions"]:
-        if assertion["result"] == "count":
-            first, second = (
-                pair_by_count_identity[reference]
-                for reference in assertion["supporting_assertion_references"]
-            )
-            assert first[1] == second[0]
-        else:
-            assert len(assertion["supporting_assertion_references"]) == 1
-    assert material["relation_path_assertion_coordinates"]["dimensions"][
-        "responsibility"
-    ] == MEASURED_ASSERTION_RESPONSIBILITY
-    serialized = json.dumps(material["relation_path_assertions"])
-    assert "exact_material" not in serialized
-    assert "composite_material" not in serialized
-
-
 def test_measurement_result_carriers_and_responsible_act_evidence_name_their_own_clauses():
     assert {
         BYTE_EVENT_KIND_RESPONSIBILITIES[BYTE_MEASUREMENT_RECORDED_KIND],
@@ -5417,7 +5350,6 @@ FIDELITY_SUBJECTS = {
     ),
     "measurement_result_distinctions": (
         test_measurement_result_distinction_adversaries_collapse_one_boundary_each,
-        test_ordered_pair_relation_path_is_structured_in_the_grammar_representation,
     ),
     "measurement_result_coordinates": (
         test_measurement_result_adversaries_change_the_declared_coordinate_only,
