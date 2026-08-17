@@ -361,7 +361,7 @@
     },
     "01.Source.B": {
       "subject": {
-        "identity": "supplied_material_as_input_to_exact_Act",
+        "identity": "supplied_material_Participation_in_exact_Act_with_input_role",
         "first_subject": "supplied_material",
         "relation": "Participation",
         "second_subject": "exact_Act",
@@ -1055,7 +1055,7 @@
         "Applicability",
         "Participation",
         {
-          "identity": "Authority_for_another_Act",
+          "identity": "Authority_supports_another_Act",
           "first_subject": "Authority",
           "relation": "supports",
           "second_subject": "another_Act",
@@ -1064,7 +1064,7 @@
         "recurrence",
         "completion",
         {
-          "identity": "Authority_for_another_occurrence",
+          "identity": "Authority_supports_another_occurrence",
           "first_subject": "Authority",
           "relation": "supports",
           "second_subject": "another_occurrence",
@@ -1089,7 +1089,7 @@
         "input_support",
         "Admission",
         {
-          "identity": "representation_as_truth",
+          "identity": "representation_represents_truth",
           "first_subject": "representation",
           "relation": "represents",
           "second_subject": "truth",
@@ -1126,7 +1126,7 @@
         "equivalence_by_name",
         "mandatory_grammar",
         {
-          "identity": "Authority_for_exact_Act",
+          "identity": "Authority_supports_exact_Act",
           "first_subject": "Authority",
           "relation": "supports",
           "second_subject": "exact_Act",
@@ -1226,7 +1226,7 @@
       "grammar": "established",
       "recorded_occurrence_kind": [],
       "Applicability_considered_with_respect_to": {
-        "identity": "current_Standing_for_same_subject",
+        "identity": "same_subject_bears_current_Standing",
         "first_subject": "same_subject",
         "relation": "bears",
         "second_subject": "current_Standing"
@@ -1257,7 +1257,7 @@
       "does_not_establish": [
         "current_Standing_into_Compare",
         {
-          "identity": "Compare_result_as_finding_for_another_Act",
+          "identity": "Compare_result_Participation_in_another_Act_with_finding_role",
           "first_subject": "Compare_result",
           "relation": "Participation",
           "second_subject": "another_Act",
@@ -1545,13 +1545,13 @@
         "completeness_requirement",
         "mandatory_Representation",
         {
-          "identity": "Acts_as_dimensions",
+          "identity": "Acts_distinct_from_dimensions",
           "first_subject": "Acts",
           "relation": "distinct_from",
           "second_subject": "dimensions"
         },
         {
-          "identity": "relations_as_dimensions",
+          "identity": "relations_distinct_from_dimensions",
           "first_subject": "relations",
           "relation": "distinct_from",
           "second_subject": "dimensions"
@@ -1912,7 +1912,7 @@
       "requires": [
         "recorded_material_admitted_to_exact_diagnostic_Act",
         {
-          "identity": "separate_responsible_occurrence_for_additional_Standing",
+          "identity": "separate_responsible_occurrence_supplies_additional_Standing",
           "first_subject": "separate_responsible_occurrence",
           "relation": "supplies",
           "second_subject": "additional_Standing"
@@ -1996,7 +1996,7 @@
         "Participation",
         "Compare",
         {
-          "identity": "Authority_for_another_Act",
+          "identity": "Authority_supports_another_Act",
           "first_subject": "Authority",
           "relation": "supports",
           "second_subject": "another_Act",
@@ -2244,7 +2244,7 @@
         ]
       },
       "authority": {
-        "identity": "operator_Authority_for_one_exact_invocation",
+        "identity": "operator_Authority_supports_one_exact_invocation",
         "first_subject": "operator_Authority",
         "relation": "supports",
         "second_subject": "one_exact_invocation"

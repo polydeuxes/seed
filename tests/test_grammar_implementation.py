@@ -219,6 +219,31 @@ def _witness_grammar() -> dict:
     return json.loads(GRAMMAR.read_text(encoding="utf-8"))["witness"]
 
 
+def _assert_structured_relation_identities_name_their_exact_relation(value):
+    if isinstance(value, dict):
+        relation = value.get("relation")
+        identity = value.get("identity")
+        if relation is not None and identity is not None:
+            assert type(relation) is str and relation
+            assert type(identity) is str and identity
+            if "_as_of_" in identity:
+                assert relation == "through"
+                relation = "as_of"
+            assert (
+                f"_{relation.casefold()}_"
+                in f"_{identity.casefold()}_"
+            ), f"{identity} does not name its exact {relation} relation"
+        for carried in value.values():
+            _assert_structured_relation_identities_name_their_exact_relation(
+                carried
+            )
+    elif isinstance(value, list):
+        for carried in value:
+            _assert_structured_relation_identities_name_their_exact_relation(
+                carried
+            )
+
+
 def test_every_grammar_representation_composite_preserves_material_order():
     grammar = json.loads(GRAMMAR.read_text(encoding="utf-8"))
     assert grammar["composite"] == {
@@ -288,6 +313,7 @@ def test_every_grammar_representation_composite_preserves_material_order():
                 assert carries_relation(parent, connective_relation(value))
 
     visit(grammar)
+    _assert_structured_relation_identities_name_their_exact_relation(grammar)
     reordered = {
         words: orders for words, orders in ordered.items() if len(orders) > 1
     }
@@ -297,6 +323,20 @@ def test_every_grammar_representation_composite_preserves_material_order():
     serialized = GRAMMAR.read_text(encoding="utf-8")
     assert '"Evidence_occurrence"' not in serialized
     assert '"occurrence_Evidence"' not in serialized
+
+
+def test_explicit_but_wrong_relation_cannot_satisfy_a_structured_grammar_identity():
+    grammar = json.loads(GRAMMAR.read_text(encoding="utf-8"))
+    authority = grammar["clauses"]["01.Standing.B"]["does_not_establish"][3]
+    assert authority["identity"] == "Authority_supports_exact_Act"
+    authority["relation"] = "dances_with"
+
+    try:
+        _assert_structured_relation_identities_name_their_exact_relation(grammar)
+    except AssertionError as error:
+        assert "does not name its exact" in str(error)
+    else:
+        raise AssertionError("wrong explicit relation escaped exact identity")
 
 
 def _content_locality_witness(
@@ -4034,7 +4074,7 @@ def test_cross_boundary_participation_preserves_scope_and_limits():
 
     assert clause == {
         "subject": {
-            "identity": "supplied_material_as_input_to_exact_Act",
+            "identity": "supplied_material_Participation_in_exact_Act_with_input_role",
             "first_subject": "supplied_material",
             "relation": "Participation",
             "second_subject": "exact_Act",
