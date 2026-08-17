@@ -1,6 +1,12 @@
 from __future__ import annotations
 
 from io import BytesIO
+import os
+
+try:
+    import fcntl
+except ImportError:  # pragma: no cover - Linux owns this kernel witness.
+    fcntl = None
 
 import pytest
 
@@ -102,6 +108,37 @@ def test_egress_refuses_a_short_write():
     assert raised.value.error is None
 
 
+@pytest.mark.skipif(
+    fcntl is None or not hasattr(fcntl, "F_GETPIPE_SZ"),
+    reason="Linux pipe coordinates are unavailable",
+)
+def test_egress_refuses_a_short_write_reported_by_a_linux_pipe():
+    read_fd, write_fd = os.pipe()
+    try:
+        os.set_blocking(write_fd, False)
+        capacity = fcntl.fcntl(write_fd, fcntl.F_GETPIPE_SZ)
+        filled = 0
+        while filled < capacity:
+            filled += os.write(write_fd, b"x" * (capacity - filled))
+
+        pipe_atomic_write_limit = os.fpathconf(write_fd, "PC_PIPE_BUF")
+        assert len(os.read(read_fd, pipe_atomic_write_limit)) == (
+            pipe_atomic_write_limit
+        )
+        material = b"y" * (pipe_atomic_write_limit * 2)
+        with os.fdopen(write_fd, "wb", buffering=0, closefd=False) as output:
+            with pytest.raises(
+                ExactMaterialEgressFailure, match="did not preserve"
+            ) as raised:
+                emit_exact_material(output, material)
+
+        assert raised.value.reported_count == pipe_atomic_write_limit
+        assert raised.value.error is None
+    finally:
+        os.close(write_fd)
+        os.close(read_fd)
+
+
 def test_egress_does_not_infer_a_count_from_a_write_returning_none():
     class UnreportedBoundary:
         def __init__(self):
@@ -185,3 +222,23 @@ def test_egress_carries_exact_bytes_to_a_socket_like_boundary():
 
     assert emit_exact_material(output, material) == len(material)
     assert output.material == material
+
+
+def test_egress_refuses_a_socket_like_boundary_reporting_partial_completion():
+    class PartialSocketBoundary:
+        def __init__(self):
+            self.material = None
+
+        def sendall(self, material):
+            self.material = material[:-1]
+            return len(self.material)
+
+    output = PartialSocketBoundary()
+    with pytest.raises(
+        ExactMaterialEgressFailure, match="did not preserve"
+    ) as raised:
+        emit_exact_material(output, b"hello")
+
+    assert output.material == b"hell"
+    assert raised.value.reported_count == 4
+    assert raised.value.error is None

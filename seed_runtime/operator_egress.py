@@ -78,13 +78,19 @@ def emit_exact_material(output_stream: BinaryIO, exact_material: bytes) -> int:
         raise TypeError("egress requires exact material bytes")
     if callable(sendall):
         try:
-            sendall(exact_material)
+            reported = sendall(exact_material)
         except Exception as error:
             raise ExactMaterialEgressFailure(
                 "egress boundary raised before reporting exact completion",
                 reported_count=None,
                 error=error,
             ) from error
+        if reported is not None:
+            raise ExactMaterialEgressFailure(
+                "egress boundary did not preserve exact material",
+                reported_count=reported if type(reported) is int else None,
+                error=None,
+            )
         written = len(exact_material)
     else:
         try:
