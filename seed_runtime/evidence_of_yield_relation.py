@@ -38,6 +38,7 @@ LIVE_BOUNDARIES_OF_YIELD_RELATION = frozenset(
         "representation_result",
         "representation_candidate",
         "representation_admission",
+        "representation_emission_applicability",
         "recorded_standing_boundary_locality_relation",
         "standing_boundary_reference",
         "standing_locality_continuation",

@@ -55,6 +55,11 @@ from seed_runtime.operator_representation_admission import (
     record_exact_material_representation_admission_result,
     exact_material_representation_admission_occurrence_references,
 )
+from seed_runtime.operator_representation_applicability import (
+    record_representation_emission_applicability_act_evidence,
+    record_representation_emission_applicability_result,
+    representation_emission_applicability_occurrence_references,
+)
 from seed_runtime.operator_standing_continuation import (
     record_standing_locality_continuation_responsibility_assignment,
     record_standing_locality_continuation_responsible_act_evidence,
@@ -108,7 +113,7 @@ def _advance_over_representation(ledger, standing, representation):
     )
 
 
-def _record_exact_material_representation_admission(
+def _record_exact_material_representation_admission_and_applicability(
     ledger,
     standing,
     representation,
@@ -195,7 +200,31 @@ def _record_exact_material_representation_admission(
         ),
         locality_identity=locality_identity,
     )
-    return standing, admission
+    applicability_act = record_representation_emission_applicability_act_evidence(
+        ledger,
+        admission_result_event_identity=admission.identity,
+        locality_standing=standing,
+    )
+    standing = _advance_over(
+        ledger,
+        standing,
+        (applicability_act.identity,),
+        locality_identity=locality_identity,
+    )
+    applicability = record_representation_emission_applicability_result(
+        ledger,
+        responsible_act_evidence_event_identity=applicability_act.identity,
+    )
+    standing = _advance_over(
+        ledger,
+        standing,
+        (
+            applicability.material["evidence_of_yield_relation_identity"],
+            applicability.identity,
+        ),
+        locality_identity=locality_identity,
+    )
+    return standing, admission, applicability
 
 
 def _record_acquisition_measurements(ledger, standing, *, locality_identity):
@@ -436,8 +465,8 @@ def run_persistent_operator_console(
                 locality_standing = _advance_over_representation(
                     ledger, locality_standing, representation
                 )
-                locality_standing, admission = (
-                    _record_exact_material_representation_admission(
+                locality_standing, admission, applicability = (
+                    _record_exact_material_representation_admission_and_applicability(
                         ledger,
                         locality_standing,
                         representation,
@@ -451,11 +480,19 @@ def run_persistent_operator_console(
                         ledger, admission.identity
                     )
                 )
+                base_reference_count += len(
+                    representation_emission_applicability_occurrence_references(
+                        ledger, applicability.identity
+                    )
+                )
                 try:
                     emit_operator_representation_material(
                         ledger,
                         representation=representation,
                         admission_result_event_identity=admission.identity,
+                        applicability_result_event_identity=(
+                            applicability.identity
+                        ),
                         locality_standing=locality_standing,
                         output_boundary=destination_operator_boundary,
                     )

@@ -719,7 +719,7 @@ def test_exact_egress_reads_the_recorded_representation_material():
         source_occurrence_reference=source.identity,
     )
     output = BytesIO()
-    admission, standing, boundary = admit_representation(
+    admission, applicability, standing, boundary = admit_representation(
         ledger, representation, output_stream=output
     )
 
@@ -727,6 +727,7 @@ def test_exact_egress_reads_the_recorded_representation_material():
         ledger,
         representation=representation,
         admission_result_event_identity=admission.identity,
+        applicability_result_event_identity=applicability.identity,
         locality_standing=standing,
         output_boundary=boundary,
     )
@@ -819,6 +820,7 @@ def test_exact_egress_reads_the_recorded_representation_material():
             ledger,
             representation=representation,
             admission_result_event_identity=admission.identity,
+            applicability_result_event_identity=applicability.identity,
             locality_standing=standing,
             output_boundary=boundary,
         )
@@ -865,7 +867,7 @@ def test_exact_material_emission_preserves_each_bounded_failure_result(
         source_occurrence_reference=source.identity,
     )
     failed_boundary = FailedBoundary()
-    admission, standing, boundary = admit_representation(
+    admission, applicability, standing, boundary = admit_representation(
         ledger, representation, output_stream=failed_boundary
     )
 
@@ -874,6 +876,7 @@ def test_exact_material_emission_preserves_each_bounded_failure_result(
             ledger,
             representation=representation,
             admission_result_event_identity=admission.identity,
+            applicability_result_event_identity=applicability.identity,
             locality_standing=standing,
             output_boundary=boundary,
         )
@@ -939,7 +942,7 @@ def test_exact_material_process_death_leaves_only_the_durable_attempt():
         source_occurrence_reference=source.identity,
     )
     dying_boundary = DyingBoundary()
-    admission, standing, boundary = admit_representation(
+    admission, applicability, standing, boundary = admit_representation(
         ledger, representation, output_stream=dying_boundary
     )
 
@@ -948,6 +951,7 @@ def test_exact_material_process_death_leaves_only_the_durable_attempt():
             ledger,
             representation=representation,
             admission_result_event_identity=admission.identity,
+            applicability_result_event_identity=applicability.identity,
             locality_standing=standing,
             output_boundary=boundary,
         )
@@ -979,12 +983,13 @@ def test_exact_material_emission_recovers_recorded_order_and_refuses_wrong_occur
     representation["recorded_occurrence_references"] = tuple(
         reversed(representation["recorded_occurrence_references"])
     )
-    admission, standing, boundary = admit_representation(ledger, representation)
+    admission, applicability, standing, boundary = admit_representation(ledger, representation)
 
     emit_operator_representation_material(
         ledger,
         representation=representation,
         admission_result_event_identity=admission.identity,
+        applicability_result_event_identity=applicability.identity,
         locality_standing=standing,
         output_boundary=boundary,
     )
@@ -999,7 +1004,7 @@ def test_exact_material_emission_recovers_recorded_order_and_refuses_wrong_occur
         locality_standing=_standing(ledger),
         source_occurrence_reference=source.identity,
     )
-    other_admission, other_standing, other_boundary = admit_representation(
+    other_admission, other_applicability, other_standing, other_boundary = admit_representation(
         ledger, other
     )
     other["representation_identity"] = representation["representation_identity"]
@@ -1008,6 +1013,7 @@ def test_exact_material_emission_recovers_recorded_order_and_refuses_wrong_occur
             ledger,
             representation=other,
             admission_result_event_identity=other_admission.identity,
+            applicability_result_event_identity=other_applicability.identity,
             locality_standing=other_standing,
             output_boundary=other_boundary,
         )

@@ -62,7 +62,7 @@ def test_candidate_admission_and_emission_remain_three_distinct_results():
     ledger = EventLedger()
     representation = _exact_representation(ledger)
     output = BytesIO()
-    admission_event, standing, boundary = admit_representation(
+    admission_event, applicability, standing, boundary = admit_representation(
         ledger, representation, output_stream=output
     )
     admission = get_recorded_exact_material_representation_admission(
@@ -75,6 +75,7 @@ def test_candidate_admission_and_emission_remain_three_distinct_results():
         ledger,
         representation=representation,
         admission_result_event_identity=admission_event.identity,
+        applicability_result_event_identity=applicability.identity,
         locality_standing=standing,
         output_boundary=boundary,
     )
@@ -110,14 +111,14 @@ def test_candidate_admission_and_emission_remain_three_distinct_results():
 def test_admission_to_one_operator_locality_does_not_admit_another():
     ledger = EventLedger()
     first = _exact_representation(ledger)
-    first_admission, first_standing, first_boundary = admit_representation(
+    first_admission, first_applicability, first_standing, first_boundary = admit_representation(
         ledger,
         first,
         boundary_identity="terminal-boundary",
         operator_locality_identity="terminal-locality",
     )
     second = _exact_representation(ledger, b"hello again")
-    second_admission, second_standing, _second_boundary = admit_representation(
+    second_admission, _second_applicability, second_standing, _second_boundary = admit_representation(
         ledger,
         second,
         boundary_identity="audio-boundary",
@@ -129,6 +130,7 @@ def test_admission_to_one_operator_locality_does_not_admit_another():
             ledger,
             representation=second,
             admission_result_event_identity=first_admission.identity,
+            applicability_result_event_identity=first_applicability.identity,
             locality_standing=first_standing,
             output_boundary=first_boundary,
         )
@@ -150,7 +152,7 @@ def test_admission_to_one_operator_locality_does_not_admit_another():
 def test_admission_refuses_a_different_invoked_operator_boundary():
     ledger = EventLedger()
     representation = _exact_representation(ledger)
-    admission, standing, _terminal_boundary = admit_representation(
+    admission, applicability, standing, _terminal_boundary = admit_representation(
         ledger,
         representation,
         boundary_identity="terminal-boundary",
@@ -162,11 +164,12 @@ def test_admission_refuses_a_different_invoked_operator_boundary():
         locality_identity="audio-locality",
     )
 
-    with pytest.raises(ValueError, match="Admission and destination"):
+    with pytest.raises(ValueError, match="Admission, Applicability, and destination"):
         emit_operator_representation_material(
             ledger,
             representation=representation,
             admission_result_event_identity=admission.identity,
+            applicability_result_event_identity=applicability.identity,
             locality_standing=standing,
             output_boundary=audio_boundary,
         )
@@ -178,13 +181,14 @@ def test_emission_refuses_admission_not_carried_by_current_standing():
     before_admission = read_operator_locality_standing(
         ledger, locality_identity="seed-locality"
     )
-    admission, _, boundary = admit_representation(ledger, representation)
+    admission, applicability, _, boundary = admit_representation(ledger, representation)
 
     with pytest.raises(ValueError, match="carried Admission"):
         emit_operator_representation_material(
             ledger,
             representation=representation,
             admission_result_event_identity=admission.identity,
+            applicability_result_event_identity=applicability.identity,
             locality_standing=before_admission,
             output_boundary=boundary,
         )
@@ -193,11 +197,12 @@ def test_emission_refuses_admission_not_carried_by_current_standing():
 def test_one_admission_participates_in_only_one_emission_attempt():
     ledger = EventLedger()
     representation = _exact_representation(ledger)
-    admission, standing, boundary = admit_representation(ledger, representation)
+    admission, applicability, standing, boundary = admit_representation(ledger, representation)
     emit_operator_representation_material(
         ledger,
         representation=representation,
         admission_result_event_identity=admission.identity,
+        applicability_result_event_identity=applicability.identity,
         locality_standing=standing,
         output_boundary=boundary,
     )
@@ -207,6 +212,7 @@ def test_one_admission_participates_in_only_one_emission_attempt():
             ledger,
             representation=representation,
             admission_result_event_identity=admission.identity,
+            applicability_result_event_identity=applicability.identity,
             locality_standing=read_operator_locality_standing(
                 ledger, locality_identity="seed-locality"
             ),
@@ -344,7 +350,7 @@ def test_one_candidate_or_admission_act_cannot_yield_twice():
 def test_candidate_and_admission_refuse_corrupted_yield_evidence(result_family):
     ledger = IntegrityAdversaryLedger()
     representation = _exact_representation(ledger)
-    admission, _standing, _boundary = admit_representation(ledger, representation)
+    admission, _applicability, _standing, _boundary = admit_representation(ledger, representation)
     candidate = ledger.get(
         admission.material["candidate_reference"]["recorded_occurrence_identity"]
     )
@@ -364,7 +370,7 @@ def test_candidate_admission_standing_survives_durable_reopen(tmp_path):
     path = tmp_path / "representation-admission.sqlite"
     ledger = SQLiteEventLedger(str(path))
     representation = _exact_representation(ledger)
-    admission, standing, _boundary = admit_representation(ledger, representation)
+    admission, applicability, standing, _boundary = admit_representation(ledger, representation)
     admission_identity = admission.identity
     expected_candidate = dict(standing["candidate_result_occurrences"])
     ledger.close()

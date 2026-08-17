@@ -12,6 +12,10 @@ from seed_runtime.operator_representation_admission import (
     record_exact_material_representation_admission_act_evidence,
     record_exact_material_representation_admission_result,
 )
+from seed_runtime.operator_representation_applicability import (
+    record_representation_emission_applicability_act_evidence,
+    record_representation_emission_applicability_result,
+)
 
 
 def admit_representation(
@@ -22,7 +26,7 @@ def admit_representation(
     operator_locality_identity="fixture_operator_locality",
     output_stream=None,
 ):
-    """Record every stage and return Admission, Standing, and its boundary."""
+    """Return Admission, Applicability, final Standing, and the output boundary."""
 
     locality_identity = representation["locality_identity"]
     boundary = operator_emission_boundary(
@@ -77,8 +81,21 @@ def admit_representation(
         ledger,
         responsible_act_evidence_event_identity=admission_act.identity,
     )
+    standing = read_operator_locality_standing(
+        ledger, locality_identity=locality_identity
+    )
+    applicability_act = record_representation_emission_applicability_act_evidence(
+        ledger,
+        admission_result_event_identity=admission.identity,
+        locality_standing=standing,
+    )
+    applicability = record_representation_emission_applicability_result(
+        ledger,
+        responsible_act_evidence_event_identity=applicability_act.identity,
+    )
     return (
         admission,
+        applicability,
         read_operator_locality_standing(ledger, locality_identity=locality_identity),
         boundary,
     )

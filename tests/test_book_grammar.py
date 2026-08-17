@@ -402,6 +402,7 @@ def test_witness_completeness_separates_grammar_from_live_crossing():
     assert complete_subjects == {
         "candidate",
         "emission_candidate_Admission_to_operator_Locality",
+        "emission_input_Applicability",
     }
     assert incomplete_subjects == {
         "Admission",

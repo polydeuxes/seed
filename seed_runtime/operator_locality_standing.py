@@ -71,6 +71,12 @@ from seed_runtime.operator_representation_admission import (
     get_exact_material_representation_admission_act_evidence,
     get_recorded_exact_material_representation_admission,
 )
+from seed_runtime.operator_representation_applicability import (
+    REPRESENTATION_EMISSION_APPLICABILITY_ACT_EVIDENCE_KIND,
+    REPRESENTATION_EMISSION_APPLICABILITY_RECORDED_KIND,
+    get_representation_emission_applicability_act_evidence,
+    get_recorded_representation_emission_applicability,
+)
 from seed_runtime.evidence_of_yield_relation import read_requirements_of_yield_relation
 
 # The writer of these occurrences declares their kinds. A reader declaring its
@@ -130,6 +136,10 @@ _REPRESENTATION_CANDIDATE_ADMISSION_KINDS = {
     EXACT_MATERIAL_REPRESENTATION_ADMISSION_ACT_EVIDENCE_KIND,
     EXACT_MATERIAL_REPRESENTATION_ADMISSION_RECORDED_KIND,
 }
+_REPRESENTATION_EMISSION_APPLICABILITY_KINDS = {
+    REPRESENTATION_EMISSION_APPLICABILITY_ACT_EVIDENCE_KIND,
+    REPRESENTATION_EMISSION_APPLICABILITY_RECORDED_KIND,
+}
 _SUPPORTED_KINDS = {
     *_SUBJECT_BY_KIND,
     *_MEASUREMENT_ACT_EVIDENCE_KINDS,
@@ -139,6 +149,7 @@ _SUPPORTED_KINDS = {
     *_RECORDED_STANDING_BOUNDARY_LOCALITY_KINDS,
     *_OPERATOR_MATERIAL_ACQUIRE_KINDS,
     *_REPRESENTATION_CANDIDATE_ADMISSION_KINDS,
+    *_REPRESENTATION_EMISSION_APPLICABILITY_KINDS,
     _REPRESENTATION_RECORDED_KIND,
     _REPRESENTATION_ACT_EVIDENCE_KIND,
     _REPRESENTATION_LOCALITY_EVIDENCE_KIND,
@@ -475,6 +486,7 @@ def advance_operator_locality_standing(
     operator_material_acquire_act_occurrences: dict[str, None] = {}
     candidate_result_occurrences: dict[str, None] = {}
     admission_result_occurrences: dict[str, None] = {}
+    applicability_result_occurrences: dict[str, None] = {}
     # Kept sorted and distinct in place rather than as a set sorted on return.
     # A set would have to be rebuilt from the prior list and re-sorted on every
     # advance, which costs the accumulated size each time.  These coordinates
@@ -542,6 +554,13 @@ def advance_operator_locality_standing(
             raise ValueError(
                 "prior Locality Standing requires exact Admission result occurrences"
             )
+        applicability_result_occurrences = prior[
+            "applicability_result_occurrences"
+        ]
+        if type(applicability_result_occurrences) is not dict:
+            raise ValueError(
+                "prior Locality Standing requires exact Applicability result occurrences"
+            )
         known_loss = prior["known_loss"]
         unknown = prior["unknown"]
         conflicts = prior["conflicts"]
@@ -561,6 +580,7 @@ def advance_operator_locality_standing(
             or event.kind in _RECORDED_STANDING_BOUNDARY_LOCALITY_KINDS
             or event.kind in _OPERATOR_MATERIAL_ACQUIRE_KINDS
             or event.kind in _REPRESENTATION_CANDIDATE_ADMISSION_KINDS
+            or event.kind in _REPRESENTATION_EMISSION_APPLICABILITY_KINDS
         ):
             continue
         if event.kind not in _SUPPORTED_KINDS:
@@ -662,6 +682,17 @@ def advance_operator_locality_standing(
                 ledger, event.identity
             )
             admission_result_occurrences[event.identity] = None
+            continue
+        if event.kind == REPRESENTATION_EMISSION_APPLICABILITY_ACT_EVIDENCE_KIND:
+            get_representation_emission_applicability_act_evidence(
+                ledger, event.identity
+            )
+            continue
+        if event.kind == REPRESENTATION_EMISSION_APPLICABILITY_RECORDED_KIND:
+            get_recorded_representation_emission_applicability(
+                ledger, event.identity
+            )
+            applicability_result_occurrences[event.identity] = None
             continue
         if (
             event.kind
@@ -851,6 +882,7 @@ def advance_operator_locality_standing(
         ),
         "candidate_result_occurrences": candidate_result_occurrences,
         "admission_result_occurrences": admission_result_occurrences,
+        "applicability_result_occurrences": applicability_result_occurrences,
         "known_loss": known_loss,
         "unknown": unknown,
         "conflicts": conflicts,

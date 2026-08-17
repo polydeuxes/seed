@@ -1,0 +1,203 @@
+from io import BytesIO
+
+import pytest
+
+FIDELITY_SUBJECT = "applicability_determination"
+
+from seed_runtime.events import CORRUPTED, EventLedger, SQLiteEventLedger
+from seed_runtime.material_ingest import ingest_material
+from seed_runtime.operator_locality_standing import (
+    read_operator_locality_standing,
+    read_operator_locality_standing_as_of,
+)
+from seed_runtime.operator_representation import (
+    emit_operator_representation_material,
+    record_operator_representation,
+)
+from seed_runtime.operator_representation_applicability import (
+    RepresentationApplicabilityError,
+    get_recorded_representation_emission_applicability,
+    record_representation_emission_applicability_result,
+)
+from tests.representation_admission import admit_representation
+
+
+class IntegrityAdversaryLedger(EventLedger):
+    def __init__(self):
+        super().__init__()
+        self.corrupted_identities = set()
+
+    def mark_corrupted(self, event_identity):
+        self.corrupted_identities.add(event_identity)
+
+    def integrity_of(self, event_identity):
+        if event_identity in self.corrupted_identities:
+            return CORRUPTED
+        return super().integrity_of(event_identity)
+
+
+def _representation(ledger, exact=b"applicable material"):
+    source = ingest_material(
+        ledger,
+        locality_identity="seed-locality",
+        exact_bytes=exact,
+        source_role="operator",
+        source_boundary="exact fixture boundary",
+    )
+    return record_operator_representation(
+        ledger,
+        locality_identity="seed-locality",
+        locality_standing=read_operator_locality_standing(
+            ledger, locality_identity="seed-locality"
+        ),
+        source_occurrence_reference=source.identity,
+    )
+
+
+def test_admission_applicability_participation_and_emission_remain_distinct():
+    ledger = EventLedger()
+    representation = _representation(ledger)
+    output = BytesIO()
+    admission, applicability_event, standing, boundary = admit_representation(
+        ledger, representation, output_stream=output
+    )
+    applicability = get_recorded_representation_emission_applicability(
+        ledger, applicability_event.identity
+    )
+
+    emitted = emit_operator_representation_material(
+        ledger,
+        representation=representation,
+        admission_result_event_identity=admission.identity,
+        applicability_result_event_identity=applicability_event.identity,
+        locality_standing=standing,
+        output_boundary=boundary,
+    )
+
+    emission = ledger.get(emitted["emitted_event_identity"])
+    act_evidence = ledger.get(emission.material["responsible_act_evidence_identity"])
+    assert output.getvalue() == b"applicable material"
+    assert applicability["standing"] == "applicable"
+    assert applicability["support_relation_standing"] == "admitted"
+    assert applicability["admission_result_event_identity"] == admission.identity
+    assert applicability["downstream_act_occurrence_identity"] == (
+        emission.material["act_occurrence_identity"]
+    )
+    assert act_evidence.material["input_applicability_event_identity"] == (
+        applicability_event.identity
+    )
+    assert len(
+        {
+            admission.material["result_identity"],
+            applicability["result_identity"],
+            emission.material["result_identity"],
+        }
+    ) == 3
+
+
+def test_emitter_refuses_applicability_absent_from_current_standing():
+    ledger = EventLedger()
+    representation = _representation(ledger)
+    admission, applicability, _standing, boundary = admit_representation(
+        ledger, representation
+    )
+    standing_before_applicability = read_operator_locality_standing_as_of(
+        ledger,
+        locality_identity="seed-locality",
+        as_of_event_identity=admission.identity,
+    )
+
+    with pytest.raises(ValueError, match="Applicability"):
+        emit_operator_representation_material(
+            ledger,
+            representation=representation,
+            admission_result_event_identity=admission.identity,
+            applicability_result_event_identity=applicability.identity,
+            locality_standing=standing_before_applicability,
+            output_boundary=boundary,
+        )
+
+
+def test_applicability_for_another_admission_cannot_participate():
+    ledger = EventLedger()
+    first = _representation(ledger, b"first")
+    first_admission, _first_applicability, _first_standing, first_boundary = (
+        admit_representation(ledger, first)
+    )
+    second = _representation(ledger, b"second")
+    _second_admission, second_applicability, second_standing, _second_boundary = (
+        admit_representation(ledger, second)
+    )
+
+    with pytest.raises(ValueError, match="Applicability"):
+        emit_operator_representation_material(
+            ledger,
+            representation=first,
+            admission_result_event_identity=first_admission.identity,
+            applicability_result_event_identity=second_applicability.identity,
+            locality_standing=second_standing,
+            output_boundary=first_boundary,
+        )
+
+
+def test_one_applicability_act_cannot_yield_twice():
+    ledger = EventLedger()
+    representation = _representation(ledger)
+    _admission, applicability, _standing, _boundary = admit_representation(
+        ledger, representation
+    )
+
+    with pytest.raises(
+        RepresentationApplicabilityError, match="already carries a Yield"
+    ):
+        record_representation_emission_applicability_result(
+            ledger,
+            responsible_act_evidence_event_identity=applicability.material[
+                "responsible_act_evidence_identity"
+            ],
+        )
+
+
+def test_applicability_refuses_corrupted_yield_evidence():
+    ledger = IntegrityAdversaryLedger()
+    representation = _representation(ledger)
+    _admission, applicability, _standing, _boundary = admit_representation(
+        ledger, representation
+    )
+    ledger.mark_corrupted(
+        applicability.material["evidence_of_yield_relation_identity"]
+    )
+
+    with pytest.raises(RepresentationApplicabilityError, match="exact Yield"):
+        get_recorded_representation_emission_applicability(
+            ledger, applicability.identity
+        )
+
+
+def test_applicability_standing_survives_durable_reopen(tmp_path):
+    path = tmp_path / "representation-applicability.sqlite"
+    ledger = SQLiteEventLedger(str(path))
+    representation = _representation(ledger)
+    _admission, applicability, standing, _boundary = admit_representation(
+        ledger, representation
+    )
+    applicability_identity = applicability.identity
+    assert standing["applicability_result_occurrences"] == {
+        applicability_identity: None
+    }
+    ledger.close()
+
+    reopened = SQLiteEventLedger(str(path))
+    try:
+        recorded = get_recorded_representation_emission_applicability(
+            reopened, applicability_identity
+        )
+        replayed = read_operator_locality_standing(
+            reopened, locality_identity="seed-locality"
+        )
+        assert recorded["standing"] == "applicable"
+        assert replayed["applicability_result_occurrences"] == {
+            applicability_identity: None
+        }
+    finally:
+        reopened.close()

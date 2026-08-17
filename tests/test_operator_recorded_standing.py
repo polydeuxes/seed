@@ -298,13 +298,14 @@ def test_recorded_standing_reference_survives_durable_reopen(tmp_path):
             source_occurrence_reference=source_occurrence_identity,
         )
         output = BytesIO()
-        admission, standing, boundary = admit_representation(
+        admission, applicability, standing, boundary = admit_representation(
             reopened, representation, output_stream=output
         )
         emit_operator_representation_material(
             reopened,
             representation=representation,
             admission_result_event_identity=admission.identity,
+            applicability_result_event_identity=applicability.identity,
             locality_standing=standing,
             output_boundary=boundary,
         )
@@ -335,7 +336,7 @@ def test_one_exact_result_at_the_recorded_boundary_can_be_represented_and_emitte
         source_occurrence_reference=source_occurrence_identity,
     )
     output = BytesIO()
-    admission, standing, boundary = admit_representation(
+    admission, applicability, standing, boundary = admit_representation(
         ledger, representation, output_stream=output
     )
 
@@ -343,6 +344,7 @@ def test_one_exact_result_at_the_recorded_boundary_can_be_represented_and_emitte
         ledger,
         representation=representation,
         admission_result_event_identity=admission.identity,
+        applicability_result_event_identity=applicability.identity,
         locality_standing=standing,
         output_boundary=boundary,
     )

@@ -100,6 +100,18 @@
         "result_occurrence": "Admission_result_occurrence",
         "Standing": "Admission_Standing",
         "downstream_Act": "Representation_emission_Act"
+      },
+      {
+        "subject": "emission_input_Applicability",
+        "grammar": "established",
+        "grammar_reference": "01.Standing.E.1",
+        "responsible_boundary": "this_Seed",
+        "responsibility_assignment": "Representation_emission_Responsibility",
+        "Act_Evidence": "Applicability_Act_Evidence",
+        "Evidence_of_Yield_relation": "Applicability_Evidence_of_Yield_relation",
+        "result_occurrence": "Applicability_result_occurrence",
+        "Standing": "applicable_input_Standing",
+        "downstream_Act": "Representation_emission_Act"
       }
     ]
   },
@@ -1152,6 +1164,36 @@
       ],
       "persistent_Standing": {
         "establishes_new_Act": false
+      },
+      "emission_input_Applicability_occurrence": {
+        "responsible_boundary": "this_Seed",
+        "assigned_by": "Representation_emission_Responsibility",
+        "requires": "Admission_Standing",
+        "coordinates": [
+          "Admission_result_occurrence",
+          "Representation_occurrence",
+          "input_identity",
+          "input_role",
+          "emission_Act",
+          "emission_Act_occurrence",
+          "emission_result_boundary",
+          "Standing_boundary",
+          "destination_operator_boundary",
+          "destination_operator_Locality",
+          "Scope",
+          "Authority",
+          "provenance",
+          "known_loss",
+          "conflicts",
+          "Unknown",
+          "negative_Authority"
+        ],
+        "result": "applicable_input_Standing",
+        "does_not_establish": [
+          "Participation",
+          "emission_result",
+          "input_supports_result"
+        ]
       }
     },
     "01.Standing.F": {

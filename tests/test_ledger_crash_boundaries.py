@@ -251,13 +251,14 @@ def test_the_exact_material_attempt_is_durable_before_raw_egress(tmp_path):
             return super().write(value)
 
     output = _Watching()
-    admission, standing, boundary = admit_representation(
+    admission, applicability, standing, boundary = admit_representation(
         ledger, representation, output_stream=output
     )
     emit_operator_representation_material(
         ledger,
         representation=representation,
         admission_result_event_identity=admission.identity,
+        applicability_result_event_identity=applicability.identity,
         locality_standing=standing,
         output_boundary=boundary,
     )

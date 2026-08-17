@@ -490,6 +490,7 @@ def emit_operator_representation_material(
     *,
     representation: dict[str, Any],
     admission_result_event_identity: str,
+    applicability_result_event_identity: str,
     locality_standing: dict[str, Any],
     output_boundary,
 ) -> dict[str, Any]:
@@ -499,9 +500,16 @@ def emit_operator_representation_material(
         get_recorded_exact_material_representation_admission,
         exact_material_representation_admission_occurrence_references,
     )
+    from seed_runtime.operator_representation_applicability import (
+        get_recorded_representation_emission_applicability,
+        representation_emission_applicability_occurrence_references,
+    )
 
     admission = get_recorded_exact_material_representation_admission(
         ledger, admission_result_event_identity
+    )
+    applicability = get_recorded_representation_emission_applicability(
+        ledger, applicability_result_event_identity
     )
     from seed_runtime.operator_egress import read_operator_emission_boundary
 
@@ -515,9 +523,19 @@ def emit_operator_representation_material(
         if type(locality_standing) is dict
         else None
     )
+    carried_applicability = (
+        locality_standing.get("applicability_result_occurrences")
+        if type(locality_standing) is dict
+        else None
+    )
     if (
         type(carried_admissions) is not dict
         or carried_admissions.get(admission_result_event_identity, object())
+        is not None
+        or type(carried_applicability) is not dict
+        or carried_applicability.get(
+            applicability_result_event_identity, object()
+        )
         is not None
         or locality_standing.get("locality_identity")
         != admission["scope"]["source_locality_identity"]
@@ -525,8 +543,17 @@ def emit_operator_representation_material(
         != admission["destination_operator_boundary_identity"]
         or destination_operator_locality_identity
         != admission["destination_operator_locality_identity"]
+        or applicability["admission_result_event_identity"]
+        != admission_result_event_identity
+        or applicability["standing"] != "applicable"
+        or applicability["downstream_act_identity"]
+        != admission["emission_act_identity"]
+        or applicability["downstream_act_occurrence_identity"]
+        != admission["emission_act_occurrence_identity"]
     ):
-        raise ValueError("emission requires one exact carried Admission and destination")
+        raise ValueError(
+            "emission requires one exact carried Admission, Applicability, and destination"
+        )
 
     recorded = read_operator_representation(
         ledger, representation.get("representation_event_identity")
@@ -566,6 +593,9 @@ def emit_operator_representation_material(
         *exact_material_representation_admission_occurrence_references(
             ledger, admission_result_event_identity
         ),
+        *representation_emission_applicability_occurrence_references(
+            ledger, applicability_result_event_identity
+        ),
     )
     emission_act_identity = admission["emission_act_identity"]
     act_occurrence_identity = admission["emission_act_occurrence_identity"]
@@ -581,6 +611,9 @@ def emit_operator_representation_material(
             "emission_act_identity": emission_act_identity,
             "act_occurrence_identity": act_occurrence_identity,
             "admission_result_event_identity": admission_result_event_identity,
+            "input_applicability_event_identity": (
+                applicability_result_event_identity
+            ),
             "candidate_result_event_identity": admission["candidate_reference"][
                 "recorded_occurrence_identity"
             ],
@@ -691,6 +724,7 @@ def emit_operator_representation_material(
         ],
         "input_role": REPRESENTATION_EMISSION_INPUT_ROLE,
         "admission_result_event_identity": admission_result_event_identity,
+        "input_applicability_event_identity": applicability_result_event_identity,
         "candidate_result_event_identity": admission["candidate_reference"][
             "recorded_occurrence_identity"
         ],
@@ -718,6 +752,9 @@ def emit_operator_representation_material(
             ],
             "input_role": REPRESENTATION_EMISSION_INPUT_ROLE,
             "admission_result_event_identity": admission_result_event_identity,
+            "input_applicability_event_identity": (
+                applicability_result_event_identity
+            ),
             "candidate_result_event_identity": admission["candidate_reference"][
                 "recorded_occurrence_identity"
             ],
@@ -793,6 +830,7 @@ def emit_operator_representation_material(
             "provenance_occurrence_references": [
                 representation["representation_event_identity"],
                 admission_result_event_identity,
+                applicability_result_event_identity,
                 attempt_event.identity,
             ],
         },
