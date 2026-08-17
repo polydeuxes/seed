@@ -34,6 +34,8 @@ A declared Measurement occurrence may carry bounded exact equality, count, recur
 
 A declared byte Measurement counts each exact byte occurrence in the exact Ingest material occurrences within its completeness boundary. Equal byte material does not identify the occurrence or position, and the result does not establish what a byte represents.
 
+Where current Standing in one Locality carries exact recorded position Assertions, this Seed may determine Applicability to one declared shared position Measurement. Exact pair occurrence Assertions from one exact source occurrence, Locality, and completeness boundary may participate. The second position of the first Assertion and the first position of the second Assertion establish one ordered relation path when each position is equal. Pair counts or source material does not establish that relation. The result Assertion carries each exact input Assertion reference, exact shared position, Applicability, Evidence, Scope, Authority, limits, and Unknown; it establishes no material of the input pair occurrences and no represented relation.
+
 Where a Seed performs a Seed-native declared Measurement over exact material related to that Seed by exact Locality Evidence, that Seed bears the Measurement Responsibility. The assignment does not identify the occurrence, make recording the Measurement occurrence, or transfer the resulting Assertion's Standing-coordinate Responsibility.
 
 ### 01.Source.D.1 — Counts preserve occurrence identity

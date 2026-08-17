@@ -47,9 +47,22 @@ from seed_runtime.measurement_of_recurrent_byte_pair_occurrence_position import 
     RECORDING_OCCURRENCE_OF_RESULT_OF_MEASUREMENT_OF_RECURRENT_BYTE_PAIR_OCCURRENCE_POSITION_KIND,
     RESPONSIBILITY_OF_RECURRENT_BYTE_PAIR_OCCURRENCE_POSITION_MEASUREMENT,
     RULE_OF_RECURRENT_BYTE_PAIR_OCCURRENCE_POSITION_MEASUREMENT,
+    measure_positions_for_recurrent_byte_pair_assertions,
     measure_positions_of_recurrent_byte_pair_occurrences,
+    references_to_recorded_recurrent_byte_pair_occurrence_positions,
     record_evidence_of_act_occurrence_for_measurement_of_recurrent_byte_pair_occurrence_position,
     record_result_of_measurement_of_recurrent_byte_pair_occurrence_position,
+)
+from seed_runtime.measurement_of_shared_position_of_recurrent_byte_pair_occurrences import (
+    MEASUREMENT_RULE as SHARED_POSITION_MEASUREMENT_RULE,
+    RESPONSIBILITY as SHARED_POSITION_MEASUREMENT_RESPONSIBILITY,
+    SHARED_POSITION_ASSERTION_RESPONSIBILITY,
+    SHARED_POSITION_MEASUREMENT_RESULT_KIND,
+    record_shared_position_responsibility_assignment,
+    record_shared_position_applicability_act_evidence,
+    record_shared_position_applicability_result,
+    record_shared_position_measurement_act_evidence,
+    record_shared_position_measurement_result,
 )
 from seed_runtime.operator_console import run_persistent_operator_console
 from seed_runtime.operator_locality_standing import read_operator_locality_standing
@@ -837,6 +850,131 @@ def _pair_occurrence_yield_witness() -> dict:
         responsible_act_evidence_event_identity=act_evidence.identity,
     )
     return _yield_bundle(ledger, event)
+
+
+def _shared_position_yield_witnesses() -> dict[str, dict]:
+    ledger = _IntegrityAdversaryLedger()
+    locality = "shared-position"
+    ingest_material(
+        ledger,
+        locality_identity=locality,
+        exact_bytes=b"abxxabbcxxbc",
+        source_role="premise material",
+        source_boundary="exact premise boundary",
+    )
+    byte = _record_byte_measurement(
+        ledger,
+        source_localities=(locality,),
+        recording_locality_identity=locality,
+    )
+    pair = record_byte_position_pair_count_layer(
+        ledger,
+        source_measurement_event_identity=byte.identity,
+        recording_locality_identity=locality,
+    )
+    recurrences = {
+        assertion.representation: assertion.assertion_identity
+        for assertion in assertions_of_recorded_byte_position_pair_measurement(
+            ledger, pair.identity
+        )
+        if assertion.result == "recurrence"
+        and assertion.representation
+        in {(ord("a"), ord("b")), (ord("b"), ord("c"))}
+    }
+    source = ingest_material(
+        ledger,
+        locality_identity=locality,
+        exact_bytes=b"abc",
+        source_role="later material",
+        source_boundary="exact later boundary",
+    )
+    findings = measure_positions_for_recurrent_byte_pair_assertions(
+        ledger,
+        pair_measurement_occurrence_identity=pair.identity,
+        recurrence_assertion_identities=(
+            recurrences[(ord("a"), ord("b"))],
+            recurrences[(ord("b"), ord("c"))],
+        ),
+        source_ingest_occurrence_identity=source.identity,
+        occurrence_limit=8,
+        through=ledger.append_boundary(),
+    )
+    results = []
+    for finding in findings:
+        act = record_evidence_of_act_occurrence_for_measurement_of_recurrent_byte_pair_occurrence_position(
+            ledger,
+            finding=finding,
+            recording_locality_identity=locality,
+        )
+        results.append(
+            record_result_of_measurement_of_recurrent_byte_pair_occurrence_position(
+                ledger,
+                responsible_act_evidence_event_identity=act.identity,
+            )
+        )
+    references = tuple(
+        reference
+        for result in results
+        for reference in references_to_recorded_recurrent_byte_pair_occurrence_positions(
+            ledger,
+            result_occurrence_identity=result.identity,
+        )
+    )
+    first = next(reference for reference in references if reference.exact_pair == b"ab")
+    second = next(reference for reference in references if reference.exact_pair == b"bc")
+    assignment = record_shared_position_responsibility_assignment(
+        ledger,
+        first_result_occurrence_identity=first.recorded_occurrence_identity,
+        first_assertion_identity=first.assertion_identity,
+        second_result_occurrence_identity=second.recorded_occurrence_identity,
+        second_assertion_identity=second.assertion_identity,
+        locality_standing=read_operator_locality_standing(
+            ledger, locality_identity=locality
+        ),
+    )
+    applicability_act = record_shared_position_applicability_act_evidence(
+        ledger,
+        assignment_event_identity=assignment.identity,
+        locality_standing=read_operator_locality_standing(
+            ledger, locality_identity=locality
+        ),
+    )
+    applicability = record_shared_position_applicability_result(
+        ledger,
+        applicability_act_evidence_event_identity=applicability_act.identity,
+    )
+    measurement_act = record_shared_position_measurement_act_evidence(
+        ledger,
+        applicability_result_event_identity=applicability.identity,
+        locality_standing=read_operator_locality_standing(
+            ledger, locality_identity=locality
+        ),
+    )
+    measurement = record_shared_position_measurement_result(
+        ledger,
+        measurement_act_evidence_event_identity=measurement_act.identity,
+    )
+    applicability_witness = _yield_bundle(ledger, applicability)
+    applicability_witness["recorded_result_occurrence_coordinate"] = (
+        "applicability_act_occurrence_identity"
+    )
+    applicability_witness["act_evidence_occurrence_coordinate"] = (
+        "applicability_act_occurrence_identity"
+    )
+    return {
+        "shared_pair_position_applicability": applicability_witness,
+        "shared_pair_position_measurement": _yield_bundle(ledger, measurement),
+    }
+
+
+def _shared_position_applicability_yield_witness() -> dict:
+    return _shared_position_yield_witnesses()[
+        "shared_pair_position_applicability"
+    ]
+
+
+def _shared_position_measurement_yield_witness() -> dict:
+    return _shared_position_yield_witnesses()["shared_pair_position_measurement"]
 
 
 def _standing_locality_continuation_yield_witness() -> dict:
@@ -1853,6 +1991,12 @@ def _remaining_yield_requirement_bundles() -> dict[str, dict[str, dict]]:
         "assertion_locality_movement": _assertion_locality_movement_yield_witness,
         "occurrence_position_measurement": _occurrence_position_yield_witness,
         "measurement_of_recurrent_byte_pair_occurrence_position": _pair_occurrence_yield_witness,
+        "shared_pair_position_applicability": (
+            _shared_position_applicability_yield_witness
+        ),
+        "shared_pair_position_measurement": (
+            _shared_position_measurement_yield_witness
+        ),
         "recorded_pair_measurement_comparison_applicability": (
             _recorded_pair_measurement_comparison_applicability_yield_witness
         ),
@@ -2225,6 +2369,13 @@ def _measurement_result_witness(bundle: dict) -> dict[str, str]:
             {"position"},
             "occurrence_identity",
         ),
+        SHARED_POSITION_MEASUREMENT_RESULT_KIND: (
+            SHARED_POSITION_MEASUREMENT_RESPONSIBILITY,
+            SHARED_POSITION_MEASUREMENT_RULE,
+            False,
+            {"ordered_relation_path"},
+            "occurrence_identity",
+        ),
     }.get(event.kind)
     if expected is None:
         return {
@@ -2311,7 +2462,11 @@ def _measurement_result_witness(bundle: dict) -> dict[str, str]:
             == expected_rule
             and item.get("assertion_scope") == expected_scope
             and item.get("dimensions", {}).get("responsibility")
-            == MEASURED_ASSERTION_RESPONSIBILITY
+            == (
+                SHARED_POSITION_ASSERTION_RESPONSIBILITY
+                if event.kind == SHARED_POSITION_MEASUREMENT_RESULT_KIND
+                else MEASURED_ASSERTION_RESPONSIBILITY
+            )
             for item in assertions
         )
         and set(assertion_results) <= allowed_results
@@ -2428,7 +2583,12 @@ def _measurement_result_distinctions(bundle: dict) -> dict[tuple[str, str], bool
             "Assertion_Standing_coordinate_Responsibility",
         ): (
             bool(assertion_responsibilities)
-            and assertion_responsibilities == {MEASURED_ASSERTION_RESPONSIBILITY}
+            and assertion_responsibilities
+            == {
+                SHARED_POSITION_ASSERTION_RESPONSIBILITY
+                if event.kind == SHARED_POSITION_MEASUREMENT_RESULT_KIND
+                else MEASURED_ASSERTION_RESPONSIBILITY
+            }
             and material.get("responsibility") not in assertion_responsibilities
         ),
     }
@@ -4215,7 +4375,13 @@ def test_unrelated_yield_occurrences_do_not_share_result_identity():
         "successful_emission": _emission_witness,
         "assertion_locality_movement": _assertion_locality_movement_yield_witness,
         "occurrence_position_measurement": _occurrence_position_yield_witness,
-        "measurement_of_recurrent_byte_pair_occurrence_position": _pair_occurrence_yield_witness,
+            "measurement_of_recurrent_byte_pair_occurrence_position": _pair_occurrence_yield_witness,
+            "shared_pair_position_applicability": (
+                _shared_position_applicability_yield_witness
+            ),
+            "shared_pair_position_measurement": (
+                _shared_position_measurement_yield_witness
+            ),
         "recorded_pair_measurement_comparison_applicability": (
             _recorded_pair_measurement_comparison_applicability_yield_witness
         ),
@@ -4252,10 +4418,11 @@ def test_unrelated_yield_occurrences_do_not_share_result_identity():
     for boundary, (first, second) in pairs.items():
         occurrence_coordinate = (
             "applicability_act_occurrence_identity"
-            if boundary in {
-                "byte_pair_applicability",
-                "representation_emission_applicability",
-            }
+                if boundary in {
+                    "byte_pair_applicability",
+                    "representation_emission_applicability",
+                    "shared_pair_position_applicability",
+                }
             else "movement_act_occurrence_identity"
             if boundary == "assertion_locality_movement"
             else "act_occurrence_identity"
@@ -4682,9 +4849,15 @@ def test_measurement_result_clause_is_checked_against_live_byte_pair_and_positio
     pair = {"event": pair_bundle["pair_event"]}
     position = _occurrence_position_yield_witness()
     pair_occurrence = _pair_occurrence_yield_witness()
+    shared_position = _shared_position_measurement_yield_witness()
 
-    assert clause["findings"] == ["count", "recurrence", "position"]
-    for bundle in (byte, pair, position, pair_occurrence):
+    assert clause["findings"] == [
+        "count",
+        "recurrence",
+        "position",
+        "ordered_relation_path",
+    ]
+    for bundle in (byte, pair, position, pair_occurrence, shared_position):
         witness = _measurement_result_witness(bundle)
         distinctions = _measurement_result_distinctions(bundle)
 
@@ -4933,6 +5106,23 @@ def test_measurement_result_and_exact_act_clauses_do_not_absorb_each_other():
     assert act_witness["exact_Act"] == MISSING
     assert act_witness["Act_occurrence"] == MISSING
     assert act_witness["Evidence_of_Act_occurrence"] == MISSING
+
+
+def test_shared_position_measurement_decomposes_material_non_establishment():
+    declared = _clause("01.Source.D")["declared_measurements"][
+        "measurement_of_shared_position_of_recurrent_byte_pair_occurrences"
+    ]
+
+    assert declared["does_not_establish"][0] == {
+        "first_subject": "input_pair_occurrences",
+        "relation": "establish",
+        "second_subject": {
+            "first_subject": "material",
+            "relation": "of",
+            "second_subject": "input_pair_occurrences",
+        },
+        "standing": "not_established",
+    }
 
 
 def test_measurement_result_distinction_adversaries_collapse_one_boundary_each():
@@ -5341,6 +5531,7 @@ FIDELITY_SUBJECTS = {
     ),
     "declared_measurement_result": (
         test_measurement_result_clause_is_checked_against_live_byte_pair_and_position_results,
+        test_shared_position_measurement_decomposes_material_non_establishment,
     ),
     "it_result_relation": (
         test_measurement_result_pronoun_reference_does_not_compress_the_relation,

@@ -26,6 +26,18 @@ from seed_runtime.measurement_of_recurrent_byte_pair_occurrence_position import 
     RECORDING_OCCURRENCE_OF_RESULT_OF_MEASUREMENT_OF_RECURRENT_BYTE_PAIR_OCCURRENCE_POSITION_KIND,
     get_recorded_result_of_measurement_of_recurrent_byte_pair_occurrence_position,
 )
+from seed_runtime.measurement_of_shared_position_of_recurrent_byte_pair_occurrences import (
+    SHARED_POSITION_RESPONSIBILITY_ASSIGNMENT_KIND,
+    SHARED_POSITION_APPLICABILITY_ACT_EVIDENCE_KIND,
+    SHARED_POSITION_APPLICABILITY_RESULT_KIND,
+    SHARED_POSITION_MEASUREMENT_ACT_EVIDENCE_KIND,
+    SHARED_POSITION_MEASUREMENT_RESULT_KIND,
+    get_shared_position_responsibility_assignment,
+    get_shared_position_applicability_act_evidence,
+    get_recorded_shared_position_applicability,
+    get_shared_position_measurement_act_evidence,
+    get_recorded_shared_position_measurement,
+)
 from seed_runtime.operator_standing_continuation import (
     STANDING_LOCALITY_CONTINUATION_ACT_EVIDENCE_KIND,
     STANDING_LOCALITY_CONTINUATION_RECORDED_KIND,
@@ -127,6 +139,7 @@ _MEASUREMENT_RECORDED_KINDS = {
     BYTE_PAIR_MEASUREMENT_RECORDED_KIND,
     OCCURRENCE_POSITION_RECORDED_KIND,
     RECORDING_OCCURRENCE_OF_RESULT_OF_MEASUREMENT_OF_RECURRENT_BYTE_PAIR_OCCURRENCE_POSITION_KIND,
+    SHARED_POSITION_MEASUREMENT_RESULT_KIND,
 }
 _STANDING_LOCALITY_CONTINUATION_KINDS = {
     STANDING_LOCALITY_CONTINUATION_RESPONSIBILITY_ASSIGNMENT_RECORDED_KIND,
@@ -172,6 +185,13 @@ _RECORDED_PAIR_MEASUREMENT_COMPARISON_KINDS = {
     RECORDED_PAIR_MEASUREMENT_COMPARISON_ACT_EVIDENCE_KIND,
     RECORDED_PAIR_MEASUREMENT_COMPARISON_RESULT_KIND,
 }
+_SHARED_POSITION_MEASUREMENT_KINDS = {
+    SHARED_POSITION_RESPONSIBILITY_ASSIGNMENT_KIND,
+    SHARED_POSITION_APPLICABILITY_ACT_EVIDENCE_KIND,
+    SHARED_POSITION_APPLICABILITY_RESULT_KIND,
+    SHARED_POSITION_MEASUREMENT_ACT_EVIDENCE_KIND,
+    SHARED_POSITION_MEASUREMENT_RESULT_KIND,
+}
 _SUPPORTED_KINDS = {
     *_SUBJECT_BY_KIND,
     *_MEASUREMENT_ACT_EVIDENCE_KINDS,
@@ -184,6 +204,7 @@ _SUPPORTED_KINDS = {
     *_REPRESENTATION_CANDIDATE_ADMISSION_KINDS,
     *_REPRESENTATION_EMISSION_APPLICABILITY_KINDS,
     *_RECORDED_PAIR_MEASUREMENT_COMPARISON_KINDS,
+    *_SHARED_POSITION_MEASUREMENT_KINDS,
     _REPRESENTATION_RECORDED_KIND,
     _REPRESENTATION_ACT_EVIDENCE_KIND,
     _REPRESENTATION_LOCALITY_EVIDENCE_KIND,
@@ -631,6 +652,7 @@ def advance_operator_locality_standing(
             or event.kind in _REPRESENTATION_CANDIDATE_ADMISSION_KINDS
             or event.kind in _REPRESENTATION_EMISSION_APPLICABILITY_KINDS
             or event.kind in _RECORDED_PAIR_MEASUREMENT_COMPARISON_KINDS
+            or event.kind in _SHARED_POSITION_MEASUREMENT_KINDS
         ):
             continue
         if event.kind not in _SUPPORTED_KINDS:
@@ -760,6 +782,26 @@ def advance_operator_locality_standing(
             )
             applicability_result_occurrences[event.identity] = None
             continue
+        if event.kind == SHARED_POSITION_RESPONSIBILITY_ASSIGNMENT_KIND:
+            get_shared_position_responsibility_assignment(
+                ledger, event.identity
+            )
+            responsibility_assignment_occurrences[event.identity] = None
+            continue
+        if event.kind == SHARED_POSITION_APPLICABILITY_ACT_EVIDENCE_KIND:
+            get_shared_position_applicability_act_evidence(
+                ledger, event.identity
+            )
+            continue
+        if event.kind == SHARED_POSITION_APPLICABILITY_RESULT_KIND:
+            get_recorded_shared_position_applicability(ledger, event.identity)
+            applicability_result_occurrences[event.identity] = None
+            continue
+        if event.kind == SHARED_POSITION_MEASUREMENT_ACT_EVIDENCE_KIND:
+            get_shared_position_measurement_act_evidence(
+                ledger, event.identity
+            )
+            continue
         if (
             event.kind
             == RECORDED_PAIR_MEASUREMENT_COMPARISON_RESPONSIBILITY_ASSIGNMENT_KIND
@@ -832,6 +874,12 @@ def advance_operator_locality_standing(
             continue
         if event.kind == RECORDING_OCCURRENCE_OF_RESULT_OF_MEASUREMENT_OF_RECURRENT_BYTE_PAIR_OCCURRENCE_POSITION_KIND:
             get_recorded_result_of_measurement_of_recurrent_byte_pair_occurrence_position(ledger, event.identity)
+            measurement_occurrences[event.identity] = (
+                _measurement_occurrence_coordinates(event)
+            )
+            continue
+        if event.kind == SHARED_POSITION_MEASUREMENT_RESULT_KIND:
+            get_recorded_shared_position_measurement(ledger, event.identity)
             measurement_occurrences[event.identity] = (
                 _measurement_occurrence_coordinates(event)
             )

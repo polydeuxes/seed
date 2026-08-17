@@ -653,7 +653,7 @@
           "assertions"
         ]
       },
-      "findings": ["count", "recurrence", "position"],
+      "findings": ["count", "recurrence", "position", "ordered_relation_path"],
       "declared_measurements": {
         "measurement_of_recurrent_byte_pair_occurrence_position": {
           "measurement": {
@@ -721,6 +721,63 @@
             "Admission",
             "Standing_movement",
             "represented_relation"
+          ]
+        },
+        "measurement_of_shared_position_of_recurrent_byte_pair_occurrences": {
+          "measurement": {
+            "subject": "shared_position_of_exact_recorded_pair_occurrence_relations",
+            "finding": "ordered_relation_path"
+          },
+          "witness": {
+            "input_references": [
+              "first_pair_position_Assertion_reference",
+              "second_pair_position_Assertion_reference"
+            ],
+            "same_source_coordinates": [
+              "source_Ingest_occurrence",
+              "Locality",
+              "completeness_boundary"
+            ],
+            "Applicability": {
+              "first_subject": {
+                "Assertion": "first",
+                "coordinate": "second_position"
+              },
+              "relation": "equal_to",
+              "second_subject": {
+                "Assertion": "second",
+                "coordinate": "first_position"
+              }
+            },
+            "Participation": [
+              "first_exact_pair_occurrence_relation",
+              "second_exact_pair_occurrence_relation"
+            ],
+            "result_coordinates": [
+              "each_exact_input_Assertion_reference",
+              "shared_position",
+              "Applicability_result_occurrence",
+              "Evidence_of_Yield_relation",
+              "Scope",
+              "Authority",
+              "limits",
+              "Unknown"
+            ]
+          },
+          "does_not_establish": [
+            {
+              "first_subject": "input_pair_occurrences",
+              "relation": "establish",
+              "second_subject": {
+                "first_subject": "material",
+                "relation": "of",
+                "second_subject": "input_pair_occurrences"
+              },
+              "standing": "not_established"
+            },
+            "represented_relation",
+            "relation_from_pair_counts",
+            "relation_from_source_material"
           ]
         }
       },

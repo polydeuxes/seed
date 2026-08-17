@@ -20,6 +20,10 @@ from seed_runtime.measurement_of_recurrent_byte_pair_occurrence_position import 
     RECORDING_OCCURRENCE_OF_RESULT_OF_MEASUREMENT_OF_RECURRENT_BYTE_PAIR_OCCURRENCE_POSITION_KIND,
     get_recorded_result_of_measurement_of_recurrent_byte_pair_occurrence_position,
 )
+from seed_runtime.measurement_of_shared_position_of_recurrent_byte_pair_occurrences import (
+    SHARED_POSITION_MEASUREMENT_RESULT_KIND,
+    get_recorded_shared_position_measurement,
+)
 from seed_runtime.comparison_of_recorded_byte_pair_measurements import (
     RECORDED_PAIR_MEASUREMENT_COMPARISON_RESULT_KIND,
     get_recorded_pair_measurement_comparison,
@@ -90,6 +94,9 @@ _MEASUREMENT_READERS = {
     OCCURRENCE_POSITION_RECORDED_KIND: get_recorded_occurrence_position_measurement,
     RECORDING_OCCURRENCE_OF_RESULT_OF_MEASUREMENT_OF_RECURRENT_BYTE_PAIR_OCCURRENCE_POSITION_KIND: (
         get_recorded_result_of_measurement_of_recurrent_byte_pair_occurrence_position
+    ),
+    SHARED_POSITION_MEASUREMENT_RESULT_KIND: (
+        get_recorded_shared_position_measurement
     ),
 }
 
