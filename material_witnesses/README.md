@@ -14,6 +14,10 @@ They do not participate in the implementation-function Fidelity catalog, and
 their tests are not collected by the default `tests/` suite.  Run a witness
 test explicitly while interrogating that witness.
 
+```text
+.venv/bin/pytest -q material_witnesses
+```
+
 ## Why this boundary exists
 
 The first versions were honest external probes.  Later work added script-local
