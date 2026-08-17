@@ -109,7 +109,7 @@ def test_one_measurement_does_not_replace_an_active_measurement():
     assert complete["sql"] == {"SELECT 1": 1, "SELECT 2": 1, "SELECT 3": 1}
 
 
-def test_one_pytest_occurrence_keeps_its_exact_implementation_measurement():
+def test_one_pytest_occurrence_keeps_its_exact_witness_measurement():
     def exact_function():
         pass
 
@@ -441,7 +441,7 @@ FIDELITY_SUBJECTS = {
         test_compiled_sql_invocation_locations_keep_observed_and_unobserved_counts,
     ),
     "fidelity_witness_occurrence": (
-        test_one_pytest_occurrence_keeps_its_exact_implementation_measurement,
+        test_one_pytest_occurrence_keeps_its_exact_witness_measurement,
     ),
     "fidelity_witness_subject": (
         test_pytest_subject_refuses_missing_crossed_or_unadmitted_families,
