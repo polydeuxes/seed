@@ -5265,6 +5265,7 @@ FIDELITY_SUBJECTS = {
     ),
     "applicability_determination": (
         test_applicability_clause_is_checked_against_a_live_pair_determination,
+        test_emission_applicability_witnesses_every_declared_coordinate,
     ),
     "input_role_participation_distinction": (
         test_input_is_an_open_act_local_role_before_participation,
@@ -5330,7 +5331,7 @@ FIDELITY_SUBJECTS = {
     "recorded_boundary_locality_responsibility_clauses": (
         test_recorded_boundary_locality_stages_keep_distinct_witness_clauses,
     ),
-    "operator_system_locality_responsibility_clauses": (
+    "Responsibility_assignment_of_operator_invocation_Locality_relation": (
         test_operator_system_locality_stages_keep_distinct_witness_clauses,
     ),
     "operator_material_acquisition_responsibility_clauses": (
@@ -5354,6 +5355,7 @@ FIDELITY_SUBJECTS = {
     "representation_result_act_locality_clause_distinction": (
         test_representation_result_act_and_locality_species_keep_their_clauses,
         test_candidate_and_admission_species_keep_their_distinct_clauses,
+        test_emission_applicability_species_keep_act_and_result_clauses_distinct,
     ),
     "representation_source_act_locality_distinction": (
         test_representation_source_act_and_locality_witnesses_do_not_absorb_each_other,
