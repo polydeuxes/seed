@@ -9,8 +9,7 @@ import math
 from typing import Any
 
 from seed_runtime.secrets import (
-    SECRET_FIELD_NAMES,
-    secret_boundary_key,
+    is_secret_boundary_key,
 )
 
 def utc_now() -> datetime:
@@ -32,7 +31,7 @@ class _ScreenedEventMaterial(dict[str, Any]):
 
 def _screen_durable_event_object(value: dict[str, Any]) -> dict[str, Any]:
     for key in value:
-        if secret_boundary_key(key) in SECRET_FIELD_NAMES:
+        if is_secret_boundary_key(key):
             raise ValueError(
                 f"secret field is not allowed in durable event material: {key}"
             )
@@ -44,7 +43,7 @@ def _require_preservable_material(value: Any, path: str = "material") -> None:
 
     if type(value) is dict:
         for key, nested in value.items():
-            if secret_boundary_key(key) in SECRET_FIELD_NAMES:
+            if is_secret_boundary_key(key):
                 raise ValueError(
                     f"secret field is not allowed in durable event material: {key}"
                 )

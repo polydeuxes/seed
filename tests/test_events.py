@@ -35,6 +35,21 @@ def test_event_ledger_rejects_secret_fields_in_materials():
 
 
 @pytest.mark.parametrize(
+    "field",
+    (
+        "TOKEN",
+        " token ",
+        "PRIVATE-KEY",
+        " PassPhrase ",
+        "PASSWORD",
+    ),
+)
+def test_event_secret_rejection_preserves_boundary_normalization(field):
+    with pytest.raises(ValueError, match="secret field"):
+        EventLedger().append("k", {"outer": [{field: "not-accepted"}]})
+
+
+@pytest.mark.parametrize(
     "material",
     (
         {"token": "not-accepted"},
