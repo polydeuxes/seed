@@ -125,6 +125,14 @@ def test_bash_functions_receive_the_same_exact_material_and_partition_it():
         tuple(occurrence.exact_material for occurrence in row) == exact_material
         for row in rows
     )
+    assert all(
+        tuple(
+            occurrence.input_boundary_accepted_byte_count
+            for occurrence in row
+        )
+        == tuple(len(material) for material in exact_material)
+        for row in rows
+    )
     assert any(
         rows[0][position].coordinates != rows[1][position].coordinates
         for position in range(len(references))
@@ -218,6 +226,14 @@ def test_media_functions_receive_the_same_material_and_form_distinct_partitions(
     assert len(rows) == len(MEDIA_FUNCTIONS)
     assert all(
         tuple(occurrence.exact_material for occurrence in row) == exact_material
+        for row in rows
+    )
+    assert all(
+        tuple(
+            occurrence.input_boundary_accepted_byte_count
+            for occurrence in row
+        )
+        == tuple(len(material) for material in exact_material)
         for row in rows
     )
     columns = tuple(zip(*rows))

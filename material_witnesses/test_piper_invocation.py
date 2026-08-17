@@ -93,6 +93,10 @@ def test_exact_prose_reaches_the_external_voice_function_unchanged(
     assert tuple(occurrence.exact_material for occurrence in ingests) == EXACT_MATERIAL
     assert tuple(reference.exact_material for reference in references) == EXACT_MATERIAL
     assert tuple(occurrence.exact_material for occurrence in invocations) == EXACT_MATERIAL
+    assert tuple(
+        occurrence.input_boundary_accepted_byte_count
+        for occurrence in invocations
+    ) == tuple(len(material) for material in EXACT_MATERIAL)
     assert tuple(occurrence.source_reference for occurrence in invocations) == references
     assert all(
         occurrence.implementation_function == implementation_function

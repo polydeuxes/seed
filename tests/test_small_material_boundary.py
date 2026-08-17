@@ -554,13 +554,16 @@ def small_boundary_removal_material(small_boundary_material):
     )
 
 
-def test_compiled_function_receives_the_exact_book_material(small_boundary_material):
+def test_compiled_invocation_preserves_exact_book_material_offered_at_input(
+    small_boundary_material,
+):
     source_reference = small_boundary_material[1]
     source_invocation = small_boundary_material[5][0][0]
 
     assert source_reference.exact_material == b"Seed"
     assert source_invocation.exact_material == source_reference.exact_material
     assert source_invocation.source_reference == source_reference
+    assert source_invocation.input_boundary_accepted_byte_count is None
     assert source_invocation.implementation_function == small_boundary_material[4]
     assert source_invocation.returncode == 0
     assert source_invocation.stdout_bytes
@@ -906,6 +909,9 @@ def test_removal_compare_refuses_wrong_or_mismatched_occurrences(
             result_invocation=replace(
                 result_rows[0][0],
                 material_byte_count_limit=1,
+                input_boundary_accepted_byte_count=len(
+                    result_rows[0][0].exact_material
+                ),
             ),
         )
     with pytest.raises(ValueError, match="differs from its exact source"):
@@ -943,7 +949,7 @@ def test_removal_result_admission_refuses_corrupted_raw_coordinates(
 
 FIDELITY_SUBJECTS = {
     "exact_act_occurrence": (
-        test_compiled_function_receives_the_exact_book_material,
+        test_compiled_invocation_preserves_exact_book_material_offered_at_input,
         test_every_addition_position_has_an_exact_invocation,
     ),
     "declared_measurement_result": (

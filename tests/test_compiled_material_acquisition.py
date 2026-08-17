@@ -49,7 +49,7 @@ def test_material_climb_refuses_the_collective_act_occurrence_count():
         )
 
 
-def test_each_compiled_function_receives_every_exact_one_byte_material():
+def test_each_compiled_function_preserves_every_one_byte_input_boundary():
     _, references = measured_one_byte_material()
     functions = implementation_functions()
     time_counts = (0.0078125, 0.03125, 0.25)
@@ -72,6 +72,15 @@ def test_each_compiled_function_receives_every_exact_one_byte_material():
     assert all(
         occurrence.time_limit_second_count == second_count
         for second_count, found, _, _ in measurements
+        for row in found
+        for occurrence in row
+    )
+    assert all(
+        occurrence.input_boundary_accepted_byte_count is not None
+        and 0
+        <= occurrence.input_boundary_accepted_byte_count
+        <= len(occurrence.exact_material)
+        for _, found, _, _ in measurements
         for row in found
         for occurrence in row
     )

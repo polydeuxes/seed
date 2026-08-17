@@ -84,6 +84,7 @@ from compiled_format_invocation import (  # noqa: E402
 from compiled_material_invocation import (  # noqa: E402
     MATERIAL_IMPLEMENTATION_FUNCTIONS,
     MaterialImplementationFunction,
+    MaterialInvocationOccurrence,
     MaterialAddedReturnCompareOccurrence,
     admit_invocation_occurrences,
     occurrences_across,
@@ -3695,6 +3696,7 @@ def test_time_limit_preserves_an_invocation_that_did_not_return(monkeypatch):
     assert occurrence.coordinates == (
         0.25,
         None,
+        None,
         False,
         True,
         False,
@@ -3731,6 +3733,7 @@ def test_material_byte_count_limit_preserves_the_exact_available_prefix():
     assert occurrence.return_coordinates == (
         1.0,
         127,
+        0,
         False,
         False,
         True,
@@ -3758,6 +3761,76 @@ def test_exact_material_at_the_byte_count_limit_can_return():
     assert not occurrence.time_limit_reached
     assert not occurrence.stdout_byte_count_limit_reached
     assert not occurrence.stderr_byte_count_limit_reached
+    assert occurrence.input_boundary_accepted_byte_count == len(
+        occurrence.exact_material
+    )
+
+
+def test_returned_invocation_preserves_incomplete_input_boundary_acceptance():
+    material = b"x" * 1048576
+    occurrence = invocation_occurrence(
+        material,
+        MaterialImplementationFunction(
+            identity="compiled-early-input-close",
+            invocation=(
+                sys.executable,
+                "-c",
+                "import sys; sys.stdin.buffer.read(1)",
+            ),
+        ),
+        boundary_identity="incomplete-input-boundary",
+        time_limit_second_count=1.0,
+        material_byte_count_limit=127,
+    )
+
+    assert occurrence.returned
+    assert occurrence.returncode == 0
+    assert occurrence.input_boundary_accepted_byte_count is not None
+    assert 0 < occurrence.input_boundary_accepted_byte_count < len(material)
+    assert not occurrence.time_limit_reached
+    assert not occurrence.stdout_byte_count_limit_reached
+    assert not occurrence.stderr_byte_count_limit_reached
+
+
+@pytest.mark.parametrize(
+    "count",
+    (-1, True, 4),
+)
+def test_bounded_invocation_refuses_invalid_input_boundary_acceptance(count):
+    with pytest.raises(TypeError, match="accepted byte count"):
+        MaterialInvocationOccurrence(
+            boundary_identity="invalid-input-boundary",
+            invocation_position=0,
+            exact_material=b"abc",
+            implementation_function=MaterialImplementationFunction(
+                identity="invalid-input-boundary-function",
+                invocation=("invalid-input-boundary-function",),
+            ),
+            returned=True,
+            returncode=0,
+            stdout_bytes=b"",
+            stderr_bytes=b"",
+            material_byte_count_limit=1,
+            input_boundary_accepted_byte_count=count,
+        )
+
+
+def test_bounded_invocation_requires_input_boundary_acceptance():
+    with pytest.raises(ValueError, match="requires its input boundary"):
+        MaterialInvocationOccurrence(
+            boundary_identity="missing-input-boundary",
+            invocation_position=0,
+            exact_material=b"abc",
+            implementation_function=MaterialImplementationFunction(
+                identity="missing-input-boundary-function",
+                invocation=("missing-input-boundary-function",),
+            ),
+            returned=True,
+            returncode=0,
+            stdout_bytes=b"",
+            stderr_bytes=b"",
+            material_byte_count_limit=1,
+        )
 
 
 FIDELITY_SUBJECTS = {
@@ -3780,6 +3853,9 @@ FIDELITY_SUBJECTS = {
         test_recurring_result_coordinates_precede_one_later_invocation,
         test_distinct_function_coordinates_precede_every_later_invocation,
         test_time_limit_preserves_an_invocation_that_did_not_return,
+        test_returned_invocation_preserves_incomplete_input_boundary_acceptance,
+        test_bounded_invocation_refuses_invalid_input_boundary_acceptance,
+        test_bounded_invocation_requires_input_boundary_acceptance,
     ),
     "content_locality_occurrence_distinction": (
         test_every_supplied_material_has_its_own_ingest,

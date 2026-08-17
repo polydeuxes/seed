@@ -23,6 +23,7 @@ from material_admission import (
 MaterialInvocationCoordinates = tuple[
     float,
     int | None,
+    int | None,
     bool,
     bool,
     bool,
@@ -33,6 +34,7 @@ MaterialInvocationCoordinates = tuple[
 ]
 MaterialInvocationReturnCoordinates = tuple[
     float,
+    int | None,
     int | None,
     bool,
     bool,
@@ -283,6 +285,7 @@ class MaterialInvocationOccurrence:
     source_reference: Hashable | None = None
     time_limit_second_count: float = 30.0
     material_byte_count_limit: int | None = None
+    input_boundary_accepted_byte_count: int | None = None
     time_limit_reached: bool = False
     stdout_byte_count_limit_reached: bool = False
     stderr_byte_count_limit_reached: bool = False
@@ -310,6 +313,20 @@ class MaterialInvocationOccurrence:
             or self.material_byte_count_limit < 1
         ):
             raise TypeError("one exact positive material byte count limit is required")
+        if self.input_boundary_accepted_byte_count is not None and (
+            type(self.input_boundary_accepted_byte_count) is not int
+            or self.input_boundary_accepted_byte_count < 0
+            or self.input_boundary_accepted_byte_count > len(self.exact_material)
+        ):
+            raise TypeError(
+                "input boundary accepted byte count must be exact"
+            )
+        if self.material_byte_count_limit is not None and (
+            self.input_boundary_accepted_byte_count is None
+        ):
+            raise ValueError(
+                "bounded invocation requires its input boundary accepted byte count"
+            )
         limit_coordinates = (
             self.time_limit_reached,
             self.stdout_byte_count_limit_reached,
@@ -374,6 +391,7 @@ class MaterialInvocationOccurrence:
         return (
             self.time_limit_second_count,
             self.material_byte_count_limit,
+            self.input_boundary_accepted_byte_count,
             self.returned,
             self.time_limit_reached,
             self.stdout_byte_count_limit_reached,
@@ -388,6 +406,7 @@ class MaterialInvocationOccurrence:
         return (
             self.time_limit_second_count,
             self.material_byte_count_limit,
+            self.input_boundary_accepted_byte_count,
             self.returned,
             self.time_limit_reached,
             self.stdout_byte_count_limit_reached,
@@ -985,8 +1004,9 @@ def _byte_bounded_invocation_occurrence(
                             stream.fileno(), exact_material[input_position:]
                         )
                     except BrokenPipeError:
-                        count = 0
-                        input_position = len(exact_material)
+                        streams.unregister(stream)
+                        stream.close()
+                        continue
                     else:
                         input_position += count
                     if input_position == len(exact_material):
@@ -1039,6 +1059,7 @@ def _byte_bounded_invocation_occurrence(
         source_reference=source_reference,
         time_limit_second_count=time_limit_second_count,
         material_byte_count_limit=material_byte_count_limit,
+        input_boundary_accepted_byte_count=input_position,
         time_limit_reached=time_limit_reached,
         stdout_byte_count_limit_reached=stdout_limit_reached,
         stderr_byte_count_limit_reached=stderr_limit_reached,

@@ -136,6 +136,10 @@ def test_exact_material_reaches_the_external_function_unchanged(
     assert tuple(occurrence.exact_material for occurrence in ingests) == EXACT_MATERIAL
     assert tuple(reference.exact_material for reference in references) == EXACT_MATERIAL
     assert tuple(occurrence.exact_material for occurrence in invocations) == EXACT_MATERIAL
+    assert tuple(
+        occurrence.input_boundary_accepted_byte_count
+        for occurrence in invocations
+    ) == tuple(len(material) for material in EXACT_MATERIAL)
     assert tuple(occurrence.source_reference for occurrence in invocations) == references
 
 
@@ -156,7 +160,17 @@ def test_one_exact_del_byte_changes_the_external_result(
     _, _, references, invocations, _ = terminal_witness_observation
 
     assert EXACT_MATERIAL[0] == b"printf 012x" + bytes((127,)) + b"3\rexit\r"
-    assert invocations[0].return_coordinates == invocations[1].return_coordinates
+    assert tuple(
+        occurrence.input_boundary_accepted_byte_count
+        for occurrence in invocations
+    ) == tuple(len(material) for material in EXACT_MATERIAL)
+    assert invocations[0].return_coordinates[:2] == (
+        invocations[1].return_coordinates[:2]
+    )
+    assert invocations[0].return_coordinates[3:] == (
+        invocations[1].return_coordinates[3:]
+    )
+    assert invocations[0].return_coordinates != invocations[1].return_coordinates
     assert invocations[0].stdout_bytes != invocations[1].stdout_bytes
     assert invocations[0].coordinates != invocations[1].coordinates
     assert references[0].result_identity != references[1].result_identity
