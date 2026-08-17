@@ -2513,13 +2513,13 @@ def _occurrence_position_assignment_reference_is_exact(bundle: dict) -> bool:
         assignment = get_occurrence_position_measurement_responsibility_assignment(
             bundle["ledger"], reference.get("recorded_occurrence_identity")
         )
+        standing = read_operator_locality_standing_through(
+            bundle["ledger"],
+            locality_identity=assignment.locality_identity,
+            through_event_occurrence_identity=assignment.identity,
+        )
     except (TypeError, ValueError):
         return False
-    standing = read_operator_locality_standing_through(
-        bundle["ledger"],
-        locality_identity=assignment.locality_identity,
-        through_event_occurrence_identity=assignment.identity,
-    )
     return bool(
         assignment.kind
         == OCCURRENCE_POSITION_RESPONSIBILITY_ASSIGNMENT_RECORDED_KIND
@@ -5551,6 +5551,60 @@ def test_responsibility_coordinates_do_not_establish_assignment_standing():
     assert witness["Responsibility_assignment_Standing"] == MISSING
 
 
+def test_occurrence_position_assignment_standing_refuses_a_corrupted_prior_carrier():
+    ledger = _IntegrityAdversaryLedger()
+    ingest_material(
+        ledger,
+        locality_identity="source",
+        exact_bytes=b"ab",
+        source_role="test source",
+        source_boundary="test boundary",
+    )
+    prior_act = record_byte_measurement_responsible_act_evidence(
+        ledger,
+        source_localities=("source",),
+        recording_locality_identity="measurement",
+    )
+    prior_result = record_byte_measurement_result(
+        ledger,
+        responsible_act_evidence_event_identity=prior_act.identity,
+    )
+    record_byte_measurement_responsible_act_evidence(
+        ledger,
+        source_localities=("source",),
+        recording_locality_identity="measurement",
+    )
+    finding = measure_occurrence_position(
+        ledger, source_locality_identity="source"
+    )
+    assignment = record_occurrence_position_measurement_responsibility_assignment(
+        ledger,
+        recording_locality_identity="measurement",
+        finding=finding,
+        locality_standing=read_operator_locality_standing(
+            ledger, locality_identity="measurement"
+        ),
+    )
+    position_act = record_occurrence_position_measurement_responsible_act_evidence(
+        ledger,
+        responsibility_assignment_event_identity=assignment.identity,
+        responsibility_assignment_standing=read_operator_locality_standing(
+            ledger, locality_identity="measurement"
+        ),
+    )
+    position_result = record_occurrence_position_measurement_result(
+        ledger,
+        responsible_act_evidence_event_identity=position_act.identity,
+    )
+    bundle = _yield_bundle(ledger, position_result)
+    ledger.mark_corrupted(prior_result.identity)
+
+    assert not _responsibility_assignment_standing_is_exact(bundle)
+    assert _measurement_result_witness(bundle)[
+        "responsibility_assignment_evidence"
+    ] == MISSING
+
+
 def test_runtime_authority_does_not_carry_evidence_scope_prose():
     contaminated = {}
     pattern = re.compile(
@@ -5815,6 +5869,7 @@ FIDELITY_SUBJECTS = {
     ),
     "responsibility_assignment_standing_distinction": (
         test_responsibility_coordinates_do_not_establish_assignment_standing,
+        test_occurrence_position_assignment_standing_refuses_a_corrupted_prior_carrier,
     ),
     "scope_locality_distinction": (test_no_new_site_compounds_scope_with_locality,),
     "exact_act_occurrence": (
