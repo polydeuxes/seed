@@ -240,6 +240,50 @@ def test_representation_refuses_a_changed_exact_material_rule():
         read_operator_representation(ledger, event.identity)
 
 
+def test_empty_exact_material_carries_its_rule_through_emission():
+    ledger = EventLedger()
+    source = ingest_material(
+        ledger,
+        locality_identity="s",
+        exact_bytes=b"",
+        source_role="operator",
+        source_boundary="empty fixture boundary",
+    )
+    representation = record_operator_representation(
+        ledger,
+        locality_identity="s",
+        locality_standing=_standing(ledger),
+        source_occurrence_reference=source.identity,
+    )
+    output = BytesIO()
+    admission, applicability, standing, boundary = admit_representation(
+        ledger,
+        representation,
+        output_stream=output,
+    )
+
+    emitted = emit_operator_representation_material(
+        ledger,
+        representation=representation,
+        admission_result_event_identity=admission.identity,
+        applicability_result_event_identity=applicability.identity,
+        locality_standing=standing,
+        output_boundary=boundary,
+    )
+
+    recorded = read_operator_representation(
+        ledger, representation["representation_event_identity"]
+    )
+    emission = ledger.get(emitted["emitted_event_identity"])
+    assert recorded["exact_material"] == b""
+    assert recorded["representation_rule"] == (
+        EXACT_SOURCE_MATERIAL_REPRESENTATION_RULE
+    )
+    assert emission.exact_material == b""
+    assert emission.material["boundary_result"] == {"accepted_count": 0}
+    assert output.getvalue() == b""
+
+
 def test_representation_addresses_one_exact_carried_measurement_result():
     ledger = EventLedger()
     measurement = _byte_measurement(ledger)
