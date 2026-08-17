@@ -123,6 +123,29 @@ class FindingOfRecurrentBytePairOccurrencePositions(NamedTuple):
     available_occurrence_count: int
     occurrences: tuple[tuple[int, int], ...]
 
+
+class ReferenceToRecordedRecurrentBytePairOccurrencePosition(NamedTuple):
+    """Immutable address of one exact yielded pair-position Assertion."""
+
+    recorded_occurrence_identity: str
+    assertion_identity: str
+    pair_measurement_occurrence_identity: str
+    recurrence_assertion_identity: str
+    count_assertion_identity: str
+    source_ingest_occurrence_identity: str
+    locality_identity: str
+    completeness_boundary_identity: str
+    exact_pair: bytes
+    first_position: int
+    second_position: int
+
+    @property
+    def assertion_reference(self) -> dict[str, str]:
+        return {
+            "recorded_occurrence_identity": self.recorded_occurrence_identity,
+            "assertion_identity": self.assertion_identity,
+        }
+
 def _validate_pair_reference(reference: ReferenceToRecordedRecurrentBytePair) -> None:
     if type(reference) is not ReferenceToRecordedRecurrentBytePair:
         raise TypeError("recurrent pair reference requires one exact reference")
@@ -932,3 +955,63 @@ def get_recorded_result_of_measurement_of_recurrent_byte_pair_occurrence_positio
     ):
         raise ValueError("pair occurrence result carries no exact Evidence of Yield relation")
     return finding
+
+
+def references_to_recorded_recurrent_byte_pair_occurrence_positions(
+    ledger: EventLedger,
+    *,
+    result_occurrence_identity: str,
+) -> tuple[ReferenceToRecordedRecurrentBytePairOccurrencePosition, ...]:
+    """Read one intact result and address each exact position Assertion once."""
+
+    if not isinstance(ledger, EventLedger):
+        raise TypeError("pair-position references require one EventLedger")
+    if (
+        type(result_occurrence_identity) is not str
+        or not result_occurrence_identity
+    ):
+        raise ValueError("pair-position references require one exact result occurrence")
+    finding = (
+        get_recorded_result_of_measurement_of_recurrent_byte_pair_occurrence_position(
+            ledger, result_occurrence_identity
+        )
+    )
+    event = ledger.get(result_occurrence_identity)
+    if event is None:
+        raise ValueError("pair-position result disappeared after validation")
+    assertions = event.material["assertions"]
+    if len(assertions) != len(finding.occurrences):
+        raise ValueError("pair-position result carries a different Assertion population")
+    references = []
+    for assertion, (first_position, second_position) in zip(
+        assertions, finding.occurrences
+    ):
+        assertion_identity = assertion.get("dimensions", {}).get("identity")
+        if type(assertion_identity) is not str or not assertion_identity:
+            raise ValueError("pair-position result carries no exact Assertion identity")
+        references.append(
+            ReferenceToRecordedRecurrentBytePairOccurrencePosition(
+                recorded_occurrence_identity=event.identity,
+                assertion_identity=assertion_identity,
+                pair_measurement_occurrence_identity=(
+                    finding.pair_reference.recorded_occurrence_identity
+                ),
+                recurrence_assertion_identity=(
+                    finding.pair_reference.recurrence_assertion_identity
+                ),
+                count_assertion_identity=(
+                    finding.pair_reference.count_assertion_identity
+                ),
+                source_ingest_occurrence_identity=(
+                    finding.source_ingest_occurrence_identity
+                ),
+                locality_identity=finding.source_locality_identity,
+                completeness_boundary_identity=(
+                    finding.completeness_boundary.identity
+                ),
+                exact_pair=finding.pair_reference.exact_material,
+                first_position=first_position,
+                second_position=second_position,
+            )
+        )
+    return tuple(references)

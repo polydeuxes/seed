@@ -20,6 +20,7 @@ from seed_runtime.measurement_of_recurrent_byte_pair_occurrence_position import 
     get_recorded_result_of_measurement_of_recurrent_byte_pair_occurrence_position,
     measure_positions_of_recurrent_byte_pair_occurrences,
     measure_positions_for_recurrent_byte_pair_assertions,
+    references_to_recorded_recurrent_byte_pair_occurrence_positions,
     record_evidence_of_act_occurrence_for_measurement_of_recurrent_byte_pair_occurrence_position,
     record_result_of_measurement_of_recurrent_byte_pair_occurrence_position,
 )
@@ -142,6 +143,59 @@ def test_pair_occurrence_measurement_yield_preserves_the_exact_finding():
     serialized = json.dumps(result.material).lower()
     assert "direction" not in serialized
     assert "displacement" not in serialized
+
+
+def test_each_pair_position_assertion_has_one_exact_occurrence_bound_reference():
+    ledger, locality, pair, recurrence, source, finding = _fixture()
+    _act, result = _record(ledger, locality, finding)
+
+    references = references_to_recorded_recurrent_byte_pair_occurrence_positions(
+        ledger,
+        result_occurrence_identity=result.identity,
+    )
+
+    assert tuple(
+        reference.assertion_identity for reference in references
+    ) == tuple(
+        assertion["dimensions"]["identity"]
+        for assertion in result.material["assertions"]
+    )
+    assert tuple(
+        (reference.first_position, reference.second_position)
+        for reference in references
+    ) == finding.occurrences
+    assert {
+        (
+            reference.recorded_occurrence_identity,
+            reference.pair_measurement_occurrence_identity,
+            reference.recurrence_assertion_identity,
+            reference.count_assertion_identity,
+            reference.source_ingest_occurrence_identity,
+            reference.locality_identity,
+            reference.completeness_boundary_identity,
+            reference.exact_pair,
+        )
+        for reference in references
+    } == {
+        (
+            result.identity,
+            pair.identity,
+            recurrence.assertion_identity,
+            recurrence.support_assertion_references[0]["assertion_identity"],
+            source.identity,
+            locality,
+            finding.completeness_boundary.identity,
+            b"ab",
+        )
+    }
+    assert all(
+        reference.assertion_reference
+        == {
+            "recorded_occurrence_identity": result.identity,
+            "assertion_identity": reference.assertion_identity,
+        }
+        for reference in references
+    )
 
 
 def test_same_boundary_pair_fan_out_reads_the_pair_result_once(monkeypatch):
@@ -540,6 +594,7 @@ FIDELITY_SUBJECTS = {
     ),
     "declared_measurement_result": (
         test_pair_occurrence_measurement_finds_exact_positions_without_a_sign,
+        test_each_pair_position_assertion_has_one_exact_occurrence_bound_reference,
         test_same_boundary_pair_fan_out_reads_the_pair_result_once,
         test_same_boundary_pair_fan_out_requires_exact_distinct_recurrence_subjects,
         test_same_boundary_pair_fan_out_keeps_each_result_evidence_independent,
