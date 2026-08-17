@@ -75,7 +75,9 @@ from seed_runtime.operator_representation_admission import (
     EXACT_MATERIAL_REPRESENTATION_ADMISSION_RESPONSIBILITY_ASSIGNMENT_RECORDED_KIND,
     EXACT_MATERIAL_REPRESENTATION_ADMISSION_ACT_EVIDENCE_KIND,
     EXACT_MATERIAL_REPRESENTATION_ADMISSION_RECORDED_KIND,
+    exact_material_representation_rule_is_applicable_to_boundary_rule,
 )
+from seed_runtime.operator_egress import EXACT_MATERIAL_WRITE_BOUNDARY_RULE
 from seed_runtime.operator_representation_applicability import (
     EVENT_KIND_RESPONSIBILITIES as REPRESENTATION_APPLICABILITY_EVENT_KIND_RESPONSIBILITIES,
     REPRESENTATION_EMISSION_APPLICABILITY_ACT_EVIDENCE_KIND,
@@ -3643,6 +3645,7 @@ def test_candidate_clause_preserves_coordinates_without_promoting_the_subject():
             "Representation_source_Standing_boundary",
             "assignment_Standing_boundary",
             "destination_operator_boundary",
+            "destination_operator_boundary_rule",
             "destination_operator_Locality",
             "emission_Act",
             "Scope",
@@ -4197,6 +4200,38 @@ def test_exact_source_material_rule_is_checked_against_one_live_representation()
     assert event.exact_material == bundle["source"].exact_material
 
 
+def test_exact_material_admission_establishes_one_rule_relation():
+    clause = _clause("01.Standing.E")["Admission_occurrence"]
+    material = _representation_admission_yield_witness()["event"].material
+
+    assert clause["rule_relation"] == {
+        "first_subject": "Representation_rule_preserve_exact_material_of_source_result",
+        "relation": "applicable_to",
+        "second_subject": "destination_boundary_rule_write_exact_material",
+        "preserves": [
+            "Representation_rule",
+            "destination_boundary_rule",
+        ],
+        "does_not_establish": [
+            "relation_by_write_function",
+            "effects_beyond_boundary",
+        ],
+    }
+    assert material["representation_rule_to_boundary_rule_relation"] == {
+        "first_subject": EXACT_SOURCE_MATERIAL_REPRESENTATION_RULE,
+        "relation": "applicable_to",
+        "second_subject": EXACT_MATERIAL_WRITE_BOUNDARY_RULE,
+    }
+    assert exact_material_representation_rule_is_applicable_to_boundary_rule(
+        EXACT_SOURCE_MATERIAL_REPRESENTATION_RULE,
+        EXACT_MATERIAL_WRITE_BOUNDARY_RULE,
+    )
+    assert not exact_material_representation_rule_is_applicable_to_boundary_rule(
+        EXACT_SOURCE_MATERIAL_REPRESENTATION_RULE,
+        "render terminal cells",
+    )
+
+
 def test_representation_source_and_standing_boundary_remain_distinct_coordinates():
     ledger = _IntegrityAdversaryLedger()
     source = ingest_material(
@@ -4296,6 +4331,9 @@ def test_emission_applicability_witnesses_every_declared_coordinate():
         "Standing_boundary": material["standing_boundary_identity"],
         "destination_operator_boundary": material[
             "destination_operator_boundary_identity"
+        ],
+        "destination_operator_boundary_rule": material[
+            "destination_operator_boundary_rule"
         ],
         "destination_operator_Locality": material[
             "destination_operator_locality_identity"
@@ -5306,6 +5344,9 @@ FIDELITY_SUBJECTS = {
         test_representation_source_clause_is_checked_against_one_live_result,
         test_exact_source_material_rule_is_checked_against_one_live_representation,
         test_representation_source_coordinate_adversaries_preserve_exact_dependencies,
+    ),
+    "emission_candidate_Admission_to_operator_Locality": (
+        test_exact_material_admission_establishes_one_rule_relation,
     ),
     "representation_source_standing_boundary_distinction": (
         test_representation_source_and_standing_boundary_remain_distinct_coordinates,

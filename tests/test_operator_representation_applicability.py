@@ -15,9 +15,14 @@ from seed_runtime.operator_representation import (
     emit_operator_representation_material,
     record_operator_representation,
 )
+from seed_runtime.operator_egress import (
+    EXACT_MATERIAL_WRITE_BOUNDARY_RULE,
+    operator_emission_boundary,
+)
 from seed_runtime.operator_representation_applicability import (
     RepresentationApplicabilityError,
     get_recorded_representation_emission_applicability,
+    record_representation_emission_applicability_act_evidence,
     record_representation_emission_applicability_result,
 )
 from tests.representation_admission import admit_representation
@@ -83,9 +88,19 @@ def test_admission_applicability_participation_and_emission_remain_distinct():
     assert applicability["representation_reference"]["representation_rule"] == (
         EXACT_SOURCE_MATERIAL_REPRESENTATION_RULE
     )
+    assert applicability["destination_operator_boundary_rule"] == (
+        EXACT_MATERIAL_WRITE_BOUNDARY_RULE
+    )
+    assert applicability["representation_rule_to_boundary_rule_relation"] == {
+        "first_subject": EXACT_SOURCE_MATERIAL_REPRESENTATION_RULE,
+        "relation": "applicable_to",
+        "second_subject": EXACT_MATERIAL_WRITE_BOUNDARY_RULE,
+    }
     assert applicability["validation"] == {
         "exact_material_Admission": True,
         "exact_Representation_rule": True,
+        "exact_destination_boundary_rule": True,
+        "Representation_rule_applicable_to_destination_boundary_rule": True,
         "current_Admission_Standing": True,
         "same_Representation": True,
         "same_destination_operator_boundary": True,
@@ -160,6 +175,33 @@ def test_applicability_refuses_a_destination_that_lost_write_capability():
             "operator.representation.emission_applicability_act_evidenced",
         )
     )
+
+
+def test_applicability_refuses_a_distinct_destination_boundary_rule():
+    ledger = EventLedger()
+    representation = _representation(ledger)
+    admission, _applicability, _standing, boundary = admit_representation(
+        ledger, representation
+    )
+    distinct_rule_boundary = operator_emission_boundary(
+        BytesIO(),
+        boundary_identity=boundary[1],
+        locality_identity=boundary[2],
+        boundary_rule="render terminal cells",
+    )
+
+    with pytest.raises(
+        RepresentationApplicabilityError,
+        match="exact admitted destination",
+    ):
+        record_representation_emission_applicability_act_evidence(
+            ledger,
+            admission_result_event_identity=admission.identity,
+            locality_standing=read_operator_locality_standing(
+                ledger, locality_identity="seed-locality"
+            ),
+            destination_operator_boundary=distinct_rule_boundary,
+        )
 
 
 def test_applicability_for_another_admission_cannot_participate():

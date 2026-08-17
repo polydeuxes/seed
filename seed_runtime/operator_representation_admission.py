@@ -67,6 +67,24 @@ class RepresentationAdmissionError(ValueError):
     """One Representation Candidate or Admission boundary is not exact."""
 
 
+def exact_material_representation_rule_is_applicable_to_boundary_rule(
+    representation_rule: Any, boundary_rule: Any
+) -> bool:
+    """Read the one currently declared exact-material emission rule pair."""
+
+    from seed_runtime.operator_egress import EXACT_MATERIAL_WRITE_BOUNDARY_RULE
+    from seed_runtime.operator_representation import (
+        EXACT_SOURCE_MATERIAL_REPRESENTATION_RULE,
+    )
+
+    return (
+        type(representation_rule) is str
+        and representation_rule == EXACT_SOURCE_MATERIAL_REPRESENTATION_RULE
+        and type(boundary_rule) is str
+        and boundary_rule == EXACT_MATERIAL_WRITE_BOUNDARY_RULE
+    )
+
+
 def _require_identity(value: Any, message: str) -> str:
     if type(value) is not str or not value:
         raise RepresentationAdmissionError(message)
@@ -185,6 +203,7 @@ def _scope(
     representation_source_standing_boundary_identity: str | None,
     assignment_standing_boundary_identity: str,
     destination_operator_boundary_identity: str,
+    destination_operator_boundary_rule: str,
     destination_operator_locality_identity: str,
     emission_act_identity: str,
     emission_act_occurrence_identity: str,
@@ -202,6 +221,7 @@ def _scope(
         "destination_operator_boundary_identity": (
             destination_operator_boundary_identity
         ),
+        "destination_operator_boundary_rule": destination_operator_boundary_rule,
         "destination_operator_locality_identity": (
             destination_operator_locality_identity
         ),
@@ -235,6 +255,7 @@ def _candidate_assignment_material(
     representation_reference: dict[str, str | None],
     assignment_standing_boundary_identity: str,
     destination_operator_boundary_identity: str,
+    destination_operator_boundary_rule: str,
     destination_operator_locality_identity: str,
     emission_act_identity: str,
     emission_act_occurrence_identity: str,
@@ -254,6 +275,7 @@ def _candidate_assignment_material(
         destination_operator_boundary_identity=(
             destination_operator_boundary_identity
         ),
+        destination_operator_boundary_rule=destination_operator_boundary_rule,
         destination_operator_locality_identity=(
             destination_operator_locality_identity
         ),
@@ -280,6 +302,7 @@ def _candidate_assignment_material(
         "destination_operator_boundary_identity": (
             destination_operator_boundary_identity
         ),
+        "destination_operator_boundary_rule": destination_operator_boundary_rule,
         "destination_operator_locality_identity": (
             destination_operator_locality_identity
         ),
@@ -319,6 +342,7 @@ def record_representation_candidate_responsibility_assignment(
         _output_stream,
         destination_operator_boundary_identity,
         destination_operator_locality_identity,
+        destination_operator_boundary_rule,
     ) = read_operator_emission_boundary(destination_operator_boundary)
     representation_reference = _representation_reference(
         ledger, representation_event_identity=representation_event_identity
@@ -364,6 +388,7 @@ def record_representation_candidate_responsibility_assignment(
             destination_operator_boundary_identity=(
                 destination_operator_boundary_identity
             ),
+            destination_operator_boundary_rule=destination_operator_boundary_rule,
             destination_operator_locality_identity=(
                 destination_operator_locality_identity
             ),
@@ -431,6 +456,9 @@ def get_representation_candidate_responsibility_assignment(
         destination_operator_boundary_identity=material.get(
             "destination_operator_boundary_identity"
         ),
+        destination_operator_boundary_rule=material.get(
+            "destination_operator_boundary_rule"
+        ),
         destination_operator_locality_identity=material.get(
             "destination_operator_locality_identity"
         ),
@@ -487,6 +515,9 @@ def _candidate_act_material(assignment: Event) -> dict[str, Any]:
         ],
         "destination_operator_boundary_identity": material[
             "destination_operator_boundary_identity"
+        ],
+        "destination_operator_boundary_rule": material[
+            "destination_operator_boundary_rule"
         ],
         "destination_operator_locality_identity": material[
             "destination_operator_locality_identity"
@@ -596,6 +627,9 @@ def _candidate_result_material(act: Event) -> dict[str, Any]:
         "destination_operator_boundary_identity": material[
             "destination_operator_boundary_identity"
         ],
+        "destination_operator_boundary_rule": material[
+            "destination_operator_boundary_rule"
+        ],
         "destination_operator_locality_identity": material[
             "destination_operator_locality_identity"
         ],
@@ -643,6 +677,9 @@ def _recorded_candidate_result_material(
         ],
         "destination_operator_boundary_identity": result[
             "destination_operator_boundary_identity"
+        ],
+        "destination_operator_boundary_rule": result[
+            "destination_operator_boundary_rule"
         ],
         "destination_operator_locality_identity": result[
             "destination_operator_locality_identity"
@@ -761,6 +798,9 @@ def _candidate_reference(event: Event, material: dict[str, Any]) -> dict[str, st
         "destination_operator_boundary_identity": material[
             "destination_operator_boundary_identity"
         ],
+        "destination_operator_boundary_rule": material[
+            "destination_operator_boundary_rule"
+        ],
         "destination_operator_locality_identity": material[
             "destination_operator_locality_identity"
         ],
@@ -798,6 +838,9 @@ def _admission_assignment_material(
         "representation_reference": deepcopy(candidate["representation_reference"]),
         "destination_operator_boundary_identity": candidate[
             "destination_operator_boundary_identity"
+        ],
+        "destination_operator_boundary_rule": candidate[
+            "destination_operator_boundary_rule"
         ],
         "destination_operator_locality_identity": candidate[
             "destination_operator_locality_identity"
@@ -966,6 +1009,9 @@ def _admission_act_material(assignment: Event) -> dict[str, Any]:
         "destination_operator_boundary_identity": material[
             "destination_operator_boundary_identity"
         ],
+        "destination_operator_boundary_rule": material[
+            "destination_operator_boundary_rule"
+        ],
         "destination_operator_locality_identity": material[
             "destination_operator_locality_identity"
         ],
@@ -1052,6 +1098,10 @@ def get_exact_material_representation_admission_act_evidence(
 
 def _admission_result_material(act: Event) -> dict[str, Any]:
     material = act.material
+    representation_rule = material["representation_reference"].get(
+        "representation_rule"
+    )
+    boundary_rule = material["destination_operator_boundary_rule"]
     return {
         "result_identity": material["responsibility_assignment_reference"][
             "result_boundary_identity"
@@ -1068,6 +1118,9 @@ def _admission_result_material(act: Event) -> dict[str, Any]:
         "representation_reference": deepcopy(material["representation_reference"]),
         "destination_operator_boundary_identity": material[
             "destination_operator_boundary_identity"
+        ],
+        "destination_operator_boundary_rule": material[
+            "destination_operator_boundary_rule"
         ],
         "destination_operator_locality_identity": material[
             "destination_operator_locality_identity"
@@ -1086,6 +1139,11 @@ def _admission_result_material(act: Event) -> dict[str, Any]:
             "second_subject": material[
                 "destination_operator_locality_identity"
             ],
+        },
+        "representation_rule_to_boundary_rule_relation": {
+            "first_subject": representation_rule,
+            "relation": "applicable_to",
+            "second_subject": boundary_rule,
         },
         "scope": deepcopy(material["scope"]),
         "authority": deepcopy(material["authority"]),
@@ -1119,6 +1177,9 @@ def _recorded_admission_result_material(
         "destination_operator_boundary_identity": result[
             "destination_operator_boundary_identity"
         ],
+        "destination_operator_boundary_rule": result[
+            "destination_operator_boundary_rule"
+        ],
         "destination_operator_locality_identity": result[
             "destination_operator_locality_identity"
         ],
@@ -1131,6 +1192,9 @@ def _recorded_admission_result_material(
         ],
         "input_role": result["input_role"],
         "admission_relation": deepcopy(result["admission_relation"]),
+        "representation_rule_to_boundary_rule_relation": deepcopy(
+            result["representation_rule_to_boundary_rule_relation"]
+        ),
         "scope": deepcopy(result["scope"]),
         "authority": deepcopy(result["authority"]),
         "standing": result["standing"],
@@ -1148,21 +1212,20 @@ def record_exact_material_representation_admission_result(
         ledger, responsible_act_evidence_event_identity
     )
     _refuse_second_yield(ledger, act)
-    from seed_runtime.operator_representation import (
-        EXACT_SOURCE_MATERIAL_REPRESENTATION_RULE,
-        read_operator_representation,
-    )
+    from seed_runtime.operator_representation import read_operator_representation
 
     representation = read_operator_representation(
         ledger, act.material["representation_reference"]["representation_event_identity"]
     )
     if (
         type(representation["exact_material"]) is not bytes
-        or representation.get("representation_rule")
-        != EXACT_SOURCE_MATERIAL_REPRESENTATION_RULE
+        or not exact_material_representation_rule_is_applicable_to_boundary_rule(
+            representation.get("representation_rule"),
+            act.material.get("destination_operator_boundary_rule"),
+        )
     ):
         raise RepresentationAdmissionError(
-            "raw operator Locality cannot admit a Representation without exact material under its exact Representation rule"
+            "operator Locality cannot admit a Representation without exact material under an applicable Representation and destination boundary rule pair"
         )
     result = _admission_result_material(act)
     evidence = _record_evidence_of_yield_relation(

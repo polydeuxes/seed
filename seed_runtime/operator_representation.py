@@ -538,6 +538,7 @@ def emit_operator_representation_material(
         output_stream,
         destination_operator_boundary_identity,
         destination_operator_locality_identity,
+        destination_operator_boundary_rule,
     ) = read_operator_emission_boundary(output_boundary)
     carried_admissions = (
         locality_standing.get("admission_result_occurrences")
@@ -562,6 +563,8 @@ def emit_operator_representation_material(
         != admission["scope"]["source_locality_identity"]
         or destination_operator_boundary_identity
         != admission["destination_operator_boundary_identity"]
+        or destination_operator_boundary_rule
+        != admission["destination_operator_boundary_rule"]
         or destination_operator_locality_identity
         != admission["destination_operator_locality_identity"]
         or applicability["admission_result_event_identity"]
@@ -571,6 +574,10 @@ def emit_operator_representation_material(
         != admission["emission_act_identity"]
         or applicability["downstream_act_occurrence_identity"]
         != admission["emission_act_occurrence_identity"]
+        or applicability["destination_operator_boundary_rule"]
+        != admission["destination_operator_boundary_rule"]
+        or applicability["representation_rule_to_boundary_rule_relation"]
+        != admission["representation_rule_to_boundary_rule_relation"]
     ):
         raise ValueError(
             "emission requires one exact carried Admission, Applicability, and destination"
@@ -640,6 +647,9 @@ def emit_operator_representation_material(
             ],
             "destination_operator_boundary_identity": admission[
                 "destination_operator_boundary_identity"
+            ],
+            "destination_operator_boundary_rule": admission[
+                "destination_operator_boundary_rule"
             ],
             "destination_operator_locality_identity": admission[
                 "destination_operator_locality_identity"
@@ -754,6 +764,9 @@ def emit_operator_representation_material(
         "destination_operator_boundary_identity": admission[
             "destination_operator_boundary_identity"
         ],
+        "destination_operator_boundary_rule": admission[
+            "destination_operator_boundary_rule"
+        ],
         "destination_operator_locality_identity": admission[
             "destination_operator_locality_identity"
         ],
@@ -783,6 +796,9 @@ def emit_operator_representation_material(
             ],
             "destination_operator_boundary_identity": admission[
                 "destination_operator_boundary_identity"
+            ],
+            "destination_operator_boundary_rule": admission[
+                "destination_operator_boundary_rule"
             ],
             "destination_operator_locality_identity": admission[
                 "destination_operator_locality_identity"

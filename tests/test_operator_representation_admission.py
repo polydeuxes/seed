@@ -6,7 +6,10 @@ FIDELITY_SUBJECT = "emission_candidate_Admission_to_operator_Locality"
 
 from seed_runtime.events import CORRUPTED, EventLedger, SQLiteEventLedger
 from seed_runtime.material_ingest import ingest_material
-from seed_runtime.operator_egress import operator_emission_boundary
+from seed_runtime.operator_egress import (
+    EXACT_MATERIAL_WRITE_BOUNDARY_RULE,
+    operator_emission_boundary,
+)
 from seed_runtime.operator_locality_standing import read_operator_locality_standing
 from seed_runtime.operator_representation import (
     emit_operator_representation_material,
@@ -90,6 +93,17 @@ def test_candidate_admission_and_emission_remain_three_distinct_results():
         representation["representation_event_identity"]
     )
     assert admission["standing"] == "admitted"
+    assert candidate["destination_operator_boundary_rule"] == (
+        EXACT_MATERIAL_WRITE_BOUNDARY_RULE
+    )
+    assert admission["destination_operator_boundary_rule"] == (
+        EXACT_MATERIAL_WRITE_BOUNDARY_RULE
+    )
+    assert admission["representation_rule_to_boundary_rule_relation"] == {
+        "first_subject": representation["representation_rule"],
+        "relation": "applicable_to",
+        "second_subject": EXACT_MATERIAL_WRITE_BOUNDARY_RULE,
+    }
     assert emission.material["result_identity"] == admission[
         "emission_result_boundary_identity"
     ]
@@ -108,21 +122,39 @@ def test_candidate_admission_and_emission_remain_three_distinct_results():
     }
 
 
+def test_admission_refuses_an_undeclared_representation_and_boundary_rule_pair():
+    ledger = EventLedger()
+    representation = _exact_representation(ledger)
+
+    with pytest.raises(
+        RepresentationAdmissionError,
+        match="applicable Representation and destination boundary rule pair",
+    ):
+        admit_representation(
+            ledger,
+            representation,
+            boundary_rule="render terminal cells",
+        )
+    assert not read_operator_locality_standing(
+        ledger, locality_identity="seed-locality"
+    )["admission_result_occurrences"]
+
+
 def test_admission_to_one_operator_locality_does_not_admit_another():
     ledger = EventLedger()
     first = _exact_representation(ledger)
     first_admission, first_applicability, first_standing, first_boundary = admit_representation(
         ledger,
         first,
-        boundary_identity="terminal-boundary",
-        operator_locality_identity="terminal-locality",
+        boundary_identity="first-boundary",
+        operator_locality_identity="first-locality",
     )
     second = _exact_representation(ledger, b"hello again")
     second_admission, _second_applicability, second_standing, _second_boundary = admit_representation(
         ledger,
         second,
-        boundary_identity="audio-boundary",
-        operator_locality_identity="audio-locality",
+        boundary_identity="second-boundary",
+        operator_locality_identity="second-locality",
     )
 
     with pytest.raises(ValueError, match="another Representation"):
@@ -152,16 +184,17 @@ def test_admission_to_one_operator_locality_does_not_admit_another():
 def test_admission_refuses_a_different_invoked_operator_boundary():
     ledger = EventLedger()
     representation = _exact_representation(ledger)
-    admission, applicability, standing, _terminal_boundary = admit_representation(
+    admission, applicability, standing, _admitted_boundary = admit_representation(
         ledger,
         representation,
-        boundary_identity="terminal-boundary",
-        operator_locality_identity="terminal-locality",
+        boundary_identity="first-boundary",
+        operator_locality_identity="first-locality",
     )
-    audio_boundary = operator_emission_boundary(
+    other_boundary = operator_emission_boundary(
         BytesIO(),
-        boundary_identity="audio-boundary",
-        locality_identity="audio-locality",
+        boundary_identity="other-boundary",
+        locality_identity="other-locality",
+        boundary_rule=EXACT_MATERIAL_WRITE_BOUNDARY_RULE,
     )
 
     with pytest.raises(ValueError, match="Admission, Applicability, and destination"):
@@ -171,7 +204,7 @@ def test_admission_refuses_a_different_invoked_operator_boundary():
             admission_result_event_identity=admission.identity,
             applicability_result_event_identity=applicability.identity,
             locality_standing=standing,
-            output_boundary=audio_boundary,
+            output_boundary=other_boundary,
         )
 
 
@@ -242,6 +275,7 @@ def test_structured_representation_may_be_candidate_but_raw_admission_refuses():
             BytesIO(),
             boundary_identity="raw-boundary",
             locality_identity="raw-locality",
+            boundary_rule=EXACT_MATERIAL_WRITE_BOUNDARY_RULE,
         ),
     )
     standing = read_operator_locality_standing(
@@ -300,6 +334,7 @@ def test_one_candidate_or_admission_act_cannot_yield_twice():
             BytesIO(),
             boundary_identity="raw-boundary",
             locality_identity="raw-locality",
+            boundary_rule=EXACT_MATERIAL_WRITE_BOUNDARY_RULE,
         ),
     )
     standing = read_operator_locality_standing(

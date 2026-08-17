@@ -778,6 +778,7 @@
         "Representation_source_Standing_boundary",
         "assignment_Standing_boundary",
         "destination_operator_boundary",
+        "destination_operator_boundary_rule",
         "destination_operator_Locality",
         "emission_Act",
         "Scope",
@@ -1094,12 +1095,26 @@
           "candidate_result_occurrence",
           "Representation_occurrence",
           "destination_operator_boundary",
+          "destination_operator_boundary_rule",
           "destination_operator_Locality",
           "emission_Act",
           "Scope",
           "Authority",
           "limits"
         ],
+        "rule_relation": {
+          "first_subject": "Representation_rule_preserve_exact_material_of_source_result",
+          "relation": "applicable_to",
+          "second_subject": "destination_boundary_rule_write_exact_material",
+          "preserves": [
+            "Representation_rule",
+            "destination_boundary_rule"
+          ],
+          "does_not_establish": [
+            "relation_by_write_function",
+            "effects_beyond_boundary"
+          ]
+        },
         "result": "Admission_Standing"
       }
     },
@@ -1178,6 +1193,7 @@
           "emission_result_boundary",
           "Standing_boundary",
           "destination_operator_boundary",
+          "destination_operator_boundary_rule",
           "destination_operator_Locality",
           "Scope",
           "Authority",
@@ -1190,6 +1206,9 @@
         "result": "applicable_input_Standing",
         "validation_requires": [
           "exact_material_Admission",
+          "exact_Representation_rule",
+          "exact_destination_boundary_rule",
+          "Representation_rule_applicable_to_destination_boundary_rule",
           "current_Admission_Standing",
           "same_Representation",
           "same_destination_operator_boundary",

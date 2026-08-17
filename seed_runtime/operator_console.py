@@ -11,7 +11,10 @@ from seed_runtime.byte_measurement import (
 from seed_runtime.events import EventLedger
 from seed_runtime.identities import new_identity
 from seed_runtime.operator_ingest import run_operator_ingest
-from seed_runtime.operator_egress import operator_emission_boundary
+from seed_runtime.operator_egress import (
+    EXACT_MATERIAL_WRITE_BOUNDARY_RULE,
+    operator_emission_boundary,
+)
 from seed_runtime.operator_material_boundary import operator_boundary_material
 from seed_runtime.operator_material_acquisition import (
     record_operator_material_acquire_responsibility_assignment,
@@ -539,6 +542,7 @@ def run_persistent_operator_console(
                     raw_output_stream,
                     boundary_identity=operator_egress_boundary_identity,
                     locality_identity=operator_locality_identity,
+                    boundary_rule=EXACT_MATERIAL_WRITE_BOUNDARY_RULE,
                 )
                 system_standing, admission, applicability = (
                     _record_exact_material_representation_admission_and_applicability(

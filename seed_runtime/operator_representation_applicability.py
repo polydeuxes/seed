@@ -161,9 +161,15 @@ def _act_material(
         "destination_operator_boundary_identity": admission[
             "destination_operator_boundary_identity"
         ],
+        "destination_operator_boundary_rule": admission[
+            "destination_operator_boundary_rule"
+        ],
         "destination_operator_locality_identity": admission[
             "destination_operator_locality_identity"
         ],
+        "representation_rule_to_boundary_rule_relation": deepcopy(
+            admission["representation_rule_to_boundary_rule_relation"]
+        ),
         "standing_boundary_identity": standing_boundary_identity,
         "scope": deepcopy(admission["scope"]),
         "authority": deepcopy(admission["authority"]),
@@ -189,10 +195,13 @@ def record_representation_emission_applicability_act_evidence(
         _output_stream,
         destination_operator_boundary_identity,
         destination_operator_locality_identity,
+        destination_operator_boundary_rule,
     ) = read_operator_emission_boundary(destination_operator_boundary)
     if (
         destination_operator_boundary_identity
         != admission["destination_operator_boundary_identity"]
+        or destination_operator_boundary_rule
+        != admission["destination_operator_boundary_rule"]
         or destination_operator_locality_identity
         != admission["destination_operator_locality_identity"]
     ):
@@ -296,16 +305,26 @@ def get_representation_emission_applicability_act_evidence(
 
 def _result_material(act: Event) -> dict[str, Any]:
     material = act.material
-    from seed_runtime.operator_representation import (
-        EXACT_SOURCE_MATERIAL_REPRESENTATION_RULE,
+    from seed_runtime.operator_representation_admission import (
+        exact_material_representation_rule_is_applicable_to_boundary_rule,
     )
 
     if (
-        material["representation_reference"].get("representation_rule")
-        != EXACT_SOURCE_MATERIAL_REPRESENTATION_RULE
+        not exact_material_representation_rule_is_applicable_to_boundary_rule(
+            material["representation_reference"].get("representation_rule"),
+            material.get("destination_operator_boundary_rule"),
+        )
+        or material.get("representation_rule_to_boundary_rule_relation")
+        != {
+            "first_subject": material["representation_reference"].get(
+                "representation_rule"
+            ),
+            "relation": "applicable_to",
+            "second_subject": material.get("destination_operator_boundary_rule"),
+        }
     ):
         raise RepresentationApplicabilityError(
-            "Applicability requires the admitted exact Representation rule"
+            "Applicability requires the admitted Representation and destination boundary rule relation"
         )
     return {
         "result_identity": material["result_boundary_identity"],
@@ -337,9 +356,15 @@ def _result_material(act: Event) -> dict[str, Any]:
         "destination_operator_boundary_identity": material[
             "destination_operator_boundary_identity"
         ],
+        "destination_operator_boundary_rule": material[
+            "destination_operator_boundary_rule"
+        ],
         "destination_operator_locality_identity": material[
             "destination_operator_locality_identity"
         ],
+        "representation_rule_to_boundary_rule_relation": deepcopy(
+            material["representation_rule_to_boundary_rule_relation"]
+        ),
         "standing_boundary_identity": material["standing_boundary_identity"],
         "scope": deepcopy(material["scope"]),
         "authority": deepcopy(material["authority"]),
@@ -361,6 +386,8 @@ def _result_material(act: Event) -> dict[str, Any]:
         "validation": {
             "exact_material_Admission": True,
             "exact_Representation_rule": True,
+            "exact_destination_boundary_rule": True,
+            "Representation_rule_applicable_to_destination_boundary_rule": True,
             "current_Admission_Standing": True,
             "same_Representation": True,
             "same_destination_operator_boundary": True,
@@ -415,9 +442,15 @@ def _recorded_result_material(
         "destination_operator_boundary_identity": result[
             "destination_operator_boundary_identity"
         ],
+        "destination_operator_boundary_rule": result[
+            "destination_operator_boundary_rule"
+        ],
         "destination_operator_locality_identity": result[
             "destination_operator_locality_identity"
         ],
+        "representation_rule_to_boundary_rule_relation": deepcopy(
+            result["representation_rule_to_boundary_rule_relation"]
+        ),
         "standing_boundary_identity": result["standing_boundary_identity"],
         "scope": deepcopy(result["scope"]),
         "authority": deepcopy(result["authority"]),

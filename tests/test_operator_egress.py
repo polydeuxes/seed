@@ -7,6 +7,7 @@ import pytest
 FIDELITY_SUBJECT = "exact_emission_boundary"
 
 from seed_runtime.operator_egress import (
+    EXACT_MATERIAL_WRITE_BOUNDARY_RULE,
     ExactMaterialEgressFailure,
     emit_exact_material,
     operator_emission_boundary,
@@ -18,23 +19,27 @@ def test_operator_emission_boundary_binds_stream_boundary_and_locality():
     output = BytesIO()
     boundary = operator_emission_boundary(
         output,
-        boundary_identity="terminal-write",
-        locality_identity="operator-terminal",
+        boundary_identity="exact-material-write",
+        locality_identity="operator-locality",
+        boundary_rule=EXACT_MATERIAL_WRITE_BOUNDARY_RULE,
     )
 
     assert read_operator_emission_boundary(boundary) == (
         output,
-        "terminal-write",
-        "operator-terminal",
+        "exact-material-write",
+        "operator-locality",
+        EXACT_MATERIAL_WRITE_BOUNDARY_RULE,
     )
 
 
 @pytest.mark.parametrize(
     "boundary",
     (
-        [BytesIO(), "terminal-write", "operator-terminal"],
-        (BytesIO(), "", "operator-terminal"),
-        (BytesIO(), "terminal-write", ""),
+        [BytesIO(), "exact-material-write", "operator-locality", EXACT_MATERIAL_WRITE_BOUNDARY_RULE],
+        (BytesIO(), "", "operator-locality", EXACT_MATERIAL_WRITE_BOUNDARY_RULE),
+        (BytesIO(), "exact-material-write", "", EXACT_MATERIAL_WRITE_BOUNDARY_RULE),
+        (BytesIO(), "exact-material-write", "operator-locality", ""),
+        (BytesIO(), "exact-material-write", "operator-locality", None),
     ),
 )
 def test_operator_emission_boundary_refuses_inferred_or_empty_coordinates(boundary):
@@ -46,8 +51,9 @@ def test_operator_emission_boundary_requires_one_exact_writable_boundary():
     with pytest.raises(TypeError, match="writable boundary"):
         operator_emission_boundary(
             object(),
-            boundary_identity="terminal-write",
-            locality_identity="operator-terminal",
+            boundary_identity="exact-material-write",
+            locality_identity="operator-locality",
+            boundary_rule=EXACT_MATERIAL_WRITE_BOUNDARY_RULE,
         )
 
 
@@ -59,8 +65,9 @@ def test_operator_emission_boundary_refuses_a_later_lost_write_capability():
     output = MutableBoundary()
     boundary = operator_emission_boundary(
         output,
-        boundary_identity="terminal-write",
-        locality_identity="operator-terminal",
+        boundary_identity="exact-material-write",
+        locality_identity="operator-locality",
+        boundary_rule=EXACT_MATERIAL_WRITE_BOUNDARY_RULE,
     )
     output.write = None
 

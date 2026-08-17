@@ -2,7 +2,10 @@
 
 from io import BytesIO
 
-from seed_runtime.operator_egress import operator_emission_boundary
+from seed_runtime.operator_egress import (
+    EXACT_MATERIAL_WRITE_BOUNDARY_RULE,
+    operator_emission_boundary,
+)
 from seed_runtime.operator_locality_standing import read_operator_locality_standing
 from seed_runtime.operator_representation_admission import (
     record_representation_candidate_responsibility_assignment,
@@ -24,6 +27,7 @@ def admit_representation(
     *,
     boundary_identity="fixture_operator_boundary",
     operator_locality_identity="fixture_operator_locality",
+    boundary_rule=EXACT_MATERIAL_WRITE_BOUNDARY_RULE,
     output_stream=None,
 ):
     """Return Admission, Applicability, final Standing, and the output boundary."""
@@ -33,6 +37,7 @@ def admit_representation(
         BytesIO() if output_stream is None else output_stream,
         boundary_identity=boundary_identity,
         locality_identity=operator_locality_identity,
+        boundary_rule=boundary_rule,
     )
     standing = read_operator_locality_standing(
         ledger, locality_identity=locality_identity
