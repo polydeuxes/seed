@@ -222,14 +222,19 @@ def _witness_grammar() -> dict:
 def _assert_structured_relation_identities_name_their_exact_relation(value):
     if isinstance(value, dict):
         relation = value.get("relation")
-        identity = value.get("identity")
-        if relation is not None and identity is not None:
+        addresses = tuple(
+            value[coordinate]
+            for coordinate in ("identity", "subject")
+            if coordinate in value
+        )
+        if relation is not None and addresses:
             assert type(relation) is str and relation
-            assert type(identity) is str and identity
-            assert (
-                f"_{relation.casefold()}_"
-                in f"_{identity.casefold()}_"
-            ), f"{identity} does not name its exact {relation} relation"
+            for address in addresses:
+                assert type(address) is str and address
+                assert (
+                    f"_{relation.casefold()}_"
+                    in f"_{address.casefold()}_"
+                ), f"{address} does not name its exact {relation} relation"
         for carried in value.values():
             _assert_structured_relation_identities_name_their_exact_relation(
                 carried
@@ -315,18 +320,31 @@ def test_every_grammar_representation_composite_preserves_material_order():
     assert '"occurrence_Evidence"' not in serialized
 
 
-def test_explicit_but_wrong_relation_cannot_satisfy_a_structured_grammar_identity():
+def test_explicit_but_wrong_relation_cannot_satisfy_a_structured_grammar_address():
     grammar = json.loads(GRAMMAR.read_text(encoding="utf-8"))
-    authority = grammar["clauses"]["01.Standing.B"]["does_not_establish"][3]
-    assert authority["identity"] == "Authority_supports_exact_Act"
-    authority["relation"] = "dances_with"
+    mutations = (
+        grammar["clauses"]["01.Standing.B"]["does_not_establish"][3],
+        grammar["clauses"]["01.Source.C"]["test_subjects"][77],
+    )
+    assert mutations[0]["identity"] == "Authority_supports_exact_Act"
+    assert mutations[1]["subject"] == (
+        "measurement_result_input_to_second_measurement"
+    )
 
-    try:
-        _assert_structured_relation_identities_name_their_exact_relation(grammar)
-    except AssertionError as error:
-        assert "does not name its exact" in str(error)
-    else:
-        raise AssertionError("wrong explicit relation escaped exact identity")
+    for structured_relation in mutations:
+        changed = json.loads(json.dumps(grammar))
+        target = (
+            changed["clauses"]["01.Standing.B"]["does_not_establish"][3]
+            if "identity" in structured_relation
+            else changed["clauses"]["01.Source.C"]["test_subjects"][77]
+        )
+        target["relation"] = "dances_with"
+        try:
+            _assert_structured_relation_identities_name_their_exact_relation(changed)
+        except AssertionError as error:
+            assert "does not name its exact" in str(error)
+        else:
+            raise AssertionError("wrong explicit relation escaped exact address")
 
 
 def _content_locality_witness(

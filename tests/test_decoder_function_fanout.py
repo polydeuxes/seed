@@ -81,7 +81,7 @@ def test_an_implementation_function_that_accepts_every_byte_alone_has_one_result
 
 
 FIDELITY_SUBJECTS = {
-    "measurement_result_input_Participation_relation": (
+    "measurement_result_input_to_second_measurement": (
         test_the_second_measurement_takes_the_first_as_input_rather_than_repeating_it,
     ),
     "pair_measurement_additional_distinction": (

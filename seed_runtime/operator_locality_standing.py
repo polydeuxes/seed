@@ -314,12 +314,12 @@ def read_operator_locality_standing_through(
     locality_identity: str,
     through_event_occurrence_identity: str | None,
 ) -> dict[str, Any]:
-    """Project one Locality through one exact recorded occurrence.
+    """Read one Locality through one exact recorded occurrence.
 
     ``None`` is the exact empty Standing boundary.  Otherwise the ledger first
     resolves the occurrence to its existing append boundary and then reads only
     that prefix.  Later occurrences in the same or another Locality are neither
-    selected nor copied into the returned projection.
+    selected nor copied into the returned Standing.
     """
 
     if type(locality_identity) is not str or not locality_identity:

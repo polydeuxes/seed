@@ -498,7 +498,7 @@
         {"subject": "count_recurrence_result_distinction"},
         {"subject": "count_invocation_coordinate_boundary"},
         {
-          "subject": "measurement_result_input_Participation_relation",
+          "subject": "measurement_result_input_to_second_measurement",
           "first_subject": "measurement_result",
           "relation": "input_to",
           "second_subject": "second_measurement"
