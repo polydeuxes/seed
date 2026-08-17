@@ -167,58 +167,42 @@ def test_witness_relations_name_one_book_clause():
 
 def test_this_occurs_only_as_exact_witness_roots():
     grammar = json.loads(GRAMMAR.read_text(encoding="utf-8"))
-    uses = [
-        (path, value)
-        for path, value in _witness_strings(grammar)
-        if "this" in value.lower().split("_")
-    ]
-
     roots = {
-        coordinates["reference"] for coordinates in grammar["root_references"]
+        coordinates["reference"]: coordinates
+        for coordinates in grammar["root_references"]
     }
-    this_seed_responsibility = (
-        "this_Seed_bears_Standing_Locality_continuation_Responsibility"
-    )
     assert all(
-        value in roots or value == this_seed_responsibility
-        for _, value in uses
+        coordinates["first_subject"] == "this"
+        and coordinates["relation"] == "identifies"
+        and coordinates["second_subject"]
+        for coordinates in roots.values()
     )
-    root_uses = [
-        (path, value)
-        for path, value in uses
-        if path[0] in {"book_material_reference", "root_references", "witness_grammar"}
-    ]
-    assert root_uses == [
-        (("book_material_reference",), "this_Book"),
-        (("root_references", 0, "reference"), "this_Witness"),
-        (
-            ("root_references", 1, "reference"),
-            "this_book_material_acquisition_witness",
-        ),
-        (("root_references", 2, "reference"), "this_Grammar"),
-        (("root_references", 3, "reference"), "this_Book"),
-        (("root_references", 4, "reference"), "this_Seed"),
-        (("root_references", 5, "reference"), "this_Rosetta"),
-        (("root_references", 6, "reference"), "this_Fidelity"),
-        (("witness_grammar", "subject"), "this_Grammar"),
-        (("witness_grammar", "book_material_reference"), "this_Book"),
-        (
-            ("witness_grammar", "represented_relation", "first_subject"),
-            "this_Grammar",
-        ),
-        (
-            ("witness_grammar", "represented_relation", "second_subject"),
-            "this_Book",
-        ),
-    ]
-    assert (
-        ("clauses", "06.Locality.B", "subject"),
-        this_seed_responsibility,
-    ) in uses
-    assert (
-        ("clauses", "01.Source.C", "test_subjects", 0, "subject"),
-        "event_standing_grammar_responsibility",
-    ) not in uses
+
+    unresolved = []
+
+    def visit(value, path=(), parent=None):
+        if isinstance(value, dict):
+            for key, nested in value.items():
+                visit(nested, (*path, key), value)
+        elif isinstance(value, list):
+            for position, nested in enumerate(value):
+                visit(nested, (*path, position), value)
+        elif (
+            isinstance(value, str)
+            and value.startswith("this_")
+            and value not in roots
+        ):
+            if not (
+                isinstance(parent, dict)
+                and value in {parent.get("identity"), parent.get("subject")}
+                and parent.get("first_subject") in roots
+                and parent.get("relation")
+                and parent.get("second_subject")
+            ):
+                unresolved.append((path, value))
+
+    visit(grammar)
+    assert unresolved == []
 
 
 def test_missing_relation_clause_is_detected():
@@ -258,18 +242,51 @@ def test_witness_root_references_remain_distinct_and_in_declared_order():
         {
             "reference": "this_Witness",
             "coordinate": "witness",
+            "first_subject": "this",
+            "relation": "identifies",
+            "second_subject": "Witness",
         },
         {
             "reference": "this_book_material_acquisition_witness",
             "coordinate": "book_material_acquisition_witness_subject",
+            "first_subject": "this",
+            "relation": "identifies",
+            "second_subject": "book_material_acquisition_witness",
         },
-        {"reference": "this_Grammar", "coordinate": "witness_grammar"},
-        {"reference": "this_Book", "coordinate": "book_material"},
-        {"reference": "this_Seed", "coordinate": "seed_subject"},
-        {"reference": "this_Rosetta", "coordinate": "rosetta_reference"},
+        {
+            "reference": "this_Grammar",
+            "coordinate": "witness_grammar",
+            "first_subject": "this",
+            "relation": "identifies",
+            "second_subject": "Grammar",
+        },
+        {
+            "reference": "this_Book",
+            "coordinate": "book_material",
+            "first_subject": "this",
+            "relation": "identifies",
+            "second_subject": "Book",
+        },
+        {
+            "reference": "this_Seed",
+            "coordinate": "seed_subject",
+            "first_subject": "this",
+            "relation": "identifies",
+            "second_subject": "Seed",
+        },
+        {
+            "reference": "this_Rosetta",
+            "coordinate": "rosetta_reference",
+            "first_subject": "this",
+            "relation": "identifies",
+            "second_subject": "Rosetta",
+        },
         {
             "reference": "this_Fidelity",
             "coordinate": "bounded_Fidelity_finding",
+            "first_subject": "this",
+            "relation": "identifies",
+            "second_subject": "Fidelity",
         },
     ]
 

@@ -3,31 +3,52 @@
   "root_references": [
     {
       "reference": "this_Witness",
-      "coordinate": "witness"
+      "coordinate": "witness",
+      "first_subject": "this",
+      "relation": "identifies",
+      "second_subject": "Witness"
     },
     {
       "reference": "this_book_material_acquisition_witness",
-      "coordinate": "book_material_acquisition_witness_subject"
+      "coordinate": "book_material_acquisition_witness_subject",
+      "first_subject": "this",
+      "relation": "identifies",
+      "second_subject": "book_material_acquisition_witness"
     },
     {
       "reference": "this_Grammar",
-      "coordinate": "witness_grammar"
+      "coordinate": "witness_grammar",
+      "first_subject": "this",
+      "relation": "identifies",
+      "second_subject": "Grammar"
     },
     {
       "reference": "this_Book",
-      "coordinate": "book_material"
+      "coordinate": "book_material",
+      "first_subject": "this",
+      "relation": "identifies",
+      "second_subject": "Book"
     },
     {
       "reference": "this_Seed",
-      "coordinate": "seed_subject"
+      "coordinate": "seed_subject",
+      "first_subject": "this",
+      "relation": "identifies",
+      "second_subject": "Seed"
     },
     {
       "reference": "this_Rosetta",
-      "coordinate": "rosetta_reference"
+      "coordinate": "rosetta_reference",
+      "first_subject": "this",
+      "relation": "identifies",
+      "second_subject": "Rosetta"
     },
     {
       "reference": "this_Fidelity",
-      "coordinate": "bounded_Fidelity_finding"
+      "coordinate": "bounded_Fidelity_finding",
+      "first_subject": "this",
+      "relation": "identifies",
+      "second_subject": "Fidelity"
     }
   ],
   "witness_grammar": {
@@ -391,7 +412,12 @@
       "test_subjects": [
         {"subject": "event_standing_grammar_responsibility"},
         {"subject": "standing_boundary_reference_representation_emission_distinction"},
-        {"subject": "this_Seed_bears_Standing_Locality_continuation_Responsibility"},
+        {
+          "subject": "this_Seed_bears_Standing_Locality_continuation_Responsibility",
+          "first_subject": "this_Seed",
+          "relation": "bears",
+          "second_subject": "Standing_Locality_continuation_Responsibility"
+        },
         {"subject": "assertion_standing_coordinates"},
         {"subject": "responsibility_assignment_standing_distinction"},
         {"subject": "standing_boundary_reference_responsibility_clauses"},
@@ -1935,7 +1961,12 @@
       ]
     },
     "06.Locality.B": {
-      "subject": "this_Seed_bears_Standing_Locality_continuation_Responsibility",
+      "subject": {
+        "identity": "this_Seed_bears_Standing_Locality_continuation_Responsibility",
+        "first_subject": "this_Seed",
+        "relation": "bears",
+        "second_subject": "Standing_Locality_continuation_Responsibility"
+      },
       "book_material_reference": "06.Locality.B",
       "grammar": "established",
       "recorded_occurrence_kind": ["event_occurrence"],
