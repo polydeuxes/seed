@@ -670,7 +670,11 @@ def test_provider_declares_exact_egress_order_without_egressing_other_results():
         if event.kind == "operator.representation.recorded"
         and event.material["source_occurrence_reference"]
         in supplied_identities
-    ] == [supplied_ingests[0].identity, supplied_ingests[1].identity]
+    ] == [
+        supplied_ingests[0].identity,
+        supplied_ingests[1].identity,
+        *(event.identity for event in supplied_ingests),
+    ]
     standing = read_operator_locality_standing(
         ledger, locality_identity=relation.material["destination_locality_identity"]
     )

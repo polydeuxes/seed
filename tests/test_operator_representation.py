@@ -74,6 +74,8 @@ def _one_material_console_kinds():
         *_OCCURRENCE_POSITION_MEASUREMENT_KINDS,
         *_REPRESENTATION_RELATION_EVIDENCE_KINDS,
         "operator.representation.recorded",
+        *_REPRESENTATION_RELATION_EVIDENCE_KINDS,
+        "operator.representation.recorded",
         *_OPERATOR_MATERIAL_ACQUIRE_BEGIN_KINDS,
     ]
 
@@ -1316,6 +1318,7 @@ def test_console_presents_standing_only_across_an_ingest():
         event for event in events if event.kind == "operator.representation.recorded"
     ]
     c0 = representations[0]
+    focused = representations[-2]
     c1 = representations[-1]
     ingest = next(
         event for event in events if event.kind == "material.ingest.occurred"
@@ -1325,11 +1328,17 @@ def test_console_presents_standing_only_across_an_ingest():
         for event in events
         if event.kind == "operator.measurement.locality_occurrence_position_recorded"
     )
-    # C1 uses Standing that now contains the Ingest occurrence.
-    # C1's Standing was taken through the last event recorded before it,
-    # C0's own Representation Act included.
+    # The focused sibling uses the exact cut containing the Ingest and its
+    # Measurements.  The source-less context Representation follows that
+    # sibling without changing which occurrence the sibling addresses.
     assert (
-        c1.material["locality_standing_as_of_event_identity"] == positions.identity
+        focused.material["locality_standing_as_of_event_identity"]
+        == positions.identity
+    )
+    assert focused.material["source_occurrence_reference"] == ingest.identity
+    assert c1.material["source_occurrence_reference"] is None
+    assert (
+        c1.material["locality_standing_as_of_event_identity"] == focused.identity
     )
     assert ingest.identity in dict(
         get_recorded_occurrence_position_measurement(
@@ -1396,22 +1405,81 @@ def test_next_console_iteration_validates_c1_and_forms_c2():
     assert read["emitted_event_identity"] == c1["emitted_event_identity"]
 
     # Through the console: the second iteration has as input Standing containing
-    # C1 and represents C2.
+    # C1 and forms sibling Representations focused on O1 and O2 at one cut.
     console_ledger, output = _run_console("first\nsecond\n")
     standing = _standing(console_ledger)
-    assert len(standing["representations"]) == 5
+    assert len(standing["representations"]) == 8
     assert output == ""
-    representation_identities = list(standing["representations"])
-    c1 = standing["representations"][representation_identities[2]]
-    c2 = standing["representations"][representation_identities[4]]
-    # C2's Standing boundary stands after C1's Representation Act.
+    ingests = [
+        event
+        for event in console_ledger.list()
+        if event.kind == "material.ingest.occurred"
+    ]
+    focused = [
+        representation
+        for representation in standing["representations"].values()
+        if representation["source_occurrence_reference"]
+        in {event.identity for event in ingests}
+    ]
+    assert [
+        representation["source_occurrence_reference"]
+        for representation in focused
+    ] == [ingests[0].identity, ingests[0].identity, ingests[1].identity]
+    final_o1, final_o2 = focused[-2:]
+    assert (
+        final_o1["locality_standing_as_of_event_identity"]
+        == final_o2["locality_standing_as_of_event_identity"]
+    )
+    assert read_operator_representation(
+        console_ledger, final_o1["representation_event_identity"]
+    )["exact_material"] == b"first\n"
+    assert read_operator_representation(
+        console_ledger, final_o2["representation_event_identity"]
+    )["exact_material"] == b"second\n"
+    # The common second-turn Standing boundary follows the first-turn focus.
     positions = {
         event.identity: index for index, event in enumerate(console_ledger.list())
     }
-    boundary = positions[c2["locality_standing_as_of_event_identity"]]
-    assert positions[c1["representation_event_identity"]] < boundary
-    assert c1["emitted_event_identity"] is None
-    assert c1["representation_identity"] != c2["representation_identity"]
+    boundary = positions[final_o2["locality_standing_as_of_event_identity"]]
+    assert positions[focused[0]["representation_event_identity"]] < boundary
+    assert final_o1["emitted_event_identity"] is None
+    assert final_o1["representation_identity"] != final_o2["representation_identity"]
+
+
+def test_later_operator_material_does_not_replace_an_earlier_focus():
+    ledger, _ = _run_console("O1\nO2\nO3\n")
+    ingests = [
+        event for event in ledger.list() if event.kind == "material.ingest.occurred"
+    ]
+    standing = _standing(ledger)
+    final_boundary = next(
+        reversed(
+            [
+                representation["locality_standing_as_of_event_identity"]
+                for representation in standing["representations"].values()
+                if representation["source_occurrence_reference"]
+                in {event.identity for event in ingests}
+            ]
+        )
+    )
+    final_siblings = [
+        representation
+        for representation in standing["representations"].values()
+        if representation["locality_standing_as_of_event_identity"] == final_boundary
+        and representation["source_occurrence_reference"]
+        in {event.identity for event in ingests}
+    ]
+
+    assert [
+        representation["source_occurrence_reference"]
+        for representation in final_siblings
+    ] == [event.identity for event in ingests]
+    assert [
+        read_operator_representation(
+            ledger, representation["representation_event_identity"]
+        )["exact_material"]
+        for representation in final_siblings
+    ] == [b"O1\n", b"O2\n", b"O3\n"]
 
 
 def test_acquisition_act_and_eof_do_not_manufacture_representation_results():

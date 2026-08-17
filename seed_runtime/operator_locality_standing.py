@@ -789,6 +789,9 @@ def advance_operator_locality_standing(
             representations[material["result_identity"]] = {
                 "representation_identity": material["result_identity"],
                 "representation_event_identity": event.identity,
+                "source_occurrence_reference": material[
+                    "source_occurrence_reference"
+                ],
                 "emission_attempt_event_identity": None,
                 "emission_attempt_locality_evidence_identity": None,
                 "boundary_failure_event_identity": None,

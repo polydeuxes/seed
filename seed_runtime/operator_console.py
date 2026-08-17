@@ -299,6 +299,40 @@ def _record_acquisition_measurements(ledger, standing, *, locality_identity):
     )
 
 
+def _record_material_focus_representations(
+    ledger, standing, *, locality_identity
+):
+    """Represent every carried Ingest from one common Standing boundary.
+
+    Recording order does not choose a focus.  Each exact Ingest occurrence gets
+    one sibling Representation over the same frozen Standing cut, so later
+    material may contribute to that cut without replacing an earlier subject.
+    """
+
+    base_standing = standing
+    source_occurrence_references = tuple(
+        occurrence["evidence_event_identity"]
+        for occurrence in base_standing["ingest_occurrences"]
+    )
+    representations = tuple(
+        record_operator_representation(
+            ledger,
+            locality_identity=locality_identity,
+            locality_standing=base_standing,
+            source_occurrence_reference=source_occurrence_reference,
+        )
+        for source_occurrence_reference in source_occurrence_references
+    )
+    for representation in representations:
+        standing = _advance_over(
+            ledger,
+            standing,
+            representation["recorded_occurrence_references"],
+            locality_identity=locality_identity,
+        )
+    return standing, representations
+
+
 def run_persistent_operator_console(
     *,
     ledger: EventLedger,
@@ -425,16 +459,18 @@ def run_persistent_operator_console(
                     locality_standing,
                     locality_identity=locality_identity,
                 )
-                command_representation = record_operator_representation(
-                    ledger,
-                    locality_identity=locality_identity,
-                    locality_standing=locality_standing,
-                    source_occurrence_reference=command_occurrence[
-                        "evidence_event_identity"
-                    ],
+                locality_standing, focused_representations = (
+                    _record_material_focus_representations(
+                        ledger,
+                        locality_standing,
+                        locality_identity=locality_identity,
+                    )
                 )
-                locality_standing = _advance_over_representation(
-                    ledger, locality_standing, command_representation
+                command_representation = next(
+                    focused
+                    for focused in focused_representations
+                    if focused["source_occurrence_reference"]
+                    == command_occurrence["evidence_event_identity"]
                 )
                 command_material = read_operator_representation(
                     ledger,
@@ -608,6 +644,11 @@ def run_persistent_operator_console(
             if provider_result is not None or not supplied_occurrence_count:
                 raise TypeError("exact supplied material required")
             with ledger.batched():
+                system_standing, _ = _record_material_focus_representations(
+                    ledger,
+                    system_standing,
+                    locality_identity=system_locality_identity,
+                )
                 system_representation = record_operator_representation(
                     ledger,
                     locality_identity=system_locality_identity,
@@ -873,6 +914,11 @@ def run_persistent_operator_console(
                 locality_identity=locality_identity,
             )
             locality_standing = _record_acquisition_measurements(
+                ledger,
+                locality_standing,
+                locality_identity=locality_identity,
+            )
+            locality_standing, _ = _record_material_focus_representations(
                 ledger,
                 locality_standing,
                 locality_identity=locality_identity,

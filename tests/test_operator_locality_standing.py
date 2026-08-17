@@ -510,7 +510,9 @@ def test_one_attempt_records_only_responsible_representation_results():
         output_stream=output_stream,
     )
     assert output_stream.getvalue() == ""
-    assert len(_standing(console_ledger)["representations"]) == 3
+    # C0, one source-focused sibling, one source-less context Representation,
+    # and the next acquisition envelope remain distinct occurrences.
+    assert len(_standing(console_ledger)["representations"]) == 4
 
 
 def test_console_supplies_prior_locality_standing_to_later_interactions():
@@ -527,7 +529,7 @@ def test_console_supplies_prior_locality_standing_to_later_interactions():
 
     assert output_stream.getvalue() == ""
     standing = _standing(ledger)
-    assert len(standing["representations"]) == 5
+    assert len(standing["representations"]) == 8
     representation_identities = list(standing["representations"])
     first_identity = representation_identities[0]
     last_identity = representation_identities[-1]
