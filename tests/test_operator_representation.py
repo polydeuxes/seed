@@ -14,6 +14,7 @@ from seed_runtime.byte_measurement import (
 )
 from seed_runtime.events import CORRUPTED, EventLedger
 from seed_runtime.operator_representation import (
+    EXACT_SOURCE_MATERIAL_REPRESENTATION_RULE,
     emit_operator_representation_material,
     read_operator_representation,
     record_operator_representation,
@@ -212,6 +213,31 @@ def test_representation_carries_exact_material_without_claiming_meaning():
     assert event.exact_material == b"hello"
     assert evidence.exact_material == b"hello"
     assert event.material["source_occurrence_reference"] == source.identity
+    assert event.material["representation_rule"] == (
+        EXACT_SOURCE_MATERIAL_REPRESENTATION_RULE
+    )
+
+
+def test_representation_refuses_a_changed_exact_material_rule():
+    ledger = EventLedger()
+    source = ingest_material(
+        ledger,
+        locality_identity="s",
+        exact_bytes=b"hello",
+        source_role="operator",
+        source_boundary="fixture boundary",
+    )
+    representation = record_operator_representation(
+        ledger,
+        locality_identity="s",
+        locality_standing=_standing(ledger),
+        source_occurrence_reference=source.identity,
+    )
+    event = ledger.get(representation["representation_event_identity"])
+    event.material["representation_rule"] = "other"
+
+    with pytest.raises(ValueError, match="not exact"):
+        read_operator_representation(ledger, event.identity)
 
 
 def test_representation_addresses_one_exact_carried_measurement_result():
@@ -258,6 +284,7 @@ def test_representation_addresses_one_exact_carried_measurement_result():
         assert "assertions" not in material
         assert "measurement_rule" not in material
         assert "occurrence_preservation" not in material
+        assert "representation_rule" not in material
     assert event.exact_material is None
     assert locality_evidence.exact_material is None
     assert evidence_of_yield_relation.exact_material is None

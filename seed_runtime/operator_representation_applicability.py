@@ -296,6 +296,17 @@ def get_representation_emission_applicability_act_evidence(
 
 def _result_material(act: Event) -> dict[str, Any]:
     material = act.material
+    from seed_runtime.operator_representation import (
+        EXACT_SOURCE_MATERIAL_REPRESENTATION_RULE,
+    )
+
+    if (
+        material["representation_reference"].get("representation_rule")
+        != EXACT_SOURCE_MATERIAL_REPRESENTATION_RULE
+    ):
+        raise RepresentationApplicabilityError(
+            "Applicability requires the admitted exact Representation rule"
+        )
     return {
         "result_identity": material["result_boundary_identity"],
         "applicability_act_identity": material["applicability_act_identity"],
@@ -349,6 +360,7 @@ def _result_material(act: Event) -> dict[str, Any]:
         "support_relation_standing": "admitted",
         "validation": {
             "exact_material_Admission": True,
+            "exact_Representation_rule": True,
             "current_Admission_Standing": True,
             "same_Representation": True,
             "same_destination_operator_boundary": True,

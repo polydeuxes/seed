@@ -97,7 +97,7 @@ def _representation_reference(
         raise RepresentationAdmissionError(
             "candidate requires one intact Representation"
         ) from error
-    return {
+    reference = {
         "representation_event_identity": representation[
             "representation_event_identity"
         ],
@@ -116,6 +116,9 @@ def _representation_reference(
             "locality_standing_as_of_event_identity"
         ],
     }
+    if "representation_rule" in representation:
+        reference["representation_rule"] = representation["representation_rule"]
+    return reference
 
 
 def _require_representation_standing(
@@ -1145,14 +1148,21 @@ def record_exact_material_representation_admission_result(
         ledger, responsible_act_evidence_event_identity
     )
     _refuse_second_yield(ledger, act)
-    from seed_runtime.operator_representation import read_operator_representation
+    from seed_runtime.operator_representation import (
+        EXACT_SOURCE_MATERIAL_REPRESENTATION_RULE,
+        read_operator_representation,
+    )
 
     representation = read_operator_representation(
         ledger, act.material["representation_reference"]["representation_event_identity"]
     )
-    if type(representation["exact_material"]) is not bytes:
+    if (
+        type(representation["exact_material"]) is not bytes
+        or representation.get("representation_rule")
+        != EXACT_SOURCE_MATERIAL_REPRESENTATION_RULE
+    ):
         raise RepresentationAdmissionError(
-            "raw operator Locality cannot admit a Representation without exact material"
+            "raw operator Locality cannot admit a Representation without exact material under its exact Representation rule"
         )
     result = _admission_result_material(act)
     evidence = _record_evidence_of_yield_relation(

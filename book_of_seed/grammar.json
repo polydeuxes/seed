@@ -263,6 +263,7 @@
         "kind": "source_coordinate_preservation",
         "coordinates": [
           "responsibility",
+          "representation_rule",
           "source_occurrence_reference",
           "locality_standing_as_of_event_identity",
           "source_provenance",
@@ -271,6 +272,16 @@
           "known_loss",
           "conflicts",
           "unknown"
+        ]
+      },
+      "exact_material_representation_rule": {
+        "subject": "Representation_exact_material",
+        "relation": "preserves",
+        "second_subject": "exact_material_of_source_result",
+        "preserves": "source_result_occurrence",
+        "does_not_establish": [
+          "what_material_represents",
+          "represented_relation"
         ]
       },
       "distinct_from": [

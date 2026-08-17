@@ -44,6 +44,9 @@ REPRESENTATION_LOCALITY_EVIDENCE_KIND = (
 REPRESENTATION_RESPONSIBILITY = (
     "yield one bounded Representation from the exact carried Locality coordinates"
 )
+EXACT_SOURCE_MATERIAL_REPRESENTATION_RULE = (
+    "preserve exact material of source result"
+)
 REPRESENTATION_EMISSION_ACT_EVIDENCE_KIND = (
     "operator.representation.emission_act_evidenced"
 )
@@ -197,6 +200,10 @@ def record_operator_representation(
         "unknown": [],
         "conflicts": [],
     }
+    if exact_material is not None:
+        result_material["representation_rule"] = (
+            EXACT_SOURCE_MATERIAL_REPRESENTATION_RULE
+        )
     responsible_act_evidence = ledger.append(
         REPRESENTATION_ACT_EVIDENCE_KIND,
         {
@@ -264,7 +271,7 @@ def record_operator_representation(
         exact_material=exact_material,
         locality_identity=locality_identity,
     )
-    return {
+    representation = {
         "representation_identity": representation_identity,
         "representation_act_identity": representation_act_identity,
         "act_occurrence_identity": act_occurrence_identity,
@@ -296,6 +303,11 @@ def record_operator_representation(
         "unknown": [],
         "conflicts": [],
     }
+    if exact_material is not None:
+        representation["representation_rule"] = (
+            EXACT_SOURCE_MATERIAL_REPRESENTATION_RULE
+        )
+    return representation
 
 
 def _exact_source_material(
@@ -430,11 +442,17 @@ def read_operator_representation(
             reader(ledger, source.identity) if reader is not None else None
         )
         if source_finding is not None:
-            if event.exact_material is not None or source.exact_material is not None:
+            if (
+                event.exact_material is not None
+                or source.exact_material is not None
+                or "representation_rule" in material
+            ):
                 raise ValueError("the recorded Representation source is not exact")
         elif (
             type(source.exact_material) is not bytes
             or source.exact_material != event.exact_material
+            or material.get("representation_rule")
+            != EXACT_SOURCE_MATERIAL_REPRESENTATION_RULE
         ):
             raise ValueError("the recorded Representation source is not exact")
         source_requirements = read_requirements_of_yield_relation(
@@ -461,7 +479,7 @@ def read_operator_representation(
         or event.locality_identity != act_evidence.locality_identity
     ):
         raise ValueError("the recorded Representation coordinates are not exact")
-    return {
+    representation = {
         "representation_identity": material["result_identity"],
         "representation_act_identity": material["representation_act_identity"],
         "act_occurrence_identity": material["act_occurrence_identity"],
@@ -483,6 +501,9 @@ def read_operator_representation(
         ],
         "exact_material": event.exact_material,
     }
+    if "representation_rule" in material:
+        representation["representation_rule"] = material["representation_rule"]
+    return representation
 
 
 def emit_operator_representation_material(

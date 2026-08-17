@@ -11,6 +11,7 @@ from seed_runtime.operator_locality_standing import (
     read_operator_locality_standing_as_of,
 )
 from seed_runtime.operator_representation import (
+    EXACT_SOURCE_MATERIAL_REPRESENTATION_RULE,
     emit_operator_representation_material,
     record_operator_representation,
 )
@@ -79,8 +80,12 @@ def test_admission_applicability_participation_and_emission_remain_distinct():
     assert output.getvalue() == b"applicable material"
     assert applicability["standing"] == "applicable"
     assert applicability["support_relation_standing"] == "admitted"
+    assert applicability["representation_reference"]["representation_rule"] == (
+        EXACT_SOURCE_MATERIAL_REPRESENTATION_RULE
+    )
     assert applicability["validation"] == {
         "exact_material_Admission": True,
+        "exact_Representation_rule": True,
         "current_Admission_Standing": True,
         "same_Representation": True,
         "same_destination_operator_boundary": True,

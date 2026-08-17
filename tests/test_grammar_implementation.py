@@ -57,6 +57,7 @@ from seed_runtime.operator_checkpoint import (
     record_standing_boundary_reference_result,
 )
 from seed_runtime.operator_representation import (
+    EXACT_SOURCE_MATERIAL_REPRESENTATION_RULE,
     EVENT_KIND_RESPONSIBILITIES as REPRESENTATION_EVENT_KIND_RESPONSIBILITIES,
     REPRESENTATION_ACT_EVIDENCE_KIND,
     REPRESENTATION_EMISSION_INPUT_ROLE,
@@ -2356,6 +2357,12 @@ def _representation_source_witness(bundle: dict) -> dict[str, str]:
             if dimensions.get("responsibility") == REPRESENTATION_RESPONSIBILITY
             else MISSING
         ),
+        "representation_rule": (
+            EXACT
+            if material.get("representation_rule")
+            == EXACT_SOURCE_MATERIAL_REPRESENTATION_RULE
+            else MISSING
+        ),
         "source_occurrence_reference": (
             EXACT
             if source is not None
@@ -4168,6 +4175,28 @@ def test_representation_source_clause_is_checked_against_one_live_result():
     assert set(distinctions.values()) == {True}
 
 
+def test_exact_source_material_rule_is_checked_against_one_live_representation():
+    clause = _clause("01.Source.A")
+    bundle = _sourced_representation_witness()
+    event = bundle["event"]
+    rule = clause["exact_material_representation_rule"]
+
+    assert rule == {
+        "subject": "Representation_exact_material",
+        "relation": "preserves",
+        "second_subject": "exact_material_of_source_result",
+        "preserves": "source_result_occurrence",
+        "does_not_establish": [
+            "what_material_represents",
+            "represented_relation",
+        ],
+    }
+    assert event.material["representation_rule"] == (
+        EXACT_SOURCE_MATERIAL_REPRESENTATION_RULE
+    )
+    assert event.exact_material == bundle["source"].exact_material
+
+
 def test_representation_source_and_standing_boundary_remain_distinct_coordinates():
     ledger = _IntegrityAdversaryLedger()
     source = ingest_material(
@@ -5275,6 +5304,7 @@ FIDELITY_SUBJECTS = {
     ),
     "representation_source_coordinates": (
         test_representation_source_clause_is_checked_against_one_live_result,
+        test_exact_source_material_rule_is_checked_against_one_live_representation,
         test_representation_source_coordinate_adversaries_preserve_exact_dependencies,
     ),
     "representation_source_standing_boundary_distinction": (
