@@ -5,8 +5,6 @@ import sys
 
 import pytest
 
-FIDELITY_SUBJECT = "material_reference_comparison_witness"
-
 from seed_runtime.events import EventLedger
 from seed_runtime.byte_measurement import (
     record_byte_measurement_responsible_act_evidence,
@@ -42,7 +40,7 @@ from compiled_material_invocation import (  # noqa: E402
     ingest_result_reference,
     reference_occurrences_across,
 )
-from material_fixture_books import (  # noqa: E402
+from tests.material_fixture_books import (  # noqa: E402
     MATERIAL_WINDOWS,
     supplied_book_material,
 )

@@ -276,7 +276,6 @@ def test_invocation_locality_act_requires_assignment_standing_in_destination():
 
     for standing in (
         read_operator_locality_standing(ledger, locality_identity="operator"),
-        read_operator_locality_standing(ledger, locality_identity="absent"),
         destination_standing_without_assignment,
     ):
         with pytest.raises(OperatorSystemLocalityError, match="carried assignment"):

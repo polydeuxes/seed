@@ -159,12 +159,10 @@ def test_book_proper_is_within_book_admission():
 
 
 def test_book_admission_carries_no_unused_words():
-    unused = sorted(
-        book_admission() - set(book_proper_words()) - witness_grammar_words()
-    )
+    unused = sorted(book_admission() - set(book_proper_words()))
     assert not unused, (
-        "\nBook admission carries words absent from both active Book material "
-        "and witness grammar: " + ", ".join(unused)
+        "\nBook admission carries words absent from active Book material: "
+        + ", ".join(unused)
     )
 
 

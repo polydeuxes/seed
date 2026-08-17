@@ -533,7 +533,6 @@
         {"subject": "read_material_multiplicity"},
         {"subject": "read_write_refusal_distinction"},
         {"subject": "read_write_difference"},
-        {"subject": "material_reference_comparison_witness"},
         {"subject": "operator_material_ingest_occurrence"},
         {"subject": "operator_material_ingest_role"},
         {"subject": "material_ingest_exact_material"},
