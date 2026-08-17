@@ -20,6 +20,7 @@ from seed_runtime.supplied_invocation_material import (
 TIME_LIMIT_SECONDS = 2.0
 MATERIAL_BYTE_LIMIT = 65536
 IMPLEMENTATION_MEASUREMENT_BYTE_LIMIT = 262144
+PIPE_DRAIN_LIMIT_SECONDS = 0.05
 _IMPLEMENTATIONS = {
     b"ls": b"/usr/bin/ls",
     b"cat": b"/usr/bin/cat",
@@ -119,6 +120,7 @@ def _bounded_invocation(
     time_limit_reached = False
     output_limit_reached = False
     error_limit_reached = False
+    pipe_drain_deadline = None
 
     def end_process() -> None:
         if process.poll() is None:
@@ -133,13 +135,26 @@ def _bounded_invocation(
     deadline = time.monotonic() + TIME_LIMIT_SECONDS
     try:
         while streams.get_map():
-            remaining = deadline - time.monotonic()
-            if remaining <= 0 and not time_limit_reached:
-                time_limit_reached = True
-                end_process()
-                remaining = 0.05
-            elif remaining <= 0:
-                remaining = 0.05
+            now = time.monotonic()
+            remaining = deadline - now
+            if remaining <= 0:
+                if process.poll() is None:
+                    if not time_limit_reached:
+                        time_limit_reached = True
+                        end_process()
+                    remaining = PIPE_DRAIN_LIMIT_SECONDS
+                elif pipe_drain_deadline is None:
+                    pipe_drain_deadline = now + PIPE_DRAIN_LIMIT_SECONDS
+                    remaining = PIPE_DRAIN_LIMIT_SECONDS
+                elif now >= pipe_drain_deadline:
+                    for key in streams.get_map().values():
+                        if key.data == "output":
+                            output_limit_reached = True
+                        else:
+                            error_limit_reached = True
+                    break
+                else:
+                    remaining = pipe_drain_deadline - now
             for key, _ in streams.select(min(remaining, 0.05)):
                 stream = key.fileobj
                 try:

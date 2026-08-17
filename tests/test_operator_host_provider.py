@@ -4,6 +4,7 @@ import json
 import os
 from pathlib import Path
 import subprocess
+import time
 
 import pytest
 
@@ -166,6 +167,63 @@ def test_host_output_is_bounded_without_returncode_material():
     assert supplied[0].known_loss == ()
     assert supplied[-1].exact_bytes == b""
     assert supplied[-1].known_loss
+
+
+def test_completed_invocation_is_not_recast_as_timed_out_by_a_slow_consumer(
+    monkeypatch,
+):
+    supplied = []
+
+    def slow_consumer(occurrence):
+        supplied.append(occurrence)
+        if len(supplied) == 1:
+            time.sleep(0.03)
+
+    monkeypatch.setattr(operator_host_provider, "TIME_LIMIT_SECONDS", 0.01)
+    timed_out, output_limited, error_limited = (
+        operator_host_provider._bounded_invocation(
+            (b"/usr/bin/printf", b"exact"),
+            supply=slow_consumer,
+        )
+    )
+
+    assert not timed_out
+    assert not output_limited
+    assert not error_limited
+    assert tuple(occurrence.exact_bytes for occurrence in supplied) == (
+        b"exact",
+        b"",
+    )
+
+
+def test_inherited_open_pipe_is_bounded_without_recasting_parent_as_timed_out(
+    monkeypatch,
+):
+    supplied = []
+    program = (
+        b"import os,time\n"
+        b"if os.fork() == 0:\n"
+        b" time.sleep(0.5)\n"
+        b" os._exit(0)\n"
+        b"os.write(1,b'exact')\n"
+        b"os._exit(0)\n"
+    )
+
+    monkeypatch.setattr(operator_host_provider, "TIME_LIMIT_SECONDS", 0.05)
+    timed_out, output_limited, error_limited = (
+        operator_host_provider._bounded_invocation(
+            (operator_host_provider._PYTEST_INVOCATION[0], b"-c", program),
+            supply=supplied.append,
+        )
+    )
+
+    assert not timed_out
+    assert output_limited
+    assert error_limited
+    assert tuple(occurrence.exact_bytes for occurrence in supplied) == (
+        b"exact",
+        b"",
+    )
 
 
 def test_pytest_provider_supplies_a_distinct_exact_measurement_artifact():
