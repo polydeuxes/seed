@@ -18,6 +18,10 @@ from seed_runtime.events import EventLedger
 from seed_runtime.byte_measurement import (
     BYTE_MEASUREMENT_RECORDED_KIND,
     assertions_of_recorded_byte_measurement,
+    assertions_of_recorded_byte_position_pair_measurement,
+    record_byte_measurement_responsible_act_evidence,
+    record_byte_measurement_result,
+    record_byte_position_pair_count_layer,
 )
 from seed_runtime.material_ingest import MATERIAL_INGEST_OCCURRED_KIND, ingest_material
 from seed_runtime.occurrence_position_measurement import (
@@ -157,6 +161,91 @@ def test_external_results_enter_seed_only_as_exact_provenanced_material(
         occurrence.material["provenance_occurrence_references"]
         for occurrence in result_ingests
     ) == tuple([source.identity] for source in source_ingests)
+
+
+def test_seed_measures_source_and_result_pair_findings_independently(
+    terminal_witness_observation,
+):
+    _, _, _, invocations, _ = terminal_witness_observation
+    ledger = EventLedger()
+    localities = (
+        "terminal-pair-source-locality",
+        "terminal-pair-result-locality",
+    )
+    materials = (
+        EXACT_MATERIAL,
+        tuple(invocation.stdout_bytes or b"" for invocation in invocations),
+    )
+    findings = []
+
+    for locality_identity, exact_materials in zip(localities, materials):
+        for position, exact_material in enumerate(exact_materials):
+            ingest_material(
+                ledger,
+                locality_identity=locality_identity,
+                exact_bytes=exact_material,
+                source_role="material witness",
+                source_boundary=f"terminal pair occurrence {position}",
+            )
+        byte_act = record_byte_measurement_responsible_act_evidence(
+            ledger,
+            source_localities=(locality_identity,),
+            recording_locality_identity=locality_identity,
+        )
+        byte_result = record_byte_measurement_result(
+            ledger,
+            responsible_act_evidence_event_identity=byte_act.identity,
+        )
+        pair_result = record_byte_position_pair_count_layer(
+            ledger,
+            source_measurement_event_identity=byte_result.identity,
+            recording_locality_identity=locality_identity,
+        )
+        assertions = assertions_of_recorded_byte_position_pair_measurement(
+            ledger, pair_result.identity
+        )
+        findings.append(
+            {
+                (
+                    assertion.result,
+                    assertion.representation,
+                ): assertion.material["dimensions"]["content"]
+                for assertion in assertions
+            }
+        )
+        standing = read_operator_locality_standing(
+            ledger, locality_identity=locality_identity
+        )
+        assert byte_result.identity in standing["measurement_occurrences"]
+        assert pair_result.identity in standing["measurement_occurrences"]
+
+    source_findings, result_findings = findings
+    assert len(source_findings) == 34
+    assert len(result_findings) == 45
+    assert source_findings != result_findings
+    assert set(source_findings) - set(result_findings) == {
+        ("count", (120, 127)),
+        ("count", (127, 51)),
+        ("count", (13, 101)),
+        ("recurrence", (13, 101)),
+    }
+    assert set(result_findings) - set(source_findings) == {
+        ("count", (10, 101)),
+        ("count", (10, 112)),
+        ("count", (10, 48)),
+        ("count", (120, 8)),
+        ("count", (13, 10)),
+        ("count", (32, 8)),
+        ("count", (51, 101)),
+        ("count", (8, 32)),
+        ("count", (8, 51)),
+        ("recurrence", (10, 101)),
+        ("recurrence", (10, 112)),
+        ("recurrence", (10, 48)),
+        ("recurrence", (13, 10)),
+        ("recurrence", (50, 51)),
+        ("recurrence", (51, 101)),
+    }
 
 
 def test_one_exact_witness_result_crosses_the_raw_operator_emission_road(
