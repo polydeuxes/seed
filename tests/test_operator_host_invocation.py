@@ -136,6 +136,48 @@ def test_supplied_result_preserves_one_exact_prior_occurrence_reference():
     ]
 
 
+def test_supplied_result_preserves_function_and_source_occurrence_references():
+    ledger = EventLedger()
+    command = _command(ledger)
+    relation = _operator_system_relation(ledger, command)
+    function = ingest_supplied_invocation_occurrence(
+        ledger,
+        operator_invocation_locality_result_event_identity=relation.identity,
+        command_occurrence_reference=command.identity,
+        supplied=SuppliedSystemMaterialOccurrence(
+            b"opaque external function reference", "provider:function", False
+        ),
+    )
+    source = ingest_supplied_invocation_occurrence(
+        ledger,
+        operator_invocation_locality_result_event_identity=relation.identity,
+        command_occurrence_reference=command.identity,
+        supplied=SuppliedSystemMaterialOccurrence(
+            b"source", "provider:source", False
+        ),
+        prior_supplied_occurrence_references=(function.identity,),
+    )
+    result = ingest_supplied_invocation_occurrence(
+        ledger,
+        operator_invocation_locality_result_event_identity=relation.identity,
+        command_occurrence_reference=command.identity,
+        supplied=SuppliedSystemMaterialOccurrence(
+            b"result",
+            "provider:result",
+            False,
+            provenance_occurrence_positions=(0, 1),
+        ),
+        prior_supplied_occurrence_references=(function.identity, source.identity),
+    )
+
+    assert result.material["provenance_occurrence_references"] == [
+        command.identity,
+        relation.identity,
+        function.identity,
+        source.identity,
+    ]
+
+
 def test_supplied_result_refuses_a_nonprior_occurrence_position():
     ledger = EventLedger()
     command = _command(ledger)

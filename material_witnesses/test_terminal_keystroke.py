@@ -215,6 +215,13 @@ def test_console_naturally_decomposes_each_supplied_terminal_witness_occurrence(
 
     def provider(exact_command, supply):
         assert exact_command == command
+        supply(
+            SuppliedSystemMaterialOccurrence(
+                exact_bytes=IMPLEMENTATION_FUNCTION.identity.encode("ascii"),
+                source_boundary="terminal witness implementation function reference",
+                egress=False,
+            )
+        )
         for position, (exact_source, observation) in enumerate(
             zip(EXACT_MATERIAL, observations)
         ):
@@ -230,7 +237,7 @@ def test_console_naturally_decomposes_each_supplied_terminal_witness_occurrence(
                     exact_bytes=observation.stdout_bytes or b"",
                     source_boundary=f"terminal witness stdout occurrence {position}",
                     egress=True,
-                    provenance_occurrence_positions=(position * 2,),
+                    provenance_occurrence_positions=(0, 1 + position * 2),
                 )
             )
 
@@ -271,11 +278,16 @@ def test_console_naturally_decomposes_each_supplied_terminal_witness_occurrence(
     )
 
     expected_supplied = tuple(
-        material
-        for position in range(len(EXACT_MATERIAL))
-        for material in (
-            EXACT_MATERIAL[position],
-            observations[position].stdout_bytes or b"",
+        (
+            IMPLEMENTATION_FUNCTION.identity.encode("ascii"),
+            *(
+                material
+                for position in range(len(EXACT_MATERIAL))
+                for material in (
+                    EXACT_MATERIAL[position],
+                    observations[position].stdout_bytes or b"",
+                )
+            ),
         )
     )
     expected_emitted = tuple(
@@ -283,11 +295,14 @@ def test_console_naturally_decomposes_each_supplied_terminal_witness_occurrence(
     )
     assert tuple(event.exact_material for event in ingests) == expected_supplied
     assert tuple(
-        event.material["provenance_occurrence_references"][-1]
-        for event in ingests[1::2]
-    ) == tuple(event.identity for event in ingests[0::2])
-    assert len(measurements) == len(ingests) == 4
-    assert len(position_measurements) == len(ingests) == 4
+        event.material["provenance_occurrence_references"][-2:]
+        for event in ingests[2::2]
+    ) == tuple(
+        [ingests[0].identity, ingests[1 + position * 2].identity]
+        for position in range(len(EXACT_MATERIAL))
+    )
+    assert len(measurements) == len(ingests) == 5
+    assert len(position_measurements) == len(ingests) == 5
     for position, measurement in enumerate(measurements):
         assertions = assertions_of_recorded_byte_measurement(
             ledger, measurement.identity
