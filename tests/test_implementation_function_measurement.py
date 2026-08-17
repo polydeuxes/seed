@@ -4,7 +4,7 @@ import ast
 from pathlib import Path
 import sqlite3
 import sys
-from types import SimpleNamespace
+from types import CodeType, SimpleNamespace
 
 import pytest
 
@@ -269,14 +269,25 @@ def test_reference_pair_measurement_contains_each_preserved_function():
     result = measured.measurement()
 
     names = {identity.rsplit(":", 1)[-1] for identity in result["reference_pair"]}
-    assert names == {
+    witness_method_names = set()
+    for method in (
+        ReferencePairComparison.references_from,
+        ReferencePairComparison.references_to,
+    ):
+        pending = [method.__code__]
+        while pending:
+            code = pending.pop()
+            witness_method_names.add(code.co_qualname)
+            pending.extend(
+                constant
+                for constant in code.co_consts
+                if isinstance(constant, CodeType)
+            )
+
+    assert names == witness_method_names | {
         "ReferencePairComparison",
         "ReferencePairComparison.__init__",
         "ReferencePairComparison.load",
-        "ReferencePairComparison.references_from",
-        "ReferencePairComparison.references_from.<locals>.<listcomp>",
-        "ReferencePairComparison.references_to",
-        "ReferencePairComparison.references_to.<locals>.<listcomp>",
         "_references",
     }
 
