@@ -260,7 +260,7 @@ def live_pytest_invocation(tmp_path_factory):
     database = tmp_path_factory.mktemp("live-pytest") / "pytest.db"
     nodeid = (
         b"tests/test_implementation_function_measurement.py::"
-        b"test_compiled_code_supplies_identities_without_ast_taxonomy"
+        b"test_compiled_code_supplies_exact_identities"
     )
 
     result = subprocess.run(

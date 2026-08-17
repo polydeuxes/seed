@@ -12,6 +12,13 @@ from seed_runtime.operator_ingest import (
     update_operator_ingest_standing,
 )
 from seed_runtime.operator_material_boundary import operator_boundary_material
+from seed_runtime.operator_material_acquisition import (
+    record_operator_material_acquire_responsibility_assignment,
+    record_operator_material_acquire_responsible_act_evidence,
+    record_operator_material_acquire_result,
+)
+from seed_runtime.operator_locality_standing import read_operator_locality_standing
+from seed_runtime.operator_representation import record_operator_representation
 from seed_runtime.material_ingest import (
     MATERIAL_INGEST_OCCURRED_KIND,
     ingested_material_bytes,
@@ -63,6 +70,78 @@ def test_eof_is_not_an_operator_material_occurrence():
         _run(b"")
 
 
+def _acquired_operator_material(ledger, material=b"question\n", *, locality="s"):
+    representation = record_operator_representation(
+        ledger,
+        locality_identity=locality,
+        locality_standing=read_operator_locality_standing(
+            ledger, locality_identity=locality
+        ),
+    )
+    assignment = record_operator_material_acquire_responsibility_assignment(
+        ledger,
+        locality_identity=locality,
+        addressed_representation_event_identity=(
+            representation["representation_event_identity"]
+        ),
+        locality_standing=read_operator_locality_standing(
+            ledger, locality_identity=locality
+        ),
+    )
+    act = record_operator_material_acquire_responsible_act_evidence(
+        ledger,
+        responsibility_assignment_event_identity=assignment.identity,
+        responsibility_assignment_standing=read_operator_locality_standing(
+            ledger, locality_identity=locality
+        ),
+    )
+    boundary = operator_boundary_material(BytesIO(material))
+    acquired = record_operator_material_acquire_result(
+        ledger,
+        responsible_act_evidence_event_identity=act.identity,
+        boundary_material=boundary,
+    )
+    return boundary, acquired
+
+
+def test_operator_ingest_preserves_its_exact_acquisition_occurrence():
+    ledger = EventLedger()
+    boundary, acquired = _acquired_operator_material(ledger)
+
+    standing = run_operator_ingest(
+        ledger=ledger,
+        locality_identity="s",
+        boundary_material=boundary,
+        operator_material_occurrence_reference=acquired.identity,
+    )
+    ingest = ledger.get(
+        standing["current_standing"]["ingest_occurrence"][
+            "evidence_event_identity"
+        ]
+    )
+
+    assert ingest.material["provenance_occurrence_references"] == [
+        acquired.identity
+    ]
+
+
+@pytest.mark.parametrize(
+    ("locality", "material"),
+    (("other", b"question\n"), ("s", b"different\n")),
+)
+def test_operator_ingest_refuses_a_crossed_acquisition(locality, material):
+    ledger = EventLedger()
+    _boundary, acquired = _acquired_operator_material(ledger)
+
+    with pytest.raises(ValueError, match="exact acquired material"):
+        run_operator_ingest(
+            ledger=ledger,
+            locality_identity=locality,
+            boundary_material=operator_boundary_material(BytesIO(material)),
+            operator_material_occurrence_reference=acquired.identity,
+        )
+
+
 def test_ingest_standing_preserves_first_occurrence_order_without_sorting():
     ledger = EventLedger()
     attempts = {}
@@ -107,5 +186,7 @@ FIDELITY_SUBJECTS = {
         test_arbitrary_bytes_are_preserved_as_one_operator_occurrence,
         test_empty_line_is_exact_operator_material,
         test_eof_is_not_an_operator_material_occurrence,
+        test_operator_ingest_preserves_its_exact_acquisition_occurrence,
+        test_operator_ingest_refuses_a_crossed_acquisition,
     ),
 }

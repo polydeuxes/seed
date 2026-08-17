@@ -5,6 +5,7 @@ from __future__ import annotations
 from typing import BinaryIO, Mapping, TextIO
 
 from seed_runtime.byte_measurement import (
+    BYTE_PAIR_MEASUREMENT_RECORDED_KIND,
     byte_position_pair_measurement_occurrence_references,
     record_byte_measurement_responsible_act_evidence,
     record_byte_measurement_result,
@@ -353,6 +354,55 @@ def _record_pair_measurement(
     return standing, pair_measurement
 
 
+def _pair_premise_for_existing_material(
+    ledger,
+    standing,
+    *,
+    locality_identity,
+):
+    """Address the latest pair premise, or record one for existing Ingests."""
+
+    if not standing["ingest_occurrences"]:
+        return standing, None
+    current_source_occurrence_references = tuple(
+        occurrence["evidence_event_identity"]
+        for occurrence in standing["ingest_occurrences"]
+    )
+    for event_identity in reversed(tuple(standing["measurement_occurrences"])):
+        event = ledger.get(event_identity)
+        source_occurrence_references = (
+            event.material.get("responsibility_assignment_evidence", {}).get(
+                "source_occurrence_references"
+            )
+            if event is not None
+            else None
+        )
+        if (
+            event is not None
+            and event.kind == BYTE_PAIR_MEASUREMENT_RECORDED_KIND
+            and event.locality_identity == locality_identity
+            and type(source_occurrence_references) is list
+            and tuple(
+                reference.get("ingest_occurrence_identity")
+                for reference in source_occurrence_references
+                if type(reference) is dict
+            )
+            == current_source_occurrence_references
+        ):
+            return standing, event
+    standing, byte_measurement = _record_acquisition_measurements(
+        ledger,
+        standing,
+        locality_identity=locality_identity,
+    )
+    return _record_pair_measurement(
+        ledger,
+        standing,
+        byte_measurement_event_identity=byte_measurement.identity,
+        locality_identity=locality_identity,
+    )
+
+
 def _record_pair_measurement_comparison(
     ledger,
     standing,
@@ -465,10 +515,18 @@ def run_persistent_operator_console(
     locality_standing = read_operator_locality_standing(
         ledger, locality_identity=locality_identity
     )
+    locality_standing, pair_premise = _pair_premise_for_existing_material(
+        ledger,
+        locality_standing,
+        locality_identity=locality_identity,
+    )
     representation = record_operator_representation(
         ledger,
         locality_identity=locality_identity,
         locality_standing=locality_standing,
+        source_occurrence_reference=(
+            pair_premise.identity if pair_premise is not None else None
+        ),
     )
     locality_standing = _advance_over_representation(
         ledger, locality_standing, representation
@@ -545,6 +603,9 @@ def run_persistent_operator_console(
                         locality_standing
                         if locality_standing["event_count"]
                         else None
+                    ),
+                    operator_material_occurrence_reference=(
+                        acquired_material.identity
                     ),
                 )
                 command_occurrence = command_record["current_standing"][
@@ -839,10 +900,22 @@ def run_persistent_operator_console(
                 locality_standing = read_operator_locality_standing(
                     ledger, locality_identity=locality_identity
                 )
+                locality_standing, pair_premise = (
+                    _pair_premise_for_existing_material(
+                        ledger,
+                        locality_standing,
+                        locality_identity=locality_identity,
+                    )
+                )
                 representation = record_operator_representation(
                     ledger,
                     locality_identity=locality_identity,
                     locality_standing=locality_standing,
+                    source_occurrence_reference=(
+                        pair_premise.identity
+                        if pair_premise is not None
+                        else None
+                    ),
                 )
                 locality_standing = _advance_over_representation(
                     ledger, locality_standing, representation
@@ -859,6 +932,7 @@ def run_persistent_operator_console(
                     )
                 )
                 locality_identity = assignment.locality_identity
+                pair_premise = None
                 locality_standing = read_operator_locality_standing(
                     ledger, locality_identity=locality_identity
                 )
@@ -988,6 +1062,7 @@ def run_persistent_operator_console(
                     )
                 )
                 locality_identity = assignment.locality_identity
+                pair_premise = None
                 locality_standing = read_operator_locality_standing(
                     ledger, locality_identity=locality_identity
                 )
@@ -1052,6 +1127,9 @@ def run_persistent_operator_console(
                 locality_standing=(
                     locality_standing if locality_standing["event_count"] else None
                 ),
+                operator_material_occurrence_reference=(
+                    acquired_material.identity
+                ),
             )
             ingest_occurrence = attempt_record["current_standing"][
                 "ingest_occurrence"
@@ -1064,16 +1142,42 @@ def run_persistent_operator_console(
                 (ingest_occurrence["evidence_event_identity"],),
                 locality_identity=locality_identity,
             )
-            locality_standing, _byte_measurement = _record_acquisition_measurements(
+            locality_standing, byte_measurement = _record_acquisition_measurements(
                 ledger,
                 locality_standing,
                 locality_identity=locality_identity,
             )
-            representation = record_operator_representation(
-                ledger,
-                locality_identity=locality_identity,
-                locality_standing=locality_standing,
-            )
+            if pair_premise is None:
+                representation = record_operator_representation(
+                    ledger,
+                    locality_identity=locality_identity,
+                    locality_standing=locality_standing,
+                )
+            else:
+                locality_standing, later_pair = _record_pair_measurement(
+                    ledger,
+                    locality_standing,
+                    byte_measurement_event_identity=byte_measurement.identity,
+                    locality_identity=locality_identity,
+                )
+                locality_standing, comparison = (
+                    _record_pair_measurement_comparison(
+                        ledger,
+                        locality_standing,
+                        earlier_pair_measurement_event_identity=(
+                            pair_premise.identity
+                        ),
+                        later_pair_measurement_event_identity=later_pair.identity,
+                        locality_identity=locality_identity,
+                    )
+                )
+                pair_premise = later_pair
+                representation = record_operator_representation(
+                    ledger,
+                    locality_identity=locality_identity,
+                    locality_standing=locality_standing,
+                    source_occurrence_reference=comparison.identity,
+                )
             locality_standing = _advance_over_representation(
                 ledger, locality_standing, representation
             )

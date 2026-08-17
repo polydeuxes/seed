@@ -1273,8 +1273,7 @@
         "completeness_requirement",
         "mandatory_Representation",
         "Acts_as_dimensions",
-        "relations_as_dimensions",
-        "exhaustive_taxonomy"
+        "relations_as_dimensions"
       ]
     },
     "02.Acts.A": {
@@ -1381,11 +1380,15 @@
           "same_Locality",
           "current_Standing_carrying_each_result",
           "later_source_occurrence_references_carry_earlier_references_and_one_added_reference",
-          "added_supplied_occurrence",
-          "provenance_to_prior_source_occurrence",
+          "one_added_occurrence",
+          "one_exact_input_relation",
           "Applicability_of_each_input_to_Compare",
           "Participation_relation_of_each_input_in_Compare",
           "Evidence_of_Yield_relation"
+        ],
+        "input_relation": [
+          "supplied_occurrence_with_provenance_to_prior_source_occurrence",
+          "operator_material_occurrence_with_exact_acquisition_at_prior_Standing"
         ]
       },
       "comparison_rule": {
@@ -1407,6 +1410,9 @@
         "ordered_source_occurrence_references",
         "added_occurrence_reference",
         "provenance",
+        "input_relation",
+        "operator_material_acquisition_result_reference",
+        "operator_material_source_Standing_reference",
         "Scope",
         "Locality",
         "Evidence",

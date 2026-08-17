@@ -298,6 +298,7 @@ def test_each_console_road_leaves_incremental_standing_equal_to_replay(
                 "source_role": "operator",
                 "unknown": [],
             },
+            exact_material=b"existing material",
             locality_identity="existing",
         )
 

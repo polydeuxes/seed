@@ -16,7 +16,7 @@ import implementation_function_measurement as measured  # noqa: E402
 from reference_pair_comparison import ReferencePairComparison  # noqa: E402
 
 
-def test_compiled_code_supplies_identities_without_ast_taxonomy(tmp_path):
+def test_compiled_code_supplies_exact_identities(tmp_path):
     source = tmp_path / "fixture.py"
     source.write_bytes(b"def a():\n    return 1\n\ndef b():\n    return 2\n")
 
@@ -408,7 +408,7 @@ FIDELITY_SUBJECTS = {
         test_one_measurement_does_not_replace_an_active_measurement,
     ),
     "compiled_function_reference": (
-        test_compiled_code_supplies_identities_without_ast_taxonomy,
+        test_compiled_code_supplies_exact_identities,
         test_uninvoked_compiled_identity_remains_unobserved,
     ),
     "function_invocation_occurrence": (

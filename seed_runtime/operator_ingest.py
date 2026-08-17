@@ -8,6 +8,9 @@ from seed_runtime.material_ingest import (
     ingest_material,
 )
 from seed_runtime.operator_material_boundary import OperatorBoundaryMaterial
+from seed_runtime.operator_material_acquisition import (
+    get_recorded_operator_material_acquire,
+)
 
 
 def update_operator_ingest_standing(attempts, event) -> None:
@@ -66,9 +69,29 @@ def run_operator_ingest(
     boundary_material: OperatorBoundaryMaterial,
     locality_standing: dict[str, object] | None = None,
     supplied_material_representation: str | None = None,
+    operator_material_occurrence_reference: str | None = None,
 ) -> dict[str, object]:
     if boundary_material.eof:
         raise ValueError("operator boundary material must be non-EOF")
+    provenance_occurrence_references: tuple[str, ...] = ()
+    if operator_material_occurrence_reference is not None:
+        acquired = get_recorded_operator_material_acquire(
+            ledger, operator_material_occurrence_reference
+        )
+        acquired_event = ledger.get(operator_material_occurrence_reference)
+        if (
+            acquired_event is None
+            or acquired_event.locality_identity != locality_identity
+            or acquired_event.exact_material != boundary_material.exact_bytes
+            or acquired["source_boundary"] != boundary_material.material_boundary
+            or acquired["known_loss"] != list(boundary_material.known_loss)
+        ):
+            raise ValueError(
+                "operator Ingest requires its exact acquired material occurrence"
+            )
+        provenance_occurrence_references = (
+            operator_material_occurrence_reference,
+        )
     event = ingest_material(
         ledger,
         locality_identity=locality_identity,
@@ -77,6 +100,7 @@ def run_operator_ingest(
         source_boundary=boundary_material.material_boundary,
         represented_material=supplied_material_representation,
         known_loss=boundary_material.known_loss,
+        provenance_occurrence_references=provenance_occurrence_references,
     )
     standing = _ingest_standing(event=event)
     if locality_standing is not None:

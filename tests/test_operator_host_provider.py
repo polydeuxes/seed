@@ -229,7 +229,7 @@ def test_inherited_open_pipe_is_bounded_without_recasting_parent_as_timed_out(
 def test_pytest_provider_supplies_a_distinct_exact_measurement_artifact():
     nodeid = (
         b"tests/test_implementation_function_measurement.py::"
-        b"test_compiled_code_supplies_identities_without_ast_taxonomy"
+        b"test_compiled_code_supplies_exact_identities"
     )
 
     supplied = _invoke(b"!pytest " + nodeid + b"\n")
@@ -285,7 +285,7 @@ def test_pytest_provider_supplies_a_distinct_exact_measurement_artifact():
 def test_repeated_pytest_reuses_one_exact_catalog_and_keeps_observation_sparse():
     command = (
         b"!pytest tests/test_implementation_function_measurement.py::"
-        b"test_compiled_code_supplies_identities_without_ast_taxonomy\n"
+        b"test_compiled_code_supplies_exact_identities\n"
     )
 
     first = _invoke(command)

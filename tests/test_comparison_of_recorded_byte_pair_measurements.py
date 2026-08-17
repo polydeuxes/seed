@@ -21,10 +21,17 @@ from seed_runtime.comparison_of_recorded_byte_pair_measurements import (
     record_recorded_pair_measurement_comparison_act_evidence,
     record_recorded_pair_measurement_comparison_result,
 )
-from seed_runtime.events import EventLedger
+from seed_runtime.events import EventLedger, SQLiteEventLedger
 from seed_runtime.material_ingest import ingest_material
 from seed_runtime.operator_locality_standing import read_operator_locality_standing
 from seed_runtime.operator_console import run_persistent_operator_console
+from seed_runtime.operator_ingest import run_operator_ingest
+from seed_runtime.operator_material_acquisition import (
+    record_operator_material_acquire_responsibility_assignment,
+    record_operator_material_acquire_responsible_act_evidence,
+    record_operator_material_acquire_result,
+)
+from seed_runtime.operator_material_boundary import operator_boundary_material
 from seed_runtime.operator_representation import (
     read_operator_representation,
     record_operator_representation,
@@ -108,6 +115,154 @@ def _comparison():
         ledger, responsible_act_evidence_event_identity=compare_act.identity
     )
     return ledger, earlier_source, added, earlier, later, assignment, applicability, result
+
+
+def _operator_inputs(*, acquisition_before_earlier_measurement=False):
+    ledger = EventLedger()
+    earlier_source = ingest_material(
+        ledger,
+        locality_identity=LOCALITY,
+        exact_bytes=b"abab",
+        source_role="operator",
+        source_boundary="earlier operator occurrence",
+    )
+    if acquisition_before_earlier_measurement:
+        standing = read_operator_locality_standing(
+            ledger, locality_identity=LOCALITY
+        )
+        representation = record_operator_representation(
+            ledger,
+            locality_identity=LOCALITY,
+            locality_standing=standing,
+        )
+        standing = read_operator_locality_standing(
+            ledger, locality_identity=LOCALITY
+        )
+    else:
+        earlier = _pair_measurement(ledger)
+        standing = read_operator_locality_standing(
+            ledger, locality_identity=LOCALITY
+        )
+        representation = record_operator_representation(
+            ledger,
+            locality_identity=LOCALITY,
+            locality_standing=standing,
+            source_occurrence_reference=earlier.identity,
+        )
+        standing = read_operator_locality_standing(
+            ledger, locality_identity=LOCALITY
+        )
+    assignment = record_operator_material_acquire_responsibility_assignment(
+        ledger,
+        locality_identity=LOCALITY,
+        addressed_representation_event_identity=(
+            representation["representation_event_identity"]
+        ),
+        locality_standing=standing,
+    )
+    standing = read_operator_locality_standing(ledger, locality_identity=LOCALITY)
+    act = record_operator_material_acquire_responsible_act_evidence(
+        ledger,
+        responsibility_assignment_event_identity=assignment.identity,
+        responsibility_assignment_standing=standing,
+    )
+    boundary = operator_boundary_material(BytesIO(b"abac\n"))
+    acquired = record_operator_material_acquire_result(
+        ledger,
+        responsible_act_evidence_event_identity=act.identity,
+        boundary_material=boundary,
+    )
+    if acquisition_before_earlier_measurement:
+        earlier = _pair_measurement(ledger)
+    added_standing = run_operator_ingest(
+        ledger=ledger,
+        locality_identity=LOCALITY,
+        boundary_material=boundary,
+        operator_material_occurrence_reference=acquired.identity,
+    )
+    added = ledger.get(
+        added_standing["current_standing"]["ingest_occurrence"][
+            "evidence_event_identity"
+        ]
+    )
+    later = _pair_measurement(ledger)
+    return ledger, earlier_source, acquired, added, earlier, later
+
+
+def test_operator_acquisition_carries_the_prior_pair_measurement_into_compare():
+    ledger, _source, acquired, added, earlier, later = _operator_inputs()
+    standing = read_operator_locality_standing(ledger, locality_identity=LOCALITY)
+
+    assignment = record_recorded_pair_measurement_comparison_responsibility_assignment(
+        ledger,
+        earlier_result_event_identity=earlier.identity,
+        later_result_event_identity=later.identity,
+        locality_standing=standing,
+    )
+
+    assert assignment.material["added_occurrence_reference"] == added.identity
+    assert assignment.material["input_relation"] == (
+        "operator material acquisition at prior Standing"
+    )
+    assert assignment.material[
+        "operator_material_acquire_result_event_identity"
+    ] == acquired.identity
+    assert assignment.material[
+        "operator_material_source_standing_reference"
+    ] == acquired.material["source_standing_reference"]
+    assert assignment.material["destination_operator_locality_identity"] == LOCALITY
+
+
+def test_operator_occurrence_without_acquisition_cannot_supply_compare():
+    ledger = EventLedger()
+    ingest_material(
+        ledger,
+        locality_identity=LOCALITY,
+        exact_bytes=b"abab",
+        source_role="operator",
+        source_boundary="earlier operator occurrence",
+    )
+    earlier = _pair_measurement(ledger)
+    ingest_material(
+        ledger,
+        locality_identity=LOCALITY,
+        exact_bytes=b"abac",
+        source_role="operator",
+        source_boundary="later operator occurrence",
+    )
+    later = _pair_measurement(ledger)
+
+    with pytest.raises(
+        RecordedPairMeasurementComparisonError,
+        match="one exact operator acquisition occurrence",
+    ):
+        record_recorded_pair_measurement_comparison_responsibility_assignment(
+            ledger,
+            earlier_result_event_identity=earlier.identity,
+            later_result_event_identity=later.identity,
+            locality_standing=read_operator_locality_standing(
+                ledger, locality_identity=LOCALITY
+            ),
+        )
+
+
+def test_operator_acquisition_before_the_premise_cannot_supply_compare():
+    ledger, _source, _acquired, _added, earlier, later = _operator_inputs(
+        acquisition_before_earlier_measurement=True
+    )
+
+    with pytest.raises(
+        RecordedPairMeasurementComparisonError,
+        match="operator acquisition carries no exact prior Standing",
+    ):
+        record_recorded_pair_measurement_comparison_responsibility_assignment(
+            ledger,
+            earlier_result_event_identity=earlier.identity,
+            later_result_event_identity=later.identity,
+            locality_standing=read_operator_locality_standing(
+                ledger, locality_identity=LOCALITY
+            ),
+        )
 
 
 def test_produced_measurements_enter_one_responsible_compare():
@@ -289,6 +444,138 @@ def test_supplied_occurrences_without_a_relation_do_not_create_pair_acts():
     assert REPRESENTATION_CANDIDATE_RECORDED_KIND not in kinds
 
 
+def test_preexisting_material_is_a_premise_for_later_operator_turns():
+    ledger = EventLedger()
+    corpus_occurrence = ingest_material(
+        ledger,
+        locality_identity=LOCALITY,
+        exact_bytes=b"abab",
+        source_role="operator",
+        source_boundary="earlier corpus occurrence",
+    )
+
+    run_persistent_operator_console(
+        ledger=ledger,
+        locality_identity=LOCALITY,
+        input_stream=binary_input(b"abac\nabca\n"),
+        output_stream=StringIO(),
+    )
+
+    comparisons = tuple(
+        event
+        for event in ledger.list()
+        if event.kind == RECORDED_PAIR_MEASUREMENT_COMPARISON_RESULT_KIND
+    )
+    assert len(comparisons) == 2
+    first_assignment = comparison_module.get_recorded_pair_measurement_comparison_responsibility_assignment(
+        ledger,
+        comparisons[0].material["responsibility_assignment_reference"][
+            "recorded_occurrence_identity"
+        ],
+    )
+    second_assignment = comparison_module.get_recorded_pair_measurement_comparison_responsibility_assignment(
+        ledger,
+        comparisons[1].material["responsibility_assignment_reference"][
+            "recorded_occurrence_identity"
+        ],
+    )
+    assert first_assignment.material["earlier_source_occurrence_references"] == [
+        corpus_occurrence.identity
+    ]
+    assert second_assignment.material["earlier_measurement_reference"] == (
+        first_assignment.material["later_measurement_reference"]
+    )
+    standing = read_operator_locality_standing(ledger, locality_identity=LOCALITY)
+    addressed_sources = {
+        coordinates["source_occurrence_reference"]
+        for coordinates in standing["representations"].values()
+    }
+    assert comparisons[0].identity in addressed_sources
+    assert comparisons[1].identity in addressed_sources
+
+
+def test_stale_pair_measurement_is_not_reused_as_the_current_premise():
+    ledger = EventLedger()
+    ingest_material(
+        ledger,
+        locality_identity=LOCALITY,
+        exact_bytes=b"abab",
+        source_role="operator",
+        source_boundary="first corpus occurrence",
+    )
+    stale_pair = _pair_measurement(ledger)
+    second_corpus_occurrence = ingest_material(
+        ledger,
+        locality_identity=LOCALITY,
+        exact_bytes=b"abac",
+        source_role="operator",
+        source_boundary="second corpus occurrence",
+    )
+
+    run_persistent_operator_console(
+        ledger=ledger,
+        locality_identity=LOCALITY,
+        input_stream=binary_input(b""),
+        output_stream=StringIO(),
+    )
+
+    current_pairs = tuple(
+        event
+        for event in ledger.list()
+        if event.kind == "operator.measurement.byte_position_pair_counts_recorded"
+    )
+    assert len(current_pairs) == 2
+    assert current_pairs[0].identity == stale_pair.identity
+    assert current_pairs[1].material["responsibility_assignment_evidence"][
+        "source_occurrence_references"
+    ] == [
+        {"ingest_occurrence_identity": stale_pair.material[
+            "responsibility_assignment_evidence"
+        ]["source_occurrence_references"][0]["ingest_occurrence_identity"]},
+        {"ingest_occurrence_identity": second_corpus_occurrence.identity},
+    ]
+
+
+def test_operator_pair_premise_and_compare_survive_reopen(tmp_path):
+    database = tmp_path / "operator-pair-compare.sqlite"
+    ledger = SQLiteEventLedger(str(database))
+    ingest_material(
+        ledger,
+        locality_identity=LOCALITY,
+        exact_bytes=b"abab",
+        source_role="operator",
+        source_boundary="durable corpus occurrence",
+    )
+    run_persistent_operator_console(
+        ledger=ledger,
+        locality_identity=LOCALITY,
+        input_stream=binary_input(b"abac\n"),
+        output_stream=StringIO(),
+    )
+    ledger.close()
+
+    reopened = SQLiteEventLedger(str(database))
+    standing = read_operator_locality_standing(
+        reopened, locality_identity=LOCALITY
+    )
+    assert len(standing["comparison_result_occurrences"]) == 1
+    comparison_identity = next(iter(standing["comparison_result_occurrences"]))
+    recorded = get_recorded_pair_measurement_comparison(
+        reopened, comparison_identity
+    )
+    assignment = comparison_module.get_recorded_pair_measurement_comparison_responsibility_assignment(
+        reopened,
+        recorded["responsibility_assignment_reference"][
+            "recorded_occurrence_identity"
+        ],
+    )
+    assert assignment.material["added_occurrence_reference"] in {
+        occurrence["evidence_event_identity"]
+        for occurrence in standing["ingest_occurrences"]
+    }
+    reopened.close()
+
+
 def test_carried_compare_result_is_one_structured_representation_source():
     ledger, *_rest, result = _comparison()
     standing = read_operator_locality_standing(ledger, locality_identity=LOCALITY)
@@ -324,6 +611,9 @@ def test_compare_result_absent_from_standing_is_refused_as_representation_source
 
 FIDELITY_SUBJECTS = {
     "assertion_standing_coordinates": (
+        test_operator_acquisition_carries_the_prior_pair_measurement_into_compare,
+        test_operator_occurrence_without_acquisition_cannot_supply_compare,
+        test_operator_acquisition_before_the_premise_cannot_supply_compare,
         test_produced_measurements_enter_one_responsible_compare,
         test_equal_finding_labels_do_not_hide_changed_content,
         test_missing_provenance_cannot_supply_the_compare_rung,
@@ -332,6 +622,9 @@ FIDELITY_SUBJECTS = {
         test_one_result_read_validates_each_pair_measurement_once,
         test_later_result_read_revalidates_changed_pair_measurement_evidence,
         test_supplied_occurrences_without_a_relation_do_not_create_pair_acts,
+        test_preexisting_material_is_a_premise_for_later_operator_turns,
+        test_stale_pair_measurement_is_not_reused_as_the_current_premise,
+        test_operator_pair_premise_and_compare_survive_reopen,
         test_carried_compare_result_is_one_structured_representation_source,
         test_compare_result_absent_from_standing_is_refused_as_representation_source,
     ),
