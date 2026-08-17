@@ -13,13 +13,13 @@ and this can be plainly readable.
 
 ## Purpose
 
-The Book sheds vocabulary. Terms leave when they name nothing, when they
+The Book sheds words. Terms leave when they name nothing, when they
 compress several distinctions into one word, or when they are ordinary English
 that acquired constitutional-looking capitalisation.
 
 Retiring a word from the Book does not delete what it meant or why it went.
-That knowledge cannot live in the Book: a maintained list of dead vocabulary
-keeps dead vocabulary present in the grammar. It lives here.
+That knowledge cannot live in the Book: a maintained list of dead words
+keeps dead words present in the grammar. It lives here.
 
 ## Scope
 
@@ -28,13 +28,13 @@ Responsibility spine        ordinary-English traversal of the same spine used
                             by the Book and instantiated by runtime occurrences;
                             Examination and Presentation are directional views
 
-translation vocabulary      words the Book does not use, and what
+translation words           words the Book does not use, and what
                             current grammar covers what they covered
 
 external / ordinary words   English that was never constitutional but
                             reads as though it might be
 
-implementation vocabulary   runtime and repository names that are not
+implementation words        runtime and repository names that are not
                             constitutional grammar
 
 
@@ -68,7 +68,7 @@ Rosetta are representative translation witnesses, not an implementation index.
 
 ## Constitutional authority
 
-`01.Source` governs the boundary this directory sits on: ordinary vocabulary
+`01.Source` governs the boundary this directory sits on: ordinary words
 may retain source coordinates and be compared **without thereby becoming
 constitutional grammar**. That chapter is the authority *for* a Rosetta. It is
 not itself a Rosetta, and this directory is not a chapter.
@@ -81,7 +81,7 @@ constitutional because Seed produced it.
 ```text
 book_of_seed/       constitutional grammar only
 concordance.md      navigation across live grammar, with aliases
-rosetta/            translation vocabulary and exact mappings
+rosetta/            translation words and exact mappings
 reports + git       historical testimony, preserved as written
 ```
 
@@ -94,10 +94,9 @@ to four current terms and to no single one of them.
 
 - [Responsibility spine](roots.md)
 - [Rosetta admission](rosetta_admission.txt)
-- [Book admission](../book_of_seed/book_admission.txt)
 
 Rosetta keeps the translation lexicon. The Book keeps its own narrower admission
-and points here without importing Rosetta admission into active law. In
+in its active constitutional material without importing Rosetta admission. In
 particular, Rosetta admits the `warrant` word family while Book proper admits
 only the singular ordinary verb in Seed's Standing declaration.
 

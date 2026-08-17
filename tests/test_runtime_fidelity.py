@@ -22,7 +22,7 @@ from seed_runtime.operator_checkpoint import (
 )
 from seed_runtime.operator_command import AddressedOperatorCommand
 from seed_runtime.operator_console import run_persistent_operator_console
-from tests.test_book_admission import (
+from scripts.book_admission import (
     book_admission,
     witness_grammar_words,
     scan_active_line,
@@ -764,25 +764,25 @@ def test_recovered_grammar_and_recorded_occurrence_kinds_account_for_the_same_cl
         for identity, clause in witness.items()
         if clause["recorded_occurrence_kind"] == ["Assertion_occurrence"]
     }
-    declared_Fidelity_occurrences = {
+    declared_without_recorded_occurrence_kind = {
         identity
         for identity, clause in witness.items()
-        if clause["recorded_occurrence_kind"] == ["Fidelity_occurrence"]
+        if clause["recorded_occurrence_kind"] == []
     }
     implemented_clauses = event_clauses | assertion_clauses
 
     assert all(clause["grammar"] == "established" for clause in witness.values())
     assert event_clauses == declared_event_occurrences
     assert assertion_clauses == declared_assertion_occurrences
-    assert witness_clauses - implemented_clauses == declared_Fidelity_occurrences
+    assert witness_clauses - implemented_clauses == declared_without_recorded_occurrence_kind
     assert (
         declared_event_occurrences
         | declared_assertion_occurrences
-        | declared_Fidelity_occurrences
+        | declared_without_recorded_occurrence_kind
     ) == witness_clauses
 
 
-def test_runtime_record_vocabulary_has_constitutional_admission():
+def test_runtime_record_words_have_constitutional_admission():
     """Event species and record coordinates require lexical admission."""
 
     violations = []
@@ -1284,21 +1284,21 @@ FIDELITY_SUBJECTS = {
     "unresolved_event_material_visibility": (
         test_unresolved_event_material_expansion_remains_visible,
     ),
-    "event_record_coordinate_vocabulary_admission": (
-        test_runtime_record_vocabulary_has_constitutional_admission,
+    "event_record_coordinate_word_admission": (
+        test_runtime_record_words_have_constitutional_admission,
     ),
-    "seed_event_material_vocabulary_admission": (
+    "seed_event_material_word_admission": (
         test_seed_authored_event_material_values_have_lexical_admission,
     ),
-    "event_record_witness_grammar_vocabulary": (
+    "event_record_witness_grammar_words": (
         test_runtime_record_words_are_witness_grammar_words,
     ),
-    "event_material_vocabulary_admission": (
+    "event_material_word_admission": (
         test_authored_value_admission_catches_an_unadmitted_word_without_naming_it,
         test_authored_value_admission_crosses_a_local_material_function,
         test_authored_value_admission_binds_local_material_function_arguments,
     ),
-    "supplied_material_seed_vocabulary_distinction": (
+    "supplied_material_seed_word_distinction": (
         test_opaque_supplied_material_is_not_seed_authored_language,
     ),
     "coordinate_reference_distinction": (

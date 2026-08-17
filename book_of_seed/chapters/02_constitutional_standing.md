@@ -23,7 +23,7 @@ A result, preserved record, representation, index entry, or other material may h
 A kind label, Representation, characterization category, function name, concordance entry, or recurring report type may preserve a bounded distinction for the subject and exact Act it names. It does not establish Standing, make similarly named material equivalent, establish mandatory grammar, or supply Authority for the exact Act without preserved Evidence, provenance, Scope, Unknown, and the applicable occurrence boundary.
 
 ### 01.Standing.C — Behavior does not confer standing
-Compiled behavior, direct instantiation, and exact represented results may witness what occurs at a read boundary, emission boundary, or other bounded seam. They do not establish the Standing suggested by a name, output vocabulary, or behavior. Such Standing still requires its own subject, responsible occurrence, Evidence, Scope, Authority, and limits.
+Compiled behavior, direct instantiation, and exact represented results may witness what occurs at a read boundary, emission boundary, or other bounded seam. They do not establish the Standing suggested by a name, output words, or behavior. Such Standing still requires its own subject, responsible occurrence, Evidence, Scope, Authority, and limits.
 
 ### 01.Standing.D — Multiplicity does not establish a collective
 Co-presence or multiplicity establishes no relation, collective Standing, shared Act or result boundary, or higher-order identity. Each stronger Assertion requires its own bounded subject and established support relation.

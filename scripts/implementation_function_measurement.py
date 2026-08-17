@@ -18,6 +18,8 @@ from typing import Callable
 
 import pytest
 
+from scripts.book_admission import book_admission
+
 
 ROOT = Path(__file__).resolve().parents[1]
 OUTPUT_ENVIRONMENT_COORDINATE = "SEED_IMPLEMENTATION_FUNCTION_MEASUREMENT"
@@ -600,13 +602,7 @@ def _fidelity_test_subjects() -> dict[str, dict[str, str]]:
             "distinct_from": relation["first_subject_distinct_from"],
         }
 
-    admission = {
-        line.split("#", 1)[0].strip()
-        for line in (ROOT / "book_of_seed" / "book_admission.txt")
-        .read_text(encoding="utf-8")
-        .splitlines()
-        if line.split("#", 1)[0].strip()
-    }
+    admission = book_admission()
     for subject in declared:
         subject_words = tuple(
             word.lower() for word in re.findall(r"[A-Za-z]+", subject)

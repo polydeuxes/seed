@@ -2,7 +2,7 @@
 
 A decoder returns whether it accepts exact bytes. That result is testimony
 about the decoder. These pin the exact Measurement, without taking
-the decoder's vocabulary along with its results.
+the decoder's words along with its results.
 """
 
 from __future__ import annotations

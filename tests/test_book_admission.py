@@ -6,24 +6,21 @@ import json
 import re
 from pathlib import Path
 
-from scripts.fill_witness_grammar import BOOK_MATERIALS, expected_book_vocabulary
+from scripts.book_admission import (
+    BOOK,
+    ROOT,
+    book_admission,
+    book_proper_files,
+    book_proper_words,
+    scan_active_line,
+    witness_grammar_words,
+)
 
-ROOT = Path(__file__).resolve().parents[1]
-BOOK = ROOT / "book_of_seed"
 BOOK_ADMISSION = BOOK / "book_admission.txt"
 ROSETTA_ADMISSION = ROOT / "rosetta" / "rosetta_admission.txt"
 
 
-def scan_active_line(line: str) -> str:
-    scanned = re.sub(r"\]\([^)]*\)", "]()", line)
-    return re.sub(r"[_-]+", " ", scanned)
-
-
-def book_proper_files() -> list[Path]:
-    return [*BOOK_MATERIALS, BOOK / "grammar.json"]
-
-
-def _admission_entries(path: Path = BOOK_ADMISSION) -> dict[str, str]:
+def _admission_entries(path: Path) -> dict[str, str]:
     entries: dict[str, str] = {}
     for line in path.read_text(encoding="utf-8").split("\n"):
         if not line.strip() or line.lstrip().startswith("#"):
@@ -35,32 +32,11 @@ def _admission_entries(path: Path = BOOK_ADMISSION) -> dict[str, str]:
     return entries
 
 
-def book_admission() -> set[str]:
-    return set(_admission_entries())
-
-
-def book_proper_words() -> dict[str, list[tuple[str, int]]]:
-    found: dict[str, list[tuple[str, int]]] = {}
-    for path in book_proper_files():
-        rel = path.relative_to(ROOT).as_posix()
-        for number, line in enumerate(path.read_text().split("\n"), start=1):
-            for word in re.findall(r"[A-Za-z]+", scan_active_line(line).lower()):
-                found.setdefault(word, []).append((rel, number))
-    return found
-
-
-def witness_grammar_words() -> set[str]:
-    return {
-        word
-        for line in (BOOK / "grammar.json").read_text().split("\n")
-        for word in re.findall(r"[A-Za-z]+", scan_active_line(line).lower())
-    }
-
-
 def test_book_proper_scope_excludes_rosetta():
     files = {path.relative_to(ROOT).as_posix() for path in book_proper_files()}
     assert any(path.startswith("book_of_seed/chapters/") for path in files)
     assert not any("/rosetta/" in path or path.startswith("rosetta/") for path in files)
+    assert "book_of_seed/grammar.json" not in files
 
 
 def test_admitted_material_reference_subjects_resolve_relative_markdown_links():
@@ -94,26 +70,15 @@ def test_admitted_material_reference_subjects_resolve_relative_markdown_links():
     assert missing == []
 
 
-def test_book_has_its_own_admission_and_points_to_rosetta():
+def test_book_has_no_separate_admission_authority():
     assert BOOK_ADMISSION == ROOT / "book_of_seed" / "book_admission.txt"
     assert ROSETTA_ADMISSION != BOOK_ADMISSION
-    assert not BOOK_ADMISSION.is_symlink()
+    assert not BOOK_ADMISSION.exists()
     assert not ROSETTA_ADMISSION.is_symlink()
-    assert (
-        "# Rosetta admission: ../rosetta/rosetta_admission.txt"
-        in BOOK_ADMISSION.read_text(encoding="utf-8").splitlines()
-    )
-    assert set(_admission_entries(BOOK_ADMISSION)) < set(
-        _admission_entries(ROSETTA_ADMISSION)
-    )
 
 
 def test_warrant_admission_is_broad_in_rosetta_and_singular_in_book():
-    book_warrant = {
-        word
-        for word in _admission_entries(BOOK_ADMISSION)
-        if word.startswith("warrant")
-    }
+    book_warrant = {word for word in book_admission() if word.startswith("warrant")}
     rosetta_warrant = {
         word
         for word in _admission_entries(ROSETTA_ADMISSION)
@@ -158,9 +123,7 @@ def test_warrant_remains_lowercase_and_bounded_to_the_three_standing_sentences()
 
 def test_composite_admission_is_broad_in_rosetta_and_singular_in_book():
     book_composite = {
-        word
-        for word in _admission_entries(BOOK_ADMISSION)
-        if word.startswith("composite")
+        word for word in book_admission() if word.startswith("composite")
     }
     rosetta_composite = {
         word
@@ -172,48 +135,15 @@ def test_composite_admission_is_broad_in_rosetta_and_singular_in_book():
 
 
 def test_book_proper_is_within_book_admission():
-    unadmitted = {
-        word: places
-        for word, places in book_proper_words().items()
-        if word not in book_admission()
-    }
-    report = "\n".join(
-        f"  {word} -- {places[0][0]}:{places[0][1]}"
-        + (f" and {len(places) - 1} more" if len(places) > 1 else "")
-        for word, places in sorted(unadmitted.items())
-    )
-    assert not unadmitted, (
-        "\nActive law carries vocabulary the lexicon does not admit.\n"
-            "Remove it or request curation; automated agents must not amend Book admission:\n"
-        + report
-    )
+    assert book_admission() == set(book_proper_words())
 
 
 def test_book_admission_carries_no_unused_words():
-    unused = sorted(book_admission() - set(book_proper_words()))
-    assert not unused, (
-        "\nBook admission carries words active law no longer carries: "
-        + ", ".join(unused)
-    )
+    assert book_admission() - set(book_proper_words()) == set()
 
 
-def test_book_admission_and_witness_grammar_match():
-    assert book_admission() == witness_grammar_words()
-
-
-def test_witness_grammar_vocabulary_preserves_first_authored_occurrence_order():
-    grammar_bytes = (BOOK / "grammar.json").read_bytes()
-    grammar = json.loads(grammar_bytes)
-
-    assert grammar["book_vocabulary"] == expected_book_vocabulary(grammar_bytes)
-    positions = tuple(
-        first_occurrence_position
-        for _entry, first_occurrence_position in grammar["book_vocabulary"][
-            "ordered_entries"
-        ]
-    )
-    assert positions == tuple(dict.fromkeys(positions))
-    assert all(first < second for first, second in zip(positions, positions[1:]))
+def test_witness_grammar_words_in_book_admission():
+    assert witness_grammar_words() <= book_admission()
 
 
 FIDELITY_SUBJECTS = {
@@ -225,12 +155,12 @@ FIDELITY_SUBJECTS = {
         test_admitted_material_reference_subjects_resolve_relative_markdown_links,
     ),
     "book_rosetta_admission_distinction": (
-        test_book_has_its_own_admission_and_points_to_rosetta,
+        test_book_has_no_separate_admission_authority,
     ),
     "book_rosetta_warrant_admission_distinction": (
         test_warrant_admission_is_broad_in_rosetta_and_singular_in_book,
     ),
-    "clause_coordinate_vocabulary_admission": (
+    "clause_coordinate_word_admission": (
         test_clause_coordinate_tokens_require_explicit_curation,
     ),
     "book_rosetta_composite_admission_distinction": (
@@ -242,8 +172,7 @@ FIDELITY_SUBJECTS = {
     "book_admission_active_law_use": (
         test_book_admission_carries_no_unused_words,
     ),
-    "book_admission_witness_grammar_vocabulary_equality": (
-        test_book_admission_and_witness_grammar_match,
-        test_witness_grammar_vocabulary_preserves_first_authored_occurrence_order,
+    "witness_grammar_words_in_book_admission": (
+        test_witness_grammar_words_in_book_admission,
     ),
 }

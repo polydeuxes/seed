@@ -570,7 +570,7 @@ def test_assignment_survives_alone_and_a_later_carried_cut_can_record_its_act(
     ledger.close()
 
 
-def test_durable_material_contains_no_later_control_vocabulary():
+def test_durable_material_contains_no_later_control_words():
     ledger = EventLedger()
     run_persistent_operator_console(
         ledger=ledger,

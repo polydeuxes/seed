@@ -79,7 +79,7 @@ from compiled_format_invocation import (  # noqa: E402
 )
 from compiled_material_invocation import ingest_result_reference  # noqa: E402
 from material_admission import compare_admission_result_pairs  # noqa: E402
-from tests.test_book_admission import (  # noqa: E402
+from scripts.book_admission import (  # noqa: E402
     book_admission,
     scan_active_line,
 )

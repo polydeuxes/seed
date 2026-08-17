@@ -2590,7 +2590,7 @@ def _assert_ordered_fidelity_representation(fidelity: dict) -> None:
         "subject": "this_Fidelity",
         "book_material_reference": "01.Source.C",
         "grammar": "established",
-        "recorded_occurrence_kind": ["Fidelity_occurrence"],
+        "recorded_occurrence_kind": [],
         "comparison": {
             "first_subject": "this_Witness",
             "relation": "comparison",
@@ -3475,7 +3475,7 @@ def test_candidate_clause_preserves_coordinates_without_promoting_the_subject():
         "subject": "candidate",
         "book_material_reference": "01.Source.E",
         "grammar": "established",
-        "recorded_occurrence_kind": ["Fidelity_occurrence"],
+        "recorded_occurrence_kind": [],
         "preserves": [
             "applicable_source_role",
             "Representation_Act_occurrence",
@@ -3502,7 +3502,7 @@ def test_cross_boundary_participation_preserves_scope_and_limits():
         "subject": "supplied_material_as_input_to_exact_Act",
         "book_material_reference": "01.Source.B",
         "grammar": "established",
-        "recorded_occurrence_kind": ["Fidelity_occurrence"],
+        "recorded_occurrence_kind": [],
         "coordinates": [
             "supplied_material",
             "input_role",

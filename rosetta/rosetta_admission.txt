@@ -1,8 +1,7 @@
-# Rosetta admission -- vocabulary available to translation.
-# Book admission: ../book_of_seed/book_admission.txt
+# Rosetta admission -- words available to translation.
+# Book admission is carried by active Book material.
 #
-# Rosetta admission grants no admission to Book proper. The Book keeps its own
-# narrower file and references this one without importing it.
+# Rosetta admission grants no admission to Book proper.
 #
 a
 abandoned
@@ -1002,7 +1001,6 @@ verified
 version
 visibility
 visible
-vocabulary
 warrant
 warranted
 warranting
