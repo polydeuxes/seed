@@ -499,10 +499,12 @@ def measure_positions_for_recurrent_byte_pair_assertions(
     occurrence_limit: int,
     through: EventLedgerBoundary,
 ) -> tuple[FindingOfRecurrentBytePairOccurrencePositions, ...]:
-    """Measure a same-boundary fan-out after one exact pair-result read."""
+    """Measure same-boundary pair subjects after one exact pair-result read."""
 
     if type(through) is not EventLedgerBoundary:
-        raise TypeError("pair occurrence fan-out requires one exact boundary")
+        raise TypeError(
+            "Measurement of same-boundary pair subjects requires one exact boundary"
+        )
     if type(occurrence_limit) is not int or occurrence_limit <= 0:
         raise ValueError("pair occurrence Measurement requires a positive exact limit")
     references = _references_to_recorded_recurrent_byte_pairs(

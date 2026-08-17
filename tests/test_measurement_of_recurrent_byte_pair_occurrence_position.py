@@ -198,7 +198,7 @@ def test_each_pair_position_assertion_has_one_exact_occurrence_bound_reference()
     )
 
 
-def test_same_boundary_pair_fan_out_reads_the_pair_result_once(monkeypatch):
+def test_same_boundary_pair_subjects_have_one_pair_result_read(monkeypatch):
     ledger, _locality, pair, _recurrence, source, _finding = _fixture(
         premise=b"abxxabyybayyba",
         current=b"ba---abxx--yy",
@@ -296,7 +296,7 @@ def test_same_boundary_pair_fan_out_reads_the_pair_result_once(monkeypatch):
     } == {(source.identity, source.locality_identity, through.identity, 16)}
 
 
-def test_same_boundary_pair_fan_out_requires_exact_distinct_recurrence_subjects():
+def test_one_same_boundary_pair_subject_set_requires_exact_distinct_recurrence_subjects():
     ledger, _locality, pair, recurrence, source, _finding = _fixture()
     through = ledger.append_boundary()
 
@@ -360,7 +360,7 @@ def test_same_boundary_pair_fan_out_requires_exact_distinct_recurrence_subjects(
         )
 
 
-def test_same_boundary_pair_fan_out_keeps_each_result_evidence_independent():
+def test_same_boundary_pair_subjects_keep_each_result_evidence_distinct():
     ledger, locality, pair, _recurrence, source, _finding = _fixture(
         premise=b"abxxabyybayyba",
         current=b"ba---abxx--yy",
@@ -628,9 +628,9 @@ FIDELITY_SUBJECTS = {
     "declared_measurement_result": (
         test_pair_occurrence_measurement_finds_exact_positions_without_a_sign,
         test_each_pair_position_assertion_has_one_exact_occurrence_bound_reference,
-        test_same_boundary_pair_fan_out_reads_the_pair_result_once,
-        test_same_boundary_pair_fan_out_requires_exact_distinct_recurrence_subjects,
-        test_same_boundary_pair_fan_out_keeps_each_result_evidence_independent,
+        test_same_boundary_pair_subjects_have_one_pair_result_read,
+        test_one_same_boundary_pair_subject_set_requires_exact_distinct_recurrence_subjects,
+        test_same_boundary_pair_subjects_keep_each_result_evidence_distinct,
         test_occurrence_limit_is_explicit_and_preserves_exact_known_loss,
         test_same_bytes_cannot_substitute_another_ingest_occurrence,
         test_count_assertion_cannot_impersonate_recurrence_and_result_is_single_use,
