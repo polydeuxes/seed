@@ -42,6 +42,32 @@ def test_operator_emission_boundary_refuses_inferred_or_empty_coordinates(bounda
         read_operator_emission_boundary(boundary)
 
 
+def test_operator_emission_boundary_requires_one_exact_writable_boundary():
+    with pytest.raises(TypeError, match="writable boundary"):
+        operator_emission_boundary(
+            object(),
+            boundary_identity="terminal-write",
+            locality_identity="operator-terminal",
+        )
+
+
+def test_operator_emission_boundary_refuses_a_later_lost_write_capability():
+    class MutableBoundary:
+        def write(self, material):
+            return len(material)
+
+    output = MutableBoundary()
+    boundary = operator_emission_boundary(
+        output,
+        boundary_identity="terminal-write",
+        locality_identity="operator-terminal",
+    )
+    output.write = None
+
+    with pytest.raises(TypeError, match="writable boundary"):
+        read_operator_emission_boundary(boundary)
+
+
 def test_egress_writes_exact_bytes_without_decoding():
     output = BytesIO()
     material = b"\x00\xff\x80hello"

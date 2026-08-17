@@ -20,6 +20,13 @@ class ExactMaterialEgressFailure(Exception):
         self.error = error
 
 
+def _require_exact_writable_boundary(output_stream: BinaryIO) -> None:
+    if not callable(getattr(output_stream, "write", None)) and not callable(
+        getattr(output_stream, "sendall", None)
+    ):
+        raise TypeError("egress requires one writable boundary")
+
+
 def operator_emission_boundary(
     output_stream: BinaryIO,
     *,
@@ -32,6 +39,7 @@ def operator_emission_boundary(
         raise TypeError("egress requires one exact boundary identity")
     if type(locality_identity) is not str or not locality_identity:
         raise TypeError("egress requires one exact operator Locality identity")
+    _require_exact_writable_boundary(output_stream)
     return (output_stream, boundary_identity, locality_identity)
 
 
@@ -49,18 +57,18 @@ def read_operator_emission_boundary(
         or not boundary[2]
     ):
         raise TypeError("egress requires one exact operator boundary")
+    _require_exact_writable_boundary(boundary[0])
     return boundary
 
 
 def emit_exact_material(output_stream: BinaryIO, exact_material: bytes) -> int:
     """Obtain one exact write acceptance without inferring later delivery."""
+    _require_exact_writable_boundary(output_stream)
     write = getattr(output_stream, "write", None)
     sendall = getattr(output_stream, "sendall", None)
-    if write is None and sendall is None:
-        raise TypeError("egress requires one writable boundary")
     if type(exact_material) is not bytes:
         raise TypeError("egress requires exact material bytes")
-    if sendall is not None:
+    if callable(sendall):
         try:
             sendall(exact_material)
         except Exception as error:

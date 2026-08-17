@@ -1189,6 +1189,16 @@
           "negative_Authority"
         ],
         "result": "applicable_input_Standing",
+        "validation_requires": [
+          "exact_material_Admission",
+          "current_Admission_Standing",
+          "same_Representation",
+          "same_destination_operator_boundary",
+          "same_destination_operator_Locality",
+          "same_emission_Act_occurrence",
+          "same_emission_result_boundary"
+        ],
+        "other_Standings_require": "separately_evidenced_determination",
         "does_not_establish": [
           "Participation",
           "emission_result",

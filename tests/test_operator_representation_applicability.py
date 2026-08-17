@@ -79,6 +79,13 @@ def test_admission_applicability_participation_and_emission_remain_distinct():
     assert output.getvalue() == b"applicable material"
     assert applicability["standing"] == "applicable"
     assert applicability["support_relation_standing"] == "admitted"
+    assert applicability["validation"] == {
+        "exact_material_Admission": True,
+        "current_Admission_Standing": True,
+        "same_destination_operator_boundary": True,
+        "same_destination_operator_Locality": True,
+        "same_emission_Act_occurrence": True,
+    }
     assert applicability["admission_result_event_identity"] == admission.identity
     assert applicability["downstream_act_occurrence_identity"] == (
         emission.material["act_occurrence_identity"]

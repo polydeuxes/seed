@@ -178,7 +178,7 @@ def record_representation_emission_applicability_act_evidence(
     admission_result_event_identity: str,
     locality_standing: dict[str, Any],
 ) -> Event:
-    """Determine no result yet; freeze the exact admitted input relation."""
+    """Validate no result yet; freeze the exact admitted input relation."""
 
     admission_event, admission = _admission_event_and_material(
         ledger, admission_result_event_identity
@@ -331,6 +331,13 @@ def _result_material(act: Event) -> dict[str, Any]:
         ],
         "standing": "applicable",
         "support_relation_standing": "admitted",
+        "validation": {
+            "exact_material_Admission": True,
+            "current_Admission_Standing": True,
+            "same_destination_operator_boundary": True,
+            "same_destination_operator_Locality": True,
+            "same_emission_Act_occurrence": True,
+        },
         "currentness": "current through exact Admission Standing boundary",
         "known_loss": [],
         "conflicts": [],
@@ -390,6 +397,7 @@ def _recorded_result_material(
         ),
         "standing": result["standing"],
         "support_relation_standing": result["support_relation_standing"],
+        "validation": deepcopy(result["validation"]),
         "currentness": result["currentness"],
         "known_loss": list(result["known_loss"]),
         "conflicts": list(result["conflicts"]),
