@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import pytest
 
+import seed_runtime.comparison_of_ordered_relation_path_with_recorded_pair_findings as comparison_module
 from seed_runtime.byte_measurement import (
     assertions_of_recorded_byte_position_pair_measurement,
     record_byte_measurement_responsible_act_evidence,
@@ -373,6 +374,79 @@ def test_changed_input_compare_is_refused_on_later_read():
         )
 
 
+def test_corrupted_higher_compare_yield_is_refused():
+    ledger, _earlier_source, _added, comparison, path = _inputs()
+    _assignment, _applicability, _act, result = _record_comparison(
+        ledger, comparison, path
+    )
+    evidence = ledger.get(result.material["evidence_of_yield_relation_identity"])
+    assert evidence is not None
+    evidence.material["result_identity"] = "crossed-result"
+
+    with pytest.raises(ValueError, match="exact Evidence of Yield"):
+        get_recorded_comparison_of_ordered_relation_path_with_recorded_pair_findings(
+            ledger, result.identity
+        )
+
+
+def test_each_higher_lifecycle_read_validates_large_inputs_once_without_cache(
+    monkeypatch,
+):
+    ledger, _earlier_source, _added, comparison, path = _inputs()
+    assignment = record_comparison_of_ordered_relation_path_with_recorded_pair_findings_responsibility_assignment(
+        ledger,
+        path_result_event_identity=path.identity,
+        comparison_result_event_identity=comparison.identity,
+        locality_standing=_standing(ledger),
+    )
+    applicability_act = record_comparison_of_ordered_relation_path_with_recorded_pair_findings_applicability_act_evidence(
+        ledger,
+        responsibility_assignment_event_identity=assignment.identity,
+        locality_standing=_standing(ledger),
+    )
+    applicability = record_comparison_of_ordered_relation_path_with_recorded_pair_findings_applicability_result(
+        ledger, responsible_act_evidence_event_identity=applicability_act.identity
+    )
+    standing = _standing(ledger)
+    original = comparison_module._inputs
+    calls = []
+
+    def counted(ledger, **identities):
+        calls.append(
+            (
+                identities["path_result_event_identity"],
+                identities["comparison_result_event_identity"],
+            )
+        )
+        return original(ledger, **identities)
+
+    monkeypatch.setattr(comparison_module, "_inputs", counted)
+    expected_call = (path.identity, comparison.identity)
+
+    act = record_comparison_of_ordered_relation_path_with_recorded_pair_findings_act_evidence(
+        ledger,
+        responsibility_assignment_event_identity=assignment.identity,
+        applicability_result_event_identity=applicability.identity,
+        locality_standing=standing,
+    )
+    assert calls == [expected_call]
+
+    result = record_comparison_of_ordered_relation_path_with_recorded_pair_findings_result(
+        ledger, responsible_act_evidence_event_identity=act.identity
+    )
+    assert calls == [expected_call, expected_call]
+
+    get_recorded_comparison_of_ordered_relation_path_with_recorded_pair_findings(
+        ledger, result.identity
+    )
+    assert calls == [expected_call, expected_call, expected_call]
+
+    get_recorded_comparison_of_ordered_relation_path_with_recorded_pair_findings(
+        ledger, result.identity
+    )
+    assert calls == [expected_call] * 4
+
+
 def test_relation_of_relations_survives_sqlite_restart(tmp_path):
     database = tmp_path / "ordered-relation-path-pair-finding-comparison.sqlite"
     ledger = SQLiteEventLedger(str(database))
@@ -435,6 +509,8 @@ FIDELITY_SUBJECTS = {
     "yield_result_occurrence_evidence": (
         test_one_ordered_relation_path_pair_finding_compare_act_cannot_yield_twice,
         test_changed_input_compare_is_refused_on_later_read,
+        test_corrupted_higher_compare_yield_is_refused,
+        test_each_higher_lifecycle_read_validates_large_inputs_once_without_cache,
     ),
     "declared_measurement_result": (
         test_relation_of_relations_survives_sqlite_restart,

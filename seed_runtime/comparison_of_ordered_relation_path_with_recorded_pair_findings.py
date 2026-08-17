@@ -629,7 +629,10 @@ def record_comparison_of_ordered_relation_path_with_recorded_pair_findings_appli
 
 
 def _read_applicability_act(
-    ledger: EventLedger, event_identity: Any
+    ledger: EventLedger,
+    event_identity: Any,
+    *,
+    assignment_reading: tuple[Event, dict[str, Any]] | None = None,
 ) -> tuple[Event, Event, dict[str, Any]]:
     event = _event(
         ledger,
@@ -638,14 +641,17 @@ def _read_applicability_act(
         message="comparison of ordered relation path with recorded pair findings requires exact Applicability Evidence",
     )
     reference = event.material.get("responsibility_assignment_reference")
-    assignment, inputs = _read_assignment(
-        ledger,
+    assignment_identity = (
         reference.get("recorded_occurrence_identity")
         if type(reference) is dict
-        else None,
+        else None
     )
+    if assignment_reading is None:
+        assignment_reading = _read_assignment(ledger, assignment_identity)
+    assignment, inputs = assignment_reading
     if (
-        event.locality_identity != assignment.locality_identity
+        assignment_identity != assignment.identity
+        or event.locality_identity != assignment.locality_identity
         or event.material != _applicability_act_material(assignment)
     ):
         raise ValueError("comparison of ordered relation path with recorded pair findings Applicability Evidence is not exact")
@@ -844,7 +850,10 @@ def _read_yielded(
 
 
 def _read_applicability_result(
-    ledger: EventLedger, event_identity: Any
+    ledger: EventLedger,
+    event_identity: Any,
+    *,
+    assignment_reading: tuple[Event, dict[str, Any]] | None = None,
 ) -> tuple[Event, Event, Event, dict[str, Any]]:
     candidate = ledger.get(event_identity) if type(event_identity) is str else None
     act_identity = (
@@ -852,7 +861,9 @@ def _read_applicability_result(
         if candidate is not None and type(candidate.material) is dict
         else None
     )
-    act, assignment, inputs = _read_applicability_act(ledger, act_identity)
+    act, assignment, inputs = _read_applicability_act(
+        ledger, act_identity, assignment_reading=assignment_reading
+    )
     event = _read_yielded(
         ledger,
         event_identity,
@@ -948,11 +959,16 @@ def record_comparison_of_ordered_relation_path_with_recorded_pair_findings_act_e
     applicability_result_event_identity: str,
     locality_standing: dict[str, Any],
 ) -> Event:
-    assignment, _inputs_reading = _read_assignment(
+    assignment_reading = _read_assignment(
         ledger, responsibility_assignment_event_identity
     )
+    assignment, _inputs_reading = assignment_reading
     applicability, _act, applicability_assignment, inputs = (
-        _read_applicability_result(ledger, applicability_result_event_identity)
+        _read_applicability_result(
+            ledger,
+            applicability_result_event_identity,
+            assignment_reading=assignment_reading,
+        )
     )
     if (
         applicability_assignment.identity != assignment.identity
@@ -978,15 +994,18 @@ def _read_compare_act(
         message="comparison of ordered relation path with recorded pair findings requires exact Compare Evidence",
     )
     reference = event.material.get("responsibility_assignment_reference")
-    assignment, inputs = _read_assignment(
+    assignment_reading = _read_assignment(
         ledger,
         reference.get("recorded_occurrence_identity")
         if type(reference) is dict
         else None,
     )
+    assignment, inputs = assignment_reading
     applicability, _act, applicability_assignment, applicability_inputs = (
         _read_applicability_result(
-            ledger, event.material.get("applicability_result_event_identity")
+            ledger,
+            event.material.get("applicability_result_event_identity"),
+            assignment_reading=assignment_reading,
         )
     )
     if (
