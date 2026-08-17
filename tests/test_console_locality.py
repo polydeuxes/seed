@@ -212,6 +212,21 @@ def test_a_caller_supplied_locality_identity_remains_exact():
     }
 
 
+def test_unrecorded_locality_named_list_is_refused_without_direct_output():
+    ledger = EventLedger()
+    output = StringIO()
+
+    with pytest.raises(ValueError, match="existing Locality"):
+        run_persistent_operator_console(
+            ledger=ledger,
+            locality_identity="current",
+            input_stream=binary_input("/locality list\n"),
+            output_stream=output,
+        )
+
+    assert output.getvalue() == ""
+
+
 # --------------------------------------------------------------------------
 # Separate processes, which is how the console is actually reopened.
 # --------------------------------------------------------------------------
@@ -283,6 +298,7 @@ FIDELITY_SUBJECTS = {
         test_a_fresh_locality_reads_none_of_the_history,
         test_the_in_memory_ledger_scopes_the_same_way,
         test_a_caller_supplied_locality_identity_remains_exact,
+        test_unrecorded_locality_named_list_is_refused_without_direct_output,
         test_a_reopened_console_process_does_not_abort,
         test_separate_processes_receive_separate_localities,
     ),

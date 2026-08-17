@@ -25,8 +25,8 @@ def test_locality_command_preserves_one_exact_identity():
     assert request.locality_identity == "session_123"
 
 
-def test_locality_list_is_a_separate_command_result():
-    assert request_operator_locality(_command(b"list")).locality_identity is None
+def test_locality_word_list_is_one_literal_identity():
+    assert request_operator_locality(_command(b"list")).locality_identity == "list"
 
 
 def test_locality_without_an_argument_creates_one():

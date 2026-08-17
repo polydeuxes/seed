@@ -276,7 +276,6 @@ def test_each_advance_reads_only_what_an_act_just_recorded(monkeypatch):
         (b"", False, False),
         (b"record-only road\n", False, False),
         (b"\x00\xff raw road\n", True, False),
-        (b"/locality list\n", False, False),
         (b"/locality\n", False, False),
         (b"/checkpoint\n", False, False),
         (b"/locality existing\n", False, True),

@@ -831,17 +831,6 @@ def run_persistent_operator_console(
             )
             request = command_run.implementation_result
             if isinstance(request, OperatorLocalityRequest):
-                if request.locality_identity is None:
-                    localities = []
-                    seen_localities = set()
-                    for event in ledger.list():
-                        locality = event.locality_identity
-                        if locality is not None and locality not in seen_localities:
-                            seen_localities.add(locality)
-                            localities.append(locality)
-                    output_stream.write("\n".join(localities) + "\n")
-                    output_stream.flush()
-                    continue
                 if not request.create_new and not ledger.has_locality(
                     request.locality_identity
                 ):

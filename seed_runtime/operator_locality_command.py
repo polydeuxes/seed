@@ -8,7 +8,7 @@ from seed_runtime.identities import new_identity
 
 @dataclass(frozen=True)
 class OperatorLocalityRequest:
-    locality_identity: str | None
+    locality_identity: str
     create_new: bool = False
 
 
@@ -19,8 +19,6 @@ def request_operator_locality(command: AddressedOperatorCommand) -> OperatorLoca
             locality_identity=new_identity("locality"),
             create_new=True,
         )
-    if argument == b"list":
-        return OperatorLocalityRequest(locality_identity=None)
     try:
         locality_identity = argument.decode("ascii")
     except UnicodeDecodeError as error:
