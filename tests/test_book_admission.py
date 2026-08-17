@@ -8,6 +8,7 @@ from pathlib import Path
 
 from scripts.book_admission import (
     BOOK,
+    BOOK_ADMISSION,
     ROOT,
     book_admission,
     book_proper_files,
@@ -16,7 +17,6 @@ from scripts.book_admission import (
     witness_grammar_words,
 )
 
-BOOK_ADMISSION = BOOK / "book_admission.txt"
 ROSETTA_ADMISSION = ROOT / "rosetta" / "rosetta_admission.txt"
 
 
@@ -70,11 +70,18 @@ def test_admitted_material_reference_subjects_resolve_relative_markdown_links():
     assert missing == []
 
 
-def test_book_has_no_separate_admission_authority():
+def test_book_has_its_own_admission_and_points_to_rosetta():
     assert BOOK_ADMISSION == ROOT / "book_of_seed" / "book_admission.txt"
     assert ROSETTA_ADMISSION != BOOK_ADMISSION
-    assert not BOOK_ADMISSION.exists()
+    assert not BOOK_ADMISSION.is_symlink()
     assert not ROSETTA_ADMISSION.is_symlink()
+    assert (
+        "# Rosetta admission: ../rosetta/rosetta_admission.txt"
+        in BOOK_ADMISSION.read_text(encoding="utf-8").splitlines()
+    )
+    assert set(_admission_entries(BOOK_ADMISSION)) < set(
+        _admission_entries(ROSETTA_ADMISSION)
+    )
 
 
 def test_warrant_admission_is_broad_in_rosetta_and_singular_in_book():
@@ -135,11 +142,30 @@ def test_composite_admission_is_broad_in_rosetta_and_singular_in_book():
 
 
 def test_book_proper_is_within_book_admission():
-    assert book_admission() == set(book_proper_words())
+    unadmitted = {
+        word: places
+        for word, places in book_proper_words().items()
+        if word not in book_admission()
+    }
+    report = "\n".join(
+        f"  {word} -- {places[0][0]}:{places[0][1]}"
+        + (f" and {len(places) - 1} more" if len(places) > 1 else "")
+        for word, places in sorted(unadmitted.items())
+    )
+    assert not unadmitted, (
+        "\nActive Book material carries words absent from Book admission:\n"
+        + report
+    )
 
 
 def test_book_admission_carries_no_unused_words():
-    assert book_admission() - set(book_proper_words()) == set()
+    unused = sorted(
+        book_admission() - set(book_proper_words()) - witness_grammar_words()
+    )
+    assert not unused, (
+        "\nBook admission carries words absent from both active Book material "
+        "and witness grammar: " + ", ".join(unused)
+    )
 
 
 def test_witness_grammar_words_in_book_admission():
@@ -155,7 +181,7 @@ FIDELITY_SUBJECTS = {
         test_admitted_material_reference_subjects_resolve_relative_markdown_links,
     ),
     "book_rosetta_admission_distinction": (
-        test_book_has_no_separate_admission_authority,
+        test_book_has_its_own_admission_and_points_to_rosetta,
     ),
     "book_rosetta_warrant_admission_distinction": (
         test_warrant_admission_is_broad_in_rosetta_and_singular_in_book,

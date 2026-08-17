@@ -1,4 +1,4 @@
-"""Admission carried by this Book's active constitutional material."""
+"""Independent Book admission and the material it bounds."""
 
 from __future__ import annotations
 
@@ -8,6 +8,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 BOOK = ROOT / "book_of_seed"
+BOOK_ADMISSION = BOOK / "book_admission.txt"
 
 
 def scan_active_line(line: str) -> str:
@@ -35,9 +36,13 @@ def book_proper_words() -> dict[str, list[tuple[str, int]]]:
 
 
 def book_admission() -> set[str]:
-    """Return exactly the words carried by this Book's active prose."""
+    """Read the independently curated words admitted to this Book."""
 
-    return set(book_proper_words())
+    return {
+        line.split("#", 1)[0].strip()
+        for line in BOOK_ADMISSION.read_text(encoding="utf-8").splitlines()
+        if line.split("#", 1)[0].strip()
+    }
 
 
 def witness_grammar_words() -> set[str]:

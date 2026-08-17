@@ -1,7 +1,8 @@
 # Rosetta admission -- words available to translation.
-# Book admission is carried by active Book material.
+# Book admission: ../book_of_seed/book_admission.txt
 #
-# Rosetta admission grants no admission to Book proper.
+# Rosetta admission grants no admission to Book proper. The Book keeps its own
+# narrower file and references this one without importing it.
 #
 a
 abandoned
@@ -1020,7 +1021,9 @@ within
 without
 witness
 witnesses
+word
 wording
+words
 would
 write
 written
